@@ -1,0 +1,7 @@
+# Track identity evolution over time
+# New entries are added by the identity_snapshot system
+history:
+  - date: "2025-04-01"
+    positioning: "full-stack developer & systems architect"
+    trigger: "initial_setup"
+    notes: "System initialized. Building first version of Personal OS."

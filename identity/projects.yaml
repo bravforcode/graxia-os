@@ -1,0 +1,49 @@
+projects:
+  - name: "Business Dashboard Automation"
+    tagline: "Automated BI dashboard that turns fragmented business data into real-time decisions"
+    description: >
+      Manual reporting kills operational speed. This system automates data collection,
+      runs ETL pipelines, and delivers real-time dashboards for operational and executive
+      decision-making — replacing spreadsheet-driven reporting for startups and SMEs.
+      Built to give founders the visibility they need without hiring a data team.
+    tech_stack: ["Python", "ETL Pipelines", "Power BI", "PostgreSQL", "React"]
+    github_url: "https://github.com/bravforcode/business-dashboard-automation"
+    live_url: ""
+    achievements: "Eliminated manual reporting cycles; real-time operational visibility for business owners"
+    best_for: ["freelance_portfolio", "competition", "startup_pitch"]
+
+  - name: "Testlyn — Hospital Management System"
+    tagline: "Full-stack hospital management system that digitizes clinical and operational workflows"
+    description: >
+      Many clinics and small hospitals in Thailand still run on paper or basic spreadsheets.
+      Testlyn digitizes patient records, appointment scheduling, and staff workflows into
+      one reliable platform — reducing manual errors and freeing staff time for patient care.
+    tech_stack: ["React", "Node.js", "PostgreSQL", "Docker", "REST API"]
+    github_url: "https://github.com/bravforcode"
+    live_url: ""
+    achievements: "Founder-built product targeting Thai healthcare digitization gap; active development"
+    best_for: ["competition", "startup_pitch", "freelance_portfolio"]
+
+  - name: "Plexta — Auction Web Platform"
+    tagline: "Real-time web auction platform with live bidding and seller/buyer management"
+    description: >
+      Plexta handles real-time bidding, item listings, user authentication, and transaction
+      management for the growing Thai online auction and e-commerce resale market.
+      Reliable experience for both sellers and buyers with no third-party auction fees.
+    tech_stack: ["React", "Node.js", "PostgreSQL", "WebSockets", "TailwindCSS"]
+    github_url: "https://github.com/bravforcode"
+    live_url: ""
+    achievements: "Founder-built product in Thai e-commerce/auction vertical; active development"
+    best_for: ["competition", "startup_pitch", "freelance_portfolio"]
+
+  - name: "API & System Integration"
+    tagline: "Multi-system API integration that eliminates manual data transfer for businesses"
+    description: >
+      Connects multiple disconnected business systems into one centralized automated
+      data workflow — faster operations, fewer manual errors, infrastructure that scales
+      without constant rebuilds.
+    tech_stack: ["Node.js", "Python", "REST API", "PostgreSQL", "MongoDB"]
+    github_url: "https://github.com/bravforcode/API-System-Integration"
+    live_url: ""
+    achievements: "Reduced manual operations; scalable integration architecture ready for production"
+    best_for: ["freelance_portfolio", "competition"]

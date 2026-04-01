@@ -1,0 +1,236 @@
+personal:
+  name: "Phirawit Jitnarong"
+  nickname: "P"
+  location: "Bangkok, Thailand"
+  languages: ["Thai", "English"]
+  timezone: "Asia/Bangkok"
+  bio_short_en: >
+    First-year Computer Engineering student at Burapha University and founder of Testlyn
+    (hospital management system) and Plexta (auction web platform). I build full-stack
+    systems and AI-powered automation that help businesses cut manual work, connect
+    fragmented data, and make faster decisions — and I've shipped real products for real
+    clients while still in my first year.
+  bio_short_th: >
+    นักศึกษาปี 1 วิศวกรรมคอมพิวเตอร์ มหาวิทยาลัยบูรพา และ founder ของ Testlyn
+    (ระบบโรงพยาบาล) และ Plexta (เว็บประมูล) ผมสร้างระบบ full-stack และ automation
+    ที่ช่วยให้ธุรกิจลดงานมือ เชื่อมต่อข้อมูล และตัดสินใจได้เร็วขึ้น — และ ship งานจริง
+    ให้ลูกค้าจริงมาแล้วตั้งแต่ปี 1 ครับ
+
+current_status:
+  role: "Student Developer & Founder"
+  university: "Burapha University"
+  year: "1st year"
+  major: "Computer Engineering"
+  available_hours_per_week: 25
+  best_work_hours: "evening and weekend"
+  current_positioning: "full-stack developer & systems architect"
+
+goals:
+  north_star: >
+    Within 6 months: earn consistent freelance income of 30,000+ THB/month,
+    place in at least one national or ASEAN-level hackathon or startup competition,
+    and ship a live product under Testlyn or Plexta with real active users.
+    All three matter — they reinforce each other.
+  short_term_3mo: >
+    Close 2-3 paying freelance clients in startup, e-commerce, or healthtech.
+    Submit Testlyn or Plexta to at least one competition.
+    Have one live product with users who return weekly.
+  medium_term_1yr: >
+    Grow one of Testlyn or Plexta to product-market fit with paying users.
+    Win or place in a regional competition (ASEAN or global).
+    Raise freelance rate to 700-800 THB/h backed by real case studies.
+  long_star: >
+    Build a profitable software company out of Thailand — starting from Testlyn
+    and Plexta — that solves real operational problems for businesses and
+    healthcare systems across Southeast Asia using AI and intelligent automation.
+
+skills:
+  technical:
+    - { name: "Python (FastAPI / Django)", level: "advanced", years: 2 }
+    - { name: "Node.js", level: "advanced", years: 2 }
+    - { name: "React / Next.js", level: "advanced", years: 2 }
+    - { name: "Vue.js / Nuxt.js", level: "intermediate", years: 1 }
+    - { name: "PostgreSQL", level: "intermediate", years: 2 }
+    - { name: "MongoDB / Supabase / Firebase", level: "intermediate", years: 1 }
+    - { name: "REST API / GraphQL", level: "advanced", years: 2 }
+    - { name: "Docker / CI-CD", level: "intermediate", years: 1 }
+    - { name: "AI / LLM Integration", level: "intermediate", years: 1 }
+    - { name: "ETL Pipelines / Power BI", level: "intermediate", years: 1 }
+    - { name: "Flutter / React Native", level: "beginner", years: 0.5 }
+    - { name: "TailwindCSS / Figma", level: "intermediate", years: 1 }
+  soft:
+    - "ships real products while still in year 1 — bias for action"
+    - "business-first engineering mindset — technology serves outcomes, not the other way"
+    - "can own a project end-to-end with no hand-holding"
+    - "works well async and remote"
+    - "systems thinker — connects product, data, and operations"
+
+target_clients:
+  industries: ["startup", "SaaS", "e-commerce", "retail", "healthtech"]
+  company_size: ["startup (1-20 people)", "SME", "clinic or small hospital"]
+  budget_range:
+    min_thb: 15000
+    max_thb: 120000
+    preferred_currency: "THB"
+  geography: ["Thailand", "Southeast Asia", "Remote"]
+  ideal_client_description: >
+    A Thai startup founder or SME owner running operations on spreadsheets, LINE groups,
+    or disconnected tools — ready to invest in automation, a real-time dashboard, or a
+    clean admin system. They value reliability and delivery over the lowest price.
+    Healthtech and e-commerce founders are ideal fits given Testlyn and Plexta.
+  what_you_wont_do:
+    - "gambling or adult content platforms"
+    - "products with misleading or predatory design"
+    - "projects with no defined scope or no written agreement"
+    - "clients who want a full system for under 5,000 THB"
+
+target_competitions:
+  types: ["hackathon", "startup competition", "grant program", "accelerator", "fellowship"]
+  focus_areas:
+    - "AI/ML"
+    - "healthtech / hospital systems"
+    - "e-commerce / marketplace automation"
+    - "developer tools"
+    - "SaaS / data systems"
+    - "edtech"
+  geographic_scope: ["Thailand", "ASEAN", "global online"]
+  team_preference: "solo or 2-3 people"
+  must_be_student_eligible: true
+
+projects:
+  - name: "Business Dashboard Automation"
+    tagline: "Automated BI dashboard that turns fragmented business data into real-time decisions"
+    description: >
+      Manual reporting kills operational speed. This system automates data collection,
+      runs ETL pipelines, and delivers real-time dashboards for operational and executive
+      decision-making — replacing spreadsheet-driven reporting for startups and SMEs.
+      Built to give founders the visibility they need without hiring a data team.
+    tech_stack: ["Python", "ETL Pipelines", "Power BI", "PostgreSQL", "React"]
+    github_url: "https://github.com/bravforcode/business-dashboard-automation"
+    live_url: ""
+    achievements: "Eliminated manual reporting cycles; real-time operational visibility for business owners"
+    best_for: ["freelance_portfolio", "competition", "startup_pitch"]
+
+  - name: "Testlyn — Hospital Management System"
+    tagline: "Full-stack hospital management system that digitizes clinical and operational workflows"
+    description: >
+      Many clinics and small hospitals in Thailand still run on paper or basic spreadsheets.
+      Testlyn is a hospital management system that digitizes patient records, appointment
+      scheduling, and staff workflows into one reliable platform — reducing manual errors
+      and freeing up staff time for patient care.
+    tech_stack: ["React", "Node.js", "PostgreSQL", "Docker", "REST API"]
+    github_url: "https://github.com/bravforcode"
+    live_url: ""
+    achievements: "Founder-built product targeting Thai healthcare digitization gap; active development"
+    best_for: ["competition", "startup_pitch", "freelance_portfolio"]
+
+  - name: "Plexta — Auction Web Platform"
+    tagline: "Real-time web auction platform with live bidding and seller/buyer management"
+    description: >
+      Plexta is a full-stack auction web platform that handles real-time bidding, item
+      listings, user authentication, and transaction management. Built for the growing
+      Thai online auction and e-commerce resale market — reliable experience for both
+      sellers and buyers, no third-party auction fees.
+    tech_stack: ["React", "Node.js", "PostgreSQL", "WebSockets", "TailwindCSS"]
+    github_url: "https://github.com/bravforcode"
+    live_url: ""
+    achievements: "Founder-built product in Thai e-commerce/auction vertical; active development"
+    best_for: ["competition", "startup_pitch", "freelance_portfolio"]
+
+  - name: "API & System Integration"
+    tagline: "Multi-system API integration that eliminates manual data transfer for businesses"
+    description: >
+      Businesses running on disconnected tools waste hours on manual data entry and
+      reconciliation every day. This project designs and implements API-based integration
+      layers that connect multiple internal systems into a centralized automated workflow —
+      faster operations, fewer errors, infrastructure that scales.
+    tech_stack: ["Node.js", "Python", "REST API", "PostgreSQL", "MongoDB"]
+    github_url: "https://github.com/bravforcode/API-System-Integration"
+    live_url: ""
+    achievements: "Reduced manual operations; scalable integration architecture ready for production"
+    best_for: ["freelance_portfolio", "competition"]
+
+voice_and_tone:
+  english_style: >
+    Direct and outcome-focused. Lead with the client's problem, not my credentials.
+    Short sentences. Reference their specific situation before any ask.
+    Mention real things I've built — Testlyn, Plexta, or a specific past project —
+    not generic claims about being "passionate" or "experienced."
+    One clear call to action at the end. Nothing more.
+    Never apologize for being a student. Let the work speak.
+  thai_style: >
+    กระชับ ตรงประเด็น ไม่อ้อม ใช้ครับ ไม่เยิน
+    เริ่มด้วยปัญหาของอีกฝ่าย ไม่ใช่การแนะนำตัวเอง
+    ศัพท์เทคนิคเป็นภาษาอังกฤษได้เลย เช่น dashboard, API, automation
+    ไม่ต้องบอกว่า "ผมเป็นนักศึกษา" — ให้ผลงานพูดแทน
+  phrases_to_avoid:
+    - "I am passionate about"
+    - "leverage synergies"
+    - "game-changing"
+    - "I would be honored to"
+    - "value-add"
+    - "I hope this email finds you well"
+    - "as per my last email"
+    - "touch base"
+    - "I'm just a student but..."
+    - "ด้วยความนับถือ"
+  sample_english_message: |
+    Hi [Name],
+
+    Noticed [Company] is still handling [specific process] manually — I built an automated
+    dashboard system that replaced exactly that for two Thai businesses. Cut their
+    reporting time from hours to minutes.
+
+    I've also shipped Testlyn (hospital ops) and Plexta (auction platform) solo,
+    so I can own this end-to-end without needing hand-holding.
+
+    Worth a 20-minute call this week?
+
+    P
+    github.com/bravforcode
+  sample_thai_message: |
+    สวัสดีครับ [ชื่อ]
+
+    เห็นว่า [บริษัท] ยังจัดการ [process] แบบ manual อยู่ครับ
+    ผมทำระบบ dashboard อัตโนมัติให้ธุรกิจไทยไปแล้ว 2 เจ้า ลด reporting time ลงมากครับ
+
+    มี product ของตัวเองด้วย — Testlyn (ระบบโรงพยาบาล) และ Plexta (เว็บประมูล)
+    เลยเข้าใจว่าระบบที่ดีต้องการอะไรจริงครับ
+
+    คุยกัน 20 นาทีเพื่อดูว่าตรงกับที่ต้องการไหมครับ
+
+    P — github.com/bravforcode
+
+financial:
+  monthly_revenue_target_thb: 30000
+  minimum_project_size_thb: 15000
+  hourly_rate_thb: 400
+  preferred_payment_terms: "50% upfront, 50% on delivery"
+
+scoring_weights:
+  money: 0.30
+  brand: 0.20
+  startup_relevance: 0.25
+  network: 0.10
+  effort_inverse: 0.15
+
+cognitive_defaults:
+  default_energy: 7
+  default_stress: 3
+  default_available_hours: 25
+
+constraints:
+  hard_limits:
+    - "Never send any message to any person without explicit approval"
+    - "Never post on social media without explicit approval"
+    - "Never apply to any paid program without approval"
+    - "Never store sensitive personal contact data beyond name/role/company/notes"
+    - "Never scrape platforms requiring authentication"
+  operational_limits:
+    max_daily_ai_cost_usd: 2.00
+    max_monthly_ai_cost_usd: 30.00
+    max_outreach_per_day: 5
+    max_pending_approvals_before_pause: 10
+    max_do_now_items_when_energy_low: 1
+    max_do_now_items_normal: 3
+    max_do_now_items_when_high_energy: 5
