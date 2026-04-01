@@ -1,0 +1,41 @@
+# Core
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+python-dotenv==1.0.1
+pydantic==2.7.0
+pydantic-settings==2.3.0
+pyyaml==6.0.1
+
+# Database
+sqlalchemy==2.0.30
+asyncpg==0.29.0
+alembic==1.13.1
+psycopg2-binary==2.9.9
+
+# AI — Gemini
+google-generativeai==0.8.3
+httpx==0.27.0
+
+# Vector DB
+chromadb==0.5.3
+
+# Queue
+celery==5.4.0
+redis==5.0.7
+
+# Scheduler
+apscheduler==3.10.4
+
+# Telegram
+python-telegram-bot==21.3
+
+# Scraping
+beautifulsoup4==4.12.3
+lxml==5.2.0
+
+# Utilities
+aiofiles==23.2.1
+python-dateutil==2.9.0
+pytz==2024.1
+tenacity==8.3.0
+structlog==24.2.0
