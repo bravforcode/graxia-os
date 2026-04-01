@@ -1,0 +1,23 @@
+{
+  "name": "Personal OS — Weekly Review",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {"interval": [{"field": "cronExpression", "expression": "30 8 * * 0"}]}
+      },
+      "name": "Sunday Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/system/brief/now",
+        "requestMethod": "POST"
+      },
+      "name": "Trigger Brief",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [460, 300]
+    }
+  ],
+  "connections": {"Sunday Trigger": {"main": [[{"node": "Trigger Brief", "type": "main", "index": 0}]]}}
+}

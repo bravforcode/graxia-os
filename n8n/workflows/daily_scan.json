@@ -1,0 +1,23 @@
+{
+  "name": "Personal OS — Daily Scan",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {"interval": [{"field": "cronExpression", "expression": "0 7 * * *"}]}
+      },
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/system/scan/now",
+        "requestMethod": "POST"
+      },
+      "name": "Trigger Scan",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [460, 300]
+    }
+  ],
+  "connections": {"Schedule Trigger": {"main": [[{"node": "Trigger Scan", "type": "main", "index": 0}]]}}
+}
