@@ -36,3 +36,6 @@ logs/
 # Alembic
 alembic/versions/*.py
 !alembic/versions/.gitkeep
+
+# Git Worktrees
+.worktrees/
