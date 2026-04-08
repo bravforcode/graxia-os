@@ -1,9 +1,21 @@
-version: "3.9"
+# ─────────────────────────────────────────────────────────────────────────────
+# Personal Sovereign OS — Docker Compose
+#
+# Profiles:
+#   default (make up)         → postgres + redis + backend + celery + n8n
+#   supabase (make supabase-up) → redi-5..95s + backend + celery + n8n  (no local postgres)
+#
+# Database: set DATABASE_URL in .env
+#   Local:    postgresql+asyncpg://personal_os:changeme@postgres:5432/personal_os
+#   Supabase: postgresql://postgres.[REF]:[PASS]@aws-0-[REGION].pooler.supabase.com:5432/postgres
+# ─────────────────────────────────────────────────────────────────────────────
 
 services:
+  # ── Local Postgres (skip when using Supabase) ──────────────────────────────
   postgres:
     image: postgres:15-alpine
     container_name: personal_os_postgres
+    profiles: ["default", "local"]
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-personal_os}
       POSTGRES_USER: ${POSTGRES_USER:-personal_os}
@@ -19,6 +31,7 @@ services:
       retries: 5
     restart: unless-stopped
 
+  # ── Redis (Upstash or local) ───────────────────────────────────────────────
   redis:
     image: redis:7-alpine
     container_name: personal_os_redis
@@ -31,38 +44,83 @@ services:
       retries: 5
     restart: unless-stopped
 
+  # ── Backend API ────────────────────────────────────────────────────────────
   backend:
     build: ./backend
     container_name: personal_os_backend
     env_file: .env
+    environment:
+      RUNNING_IN_DOCKER: "true"
     volumes:
       - ./backend:/app
       - ./identity:/identity:ro
     ports:
       - "8000:8000"
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     restart: unless-stopped
 
+  # ── Celery Worker ──────────────────────────────────────────────────────────
   celery:
     build: ./backend
     container_name: personal_os_celery
     env_file: .env
+    environment:
+      RUNNING_IN_DOCKER: "true"
     volumes:
       - ./backend:/app
       - ./identity:/identity:ro
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
     command: celery -A app.tasks.celery_app worker --loglevel=info --concurrency=2
     restart: unless-stopped
 
+  # ── Frontend (React + Vite) ────────────────────────────────────────────────
+  frontend:
+    image: oven/bun:1
+    container_name: personal_os_frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "5173:5173"
+    command: sh -c "bun install && bun run dev --host 0.0.0.0"
+    environment:
+      - VITE_DEV_PROXY_TARGET=http://backend:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # ── Ollama (Local LLM inference) ──────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: personal_os_ollama
+    profiles: ["default", "local"]
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+    volumes:
+      - ollama_data:/root/.ollama
+    # Uncomment for GPU support (NVIDIA):
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ── n8n Automation ─────────────────────────────────────────────────────────
   n8n:
     image: n8nio/n8n:latest
     container_name: personal_os_n8n
@@ -84,4 +142,5 @@ services:
 
 volumes:
   postgres_data:
+  ollama_data:
   n8n_data:
