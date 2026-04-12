@@ -1,0 +1,37 @@
+{
+  "title": "ลงประกาศ | Thaolai",
+  "url": "https://thaolai.com/assets/create",
+  "suggestions": [
+    "รังสิตซิตี้ / Rangsit City",
+    "มั่งมีนคร รังสิต / Mungme Nakorn Rangsit",
+    "รังสิต ลำลูกกา ปทุมธานี คลองหลวง",
+    "D condo Hideaway Rangsit / ดีคอนโด แคมปัส ไฮด์อเวย์ รังสิต",
+    "Ladawan Village, Lagoon, Rangsit / ลดาวัลย์ ลากูน รังสิต",
+    "เดอะ แพลนท์ วงแหวน-รังสิต / The Plant Wongwaen-Rangsit",
+    "บ้านพฤกษา รังสิต-คลอง 4 / Baan Pruksa Rangsit-Klong 4",
+    "ไอลีฟ ไพร์ม วงแหวน-รังสิตคลอง 4 / I Leaf Prime Wongwaen-Rangsit klong 4",
+    "ปิ่นฤทัย รังสิต - คลอง 7 / Pinruethai Rangsit - Klong 7",
+    "เดอะ แพลนท์ รังสิต-คลอง3 / The Plant Rangsit-Klong 3",
+    "พิมนารา ธรรมศาสตร์-รังสิต / Pimnara Thammasart-Rangsit",
+    "บ้านไอยรา คลอง 2 รังสิต-คลองหลวง / Baan Iyara Klong 2 Rangsit-Klong Luang",
+    "ไอลีฟ พาร์ค วงแหวน-รังสิตคลอง 4 / I Leaf Park Wongwaen-Rangsit Klong 4",
+    "เดอะ แพลนท์ รังสิต-อเวนิว / The Plant Rangsit-Avenue",
+    "บ้านพฤกษา 96/1 รังสิต คลองหลวง / Baan Pruksa 96/1 Rangsit Klong Luang"
+  ],
+  "matching_search_calls": [
+    {
+      "url": "https://thaolai.com/service/api/v1/assets/search/location?search=%E0%B8%A3%E0%B8%B1%E0%B8%87%E0%B8%AA%E0%B8%B4%E0%B8%95",
+      "status": 200
+    }
+  ],
+  "console": [
+    {
+      "type": "log",
+      "text": "random!"
+    },
+    {
+      "type": "log",
+      "text": "random!"
+    }
+  ]
+}

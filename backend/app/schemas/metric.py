@@ -2,10 +2,12 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional
 from uuid import UUID
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class WeeklyMetricOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     week_start: date
     opps_found: Optional[int] = 0
@@ -17,6 +19,3 @@ class WeeklyMetricOut(BaseModel):
     ai_cost_usd: Optional[Decimal] = None
     avg_energy_this_week: Optional[Decimal] = None
     created_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True

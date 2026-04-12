@@ -1,0 +1,111 @@
+{
+  "checked": 7,
+  "failures": [],
+  "results": [
+    {
+      "path": "/",
+      "final_url": "https://thaolai.com/",
+      "title": "หน้าแรก | Thaolai",
+      "nav_error": null,
+      "bad": [],
+      "console_tail": [
+        {
+          "type": "log",
+          "text": "random!"
+        },
+        {
+          "type": "log",
+          "text": "random!"
+        }
+      ]
+    },
+    {
+      "path": "/th",
+      "final_url": "https://thaolai.com/th",
+      "title": "หน้าแรก | Thaolai",
+      "nav_error": null,
+      "bad": [],
+      "console_tail": [
+        {
+          "type": "log",
+          "text": "random!"
+        },
+        {
+          "type": "log",
+          "text": "random!"
+        }
+      ]
+    },
+    {
+      "path": "/en",
+      "final_url": "https://thaolai.com/en",
+      "title": "Home | Thaolai",
+      "nav_error": null,
+      "bad": [],
+      "console_tail": [
+        {
+          "type": "log",
+          "text": "random!"
+        },
+        {
+          "type": "log",
+          "text": "random!"
+        }
+      ]
+    },
+    {
+      "path": "/assets",
+      "final_url": "https://thaolai.com/assets",
+      "title": "รวมประกาศขาย ให้เช่าคอนโดมิเนียม คอนโดใหม่ คอนโดมือสอง | Thaolai",
+      "nav_error": null,
+      "bad": [],
+      "console_tail": []
+    },
+    {
+      "path": "/assets/create",
+      "final_url": "https://thaolai.com/assets/create",
+      "title": "ลงประกาศ | Thaolai",
+      "nav_error": null,
+      "bad": [],
+      "console_tail": [
+        {
+          "type": "log",
+          "text": "random!"
+        },
+        {
+          "type": "log",
+          "text": "random!"
+        },
+        {
+          "type": "log",
+          "text": "random!"
+        },
+        {
+          "type": "log",
+          "text": "random!"
+        }
+      ]
+    },
+    {
+      "path": "/expired",
+      "final_url": "https://thaolai.com/expired",
+      "title": "เซสชั่นหมดอายุ | Thaolai",
+      "nav_error": null,
+      "bad": [],
+      "console_tail": []
+    },
+    {
+      "path": "/backoffice",
+      "final_url": "https://thaolai.com/backoffice/login",
+      "title": "เข้าสู่ระบบ | Thaolai",
+      "nav_error": null,
+      "bad": [],
+      "console_tail": [
+        {
+          "type": "log",
+          "text": "[InitData] Store updated ✅"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+slos:
+  - name: api_availability
+    target: 99.5
+    window: 30d
+    query: |
+      1 - (
+        sum(rate(http_requests_total{status=~"5.."}[5m]))
+        /
+        sum(rate(http_requests_total[5m]))
+      )
+  - name: api_latency_p95
+    target: 0.5
+    window: 30d
+    query: |
+      histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
+  - name: task_success_rate
+    target: 0.95
+    window: 7d
+    query: |
+      sum(celery_task_succeeded_total) /
+      (sum(celery_task_succeeded_total) + sum(celery_task_failed_total))
+  - name: backup_freshness
+    target: 0.99
+    window: 30d
+    query: |
+      time() - backup_last_success_timestamp_seconds < 90000

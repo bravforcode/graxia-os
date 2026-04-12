@@ -1,6 +1,7 @@
 import logging
 import uuid
 from app.agents.base import BaseAgent
+from app.core.control_plane import create_draft_review_request
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +21,10 @@ class Drafter(BaseAgent):
 
     async def _draft_for_opportunity(self, opp_id: uuid.UUID) -> None:
         from app.database import AsyncSessionLocal
-        from app.models.opportunity import Opportunity
         from app.models.content_draft import ContentDraft
+        from app.models.opportunity import Opportunity
         from app.core.identity import identity
+        from sqlalchemy import select
 
         if self.llm.is_degraded():
             logger.info("Drafter: LLM degraded — skipping draft generation")
@@ -31,6 +33,17 @@ class Drafter(BaseAgent):
         async with AsyncSessionLocal() as db:
             opp = await db.get(Opportunity, opp_id)
             if not opp:
+                return
+            existing_draft = (
+                await db.execute(
+                    select(ContentDraft)
+                    .where(ContentDraft.opportunity_id == opp_id)
+                    .where(ContentDraft.status.in_(["pending", "approved", "sent"]))
+                    .limit(1)
+                )
+            ).scalar_one_or_none()
+            if existing_draft is not None:
+                logger.info("Drafter: draft already exists for %s", opp_id)
                 return
 
             draft_type = "application_essay" if opp.type in ("competition", "hackathon", "accelerator", "fellowship") else "proposal"
@@ -57,7 +70,15 @@ Fit summary: {opp.fit_summary or 'not analyzed'}
 
 Write the complete draft now. Make it real — not a template."""
 
-            content = await self.llm.complete(system=system, user=user, max_tokens=1500, temperature=0.7, allow_fallback=True)
+            content = await self.llm.complete(
+                system=system,
+                user=user,
+                max_tokens=1500,
+                temperature=0.7,
+                allow_fallback=True,
+                task_class="proposal",
+                complexity=8,
+            )
             if not content:
                 return
 
@@ -73,6 +94,22 @@ Write the complete draft now. Make it real — not a template."""
             )
             db.add(draft)
             await db.commit()
+            await db.refresh(draft)
+            await create_draft_review_request(
+                draft_id=draft.id,
+                draft_type=draft.type,
+                draft_title=draft.title,
+                preview_text=draft.content,
+                requested_by=self.name,
+            )
+            await self.log_audit(
+                "draft.created",
+                {
+                    "draft_id": str(draft.id),
+                    "opportunity_id": str(opp_id),
+                    "draft_type": draft.type,
+                },
+            )
             logger.info(f"Drafter: created draft for {opp.title[:50]}")
 
 

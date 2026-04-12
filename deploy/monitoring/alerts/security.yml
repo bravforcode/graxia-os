@@ -1,0 +1,47 @@
+groups:
+  - name: security
+    rules:
+      - alert: HighFailedLoginRate
+        expr: rate(auth_failed_login_total[5m]) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: High failed login rate
+          runbook: https://runbooks.internal/high-failed-login
+
+      - alert: AccountLockoutSpike
+        expr: increase(auth_account_locked_total[15m]) > 5
+        for: 0m
+        labels:
+          severity: high
+        annotations:
+          summary: Account lockout spike detected
+          runbook: https://runbooks.internal/account-lockout
+
+      - alert: CSRFViolationDetected
+        expr: increase(security_csrf_violation_total[5m]) > 0
+        for: 0m
+        labels:
+          severity: high
+        annotations:
+          summary: CSRF violation detected
+          runbook: https://runbooks.internal/csrf-violation
+
+      - alert: RefreshTokenReuseDetected
+        expr: increase(auth_refresh_token_reuse_total[1m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: Refresh token reuse detected
+          runbook: https://runbooks.internal/token-theft
+
+      - alert: CircuitBreakerOpen
+        expr: circuit_breaker_state == 2
+        for: 0m
+        labels:
+          severity: high
+        annotations:
+          summary: Circuit breaker open
+          runbook: https://runbooks.internal/circuit-breaker

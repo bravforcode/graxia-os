@@ -1,4 +1,5 @@
 import logging
+
 from app.agents.base import BaseAgent
 
 logger = logging.getLogger(__name__)
@@ -17,9 +18,9 @@ class PlaybookCapture(BaseAgent):
 
     async def _capture_playbook(self, sub_id, value: float) -> None:
         from app.database import AsyncSessionLocal
-        from app.models.submission import Submission
-        from app.models.opportunity import Opportunity
         from app.models.knowledge import KnowledgeItem
+        from app.models.opportunity import Opportunity
+        from app.models.submission import Submission
         from app.core.identity import identity
 
         if self.llm.is_degraded():
@@ -42,7 +43,15 @@ Message sent: {(sub.content or '')[:500]}
 
 Write a concise playbook (3-5 bullet points) capturing what worked and why. Be specific."""
 
-        content = await self.llm.complete(system=system, user=user, max_tokens=600, temperature=0.5, allow_fallback=True)
+        content = await self.llm.complete(
+            system=system,
+            user=user,
+            max_tokens=600,
+            temperature=0.5,
+            allow_fallback=True,
+            task_class="analysis",
+            complexity=5,
+        )
         if not content:
             return
 
@@ -58,7 +67,26 @@ Write a concise playbook (3-5 bullet points) capturing what worked and why. Be s
             )
             db.add(item)
             await db.commit()
+            await db.refresh(item)
             logger.info(f"PlaybookCapture: saved playbook for {value} THB win")
+
+        await self.bus.emit(
+            "knowledge.captured",
+            {
+                "knowledge_item_id": str(item.id),
+                "category": item.category,
+                "title": item.title,
+            },
+        )
+
+        await self.log_audit(
+            "playbook.captured",
+            {
+                "submission_id": str(sub_id) if sub_id else None,
+                "knowledge_item_title": item.title,
+                "actual_value_thb": value,
+            },
+        )
 
         try:
             from app.telegram_bot.bot import send_message

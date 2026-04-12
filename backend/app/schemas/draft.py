@@ -1,10 +1,13 @@
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
-from pydantic import BaseModel
+
+from pydantic import BaseModel, ConfigDict
 
 
 class DraftOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
+
     id: UUID
     type: Optional[str] = None
     title: Optional[str] = None
@@ -16,10 +19,6 @@ class DraftOut(BaseModel):
     model_used: Optional[str] = None
     was_fallback_draft: Optional[bool] = False
     created_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
-
 
 class DraftList(BaseModel):
     total: int

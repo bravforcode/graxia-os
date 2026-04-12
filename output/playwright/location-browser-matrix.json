@@ -1,0 +1,77 @@
+[
+  {
+    "term": "รังสิต",
+    "count": 100,
+    "sample": [
+      "รังสิตซิตี้ / Rangsit City",
+      "มั่งมีนคร รังสิต / Mungme Nakorn Rangsit",
+      "รังสิต ลำลูกกา ปทุมธานี คลองหลวง",
+      "D condo Hideaway Rangsit / ดีคอนโด แคมปัส ไฮด์อเวย์ รังสิต",
+      "Ladawan Village, Lagoon, Rangsit / ลดาวัลย์ ลากูน รังสิต",
+      "เดอะ แพลนท์ วงแหวน-รังสิต / The Plant Wongwaen-Rangsit",
+      "บ้านพฤกษา รังสิต-คลอง 4 / Baan Pruksa Rangsit-Klong 4",
+      "ไอลีฟ ไพร์ม วงแหวน-รังสิตคลอง 4 / I Leaf Prime Wongwaen-Rangsit klong 4"
+    ]
+  },
+  {
+    "term": "ทองหล่อ",
+    "count": 77,
+    "sample": [
+      "สุขุมวิท อโศก ทองหล่อ เอกมัย พร้อมพงษ์ ประสานมิตร",
+      "Chapter Thonglor 25 / แชปเตอร์ ทองหล่อ 25",
+      "Chewathai Residence Thonglor / ชีวาทัย เรสซิเดนซ์ ทองหล่อ",
+      "Condo M Thonglor 10 / คอนโด เอ็ม ทองหล่อ 10",
+      "D25 Thonglor Condominium / ดี'25 ทองหล่อ คอนโดมิเนียม",
+      "Garnd Heritage Thonglor / แกรนด์ เฮอริเทจ ทองหล่อ",
+      "HQ Thonglor by Sansiri / เอชคิว ทองหล่อ บาย แสนสิริ",
+      "Ivy Thonglor / ไอวี่ ทองหล่อ"
+    ]
+  },
+  {
+    "term": "สุขุมวิท",
+    "count": 100,
+    "sample": [
+      "สุขุมวิท อโศก ทองหล่อ เอกมัย พร้อมพงษ์ ประสานมิตร",
+      "A Space Sukhumvit 77 / เอ สเปซ มี สุขุมวิท 77",
+      "Aspire Sukhumvit - Onnut / แอสปาย สุขุมวิท-อ่อนนุช",
+      "Aspire Sukhumvit 48 / แอสปาย สุขุมวิท 48",
+      "BEATNIQ Sukhumvit 32 / คอนโดบีทนิค สุขุมวิท 32",
+      "Blue Sukhumvit89 / บลู สุขุมวิท 89",
+      "Bright Sukhumvit 24 / ไบร์ท สุขุมวิท 24",
+      "Casa Condo Sukhumvit 97 / คาซ่า คอนโด สุขุมวิท 97"
+    ]
+  },
+  {
+    "term": "บางนา",
+    "count": 100,
+    "sample": [
+      "Bangna Residence / บางนา เรสซิเดนซ์",
+      "IDEO Bangna / ไอดีโอ บางนา",
+      "Indy 2 Bangna-Ramkhamhaeng 2 / อินดี้ 2 บางนา-รามคำแหง 2",
+      "Mantana Bangna-Wongwaen / หมู่บ้าน มันฑณาบางนา-วงแหวน",
+      "The Parkland Bangna / เดอะ พาร์คแลนด์ บางนา",
+      "บางนาวิลล่า บางนา-ตราด / Bangna Villa Bangna-Trad",
+      "อัลติจูด ฟอเรสต์ อ่อนนุช-บางนา / Altitude Forest Onnut-Bangna",
+      "มายวิลล่า บางนา / My Villa Bangna"
+    ]
+  },
+  {
+    "term": "ari",
+    "count": 97,
+    "sample": [
+      "Asakan Place Srinakarin* / อัสสกาญจน์ ทาวเวอร์ ศรีนครินทร์",
+      "ASPIRE Pinklao - Arun Ammarin / แอสปาย ปิ่นเกล้า - อรุณอมรินทร์",
+      "Baan Klang Muang Urbanion Srinakarin / บ้านกลางเมือง เออร์บาเนี่ยน ศรีนครินทร์",
+      "Lumpini Ville Phatanakan - Srinakarin / ลุมพินี วิลล์ พัฒนาการ-ศรีนครินทร์",
+      "Niche Mono Bearing / นิช โมโน สุขุมวิท แบริ่ง",
+      "nirvana define srinakarin-rama 9 / เนอวานา ดีฟายน์ ศรีนครินทร์-รามา9",
+      "Nue noble Srinakarin-Lasalle / นิว โนเบิล ศรีนครินทร์ – ลาซาล",
+      "Rythm Prahol-Ari / ริธึ่ม พหล-อารีย์"
+    ]
+  },
+  {
+    "term": "xyznotfound123",
+    "count": 0,
+    "sample": []
+  }
+]

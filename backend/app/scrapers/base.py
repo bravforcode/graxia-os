@@ -7,6 +7,7 @@ import hashlib
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from typing import Optional
 
 import httpx
@@ -131,17 +132,19 @@ class BaseScraper(ABC):
                     health.total_successes = (health.total_successes or 0) + 1
                     runs = health.total_runs or 1
                     prev_avg = float(health.avg_items_per_run or 0)
-                    health.avg_items_per_run = (prev_avg * (runs - 1) + item_count) / runs
+                    health.avg_items_per_run = Decimal(
+                        str((prev_avg * (runs - 1) + item_count) / runs)
+                    )
                 else:
                     health.consecutive_failures = (health.consecutive_failures or 0) + 1
                     health.last_error = error
                     if (health.consecutive_failures or 0) >= 3 and not health.is_muted:
                         health.is_muted = True
                         health.muted_until = now + timedelta(hours=24)
-                        await self._notify_muted(health.consecutive_failures)
+                        await self._notify_muted(health.consecutive_failures or 0)
                 total_runs = health.total_runs or 1
                 total_succ = health.total_successes or 0
-                health.success_rate = round((total_succ / total_runs) * 100, 2)
+                health.success_rate = Decimal(str(round((total_succ / total_runs) * 100, 2)))
                 await db.commit()
         except Exception as e:
             logger.warning(f"_record_result failed: {e}")

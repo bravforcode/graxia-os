@@ -1,12 +1,22 @@
 import asyncio
 import logging
+from datetime import datetime, timezone
+from datetime import timedelta as timedelta_cls
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.schedulers.base import SchedulerNotRunningError
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.interval import IntervalTrigger
 import pytz
+
+from app.tasks.schedule import BEAT_SCHEDULE
 
 logger = logging.getLogger(__name__)
 
 BANGKOK = pytz.timezone("Asia/Bangkok")
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 class PersonalOSScheduler:
@@ -15,42 +25,15 @@ class PersonalOSScheduler:
         self._running = False
 
     def setup(self) -> None:
-        # Daily scan — 7:00 AM Bangkok
-        self.scheduler.add_job(
-            self._run_daily_scan,
-            CronTrigger(hour=7, minute=0, timezone=BANGKOK),
-            id="daily_scan",
-            replace_existing=True,
-        )
-        # Follow-up check — 9:00 AM Bangkok
-        self.scheduler.add_job(
-            self._run_follow_up_check,
-            CronTrigger(hour=9, minute=0, timezone=BANGKOK),
-            id="follow_up_check",
-            replace_existing=True,
-        )
-        # Weekly strategy — Sunday 8:30 AM Bangkok
-        self.scheduler.add_job(
-            self._run_weekly_strategy,
-            CronTrigger(day_of_week="sun", hour=8, minute=30, timezone=BANGKOK),
-            id="weekly_strategy",
-            replace_existing=True,
-        )
-        # Weekly learning — Sunday 9:30 AM Bangkok
-        self.scheduler.add_job(
-            self._run_weekly_learning,
-            CronTrigger(day_of_week="sun", hour=9, minute=30, timezone=BANGKOK),
-            id="weekly_learning",
-            replace_existing=True,
-        )
-        # Monthly identity snapshot — 1st of month, 10:00 AM
-        self.scheduler.add_job(
-            self._run_identity_snapshot,
-            CronTrigger(day=1, hour=10, minute=0, timezone=BANGKOK),
-            id="identity_snapshot",
-            replace_existing=True,
-        )
-        logger.info("Scheduler: 5 jobs registered")
+        for job_id, entry in BEAT_SCHEDULE.items():
+            self.scheduler.add_job(
+                self._dispatch_task,
+                self._to_trigger(entry["schedule"]),
+                args=[entry["task"]],
+                id=job_id,
+                replace_existing=True,
+            )
+        logger.info("Scheduler: %s jobs registered", len(BEAT_SCHEDULE))
 
     def start(self) -> None:
         self.scheduler.start()
@@ -58,49 +41,57 @@ class PersonalOSScheduler:
         logger.info("Scheduler: started")
 
     def stop(self) -> None:
-        self.scheduler.shutdown(wait=False)
-        self._running = False
+        if not self._running:
+            return
+        try:
+            self.scheduler.shutdown(wait=False)
+        except SchedulerNotRunningError:
+            logger.debug("Scheduler already stopped")
+        finally:
+            self._running = False
 
     @staticmethod
-    async def _run_daily_scan() -> None:
-        try:
-            from app.tasks.daily_scan import run_daily_scan
-            await run_daily_scan()
-        except Exception as e:
-            logger.error(f"Daily scan failed: {e}", exc_info=True)
+    def _to_trigger(schedule):
+        if isinstance(schedule, timedelta_cls):
+            return IntervalTrigger(seconds=int(schedule.total_seconds()), timezone=BANGKOK)
+        return CronTrigger(
+            minute=str(schedule._orig_minute),
+            hour=str(schedule._orig_hour),
+            day=str(schedule._orig_day_of_month),
+            month=str(schedule._orig_month_of_year),
+            day_of_week=str(schedule._orig_day_of_week),
+            timezone=BANGKOK,
+        )
 
     @staticmethod
-    async def _run_follow_up_check() -> None:
+    async def _dispatch_task(task_name: str) -> None:
+        handlers = {
+            "tasks.daily_scan.run": "app.tasks.daily_scan:run_daily_scan",
+            "tasks.morning_briefing.run": "app.tasks.morning_briefing:send_morning_briefing",
+            "tasks.follow_up_check.run": "app.tasks.follow_up_check:run_follow_up_check",
+            "tasks.job_discovery.run": "app.tasks.job_discovery:run_job_discovery",
+            "tasks.email_processing.run": "app.tasks.email_processing:run_email_processing",
+            "tasks.weekly_review.run": "app.tasks.weekly_review:run_weekly_review",
+            "tasks.maintenance.weekly_strategy": "app.tasks.maintenance_tasks:run_weekly_strategy",
+            "tasks.maintenance.identity_snapshot": "app.tasks.maintenance_tasks:run_identity_snapshot",
+            "tasks.maintenance.obsidian_daily_note": "app.tasks.maintenance_tasks:run_obsidian_daily_note",
+            "tasks.maintenance.obsidian_refresh": "app.tasks.maintenance_tasks:run_obsidian_refresh",
+            "tasks.maintenance.check_dlq_depth": "app.tasks.maintenance_tasks:check_dlq_depth",
+            "tasks.backup.run_daily_backup": "app.tasks.backup_tasks:run_daily_backup_async",
+            "tasks.backup.run_restore_drill": "app.tasks.backup_tasks:run_restore_drill_async",
+            "tasks.backup.run_redis_backup": "app.tasks.backup_tasks:run_redis_backup_async",
+        }
+        target = handlers.get(task_name)
+        if not target:
+            logger.warning("No local dev scheduler handler registered for %s", task_name)
+            return
+        module_name, attr = target.split(":")
+        module = __import__(module_name, fromlist=[attr])
+        handler = getattr(module, attr)
         try:
-            from app.tasks.follow_up_check import run_follow_up_check
-            await run_follow_up_check()
-        except Exception as e:
-            logger.error(f"Follow-up check failed: {e}", exc_info=True)
-
-    @staticmethod
-    async def _run_weekly_strategy() -> None:
-        try:
-            from app.agents.strategy_agent import StrategyAgent
-            agent = StrategyAgent()
-            await agent.run()
-        except Exception as e:
-            logger.error(f"Weekly strategy failed: {e}", exc_info=True)
-
-    @staticmethod
-    async def _run_weekly_learning() -> None:
-        try:
-            from app.tasks.weekly_review import run_weekly_review
-            await run_weekly_review()
-        except Exception as e:
-            logger.error(f"Weekly learning failed: {e}", exc_info=True)
-
-    @staticmethod
-    async def _run_identity_snapshot() -> None:
-        try:
-            from app.core.identity import identity
-            await identity.maybe_snapshot_identity()
-        except Exception as e:
-            logger.error(f"Identity snapshot failed: {e}", exc_info=True)
+            await handler()
+        except Exception as exc:
+            logger.error("Scheduled task %s failed: %s", task_name, exc, exc_info=True)
 
 
 scheduler = PersonalOSScheduler()

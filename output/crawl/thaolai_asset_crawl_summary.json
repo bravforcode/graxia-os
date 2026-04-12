@@ -1,0 +1,37 @@
+{
+  "generated_at_epoch": 1775893309,
+  "duration_seconds": 174.22,
+  "sample_count": 45,
+  "source_stats": [
+    {
+      "source": "assets",
+      "added": 45
+    },
+    {
+      "source": "owner",
+      "added": 0
+    },
+    {
+      "source": "nearby_transis",
+      "added": 0
+    },
+    {
+      "source": "pet_friendly",
+      "added": 0
+    },
+    {
+      "source": "short_term",
+      "added": 0
+    },
+    {
+      "source": "nearby_university",
+      "added": 0
+    }
+  ],
+  "main_status_not_200": [],
+  "pages_with_non_200_subrequests": [],
+  "pages_with_request_failures": [],
+  "pages_with_console_errors": [],
+  "pages_with_page_errors": [],
+  "pages_with_broken_images": []
+}

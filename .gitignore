@@ -10,7 +10,10 @@ build/
 
 # Env
 .env
+.env.production
+.env.backup-*
 *.env.local
+secrets/
 
 # Docker
 .docker/

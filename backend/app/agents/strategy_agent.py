@@ -46,7 +46,7 @@ class StrategyAgent(BaseAgent):
 
         return {"metrics": metrics, "patterns": patterns, "pipeline": pipeline}
 
-    async def _generate_strategy(self, data: dict) -> str:
+    async def _generate_strategy(self, data: dict) -> str | None:
         from app.core.identity import identity
         metrics_summary = f"{len(data['metrics'])} weeks of data, {len(data['patterns'])} outcome patterns"
         pipeline_summary = f"{len(data['pipeline'])} active opportunities"
@@ -69,9 +69,22 @@ Provide a concise strategic brief (under 300 words):
 
 Be specific. Reference actual numbers and patterns if available."""
 
-        return await self.llm.complete(system=system, user=user, model=self.llm.default_model, max_tokens=500, temperature=0.6, allow_fallback=True)
+        return await self.llm.complete(
+            system=system,
+            user=user,
+            model=self.llm.default_model,
+            max_tokens=500,
+            temperature=0.6,
+            allow_fallback=True,
+            task_class="strategy",
+            complexity=8,
+        )
 
     async def _send_strategy_brief(self, strategy: str) -> None:
+        await self.log_audit(
+            "strategy.generated",
+            {"date": str(date.today()), "strategy": strategy},
+        )
         try:
             from app.telegram_bot.bot import send_message
             await send_message(f"🧭 *Weekly Strategy Brief — {date.today()}*\n\n{strategy}")

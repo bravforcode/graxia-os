@@ -1,0 +1,82 @@
+<h2>3 Approaches — ทำให้ Personal OS ของคุณ Enterprise-Grade</h2>
+<p class="subtitle">แต่ละแนวทางมี trade-offs ต่างกัน</p>
+
+<div class="options">
+
+  <div class="option" data-choice="approach-a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Parallel Fast Track (6-8 weeks)</h3>
+      <p><strong>UI + Backend simultaneously</strong></p>
+      <ul style="margin:6px 0;font-size:13px;line-height:1.5">
+        <li>🎨 Rebuild frontend (React → A+C design) in parallel</li>
+        <li>⚙️ Fix backend (agents, APIs, LLM setup) in parallel</li>
+        <li>✓ WebSocket for real-time agent streams</li>
+        <li>✓ Deploy incrementally (feature flags)</li>
+      </ul>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><strong>Pros</strong><ul style="margin:4px 0"><li>Fastest time-to-value</li><li>Team can work independently</li></ul></div>
+        <div class="cons"><strong>Cons</strong><ul style="margin:4px 0"><li>Higher risk of integration issues</li><li>Requires careful coordination</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="approach-b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Backend First (4 weeks) + UI (4 weeks) = 8 weeks</h3>
+      <p><strong>Stabilize foundation, then build gorgeous UI</strong></p>
+      <ul style="margin:6px 0;font-size:13px;line-height:1.5">
+        <li>⚙️ Phase 1: Fix all backend (agents working, APIs solid, LLM setup)</li>
+        <li>🎨 Phase 2: Rebuild frontend with confirmed API contracts</li>
+        <li>✓ No guessing about APIs — UI builds against real contracts</li>
+        <li>✓ Easier to test and debug</li>
+      </ul>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><strong>Pros</strong><ul style="margin:4px 0"><li>Lower integration risk</li><li>APIs are stable before UI</li><li>Cleaner workflow</li></ul></div>
+        <div class="cons"><strong>Cons</strong><ul style="margin:4px 0"><li>Takes longer overall</li><li>UI can't start until backend done</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="approach-c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Modular Incremental (8-12 weeks)</h3>
+      <p><strong>Feature by feature (backend + UI together)</strong></p>
+      <ul style="margin:6px 0;font-size:13px;line-height:1.5">
+        <li>📦 Phase 1: Dashboard (real-time agent status, metrics)</li>
+        <li>📦 Phase 2: Opportunity scoring & decision flow</li>
+        <li>📦 Phase 3: Email management & follow-ups</li>
+        <li>📦 Phase 4: Admin controls & settings</li>
+        <li>✓ Each phase is deployable (feature flags)</li>
+      </ul>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><strong>Pros</strong><ul style="margin:4px 0"><li>Users see progress early</li><li>Less risk per phase</li><li>Easy to pivot</li></ul></div>
+        <div class="cons"><strong>Cons</strong><ul style="margin:4px 0"><li>More coordination overhead</li><li>Longest timeline</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:20px;padding:12px;background:#f5f5f5;border-radius:6px">
+  <h3 style="margin-top:0">My Recommendation: Approach B (Backend First)</h3>
+  <p style="margin:8px 0">
+    <strong>Why?</strong> Your codebase is 85% built already. The backend has solid architecture — we just need to:
+  </p>
+  <ul style="margin:8px 0">
+    <li>Fix 3 TODO items (Gemini cost tracking)</li>
+    <li>Test all APIs end-to-end</li>
+    <li>Set up LLM keys (OpenClaw/Gemini)</li>
+    <li>Verify agents are wired correctly</li>
+  </ul>
+  <p style="margin:8px 0">
+    <strong>Then</strong> rebuild the frontend with the A+C design — you'll have solid APIs to build against, no surprises.
+  </p>
+  <p style="margin:8px 0">
+    <strong>Timeline:</strong> 3-4 weeks backend fixes + testing, then 3-4 weeks UI = <strong>6-8 weeks total</strong>
+  </p>
+</div>
+
+<p class="subtitle" style="margin-top:16px">เลือกแนวทาง หรือบอกว่าอยากเปลี่ยนแปลงอะไรก็ได้</p>

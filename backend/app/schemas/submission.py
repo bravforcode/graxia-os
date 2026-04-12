@@ -2,7 +2,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional
 from uuid import UUID
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class SubmissionCreate(BaseModel):
@@ -17,10 +17,9 @@ class SubmissionCreate(BaseModel):
 
 
 class SubmissionOut(SubmissionCreate):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     status: Optional[str] = "draft"
     sent_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True

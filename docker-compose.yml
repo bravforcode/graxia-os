@@ -51,15 +51,26 @@ services:
     env_file: .env
     environment:
       RUNNING_IN_DOCKER: "true"
+      SCHEDULER_EMBEDDED: "false"
     volumes:
       - ./backend:/app
       - ./identity:/identity:ro
     ports:
       - "8000:8000"
     depends_on:
+      postgres:
+        condition: service_healthy
+        required: false
       redis:
         condition: service_healthy
+        required: true
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     restart: unless-stopped
 
   # ── Celery Worker ──────────────────────────────────────────────────────────
@@ -73,9 +84,31 @@ services:
       - ./backend:/app
       - ./identity:/identity:ro
     depends_on:
+      postgres:
+        condition: service_healthy
+        required: false
       redis:
         condition: service_healthy
+        required: true
     command: celery -A app.tasks.celery_app worker --loglevel=info --concurrency=2
+    restart: unless-stopped
+
+  # ── Celery Beat Scheduler ─────────────────────────────────────────────────
+  beat:
+    build: ./backend
+    container_name: personal_os_beat
+    env_file: .env
+    environment:
+      RUNNING_IN_DOCKER: "true"
+      SCHEDULER_EMBEDDED: "false"
+    volumes:
+      - ./backend:/app
+      - ./identity:/identity:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+        required: true
+    command: python -m app.tasks.beat_launcher
     restart: unless-stopped
 
   # ── Frontend (React + Vite) ────────────────────────────────────────────────
@@ -91,7 +124,9 @@ services:
     environment:
       - VITE_DEV_PROXY_TARGET=http://backend:8000
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+        required: true
     restart: unless-stopped
 
   # ── Ollama (Local LLM inference) ──────────────────────────────────────────

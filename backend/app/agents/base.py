@@ -1,4 +1,6 @@
 import logging
+from typing import Any
+
 from app.core.identity import identity
 from app.core.llm import llm_client
 from app.core.event_bus import event_bus
@@ -23,7 +25,14 @@ class BaseAgent:
     def bus(self):
         return event_bus
 
-    async def log_audit(self, action: str, details: dict, success: bool = True, error: str = None, was_fallback: bool = False) -> None:
+    async def log_audit(
+        self,
+        action: str,
+        details: dict[str, Any],
+        success: bool = True,
+        error: str | None = None,
+        was_fallback: bool = False,
+    ) -> None:
         try:
             from app.database import AsyncSessionLocal
             from app.models.audit import AuditLog

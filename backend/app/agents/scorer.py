@@ -23,14 +23,14 @@ class Scorer(BaseAgent):
         from app.models.knowledge import KnowledgeItem
         from app.core.scoring import score_heuristic
         from app.core.identity import identity
-        from sqlalchemy import select, or_
+        from sqlalchemy import select
 
         async with AsyncSessionLocal() as db:
             opp = await db.get(Opportunity, opp_id)
             if not opp or opp.total_score is not None:
                 return
 
-            weights = identity.get_scoring_weights()
+            weights = await identity.get_scoring_weights()
             was_fallback = False
             score_data = None
 
@@ -77,7 +77,12 @@ Return ONLY valid JSON:
 {{"money_score":0-10,"brand_score":0-10,"network_score":0-10,"startup_score":0-10,"effort_score":0-10,"total_score":0.00,"action_priority":"do_now|queue|skip","scoring_rationale":"2-3 sentences","red_flags":[],"deadline_urgency":"critical|soon|comfortable|none"}}"""
 
                 try:
-                    score_data = await self.llm.complete_json(system=system, user=user)
+                    score_data = await self.llm.complete_json(
+                        system=system,
+                        user=user,
+                        task_class="classification",
+                        complexity=2,
+                    )
                 except Exception as e:
                     logger.warning(f"LLM scoring failed, using heuristic: {e}")
 
@@ -102,7 +107,18 @@ Return ONLY valid JSON:
             await db.commit()
 
         await self.log_audit("opportunity.scored", {"opp_id": str(opp_id), "total_score": float(opp.total_score or 0)}, was_fallback=was_fallback)
-        await self.bus.emit("opportunity.scored", {"opportunity_id": str(opp_id), "total_score": float(opp.total_score or 0), "action_priority": opp.action_priority})
+        
+        # ✅ Use Domain Event instead of dict
+        from app.core.domain_events import OpportunityScored
+        from app.core.value_objects import Score
+        
+        event = OpportunityScored(
+            opportunity_id=str(opp_id),
+            score=Score(float(opp.total_score or 0)),
+            reasoning=opp.scoring_rationale or "Scored by agent",
+            action_priority=opp.action_priority or "queue"
+        )
+        await self.bus.emit_domain_event(event)
 
 
 scorer_agent = Scorer()

@@ -2,10 +2,12 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Optional
 from uuid import UUID
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class OpportunityOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     type: str
     title: str
@@ -32,10 +34,6 @@ class OpportunityOut(BaseModel):
     network_score: Optional[int] = None
     startup_score: Optional[int] = None
     effort_score: Optional[int] = None
-
-    class Config:
-        from_attributes = True
-
 
 class OpportunityList(BaseModel):
     total: int

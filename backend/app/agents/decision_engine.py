@@ -1,6 +1,7 @@
 import logging
 import uuid
 from datetime import date, timedelta
+from decimal import Decimal
 from app.agents.base import BaseAgent
 
 logger = logging.getLogger(__name__)
@@ -14,7 +15,8 @@ class DecisionEngine(BaseAgent):
         self._cognitive_cache = payload
 
     async def handle_scored_opportunity(self, payload: dict) -> None:
-        opp_id = payload.get("opportunity_id")
+        event_payload = payload.get("data", payload)
+        opp_id = event_payload.get("opportunity_id")
         if not opp_id:
             return
         try:
@@ -45,7 +47,6 @@ class DecisionEngine(BaseAgent):
             from app.models.content_draft import ContentDraft
             from sqlalchemy import select, func
             from datetime import datetime, timezone
-            from dateutil.relativedelta import relativedelta
             async with AsyncSessionLocal() as db:
                 do_now_count = await db.scalar(select(func.count()).where(Opportunity.decision == "do_now", Opportunity.status.in_(["decided", "approved", "in_progress"])))
                 pending_count = await db.scalar(select(func.count()).where(ContentDraft.status == "pending"))
@@ -112,7 +113,7 @@ class DecisionEngine(BaseAgent):
 
             if decision:
                 opp.decision = decision
-                opp.decision_confidence = confidence
+                opp.decision_confidence = Decimal(str(confidence))
                 opp.decision_reasoning = reasoning
                 opp.decision_factors = {"rule_based": True, "energy": energy, "stress": stress}
                 opp.review_after = date.fromisoformat(review_after) if decision == "delay" else None
@@ -124,7 +125,9 @@ class DecisionEngine(BaseAgent):
                     result = await self._llm_decide(opp, cog, workload)
                     if result:
                         opp.decision = result.get("decision", "delay")
-                        opp.decision_confidence = result.get("confidence", 0.6)
+                        opp.decision_confidence = Decimal(
+                            str(result.get("confidence", 0.6))
+                        )
                         opp.decision_reasoning = result.get("reasoning", "")
                         opp.decision_factors = result.get("decision_factors", {})
                         ra = result.get("review_after")
@@ -134,7 +137,7 @@ class DecisionEngine(BaseAgent):
                 except Exception as e:
                     logger.error(f"LLM decision failed: {e}")
                     opp.decision = "delay"
-                    opp.decision_confidence = 0.5
+                    opp.decision_confidence = Decimal("0.5")
                     opp.decision_reasoning = "LLM unavailable — defaulting to delay."
                     opp.status = "decided"
                     await db.commit()
@@ -142,6 +145,14 @@ class DecisionEngine(BaseAgent):
         if opp.decision == "ask_user":
             await self._ask_user(opp)
 
+        await self.log_audit(
+            "opportunity.decided",
+            {
+                "opp_id": str(opp_id),
+                "decision": opp.decision,
+                "confidence": float(opp.decision_confidence or 0),
+            },
+        )
         await self.bus.emit("opportunity.decided", {"opportunity_id": str(opp_id), "decision": opp.decision, "confidence": float(opp.decision_confidence or 0)})
 
     async def _llm_decide(self, opp, cog: dict, workload: dict) -> dict:
@@ -160,7 +171,12 @@ Opportunity:
   Red flags: {opp.red_flags}
 
 Return ONLY valid JSON: {{"decision":"do_now|delay|skip|ask_user","confidence":0.0-1.0,"reasoning":"2-4 sentences","decision_factors":{{"deadline_pressure":"critical|moderate|comfortable|none","strategic_fit":"high|medium|low","workload_fit":"fits|tight|overloaded","cash_need":"urgent|moderate|comfortable","conviction_signal":"strong|medium|absent"}},"review_after":"YYYY-MM-DD or null","alternative_action":"optional string"}}"""
-        return await self.llm.complete_json(system=system, user=user)
+        return await self.llm.complete_json(
+            system=system,
+            user=user,
+            task_class="analysis",
+            complexity=6,
+        )
 
     async def _ask_user(self, opp) -> None:
         try:

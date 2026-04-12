@@ -4,6 +4,7 @@ uvicorn[standard]==0.30.0
 python-dotenv==1.0.1
 pydantic==2.7.0
 pydantic-settings==2.3.0
+email-validator==2.2.0
 pyyaml==6.0.1
 
 # Database
@@ -17,7 +18,8 @@ google-generativeai==0.8.3
 httpx==0.27.0
 
 # Vector DB
-chromadb==0.5.3
+# 0.5.5 pulls chroma-hnswlib 0.7.6, which ships Python 3.12 manylinux wheels.
+chromadb==0.5.5
 
 # Queue
 celery==5.4.0
@@ -29,6 +31,12 @@ apscheduler==3.10.4
 # Telegram
 python-telegram-bot==21.3
 
+# Google Workspace
+google-auth==2.29.0
+google-auth-oauthlib==1.2.0
+google-auth-httplib2==0.2.0
+google-api-python-client==2.122.0
+
 # Scraping
 beautifulsoup4==4.12.3
 lxml==5.2.0
@@ -39,3 +47,21 @@ python-dateutil==2.9.0
 pytz==2024.1
 tenacity==8.3.0
 structlog==24.2.0
+watchdog==4.0.0
+
+# Monitoring
+prometheus-client==0.20.0
+
+# AWS (for S3 backups)
+boto3==1.34.0
+
+# Security
+PyJWT==2.11.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+python-multipart==0.0.9
+
+# Testing
+pytest==8.3.2
+pytest-asyncio==0.23.8
+hypothesis==6.98.0

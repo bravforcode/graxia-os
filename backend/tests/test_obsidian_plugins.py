@@ -9,6 +9,13 @@ import pytest
 from app.integrations.obsidian_plugins import write_plugin_manifest, write_vault_templates
 
 
+# Skip permission tests on Windows due to permission model differences
+pytestmark = pytest.mark.skipif(
+    __import__("sys").platform == "win32",
+    reason="POSIX permission tests not reliable on Windows",
+)
+
+
 @pytest.mark.asyncio
 async def test_write_plugin_manifest_creates_directory(tmp_path: Path):
     """Test that write_plugin_manifest creates .obsidian directory."""
@@ -125,3 +132,41 @@ async def test_write_vault_templates_preserves_existing_templates(tmp_path: Path
 
     # Verify custom template is preserved
     assert existing_file.read_text(encoding="utf-8") == custom_content
+
+
+@pytest.mark.asyncio
+async def test_write_plugin_manifest_handles_permission_error(tmp_path: Path):
+    """Test that write_plugin_manifest raises OSError on permission denied."""
+    vault = tmp_path / "vault"
+    vault.mkdir()
+    obsidian_dir = vault / ".obsidian"
+    obsidian_dir.mkdir()
+
+    # Make read-only to prevent writes
+    obsidian_dir.chmod(0o444)
+
+    try:
+        with pytest.raises(OSError):
+            await write_plugin_manifest(vault)
+    finally:
+        # Restore permissions for cleanup
+        obsidian_dir.chmod(0o755)
+
+
+@pytest.mark.asyncio
+async def test_write_vault_templates_handles_permission_error(tmp_path: Path):
+    """Test that write_vault_templates raises OSError on permission denied."""
+    vault = tmp_path / "vault"
+    vault.mkdir()
+    templates_dir = vault / "System" / "Templates"
+    templates_dir.mkdir(parents=True, exist_ok=True)
+
+    # Make read-only to prevent writes
+    templates_dir.chmod(0o444)
+
+    try:
+        with pytest.raises(OSError):
+            await write_vault_templates(vault)
+    finally:
+        # Restore permissions for cleanup
+        templates_dir.chmod(0o755)

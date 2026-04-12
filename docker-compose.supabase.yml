@@ -1,0 +1,361 @@
+name: personal-os-supabase
+
+networks:
+  internal:
+    driver: bridge
+    internal: true
+  public:
+    driver: bridge
+
+volumes:
+  redis_data:
+  caddy_data:
+  caddy_config:
+  n8n_data:
+  grafana_data:
+  loki_data:
+  prometheus_data:
+  backup_data:
+
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    networks: [internal, public]
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./logs/caddy:/var/log/caddy
+      - caddy_data:/data
+      - caddy_config:/config
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-personal-os-frontend:prod}
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    networks: [internal]
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    user: "1001:1001"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  backend:
+    image: ${BACKEND_IMAGE:-personal-os-backend:prod}
+    build:
+      context: ./backend
+    restart: unless-stopped
+    networks: [internal]
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    environment:
+      RUNNING_IN_DOCKER: "true"
+      REQUIRE_SUPABASE: "true"
+      SCHEDULER_EMBEDDED: "false"
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./identity:/identity:ro
+      - ./logs/backend:/app/logs
+      - ./data/obsidian:/data/obsidian
+      - backup_data:/app/backups
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  worker-critical:
+    image: ${BACKEND_IMAGE:-personal-os-backend:prod}
+    build:
+      context: ./backend
+    restart: unless-stopped
+    networks: [internal]
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    environment:
+      RUNNING_IN_DOCKER: "true"
+      REQUIRE_SUPABASE: "true"
+      SCHEDULER_EMBEDDED: "false"
+    command: celery -A app.tasks.celery_app worker -Q critical -c 2 -n critical@%h
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./identity:/identity:ro
+      - ./data/obsidian:/data/obsidian
+      - backup_data:/app/backups
+      - ./secrets/backup_private_key.txt:/run/secrets/backup_private_key:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    security_opt:
+      - no-new-privileges:true
+    # Restore drills need Docker socket access to start disposable Postgres containers.
+    user: "0:0"
+
+  worker-default:
+    image: ${BACKEND_IMAGE:-personal-os-backend:prod}
+    build:
+      context: ./backend
+    restart: unless-stopped
+    networks: [internal]
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    environment:
+      RUNNING_IN_DOCKER: "true"
+      REQUIRE_SUPABASE: "true"
+      SCHEDULER_EMBEDDED: "false"
+    command: celery -A app.tasks.celery_app worker -Q default -c 4 -n default@%h
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./identity:/identity:ro
+      - ./data/obsidian:/data/obsidian
+      - backup_data:/app/backups
+    security_opt:
+      - no-new-privileges:true
+
+  worker-background:
+    image: ${BACKEND_IMAGE:-personal-os-backend:prod}
+    build:
+      context: ./backend
+    restart: unless-stopped
+    networks: [internal]
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    environment:
+      RUNNING_IN_DOCKER: "true"
+      REQUIRE_SUPABASE: "true"
+      SCHEDULER_EMBEDDED: "false"
+    command: celery -A app.tasks.celery_app worker -Q background -c 2 -n background@%h
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./identity:/identity:ro
+      - ./data/obsidian:/data/obsidian
+      - backup_data:/app/backups
+      - redis_data:/data/redis:ro
+    security_opt:
+      - no-new-privileges:true
+
+  beat:
+    image: ${BACKEND_IMAGE:-personal-os-backend:prod}
+    build:
+      context: ./backend
+    restart: unless-stopped
+    networks: [internal]
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    environment:
+      RUNNING_IN_DOCKER: "true"
+      REQUIRE_SUPABASE: "true"
+      SCHEDULER_EMBEDDED: "false"
+    command: python -m app.tasks.beat_launcher
+    depends_on:
+      redis:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+
+  telegram-bot:
+    image: ${BACKEND_IMAGE:-personal-os-backend:prod}
+    build:
+      context: ./backend
+    restart: unless-stopped
+    networks: [internal]
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    environment:
+      RUNNING_IN_DOCKER: "true"
+      REQUIRE_SUPABASE: "true"
+      SCHEDULER_EMBEDDED: "false"
+    command: python -m app.telegram_bot.bot
+    depends_on:
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    volumes:
+      - ./identity:/identity:ro
+    security_opt:
+      - no-new-privileges:true
+
+  redis:
+    image: redis:7.2-alpine
+    restart: unless-stopped
+    networks: [internal]
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    command: >
+      sh -c 'redis-server --appendonly yes --appendfsync everysec
+      --maxmemory 256mb --maxmemory-policy allkeys-lru
+      --requirepass "$${REDIS_PASSWORD:?REDIS_PASSWORD is required}"'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    security_opt:
+      - no-new-privileges:true
+
+  n8n:
+    image: n8nio/n8n:latest
+    restart: unless-stopped
+    networks: [internal]
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-change-me}
+      - N8N_HOST=${APP_HOST:-app.example.com}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - N8N_PATH=/n8n/
+      - WEBHOOK_URL=https://${APP_HOST:-app.example.com}/n8n/
+      - GENERIC_TIMEZONE=Asia/Bangkok
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n/workflows:/home/node/.n8n/workflows:ro
+    command: >
+      sh -c "n8n import:workflow --separate --input=/home/node/.n8n/workflows || true;
+      exec n8n start"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    restart: unless-stopped
+    networks: [internal]
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    volumes:
+      - ./deploy/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deploy/monitoring/alerts:/etc/prometheus/alerts:ro
+      - ./deploy/monitoring/slos.yml:/etc/prometheus/slos.yml:ro
+      - prometheus_data:/prometheus
+
+  alertmanager:
+    image: prom/alertmanager:v0.28.0
+    restart: unless-stopped
+    networks: [internal]
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+    volumes:
+      - ./deploy/monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./secrets/alertmanager_webhook_token.txt:/etc/alertmanager/secrets/webhook_token:ro
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    restart: unless-stopped
+    networks: [internal]
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-change-me}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deploy/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+
+  loki:
+    image: grafana/loki:3.2.1
+    restart: unless-stopped
+    networks: [internal]
+    command: -config.file=/etc/loki/config.yml
+    volumes:
+      - ./deploy/monitoring/loki-config.yml:/etc/loki/config.yml:ro
+      - loki_data:/loki
+
+  promtail:
+    image: grafana/promtail:3.2.1
+    restart: unless-stopped
+    networks: [internal]
+    command: -config.file=/etc/promtail/config.yml
+    volumes:
+      - ./deploy/monitoring/promtail.yml:/etc/promtail/config.yml:ro
+      - ./logs:/var/log/personal-os:ro
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    restart: unless-stopped
+    networks: [internal]
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    restart: unless-stopped
+    networks: [internal]
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.63.0
+    restart: unless-stopped
+    networks: [internal]
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    entrypoint: ["/bin/sh", "-c"]
+    command: 'exec /redis_exporter --redis.addr=redis://redis:6379 --redis.password="$${REDIS_PASSWORD}"'
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.16.0
+    restart: unless-stopped
+    networks: [internal]
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    environment:
+      DATA_SOURCE_NAME: ${POSTGRES_EXPORTER_DATA_SOURCE_NAME}
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.110.0
+    restart: unless-stopped
+    networks: [internal]
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./deploy/monitoring/otel-collector.yml:/etc/otelcol/config.yaml:ro
+
+  flower:
+    image: ${BACKEND_IMAGE:-personal-os-backend:prod}
+    build:
+      context: ./backend
+    restart: unless-stopped
+    networks: [internal]
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    environment:
+      RUNNING_IN_DOCKER: "true"
+      REQUIRE_SUPABASE: "true"
+      SCHEDULER_EMBEDDED: "false"
+    command: celery -A app.tasks.celery_app flower --port=5555
+    depends_on:
+      redis:
+        condition: service_healthy

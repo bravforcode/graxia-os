@@ -1,6 +1,7 @@
 import logging
 from datetime import date
 from app.agents.base import BaseAgent
+from app.core.control_plane import create_draft_review_request
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +51,15 @@ Notes: {sub.outcome_notes or 'none'}
 
 Write the follow-up now."""
 
-        content = await self.llm.complete(system=system, user=user, max_tokens=300, temperature=0.7, allow_fallback=True)
+        content = await self.llm.complete(
+            system=system,
+            user=user,
+            max_tokens=300,
+            temperature=0.7,
+            allow_fallback=True,
+            task_class="short_draft",
+            complexity=4,
+        )
         if not content:
             return
 
@@ -67,6 +76,14 @@ Write the follow-up now."""
             )
             db.add(draft)
             await db.commit()
+            await db.refresh(draft)
+            await create_draft_review_request(
+                draft_id=draft.id,
+                draft_type=draft.type,
+                draft_title=draft.title,
+                preview_text=draft.content,
+                requested_by=self.name,
+            )
 
 
 follow_up_agent = FollowUpAgent()

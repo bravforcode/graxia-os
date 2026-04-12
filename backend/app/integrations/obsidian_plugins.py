@@ -1,6 +1,8 @@
 """Obsidian plugin manifest generation and Templater template setup."""
+import asyncio
 import json
 from pathlib import Path
+from typing import Any
 
 from structlog import get_logger
 
@@ -137,7 +139,7 @@ created: <% tp.date.now("YYYY-MM-DD HH:mm:ss") %>
 }
 
 
-async def write_plugin_manifest(vault_path: Path) -> dict:
+async def write_plugin_manifest(vault_path: Path) -> dict[str, Any]:
     """Write .obsidian/community-plugins.json and basic app config.
 
     Creates the Obsidian configuration directory and writes:
@@ -150,39 +152,83 @@ async def write_plugin_manifest(vault_path: Path) -> dict:
 
     Returns:
         Dictionary with result metadata including plugins_written and path
+
+    Raises:
+        OSError: If directory creation or file writes fail
     """
     obsidian_dir = vault_path / ".obsidian"
-    obsidian_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        await asyncio.to_thread(obsidian_dir.mkdir, parents=True, exist_ok=True)
+    except OSError as e:
+        logger.error(
+            "obsidian_dir_creation_failed",
+            path=str(obsidian_dir),
+            error=str(e),
+        )
+        raise
 
     # community-plugins.json — list of enabled plugin IDs
     plugins_file = obsidian_dir / "community-plugins.json"
-    plugins_file.write_text(
-        json.dumps(REQUIRED_PLUGINS, indent=2),
-        encoding="utf-8",
-    )
-    logger.info(
-        "obsidian_community_plugins_written",
-        path=str(plugins_file),
-        count=len(REQUIRED_PLUGINS),
-    )
+    plugins_content = json.dumps(REQUIRED_PLUGINS, indent=2)
+    try:
+        await asyncio.to_thread(
+            plugins_file.write_text,
+            plugins_content,
+            encoding="utf-8",
+        )
+        logger.info(
+            "obsidian_community_plugins_written",
+            path=str(plugins_file),
+            count=len(REQUIRED_PLUGINS),
+        )
+    except OSError as e:
+        logger.error(
+            "obsidian_community_plugins_write_failed",
+            path=str(plugins_file),
+            error=str(e),
+        )
+        raise
 
     # app.json — basic editor config
     app_file = obsidian_dir / "app.json"
-    if not app_file.exists():
-        app_file.write_text(
-            json.dumps(DEFAULT_APP_CONFIG, indent=2),
-            encoding="utf-8",
-        )
-        logger.info("obsidian_app_config_created", path=str(app_file))
+    app_exists = await asyncio.to_thread(app_file.exists)
+    if not app_exists:
+        app_content = json.dumps(DEFAULT_APP_CONFIG, indent=2)
+        try:
+            await asyncio.to_thread(
+                app_file.write_text,
+                app_content,
+                encoding="utf-8",
+            )
+            logger.info("obsidian_app_config_created", path=str(app_file))
+        except OSError as e:
+            logger.error(
+                "obsidian_app_config_write_failed",
+                path=str(app_file),
+                error=str(e),
+            )
+            raise
 
     # hotkeys.json — empty placeholder
     hotkeys_file = obsidian_dir / "hotkeys.json"
-    if not hotkeys_file.exists():
-        hotkeys_file.write_text(
-            json.dumps(PLUGIN_HOTKEYS, indent=2),
-            encoding="utf-8",
-        )
-        logger.info("obsidian_hotkeys_config_created", path=str(hotkeys_file))
+    hotkeys_exists = await asyncio.to_thread(hotkeys_file.exists)
+    if not hotkeys_exists:
+        hotkeys_content = json.dumps(PLUGIN_HOTKEYS, indent=2)
+        try:
+            await asyncio.to_thread(
+                hotkeys_file.write_text,
+                hotkeys_content,
+                encoding="utf-8",
+            )
+            logger.info("obsidian_hotkeys_config_created", path=str(hotkeys_file))
+        except OSError as e:
+            logger.error(
+                "obsidian_hotkeys_config_write_failed",
+                path=str(hotkeys_file),
+                error=str(e),
+            )
+            raise
 
     return {
         "plugins_written": REQUIRED_PLUGINS,
@@ -191,7 +237,7 @@ async def write_plugin_manifest(vault_path: Path) -> dict:
     }
 
 
-async def write_vault_templates(vault_path: Path) -> dict:
+async def write_vault_templates(vault_path: Path) -> dict[str, Any]:
     """Write Templater template files to the vault.
 
     Creates System/Templates directory and writes template files for:
@@ -208,17 +254,43 @@ async def write_vault_templates(vault_path: Path) -> dict:
 
     Returns:
         Dictionary with result metadata including templates_written and path
+
+    Raises:
+        OSError: If directory creation or file writes fail
     """
     templates_dir = vault_path / "System" / "Templates"
-    templates_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        await asyncio.to_thread(templates_dir.mkdir, parents=True, exist_ok=True)
+    except OSError as e:
+        logger.error(
+            "obsidian_templates_dir_creation_failed",
+            path=str(templates_dir),
+            error=str(e),
+        )
+        raise
 
     templates_written = []
     for filename, content in TEMPLATE_DEFINITIONS.items():
         template_file = templates_dir / filename
-        if not template_file.exists():
-            template_file.write_text(content, encoding="utf-8")
-            templates_written.append(filename)
-            logger.info("obsidian_template_written", path=str(template_file))
+        file_exists = await asyncio.to_thread(template_file.exists)
+        if not file_exists:
+            try:
+                await asyncio.to_thread(
+                    template_file.write_text,
+                    content,
+                    encoding="utf-8",
+                )
+                templates_written.append(filename)
+                logger.info("obsidian_template_written", path=str(template_file))
+            except OSError as e:
+                logger.error(
+                    "obsidian_template_write_failed",
+                    path=str(template_file),
+                    filename=filename,
+                    error=str(e),
+                )
+                raise
 
     logger.info(
         "obsidian_templates_bootstrap",

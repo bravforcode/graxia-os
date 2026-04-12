@@ -1,0 +1,17 @@
+[Unit]
+Description=Personal OS Supabase production stack
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/personal-os
+Environment=ENV_FILE=.env.production
+ExecStartPre=/usr/bin/docker compose --env-file .env.production -f docker-compose.supabase.yml config --quiet
+ExecStart=/usr/bin/docker compose --env-file .env.production -f docker-compose.supabase.yml up -d
+ExecStop=/usr/bin/docker compose --env-file .env.production -f docker-compose.supabase.yml down
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target

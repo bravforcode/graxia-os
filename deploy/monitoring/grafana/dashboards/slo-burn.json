@@ -1,0 +1,19 @@
+{
+  "title": "SLO Burn",
+  "schemaVersion": 39,
+  "version": 1,
+  "panels": [
+    {
+      "title": "Availability Burn",
+      "type": "timeseries",
+      "targets": [{"expr": "1 - (sum(rate(http_requests_total{status=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m])))"}],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+    },
+    {
+      "title": "Backup Freshness",
+      "type": "stat",
+      "targets": [{"expr": "time() - backup_last_success_timestamp_seconds"}],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+    }
+  ]
+}

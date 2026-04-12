@@ -1,0 +1,16 @@
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.pyc
+*.pyo
+*.db
+*.sqlite
+backups/
+logs/
+reports/
+tests/
+tests_legacy/
+.env
+*.env.local
+secrets/

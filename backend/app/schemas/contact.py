@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import Any, Optional
 from uuid import UUID
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ContactCreate(BaseModel):
@@ -19,10 +19,9 @@ class ContactCreate(BaseModel):
 
 
 class ContactOut(ContactCreate):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     relationship_strength: Optional[int] = 1
     last_contacted_at: Optional[date] = None
     created_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True

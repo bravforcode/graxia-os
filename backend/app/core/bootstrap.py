@@ -1,12 +1,65 @@
 import logging
 from pathlib import Path
-from typing import Optional
 
 import yaml
 
 from app.config import settings
 
 logger = logging.getLogger(__name__)
+
+
+def wire_event_handlers() -> None:
+    """Register the default event-driven agent pipeline.
+
+    This is intentionally idempotent so startup and tests can call it repeatedly.
+    """
+    from app.agents.briefer import briefer_agent
+    from app.agents.compound_engine import compound_engine
+    from app.agents.decision_engine import decision_engine
+    from app.agents.drafter import drafter_agent
+    from app.agents.failure_analysis import failure_analysis
+    from app.agents.learning_engine import learning_engine
+    from app.agents.obsidian_sync import obsidian_sync_agent
+    from app.agents.playbook_capture import playbook_capture
+    from app.agents.scorer import scorer_agent
+    from app.core.event_bus import event_bus
+
+    subscriptions = [
+        ("opportunity.found", scorer_agent.handle_new_opportunity),
+        ("opportunity.scored", decision_engine.handle_scored_opportunity),
+        ("opportunity.decided", drafter_agent.handle_decided_opportunity),
+        ("opportunity.decided", briefer_agent.handle_decided_opportunity),
+        ("draft.approved", briefer_agent.handle_draft_approved),
+        ("scraper.failed", briefer_agent.handle_scraper_alert),
+        ("cost.budget_warning", briefer_agent.handle_cost_alert),
+        ("ai.cost_limit_reached", briefer_agent.handle_cost_alert),
+        ("submission.sent", compound_engine.handle_submission_sent),
+        ("submission.won", learning_engine.handle_win),
+        ("submission.won", playbook_capture.handle_win),
+        ("submission.won", compound_engine.handle_win),
+        ("submission.lost", learning_engine.handle_loss),
+        ("submission.lost", failure_analysis.handle_loss),
+    ]
+
+    if getattr(settings, "OBSIDIAN_AUTO_SYNC_ENABLED", True):
+        subscriptions.extend(
+            [
+                ("opportunity.found", obsidian_sync_agent.handle_opportunity_found),
+                ("opportunity.scored", obsidian_sync_agent.handle_opportunity_found),
+                ("opportunity.decided", obsidian_sync_agent.handle_opportunity_found),
+                ("submission.sent", obsidian_sync_agent.handle_submission_sent),
+                ("submission.won", obsidian_sync_agent.handle_submission_sent),
+                ("submission.lost", obsidian_sync_agent.handle_submission_sent),
+                ("contact.created", obsidian_sync_agent.handle_contact_created),
+                ("task.created", obsidian_sync_agent.handle_task_created),
+                ("task.updated", obsidian_sync_agent.handle_task_created),
+                ("task.completed", obsidian_sync_agent.handle_task_created),
+                ("knowledge.captured", obsidian_sync_agent.handle_knowledge_captured),
+            ]
+        )
+
+    for event_name, handler in subscriptions:
+        event_bus.subscribe(event_name, handler)
 
 
 async def _send_telegram(msg: str) -> None:
@@ -20,13 +73,20 @@ async def _send_telegram(msg: str) -> None:
 async def check_system_ready() -> tuple[bool, str, list[str]]:
     issues: list[str] = []
     warnings: list[str] = []
+    profile = None
 
     # ── 1. Profile completeness ──────────────────────────
-    profile_path = Path(settings.IDENTITY_PATH)
-    if not profile_path.exists():
-        profile_path = Path("identity/profile.yaml")
+    profile_candidates = [
+        Path(settings.IDENTITY_PATH),
+        Path("identity/profile.yaml"),
+        Path(__file__).resolve().parents[3] / "identity/profile.yaml",
+    ]
+    profile_path = next(
+        (candidate for candidate in profile_candidates if candidate.exists()),
+        profile_candidates[-1],
+    )
     try:
-        with open(profile_path) as f:
+        with open(profile_path, "r", encoding="utf-8") as f:
             profile = yaml.safe_load(f)
         name = profile.get("personal", {}).get("name", "")
         if "[YOUR" in name:
@@ -44,25 +104,107 @@ async def check_system_ready() -> tuple[bool, str, list[str]]:
         issues.append(f"Profile: cannot load profile.yaml — {e}")
 
     # ── 2. API keys ──────────────────────────────────────
-    if not settings.GEMINI_API_KEY:
-        issues.append("API: GEMINI_API_KEY not set")
-    if not settings.TELEGRAM_BOT_TOKEN:
-        issues.append("API: TELEGRAM_BOT_TOKEN not set")
-    if not settings.TELEGRAM_CHAT_ID:
-        issues.append("API: TELEGRAM_CHAT_ID not set")
+    def add_external_readiness(message: str) -> None:
+        if settings.STRICT_BOOTSTRAP:
+            issues.append(message)
+        else:
+            warnings.append(message)
+
+    # At least one LLM key required
+    if not settings.HAS_REAL_OPENCLAW_KEY and not settings.HAS_REAL_GEMINI_KEY:
+        add_external_readiness("API: Neither OPENCLAW_API_KEY nor GEMINI_API_KEY is set — AI features disabled")
+    elif settings.HAS_REAL_OPENCLAW_KEY:
+        logger.info("LLM: Using OpenClaw (Claude) as primary")
+    else:
+        logger.info("LLM: Using Gemini as primary (OpenClaw key not set)")
+    if not settings.HAS_REAL_TELEGRAM_TOKEN:
+        add_external_readiness("API: TELEGRAM_BOT_TOKEN not set or still placeholder")
+    if not settings.HAS_REAL_TELEGRAM_CHAT_ID:
+        add_external_readiness("API: TELEGRAM_CHAT_ID not set, placeholder, or non-numeric")
+    if not settings.HAS_REAL_GOOGLE_WORKSPACE_CREDENTIALS:
+        warnings.append(
+            "Google Workspace not configured — inbox/calendar assistant features disabled"
+        )
 
     # ── 3. Database ──────────────────────────────────────
     try:
-        from app.database import engine
-        from sqlalchemy import text
+        from sqlalchemy import inspect, text
+
+        from app.database import AsyncSessionLocal, engine
+        from app.models.scoring_weight_history import ScoringWeightHistory
+        from app.models import Base
+
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
+            expected_tables = set(Base.metadata.tables.keys())
+
+            def inspect_schema(sync_conn):
+                inspector = inspect(sync_conn)
+                table_names = set(inspector.get_table_names())
+                missing_tables = sorted(expected_tables.difference(table_names))
+                missing_columns: list[str] = []
+                if not missing_tables:
+                    for table_name, table in Base.metadata.tables.items():
+                        db_columns = {
+                            column["name"] for column in inspector.get_columns(table_name)
+                        }
+                        table_missing = [
+                            column.name
+                            for column in table.columns
+                            if column.name not in db_columns
+                        ]
+                        if table_missing:
+                            missing_columns.append(
+                                f"{table_name}.{', '.join(table_missing[:5])}"
+                            )
+                return missing_tables, missing_columns
+
+            missing_tables, missing_columns = await conn.run_sync(inspect_schema)
+
+        if missing_tables:
+            issues.append(
+                f"Database: missing tables — {', '.join(missing_tables[:5])}"
+                + ("..." if len(missing_tables) > 5 else "")
+            )
+        elif missing_columns:
+            issues.append(
+                f"Database: missing columns — {'; '.join(missing_columns[:3])}"
+                + ("..." if len(missing_columns) > 3 else "")
+            )
+
+        if profile and not missing_tables and not missing_columns:
+            async with AsyncSessionLocal() as db:
+                from sqlalchemy import select
+
+                result = await db.execute(select(ScoringWeightHistory).limit(1))
+                existing = result.scalar_one_or_none()
+                if existing is None:
+                    db.add(
+                        ScoringWeightHistory(
+                            version=1,
+                            weights=profile.get("scoring_weights", {}),
+                            previous_weights=None,
+                            changed_by="user",
+                            change_reason="Initial weights from identity profile",
+                            is_current=True,
+                        )
+                    )
+                    await db.commit()
+            if profile and "skill_profiles" in expected_tables:
+                from app.core.career import ensure_skill_profiles_seeded
+
+                await ensure_skill_profiles_seeded()
     except Exception as e:
         issues.append(f"Database: cannot connect — {e}")
 
     # ── 4. Degraded checks (warnings only) ───────────────
-    if not settings.SERPAPI_KEY:
+    if not settings.HAS_REAL_SERPAPI_KEY:
         warnings.append("SerpAPI not set — search limited to direct scraping")
+
+    if settings.IS_SUPABASE_TRANSACTION_MODE:
+        warnings.append(
+            "Supabase transaction pooler detected on port 6543 — long-running backend/celery workloads are more stable on a Direct or Session pooler connection when available"
+        )
 
     try:
         import redis.asyncio as aioredis
@@ -74,7 +216,9 @@ async def check_system_ready() -> tuple[bool, str, list[str]]:
 
     try:
         import chromadb
-        chromadb.Client()
+
+        if not hasattr(chromadb, "Client"):
+            raise RuntimeError("chromadb.Client unavailable")
     except Exception:
         warnings.append("ChromaDB unavailable — vector features disabled")
 

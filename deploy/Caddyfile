@@ -1,0 +1,96 @@
+{
+    email {$CADDY_EMAIL:admin@example.com}
+    admin off
+
+    servers {
+        protocols h1 h2 h3
+    }
+}
+
+http://{$APP_HOST:app.example.com} {
+    redir https://{host}{uri} permanent
+}
+
+https://{$APP_HOST:app.example.com} {
+    tls {
+        protocols tls1.2 tls1.3
+    }
+
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 100mb
+            roll_keep 10
+        }
+        format json
+        level WARN
+    }
+
+    request_body {
+        max_size 10MB
+    }
+
+    @blocked path /docs /redoc /openapi.json /metrics /flower /admin /grafana
+    respond @blocked 404
+
+    @traversal path_regexp traversal \.\./
+    respond @traversal 400
+
+    @badua header_regexp ua User-Agent "(?i)(sqlmap|nikto|nmap)"
+    respond @badua 403
+
+    handle /api/v1/* {
+        reverse_proxy backend:8000 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up Host {host}
+            health_uri /health
+            health_interval 30s
+            health_timeout 10s
+        }
+    }
+
+    handle /health {
+        reverse_proxy backend:8000 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up Host {host}
+            health_uri /health
+            health_interval 30s
+            health_timeout 10s
+        }
+    }
+
+    handle /n8n/* {
+        reverse_proxy n8n:5678 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up Host {host}
+        }
+    }
+
+    handle /webhook/* {
+        reverse_proxy n8n:5678 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up Host {host}
+        }
+    }
+
+    handle {
+        reverse_proxy frontend:8080
+    }
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        -Server
+        -X-Powered-By
+    }
+}

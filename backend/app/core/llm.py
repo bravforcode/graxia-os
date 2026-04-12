@@ -1,11 +1,10 @@
 """
-app/core/llm.py — LLM Client (Google Gemini)
+app/core/llm.py — LLM Client
 
-Models:
-  DEFAULT_MODEL = gemini-2.0-flash        (drafts, strategy, analysis)
-  FAST_MODEL    = gemini-2.0-flash-lite   (scoring, classification)
+Primary:  OpenClaw (Claude via OpenAI-compatible API)
+Fallback: Google Gemini (free tier)
 
-Free tier: 1,500 req/day per model. Cost = $0.
+OpenClaw uses the OpenAI-compatible endpoint so we call it with httpx directly.
 """
 import hashlib
 import json
@@ -17,6 +16,7 @@ import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from app.config import settings
+from app.core.model_router import build_router_config, route_task
 
 logger = logging.getLogger(__name__)
 
@@ -25,13 +25,21 @@ GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 
 class LLMClient:
     def __init__(self) -> None:
-        self.api_key = settings.GEMINI_API_KEY
-        self.default_model = settings.DEFAULT_MODEL
-        self.fast_model = settings.FAST_MODEL
+        # OpenClaw is primary — Claude via OpenAI-compatible API
+        self.openclaw_key = settings.OPENCLAW_API_KEY if settings.HAS_REAL_OPENCLAW_KEY else ""
+        self.openclaw_base_url = settings.OPENCLAW_BASE_URL
+        # Gemini is fallback
+        self.api_key = settings.GEMINI_API_KEY if settings.HAS_REAL_GEMINI_KEY else ""
+        self.default_model = settings.OPENCLAW_DEFAULT_MODEL if self.openclaw_key else settings.DEFAULT_MODEL
+        self.fast_model = settings.OPENCLAW_FAST_MODEL if self.openclaw_key else settings.FAST_MODEL
         self.daily_limit = settings.GEMINI_DAILY_REQUEST_LIMIT
+        self.router_config = build_router_config(settings)
         self._redis = None
         self._degraded = False
         self._degraded_until = 0.0
+
+    def _using_openclaw(self) -> bool:
+        return bool(self.openclaw_key)
 
     async def _get_redis(self):
         if self._redis is None:
@@ -87,6 +95,32 @@ class LLMClient:
         self._degraded_until = time.time() + 1800
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=8))
+    async def _call_openclaw(self, system: str, user: str, model: str, max_tokens: int, temperature: float) -> str:
+        """Call OpenClaw (OpenAI-compatible endpoint)."""
+        url = f"{self.openclaw_base_url}/chat/completions"
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+        }
+        headers = {
+            "Authorization": f"Bearer {self.openclaw_key}",
+            "Content-Type": "application/json",
+        }
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            resp = await client.post(url, json=payload, headers=headers)
+            resp.raise_for_status()
+            data = resp.json()
+        choices = data.get("choices", [])
+        if not choices:
+            raise ValueError(f"OpenClaw returned no choices: {data}")
+        return choices[0]["message"]["content"].strip()
+
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=8))
     async def _call_gemini(self, system: str, user: str, model: str, max_tokens: int, temperature: float) -> str:
         url = f"{GEMINI_API_BASE}/{model}:generateContent?key={self.api_key}"
         payload = {
@@ -94,6 +128,10 @@ class LLMClient:
             "contents": [{"role": "user", "parts": [{"text": user}]}],
             "generationConfig": {"maxOutputTokens": max_tokens, "temperature": temperature},
         }
+        
+        # Estimate input tokens (rough: 1 token ≈ 0.75 words)
+        input_tokens = int(len((system + user).split()) * 1.3)
+        
         async with httpx.AsyncClient(timeout=60.0) as client:
             resp = await client.post(url, json=payload)
             resp.raise_for_status()
@@ -101,7 +139,31 @@ class LLMClient:
         candidates = data.get("candidates", [])
         if not candidates:
             raise ValueError(f"Gemini returned no candidates: {data}")
-        return candidates[0]["content"]["parts"][0]["text"].strip()
+        
+        result_text = candidates[0]["content"]["parts"][0]["text"].strip()
+        
+        # Estimate output tokens
+        output_tokens = int(len(result_text.split()) * 1.3)
+        
+        # Calculate cost (Gemini pricing: $0.00025/1K input, $0.0005/1K output)
+        input_cost = (input_tokens / 1000) * 0.00025
+        output_cost = (output_tokens / 1000) * 0.0005
+        total_cost = input_cost + output_cost
+        
+        # Track cost
+        try:
+            from app.core.cost_tracker import cost_tracker
+            await cost_tracker.track_gemini_cost(
+                model=model,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                cost_usd=total_cost,
+                prompt_preview=user[:100]
+            )
+        except Exception as e:
+            logger.warning(f"Failed to track Gemini cost: {e}")
+        
+        return result_text
 
     async def complete(
         self,
@@ -111,11 +173,44 @@ class LLMClient:
         max_tokens: int = 1000,
         temperature: float = 0.7,
         allow_fallback: bool = False,
+        task_class: str = "analysis",
+        complexity: int | None = None,
+        budget_tag: str | None = None,
     ) -> Optional[str]:
+        routing = route_task(
+            task_class=task_class,
+            requested_max_tokens=max_tokens,
+            complexity=complexity,
+            router=self.router_config,
+        )
         if model is None:
-            model = self.default_model
+            model = routing.model
+            max_tokens = routing.max_tokens
+        if routing.budget_exceeded:
+            logger.warning(
+                "LLM route for task=%s exceeded single-call budget (estimated=%s)",
+                task_class,
+                routing.estimated_max_cost_usd,
+            )
+            from app.core.event_bus import event_bus
+
+            await event_bus.emit(
+                "ai.cost_limit_reached",
+                {
+                    "scope": "single_call",
+                    "amount_usd": routing.estimated_max_cost_usd,
+                    "limit_usd": self.router_config.max_single_call_cost_usd,
+                    "reason": "single_call_budget_limit",
+                    "task_class": task_class,
+                },
+            )
+            return None
+        if not self.openclaw_key and not self.api_key:
+            logger.info("No LLM API key available — staying in degraded mode")
+            self._set_degraded()
+            return None
         if not await self._track_request():
-            logger.warning("Gemini daily request limit reached")
+            logger.warning("Daily request limit reached")
             from app.core.event_bus import event_bus
             await event_bus.emit("ai.cost_limit_reached", {"scope": "daily", "amount_usd": 0.0, "limit_usd": 0.0, "reason": "daily_request_limit"})
             return None
@@ -127,9 +222,21 @@ class LLMClient:
             logger.warning("LLM in degraded mode — skipping call")
             return None
         try:
-            result = await self._call_gemini(system, user, model, max_tokens, temperature)
+            # Try OpenClaw first, fall back to Gemini
+            if self._using_openclaw():
+                result = await self._call_openclaw(system, user, model, max_tokens, temperature)
+            else:
+                result = await self._call_gemini(system, user, model, max_tokens, temperature)
             await self._set_cache(cache_key, result)
-            await self._log_call(model, user, result, was_fallback=False)
+            await self._log_call(
+                model,
+                user,
+                result,
+                was_fallback=False,
+                task_class=task_class,
+                budget_tag=budget_tag or routing.budget_tag,
+                estimated_max_cost_usd=routing.estimated_max_cost_usd,
+            )
             return result
         except Exception as e:
             logger.error(f"Gemini API error: {e}")
@@ -139,14 +246,37 @@ class LLMClient:
                 await send_message("⚠️ AI ไม่พร้อม — ทำงานด้วย heuristic ชั่วคราว (30 นาที)")
             except Exception:
                 pass
-            await self._log_call(model, user, "", was_fallback=True, error=str(e))
+            await self._log_call(
+                model,
+                user,
+                "",
+                was_fallback=True,
+                error=str(e),
+                task_class=task_class,
+                budget_tag=budget_tag or routing.budget_tag,
+                estimated_max_cost_usd=routing.estimated_max_cost_usd,
+            )
             return None
 
-    async def complete_json(self, system: str, user: str, model: Optional[str] = None, max_tokens: int = 800) -> dict:
-        if model is None:
-            model = self.fast_model
+    async def complete_json(
+        self,
+        system: str,
+        user: str,
+        model: Optional[str] = None,
+        max_tokens: int = 800,
+        task_class: str = "classification",
+        complexity: int | None = None,
+    ) -> dict:
         json_system = system + "\n\nCRITICAL: Return ONLY valid JSON. No markdown, no backticks, no explanation."
-        result = await self.complete(system=json_system, user=user, model=model, max_tokens=max_tokens, temperature=0.1)
+        result = await self.complete(
+            system=json_system,
+            user=user,
+            model=model,
+            max_tokens=max_tokens,
+            temperature=0.1,
+            task_class=task_class,
+            complexity=complexity,
+        )
         if result is None:
             raise ValueError("LLM returned None")
         cleaned = result.strip()
@@ -160,14 +290,32 @@ class LLMClient:
         except json.JSONDecodeError as e:
             raise ValueError(f"Gemini returned invalid JSON: {e}\nRaw: {cleaned[:200]}")
 
-    async def _log_call(self, model: str, user: str, result: str, was_fallback: bool = False, error: Optional[str] = None) -> None:
+    async def _log_call(
+        self,
+        model: str,
+        user: str,
+        result: str,
+        was_fallback: bool = False,
+        error: Optional[str] = None,
+        task_class: str | None = None,
+        budget_tag: str | None = None,
+        estimated_max_cost_usd: float | None = None,
+    ) -> None:
         try:
             from app.database import AsyncSessionLocal
             from app.models.audit import AuditLog
             async with AsyncSessionLocal() as db:
                 log = AuditLog(
                     action="llm.call",
-                    details={"model": model, "prompt_preview": user[:100], "response_preview": result[:100] if result else "", "error": error},
+                    details={
+                        "model": model,
+                        "task_class": task_class,
+                        "budget_tag": budget_tag,
+                        "estimated_max_cost_usd": estimated_max_cost_usd,
+                        "prompt_preview": user[:100],
+                        "response_preview": result[:100] if result else "",
+                        "error": error,
+                    },
                     ai_model_used=model,
                     was_fallback=was_fallback,
                     success=not was_fallback,
@@ -196,6 +344,12 @@ class LLMClient:
 
     def is_cost_paused(self) -> bool:
         return False
+
+    def get_router_summary(self) -> dict[str, float | bool]:
+        return {
+            "routing_enabled": self.router_config.routing_enabled,
+            "max_single_call_cost_usd": self.router_config.max_single_call_cost_usd,
+        }
 
 
 llm_client = LLMClient()

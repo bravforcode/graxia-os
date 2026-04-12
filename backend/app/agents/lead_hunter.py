@@ -48,6 +48,7 @@ class LeadHunter(BaseAgent):
 
     async def _save_lead(self, raw: dict):
         from app.database import AsyncSessionLocal
+        from app.core.career import upsert_job_posting_from_opportunity
         from app.models.opportunity import Opportunity
         from sqlalchemy import select
 
@@ -74,4 +75,8 @@ class LeadHunter(BaseAgent):
             db.add(opp)
             await db.commit()
             await db.refresh(opp)
+            try:
+                await upsert_job_posting_from_opportunity(opp.id)
+            except Exception as exc:
+                logger.warning("Failed to sync job posting from opportunity %s: %s", opp.id, exc)
             return opp.id

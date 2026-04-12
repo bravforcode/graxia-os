@@ -1,0 +1,16 @@
+[Unit]
+Description=Personal OS production stack
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/personal-os
+Environment=ENV_FILE=.env.production
+ExecStart=/usr/bin/docker compose --env-file .env.production -f docker-compose.prod.yml up -d
+ExecStop=/usr/bin/docker compose --env-file .env.production -f docker-compose.prod.yml down
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target

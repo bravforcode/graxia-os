@@ -20,20 +20,20 @@ class FailureAnalysis(BaseAgent):
 
     async def _analyze_loss(self, sub_id, lost_reason: str) -> None:
         from app.database import AsyncSessionLocal
-        from app.models.submission import Submission
         from app.models.knowledge import KnowledgeItem
+        from app.models.submission import Submission
         from app.core.identity import identity
-
-        if self.llm.is_degraded():
-            return
 
         async with AsyncSessionLocal() as db:
             sub = await db.get(Submission, sub_id) if sub_id else None
             if not sub:
                 return
 
-        system = f"You are doing post-mortem analysis for {identity.get_profile()['personal']['name']}. Be honest and constructive. Identify what could be improved."
-        user = f"""Analyze this loss and extract lessons:
+        if self.llm.is_degraded():
+            content = self._heuristic_analysis(sub, lost_reason)
+        else:
+            system = f"You are doing post-mortem analysis for {identity.get_profile()['personal']['name']}. Be honest and constructive. Identify what could be improved."
+            user = f"""Analyze this loss and extract lessons:
 
 Lost reason: {lost_reason}
 Lost stage: {sub.lost_stage or 'unknown'}
@@ -42,7 +42,15 @@ Content sent: {(sub.content or '')[:500]}
 
 Write 2-3 specific lessons learned and how to avoid this next time."""
 
-        content = await self.llm.complete(system=system, user=user, max_tokens=400, temperature=0.5, allow_fallback=True)
+            content = await self.llm.complete(
+                system=system,
+                user=user,
+                max_tokens=400,
+                temperature=0.5,
+                allow_fallback=True,
+                task_class="analysis",
+                complexity=5,
+            )
         if not content:
             return
 
@@ -56,6 +64,34 @@ Write 2-3 specific lessons learned and how to avoid this next time."""
             )
             db.add(item)
             await db.commit()
+            await db.refresh(item)
+
+        await self.bus.emit(
+            "knowledge.captured",
+            {
+                "knowledge_item_id": str(item.id),
+                "category": item.category,
+                "title": item.title,
+            },
+        )
+
+        await self.log_audit(
+            "failure_analysis.captured",
+            {
+                "submission_id": str(sub_id) if sub_id else None,
+                "knowledge_item_title": item.title,
+                "lost_reason": lost_reason,
+            },
+        )
+
+    def _heuristic_analysis(self, submission, lost_reason: str) -> str:
+        reason = lost_reason.replace("_", " ")
+        stage = submission.lost_stage or "unknown"
+        return (
+            f"1. Loss reason was {reason} at the {stage} stage, so the positioning likely broke before trust was established.\n"
+            "2. Tighten qualification earlier, especially budget, urgency, and the concrete outcome the buyer wants.\n"
+            "3. Rewrite the first three lines to lead with proof of delivery and a narrower scope before expanding."
+        )
 
 
 failure_analysis = FailureAnalysis()

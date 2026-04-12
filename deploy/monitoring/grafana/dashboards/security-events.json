@@ -1,0 +1,19 @@
+{
+  "title": "Security Events",
+  "schemaVersion": 39,
+  "version": 1,
+  "panels": [
+    {
+      "title": "Failed Logins",
+      "type": "timeseries",
+      "targets": [{"expr": "sum(rate(auth_failed_login_total[5m]))"}],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+    },
+    {
+      "title": "CSRF Violations",
+      "type": "timeseries",
+      "targets": [{"expr": "increase(security_csrf_violation_total[5m])"}],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+    }
+  ]
+}

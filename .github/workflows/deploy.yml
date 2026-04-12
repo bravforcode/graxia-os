@@ -1,0 +1,48 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    env:
+      BACKEND_DIGEST: ${{ vars.BACKEND_DIGEST }}
+      FRONTEND_DIGEST: ${{ vars.FRONTEND_DIGEST }}
+      APP_URL: ${{ vars.PRODUCTION_APP_URL }}
+      COMMIT_SHA: ${{ github.sha }}
+      DEPLOY_OPERATOR: ${{ github.actor }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy ordered stack
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: BACKEND_DIGEST,FRONTEND_DIGEST,APP_URL,COMMIT_SHA,DEPLOY_OPERATOR
+          script: |
+            set -euo pipefail
+            cd /opt/personal-os
+            bash deploy/scripts/deploy.sh
+
+      - name: Roll back on failed deploy
+        if: failure()
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: APP_URL
+          script: |
+            set -euo pipefail
+            cd /opt/personal-os
+            ROLLBACK_INDEX=1 bash deploy/scripts/rollback.sh

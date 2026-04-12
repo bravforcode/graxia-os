@@ -1,0 +1,1340 @@
+{
+  "generated_at": "2026-04-10T20:15:39.220330+00:00",
+  "commit": "workspace",
+  "routes": [
+    {
+      "path": "/",
+      "method": "GET",
+      "router_prefix": "",
+      "expected_auth": "public",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/admin/audit-logs",
+      "method": "GET",
+      "router_prefix": "/api/v1/admin",
+      "expected_auth": "admin",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/admin/dlq",
+      "method": "GET",
+      "router_prefix": "/api/v1/admin",
+      "expected_auth": "admin",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/admin/dlq/{message_id}/replay",
+      "method": "POST",
+      "router_prefix": "/api/v1/admin/dlq/{message_id}",
+      "expected_auth": "admin",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/admin/runtime",
+      "method": "GET",
+      "router_prefix": "/api/v1/admin",
+      "expected_auth": "admin",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/approvals",
+      "method": "GET",
+      "router_prefix": "/api/v1",
+      "expected_auth": "operator",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/approvals/batch/{batch_key}/approve",
+      "method": "PATCH",
+      "router_prefix": "/api/v1/approvals/batch/{batch_key}",
+      "expected_auth": "operator",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/approvals/batch/{batch_key}/reject",
+      "method": "PATCH",
+      "router_prefix": "/api/v1/approvals/batch/{batch_key}",
+      "expected_auth": "operator",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/approvals/{approval_id}",
+      "method": "GET",
+      "router_prefix": "/api/v1/approvals",
+      "expected_auth": "operator",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/approvals/{approval_id}/approve",
+      "method": "PATCH",
+      "router_prefix": "/api/v1/approvals/{approval_id}",
+      "expected_auth": "operator",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/approvals/{approval_id}/reject",
+      "method": "PATCH",
+      "router_prefix": "/api/v1/approvals/{approval_id}",
+      "expected_auth": "operator",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/auth/change-password",
+      "method": "POST",
+      "router_prefix": "/api/v1/auth",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/auth/login",
+      "method": "POST",
+      "router_prefix": "/api/v1/auth",
+      "expected_auth": "public",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/auth/logout",
+      "method": "POST",
+      "router_prefix": "/api/v1/auth",
+      "expected_auth": "public",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/auth/me",
+      "method": "GET",
+      "router_prefix": "/api/v1/auth",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/auth/me",
+      "method": "PUT",
+      "router_prefix": "/api/v1/auth",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/auth/refresh",
+      "method": "POST",
+      "router_prefix": "/api/v1/auth",
+      "expected_auth": "public",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/auth/register",
+      "method": "POST",
+      "router_prefix": "/api/v1/auth",
+      "expected_auth": "public",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/calendar/today",
+      "method": "GET",
+      "router_prefix": "/api/v1/calendar",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/cognitive/checkin",
+      "method": "POST",
+      "router_prefix": "/api/v1/cognitive",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/cognitive/today",
+      "method": "GET",
+      "router_prefix": "/api/v1/cognitive",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/commands/execute",
+      "method": "POST",
+      "router_prefix": "/api/v1/commands",
+      "expected_auth": "operator",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/contacts",
+      "method": "GET",
+      "router_prefix": "/api/v1",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/contacts",
+      "method": "POST",
+      "router_prefix": "/api/v1",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/contacts/{contact_id}",
+      "method": "GET",
+      "router_prefix": "/api/v1/contacts",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/costs/forecast",
+      "method": "GET",
+      "router_prefix": "/api/v1/costs",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/costs/summary",
+      "method": "GET",
+      "router_prefix": "/api/v1/costs",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/costs/usage",
+      "method": "GET",
+      "router_prefix": "/api/v1/costs",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/drafts",
+      "method": "GET",
+      "router_prefix": "/api/v1",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/drafts/{draft_id}",
+      "method": "GET",
+      "router_prefix": "/api/v1/drafts",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/drafts/{draft_id}/approve",
+      "method": "PATCH",
+      "router_prefix": "/api/v1/drafts/{draft_id}",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/drafts/{draft_id}/reject",
+      "method": "PATCH",
+      "router_prefix": "/api/v1/drafts/{draft_id}",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/email-threads/",
+      "method": "GET",
+      "router_prefix": "/api/v1/email-threads",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/email-threads/stats",
+      "method": "GET",
+      "router_prefix": "/api/v1/email-threads",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/email-threads/stats/summary",
+      "method": "GET",
+      "router_prefix": "/api/v1/email-threads/stats",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/email-threads/{thread_id}",
+      "method": "GET",
+      "router_prefix": "/api/v1/email-threads",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/email-threads/{thread_id}/mark-read",
+      "method": "PATCH",
+      "router_prefix": "/api/v1/email-threads/{thread_id}",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/email-threads/{thread_id}/mark-read",
+      "method": "POST",
+      "router_prefix": "/api/v1/email-threads/{thread_id}",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/email-threads/{thread_id}/messages",
+      "method": "GET",
+      "router_prefix": "/api/v1/email-threads/{thread_id}",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/events/failed",
+      "method": "DELETE",
+      "router_prefix": "/api/v1/events",
+      "expected_auth": "admin",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/events/failed",
+      "method": "GET",
+      "router_prefix": "/api/v1/events",
+      "expected_auth": "admin",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/events/failed/{index}",
+      "method": "DELETE",
+      "router_prefix": "/api/v1/events/failed",
+      "expected_auth": "admin",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/events/health",
+      "method": "GET",
+      "router_prefix": "/api/v1/events",
+      "expected_auth": "admin",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/events/replay/{index}",
+      "method": "POST",
+      "router_prefix": "/api/v1/events/replay",
+      "expected_auth": "admin",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/events/stats",
+      "method": "GET",
+      "router_prefix": "/api/v1/events",
+      "expected_auth": "admin",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/inbox/triage",
+      "method": "GET",
+      "router_prefix": "/api/v1/inbox",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/integrations/alerts/telegram",
+      "method": "POST",
+      "router_prefix": "/api/v1/integrations/alerts",
+      "expected_auth": "internal",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "internal_token"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/integrations/google/calendar/today",
+      "method": "GET",
+      "router_prefix": "/api/v1/integrations/google/calendar",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/integrations/google/gmail/inbox-summary",
+      "method": "GET",
+      "router_prefix": "/api/v1/integrations/google/gmail",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/integrations/google/health",
+      "method": "GET",
+      "router_prefix": "/api/v1/integrations/google",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/jobs",
+      "method": "GET",
+      "router_prefix": "/api/v1",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/jobs/stats",
+      "method": "GET",
+      "router_prefix": "/api/v1/jobs",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/jobs/{job_id}",
+      "method": "GET",
+      "router_prefix": "/api/v1/jobs",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/jobs/{job_id}/status",
+      "method": "PATCH",
+      "router_prefix": "/api/v1/jobs/{job_id}",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/metrics",
+      "method": "GET",
+      "router_prefix": "/api/v1",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/metrics/current-week",
+      "method": "GET",
+      "router_prefix": "/api/v1/metrics",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/metrics/history",
+      "method": "GET",
+      "router_prefix": "/api/v1/metrics",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/metrics/loss-analysis",
+      "method": "GET",
+      "router_prefix": "/api/v1/metrics",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/opportunities",
+      "method": "GET",
+      "router_prefix": "/api/v1",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/opportunities/high-score",
+      "method": "GET",
+      "router_prefix": "/api/v1/opportunities",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/opportunities/{opp_id}",
+      "method": "GET",
+      "router_prefix": "/api/v1/opportunities",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/opportunities/{opp_id}/approve",
+      "method": "PATCH",
+      "router_prefix": "/api/v1/opportunities/{opp_id}",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/opportunities/{opp_id}/skip",
+      "method": "PATCH",
+      "router_prefix": "/api/v1/opportunities/{opp_id}",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/runs",
+      "method": "GET",
+      "router_prefix": "/api/v1",
+      "expected_auth": "operator",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/runs/{run_id}",
+      "method": "GET",
+      "router_prefix": "/api/v1/runs",
+      "expected_auth": "operator",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/scrapers/health",
+      "method": "GET",
+      "router_prefix": "/api/v1/scrapers",
+      "expected_auth": "admin",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/scrapers/health/{scraper_name}",
+      "method": "GET",
+      "router_prefix": "/api/v1/scrapers/health",
+      "expected_auth": "admin",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/scrapers/stats",
+      "method": "GET",
+      "router_prefix": "/api/v1/scrapers",
+      "expected_auth": "admin",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/skills",
+      "method": "GET",
+      "router_prefix": "/api/v1",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/skills/bootstrap",
+      "method": "POST",
+      "router_prefix": "/api/v1/skills",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/submissions",
+      "method": "GET",
+      "router_prefix": "/api/v1",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/submissions",
+      "method": "POST",
+      "router_prefix": "/api/v1",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/submissions/{sub_id}/mark-lost",
+      "method": "PATCH",
+      "router_prefix": "/api/v1/submissions/{sub_id}",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/submissions/{sub_id}/mark-won",
+      "method": "PATCH",
+      "router_prefix": "/api/v1/submissions/{sub_id}",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/system/audit-log",
+      "method": "GET",
+      "router_prefix": "/api/v1/system",
+      "expected_auth": "admin",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/system/brief",
+      "method": "POST",
+      "router_prefix": "/api/v1/system",
+      "expected_auth": "operator",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/system/brief/now",
+      "method": "POST",
+      "router_prefix": "/api/v1/system/brief",
+      "expected_auth": "operator",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/system/costs",
+      "method": "GET",
+      "router_prefix": "/api/v1/system",
+      "expected_auth": "admin",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/system/health",
+      "method": "GET",
+      "router_prefix": "/api/v1/system",
+      "expected_auth": "admin",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/system/reload-identity",
+      "method": "POST",
+      "router_prefix": "/api/v1/system",
+      "expected_auth": "admin",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/system/scan",
+      "method": "POST",
+      "router_prefix": "/api/v1/system",
+      "expected_auth": "operator",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/system/scan/now",
+      "method": "POST",
+      "router_prefix": "/api/v1/system/scan",
+      "expected_auth": "operator",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/system/scraper-health",
+      "method": "GET",
+      "router_prefix": "/api/v1/system",
+      "expected_auth": "admin",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/system/strategy",
+      "method": "GET",
+      "router_prefix": "/api/v1/system",
+      "expected_auth": "admin",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/system/weights",
+      "method": "GET",
+      "router_prefix": "/api/v1/system",
+      "expected_auth": "admin",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/system/weights/rollback",
+      "method": "POST",
+      "router_prefix": "/api/v1/system/weights",
+      "expected_auth": "admin",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/tasks/",
+      "method": "GET",
+      "router_prefix": "/api/v1/tasks",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/tasks/",
+      "method": "POST",
+      "router_prefix": "/api/v1/tasks",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/tasks/stats",
+      "method": "GET",
+      "router_prefix": "/api/v1/tasks",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/tasks/stats/summary",
+      "method": "GET",
+      "router_prefix": "/api/v1/tasks/stats",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/tasks/{task_id}",
+      "method": "DELETE",
+      "router_prefix": "/api/v1/tasks",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/tasks/{task_id}",
+      "method": "GET",
+      "router_prefix": "/api/v1/tasks",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/tasks/{task_id}",
+      "method": "PATCH",
+      "router_prefix": "/api/v1/tasks",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/tasks/{task_id}/complete",
+      "method": "PATCH",
+      "router_prefix": "/api/v1/tasks/{task_id}",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/api/v1/tasks/{task_id}/complete",
+      "method": "POST",
+      "router_prefix": "/api/v1/tasks/{task_id}",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/docs",
+      "method": "GET",
+      "router_prefix": "",
+      "expected_auth": "blocked",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/docs/oauth2-redirect",
+      "method": "GET",
+      "router_prefix": "/docs",
+      "expected_auth": "blocked",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/favicon.ico",
+      "method": "GET",
+      "router_prefix": "",
+      "expected_auth": "public",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/health",
+      "method": "GET",
+      "router_prefix": "",
+      "expected_auth": "public",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/metrics",
+      "method": "GET",
+      "router_prefix": "",
+      "expected_auth": "blocked",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/obsidian/bootstrap",
+      "method": "POST",
+      "router_prefix": "/obsidian",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/obsidian/context",
+      "method": "POST",
+      "router_prefix": "/obsidian",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/obsidian/daily-note",
+      "method": "POST",
+      "router_prefix": "/obsidian",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/obsidian/health",
+      "method": "GET",
+      "router_prefix": "/obsidian",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/obsidian/sync",
+      "method": "POST",
+      "router_prefix": "/obsidian",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/obsidian/weekly-review",
+      "method": "POST",
+      "router_prefix": "/obsidian",
+      "expected_auth": "authenticated",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit",
+        "jwt_auth",
+        "csrf"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/openapi.json",
+      "method": "GET",
+      "router_prefix": "",
+      "expected_auth": "blocked",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit"
+      ],
+      "gap": false
+    },
+    {
+      "path": "/redoc",
+      "method": "GET",
+      "router_prefix": "",
+      "expected_auth": "blocked",
+      "actual_controls": [
+        "security_headers",
+        "rate_limit"
+      ],
+      "gap": false
+    }
+  ],
+  "summary": {
+    "total": 108,
+    "gaps_found": 0,
+    "public": 7,
+    "internal": 1,
+    "authenticated": 61,
+    "operator": 13,
+    "admin": 21,
+    "blocked": 5
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "generated_at": "2026-04-10T19:30:26.235977+00:00",
+  "repo_root": "C:\\brav os",
+  "tools": {
+    "bandit": {
+      "status": "nonzero_exit",
+      "command": [
+        "bandit",
+        "-r",
+        "backend",
+        "-f",
+        "json",
+        "-o",
+        "reports/bandit-baseline.json",
+        "--severity-level",
+        "low"
+      ],
+      "returncode": 1,
+      "stdout_tail": "Working... ---------------------------------------- 100% 0:00:01\n",
+      "stderr_tail": "[main]\tINFO\tprofile include tests: None\n[main]\tINFO\tprofile exclude tests: None\n[main]\tINFO\tcli include tests: None\n[main]\tINFO\tcli exclude tests: None\n[json]\tINFO\tJSON output written to file: reports/bandit-baseline.json\n"
+    },
+    "semgrep_python": {
+      "status": "missing_tool",
+      "command": [
+        "semgrep",
+        "--config=p/python",
+        "--config=p/jwt",
+        "--config=p/secrets",
+        "--config=p/sqlalchemy",
+        "--json",
+        "-o",
+        "reports/semgrep-baseline.json",
+        "backend"
+      ]
+    },
+    "pip_audit": {
+      "status": "missing_tool",
+      "command": [
+        "pip-audit",
+        "--format",
+        "json",
+        "-o",
+        "reports/pip-audit-baseline.json"
+      ]
+    },
+    "gitleaks": {
+      "status": "completed",
+      "command": [
+        "gitleaks",
+        "detect",
+        "--source",
+        ".",
+        "--report-format",
+        "json",
+        "--report-path",
+        "reports/gitleaks-baseline.json"
+      ],
+      "returncode": 0,
+      "stdout_tail": "",
+      "stderr_tail": "\n    \u00e2\u2014\u2039\n    \u00e2\u201d\u201a\u00e2\u2022\u00b2\n    \u00e2\u201d\u201a \u00e2\u2014\u2039\n    \u00e2\u2014\u2039 \u00e2\u2013\u2018\n    \u00e2\u2013\u2018    gitleaks\n\n\u001b[90m2:30AM\u001b[0m \u001b[32mINF\u001b[0m \u001b[1m18 commits scanned.\u001b[0m\n\u001b[90m2:30AM\u001b[0m \u001b[32mINF\u001b[0m \u001b[1mscanned ~274730 bytes (274.73 KB) in 267ms\u001b[0m\n\u001b[90m2:30AM\u001b[0m \u001b[32mINF\u001b[0m \u001b[1mno leaks found\u001b[0m\n"
+    },
+    "trufflehog": {
+      "status": "missing_tool",
+      "command": [
+        "trufflehog",
+        "filesystem",
+        ".",
+        "--json"
+      ]
+    },
+    "npm_audit": {
+      "status": "missing_tool",
+      "command": [
+        "npm",
+        "audit",
+        "--json"
+      ]
+    }
+  }
+}

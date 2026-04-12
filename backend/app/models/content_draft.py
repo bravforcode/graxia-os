@@ -1,9 +1,24 @@
 import uuid
+from datetime import datetime
+from decimal import Decimal
+from typing import Any
+from uuid import UUID as UUIDType
+
 from sqlalchemy import (
-    UUID, Boolean, CheckConstraint, Column, DateTime, ForeignKey,
-    Integer, Numeric, String, Text, func,
+    UUID as SQLUUID,
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import Mapped, mapped_column
+
 from .base import Base
 
 
@@ -20,23 +35,35 @@ class ContentDraft(Base):
         ),
     )
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    type = Column(String(50))
-    title = Column(String(500))
-    content = Column(Text, nullable=False)
-    context_notes = Column(Text)
-    review_notes = Column(Text)
-    status = Column(String(30), default="pending")
-    approved_at = Column(DateTime(timezone=True))
-    rejection_reason = Column(Text)
-    revision_request = Column(Text)
-    opportunity_id = Column(UUID(as_uuid=True), ForeignKey("opportunities.id"))
-    contact_id = Column(UUID(as_uuid=True), ForeignKey("contacts.id"))
-    submission_id = Column(UUID(as_uuid=True), ForeignKey("submissions.id"))
-    model_used = Column(String(100))
-    generation_tokens = Column(Integer)
-    generation_cost_usd = Column(Numeric(8, 6))
-    used_playbook_ids = Column(JSONB, default=list)
-    was_fallback_draft = Column(Boolean, default=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    id: Mapped[UUIDType] = mapped_column(
+        SQLUUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    type: Mapped[str | None] = mapped_column(String(50))
+    title: Mapped[str | None] = mapped_column(String(500))
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    context_notes: Mapped[str | None] = mapped_column(Text)
+    review_notes: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str | None] = mapped_column(String(30), default="pending")
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    rejection_reason: Mapped[str | None] = mapped_column(Text)
+    revision_request: Mapped[str | None] = mapped_column(Text)
+    opportunity_id: Mapped[UUIDType | None] = mapped_column(
+        SQLUUID(as_uuid=True), ForeignKey("opportunities.id")
+    )
+    contact_id: Mapped[UUIDType | None] = mapped_column(
+        SQLUUID(as_uuid=True), ForeignKey("contacts.id")
+    )
+    submission_id: Mapped[UUIDType | None] = mapped_column(
+        SQLUUID(as_uuid=True), ForeignKey("submissions.id")
+    )
+    model_used: Mapped[str | None] = mapped_column(String(100))
+    generation_tokens: Mapped[int | None] = mapped_column(Integer)
+    generation_cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(8, 6))
+    used_playbook_ids: Mapped[list[Any] | None] = mapped_column(JSONB, default=list)
+    was_fallback_draft: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )

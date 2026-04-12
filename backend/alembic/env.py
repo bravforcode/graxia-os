@@ -1,5 +1,8 @@
 import asyncio
 from logging.config import fileConfig
+
+import app as _app_bootstrap  # noqa: F401 - install Windows platform import guards
+
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
@@ -10,6 +13,9 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 from app.models import Base  # noqa: E402
+from app.config import settings  # noqa: E402
+
+config.set_main_option("sqlalchemy.url", settings.EFFECTIVE_MIGRATION_DATABASE_URL)
 target_metadata = Base.metadata
 
 
@@ -34,10 +40,14 @@ def do_run_migrations(connection: Connection) -> None:
 async def run_async_migrations() -> None:
     configuration = config.get_section(config.config_ini_section, {})
     configuration["sqlalchemy.url"] = config.get_main_option("sqlalchemy.url")
+    connect_args = {}
+    if settings.IS_MIGRATION_SUPABASE_TRANSACTION_MODE:
+        connect_args["statement_cache_size"] = 0
     connectable = async_engine_from_config(
         configuration,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args=connect_args,
     )
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)

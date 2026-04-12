@@ -946,6 +946,93 @@ class ObsidianConnector:
         return path
 
 
+def parse_frontmatter(file_path: Path) -> dict[str, Any]:
+    """Parse YAML frontmatter from a Markdown file.
+
+    Returns empty dict if no frontmatter is found.
+    """
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+    except Exception:
+        return {}
+
+    # Check if file starts with ---
+    if not content.startswith("---"):
+        return {}
+
+    # Find the closing ---
+    lines = content.split("\n")
+    if len(lines) < 2:
+        return {}
+
+    # Find the closing frontmatter delimiter
+    closing_idx = None
+    for i in range(1, len(lines)):
+        if lines[i].strip() == "---":
+            closing_idx = i
+            break
+
+    if closing_idx is None:
+        return {}
+
+    # Extract and parse YAML
+    frontmatter_text = "\n".join(lines[1:closing_idx])
+    try:
+        parsed = yaml.safe_load(frontmatter_text) or {}
+        return parsed if isinstance(parsed, dict) else {}
+    except Exception:
+        return {}
+
+
+def extract_status_from_note(file_path: Path) -> str | None:
+    """Extract status field from frontmatter of a note.
+
+    Returns None if status field is not found.
+    """
+    frontmatter = parse_frontmatter(file_path)
+    return frontmatter.get("status")
+
+
+def scan_changed_opportunity_files(
+    vault_path: Path,
+    since_minutes: int = 35,
+) -> list[dict[str, Any]]:
+    """Scan vault for recently modified OPP-*.md files.
+
+    Returns list of dicts with file_path and status from frontmatter.
+    """
+    import time
+
+    vault_path = Path(vault_path)
+    if not vault_path.exists():
+        return []
+
+    result = []
+    current_time = time.time()
+    cutoff_time = current_time - (since_minutes * 60)
+
+    # Look for OPP-*.md files in Operations/Opportunities folder
+    opportunities_folder = vault_path / "Operations" / "Opportunities"
+    if not opportunities_folder.exists():
+        return []
+
+    for file_path in opportunities_folder.glob("OPP-*.md"):
+        try:
+            mtime = file_path.stat().st_mtime
+            if mtime >= cutoff_time:
+                status = extract_status_from_note(file_path)
+                result.append({
+                    "file_path": file_path,
+                    "status": status,
+                    "mtime": mtime,
+                })
+        except Exception:
+            pass
+
+    return result
+
+
 def build_obsidian_connector() -> ObsidianConnector | None:
     vault_path = getattr(settings, "OBSIDIAN_VAULT_PATH", None)
     api_url = getattr(settings, "OBSIDIAN_API_URL", None)

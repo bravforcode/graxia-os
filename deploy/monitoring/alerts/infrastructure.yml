@@ -1,0 +1,47 @@
+groups:
+  - name: infrastructure
+    rules:
+      - alert: APIDown
+        expr: up{job="backend"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Backend API is down
+          runbook: https://runbooks.internal/api-down
+
+      - alert: WorkerDown
+        expr: celery_workers_online < 1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: No Celery workers online
+          runbook: https://runbooks.internal/worker-down
+
+      - alert: BackupStale
+        expr: time() - backup_last_success_timestamp_seconds > 90000
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Backup is older than 25 hours
+          runbook: https://runbooks.internal/backup-stale
+
+      - alert: DLQDepthHigh
+        expr: celery_dlq_depth > 10
+        for: 5m
+        labels:
+          severity: high
+        annotations:
+          summary: DLQ depth is high
+          runbook: https://runbooks.internal/dlq-replay
+
+      - alert: RestoreDrillOverdue
+        expr: time() - restore_drill_last_success_timestamp_seconds > 604800
+        for: 1h
+        labels:
+          severity: high
+        annotations:
+          summary: Restore drill overdue
+          runbook: https://runbooks.internal/restore-drill

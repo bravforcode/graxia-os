@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Personal Sovereign Enterprise OS</title>
+    <meta
+      name="description"
+      content="Operational dashboard for the Personal Sovereign Enterprise OS"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      window.tailwind = window.tailwind || {};
+      window.tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              display: ['"Space Grotesk"', "sans-serif"],
+              mono: ['"IBM Plex Mono"', "monospace"],
+            },
+            colors: {
+              ink: "#08111d",
+              mist: "#e5f4ef",
+              steel: "#9fb5c8",
+              aqua: "#6bf0c7",
+              ember: "#ff8b61",
+              flare: "#f6c760",
+            },
+          },
+        },
+      };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/dashboard/style.css" />
+  </head>
+  <body class="bg-ink font-display text-slate-100 antialiased">
+    <div class="ambient-bg" aria-hidden="true">
+      <div class="ambient-orb orb-a"></div>
+      <div class="ambient-orb orb-b"></div>
+      <div class="ambient-orb orb-c"></div>
+    </div>
+
+    <main class="relative mx-auto flex min-h-screen max-w-[1600px] flex-col gap-6 px-4 py-5 sm:px-6 xl:px-8">
+      <header class="glass-panel p-5 sm:p-6">
+        <div class="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+          <div class="space-y-4">
+            <div class="flex flex-wrap items-center gap-3">
+              <span class="eyebrow">Autonomous Founder OS</span>
+              <span class="font-mono text-[11px] uppercase tracking-[0.28em] text-steel/75">
+                Bangkok · Asia/Bangkok
+              </span>
+            </div>
+            <div class="space-y-3">
+              <p class="font-mono text-xs uppercase tracking-[0.34em] text-aqua/80">
+                Personal Sovereign Enterprise OS v3
+              </p>
+              <h1 class="max-w-4xl text-3xl font-semibold leading-tight text-mist sm:text-5xl">
+                A command center that filters hard, protects energy, and only surfaces what compounds.
+              </h1>
+              <p id="heroCopy" class="max-w-3xl text-sm leading-7 text-steel sm:text-base">
+                Pulling live status from the operating engine.
+              </p>
+            </div>
+          </div>
+
+          <div class="grid gap-3 sm:grid-cols-2 xl:w-[28rem] xl:grid-cols-1">
+            <div class="signal-card">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <p class="panel-kicker">System State</p>
+                  <p id="headerDate" class="mt-2 text-sm text-steel"></p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span id="statusDot" class="status-dot status-dot--booting"></span>
+                  <span id="statusLabel" class="status-pill status-pill--booting">Booting</span>
+                </div>
+              </div>
+            </div>
+            <div class="signal-card">
+              <div class="grid gap-2 text-sm text-steel">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="panel-kicker">AI Cost Today</span>
+                  <span id="costTodayValue" class="text-mist">$0.00</span>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                  <span class="panel-kicker">Gemini Calls</span>
+                  <span id="geminiCallsValue" class="text-mist">0</span>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                  <span class="panel-kicker">Scraper Health</span>
+                  <span id="scraperHealthValue" class="text-mist">0 / 0 healthy</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="glass-panel p-5 sm:p-6">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div class="space-y-2">
+            <p class="panel-kicker">Cognitive State Bar</p>
+            <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-mist sm:text-base">
+              <span id="energyBarText">Energy 7/10</span>
+              <span id="stressBarText">Stress 3/10</span>
+              <span id="hoursBarText">Hours 20h</span>
+              <span id="examBarText">Exam 0/10</span>
+            </div>
+            <p id="moodBarText" class="text-sm text-steel">No mood note captured for today.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <button id="updateStateButton" type="button" class="command-button command-button--primary">
+              Update State
+            </button>
+            <button id="refreshButton" type="button" class="command-button">
+              Refresh Now
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="glass-panel p-5 sm:p-6">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p class="panel-kicker">System Diagnostics</p>
+            <h2 class="section-title">Readiness blockers, degraded warnings, and refresh health</h2>
+          </div>
+          <div class="text-sm text-steel">
+            <span class="panel-kicker">Last Refresh</span>
+            <p id="lastRefreshText" class="mt-2 text-mist">Not refreshed yet.</p>
+          </div>
+        </div>
+        <div id="diagnosticsList" class="mt-5 space-y-3"></div>
+      </section>
+
+      <section class="grid gap-6 xl:grid-cols-2">
+        <article class="glass-panel p-5 sm:p-6">
+          <p class="panel-kicker">Approvals Queue</p>
+          <h2 class="section-title">Durable approvals across drafts and future external actions</h2>
+          <div id="approvalList" class="mt-5 space-y-3"></div>
+        </article>
+        <article class="glass-panel p-5 sm:p-6">
+          <p class="panel-kicker">Recent Runs</p>
+          <h2 class="section-title">Background jobs, manual triggers, and their current status</h2>
+          <div id="runList" class="mt-5 space-y-3"></div>
+        </article>
+      </section>
+
+      <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        <article class="metric-card">
+          <p class="panel-kicker">Active Opportunities</p>
+          <strong id="metricActiveOpps" class="metric-value">0</strong>
+          <p id="metricDecisionBreakdown" class="metric-meta">0 do_now · 0 delay · 0 queue</p>
+        </article>
+        <article class="metric-card">
+          <p class="panel-kicker">Pending Approvals</p>
+          <strong id="metricPendingApprovals" class="metric-value">0</strong>
+          <p id="metricPendingHint" class="metric-meta">No review pressure.</p>
+        </article>
+        <article class="metric-card">
+          <p class="panel-kicker">Pipeline Value</p>
+          <strong id="metricPipelineValue" class="metric-value">THB 0</strong>
+          <p class="metric-meta">Drafts and opportunities awaiting action.</p>
+        </article>
+        <article class="metric-card">
+          <p class="panel-kicker">This Week Revenue</p>
+          <strong id="metricRevenueWeek" class="metric-value">THB 0</strong>
+          <p id="metricRevenueNote" class="metric-meta">Waiting for current-week metrics.</p>
+        </article>
+        <article class="metric-card">
+          <p class="panel-kicker">AI Costs Today</p>
+          <strong id="metricAiCost" class="metric-value">$0.00</strong>
+          <p id="metricAiCostNote" class="metric-meta">Within budget.</p>
+        </article>
+        <article class="metric-card">
+          <p class="panel-kicker">Decision Accuracy</p>
+          <strong id="metricDecisionAccuracy" class="metric-value">0%</strong>
+          <p class="metric-meta">Share of do_now calls that actually converted.</p>
+        </article>
+      </section>
+
+      <section class="glass-panel p-5 sm:p-6">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p class="panel-kicker">Opportunities Table</p>
+            <h2 class="section-title">Current pipeline with executive decisions and confidence</h2>
+          </div>
+          <div class="flex flex-wrap gap-2" id="opportunityFilters">
+            <button class="filter-chip is-active" data-filter="all" type="button">All</button>
+            <button class="filter-chip" data-filter="do_now" type="button">do_now</button>
+            <button class="filter-chip" data-filter="delay" type="button">delay</button>
+            <button class="filter-chip" data-filter="ask_user" type="button">ask_user</button>
+          </div>
+        </div>
+        <div class="mt-5 overflow-x-auto">
+          <table class="dashboard-table min-w-full">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Title</th>
+                <th>Score</th>
+                <th>Decision</th>
+                <th>Confidence</th>
+                <th>Deadline</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="opportunityTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="grid gap-6 xl:grid-cols-3">
+        <article class="glass-panel p-5 sm:p-6">
+          <p class="panel-kicker">Follow-Up Radar</p>
+          <h2 class="section-title">Contacts needing follow-up today</h2>
+          <div id="followupList" class="mt-5 space-y-3"></div>
+        </article>
+        <article class="glass-panel p-5 sm:p-6">
+          <p class="panel-kicker">Pending Drafts</p>
+          <h2 class="section-title">Drafts waiting for your approval</h2>
+          <div id="draftList" class="mt-5 space-y-3"></div>
+        </article>
+        <article class="glass-panel p-5 sm:p-6">
+          <p class="panel-kicker">Scraper Health</p>
+          <h2 class="section-title">Per-source resilience and last success time</h2>
+          <div id="scraperList" class="mt-5 space-y-3"></div>
+        </article>
+      </section>
+
+      <section class="glass-panel p-5 sm:p-6">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p class="panel-kicker">Weekly Strategy Brief</p>
+            <h2 class="section-title">Current strategic focus, kill list, and double-down direction</h2>
+          </div>
+          <div class="w-full max-w-xs">
+            <div class="space-y-3">
+              <div>
+                <div class="flex items-center justify-between gap-3 text-sm text-steel">
+                  <span>Execution Allocation</span>
+                  <span id="allocationLabel">0%</span>
+                </div>
+                <div class="allocation-bar mt-2"><span id="allocationFill"></span></div>
+              </div>
+              <div class="flex flex-wrap gap-2" id="strategyTags"></div>
+            </div>
+          </div>
+        </div>
+        <div id="strategyBlock" class="mt-5 prose-shell"></div>
+      </section>
+
+      <section class="grid gap-6 xl:grid-cols-3">
+        <article class="glass-panel p-5 sm:p-6">
+          <p class="panel-kicker">Ops Found vs Actioned</p>
+          <canvas id="oppsChart" height="240"></canvas>
+        </article>
+        <article class="glass-panel p-5 sm:p-6">
+          <p class="panel-kicker">Revenue vs Target</p>
+          <canvas id="revenueChart" height="240"></canvas>
+        </article>
+        <article class="glass-panel p-5 sm:p-6">
+          <p class="panel-kicker">Loss Distribution</p>
+          <canvas id="lossChart" height="240"></canvas>
+        </article>
+      </section>
+
+      <section class="grid gap-6 xl:grid-cols-[1.05fr_1.35fr]">
+        <article class="glass-panel p-5 sm:p-6">
+          <div class="flex items-center justify-between gap-4">
+            <div>
+              <p class="panel-kicker">Weight History</p>
+              <h2 class="section-title">Current scoring weights and version timeline</h2>
+            </div>
+            <button id="rollbackWeightsButton" type="button" class="command-button">
+              Rollback
+            </button>
+          </div>
+          <div id="weightBars" class="mt-5 space-y-3"></div>
+          <div id="weightTimeline" class="mt-6 space-y-3"></div>
+        </article>
+        <article class="glass-panel p-5 sm:p-6">
+          <p class="panel-kicker">Recent Audit Log</p>
+          <h2 class="section-title">Last 20 actions with fallback visibility</h2>
+          <div id="auditLogList" class="mt-5 space-y-3"></div>
+        </article>
+      </section>
+    </main>
+
+    <dialog id="stateDialog" class="state-dialog">
+      <form id="checkinForm" class="dialog-shell" method="dialog">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <p class="panel-kicker">Update Cognitive State</p>
+            <h2 class="section-title">Tell the engine what today actually feels like</h2>
+          </div>
+          <button id="closeDialogButton" type="button" class="icon-button" aria-label="Close dialog">
+            ×
+          </button>
+        </div>
+
+        <div class="mt-5 grid gap-4">
+          <label class="input-group">
+            <div class="flex items-center justify-between gap-4">
+              <span class="panel-kicker">Energy</span>
+              <span id="energyValue" class="input-value">7 / 10</span>
+            </div>
+            <input id="energyInput" type="range" min="0" max="10" value="7" class="range-input" />
+          </label>
+          <label class="input-group">
+            <div class="flex items-center justify-between gap-4">
+              <span class="panel-kicker">Stress</span>
+              <span id="stressValue" class="input-value">3 / 10</span>
+            </div>
+            <input id="stressInput" type="range" min="0" max="10" value="3" class="range-input" />
+          </label>
+          <label class="input-group">
+            <div class="flex items-center justify-between gap-4">
+              <span class="panel-kicker">Available Hours This Week</span>
+              <span id="hoursValue" class="input-value">20h</span>
+            </div>
+            <input id="hoursInput" type="range" min="0" max="40" value="20" class="range-input" />
+          </label>
+          <label class="input-group">
+            <div class="flex items-center justify-between gap-4">
+              <span class="panel-kicker">Exam Pressure</span>
+              <span id="examValue" class="input-value">0 / 10</span>
+            </div>
+            <input id="examInput" type="range" min="0" max="10" value="0" class="range-input" />
+          </label>
+          <label class="space-y-2">
+            <span class="panel-kicker">Mood Note</span>
+            <textarea
+              id="moodNoteInput"
+              rows="4"
+              class="textarea-shell"
+              placeholder="Optional context for today's constraints, exams, stressors, or momentum."
+            ></textarea>
+          </label>
+        </div>
+
+        <div class="mt-5 flex items-center justify-between gap-4">
+          <p id="checkinStatus" class="text-sm text-steel">No check-in submitted yet.</p>
+          <button type="submit" class="command-button command-button--primary">Save Check-In</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="opportunityDialog" class="state-dialog">
+      <div class="dialog-shell">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <p class="panel-kicker">Opportunity Detail</p>
+            <h2 id="opportunityDialogTitle" class="section-title">Opportunity</h2>
+          </div>
+          <button id="closeOpportunityDialogButton" type="button" class="icon-button" aria-label="Close detail dialog">
+            ×
+          </button>
+        </div>
+        <div id="opportunityDialogContent" class="mt-5 space-y-4"></div>
+      </div>
+    </dialog>
+
+    <script type="module" src="/dashboard/app.js"></script>
+  </body>
+</html>

@@ -12,6 +12,19 @@ from .scoring_weight_history import ScoringWeightHistory
 from .scraper_health import ScraperHealth
 from .identity_snapshot import IdentitySnapshot
 from .audit import AuditLog
+from .automation_run import AutomationRun
+from .approval_request import ApprovalRequest
+from .skill_profile import SkillProfile
+from .job_posting import JobPosting
+from .email_thread import EmailThread
+from .email_message import EmailMessage
+from .assistant_task import AssistantTask
+from .network_interaction import NetworkInteraction
+from .openclaw_usage import OpenClawUsage
+from .scraper_run import ScraperRun
+from .api_rate_limit import APIRateLimit
+from .user import User
+from .deploy_history import DeployHistory
 
 __all__ = [
     "Base",
@@ -28,4 +41,17 @@ __all__ = [
     "ScraperHealth",
     "IdentitySnapshot",
     "AuditLog",
+    "AutomationRun",
+    "ApprovalRequest",
+    "SkillProfile",
+    "JobPosting",
+    "EmailThread",
+    "EmailMessage",
+    "AssistantTask",
+    "NetworkInteraction",
+    "OpenClawUsage",
+    "ScraperRun",
+    "APIRateLimit",
+    "User",
+    "DeployHistory",
 ]

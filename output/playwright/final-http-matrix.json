@@ -1,0 +1,143 @@
+{
+  "asset_uuid": "c93126a4-e84c-4a5c-b0c2-8f4f66c06052",
+  "route_failures": [],
+  "api_failures": [],
+  "route_results": [
+    {
+      "path": "/",
+      "status": 200,
+      "final_url": "https://thaolai.com/"
+    },
+    {
+      "path": "/th",
+      "status": 200,
+      "final_url": "https://thaolai.com/th"
+    },
+    {
+      "path": "/en",
+      "status": 200,
+      "final_url": "https://thaolai.com/en"
+    },
+    {
+      "path": "/assets",
+      "status": 200,
+      "final_url": "https://thaolai.com/assets"
+    },
+    {
+      "path": "/assets/create",
+      "status": 200,
+      "final_url": "https://thaolai.com/assets/create"
+    },
+    {
+      "path": "/assets/owner",
+      "status": 200,
+      "final_url": "https://thaolai.com/assets/owner"
+    },
+    {
+      "path": "/assets/nearby_transis",
+      "status": 200,
+      "final_url": "https://thaolai.com/assets/nearby_transis"
+    },
+    {
+      "path": "/assets/pet_friendly",
+      "status": 200,
+      "final_url": "https://thaolai.com/assets/pet_friendly"
+    },
+    {
+      "path": "/assets/short_term",
+      "status": 200,
+      "final_url": "https://thaolai.com/assets/short_term"
+    },
+    {
+      "path": "/assets/nearby_university",
+      "status": 200,
+      "final_url": "https://thaolai.com/assets/nearby_university"
+    },
+    {
+      "path": "/assets/c93126a4-e84c-4a5c-b0c2-8f4f66c06052/info",
+      "status": 200,
+      "final_url": "https://thaolai.com/assets/c93126a4-e84c-4a5c-b0c2-8f4f66c06052/info"
+    },
+    {
+      "path": "/assets/c93126a4-e84c-4a5c-b0c2-8f4f66c06052/step1",
+      "status": 200,
+      "final_url": "https://thaolai.com/assets/c93126a4-e84c-4a5c-b0c2-8f4f66c06052/step1"
+    },
+    {
+      "path": "/assets/c93126a4-e84c-4a5c-b0c2-8f4f66c06052/step2",
+      "status": 200,
+      "final_url": "https://thaolai.com/assets/c93126a4-e84c-4a5c-b0c2-8f4f66c06052/step2"
+    },
+    {
+      "path": "/assets/c93126a4-e84c-4a5c-b0c2-8f4f66c06052/step3",
+      "status": 200,
+      "final_url": "https://thaolai.com/assets/c93126a4-e84c-4a5c-b0c2-8f4f66c06052/step3"
+    },
+    {
+      "path": "/not-a-real-page",
+      "status": 200,
+      "final_url": "https://thaolai.com/not-a-real-page"
+    },
+    {
+      "path": "/assets/not-a-real-uuid/info",
+      "status": 200,
+      "final_url": "https://thaolai.com/assets/not-a-real-uuid/info"
+    }
+  ],
+  "api_results": [
+    {
+      "path": "/service/api/v1/init_data",
+      "status": 200,
+      "final_url": "https://thaolai.com/service/api/v1/init_data"
+    },
+    {
+      "path": "/service/api/v1/assets/data_map",
+      "status": 200,
+      "final_url": "https://thaolai.com/service/api/v1/assets/data_map"
+    },
+    {
+      "path": "/service/api/v1/assets/search/location?search=%E0%B8%A3%E0%B8%B1%E0%B8%87%E0%B8%AA%E0%B8%B4%E0%B8%95",
+      "status": 200,
+      "final_url": "https://thaolai.com/service/api/v1/assets/search/location?search=%E0%B8%A3%E0%B8%B1%E0%B8%87%E0%B8%AA%E0%B8%B4%E0%B8%95",
+      "item_count": 100
+    },
+    {
+      "path": "/service/api/v1/assets/search/location?search=ari",
+      "status": 200,
+      "final_url": "https://thaolai.com/service/api/v1/assets/search/location?search=ari",
+      "item_count": 100
+    },
+    {
+      "path": "/service/api/v1/assets/search/location?search=xyznotfound123",
+      "status": 200,
+      "final_url": "https://thaolai.com/service/api/v1/assets/search/location?search=xyznotfound123",
+      "item_count": 0
+    },
+    {
+      "path": "/service/api/v1/assets?limit=5&page=1",
+      "status": 200,
+      "final_url": "https://thaolai.com/service/api/v1/assets?limit=5&page=1"
+    },
+    {
+      "path": "/service/api/v1/assets/c93126a4-e84c-4a5c-b0c2-8f4f66c06052",
+      "status": 200,
+      "final_url": "https://thaolai.com/service/api/v1/assets/c93126a4-e84c-4a5c-b0c2-8f4f66c06052",
+      "asset_id": 20263
+    },
+    {
+      "path": "/robots.txt",
+      "status": 200,
+      "final_url": "https://thaolai.com/robots.txt"
+    },
+    {
+      "path": "/favicon.ico",
+      "status": 200,
+      "final_url": "https://thaolai.com/favicon.ico"
+    },
+    {
+      "path": "/apple-touch-icon.png",
+      "status": 200,
+      "final_url": "https://thaolai.com/apple-touch-icon.png"
+    }
+  ]
+}
