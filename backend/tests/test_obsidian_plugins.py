@@ -28,7 +28,16 @@ async def test_write_plugin_manifest_includes_required_plugins(tmp_path: Path):
     plugins_file = vault / ".obsidian" / "community-plugins.json"
     content = json.loads(plugins_file.read_text(encoding="utf-8"))
 
-    required = {"dataview", "obsidian-tasks-plugin", "calendar", "templater-obsidian", "obsidian-git"}
+    required = {
+        "dataview",
+        "obsidian-tasks-plugin",
+        "calendar",
+        "templater-obsidian",
+        "obsidian-git",
+        "obsidian-kanban",
+        "advanced-tables-obsidian",
+        "obsidian-style-settings",
+    }
     assert required.issubset(set(content))
 
 
