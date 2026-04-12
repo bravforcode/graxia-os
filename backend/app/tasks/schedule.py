@@ -58,6 +58,11 @@ BEAT_SCHEDULE = {
         "schedule": crontab(day_of_week="sunday", hour=8, minute=30),
         "options": {"queue": DEFAULT_QUEUE},
     },
+    "weekly-cog-evolution": {
+        "task": "tasks.cog_evolution.run",
+        "schedule": crontab(day_of_week="sunday", hour=10, minute=0),
+        "options": {"queue": DEFAULT_QUEUE},
+    },
     "identity-snapshot": {
         "task": "tasks.maintenance.identity_snapshot",
         "schedule": crontab(day_of_month=1, hour=10, minute=0),
