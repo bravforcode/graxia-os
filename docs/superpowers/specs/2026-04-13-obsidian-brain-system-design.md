@@ -23,7 +23,7 @@
 
 Three layers, all zero-quota except manual `/learn`:
 
-```
+```text
 LAYER 1: CAPTURE
   Stop hook ──────────► delta JSON  (files, commands, errors, last task)
   PostCompact hook ────► session summary .md + keyword pattern extract
@@ -124,7 +124,7 @@ Alternatives considered: Y, Z
 
 ### Stop Hook — `~/.claude/hooks/stop-context-saver.py`
 
-```
+```text
 trigger:  every Claude response end
 quota:    ZERO
 async:    true (non-blocking)
@@ -146,7 +146,7 @@ algorithm:
 
 ### PostCompact Hook — `~/.claude/hooks/postcompact-saver.py`
 
-```
+```text
 trigger:  after Claude Code auto-compact
 quota:    ZERO
 async:    true
@@ -170,8 +170,8 @@ algorithm:
 
 ### SessionStart Injector — `~/.claude/hooks/session-start-injector.py`
 
-```
-trigger:  session start (replaces/enhances current brain preflight)
+```text
+trigger:  session start (alongside existing brain preflight, not replacing it)
 quota:    ZERO
 timeout:  5s
 
@@ -213,7 +213,7 @@ algorithm:
 }]
 ```
 
-SessionStart: replace `brain preflight` command with `session-start-injector.py` (runs `brain preflight` internally as well).
+SessionStart: add `session-start-injector.py` as a **new hook entry** alongside the existing `brain preflight` hook — do NOT remove or replace it. Run order: brain preflight first, then injector.
 
 ---
 
@@ -225,7 +225,7 @@ Runs inside `postcompact-saver.py`. Rule-based keyword extraction only. Updates 
 
 ### Manual `/learn` (Current Turn Only)
 
-```
+```text
 User runs: /learn
 
 Claude:
@@ -244,7 +244,7 @@ Claude:
 
 ### Pattern Lifecycle
 
-```
+```text
 CANDIDATE (0.3) ──seen×5──► ACTIVE (0.6) ──seen×15──► CORE (0.9)
     │                                                       │
     │                                          appears in 2+ projects
@@ -258,7 +258,7 @@ CANDIDATE (0.3) ──seen×5──► ACTIVE (0.6) ──seen×15──► CORE
 
 ## On-Demand Integration
 
-```
+```text
 Archived pattern requested → /use-pattern <name> reads from patterns.json
 Archived skill needed → /use <skill-name> reads from commands/archive/
 Auto-detect: Claude sees .dart file → loads flutter-tagged patterns + /use flutter-review
@@ -270,7 +270,7 @@ Both systems share the same auto-detect rules in `~/.claude/CLAUDE.md`.
 
 ## Obsidian Vault Structure
 
-```
+```text
 Second Brain/
   brain/
     latest.md              existing + "Auto-injected" section added
@@ -290,7 +290,8 @@ Second Brain/
 
 ## Implementation Phases
 
-**Phase 1 — Foundation (hooks + vault structure)**
+### Phase 1 — Foundation (hooks + vault structure)
+
 - Create vault folders
 - Write `stop-context-saver.py`
 - Write `postcompact-saver.py`
@@ -298,12 +299,14 @@ Second Brain/
 - Register hooks in settings.json
 - Initialize `patterns.json` (empty, version 1)
 
-**Phase 2 — Learning Loop**
+### Phase 2 — Learning Loop
+
 - Add keyword extractor to postcompact-saver
 - Add pattern scorer/ranker to session-start-injector
 - Update `/learn` command to read from Obsidian and write back
 
-**Phase 3 — On-Demand Integration**
+### Phase 3 — On-Demand Integration
+
 - Add tag-based archived pattern detection to CLAUDE.md rules
 - Connect `/use-pattern` to patterns.json lookups
 - Cross-project promotion logic
