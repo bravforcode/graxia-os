@@ -155,3 +155,28 @@ async def create_weekly_review() -> SyncResponse:
     except Exception as exc:
         logger.error("weekly_review_failed", error=str(exc))
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+@router.get("/obsidian/vault-stats")
+async def get_vault_stats():
+    """Return vault file counts and tag frequencies for the dashboard."""
+    try:
+        from app.agents.cog_loop import extract_vault_tag_frequencies
+        from pathlib import Path
+
+        obsidian = await get_obsidian()
+        vault_path = obsidian.vault_path
+
+        all_files = list(vault_path.rglob("*.md")) if vault_path.exists() else []
+        tag_freqs = extract_vault_tag_frequencies(vault_path)
+        top_tags = sorted(tag_freqs.items(), key=lambda x: x[1], reverse=True)[:20]
+
+        return {
+            "total_notes": len(all_files),
+            "top_tags": [{"tag": t, "count": c} for t, c in top_tags],
+            "vault_path": str(vault_path),
+            "vault_exists": vault_path.exists(),
+        }
+    except Exception as exc:
+        logger.error("vault_stats_failed", error=str(exc))
+        raise HTTPException(status_code=500, detail=str(exc))
