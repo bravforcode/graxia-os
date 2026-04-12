@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.control_plane import resolve_approval_batch, resolve_approval_request
+from app.core.control_plane import queue_approval_request, resolve_approval_batch, resolve_approval_request
 from app.database import get_db
 from app.models.approval_request import ApprovalRequest
 from app.schemas.approval import (
@@ -94,3 +94,40 @@ async def approve_batch(batch_key: str, note: str = "") -> ApprovalBatchResponse
 async def reject_batch(batch_key: str, note: str = "") -> ApprovalBatchResponse:
     count = await resolve_approval_batch(batch_key, "rejected", note=note or None)
     return ApprovalBatchResponse(status="rejected", batch_key=batch_key, count=count)
+
+
+async def create_approval_from_event(
+    action_type: str,
+    what_action: str,
+    why_now: str = "",
+    confidence: float = 0.5,
+    metadata: dict | None = None,
+) -> ApprovalRequest:
+    """Create an approval request from an event payload.
+
+    Args:
+        action_type: Type of action (e.g., 'scoring_weight_update')
+        what_action: Human-readable description of the action
+        why_now: Reasoning for why the action is suggested
+        confidence: Confidence score (0.0-1.0)
+        metadata: Additional event metadata to store
+
+    Returns:
+        Created ApprovalRequest instance
+    """
+    return await queue_approval_request(
+        title=what_action,
+        action_type=action_type,
+        subject_type=None,
+        subject_id=None,
+        details={
+            "reasoning": why_now,
+            "confidence": confidence,
+            **(metadata or {}),
+        },
+        preview={
+            "summary": what_action,
+            "confidence": confidence,
+        },
+        requested_by="system",
+    )

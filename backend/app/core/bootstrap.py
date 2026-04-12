@@ -22,7 +22,18 @@ def wire_event_handlers() -> None:
     from app.agents.obsidian_sync import obsidian_sync_agent
     from app.agents.playbook_capture import playbook_capture
     from app.agents.scorer import scorer_agent
+    from app.api.approvals import create_approval_from_event
     from app.core.event_bus import event_bus
+
+    async def handle_cog_suggestion(payload: dict):
+        """Route COG weight suggestions through the approval queue (never auto-apply)."""
+        await create_approval_from_event(
+            action_type="scoring_weight_update",
+            what_action=f"Update scoring weights: {payload.get('suggested_weights')}",
+            why_now=payload.get("reasoning", ""),
+            confidence=payload.get("confidence", 0.5),
+            metadata=payload,
+        )
 
     subscriptions = [
         ("opportunity.found", scorer_agent.handle_new_opportunity),
@@ -39,6 +50,7 @@ def wire_event_handlers() -> None:
         ("submission.won", compound_engine.handle_win),
         ("submission.lost", learning_engine.handle_loss),
         ("submission.lost", failure_analysis.handle_loss),
+        ("cog.evolution_suggested", handle_cog_suggestion),
     ]
 
     if getattr(settings, "OBSIDIAN_AUTO_SYNC_ENABLED", True):
