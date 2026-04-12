@@ -33,7 +33,7 @@ class VaultReaderAgent(BaseAgent):
             vault_path = getattr(settings, "OBSIDIAN_VAULT_PATH", None)
 
         if not vault_path:
-            logger.warning("vault_reader: no vault path configured")
+            logger.warning("vault_reader_no_vault_path")
             return {"synced_count": 0, "failed_count": 0, "error": "vault_path not configured"}
 
         vault_path_obj = Path(vault_path)
@@ -59,8 +59,8 @@ class VaultReaderAgent(BaseAgent):
                     try:
                         opp_id_str = filename[4:]  # Remove "OPP-" prefix
                         opp_id = uuid.UUID(opp_id_str)
-                    except (ValueError, IndexError):
-                        logger.warning(f"vault_reader: invalid opportunity filename: {filename}")
+                    except (ValueError, IndexError) as e:
+                        logger.warning("vault_reader_invalid_filename", filename=filename, error=str(e))
                         failed_count += 1
                         continue
 
@@ -70,14 +70,14 @@ class VaultReaderAgent(BaseAgent):
                     opp = result.scalar_one_or_none()
 
                     if not opp:
-                        logger.warning(f"vault_reader: opportunity not found: {opp_id}")
+                        logger.warning("vault_reader_opportunity_not_found", opportunity_id=str(opp_id))
                         failed_count += 1
                         continue
 
                     # Get new status from vault frontmatter
                     new_status = file_info.get("status")
                     if not new_status:
-                        logger.debug(f"vault_reader: no status in vault for {filename}")
+                        logger.debug("vault_reader_no_status_in_vault", filename=filename)
                         failed_count += 1
                         continue
 
@@ -101,7 +101,9 @@ class VaultReaderAgent(BaseAgent):
                         }
                         if new_status not in valid_statuses:
                             logger.warning(
-                                f"vault_reader: invalid status for {filename}: {new_status}"
+                                "vault_reader_invalid_status",
+                                filename=filename,
+                                status=new_status,
                             )
                             failed_count += 1
                             continue
@@ -109,7 +111,7 @@ class VaultReaderAgent(BaseAgent):
                         opp.status = new_status
                         await db.commit()
                         logger.info(
-                            f"vault_reader: synced opportunity status",
+                            "vault_reader_synced_opportunity_status",
                             opportunity_id=str(opp_id),
                             old_status=old_status,
                             new_status=new_status,
@@ -128,14 +130,29 @@ class VaultReaderAgent(BaseAgent):
                         synced_count += 1
                     else:
                         logger.debug(
-                            f"vault_reader: no status change for {filename}",
+                            "vault_reader_no_status_change",
+                            filename=filename,
                             status=new_status,
                         )
-                        synced_count += 1
+                        # Don't increment synced_count - nothing changed
 
+                except (ValueError, KeyError) as e:
+                    logger.error(
+                        "vault_reader_invalid_data",
+                        filename=file_info.get("file_path"),
+                        error=str(e),
+                    )
+                    failed_count += 1
+                except (OSError, IOError) as e:
+                    logger.error(
+                        "vault_reader_file_error",
+                        filename=file_info.get("file_path"),
+                        error=str(e),
+                    )
+                    failed_count += 1
                 except Exception as e:
                     logger.error(
-                        f"vault_reader: failed to sync opportunity",
+                        "vault_reader_unknown_error",
                         filename=file_info.get("file_path"),
                         error=str(e),
                         exc_info=True,

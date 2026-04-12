@@ -3,6 +3,7 @@ Obsidian integration and second-brain automation.
 """
 import asyncio
 import re
+import time
 from datetime import date, datetime, timezone
 from decimal import Decimal
 from pathlib import Path
@@ -1002,8 +1003,6 @@ def scan_changed_opportunity_files(
 
     Returns list of dicts with file_path and status from frontmatter.
     """
-    import time
-
     vault_path = Path(vault_path)
     if not vault_path.exists():
         return []
@@ -1027,8 +1026,9 @@ def scan_changed_opportunity_files(
                     "status": status,
                     "mtime": mtime,
                 })
-        except Exception:
-            pass
+        except (OSError, PermissionError) as e:
+            logger.warning("vault_file_stat_failed", filepath=str(file_path), error=str(e))
+            continue
 
     return result
 
