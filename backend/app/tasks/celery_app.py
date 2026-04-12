@@ -17,6 +17,7 @@ celery_app = Celery(
         "app.tasks.weekly_review",
         "app.tasks.maintenance_tasks",
         "app.tasks.backup_tasks",
+        "app.tasks.vault_sync",
     ],
 )
 

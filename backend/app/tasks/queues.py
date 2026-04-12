@@ -34,6 +34,7 @@ TASK_ROUTES: dict[str, dict[str, str]] = {
     "tasks.backup.run_daily_backup": {"queue": CRITICAL_QUEUE, "routing_key": CRITICAL_QUEUE},
     "tasks.backup.run_restore_drill": {"queue": CRITICAL_QUEUE, "routing_key": CRITICAL_QUEUE},
     "tasks.backup.run_redis_backup": {"queue": BACKGROUND_QUEUE, "routing_key": BACKGROUND_QUEUE},
+    "tasks.vault_sync": {"queue": BACKGROUND_QUEUE, "routing_key": BACKGROUND_QUEUE},
 }
 
 

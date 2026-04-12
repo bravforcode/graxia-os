@@ -78,4 +78,9 @@ BEAT_SCHEDULE = {
         "schedule": crontab(hour=2, minute=30),
         "options": {"queue": BACKGROUND_QUEUE},
     },
+    "vault-sync": {
+        "task": "tasks.vault_sync",
+        "schedule": crontab(minute="*/30"),
+        "options": {"queue": BACKGROUND_QUEUE},
+    },
 }
