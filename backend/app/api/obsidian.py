@@ -158,7 +158,7 @@ async def create_weekly_review() -> SyncResponse:
 
 
 @router.get("/obsidian/vault-stats")
-async def get_vault_stats():
+async def get_vault_stats() -> dict[str, Any]:
     """Return vault file counts and tag frequencies for the dashboard."""
     try:
         from app.agents.cog_loop import extract_vault_tag_frequencies
@@ -166,6 +166,14 @@ async def get_vault_stats():
 
         obsidian = await get_obsidian()
         vault_path = obsidian.vault_path
+
+        if vault_path is None:
+            return {
+                "total_notes": 0,
+                "top_tags": [],
+                "vault_path": None,
+                "vault_exists": False,
+            }
 
         all_files = list(vault_path.rglob("*.md")) if vault_path.exists() else []
         tag_freqs = extract_vault_tag_frequencies(vault_path)
