@@ -9,7 +9,6 @@ This agent:
 4. Emits cog.evolution_suggested event for approval
 """
 
-import json
 import logging
 from pathlib import Path
 from typing import Any
@@ -103,6 +102,17 @@ class CogEvolutionAgent(BaseAgent):
                     details={"vault_path": vault_path, "status": "vault_not_found"},
                     success=False,
                     error="Vault path does not exist"
+                )
+                return
+
+            # Validate that path is a directory
+            if not vault.is_dir():
+                logger.error("vault_path_not_directory", extra={"vault_path": str(vault)})
+                await self.log_audit(
+                    action="cog_evolution",
+                    details={"vault_path": vault_path, "status": "vault_path_not_directory"},
+                    success=False,
+                    error="vault_path_not_directory"
                 )
                 return
 
@@ -201,26 +211,15 @@ Respond with JSON only, no extra text:
 Remember: all weights must sum to approximately 1.0. Return JSON only."""
 
         try:
-            response = await self.llm.call(
+            # Use complete_json() which handles parsing, markdown cleanup, and error handling
+            result = await self.llm.complete_json(
                 system=system_prompt,
                 user=user_prompt,
-                model=self.llm.default_model,
+                max_tokens=600,
+                task_class="scoring_optimization",
             )
-
-            # Parse JSON from response
-            try:
-                result = json.loads(response)
-                return result
-            except json.JSONDecodeError:
-                # Try to extract JSON from response
-                import re
-                json_match = re.search(r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}", response)
-                if json_match:
-                    result = json.loads(json_match.group())
-                    return result
-                logger.error(f"Failed to parse LLM response as JSON: {response}")
-                return None
+            return result
 
         except Exception as e:
-            logger.error(f"LLM call failed: {e}", exc_info=True)
+            logger.error(f"LLM analysis failed: {e}", exc_info=True)
             return None
