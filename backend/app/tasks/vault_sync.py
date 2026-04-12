@@ -6,7 +6,7 @@ import asyncio
 import logging
 from typing import Any, TypedDict
 
-from app.tasks.base import execute_managed_async_task
+from app.tasks.base import execute_managed_async_task, idempotent_task
 from app.tasks.celery_app import celery_app
 from app.tasks.queues import BACKGROUND_QUEUE
 
@@ -32,7 +32,8 @@ async def run_vault_sync() -> VaultSyncResult:
     return {"synced_count": synced, "failed_count": failed}
 
 
-@celery_app.task(name="tasks.vault_sync", queue=BACKGROUND_QUEUE)
+@idempotent_task("vault-sync:{date}")
+@celery_app.task(name="tasks.vault_sync.run", queue=BACKGROUND_QUEUE)
 def vault_sync_task() -> VaultSyncResult:
     """Celery task wrapper for vault sync."""
     return execute_managed_async_task(
