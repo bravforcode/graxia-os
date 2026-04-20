@@ -1,48 +1,164 @@
-name: Deploy
+name: Build & Deploy — Personal OS
 
 on:
   push:
     branches: [main]
-  workflow_dispatch:
+  workflow_dispatch:  # Manual trigger
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE: ${{ github.repository_owner }}/personal-os-backend
+  FRONTEND_IMAGE: ${{ github.repository_owner }}/personal-os-frontend
 
 jobs:
-  deploy:
+  # ─── Build Images ──────────────────────────────────────────────────────────
+  build:
+    name: Build & Push Docker Images
     runs-on: ubuntu-latest
-    environment: production
     permissions:
       contents: read
-      packages: read
-      id-token: write
-    env:
-      BACKEND_DIGEST: ${{ vars.BACKEND_DIGEST }}
-      FRONTEND_DIGEST: ${{ vars.FRONTEND_DIGEST }}
-      APP_URL: ${{ vars.PRODUCTION_APP_URL }}
-      COMMIT_SHA: ${{ github.sha }}
-      DEPLOY_OPERATOR: ${{ github.actor }}
+      packages: write
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Deploy ordered stack
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Login to GHCR
+        uses: docker/login-action@v3
         with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          envs: BACKEND_DIGEST,FRONTEND_DIGEST,APP_URL,COMMIT_SHA,DEPLOY_OPERATOR
-          script: |
-            set -euo pipefail
-            cd /opt/personal-os
-            bash deploy/scripts/deploy.sh
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Roll back on failed deploy
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Generate Image Tag
+        id: meta
+        run: |
+          TAG="${{ github.sha }}"
+          SHORT_TAG="${TAG:0:7}"
+          echo "tag=$SHORT_TAG" >> $GITHUB_OUTPUT
+
+      - name: Build & Push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          dockerfile: ./backend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:${{ steps.meta.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:latest
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+
+      - name: Build & Push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          dockerfile: ./frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:${{ steps.meta.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:latest
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+          build-args: |
+            VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
+            VITE_AGENT_STREAM_URL=${{ secrets.VITE_AGENT_STREAM_URL }}
+
+      - name: Save image tag
+        run: echo "${{ steps.meta.outputs.tag }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+
+  # ─── Deploy ────────────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to Production
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Download image tag
+        uses: actions/download-artifact@v4
+        with:
+          name: image-tag
+
+      - name: Set image tag
+        id: tag
+        run: echo "value=$(cat image_tag.txt)" >> $GITHUB_OUTPUT
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          port: ${{ secrets.PROD_SSH_PORT || 22 }}
+          timeout: 300s
+          script: |
+            set -e
+            cd /opt/personal-os
+            git pull origin main
+
+            # Pin the deployed image tag
+            sed -i "s|^IMAGE_TAG=.*|IMAGE_TAG=${{ steps.tag.outputs.value }}|" .env.production
+
+            # Auth GHCR
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+            # Run migrations before swapping containers
+            docker compose -f docker-compose.prod.yml --env-file .env.production \
+              run --rm --no-deps backend alembic upgrade head
+
+            # Pull new images and restart
+            docker compose -f docker-compose.prod.yml --env-file .env.production pull
+            docker compose -f docker-compose.prod.yml --env-file .env.production \
+              up -d --remove-orphans --no-build
+
+            # Wait for health
+            timeout 120 bash -c 'until docker compose -f docker-compose.prod.yml ps backend | grep -q "healthy"; do sleep 5; done'
+
+            # Clean old images
+            docker image prune -f --filter "until=24h"
+            echo "Deploy complete: ${{ steps.tag.outputs.value }}"
+
+      - name: Notify Success
+        if: success()
+        run: |
+          curl -s -X POST -H 'Content-type: application/json' \
+            --data '{
+              "username": "GitHub Actions",
+              "embeds": [{
+                "title": "Deploy Successful",
+                "description": "Personal OS production deploy complete",
+                "color": 65280,
+                "fields": [
+                  {"name": "Commit", "value": "${{ github.sha }}", "inline": true},
+                  {"name": "Actor", "value": "${{ github.actor }}", "inline": true}
+                ]
+              }]
+            }' \
+            "${{ secrets.DISCORD_WEBHOOK_URL }}"
+
+      - name: Notify Failure
         if: failure()
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          envs: APP_URL
-          script: |
-            set -euo pipefail
-            cd /opt/personal-os
-            ROLLBACK_INDEX=1 bash deploy/scripts/rollback.sh
+        run: |
+          curl -s -X POST -H 'Content-type: application/json' \
+            --data '{
+              "username": "GitHub Actions",
+              "embeds": [{
+                "title": "Deploy FAILED",
+                "description": "Personal OS production deploy failed",
+                "color": 16711680,
+                "fields": [
+                  {"name": "Run", "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}
+                ]
+              }]
+            }' \
+            "${{ secrets.DISCORD_WEBHOOK_URL }}"

@@ -14,6 +14,9 @@ build/
 .env.backup-*
 *.env.local
 secrets/
+# Exception: frontend build vars (VITE_*) are NOT secrets — safe to track
+# Real secrets live in root .env.production (which stays gitignored)
+!frontend/.env.production
 
 # Docker
 .docker/
@@ -27,6 +30,9 @@ secrets/
 .idea/
 *.swp
 *.swo
+.claude/
+.codex/
+settings.local.json
 
 # OS
 .DS_Store
@@ -36,9 +42,15 @@ Thumbs.db
 *.log
 logs/
 
-# Alembic
-alembic/versions/*.py
+# Alembic migration files MUST be version-controlled!
+# Removing them from .gitignore ensures schema migrations run on every deploy.
+# DO NOT re-add alembic/versions/*.py here.
+# Only .gitkeep is excluded (it's a placeholder for the empty directory).
 !alembic/versions/.gitkeep
 
 # Git Worktrees
 .worktrees/
+node_modules
+node_modules
+node_modules
+node_modules

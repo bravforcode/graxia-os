@@ -35,10 +35,14 @@ services:
   redis:
     image: redis:7-alpine
     container_name: personal_os_redis
+    # Security: require password even in dev to match prod behavior
+    command: >
+      sh -c 'redis-server --appendonly yes
+      --requirepass "$${REDIS_PASSWORD:-localdev_redis_password}"'
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-localdev_redis_password}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -52,6 +56,7 @@ services:
     environment:
       RUNNING_IN_DOCKER: "true"
       SCHEDULER_EMBEDDED: "false"
+      TELEGRAM_POLLING_ENABLED: "true"
     volumes:
       - ./backend:/app
       - ./identity:/identity:ro

@@ -39,7 +39,12 @@ services:
       - no-new-privileges:true
 
   frontend:
-    image: ghcr.io/example/personal-os-frontend@sha256:${FRONTEND_DIGEST}
+    # Image is built and pushed by CI (GitHub Actions). Use the tag set in .env.production.
+    # For local prod test: docker compose -f docker-compose.prod.yml build frontend
+    image: ${FRONTEND_IMAGE:-ghcr.io/your-username/personal-os-frontend}:${IMAGE_TAG:-latest}
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     restart: unless-stopped
     networks: [internal]
     read_only: true
@@ -50,7 +55,10 @@ services:
     user: "1001:1001"
 
   backend:
-    image: ghcr.io/example/personal-os-backend@sha256:${BACKEND_DIGEST}
+    image: ${BACKEND_IMAGE:-ghcr.io/your-username/personal-os-backend}:${IMAGE_TAG:-latest}
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     restart: unless-stopped
     networks: [internal]
     env_file:
@@ -77,7 +85,7 @@ services:
       start_period: 60s
 
   worker-critical:
-    image: ghcr.io/example/personal-os-backend@sha256:${BACKEND_DIGEST}
+    image: ${BACKEND_IMAGE:-ghcr.io/your-username/personal-os-backend}:${IMAGE_TAG:-latest}
     restart: unless-stopped
     networks: [internal]
     env_file:
@@ -86,7 +94,9 @@ services:
     volumes:
       - backup_data:/app/backups
       - ./secrets/backup_private_key.txt:/run/secrets/backup_private_key:ro
-      - /var/run/docker.sock:/var/run/docker.sock
+      # Docker socket removed: backup restore drills should use docker-socket-proxy or
+      # a separate restore job triggered via celery task with pre-pulled image.
+      # If docker socket is needed, use docker-socket-proxy instead of mounting directly.
     depends_on:
       redis:
         condition: service_healthy
@@ -94,11 +104,11 @@ services:
         condition: service_healthy
     security_opt:
       - no-new-privileges:true
-    # Restore drills need Docker socket access to start disposable Postgres containers.
-    user: "0:0"
+    # Fixed: was running as root (0:0). Removed docker socket dependency.
+    user: "1001:1001"
 
   worker-default:
-    image: ghcr.io/example/personal-os-backend@sha256:${BACKEND_DIGEST}
+    image: ${BACKEND_IMAGE:-ghcr.io/your-username/personal-os-backend}:${IMAGE_TAG:-latest}
     restart: unless-stopped
     networks: [internal]
     env_file:
@@ -116,7 +126,7 @@ services:
     user: "1001:1001"
 
   worker-background:
-    image: ghcr.io/example/personal-os-backend@sha256:${BACKEND_DIGEST}
+    image: ${BACKEND_IMAGE:-ghcr.io/your-username/personal-os-backend}:${IMAGE_TAG:-latest}
     restart: unless-stopped
     networks: [internal]
     env_file:
@@ -124,7 +134,6 @@ services:
     command: celery -A app.tasks.celery_app worker -Q background -c 2 -n background@%h
     volumes:
       - backup_data:/app/backups
-      - redis_data:/data/redis:ro
     depends_on:
       redis:
         condition: service_healthy
@@ -135,7 +144,7 @@ services:
     user: "1001:1001"
 
   beat:
-    image: ghcr.io/example/personal-os-backend@sha256:${BACKEND_DIGEST}
+    image: ${BACKEND_IMAGE:-ghcr.io/your-username/personal-os-backend}:${IMAGE_TAG:-latest}
     restart: unless-stopped
     networks: [internal]
     env_file:
@@ -214,8 +223,12 @@ services:
     restart: unless-stopped
     networks: [internal]
     environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: change-me
+      # Set GRAFANA_ADMIN_USER and GRAFANA_ADMIN_PASSWORD in .env.production
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD must be set in .env.production}
+      GF_SECURITY_DISABLE_GRAVATAR: "true"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./deploy/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
@@ -281,9 +294,12 @@ services:
       - ./deploy/monitoring/otel-collector.yml:/etc/otelcol/config.yaml:ro
 
   flower:
-    image: ghcr.io/example/personal-os-backend@sha256:${BACKEND_DIGEST}
+    image: ${BACKEND_IMAGE:-ghcr.io/your-username/personal-os-backend}:${IMAGE_TAG:-latest}
     restart: unless-stopped
     networks: [internal]
     env_file:
       - ${ENV_FILE:-.env.production}
-    command: celery -A app.tasks.celery_app flower --port=5555
+    command: celery -A app.tasks.celery_app flower --port=5555 --basic_auth=${FLOWER_BASIC_AUTH:-admin:changeme}
+    security_opt:
+      - no-new-privileges:true
+    user: "1001:1001"
