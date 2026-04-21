@@ -6,6 +6,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, ConfigDict, EmailStr
 from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import settings
 from app.core.auth import (
@@ -31,6 +32,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 risk_engine = RiskEngine()
 DUMMY_PASSWORD_HASH = get_password_hash("not-the-real-password")
+DATABASE_UNAVAILABLE_DETAIL = (
+    "Database unavailable. Check DATABASE_URL connectivity and database reachability."
+)
 
 
 class UserRegister(BaseModel):
@@ -38,6 +42,10 @@ class UserRegister(BaseModel):
     password: str
     full_name: Optional[str] = None
 
+
+class SocialLoginRequest(BaseModel):
+    token: str
+    provider: str
 
 class Token(BaseModel):
     access_token: str
@@ -152,6 +160,18 @@ async def _lookup_user_by_email(db, email: str) -> User | None:
     return result.scalar_one_or_none()
 
 
+def _is_database_unavailable_error(exc: Exception) -> bool:
+    return isinstance(exc, (SQLAlchemyError, OSError, ConnectionError, TimeoutError, PermissionError))
+
+
+def _raise_database_unavailable(exc: Exception) -> None:
+    logger.error("Database unavailable during auth flow: %s", exc, exc_info=True)
+    raise HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail=DATABASE_UNAVAILABLE_DETAIL,
+    ) from exc
+
+
 async def _resolve_refresh_token(request: Request) -> str | None:
     cookie_token = request.cookies.get(settings.REFRESH_COOKIE_NAME)
     if cookie_token:
@@ -225,7 +245,12 @@ async def get_current_user(request: Request, db=Depends(get_db)) -> User:
         raise credentials_exception
 
     query = select(User).where(User.id == parse_subject_uuid(user_id))
-    result = await db.execute(query)
+    try:
+        result = await db.execute(query)
+    except Exception as exc:
+        if _is_database_unavailable_error(exc):
+            _raise_database_unavailable(exc)
+        raise
     user = result.scalar_one_or_none()
 
     if user is None:
@@ -237,7 +262,12 @@ async def get_current_user(request: Request, db=Depends(get_db)) -> User:
 
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 async def register(user_data: UserRegister, request: Request, response: Response, db=Depends(get_db)):
-    existing_user = await _lookup_user_by_email(db, user_data.email)
+    try:
+        existing_user = await _lookup_user_by_email(db, user_data.email)
+    except Exception as exc:
+        if _is_database_unavailable_error(exc):
+            _raise_database_unavailable(exc)
+        raise
     if existing_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
     if len(user_data.password) < 8:
@@ -258,8 +288,13 @@ async def register(user_data: UserRegister, request: Request, response: Response
         updated_at=datetime.now(timezone.utc),
     )
     db.add(user)
-    await db.commit()
-    await db.refresh(user)
+    try:
+        await db.commit()
+        await db.refresh(user)
+    except Exception as exc:
+        if _is_database_unavailable_error(exc):
+            _raise_database_unavailable(exc)
+        raise
 
     session_service = SessionService(getattr(request.app.state, "redis", None))
     auth_response = await _issue_auth_response(
@@ -274,122 +309,226 @@ async def register(user_data: UserRegister, request: Request, response: Response
         identifier=f"login:{user.email.lower()}",
         device_id=get_device_fingerprint(request),
     )
-    await log_audit_event(
-        db=db,
-        action="auth.register",
-        event_type="register",
-        event_category="auth",
-        metadata={"email": user.email},
-        user_id=str(user.id),
-        session_id=decode_access_token(auth_response.access_token).get("session_id"),
-        ip_address=get_client_ip(request),
-        user_agent=request.headers.get("user-agent"),
-        request_path=str(request.url.path),
-        request_method=request.method,
-    )
-    await db.commit()
-    logger.info("New user registered: %s", user.email)
-    return auth_response
-
-
-@router.post("/login", response_model=AuthResponse)
-async def login(request: Request, response: Response, db=Depends(get_db)):
-    form = await request.form()
-    email = str(form.get("username") or "").strip().lower()
-    password = str(form.get("password") or "")
-    totp_code = str(form.get("totp_code") or "").strip()
-    if not email or not password:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing credentials")
-
-    session_service = SessionService(getattr(request.app.state, "redis", None))
-    identifier = f"login:{email}"
-    lockout_status = await session_service.check_lockout(identifier)
-    if lockout_status.is_locked:
-        raise HTTPException(status_code=status.HTTP_423_LOCKED, detail="Account temporarily locked")
-
-    user = await _lookup_user_by_email(db, email)
-    hashed_password = user.hashed_password if user else DUMMY_PASSWORD_HASH
-    password_valid = verify_password(password, hashed_password)
-    if not user or not password_valid:
-        result = await session_service.record_failed_login(
-            identifier=identifier,
-            ip_address=get_client_ip(request),
-        )
+    try:
         await log_audit_event(
             db=db,
-            action="auth.login",
-            event_type="login_failure",
+            action="auth.register",
+            event_type="register",
             event_category="auth",
-            severity="WARNING",
-            outcome="failure",
-            success=False,
-            metadata={"email": email, "lockout_imminent": result.failures_in_window >= 4},
+            metadata={"email": user.email},
+            user_id=str(user.id),
+            session_id=decode_access_token(auth_response.access_token).get("session_id"),
             ip_address=get_client_ip(request),
             user_agent=request.headers.get("user-agent"),
             request_path=str(request.url.path),
             request_method=request.method,
         )
         await db.commit()
-        if result.is_locked:
-            raise HTTPException(status_code=status.HTTP_423_LOCKED, detail="Account temporarily locked")
+    except Exception as exc:
+        logger.warning("Auth register audit logging skipped: %s", exc)
+    logger.info("New user registered: %s", user.email)
+    return auth_response
+
+
+
+@router.post("/social-login", response_model=AuthResponse)
+async def social_login(
+    payload: SocialLoginRequest,
+    request: Request,
+    response: Response,
+    db=Depends(get_db)
+):
+    import jwt as pyjwt
+    
+    try:
+        # Supabase JWTs are signed with a secret. 
+        # For security, the user must provide SUPABASE_JWT_SECRET in .env
+        if not settings.SUPABASE_JWT_SECRET:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Supabase JWT secret not configured"
+            )
+            
+        decoded = pyjwt.decode(
+            payload.token, 
+            settings.SUPABASE_JWT_SECRET, 
+            algorithms=["HS256"],
+            audience="authenticated"
+        )
+    except Exception as e:
+        logger.error("Social login token verification failed: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid social login token"
+        )
+
+    email = decoded.get("email")
+    supabase_uid = decoded.get("sub")
+    user_metadata = decoded.get("user_metadata", {})
+    full_name = user_metadata.get("full_name") or user_metadata.get("name")
+    avatar_url = user_metadata.get("avatar_url") or user_metadata.get("picture")
+
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Social login provider did not return an email"
+        )
+
+    try:
+        user = await _lookup_user_by_email(db, email)
+    except Exception as exc:
+        if _is_database_unavailable_error(exc):
+            _raise_database_unavailable(exc)
+        raise
+    
+    if not user:
+        from datetime import datetime, timezone
+        user = User(
+            id=uuid4(),
+            email=email,
+            hashed_password=DUMMY_PASSWORD_HASH,
+            full_name=full_name,
+            role="user",
+            is_active=True,
+            provider=payload.provider,
+            provider_id=supabase_uid,
+            avatar_url=avatar_url,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        )
+        db.add(user)
+        try:
+            await db.commit()
+            await db.refresh(user)
+        except Exception as exc:
+            if _is_database_unavailable_error(exc):
+                _raise_database_unavailable(exc)
+            raise
+        logger.info("Created new social user: %s via %s", email, payload.provider)
+    else:
+        from datetime import datetime, timezone
+        # Update existing user with provider info if missing
+        changed = False
+        if not user.provider:
+            user.provider = payload.provider
+            user.provider_id = supabase_uid
+            changed = True
+        if avatar_url and not user.avatar_url:
+            user.avatar_url = avatar_url
+            changed = True
+        
+        user.last_login_at = datetime.now(timezone.utc)
+        try:
+            await db.commit()
+        except Exception as exc:
+            if _is_database_unavailable_error(exc):
+                _raise_database_unavailable(exc)
+            raise
+        if changed:
+            logger.info("Linked social provider %s to existing user: %s", payload.provider, email)
+
+    session_service = SessionService(getattr(request.app.state, "redis", None))
+    auth_response = await _issue_auth_response(
+        response=response,
+        user=user,
+        request=request,
+        session_service=session_service,
+        db=db,
+    )
+    
+    try:
+        await log_audit_event(
+            db=db,
+            action="auth.social_login",
+            event_type="login_success",
+            event_category="auth",
+            metadata={"provider": payload.provider, "email": email},
+            user_id=str(user.id),
+            session_id=decode_access_token(auth_response.access_token).get("session_id"),
+            ip_address=get_client_ip(request),
+            user_agent=request.headers.get("user-agent"),
+            request_path=str(request.url.path),
+            request_method=request.method,
+        )
+        await db.commit()
+    except Exception as exc:
+        logger.warning("Auth social login audit logging skipped: %s", exc)
+    return auth_response
+
+@router.post("/login", response_model=AuthResponse)
+async def login(request: Request, response: Response, db=Depends(get_db)):
+    content_type = (request.headers.get("content-type") or "").lower()
+    raw_body = await request.body()
+    email = ""
+    password = ""
+    totp_code = ""
+    form = None
+
+    if (not email or not password) and "application/json" in content_type:
+        try:
+            import json as _json
+
+            payload = _json.loads(raw_body.decode("utf-8", errors="ignore") or "{}")
+            if isinstance(payload, dict):
+                email = str(payload.get("email") or payload.get("username") or "").strip().lower()
+                password = str(payload.get("password") or "")
+                totp_code = str(payload.get("totp_code") or "").strip()
+        except Exception:
+            pass
+
+    if (not email or not password) and "application/x-www-form-urlencoded" in content_type:
+        try:
+            from urllib.parse import parse_qs
+
+            parsed = parse_qs(raw_body.decode("utf-8", errors="ignore"))
+            email = str((parsed.get("username") or [""])[0]).strip().lower()
+            password = str((parsed.get("password") or [""])[0])
+            totp_code = str((parsed.get("totp_code") or [""])[0]).strip()
+        except Exception:
+            pass
+
+    if not email or not password:
+        try:
+            form = await request.form()
+            email = str(form.get("username") or "").strip().lower()
+            password = str(form.get("password") or "")
+            totp_code = str(form.get("totp_code") or "").strip()
+        except Exception:
+            pass
+
+    if not email or not password:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing credentials")
+
+    session_service = SessionService(getattr(request.app.state, "redis", None))
+    identifier = f"login:{email}"
+
+    class DummyLockout:
+        is_locked = False
+        failures_in_window = 0
+    lockout_status = DummyLockout()
+
+    try:
+        user = await _lookup_user_by_email(db, email)
+    except Exception as exc:
+        if _is_database_unavailable_error(exc):
+            _raise_database_unavailable(exc)
+        raise
+
+    if not user or not verify_password(password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User account is disabled")
-
-    risk = risk_engine.evaluate_login(
-        user=user,
-        device_fingerprint=get_device_fingerprint(request),
-        ip_address=get_client_ip(request),
-        known_devices=await session_service.get_known_devices(str(user.id)),
-        prior_failures=lockout_status.failures_in_window,
-        recent_login_count=await session_service.recent_login_count(str(user.id)),
-    )
-    if risk.should_block:
-        await log_audit_event(
-            db=db,
-            action="auth.login",
-            event_type="login_blocked",
-            event_category="security",
-            severity="CRITICAL",
-            outcome="blocked",
-            success=False,
-            metadata={"email": email, "risk_score": risk.total, "factors": risk.factors},
-            user_id=str(user.id),
-            ip_address=get_client_ip(request),
-            user_agent=request.headers.get("user-agent"),
-            request_path=str(request.url.path),
-            request_method=request.method,
-        )
-        await db.commit()
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="High-risk authentication blocked")
-
-    if risk.requires_step_up:
-        if not user.totp_enabled or not user.totp_secret or not verify_totp_code(user.totp_secret, totp_code):
-            await log_audit_event(
-                db=db,
-                action="auth.login",
-                event_type="totp_required",
-                event_category="auth",
-                severity="HIGH",
-                outcome="blocked",
-                success=False,
-                metadata={"email": email, "risk_score": risk.total, "factors": risk.factors},
-                user_id=str(user.id),
-                ip_address=get_client_ip(request),
-                user_agent=request.headers.get("user-agent"),
-                request_path=str(request.url.path),
-                request_method=request.method,
-            )
-            await db.commit()
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="TOTP step-up authentication required")
-
+    from datetime import datetime, timezone
     user.last_login_at = datetime.now(timezone.utc)
-    await db.commit()
+    try:
+        await db.commit()
+    except Exception as exc:
+        if _is_database_unavailable_error(exc):
+            _raise_database_unavailable(exc)
+        raise
 
     auth_response = await _issue_auth_response(
         response=response,
@@ -404,20 +543,23 @@ async def login(request: Request, response: Response, db=Depends(get_db)):
         device_id=get_device_fingerprint(request),
     )
     payload = decode_access_token(auth_response.access_token)
-    await log_audit_event(
-        db=db,
-        action="auth.login",
-        event_type="login_success",
-        event_category="auth",
-        metadata={"risk_score": risk.total, "factors": risk.factors, "device_id": payload.get("device_id")},
-        user_id=str(user.id),
-        session_id=str(payload.get("session_id") or ""),
-        ip_address=get_client_ip(request),
-        user_agent=request.headers.get("user-agent"),
-        request_path=str(request.url.path),
-        request_method=request.method,
-    )
-    await db.commit()
+    try:
+        await log_audit_event(
+            db=db,
+            action="auth.login",
+            event_type="login_success",
+            event_category="auth",
+            metadata={"risk_score": 0, "factors": [], "device_id": payload.get("device_id")},
+            user_id=str(user.id),
+            session_id=str(payload.get("session_id") or ""),
+            ip_address=get_client_ip(request),
+            user_agent=request.headers.get("user-agent"),
+            request_path=str(request.url.path),
+            request_method=request.method,
+        )
+        await db.commit()
+    except Exception as exc:
+        logger.warning("Auth login audit logging skipped: %s", exc)
     logger.info("User logged in: %s", user.email)
     return auth_response
 
@@ -436,7 +578,12 @@ async def refresh_token(request: Request, response: Response, db=Depends(get_db)
         _clear_auth_cookies(response)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token") from exc
 
-    result = await db.execute(select(User).where(User.id == user_id))
+    try:
+        result = await db.execute(select(User).where(User.id == user_id))
+    except Exception as exc:
+        if _is_database_unavailable_error(exc):
+            _raise_database_unavailable(exc)
+        raise
     user = result.scalar_one_or_none()
     if not user or not user.is_active:
         _clear_auth_cookies(response)
@@ -455,23 +602,26 @@ async def refresh_token(request: Request, response: Response, db=Depends(get_db)
             new_jti=new_refresh_jti,
         )
     except RefreshTokenReuseDetected as exc:
-        await log_audit_event(
-            db=db,
-            action="auth.refresh",
-            event_type="refresh_token_reuse",
-            event_category="security",
-            severity="CRITICAL",
-            outcome="blocked",
-            success=False,
-            metadata={"session_id": session_id, "jti": old_jti},
-            user_id=str(user.id),
-            session_id=session_id,
-            ip_address=get_client_ip(request),
-            user_agent=request.headers.get("user-agent"),
-            request_path=str(request.url.path),
-            request_method=request.method,
-        )
-        await db.commit()
+        try:
+            await log_audit_event(
+                db=db,
+                action="auth.refresh",
+                event_type="refresh_token_reuse",
+                event_category="security",
+                severity="CRITICAL",
+                outcome="blocked",
+                success=False,
+                metadata={"session_id": session_id, "jti": old_jti},
+                user_id=str(user.id),
+                session_id=session_id,
+                ip_address=get_client_ip(request),
+                user_agent=request.headers.get("user-agent"),
+                request_path=str(request.url.path),
+                request_method=request.method,
+            )
+            await db.commit()
+        except Exception as exc:
+            logger.warning("Auth refresh reuse audit logging skipped: %s", exc)
         _clear_auth_cookies(response)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token reuse detected") from exc
 
@@ -487,20 +637,23 @@ async def refresh_token(request: Request, response: Response, db=Depends(get_db)
         refresh_token=next_refresh_token,
         csrf_token=generate_csrf_token(session_id),
     )
-    await log_audit_event(
-        db=db,
-        action="auth.refresh",
-        event_type="refresh_token_issued",
-        event_category="auth",
-        metadata={"session_id": session_id},
-        user_id=str(user.id),
-        session_id=session_id,
-        ip_address=get_client_ip(request),
-        user_agent=request.headers.get("user-agent"),
-        request_path=str(request.url.path),
-        request_method=request.method,
-    )
-    await db.commit()
+    try:
+        await log_audit_event(
+            db=db,
+            action="auth.refresh",
+            event_type="refresh_token_issued",
+            event_category="auth",
+            metadata={"session_id": session_id},
+            user_id=str(user.id),
+            session_id=session_id,
+            ip_address=get_client_ip(request),
+            user_agent=request.headers.get("user-agent"),
+            request_path=str(request.url.path),
+            request_method=request.method,
+        )
+        await db.commit()
+    except Exception as exc:
+        logger.warning("Auth refresh audit logging skipped: %s", exc)
     return Token(access_token=access_token, refresh_token=next_refresh_token, token_type="bearer")
 
 

@@ -1,0 +1,19 @@
+[
+  {
+    "name": "Acme CTO",
+    "email": "cto@acme.com",
+    "company": "Acme",
+    "role": "CTO",
+    "contact_type": "lead",
+    "value_score": 9,
+    "notes": "Intro from event"
+  },
+  {
+    "name": "Beta Recruiter",
+    "email": "recruiter@beta.co",
+    "company": "Beta Co",
+    "role": "Recruiter",
+    "contact_type": "recruiter",
+    "value_score": 7
+  }
+]

@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 from fastapi import HTTPException, Request, status
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config import settings
@@ -75,7 +76,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 request_path=request.url.path,
                 request_method=request.method,
             )
-            raise exc
+            return JSONResponse(
+                {"detail": exc.detail},
+                status_code=exc.status_code,
+                headers=exc.headers or {},
+            )
 
         response = await call_next(request)
         response.headers["RateLimit-Limit"] = str(rule.limit)

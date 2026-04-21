@@ -1,7 +1,12 @@
 __pycache__/
 .pytest_cache/
+.tmp_pytest/
 .mypy_cache/
 .ruff_cache/
+.venv/
+.coverage
+C*/
+tmp*/
 *.pyc
 *.pyo
 *.db
@@ -9,8 +14,14 @@ __pycache__/
 backups/
 logs/
 reports/
+test-results/
 tests/
 tests_legacy/
 .env
 *.env.local
 secrets/
+staging-token.json
+celerybeat-schedule*
+openapi.json
+error.log
+uvicorn-local*.log

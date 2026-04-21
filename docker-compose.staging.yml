@@ -1,0 +1,212 @@
+# Staging Environment for Gracia OS
+# Enterprise-grade testing environment with monitoring
+version: '3.8'
+
+services:
+  # Backend API
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gracia-staging-api
+    restart: unless-stopped
+    environment:
+      - ENVIRONMENT=staging
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/gracia_staging
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      # OpenClaw & Gemini (staging keys)
+      - OPENCLAW_API_KEY=${STAGING_OPENCLAW_API_KEY}
+      - GEMINI_API_KEY=${STAGING_GEMINI_API_KEY}
+      # Telegram (staging bot)
+      - TELEGRAM_BOT_TOKEN=${STAGING_TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${STAGING_TELEGRAM_CHAT_ID}
+    ports:
+      - "8001:8000"  # Staging on 8001
+    depends_on:
+      - redis
+      - db
+    volumes:
+      - ./backend:/app
+      - staging_logs:/app/logs
+    networks:
+      - gracia-staging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Celery Worker
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gracia-staging-worker
+    restart: unless-stopped
+    command: celery -A app.tasks.celery_app worker --loglevel=info --concurrency=2
+    environment:
+      - ENVIRONMENT=staging
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/gracia_staging
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - OPENCLAW_API_KEY=${STAGING_OPENCLAW_API_KEY}
+      - GEMINI_API_KEY=${STAGING_GEMINI_API_KEY}
+      - TELEGRAM_BOT_TOKEN=${STAGING_TELEGRAM_BOT_TOKEN}
+    depends_on:
+      - redis
+      - db
+      - api
+    volumes:
+      - ./backend:/app
+      - staging_logs:/app/logs
+    networks:
+      - gracia-staging
+
+  # Celery Beat (Scheduler)
+  beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gracia-staging-beat
+    restart: unless-stopped
+    command: celery -A app.tasks.celery_app beat --loglevel=info
+    environment:
+      - ENVIRONMENT=staging
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/gracia_staging
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+    depends_on:
+      - redis
+      - db
+    volumes:
+      - ./backend:/app
+    networks:
+      - gracia-staging
+
+  # Redis with persistence
+  redis:
+    image: redis:7-alpine
+    container_name: gracia-staging-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6380:6379"  # Staging Redis on 6380
+    volumes:
+      - staging_redis_data:/data
+    networks:
+      - gracia-staging
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: gracia-staging-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=gracia_staging
+    ports:
+      - "5433:5432"  # Staging DB on 5433
+    volumes:
+      - staging_db_data:/var/lib/postgresql/data
+    networks:
+      - gracia-staging
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Chaos Test Runner
+  chaos:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gracia-staging-chaos
+    profiles: ["chaos"]  # Only run when explicitly requested
+    command: python -m pytest tests/chaos/ -v --tb=short
+    environment:
+      - ENVIRONMENT=staging
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/gracia_staging
+      - CHAOS_MODE=true
+    depends_on:
+      - redis
+      - db
+      - api
+    volumes:
+      - ./backend:/app
+      - ./chaos-results:/app/chaos-results
+    networks:
+      - gracia-staging
+
+  # Monitoring - Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: gracia-staging-prometheus
+    restart: unless-stopped
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./deploy/monitoring/prometheus/staging.yml:/etc/prometheus/prometheus.yml
+      - staging_prometheus_data:/prometheus
+    networks:
+      - gracia-staging
+
+  # Monitoring - Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: gracia-staging-grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - staging_grafana_data:/var/lib/grafana
+      - ./deploy/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./deploy/monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - gracia-staging
+
+  # Log aggregation with Loki
+  loki:
+    image: grafana/loki:latest
+    container_name: gracia-staging-loki
+    restart: unless-stopped
+    ports:
+      - "3101:3100"
+    volumes:
+      - ./deploy/monitoring/loki/staging-config.yml:/etc/loki/local-config.yaml
+      - staging_loki_data:/loki
+    networks:
+      - gracia-staging
+
+volumes:
+  staging_db_data:
+  staging_redis_data:
+  staging_logs:
+  staging_prometheus_data:
+  staging_grafana_data:
+  staging_loki_data:
+
+networks:
+  gracia-staging:
+    driver: bridge

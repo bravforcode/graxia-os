@@ -51,15 +51,18 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
     
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """End transaction."""
-        if exc_type is not None:
-            await self.rollback()
-        else:
-            try:
-                await self.commit()
-            except Exception as e:
-                logger.error(f"Commit failed: {e}")
+        try:
+            if exc_type is not None:
                 await self.rollback()
-                raise
+            else:
+                await self.commit()
+        except Exception as e:
+            logger.error(f"Commit failed: {e}")
+            try:
+                await self.rollback()
+            except Exception:
+                pass
+            raise
         finally:
             if self.session:
                 await self.session.close()

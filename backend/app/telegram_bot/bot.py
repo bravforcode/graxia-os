@@ -287,6 +287,17 @@ async def briefing_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Failed to generate briefing")
 
 
+async def outreach_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        from app.agents.outreach_agent import outreach_agent
+
+        result = await outreach_agent.run()
+        await update.message.reply_text(str(result))
+    except Exception as e:
+        logger.error(f"Outreach command failed: {e}")
+        await update.message.reply_text("❌ Failed to run outreach")
+
+
 async def approval_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle approval button callbacks."""
     query = update.callback_query
@@ -323,11 +334,11 @@ async def approval_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if action == "approve":
                 await _execute_approved_action(approval)
                 await query.edit_message_text(
-                    f"✅ Approved and executed!\n\n{approval.action_description}"
+                    f"✅ Approved and executed!\n\n{approval.title}"
                 )
             else:
                 await query.edit_message_text(
-                    f"❌ Rejected\n\n{approval.action_description}"
+                    f"❌ Rejected\n\n{approval.title}"
                 )
     except Exception as e:
         logger.error(f"Approval callback failed: {e}")
@@ -338,14 +349,16 @@ async def _execute_approved_action(approval: ApprovalRequest):
     """Execute approved action."""
     try:
         action_type = approval.action_type
-        action_data = approval.action_data or {}
+        action_data = approval.details or {}
         
         if action_type == "send_email":
             from app.core.google_workspace import google_workspace
             await google_workspace.send_message(
-                to=action_data.get("to"),
-                subject=action_data.get("subject"),
-                body=action_data.get("body")
+                to=str(action_data.get("to") or ""),
+                subject=str(action_data.get("subject") or ""),
+                body=str(action_data.get("body_html") or action_data.get("body") or ""),
+                is_html=bool(action_data.get("is_html") or action_data.get("body_html")),
+                extra_headers=action_data.get("headers") if isinstance(action_data.get("headers"), dict) else None,
             )
         elif action_type == "linkedin_outreach":
             # Log outreach (actual sending would be manual)
@@ -471,6 +484,7 @@ def setup_bot() -> Application:
     _app.add_handler(CommandHandler("tasks", tasks_command))
     _app.add_handler(CommandHandler("costs", costs_command))
     _app.add_handler(CommandHandler("briefing", briefing_command))
+    _app.add_handler(CommandHandler("outreach", outreach_command))
     
     # Add callback handler for approvals
     _app.add_handler(CallbackQueryHandler(approval_callback))
@@ -500,11 +514,25 @@ async def start_polling():
 
 async def run_polling_forever():
     """Run Telegram polling until the process receives cancellation."""
-    await start_polling()
-    try:
-        await asyncio.Event().wait()
-    finally:
-        await stop_polling()
+    while True:
+        try:
+            await start_polling()
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            msg = str(exc)
+            if "Conflict" in msg or "409" in msg:
+                logger.warning("Telegram polling conflict detected; retrying: %s", msg)
+                await asyncio.sleep(60)
+                continue
+            logger.exception("Telegram polling crashed; restarting")
+            await asyncio.sleep(10)
+        finally:
+            try:
+                await stop_polling()
+            except Exception:
+                pass
 
 
 async def stop_polling():

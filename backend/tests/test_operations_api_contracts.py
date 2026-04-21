@@ -10,6 +10,11 @@ import pytest_asyncio
 
 from app.core.event_bus import event_bus
 from app.models.audit import AuditLog
+from app.models.assistant_task import AssistantTask
+from app.models.automation_run import AutomationRun
+from app.models.contact import Contact
+from app.models.network_interaction import NetworkInteraction
+from app.models.opportunity import Opportunity
 from app.models.scraper_health import ScraperHealth
 
 
@@ -323,3 +328,84 @@ async def test_system_api_reports_health_costs_weights_audit_strategy_and_trigge
     assert len(created_runs) == 2
     assert created_runs[0][1]["task_type"] == "daily_scan"
     assert created_runs[1][1]["task_type"] == "morning_brief"
+
+
+@pytest.mark.asyncio
+async def test_system_stats_are_derived_from_real_tables(
+    async_client, db_session, operations_session_factory
+):
+    now = datetime.now(timezone.utc)
+    contact = Contact(
+        name="Maya Chen",
+        contact_type="lead",
+        email="maya@example.com",
+        value_score=8,
+        created_at=now,
+        updated_at=now,
+    )
+    db_session.add(contact)
+    await db_session.flush()
+    db_session.add_all(
+        [
+            Opportunity(
+                type="freelance",
+                title="Workflow automation build",
+                status="found",
+                source_hash="stats-opportunity",
+                found_at=now,
+                updated_at=now,
+            ),
+            AutomationRun(
+                name="Daily scan",
+                task_type="daily_scan",
+                trigger_source="test",
+                status="completed",
+                completed_at=now,
+                updated_at=now,
+            ),
+            AutomationRun(
+                name="Brief",
+                task_type="morning_brief",
+                trigger_source="test",
+                status="failed",
+                error_message="timeout",
+                completed_at=now,
+                updated_at=now,
+            ),
+            AssistantTask(
+                title="Send proposal",
+                status="completed",
+                priority=8,
+                assigned_to="user",
+                created_at=now,
+                updated_at=now,
+            ),
+            NetworkInteraction(
+                contact_id=contact.id,
+                interaction_type="email_outreach_initial",
+                interaction_at=now,
+            ),
+            AuditLog(
+                action="llm.call",
+                event_type="ai",
+                event_category="llm",
+                ai_model_used="test-model",
+                success=True,
+                created_at=now,
+            ),
+        ]
+    )
+    await db_session.commit()
+
+    response = await async_client.get("/api/v1/system/stats")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["active_leads"] == 1
+    assert payload["opportunities_found"] == 1
+    assert payload["leads_scanned"] == 2
+    assert payload["ai_actions"] == 3
+    assert payload["completed_24h"] == 1
+    assert payload["failed_24h"] == 1
+    assert payload["outreach_sent_24h"] == 1
+    assert payload["history"][-1]["success"] == 1
+    assert payload["history"][-1]["failed"] == 1

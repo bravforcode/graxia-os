@@ -23,9 +23,9 @@ BEAT_SCHEDULE = {
         "schedule": timedelta(minutes=15),
         "options": {"queue": CRITICAL_QUEUE},
     },
-    "daily-scan": {
+    "frequent-scan": {
         "task": "tasks.daily_scan.run",
-        "schedule": crontab(hour=7, minute=0),
+        "schedule": timedelta(minutes=15),
         "options": {"queue": DEFAULT_QUEUE},
     },
     "morning-briefing": {
@@ -38,14 +38,34 @@ BEAT_SCHEDULE = {
         "schedule": crontab(hour=9, minute=0),
         "options": {"queue": DEFAULT_QUEUE},
     },
-    "job-discovery": {
+    "job-discovery-frequent": {
         "task": "tasks.job_discovery.run",
-        "schedule": crontab(hour="10,18", minute=0),
+        "schedule": timedelta(minutes=20),
         "options": {"queue": DEFAULT_QUEUE},
     },
     "email-processing": {
         "task": "tasks.email_processing.run",
         "schedule": timedelta(minutes=30),
+        "options": {"queue": BACKGROUND_QUEUE},
+    },
+    "autopilot-cycle": {
+        "task": "tasks.maintenance.autopilot_cycle",
+        "schedule": timedelta(minutes=30),
+        "options": {"queue": DEFAULT_QUEUE},
+    },
+    "outreach-email": {
+        "task": "tasks.outreach.email",
+        "schedule": timedelta(hours=1),
+        "options": {"queue": DEFAULT_QUEUE},
+    },
+    "leadgen-frequent": {
+        "task": "tasks.leadgen.run",
+        "schedule": timedelta(minutes=30),
+        "options": {"queue": DEFAULT_QUEUE},
+    },
+    "crm-sync": {
+        "task": "tasks.crm.sync",
+        "schedule": timedelta(hours=12),
         "options": {"queue": BACKGROUND_QUEUE},
     },
     "weekly-review": {

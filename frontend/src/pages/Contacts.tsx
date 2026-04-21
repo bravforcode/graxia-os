@@ -13,11 +13,11 @@ import { formatRelative } from '@/lib/utils'
 export default function Contacts() {
   const { data: contacts, isLoading, refetch } = useQuery({
     queryKey: ['contacts'],
-    queryFn: api.getContacts,
+    queryFn: () => api.getContacts(),
   })
 
   const items = contacts?.items ?? []
-  const highStrengthCount = items.filter((contact) => (contact.relationship_strength ?? 0) >= 7).length
+  const highStrengthCount = items.filter((contact) => (contact.relationship_strength ?? 0) >= 4).length
   const companyCount = new Set(items.map((contact) => contact.company).filter(Boolean)).size
 
   return (
@@ -115,7 +115,7 @@ function ContactCard({ contact }: { contact: Contact }) {
         <div className="mt-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-primary)]/60 px-4 py-3">
           <div className="flex items-center justify-between text-sm">
             <span className="text-[var(--color-text-secondary)]">Relationship strength</span>
-            <span className="font-semibold text-[var(--color-text-primary)]">{contact.relationship_strength}/10</span>
+            <span className="font-semibold text-[var(--color-text-primary)]">{contact.relationship_strength}/5</span>
           </div>
         </div>
       ) : null}

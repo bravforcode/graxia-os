@@ -14,6 +14,12 @@ from app.telegram_bot.bot import send_message
 from app.telegram_bot.keyboards import approval_keyboard
 
 
+class ApprovalAlreadyProcessedError(RuntimeError):
+    def __init__(self, status: str):
+        super().__init__("Approval already processed")
+        self.status = status
+
+
 async def create_run(
     name: str,
     task_type: str,
@@ -135,7 +141,7 @@ async def resolve_approval_request(
         if approval is None:
             return None
         if approval.status != "pending":
-            return approval
+            raise ApprovalAlreadyProcessedError(approval.status)
 
         approval.status = "approved" if decision == "approved" else "rejected"
         approval.resolved_at = datetime.now(UTC)

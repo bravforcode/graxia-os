@@ -18,6 +18,9 @@ celery_app = Celery(
         "app.tasks.maintenance_tasks",
         "app.tasks.backup_tasks",
         "app.tasks.vault_sync",
+        "app.tasks.outreach_tasks",
+        "app.tasks.leadgen_tasks",
+        "app.tasks.crm_sync_tasks",
     ],
 )
 

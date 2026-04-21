@@ -28,7 +28,18 @@ def main() -> int:
         return 1
 
     process = subprocess.Popen(
-        [sys.executable, "-m", "celery", "-A", "app.tasks.celery_app", "beat"],
+        [
+            sys.executable,
+            "-m",
+            "celery",
+            "-A",
+            "app.tasks.celery_app",
+            "beat",
+            "--schedule",
+            "/tmp/celerybeat-schedule",
+            "--loglevel",
+            "INFO",
+        ],
     )
 
     stop = threading.Event()

@@ -4,18 +4,20 @@ import { Loader2 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline'
 type ButtonSize = 'sm' | 'md' | 'lg'
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
     'bg-[var(--color-accent-cyan)] text-slate-950 shadow-[0_0_30px_rgba(0,212,255,0.18)] hover:bg-[var(--color-accent-lime)]',
   secondary:
-    'bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] border border-[var(--color-border)] hover:border-[var(--color-accent-blue)]',
+    'bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] border border-[var(--color-border)] hover:border-[var(--color-accent-blue)]',   
   ghost:
     'bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)]',
   danger:
     'bg-[var(--color-accent-red)] text-white hover:bg-[#bf2d2a]',
+  outline:
+    'bg-transparent border border-[var(--color-border)] text-[var(--color-text-primary)] hover:bg-[rgba(255,255,255,0.05)]',
 }
 
 const sizeClasses: Record<ButtonSize, string> = {

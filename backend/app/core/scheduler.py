@@ -54,12 +54,22 @@ class PersonalOSScheduler:
     def _to_trigger(schedule):
         if isinstance(schedule, timedelta_cls):
             return IntervalTrigger(seconds=int(schedule.total_seconds()), timezone=BANGKOK)
+        
+        # Map weekday names to 3-letter abbreviations for APScheduler
+        day_of_week = str(schedule._orig_day_of_week)
+        day_map = {
+            "monday": "mon", "tuesday": "tue", "wednesday": "wed",
+            "thursday": "thu", "friday": "fri", "saturday": "sat", "sunday": "sun"
+        }
+        if day_of_week.lower() in day_map:
+            day_of_week = day_map[day_of_week.lower()]
+
         return CronTrigger(
             minute=str(schedule._orig_minute),
             hour=str(schedule._orig_hour),
             day=str(schedule._orig_day_of_month),
             month=str(schedule._orig_month_of_year),
-            day_of_week=str(schedule._orig_day_of_week),
+            day_of_week=day_of_week,
             timezone=BANGKOK,
         )
 

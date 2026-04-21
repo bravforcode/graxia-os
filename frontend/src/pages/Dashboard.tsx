@@ -3,12 +3,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useOutletContext } from 'react-router-dom'
 import {
   Activity,
+  Bot,
   CalendarClock,
   FileText,
   RefreshCw,
   Shield,
   Sparkles,
   Target,
+  Users,
   Wallet,
   Zap,
 } from 'lucide-react'
@@ -23,7 +25,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Panel } from '@/components/ui/Panel'
 import { StatusPill } from '@/components/ui/StatusPill'
 import type { AppShellContext } from '@/components/Layout'
-import { api, type Draft, type Opportunity } from '@/lib/api'
+import { api, type Draft, type Opportunity, type SystemStatsHistoryItem } from '@/lib/api'
 import { formatCurrency, formatRelative, getScoreBadgeClass } from '@/lib/utils'
 
 type NoticeTone = 'success' | 'warning' | 'danger' | 'info'
@@ -63,6 +65,12 @@ export default function Dashboard() {
   const { data: costs } = useQuery({
     queryKey: ['costs', 'summary'],
     queryFn: api.getCostsSummary,
+  })
+
+  const { data: systemStats } = useQuery({
+    queryKey: ['system', 'stats'],
+    queryFn: api.getSystemStats,
+    refetchInterval: 30_000,
   })
 
   const scanMutation = useMutation({
@@ -200,6 +208,37 @@ export default function Dashboard() {
         />
       </section>
 
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          label="Leads scanned"
+          value={String(systemStats?.leads_scanned ?? 0)}
+          helper={`${systemStats?.active_leads ?? 0} active leads and ${systemStats?.opportunities_found ?? 0} opportunities.`}
+          accent="cyan"
+          icon={Users}
+        />
+        <MetricCard
+          label="AI actions"
+          value={String(systemStats?.ai_actions ?? 0)}
+          helper={`${systemStats?.completed_24h ?? 0} completed and ${systemStats?.failed_24h ?? 0} failed in 24h.`}
+          accent="blue"
+          icon={Bot}
+        />
+        <MetricCard
+          label="Success rate"
+          value={`${systemStats?.success_rate ?? 0}%`}
+          helper={`${systemStats?.outreach_sent_24h ?? 0} outreach touches in the last 24h.`}
+          accent="green"
+          icon={Shield}
+        />
+        <MetricCard
+          label="AI engine"
+          value={systemStats?.active_ai_provider ?? 'Unknown'}
+          helper={systemStats?.active_ai_model ?? 'No active model reported.'}
+          accent="orange"
+          icon={Zap}
+        />
+      </section>
+
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
         <div className="space-y-6">
           <Panel
@@ -264,7 +303,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            <div className="mt-4 grid gap-4 sm:grid-cols-4">
               <StatDetail label="Energy" value={`${cognitive?.energy ?? 7}/10`} icon={Zap} />
               <StatDetail label="Stress" value={`${cognitive?.stress ?? 3}/10`} icon={Shield} />
               <StatDetail
@@ -272,7 +311,16 @@ export default function Dashboard() {
                 value={`${cognitive?.available_hours_this_week ?? 20}h`}
                 icon={CalendarClock}
               />
+              <StatDetail label="Engine" value={systemStats?.active_ai_provider ?? 'Unknown'} icon={Bot} />
             </div>
+          </Panel>
+
+          <Panel
+            eyebrow="Real-time metrics"
+            title="7-day execution history"
+            actions={<StatusPill label={systemStats?.environment ?? 'unknown'} tone="info" />}
+          >
+            <ExecutionHistoryChart items={systemStats?.history ?? []} />
           </Panel>
 
           <ActivityFeed items={feedSlice} />
@@ -341,6 +389,69 @@ export default function Dashboard() {
         </div>
       </Dialog>
     </div>
+  )
+}
+
+function ExecutionHistoryChart({ items }: { items: SystemStatsHistoryItem[] }) {
+  const maxValue = Math.max(
+    1,
+    ...items.map((item) => item.success + item.failed + item.leads + item.outreach)
+  )
+
+  if (!items.length) {
+    return <EmptyState message="No execution history is available yet." />
+  }
+
+  return (
+    <div aria-label="7-day execution history" className="space-y-4">
+      <div className="grid h-56 grid-cols-7 items-end gap-3 rounded-[20px] border border-[var(--color-border)] bg-[var(--color-bg-secondary)]/50 p-4">
+        {items.map((item) => {
+          const successHeight = Math.max(4, (item.success / maxValue) * 100)
+          const failedHeight = Math.max(4, (item.failed / maxValue) * 100)
+          const leadHeight = Math.max(4, (item.leads / maxValue) * 100)
+          const outreachHeight = Math.max(4, (item.outreach / maxValue) * 100)
+
+          return (
+            <div key={item.date} className="flex h-full min-w-0 flex-col justify-end gap-1">
+              <div className="flex h-full items-end gap-1" title={`${item.date}: ${item.success} success, ${item.failed} failed, ${item.leads} leads, ${item.outreach} outreach`}>
+                <div
+                  className="min-h-[6px] flex-1 rounded-t bg-[var(--color-accent-green)]"
+                  style={{ height: `${successHeight}%` }}
+                />
+                <div
+                  className="min-h-[6px] flex-1 rounded-t bg-[var(--color-accent-red)]"
+                  style={{ height: `${failedHeight}%` }}
+                />
+                <div
+                  className="min-h-[6px] flex-1 rounded-t bg-[var(--color-accent-cyan)]"
+                  style={{ height: `${leadHeight}%` }}
+                />
+                <div
+                  className="min-h-[6px] flex-1 rounded-t bg-[var(--color-accent-orange)]"
+                  style={{ height: `${outreachHeight}%` }}
+                />
+              </div>
+              <div className="truncate text-center text-[11px] text-[var(--color-text-tertiary)]">{item.name}</div>
+            </div>
+          )
+        })}
+      </div>
+      <div className="flex flex-wrap gap-3 text-xs text-[var(--color-text-secondary)]">
+        <LegendDot className="bg-[var(--color-accent-green)]" label="Success" />
+        <LegendDot className="bg-[var(--color-accent-red)]" label="Failed" />
+        <LegendDot className="bg-[var(--color-accent-cyan)]" label="Leads" />
+        <LegendDot className="bg-[var(--color-accent-orange)]" label="Outreach" />
+      </div>
+    </div>
+  )
+}
+
+function LegendDot({ className, label }: { className: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-2">
+      <span className={`h-2.5 w-2.5 rounded-full ${className}`} />
+      {label}
+    </span>
   )
 }
 

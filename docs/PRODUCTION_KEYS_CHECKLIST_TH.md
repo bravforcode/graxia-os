@@ -4,6 +4,14 @@
 
 ห้าม commit `.env.production`, `.env.backup-*`, หรือไฟล์ใน `secrets/`
 
+ก่อน deploy จริงให้รัน:
+
+```powershell
+make supabase-env-audit
+```
+
+ถ้าคำสั่งนี้ยัง fail อยู่ ห้ามข้ามไป `up -d` เพราะระบบจะถือว่า config production ยังไม่พร้อม
+
 ## เติมให้แล้วโดยอัตโนมัติ
 
 ค่ากลุ่มนี้สร้างให้แล้ว ไม่ต้องไปหาจาก provider:
@@ -27,6 +35,11 @@
 - `OBSIDIAN_VAULT_PATH=/data/obsidian`
 - `OBSIDIAN_AUTO_BOOTSTRAP=false`
 - `OBSIDIAN_AUTO_SYNC_ENABLED=false`
+
+ข้อสำคัญสำหรับ `JWT_SIGNING_KEYS`:
+
+- ต้องเป็น JSON object บรรทัดเดียว เช่น `{"v1":"<64+ char key>"}`
+- ถ้าค่า key มีเครื่องหมาย backslash จริง ต้อง escape เป็น `\\` ไม่อย่างนั้น `make supabase-env-audit` จะ fail
 
 ## ต้องใส่เองก่อน production จริง
 
@@ -117,6 +130,13 @@ POSTGRES_EXPORTER_DATA_SOURCE_NAME=postgresql://postgres:DB_PASSWORD@db.PROJECT_
    - service_role/secret key -> `SUPABASE_SERVICE_ROLE_KEY`
 
 ข้อสำคัญ: `SUPABASE_SERVICE_ROLE_KEY` ใช้ฝั่ง backend เท่านั้น ห้ามใส่ frontend
+
+หมายเหตุ frontend:
+
+- `frontend/.env.production` สามารถคง placeholder `VITE_*` ไว้ใน repo ได้
+- ตอน build production, Docker compose จะ inject ค่าจริงผ่าน build args จาก `.env.production`
+- ค่าที่ต้อง bridge เข้า frontend คือ `VITE_API_BASE_URL`, `VITE_AGENT_STREAM_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+- ห้ามส่ง `SUPABASE_SERVICE_ROLE_KEY` เข้า frontend เด็ดขาด
 
 ### 3. Telegram
 
@@ -272,7 +292,22 @@ BACKUP_ENCRYPTION_PUBLIC_KEY=age1...
 
 ถ้าเครื่องยังไม่มี `age-keygen` ให้ติดตั้ง age ก่อน
 
-### 7. Obsidian API
+### 7. Operations Passwords
+
+ต้องเติมหรือ generate ให้แข็งแรง:
+
+```env
+FLOWER_BASIC_AUTH=admin:strong-random-password
+```
+
+หมายเหตุ:
+
+- `FLOWER_BASIC_AUTH` ต้องอยู่ในรูป `username:password`
+- password ต้องไม่เป็น placeholder เช่น `changeme`, `replace`, `example`
+- `N8N_PASSWORD` และ `GRAFANA_ADMIN_PASSWORD` ก็ถูก validate ใน production เหมือนกัน
+- ถ้าค่าเหล่านี้เคยถูก paste ในแชต, commit, หรือ sync ออกนอกเครื่อง ให้ rotate ก่อน deploy
+
+### 8. Obsidian API
 
 ตอนนี้ปิดไว้แล้ว:
 
@@ -296,6 +331,10 @@ OBSIDIAN_API_KEY=...
 ```
 
 ## ตรวจหลังเติมครบ
+
+```powershell
+make supabase-env-audit
+```
 
 ```powershell
 docker compose --env-file .env.production -f docker-compose.supabase.yml config --quiet

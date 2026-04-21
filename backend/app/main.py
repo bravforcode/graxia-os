@@ -26,14 +26,17 @@ from app.api.metrics import router as metrics_router
 from app.api.opportunities import router as opportunities_router
 from app.api.runs import router as runs_router
 from app.api.obsidian import router as obsidian_router
+from app.api.outreach import router as outreach_router
 from app.api.scrapers import router as scrapers_router
 from app.api.skills import router as skills_router
 from app.api.submissions import router as submissions_router
 from app.api.system import router as system_router
 from app.api.tasks import router as tasks_router
+from app.api.tracking import router as tracking_router
 from app.config import settings
 from app.cqrs.setup import setup_cqrs
 from app.core.event_bus import event_bus
+from app.core.logging_config import setup_logging
 from app.core.monitoring import metrics_collector
 from app.core.runtime_state import get_runtime_state, set_runtime_state
 from app.middleware.auth import AuthMiddleware
@@ -49,7 +52,7 @@ from app.tasks.celery_app import celery_app
 from app.tasks.dlq_handler import DeadLetterQueue
 from app.tasks.queues import get_queue_depths
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
+setup_logging(settings.LOG_LEVEL)
 logger = logging.getLogger(__name__)
 
 setup_cqrs()
@@ -65,12 +68,22 @@ async def lifespan(app: FastAPI):
     app.state.redis = redis_client
     event_loop_task = asyncio.create_task(event_bus.start_processing())
     scheduler = None
+    telegram_task = None
+    telegram_lock = None
 
     try:
-        from app.core.bootstrap import check_system_ready, wire_event_handlers
+        from app.core.bootstrap import (
+            check_system_ready,
+            initialize_telegram_notifier,
+            seed_admin_user,
+            wire_event_handlers,
+        )
         from app.agents.obsidian_sync import obsidian_sync_agent
 
         wire_event_handlers()
+        await seed_admin_user()
+        if "pytest" not in sys.modules:
+            await initialize_telegram_notifier()
         if "pytest" not in sys.modules and settings.SCHEDULER_EMBEDDED:
             try:
                 from app.core.scheduler import scheduler as runtime_scheduler
@@ -81,6 +94,26 @@ async def lifespan(app: FastAPI):
                 logger.info("Runtime scheduler started")
             except Exception as exc:
                 logger.warning("Runtime scheduler not started: %s", exc)
+        if (
+            "pytest" not in sys.modules
+            and settings.TELEGRAM_POLLING_ENABLED
+            and settings.HAS_REAL_TELEGRAM_TOKEN
+        ):
+            try:
+                from app.core.telegram_lock import TelegramPollingSingletonLock
+                from app.telegram_bot.bot import run_polling_forever
+
+                if redis_client is not None:
+                    telegram_lock = TelegramPollingSingletonLock(redis_client)
+                    if await telegram_lock.acquire():
+                        telegram_task = asyncio.create_task(run_polling_forever())
+                        logger.info("Telegram polling started")
+                    else:
+                        logger.info("Telegram polling skipped: lock is already held")
+                else:
+                    logger.info("Telegram polling skipped: redis client unavailable")
+            except Exception as exc:
+                logger.warning("Telegram polling not started: %s", exc)
         if settings.OBSIDIAN_AUTO_BOOTSTRAP:
             try:
                 await obsidian_sync_agent.bootstrap_second_brain()
@@ -101,6 +134,15 @@ async def lifespan(app: FastAPI):
 
     if scheduler is not None:
         scheduler.stop()
+
+    if telegram_task is not None:
+        telegram_task.cancel()
+        try:
+            await telegram_task
+        except asyncio.CancelledError:
+            pass
+    if telegram_lock is not None:
+        await telegram_lock.release()
 
     event_bus.stop()
     event_loop_task.cancel()
@@ -170,17 +212,19 @@ app.include_router(jobs_router, prefix="/api/v1")
 app.include_router(runs_router, prefix="/api/v1")
 app.include_router(email_threads_router)
 app.include_router(obsidian_router)
+app.include_router(outreach_router)
 app.include_router(skills_router, prefix="/api/v1")
 app.include_router(tasks_router)
 app.include_router(costs_router)
 app.include_router(events_router)
 app.include_router(scrapers_router)
+app.include_router(tracking_router)
 
 
 @app.get("/metrics", response_class=PlainTextResponse)
 async def get_metrics():
     await metrics_collector.update_gauges()
-    queue_depths = await get_queue_depths(getattr(app.state, "redis", None))
+    queue_depths = await get_queue_depths(getattr(app.state, "redis", None), use_pool_fallback=False)
     for queue_name, depth in queue_depths.items():
         metrics_collector.set_queue_depth(queue_name, depth)
     dlq = DeadLetterQueue(getattr(app.state, "redis", None))

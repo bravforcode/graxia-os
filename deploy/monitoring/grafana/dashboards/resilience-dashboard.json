@@ -1,0 +1,150 @@
+{
+  "dashboard": {
+    "title": "Gracia OS Resilience Monitoring",
+    "tags": ["resilience", "circuit-breaker", "staging"],
+    "timezone": "browser",
+    "schemaVersion": 36,
+    "refresh": "5s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Circuit Breaker Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "gracia_circuit_breaker_state",
+            "legendFormat": "{{service}} - {{state}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {"value": "CLOSED", "text": "✅ CLOSED", "color": "green"},
+              {"value": "OPEN", "text": "❌ OPEN", "color": "red"},
+              {"value": "HALF_OPEN", "text": "⚠️ HALF-OPEN", "color": "yellow"}
+            ]
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Resilience Score",
+        "type": "gauge",
+        "targets": [
+          {
+            "expr": "gracia_resilience_score",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 50, "color": "yellow"},
+                {"value": 80, "color": "green"}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Circuit Breaker Failure Count",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "gracia_circuit_breaker_failures_total",
+            "legendFormat": "{{service}} failures",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+      },
+      {
+        "id": 4,
+        "title": "Predictive Alerts",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "gracia_predictive_alerts_total",
+            "legendFormat": "{{severity}} - {{service}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+      },
+      {
+        "id": 5,
+        "title": "Redis Pool Health",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "gracia_redis_pool_healthy",
+            "refId": "A"
+          },
+          {
+            "expr": "gracia_redis_pool_connections_active",
+            "refId": "B"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 16}
+      },
+      {
+        "id": 6,
+        "title": "Service Degradation Trends",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "gracia_service_latency_ms",
+            "legendFormat": "{{service}} latency",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 18, "x": 6, "y": 16}
+      },
+      {
+        "id": 7,
+        "title": "Alert Cooldown Status",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "gracia_alert_cooldown_remaining",
+            "format": "table",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 24}
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "Circuit Breaker Events",
+          "datasource": "prometheus",
+          "expr": "gracia_circuit_breaker_state_change",
+          "tagKeys": "service,from_state,to_state",
+          "textFormat": "{{service}}: {{from_state}} → {{to_state}}",
+          "iconColor": "red"
+        },
+        {
+          "name": "Predictive Alerts",
+          "datasource": "prometheus",
+          "expr": "gracia_predictive_alerts_total",
+          "tagKeys": "service,severity",
+          "textFormat": "Predictive: {{service}} - {{severity}}",
+          "iconColor": "yellow"
+        }
+      ]
+    }
+  }
+}

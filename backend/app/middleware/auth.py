@@ -38,6 +38,7 @@ class AuthLevel(str, Enum):
 PUBLIC_ROUTES: set[tuple[str, str]] = {
     ("POST", "/api/v1/auth/register"),
     ("POST", "/api/v1/auth/login"),
+    ("POST", "/api/v1/auth/social-login"),
     ("POST", "/api/v1/auth/refresh"),
     ("POST", "/api/v1/auth/logout"),
     ("GET", "/health"),
@@ -59,9 +60,11 @@ ADMIN_ROUTE_PREFIXES = ("/api/v1/system",)
 CSRF_EXEMPT_PATHS = {
     "/api/v1/auth/login",
     "/api/v1/auth/register",
+    "/api/v1/auth/social-login",
     "/api/v1/auth/refresh",
     "/api/v1/auth/logout",
     "/api/v1/integrations/alerts/telegram",
+    "/api/v1/contacts/bulk",
 }
 INTERNAL_TOKEN_ROUTES: set[tuple[str, str]] = {
     ("POST", "/api/v1/integrations/alerts/telegram"),

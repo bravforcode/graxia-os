@@ -1,5 +1,5 @@
 import { renderHook, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useAgentStream } from '@/hooks/useAgentStream'
 import { api } from '@/lib/api'
@@ -15,6 +15,7 @@ vi.mock('@/lib/api', () => ({
 describe('useAgentStream', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.stubEnv('VITE_AGENT_STREAM_URL', '')
     vi.mocked(api.getHealth).mockResolvedValue({
       status: 'ok',
       llm_degraded: false,
@@ -37,6 +38,10 @@ describe('useAgentStream', () => {
         opportunity_found: 2,
       },
     })
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
   })
 
   it('falls back to polling when no websocket url is configured', async () => {

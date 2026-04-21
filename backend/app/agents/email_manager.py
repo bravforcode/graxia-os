@@ -12,10 +12,12 @@ from uuid import uuid4
 
 from app.agents.base import BaseAgent
 from app.core.google_workspace import google_workspace
+from app.core.tracking import verify_token
 from app.database import AsyncSessionLocal
 from app.models.email_thread import EmailThread
 from app.models.email_message import EmailMessage
 from app.models.assistant_task import AssistantTask
+from app.services.audit_service import log_audit_event
 from sqlalchemy import select
 
 logger = logging.getLogger(__name__)
@@ -131,6 +133,28 @@ class EmailManagerAgent(BaseAgent):
             
             # Parse email body
             body = self._extract_body(msg_data.get("payload", {}))
+
+            try:
+                token = headers.get("X-Outreach-Token") or ""
+                if not token and "<!--" in (body or ""):
+                    marker = "<!--OUTREACH:"
+                    if marker in body:
+                        token = body.split(marker, 1)[1].split("-->", 1)[0].strip()
+                payload = verify_token(token) if token else None
+                if payload and payload.get("contact_id"):
+                    await log_audit_event(
+                        db=None,
+                        action="outreach.reply",
+                        event_type="email",
+                        event_category="outreach",
+                        severity="INFO",
+                        outcome="success",
+                        metadata={"payload": payload, "from": from_email, "subject": subject},
+                        entity_type="contact",
+                        entity_id=str(payload.get("contact_id")),
+                    )
+            except Exception:
+                pass
             
             # Categorize email
             category = await self._categorize_email(subject, body, from_email)

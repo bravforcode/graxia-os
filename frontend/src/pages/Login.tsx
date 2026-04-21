@@ -10,7 +10,7 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const { login } = useAuth()
+  const { login, socialLogin } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (event: FormEvent) => {
@@ -77,6 +77,35 @@ export default function Login() {
         <Button type="submit" className="w-full" loading={isLoading}>
           Sign in
         </Button>
+
+        
+        <div className="relative py-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-[var(--color-border)]"></div>
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-[var(--color-bg-primary)] px-2 text-[var(--color-text-secondary)]">Or continue with</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full border-[var(--color-border)] hover:bg-[rgba(255,255,255,0.05)]"
+            onClick={() => socialLogin('google')}
+          >
+            Google
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full border-[var(--color-border)] hover:bg-[rgba(255,255,255,0.05)]"
+            onClick={() => socialLogin('facebook')}
+          >
+            Facebook
+          </Button>
+        </div>
 
         <div className="text-sm text-[var(--color-text-secondary)]">
           New operator?{' '}

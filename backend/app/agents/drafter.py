@@ -1,5 +1,8 @@
 import logging
 import uuid
+from datetime import datetime, timezone
+from pathlib import Path
+
 from app.agents.base import BaseAgent
 from app.core.control_plane import create_draft_review_request
 
@@ -24,11 +27,8 @@ class Drafter(BaseAgent):
         from app.models.content_draft import ContentDraft
         from app.models.opportunity import Opportunity
         from app.core.identity import identity
+        from app.config import settings
         from sqlalchemy import select
-
-        if self.llm.is_degraded():
-            logger.info("Drafter: LLM degraded — skipping draft generation")
-            return
 
         async with AsyncSessionLocal() as db:
             opp = await db.get(Opportunity, opp_id)
@@ -80,7 +80,10 @@ Write the complete draft now. Make it real — not a template."""
                 complexity=8,
             )
             if not content:
-                return
+                template_name = "competition_essay.md" if draft_type == "application_essay" else "proposal_base.md"
+                content = self._render_template(settings, identity, template_name, opp)
+                if not content:
+                    return
 
             draft = ContentDraft(
                 type=draft_type,
@@ -111,6 +114,51 @@ Write the complete draft now. Make it real — not a template."""
                 },
             )
             logger.info(f"Drafter: created draft for {opp.title[:50]}")
+
+    def _render_template(self, settings, identity, template_name: str, opp) -> str | None:
+        try:
+            template_path = Path(settings.IDENTITY_PATH).resolve().parent / "templates" / template_name
+            text = template_path.read_text(encoding="utf-8")
+        except Exception:
+            return None
+
+        name = identity.get_profile().get("personal", {}).get("name") or "Developer"
+        now = datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d")
+        description = (opp.description or "").strip().splitlines()
+        first_line = (description[0] if description else "Automated system implementation.").strip()
+        replacements = {
+            "[PROJECT NAME]": opp.title or "Project",
+            "[CLIENT NAME / COMPANY]": getattr(opp, "source", None) or "Client",
+            "[DATE]": now,
+            "P (Phirawit Jitnarong)": name,
+            "[1-2 sentences: their specific operational problem in their terms]": first_line[:160],
+            "[3-5 bullet points: concrete deliverables, not vague services]": "- Scope discovery and technical plan\n- Implementation with deployment\n- Testing and handover",
+            "[Feature 1]:": "[Feature 1]:",
+            "[Feature 2]:": "[Feature 2]:",
+            "[Feature 3]:": "[Feature 3]:",
+            "[What it does in plain terms]": "Deliver a working MVP aligned to requirements",
+            "[Core feature]": "Core MVP",
+            "[Secondary feature]": "Enhancements",
+            "[X weeks]": "1-2",
+            "[N]": "2",
+            "[Amount]": "TBD",
+            "[TOTAL]": "TBD",
+            "[AMOUNT]": "TBD",
+            "[2-3 sentences: what specific problem exists and why current solutions fail]": first_line[:200],
+            "[3-4 sentences: what we built, how it works, what makes it different]": "We will deliver a practical implementation with clear milestones and measurable impact.",
+            "[Be specific: users, revenue, deployments, feedback received]": "Initial delivery with measurable outcomes and iterative improvements.",
+            "[Project 1]": "Testlyn",
+            "[Project 2]": "Plexta",
+            "[SECTOR]": "SME",
+            "[SIZE/GROWTH]": "growing",
+            "[REASON]": "fragmented tooling",
+            "[HOW/WHY].": "Through targeted integrations and repeatable playbooks.",
+            "[What we're asking for: prize money, mentorship, acceleration]": "Mentorship and support to accelerate deployment.",
+            "[What we'll do with it in 90 days: specific milestones]": "Ship MVP, onboard early users, and validate retention.",
+        }
+        for k, v in replacements.items():
+            text = text.replace(k, str(v))
+        return text.strip()
 
 
 drafter_agent = Drafter()

@@ -2,12 +2,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import axios from 'axios'
 import { api, type User } from '@/lib/api'
+import { supabase } from '@/lib/supabase'
 
 interface AuthContextType {
   user: User | null
   token: string | null
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, fullName?: string) => Promise<void>
+  socialLogin: (provider: "google" | "facebook") => Promise<void>
   logout: () => void
   isAuthenticated: boolean
   isLoading: boolean
@@ -20,6 +22,19 @@ function isExpectedUnauthenticatedError(error: unknown) {
     return error.response?.status === 401
   }
   return error instanceof Error && error.message === 'no active session'
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  if (axios.isAxiosError(error)) {
+    const detail = error.response?.data?.detail
+    if (typeof detail === 'string' && detail.trim()) {
+      return detail
+    }
+    if (typeof error.message === 'string' && error.message.trim()) {
+      return error.message
+    }
+  }
+  return error instanceof Error ? error.message : fallback
 }
 
 export const useAuth = () => {
@@ -41,6 +56,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     void fetchUser()
+
+    // Handle Supabase OAuth callback
+    const handleAuthChange = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.access_token) {
+        try {
+          const response = await api.socialLogin(session.access_token, session.user.app_metadata.provider || 'social')
+          setUser(response.user)
+          setToken('session')
+          // Clear supabase session once we have local session if desired, 
+          // but usually keeping it is fine.
+        } catch (err) {
+          console.error('Failed to exchange supabase token:', err)
+        }
+      }
+    }
+    void handleAuthChange()
+
 
     const handleSessionExpired = () => {
       setUser(null)
@@ -75,7 +108,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(response.user)
       setToken('session')
     } catch (error: unknown) {
-      throw new Error(error instanceof Error ? error.message : 'Login failed')
+      throw new Error(getApiErrorMessage(error, 'Login failed'))
     }
   }
 
@@ -86,7 +119,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(response.user)
       setToken('session')
     } catch (error: unknown) {
-      throw new Error(error instanceof Error ? error.message : 'Registration failed')
+      throw new Error(getApiErrorMessage(error, 'Registration failed'))
+    }
+  }
+
+
+  // Social Login
+  const socialLogin = async (provider: 'google' | 'facebook') => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: window.location.origin,
+        },
+      })
+      if (error) throw error
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Social login failed')
     }
   }
 
@@ -102,6 +151,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     token,
     login,
     register,
+    socialLogin,
     logout,
     isAuthenticated: !!user,
     isLoading

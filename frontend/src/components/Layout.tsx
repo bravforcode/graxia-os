@@ -12,7 +12,9 @@ import {
   Menu,
   RefreshCw,
   Settings,
+  ShieldCheck,
   Target,
+  UserPlus,
   Users,
   X,
 } from 'lucide-react'
@@ -37,11 +39,13 @@ export type AppShellContext = {
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: BarChart3 },
+  { path: '/approvals', label: 'Approvals', icon: ShieldCheck },
   { path: '/opportunities', label: 'Opportunities', icon: Target },
   { path: '/jobs', label: 'Jobs', icon: Briefcase },
   { path: '/emails', label: 'Inbox', icon: Mail },
   { path: '/tasks', label: 'Tasks', icon: CheckSquare },
   { path: '/drafts', label: 'Drafts', icon: FileText },
+  { path: '/leads', label: 'Leads', icon: UserPlus },
   { path: '/contacts', label: 'Contacts', icon: Users },
   { path: '/costs', label: 'Costs', icon: DollarSign },
   { path: '/event-bus', label: 'Event Bus', icon: Activity },

@@ -170,6 +170,20 @@ async def test_approvals_runs_and_skills_routes_are_mounted_and_work(
     assert approve_response.status_code == 200
     assert approve_response.json()["status"] == "approved"
 
+    duplicate_approve_response = await async_client.patch(
+        f"/api/v1/approvals/{approval.id}/approve",
+        params={"note": "Double click"},
+    )
+    assert duplicate_approve_response.status_code == 409
+    assert duplicate_approve_response.json()["detail"] == "Approval already processed"
+
+    reject_after_approve_response = await async_client.patch(
+        f"/api/v1/approvals/{approval.id}/reject",
+        params={"note": "Changed mind"},
+    )
+    assert reject_after_approve_response.status_code == 409
+    assert reject_after_approve_response.json()["detail"] == "Approval already processed"
+
     runs_response = await async_client.get("/api/v1/runs")
     assert runs_response.status_code == 200
     assert runs_response.json()["total"] == 1

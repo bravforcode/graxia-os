@@ -34,11 +34,22 @@ Minimum required groups:
 
 - Real public URLs: `APP_HOST`, `APP_BASE_URL`, `FRONTEND_URL`, `ALLOWED_CORS_ORIGINS`
 - Secrets: `SECRET_KEY`, `ENCRYPTION_KEY`, `JWT_SIGNING_KEYS`, `CSRF_SECRET`
-- Supabase: `DATABASE_URL`, `DATABASE_MIGRATION_URL`, `POSTGRES_PASSWORD`
+- TLS and routing: `CADDY_EMAIL`
+- Supabase: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, `DATABASE_MIGRATION_URL`, `POSTGRES_PASSWORD`
 - Redis: `REDIS_PASSWORD`, `REDIS_URL`, `CELERY_BROKER_URL`, `CELERY_RESULT_BACKEND`
 - Control plane: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `ALERTMANAGER_WEBHOOK_TOKEN`
+- Operations passwords: `FLOWER_BASIC_AUTH`, `N8N_PASSWORD`, `GRAFANA_ADMIN_PASSWORD`
 - AI: at least one real `OPENCLAW_API_KEY` or `GEMINI_API_KEY`
-- Backups: `BACKUP_BUCKET`, `BACKUP_ENCRYPTION_PUBLIC_KEY`, `BACKUP_ENCRYPTION_PRIVATE_KEY_FILE`
+- Backups: `BACKUP_BUCKET`, `BACKUP_REGION`, `BACKUP_ENCRYPTION_PUBLIC_KEY`, `BACKUP_ENCRYPTION_PRIVATE_KEY_FILE`
+
+`frontend/.env.production` may keep placeholder `VITE_*` values in git. Production Docker builds now inject the real frontend runtime values from `.env.production` through compose build args. The frontend must receive:
+
+- `VITE_API_BASE_URL`
+- `VITE_AGENT_STREAM_URL`
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+Do not put `SUPABASE_SERVICE_ROLE_KEY` in any frontend build or client env.
 
 Create required local directories and secret files:
 
@@ -52,6 +63,7 @@ chmod 600 secrets/backup_private_key.txt secrets/alertmanager_webhook_token.txt
 ## Preflight, Migrate, Start
 
 ```bash
+make supabase-env-audit
 docker compose --env-file .env.production -f docker-compose.supabase.yml config --quiet
 docker compose --env-file .env.production -f docker-compose.supabase.yml build
 docker compose --env-file .env.production -f docker-compose.supabase.yml run --rm backend python scripts/production_preflight.py
@@ -62,10 +74,13 @@ docker compose --env-file .env.production -f docker-compose.supabase.yml up -d
 Equivalent Make targets:
 
 ```bash
+make supabase-env-audit
 make supabase-preflight
 make supabase-prod-migrate
 make supabase-prod-up
 ```
+
+`make supabase-env-audit` is the fast fail gate. It validates strict production settings before Docker preflight and checks that the frontend compose build still bridges the required `VITE_*` args from `.env.production`.
 
 ## Install Always-On Service
 

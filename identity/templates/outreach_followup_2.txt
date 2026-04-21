@@ -1,0 +1,12 @@
+Hi {{contact_name}},
+
+Last quick ping from me.
+
+If there’s no need right now, all good. If you’re open to it, I can share:
+- a 1-page plan for a revenue-first automation workflow
+- a quick estimate based on your current stack
+
+Either way, thanks for your time.
+
+Best,
+{{name}}

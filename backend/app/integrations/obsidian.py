@@ -116,12 +116,13 @@ class ObsidianConnector:
         api_url: str | None = None,
         api_key: str | None = None,
         root_folder: str | None = None,
+        verify_ssl: bool = True,
     ):
         self.vault_path = Path(vault_path) if vault_path else None
         self.api_url = api_url
         self.api_key = api_key
         self.root_folder = (root_folder or "").strip("/\\ ")
-        self.client = httpx.AsyncClient(timeout=30.0) if api_url else None
+        self.client = httpx.AsyncClient(timeout=30.0, verify=verify_ssl) if api_url else None
 
     async def close(self):
         if self.client:
@@ -1037,7 +1038,40 @@ def build_obsidian_connector() -> ObsidianConnector | None:
     vault_path = getattr(settings, "OBSIDIAN_VAULT_PATH", None)
     api_url = getattr(settings, "OBSIDIAN_API_URL", None)
     api_key = getattr(settings, "OBSIDIAN_API_KEY", None)
+    verify_ssl = bool(getattr(settings, "OBSIDIAN_API_VERIFY_SSL", True))
     root_folder = getattr(settings, "OBSIDIAN_ROOT_FOLDER", "Second Brain")
+
+    if vault_path:
+        try:
+            vault_path_str = str(vault_path)
+            if getattr(settings, "RUNNING_IN_DOCKER", False) and ":" in vault_path_str and not vault_path_str.startswith("/"):
+                logger.warning("obsidian_vault_path_unreachable", vault_path=vault_path_str)
+                vault_path = None
+            elif not Path(vault_path_str).exists():
+                logger.warning("obsidian_vault_path_unreachable", vault_path=str(vault_path))
+                vault_path = None
+        except Exception:
+            logger.warning("obsidian_vault_path_unreachable", vault_path=str(vault_path))
+            vault_path = None
+
+    if api_url and getattr(settings, "RUNNING_IN_DOCKER", False):
+        api_url = (
+            api_url.replace("http://localhost", "http://host.docker.internal")
+            .replace("http://127.0.0.1", "http://host.docker.internal")
+            .replace("https://localhost", "https://host.docker.internal")
+            .replace("https://127.0.0.1", "https://host.docker.internal")
+        )
+
+    if api_url:
+        try:
+            headers = {}
+            if api_key:
+                headers["Authorization"] = f"Bearer {api_key}"
+            with httpx.Client(timeout=3.0, verify=verify_ssl) as client:
+                client.get(f"{api_url.rstrip('/')}/vault/", headers=headers)
+        except Exception as exc:
+            logger.warning("obsidian_api_unreachable", api_url=str(api_url), error=str(exc))
+            api_url = None
 
     if not vault_path and not api_url:
         logger.warning("obsidian_not_configured")
@@ -1048,6 +1082,7 @@ def build_obsidian_connector() -> ObsidianConnector | None:
         api_url=api_url,
         api_key=api_key,
         root_folder=root_folder,
+        verify_ssl=verify_ssl,
     )
 
 

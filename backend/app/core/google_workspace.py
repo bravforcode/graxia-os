@@ -57,13 +57,21 @@ class GoogleWorkspaceClient:
                 token_uri="https://oauth2.googleapis.com/token",
                 client_id=settings.GOOGLE_CLIENT_ID,
                 client_secret=settings.GOOGLE_CLIENT_SECRET,
-                scopes=[
-                    "https://www.googleapis.com/auth/gmail.readonly",
-                    "https://www.googleapis.com/auth/gmail.send",
-                    "https://www.googleapis.com/auth/gmail.modify",
-                    "https://www.googleapis.com/auth/calendar.readonly",
-                    "https://www.googleapis.com/auth/calendar.events"
-                ]
+                scopes=(
+                    [
+                        "https://www.googleapis.com/auth/gmail.readonly",
+                        "https://www.googleapis.com/auth/calendar.readonly",
+                    ]
+                    + (
+                        [
+                            "https://www.googleapis.com/auth/gmail.send",
+                            "https://www.googleapis.com/auth/gmail.modify",
+                            "https://www.googleapis.com/auth/calendar.events",
+                        ]
+                        if settings.GOOGLE_ENABLE_WRITE_SCOPES
+                        else []
+                    )
+                ),
             )
             
             # Refresh token if needed
@@ -154,7 +162,9 @@ class GoogleWorkspaceClient:
         to: str,
         subject: str,
         body: str,
-        reply_to: Optional[str] = None
+        reply_to: Optional[str] = None,
+        is_html: bool = False,
+        extra_headers: dict[str, str] | None = None,
     ) -> Optional[str]:
         """
         Send Gmail message.
@@ -174,9 +184,13 @@ class GoogleWorkspaceClient:
         try:
             from email.mime.text import MIMEText
             
-            message = MIMEText(body)
+            message = MIMEText(body, "html" if is_html else "plain")
             message['to'] = to
             message['subject'] = subject
+            if extra_headers:
+                for key, value in extra_headers.items():
+                    if key and value:
+                        message[key] = value
             
             if reply_to:
                 message['In-Reply-To'] = reply_to
@@ -494,6 +508,7 @@ class GoogleWorkspaceClient:
 
     async def health_check(self) -> Dict[str, Any]:
         """Check Google Workspace service health."""
+        self._ensure_initialized()
         status = {
             "gmail": "unavailable",
             "calendar": "unavailable",

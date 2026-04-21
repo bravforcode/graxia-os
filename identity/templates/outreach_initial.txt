@@ -1,0 +1,18 @@
+Hi {{contact_name}},
+
+I’m {{name}}. Quick intro — I build revenue-focused automation systems for teams that want to ship faster with fewer ops headaches.
+
+{{service}}
+
+If you’re at {{company}}, I can usually help with:
+- Lead capture + follow-up automation (email/CRM)
+- Internal ops dashboards and alerts (so issues get fixed before they cost revenue)
+- AI-assisted workflows where it actually saves time (not just “AI for AI”)
+
+If it’s useful, I can send a 3-point plan tailored to your context.
+
+{{summary}}
+{{portfolio}}
+
+Best,
+{{name}}

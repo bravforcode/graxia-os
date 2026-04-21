@@ -1,4 +1,8 @@
+import jwt
 import pytest
+from unittest.mock import AsyncMock
+
+from app.api import auth as auth_api
 
 
 @pytest.mark.asyncio
@@ -72,3 +76,51 @@ async def test_login_rejects_invalid_credentials(public_async_client):
 
     assert response.status_code == 401
     assert response.json()["detail"] == "Incorrect email or password"
+
+
+@pytest.mark.asyncio
+async def test_register_returns_503_when_database_is_unavailable(public_async_client, monkeypatch):
+    monkeypatch.setattr(
+        "app.api.auth._lookup_user_by_email",
+        AsyncMock(side_effect=PermissionError("database connect blocked")),
+    )
+
+    response = await public_async_client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "db-down@example.com",
+            "password": "correct-horse-battery",
+            "full_name": "DB Down",
+        },
+    )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Database unavailable. Check DATABASE_URL connectivity and database reachability."
+
+
+@pytest.mark.asyncio
+async def test_social_login_returns_503_when_database_is_unavailable(public_async_client, monkeypatch):
+    monkeypatch.setattr(auth_api.settings, "SUPABASE_JWT_SECRET", "social-test-secret", raising=False)
+    monkeypatch.setattr(
+        jwt,
+        "decode",
+        lambda *args, **kwargs: {
+            "sub": "supabase-user-id",
+            "email": "social-db-down@example.com",
+            "user_metadata": {
+                "full_name": "Social DB Down",
+                "avatar_url": "https://example.com/avatar.png",
+            },
+        },
+    )
+    monkeypatch.setattr(
+        "app.api.auth._lookup_user_by_email",
+        AsyncMock(side_effect=PermissionError("database connect blocked")),
+    )
+    response = await public_async_client.post(
+        "/api/v1/auth/social-login",
+        json={"token": jwt.encode({"sub": "unused"}, "social-test-secret", algorithm="HS256"), "provider": "google"},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Database unavailable. Check DATABASE_URL connectivity and database reachability."

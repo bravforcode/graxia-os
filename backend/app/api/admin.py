@@ -96,7 +96,7 @@ async def replay_dlq_message(message_id: str, request: Request) -> dict[str, Any
 async def get_runtime_state(request: Request) -> dict[str, Any]:
     redis_client = getattr(request.app.state, "redis", None)
     beat = await get_beat_lock_status(redis_client)
-    queue_depths = await get_queue_depths(redis_client)
+    queue_depths = await get_queue_depths(redis_client, use_pool_fallback=False)
     for queue_name, depth in queue_depths.items():
         metrics_collector.set_queue_depth(queue_name, depth)
     active_workers: dict[str, Any] = {}

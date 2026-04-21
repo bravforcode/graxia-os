@@ -79,7 +79,19 @@ async def run_restore_drill_async() -> dict[str, str]:
             artifact_path = artifact
             break
     if selected_manifest is None or artifact_path is None or manifest_path is None:
-        raise RuntimeError("No local PostgreSQL backup artifact is available for restore drill")
+        return {"status": "skipped", "reason": "no_postgres_backup_found"}
+
+    try:
+        probe = subprocess.run(
+            ["docker", "info"],
+            capture_output=True,
+            text=True,
+            timeout=8,
+        )
+        if probe.returncode != 0:
+            return {"status": "skipped", "reason": "docker_daemon_unavailable"}
+    except Exception:
+        return {"status": "skipped", "reason": "docker_daemon_unavailable"}
 
     drill_id = uuid.uuid4().hex[:12]
     container_name = f"restore-drill-{drill_id}"

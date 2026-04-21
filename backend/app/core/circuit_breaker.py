@@ -108,6 +108,26 @@ class CircuitBreaker:
             # Failure - increment counter
             self._on_failure()
             raise e
+
+    async def call_async(self, func: Callable, *args, **kwargs) -> Any:
+        if self.state == CircuitState.OPEN:
+            if self._should_attempt_reset():
+                self.state = CircuitState.HALF_OPEN
+                metrics_collector.set_circuit_breaker_state(self.name, 1)
+                logger.info(f"CircuitBreaker[{self.name}]: Transitioning to HALF_OPEN")
+            else:
+                raise CircuitBreakerError(
+                    f"CircuitBreaker[{self.name}] is OPEN. "
+                    f"Will retry after {self.recovery_timeout}s"
+                )
+
+        try:
+            result = await func(*args, **kwargs)
+            self._on_success()
+            return result
+        except self.expected_exception as e:
+            self._on_failure()
+            raise e
     
     def _should_attempt_reset(self) -> bool:
         """Check if enough time passed to attempt reset."""
@@ -201,7 +221,7 @@ def circuit_breaker(
     def decorator(func: Callable):
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
-            return await breaker.call(func, *args, **kwargs)
+            return await breaker.call_async(func, *args, **kwargs)
         
         @wraps(func)
         def sync_wrapper(*args, **kwargs):

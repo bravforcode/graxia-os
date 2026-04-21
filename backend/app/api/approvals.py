@@ -5,7 +5,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.control_plane import queue_approval_request, resolve_approval_batch, resolve_approval_request
+from app.core.control_plane import (
+    ApprovalAlreadyProcessedError,
+    queue_approval_request,
+    resolve_approval_batch,
+    resolve_approval_request,
+)
 from app.database import get_db
 from app.models.approval_request import ApprovalRequest
 from app.schemas.approval import (
@@ -59,7 +64,10 @@ async def approve_approval(
     approval_id: UUID,
     note: str = "",
 ) -> ApprovalDecisionResponse:
-    approval = await resolve_approval_request(approval_id, "approved", note=note or None)
+    try:
+        approval = await resolve_approval_request(approval_id, "approved", note=note or None)
+    except ApprovalAlreadyProcessedError as exc:
+        raise HTTPException(status_code=409, detail="Approval already processed") from exc
     if approval is None:
         raise HTTPException(status_code=404, detail="Approval not found")
     return ApprovalDecisionResponse(
@@ -74,7 +82,10 @@ async def reject_approval(
     approval_id: UUID,
     note: str = "",
 ) -> ApprovalDecisionResponse:
-    approval = await resolve_approval_request(approval_id, "rejected", note=note or None)
+    try:
+        approval = await resolve_approval_request(approval_id, "rejected", note=note or None)
+    except ApprovalAlreadyProcessedError as exc:
+        raise HTTPException(status_code=409, detail="Approval already processed") from exc
     if approval is None:
         raise HTTPException(status_code=404, detail="Approval not found")
     return ApprovalDecisionResponse(

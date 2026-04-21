@@ -6,6 +6,7 @@ from typing import Any
 from kombu import Queue
 
 from app.config import settings
+from app.core.redis_pool import get_redis, redis_pool
 
 CRITICAL_QUEUE = "critical"
 DEFAULT_QUEUE = "default"
@@ -49,15 +50,18 @@ def get_sync_redis_client() -> Any | None:
         return None
 
 
-async def get_queue_depths(redis_client: Any | None = None) -> dict[str, int]:
+async def get_queue_depths(
+    redis_client: Any | None = None,
+    *,
+    use_pool_fallback: bool = True,
+) -> dict[str, int]:
+    """Get queue depths using connection pool with circuit breaker."""
     client = redis_client
     if client is None:
-        try:
-            import redis.asyncio as aioredis
-
-            client = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
-            await client.ping()
-        except Exception:
+        if not use_pool_fallback:
+            return {queue.name: 0 for queue in ALL_QUEUES}
+        client = await get_redis()
+        if client is None:
             return {queue.name: 0 for queue in ALL_QUEUES}
 
     depths: dict[str, int] = {}
@@ -70,6 +74,7 @@ async def get_queue_depths(redis_client: Any | None = None) -> dict[str, int]:
 
 
 def get_queue_depths_sync(redis_client: Any | None = None) -> dict[str, int]:
+    """Get queue depths synchronously (fallback to basic client)."""
     client = redis_client or get_sync_redis_client()
     if client is None:
         return {queue.name: 0 for queue in ALL_QUEUES}
@@ -80,3 +85,8 @@ def get_queue_depths_sync(redis_client: Any | None = None) -> dict[str, int]:
         except Exception:
             depths[queue.name] = 0
     return depths
+
+
+async def get_redis_health() -> dict[str, Any]:
+    """Get Redis health status from connection pool."""
+    return await redis_pool.health_status()

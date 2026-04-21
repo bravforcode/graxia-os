@@ -41,10 +41,15 @@ services:
   frontend:
     # Image is built and pushed by CI (GitHub Actions). Use the tag set in .env.production.
     # For local prod test: docker compose -f docker-compose.prod.yml build frontend
-    image: ${FRONTEND_IMAGE:-ghcr.io/your-username/personal-os-frontend}:${IMAGE_TAG:-latest}
+    image: ${FRONTEND_IMAGE:-personal-os-frontend}:${IMAGE_TAG:-prod}
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${APP_BASE_URL}/api/v1
+        VITE_AGENT_STREAM_URL: wss://${APP_HOST}/api/v1/events/stream
+        VITE_SUPABASE_URL: ${SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
     restart: unless-stopped
     networks: [internal]
     read_only: true
@@ -55,7 +60,7 @@ services:
     user: "1001:1001"
 
   backend:
-    image: ${BACKEND_IMAGE:-ghcr.io/your-username/personal-os-backend}:${IMAGE_TAG:-latest}
+    image: ${BACKEND_IMAGE:-personal-os-backend}:${IMAGE_TAG:-prod}
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -85,7 +90,7 @@ services:
       start_period: 60s
 
   worker-critical:
-    image: ${BACKEND_IMAGE:-ghcr.io/your-username/personal-os-backend}:${IMAGE_TAG:-latest}
+    image: ${BACKEND_IMAGE:-personal-os-backend}:${IMAGE_TAG:-prod}
     restart: unless-stopped
     networks: [internal]
     env_file:
@@ -108,7 +113,7 @@ services:
     user: "1001:1001"
 
   worker-default:
-    image: ${BACKEND_IMAGE:-ghcr.io/your-username/personal-os-backend}:${IMAGE_TAG:-latest}
+    image: ${BACKEND_IMAGE:-personal-os-backend}:${IMAGE_TAG:-prod}
     restart: unless-stopped
     networks: [internal]
     env_file:
@@ -126,7 +131,7 @@ services:
     user: "1001:1001"
 
   worker-background:
-    image: ${BACKEND_IMAGE:-ghcr.io/your-username/personal-os-backend}:${IMAGE_TAG:-latest}
+    image: ${BACKEND_IMAGE:-personal-os-backend}:${IMAGE_TAG:-prod}
     restart: unless-stopped
     networks: [internal]
     env_file:
@@ -144,7 +149,7 @@ services:
     user: "1001:1001"
 
   beat:
-    image: ${BACKEND_IMAGE:-ghcr.io/your-username/personal-os-backend}:${IMAGE_TAG:-latest}
+    image: ${BACKEND_IMAGE:-personal-os-backend}:${IMAGE_TAG:-prod}
     restart: unless-stopped
     networks: [internal]
     env_file:
@@ -294,12 +299,12 @@ services:
       - ./deploy/monitoring/otel-collector.yml:/etc/otelcol/config.yaml:ro
 
   flower:
-    image: ${BACKEND_IMAGE:-ghcr.io/your-username/personal-os-backend}:${IMAGE_TAG:-latest}
+    image: ${BACKEND_IMAGE:-personal-os-backend}:${IMAGE_TAG:-prod}
     restart: unless-stopped
     networks: [internal]
     env_file:
       - ${ENV_FILE:-.env.production}
-    command: celery -A app.tasks.celery_app flower --port=5555 --basic_auth=${FLOWER_BASIC_AUTH:-admin:changeme}
+    command: celery -A app.tasks.celery_app flower --port=5555 --basic_auth=${FLOWER_BASIC_AUTH:?FLOWER_BASIC_AUTH must be set in .env.production}
     security_opt:
       - no-new-privileges:true
     user: "1001:1001"

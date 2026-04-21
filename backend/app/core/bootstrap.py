@@ -74,12 +74,68 @@ def wire_event_handlers() -> None:
         event_bus.subscribe(event_name, handler)
 
 
+async def seed_admin_user() -> None:
+    from datetime import datetime, timezone
+    from uuid import uuid4
+
+    from sqlalchemy import select
+
+    from app.core.auth import get_password_hash
+    from app.database import AsyncSessionLocal
+    from app.models.user import User
+
+    email = (getattr(settings, "GOOGLE_WORKSPACE_EMAIL", "") or "").strip().lower()
+    if not email:
+        email = (getattr(settings, "ADMIN_DEFAULT_EMAIL", "") or "").strip().lower()
+    if not email:
+        email = "admin@local"
+
+    async with AsyncSessionLocal() as db:
+        existing = (await db.execute(select(User).where(User.email == email))).scalar_one_or_none()
+        if existing:
+            if existing.role != "admin":
+                existing.role = "admin"
+                existing.updated_at = datetime.now(timezone.utc)
+                await db.commit()
+            return
+
+        password = str(getattr(settings, "ADMIN_DEFAULT_PASSWORD", "changeme") or "changeme")
+        now = datetime.now(timezone.utc)
+        user = User(
+            id=uuid4(),
+            email=email,
+            hashed_password=get_password_hash(password),
+            full_name="Admin",
+            role="admin",
+            is_active=True,
+            totp_enabled=False,
+            created_at=now,
+            updated_at=now,
+        )
+        db.add(user)
+        await db.commit()
+        logger.info("Seeded admin user: %s", email)
+
+
 async def _send_telegram(msg: str) -> None:
     try:
         from app.telegram_bot.bot import send_message
         await send_message(msg)
     except Exception:
         pass
+
+
+async def initialize_telegram_notifier() -> bool:
+    """Initialize real-time Telegram notification service."""
+    try:
+        from app.core.telegram_notifier import telegram_notifier
+        success = await telegram_notifier.initialize()
+        if success:
+            logger.info("Telegram notifier: Real-time notifications active")
+        return success
+    except Exception as e:
+        logger.warning(f"Telegram notifier: Initialization failed: {e}")
+        return False
 
 
 async def check_system_ready() -> tuple[bool, str, list[str]]:

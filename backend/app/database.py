@@ -12,9 +12,10 @@ engine_kwargs: dict[str, Any] = {
 }
 connect_args: dict[str, Any] = {}
 
-if settings.IS_SUPABASE_TRANSACTION_MODE:
+if settings.IS_SUPABASE_TRANSACTION_MODE or "sqlite" in settings.DATABASE_URL.lower():
     engine_kwargs["poolclass"] = NullPool
-    connect_args["statement_cache_size"] = 0
+    if "sqlite" not in settings.DATABASE_URL.lower():
+        connect_args["statement_cache_size"] = 0
 else:
     engine_kwargs["pool_size"] = 5
     engine_kwargs["max_overflow"] = 10

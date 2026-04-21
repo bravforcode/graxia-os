@@ -43,6 +43,7 @@ async def check_redis() -> tuple[bool, str]:
 
 async def main() -> int:
     checks: list[tuple[str, bool, str]] = []
+    warnings: list[str] = []
 
     try:
         settings.validate_production_configuration()
@@ -64,6 +65,11 @@ async def main() -> int:
             f"host={settings.MIGRATION_DATABASE_HOST or 'missing'} port={settings.MIGRATION_DATABASE_PORT or 'default'}",
         )
     )
+    if settings.IS_MIGRATION_SUPABASE_SESSION_MODE:
+        warnings.append(
+            "DATABASE_MIGRATION_URL is using the Supabase session pooler. "
+            "Use the direct db.<project-ref>.supabase.co host for migrations when available."
+        )
     checks.append(
         (
             "embedded scheduler disabled",
@@ -83,6 +89,9 @@ async def main() -> int:
         print(f"{status}: {name} - {message}")
         if not ok:
             failed += 1
+
+    for message in warnings:
+        print(f"WARN: {message}")
 
     if failed:
         print(f"Production preflight failed: {failed} issue(s)")

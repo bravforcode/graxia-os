@@ -12,6 +12,7 @@ build/
 .env
 .env.production
 .env.backup-*
+.env.bak*
 *.env.local
 secrets/
 # Exception: frontend build vars (VITE_*) are NOT secrets — safe to track
@@ -41,6 +42,7 @@ Thumbs.db
 # Logs
 *.log
 logs/
+dump.rdb
 
 # Alembic migration files MUST be version-controlled!
 # Removing them from .gitignore ensures schema migrations run on every deploy.
@@ -51,6 +53,17 @@ logs/
 # Git Worktrees
 .worktrees/
 node_modules
-node_modules
-node_modules
-node_modules
+
+# Backend local artifacts / secrets
+backend/.coverage
+backend/.venv/
+backend/celerybeat-schedule*
+backend/staging-token.json
+backend/openapi.json
+backend/error.log
+backend/uvicorn-local*.log
+backend/test-results/
+backend/backups/
+backend/.tmp_pytest/
+backend/tmp*/
+backend/C*/

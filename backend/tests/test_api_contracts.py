@@ -93,6 +93,52 @@ async def test_task_list_stats_update_and_complete_contract(async_client, seeded
 
 
 @pytest.mark.asyncio
+async def test_contacts_support_lead_management_contract(async_client):
+    create_response = await async_client.post(
+        "/api/v1/contacts",
+        json={
+            "name": "Maya Chen",
+            "company": "Orbit Labs",
+            "role": "Founder",
+            "contact_type": "lead",
+            "email": "maya@example.com",
+            "value_score": 8,
+            "next_followup_date": "2099-04-10",
+            "followup_reason": "Discuss workflow automation pilot.",
+        },
+    )
+    assert create_response.status_code == 201
+    contact_id = create_response.json()["id"]
+
+    list_response = await async_client.get(
+        "/api/v1/contacts",
+        params={"contact_type": "lead", "q": "Orbit"},
+    )
+    assert list_response.status_code == 200
+    assert list_response.json()["total"] == 1
+
+    stats_response = await async_client.get("/api/v1/contacts/stats")
+    assert stats_response.status_code == 200
+    assert stats_response.json()["leads"] == 1
+    assert stats_response.json()["with_email"] == 1
+
+    update_response = await async_client.patch(
+        f"/api/v1/contacts/{contact_id}",
+        json={"last_contacted_at": "2099-04-09", "relationship_strength": 4},
+    )
+    assert update_response.status_code == 200
+    assert update_response.json()["last_contacted_at"] == "2099-04-09"
+    assert update_response.json()["relationship_strength"] == 4
+
+    delete_response = await async_client.delete(f"/api/v1/contacts/{contact_id}")
+    assert delete_response.status_code == 204
+
+    after_delete_response = await async_client.get("/api/v1/contacts", params={"contact_type": "lead"})
+    assert after_delete_response.status_code == 200
+    assert after_delete_response.json()["total"] == 0
+
+
+@pytest.mark.asyncio
 async def test_cost_summary_usage_and_forecast_contract(async_client, seeded_records):
     summary_response = await async_client.get("/api/v1/costs/summary")
     assert summary_response.status_code == 200

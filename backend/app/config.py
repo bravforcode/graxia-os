@@ -29,7 +29,7 @@ def _rewrite_hostname(url: str, host_map: dict[str, str]) -> str:
         auth = f"{auth}@"
 
     host = host_map[hostname]
-    if ":" in host and not host.startswith("["):
+    if ":" in host and not host.startswith("[") and "." not in host:
         host = f"[{host}]"
     netloc = f"{auth}{host}"
     if parts.port:
@@ -91,13 +91,28 @@ class Settings(BaseSettings):
     SESSION_MAX_CONCURRENT: int = 5
     CSRF_SECRET: str = ""
     ALLOWED_CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173,http://frontend:5173"
+    APP_HOST: str = ""
     APP_BASE_URL: str = "http://localhost:8000"
     FRONTEND_URL: str = "http://localhost:5173"
+    CADDY_EMAIL: str = ""
+    FLOWER_BASIC_AUTH: str = ""
+    GRAFANA_ADMIN_PASSWORD: str = ""
+    N8N_PASSWORD: str = ""
+
+    # Supabase
+    SUPABASE_URL: str = ""
+    SUPABASE_ANON_KEY: str = ""
+    SUPABASE_SERVICE_ROLE_KEY: str = ""
+    SUPABASE_JWT_SECRET: str = ""
 
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://personal_os:changeme@postgres:5432/personal_os"
     DATABASE_MIGRATION_URL: str = ""
     REQUIRE_SUPABASE: bool = False
+    DB_POOL_SIZE: int = 10
+    DB_MAX_OVERFLOW: int = 20
+    DB_POOL_TIMEOUT_SECONDS: int = 30
+    DB_POOL_RECYCLE_SECONDS: int = 1800
     POSTGRES_DB: str = "personal_os"
     POSTGRES_USER: str = "personal_os"
     POSTGRES_PASSWORD: str = "changeme"
@@ -119,13 +134,14 @@ class Settings(BaseSettings):
     REDIS_SNAPSHOT_PATH: str = "/data/dump.rdb"
     RESTORE_DRILL_POSTGRES_IMAGE: str = "postgres:16.3-alpine"
 
-    # AI — OpenClaw (Claude via OpenClaw proxy)
+    # AI â€” OpenClaw (Claude via OpenClaw proxy)
     OPENCLAW_API_KEY: str = ""
     OPENCLAW_BASE_URL: str = "https://api.openclaw.ai/v1"
     OPENCLAW_DEFAULT_MODEL: str = "claude-sonnet-4-5"
     OPENCLAW_FAST_MODEL: str = "claude-haiku-4-5"
+    OPENCLAW_FALLBACK_MODELS: str = ""
 
-    # AI — Gemini (fallback)
+    # AI â€” Gemini (fallback)
     GEMINI_API_KEY: str = ""
     DEFAULT_MODEL: str = "claude-sonnet-4-5"
     FAST_MODEL: str = "claude-haiku-4-5"
@@ -158,6 +174,7 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: str = ""
     GOOGLE_REFRESH_TOKEN: str = ""
     GOOGLE_WORKSPACE_EMAIL: str = ""
+    GOOGLE_ENABLE_WRITE_SCOPES: bool = False
 
     # SerpAPI
     SERPAPI_KEY: str = ""
@@ -170,6 +187,7 @@ class Settings(BaseSettings):
     OBSIDIAN_VAULT_PATH: str = ""
     OBSIDIAN_API_URL: str = ""
     OBSIDIAN_API_KEY: str = ""
+    OBSIDIAN_API_VERIFY_SSL: bool = True
     OBSIDIAN_ROOT_FOLDER: str = "Second Brain"
     OBSIDIAN_AUTO_BOOTSTRAP: bool = True
     OBSIDIAN_AUTO_SYNC_ENABLED: bool = True
@@ -180,6 +198,44 @@ class Settings(BaseSettings):
     MAX_MONTHLY_AI_COST_USD: float = 30.00
     MAX_OUTREACH_PER_DAY: int = 5
     MAX_PENDING_APPROVALS: int = 10
+
+    # Autopilot / Revenue
+    AUTOPILOT_ENABLED: bool = False
+    AUTOPILOT_NOTIFY_EVERY_RUN: bool = False
+    DAILY_REVENUE_TARGET_THB: int = 1000
+
+    OUTREACH_AUTOSEND_ENABLED: bool = False
+    OUTREACH_ALLOWED_EMAILS: str = ""
+    OUTREACH_ALLOWED_DOMAINS: str = ""
+    OUTREACH_MAX_PER_DAY: int = 5
+    OUTREACH_MIN_DAYS_BETWEEN_CONTACT: int = 14
+    OUTREACH_FROM_EMAIL: str = ""
+    OUTREACH_CAMPAIGN_NAME: str = "revenue-first"
+
+    EMAIL_TRACKING_ENABLED: bool = True
+    TRACKING_BASE_URL: str = ""
+    TRACKING_SIGNING_SECRET: str = ""
+
+    HUBSPOT_PRIVATE_APP_TOKEN: str = ""
+    SALESFORCE_INSTANCE_URL: str = ""
+    SALESFORCE_ACCESS_TOKEN: str = ""
+
+    LEADGEN_ENABLED: bool = False
+    LEADGEN_MAX_PER_RUN: int = 50
+    LEADGEN_EXPORT_DIR: str = "data/leads"
+    LEADGEN_USE_SERPAPI: bool = False
+    LEADGEN_SERPAPI_MAX_QUERIES: int = 8
+    LEADGEN_SERPAPI_RESULTS_PER_QUERY: int = 10
+
+    ICP_INDUSTRIES: str = ""
+    ICP_COMPANY_SIZE_RANGE: str = ""
+    ICP_COUNTRIES: str = ""
+    ICP_TITLES: str = ""
+    ICP_KEYWORDS: str = ""
+
+    # Admin seed
+    ADMIN_DEFAULT_EMAIL: str = ""
+    ADMIN_DEFAULT_PASSWORD: str = "changeme"
 
     # App
     APP_ENV: str = "development"
@@ -200,6 +256,13 @@ class Settings(BaseSettings):
             self.CELERY_RESULT_BACKEND = _rewrite_hostname(
                 self.CELERY_RESULT_BACKEND, {"redis": "localhost"}
             )
+        if self.RUNNING_IN_DOCKER:
+            host_map = {
+                "localhost": "host.docker.internal",
+                "127.0.0.1": "host.docker.internal",
+            }
+            self.OPENCLAW_BASE_URL = _rewrite_hostname(self.OPENCLAW_BASE_URL, host_map)
+            self.OBSIDIAN_API_URL = _rewrite_hostname(self.OBSIDIAN_API_URL, host_map)
         return self
 
     @staticmethod
@@ -208,6 +271,7 @@ class Settings(BaseSettings):
         return (
             not lowered
             or lowered.startswith("your_")
+            or lowered.startswith("your-")
             or lowered.startswith("paste_")
             or "paste_" in lowered
             or "changeme" in lowered
@@ -215,6 +279,9 @@ class Settings(BaseSettings):
             or "development-secret" in lowered
             or "replace" in lowered
             or "placeholder" in lowered
+            or "your-domain" in lowered
+            or "your-project-ref" in lowered
+            or "example.com" in lowered
             or lowered == "example"
         )
 
@@ -307,6 +374,14 @@ class Settings(BaseSettings):
         return self.IS_MIGRATION_SUPABASE and self.MIGRATION_DATABASE_PORT == 6543
 
     @property
+    def IS_MIGRATION_SUPABASE_SESSION_MODE(self) -> bool:
+        return (
+            self.IS_MIGRATION_SUPABASE
+            and self.MIGRATION_DATABASE_PORT == 5432
+            and "pooler.supabase.com" in self.MIGRATION_DATABASE_HOST
+        )
+
+    @property
     def IS_SUPABASE_SESSION_MODE(self) -> bool:
         return self.IS_SUPABASE and self.DATABASE_PORT == 5432 and "pooler.supabase.com" in self.DATABASE_HOST
 
@@ -331,7 +406,9 @@ class Settings(BaseSettings):
             try:
                 parsed = json.loads(self.JWT_SIGNING_KEYS)
             except json.JSONDecodeError as exc:
-                raise RuntimeError("JWT_SIGNING_KEYS must be valid JSON") from exc
+                raise RuntimeError(
+                    "JWT_SIGNING_KEYS must be valid JSON; escape literal backslashes in key values as \\\\"
+                ) from exc
             if not isinstance(parsed, dict) or not parsed:
                 raise RuntimeError("JWT_SIGNING_KEYS must be a non-empty JSON object")
             return {str(key): str(value) for key, value in parsed.items() if str(value).strip()}
@@ -343,6 +420,11 @@ class Settings(BaseSettings):
         if not key:
             raise RuntimeError(f"JWT active kid '{self.JWT_ACTIVE_KID}' missing from JWT_KEYSET")
         return key
+
+    @property
+    def FLOWER_BASIC_AUTH_PASSWORD(self) -> str:
+        _username, _sep, password = (self.FLOWER_BASIC_AUTH or "").partition(":")
+        return password.strip()
 
     def _entropy(self, value: str) -> float:
         if not value:
@@ -362,23 +444,66 @@ class Settings(BaseSettings):
             errors.append("SECRET_KEY does not have enough entropy")
         if self._looks_placeholder(self.ENCRYPTION_KEY):
             errors.append("ENCRYPTION_KEY must be configured in production")
-        if not self.JWT_KEYSET:
-            errors.append("JWT signing keys must be configured in production")
-        for kid, signing_key in self.JWT_KEYSET.items():
+        try:
+            jwt_keyset = self.JWT_KEYSET
+        except RuntimeError as exc:
+            errors.append(str(exc))
+            jwt_keyset = {}
+        else:
+            if not jwt_keyset:
+                errors.append("JWT signing keys must be configured in production")
+        for kid, signing_key in jwt_keyset.items():
             if self._looks_placeholder(signing_key) or len(signing_key.strip()) < 64:
                 errors.append(f"JWT signing key '{kid}' must be a non-placeholder 64+ character secret")
         if not self.HAS_REAL_TELEGRAM_TOKEN or not self.HAS_REAL_TELEGRAM_CHAT_ID:
             errors.append("Telegram control-plane credentials must be configured in production")
         if self._looks_placeholder(self.ALERTMANAGER_WEBHOOK_TOKEN):
             errors.append("ALERTMANAGER_WEBHOOK_TOKEN must be configured in production")
+        app_host = (self.APP_HOST or "").strip()
+        if (
+            self._looks_placeholder(app_host)
+            or "://" in app_host
+            or "localhost" in app_host.lower()
+            or "example.com" in app_host.lower()
+            or "." not in app_host
+        ):
+            errors.append("APP_HOST must be a real production hostname without a URL scheme")
+        caddy_email = (self.CADDY_EMAIL or "").strip()
+        if (
+            self._looks_placeholder(caddy_email)
+            or "@" not in caddy_email
+            or caddy_email.lower().endswith("@example.com")
+            or "localhost" in caddy_email.lower()
+        ):
+            errors.append("CADDY_EMAIL must be configured with a real email for production TLS")
         if not self.CORS_ORIGINS:
             errors.append("ALLOWED_CORS_ORIGINS must not be empty in production")
+        if any(origin == "*" or origin.lower() == "null" or "*" in origin for origin in self.CORS_ORIGINS):
+            errors.append("ALLOWED_CORS_ORIGINS must contain only explicit production origins")
+        if self._looks_placeholder(self.SUPABASE_URL) or not self.SUPABASE_URL.lower().startswith("https://"):
+            errors.append("SUPABASE_URL must be configured with the real https project URL in production")
+        if self._looks_placeholder(self.SUPABASE_ANON_KEY):
+            errors.append("SUPABASE_ANON_KEY must be configured in production")
+        if self._looks_placeholder(self.SUPABASE_SERVICE_ROLE_KEY):
+            errors.append("SUPABASE_SERVICE_ROLE_KEY must be configured in production")
         if self._looks_placeholder(self.BACKUP_BUCKET):
             errors.append("BACKUP_BUCKET must be configured in production")
+        if self._looks_placeholder(self.BACKUP_REGION):
+            errors.append("BACKUP_REGION must be configured in production")
         if self._looks_placeholder(self.BACKUP_ENCRYPTION_PUBLIC_KEY):
             errors.append("BACKUP_ENCRYPTION_PUBLIC_KEY must be configured in production")
         if self._looks_placeholder(self.BACKUP_ENCRYPTION_PRIVATE_KEY_FILE):
             errors.append("BACKUP_ENCRYPTION_PRIVATE_KEY_FILE must be configured in production")
+        if self._looks_placeholder(self.N8N_PASSWORD):
+            errors.append("N8N_PASSWORD must be configured in production")
+        if self._looks_placeholder(self.GRAFANA_ADMIN_PASSWORD):
+            errors.append("GRAFANA_ADMIN_PASSWORD must be configured in production")
+        if (
+            self._looks_placeholder(self.FLOWER_BASIC_AUTH)
+            or ":" not in self.FLOWER_BASIC_AUTH
+            or self._looks_placeholder(self.FLOWER_BASIC_AUTH_PASSWORD)
+        ):
+            errors.append("FLOWER_BASIC_AUTH must use username:strong-password in production")
         redis_passwords = [
             urlsplit(self.REDIS_URL).password,
             urlsplit(self.CELERY_BROKER_URL).password,
@@ -392,12 +517,16 @@ class Settings(BaseSettings):
             or "example.com" in self.APP_BASE_URL.lower()
         ):
             errors.append("APP_BASE_URL must be a real production URL")
+        if urlsplit(self.APP_BASE_URL).scheme != "https":
+            errors.append("APP_BASE_URL must use https in production")
         if (
             self._looks_placeholder(self.FRONTEND_URL)
             or "localhost" in self.FRONTEND_URL.lower()
             or "example.com" in self.FRONTEND_URL.lower()
         ):
             errors.append("FRONTEND_URL must be a real production URL")
+        if urlsplit(self.FRONTEND_URL).scheme != "https":
+            errors.append("FRONTEND_URL must use https in production")
         if any(
             self._looks_placeholder(origin)
             or "localhost" in origin.lower()
@@ -431,3 +560,4 @@ class Settings(BaseSettings):
             )
 
 settings = Settings()
+

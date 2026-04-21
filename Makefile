@@ -1,4 +1,4 @@
-.PHONY: up down infra-up infra-down redis-up supabase-up supabase-down supabase-migrate supabase-preflight supabase-prod-up supabase-prod-down supabase-prod-migrate supabase-logs build restart logs shell-backend migrate migrate-local db-upgrade db-reset test test-local health health-local run-local frontend-dev frontend-build frontend-install openapi-export smoke verify
+.PHONY: up down infra-up infra-down redis-up supabase-up supabase-down supabase-migrate supabase-env-audit supabase-preflight supabase-prod-up supabase-prod-down supabase-prod-migrate supabase-logs build restart logs shell-backend migrate migrate-local db-upgrade db-reset test test-local health health-local run-local frontend-dev frontend-build frontend-install openapi-export smoke verify
 
 up:
 	docker compose --profile default up -d
@@ -18,16 +18,22 @@ supabase-down:
 supabase-migrate:
 	docker compose exec backend python scripts/alembic_safe.py upgrade head
 
+supabase-env-audit:
+	cd backend && python scripts/production_env_audit.py --env-file ../.env.production --compose-file ../docker-compose.supabase.yml --frontend-env-file ../frontend/.env.production
+
 supabase-preflight:
+	$(MAKE) supabase-env-audit
 	ENV_FILE=.env.production docker compose --env-file .env.production -f docker-compose.supabase.yml run --rm backend python scripts/production_preflight.py
 
 supabase-prod-up:
+	$(MAKE) supabase-env-audit
 	ENV_FILE=.env.production docker compose --env-file .env.production -f docker-compose.supabase.yml up -d --build
 
 supabase-prod-down:
 	ENV_FILE=.env.production docker compose --env-file .env.production -f docker-compose.supabase.yml down
 
 supabase-prod-migrate:
+	$(MAKE) supabase-env-audit
 	ENV_FILE=.env.production docker compose --env-file .env.production -f docker-compose.supabase.yml run --rm backend python scripts/alembic_safe.py upgrade head
 
 supabase-logs:

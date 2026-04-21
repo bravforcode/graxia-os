@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 import subprocess
@@ -5,6 +6,7 @@ import sys
 
 import yaml
 
+from app.core.logging_config import setup_logging
 from app.main import app
 from scripts.export_openapi import export_openapi
 
@@ -85,3 +87,49 @@ def test_compose_has_backend_healthcheck_and_profile_safe_dependencies():
     assert backend["depends_on"]["postgres"]["required"] is False
     assert backend["depends_on"]["redis"]["condition"] == "service_healthy"
     assert frontend["depends_on"]["backend"]["condition"] == "service_healthy"
+
+
+def test_latest_users_migration_includes_social_auth_columns():
+    backend_root = Path(__file__).resolve().parents[1]
+    migration_path = (
+        backend_root
+        / "alembic"
+        / "versions"
+        / "004_add_social_auth_columns_to_users.py"
+    )
+    migration = migration_path.read_text(encoding="utf-8")
+
+    assert "provider VARCHAR(50)" in migration
+    assert "provider_id VARCHAR(255)" in migration
+    assert "avatar_url VARCHAR(1024)" in migration
+    assert 'revision: str = "004_users_social_cols"' in migration
+
+
+def test_setup_logging_falls_back_to_console_when_file_handlers_are_unavailable(monkeypatch):
+    root_logger = logging.getLogger()
+    original_handlers = list(root_logger.handlers)
+    original_level = root_logger.level
+    for handler in list(root_logger.handlers):
+        root_logger.removeHandler(handler)
+
+    def _blocked_file_handler(*args, **kwargs):
+        raise PermissionError("log file blocked")
+
+    monkeypatch.setattr(logging, "FileHandler", _blocked_file_handler)
+
+    try:
+        setup_logging("INFO")
+        assert any(
+            getattr(handler, "_bravos_json_logging", False)
+            for handler in root_logger.handlers
+        )
+    finally:
+        for handler in list(root_logger.handlers):
+            root_logger.removeHandler(handler)
+            try:
+                handler.close()
+            except Exception:
+                pass
+        root_logger.setLevel(original_level)
+        for handler in original_handlers:
+            root_logger.addHandler(handler)

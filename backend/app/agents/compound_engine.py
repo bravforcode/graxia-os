@@ -6,6 +6,7 @@ from typing import Any
 from sqlalchemy import func, select
 
 from app.agents.base import BaseAgent
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,33 @@ class CompoundEngine(BaseAgent):
             await self._update_weekly_metrics(revenue=revenue, proposals_won=1)
         except Exception as exc:
             logger.error("CompoundEngine handle_win failed: %s", exc, exc_info=True)
+            return
+
+        try:
+            from app.database import AsyncSessionLocal
+            from app.models.submission import Submission
+            from app.telegram_bot.bot import send_message
+            from sqlalchemy import and_
+
+            await send_message(f"💸 Win recorded: +{float(revenue):,.0f} THB")
+
+            today = datetime.now(timezone.utc).date()
+            async with AsyncSessionLocal() as db:
+                total_today = await db.scalar(
+                    select(func.sum(Submission.actual_value)).where(
+                        and_(
+                            Submission.status == "won",
+                            func.date(Submission.outcome_at) == today,
+                        )
+                    )
+                )
+            total_today_value = float(total_today or 0)
+            if total_today_value >= float(settings.DAILY_REVENUE_TARGET_THB or 0):
+                await send_message(
+                    f"🎯 Daily revenue target reached: {total_today_value:,.0f} THB (target {int(settings.DAILY_REVENUE_TARGET_THB)} THB)"
+                )
+        except Exception as exc:
+            logger.warning("CompoundEngine win notification failed: %s", exc)
 
     async def run(self) -> dict[str, Any]:
         metrics = await self._calculate_weekly_metrics()

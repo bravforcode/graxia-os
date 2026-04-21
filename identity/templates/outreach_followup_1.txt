@@ -1,0 +1,13 @@
+Hi {{contact_name}},
+
+Just following up in case my last note got buried.
+
+If {{company}} is working on growth, I can help you set up a simple pipeline that:
+- captures leads consistently
+- routes them automatically
+- keeps follow-ups from slipping
+
+If you want, reply with the best point of contact (or what you’re prioritizing right now) and I’ll keep it short.
+
+Best,
+{{name}}

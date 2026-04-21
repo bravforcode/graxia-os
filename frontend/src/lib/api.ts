@@ -82,6 +82,30 @@ export interface Draft {
   created_at?: string
 }
 
+export interface ApprovalRequest {
+  id: string
+  title: string
+  action_type: string
+  subject_type?: string | null
+  subject_id?: string | null
+  status: string
+  policy_class: string
+  requested_by?: string | null
+  batch_key?: string | null
+  details?: Record<string, unknown> | null
+  preview?: Record<string, unknown> | null
+  expires_at?: string | null
+  resolved_at?: string | null
+  resolution_note?: string | null
+  created_at?: string | null
+}
+
+export interface ApprovalDecisionResponse {
+  id: string
+  status: string
+  batch_key?: string | null
+}
+
 export interface CognitiveState {
   id: string
   date: string
@@ -119,7 +143,44 @@ export interface Contact {
   notes?: string
   relationship_strength?: number
   last_contacted_at?: string
+  value_score?: number
+  next_followup_date?: string
+  followup_reason?: string
+  updated_at?: string
   created_at?: string
+}
+
+export interface ContactStats {
+  total: number
+  leads: number
+  with_email: number
+  followup_due: number
+  by_type: Record<string, number>
+}
+
+export interface SystemStatsHistoryItem {
+  name: string
+  date: string
+  leads: number
+  outreach: number
+  success: number
+  failed: number
+}
+
+export interface SystemStats {
+  leads_scanned: number
+  active_leads: number
+  total_contacts: number
+  opportunities_found: number
+  ai_actions: number
+  success_rate: number
+  completed_24h: number
+  failed_24h: number
+  outreach_sent_24h: number
+  active_ai_provider: string
+  active_ai_model: string
+  environment: string
+  history: SystemStatsHistoryItem[]
 }
 
 export interface JobPosting {
@@ -355,9 +416,9 @@ client.interceptors.response.use(
 )
 
 async function loginRequest(email: string, password: string): Promise<AuthResponse> {
-  const formData = new FormData()
-  formData.append('username', email)
-  formData.append('password', password)
+  const formData = new URLSearchParams()
+  formData.set('username', email)
+  formData.set('password', password)
   const { data } = await publicClient.post<AuthResponse>('/auth/login', formData, {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -393,6 +454,11 @@ export const api = {
 
   getHealth: async (): Promise<SystemHealth> => {
     const { data } = await client.get<SystemHealth>('/system/health')
+    return data
+  },
+
+  getSystemStats: async (): Promise<SystemStats> => {
+    const { data } = await client.get<SystemStats>('/system/stats')
     return data
   },
 
@@ -457,6 +523,30 @@ export const api = {
     return data
   },
 
+  getApprovals: async (params?: {
+    status?: string
+    batch_key?: string
+    limit?: number
+    offset?: number
+  }): Promise<ListResponse<ApprovalRequest>> => {
+    const { data } = await client.get('/approvals', { params })
+    return data
+  },
+
+  approveApproval: async (id: string, note?: string): Promise<ApprovalDecisionResponse> => {
+    const { data } = await client.patch(`/approvals/${id}/approve`, null, {
+      params: note ? { note } : undefined,
+    })
+    return data
+  },
+
+  rejectApproval: async (id: string, note?: string): Promise<ApprovalDecisionResponse> => {
+    const { data } = await client.patch(`/approvals/${id}/reject`, null, {
+      params: note ? { note } : undefined,
+    })
+    return data
+  },
+
   getCognitiveToday: async (): Promise<CognitiveState> => {
     const { data } = await client.get('/cognitive/today')
     return data
@@ -478,13 +568,35 @@ export const api = {
     return data
   },
 
-  getContacts: async (): Promise<ListResponse<Contact>> => {
-    const { data } = await client.get('/contacts')
+  getContacts: async (params?: {
+    q?: string
+    contact_type?: string
+    min_value_score?: number
+    followup_due_only?: boolean
+    limit?: number
+    offset?: number
+  }): Promise<ListResponse<Contact>> => {
+    const { data } = await client.get('/contacts', { params })
     return data
   },
 
-  createContact: async (contact: Partial<Contact>) => {
+  getContactStats: async (): Promise<ContactStats> => {
+    const { data } = await client.get('/contacts/stats')
+    return data
+  },
+
+  createContact: async (contact: Partial<Contact>): Promise<Contact> => {
     const { data } = await client.post('/contacts', contact)
+    return data
+  },
+
+  updateContact: async (contactId: string, contact: Partial<Contact>): Promise<Contact> => {
+    const { data } = await client.patch(`/contacts/${contactId}`, contact)
+    return data
+  },
+
+  deleteContact: async (contactId: string) => {
+    const { data } = await client.delete(`/contacts/${contactId}`)
     return data
   },
 
@@ -594,6 +706,14 @@ export const api = {
 
   clearFailedEvents: async () => {
     const { data } = await client.delete('/events/failed')
+    return data
+  },
+
+  socialLogin: async (token: string, provider: string): Promise<AuthResponse> => {
+    const { data } = await publicClient.post<AuthResponse>('/auth/social-login', {
+      token,
+      provider,
+    })
     return data
   },
 }

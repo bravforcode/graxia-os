@@ -24,6 +24,9 @@ class User(Base):
     totp_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    provider: Mapped[str | None] = mapped_column(String(50))
+    provider_id: Mapped[str | None] = mapped_column(String(255))
+    avatar_url: Mapped[str | None] = mapped_column(String(1024))
 
     def __repr__(self) -> str:
         return f"<User {self.email}>"
