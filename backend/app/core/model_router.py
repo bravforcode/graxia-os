@@ -18,6 +18,7 @@ class ModelTierConfig:
 
 @dataclass(frozen=True)
 class RouterConfig:
+    local: ModelTierConfig | None
     cheap: ModelTierConfig
     mid: ModelTierConfig
     high: ModelTierConfig
@@ -98,7 +99,9 @@ def route_task(
     )
 
     target_tier = base_tier
-    if complexity is not None:
+    if router.local is not None and getattr(settings, "HERMES_URL", None) and getattr(settings, "OPENCLAW_DEFAULT_MODEL", "") == "local-gateway":
+        target_tier = "local"
+    elif complexity is not None:
         complexity_tier = _tier_from_complexity(complexity, router)
         if _TIER_ORDER[complexity_tier] > _TIER_ORDER[target_tier]:
             target_tier = complexity_tier
@@ -151,5 +154,8 @@ def _estimate_cost_usd(
     output_tokens: int,
 ) -> float:
     input_cost = (input_tokens / 1_000_000) * tier_config.pricing.input_cost_per_1m
+    output_cost = (output_tokens / 1_000_000) * tier_config.pricing.output_cost_per_1m
+    return round(input_cost + output_cost, 6)
+er_config.pricing.input_cost_per_1m
     output_cost = (output_tokens / 1_000_000) * tier_config.pricing.output_cost_per_1m
     return round(input_cost + output_cost, 6)

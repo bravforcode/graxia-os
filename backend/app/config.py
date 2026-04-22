@@ -141,6 +141,11 @@ class Settings(BaseSettings):
     OPENCLAW_FAST_MODEL: str = "claude-haiku-4-5"
     OPENCLAW_FALLBACK_MODELS: str = ""
 
+    # Hermes / WSL2 Gateway
+    HERMES_URL: str = "http://host.docker.internal:8081"
+    HERMES_API_KEY: str = ""
+    HERMES_TIMEOUT_SECONDS: int = 15
+
     # AI â€” Gemini (fallback)
     GEMINI_API_KEY: str = ""
     DEFAULT_MODEL: str = "claude-sonnet-4-5"
