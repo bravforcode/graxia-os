@@ -75,6 +75,19 @@ def test_setup_script_uses_env_example_and_modern_compose():
     assert "http://localhost:3000" not in script
 
 
+def test_production_deploy_scripts_use_explicit_env_file_and_audit_gate():
+    repo_root = Path(__file__).resolve().parents[2]
+    deploy_script = (repo_root / "deploy" / "scripts" / "deploy.sh").read_text(encoding="utf-8")
+    rollback_script = (repo_root / "deploy" / "scripts" / "rollback.sh").read_text(encoding="utf-8")
+    dr_script = (repo_root / "deploy" / "scripts" / "dr-rebuild.sh").read_text(encoding="utf-8")
+
+    assert "production_env_audit.py" in deploy_script
+    assert 'docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE"' in deploy_script
+    assert 'docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE"' in rollback_script
+    assert "docker compose --env-file" in dr_script
+    assert "$ENV_FILE" in dr_script
+
+
 def test_compose_has_backend_healthcheck_and_profile_safe_dependencies():
     repo_root = Path(__file__).resolve().parents[2]
     compose = yaml.safe_load((repo_root / "docker-compose.yml").read_text(encoding="utf-8"))

@@ -4,6 +4,7 @@ from sqlalchemy import (
     Integer, Numeric, String, Text, func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
+from pgvector.sqlalchemy import Vector
 from .base import Base
 
 
@@ -11,7 +12,7 @@ class KnowledgeItem(Base):
     __tablename__ = "knowledge_items"
     __table_args__ = (
         CheckConstraint(
-            "category IN ('project','proposal_template','bio','skill_description','lesson','case_study','testimonial','pitch_snippet','objection_response','playbook','failure_analysis')",
+            "category IN ('project','proposal_template','bio','skill_description','lesson','case_study','testimonial','pitch_snippet','objection_response','playbook','failure_analysis','vault_note','research')",
             name="ck_knowledge_category",
         ),
     )
