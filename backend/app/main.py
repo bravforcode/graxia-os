@@ -219,7 +219,7 @@ app.include_router(costs_router)
 app.include_router(events_router)
 app.include_router(scrapers_router)
 app.include_router(tracking_router)
-
+app.include_router(orchestration_router, prefix="/api/v1/orchestration", tags=["orchestration"])
 
 @app.get("/metrics", response_class=PlainTextResponse)
 async def get_metrics():

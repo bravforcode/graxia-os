@@ -25,6 +25,7 @@ from .scraper_run import ScraperRun
 from .api_rate_limit import APIRateLimit
 from .user import User
 from .deploy_history import DeployHistory
+from .orchestration import AgentTask, AgentMessage
 
 __all__ = [
     "Base",
@@ -54,4 +55,6 @@ __all__ = [
     "APIRateLimit",
     "User",
     "DeployHistory",
+    "AgentTask",
+    "AgentMessage",
 ]

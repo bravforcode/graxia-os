@@ -12,10 +12,11 @@ from .costs import router as costs_router
 from .auth import router as auth_router
 from .events import router as events_router
 from .scrapers import router as scrapers_router
+from .orchestration import router as orchestration_router
 
 __all__ = [
     "admin_router", "opportunities_router", "contacts_router",
     "drafts_router", "metrics_router", "cognitive_router", "system_router",
     "jobs_router", "email_threads_router", "tasks_router", "costs_router", "auth_router",
-    "events_router", "scrapers_router",
+    "events_router", "scrapers_router", "orchestration_router"
 ]

@@ -1,7 +1,7 @@
 """add pgvector
 
-Revision ID: 004
-Revises: 003
+Revision ID: 005
+Revises: 004_users_social_cols
 Create Date: 2026-04-22
 
 """
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 from pgvector.sqlalchemy import Vector
 
 # revision identifiers, used by Alembic.
-revision: str = '004'
-down_revision: Union[str, None] = '003'
+revision: str = '005'
+down_revision: Union[str, None] = '004_users_social_cols'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
