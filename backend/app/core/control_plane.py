@@ -20,6 +20,25 @@ class ApprovalAlreadyProcessedError(RuntimeError):
         self.status = status
 
 
+def _approval_event_payload(approval: ApprovalRequest) -> dict[str, Any]:
+    return {
+        "approval_id": str(approval.id),
+        "title": approval.title,
+        "action_type": approval.action_type,
+        "status": approval.status,
+        "policy_class": approval.policy_class,
+        "requested_by": approval.requested_by,
+        "batch_key": approval.batch_key,
+        "subject_type": approval.subject_type,
+        "subject_id": str(approval.subject_id) if approval.subject_id else None,
+        "details": approval.details or {},
+        "preview": approval.preview or {},
+        "expires_at": approval.expires_at.isoformat() if approval.expires_at else None,
+        "resolved_at": approval.resolved_at.isoformat() if approval.resolved_at else None,
+        "resolution_note": approval.resolution_note,
+    }
+
+
 async def create_run(
     name: str,
     task_type: str,
@@ -109,6 +128,7 @@ async def queue_approval_request(
         await db.refresh(approval)
 
     await _notify_approval_request(approval)
+    await event_bus.emit("approval.requested", _approval_event_payload(approval))
     return approval
 
 
@@ -143,8 +163,9 @@ async def resolve_approval_request(
         if approval.status != "pending":
             raise ApprovalAlreadyProcessedError(approval.status)
 
+        resolved_at = datetime.now(UTC)
         approval.status = "approved" if decision == "approved" else "rejected"
-        approval.resolved_at = datetime.now(UTC)
+        approval.resolved_at = resolved_at
         approval.resolution_note = note
 
         if approval.subject_type == "content_draft" and approval.subject_id:
@@ -152,7 +173,7 @@ async def resolve_approval_request(
             if draft:
                 if decision == "approved":
                     draft.status = "approved"
-                    draft.approved_at = datetime.now(UTC)
+                    draft.approved_at = resolved_at
                 else:
                     draft.status = "rejected"
                     draft.rejection_reason = note or "Rejected from approval queue"
@@ -160,6 +181,7 @@ async def resolve_approval_request(
         await db.commit()
         await db.refresh(approval)
 
+    await event_bus.emit("approval.resolved", _approval_event_payload(approval))
     if decision == "approved" and approval.subject_type == "content_draft" and approval.subject_id:
         await event_bus.emit(
             "draft.approved",
@@ -201,6 +223,7 @@ async def mark_subject_approvals_resolved(
     note: str | None = None,
 ) -> int:
     async with AsyncSessionLocal() as db:
+        resolved_at = datetime.now(UTC)
         rows = list(
             (
                 await db.execute(
@@ -213,12 +236,17 @@ async def mark_subject_approvals_resolved(
             ).scalars()
         )
 
+        payloads: list[dict[str, Any]] = []
         for approval in rows:
             approval.status = "approved" if decision == "approved" else "rejected"
-            approval.resolved_at = datetime.now(UTC)
+            approval.resolved_at = resolved_at
             approval.resolution_note = note
+            payloads.append(_approval_event_payload(approval))
         await db.commit()
-        return len(rows)
+
+    for payload in payloads:
+        await event_bus.emit("approval.resolved", payload)
+    return len(rows)
 
 
 async def count_pending_approvals() -> int:

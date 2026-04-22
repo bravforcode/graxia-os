@@ -338,6 +338,13 @@ export interface EventBusHealth {
   event_types: number
 }
 
+export interface RuntimeAvailability {
+  available: boolean
+  message: string
+  status?: number
+  checkedUrl: string
+}
+
 function getCookieValue(name: string) {
   const target = `${name}=`
   return document.cookie
@@ -345,6 +352,27 @@ function getCookieValue(name: string) {
     .map((part) => part.trim())
     .find((part) => part.startsWith(target))
     ?.slice(target.length) ?? null
+}
+
+export function getRuntimeHealthUrl(apiBaseUrl = API_BASE_URL) {
+  const normalizedBaseUrl = apiBaseUrl.replace(/\/+$/, '')
+  const healthPath = '/system/health'
+
+  if (typeof window === 'undefined') {
+    return `${normalizedBaseUrl}${healthPath}`
+  }
+
+  if (normalizedBaseUrl.startsWith('http://') || normalizedBaseUrl.startsWith('https://')) {
+    const apiUrl = new URL(normalizedBaseUrl)
+    return new URL(`${apiUrl.pathname}${healthPath}`, apiUrl.origin).toString()
+  }
+
+  return new URL(`${normalizedBaseUrl}${healthPath}`, window.location.origin).toString()
+}
+
+function isRuntimeHealthResponse(response: { data: unknown; headers?: Record<string, unknown> }) {
+  const contentType = String(response.headers?.['content-type'] ?? response.headers?.['Content-Type'] ?? '')
+  return contentType.toLowerCase().includes('application/json') || typeof response.data === 'object'
 }
 
 export function getAccessToken() {
@@ -451,6 +479,66 @@ export const api = {
   registerRequest,
   getCurrentUser,
   logoutRequest,
+
+  getRuntimeAvailability: async (): Promise<RuntimeAvailability> => {
+    const checkedUrl = getRuntimeHealthUrl()
+
+    try {
+      const response = await axios.get(checkedUrl, {
+        headers: {
+          Accept: 'application/json',
+        },
+        timeout: 5_000,
+        validateStatus: () => true,
+        withCredentials: false,
+      })
+
+      if (response.status >= 200 && response.status < 300) {
+        if (!isRuntimeHealthResponse(response)) {
+          return {
+            available: false,
+            checkedUrl,
+            message: `${checkedUrl} returned ${response.status}, but did not return JSON health data. The frontend may be receiving the SPA fallback instead of the API.`,
+            status: response.status,
+          }
+        }
+
+        return {
+          available: true,
+          checkedUrl,
+          message: 'Backend runtime is reachable.',
+          status: response.status,
+        }
+      }
+
+      if (response.status === 404) {
+        return {
+          available: false,
+          checkedUrl,
+          message: `${checkedUrl} returned 404. This deployment does not have the backend mounted yet.`,
+          status: response.status,
+        }
+      }
+
+      return {
+        available: false,
+        checkedUrl,
+        message: `${checkedUrl} returned ${response.status}. The backend runtime is not ready to serve traffic yet.`,
+        status: response.status,
+      }
+    } catch (error) {
+      const detail =
+        axios.isAxiosError(error) && typeof error.message === 'string' && error.message.trim()
+          ? error.message
+          : 'The runtime probe could not reach the backend.'
+
+      return {
+        available: false,
+        checkedUrl,
+        message: `${checkedUrl} could not be reached. ${detail}`,
+      }
+    }
+  },
 
   getHealth: async (): Promise<SystemHealth> => {
     const { data } = await client.get<SystemHealth>('/system/health')

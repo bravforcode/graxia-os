@@ -113,11 +113,12 @@ def audit_production_env(
     env_values = parse_env_file(env_file)
     settings = Settings(**env_values)
 
-    try:
-        settings.validate_production_configuration()
+    production_errors = settings.get_production_configuration_errors()
+    if production_errors:
+        for error in production_errors:
+            result.add("production configuration", False, error)
+    else:
         result.add("production configuration", True, "strict settings accepted")
-    except Exception as exc:
-        result.add("production configuration", False, str(exc))
 
     _check_compose_frontend_bridge(compose_file, result)
     _check_required_secret_files(repo_root, result)

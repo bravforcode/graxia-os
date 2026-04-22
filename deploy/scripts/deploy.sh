@@ -12,27 +12,41 @@ ENV_FILE="${ENV_FILE:-.env.production}"
 
 export BACKEND_DIGEST FRONTEND_DIGEST HISTORY_FILE COMMIT_SHA DEPLOY_OPERATOR ENV_FILE
 
-docker compose -f "$COMPOSE_FILE" pull backend frontend worker-critical worker-default worker-background beat
+if [[ ! -f "$ENV_FILE" ]]; then
+  echo "Production env file not found: $ENV_FILE" >&2
+  exit 1
+fi
 
-docker compose -f "$COMPOSE_FILE" run --rm backend python scripts/production_preflight.py
-docker compose -f "$COMPOSE_FILE" run --rm backend python scripts/alembic_safe.py upgrade head
+compose() {
+  docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"
+}
+
+python3 backend/scripts/production_env_audit.py \
+  --env-file "$ENV_FILE" \
+  --compose-file "$COMPOSE_FILE" \
+  --frontend-env-file frontend/.env.production
+
+compose pull backend frontend worker-critical worker-default worker-background beat
+
+compose run --rm backend python scripts/production_preflight.py
+compose run --rm backend python scripts/alembic_safe.py upgrade head
 MIGRATION_VERSION="$(
-  docker compose -f "$COMPOSE_FILE" run --rm backend python scripts/current_migration.py 2>/dev/null || true
+  compose run --rm backend python scripts/current_migration.py 2>/dev/null || true
 )"
 export MIGRATION_VERSION
 
-docker compose -f "$COMPOSE_FILE" up -d --no-deps backend
+compose up -d --no-deps backend
 sleep 10
-docker compose -f "$COMPOSE_FILE" exec -T backend curl -sf http://localhost:8000/health >/dev/null
+compose exec -T backend curl -sf http://localhost:8000/health >/dev/null
 
-docker compose -f "$COMPOSE_FILE" up -d --no-deps worker-critical
+compose up -d --no-deps worker-critical
 sleep 5
-docker compose -f "$COMPOSE_FILE" up -d --no-deps worker-default worker-background beat
-docker compose -f "$COMPOSE_FILE" up -d --no-deps frontend
+compose up -d --no-deps worker-default worker-background beat
+compose up -d --no-deps frontend
 
 python3 deploy/scripts/smoke_test.py --target "$APP_URL"
 
-docker compose -f "$COMPOSE_FILE" exec -T backend python scripts/record_deploy.py \
+compose exec -T backend python scripts/record_deploy.py \
   --commit-sha "$COMMIT_SHA" \
   --backend-digest "$BACKEND_DIGEST" \
   --frontend-digest "$FRONTEND_DIGEST" \

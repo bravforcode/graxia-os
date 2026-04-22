@@ -4,6 +4,8 @@ import axios from 'axios'
 import { api, type User } from '@/lib/api'
 import { supabase } from '@/lib/supabase'
 
+type BackendState = 'checking' | 'available' | 'unavailable'
+
 interface AuthContextType {
   user: User | null
   token: string | null
@@ -13,6 +15,9 @@ interface AuthContextType {
   logout: () => void
   isAuthenticated: boolean
   isLoading: boolean
+  backendState: BackendState
+  backendMessage: string | null
+  refreshSession: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -22,6 +27,35 @@ function isExpectedUnauthenticatedError(error: unknown) {
     return error.response?.status === 401
   }
   return error instanceof Error && error.message === 'no active session'
+}
+
+function isBackendUnavailableError(error: unknown) {
+  if (!axios.isAxiosError(error)) {
+    return false
+  }
+
+  if (!error.response) {
+    return true
+  }
+
+  const { status } = error.response
+  return status === 404 || status >= 500
+}
+
+function getBackendUnavailableMessage(error: unknown) {
+  if (axios.isAxiosError(error)) {
+    if (!error.response) {
+      return 'The operator API could not be reached from this deployment.'
+    }
+
+    if (error.response.status === 404) {
+      return 'The operator API routes are not mounted on this deployment yet.'
+    }
+
+    return `The operator API returned ${error.response.status} and is not ready to accept traffic.`
+  }
+
+  return 'The operator API is not reachable from this deployment.'
 }
 
 function getApiErrorMessage(error: unknown, fallback: string) {
@@ -53,9 +87,59 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [backendState, setBackendState] = useState<BackendState>('checking')
+  const [backendMessage, setBackendMessage] = useState<string | null>(null)
+
+  const resetAuthState = () => {
+    setUser(null)
+    setToken(null)
+  }
+
+  const markBackendUnavailable = (message: string) => {
+    setBackendState('unavailable')
+    setBackendMessage(message)
+    resetAuthState()
+  }
+
+  const fetchUser = async () => {
+    try {
+      const currentUser = await api.getCurrentUser()
+      setUser(currentUser)
+      setToken('session')
+    } catch (error) {
+      if (isExpectedUnauthenticatedError(error)) {
+        resetAuthState()
+        return
+      }
+
+      if (isBackendUnavailableError(error)) {
+        markBackendUnavailable(getBackendUnavailableMessage(error))
+        return
+      }
+
+      console.error('Failed to fetch user:', error)
+      resetAuthState()
+    }
+  }
+
+  const refreshSession = async () => {
+    setIsLoading(true)
+
+    const availability = await api.getRuntimeAvailability()
+    if (!availability.available) {
+      markBackendUnavailable(availability.message)
+      setIsLoading(false)
+      return
+    }
+
+    setBackendState('available')
+    setBackendMessage(null)
+    await fetchUser()
+    setIsLoading(false)
+  }
 
   useEffect(() => {
-    void fetchUser()
+    void refreshSession()
 
     // Handle Supabase OAuth callback
     const handleAuthChange = async () => {
@@ -65,9 +149,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const response = await api.socialLogin(session.access_token, session.user.app_metadata.provider || 'social')
           setUser(response.user)
           setToken('session')
+          setBackendState('available')
+          setBackendMessage(null)
           // Clear supabase session once we have local session if desired, 
           // but usually keeping it is fine.
         } catch (err) {
+          if (isBackendUnavailableError(err)) {
+            markBackendUnavailable(getBackendUnavailableMessage(err))
+          }
           console.error('Failed to exchange supabase token:', err)
         }
       }
@@ -76,8 +165,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
 
     const handleSessionExpired = () => {
-      setUser(null)
-      setToken(null)
+      resetAuthState()
       setIsLoading(false)
     }
 
@@ -85,40 +173,46 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => window.removeEventListener('auth:session-expired', handleSessionExpired)
   }, [])
 
-  const fetchUser = async () => {
-    try {
-      const currentUser = await api.getCurrentUser()
-      setUser(currentUser)
-      setToken('session')
-    } catch (error) {
-      if (!isExpectedUnauthenticatedError(error)) {
-        console.error('Failed to fetch user:', error)
-      }
-      setUser(null)
-      setToken(null)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   // Login
   const login = async (email: string, password: string) => {
+    if (backendState === 'unavailable') {
+      throw new Error(backendMessage ?? 'The operator API is not reachable from this deployment.')
+    }
+
     try {
       const response = await api.loginRequest(email, password)
       setUser(response.user)
       setToken('session')
+      setBackendState('available')
+      setBackendMessage(null)
     } catch (error: unknown) {
+      if (isBackendUnavailableError(error)) {
+        const message = getBackendUnavailableMessage(error)
+        markBackendUnavailable(message)
+        throw new Error(message)
+      }
       throw new Error(getApiErrorMessage(error, 'Login failed'))
     }
   }
 
   // Register
   const register = async (email: string, password: string, fullName?: string) => {
+    if (backendState === 'unavailable') {
+      throw new Error(backendMessage ?? 'The operator API is not reachable from this deployment.')
+    }
+
     try {
       const response = await api.registerRequest(email, password, fullName)
       setUser(response.user)
       setToken('session')
+      setBackendState('available')
+      setBackendMessage(null)
     } catch (error: unknown) {
+      if (isBackendUnavailableError(error)) {
+        const message = getBackendUnavailableMessage(error)
+        markBackendUnavailable(message)
+        throw new Error(message)
+      }
       throw new Error(getApiErrorMessage(error, 'Registration failed'))
     }
   }
@@ -142,8 +236,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Logout
   const logout = () => {
     void api.logoutRequest()
-    setUser(null)
-    setToken(null)
+    resetAuthState()
   }
 
   const value: AuthContextType = {
@@ -154,7 +247,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     socialLogin,
     logout,
     isAuthenticated: !!user,
-    isLoading
+    isLoading,
+    backendState,
+    backendMessage,
+    refreshSession,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

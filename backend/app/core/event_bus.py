@@ -80,30 +80,32 @@ class EventBus:
         while self._running:
             try:
                 event, payload = await asyncio.wait_for(self._queue.get(), timeout=1.0)
-                handlers = self._handlers.get(event, [])
-                if not handlers:
-                    logger.debug(f"EventBus: no handlers for '{event}'")
-                    continue
-                for handler in handlers:
-                    handler_name = getattr(handler, "__name__", handler.__class__.__name__)
-                    try:
-                        result = handler(payload)
-                        if inspect.isawaitable(result):
-                            await result
-                    except Exception as exc:
-                        logger.error(
-                            "EventBus: handler %s failed for '%s': %s",
-                            handler_name,
-                            event,
-                            exc,
-                            exc_info=True,
-                        )
-                        # Add to dead letter queue
-                        self._failed_events.append((event, payload, str(exc)))
-                        # Keep only last 100 failed events
-                        if len(self._failed_events) > 100:
-                            self._failed_events.pop(0)
-                self._queue.task_done()
+                try:
+                    handlers = self._handlers.get(event, [])
+                    if not handlers:
+                        logger.debug(f"EventBus: no handlers for '{event}'")
+                        continue
+                    for handler in handlers:
+                        handler_name = getattr(handler, "__name__", handler.__class__.__name__)
+                        try:
+                            result = handler(payload)
+                            if inspect.isawaitable(result):
+                                await result
+                        except Exception as exc:
+                            logger.error(
+                                "EventBus: handler %s failed for '%s': %s",
+                                handler_name,
+                                event,
+                                exc,
+                                exc_info=True,
+                            )
+                            # Add to dead letter queue
+                            self._failed_events.append((event, payload, str(exc)))
+                            # Keep only last 100 failed events
+                            if len(self._failed_events) > 100:
+                                self._failed_events.pop(0)
+                finally:
+                    self._queue.task_done()
             except asyncio.TimeoutError:
                 continue
             except Exception as exc:
@@ -128,12 +130,7 @@ class EventBus:
         self._handlers = defaultdict(list)
         self._stats = defaultdict(int)
         self._failed_events = []
-        while not self._queue.empty():
-            try:
-                self._queue.get_nowait()
-                self._queue.task_done()
-            except asyncio.QueueEmpty:
-                break
+        self._queue = asyncio.Queue()
 
 
 event_bus = EventBus()

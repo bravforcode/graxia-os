@@ -20,10 +20,14 @@ describe('ProtectedRoute', () => {
     mockedUseAuth.mockReturnValue({
       isAuthenticated: false,
       isLoading: true,
+      backendState: 'checking',
+      backendMessage: null,
+      refreshSession: vi.fn(),
       user: null,
       token: null,
       login: vi.fn(),
       register: vi.fn(),
+      socialLogin: vi.fn(),
       logout: vi.fn(),
     })
 
@@ -49,14 +53,56 @@ describe('ProtectedRoute', () => {
     expect(screen.queryByText('Secure area')).not.toBeInTheDocument()
   })
 
-  it('redirects unauthenticated users to login', () => {
+  it('renders a deployment-safe unavailable state when the backend is missing', () => {
     mockedUseAuth.mockReturnValue({
       isAuthenticated: false,
       isLoading: false,
+      backendState: 'unavailable',
+      backendMessage: 'https://brav-os-frontend.vercel.app/api/v1/system/health returned 404. This deployment does not have the backend mounted yet.',
+      refreshSession: vi.fn(),
       user: null,
       token: null,
       login: vi.fn(),
       register: vi.fn(),
+      socialLogin: vi.fn(),
+      logout: vi.fn(),
+    })
+
+    render(
+      <MemoryRouter
+        initialEntries={['/']}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <div>Secure area</div>
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByText('Control Plane Unavailable')).toBeInTheDocument()
+    expect(screen.getByText('Frontend is live, but the backend is not reachable yet.')).toBeInTheDocument()
+    expect(screen.queryByText('Secure area')).not.toBeInTheDocument()
+  })
+
+  it('redirects unauthenticated users to login', () => {
+    mockedUseAuth.mockReturnValue({
+      isAuthenticated: false,
+      isLoading: false,
+      backendState: 'available',
+      backendMessage: null,
+      refreshSession: vi.fn(),
+      user: null,
+      token: null,
+      login: vi.fn(),
+      register: vi.fn(),
+      socialLogin: vi.fn(),
       logout: vi.fn(),
     })
 
@@ -87,6 +133,9 @@ describe('ProtectedRoute', () => {
     mockedUseAuth.mockReturnValue({
       isAuthenticated: true,
       isLoading: false,
+      backendState: 'available',
+      backendMessage: null,
+      refreshSession: vi.fn(),
       user: {
         id: 'user-1',
         email: 'operator@example.com',
@@ -97,6 +146,7 @@ describe('ProtectedRoute', () => {
       token: 'access-token',
       login: vi.fn(),
       register: vi.fn(),
+      socialLogin: vi.fn(),
       logout: vi.fn(),
     })
 

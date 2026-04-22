@@ -91,7 +91,8 @@ System is ready and monitoring your activities.
         event_bus.subscribe("task.created", self._on_task_created)
         event_bus.subscribe("task.completed", self._on_task_completed)
         event_bus.subscribe("email.received", self._on_email_received)
-        event_bus.subscribe("approval.requested", self._on_approval_requested)
+        # Approval requests are delivered directly from control_plane so the
+        # inline keyboard payload is preserved without duplicate Telegram pings.
         event_bus.subscribe("approval.resolved", self._on_approval_resolved)
         event_bus.subscribe("cost.threshold", self._on_cost_threshold)
         event_bus.subscribe("system.alert", self._on_system_alert)
@@ -347,8 +348,12 @@ System is ready and monitoring your activities.
     async def _on_approval_resolved(self, payload: dict) -> None:
         title = payload.get("title", "")
         status = payload.get("status", "")
+        resolution_note = payload.get("resolution_note", "")
+        msg = f"✅ Approval resolved: **{title}**\n📋 Status: {status}"
+        if resolution_note:
+            msg += f"\n📝 {resolution_note}"
         await self.notify(
-            f"✅ Approval resolved: **{title}**\n📋 Status: {status}",
+            msg,
             NotificationPriority.NORMAL,
             NotificationType.APPROVAL
         )

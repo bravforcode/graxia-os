@@ -67,3 +67,5 @@ backend/backups/
 backend/.tmp_pytest/
 backend/tmp*/
 backend/C*/
+
+.vercel

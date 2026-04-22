@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 
+import { ControlPlaneUnavailable } from '@/components/ControlPlaneUnavailable'
 import { useAuth } from '@/contexts/AuthContext'
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
   const location = useLocation()
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isLoading, backendState, backendMessage, refreshSession } = useAuth()
 
   if (isLoading) {
     return (
@@ -22,6 +23,22 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
           <p className="text-sm text-[var(--color-text-secondary)]">
             Rehydrating your control plane access and reconnecting agent telemetry.
           </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (backendState === 'unavailable') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--color-bg)] px-6 py-10">
+        <div className="w-full max-w-3xl">
+          <ControlPlaneUnavailable
+            message={
+              backendMessage ??
+              'The backend control plane is not reachable from this deployment yet.'
+            }
+            onRetry={refreshSession}
+          />
         </div>
       </div>
     )

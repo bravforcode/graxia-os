@@ -7,10 +7,12 @@ import { api } from '@/lib/api'
 
 vi.mock('@/lib/api', () => ({
   api: {
+    getRuntimeAvailability: vi.fn(),
     getCurrentUser: vi.fn(),
     loginRequest: vi.fn(),
     registerRequest: vi.fn(),
     logoutRequest: vi.fn(),
+    socialLogin: vi.fn(),
   },
 }))
 
@@ -42,6 +44,12 @@ function AuthHarness() {
 describe('AuthProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockedApi.getRuntimeAvailability.mockResolvedValue({
+      available: true,
+      message: 'Backend runtime is reachable.',
+      checkedUrl: 'https://example.com/api/v1/system/health',
+      status: 200,
+    })
     mockedApi.getCurrentUser.mockRejectedValue(new Error('no active session'))
   })
 
@@ -58,6 +66,27 @@ describe('AuthProvider', () => {
 
     expect(mockedApi.getCurrentUser).toHaveBeenCalledTimes(1)
     expect(screen.getByText(`user:${baseUser.email}`)).toBeInTheDocument()
+  })
+
+  it('reports backend unavailability when the runtime probe fails', async () => {
+    mockedApi.getRuntimeAvailability.mockResolvedValue({
+      available: false,
+      message: 'https://example.com/api/v1/system/health returned 404. This deployment does not have the backend mounted yet.',
+      checkedUrl: 'https://example.com/api/v1/system/health',
+      status: 404,
+    })
+
+    render(
+      <AuthProvider>
+        <AuthHarness />
+      </AuthProvider>,
+    )
+
+    await waitFor(() => expect(screen.getByText('loading:false')).toBeInTheDocument())
+
+    expect(mockedApi.getCurrentUser).not.toHaveBeenCalled()
+    expect(screen.getByText('authenticated:false')).toBeInTheDocument()
+    expect(screen.getByText('user:none')).toBeInTheDocument()
   })
 
   it('stores tokens and updates user state on login', async () => {

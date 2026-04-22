@@ -433,9 +433,9 @@ class Settings(BaseSettings):
         total = len(value)
         return -sum((count / total) * math.log2(count / total) for count in counts.values())
 
-    def validate_production_configuration(self) -> None:
+    def get_production_configuration_errors(self) -> list[str]:
         if not self.STRICT_BOOTSTRAP:
-            return
+            return []
 
         errors: list[str] = []
         if len((self.SECRET_KEY or "").strip()) < 64:
@@ -554,9 +554,13 @@ class Settings(BaseSettings):
             if isinstance(value, str) and value.strip().lower() in forbidden_values:
                 errors.append(f"{field_name} uses a forbidden placeholder value")
 
+        return sorted(set(errors))
+
+    def validate_production_configuration(self) -> None:
+        errors = self.get_production_configuration_errors()
         if errors:
             raise RuntimeError(
-                "Production security configuration is invalid: " + "; ".join(sorted(set(errors)))
+                "Production security configuration is invalid: " + "; ".join(errors)
             )
 
 settings = Settings()

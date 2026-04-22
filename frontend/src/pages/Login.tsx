@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { AuthShell } from '@/components/AuthShell'
+import { ControlPlaneUnavailable } from '@/components/ControlPlaneUnavailable'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -10,7 +11,7 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const { login, socialLogin } = useAuth()
+  const { login, socialLogin, backendState, backendMessage, refreshSession } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (event: FormEvent) => {
@@ -26,6 +27,20 @@ export default function Login() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  if (backendState === 'unavailable') {
+    return (
+      <AuthShell
+        title="Sign in"
+        subtitle="Authenticate into the operator console once the control plane backend is online."
+      >
+        <ControlPlaneUnavailable
+          message={backendMessage ?? 'The operator API is not reachable from this deployment yet.'}
+          onRetry={refreshSession}
+        />
+      </AuthShell>
+    )
   }
 
   return (

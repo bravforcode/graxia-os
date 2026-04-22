@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { AuthShell } from '@/components/AuthShell'
+import { ControlPlaneUnavailable } from '@/components/ControlPlaneUnavailable'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -12,7 +13,7 @@ export default function Register() {
   const [fullName, setFullName] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const { register } = useAuth()
+  const { register, backendState, backendMessage, refreshSession } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (event: FormEvent) => {
@@ -39,6 +40,20 @@ export default function Register() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  if (backendState === 'unavailable') {
+    return (
+      <AuthShell
+        title="Create account"
+        subtitle="Provision operator access after the backend control plane is reachable."
+      >
+        <ControlPlaneUnavailable
+          message={backendMessage ?? 'The operator API is not reachable from this deployment yet.'}
+          onRetry={refreshSession}
+        />
+      </AuthShell>
+    )
   }
 
   return (

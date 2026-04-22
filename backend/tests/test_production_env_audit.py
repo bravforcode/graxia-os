@@ -160,3 +160,51 @@ services:
 
         assert result.failed >= 1
         assert any(name == "secret file backup_private_key.txt" and not ok for name, ok, _message in result.checks)
+
+
+def test_production_env_audit_surfaces_each_missing_deploy_value_as_a_separate_failure():
+    with _temp_workspace() as temp_dir:
+        tmp_path = Path(temp_dir)
+        env_file = tmp_path / ".env.production"
+        compose_file = tmp_path / "docker-compose.supabase.yml"
+
+        broken_values = _valid_env_values()
+        broken_values.update(
+            {
+                "APP_HOST": "https://PASTE_YOUR_DOMAIN_HERE",
+                "APP_BASE_URL": "https://PASTE_YOUR_DOMAIN_HERE",
+                "FRONTEND_URL": "https://PASTE_YOUR_DOMAIN_HERE",
+                "ALLOWED_CORS_ORIGINS": "https://PASTE_YOUR_DOMAIN_HERE",
+                "BACKUP_BUCKET": "replace",
+                "BACKUP_REGION": "replace",
+                "BACKUP_ENCRYPTION_PUBLIC_KEY": "replace",
+            }
+        )
+
+        _write_env_file(env_file, broken_values)
+        _write_secret_files(tmp_path)
+        compose_file.write_text(
+            """
+services:
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: ${APP_BASE_URL}/api/v1
+        VITE_AGENT_STREAM_URL: wss://${APP_HOST}/api/v1/events/stream
+        VITE_SUPABASE_URL: ${SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+""".strip(),
+            encoding="utf-8",
+        )
+
+        result = audit_production_env(env_file, compose_file, repo_root=tmp_path)
+        failures = [message for name, ok, message in result.checks if name == "production configuration" and not ok]
+
+        assert "APP_HOST must be a real production hostname without a URL scheme" in failures
+        assert "APP_BASE_URL must be a real production URL" in failures
+        assert "FRONTEND_URL must be a real production URL" in failures
+        assert "ALLOWED_CORS_ORIGINS must contain only real production origins" in failures
+        assert "BACKUP_BUCKET must be configured in production" in failures
+        assert "BACKUP_REGION must be configured in production" in failures
+        assert "BACKUP_ENCRYPTION_PUBLIC_KEY must be configured in production" in failures

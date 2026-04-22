@@ -23,9 +23,13 @@ type MockAuthState = {
   token: string | null
   login: typeof login
   register: typeof register
+  socialLogin: typeof login
   logout: typeof logout
   isAuthenticated: boolean
   isLoading: boolean
+  backendState: 'checking' | 'available' | 'unavailable'
+  backendMessage: string | null
+  refreshSession: typeof refresh
 }
 
 let authState: MockAuthState = {
@@ -33,9 +37,13 @@ let authState: MockAuthState = {
   token: 'token',
   login,
   register,
+  socialLogin: login,
   logout,
   isAuthenticated: true,
   isLoading: false,
+  backendState: 'available',
+  backendMessage: null,
+  refreshSession: refresh,
 }
 
 vi.mock('@/contexts/AuthContext', () => ({
@@ -97,9 +105,13 @@ describe('frontend accessibility baseline', () => {
       token: 'token',
       login,
       register,
+      socialLogin: login,
       logout,
       isAuthenticated: true,
       isLoading: false,
+      backendState: 'available',
+      backendMessage: null,
+      refreshSession: refresh,
     }
   })
 
@@ -129,9 +141,13 @@ describe('frontend accessibility baseline', () => {
       token: null,
       login,
       register,
+      socialLogin: login,
       logout,
       isAuthenticated: false,
       isLoading: true,
+      backendState: 'checking',
+      backendMessage: null,
+      refreshSession: refresh,
     }
 
     const { container } = render(
