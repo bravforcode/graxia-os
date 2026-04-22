@@ -694,6 +694,8 @@ class LLMClient:
         max_tokens: int = 800,
         task_class: str = "classification",
         complexity: int | None = None,
+        rag_context: bool = False,
+        rag_query: str | None = None,
     ) -> dict:
         json_system = system + "\n\nCRITICAL: Return ONLY valid JSON. No markdown, no backticks, no explanation."
         result = await self.complete(
@@ -705,6 +707,8 @@ class LLMClient:
             task_class=task_class,
             complexity=complexity,
             allow_fallback=True,
+            rag_context=rag_context,
+            rag_query=rag_query,
         )
         if result is None:
             return {}
@@ -777,6 +781,12 @@ class LLMClient:
     def get_router_summary(self) -> dict[str, float | bool]:
         return {
             "routing_enabled": self.router_config.routing_enabled,
+            "max_single_call_cost_usd": self.router_config.max_single_call_cost_usd,
+        }
+
+
+llm_client = LLMClient()
+": self.router_config.routing_enabled,
             "max_single_call_cost_usd": self.router_config.max_single_call_cost_usd,
         }
 
