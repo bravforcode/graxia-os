@@ -32,3 +32,8 @@ class KnowledgeItem(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    embedding = Column(Vector(768), nullable=True)
+    chunk_hash = Column(String(64), nullable=True, index=True)
+    chunk_index = Column(Integer, nullable=True)
+    source_path = Column(String(512), nullable=True)
