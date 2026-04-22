@@ -283,12 +283,9 @@ async def check_system_ready() -> tuple[bool, str, list[str]]:
         warnings.append("Redis unavailable — caching and Celery tasks disabled")
 
     try:
-        import chromadb
-
-        if not hasattr(chromadb, "Client"):
-            raise RuntimeError("chromadb.Client unavailable")
+        from pgvector.sqlalchemy import Vector
     except Exception:
-        warnings.append("ChromaDB unavailable — vector features disabled")
+        warnings.append("pgvector unavailable — vector features disabled")
 
     if issues:
         mode = "blocked"
@@ -303,5 +300,12 @@ async def check_system_ready() -> tuple[bool, str, list[str]]:
     else:
         mode = "full"
         await _send_telegram("✅ Personal OS v3 online. Ready to find your next win.")
+
+    try:
+        from app.agents.vault_indexer import vault_indexer_agent
+        import asyncio
+        asyncio.create_task(vault_indexer_agent.index_vault())
+    except Exception as e:
+        logger.error(f"Failed to start vault indexer: {e}")
 
     return True, mode, warnings
