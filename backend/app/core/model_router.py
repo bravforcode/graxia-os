@@ -125,6 +125,18 @@ def route_task(
     )
 
 
+AGENT_MODEL_TIERS = {
+    "orchestrator": "cheap",
+    "classifier": "cheap", 
+    "drafter": "high",
+    "researcher": "cheap",
+    "briefer": "mid",
+    "scorer": "mid",
+}
+
+def route_for_agent(agent_name: str) -> str:
+    return AGENT_MODEL_TIERS.get(agent_name, "mid")
+
 def _tier_from_complexity(complexity: int, router: RouterConfig) -> str:
     if complexity <= router.simple_max_complexity:
         return "cheap"
