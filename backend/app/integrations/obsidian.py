@@ -418,7 +418,8 @@ class ObsidianConnector:
                 continue
             category = _stringify(skill.get("category")) or "technical"
             normalized_category = "soft" if category.lower() == "soft" else "technical"
-            folder_name = "Soft" if normalized_category == "soft" else "Technical"
+            owner = _stringify(skill.get("owner")) or "Local"
+            folder_name = owner
             slug = _slugify(name)
             project_links = []
             for project in projects:
