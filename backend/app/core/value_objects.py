@@ -5,7 +5,6 @@ Immutable, validated value objects for domain modeling.
 """
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Optional
 from datetime import datetime
 
 

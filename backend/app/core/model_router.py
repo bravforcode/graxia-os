@@ -50,11 +50,16 @@ _TASK_DEFAULTS: dict[str, tuple[str, str, int]] = {
     "strategy": ("high", "high", 1200),
 }
 
-_TIER_ORDER = {"cheap": 0, "mid": 1, "high": 2}
+_TIER_ORDER = {"local": 0, "cheap": 1, "mid": 2, "high": 3}
 
 
 def build_router_config(app_settings: Settings = settings) -> RouterConfig:
     return RouterConfig(
+        local=ModelTierConfig(
+            model="hermes-local",
+            max_tokens=8000,
+            pricing=ModelPricing(0.0, 0.0)
+        ) if getattr(app_settings, "HERMES_URL", None) else None,
         cheap=ModelTierConfig(
             model=app_settings.CHEAP_MODEL,
             max_tokens=app_settings.CHEAP_MODEL_MAX_TOKENS,
@@ -154,8 +159,5 @@ def _estimate_cost_usd(
     output_tokens: int,
 ) -> float:
     input_cost = (input_tokens / 1_000_000) * tier_config.pricing.input_cost_per_1m
-    output_cost = (output_tokens / 1_000_000) * tier_config.pricing.output_cost_per_1m
-    return round(input_cost + output_cost, 6)
-er_config.pricing.input_cost_per_1m
     output_cost = (output_tokens / 1_000_000) * tier_config.pricing.output_cost_per_1m
     return round(input_cost + output_cost, 6)

@@ -31,7 +31,7 @@ class RSSReaderScraper(BaseScraper):
             root = ET.fromstring(response.content)
             ns = ""
             items = []
-            for item in root.findall(f".//item")[:20]:
+            for item in root.findall(".//item")[:20]:
                 title_el = item.find("title")
                 link_el = item.find("link")
                 desc_el = item.find("description")

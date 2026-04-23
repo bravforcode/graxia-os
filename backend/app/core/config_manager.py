@@ -4,13 +4,12 @@ Configuration Management
 Provides hot reload, validation, and configuration UI.
 """
 import logging
-import json
-from typing import Any, Optional
+from typing import Optional
 from pathlib import Path
 from datetime import datetime, timezone
 
 import yaml
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, validator
 
 logger = logging.getLogger(__name__)
 

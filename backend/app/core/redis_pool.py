@@ -3,7 +3,7 @@ Production-grade Redis Client with Connection Pooling
 แก้ปัญหา: Connection ไม่ reuse, latency สูง, resource leak
 """
 import logging
-from typing import Optional, Any
+from typing import Optional
 import redis.asyncio as aioredis
 from redis.asyncio.connection import ConnectionPool
 

@@ -20,7 +20,7 @@ from app.cqrs.commands import (
     MarkSubmissionWonCommand,
     MarkSubmissionLostCommand,
 )
-from app.cqrs.queries import GetSubmissionQuery, ListSubmissionsQuery
+from app.cqrs.queries import ListSubmissionsQuery
 from app.schemas.submission import SubmissionCreate, SubmissionOut
 
 logger = logging.getLogger(__name__)

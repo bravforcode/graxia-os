@@ -4,7 +4,6 @@ Submission Command and Query Handlers
 import logging
 from uuid import uuid4
 from datetime import datetime, timezone
-from decimal import Decimal
 
 from app.cqrs.handlers import CommandHandler, QueryHandler
 from app.cqrs.commands import (

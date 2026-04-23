@@ -283,7 +283,7 @@ async def check_system_ready() -> tuple[bool, str, list[str]]:
         warnings.append("Redis unavailable — caching and Celery tasks disabled")
 
     try:
-        from pgvector.sqlalchemy import Vector
+        pass
     except Exception:
         warnings.append("pgvector unavailable — vector features disabled")
 
@@ -295,7 +295,7 @@ async def check_system_ready() -> tuple[bool, str, list[str]]:
 
     if warnings:
         mode = "degraded"
-        msg = f"⚠️ Personal OS running in degraded mode:\n" + "\n".join(f"• {w}" for w in warnings) + "\nCore features active."
+        msg = "⚠️ Personal OS running in degraded mode:\n" + "\n".join(f"• {w}" for w in warnings) + "\nCore features active."
         await _send_telegram(msg)
     else:
         mode = "full"

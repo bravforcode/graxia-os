@@ -4,9 +4,7 @@ Monitoring and Observability
 Prometheus metrics, health checks, and alerting.
 """
 import logging
-import time
 from datetime import datetime, timezone
-from typing import Optional
 
 from prometheus_client import Counter, Gauge, Histogram, generate_latest
 

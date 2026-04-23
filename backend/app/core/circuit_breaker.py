@@ -4,7 +4,7 @@ Circuit Breaker Pattern Implementation
 Prevents cascade failures by stopping calls to failing services.
 """
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Callable, Any, Optional
 from functools import wraps

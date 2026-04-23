@@ -4,7 +4,7 @@ Result Type Pattern
 Railway-oriented programming for clean error handling.
 Inspired by Rust's Result<T, E> and functional programming.
 """
-from typing import TypeVar, Generic, Callable, Optional, Union
+from typing import TypeVar, Generic, Callable, Union
 from dataclasses import dataclass
 
 

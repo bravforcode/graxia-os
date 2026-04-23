@@ -7,7 +7,7 @@ import asyncio
 import argparse
 import sys
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import List
 
 # Add parent to path for imports
 import os
@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.database import AsyncSessionLocal
 from app.models.scraper_health import ScraperHealth
-from sqlalchemy import select, update
+from sqlalchemy import select
 from app.scrapers.smart_base import unmute_scraper, get_scraper_health
 from app.telegram_bot.bot import send_message
 
@@ -116,7 +116,7 @@ async def test_scraper(source_name: str) -> dict:
         print(f"  ❌ Scraper '{source_name}' not found in database")
         return {"source": source_name, "found": False}
     
-    print(f"  Found: ✓")
+    print("  Found: ✓")
     print(f"  Muted: {'YES' if health['is_muted'] else 'no'}")
     print(f"  Weighted Failures: {health['consecutive_failures']}")
     print(f"  Success Rate: {health['success_rate']:.1%}" if health['success_rate'] else "  Success Rate: N/A")
@@ -187,7 +187,7 @@ async def emergency_recovery():
     unmuted = await unmute_all_scrapers(notify=False)
     
     # Step 2: Reset all failure counts
-    print(f"\n[2/3] Resetting failure counts...")
+    print("\n[2/3] Resetting failure counts...")
     async with AsyncSessionLocal() as db:
         result = await db.execute(select(ScraperHealth))
         all_scrapers = result.scalars().all()
@@ -202,7 +202,7 @@ async def emergency_recovery():
         print(f"  Reset {reset_count} scraper(s)")
     
     # Step 3: Send notification
-    print(f"\n[3/3] Sending notification...")
+    print("\n[3/3] Sending notification...")
     msg = (
         f"🚨 Emergency Recovery Executed\n"
         f"• Unmuted: {unmuted} scraper(s)\n"

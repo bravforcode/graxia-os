@@ -8,14 +8,9 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 from app.agents.job_hunter import job_hunter_agent
-from app.agents.email_manager import email_manager_agent
-from app.agents.network_builder import network_builder_agent
 from app.agents.personal_assistant import personal_assistant_agent
 from app.database import AsyncSessionLocal
 from app.models.job_posting import JobPosting
-from app.models.contact import Contact
-from app.models.email_thread import EmailThread
-from app.models.assistant_task import AssistantTask
 from sqlalchemy import select
 
 

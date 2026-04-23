@@ -6,14 +6,11 @@ Tests system performance under load and stress conditions.
 import asyncio
 import time
 import pytest
-from typing import List
-from concurrent.futures import ThreadPoolExecutor
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.opportunity import Opportunity
 from app.models.job_posting import JobPosting
 from app.models.contact import Contact
-from app.models.email_thread import EmailThread
 
 
 class TestLoadPerformance:
@@ -271,7 +268,6 @@ class TestLoadPerformance:
     @pytest.mark.asyncio
     async def test_memory_efficiency(self, db_session: AsyncSession):
         """Test memory usage with large result sets."""
-        import sys
         
         # Create large dataset
         jobs = []

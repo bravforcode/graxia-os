@@ -1,4 +1,3 @@
-import pytest
 from app.core.chunker import VaultChunker
 
 def test_vault_chunker_basic_split():

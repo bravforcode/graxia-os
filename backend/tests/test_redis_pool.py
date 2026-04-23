@@ -52,7 +52,6 @@ class TestRedisPoolSingleton:
     """Test RedisPool is a singleton."""
 
     def test_singleton_pattern(self):
-        from app.core.redis_pool import redis_pool
         pool1 = RedisPool()
         pool2 = RedisPool()
         assert pool1 is pool2

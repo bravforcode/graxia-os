@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from datetime import datetime, timezone
 from datetime import timedelta as timedelta_cls

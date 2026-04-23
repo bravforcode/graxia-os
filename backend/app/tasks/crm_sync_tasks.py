@@ -1,4 +1,3 @@
-import asyncio
 
 from app.tasks.base import execute_managed_async_task, idempotent_task
 from app.tasks.celery_app import celery_app

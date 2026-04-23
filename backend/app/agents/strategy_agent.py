@@ -27,7 +27,7 @@ class StrategyAgent(BaseAgent):
         from app.models.metric import WeeklyMetric
         from app.models.outcome_pattern import OutcomePattern
         from app.models.opportunity import Opportunity
-        from sqlalchemy import select, func, desc
+        from sqlalchemy import select, desc
 
         async with AsyncSessionLocal() as db:
             # Last 4 weeks metrics

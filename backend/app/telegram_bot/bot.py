@@ -13,9 +13,7 @@ from telegram.ext import (
     Application,
     CommandHandler,
     CallbackQueryHandler,
-    ContextTypes,
-    MessageHandler,
-    filters
+    ContextTypes
 )
 
 from app.config import settings
@@ -175,7 +173,6 @@ async def tasks_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /tasks command."""
     try:
         from app.models.assistant_task import AssistantTask
-        from sqlalchemy import and_
         
         async with AsyncSessionLocal() as db:
             now = datetime.now(timezone.utc)
@@ -326,7 +323,7 @@ async def approval_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # Update approval status
             approval.status = "approved" if action == "approve" else "rejected"
             approval.responded_at = datetime.now(timezone.utc)
-            approval.response_notes = f"Via Telegram by user"
+            approval.response_notes = "Via Telegram by user"
             
             await db.commit()
             

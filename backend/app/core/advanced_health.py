@@ -12,7 +12,6 @@ from typing import Dict, List, Optional, Any
 from collections import deque
 import statistics
 
-from app.config import settings
 
 logger = logging.getLogger(__name__)
 

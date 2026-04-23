@@ -1,5 +1,3 @@
-import pytest
-from pathlib import Path
 from app.agents.cog_loop import extract_vault_tag_frequencies, build_pattern_context
 
 

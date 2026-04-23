@@ -102,7 +102,7 @@ class LinkedInFallbackScraper(FallbackScraper):
                         "source_url": url,
                         "source_hash": self._calculate_hash("linkedin", job_id),
                         "job_type": "job",
-                        "description": f"Job found via LinkedIn RSS feed. Visit URL for full details.",
+                        "description": "Job found via LinkedIn RSS feed. Visit URL for full details.",
                         "required_skills": [],
                         "raw_data": {
                             "scraped_at": datetime.now(timezone.utc).isoformat(),

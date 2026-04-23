@@ -1,37 +1,50 @@
-from collections.abc import AsyncGenerator
-from typing import Any
-
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.pool import NullPool
-
+import logging
+import os
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.orm import declarative_base
 from app.config import settings
+import tenacity
 
-engine_kwargs: dict[str, Any] = {
-    "echo": settings.APP_ENV == "development",
-    "pool_pre_ping": True,
-}
-connect_args: dict[str, Any] = {}
+logger = logging.getLogger(__name__)
 
-if settings.IS_SUPABASE_TRANSACTION_MODE or "sqlite" in settings.DATABASE_URL.lower():
-    engine_kwargs["poolclass"] = NullPool
-    if "sqlite" not in settings.DATABASE_URL.lower():
-        connect_args["statement_cache_size"] = 0
-else:
-    engine_kwargs["pool_size"] = 5
-    engine_kwargs["max_overflow"] = 10
+# Enterprise-grade engine with retries and connection pooling
+@tenacity.retry(
+    stop=tenacity.stop_after_attempt(5),
+    wait=tenacity.wait_exponential(multiplier=1, min=2, max=10),
+    retry=tenacity.retry_if_exception_type(Exception),
+    before_sleep=lambda retry_state: logger.warning(f"DB connection failed, retrying... ({retry_state.attempt_number})")
+)
+def create_engine_with_retry():
+    url = settings.DATABASE_URL
+    is_sqlite = url.startswith("sqlite")
+    
+    engine_args = {
+        "pool_pre_ping": True,
+    }
+    
+    if is_sqlite:
+        engine_args["connect_args"] = {"check_same_thread": False}
+    else:
+        engine_args.update({
+            "pool_size": 20,
+            "max_overflow": 10,
+            "pool_timeout": 30,
+            "pool_recycle": 1800,
+            "connect_args": {"server_settings": {"application_name": "brav_os_mas"}}
+        })
 
-if connect_args:
-    engine_kwargs["connect_args"] = connect_args
+    return create_async_engine(url, **engine_args)
 
-engine = create_async_engine(settings.DATABASE_URL, **engine_kwargs)
-
+engine = create_engine_with_retry()
 AsyncSessionLocal = async_sessionmaker(
-    engine,
+    bind=engine,
     class_=AsyncSession,
     expire_on_commit=False,
 )
 
-
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
+async def get_db():
     async with AsyncSessionLocal() as session:
-        yield session
+        try:
+            yield session
+        finally:
+            await session.close()

@@ -4,8 +4,7 @@ Failure injection and resilience verification
 """
 import pytest
 import asyncio
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from datetime import datetime, timezone
+from unittest.mock import AsyncMock, patch
 
 from app.core.redis_circuit_breaker import CircuitBreaker, CircuitState, CircuitBreakerOpen, CircuitBreakerConfig
 from app.core.redis_pool import RedisPool

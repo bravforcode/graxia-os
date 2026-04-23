@@ -6,7 +6,6 @@ Provides encryption, input sanitization, and security utilities.
 import hashlib
 import logging
 import re
-from typing import Optional
 
 from cryptography.fernet import Fernet
 from app.config import settings

@@ -6,11 +6,9 @@ Provides shared fixtures for all tests.
 import asyncio
 import pytest
 from typing import AsyncGenerator
-from uuid import uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from app.models.base import Base
-from app.config import settings
 
 
 # Test database URL

@@ -162,7 +162,6 @@ async def get_vault_stats() -> dict[str, Any]:
     """Return vault file counts and tag frequencies for the dashboard."""
     try:
         from app.agents.cog_loop import extract_vault_tag_frequencies
-        from pathlib import Path
 
         obsidian = await get_obsidian()
         vault_path = obsidian.vault_path

@@ -249,8 +249,15 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def normalize_local_service_hosts(self):
-        self.DATABASE_URL = _normalize_postgres_driver(self.DATABASE_URL)
-        self.DATABASE_MIGRATION_URL = _normalize_postgres_driver(self.DATABASE_MIGRATION_URL)
+        if self.DATABASE_URL.startswith("postgresql"):
+            self.DATABASE_URL = _normalize_postgres_driver(self.DATABASE_URL)
+        elif self.DATABASE_URL.startswith("sqlite"):
+            if not self.DATABASE_URL.startswith("sqlite+aiosqlite"):
+                self.DATABASE_URL = self.DATABASE_URL.replace("sqlite://", "sqlite+aiosqlite://")
+        
+        if self.DATABASE_MIGRATION_URL.startswith("postgresql"):
+            self.DATABASE_MIGRATION_URL = _normalize_postgres_driver(self.DATABASE_MIGRATION_URL)
+            
         if self.APP_ENV.lower() == "development" and not self.RUNNING_IN_DOCKER:
             self.DATABASE_URL = _rewrite_hostname(self.DATABASE_URL, {"postgres": "localhost"})
             self.DATABASE_MIGRATION_URL = _rewrite_hostname(

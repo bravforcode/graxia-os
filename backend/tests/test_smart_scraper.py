@@ -3,8 +3,7 @@ Tests for Smart Scraper with Weighted Failure Scoring
 TDD approach for resilient scraper implementation
 """
 import pytest
-from datetime import datetime, timedelta, timezone
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
+from unittest.mock import Mock, AsyncMock, patch
 
 from app.scrapers.smart_base import SmartBaseScraper, ErrorType, ERROR_WEIGHTS
 

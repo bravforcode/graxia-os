@@ -3,16 +3,14 @@ Tests for Advanced Health Checker with Predictive Alerting
 Enterprise-grade health monitoring with trend analysis
 """
 import pytest
-from datetime import datetime, timedelta, timezone
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from typing import List
+from datetime import datetime, timezone
+from unittest.mock import AsyncMock, patch
 
 from app.core.advanced_health import (
     AdvancedHealthChecker,
     HealthTrend,
     MetricHistory,
-    AlertSeverity,
-    predictive_alert
+    AlertSeverity
 )
 
 

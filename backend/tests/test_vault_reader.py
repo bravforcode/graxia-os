@@ -1,5 +1,3 @@
-import pytest
-from pathlib import Path
 from app.integrations.obsidian import parse_frontmatter, extract_status_from_note, scan_changed_opportunity_files
 
 

@@ -4,7 +4,7 @@ TDD: Write tests first, then implement
 """
 import pytest
 import time
-from unittest.mock import Mock, AsyncMock
+from unittest.mock import AsyncMock
 
 from app.core.redis_circuit_breaker import (
     CircuitBreaker,

@@ -1,8 +1,5 @@
 import logging
-import uuid
 from app.agents.base import BaseAgent
-from app.core.llm import llm_client
-from app.core.identity import identity
 
 logger = logging.getLogger(__name__)
 

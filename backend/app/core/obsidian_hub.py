@@ -1,7 +1,5 @@
 import logging
 from pathlib import Path
-from typing import Any
-import yaml
 
 from app.config import settings
 

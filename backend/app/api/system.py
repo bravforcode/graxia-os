@@ -13,7 +13,7 @@ from app.core.runtime_state import get_runtime_state
 from app.core.control_plane import create_run, mark_run_completed, mark_run_failed, mark_run_started
 from app.core.redis_circuit_breaker import redis_circuit_breaker, openclaw_circuit_breaker
 from app.core.redis_pool import redis_pool
-from app.core.advanced_health import health_checker as advanced_health_checker, HealthTrend, AlertSeverity
+from app.core.advanced_health import health_checker as advanced_health_checker
 from app.tasks.queues import get_queue_depths
 from app.database import AsyncSessionLocal
 from app.models.audit import AuditLog
@@ -562,7 +562,6 @@ class DetailedHealthResponse(TypedDict):
 @router.get("/health/detailed")
 async def health_detailed() -> DetailedHealthResponse:
     """Detailed health check with circuit breaker and pool status."""
-    import time
 
     # Redis pool health
     redis_health = await redis_pool.health_status()
@@ -621,7 +620,6 @@ async def health_detailed() -> DetailedHealthResponse:
 @router.post("/health/predictive-test")
 async def predictive_test(request: dict[str, Any]) -> dict[str, Any]:
     """Test predictive alerting by injecting metrics."""
-    import time
 
     service = request.get("service", "test")
     metrics = request.get("metrics", {})

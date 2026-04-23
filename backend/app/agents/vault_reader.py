@@ -5,7 +5,6 @@ from typing import Any
 
 from app.agents.base import BaseAgent
 from app.core.domain_events import VaultSynced
-from app.core.chunker import VaultChunker
 
 logger = logging.getLogger(__name__)
 

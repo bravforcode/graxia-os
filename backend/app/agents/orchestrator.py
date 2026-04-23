@@ -1,11 +1,13 @@
 import asyncio
 import logging
-from typing import Any
+from typing import Any, Dict, List
+from uuid import UUID
 
 from app.agents.base import BaseAgent
 from app.core.model_router import route_task
 from app.core.llm import llm_client
 from app.core.event_bus import event_bus
+from app.core.agent_registry import agent_registry
 from app.database import AsyncSessionLocal
 from app.models.orchestration import AgentTask
 from sqlalchemy import select
@@ -16,31 +18,18 @@ class AgentOrchestrator(BaseAgent):
     name = "orchestrator"
 
     async def start(self):
-        """Start listening for delegated tasks and assigning them."""
+        """Start MAS orchestration services."""
         event_bus.subscribe("agent.task.delegated", self.on_task_delegated)
         event_bus.subscribe("agent.task.completed", self.on_task_completed)
-        # Background task processing loop could be added here
-        logger.info("Orchestrator online and listening to task events.")
+        logger.info("Enterprise Orchestrator online.")
 
     async def on_task_delegated(self, payload: dict[str, Any]):
-        task_id = payload.get("task_id")
+        task_id_str = payload.get("task_id")
         assigned_to = payload.get("assigned_to")
-        name = payload.get("name")
-        logger.info(f"Orchestrator intercepted delegation: {name} to {assigned_to}")
         
-        # Here we dynamically route the task to the correct agent module.
-        # This acts as the central router for enterprise multi-agent workflows.
-        try:
-            module = __import__(f"app.agents.{assigned_to}", fromlist=[f"{assigned_to}_agent"])
-            agent_instance = getattr(module, f"{assigned_to}_agent")
-            
-            # Fire and forget the agent's task execution
-            asyncio.create_task(self._execute_agent_task(agent_instance, task_id))
-        except Exception as e:
-            logger.error(f"Orchestrator failed to route task to {assigned_to}: {e}")
-            await self.fail_task(task_id, str(e))
-
-    async def _execute_agent_task(self, agent_instance: BaseAgent, task_id: str):
+        if not task_id_str: return
+        task_id = UUID(task_id_str)
+        
         async with AsyncSessionLocal() as db:
             stmt = select(AgentTask).where(AgentTask.id == task_id)
             res = await db.execute(stmt)
@@ -48,30 +37,43 @@ class AgentOrchestrator(BaseAgent):
             if not task:
                 return
 
+            # Dependency check
+            if task.dependencies:
+                dep_uuids = [UUID(d) for d in task.dependencies]
+                dep_stmt = select(AgentTask).where(AgentTask.id.in_(dep_uuids))
+                dep_res = await db.execute(dep_stmt)
+                deps = dep_res.scalars().all()
+                if any(d.status != "completed" for d in deps):
+                    task.status = "waiting"
+                    await db.commit()
+                    logger.info(f"Task {task_id} is waiting for dependencies.")
+                    return
+
+            agent_instance = agent_registry.get_agent(assigned_to)
+            if agent_instance:
+                asyncio.create_task(self._execute_agent_task(agent_instance, task_id))
+            else:
+                logger.error(f"Unknown agent: {assigned_to}")
+                await self.fail_task(task_id, f"Agent {assigned_to} not found.")
+
+    async def _execute_agent_task(self, agent_instance: BaseAgent, task_id: UUID):
+        async with AsyncSessionLocal() as db:
+            stmt = select(AgentTask).where(AgentTask.id == task_id)
+            res = await db.execute(stmt)
+            task = res.scalar_one_or_none()
+            if not task: return
+
             task.status = "in_progress"
             await db.commit()
             
             try:
-                # We assume agents have a `handle_task` method for delegated orchestration.
-                if hasattr(agent_instance, "handle_task"):
-                    result = await getattr(agent_instance, "handle_task")(task.description)
-                else:
-                    # Fallback to general LLM if agent is just a generic persona
-                    routing = route_task("analysis")
-                    result_text = await llm_client.complete(
-                        system=f"You are the {agent_instance.name} agent. Execute this task.",
-                        user=task.description,
-                        model=routing.model,
-                        task_class="analysis"
-                    )
-                    result = {"response": result_text}
-
-                await agent_instance.complete_task(task_id, result)
+                result = await agent_instance.handle_task(task.description)
+                await agent_instance.complete_task(str(task_id), result)
             except Exception as e:
-                logger.error(f"Agent {agent_instance.name} failed task {task_id}: {e}")
+                logger.error(f"Task {task_id} failed: {e}")
                 await self.fail_task(task_id, str(e))
 
-    async def fail_task(self, task_id: str, error_msg: str):
+    async def fail_task(self, task_id: UUID, error_msg: str):
         async with AsyncSessionLocal() as db:
             stmt = select(AgentTask).where(AgentTask.id == task_id)
             res = await db.execute(stmt)
@@ -82,45 +84,51 @@ class AgentOrchestrator(BaseAgent):
                 await db.commit()
 
     async def on_task_completed(self, payload: dict[str, Any]):
-        assigned_by = payload.get("assigned_by")
-        assigned_to = payload.get("assigned_to")
-        task_id = payload.get("task_id")
-        logger.info(f"Task {task_id} completed by {assigned_to}. Notifying {assigned_by}.")
+        task_id_str = payload.get("task_id")
+        if not task_id_str: return
         
-        # If assigned by orchestrator, check for next steps in goal
-        if assigned_by == self.name:
-            await self.log_audit("subtask_completed", {"task_id": task_id, "agent": assigned_to})
+        # Check for blocked sibling tasks
+        async with AsyncSessionLocal() as db:
+            stmt = select(AgentTask).where(AgentTask.status == "waiting")
+            res = await db.execute(stmt)
+            waiting_tasks = res.scalars().all()
+            
+            for wt in waiting_tasks:
+                if wt.dependencies and task_id_str in wt.dependencies:
+                    # Re-trigger task
+                    await self.on_task_delegated({"task_id": str(wt.id), "assigned_to": wt.assigned_to})
 
-    async def orchestrate_goal(self, goal: str) -> list[dict]:
+    async def orchestrate_goal(self, goal: str) -> str:
+        """Entry point for autonomous goal execution."""
         routing = route_task("classification")
-        system_prompt = "You are an orchestrator agent. Break the user's goal into subtasks. Return JSON list of tasks: [{'name': '...', 'description': '...', 'agent_type': 'researcher|drafter|briefer|classifier'}]."
+        
+        system_prompt = (
+            "You are the Enterprise Orchestrator. Break down the user's high-level goal into a sequence of agent tasks.\n"
+            "Identify dependencies. Return JSON: {'tasks': [{'name': '...', 'agent': '...', 'desc': '...', 'depends_on_index': [0, 1]}]}"
+        )
         
         try:
-            tasks_data = await llm_client.complete_json(
-                system=system_prompt,
-                user=f"Goal: {goal}",
-                model=routing.model,
-                task_class="classification"
-            )
-            tasks = tasks_data if isinstance(tasks_data, list) else tasks_data.get("tasks", [])
-        except Exception as e:
-            logger.warning(f"Failed to decompose goal: {e}")
-            tasks = []
+            plan = await llm_client.complete_json(system=system_prompt, user=goal, model=routing.model)
+            tasks_data = plan.get("tasks", [])
+        except Exception:
+            tasks_data = []
 
-        subtasks = []
-        for task in tasks:
-            agent_type = task.get("agent_type", "research_collector")
-            # For simplicity, map "researcher" to "research_collector"
-            if agent_type == "researcher":
-                agent_type = "research_collector"
-                
-            await self.delegate_task(
-                name=task.get("name", "Subtask"),
-                description=task.get("description", ""),
-                to_agent=agent_type
+        # Create master goal task
+        master_task_id = await self.delegate_task("Master Goal", goal, self.name)
+        
+        created_task_ids = []
+        for i, t_info in enumerate(tasks_data):
+            deps = [created_task_ids[j] for j in t_info.get("depends_on_index", []) if j < len(created_task_ids)]
+            
+            tid = await self.delegate_task(
+                name=t_info.get("name"),
+                description=t_info.get("desc"),
+                to_agent=t_info.get("agent"),
+                parent_id=master_task_id,
+                dependencies=deps
             )
-            subtasks.append(task)
+            created_task_ids.append(tid)
 
-        return subtasks
+        return master_task_id
 
 orchestrator_agent = AgentOrchestrator()

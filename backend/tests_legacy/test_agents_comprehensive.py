@@ -2,7 +2,7 @@
 Comprehensive test suite for all agents
 """
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 from decimal import Decimal
 

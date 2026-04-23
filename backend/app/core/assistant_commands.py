@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 from datetime import date
-from typing import Any
 
 from app.core.calendar_ops import generate_inbox_triage, generate_today_calendar_overview
 from app.core.runtime_state import get_runtime_state

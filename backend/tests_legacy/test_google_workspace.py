@@ -2,8 +2,7 @@
 Tests for Google Workspace integration.
 """
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from datetime import datetime, timezone
+from unittest.mock import MagicMock, patch
 
 from app.core.google_workspace import GoogleWorkspaceClient
 

@@ -14,11 +14,8 @@ from starlette.routing import Match
 
 from app.config import settings
 from app.core.auth import (
-    create_access_token,
     decode_access_token,
     extract_bearer_token,
-    get_password_hash,
-    verify_password,
 )
 from app.services.audit_service import log_audit_event
 from app.services.session_service import SessionService

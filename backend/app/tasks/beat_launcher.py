@@ -6,7 +6,6 @@ import signal
 import subprocess
 import sys
 import threading
-import time
 
 from app.tasks.beat_lock import BEAT_LOCK_KEY, BEAT_LOCK_TTL
 from app.tasks.queues import get_sync_redis_client

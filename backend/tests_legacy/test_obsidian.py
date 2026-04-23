@@ -1,7 +1,6 @@
 """
 Tests for Obsidian integration
 """
-import asyncio
 from datetime import datetime
 from pathlib import Path
 import tempfile

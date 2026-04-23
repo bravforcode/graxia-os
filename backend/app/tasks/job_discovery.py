@@ -4,7 +4,6 @@ Job Discovery Task
 Scheduled task to run job hunter agent.
 """
 import logging
-from datetime import datetime, timezone
 
 from app.agents.job_hunter import job_hunter_agent
 from app.tasks.base import execute_managed_async_task, idempotent_task

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any
 from urllib.parse import urlparse
 
 from fastapi import APIRouter, Request

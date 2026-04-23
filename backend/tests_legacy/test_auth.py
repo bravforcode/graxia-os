@@ -3,7 +3,6 @@ Authentication Tests
 
 Tests for JWT authentication, login, registration, and authorization.
 """
-import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app

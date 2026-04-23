@@ -4,7 +4,6 @@ Event Bus API
 Provides endpoints for monitoring and managing event bus operations.
 """
 import logging
-from typing import Any
 
 from fastapi import APIRouter, HTTPException
 

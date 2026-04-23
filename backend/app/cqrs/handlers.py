@@ -9,7 +9,7 @@ import logging
 
 from app.cqrs.commands import Command
 from app.cqrs.queries import Query
-from app.core.result import Result, ok, err
+from app.core.result import Result, err
 
 
 logger = logging.getLogger(__name__)

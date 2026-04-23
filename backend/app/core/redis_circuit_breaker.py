@@ -6,7 +6,7 @@ import time
 import logging
 from enum import Enum
 from dataclasses import dataclass, field
-from typing import Callable, Any, Optional
+from typing import Callable, Any
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,7 @@ class CircuitBreaker:
             result = await operation(*args, **kwargs)
             self._on_success()
             return result
-        except Exception as e:
+        except Exception:
             self._on_failure()
             raise
     

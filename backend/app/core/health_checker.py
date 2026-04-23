@@ -4,7 +4,7 @@ Enterprise Health Checker
 Comprehensive health checks for all system components.
 """
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from time import perf_counter
 from typing import Dict, Any
 

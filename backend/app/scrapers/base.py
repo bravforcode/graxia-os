@@ -2,7 +2,6 @@
 Universal scraper interface — ALL scrapers must implement this contract.
 Guarantees consistent health tracking and graceful degradation.
 """
-import asyncio
 import hashlib
 import logging
 from abc import ABC, abstractmethod

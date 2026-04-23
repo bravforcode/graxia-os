@@ -24,7 +24,7 @@ from app.middleware.auth import extract_access_token_from_request, get_client_ip
 from app.middleware.security import generate_csrf_token
 from app.models.user import User
 from app.services.audit_service import log_audit_event
-from app.services.risk_engine import RiskEngine, verify_totp_code
+from app.services.risk_engine import RiskEngine
 from app.services.session_service import RefreshTokenReuseDetected, SessionService
 
 logger = logging.getLogger(__name__)

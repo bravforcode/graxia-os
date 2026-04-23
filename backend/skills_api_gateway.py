@@ -4,12 +4,11 @@ FastAPI server serving skills at localhost:8000
 """
 
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import json
-import os
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime
 
 app = FastAPI(

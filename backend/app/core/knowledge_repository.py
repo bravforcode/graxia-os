@@ -1,7 +1,6 @@
 import logging
 from typing import Sequence
-from uuid import UUID
-from sqlalchemy import select, delete, func
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.knowledge import KnowledgeItem
 

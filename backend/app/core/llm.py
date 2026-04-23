@@ -22,7 +22,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from app.config import settings
 from app.core.model_router import build_router_config, route_task
-from app.core.redis_pool import redis_pool, get_redis
+from app.core.redis_pool import get_redis
 from app.core.redis_circuit_breaker import openclaw_circuit_breaker, CircuitBreakerOpen
 
 logger = logging.getLogger(__name__)
@@ -781,12 +781,6 @@ class LLMClient:
     def get_router_summary(self) -> dict[str, float | bool]:
         return {
             "routing_enabled": self.router_config.routing_enabled,
-            "max_single_call_cost_usd": self.router_config.max_single_call_cost_usd,
-        }
-
-
-llm_client = LLMClient()
-": self.router_config.routing_enabled,
             "max_single_call_cost_usd": self.router_config.max_single_call_cost_usd,
         }
 

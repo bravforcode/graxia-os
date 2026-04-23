@@ -4,10 +4,8 @@ Real-time Telegram Notification Service
 Provides comprehensive progress tracking and real-time notifications
 to Telegram for all system activities, agent actions, and user operations.
 """
-import asyncio
 import logging
 from datetime import datetime, timezone
-from typing import Any, Optional
 from enum import Enum
 
 from app.config import settings
