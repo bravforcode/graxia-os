@@ -1,67 +1,55 @@
-# Core
-fastapi==0.115.0
-uvicorn[standard]==0.30.0
-python-dotenv==1.0.1
-pydantic==2.7.0
-pydantic-settings==2.3.0
-email-validator==2.2.0
-pyyaml==6.0.1
+# Core dependencies for Graxia OS
+# Generated from codebase analysis
+
+# Web framework
+fastapi==0.110.0
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9
+python-jose[cryptography]==3.3.0
 
 # Database
-sqlalchemy==2.0.30
+sqlalchemy[asyncio]==2.0.27
 asyncpg==0.29.0
 alembic==1.13.1
-psycopg2-binary==2.9.9
+aiosqlite==0.20.0
 
-# AI — Gemini
-google-generativeai==0.8.3
+# Configuration & validation
+pydantic==2.6.4
+pydantic-settings==2.2.1
+
+# Caching & Tasks
+redis==5.0.2
+celery==5.3.6
+
+# HTTP Clients
 httpx==0.27.0
+requests==2.31.0
+aiohttp==3.9.3
 
-# Vector DB
-pgvector>=0.3.0
-ollama>=0.2.0
+# Data processing
+pandas==2.2.1
+numpy==1.26.4
 
-# Queue
-celery==5.4.0
-redis==5.0.7
+# Authentication & Security
+passlib[bcrypt]==1.7.4
+bcrypt==4.1.2
+cryptography==42.0.5
 
-# Scheduler
+# Web scraping & parsing
+beautifulsoup4==4.12.3
+selenium==4.18.1
+lxml==5.1.0
+
+# AI / LLM
+openai==1.14.0
+anthropic==0.21.0
+
+# Monitoring & Observability
+prometheus-client==0.20.0
+sentry-sdk==1.43.0
+
+# Scheduling
 apscheduler==3.10.4
 
-# Telegram
-python-telegram-bot==21.3
-
-# Google Workspace
-google-auth==2.29.0
-google-auth-oauthlib==1.2.0
-google-auth-httplib2==0.2.0
-google-api-python-client==2.122.0
-
-# Scraping
-beautifulsoup4==4.12.3
-lxml==5.2.0
-
 # Utilities
-aiofiles==23.2.1
 python-dateutil==2.9.0
-pytz==2024.1
-tenacity==8.3.0
-structlog==24.2.0
-watchdog==4.0.0
-
-# Monitoring
-prometheus-client==0.20.0
-
-# AWS (for S3 backups)
-boto3==1.34.0
-
-# Security
-PyJWT==2.11.0
-passlib[bcrypt]==1.7.4
-bcrypt==4.0.1
-python-multipart==0.0.9
-
-# Testing
-pytest==8.3.2
-pytest-asyncio==0.23.8
-hypothesis==6.98.0
