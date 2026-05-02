@@ -8,16 +8,18 @@ dist/
 build/
 .eggs/
 
-# Env
+# xiarchitect cache (keep docs/)
+.xiarchitect/
+
+# Env - ALL env files are gitignored, including frontend
 .env
 .env.production
 .env.backup-*
 .env.bak*
 *.env.local
+frontend/.env
+frontend/.env.production
 secrets/
-# Exception: frontend build vars (VITE_*) are NOT secrets — safe to track
-# Real secrets live in root .env.production (which stays gitignored)
-!frontend/.env.production
 
 # Docker
 .docker/
@@ -59,6 +61,8 @@ backend/.coverage
 backend/.venv/
 backend/celerybeat-schedule*
 backend/staging-token.json
+backend/*.txt
+backend/*.log
 backend/openapi.json
 backend/error.log
 backend/uvicorn-local*.log
@@ -69,3 +73,4 @@ backend/tmp*/
 backend/C*/
 
 .vercel
+node_modules
