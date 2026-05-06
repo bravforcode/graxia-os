@@ -6,19 +6,19 @@ import hmac
 from enum import Enum
 from typing import Any
 
-from fastapi import HTTPException, Request, Security, status
-from fastapi.responses import JSONResponse
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.routing import Match
-
 from app.config import settings
+from app.database import get_db as get_db_dependency
 from app.core.auth import (
     decode_access_token,
     extract_bearer_token,
 )
 from app.services.audit_service import log_audit_event
 from app.services.session_service import SessionService
+from fastapi import HTTPException, Request, Security, status
+from fastapi.responses import JSONResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.routing import Match
 
 security = HTTPBearer(auto_error=False)
 
@@ -245,15 +245,27 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
 
 async def get_current_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials | None = Security(security),
-) -> dict[str, Any]:
+    db: AsyncSession = Depends(get_db_dependency),
+) -> "User":
+    """
+    Returns the authenticated ORM User object.
+    Validates: token present, signature valid, session active, user exists, user active.
+    """
     if credentials is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    payload = decode_access_token(credentials.credentials)
+        # Fall back to cookie-based token (same as middleware)
+        token = request.cookies.get(settings.ACCESS_COOKIE_NAME)
+        if not token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication required",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    else:
+        token = credentials.credentials
+
+    payload = decode_access_token(token)
     user_id = payload.get("sub")
     if not user_id:
         raise HTTPException(
@@ -261,21 +273,47 @@ async def get_current_user(
             detail="Invalid authentication credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return {
-        "user_id": str(user_id),
-        "roles": [payload.get("role", "user")],
-        "email": payload.get("email"),
-        "session_id": payload.get("session_id"),
-    }
+
+    # Validate session is still active
+    session_id = str(payload.get("session_id") or "")
+    if session_id:
+        session_service = SessionService(getattr(request.app.state, "redis", None))
+        if not await session_service.is_session_active(session_id):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Session is no longer active",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+    # Load ORM User from DB
+    from uuid import UUID as _UUID
+    from app.models.user import User as _User
+    user = await db.get(_User, _UUID(str(user_id)))
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User account is deactivated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user
 
 
-async def get_current_active_user(current_user: dict[str, Any] = Security(get_current_user)) -> dict[str, Any]:
+async def get_current_active_user(current_user: "User" = Depends(get_current_user)) -> "User":
     return current_user
 
 
-async def require_role(required_role: str, current_user: dict[str, Any] = Security(get_current_user)) -> dict[str, Any]:
-    user_roles = current_user.get("roles", [])
-    if required_role not in user_roles and "admin" not in user_roles:
+async def require_role(required_role: str, current_user: "User" = Depends(get_current_user)) -> "User":
+    user_role = getattr(current_user, "role", "user") or "user"
+    if not role_satisfies(
+        AuthLevel.ADMIN if required_role == "admin" else AuthLevel.OPERATOR,
+        user_role,
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"Insufficient permissions. Required role: {required_role}",

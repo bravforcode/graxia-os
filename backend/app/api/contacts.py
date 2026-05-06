@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from typing import Annotated
 from uuid import UUID
 
@@ -8,8 +8,10 @@ from sqlalchemy import desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.event_bus import event_bus
+from app.api.deps import get_org
 from app.database import get_db
 from app.models.contact import Contact
+from app.models.organization import Organization
 from app.schemas.contact import ContactCreate, ContactOut, ContactUpdate
 
 router = APIRouter(prefix="/contacts", tags=["contacts"])
@@ -45,13 +47,17 @@ class ContactListFilters(BaseModel):
     offset: int = Field(default=0, ge=0)
 
 
-def _active_contacts():
-    return select(Contact).where(Contact.is_deleted.is_(False))
+def _active_contacts(org_id: "UUID"):
+    return select(Contact).where(
+        Contact.is_deleted.is_(False),
+        Contact.organization_id == org_id,
+    )
 
 
 @router.get("", response_model=ContactList)
 async def list_contacts(
     db: DbSession,
+    org: Organization = Depends(get_org),
     q: Annotated[str | None, Query(max_length=120)] = None,
     contact_type: Annotated[str | None, Query(max_length=50)] = None,
     min_value_score: Annotated[int | None, Query(ge=1, le=10)] = None,
@@ -59,7 +65,7 @@ async def list_contacts(
     limit: Annotated[int, Query(ge=1, le=200)] = 100,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> ContactList:
-    query = _active_contacts()
+    query = _active_contacts(org.id)
     filters = ContactListFilters(
         q=q,
         contact_type=contact_type,
@@ -143,8 +149,9 @@ async def contact_stats(db: DbSession) -> ContactStats:
 
 
 @router.post("", response_model=ContactOut, status_code=201)
-async def create_contact(data: ContactCreate, db: DbSession):
+async def create_contact(data: ContactCreate, db: DbSession, org: Organization = Depends(get_org)):
     row = Contact(
+        organization_id=org.id,
         name=data.name,
         email=data.email,
         company=data.company,
@@ -168,7 +175,7 @@ async def create_contact(data: ContactCreate, db: DbSession):
 
 
 @router.post("/bulk", response_model=ContactBulkResult, status_code=201)
-async def bulk_upsert_contacts(items: list[ContactCreate], db: DbSession) -> ContactBulkResult:
+async def bulk_upsert_contacts(items: list[ContactCreate], db: DbSession, org: Organization = Depends(get_org)) -> ContactBulkResult:
     created = 0
     updated = 0
     out: list[ContactOut] = []
@@ -179,7 +186,7 @@ async def bulk_upsert_contacts(items: list[ContactCreate], db: DbSession) -> Con
         if email:
             existing = (
                 await db.execute(
-                    _active_contacts().where(Contact.email == email).limit(1)
+                    _active_contacts(org.id).where(Contact.email == email).limit(1)
                 )
             ).scalar_one_or_none()
         if existing:
@@ -199,6 +206,7 @@ async def bulk_upsert_contacts(items: list[ContactCreate], db: DbSession) -> Con
             continue
 
         row = Contact(
+            organization_id=org.id,
             name=item.name,
             email=email,
             company=item.company,
@@ -225,9 +233,9 @@ async def bulk_upsert_contacts(items: list[ContactCreate], db: DbSession) -> Con
 
 
 @router.get("/{contact_id}", response_model=ContactOut)
-async def get_contact(contact_id: UUID, db: DbSession):
+async def get_contact(contact_id: UUID, db: DbSession, org: Organization = Depends(get_org)):
     row = (
-        await db.execute(_active_contacts().where(Contact.id == contact_id).limit(1))
+        await db.execute(_active_contacts(org.id).where(Contact.id == contact_id).limit(1))
     ).scalar_one_or_none()
     if row is None:
         raise HTTPException(status_code=404, detail="Contact not found")
@@ -235,16 +243,16 @@ async def get_contact(contact_id: UUID, db: DbSession):
 
 
 @router.patch("/{contact_id}", response_model=ContactOut)
-async def update_contact(contact_id: UUID, data: ContactUpdate, db: DbSession) -> ContactOut:
+async def update_contact(contact_id: UUID, data: ContactUpdate, db: DbSession, org: Organization = Depends(get_org)) -> ContactOut:
     row = (
-        await db.execute(_active_contacts().where(Contact.id == contact_id).limit(1))
+        await db.execute(_active_contacts(org.id).where(Contact.id == contact_id).limit(1))
     ).scalar_one_or_none()
     if row is None:
         raise HTTPException(status_code=404, detail="Contact not found")
 
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(row, field, value)
-    row.updated_at = datetime.now(timezone.utc)
+    row.updated_at = datetime.now(UTC)
 
     await db.commit()
     await db.refresh(row)
@@ -256,15 +264,15 @@ async def update_contact(contact_id: UUID, data: ContactUpdate, db: DbSession) -
 
 
 @router.delete("/{contact_id}", status_code=204)
-async def delete_contact(contact_id: UUID, db: DbSession) -> None:
+async def delete_contact(contact_id: UUID, db: DbSession, org: Organization = Depends(get_org)) -> None:
     row = (
-        await db.execute(_active_contacts().where(Contact.id == contact_id).limit(1))
+        await db.execute(_active_contacts(org.id).where(Contact.id == contact_id).limit(1))
     ).scalar_one_or_none()
     if row is None:
         raise HTTPException(status_code=404, detail="Contact not found")
 
     row.is_deleted = True
-    row.deleted_at = datetime.now(timezone.utc)
-    row.updated_at = datetime.now(timezone.utc)
+    row.deleted_at = datetime.now(UTC)
+    row.updated_at = datetime.now(UTC)
     await db.commit()
     await event_bus.emit("contact.deleted", {"contact_id": str(row.id), "name": row.name})

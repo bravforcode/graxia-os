@@ -7,7 +7,6 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
 ENV_FILE = REPO_ROOT / ".env"
 
@@ -77,6 +76,20 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "development-secret-key-change-me"
     ENCRYPTION_KEY: str = ""
     API_KEY: str = ""
+    INTERNAL_API_KEY: str = ""
+
+    # Enterprise IP Filtering (comma-separated CIDR blocks)
+    # Example: "10.0.0.0/8,192.168.0.0/16,172.16.0.0/12"
+    IP_WHITELIST: str = ""  # Empty = allow all
+    IP_BLACKLIST: str = ""  # Block specific IPs/networks
+
+    # Enterprise Security Settings
+    SECURITY_LOG_ALL_REQUESTS: bool = True
+    SECURITY_MAX_FAILED_AUTH: int = 5  # Lockout after N failed attempts
+    SECURITY_LOCKOUT_DURATION: int = 300  # Lockout duration in seconds (5 min)
+    SECURITY_REQUIRE_MFA: bool = False  # Require MFA for admin users
+    SECURITY_AUDIT_RETENTION_DAYS: int = 90  # Audit log retention
+
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     JWT_SIGNING_KEYS: str = ""
@@ -184,6 +197,14 @@ class Settings(BaseSettings):
     # SerpAPI
     SERPAPI_KEY: str = ""
 
+    # Stripe Billing
+    STRIPE_SECRET_KEY: str = ""
+    STRIPE_WEBHOOK_SECRET: str = ""
+    STRIPE_PUBLISHABLE_KEY: str = ""
+    STRIPE_PRICE_STARTER_MONTHLY: str = ""
+    STRIPE_PRICE_PRO_MONTHLY: str = ""
+    STRIPE_PRICE_ENTERPRISE_MONTHLY: str = ""
+
     # Identity
     IDENTITY_PATH: str = "/identity/profile.yaml"
     RUNNING_IN_DOCKER: bool = False
@@ -245,7 +266,19 @@ class Settings(BaseSettings):
     # App
     APP_ENV: str = "development"
     LOG_LEVEL: str = "INFO"
+    TESTING: bool = False
     SCHEDULER_EMBEDDED: bool = True
+
+    # Monitoring & Error Tracking
+    SENTRY_DSN: str = ""
+    SENTRY_TRACES_SAMPLE_RATE: float = 0.1
+    SENTRY_PROFILES_SAMPLE_RATE: float = 0.1
+
+    # Enterprise Security - IP Filtering
+    IP_WHITELIST: list[str] = []
+    IP_BLACKLIST: list[str] = []
+    RATE_LIMIT_REQUESTS_PER_MINUTE: int = 100
+    RATE_LIMIT_BURST: int = 10
 
     @model_validator(mode="after")
     def normalize_local_service_hosts(self):
@@ -254,10 +287,10 @@ class Settings(BaseSettings):
         elif self.DATABASE_URL.startswith("sqlite"):
             if not self.DATABASE_URL.startswith("sqlite+aiosqlite"):
                 self.DATABASE_URL = self.DATABASE_URL.replace("sqlite://", "sqlite+aiosqlite://")
-        
+
         if self.DATABASE_MIGRATION_URL.startswith("postgresql"):
             self.DATABASE_MIGRATION_URL = _normalize_postgres_driver(self.DATABASE_MIGRATION_URL)
-            
+
         if self.APP_ENV.lower() == "development" and not self.RUNNING_IN_DOCKER:
             self.DATABASE_URL = _rewrite_hostname(self.DATABASE_URL, {"postgres": "localhost"})
             self.DATABASE_MIGRATION_URL = _rewrite_hostname(
@@ -576,4 +609,3 @@ class Settings(BaseSettings):
             )
 
 settings = Settings()
-

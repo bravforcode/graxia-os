@@ -1,6 +1,5 @@
 import logging
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
@@ -20,7 +19,11 @@ from app.core.auth import (
     verify_password,
 )
 from app.database import get_db
-from app.middleware.auth import extract_access_token_from_request, get_client_ip, get_device_fingerprint
+from app.middleware.auth import (
+    extract_access_token_from_request,
+    get_client_ip,
+    get_device_fingerprint,
+)
 from app.middleware.security import generate_csrf_token
 from app.models.user import User
 from app.services.audit_service import log_audit_event
@@ -40,7 +43,7 @@ DATABASE_UNAVAILABLE_DETAIL = (
 class UserRegister(BaseModel):
     email: EmailStr
     password: str
-    full_name: Optional[str] = None
+    full_name: str | None = None
 
 
 class SocialLoginRequest(BaseModel):
@@ -58,7 +61,7 @@ class UserResponse(BaseModel):
 
     id: str
     email: str
-    full_name: Optional[str]
+    full_name: str | None
     role: str
     is_active: bool
     created_at: datetime
@@ -270,10 +273,10 @@ async def register(user_data: UserRegister, request: Request, response: Response
         raise
     if existing_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
-    if len(user_data.password) < 8:
+    if len(user_data.password) < 12:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password must be at least 8 characters",
+            detail="Password must be at least 12 characters",
         )
 
     user = User(
@@ -284,8 +287,8 @@ async def register(user_data: UserRegister, request: Request, response: Response
         role="user",
         is_active=True,
         totp_enabled=False,
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
     db.add(user)
     try:
@@ -382,7 +385,7 @@ async def social_login(
         raise
     
     if not user:
-        from datetime import datetime, timezone
+        from datetime import datetime
         user = User(
             id=uuid4(),
             email=email,
@@ -393,8 +396,8 @@ async def social_login(
             provider=payload.provider,
             provider_id=supabase_uid,
             avatar_url=avatar_url,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
         )
         db.add(user)
         try:
@@ -406,7 +409,7 @@ async def social_login(
             raise
         logger.info("Created new social user: %s via %s", email, payload.provider)
     else:
-        from datetime import datetime, timezone
+        from datetime import datetime
         # Update existing user with provider info if missing
         changed = False
         if not user.provider:
@@ -417,7 +420,7 @@ async def social_login(
             user.avatar_url = avatar_url
             changed = True
         
-        user.last_login_at = datetime.now(timezone.utc)
+        user.last_login_at = datetime.now(UTC)
         try:
             await db.commit()
         except Exception as exc:
@@ -521,8 +524,8 @@ async def login(request: Request, response: Response, db=Depends(get_db)):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    from datetime import datetime, timezone
-    user.last_login_at = datetime.now(timezone.utc)
+    from datetime import datetime
+    user.last_login_at = datetime.now(UTC)
     try:
         await db.commit()
     except Exception as exc:
@@ -665,13 +668,13 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
 @router.put("/me", response_model=UserResponse)
 async def update_current_user(
     request: Request,
-    full_name: Optional[str] = None,
+    full_name: str | None = None,
     current_user: User = Depends(get_current_user),
     db=Depends(get_db),
 ):
     if full_name is not None:
         current_user.full_name = full_name
-    current_user.updated_at = datetime.now(timezone.utc)
+    current_user.updated_at = datetime.now(UTC)
     await db.commit()
     await db.refresh(current_user)
     await log_audit_event(
@@ -701,14 +704,14 @@ async def change_password(
 ):
     if not verify_password(password_data.current_password, current_user.hashed_password):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect")
-    if len(password_data.new_password) < 8:
+    if len(password_data.new_password) < 12:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="New password must be at least 8 characters",
+            detail="New password must be at least 12 characters",
         )
 
     current_user.hashed_password = get_password_hash(password_data.new_password)
-    current_user.updated_at = datetime.now(timezone.utc)
+    current_user.updated_at = datetime.now(UTC)
     await db.commit()
 
     session_service = SessionService(getattr(request.app.state, "redis", None))
