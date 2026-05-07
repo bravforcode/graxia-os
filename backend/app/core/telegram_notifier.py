@@ -5,12 +5,12 @@ Provides comprehensive progress tracking and real-time notifications
 to Telegram for all system activities, agent actions, and user operations.
 """
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 
 from app.config import settings
-from app.telegram_bot.bot import send_message
 from app.core.event_bus import event_bus
+from app.telegram_bot.bot import send_message
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ class TelegramNotifier:
     def __init__(self):
         self._initialized = False
         self._notification_count = 0
-        self._last_reset = datetime.now(timezone.utc)
+        self._last_reset = datetime.now(UTC)
         self._rate_limit = 30  # notifications per minute
         self._pending_progress: dict[str, dict] = {}  # Track ongoing operations
 
@@ -59,7 +59,7 @@ class TelegramNotifier:
         startup_msg = f"""
 🚀 **Personal OS Started**
 
-⏰ Time: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}
+⏰ Time: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}
 🌐 Environment: {settings.APP_ENV}
 🤖 AI Models: OpenClaw + Gemini
 📊 Real-time notifications: ACTIVE
@@ -99,7 +99,7 @@ System is ready and monitoring your activities.
 
     def _check_rate_limit(self) -> bool:
         """Check if we can send another notification."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if (now - self._last_reset).total_seconds() > 60:
             self._notification_count = 0
             self._last_reset = now
@@ -172,7 +172,7 @@ System is ready and monitoring your activities.
             "current": 0,
             "total": total_steps,
             "description": description,
-            "started_at": datetime.now(timezone.utc),
+            "started_at": datetime.now(UTC),
             "message_id": None,
         }
 
@@ -201,7 +201,7 @@ System is ready and monitoring your activities.
         filled = int((percentage / 100) * bar_length)
         bar = "█" * filled + "░" * (bar_length - filled)
 
-        elapsed = (datetime.now(timezone.utc) - progress["started_at"]).total_seconds()
+        elapsed = (datetime.now(UTC) - progress["started_at"]).total_seconds()
 
         status_msg = f"""
 **{progress['title']}**
@@ -228,7 +228,7 @@ System is ready and monitoring your activities.
             return
 
         progress = self._pending_progress.pop(operation_id)
-        elapsed = (datetime.now(timezone.utc) - progress["started_at"]).total_seconds()
+        elapsed = (datetime.now(UTC) - progress["started_at"]).total_seconds()
 
         status_emoji = "✅" if success else "❌"
         status_text = "Completed" if success else "Failed"

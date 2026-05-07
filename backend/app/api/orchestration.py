@@ -1,11 +1,12 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Any
 
-from app.database import get_db
-from app.models.orchestration import AgentTask, AgentMessage
 from app.core.event_bus import event_bus
+from app.database import get_db
+from app.models.orchestration import AgentMessage, AgentTask
 
 router = APIRouter()
 
@@ -32,8 +33,9 @@ async def delegate_goal(payload: dict[str, Any]):
         raise HTTPException(status_code=400, detail="Missing 'goal'")
     
     # We trigger the orchestrator directly or via event
-    from app.agents.orchestrator import orchestrator_agent
     import asyncio
+
+    from app.agents.orchestrator import orchestrator_agent
     asyncio.create_task(orchestrator_agent.orchestrate_goal(goal))
     
     return {"status": "accepted", "goal": goal}

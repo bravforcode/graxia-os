@@ -14,6 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.config import settings
+
 from scripts.backup_database import (
     BackupManifest,
     ObjectStore,
@@ -109,7 +110,9 @@ class DatabaseRestore:
         self.restore_prepared_dump(dump_path)
         return dump_path
 
-    def download_backup(self, artifact_key: str, manifest_key: str, work_dir: Path) -> tuple[Path, BackupManifest]:
+    def download_backup(
+        self, artifact_key: str, manifest_key: str, work_dir: Path
+    ) -> tuple[Path, BackupManifest]:
         if not self.object_store.enabled():
             raise RuntimeError("BACKUP_BUCKET is not configured")
         import boto3

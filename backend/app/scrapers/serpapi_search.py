@@ -1,8 +1,10 @@
 import logging
-from typing import Optional
+
 import httpx
-from .base import BaseScraper
+
 from app.config import settings
+
+from .base import BaseScraper
 
 logger = logging.getLogger(__name__)
 
@@ -19,13 +21,13 @@ SEARCH_QUERIES = [
 class SerpAPIScraper(BaseScraper):
     source_name = "serpapi"
 
-    def __init__(self, query: Optional[str] = None) -> None:
+    def __init__(self, query: str | None = None) -> None:
         self._query = query or SEARCH_QUERIES[0]
 
     def _get_url(self) -> str:
         return f"https://serpapi.com/search.json?q={self._query}&api_key={settings.SERPAPI_KEY}&num=10&hl=en&gl=th"
 
-    async def fetch(self, url: str) -> Optional[httpx.Response]:
+    async def fetch(self, url: str) -> httpx.Response | None:
         if not settings.SERPAPI_KEY:
             logger.info("SerpAPI: no key — skipping")
             return None
@@ -44,7 +46,7 @@ class SerpAPIScraper(BaseScraper):
             logger.error(f"SerpAPI parse error: {e}")
             return []
 
-    async def normalize(self, raw_item: dict) -> Optional[dict]:
+    async def normalize(self, raw_item: dict) -> dict | None:
         title = raw_item.get("title", "")
         if not title:
             return None

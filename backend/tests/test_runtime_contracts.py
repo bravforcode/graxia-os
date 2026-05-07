@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
 import warnings
+from datetime import UTC, datetime, timedelta
 
 import pytest
-
 from app.core.auth import create_access_token, decode_access_token
 from app.models.scraper_run import ScraperRun
 
@@ -33,7 +32,7 @@ def test_scraper_run_markers_use_timezone_aware_datetimes():
 
 @pytest.mark.asyncio
 async def test_scraper_run_success_rate_query_works_with_case_expression(db_session):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     db_session.add_all(
         [
             ScraperRun(

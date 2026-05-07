@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pydantic
+pydantic-settings
+pyjwt[crypto]
+loguru
+python-dotenv
+redis
+httpx

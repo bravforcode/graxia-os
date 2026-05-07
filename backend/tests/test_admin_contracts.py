@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import pytest
-
-from app.tasks.dlq_handler import DLQMessage, DeadLetterQueue
+from app.tasks.dlq_handler import DeadLetterQueue, DLQMessage
 
 
 @pytest.mark.asyncio

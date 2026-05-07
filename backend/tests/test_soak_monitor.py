@@ -10,7 +10,10 @@ def test_parse_system_health_payload_full_ok():
 
 
 def test_parse_system_health_payload_degraded_ok():
-    payload = {"status": "degraded", "readiness": {"mode": "degraded", "issues": ["redis unavailable"]}}
+    payload = {
+        "status": "degraded",
+        "readiness": {"mode": "degraded", "issues": ["redis unavailable"]},
+    }
     snapshot = parse_system_health_payload(payload, 200)
     assert snapshot.ok is True
     assert snapshot.mode == "degraded"
@@ -18,7 +21,10 @@ def test_parse_system_health_payload_degraded_ok():
 
 
 def test_parse_system_health_payload_blocked_not_ok():
-    payload = {"status": "blocked", "readiness": {"mode": "blocked", "issues": ["Database: cannot connect"]}}
+    payload = {
+        "status": "blocked",
+        "readiness": {"mode": "blocked", "issues": ["Database: cannot connect"]},
+    }
     snapshot = parse_system_health_payload(payload, 200)
     assert snapshot.ok is False
     assert snapshot.mode == "blocked"

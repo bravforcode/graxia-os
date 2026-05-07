@@ -1,0 +1,9 @@
+# xiarchitect — Enterprise Architecture Intelligence System
+# Python 3.11+ required
+
+# CLI
+click>=8.1.0,<9.0.0
+
+# Core dependencies (minimal for v0.1)
+# No external dependencies for scanning and classification
+# All analysis is done with stdlib only for maximum privacy and speed

@@ -6,6 +6,8 @@ from uuid import UUID as UUIDType
 
 from sqlalchemy import (
     UUID as SQLUUID,
+)
+from sqlalchemy import (
     Boolean,
     CheckConstraint,
     Date,
@@ -21,10 +23,10 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import Base
+from .base import Base, TenantMixin
 
 
-class Opportunity(Base):
+class Opportunity(Base, TenantMixin):
     __tablename__ = "opportunities"
     __table_args__ = (
         CheckConstraint(

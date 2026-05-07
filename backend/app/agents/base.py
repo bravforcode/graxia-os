@@ -1,13 +1,14 @@
 import logging
+from datetime import UTC, datetime
 from typing import Any
-from datetime import datetime, timezone
 
+from sqlalchemy import select
+
+from app.core.event_bus import event_bus
 from app.core.identity import identity
 from app.core.llm import llm_client
-from app.core.event_bus import event_bus
 from app.database import AsyncSessionLocal
 from app.models.orchestration import AgentTask
-from sqlalchemy import select
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ class BaseAgent:
             task_class="analysis"
         )
         
-        return {"response": result_text, "timestamp": datetime.now(timezone.utc).isoformat()}
+        return {"response": result_text, "timestamp": datetime.now(UTC).isoformat()}
 
     async def log_audit(self, action: str, details: dict[str, Any], success: bool = True, error: str | None = None, was_fallback: bool = False) -> None:
         try:
@@ -96,8 +97,8 @@ class BaseAgent:
         })
 
     async def complete_task(self, task_id: str, result: dict[str, Any]) -> None:
+        from datetime import datetime
         from uuid import UUID
-        from datetime import datetime, timezone
         async with AsyncSessionLocal() as db:
             stmt = select(AgentTask).where(AgentTask.id == UUID(task_id))
             res = await db.execute(stmt)
@@ -105,7 +106,7 @@ class BaseAgent:
             if task:
                 task.status = "completed"
                 task.result = result
-                task.completed_at = datetime.now(timezone.utc)
+                task.completed_at = datetime.now(UTC)
                 await db.commit()
                 await self.bus.emit("agent.task.completed", {
                     "task_id": str(task.id),

@@ -1,9 +1,10 @@
 import uuid
-from sqlalchemy import (
-    UUID, Column, DateTime, String, Text, func, ForeignKey
-)
+
+from sqlalchemy import UUID, Column, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
+
 from .base import Base
+
 
 class AgentTask(Base):
     __tablename__ = "agent_tasks"

@@ -5,8 +5,8 @@ Event-driven architecture with strong typing and validation.
 """
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Any, Dict, Optional, Type
+from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID, uuid4
 
 
@@ -19,7 +19,7 @@ def _serialize_event_value(value: Any) -> Any:
     if isinstance(value, datetime):
         return value.isoformat()
     if hasattr(value, "value"):
-        candidate = getattr(value, "value")
+        candidate = value.value
         if isinstance(candidate, (int, float, str, bool)):
             return candidate
     return value
@@ -30,9 +30,9 @@ class DomainEvent(ABC):
     """Base class for all domain events."""
     
     event_id: UUID = field(default_factory=uuid4)
-    occurred_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    aggregate_id: Optional[str] = None
-    aggregate_type: Optional[str] = None
+    occurred_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    aggregate_id: str | None = None
+    aggregate_type: str | None = None
     version: int = 1
     
     @abstractmethod
@@ -40,7 +40,7 @@ class DomainEvent(ABC):
         """Return the event type identifier."""
         pass
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary."""
         return {
             "event_id": str(self.event_id),
@@ -53,7 +53,7 @@ class DomainEvent(ABC):
         }
     
     @abstractmethod
-    def _get_data(self) -> Dict[str, Any]:
+    def _get_data(self) -> dict[str, Any]:
         """Get event-specific data."""
         pass
 
@@ -66,12 +66,12 @@ class OpportunityDiscovered(DomainEvent):
     opportunity_id: str
     title: str
     source: str
-    score: Optional[float] = None
+    score: float | None = None
     
     def event_type(self) -> str:
         return "opportunity.discovered"
     
-    def _get_data(self) -> Dict[str, Any]:
+    def _get_data(self) -> dict[str, Any]:
         return {
             "opportunity_id": self.opportunity_id,
             "title": self.title,
@@ -87,12 +87,12 @@ class OpportunityScored(DomainEvent):
     opportunity_id: str
     score: float
     reasoning: str
-    action_priority: Optional[str] = None
+    action_priority: str | None = None
     
     def event_type(self) -> str:
         return "opportunity.scored"
     
-    def _get_data(self) -> Dict[str, Any]:
+    def _get_data(self) -> dict[str, Any]:
         return {
             "opportunity_id": self.opportunity_id,
             "score": self.score,
@@ -111,7 +111,7 @@ class OpportunityApproved(DomainEvent):
     def event_type(self) -> str:
         return "opportunity.approved"
     
-    def _get_data(self) -> Dict[str, Any]:
+    def _get_data(self) -> dict[str, Any]:
         return {
             "opportunity_id": self.opportunity_id,
             "approved_by": self.approved_by
@@ -130,7 +130,7 @@ class SubmissionCreated(DomainEvent):
     def event_type(self) -> str:
         return "submission.created"
     
-    def _get_data(self) -> Dict[str, Any]:
+    def _get_data(self) -> dict[str, Any]:
         return {
             "submission_id": self.submission_id,
             "opportunity_id": self.opportunity_id,
@@ -148,7 +148,7 @@ class SubmissionSent(DomainEvent):
     def event_type(self) -> str:
         return "submission.sent"
     
-    def _get_data(self) -> Dict[str, Any]:
+    def _get_data(self) -> dict[str, Any]:
         return {
             "submission_id": self.submission_id,
             "sent_at": self.sent_at.isoformat()
@@ -165,7 +165,7 @@ class SubmissionWon(DomainEvent):
     def event_type(self) -> str:
         return "submission.won"
     
-    def _get_data(self) -> Dict[str, Any]:
+    def _get_data(self) -> dict[str, Any]:
         return {
             "submission_id": self.submission_id,
             "value_usd": self.value_usd
@@ -177,12 +177,12 @@ class SubmissionLost(DomainEvent):
     """Submission lost the opportunity."""
     
     submission_id: str
-    reason: Optional[str] = None
+    reason: str | None = None
     
     def event_type(self) -> str:
         return "submission.lost"
     
-    def _get_data(self) -> Dict[str, Any]:
+    def _get_data(self) -> dict[str, Any]:
         return {
             "submission_id": self.submission_id,
             "reason": self.reason
@@ -201,7 +201,7 @@ class CostIncurred(DomainEvent):
     def event_type(self) -> str:
         return "cost.incurred"
     
-    def _get_data(self) -> Dict[str, Any]:
+    def _get_data(self) -> dict[str, Any]:
         return {
             "service": self.service,
             "amount_usd": self.amount_usd,
@@ -221,7 +221,7 @@ class BudgetThresholdReached(DomainEvent):
     def event_type(self) -> str:
         return "cost.budget_threshold_reached"
     
-    def _get_data(self) -> Dict[str, Any]:
+    def _get_data(self) -> dict[str, Any]:
         return {
             "period": self.period,
             "current_usd": self.current_usd,
@@ -242,7 +242,7 @@ class ScraperExecuted(DomainEvent):
     def event_type(self) -> str:
         return "scraper.executed"
     
-    def _get_data(self) -> Dict[str, Any]:
+    def _get_data(self) -> dict[str, Any]:
         return {
             "scraper_name": self.scraper_name,
             "results_count": self.results_count,
@@ -261,7 +261,7 @@ class ScraperFailed(DomainEvent):
     def event_type(self) -> str:
         return "scraper.failed"
     
-    def _get_data(self) -> Dict[str, Any]:
+    def _get_data(self) -> dict[str, Any]:
         return {
             "scraper_name": self.scraper_name,
             "error_message": self.error_message,
@@ -279,7 +279,7 @@ class ScraperMuted(DomainEvent):
     def event_type(self) -> str:
         return "scraper.muted"
 
-    def _get_data(self) -> Dict[str, Any]:
+    def _get_data(self) -> dict[str, Any]:
         return {
             "scraper_name": self.scraper_name,
             "muted_until": self.muted_until.isoformat()
@@ -292,13 +292,13 @@ class VaultSynced(DomainEvent):
     """Vault changes synced back to database."""
 
     opportunity_id: str
-    old_status: Optional[str]
+    old_status: str | None
     new_status: str
 
     def event_type(self) -> str:
         return "vault.synced"
 
-    def _get_data(self) -> Dict[str, Any]:
+    def _get_data(self) -> dict[str, Any]:
         return {
             "opportunity_id": self.opportunity_id,
             "old_status": self.old_status,
@@ -307,7 +307,7 @@ class VaultSynced(DomainEvent):
 
 
 # Event Registry
-EVENT_REGISTRY: Dict[str, Type[DomainEvent]] = {
+EVENT_REGISTRY: dict[str, type[DomainEvent]] = {
     "opportunity.discovered": OpportunityDiscovered,
     "opportunity.scored": OpportunityScored,
     "opportunity.approved": OpportunityApproved,
@@ -324,6 +324,6 @@ EVENT_REGISTRY: Dict[str, Type[DomainEvent]] = {
 }
 
 
-def get_event_class(event_type: str) -> Optional[Type[DomainEvent]]:
+def get_event_class(event_type: str) -> type[DomainEvent] | None:
     """Get event class by type."""
     return EVENT_REGISTRY.get(event_type)

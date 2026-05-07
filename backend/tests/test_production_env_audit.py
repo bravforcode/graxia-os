@@ -5,7 +5,6 @@ from uuid import uuid4
 
 from scripts.production_env_audit import audit_production_env
 
-
 WRITABLE_TEMP_ROOT = Path("C:/Users/menum/.codex/memories/tmp/bravos-prodready-tests")
 
 
@@ -44,18 +43,26 @@ def _valid_env_values() -> dict[str, str]:
         "N8N_PASSWORD": "n8n-prod-password-A1b2C3d4",
         "FLOWER_BASIC_AUTH": "admin:flower-prod-password-A1b2C3d4",
         "GRAFANA_ADMIN_PASSWORD": "grafana-prod-password-A1b2C3d4",
+        "API_KEY": "graxia-execute-api-key-prod-A1b2C3d4",
+        "INTERNAL_METRICS_TOKEN": "graxia-metrics-token-prod-A1b2C3d4",
     }
 
 
 def _write_env_file(path: Path, values: dict[str, str]) -> None:
-    path.write_text("\n".join(f"{key}={value}" for key, value in values.items()) + "\n", encoding="utf-8")
+    path.write_text(
+        "\n".join(f"{key}={value}" for key, value in values.items()) + "\n", encoding="utf-8"
+    )
 
 
 def _write_secret_files(repo_root: Path) -> None:
     secrets_dir = repo_root / "secrets"
     secrets_dir.mkdir(parents=True, exist_ok=True)
-    (secrets_dir / "backup_private_key.txt").write_text("AGE-SECRET-KEY-TEST-ONLY\n", encoding="utf-8")
-    (secrets_dir / "alertmanager_webhook_token.txt").write_text("alertmanager-secret-token\n", encoding="utf-8")
+    (secrets_dir / "backup_private_key.txt").write_text(
+        "AGE-SECRET-KEY-TEST-ONLY\n", encoding="utf-8"
+    )
+    (secrets_dir / "alertmanager_webhook_token.txt").write_text(
+        "alertmanager-secret-token\n", encoding="utf-8"
+    )
 
 
 @contextmanager
@@ -105,7 +112,10 @@ services:
         )
 
         assert result.failed == 0
-        assert any("frontend/.env.production still contains placeholder values" in warning for warning in result.warnings)
+        assert any(
+            "frontend/.env.production still contains placeholder values" in warning
+            for warning in result.warnings
+        )
 
 
 def test_production_env_audit_fails_when_frontend_supabase_bridge_is_missing():
@@ -131,7 +141,10 @@ services:
         result = audit_production_env(env_file, compose_file, repo_root=tmp_path)
 
         assert result.failed >= 1
-        assert any(name == "compose bridge VITE_SUPABASE_URL" and not ok for name, ok, _message in result.checks)
+        assert any(
+            name == "compose bridge VITE_SUPABASE_URL" and not ok
+            for name, ok, _message in result.checks
+        )
 
 
 def test_production_env_audit_fails_when_required_secret_files_are_missing():
@@ -159,7 +172,10 @@ services:
         result = audit_production_env(env_file, compose_file, repo_root=tmp_path)
 
         assert result.failed >= 1
-        assert any(name == "secret file backup_private_key.txt" and not ok for name, ok, _message in result.checks)
+        assert any(
+            name == "secret file backup_private_key.txt" and not ok
+            for name, ok, _message in result.checks
+        )
 
 
 def test_production_env_audit_surfaces_each_missing_deploy_value_as_a_separate_failure():
@@ -199,7 +215,11 @@ services:
         )
 
         result = audit_production_env(env_file, compose_file, repo_root=tmp_path)
-        failures = [message for name, ok, message in result.checks if name == "production configuration" and not ok]
+        failures = [
+            message
+            for name, ok, message in result.checks
+            if name == "production configuration" and not ok
+        ]
 
         assert "APP_HOST must be a real production hostname without a URL scheme" in failures
         assert "APP_BASE_URL must be a real production URL" in failures

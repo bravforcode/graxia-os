@@ -4,8 +4,6 @@ from uuid import uuid4
 
 import pytest
 import pytest_asyncio
-from sqlalchemy import select
-
 from app.core.control_plane import (
     mark_subject_approvals_resolved,
     queue_approval_request,
@@ -13,6 +11,7 @@ from app.core.control_plane import (
 )
 from app.core.event_bus import event_bus
 from app.models.approval_request import ApprovalRequest
+from sqlalchemy import select
 
 
 @pytest_asyncio.fixture()

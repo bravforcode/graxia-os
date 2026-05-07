@@ -3,14 +3,13 @@ CQRS Command and Query Handlers
 
 Mediator pattern for handling commands and queries.
 """
-from abc import ABC, abstractmethod
-from typing import TypeVar, Generic, Dict, Type, Any
 import logging
+from abc import ABC, abstractmethod
+from typing import Any, Generic, TypeVar
 
+from app.core.result import Result, err
 from app.cqrs.commands import Command
 from app.cqrs.queries import Query
-from app.core.result import Result, err
-
 
 logger = logging.getLogger(__name__)
 
@@ -46,12 +45,12 @@ class Mediator:
     """
     
     def __init__(self):
-        self._command_handlers: Dict[Type[Command], CommandHandler] = {}
-        self._query_handlers: Dict[Type[Query], QueryHandler] = {}
+        self._command_handlers: dict[type[Command], CommandHandler] = {}
+        self._query_handlers: dict[type[Query], QueryHandler] = {}
     
     def register_command_handler(
         self,
-        command_type: Type[TCommand],
+        command_type: type[TCommand],
         handler: CommandHandler[TCommand, TResult]
     ):
         """Register command handler."""
@@ -60,7 +59,7 @@ class Mediator:
     
     def register_query_handler(
         self,
-        query_type: Type[TQuery],
+        query_type: type[TQuery],
         handler: QueryHandler[TQuery, TResult]
     ):
         """Register query handler."""

@@ -4,9 +4,9 @@ Result Type Pattern
 Railway-oriented programming for clean error handling.
 Inspired by Rust's Result<T, E> and functional programming.
 """
-from typing import TypeVar, Generic, Callable, Union
+from collections.abc import Callable
 from dataclasses import dataclass
-
+from typing import Generic, TypeVar, Union
 
 T = TypeVar('T')
 E = TypeVar('E')

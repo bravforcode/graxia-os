@@ -1,14 +1,14 @@
-name: Build & Deploy — Personal OS
+name: Build & Deploy — Graxia OS
 
 on:
   push:
     branches: [main]
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch: # Manual trigger
 
 env:
   REGISTRY: ghcr.io
-  BACKEND_IMAGE: ${{ github.repository_owner }}/personal-os-backend
-  FRONTEND_IMAGE: ${{ github.repository_owner }}/personal-os-frontend
+  BACKEND_IMAGE: ${{ github.repository_owner }}/graxia-backend
+  FRONTEND_IMAGE: ${{ github.repository_owner }}/graxia-frontend
 
 jobs:
   # ─── Build Images ──────────────────────────────────────────────────────────
@@ -103,7 +103,7 @@ jobs:
           timeout: 300s
           script: |
             set -e
-            cd /opt/personal-os
+            cd /opt/graxia
             git pull origin main
 
             # Pin the deployed image tag
@@ -113,16 +113,16 @@ jobs:
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
             # Run migrations before swapping containers
-            docker compose -f docker-compose.prod.yml --env-file .env.production \
+            docker compose -f docker-compose.production.yml --env-file .env.production \
               run --rm --no-deps backend alembic upgrade head
 
             # Pull new images and restart
-            docker compose -f docker-compose.prod.yml --env-file .env.production pull
-            docker compose -f docker-compose.prod.yml --env-file .env.production \
+            docker compose -f docker-compose.production.yml --env-file .env.production pull
+            docker compose -f docker-compose.production.yml --env-file .env.production \
               up -d --remove-orphans --no-build
 
             # Wait for health
-            timeout 120 bash -c 'until docker compose -f docker-compose.prod.yml ps backend | grep -q "healthy"; do sleep 5; done'
+            timeout 120 bash -c 'until docker compose -f docker-compose.production.yml ps backend | grep -q "healthy"; do sleep 5; done'
 
             # Clean old images
             docker image prune -f --filter "until=24h"
@@ -136,7 +136,7 @@ jobs:
               "username": "GitHub Actions",
               "embeds": [{
                 "title": "Deploy Successful",
-                "description": "Personal OS production deploy complete",
+                "description": "Graxia OS production deploy complete",
                 "color": 65280,
                 "fields": [
                   {"name": "Commit", "value": "${{ github.sha }}", "inline": true},
@@ -154,7 +154,7 @@ jobs:
               "username": "GitHub Actions",
               "embeds": [{
                 "title": "Deploy FAILED",
-                "description": "Personal OS production deploy failed",
+                "description": "Graxia OS production deploy failed",
                 "color": 16711680,
                 "fields": [
                   {"name": "Run", "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}

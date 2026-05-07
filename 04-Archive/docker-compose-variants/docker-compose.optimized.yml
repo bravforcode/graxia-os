@@ -1,0 +1,153 @@
+# Graxia OS — Memory-Optimized Docker Compose
+# RAM usage: ~800MB total (vs 2GB+ when separate)
+
+version: "3.8"
+
+services:
+  # ── Unified API ──
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.unified
+    container_name: graxia-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/graxia
+      - REDIS_URL=redis://redis:6379/0
+      - TRADING_MODE=${TRADING_MODE:-PAPER}
+      - LIVE_TRADING_ENABLED=${LIVE_TRADING_ENABLED:-false}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - graxia
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 512M
+        reservations:
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Celery Worker ──
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.unified
+    container_name: graxia-worker
+    restart: unless-stopped
+    command: celery -A graxia.services.celery_app worker -l info -c 2 -Q celery,revenue,quant
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/graxia
+      - REDIS_URL=redis://redis:6379/0
+      - TRADING_MODE=${TRADING_MODE:-PAPER}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - graxia
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ── Celery Beat ──
+  beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.unified
+    container_name: graxia-beat
+    restart: unless-stopped
+    command: celery -A graxia.services.celery_app beat -l info --scheduler celery.beat.schedulers.DatabaseScheduler
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/graxia
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - graxia
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  # ── PostgreSQL ──
+  db:
+    image: postgres:15-alpine
+    container_name: graxia-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=graxia
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - graxia
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: >
+      postgres
+      -c shared_buffers=64MB
+      -c effective_cache_size=128MB
+      -c work_mem=4MB
+      -c maintenance_work_mem=16MB
+      -c max_connections=50
+
+  # ── Redis ──
+  redis:
+    image: redis:7-alpine
+    container_name: graxia-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru --save ""
+    volumes:
+      - redis_data:/data
+    networks:
+      - graxia
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  graxia:
+    driver: bridge

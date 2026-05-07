@@ -13,6 +13,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  security_scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: TruffleHog Secret Scan
+        uses: trufflesecurity/trufflehog@main
+
   backend:
     name: Backend Tests
     runs-on: ubuntu-latest
@@ -74,8 +85,22 @@ jobs:
       - name: Run frontend build
         run: bun run build
 
+      - name: Cache Playwright browsers
+        id: cache-playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
       - name: Install Playwright browser
+        if: steps.cache-playwright.outputs.cache-hit != 'true'
         run: bunx playwright install --with-deps chromium
+
+      - name: Install Playwright dependencies (if cached)
+        if: steps.cache-playwright.outputs.cache-hit == 'true'
+        run: bunx playwright install-deps chromium
 
       - name: Run frontend browser E2E
         run: bun run test:e2e
@@ -116,7 +141,7 @@ jobs:
           bash -n deploy/scripts/dr-rebuild.sh
 
       - name: Validate Docker Compose
-        run: docker compose -f docker-compose.yml config > /dev/null
+        run: TAG=${{ github.sha }} docker compose -f docker-compose.yml config > /dev/null
 
       - name: Validate production Docker Compose
         run: |
@@ -126,3 +151,37 @@ jobs:
           printf '%s' 'placeholder-token' > secrets/alertmanager_webhook_token.txt
           BACKEND_DIGEST=sha256-test FRONTEND_DIGEST=sha256-test \
             docker compose -f docker-compose.prod.yml config > /dev/null
+
+  deploy:
+    name: Build and Push Images
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Backend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: ghcr.io/${{ github.repository }}/graxia-backend:${{ github.sha }}
+
+      - name: Build and push Frontend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile.prod
+          push: true
+          tags: ghcr.io/${{ github.repository }}/graxia-frontend:${{ github.sha }}

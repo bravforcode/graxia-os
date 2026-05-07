@@ -1,7 +1,8 @@
 import logging
-from typing import Optional
-import httpx
 from xml.etree import ElementTree as ET
+
+import httpx
+
 from .base import BaseScraper
 
 logger = logging.getLogger(__name__)
@@ -15,7 +16,7 @@ RSS_FEEDS = [
 class RSSReaderScraper(BaseScraper):
     source_name = "rss_reader"
 
-    def __init__(self, feed_url: Optional[str] = None, feed_name: Optional[str] = None) -> None:
+    def __init__(self, feed_url: str | None = None, feed_name: str | None = None) -> None:
         self._feed_url = feed_url or RSS_FEEDS[0][0]
         if feed_name:
             self.source_name = feed_name
@@ -23,7 +24,7 @@ class RSSReaderScraper(BaseScraper):
     def _get_url(self) -> str:
         return self._feed_url
 
-    async def fetch(self, url: str) -> Optional[httpx.Response]:
+    async def fetch(self, url: str) -> httpx.Response | None:
         return await self._safe_fetch(url)
 
     async def parse(self, response: httpx.Response) -> list[dict]:
@@ -50,7 +51,7 @@ class RSSReaderScraper(BaseScraper):
             logger.error(f"RSS parse error: {e}")
             return []
 
-    async def normalize(self, raw_item: dict) -> Optional[dict]:
+    async def normalize(self, raw_item: dict) -> dict | None:
         if not raw_item.get("title"):
             return None
         source_hash = self._compute_source_hash(raw_item.get("source_url", ""), raw_item.get("title", ""))

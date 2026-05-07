@@ -3,12 +3,11 @@ Fiverr Scraper for buyer requests (jobs posted by clients).
 Uses OpenClaw for browser automation with fallback.
 """
 import logging
-from typing import Optional
 from urllib.parse import quote_plus
 
 import httpx
 
-from app.core.openclaw import openclaw_client, OpenClawRateLimitError
+from app.core.openclaw import OpenClawRateLimitError, openclaw_client
 from app.scrapers.base import BaseScraper
 
 logger = logging.getLogger(__name__)
@@ -37,7 +36,7 @@ class FiverrScraper(BaseScraper):
         params = f"?query={quote_plus(self.keywords)}&source=top-bar&search_in=everywhere"
         return base + params
     
-    async def fetch(self, url: str) -> Optional[httpx.Response]:
+    async def fetch(self, url: str) -> httpx.Response | None:
         """Fetch using OpenClaw or fallback to basic HTTP."""
         if self.use_openclaw:
             try:
@@ -94,7 +93,7 @@ class FiverrScraper(BaseScraper):
             logger.error(f"Fiverr parse failed: {e}")
             return []
     
-    def _parse_gig_card(self, card) -> Optional[dict]:
+    def _parse_gig_card(self, card) -> dict | None:
         """Parse individual gig card."""
         try:
             # Extract title
@@ -150,7 +149,7 @@ class FiverrScraper(BaseScraper):
             logger.warning(f"Gig card parsing failed: {e}")
             return None
     
-    async def normalize(self, raw_item: dict) -> Optional[dict]:
+    async def normalize(self, raw_item: dict) -> dict | None:
         """
         Normalize to opportunity schema.
         

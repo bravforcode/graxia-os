@@ -1,0 +1,199 @@
+{
+  "dashboard": {
+    "title": "LLM Costs & Usage",
+    "tags": ["graxia", "llm", "costs"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Daily Cost (USD)",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(increase(llm_cost_usd_total[24h]))",
+            "legendFormat": "Cost"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 1.5, "color": "yellow"},
+                {"value": 2.0, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Monthly Cost (USD)",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(increase(llm_cost_usd_total[30d]))",
+            "legendFormat": "Cost"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 25, "color": "yellow"},
+                {"value": 30, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Total Requests (Today)",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(increase(llm_requests_total[24h]))",
+            "legendFormat": "Requests"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0}
+      },
+      {
+        "id": 4,
+        "title": "Total Tokens (Today)",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(increase(llm_tokens_total[24h]))",
+            "legendFormat": "Tokens"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0}
+      },
+      {
+        "id": 5,
+        "title": "Cost by Model",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "sum by (model) (increase(llm_cost_usd_total[24h]))",
+            "legendFormat": "{{model}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4}
+      },
+      {
+        "id": 6,
+        "title": "Cost Trend (7 days)",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "sum(increase(llm_cost_usd_total[1d]))",
+            "legendFormat": "Daily Cost"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4}
+      },
+      {
+        "id": 7,
+        "title": "Token Usage by Model",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "sum by (model) (rate(llm_tokens_total[5m]))",
+            "legendFormat": "{{model}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12}
+      },
+      {
+        "id": 8,
+        "title": "Request Rate by Model",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "sum by (model) (rate(llm_requests_total[5m]))",
+            "legendFormat": "{{model}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12}
+      },
+      {
+        "id": 9,
+        "title": "Average Cost per Request",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "sum(rate(llm_cost_usd_total[5m])) / sum(rate(llm_requests_total[5m]))",
+            "legendFormat": "Avg Cost/Request"
+          }
+        ],
+        "gridPos": {"h": 6, "w": 12, "x": 0, "y": 20}
+      },
+      {
+        "id": 10,
+        "title": "Average Tokens per Request",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "sum(rate(llm_tokens_total[5m])) / sum(rate(llm_requests_total[5m]))",
+            "legendFormat": "Avg Tokens/Request"
+          }
+        ],
+        "gridPos": {"h": 6, "w": 12, "x": 12, "y": 20}
+      },
+      {
+        "id": 11,
+        "title": "Cost Budget Status",
+        "type": "bargauge",
+        "targets": [
+          {
+            "expr": "(sum(increase(llm_cost_usd_total[24h])) / 2.0) * 100",
+            "legendFormat": "Daily Budget %"
+          },
+          {
+            "expr": "(sum(increase(llm_cost_usd_total[30d])) / 30.0) * 100",
+            "legendFormat": "Monthly Budget %"
+          }
+        ],
+        "gridPos": {"h": 6, "w": 24, "x": 0, "y": 26},
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 75, "color": "yellow"},
+                {"value": 90, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 12,
+        "title": "Most Expensive Operations",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "topk(10, sum by (operation) (increase(llm_cost_usd_total[24h])))",
+            "legendFormat": "{{operation}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 32}
+      }
+    ],
+    "refresh": "30s",
+    "time": {"from": "now-24h", "to": "now"}
+  }
+}

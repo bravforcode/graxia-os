@@ -3,12 +3,11 @@ Upwork Scraper using OpenClaw for browser automation.
 Handles freelance job postings with rate limiting.
 """
 import logging
-from typing import Optional
 from urllib.parse import quote_plus
 
 import httpx
 
-from app.core.openclaw import openclaw_client, OpenClawRateLimitError
+from app.core.openclaw import OpenClawRateLimitError, openclaw_client
 from app.scrapers.base import BaseScraper
 
 logger = logging.getLogger(__name__)
@@ -35,7 +34,7 @@ class UpworkScraper(BaseScraper):
         params = f"?q={quote_plus(self.keywords)}&category2_uid={self.category}"
         return base + params
     
-    async def fetch(self, url: str) -> Optional[httpx.Response]:
+    async def fetch(self, url: str) -> httpx.Response | None:
         """Fetch using OpenClaw or fallback to RSS."""
         if self.use_openclaw:
             try:
@@ -130,7 +129,7 @@ class UpworkScraper(BaseScraper):
             logger.error(f"Upwork RSS parse failed: {e}")
             return []
     
-    def _parse_job_tile(self, tile) -> Optional[dict]:
+    def _parse_job_tile(self, tile) -> dict | None:
         """Parse individual job tile from HTML."""
         try:
             # Extract title
@@ -181,7 +180,7 @@ class UpworkScraper(BaseScraper):
             logger.warning(f"Job tile parsing failed: {e}")
             return None
     
-    async def normalize(self, raw_item: dict) -> Optional[dict]:
+    async def normalize(self, raw_item: dict) -> dict | None:
         """Normalize to opportunity schema."""
         try:
             title = raw_item.get("title")

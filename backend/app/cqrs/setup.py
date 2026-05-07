@@ -5,47 +5,17 @@ Register all command and query handlers.
 """
 import logging
 
-from app.cqrs.handlers import mediator
 from app.cqrs.commands import (
-    CreateOpportunityCommand,
-    ScoreOpportunityCommand,
-    ApproveOpportunityCommand,
-    RejectOpportunityCommand,
-    CreateSubmissionCommand,
-    MarkSubmissionWonCommand,
-    MarkSubmissionLostCommand,
-    CreateContactCommand,
     ApproveDraftCommand,
+    ApproveOpportunityCommand,
+    CreateContactCommand,
+    CreateOpportunityCommand,
+    CreateSubmissionCommand,
+    MarkSubmissionLostCommand,
+    MarkSubmissionWonCommand,
     RejectDraftCommand,
-)
-from app.cqrs.queries import (
-    GetOpportunityQuery,
-    ListOpportunitiesQuery,
-    GetHighScoreOpportunitiesQuery,
-    GetUrgentOpportunitiesQuery,
-    GetSubmissionQuery,
-    ListSubmissionsQuery,
-    GetContactQuery,
-    ListContactsQuery,
-    GetDraftQuery,
-    ListDraftsQuery,
-)
-from app.cqrs.opportunity_handlers import (
-    CreateOpportunityHandler,
-    ScoreOpportunityHandler,
-    ApproveOpportunityHandler,
-    RejectOpportunityHandler,
-    GetOpportunityHandler,
-    ListOpportunitiesHandler,
-    GetHighScoreOpportunitiesHandler,
-    GetUrgentOpportunitiesHandler,
-)
-from app.cqrs.submission_handlers import (
-    CreateSubmissionHandler,
-    MarkSubmissionWonHandler,
-    MarkSubmissionLostHandler,
-    GetSubmissionHandler,
-    ListSubmissionsHandler,
+    RejectOpportunityCommand,
+    ScoreOpportunityCommand,
 )
 from app.cqrs.contact_handlers import (
     CreateContactHandler,
@@ -54,9 +24,39 @@ from app.cqrs.contact_handlers import (
 )
 from app.cqrs.draft_handlers import (
     ApproveDraftHandler,
-    RejectDraftHandler,
     GetDraftHandler,
     ListDraftsHandler,
+    RejectDraftHandler,
+)
+from app.cqrs.handlers import mediator
+from app.cqrs.opportunity_handlers import (
+    ApproveOpportunityHandler,
+    CreateOpportunityHandler,
+    GetHighScoreOpportunitiesHandler,
+    GetOpportunityHandler,
+    GetUrgentOpportunitiesHandler,
+    ListOpportunitiesHandler,
+    RejectOpportunityHandler,
+    ScoreOpportunityHandler,
+)
+from app.cqrs.queries import (
+    GetContactQuery,
+    GetDraftQuery,
+    GetHighScoreOpportunitiesQuery,
+    GetOpportunityQuery,
+    GetSubmissionQuery,
+    GetUrgentOpportunitiesQuery,
+    ListContactsQuery,
+    ListDraftsQuery,
+    ListOpportunitiesQuery,
+    ListSubmissionsQuery,
+)
+from app.cqrs.submission_handlers import (
+    CreateSubmissionHandler,
+    GetSubmissionHandler,
+    ListSubmissionsHandler,
+    MarkSubmissionLostHandler,
+    MarkSubmissionWonHandler,
 )
 
 logger = logging.getLogger(__name__)

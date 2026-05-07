@@ -1,5 +1,6 @@
 import logging
 import uuid
+
 from app.agents.base import BaseAgent
 
 logger = logging.getLogger(__name__)
@@ -18,12 +19,13 @@ class Scorer(BaseAgent):
             logger.error(f"Scorer failed for {opp_id}: {e}", exc_info=True)
 
     async def _score_opportunity(self, opp_id: uuid.UUID) -> None:
-        from app.database import AsyncSessionLocal
-        from app.models.opportunity import Opportunity
-        from app.models.knowledge import KnowledgeItem
-        from app.core.scoring import score_heuristic
-        from app.core.identity import identity
         from sqlalchemy import select
+
+        from app.core.identity import identity
+        from app.core.scoring import score_heuristic
+        from app.database import AsyncSessionLocal
+        from app.models.knowledge import KnowledgeItem
+        from app.models.opportunity import Opportunity
 
         async with AsyncSessionLocal() as db:
             opp = await db.get(Opportunity, opp_id)

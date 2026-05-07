@@ -8,6 +8,7 @@ import logging
 import re
 
 from cryptography.fernet import Fernet
+
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -81,10 +82,10 @@ class SecurityManager:
         Sanitize user input to prevent prompt injection.
         
         Removes:
-        - System prompts (system:, assistant:, user:)
         - Code blocks (```)
-        - HTML/script tags
+        - HTML/script tags (via bleach)
         - Control characters
+        Raises ValueError if LLM role keywords are detected.
         
         Args:
             text: Input text to sanitize
@@ -96,21 +97,23 @@ class SecurityManager:
         if not text:
             return ""
         
-        # Remove system prompts
-        text = re.sub(r'(system:|assistant:|user:)', '', text, flags=re.IGNORECASE)
+        # Limit length
+        text = text[:max_length]
+        
+        # Prevent LLM role manipulation
+        text_lower = text.lower()
+        if 'system:' in text_lower or 'assistant:' in text_lower or 'user:' in text_lower:
+            raise ValueError("Input contains restricted LLM role keywords.")
         
         # Remove code blocks
         text = re.sub(r'```.*?```', '', text, flags=re.DOTALL)
         
-        # Remove HTML/script tags
-        text = re.sub(r'<script.*?</script>', '', text, flags=re.DOTALL | re.IGNORECASE)
-        text = re.sub(r'<.*?>', '', text)
+        # Remove HTML/script tags using robust parser
+        import bleach
+        text = bleach.clean(text, tags=[], strip=True)
         
         # Remove control characters
         text = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', text)
-        
-        # Limit length
-        text = text[:max_length]
         
         return text.strip()
     

@@ -1,18 +1,16 @@
 """API rate limit model for tracking rate limits per service."""
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import String, Integer, TIMESTAMP, UniqueConstraint
+from sqlalchemy import TIMESTAMP, Integer, String, UniqueConstraint, select
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import select
 
 from .base import Base
 
 
 def _utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class APIRateLimit(Base):
@@ -34,10 +32,10 @@ class APIRateLimit(Base):
     
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     service_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    limit_type: Mapped[Optional[str]] = mapped_column(String(50))
-    limit_value: Mapped[Optional[int]] = mapped_column(Integer)
+    limit_type: Mapped[str | None] = mapped_column(String(50))
+    limit_value: Mapped[int | None] = mapped_column(Integer)
     current_value: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
-    reset_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True))
+    reset_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=_utc_now)
     updated_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True), 
@@ -91,7 +89,7 @@ class APIRateLimit(Base):
         """Increment current value."""
         self.current_value += amount
     
-    def reset(self, new_reset_at: Optional[datetime] = None) -> None:
+    def reset(self, new_reset_at: datetime | None = None) -> None:
         """Reset current value to 0."""
         self.current_value = 0
         if new_reset_at:

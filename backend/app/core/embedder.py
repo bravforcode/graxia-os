@@ -1,6 +1,7 @@
-import os
 import logging
-from datetime import datetime, timedelta, timezone
+import os
+from datetime import UTC, datetime, timedelta
+
 import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
 
@@ -14,7 +15,7 @@ _blocked_until = None
 
 def _is_blocked():
     global _blocked_until, _failures
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if _blocked_until and now < _blocked_until:
         return True
     
@@ -28,7 +29,7 @@ def _is_blocked():
 
 def _record_failure():
     global _failures
-    _failures.append(datetime.now(timezone.utc))
+    _failures.append(datetime.now(UTC))
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
 async def _do_embed(text: str) -> list[float]:

@@ -4,7 +4,7 @@ Authorization System
 Role-Based Access Control (RBAC) for API endpoints.
 """
 from enum import Enum
-from typing import List, Optional
+
 from fastapi import HTTPException
 
 
@@ -116,7 +116,7 @@ ROLE_PERMISSIONS = {
 }
 
 
-def get_role_permissions(role: Role) -> List[Permission]:
+def get_role_permissions(role: Role) -> list[Permission]:
     """Get all permissions for a role."""
     return ROLE_PERMISSIONS.get(role, [])
 
@@ -150,7 +150,7 @@ def require_permission(required_permission: Permission):
 
 def check_resource_ownership(
     current_user: dict,
-    resource_owner_id: Optional[str] = None
+    resource_owner_id: str | None = None
 ) -> bool:
     """Check if user owns the resource or is admin."""
     user_role = current_user.get("role", "viewer")
@@ -167,7 +167,7 @@ def check_resource_ownership(
     return False
 
 
-def require_ownership_or_admin(resource_owner_id: Optional[str] = None):
+def require_ownership_or_admin(resource_owner_id: str | None = None):
     """Decorator to require resource ownership or admin role."""
     def ownership_checker(current_user: dict) -> dict:
         if not check_resource_ownership(current_user, resource_owner_id):

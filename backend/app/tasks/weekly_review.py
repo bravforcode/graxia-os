@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import and_, func, select
 
@@ -26,7 +26,7 @@ async def run_weekly_review():
     try:
         async with AsyncSessionLocal() as db:
             # Get last week's data
-            week_ago = datetime.now(timezone.utc) - timedelta(days=7)
+            week_ago = datetime.now(UTC) - timedelta(days=7)
             
             # Opportunities discovered
             opp_query = select(func.count(Opportunity.id)).where(

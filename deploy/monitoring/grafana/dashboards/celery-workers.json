@@ -1,0 +1,147 @@
+{
+  "dashboard": {
+    "title": "Celery Workers",
+    "tags": ["graxia", "celery", "workers"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Active Workers",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "celery_workers_online",
+            "legendFormat": "Workers"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Total Queue Depth",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(celery_queue_depth)",
+            "legendFormat": "Tasks"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Task Success Rate",
+        "type": "gauge",
+        "targets": [
+          {
+            "expr": "sum(rate(celery_task_success_total[5m])) / sum(rate(celery_task_total[5m])) * 100",
+            "legendFormat": "Success %"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0}
+      },
+      {
+        "id": 4,
+        "title": "Failed Tasks (Last Hour)",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(increase(celery_task_failed_total[1h]))",
+            "legendFormat": "Failed"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0}
+      },
+      {
+        "id": 5,
+        "title": "Queue Depth by Queue",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "celery_queue_depth",
+            "legendFormat": "{{queue}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4}
+      },
+      {
+        "id": 6,
+        "title": "Task Execution Rate",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "sum(rate(celery_task_total[5m]))",
+            "legendFormat": "Tasks/sec"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4}
+      },
+      {
+        "id": 7,
+        "title": "Task Duration (p95)",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(celery_task_duration_seconds_bucket[5m])) by (le, task))",
+            "legendFormat": "{{task}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12}
+      },
+      {
+        "id": 8,
+        "title": "Task Success vs Failure",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "sum(rate(celery_task_success_total[5m]))",
+            "legendFormat": "Success"
+          },
+          {
+            "expr": "sum(rate(celery_task_failed_total[5m]))",
+            "legendFormat": "Failed"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12}
+      },
+      {
+        "id": 9,
+        "title": "Dead Letter Queue Depth",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "celery_dlq_depth",
+            "legendFormat": "DLQ"
+          }
+        ],
+        "gridPos": {"h": 6, "w": 12, "x": 0, "y": 20}
+      },
+      {
+        "id": 10,
+        "title": "Worker CPU Usage",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(process_cpu_seconds_total{job=\"celery\"}[5m]) * 100",
+            "legendFormat": "{{instance}}"
+          }
+        ],
+        "gridPos": {"h": 6, "w": 12, "x": 12, "y": 20}
+      },
+      {
+        "id": 11,
+        "title": "Top 10 Slowest Tasks",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "topk(10, avg(celery_task_duration_seconds) by (task))",
+            "legendFormat": "{{task}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 26}
+      }
+    ],
+    "refresh": "10s",
+    "time": {"from": "now-1h", "to": "now"}
+  }
+}

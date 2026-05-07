@@ -2,11 +2,12 @@
 Circuit Breaker Pattern สำหรับ Redis Operations
 สถานะ: CLOSED (normal) → OPEN (fail fast) → HALF-OPEN (testing)
 """
-import time
 import logging
-from enum import Enum
+import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable, Any
+from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 

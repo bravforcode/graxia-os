@@ -6,8 +6,8 @@ Fallback: Google Gemini (free tier)
 
 OpenClaw uses the OpenAI-compatible endpoint so we call it with httpx directly.
 """
-import hashlib
 import asyncio
+import hashlib
 import json
 import logging
 import os
@@ -15,15 +15,14 @@ import shutil
 import time
 from collections.abc import AsyncIterator
 from pathlib import Path
-from typing import Optional
 
 import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from app.config import settings
 from app.core.model_router import build_router_config, route_task
+from app.core.redis_circuit_breaker import CircuitBreakerOpen, openclaw_circuit_breaker
 from app.core.redis_pool import get_redis
-from app.core.redis_circuit_breaker import openclaw_circuit_breaker, CircuitBreakerOpen
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +57,7 @@ class LLMClient:
         raw = f"{model}|{system}|{user}"
         return "llm_cache:" + hashlib.sha256(raw.encode()).hexdigest()
 
-    async def _get_cache(self, key: str) -> Optional[str]:
+    async def _get_cache(self, key: str) -> str | None:
         r = await self._get_redis()
         if r:
             try:
@@ -428,7 +427,7 @@ class LLMClient:
         self,
         system: str,
         user: str,
-        model: Optional[str] = None,
+        model: str | None = None,
         max_tokens: int = 1000,
         temperature: float = 0.7,
         allow_fallback: bool = True,
@@ -570,14 +569,14 @@ class LLMClient:
         self,
         system: str,
         user: str,
-        model: Optional[str] = None,
+        model: str | None = None,
         max_tokens: int = 1000,
         temperature: float = 0.7,
         allow_fallback: bool = True,
         task_class: str = "analysis",
         complexity: int | None = None,
         budget_tag: str | None = None,
-    ) -> Optional[str]:
+    ) -> str | None:
         routing = route_task(
             task_class=task_class,
             requested_max_tokens=max_tokens,
@@ -690,7 +689,7 @@ class LLMClient:
         self,
         system: str,
         user: str,
-        model: Optional[str] = None,
+        model: str | None = None,
         max_tokens: int = 800,
         task_class: str = "classification",
         complexity: int | None = None,
@@ -729,7 +728,7 @@ class LLMClient:
         user: str,
         result: str,
         was_fallback: bool = False,
-        error: Optional[str] = None,
+        error: str | None = None,
         task_class: str | None = None,
         budget_tag: str | None = None,
         estimated_max_cost_usd: float | None = None,

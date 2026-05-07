@@ -15,9 +15,9 @@ class DailyScanResult(TypedDict):
 
 async def run_daily_scan() -> DailyScanResult:
     """Run competition scout + lead hunter."""
+    from app.agents.briefer import briefer_agent
     from app.agents.competition_scout import CompetitionScout
     from app.agents.lead_hunter import LeadHunter
-    from app.agents.briefer import briefer_agent
 
     scout = CompetitionScout()
     hunter = LeadHunter()

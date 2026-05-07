@@ -1,7 +1,7 @@
 """Helpers for building the canonical route manifest."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.middleware.auth import classify_route, route_controls
 
@@ -42,7 +42,7 @@ def build_route_manifest(app) -> dict:
             )
 
     return {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "commit": "workspace",
         "routes": sorted(routes, key=lambda item: (item["path"], item["method"])),
         "summary": {

@@ -17,11 +17,11 @@ class PlaybookCapture(BaseAgent):
             logger.error(f"PlaybookCapture failed: {e}")
 
     async def _capture_playbook(self, sub_id, value: float) -> None:
+        from app.core.identity import identity
         from app.database import AsyncSessionLocal
         from app.models.knowledge import KnowledgeItem
         from app.models.opportunity import Opportunity
         from app.models.submission import Submission
-        from app.core.identity import identity
 
         if self.llm.is_degraded():
             return

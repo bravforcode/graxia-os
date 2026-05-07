@@ -1,7 +1,7 @@
-import jwt
-import pytest
 from unittest.mock import AsyncMock
 
+import jwt
+import pytest
 from app.api import auth as auth_api
 
 
@@ -95,12 +95,19 @@ async def test_register_returns_503_when_database_is_unavailable(public_async_cl
     )
 
     assert response.status_code == 503
-    assert response.json()["detail"] == "Database unavailable. Check DATABASE_URL connectivity and database reachability."
+    assert (
+        response.json()["detail"]
+        == "Database unavailable. Check DATABASE_URL connectivity and database reachability."
+    )
 
 
 @pytest.mark.asyncio
-async def test_social_login_returns_503_when_database_is_unavailable(public_async_client, monkeypatch):
-    monkeypatch.setattr(auth_api.settings, "SUPABASE_JWT_SECRET", "social-test-secret", raising=False)
+async def test_social_login_returns_503_when_database_is_unavailable(
+    public_async_client, monkeypatch
+):
+    monkeypatch.setattr(
+        auth_api.settings, "SUPABASE_JWT_SECRET", "social-test-secret", raising=False
+    )
     monkeypatch.setattr(
         jwt,
         "decode",
@@ -119,8 +126,14 @@ async def test_social_login_returns_503_when_database_is_unavailable(public_asyn
     )
     response = await public_async_client.post(
         "/api/v1/auth/social-login",
-        json={"token": jwt.encode({"sub": "unused"}, "social-test-secret", algorithm="HS256"), "provider": "google"},
+        json={
+            "token": jwt.encode({"sub": "unused"}, "social-test-secret", algorithm="HS256"),
+            "provider": "google",
+        },
     )
 
     assert response.status_code == 503
-    assert response.json()["detail"] == "Database unavailable. Check DATABASE_URL connectivity and database reachability."
+    assert (
+        response.json()["detail"]
+        == "Database unavailable. Check DATABASE_URL connectivity and database reachability."
+    )

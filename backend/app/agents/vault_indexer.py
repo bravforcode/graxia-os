@@ -1,10 +1,11 @@
 import logging
 from pathlib import Path
+
 from app.agents.base import BaseAgent
 from app.config import settings
-from app.database import AsyncSessionLocal
-from app.core.knowledge_service import KnowledgeService
 from app.core.event_bus import event_bus
+from app.core.knowledge_service import KnowledgeService
+from app.database import AsyncSessionLocal
 
 logger = logging.getLogger(__name__)
 

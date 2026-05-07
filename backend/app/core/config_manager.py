@@ -4,9 +4,8 @@ Configuration Management
 Provides hot reload, validation, and configuration UI.
 """
 import logging
-from typing import Optional
+from datetime import UTC, datetime
 from pathlib import Path
-from datetime import datetime, timezone
 
 import yaml
 from pydantic import BaseModel, validator
@@ -17,7 +16,7 @@ logger = logging.getLogger(__name__)
 class AgentConfig(BaseModel):
     """Configuration for individual agent."""
     enabled: bool = True
-    schedule: Optional[str] = None
+    schedule: str | None = None
     max_items: int = 100
     timeout_seconds: int = 300
     retry_attempts: int = 3
@@ -100,8 +99,8 @@ class ConfigManager:
     
     def __init__(self, config_path: str = "config.yaml"):
         self.config_path = Path(config_path)
-        self.config: Optional[SystemConfig] = None
-        self.last_modified: Optional[datetime] = None
+        self.config: SystemConfig | None = None
+        self.last_modified: datetime | None = None
         self.version: int = 1
         
         # Load initial configuration
@@ -117,14 +116,14 @@ class ConfigManager:
                 return self.config
             
             # Read YAML file
-            with open(self.config_path, 'r') as f:
+            with open(self.config_path) as f:
                 config_data = yaml.safe_load(f)
             
             # Validate and parse
             self.config = SystemConfig(**config_data)
             self.last_modified = datetime.fromtimestamp(
                 self.config_path.stat().st_mtime,
-                tz=timezone.utc
+                tz=UTC
             )
             
             logger.info(f"Configuration loaded from {self.config_path}")
@@ -145,7 +144,7 @@ class ConfigManager:
             with open(self.config_path, 'w') as f:
                 yaml.dump(config_dict, f, default_flow_style=False, sort_keys=False)
             
-            self.last_modified = datetime.now(timezone.utc)
+            self.last_modified = datetime.now(UTC)
             self.version += 1
             
             logger.info(f"Configuration saved to {self.config_path} (version {self.version})")
@@ -165,7 +164,7 @@ class ConfigManager:
             
             current_mtime = datetime.fromtimestamp(
                 self.config_path.stat().st_mtime,
-                tz=timezone.utc
+                tz=UTC
             )
             
             if self.last_modified and current_mtime > self.last_modified:
@@ -214,11 +213,11 @@ class ConfigManager:
             else:
                 base[key] = value
     
-    def get_agent_config(self, agent_name: str) -> Optional[AgentConfig]:
+    def get_agent_config(self, agent_name: str) -> AgentConfig | None:
         """Get configuration for specific agent."""
         return getattr(self.config, agent_name, None)
     
-    def get_scraper_config(self, platform: str) -> Optional[ScraperConfig]:
+    def get_scraper_config(self, platform: str) -> ScraperConfig | None:
         """Get configuration for specific scraper."""
         return self.config.scrapers.get(platform)
     
@@ -240,7 +239,7 @@ class ConfigManager:
         """Get configuration as JSON string."""
         return self.config.json(indent=2)
     
-    def validate_config(self, config_dict: dict) -> tuple[bool, Optional[str]]:
+    def validate_config(self, config_dict: dict) -> tuple[bool, str | None]:
         """
         Validate configuration dictionary.
         
@@ -260,6 +259,7 @@ config_manager = ConfigManager()
 
 # Auto-reload configuration every 5 minutes
 import asyncio
+
 
 async def auto_reload_config():
     """Background task to auto-reload configuration."""

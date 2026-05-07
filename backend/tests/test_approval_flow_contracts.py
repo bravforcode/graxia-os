@@ -4,11 +4,10 @@ from uuid import UUID
 
 import pytest
 import pytest_asyncio
-from sqlalchemy import select
-
 from app.core.approval_flow import ApprovalFlowManager
 from app.models.approval_request import ApprovalRequest
 from app.models.submission import Submission
+from sqlalchemy import select
 
 
 @pytest_asyncio.fixture()
@@ -78,7 +77,9 @@ async def test_handle_approval_executes_action_and_callback_once(
     manager.pending_approvals[str(approval.id)] = {"callback": callback, "data": approval.details}
 
     result = await manager.handle_approval(str(approval.id), approved=True, user_id="operator")
-    duplicate_result = await manager.handle_approval(str(approval.id), approved=True, user_id="operator")
+    duplicate_result = await manager.handle_approval(
+        str(approval.id), approved=True, user_id="operator"
+    )
 
     async with approval_flow_session_factory() as session:
         stored = await session.get(ApprovalRequest, approval.id)
@@ -126,7 +127,10 @@ async def test_handle_approval_rejects_invalid_missing_expired_and_rejected_requ
         await session.refresh(rejectable)
 
     assert await manager.handle_approval("not-a-uuid", approved=True) is False
-    assert await manager.handle_approval("00000000-0000-0000-0000-000000000000", approved=True) is False
+    assert (
+        await manager.handle_approval("00000000-0000-0000-0000-000000000000", approved=True)
+        is False
+    )
     assert await manager.handle_approval(str(expired.id), approved=True) is False
     assert await manager.handle_approval(str(rejectable.id), approved=False) is False
 
@@ -225,7 +229,9 @@ async def test_execute_email_and_job_apply_actions_delegate_to_integrations(
     monkeypatch,
 ):
     manager = ApprovalFlowManager()
-    monkeypatch.setattr("app.core.google_workspace.google_workspace.send_message", AsyncMock(return_value="gmail-1"))
+    monkeypatch.setattr(
+        "app.core.google_workspace.google_workspace.send_message", AsyncMock(return_value="gmail-1")
+    )
     monkeypatch.setattr("app.telegram_bot.bot.send_message", AsyncMock(return_value=True))
     monkeypatch.setattr("app.core.event_bus.event_bus.emit", AsyncMock())
 
@@ -241,7 +247,9 @@ async def test_execute_email_and_job_apply_actions_delegate_to_integrations(
     email_result = await manager._execute_action(email_approval)
     missing_email_result = await manager._execute_email_send({"to": "client@example.com"})
     unknown_result = await manager._execute_action(
-        ApprovalRequest(title="Unknown", action_type="unknown", policy_class="approval_required", details={})
+        ApprovalRequest(
+            title="Unknown", action_type="unknown", policy_class="approval_required", details={}
+        )
     )
 
     async with approval_flow_session_factory() as session:

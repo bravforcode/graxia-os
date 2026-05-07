@@ -4,9 +4,10 @@ System Verification Script
 
 Comprehensive system health check and verification.
 """
+
 import asyncio
-import sys
 import logging
+import sys
 from pathlib import Path
 
 # Add parent directory to path
@@ -16,33 +17,30 @@ from app.config import settings
 from app.database import AsyncSessionLocal
 from sqlalchemy import text
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
 class SystemVerifier:
     """System verification manager."""
-    
+
     def __init__(self):
         self.results = []
         self.passed = 0
         self.failed = 0
-    
+
     def check(self, name: str, condition: bool, message: str = ""):
         """Record check result."""
         status = "✅ PASS" if condition else "❌ FAIL"
         self.results.append(f"{status} - {name}: {message}")
-        
+
         if condition:
             self.passed += 1
         else:
             self.failed += 1
-        
+
         return condition
-    
+
     async def verify_environment(self) -> bool:
         """Verify environment variables."""
         logger.info("Checking environment variables...")
@@ -85,70 +83,65 @@ class SystemVerifier:
         )
 
         return all_good
-    
+
     async def verify_database(self) -> bool:
         """Verify database connection and schema."""
         logger.info("Checking database...")
-        
+
         try:
             async with AsyncSessionLocal() as db:
                 # Test connection
                 result = await db.execute(text("SELECT 1"))
                 self.check("Database Connection", True, "Connected")
-                
+
                 # Check tables
-                result = await db.execute(text("""
+                result = await db.execute(
+                    text("""
                     SELECT COUNT(*) FROM information_schema.tables 
                     WHERE table_schema = 'public'
-                """))
+                """)
+                )
                 table_count = result.scalar()
                 self.check(
-                    "Database Tables",
-                    table_count >= 26,
-                    f"{table_count} tables (expected 26+)"
+                    "Database Tables", table_count >= 26, f"{table_count} tables (expected 26+)"
                 )
-                
+
                 # Check migrations
-                result = await db.execute(text("""
+                result = await db.execute(
+                    text("""
                     SELECT version_num FROM alembic_version
-                """))
-                version = result.scalar()
-                self.check(
-                    "Database Migrations",
-                    version is not None,
-                    f"Version: {version}"
+                """)
                 )
-                
+                version = result.scalar()
+                self.check("Database Migrations", version is not None, f"Version: {version}")
+
                 return True
         except Exception as e:
             self.check("Database Connection", False, str(e))
             return False
-    
+
     async def verify_redis(self) -> bool:
         """Verify Redis connection."""
         logger.info("Checking Redis...")
-        
+
         try:
             import redis.asyncio as aioredis
-            
-            redis_client = aioredis.from_url(
-                settings.REDIS_URL,
-                decode_responses=True
-            )
-            
+
+            redis_client = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
+
             await redis_client.ping()
             self.check("Redis Connection", True, "Connected")
-            
+
             await redis_client.aclose()
             return True
         except Exception as e:
             self.check("Redis Connection", False, str(e))
             return False
-    
+
     async def verify_agents(self) -> bool:
         """Verify agents can be imported."""
         logger.info("Checking agents...")
-        
+
         agents = [
             "job_hunter",
             "network_builder",
@@ -159,26 +152,23 @@ class SystemVerifier:
             "drafter",
             "briefer",
         ]
-        
+
         all_good = True
-        
+
         for agent_name in agents:
             try:
-                module = __import__(
-                    f"app.agents.{agent_name}",
-                    fromlist=[f"{agent_name}_agent"]
-                )
+                __import__(f"app.agents.{agent_name}", fromlist=[f"{agent_name}_agent"])
                 self.check(f"Agent: {agent_name}", True, "Loaded")
             except Exception as e:
                 self.check(f"Agent: {agent_name}", False, str(e))
                 all_good = False
-        
+
         return all_good
-    
+
     async def verify_scrapers(self) -> bool:
         """Verify scrapers can be imported."""
         logger.info("Checking scrapers...")
-        
+
         scrapers = [
             "linkedin",
             "upwork",
@@ -186,22 +176,21 @@ class SystemVerifier:
             "fastwork",
             "devpost",
         ]
-        
+
         all_good = True
-        
+
         for scraper_name in scrapers:
             try:
-                module = __import__(
-                    f"app.scrapers.{scraper_name}",
-                    fromlist=[f"{scraper_name.capitalize()}Scraper"]
+                __import__(
+                    f"app.scrapers.{scraper_name}", fromlist=[f"{scraper_name.capitalize()}Scraper"]
                 )
                 self.check(f"Scraper: {scraper_name}", True, "Loaded")
             except Exception as e:
                 self.check(f"Scraper: {scraper_name}", False, str(e))
                 all_good = False
-        
+
         return all_good
-    
+
     async def verify_integrations(self) -> bool:
         """Verify external integrations."""
         logger.info("Checking integrations...")
@@ -270,7 +259,9 @@ class SystemVerifier:
                     self.check("OpenClaw Gateway", False, detail)
             except Exception as e:
                 if settings.HAS_REAL_GEMINI_KEY:
-                    self.check("OpenClaw Gateway", True, f"Degraded (fallback available). Error: {e}")
+                    self.check(
+                        "OpenClaw Gateway", True, f"Degraded (fallback available). Error: {e}"
+                    )
                 else:
                     self.check("OpenClaw Gateway", False, str(e))
 
@@ -282,9 +273,15 @@ class SystemVerifier:
                 import httpx
 
                 resp = httpx.get(obsidian_url, timeout=2.0)
-                self.check("Obsidian Local REST API", resp.status_code < 500, f"{resp.status_code} {obsidian_url}")
+                self.check(
+                    "Obsidian Local REST API",
+                    resp.status_code < 500,
+                    f"{resp.status_code} {obsidian_url}",
+                )
             except Exception as e:
-                self.check("Obsidian Local REST API", True, f"Degraded (optional). Unreachable: {e}")
+                self.check(
+                    "Obsidian Local REST API", True, f"Degraded (optional). Unreachable: {e}"
+                )
 
         # Telegram
         has_telegram = settings.HAS_REAL_TELEGRAM_TOKEN and settings.HAS_REAL_TELEGRAM_CHAT_ID
@@ -300,11 +297,11 @@ class SystemVerifier:
                 self.check("Telegram Bot", False, str(e))
 
         return True
-    
+
     async def verify_scheduled_tasks(self) -> bool:
         """Verify scheduled tasks can be imported."""
         logger.info("Checking scheduled tasks...")
-        
+
         tasks = [
             "job_discovery",
             "email_processing",
@@ -312,22 +309,19 @@ class SystemVerifier:
             "follow_up_check",
             "weekly_review",
         ]
-        
+
         all_good = True
-        
+
         for task_name in tasks:
             try:
-                module = __import__(
-                    f"app.tasks.{task_name}",
-                    fromlist=[f"run_{task_name}"]
-                )
+                __import__(f"app.tasks.{task_name}", fromlist=[f"run_{task_name}"])
                 self.check(f"Task: {task_name}", True, "Loaded")
             except Exception as e:
                 self.check(f"Task: {task_name}", False, str(e))
                 all_good = False
-        
+
         return all_good
-    
+
     async def verify_backup_scripts(self) -> bool:
         """Verify backup scripts exist."""
         logger.info("Checking backup scripts...")
@@ -335,33 +329,25 @@ class SystemVerifier:
         scripts_dir = Path(__file__).resolve().parent
         backup_script = scripts_dir / "backup_database.py"
         restore_script = scripts_dir / "restore_database.py"
-        
-        self.check(
-            "Backup Script",
-            backup_script.exists(),
-            str(backup_script)
-        )
-        self.check(
-            "Restore Script",
-            restore_script.exists(),
-            str(restore_script)
-        )
-        
+
+        self.check("Backup Script", backup_script.exists(), str(backup_script))
+        self.check("Restore Script", restore_script.exists(), str(restore_script))
+
         return backup_script.exists() and restore_script.exists()
-    
+
     def print_results(self):
         """Print verification results."""
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("SYSTEM VERIFICATION RESULTS")
-        print("="*60 + "\n")
-        
+        print("=" * 60 + "\n")
+
         for result in self.results:
             print(result)
-        
-        print("\n" + "="*60)
+
+        print("\n" + "=" * 60)
         print(f"SUMMARY: {self.passed} passed, {self.failed} failed")
-        print("="*60 + "\n")
-        
+        print("=" * 60 + "\n")
+
         if self.failed == 0:
             print("✅ ALL CHECKS PASSED - SYSTEM READY FOR PRODUCTION")
             return 0
@@ -373,9 +359,9 @@ class SystemVerifier:
 async def main():
     """Main verification routine."""
     verifier = SystemVerifier()
-    
+
     print("\n🔍 Starting System Verification...\n")
-    
+
     # Run all checks
     await verifier.verify_environment()
     await verifier.verify_database()
@@ -385,7 +371,7 @@ async def main():
     await verifier.verify_integrations()
     await verifier.verify_scheduled_tasks()
     await verifier.verify_backup_scripts()
-    
+
     # Print results
     return verifier.print_results()
 

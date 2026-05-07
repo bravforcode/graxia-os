@@ -1,4 +1,5 @@
 """Generate a route manifest with expected auth controls."""
+
 from __future__ import annotations
 
 import argparse

@@ -1,15 +1,14 @@
 """
 Draft Repository Implementation
 """
-from typing import List, Optional
 from uuid import UUID
 
-from sqlalchemy import select, desc
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.repositories.base import Repository
-from app.models.content_draft import ContentDraft
 from app.core.specifications import Specification
+from app.models.content_draft import ContentDraft
+from app.repositories.base import Repository
 
 
 class DraftRepository(Repository[ContentDraft]):
@@ -18,11 +17,11 @@ class DraftRepository(Repository[ContentDraft]):
     def __init__(self, session: AsyncSession):
         self.session = session
     
-    async def get_by_id(self, id: UUID) -> Optional[ContentDraft]:
+    async def get_by_id(self, id: UUID) -> ContentDraft | None:
         """Get draft by ID."""
         return await self.session.get(ContentDraft, id)
     
-    async def get_all(self, skip: int = 0, limit: int = 100) -> List[ContentDraft]:
+    async def get_all(self, skip: int = 0, limit: int = 100) -> list[ContentDraft]:
         """Get all drafts with pagination."""
         query = (
             select(ContentDraft)
@@ -55,7 +54,7 @@ class DraftRepository(Repository[ContentDraft]):
             return True
         return False
     
-    async def find(self, specification: Specification[ContentDraft]) -> List[ContentDraft]:
+    async def find(self, specification: Specification[ContentDraft]) -> list[ContentDraft]:
         """Find drafts matching specification."""
         query = select(ContentDraft).order_by(desc(ContentDraft.created_at))
         result = await self.session.execute(query)
@@ -76,7 +75,7 @@ class DraftRepository(Repository[ContentDraft]):
         entity = await self.get_by_id(id)
         return entity is not None
     
-    async def find_by_status(self, status: str, limit: int = 100) -> List[ContentDraft]:
+    async def find_by_status(self, status: str, limit: int = 100) -> list[ContentDraft]:
         """Find drafts by status."""
         query = (
             select(ContentDraft)
@@ -87,7 +86,7 @@ class DraftRepository(Repository[ContentDraft]):
         result = await self.session.execute(query)
         return list(result.scalars().all())
     
-    async def find_pending(self, limit: int = 100) -> List[ContentDraft]:
+    async def find_pending(self, limit: int = 100) -> list[ContentDraft]:
         """Find pending drafts."""
         return await self.find_by_status("pending", limit)
     

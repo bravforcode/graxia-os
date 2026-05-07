@@ -1,0 +1,49 @@
+name: Graxia OS CI/CD
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install .
+        pip install pytest ruff black
+        
+    - name: Lint with Ruff
+      run: ruff check .
+      
+    - name: Check formatting with Black
+      run: black --check .
+      
+    - name: Run unit tests
+      env:
+        TESTSPRITE_API_KEY: ${{ secrets.TESTSPRITE_API_KEY }}
+        PYTHONPATH: .
+      run: |
+        pytest tests/
+
+  build-docker:
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Build Docker image
+      run: |
+        docker build -t brav-os-api:${{ github.sha }} .
+        # In a real enterprise setup, we would push to ECR/GCR here

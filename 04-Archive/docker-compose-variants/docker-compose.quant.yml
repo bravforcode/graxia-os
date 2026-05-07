@@ -1,0 +1,271 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Quant OS — Docker Compose Configuration
+# Production-ready Forex Trading System
+# ═══════════════════════════════════════════════════════════════════════════════
+
+version: "3.8"
+
+services:
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # Quant OS API Server
+  # ═══════════════════════════════════════════════════════════════════════════════
+  quant-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.quant
+    container_name: quant-os-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+      - "9090:9090"  # Prometheus metrics
+    environment:
+      - TRADING_MODE=${TRADING_MODE:-PAPER}
+      - LIVE_TRADING_ENABLED=${LIVE_TRADING_ENABLED:-false}
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@quant-db:5432/quant_os
+      - REDIS_URL=redis://quant-redis:6379/0
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - WEBHOOK_HMAC_SECRET=${WEBHOOK_HMAC_SECRET}
+      - ADMIN_API_KEY=${ADMIN_API_KEY}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - MT5_LOGIN=${MT5_LOGIN}
+      - MT5_PASSWORD=${MT5_PASSWORD}
+      - MT5_SERVER=${MT5_SERVER:-ICMarketsSC-Demo}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    depends_on:
+      quant-db:
+        condition: service_healthy
+      quant-redis:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+      - ./ml_models:/app/ml_models
+      - mt5_data:/mt5  # MT5 data persistence
+    networks:
+      - quant-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # PostgreSQL Database
+  # ═══════════════════════════════════════════════════════════════════════════════
+  quant-db:
+    image: postgres:15-alpine
+    container_name: quant-os-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=quant_os
+    volumes:
+      - quant_postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    ports:
+      - "5433:5432"  # Expose on different port to avoid conflicts
+    networks:
+      - quant-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # Redis Cache & Message Broker
+  # ═══════════════════════════════════════════════════════════════════════════════
+  quant-redis:
+    image: redis:7-alpine
+    container_name: quant-os-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - quant_redis_data:/data
+    ports:
+      - "6380:6379"  # Expose on different port
+    networks:
+      - quant-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # Celery Worker — Background Tasks
+  # ═══════════════════════════════════════════════════════════════════════════════
+  quant-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.quant
+    container_name: quant-os-worker
+    restart: unless-stopped
+    command: celery -A graxia.packages.quant_os.tasks worker --loglevel=info --concurrency=2
+    environment:
+      - TRADING_MODE=${TRADING_MODE:-PAPER}
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@quant-db:5432/quant_os
+      - REDIS_URL=redis://quant-redis:6379/0
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+    depends_on:
+      - quant-db
+      - quant-redis
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - quant-network
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # Celery Beat — Scheduled Tasks
+  # ═══════════════════════════════════════════════════════════════════════════════
+  quant-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.quant
+    container_name: quant-os-beat
+    restart: unless-stopped
+    command: celery -A graxia.packages.quant_os.tasks beat --loglevel=info
+    environment:
+      - TRADING_MODE=${TRADING_MODE:-PAPER}
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@quant-db:5432/quant_os
+      - REDIS_URL=redis://quant-redis:6379/0
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+    depends_on:
+      - quant-db
+      - quant-redis
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - quant-network
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # Grafana — Monitoring Dashboard
+  # ═══════════════════════════════════════════════════════════════════════════════
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: quant-os-grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deploy/monitoring/grafana:/etc/grafana/provisioning
+      - ./deploy/monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - quant-network
+    depends_on:
+      - quant-api
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # Prometheus — Metrics Collection
+  # ═══════════════════════════════════════════════════════════════════════════════
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: quant-os-prometheus
+    restart: unless-stopped
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./deploy/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    networks:
+      - quant-network
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # Loki — Log Aggregation
+  # ═══════════════════════════════════════════════════════════════════════════════
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: quant-os-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./deploy/monitoring/loki-config.yml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - quant-network
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # Promtail — Log Shipper
+  # ═══════════════════════════════════════════════════════════════════════════════
+  promtail:
+    image: grafana/promtail:2.9.0
+    container_name: quant-os-promtail
+    restart: unless-stopped
+    volumes:
+      - ./logs:/var/log/quant
+      - ./deploy/monitoring/promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - quant-network
+    depends_on:
+      - loki
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # AlertManager — Alert Routing
+  # ═══════════════════════════════════════════════════════════════════════════════
+  alertmanager:
+    image: prom/alertmanager:v0.26.0
+    container_name: quant-os-alertmanager
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./deploy/monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - alertmanager_data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    networks:
+      - quant-network
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # Caddy — Reverse Proxy & SSL
+  # ═══════════════════════════════════════════════════════════════════════════════
+  caddy:
+    image: caddy:2-alpine
+    container_name: quant-os-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - quant-network
+    depends_on:
+      - quant-api
+
+volumes:
+  quant_postgres_data:
+  quant_redis_data:
+  grafana_data:
+  prometheus_data:
+  loki_data:
+  alertmanager_data:
+  caddy_data:
+  caddy_config:
+  mt5_data:
+
+networks:
+  quant-network:
+    driver: bridge

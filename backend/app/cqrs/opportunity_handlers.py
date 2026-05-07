@@ -2,27 +2,27 @@
 Opportunity Command and Query Handlers
 """
 import logging
+from datetime import UTC, datetime
 from uuid import uuid4
-from datetime import datetime, timezone
 
-from app.cqrs.handlers import CommandHandler, QueryHandler
-from app.cqrs.commands import (
-    CreateOpportunityCommand,
-    ScoreOpportunityCommand,
-    ApproveOpportunityCommand,
-    RejectOpportunityCommand,
-)
-from app.cqrs.queries import (
-    GetOpportunityQuery,
-    ListOpportunitiesQuery,
-    GetHighScoreOpportunitiesQuery,
-    GetUrgentOpportunitiesQuery,
-)
-from app.core.result import Result, ok, err
+from app.core.result import Result, err, ok
 from app.core.specifications import HighScoreOpportunity, UrgentOpportunity
-from app.repositories.opportunity_repository import OpportunityRepository
+from app.cqrs.commands import (
+    ApproveOpportunityCommand,
+    CreateOpportunityCommand,
+    RejectOpportunityCommand,
+    ScoreOpportunityCommand,
+)
+from app.cqrs.handlers import CommandHandler, QueryHandler
+from app.cqrs.queries import (
+    GetHighScoreOpportunitiesQuery,
+    GetOpportunityQuery,
+    GetUrgentOpportunitiesQuery,
+    ListOpportunitiesQuery,
+)
+from app.core.unit_of_work import AsyncUnitOfWork
 from app.models.opportunity import Opportunity
-from app.database import AsyncSessionLocal
+from app.repositories.opportunity_repository import OpportunityRepository
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,8 @@ class CreateOpportunityHandler(CommandHandler[CreateOpportunityCommand, Opportun
     async def handle(self, command: CreateOpportunityCommand) -> Result[Opportunity, Exception]:
         """Create new opportunity."""
         try:
-            async with AsyncSessionLocal() as session:
+            async with AsyncUnitOfWork() as uow:
+                session = uow.session
                 repo = OpportunityRepository(session)
                 
                 # Create opportunity
@@ -47,14 +48,14 @@ class CreateOpportunityHandler(CommandHandler[CreateOpportunityCommand, Opportun
                     deadline=command.deadline,
                     budget=command.budget,
                     status="new",
-                    discovered_at=datetime.now(timezone.utc),
-                    created_at=datetime.now(timezone.utc),
-                    updated_at=datetime.now(timezone.utc),
+                    discovered_at=datetime.now(UTC),
+                    created_at=datetime.now(UTC),
+                    updated_at=datetime.now(UTC),
                 )
                 
                 # Save
                 opportunity = await repo.add(opportunity)
-                await session.commit()
+
                 
                 # Emit event
                 from app.core.event_bus import event_bus
@@ -78,7 +79,8 @@ class ScoreOpportunityHandler(CommandHandler[ScoreOpportunityCommand, Opportunit
     async def handle(self, command: ScoreOpportunityCommand) -> Result[Opportunity, Exception]:
         """Score opportunity."""
         try:
-            async with AsyncSessionLocal() as session:
+            async with AsyncUnitOfWork() as uow:
+                session = uow.session
                 repo = OpportunityRepository(session)
                 
                 # Get opportunity
@@ -106,7 +108,8 @@ class ApproveOpportunityHandler(CommandHandler[ApproveOpportunityCommand, Opport
     async def handle(self, command: ApproveOpportunityCommand) -> Result[Opportunity, Exception]:
         """Approve opportunity."""
         try:
-            async with AsyncSessionLocal() as session:
+            async with AsyncUnitOfWork() as uow:
+                session = uow.session
                 repo = OpportunityRepository(session)
                 
                 # Get opportunity
@@ -117,11 +120,11 @@ class ApproveOpportunityHandler(CommandHandler[ApproveOpportunityCommand, Opport
                 # Update status
                 opportunity.status = "approved"
                 opportunity.decision = "approve"
-                opportunity.updated_at = datetime.now(timezone.utc)
+                opportunity.updated_at = datetime.now(UTC)
                 
                 # Save
                 opportunity = await repo.update(opportunity)
-                await session.commit()
+
                 
                 # Emit event
                 from app.core.event_bus import event_bus
@@ -144,7 +147,8 @@ class RejectOpportunityHandler(CommandHandler[RejectOpportunityCommand, Opportun
     async def handle(self, command: RejectOpportunityCommand) -> Result[Opportunity, Exception]:
         """Reject opportunity."""
         try:
-            async with AsyncSessionLocal() as session:
+            async with AsyncUnitOfWork() as uow:
+                session = uow.session
                 repo = OpportunityRepository(session)
                 
                 # Get opportunity
@@ -155,11 +159,11 @@ class RejectOpportunityHandler(CommandHandler[RejectOpportunityCommand, Opportun
                 # Update status
                 opportunity.status = "ignored"
                 opportunity.decision = "skip"
-                opportunity.updated_at = datetime.now(timezone.utc)
+                opportunity.updated_at = datetime.now(UTC)
                 
                 # Save
                 opportunity = await repo.update(opportunity)
-                await session.commit()
+
                 
                 # Emit event
                 from app.core.event_bus import event_bus
@@ -183,7 +187,8 @@ class GetOpportunityHandler(QueryHandler[GetOpportunityQuery, Opportunity]):
     async def handle(self, query: GetOpportunityQuery) -> Result[Opportunity, Exception]:
         """Get opportunity."""
         try:
-            async with AsyncSessionLocal() as session:
+            async with AsyncUnitOfWork() as uow:
+                session = uow.session
                 repo = OpportunityRepository(session)
                 opportunity = await repo.get_by_id(query.opportunity_id)
                 
@@ -203,7 +208,8 @@ class ListOpportunitiesHandler(QueryHandler[ListOpportunitiesQuery, list]):
     async def handle(self, query: ListOpportunitiesQuery) -> Result[list, Exception]:
         """List opportunities."""
         try:
-            async with AsyncSessionLocal() as session:
+            async with AsyncUnitOfWork() as uow:
+                session = uow.session
                 repo = OpportunityRepository(session)
                 
                 # Get opportunities
@@ -232,7 +238,8 @@ class GetHighScoreOpportunitiesHandler(QueryHandler[GetHighScoreOpportunitiesQue
     async def handle(self, query: GetHighScoreOpportunitiesQuery) -> Result[list, Exception]:
         """Get high-score opportunities."""
         try:
-            async with AsyncSessionLocal() as session:
+            async with AsyncUnitOfWork() as uow:
+                session = uow.session
                 repo = OpportunityRepository(session)
                 
                 # Use specification
@@ -255,7 +262,8 @@ class GetUrgentOpportunitiesHandler(QueryHandler[GetUrgentOpportunitiesQuery, li
     async def handle(self, query: GetUrgentOpportunitiesQuery) -> Result[list, Exception]:
         """Get urgent opportunities."""
         try:
-            async with AsyncSessionLocal() as session:
+            async with AsyncUnitOfWork() as uow:
+                session = uow.session
                 repo = OpportunityRepository(session)
                 
                 # Use specification

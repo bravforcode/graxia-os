@@ -4,7 +4,7 @@ import argparse
 import asyncio
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from sqlalchemy import text
@@ -115,9 +115,7 @@ async def fetch_unused_indexes(db, limit: int) -> list[dict]:
 
 async def explain_query(db, query: str) -> dict | None:
     try:
-        explain = await db.execute(
-            text(f"EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) {query}")
-        )
+        explain = await db.execute(text(f"EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) {query}"))
         payload = explain.scalar_one_or_none()
         if payload is None:
             return None
@@ -144,7 +142,7 @@ async def main() -> int:
                     explains.append({"query": item["query"], "explain": plan})
 
         report = {
-            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "generated_at": datetime.now(UTC).isoformat(),
             "top_queries": top_queries,
             "unused_indexes": unused_indexes,
             "explains": explains,

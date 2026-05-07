@@ -1,15 +1,15 @@
 import json
 import logging
-import pytest
-import jwt
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
-from app.core.logging_config import JSONFormatter
-from app.core.route_manifest import build_route_manifest
+import jwt
+import pytest
 from app.config import settings
 from app.core.auth import create_access_token
+from app.core.logging_config import JSONFormatter
+from app.core.route_manifest import build_route_manifest
 from app.middleware.auth import classify_route
-from app.middleware.security import SECURITY_HEADERS
+from app.middleware.security import _get_security_headers
 
 
 @pytest.mark.asyncio
@@ -37,7 +37,7 @@ async def test_protected_routes_reject_expired_access_tokens(public_async_client
 
 @pytest.mark.asyncio
 async def test_protected_routes_reject_forged_access_tokens(public_async_client):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     forged = jwt.encode(
         {
             "sub": "security-user",
@@ -107,8 +107,14 @@ async def test_csrf_is_enforced_for_state_changing_requests(async_client):
 async def test_security_headers_are_present(public_async_client):
     response = await public_async_client.get("/health")
     assert response.status_code == 200
-    for header in ("Content-Security-Policy", "X-Frame-Options", "X-Content-Type-Options", "Referrer-Policy"):
-        assert response.headers[header] == SECURITY_HEADERS[header]
+    security_headers = _get_security_headers()
+    for header in (
+        "Content-Security-Policy",
+        "X-Frame-Options",
+        "X-Content-Type-Options",
+        "Referrer-Policy",
+    ):
+        assert response.headers[header] == security_headers[header]
 
 
 def test_route_manifest_has_no_gaps():
@@ -116,13 +122,17 @@ def test_route_manifest_has_no_gaps():
 
     manifest = build_route_manifest(app)
     assert manifest["summary"]["gaps_found"] == 0
-    assert any(route["path"] == "/api/v1/auth/login" and route["expected_auth"] == "public" for route in manifest["routes"])
+    assert any(
+        route["path"] == "/api/v1/auth/login" and route["expected_auth"] == "public"
+        for route in manifest["routes"]
+    )
     assert any(
         route["path"] == "/api/v1/auth/social-login" and route["expected_auth"] == "public"
         for route in manifest["routes"]
     )
     assert any(
-        route["path"] == "/api/v1/system/health" and route["expected_auth"] == classify_route("GET", "/api/v1/system/health").value
+        route["path"] == "/api/v1/system/health"
+        and route["expected_auth"] == classify_route("GET", "/api/v1/system/health").value
         for route in manifest["routes"]
     )
 

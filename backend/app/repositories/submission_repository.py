@@ -1,16 +1,15 @@
 """
 Submission Repository Implementation
 """
-from datetime import datetime, timezone
-from typing import List, Optional
+from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import select, desc
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.repositories.base import Repository
-from app.models.submission import Submission
 from app.core.specifications import Specification
+from app.models.submission import Submission
+from app.repositories.base import Repository
 
 
 class SubmissionRepository(Repository[Submission]):
@@ -22,14 +21,14 @@ class SubmissionRepository(Repository[Submission]):
     def _base_query(self):
         return select(Submission).where(Submission.is_deleted.is_(False))
     
-    async def get_by_id(self, id: UUID) -> Optional[Submission]:
+    async def get_by_id(self, id: UUID) -> Submission | None:
         """Get submission by ID."""
         result = await self.session.execute(
             self._base_query().where(Submission.id == id).limit(1)
         )
         return result.scalar_one_or_none()
     
-    async def get_all(self, skip: int = 0, limit: int = 100) -> List[Submission]:
+    async def get_all(self, skip: int = 0, limit: int = 100) -> list[Submission]:
         """Get all submissions with pagination."""
         query = (
             self._base_query()
@@ -58,12 +57,12 @@ class SubmissionRepository(Repository[Submission]):
         entity = await self.get_by_id(id)
         if entity:
             entity.is_deleted = True
-            entity.deleted_at = datetime.now(timezone.utc)
+            entity.deleted_at = datetime.now(UTC)
             await self.session.flush()
             return True
         return False
     
-    async def find(self, specification: Specification[Submission]) -> List[Submission]:
+    async def find(self, specification: Specification[Submission]) -> list[Submission]:
         """Find submissions matching specification."""
         query = self._base_query().order_by(desc(Submission.sent_at))
         result = await self.session.execute(query)
@@ -88,7 +87,7 @@ class SubmissionRepository(Repository[Submission]):
         entity = await self.get_by_id(id)
         return entity is not None
     
-    async def find_by_status(self, status: str, limit: int = 100) -> List[Submission]:
+    async def find_by_status(self, status: str, limit: int = 100) -> list[Submission]:
         """Find submissions by status."""
         query = (
             self._base_query()
@@ -99,7 +98,7 @@ class SubmissionRepository(Repository[Submission]):
         result = await self.session.execute(query)
         return list(result.scalars().all())
     
-    async def find_by_opportunity(self, opportunity_id: UUID) -> List[Submission]:
+    async def find_by_opportunity(self, opportunity_id: UUID) -> list[Submission]:
         """Find submissions for an opportunity."""
         query = (
             self._base_query()

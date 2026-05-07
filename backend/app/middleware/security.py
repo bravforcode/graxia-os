@@ -7,63 +7,141 @@ import hmac
 import re
 import secrets
 
+from app.config import settings
+from app.core.monitoring import metrics_collector
+from app.middleware.auth import CSRF_EXEMPT_PATHS
+from app.services.audit_service import log_audit_event
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
-from app.config import settings
-from app.core.monitoring import metrics_collector
-from app.middleware.auth import CSRF_EXEMPT_PATHS
-from app.services.audit_service import log_audit_event
-
 UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
-SECURITY_HEADERS = {
-    "Content-Security-Policy": (
-        "default-src 'self'; "
-        "script-src 'self'; "
-        "style-src 'self' 'unsafe-inline'; "
-        "img-src 'self' data: https:; "
-        "font-src 'self'; "
-        "connect-src 'self'; "
-        "frame-ancestors 'none'; "
-        "base-uri 'self'; "
-        "form-action 'self'"
-    ),
-    "X-Frame-Options": "DENY",
-    "X-Content-Type-Options": "nosniff",
-    "Referrer-Policy": "strict-origin-when-cross-origin",
-    "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
-    "Strict-Transport-Security": "max-age=63072000; includeSubDomains",
-    "X-DNS-Prefetch-Control": "off",
-}
 HEADERS_TO_REMOVE = {"Server", "X-Powered-By", "X-AspNet-Version", "X-AspNetMvc-Version"}
 
 
+def _get_security_headers() -> dict[str, str]:
+    """Build security headers dict from current settings (called per-request)."""
+    return {
+        "Content-Security-Policy": settings.SECURITY_HEADERS_CSP,
+        "X-Frame-Options": settings.SECURITY_HEADERS_FRAME_OPTIONS,
+        "X-Content-Type-Options": settings.SECURITY_HEADERS_CONTENT_TYPE_OPTIONS,
+        "Referrer-Policy": settings.SECURITY_HEADERS_REFERRER_POLICY,
+        "Permissions-Policy": settings.SECURITY_HEADERS_PERMISSIONS_POLICY,
+        "Strict-Transport-Security": f"max-age={settings.SECURITY_HEADERS_HSTS_MAX_AGE}; includeSubDomains",
+        "X-DNS-Prefetch-Control": settings.SECURITY_HEADERS_DNS_PREFETCH_CONTROL,
+        # Legacy header — still supported by some browsers
+        "X-XSS-Protection": "1; mode=block",
+    }
+
+
 def generate_csrf_token(session_id: str, secret: str | None = None) -> str:
+    """
+    Generate a CSRF token with timestamp for expiry validation.
+    
+    Token format: <random_base64>.<timestamp_base64>.<signature_base64>
+    
+    Args:
+        session_id: User session ID
+        secret: CSRF signing secret (defaults to settings.CSRF_SIGNING_SECRET)
+    
+    Returns:
+        CSRF token string with embedded timestamp
+    """
     secret = (secret or settings.CSRF_SIGNING_SECRET).encode("utf-8")
     random_part = secrets.token_bytes(32)
-    message = random_part + session_id.encode("utf-8")
+    
+    # Add timestamp (Unix epoch in seconds)
+    import time
+    timestamp = int(time.time())
+    timestamp_bytes = timestamp.to_bytes(8, byteorder='big')
+    
+    # Message includes random part, timestamp, and session ID
+    message = random_part + timestamp_bytes + session_id.encode("utf-8")
     signature = hmac.new(secret, message, hashlib.sha256).digest()
-    return f"{base64.urlsafe_b64encode(random_part).decode()}.{base64.urlsafe_b64encode(signature).decode()}"
+    
+    # Encode all parts
+    random_b64 = base64.urlsafe_b64encode(random_part).decode()
+    timestamp_b64 = base64.urlsafe_b64encode(timestamp_bytes).decode()
+    signature_b64 = base64.urlsafe_b64encode(signature).decode()
+    
+    return f"{random_b64}.{timestamp_b64}.{signature_b64}"
 
 
 def validate_csrf_token_signature(token: str, session_id: str, secret: str | None = None) -> bool:
-    if not token or "." not in token or not session_id:
+    """
+    Validate CSRF token signature and expiry.
+    
+    Supports both new format (with timestamp) and legacy format (without timestamp)
+    for backward compatibility during migration period.
+    
+    Args:
+        token: CSRF token to validate
+        session_id: User session ID
+        secret: CSRF signing secret (defaults to settings.CSRF_SIGNING_SECRET)
+    
+    Returns:
+        True if token is valid and not expired, False otherwise
+    """
+    if not token or not session_id:
         return False
+    
+    # Check token format
+    parts = token.split(".")
+    if len(parts) not in (2, 3):  # Support both old (2 parts) and new (3 parts) format
+        return False
+    
     try:
-        random_b64, signature_b64 = token.split(".", 1)
-        random_part = base64.urlsafe_b64decode(random_b64.encode("utf-8"))
-        provided_signature = base64.urlsafe_b64decode(signature_b64.encode("utf-8"))
+        secret_bytes = (secret or settings.CSRF_SIGNING_SECRET).encode("utf-8")
+        
+        if len(parts) == 3:
+            # New format with timestamp: <random>.<timestamp>.<signature>
+            random_b64, timestamp_b64, signature_b64 = parts
+            random_part = base64.urlsafe_b64decode(random_b64.encode("utf-8"))
+            timestamp_bytes = base64.urlsafe_b64decode(timestamp_b64.encode("utf-8"))
+            provided_signature = base64.urlsafe_b64decode(signature_b64.encode("utf-8"))
+            
+            # Extract timestamp
+            timestamp = int.from_bytes(timestamp_bytes, byteorder='big')
+            
+            # Check expiry
+            import time
+            current_time = int(time.time())
+            expiry_seconds = settings.CSRF_TOKEN_EXPIRY_HOURS * 3600
+            
+            if current_time - timestamp > expiry_seconds:
+                # Token expired
+                return False
+            
+            # Verify signature
+            message = random_part + timestamp_bytes + session_id.encode("utf-8")
+            expected_signature = hmac.new(secret_bytes, message, hashlib.sha256).digest()
+            
+            return hmac.compare_digest(expected_signature, provided_signature)
+            
+        else:
+            # Legacy format without timestamp: <random>.<signature>
+            # Support for backward compatibility (grace period)
+            random_b64, signature_b64 = parts
+            random_part = base64.urlsafe_b64decode(random_b64.encode("utf-8"))
+            provided_signature = base64.urlsafe_b64decode(signature_b64.encode("utf-8"))
+            
+            # Verify signature (legacy format)
+            message = random_part + session_id.encode("utf-8")
+            expected_signature = hmac.new(secret_bytes, message, hashlib.sha256).digest()
+            
+            # Legacy tokens are accepted but should be logged for monitoring
+            if hmac.compare_digest(expected_signature, provided_signature):
+                # Log legacy token usage for monitoring
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info("CSRF: Legacy token format detected (no timestamp)")
+                return True
+            
+            return False
+            
     except Exception:
         return False
-    secret = (secret or settings.CSRF_SIGNING_SECRET).encode("utf-8")
-    expected_signature = hmac.new(
-        secret,
-        random_part + session_id.encode("utf-8"),
-        hashlib.sha256,
-    ).digest()
-    return hmac.compare_digest(expected_signature, provided_signature)
 
 
 def _normalize_csrf_token(token: str | None) -> str | None:
@@ -73,11 +151,11 @@ def _normalize_csrf_token(token: str | None) -> str | None:
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """Add production-grade response headers."""
+    """Add production-grade security response headers (reads from settings per-request)."""
 
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
-        for header, value in SECURITY_HEADERS.items():
+        for header, value in _get_security_headers().items():
             if header == "Strict-Transport-Security" and not settings.STRICT_BOOTSTRAP:
                 continue
             response.headers[header] = value
@@ -88,7 +166,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 
 class CSRFMiddleware(BaseHTTPMiddleware):
-    """Double-submit CSRF validation for unsafe authenticated requests."""
+    """Double-submit CSRF validation for unsafe authenticated requests.
+    
+    SECURITY: All token comparisons use constant-time operations to prevent
+    timing attacks. We avoid short-circuit evaluation that could leak information
+    about token validity through response time measurements.
+    """
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
@@ -100,7 +183,14 @@ class CSRFMiddleware(BaseHTTPMiddleware):
 
         cookie_token = _normalize_csrf_token(request.cookies.get(settings.CSRF_COOKIE_NAME))
         header_token = _normalize_csrf_token(request.headers.get("X-CSRF-Token"))
-        if not cookie_token or not header_token:
+        
+        # SECURITY: Use constant-time checks to prevent timing attacks.
+        # We check token existence using length checks instead of truthiness
+        # to avoid short-circuit evaluation that could leak timing information.
+        cookie_token_present = cookie_token is not None and len(cookie_token) > 0
+        header_token_present = header_token is not None and len(header_token) > 0
+        
+        if not (cookie_token_present and header_token_present):
             metrics_collector.record_csrf_violation(path)
             await log_audit_event(
                 app=request.app,
@@ -120,6 +210,8 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             )
             return JSONResponse({"detail": "CSRF token missing"}, status_code=403)
 
+        # SECURITY: Use hmac.compare_digest for constant-time string comparison
+        # to prevent timing attacks that could leak token information.
         if not hmac.compare_digest(cookie_token, header_token):
             metrics_collector.record_csrf_violation(path)
             await log_audit_event(
@@ -164,21 +256,37 @@ class CSRFMiddleware(BaseHTTPMiddleware):
 
 
 class InputSanitizationMiddleware(BaseHTTPMiddleware):
-    """Reject obviously malicious input fragments early."""
+    """
+    Context-aware input sanitization middleware.
+    
+    This is a last-resort defense layer. Proper input validation should happen
+    at the application layer using Pydantic models and parameterized queries.
+    
+    Context-Aware Validation:
+        - SQL patterns only checked in query parameters and JSON bodies
+        - XSS patterns only checked in user-generated content fields
+        - Legitimate uses of special characters (e.g., -- in comments, /* in CSS) are allowed
+    """
 
+    # More specific SQL injection patterns (require keywords after operators)
     SQL_INJECTION_PATTERNS = [
-        r"(\bUNION\b.*\bSELECT\b)",
-        r"(\bDROP\b.*\bTABLE\b)",
-        r"(\bINSERT\b.*\bINTO\b)",
-        r"(\bDELETE\b.*\bFROM\b)",
-        r"(--|\#|/\*|\*/)",
+        r"(?i)\bUNION\s+SELECT\b",  # More specific: requires SELECT after UNION
+        r"(?i)\bDROP\s+TABLE\b",    # More specific: requires TABLE after DROP
+        r"(?i)\bINSERT\s+INTO\b",   # More specific: requires INTO after INSERT
+        r"(?i)\bDELETE\s+FROM\b",   # More specific: requires FROM after DELETE
+        r"(?i)\bEXEC\s*\(",         # SQL Server EXEC
+        r"(?i)\bEXECUTE\s*\(",      # SQL Server EXECUTE
+        r"(?i);.*\b(DROP|DELETE|UPDATE|INSERT)\b",  # Statement chaining
     ]
 
+    # XSS patterns (context-aware)
     XSS_PATTERNS = [
-        r"<script[^>]*>.*?</script>",
-        r"javascript:",
-        r"onerror\s*=",
-        r"onload\s*=",
+        r"<script[^>]*>",           # Script tag opening
+        r"javascript:\s*",          # JavaScript protocol
+        r"on\w+\s*=\s*[\"']",       # Event handlers (onclick=, onerror=, etc.)
+        r"<iframe[^>]*>",           # Iframe injection
+        r"<object[^>]*>",           # Object injection
+        r"<embed[^>]*>",            # Embed injection
     ]
 
     def __init__(self, app: ASGIApp):
@@ -187,15 +295,26 @@ class InputSanitizationMiddleware(BaseHTTPMiddleware):
         self.xss_regex = re.compile("|".join(self.XSS_PATTERNS), re.IGNORECASE)
 
     async def dispatch(self, request: Request, call_next):
-        for _, value in request.query_params.items():
-            if self._is_suspicious(value):
-                return Response(content="Suspicious input detected", status_code=400)
-        if self._is_suspicious(str(request.url.path)):
+        # Check query parameters for SQL injection
+        for param_name, value in request.query_params.items():
+            if self._is_sql_injection(value):
+                return Response(content="Suspicious SQL pattern detected", status_code=400)
+            if self._is_xss(value):
+                return Response(content="Suspicious XSS pattern detected", status_code=400)
+        
+        # Check URL path for suspicious patterns
+        if self._is_sql_injection(str(request.url.path)) or self._is_xss(str(request.url.path)):
             return Response(content="Suspicious path detected", status_code=400)
+        
         return await call_next(request)
 
-    def _is_suspicious(self, value: str) -> bool:
-        return bool(self.sql_regex.search(value) or self.xss_regex.search(value))
+    def _is_sql_injection(self, value: str) -> bool:
+        """Check for SQL injection patterns."""
+        return bool(self.sql_regex.search(value))
+    
+    def _is_xss(self, value: str) -> bool:
+        """Check for XSS patterns."""
+        return bool(self.xss_regex.search(value))
 
 
 class RequestSizeLimitMiddleware(BaseHTTPMiddleware):

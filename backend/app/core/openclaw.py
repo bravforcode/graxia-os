@@ -7,9 +7,9 @@ Includes caching, rate limiting, cost tracking, and fallback mechanisms.
 import hashlib
 import logging
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from typing import Any, Optional
+from typing import Any
 from uuid import uuid4
 
 import httpx
@@ -72,7 +72,7 @@ class OpenClawClient:
         raw = f"{action}|{url}"
         return "openclaw:" + hashlib.sha256(raw.encode()).hexdigest()
     
-    async def _get_cache(self, key: str) -> Optional[dict]:
+    async def _get_cache(self, key: str) -> dict | None:
         """Get cached result from Redis."""
         r = await self._get_redis()
         if not r:
@@ -153,7 +153,7 @@ class OpenClawClient:
                     platform=platform,
                     action=action,
                     cost_usd=Decimal(str(cost_usd)),
-                    created_at=datetime.now(timezone.utc)
+                    created_at=datetime.now(UTC)
                 )
                 db.add(usage)
                 await db.commit()
@@ -166,10 +166,11 @@ class OpenClawClient:
     async def _check_daily_budget(self, db) -> None:
         """Check if daily budget is exceeded."""
         try:
+            from sqlalchemy import func, select
+
             from app.models.openclaw_usage import OpenClawUsage
-            from sqlalchemy import select, func
             
-            today = datetime.now(timezone.utc).date()
+            today = datetime.now(UTC).date()
             query = select(func.sum(OpenClawUsage.cost_usd)).where(
                 func.date(OpenClawUsage.created_at) == today
             )
@@ -219,8 +220,8 @@ class OpenClawClient:
         self,
         url: str,
         platform: str = "default",
-        wait_for_selector: Optional[str] = None,
-        extract_schema: Optional[dict] = None,
+        wait_for_selector: str | None = None,
+        extract_schema: dict | None = None,
         use_cache: bool = True
     ) -> dict:
         """
@@ -363,13 +364,14 @@ class OpenClawClient:
     async def health_check(self) -> dict:
         """Check OpenClaw service health and usage stats."""
         try:
+            from sqlalchemy import func, select
+
             from app.database import AsyncSessionLocal
             from app.models.openclaw_usage import OpenClawUsage
-            from sqlalchemy import select, func
             
             async with AsyncSessionLocal() as db:
                 # Get today's usage
-                today = datetime.now(timezone.utc).date()
+                today = datetime.now(UTC).date()
                 query = select(
                     func.count(OpenClawUsage.id).label("count"),
                     func.sum(OpenClawUsage.cost_usd).label("cost")
@@ -392,12 +394,13 @@ class OpenClawClient:
     async def get_usage_stats(self, days: int = 7) -> dict:
         """Get usage statistics for the last N days."""
         try:
+            from sqlalchemy import func, select
+
             from app.database import AsyncSessionLocal
             from app.models.openclaw_usage import OpenClawUsage
-            from sqlalchemy import select, func
             
             async with AsyncSessionLocal() as db:
-                since = datetime.now(timezone.utc) - timedelta(days=days)
+                since = datetime.now(UTC) - timedelta(days=days)
                 
                 # Total stats
                 query = select(

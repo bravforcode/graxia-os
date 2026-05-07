@@ -3,7 +3,8 @@ from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID as UUIDType
 
-from sqlalchemy import UUID as SQLUUID, Date, DateTime, Integer, Numeric, Text, func
+from sqlalchemy import UUID as SQLUUID
+from sqlalchemy import Date, DateTime, Integer, Numeric, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base

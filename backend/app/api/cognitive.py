@@ -1,11 +1,12 @@
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc
+
 from app.database import get_db
 from app.models.cognitive_state import CognitiveState
-from app.schemas.cognitive_state import CognitiveStateOut, CognitiveStateCreate
+from app.schemas.cognitive_state import CognitiveStateCreate, CognitiveStateOut
 
 router = APIRouter(prefix="/cognitive", tags=["cognitive"])
 
@@ -13,6 +14,7 @@ router = APIRouter(prefix="/cognitive", tags=["cognitive"])
 @router.get("/today", response_model=CognitiveStateOut)
 async def get_today(db: AsyncSession = Depends(get_db)):
     from datetime import date
+
     from app.core.identity import identity
 
     defaults = identity.get_cognitive_defaults()

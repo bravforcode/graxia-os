@@ -1,0 +1,39 @@
+# Fly.io Configuration for Graxia OS Backend
+# Free tier: 256MB RAM, shared CPU
+
+app = "graxia-api"
+primary_region = "sin"  # Singapore - closest to Thailand
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  APP_ENV = "production"
+  PORT = "8080"
+  # Note: Add DATABASE_URL, REDIS_URL, and secrets via `fly secrets set`
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false  # Keep running (free tier allows 3 machines)
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = "connections"
+    hard_limit = 10
+    soft_limit = 5
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+# Health check endpoint
+[[http_service.checks]]
+  grace_period = "30s"
+  interval = "60s"
+  method = "GET"
+  timeout = "15s"
+  path = "/health"
+  protocol = "http"

@@ -1,10 +1,10 @@
 """Email thread model for managing email conversations."""
-from datetime import datetime, timezone
-from typing import Optional, List
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import String, Integer, Boolean, TIMESTAMP, Index
-from sqlalchemy.dialects.postgresql import UUID as PGUUID, JSONB
+from sqlalchemy import TIMESTAMP, Boolean, Index, Integer, String
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -34,26 +34,26 @@ class EmailThread(Base):
     
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     thread_id: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
-    subject: Mapped[Optional[str]] = mapped_column(String(500))
+    subject: Mapped[str | None] = mapped_column(String(500))
     participants: Mapped[list] = mapped_column(JSONB, default=list, server_default="[]")
-    category: Mapped[Optional[str]] = mapped_column(String(50), index=True)
+    category: Mapped[str | None] = mapped_column(String(50), index=True)
     priority: Mapped[int] = mapped_column(Integer, default=5, server_default="5")
-    last_message_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True))
+    last_message_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
     unread_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     has_attachments: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     action_items: Mapped[list] = mapped_column(JSONB, default=list, server_default="[]")
     status: Mapped[str] = mapped_column(String(50), default="unread", server_default="unread")
     created_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc)
+        TIMESTAMP(timezone=True), default=lambda: datetime.now(UTC)
     )
     updated_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
     )
     
     # Relationships
-    messages: Mapped[List["EmailMessage"]] = relationship(
+    messages: Mapped[list["EmailMessage"]] = relationship(
         "EmailMessage",
         back_populates="thread",
         cascade="all, delete-orphan"
@@ -77,7 +77,7 @@ class EmailThread(Base):
         """Check if thread has unread messages."""
         return self.unread_count > 0
     
-    def add_action_item(self, task: str, due_date: Optional[datetime] = None, priority: int = 5) -> None:
+    def add_action_item(self, task: str, due_date: datetime | None = None, priority: int = 5) -> None:
         """Add an action item to the thread."""
         if not self.action_items:
             self.action_items = []
@@ -86,7 +86,7 @@ class EmailThread(Base):
             "task": task,
             "due_date": due_date.isoformat() if due_date else None,
             "priority": priority,
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
         }
         self.action_items.append(action_item)
     

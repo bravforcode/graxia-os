@@ -1,15 +1,14 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 
 import pytest
-from sqlalchemy import select
-
 from app.models.contact import Contact
 from app.models.opportunity import Opportunity
 from app.models.submission import Submission
 from app.repositories.contact_repository import ContactRepository
 from app.repositories.opportunity_repository import OpportunityRepository
 from app.repositories.submission_repository import SubmissionRepository
+from sqlalchemy import select
 
 
 @pytest.fixture()
@@ -29,7 +28,7 @@ async def test_repositories_soft_delete_without_removing_rows(db_session):
         title="Soft Delete Opportunity",
         total_score=Decimal("7.50"),
         status="found",
-        found_at=datetime.now(timezone.utc),
+        found_at=datetime.now(UTC),
     )
     contact = Contact(
         name="Soft Delete Contact",
@@ -70,9 +69,7 @@ async def test_repositories_soft_delete_without_removing_rows(db_session):
         await db_session.execute(select(Contact).where(Contact.id == contact.id).limit(1))
     ).scalar_one()
     raw_submission = (
-        await db_session.execute(
-            select(Submission).where(Submission.id == submission.id).limit(1)
-        )
+        await db_session.execute(select(Submission).where(Submission.id == submission.id).limit(1))
     ).scalar_one()
 
     assert raw_opportunity.is_deleted is True
@@ -84,46 +81,48 @@ async def test_repositories_soft_delete_without_removing_rows(db_session):
 
 
 @pytest.mark.asyncio
-async def test_canonical_apis_hide_soft_deleted_records(async_client, db_session, cqrs_session_factory):
+async def test_canonical_apis_hide_soft_deleted_records(
+    async_client, db_session, cqrs_session_factory
+):
     active_opportunity = Opportunity(
         type="competition",
         title="Visible Opportunity",
         total_score=Decimal("8.10"),
         status="found",
-        found_at=datetime.now(timezone.utc),
+        found_at=datetime.now(UTC),
     )
     deleted_opportunity = Opportunity(
         type="competition",
         title="Hidden Opportunity",
         total_score=Decimal("7.90"),
         status="found",
-        found_at=datetime.now(timezone.utc),
+        found_at=datetime.now(UTC),
     )
     active_contact = Contact(
         name="Visible Contact",
         email="visible@example.com",
         contact_type="lead",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     deleted_contact = Contact(
         name="Hidden Contact",
         email="hidden@example.com",
         contact_type="lead",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     visible_submission = Submission(
         type="proposal",
         title="Visible Submission",
         status="draft",
         content="Visible draft",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     hidden_submission = Submission(
         type="proposal",
         title="Hidden Submission",
         status="draft",
         content="Hidden draft",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     db_session.add_all(
         [
@@ -161,9 +160,7 @@ async def test_canonical_apis_hide_soft_deleted_records(async_client, db_session
     assert "Visible Contact" in contact_names
     assert "Hidden Contact" not in contact_names
 
-    deleted_contact_response = await async_client.get(
-        f"/api/v1/contacts/{deleted_contact.id}"
-    )
+    deleted_contact_response = await async_client.get(f"/api/v1/contacts/{deleted_contact.id}")
     assert deleted_contact_response.status_code == 404
 
     submissions_response = await async_client.get("/api/v1/submissions")

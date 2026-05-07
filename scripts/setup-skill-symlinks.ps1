@@ -9,7 +9,7 @@ param(
     [switch]$Force
 )
 
-$ObsidianSkillsDir = "$env:USERPROFILE\Documents\ObsidianVault\Second Brain\brain\skills"
+$ObsidianSkillsDir = "$env:USERPROFILE\OneDrive\Documents\Gracia\Second Brain\brain\skills"
 $ClaudeSkillsDir = "$env:USERPROFILE\.claude\skills"
 
 Write-Host "🔗 Setting up skill symlinks..." -ForegroundColor Cyan

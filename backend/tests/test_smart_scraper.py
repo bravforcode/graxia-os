@@ -2,14 +2,16 @@
 Tests for Smart Scraper with Weighted Failure Scoring
 TDD approach for resilient scraper implementation
 """
-import pytest
-from unittest.mock import Mock, AsyncMock, patch
 
-from app.scrapers.smart_base import SmartBaseScraper, ErrorType, ERROR_WEIGHTS
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
+from app.scrapers.smart_base import ERROR_WEIGHTS, ErrorType, SmartBaseScraper
 
 
 class TestScraper(SmartBaseScraper):
     """Concrete test implementation."""
+
     source_name = "test_scraper"
 
     def _get_url(self):
@@ -102,7 +104,7 @@ class TestWeightedFailureRecording:
         mock_health.consecutive_failures = 0
         mock_health.is_muted = False
 
-        with patch('app.scrapers.smart_base.AsyncSessionLocal') as mock_session:
+        with patch("app.scrapers.smart_base.AsyncSessionLocal") as mock_session:
             mock_db = AsyncMock()
             mock_result = Mock()
             mock_result.scalar_one_or_none.return_value = mock_health
@@ -121,9 +123,10 @@ class TestWeightedFailureRecording:
         mock_health.consecutive_failures = 2.5
         mock_health.is_muted = False
 
-        with patch('app.scrapers.smart_base.AsyncSessionLocal') as mock_session, \
-             patch.object(scraper, '_notify_muted') as mock_notify:
-
+        with (
+            patch("app.scrapers.smart_base.AsyncSessionLocal") as mock_session,
+            patch.object(scraper, "_notify_muted"),
+        ):
             mock_db = AsyncMock()
             mock_result = Mock()
             mock_result.scalar_one_or_none.return_value = mock_health
@@ -146,7 +149,7 @@ class TestSuccessResetsFailures:
         mock_health = Mock()
         mock_health.consecutive_failures = 5
 
-        with patch('app.scrapers.smart_base.AsyncSessionLocal') as mock_session:
+        with patch("app.scrapers.smart_base.AsyncSessionLocal") as mock_session:
             mock_db = AsyncMock()
             mock_result = Mock()
             mock_result.scalar_one_or_none.return_value = mock_health
@@ -185,7 +188,7 @@ class TestRunWithRetries:
         scraper._record_weighted_failure = AsyncMock()
         scraper._record_result = AsyncMock()
 
-        with patch('asyncio.sleep', AsyncMock()):
+        with patch("asyncio.sleep", AsyncMock()):
             results = await scraper.run()
 
         assert scraper.fetch.call_count == 3

@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 
@@ -16,9 +15,9 @@ class GetOpportunityQuery(Query):
 
 @dataclass(frozen=True)
 class ListOpportunitiesQuery(Query):
-    status: Optional[str] = None
-    min_score: Optional[float] = None
-    source: Optional[str] = None
+    status: str | None = None
+    min_score: float | None = None
+    source: str | None = None
     skip: int = 0
     limit: int = 100
 
@@ -44,8 +43,8 @@ class GetSubmissionQuery(Query):
 
 @dataclass(frozen=True)
 class ListSubmissionsQuery(Query):
-    status: Optional[str] = None
-    opportunity_id: Optional[UUID] = None
+    status: str | None = None
+    opportunity_id: UUID | None = None
     skip: int = 0
     limit: int = 100
 
@@ -57,7 +56,7 @@ class GetContactQuery(Query):
 
 @dataclass(frozen=True)
 class ListContactsQuery(Query):
-    company: Optional[str] = None
+    company: str | None = None
     skip: int = 0
     limit: int = 100
 
@@ -69,20 +68,20 @@ class GetDraftQuery(Query):
 
 @dataclass(frozen=True)
 class ListDraftsQuery(Query):
-    status: Optional[str] = "pending"
+    status: str | None = "pending"
     skip: int = 0
     limit: int = 100
 
 
 @dataclass(frozen=True)
 class GetWinRateQuery(Query):
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
 
 
 @dataclass(frozen=True)
 class GetDailyCostQuery(Query):
-    date: Optional[datetime] = None
+    date: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -125,14 +124,14 @@ class GetApprovalQuery(Query):
 
 @dataclass(frozen=True)
 class ListPendingApprovalsQuery(Query):
-    priority: Optional[str] = None
+    priority: str | None = None
     limit: int = 10
 
 
 @dataclass(frozen=True)
 class GetApprovalStatsQuery(Query):
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
 
 
 @dataclass(frozen=True)

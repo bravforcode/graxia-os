@@ -4,7 +4,7 @@ Monitoring and Observability
 Prometheus metrics, health checks, and alerting.
 """
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from prometheus_client import Counter, Gauge, Histogram, generate_latest
 
@@ -218,13 +218,14 @@ class MetricsCollector:
     async def update_gauges():
         """Update gauge metrics with current state."""
         try:
+            from sqlalchemy import func, select
+
             from app.database import AsyncSessionLocal
-            from app.models.job_posting import JobPosting
-            from app.models.contact import Contact
             from app.models.assistant_task import AssistantTask
+            from app.models.contact import Contact
             from app.models.email_thread import EmailThread
+            from app.models.job_posting import JobPosting
             from app.models.openclaw_usage import OpenClawUsage
-            from sqlalchemy import select, func
             
             async with AsyncSessionLocal() as db:
                 # Active jobs
@@ -254,7 +255,7 @@ class MetricsCollector:
                 unread_emails.set(emails_result.scalar() or 0)
                 
                 # Daily cost
-                today = datetime.now(timezone.utc).date()
+                today = datetime.now(UTC).date()
                 daily_query = select(func.sum(OpenClawUsage.cost_usd)).where(
                     func.date(OpenClawUsage.created_at) == today
                 )
@@ -262,7 +263,7 @@ class MetricsCollector:
                 daily_cost_usd.set(float(daily_result.scalar() or 0))
                 
                 # Monthly cost
-                month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0)
+                month_start = datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0)
                 monthly_query = select(func.sum(OpenClawUsage.cost_usd)).where(
                     OpenClawUsage.created_at >= month_start
                 )

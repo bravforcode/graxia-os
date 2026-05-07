@@ -1,0 +1,27 @@
+flowchart TD
+    %% Component Diagram - revenue_os
+
+    0010Enterpriserevenueosmerge.Sql["0010_enterprise_revenue_os_merge.sql<br/>(1 files)"]
+    Agents["agents<br/>(4 files)"]
+    Celery["celery<br/>(8 files)"]
+    Constants.Py["constants.py<br/>(1 files)"]
+    Core["core<br/>(6 files)"]
+    Db.Py["db.py<br/>(1 files)"]
+    Enums.Py["enums.py<br/>(1 files)"]
+    Models.Py["models.py<br/>(1 files)"]
+    Readmephase2.Md["README_PHASE2.md<br/>(1 files)"]
+    Schemas.Py["schemas.py<br/>(1 files)"]
+    Services["services<br/>(7 files)"]
+    Tests["tests<br/>(11 files)"]
+    Init.Py["__init__.py<br/>(2 files)"]
+    App.Py["app.py<br/>(1 files)"]
+    Dependencies.Py["dependencies.py<br/>(1 files)"]
+    Middleware.Py["middleware.py<br/>(1 files)"]
+
+    %% Connections
+    App.Py --> Db.Py
+    Init.Py --> App.Py
+
+    %% Styling
+    classDef component fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    class 0010_enterprise_revenue_os_merge.sql,agents,celery,constants.py,core,db.py,enums.py,models.py,README_PHASE2.md,schemas.py,services,tests,__init__.py,app.py,dependencies.py,middleware.py component

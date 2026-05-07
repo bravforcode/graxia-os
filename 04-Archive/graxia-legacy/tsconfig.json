@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "lib": ["ESNext", "DOM"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@bravos/auth": ["packages/auth/src"],
+      "@bravos/logging": ["packages/logging/src"],
+      "@bravos/bwcp": ["packages/bwcp-protocol/src"]
+    }
+  },
+  "exclude": ["node_modules", "dist"]
+}

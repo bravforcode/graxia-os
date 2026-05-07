@@ -14,12 +14,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
 
-from app.cqrs.handlers import mediator
 from app.cqrs.commands import (
     CreateSubmissionCommand,
-    MarkSubmissionWonCommand,
     MarkSubmissionLostCommand,
+    MarkSubmissionWonCommand,
 )
+from app.cqrs.handlers import mediator
 from app.cqrs.queries import ListSubmissionsQuery
 from app.schemas.submission import SubmissionCreate, SubmissionOut
 

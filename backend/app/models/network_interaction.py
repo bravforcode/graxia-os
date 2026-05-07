@@ -1,9 +1,8 @@
 """Network interaction model for tracking contact interactions."""
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import String, Text, TIMESTAMP, ForeignKey, Index
+from sqlalchemy import TIMESTAMP, ForeignKey, Index, String, Text
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -29,9 +28,9 @@ class NetworkInteraction(Base):
     contact_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("contacts.id", ondelete="CASCADE"), nullable=False)
     interaction_type: Mapped[str] = mapped_column(String(50), nullable=False)
     interaction_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
-    notes: Mapped[Optional[str]] = mapped_column(Text)
+    notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc)
+        TIMESTAMP(timezone=True), default=lambda: datetime.now(UTC)
     )
     contact = relationship("Contact", back_populates="interactions")
     

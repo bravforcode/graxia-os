@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-
 HIGH_PRIORITY_KEYWORDS = {
     "urgent",
     "asap",

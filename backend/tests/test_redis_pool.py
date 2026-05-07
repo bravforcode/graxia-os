@@ -2,14 +2,14 @@
 Tests for Redis Connection Pool
 Production-grade connection management
 """
+
 import inspect
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 import pytest_asyncio
-from unittest.mock import Mock, patch, AsyncMock
-
-from app.core.redis_pool import RedisPool
 from app.core.redis_circuit_breaker import CircuitBreakerOpen
+from app.core.redis_pool import RedisPool
 
 
 async def _maybe_await(value):
@@ -58,6 +58,7 @@ class TestRedisPoolSingleton:
 
     def test_global_instance_exists(self):
         from app.core.redis_pool import redis_pool
+
         assert isinstance(redis_pool, RedisPool)
 
 
@@ -66,9 +67,10 @@ class TestRedisPoolInitialization:
 
     @pytest.mark.asyncio
     async def test_initialize_creates_pool(self):
-        with patch('app.core.redis_pool.ConnectionPool.from_url') as mock_from_url, \
-             patch('app.core.redis_pool.aioredis.Redis') as mock_redis:
-
+        with (
+            patch("app.core.redis_pool.ConnectionPool.from_url") as mock_from_url,
+            patch("app.core.redis_pool.aioredis.Redis") as mock_redis,
+        ):
             mock_pool = Mock()
             mock_from_url.return_value = mock_pool
 
@@ -90,7 +92,7 @@ class TestRedisPoolInitialization:
 
     @pytest.mark.asyncio
     async def test_initialize_handles_failure(self):
-        with patch('app.core.redis_pool.ConnectionPool.from_url') as mock_from_url:
+        with patch("app.core.redis_pool.ConnectionPool.from_url") as mock_from_url:
             mock_from_url.side_effect = Exception("Connection refused")
 
             pool = RedisPool()
@@ -105,7 +107,7 @@ class TestRedisPoolInitialization:
 
     @pytest.mark.asyncio
     async def test_initialize_is_idempotent(self):
-        with patch('app.core.redis_pool.ConnectionPool.from_url') as mock_from_url:
+        with patch("app.core.redis_pool.ConnectionPool.from_url") as mock_from_url:
             mock_from_url.return_value = Mock()
 
             pool = RedisPool()
@@ -123,9 +125,10 @@ class TestRedisPoolGetClient:
 
     @pytest.mark.asyncio
     async def test_get_client_returns_client_when_healthy(self):
-        with patch('app.core.redis_pool.ConnectionPool.from_url') as mock_from_url, \
-             patch('app.core.redis_pool.aioredis.Redis') as mock_redis:
-
+        with (
+            patch("app.core.redis_pool.ConnectionPool.from_url") as mock_from_url,
+            patch("app.core.redis_pool.aioredis.Redis") as mock_redis,
+        ):
             mock_from_url.return_value = Mock()
             mock_client = AsyncMock()
             mock_client.ping = AsyncMock(return_value=True)
@@ -146,8 +149,9 @@ class TestRedisPoolGetClient:
         # Force circuit open
         redis_circuit_breaker._state = CircuitBreakerOpen.__class__  # Reset first
         from app.core.redis_circuit_breaker import CircuitState
+
         redis_circuit_breaker._state = CircuitState.OPEN
-        redis_circuit_breaker._last_failure_time = __import__('time').time()
+        redis_circuit_breaker._last_failure_time = __import__("time").time()
 
         pool = RedisPool()
         pool._pool = Mock()
@@ -160,17 +164,19 @@ class TestRedisPoolGetClient:
 
     @pytest.mark.asyncio
     async def test_get_client_initializes_if_not_initialized(self):
-        with patch('app.core.redis_pool.ConnectionPool.from_url') as mock_from_url, \
-             patch('app.core.redis_pool.aioredis.Redis') as mock_redis:
-
+        with (
+            patch("app.core.redis_pool.ConnectionPool.from_url") as mock_from_url,
+            patch("app.core.redis_pool.aioredis.Redis") as mock_redis,
+        ):
             mock_from_url.return_value = Mock()
             mock_client = AsyncMock()
             mock_client.ping = AsyncMock(return_value=True)
             mock_redis.return_value = mock_client
 
             # Reset circuit breaker to closed state
-            from app.core.redis_pool import redis_circuit_breaker
             from app.core.redis_circuit_breaker import CircuitState
+            from app.core.redis_pool import redis_circuit_breaker
+
             redis_circuit_breaker._state = CircuitState.CLOSED
             redis_circuit_breaker._failure_count = 0
 
@@ -190,16 +196,18 @@ class TestRedisPoolHealthCheck:
 
     @pytest.mark.asyncio
     async def test_health_check_failure_triggers_circuit_breaker(self):
-        with patch('app.core.redis_pool.ConnectionPool.from_url') as mock_from_url, \
-             patch('app.core.redis_pool.aioredis.Redis') as mock_redis:
-
+        with (
+            patch("app.core.redis_pool.ConnectionPool.from_url") as mock_from_url,
+            patch("app.core.redis_pool.aioredis.Redis") as mock_redis,
+        ):
             mock_from_url.return_value = Mock()
             mock_client = AsyncMock()
             mock_client.ping = AsyncMock(side_effect=Exception("Connection lost"))
             mock_redis.return_value = mock_client
 
-            from app.core.redis_pool import redis_circuit_breaker
             from app.core.redis_circuit_breaker import CircuitState
+            from app.core.redis_pool import redis_circuit_breaker
+
             redis_circuit_breaker._state = CircuitState.CLOSED
             redis_circuit_breaker._failure_count = 0
 
@@ -245,9 +253,10 @@ class TestRedisPoolConfiguration:
 
     @pytest.mark.asyncio
     async def test_pool_uses_correct_settings(self):
-        with patch('app.core.redis_pool.ConnectionPool.from_url') as mock_from_url, \
-             patch('app.core.redis_pool.aioredis.Redis') as mock_redis:
-
+        with (
+            patch("app.core.redis_pool.ConnectionPool.from_url") as mock_from_url,
+            patch("app.core.redis_pool.aioredis.Redis") as mock_redis,
+        ):
             mock_from_url.return_value = Mock()
             mock_client = AsyncMock()
             mock_client.ping = AsyncMock(return_value=True)
@@ -261,10 +270,10 @@ class TestRedisPoolConfiguration:
 
             # Check configuration
             call_kwargs = mock_from_url.call_args.kwargs
-            assert call_kwargs.get('max_connections') == 20
-            assert call_kwargs.get('socket_connect_timeout') == 5
-            assert call_kwargs.get('socket_keepalive') is True
-            assert call_kwargs.get('health_check_interval') == 30
+            assert call_kwargs.get("max_connections") == 20
+            assert call_kwargs.get("socket_connect_timeout") == 5
+            assert call_kwargs.get("socket_keepalive") is True
+            assert call_kwargs.get("health_check_interval") == 30
 
 
 class TestRedisPoolIntegration:
@@ -272,9 +281,10 @@ class TestRedisPoolIntegration:
 
     @pytest.mark.asyncio
     async def test_full_lifecycle(self):
-        with patch('app.core.redis_pool.ConnectionPool.from_url') as mock_from_url, \
-             patch('app.core.redis_pool.aioredis.Redis') as mock_redis:
-
+        with (
+            patch("app.core.redis_pool.ConnectionPool.from_url") as mock_from_url,
+            patch("app.core.redis_pool.aioredis.Redis") as mock_redis,
+        ):
             mock_pool = AsyncMock()
             mock_from_url.return_value = mock_pool
 

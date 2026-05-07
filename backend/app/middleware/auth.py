@@ -14,11 +14,12 @@ from app.core.auth import (
 )
 from app.services.audit_service import log_audit_event
 from app.services.session_service import SessionService
-from fastapi import HTTPException, Request, Security, status
+from fastapi import HTTPException, Request, Security, status, Depends
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.routing import Match
+from sqlalchemy.ext.asyncio import AsyncSession
 
 security = HTTPBearer(auto_error=False)
 
@@ -159,6 +160,28 @@ def find_route_template(request: Request) -> str | None:
     return None
 
 
+async def verify_internal_bearer_token(
+    configured_token: str,
+    provided_token: str,
+) -> bool:
+    """
+    Verify bearer token for internal webhook requests (deprecated).
+    
+    Args:
+        configured_token: Expected token from settings
+        provided_token: Provided token from request
+    
+    Returns:
+        True if tokens match (constant-time comparison), False otherwise
+    
+    Note:
+        This method is deprecated. Use HMAC signature verification instead.
+    """
+    if not configured_token or not provided_token:
+        return False
+    return hmac.compare_digest(configured_token, provided_token)
+
+
 async def build_auth_context(request: Request) -> dict[str, Any]:
     token = extract_access_token_from_request(request)
     if not token:
@@ -196,13 +219,52 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if required_level == AuthLevel.BLOCKED and settings.STRICT_BOOTSTRAP:
             return JSONResponse({"detail": "Not Found"}, status_code=404)
         if (request.method.upper(), route_path) in INTERNAL_TOKEN_ROUTES:
+            secret = (getattr(settings, "ALERTMANAGER_WEBHOOK_SECRET", "") or "").strip()
+            signature = request.headers.get("X-Alertmanager-Signature", "").strip()
+            
+            # Try HMAC signature verification first (preferred)
+            if secret and signature.startswith("sha256="):
+                timestamp_str = request.headers.get("X-Graxia-Timestamp", "").strip()
+                
+                # Validate timestamp format
+                if not timestamp_str:
+                    return JSONResponse({"detail": "Unauthorized"}, status_code=401)
+                
+                try:
+                    import time
+                    timestamp = int(timestamp_str)
+                except ValueError:
+                    return JSONResponse({"detail": "Unauthorized"}, status_code=401)
+                
+                # Check timestamp window (5 minutes)
+                import time as time_module
+                if abs(time_module.time() - timestamp) > 300:
+                    return JSONResponse({"detail": "Unauthorized"}, status_code=401)
+                
+                # Read request body (cached by Starlette)
+                body = await request.body()
+                
+                # Compute expected signature
+                payload = f"{timestamp_str}.".encode() + body
+                expected_sig = "sha256=" + hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
+                
+                # Verify signature (constant-time comparison)
+                if not hmac.compare_digest(expected_sig, signature):
+                    return JSONResponse({"detail": "Unauthorized"}, status_code=401)
+                
+                request.state.internal_token_authenticated = True
+                return await call_next(request)
+
+            # Fallback to bearer token (deprecated)
             configured = (settings.ALERTMANAGER_WEBHOOK_TOKEN or "").strip()
             provided = request.headers.get("X-Alertmanager-Token", "").strip()
             authorization = request.headers.get("Authorization", "")
             if authorization.lower().startswith("bearer "):
                 provided = authorization.split(" ", 1)[1].strip()
-            if not configured or not hmac.compare_digest(configured, provided):
+            
+            if not await verify_internal_bearer_token(configured, provided):
                 return JSONResponse({"detail": "Unauthorized"}, status_code=401)
+            
             request.state.internal_token_authenticated = True
             return await call_next(request)
         if required_level == AuthLevel.PUBLIC:

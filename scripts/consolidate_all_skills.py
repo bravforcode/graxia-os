@@ -21,7 +21,7 @@ from typing import Iterable
 
 
 HOME = Path.home()
-WORKSPACE = Path("c:/brav os")
+WORKSPACE = Path("C:/Users/menum/graxia os")
 OBSIDIAN_BRAIN = HOME / "Documents" / "ObsidianVault" / "Second Brain" / "brain"
 UNIVERSAL_HUB = OBSIDIAN_BRAIN / "skills-universal"
 REGISTRY_FILE = UNIVERSAL_HUB / "skills-registry.json"

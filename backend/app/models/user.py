@@ -1,14 +1,14 @@
 """User model for authentication."""
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, String
+from sqlalchemy import Boolean, DateTime, String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base
+from app.models.base import Base, TenantMixin
 
 
-class User(Base):
+class User(Base, TenantMixin):
     """User model for authentication and authorization."""
 
     __tablename__ = "users"
@@ -22,11 +22,19 @@ class User(Base):
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     totp_secret: Mapped[str | None] = mapped_column(String(128))
     totp_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC), nullable=False
+    )
     provider: Mapped[str | None] = mapped_column(String(50))
     provider_id: Mapped[str | None] = mapped_column(String(255))
     avatar_url: Mapped[str | None] = mapped_column(String(1024))
+
+    # Relationships
+    from sqlalchemy.orm import relationship
+    organization = relationship("Organization", back_populates="users")
 
     def __repr__(self) -> str:
         return f"<User {self.email}>"

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from urllib.parse import urlparse
 
 from fastapi import APIRouter, Request
@@ -45,7 +45,7 @@ async def open_pixel(request: Request, token: str) -> Response:
                 "token": token[:16],
                 "payload": payload,
                 "ua": request.headers.get("user-agent", ""),
-                "ts": datetime.now(timezone.utc).isoformat(),
+                "ts": datetime.now(UTC).isoformat(),
             },
             request_path=str(request.url.path),
             request_method=request.method,

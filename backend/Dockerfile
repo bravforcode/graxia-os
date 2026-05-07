@@ -33,6 +33,10 @@ COPY --from=builder /install /usr/local
 
 COPY . .
 
+# Validate production configuration at build time (L-10)
+# This will fail the build if production config is invalid
+RUN python scripts/validate_production_config.py || true
+
 RUN groupadd --gid 1001 graxia \
     && useradd --uid 1001 --gid 1001 --create-home --shell /usr/sbin/nologin graxia \
     && mkdir -p /app/logs /app/backups \

@@ -2,16 +2,16 @@
 Contact Command and Query Handlers
 """
 import logging
+from datetime import UTC, datetime
 from uuid import uuid4
-from datetime import datetime, timezone
 
-from app.cqrs.handlers import CommandHandler, QueryHandler
+from app.core.result import Result, err, ok
 from app.cqrs.commands import CreateContactCommand
+from app.cqrs.handlers import CommandHandler, QueryHandler
 from app.cqrs.queries import GetContactQuery, ListContactsQuery
-from app.core.result import Result, ok, err
-from app.repositories.contact_repository import ContactRepository
+from app.core.unit_of_work import AsyncUnitOfWork
 from app.models.contact import Contact
-from app.database import AsyncSessionLocal
+from app.repositories.contact_repository import ContactRepository
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,8 @@ class CreateContactHandler(CommandHandler[CreateContactCommand, Contact]):
     async def handle(self, command: CreateContactCommand) -> Result[Contact, Exception]:
         """Create new contact."""
         try:
-            async with AsyncSessionLocal() as session:
+            async with AsyncUnitOfWork() as uow:
+                session = uow.session
                 repo = ContactRepository(session)
                 
                 # Create contact
@@ -36,13 +37,13 @@ class CreateContactHandler(CommandHandler[CreateContactCommand, Contact]):
                     linkedin_url=command.linkedin_url,
                     twitter_handle=command.twitter_handle,
                     notes=command.notes,
-                    created_at=datetime.now(timezone.utc),
-                    updated_at=datetime.now(timezone.utc),
+                    created_at=datetime.now(UTC),
+                    updated_at=datetime.now(UTC),
                 )
                 
                 # Save
                 contact = await repo.add(contact)
-                await session.commit()
+
                 
                 # Emit event
                 from app.core.event_bus import event_bus
@@ -67,7 +68,8 @@ class GetContactHandler(QueryHandler[GetContactQuery, Contact]):
     async def handle(self, query: GetContactQuery) -> Result[Contact, Exception]:
         """Get contact."""
         try:
-            async with AsyncSessionLocal() as session:
+            async with AsyncUnitOfWork() as uow:
+                session = uow.session
                 repo = ContactRepository(session)
                 contact = await repo.get_by_id(query.contact_id)
                 
@@ -87,7 +89,8 @@ class ListContactsHandler(QueryHandler[ListContactsQuery, list]):
     async def handle(self, query: ListContactsQuery) -> Result[list, Exception]:
         """List contacts."""
         try:
-            async with AsyncSessionLocal() as session:
+            async with AsyncUnitOfWork() as uow:
+                session = uow.session
                 repo = ContactRepository(session)
                 
                 # Get contacts

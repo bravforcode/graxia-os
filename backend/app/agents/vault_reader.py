@@ -23,10 +23,11 @@ class VaultReaderAgent(BaseAgent):
         Returns:
             Dict with sync statistics (synced_count, failed_count, etc.)
         """
-        from app.integrations.obsidian import scan_changed_opportunity_files
-        from app.database import AsyncSessionLocal
-        from app.models.opportunity import Opportunity
         from sqlalchemy import select
+
+        from app.database import AsyncSessionLocal
+        from app.integrations.obsidian import scan_changed_opportunity_files
+        from app.models.opportunity import Opportunity
 
         if vault_path is None:
             from app.config import settings
@@ -143,7 +144,7 @@ class VaultReaderAgent(BaseAgent):
                         error=str(e),
                     )
                     failed_count += 1
-                except (OSError, IOError) as e:
+                except OSError as e:
                     logger.error(
                         "vault_reader_file_error",
                         filename=file_info.get("file_path"),

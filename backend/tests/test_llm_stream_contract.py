@@ -1,5 +1,4 @@
 import pytest
-
 from app.core.llm import LLMClient
 
 
@@ -31,10 +30,10 @@ async def test_sse_json_iterator_ignores_comments_and_stops_on_done():
             for line in [
                 ": keepalive",
                 "",
-                "data: {\"chunk\": 1}",
+                'data: {"chunk": 1}',
                 "not-an-sse-line",
                 "data: [DONE]",
-                "data: {\"chunk\": 2}",
+                'data: {"chunk": 2}',
             ]:
                 yield line
 

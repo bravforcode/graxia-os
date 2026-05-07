@@ -1,0 +1,212 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Kong API Gateway Configuration for Graxia OS
+# Features: JWT Auth, Rate Limiting, ACL, Prometheus
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_format_version: "3.0"
+_transform: true
+
+services:
+  # ── Graxia API Service ──
+  - name: graxia-api
+    url: http://api:8000
+    routes:
+      - name: api-routes
+        paths:
+          - /api
+        strip_path: false
+        preserve_host: false
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 1000
+          hour: 50000
+          policy: redis
+          redis_host: redis-node-1
+          fault_tolerant: true
+          hide_client_headers: false
+      - name: prometheus
+        config:
+          per_consumer: false
+          status_code_metrics: true
+          latency_metrics: true
+          bandwidth_metrics: true
+          upstream_health_metrics: true
+
+  # ── Trading API (Quant OS) ──
+  - name: trading-api
+    url: http://api:8000
+    routes:
+      - name: trading-routes
+        paths:
+          - /api/v1/quant
+          - /api/v1/positions
+          - /api/v1/orders
+          - /api/v1/webhook
+        strip_path: false
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 500
+          hour: 20000
+          policy: redis
+          redis_host: redis-node-1
+      - name: prometheus
+        config:
+          per_consumer: true
+
+  # ── Revenue API (Revenue OS) ──
+  - name: revenue-api
+    url: http://api:8000
+    routes:
+      - name: revenue-routes
+        paths:
+          - /api/v1/revenue
+          - /api/v1/leads
+          - /api/v1/opportunities
+        strip_path: false
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 800
+          hour: 30000
+          policy: redis
+          redis_host: redis-node-1
+
+  # ── WebSocket Service ──
+  - name: websocket
+    url: http://api:8000
+    protocol: ws
+    routes:
+      - name: websocket-route
+        paths:
+          - /ws
+        strip_path: false
+
+  # ── Admin API (Protected) ──
+  - name: admin-api
+    url: http://api:8000
+    routes:
+      - name: admin-routes
+        paths:
+          - /admin
+        strip_path: false
+    plugins:
+      - name: key-auth
+        config:
+          key_names:
+            - X-Admin-Key
+          hide_credentials: false
+          key_in_body: false
+      - name: rate-limiting
+        config:
+          minute: 100
+          hour: 5000
+          policy: redis
+          redis_host: redis-node-1
+
+  # ── Grafana Service ──
+  - name: grafana
+    url: http://grafana:3000
+    routes:
+      - name: grafana-route
+        hosts:
+          - grafana.graxia.local
+        paths:
+          - /
+        strip_path: false
+
+  # ── ClickHouse Query API ──
+  - name: clickhouse-api
+    url: http://clickhouse:8123
+    routes:
+      - name: clickhouse-route
+        paths:
+          - /analytics
+        strip_path: true
+    plugins:
+      - name: jwt
+        config:
+          uri_param_names: []
+          cookie_names: []
+          key_claim_name: iss
+          secret_is_base64: false
+          claims_to_verify:
+            - exp
+      - name: rate-limiting
+        config:
+          minute: 100
+          hour: 5000
+
+consumers:
+  # ── Trading Bot Consumer ──
+  - username: trading-bot
+    custom_id: quant-os-bot
+    keyauth_credentials:
+      - key: trading-bot-api-key-change-in-prod
+    acls:
+      - group: trading
+
+  # ── Web Dashboard Consumer ──
+  - username: web-dashboard
+    custom_id: revenue-os-web
+    keyauth_credentials:
+      - key: web-dashboard-api-key-change-in-prod
+    acls:
+      - group: revenue
+      - group: analytics
+
+  # ── Mobile App Consumer ──
+  - username: mobile-app
+    custom_id: graxia-mobile
+    keyauth_credentials:
+      - key: mobile-app-api-key-change-in-prod
+    acls:
+      - group: trading
+      - group: revenue
+      - group: analytics
+
+  # ── Admin Consumer ──
+  - username: admin-user
+    custom_id: graxia-admin
+    keyauth_credentials:
+      - key: admin-api-key-change-in-prod
+    acls:
+      - group: admin
+
+acls:
+  - consumer: trading-bot
+    group: trading
+  - consumer: web-dashboard
+    group: revenue
+  - consumer: mobile-app
+    group: trading
+  - consumer: mobile-app
+    group: revenue
+  - consumer: admin-user
+    group: admin
+
+# JWT Plugin Configuration (for JWT auth)
+plugins:
+  - name: jwt
+    service: clickhouse-api
+    config:
+      uri_param_names: []
+      cookie_names: []
+      key_claim_name: iss
+      secret_is_base64: false
+      claims_to_verify:
+        - exp
+
+  - name: correlation-id
+    config:
+      header_name: X-Request-ID
+      generator: uuid
+      echo_downstream: true
+
+  - name: request-transformer
+    config:
+      add:
+        headers:
+          - X-Graxia-Gateway:v1.0
+          - X-Graxia-Region:local

@@ -1,0 +1,149 @@
+# Graxia OS - Enterprise Auto-Scaling Configuration
+# Fly.io Platform Auto-Scaling Rules
+
+[build]
+  dockerfile = "Dockerfile"
+
+[deploy]
+  strategy = "rolling"
+  
+# Auto-scaling configuration
+[services]
+  internal_port = 8000
+  protocol = "tcp"
+  
+  # Auto-stop and auto-start for cost optimization
+  auto_stop_machines = true
+  auto_start_machines = true
+  
+  # Minimum and maximum machines for auto-scaling
+  min_machines_running = 2  # Always keep 2 for high availability
+  max_machines_running = 10  # Scale up to 10 during peak
+  
+  # Concurrency-based scaling
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 500
+    soft_limit = 350
+  
+  # HTTP service configuration
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+    force_https = true
+  
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+  
+  # Health checks for auto-scaling decisions
+  [[services.http_checks]]
+    interval = "10s"
+    timeout = "5s"
+    grace_period = "30s"
+    method = "GET"
+    path = "/health"
+    protocol = "http"
+    tls_skip_verify = false
+    
+    [services.http_checks.headers]
+      Host = "graxia-api.fly.dev"
+
+# Custom metrics-based scaling (using Fly.io's experimental features)
+[metrics]
+  port = 9091
+  path = "/metrics"
+
+# Resource limits for each machine
+[resources]
+  cpu = "2"
+  memory = "4gb"
+  
+  # CPU threshold for scaling
+  cpu_threshold = 70
+  
+  # Memory threshold for scaling
+  memory_threshold = 80
+
+# Environment-specific overrides
+[env]
+  # Production settings
+  LOG_LEVEL = "INFO"
+  APP_ENV = "production"
+  
+  # Database pool sizing for auto-scaling
+  DB_POOL_SIZE = "20"
+  DB_MAX_OVERFLOW = "10"
+  
+  # Redis connection pool
+  REDIS_POOL_SIZE = "50"
+  
+  # Feature flags for gradual rollout
+  FEATURE_FLAGS = "new_dashboard:10,analytics_v2:5"
+
+# Advanced scaling rules (custom autoscaler)
+[experimental]
+  # Enable auto-rollback on health check failure
+  auto_rollback = true
+  
+  # Enable canary deployments
+  canary = true
+  canary_weight = 10
+  
+  # Circuit breaker settings
+  circuit_breaker_threshold = 50
+  circuit_breaker_recovery = 30
+
+# Metrics-based auto-scaling triggers (custom implementation)
+[[metrics.scaling_rules]]
+  name = "high_cpu"
+  metric = "cpu_usage"
+  threshold = 75
+  operator = ">"
+  action = "scale_up"
+  cooldown = "120s"
+  
+[[metrics.scaling_rules]]
+  name = "low_cpu"
+  metric = "cpu_usage"
+  threshold = 25
+  operator = "<"
+  action = "scale_down"
+  cooldown = "300s"
+  
+[[metrics.scaling_rules]]
+  name = "high_memory"
+  metric = "memory_usage"
+  threshold = 80
+  operator = ">"
+  action = "scale_up"
+  cooldown = "120s"
+  
+[[metrics.scaling_rules]]
+  name = "queue_depth"
+  metric = "queue_depth"
+  threshold = 100
+  operator = ">"
+  action = "scale_up"
+  cooldown = "60s"
+  
+[[metrics.scaling_rules]]
+  name = "error_rate"
+  metric = "error_rate"
+  threshold = 5
+  operator = ">"
+  action = "scale_up"
+  cooldown = "30s"
+
+# Regional deployment for global availability
+[[regions]]
+  name = "sin"  # Singapore (primary)
+  weight = 50
+  
+[[regions]]
+  name = "nrt"  # Tokyo (DR)
+  weight = 30
+  
+[[regions]]
+  name = "lhr"  # London (EU users)
+  weight = 20

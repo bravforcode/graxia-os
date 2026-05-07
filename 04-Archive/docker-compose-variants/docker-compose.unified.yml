@@ -1,0 +1,307 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Graxia OS — Unified Docker Compose
+# Single stack for Revenue OS + Quant OS
+# Memory-optimized, production-ready
+# ═══════════════════════════════════════════════════════════════════════════════
+
+version: "3.8"
+
+services:
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # Unified API Server (Revenue + Quant)
+  # ═══════════════════════════════════════════════════════════════════════════════
+  graxia-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.unified
+    container_name: graxia-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+      - "9090:9090"  # Prometheus metrics
+    environment:
+      # Database
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@graxia-db:5432/graxia_unified
+      - REDIS_URL=redis://graxia-redis:6379/0
+      
+      # Security
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ADMIN_API_KEY=${ADMIN_API_KEY}
+      
+      # Revenue OS
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - GUMROAD_API_KEY=${GUMROAD_API_KEY}
+      
+      # Quant OS
+      - TRADING_MODE=${TRADING_MODE:-PAPER}
+      - LIVE_TRADING_ENABLED=${LIVE_TRADING_ENABLED:-false}
+      - WEBHOOK_HMAC_SECRET=${WEBHOOK_HMAC_SECRET}
+      - MT5_LOGIN=${MT5_LOGIN}
+      - MT5_PASSWORD=${MT5_PASSWORD}
+      - MT5_SERVER=${MT5_SERVER:-ICMarketsSC-Demo}
+      
+      # Notifications
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      
+      # General
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+      - DEBUG=${DEBUG:-false}
+      
+    depends_on:
+      graxia-db:
+        condition: service_healthy
+      graxia-redis:
+        condition: service_healthy
+      
+    volumes:
+      - ./logs:/app/logs
+      - ./ml_models:/app/ml_models
+      - ./uploads:/app/uploads
+      
+    networks:
+      - graxia-network
+      
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+      
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # Background Worker (Celery) — Shared for both modules
+  # ═══════════════════════════════════════════════════════════════════════════════
+  graxia-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.unified
+    container_name: graxia-worker
+    restart: unless-stopped
+    command: celery -A graxia.services.celery_app worker --loglevel=info --concurrency=2 -Q revenue,quant,default
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@graxia-db:5432/graxia_unified
+      - REDIS_URL=redis://graxia-redis:6379/0
+      - TRADING_MODE=${TRADING_MODE:-PAPER}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    depends_on:
+      - graxia-db
+      - graxia-redis
+    volumes:
+      - ./logs:/app/logs
+      - ./ml_models:/app/ml_models
+    networks:
+      - graxia-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # Scheduler (Celery Beat) — Unified cron jobs
+  # ═══════════════════════════════════════════════════════════════════════════════
+  graxia-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.unified
+    container_name: graxia-beat
+    restart: unless-stopped
+    command: celery -A graxia.services.celery_app beat --loglevel=info --scheduler redisbeat.RedisScheduler
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@graxia-db:5432/graxia_unified
+      - REDIS_URL=redis://graxia-redis:6379/0
+      - REDIS_BEAT_URL=redis://graxia-redis:6379/1
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    depends_on:
+      - graxia-db
+      - graxia-redis
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - graxia-network
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # PostgreSQL — Shared database
+  # ═══════════════════════════════════════════════════════════════════════════════
+  graxia-db:
+    image: postgres:15-alpine
+    container_name: graxia-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=graxia_unified
+    volumes:
+      - graxia_postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - graxia-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # Redis — Shared cache & message broker
+  # ═══════════════════════════════════════════════════════════════════════════════
+  graxia-redis:
+    image: redis:7-alpine
+    container_name: graxia-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - graxia_redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - graxia-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # Grafana — Unified monitoring dashboards
+  # ═══════════════════════════════════════════════════════════════════════════════
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: graxia-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=redis-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deploy/monitoring/grafana:/etc/grafana/provisioning
+      - ./deploy/monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - graxia-network
+    depends_on:
+      - graxia-api
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # Prometheus — Metrics collection
+  # ═══════════════════════════════════════════════════════════════════════════════
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: graxia-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deploy/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    networks:
+      - graxia-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # Loki — Log aggregation
+  # ═══════════════════════════════════════════════════════════════════════════════
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: graxia-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./deploy/monitoring/loki-config.yml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - graxia-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # Promtail — Log shipper
+  # ═══════════════════════════════════════════════════════════════════════════════
+  promtail:
+    image: grafana/promtail:2.9.0
+    container_name: graxia-promtail
+    restart: unless-stopped
+    volumes:
+      - ./logs:/var/log/graxia
+      - ./deploy/monitoring/promtail.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - graxia-network
+    depends_on:
+      - loki
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # Caddy — Reverse proxy & SSL (optional, for production)
+  # ═══════════════════════════════════════════════════════════════════════════════
+  caddy:
+    image: caddy:2-alpine
+    container_name: graxia-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - graxia-network
+    depends_on:
+      - graxia-api
+    profiles:
+      - production
+
+volumes:
+  graxia_postgres_data:
+  graxia_redis_data:
+  grafana_data:
+  prometheus_data:
+  loki_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  graxia-network:
+    driver: bridge

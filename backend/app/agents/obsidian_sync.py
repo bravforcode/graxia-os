@@ -1,7 +1,7 @@
 """
 Obsidian sync agent for the shared second-brain vault.
 """
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
@@ -34,7 +34,7 @@ def _iso_datetime(value: datetime | None) -> str | None:
     if value is None:
         return None
     if value.tzinfo is None:
-        value = value.replace(tzinfo=timezone.utc)
+        value = value.replace(tzinfo=UTC)
     return value.isoformat()
 
 
@@ -254,7 +254,7 @@ class ObsidianSyncAgent(BaseAgent):
     async def create_weekly_review(self, review_data: dict[str, Any] | None = None) -> None:
         try:
             obsidian = await get_obsidian()
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             week_start = now - timedelta(days=now.weekday())
             await obsidian.create_weekly_review(week_start, review_data=review_data)
             logger.info("weekly_review_created")
@@ -380,6 +380,29 @@ class ObsidianSyncAgent(BaseAgent):
                 counts["tasks"] += 1
 
         return counts
+
+    async def test_obsidian_connection(self) -> bool:
+        """Test connection to Obsidian vault and API."""
+        try:
+            # Test vault path exists
+            from pathlib import Path
+            vault_path = Path(settings.OBSIDIAN_VAULT_PATH)
+            if not vault_path.exists():
+                logger.error(f"Vault path does not exist: {vault_path}")
+                return False
+
+            # Test API connection
+            obsidian = await get_obsidian()
+            if obsidian:
+                logger.info("Obsidian API connection successful")
+                return True
+            else:
+                logger.error("Obsidian API connection failed")
+                return False
+
+        except Exception as e:
+            logger.error(f"Obsidian connection test failed: {e}")
+            return False
 
 
 obsidian_sync_agent = ObsidianSyncAgent()

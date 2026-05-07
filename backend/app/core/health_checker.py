@@ -4,12 +4,13 @@ Enterprise Health Checker
 Comprehensive health checks for all system components.
 """
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from time import perf_counter
-from typing import Dict, Any
+from typing import Any
+
+from sqlalchemy import text
 
 from app.database import AsyncSessionLocal
-from sqlalchemy import text
 
 logger = logging.getLogger(__name__)
 
@@ -28,11 +29,11 @@ class HealthChecker:
     - Memory usage
     """
     
-    async def check_all(self) -> Dict[str, Any]:
+    async def check_all(self) -> dict[str, Any]:
         """Run all health checks."""
         results = {
             "status": "healthy",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "checks": {}
         }
         
@@ -66,7 +67,7 @@ class HealthChecker:
         
         return results
     
-    async def _check_database(self) -> Dict[str, Any]:
+    async def _check_database(self) -> dict[str, Any]:
         """Check database connectivity and performance."""
         try:
             async with AsyncSessionLocal() as db:
@@ -87,10 +88,11 @@ class HealthChecker:
                 "message": "Database connection failed"
             }
     
-    async def _check_redis(self) -> Dict[str, Any]:
+    async def _check_redis(self) -> dict[str, Any]:
         """Check Redis connectivity."""
         try:
             import redis.asyncio as aioredis
+
             from app.config import settings
             
             r = aioredis.from_url(settings.REDIS_URL)
@@ -112,7 +114,7 @@ class HealthChecker:
                 "message": "Redis connection failed"
             }
     
-    async def _check_llm_apis(self) -> Dict[str, Any]:
+    async def _check_llm_apis(self) -> dict[str, Any]:
         """Check LLM API availability."""
         results = {
             "openclaw": {"status": "unknown"},
@@ -148,11 +150,12 @@ class HealthChecker:
         
         return results
     
-    async def _check_scrapers(self) -> Dict[str, Any]:
+    async def _check_scrapers(self) -> dict[str, Any]:
         """Check scraper health."""
         try:
+            from sqlalchemy import func, select
+
             from app.models.scraper_health import ScraperHealth
-            from sqlalchemy import select, func
             
             async with AsyncSessionLocal() as db:
                 # Get scraper health stats
@@ -183,7 +186,7 @@ class HealthChecker:
                 "error": str(e)
             }
     
-    async def _check_event_bus(self) -> Dict[str, Any]:
+    async def _check_event_bus(self) -> dict[str, Any]:
         """Check event bus status."""
         try:
             from app.core.event_bus import event_bus
@@ -207,7 +210,7 @@ class HealthChecker:
                 "error": str(e)
             }
     
-    async def _check_system_resources(self) -> Dict[str, Any]:
+    async def _check_system_resources(self) -> dict[str, Any]:
         """Check system resources (disk, memory)."""
         try:
             import psutil

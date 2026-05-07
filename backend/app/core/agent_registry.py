@@ -1,11 +1,10 @@
 import logging
-from typing import Dict, Type, Any
-from app.agents.base import BaseAgent
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 class AgentRegistry:
-    _agents: Dict[str, Any] = {}
+    _agents: dict[str, Any] = {}
 
     @classmethod
     def register(cls, name: str, agent_instance: Any):

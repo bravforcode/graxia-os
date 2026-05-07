@@ -2,15 +2,16 @@
 Tests for Advanced Health Checker with Predictive Alerting
 Enterprise-grade health monitoring with trend analysis
 """
-import pytest
-from datetime import datetime, timezone
+
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
+import pytest
 from app.core.advanced_health import (
     AdvancedHealthChecker,
+    AlertSeverity,
     HealthTrend,
     MetricHistory,
-    AlertSeverity
 )
 
 
@@ -98,10 +99,21 @@ class TestPredictiveAlert:
 
         # Simulate degrading Redis that will fail soon (>50ms increase per reading)
         redis_history = {
-            'latency_ms': [50, 110, 180, 260, 350, 450, 560, 680, 810, 950]  # Will hit 1000ms threshold
+            "latency_ms": [
+                50,
+                110,
+                180,
+                260,
+                350,
+                450,
+                560,
+                680,
+                810,
+                950,
+            ]  # Will hit 1000ms threshold
         }
 
-        with patch.object(checker, '_send_telegram_alert', AsyncMock()) as mock_alert:
+        with patch.object(checker, "_send_telegram_alert", AsyncMock()) as mock_alert:
             await checker.check_service_health("redis", redis_history)
 
             # Should send predictive alert (failure predicted within 10 min)
@@ -120,7 +132,7 @@ class TestMetricHistory:
 
         # Add 10 metrics
         for i in range(10):
-            history.add_metric(i * 100.0, datetime.now(timezone.utc))
+            history.add_metric(i * 100.0, datetime.now(UTC))
 
         # Should only keep last 5
         assert len(history.values) == 5
@@ -133,7 +145,7 @@ class TestMetricHistory:
         history = MetricHistory(window_size=10)
 
         for i in range(10):
-            history.add_metric(float(i), datetime.now(timezone.utc))
+            history.add_metric(float(i), datetime.now(UTC))
 
         # Get last 3
         recent = history.get_recent_values(3)
@@ -144,7 +156,7 @@ class TestMetricHistory:
         history = MetricHistory(window_size=5)
 
         for i in range(10):
-            history.add_metric(float(i * 100), datetime.now(timezone.utc))
+            history.add_metric(float(i * 100), datetime.now(UTC))
 
         # Values should be a list-like sequence
         values_list = list(history.values)
@@ -156,7 +168,7 @@ class TestMetricHistory:
         history = MetricHistory(window_size=5)
 
         for i in [100, 200, 300, 400, 500]:
-            history.add_metric(float(i), datetime.now(timezone.utc))
+            history.add_metric(float(i), datetime.now(UTC))
 
         assert history.average() == 300.0
 
@@ -191,10 +203,10 @@ class TestAdvancedHealthIntegration:
         service_histories = {
             "redis": {"latency_ms": [100, 300, 600, 1000, 1500]},
             "celery": {"latency_ms": [100, 280, 550, 900, 1400]},
-            "openclaw": {"latency_ms": [100, 320, 620, 1050, 1600]}
+            "openclaw": {"latency_ms": [100, 320, 620, 1050, 1600]},
         }
 
-        with patch.object(checker, '_send_telegram_alert', AsyncMock()) as mock_alert:
+        with patch.object(checker, "_send_telegram_alert", AsyncMock()) as mock_alert:
             result = await checker.detect_correlated_failures(service_histories)
 
             # Should detect and alert about correlated degradation
@@ -211,7 +223,7 @@ class TestAlertDeduplication:
         checker = AdvancedHealthChecker()
         checker.alert_cooldown_seconds = 300  # 5 min cooldown
 
-        with patch.object(checker, '_send_telegram_alert', AsyncMock()) as mock_send:
+        with patch.object(checker, "_send_telegram_alert", AsyncMock()) as mock_send:
             # Send first alert
             await checker._send_alert("redis", AlertSeverity.WARNING, "test message")
 
@@ -226,7 +238,7 @@ class TestAlertDeduplication:
         checker = AdvancedHealthChecker()
         checker.alert_cooldown_seconds = 300
 
-        with patch.object(checker, '_send_telegram_alert', AsyncMock()) as mock_send:
+        with patch.object(checker, "_send_telegram_alert", AsyncMock()) as mock_send:
             # Send WARNING alert
             await checker._send_alert("redis", AlertSeverity.WARNING, "warning")
 
@@ -273,16 +285,12 @@ class TestHealthReportGeneration:
         # Add some metric history
         checker.metric_history["redis"] = {
             "latency": MetricHistory(window_size=10),
-            "error_rate": MetricHistory(window_size=10)
+            "error_rate": MetricHistory(window_size=10),
         }
 
         for i in range(5):
-            checker.metric_history["redis"]["latency"].add_metric(
-                50.0 + i * 10, datetime.now(timezone.utc)
-            )
-            checker.metric_history["redis"]["error_rate"].add_metric(
-                0.01 * i, datetime.now(timezone.utc)
-            )
+            checker.metric_history["redis"]["latency"].add_metric(50.0 + i * 10, datetime.now(UTC))
+            checker.metric_history["redis"]["error_rate"].add_metric(0.01 * i, datetime.now(UTC))
 
         report = await checker.generate_health_report()
 

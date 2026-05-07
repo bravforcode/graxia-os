@@ -1,5 +1,4 @@
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -7,8 +6,9 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db
 from app.core.time_utils import business_day_bounds_utc
+from app.database import get_db
+from app.middleware.auth import get_current_user
 from app.models.assistant_task import AssistantTask
 
 router = APIRouter(prefix="/api/v1/tasks", tags=["tasks"])
@@ -16,22 +16,22 @@ router = APIRouter(prefix="/api/v1/tasks", tags=["tasks"])
 
 class TaskCreate(BaseModel):
     title: str
-    description: Optional[str] = None
-    task_type: Optional[str] = None
+    description: str | None = None
+    task_type: str | None = None
     priority: int = 5
-    due_date: Optional[datetime] = None
-    related_entity_type: Optional[str] = None
-    related_entity_id: Optional[UUID] = None
+    due_date: datetime | None = None
+    related_entity_type: str | None = None
+    related_entity_id: UUID | None = None
     assigned_to: str = "user"
 
 
 class TaskUpdate(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    task_type: Optional[str] = None
-    priority: Optional[int] = None
-    status: Optional[str] = None
-    due_date: Optional[datetime] = None
+    title: str | None = None
+    description: str | None = None
+    task_type: str | None = None
+    priority: int | None = None
+    status: str | None = None
+    due_date: datetime | None = None
 
 
 class TaskResponse(BaseModel):
@@ -39,15 +39,15 @@ class TaskResponse(BaseModel):
 
     id: UUID
     title: str
-    description: Optional[str]
-    task_type: Optional[str]
+    description: str | None
+    task_type: str | None
     priority: int
     status: str
-    due_date: Optional[datetime]
-    related_entity_type: Optional[str]
-    related_entity_id: Optional[UUID]
+    due_date: datetime | None
+    related_entity_type: str | None
+    related_entity_id: UUID | None
     assigned_to: str
-    completed_at: Optional[datetime]
+    completed_at: datetime | None
     created_at: datetime
     updated_at: datetime
 
@@ -59,9 +59,9 @@ class TaskListResponse(BaseModel):
 @router.get("/", response_model=TaskListResponse)
 async def list_tasks(
     db: AsyncSession = Depends(get_db),
-    status: Optional[str] = Query(None, description="Filter by status"),
-    priority_min: Optional[int] = Query(None, description="Minimum priority"),
-    task_type: Optional[str] = Query(None, description="Task type"),
+    status: str | None = Query(None, description="Filter by status"),
+    priority_min: int | None = Query(None, description="Minimum priority"),
+    task_type: str | None = Query(None, description="Task type"),
     overdue_only: bool = Query(False, description="Show only overdue tasks"),
     limit: int = Query(50, le=100),
     offset: int = Query(0, ge=0),
@@ -78,7 +78,7 @@ async def list_tasks(
     if overdue_only:
         conditions.append(
             and_(
-                AssistantTask.due_date < datetime.now(timezone.utc),
+                AssistantTask.due_date < datetime.now(UTC),
                 AssistantTask.status != "completed",
             )
         )
@@ -107,7 +107,7 @@ async def get_task_stats(db: AsyncSession = Depends(get_db)):
 
     overdue_query = select(func.count(AssistantTask.id)).where(
         and_(
-            AssistantTask.due_date < datetime.now(timezone.utc),
+            AssistantTask.due_date < datetime.now(UTC),
             AssistantTask.status != "completed",
         )
     )
@@ -145,11 +145,16 @@ async def get_task(task_id: UUID, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/", response_model=TaskResponse, status_code=201)
-async def create_task(task_data: TaskCreate, db: AsyncSession = Depends(get_db)):
+async def create_task(
+    task_data: TaskCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: "User" = Depends(get_current_user),
+):
     task = AssistantTask(
         **task_data.model_dump(),
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        organization_id=current_user.organization_id,
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
 
     db.add(task)
@@ -178,7 +183,7 @@ async def update_task(task_id: UUID, task_data: TaskUpdate, db: AsyncSession = D
     for field, value in task_data.model_dump(exclude_unset=True).items():
         setattr(task, field, value)
 
-    task.updated_at = datetime.now(timezone.utc)
+    task.updated_at = datetime.now(UTC)
 
     await db.commit()
     await db.refresh(task)
@@ -203,7 +208,7 @@ async def complete_task(task_id: UUID, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Task not found")
 
     task.mark_completed()
-    task.updated_at = datetime.now(timezone.utc)
+    task.updated_at = datetime.now(UTC)
 
     await db.commit()
     await db.refresh(task)

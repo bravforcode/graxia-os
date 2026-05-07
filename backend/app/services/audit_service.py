@@ -5,7 +5,7 @@ import hashlib
 import json
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -81,7 +81,7 @@ async def log_audit_event(
     error_message: str | None = None,
     was_fallback: bool | None = False,
 ) -> AuditLog:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     metadata = metadata or {}
     details = details or metadata
     async with _session_scope(app=app, db=db) as session:

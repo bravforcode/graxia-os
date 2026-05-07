@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
-
 
 _state: dict[str, Any] = {
     "is_ready": False,
@@ -16,7 +15,7 @@ def set_runtime_state(is_ready: bool, mode: str, issues: list[str] | None = None
     _state["is_ready"] = is_ready
     _state["mode"] = mode
     _state["issues"] = list(issues or [])
-    _state["updated_at"] = datetime.now(timezone.utc)
+    _state["updated_at"] = datetime.now(UTC)
 
 
 def get_runtime_state() -> dict[str, Any]:

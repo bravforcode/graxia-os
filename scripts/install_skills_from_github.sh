@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Configuration
-VAULT_DIR="C:/Users/menum/Documents/ObsidianVault/Second Brain/skills"
-BRAIN_DIR="C:/Users/menum/Documents/ObsidianVault/Second Brain/brain"
+VAULT_DIR="C:/Users/menum/OneDrive/Documents/Gracia/Second Brain/skills"
+BRAIN_DIR="C:/Users/menum/OneDrive/Documents/Gracia/Second Brain/brain"
 INDEX_FILE="$BRAIN_DIR/skills-catalog.md"
 
 REPOS=(

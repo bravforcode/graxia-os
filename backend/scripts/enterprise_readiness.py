@@ -5,8 +5,8 @@ import argparse
 import asyncio
 import json
 import sys
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 import httpx
 from sqlalchemy import text
@@ -18,6 +18,7 @@ if str(BACKEND_ROOT) not in sys.path:
 
 from app.config import settings
 from app.database import AsyncSessionLocal
+
 from scripts.production_env_audit import audit_production_env
 
 
@@ -28,7 +29,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--strict", action="store_true")
     parser.add_argument("--env-file", default=str(REPO_ROOT / ".env.production"))
     parser.add_argument("--compose-file", default=str(REPO_ROOT / "docker-compose.prod.yml"))
-    parser.add_argument("--frontend-env-file", default=str(REPO_ROOT / "frontend" / ".env.production"))
+    parser.add_argument(
+        "--frontend-env-file", default=str(REPO_ROOT / "frontend" / ".env.production")
+    )
     return parser.parse_args()
 
 

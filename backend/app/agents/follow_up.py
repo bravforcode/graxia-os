@@ -1,5 +1,6 @@
 import logging
 from datetime import date
+
 from app.agents.base import BaseAgent
 from app.core.control_plane import create_draft_review_request
 
@@ -11,9 +12,10 @@ class FollowUpAgent(BaseAgent):
 
     async def run(self) -> int:
         """Check for due follow-ups and generate reminder messages."""
+        from sqlalchemy import select
+
         from app.database import AsyncSessionLocal
         from app.models.submission import Submission
-        from sqlalchemy import select
 
         async with AsyncSessionLocal() as db:
             due = await db.execute(
@@ -35,9 +37,9 @@ class FollowUpAgent(BaseAgent):
         return count
 
     async def _handle_followup(self, sub) -> None:
+        from app.core.identity import identity
         from app.database import AsyncSessionLocal
         from app.models.content_draft import ContentDraft
-        from app.core.identity import identity
 
         if self.llm.is_degraded():
             return

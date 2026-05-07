@@ -1,11 +1,11 @@
+import hashlib
 import logging
 from typing import Any
-import hashlib
 
 from app.agents.base import BaseAgent
+from app.core.event_bus import event_bus
 from app.core.llm import llm_client
 from app.core.model_router import route_task
-from app.core.event_bus import event_bus
 from app.database import AsyncSessionLocal
 from app.models.orchestration import AgentMessage
 

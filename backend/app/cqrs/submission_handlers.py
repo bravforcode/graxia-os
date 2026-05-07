@@ -2,23 +2,23 @@
 Submission Command and Query Handlers
 """
 import logging
+from datetime import UTC, datetime
 from uuid import uuid4
-from datetime import datetime, timezone
 
-from app.cqrs.handlers import CommandHandler, QueryHandler
+from app.core.result import Result, err, ok
 from app.cqrs.commands import (
     CreateSubmissionCommand,
-    MarkSubmissionWonCommand,
     MarkSubmissionLostCommand,
+    MarkSubmissionWonCommand,
 )
+from app.cqrs.handlers import CommandHandler, QueryHandler
 from app.cqrs.queries import (
     GetSubmissionQuery,
     ListSubmissionsQuery,
 )
-from app.core.result import Result, ok, err
-from app.repositories.submission_repository import SubmissionRepository
+from app.core.unit_of_work import AsyncUnitOfWork
 from app.models.submission import Submission
-from app.database import AsyncSessionLocal
+from app.repositories.submission_repository import SubmissionRepository
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,8 @@ class CreateSubmissionHandler(CommandHandler[CreateSubmissionCommand, Submission
     async def handle(self, command: CreateSubmissionCommand) -> Result[Submission, Exception]:
         """Create new submission."""
         try:
-            async with AsyncSessionLocal() as session:
+            async with AsyncUnitOfWork() as uow:
+                session = uow.session
                 repo = SubmissionRepository(session)
                 
                 # Create submission
@@ -45,13 +46,13 @@ class CreateSubmissionHandler(CommandHandler[CreateSubmissionCommand, Submission
                     subject_line=command.subject_line,
                     proposed_value=command.proposed_value,
                     currency=command.currency or "THB",
-                    created_at=datetime.now(timezone.utc),
-                    updated_at=datetime.now(timezone.utc),
+                    created_at=datetime.now(UTC),
+                    updated_at=datetime.now(UTC),
                 )
                 
                 # Save
                 submission = await repo.add(submission)
-                await session.commit()
+
                 
                 # Emit event
                 from app.core.event_bus import event_bus
@@ -75,7 +76,8 @@ class MarkSubmissionWonHandler(CommandHandler[MarkSubmissionWonCommand, Submissi
     async def handle(self, command: MarkSubmissionWonCommand) -> Result[Submission, Exception]:
         """Mark submission as won."""
         try:
-            async with AsyncSessionLocal() as session:
+            async with AsyncUnitOfWork() as uow:
+                session = uow.session
                 repo = SubmissionRepository(session)
                 
                 # Get submission
@@ -86,12 +88,12 @@ class MarkSubmissionWonHandler(CommandHandler[MarkSubmissionWonCommand, Submissi
                 # Update status
                 submission.status = "won"
                 submission.actual_value = command.actual_value
-                submission.outcome_at = datetime.now(timezone.utc)
-                submission.updated_at = datetime.now(timezone.utc)
+                submission.outcome_at = datetime.now(UTC)
+                submission.updated_at = datetime.now(UTC)
                 
                 # Save
                 submission = await repo.update(submission)
-                await session.commit()
+
                 
                 # Emit event
                 from app.core.event_bus import event_bus
@@ -114,7 +116,8 @@ class MarkSubmissionLostHandler(CommandHandler[MarkSubmissionLostCommand, Submis
     async def handle(self, command: MarkSubmissionLostCommand) -> Result[Submission, Exception]:
         """Mark submission as lost."""
         try:
-            async with AsyncSessionLocal() as session:
+            async with AsyncUnitOfWork() as uow:
+                session = uow.session
                 repo = SubmissionRepository(session)
                 
                 # Get submission
@@ -125,12 +128,12 @@ class MarkSubmissionLostHandler(CommandHandler[MarkSubmissionLostCommand, Submis
                 # Update status
                 submission.status = "lost"
                 submission.lost_reason_primary = command.lost_reason
-                submission.outcome_at = datetime.now(timezone.utc)
-                submission.updated_at = datetime.now(timezone.utc)
+                submission.outcome_at = datetime.now(UTC)
+                submission.updated_at = datetime.now(UTC)
                 
                 # Save
                 submission = await repo.update(submission)
-                await session.commit()
+
                 
                 # Emit event
                 from app.core.event_bus import event_bus
@@ -154,7 +157,8 @@ class GetSubmissionHandler(QueryHandler[GetSubmissionQuery, Submission]):
     async def handle(self, query: GetSubmissionQuery) -> Result[Submission, Exception]:
         """Get submission."""
         try:
-            async with AsyncSessionLocal() as session:
+            async with AsyncUnitOfWork() as uow:
+                session = uow.session
                 repo = SubmissionRepository(session)
                 submission = await repo.get_by_id(query.submission_id)
                 
@@ -174,7 +178,8 @@ class ListSubmissionsHandler(QueryHandler[ListSubmissionsQuery, list]):
     async def handle(self, query: ListSubmissionsQuery) -> Result[list, Exception]:
         """List submissions."""
         try:
-            async with AsyncSessionLocal() as session:
+            async with AsyncUnitOfWork() as uow:
+                session = uow.session
                 repo = SubmissionRepository(session)
                 
                 # Get submissions

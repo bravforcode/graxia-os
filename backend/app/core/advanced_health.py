@@ -5,13 +5,12 @@ Enterprise-grade monitoring: trend analysis, predictive alerts, SLA tracking
 """
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
-from enum import Enum
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any
-from collections import deque
 import statistics
-
+from collections import deque
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
+from enum import Enum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +54,7 @@ class MetricHistory:
         self.values.append(value)
         self.timestamps.append(timestamp)
 
-    def get_recent_values(self, n: int) -> List[float]:
+    def get_recent_values(self, n: int) -> list[float]:
         """Get last n values."""
         return list(self.values)[-n:]
 
@@ -79,9 +78,9 @@ class HealthAlert:
     severity: AlertSeverity
     message: str
     timestamp: datetime
-    predicted_failure_at: Optional[datetime] = None
+    predicted_failure_at: datetime | None = None
     trend: HealthTrend = HealthTrend.UNKNOWN
-    metrics: Dict[str, Any] = field(default_factory=dict)
+    metrics: dict[str, Any] = field(default_factory=dict)
 
 
 class AdvancedHealthChecker:
@@ -106,9 +105,9 @@ class AdvancedHealthChecker:
     alert_cooldown_seconds: int = 300  # 5 minutes
 
     def __init__(self):
-        self.metric_history: Dict[str, Dict[str, MetricHistory]] = {}
-        self.last_alert_time: Dict[str, datetime] = {}
-        self.last_alert_severity: Dict[str, AlertSeverity] = {}
+        self.metric_history: dict[str, dict[str, MetricHistory]] = {}
+        self.last_alert_time: dict[str, datetime] = {}
+        self.last_alert_severity: dict[str, AlertSeverity] = {}
         self._lock = asyncio.Lock()
 
     def _get_or_create_metric_history(self, service: str, metric_name: str) -> MetricHistory:
@@ -123,7 +122,7 @@ class AdvancedHealthChecker:
 
         return self.metric_history[service][metric_name]
 
-    def _calculate_trend(self, values: List[float]) -> HealthTrend:
+    def _calculate_trend(self, values: list[float]) -> HealthTrend:
         """
         Calculate trend from value series.
 
@@ -173,10 +172,10 @@ class AdvancedHealthChecker:
 
     def _predict_failure_time(
         self,
-        values: List[float],
+        values: list[float],
         threshold: float,
         check_interval_seconds: float = 60.0
-    ) -> Optional[float]:
+    ) -> float | None:
         """
         Predict time until value exceeds threshold.
 
@@ -222,8 +221,8 @@ class AdvancedHealthChecker:
     async def check_service_health(
         self,
         service_name: str,
-        metrics: Dict[str, List[float]]
-    ) -> Dict[str, Any]:
+        metrics: dict[str, list[float]]
+    ) -> dict[str, Any]:
         """
         Check service health and generate predictive alerts.
 
@@ -237,7 +236,7 @@ class AdvancedHealthChecker:
         async with self._lock:
             results = {
                 "service": service_name,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "metrics": {},
                 "trends": {},
                 "predictions": {},
@@ -248,7 +247,7 @@ class AdvancedHealthChecker:
                 # Update history
                 history = self._get_or_create_metric_history(service_name, metric_name)
                 for val in values:
-                    history.add_metric(val, datetime.now(timezone.utc))
+                    history.add_metric(val, datetime.now(UTC))
 
                 # Calculate trend
                 recent = history.get_recent_values(self.TREND_WINDOW_SIZE)
@@ -262,7 +261,7 @@ class AdvancedHealthChecker:
 
                     if prediction is not None and prediction < self.PREDICTION_THRESHOLD:
                         severity = AlertSeverity.from_prediction_time(prediction)
-                        predicted_time = datetime.now(timezone.utc) + timedelta(seconds=prediction)
+                        predicted_time = datetime.now(UTC) + timedelta(seconds=prediction)
 
                         alert_msg = (
                             f"🔮 Predictive Alert: {service_name} {metric_name} "
@@ -301,7 +300,7 @@ class AdvancedHealthChecker:
         """
         Send alert with deduplication and escalation handling.
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         alert_key = f"{service}:{message}"
 
         # Check cooldown
@@ -343,8 +342,8 @@ class AdvancedHealthChecker:
 
     async def detect_correlated_failures(
         self,
-        service_histories: Dict[str, Dict[str, List[float]]]
-    ) -> Optional[str]:
+        service_histories: dict[str, dict[str, list[float]]]
+    ) -> str | None:
         """
         Detect when multiple services are failing simultaneously.
 
@@ -379,7 +378,7 @@ class AdvancedHealthChecker:
     def _check_sla_breach(
         self,
         service: str,
-        error_rates: List[float],
+        error_rates: list[float],
         max_error_rate: float = 0.001  # 99.9% SLA
     ) -> bool:
         """
@@ -403,7 +402,7 @@ class AdvancedHealthChecker:
 
         return False
 
-    async def run_full_health_check(self, services: List[str]) -> Dict[str, Any]:
+    async def run_full_health_check(self, services: list[str]) -> dict[str, Any]:
         """
         Run comprehensive health check on all services.
 
@@ -428,7 +427,7 @@ class AdvancedHealthChecker:
 
         return results
 
-    async def _get_service_metrics(self, service: str) -> Dict[str, List[float]]:
+    async def _get_service_metrics(self, service: str) -> dict[str, list[float]]:
         """
         Get metrics for a service. Override in subclass or implement per service.
         """
@@ -438,10 +437,10 @@ class AdvancedHealthChecker:
             "error_rate": [0.001, 0.002, 0.001, 0.003, 0.002]
         }
 
-    async def generate_health_report(self) -> Dict[str, Any]:
+    async def generate_health_report(self) -> dict[str, Any]:
         """Generate comprehensive health report."""
         report = {
-            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "generated_at": datetime.now(UTC).isoformat(),
             "services": {},
             "system_wide": {
                 "total_services": len(self.metric_history),
@@ -480,9 +479,9 @@ class AdvancedHealthChecker:
 def predictive_alert(
     service: str,
     metric: str,
-    values: List[float],
+    values: list[float],
     threshold: float
-) -> Optional[Dict[str, Any]]:
+) -> dict[str, Any] | None:
     """
     Quick predictive alert check.
 

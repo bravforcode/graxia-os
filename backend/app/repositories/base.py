@@ -4,11 +4,10 @@ Repository Pattern
 Abstract data access layer with clean interfaces.
 """
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar, Optional, List
+from typing import Generic, TypeVar
 from uuid import UUID
 
 from app.core.specifications import Specification
-
 
 T = TypeVar('T')
 
@@ -17,12 +16,12 @@ class Repository(ABC, Generic[T]):
     """Base repository interface."""
     
     @abstractmethod
-    async def get_by_id(self, id: UUID) -> Optional[T]:
+    async def get_by_id(self, id: UUID) -> T | None:
         """Get entity by ID."""
         pass
     
     @abstractmethod
-    async def get_all(self, skip: int = 0, limit: int = 100) -> List[T]:
+    async def get_all(self, skip: int = 0, limit: int = 100) -> list[T]:
         """Get all entities with pagination."""
         pass
     
@@ -42,7 +41,7 @@ class Repository(ABC, Generic[T]):
         pass
     
     @abstractmethod
-    async def find(self, specification: Specification[T]) -> List[T]:
+    async def find(self, specification: Specification[T]) -> list[T]:
         """Find entities matching specification."""
         pass
     

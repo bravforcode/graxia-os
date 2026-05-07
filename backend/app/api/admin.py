@@ -8,10 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.circuit_breaker import get_all_circuit_breakers
 from app.core.monitoring import metrics_collector
+from app.api.deps import require_admin
 from app.database import get_db
 from app.models.audit import AuditLog
-from app.tasks.celery_app import celery_app
 from app.tasks.beat_lock import get_beat_lock_status
+from app.tasks.celery_app import celery_app
 from app.tasks.dlq_handler import DeadLetterQueue
 from app.tasks.queues import get_queue_depths
 
@@ -35,7 +36,12 @@ class AuditLogEntry(TypedDict):
 
 
 @router.get("/audit-logs")
-async def get_audit_logs(db: DbSession, limit: int = 50, offset: int = 0) -> dict[str, Any]:
+async def get_audit_logs(
+    db: DbSession,
+    limit: int = 50,
+    offset: int = 0,
+    _adm: object = Depends(require_admin),
+) -> dict[str, Any]:
     rows = list(
         (
             await db.execute(
@@ -65,7 +71,12 @@ async def get_audit_logs(db: DbSession, limit: int = 50, offset: int = 0) -> dic
 
 
 @router.get("/dlq")
-async def list_dlq_messages(request: Request, offset: int = 0, limit: int = 20) -> dict[str, Any]:
+async def list_dlq_messages(
+    request: Request,
+    offset: int = 0,
+    limit: int = 20,
+    _adm: object = Depends(require_admin),
+) -> dict[str, Any]:
     queue = DeadLetterQueue(getattr(request.app.state, "redis", None))
     messages = await queue.list_messages(offset=offset, limit=limit)
     return {
@@ -85,7 +96,11 @@ async def list_dlq_messages(request: Request, offset: int = 0, limit: int = 20) 
 
 
 @router.post("/dlq/{message_id}/replay")
-async def replay_dlq_message(message_id: str, request: Request) -> dict[str, Any]:
+async def replay_dlq_message(
+    message_id: str,
+    request: Request,
+    _adm: object = Depends(require_admin),
+) -> dict[str, Any]:
     operator_id = getattr(request.state, "authenticated_user_id", "admin")
     queue = DeadLetterQueue(getattr(request.app.state, "redis", None))
     success = await queue.replay_message(message_id, operator_id=operator_id)
@@ -93,7 +108,10 @@ async def replay_dlq_message(message_id: str, request: Request) -> dict[str, Any
 
 
 @router.get("/runtime")
-async def get_runtime_state(request: Request) -> dict[str, Any]:
+async def get_runtime_state(
+    request: Request,
+    _adm: object = Depends(require_admin),
+) -> dict[str, Any]:
     redis_client = getattr(request.app.state, "redis", None)
     beat = await get_beat_lock_status(redis_client)
     queue_depths = await get_queue_depths(redis_client, use_pool_fallback=False)

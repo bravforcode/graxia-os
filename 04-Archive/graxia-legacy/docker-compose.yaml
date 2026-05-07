@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # Business Truth Database
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-bravos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bravos_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-bravos_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Semantic Cache & Rate Limiting
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # Vector Memory (RAG)
+  qdrant:
+    image: qdrant/qdrant:v1.9.0
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  # Durable Workflow Engine
+  temporal:
+    image: temporalio/admin-tools:latest
+    depends_on:
+      - postgres
+    environment:
+      - TEMPORAL_CLI_ADDRESS=temporal:7233
+    ports:
+      - "7233:7233"
+      - "8233:8233"
+
+volumes:
+  postgres_data:
+  redis_data:
+  qdrant_data:

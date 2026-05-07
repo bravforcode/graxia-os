@@ -8,7 +8,6 @@ Create Date: 2026-04-12
 from collections.abc import Sequence
 
 from alembic import op
-
 from app.models import Base
 
 # revision identifiers, used by Alembic.

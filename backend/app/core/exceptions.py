@@ -3,7 +3,7 @@ Enterprise Exception Hierarchy
 
 Clean, typed exceptions for better error handling and debugging.
 """
-from typing import Optional, Dict, Any
+from typing import Any
 
 
 class PersonalOSException(Exception):
@@ -13,8 +13,8 @@ class PersonalOSException(Exception):
         self,
         message: str,
         code: str,
-        details: Optional[Dict[str, Any]] = None,
-        cause: Optional[Exception] = None
+        details: dict[str, Any] | None = None,
+        cause: Exception | None = None
     ):
         self.message = message
         self.code = code
@@ -22,7 +22,7 @@ class PersonalOSException(Exception):
         self.cause = cause
         super().__init__(message)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert exception to dictionary for API responses."""
         return {
             "error": {
@@ -71,7 +71,7 @@ class APIException(PersonalOSException):
 class RateLimitException(APIException):
     """API rate limit exceeded."""
     
-    def __init__(self, service: str, retry_after: Optional[int] = None):
+    def __init__(self, service: str, retry_after: int | None = None):
         super().__init__(
             message=f"Rate limit exceeded for {service}",
             code="RATE_LIMIT_EXCEEDED",

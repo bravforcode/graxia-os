@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  brav-os-api:
+    build: .
+    container_name: brav-os-api
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis-cache:6379/0
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - ENVIRONMENT=production
+    depends_on:
+      - redis-cache
+      - qdrant
+    networks:
+      - brav-os-network
+    restart: always
+
+  redis-cache:
+    image: redis/redis-stack-server:latest
+    container_name: redis-cache
+    ports:
+      - "6379:6379"
+      - "8001:8001" # RedisInsight
+    networks:
+      - brav-os-network
+    volumes:
+      - redis-data:/data
+    restart: always
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    networks:
+      - brav-os-network
+    volumes:
+      - qdrant-data:/qdrant/storage
+    restart: always
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
+      - "8888:8888" # Metrics
+    networks:
+      - brav-os-network
+    restart: always
+
+networks:
+  brav-os-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+  qdrant-data:

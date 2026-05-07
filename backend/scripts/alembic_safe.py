@@ -12,6 +12,5 @@ if str(BACKEND_ROOT) not in sys.path:
 import app as _app_bootstrap  # noqa: F401 - install Windows platform import guards
 from alembic.config import main
 
-
 if __name__ == "__main__":
     main(argv=sys.argv[1:])

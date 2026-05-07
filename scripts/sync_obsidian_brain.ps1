@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-$vaultBrain = "C:\Users\menum\Documents\ObsidianVault\Second Brain\brain\latest.md"
+$vaultBrain = "C:\Users\menum\OneDrive\Documents\Gracia\Second Brain\brain\latest.md"
 $globalDir = Join-Path $env:USERPROFILE ".ai"
 New-Item -ItemType Directory -Force -Path $globalDir | Out-Null
 $snapshotPath = Join-Path $globalDir "BRAIN_SNAPSHOT.md"

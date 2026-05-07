@@ -3,7 +3,6 @@ import subprocess
 from pathlib import Path
 
 import pytest
-
 from scripts.backup_database import BackupManifest, DatabaseBackup, compute_sha256
 from scripts.restore_database import DatabaseRestore
 
@@ -73,7 +72,9 @@ def test_database_backup_creates_age_encrypted_artifact_and_manifest(tmp_path: P
     assert result.artifact_path.exists()
     assert result.manifest_path.exists()
     assert result.manifest.checksum_plaintext == hashlib.sha256(b"PGDMP custom format").hexdigest()
-    assert result.manifest.checksum_encrypted == hashlib.sha256(b"age encrypted payload").hexdigest()
+    assert (
+        result.manifest.checksum_encrypted == hashlib.sha256(b"age encrypted payload").hexdigest()
+    )
     assert any(cmd[0] == "age" and "--recipient" in cmd for cmd in commands)
     assert any(cmd[0] == "pg_dump" and "-F" in cmd and "c" in cmd for cmd in commands)
 
@@ -133,9 +134,13 @@ def test_restore_decrypts_and_verifies_plaintext_checksum(tmp_path: Path, monkey
         Path(cmd[cmd.index("--output") + 1]).write_bytes(plaintext_payload)
         return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
 
-    monkeypatch.setattr("scripts.restore_database.settings.BACKUP_ENCRYPTION_PRIVATE_KEY_FILE", str(key_file))
+    monkeypatch.setattr(
+        "scripts.restore_database.settings.BACKUP_ENCRYPTION_PRIVATE_KEY_FILE", str(key_file)
+    )
     monkeypatch.setattr("scripts.restore_database.subprocess.run", fake_run)
 
-    restored_dump = DatabaseRestore().prepare_backup_for_restore(encrypted, manifest, work_dir=tmp_path)
+    restored_dump = DatabaseRestore().prepare_backup_for_restore(
+        encrypted, manifest, work_dir=tmp_path
+    )
 
     assert restored_dump.read_bytes() == plaintext_payload

@@ -1,18 +1,16 @@
 """Scraper run model for tracking scraper execution history."""
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
-from sqlalchemy import String, Integer, Text, TIMESTAMP, Index, case
+from sqlalchemy import TIMESTAMP, Index, Integer, String, Text, case, func, select
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import select, func
 
 from .base import Base
 
 
 def _utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class ScraperRun(Base):
@@ -39,16 +37,16 @@ class ScraperRun(Base):
     
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     scraper_name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    platform: Mapped[Optional[str]] = mapped_column(String(100))
-    run_type: Mapped[Optional[str]] = mapped_column(String(50))
+    platform: Mapped[str | None] = mapped_column(String(100))
+    run_type: Mapped[str | None] = mapped_column(String(50))
     items_found: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     items_new: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     items_updated: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
-    duration_seconds: Mapped[Optional[int]] = mapped_column(Integer)
-    status: Mapped[Optional[str]] = mapped_column(String(50), index=True)
-    error_message: Mapped[Optional[str]] = mapped_column(Text)
-    started_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True))
-    completed_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True))
+    duration_seconds: Mapped[int | None] = mapped_column(Integer)
+    status: Mapped[str | None] = mapped_column(String(50), index=True)
+    error_message: Mapped[str | None] = mapped_column(Text)
+    started_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=_utc_now)
     
     __table_args__ = (
@@ -74,7 +72,7 @@ class ScraperRun(Base):
         return self.status == "partial"
     
     @property
-    def success_rate(self) -> Optional[float]:
+    def success_rate(self) -> float | None:
         """Calculate success rate (new + updated / found)."""
         if not self.items_found:
             return None

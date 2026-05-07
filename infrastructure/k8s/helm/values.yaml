@@ -1,0 +1,42 @@
+replicaCount: 3
+
+image:
+  repository: bravos/intelligence
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+# HPA Configuration
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+  
+  # Custom metrics (Prometheus Adapter required)
+  customMetrics:
+    - name: brav_os_request_queue_length
+      target:
+        type: Value
+        value: 50
+
+# Application Configuration
+config:
+  env: production
+  logLevel: INFO
+  defaultModel: gpt-4-turbo
+  
+# Secrets (Reference existing secret)
+existingSecret: "brav-os-secrets"

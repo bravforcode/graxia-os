@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated, TypedDict
 from uuid import UUID
 
@@ -50,7 +50,7 @@ async def approve_draft(draft_id: UUID, db: DbSession) -> DraftStatusResponse:
     if row is None:
         raise HTTPException(status_code=404, detail="Draft not found")
     row.status = "approved"
-    row.approved_at = datetime.now(timezone.utc)
+    row.approved_at = datetime.now(UTC)
     await db.commit()
     return {"status": row.status or "approved"}
 
@@ -66,6 +66,6 @@ async def reject_draft(
         raise HTTPException(status_code=404, detail="Draft not found")
     row.status = "rejected"
     row.rejection_reason = payload.reason
-    row.updated_at = datetime.now(timezone.utc)
+    row.updated_at = datetime.now(UTC)
     await db.commit()
     return {"status": row.status or "rejected"}

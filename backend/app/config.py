@@ -73,8 +73,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ENV_FILE, case_sensitive=True, extra="ignore")
 
     # Security
-    SECRET_KEY: str = "development-secret-key-change-me"
-    ENCRYPTION_KEY: str = ""
+    SECRET_KEY: str | None = None
+    ENCRYPTION_KEY: str | None = None
     API_KEY: str = ""
     INTERNAL_API_KEY: str = ""
 
@@ -89,6 +89,25 @@ class Settings(BaseSettings):
     SECURITY_LOCKOUT_DURATION: int = 300  # Lockout duration in seconds (5 min)
     SECURITY_REQUIRE_MFA: bool = False  # Require MFA for admin users
     SECURITY_AUDIT_RETENTION_DAYS: int = 90  # Audit log retention
+
+    # Security Headers Configuration (L-09)
+    SECURITY_HEADERS_CSP: str = (
+        "default-src 'self'; "
+        "script-src 'self'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: https:; "
+        "font-src 'self'; "
+        "connect-src 'self'; "
+        "frame-ancestors 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self'"
+    )
+    SECURITY_HEADERS_HSTS_MAX_AGE: int = 63072000  # 2 years in seconds
+    SECURITY_HEADERS_FRAME_OPTIONS: str = "DENY"
+    SECURITY_HEADERS_CONTENT_TYPE_OPTIONS: str = "nosniff"
+    SECURITY_HEADERS_REFERRER_POLICY: str = "strict-origin-when-cross-origin"
+    SECURITY_HEADERS_PERMISSIONS_POLICY: str = "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+    SECURITY_HEADERS_DNS_PREFETCH_CONTROL: str = "off"
 
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
@@ -128,7 +147,7 @@ class Settings(BaseSettings):
     DB_POOL_RECYCLE_SECONDS: int = 1800
     POSTGRES_DB: str = "personal_os"
     POSTGRES_USER: str = "personal_os"
-    POSTGRES_PASSWORD: str = "changeme"
+    POSTGRES_PASSWORD: str | None = None
 
     # Redis
     REDIS_PASSWORD: str = ""
@@ -177,15 +196,43 @@ class Settings(BaseSettings):
     MID_MODEL_OUTPUT_COST_PER_1M: float = 0.0
     HIGH_QUALITY_MODEL_INPUT_COST_PER_1M: float = 0.0
     HIGH_QUALITY_MODEL_OUTPUT_COST_PER_1M: float = 0.0
+    # Model Router Configuration
     ROUTER_SIMPLE_MAX_COMPLEXITY: int = 2
     ROUTER_MEDIUM_MAX_COMPLEXITY: int = 6
     MAX_SINGLE_LLM_CALL_COST_USD: float = 0.10
+    
+    # Model Router Task Defaults (tier, budget_tag, default_tokens)
+    # Format: "task_class": "tier,budget_tag,tokens"
+    ROUTER_TASK_DEFAULTS: str = (
+        "classification:cheap,low,300;"
+        "triage:cheap,low,400;"
+        "short_summary:cheap,low,450;"
+        "analysis:mid,standard,800;"
+        "short_draft:mid,standard,700;"
+        "meeting_summary:mid,standard,800;"
+        "proposal:high,high,1600;"
+        "strategy:high,high,1200"
+    )
+
+    # ML/AI
+    OLLAMA_URL: str = "http://localhost:11434"
+    DEFAULT_EMBEDDING_MODEL: str = "nomic-embed-text"
+    OPENAI_API_KEY: str = ""
+    OPENAI_BASE_URL: str = "https://api.openai.com/v1"
 
     # Telegram
     TELEGRAM_BOT_TOKEN: str = ""
     TELEGRAM_CHAT_ID: str = ""
     TELEGRAM_POLLING_ENABLED: bool = False
     ALERTMANAGER_WEBHOOK_TOKEN: str = ""
+    ALERTMANAGER_WEBHOOK_SECRET: str = ""
+
+    # Event Bus Configuration
+    EVENT_BUS_SHUTDOWN_TIMEOUT: int = 30  # Seconds to wait for graceful shutdown
+    EVENT_BUS_MAX_QUEUE_SIZE: int = 10000  # Maximum queue size for backpressure
+    
+    # CSRF Configuration
+    CSRF_TOKEN_EXPIRY_HOURS: int = 1  # CSRF token expiry time in hours
 
     # Google Workspace
     GOOGLE_CLIENT_ID: str = ""
@@ -204,6 +251,9 @@ class Settings(BaseSettings):
     STRIPE_PRICE_STARTER_MONTHLY: str = ""
     STRIPE_PRICE_PRO_MONTHLY: str = ""
     STRIPE_PRICE_ENTERPRISE_MONTHLY: str = ""
+
+    # Email
+    RESEND_API_KEY: str = ""
 
     # Identity
     IDENTITY_PATH: str = "/identity/profile.yaml"
@@ -274,9 +324,7 @@ class Settings(BaseSettings):
     SENTRY_TRACES_SAMPLE_RATE: float = 0.1
     SENTRY_PROFILES_SAMPLE_RATE: float = 0.1
 
-    # Enterprise Security - IP Filtering
-    IP_WHITELIST: list[str] = []
-    IP_BLACKLIST: list[str] = []
+    # Enterprise Security - Rate Limiting
     RATE_LIMIT_REQUESTS_PER_MINUTE: int = 100
     RATE_LIMIT_BURST: int = 10
 
@@ -308,6 +356,64 @@ class Settings(BaseSettings):
             }
             self.OPENCLAW_BASE_URL = _rewrite_hostname(self.OPENCLAW_BASE_URL, host_map)
             self.OBSIDIAN_API_URL = _rewrite_hostname(self.OBSIDIAN_API_URL, host_map)
+        return self
+
+    @model_validator(mode="after")
+    def validate_required_secrets(self):
+        """Validate that required secrets are configured in non-testing environments."""
+        if self.APP_ENV.lower() == "testing":
+            # Testing mode allows defaults for convenience
+            if self.SECRET_KEY is None:
+                self.SECRET_KEY = "test-secret-key-min-32-chars-long-for-testing-purposes"
+            if self.ENCRYPTION_KEY is None:
+                self.ENCRYPTION_KEY = "test-encryption-key-32-chars!!"
+            if self.POSTGRES_PASSWORD is None:
+                self.POSTGRES_PASSWORD = "test-password"
+            return self
+
+        # For development and production, validate required secrets
+        required_secrets = {
+            "SECRET_KEY": self.SECRET_KEY,
+            "ENCRYPTION_KEY": self.ENCRYPTION_KEY,
+            "POSTGRES_PASSWORD": self.POSTGRES_PASSWORD,
+        }
+
+        # Check for missing or placeholder-looking secrets
+        missing = []
+        weak = []
+        
+        for key, value in required_secrets.items():
+            if not value or self._looks_placeholder(value):
+                missing.append(key)
+            elif key == "SECRET_KEY" and len(value.strip()) < 32:
+                weak.append(f"{key} must be at least 32 characters (current: {len(value.strip())})")
+            elif key == "ENCRYPTION_KEY" and len(value.strip()) < 32:
+                weak.append(f"{key} must be at least 32 characters (current: {len(value.strip())})")
+            elif key == "POSTGRES_PASSWORD" and len(value.strip()) < 16:
+                weak.append(f"{key} must be at least 16 characters (current: {len(value.strip())})")
+
+        # Check entropy for SECRET_KEY
+        if self.SECRET_KEY and not self._looks_placeholder(self.SECRET_KEY):
+            entropy = self._entropy(self.SECRET_KEY)
+            if entropy < 4.0:
+                weak.append(f"SECRET_KEY has insufficient entropy ({entropy:.2f} bits, minimum 4.0)")
+
+        errors = []
+        if missing:
+            errors.append(
+                f"Required secrets not configured: {', '.join(missing)}. "
+                f"Set them in .env file before starting the application. "
+                f"Generate strong secrets using:\n"
+                f"  SECRET_KEY: openssl rand -hex 32\n"
+                f"  ENCRYPTION_KEY: openssl rand -hex 32\n"
+                f"  POSTGRES_PASSWORD: openssl rand -base64 32"
+            )
+        if weak:
+            errors.append("Weak secrets detected:\n  " + "\n  ".join(weak))
+
+        if errors:
+            raise RuntimeError("\n\n".join(errors))
+
         return self
 
     @staticmethod

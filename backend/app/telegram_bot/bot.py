@@ -5,26 +5,21 @@ Provides command handlers, approval flow, and notifications.
 """
 import asyncio
 import logging
-from datetime import datetime, timezone
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import (
-    Application,
-    CommandHandler,
-    CallbackQueryHandler,
-    ContextTypes
-)
+from sqlalchemy import select
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import Application, CallbackQueryHandler, CommandHandler, ContextTypes
 
 from app.config import settings
 from app.database import AsyncSessionLocal
 from app.models.approval_request import ApprovalRequest
-from sqlalchemy import select
 
 logger = logging.getLogger(__name__)
 
 # Global application instance
-_app: Optional[Application] = None
+_app: Application | None = None
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -105,7 +100,7 @@ async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 • Pending Tasks: {status.get('pending_tasks', 0)}
 • Unread Emails: {status.get('unread_emails', 0)}
 
-🕐 Last Updated: {datetime.now(timezone.utc).strftime('%H:%M:%S UTC')}
+🕐 Last Updated: {datetime.now(UTC).strftime('%H:%M:%S UTC')}
 """
         await update.message.reply_text(message)
     except Exception as e:
@@ -175,7 +170,7 @@ async def tasks_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         from app.models.assistant_task import AssistantTask
         
         async with AsyncSessionLocal() as db:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             
             # Get overdue and urgent tasks
             query = (
@@ -214,12 +209,13 @@ async def tasks_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def costs_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /costs command."""
     try:
-        from app.models.openclaw_usage import OpenClawUsage
         from sqlalchemy import func
+
+        from app.models.openclaw_usage import OpenClawUsage
         
         async with AsyncSessionLocal() as db:
-            today = datetime.now(timezone.utc).date()
-            month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0)
+            today = datetime.now(UTC).date()
+            month_start = datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0)
             
             # Today's cost
             today_query = select(func.sum(OpenClawUsage.cost_usd)).where(
@@ -322,7 +318,7 @@ async def approval_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             
             # Update approval status
             approval.status = "approved" if action == "approve" else "rejected"
-            approval.responded_at = datetime.now(timezone.utc)
+            approval.responded_at = datetime.now(UTC)
             approval.response_notes = "Via Telegram by user"
             
             await db.commit()
@@ -490,7 +486,7 @@ def setup_bot() -> Application:
     return _app
 
 
-def get_application() -> Optional[Application]:
+def get_application() -> Application | None:
     """Get the global application instance."""
     return _app
 

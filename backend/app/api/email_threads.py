@@ -1,5 +1,4 @@
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -19,11 +18,11 @@ class EmailThreadResponse(BaseModel):
 
     id: UUID
     thread_id: str
-    subject: Optional[str]
+    subject: str | None
     participants: list
-    category: Optional[str]
+    category: str | None
     priority: int
-    last_message_at: Optional[datetime]
+    last_message_at: datetime | None
     unread_count: int
     has_attachments: bool
     action_items: list
@@ -82,8 +81,8 @@ async def get_email_stats(db: AsyncSession = Depends(get_db)):
 @router.get("/", response_model=EmailThreadListResponse)
 async def list_email_threads(
     db: AsyncSession = Depends(get_db),
-    category: Optional[str] = Query(None, description="Filter by category"),
-    status: Optional[str] = Query(None, description="Filter by status"),
+    category: str | None = Query(None, description="Filter by category"),
+    status: str | None = Query(None, description="Filter by status"),
     unread_only: bool = Query(False, description="Show only unread"),
     limit: int = Query(50, le=100),
     offset: int = Query(0, ge=0),
@@ -139,7 +138,7 @@ async def mark_thread_read(thread_id: UUID, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Email thread not found")
 
     thread.mark_as_read()
-    thread.updated_at = datetime.now(timezone.utc)
+    thread.updated_at = datetime.now(UTC)
 
     await db.commit()
     await db.refresh(thread)

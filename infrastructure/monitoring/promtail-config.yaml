@@ -1,0 +1,94 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Promtail Configuration for Graxia OS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # ── Graxia API Logs ──
+  - job_name: graxia-api
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: api
+          service: graxia-api
+          __path__: /var/log/graxia/api*.log
+    pipeline_stages:
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            message: message
+            request_id: request_id
+            user_id: user_id
+      - timestamp:
+          source: timestamp
+          format: RFC3339
+      - labels:
+          level:
+          service:
+      - output:
+          source: message
+
+  # ── Celery Worker Logs ──
+  - job_name: graxia-worker
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: worker
+          service: graxia-worker
+          __path__: /var/log/graxia/worker*.log
+    pipeline_stages:
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            message: message
+            task_name: task_name
+            task_id: task_id
+      - timestamp:
+          source: timestamp
+          format: RFC3339
+      - labels:
+          level:
+          task_name:
+
+  # ── Trading Logs ──
+  - job_name: graxia-trading
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: trading
+          service: quant-os
+          __path__: /var/log/graxia/trading*.log
+
+  # ── Revenue Logs ──
+  - job_name: graxia-revenue
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: revenue
+          service: revenue-os
+          __path__: /var/log/graxia/revenue*.log
+
+  # ── System Logs ──
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: system
+          service: graxia-system
+          __path__: /var/log/graxia/system*.log

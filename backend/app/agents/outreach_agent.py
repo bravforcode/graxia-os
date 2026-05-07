@@ -1,5 +1,5 @@
 import logging
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 from uuid import uuid4
 
@@ -109,12 +109,13 @@ class OutreachAgent(BaseAgent):
         return default_subject, body, html_body, token, token_payload
 
     async def run(self) -> dict[str, Any]:
+        from sqlalchemy import func
+
         from app.database import AsyncSessionLocal
         from app.models.automation_run import AutomationRun
         from app.models.contact import Contact
         from app.models.network_interaction import NetworkInteraction
         from app.telegram_bot.bot import send_message
-        from sqlalchemy import func
 
         max_per_day = int(settings.OUTREACH_MAX_PER_DAY or 0)
         min_days = int(settings.OUTREACH_MIN_DAYS_BETWEEN_CONTACT or 0)
@@ -122,7 +123,7 @@ class OutreachAgent(BaseAgent):
         if max_per_day <= 0:
             return {"status": "skipped", "reason": "max_per_day<=0"}
 
-        today = datetime.now(timezone.utc).date()
+        today = datetime.now(UTC).date()
         cutoff_date = today - timedelta(days=min_days)
 
         sent = 0
@@ -237,7 +238,7 @@ class OutreachAgent(BaseAgent):
                 try:
                     from app.core.google_workspace import google_workspace
 
-                    message_id = await google_workspace.send_message(
+                    message_id = await google_workspace.send_message(  # ENFORCE
                         contact.email or "",
                         subject,
                         html_body,
@@ -259,7 +260,7 @@ class OutreachAgent(BaseAgent):
                             id=uuid4(),
                             contact_id=contact.id,
                             interaction_type=interaction_type,
-                            interaction_at=datetime.now(timezone.utc),
+                            interaction_at=datetime.now(UTC),
                             notes=f"campaign_id={run.id} subject={subject}",
                         )
                     )
@@ -337,7 +338,7 @@ class OutreachAgent(BaseAgent):
                 try:
                     from app.core.google_workspace import google_workspace
 
-                    message_id = await google_workspace.send_message(
+                    message_id = await google_workspace.send_message(  # ENFORCE
                         contact.email or "",
                         subject,
                         html_body,
@@ -354,7 +355,7 @@ class OutreachAgent(BaseAgent):
                             id=uuid4(),
                             contact_id=contact.id,
                             interaction_type="email_outreach_initial",
-                            interaction_at=datetime.now(timezone.utc),
+                            interaction_at=datetime.now(UTC),
                             notes=f"campaign_id={run.id} subject={subject}",
                         )
                     )
@@ -384,7 +385,7 @@ class OutreachAgent(BaseAgent):
                 if run_row:
                     run_row.status = "completed"
                     run_row.result = {"sent": sent, "followups": followups_sent, "skipped": skipped}
-                    run_row.completed_at = datetime.now(timezone.utc)
+                    run_row.completed_at = datetime.now(UTC)
                     await db.commit()
         except Exception:
             pass

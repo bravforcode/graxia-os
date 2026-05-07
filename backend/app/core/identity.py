@@ -1,7 +1,8 @@
 import hashlib
 import logging
+from datetime import UTC
 from pathlib import Path
-from typing import Any, Optional, TypedDict, cast
+from typing import Any, TypedDict, cast
 
 import yaml
 
@@ -114,7 +115,7 @@ def _load_profile() -> ProfileData:
         return _profile_cache
 
     path = _resolve_profile_path()
-    with open(path, "r", encoding="utf-8") as file_handle:
+    with open(path, encoding="utf-8") as file_handle:
         loaded = yaml.safe_load(file_handle)
 
     if not isinstance(loaded, dict):
@@ -315,7 +316,7 @@ class IdentityCore:
             next_version = current_version + 1
 
             if current is not None:
-                setattr(current, "is_current", False)
+                current.is_current = False
 
             row = ScoringWeightHistory(
                 version=next_version,
@@ -338,7 +339,7 @@ class IdentityCore:
             }
 
     async def rollback_scoring_weights(self) -> WeightRollbackResult | None:
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         from sqlalchemy import desc, select
 
@@ -359,10 +360,10 @@ class IdentityCore:
             current, previous = rows[0], rows[1]
             restored_weights = _weight_map(getattr(previous, "weights", None))
 
-            setattr(current, "is_current", False)
-            setattr(previous, "is_current", True)
-            setattr(previous, "rolled_back_at", None)
-            setattr(current, "rolled_back_at", datetime.now(timezone.utc))
+            current.is_current = False
+            previous.is_current = True
+            previous.rolled_back_at = None
+            current.rolled_back_at = datetime.now(UTC)
             db.add(
                 AuditLog(
                     action="scoring_weights.rollback",
@@ -391,7 +392,7 @@ class IdentityCore:
         target_clients = _profile_section(self.get_profile().get("target_clients"))
         return _string(target_clients.get("ideal_client_description"))
 
-    def get_project_summaries(self, best_for: Optional[str] = None) -> list[ProjectSummary]:
+    def get_project_summaries(self, best_for: str | None = None) -> list[ProjectSummary]:
         projects = [
             cast(ProjectSummary, project)
             for project in _profile_list(self.get_profile().get("projects"))

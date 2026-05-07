@@ -1,0 +1,19 @@
+flowchart TD
+    %% System Overview - C4 Context Level
+
+    System["Graxia Revenue OS<br/>FastAPI + Celery + SQLAlchemy"]
+
+    %% Database
+    DB[("PostgreSQL<br/>Database")]
+    System --> DB
+
+    %% Cache
+    Cache[("Redis<br/>Cache & Queue")]
+    System --> Cache
+
+    %% Styling
+    classDef system fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    classDef external fill:#E8E8E8,stroke:#999,color:#333
+    classDef database fill:#50C878,stroke:#2E7D4E,color:#fff
+    class System system
+    class DB,Cache database

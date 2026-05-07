@@ -1,6 +1,6 @@
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from app.agents.base import BaseAgent
@@ -23,12 +23,13 @@ class Drafter(BaseAgent):
             logger.error(f"Drafter failed for {opp_id}: {e}", exc_info=True)
 
     async def _draft_for_opportunity(self, opp_id: uuid.UUID) -> None:
+        from sqlalchemy import select
+
+        from app.config import settings
+        from app.core.identity import identity
         from app.database import AsyncSessionLocal
         from app.models.content_draft import ContentDraft
         from app.models.opportunity import Opportunity
-        from app.core.identity import identity
-        from app.config import settings
-        from sqlalchemy import select
 
         async with AsyncSessionLocal() as db:
             opp = await db.get(Opportunity, opp_id)
@@ -123,7 +124,7 @@ Write the complete draft now. Make it real — not a template."""
             return None
 
         name = identity.get_profile().get("personal", {}).get("name") or "Developer"
-        now = datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d")
+        now = datetime.now(UTC).astimezone().strftime("%Y-%m-%d")
         description = (opp.description or "").strip().splitlines()
         first_line = (description[0] if description else "Automated system implementation.").strip()
         replacements = {

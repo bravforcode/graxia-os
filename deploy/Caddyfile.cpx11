@@ -1,0 +1,49 @@
+# Caddyfile optimized for CPX11 (2GB RAM)
+# Minimal config for reverse proxy + auto SSL
+# Edit: replace YOUR_DOMAIN with your actual domain
+
+{
+    admin off       # Disable admin API to save memory
+    log {
+        level ERROR  # Only log errors
+    }
+}
+
+# API + Static files - HTTPS with auto SSL (when domain configured)
+YOUR_DOMAIN {
+    reverse_proxy backend:8000
+
+    # Security headers
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        X-XSS-Protection "0"
+        Referrer-Policy strict-origin-when-cross-origin
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    }
+
+    # Compression
+    encode zstd gzip
+
+    # Logging (minimal)
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 10MB
+            roll_keep 3
+        }
+        level ERROR
+    }
+}
+
+# Fallback: HTTP only (before DNS is ready or for local testing)
+:80 {
+    reverse_proxy backend:8000
+
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy strict-origin-when-cross-origin
+    }
+
+    encode zstd gzip
+}

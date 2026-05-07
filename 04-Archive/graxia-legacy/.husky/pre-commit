@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🚀 Running pre-commit checks..."
+
+# 1. Lint and Format
+npm run lint
+python tools/check-hr-rules.py
+
+# 2. Block commit if checks fail
+if [ $? -ne 0 ]; then
+  echo "❌ Commit rejected. Please fix the violations above."
+  exit 1
+fi

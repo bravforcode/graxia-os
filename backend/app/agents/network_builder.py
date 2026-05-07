@@ -5,17 +5,17 @@ Discovers and manages professional contacts, builds network graph,
 and generates personalized outreach messages.
 """
 import logging
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
+from sqlalchemy import func, select
+
 from app.agents.base import BaseAgent
-from app.core.openclaw import openclaw_client, OpenClawRateLimitError
+from app.core.openclaw import OpenClawRateLimitError, openclaw_client
 from app.core.time_utils import business_today
 from app.database import AsyncSessionLocal
 from app.models.contact import Contact
 from app.models.network_interaction import NetworkInteraction
-from sqlalchemy import func, select
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +113,7 @@ class NetworkBuilderAgent(BaseAgent):
         
         return result
     
-    async def _contact_exists(self, profile_url: Optional[str]) -> bool:
+    async def _contact_exists(self, profile_url: str | None) -> bool:
         """Check if contact already exists."""
         if not profile_url:
             return False
@@ -129,7 +129,7 @@ class NetworkBuilderAgent(BaseAgent):
         except Exception:
             return False
     
-    async def _save_contact(self, contact_data: dict) -> Optional[Contact]:
+    async def _save_contact(self, contact_data: dict) -> Contact | None:
         """Save contact to database."""
         try:
             async with AsyncSessionLocal() as db:
@@ -143,8 +143,8 @@ class NetworkBuilderAgent(BaseAgent):
                     linkedin_url=contact_data.get("profile_url"),
                     relationship_strength=1,
                     last_contacted_at=None,
-                    created_at=datetime.now(timezone.utc),
-                    updated_at=datetime.now(timezone.utc)
+                    created_at=datetime.now(UTC),
+                    updated_at=datetime.now(UTC)
                 )
                 
                 db.add(contact)
@@ -219,8 +219,8 @@ Score this contact."""
     async def generate_outreach(
         self,
         contact_id: str,
-        context: Optional[str] = None
-    ) -> Optional[str]:
+        context: str | None = None
+    ) -> str | None:
         """
         Generate personalized outreach message.
         
@@ -296,7 +296,7 @@ Write a personalized outreach message."""
         self,
         contact_id: UUID,
         interaction_type: str,
-        notes: Optional[str] = None
+        notes: str | None = None
     ) -> None:
         """Log network interaction."""
         try:
@@ -305,9 +305,9 @@ Write a personalized outreach message."""
                     id=uuid4(),
                     contact_id=contact_id,
                     interaction_type=interaction_type,
-                    interaction_at=datetime.now(timezone.utc),
+                    interaction_at=datetime.now(UTC),
                     notes=notes,
-                    created_at=datetime.now(timezone.utc)
+                    created_at=datetime.now(UTC)
                 )
                 
                 db.add(interaction)

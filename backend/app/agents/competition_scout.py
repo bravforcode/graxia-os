@@ -1,4 +1,5 @@
 import logging
+
 from app.agents.base import BaseAgent
 
 logger = logging.getLogger(__name__)
@@ -11,8 +12,8 @@ class CompetitionScout(BaseAgent):
         """Run all competition scrapers, extract with LLM, save, emit events. Returns count found."""
         from app.scrapers.devpost import DevpostScraper
         from app.scrapers.eventpop import EventpopScraper
-        from app.scrapers.serpapi_search import SerpAPIScraper
         from app.scrapers.rss_reader import RSSReaderScraper
+        from app.scrapers.serpapi_search import SerpAPIScraper
 
         all_raw = []
         for scraper_cls in [DevpostScraper, EventpopScraper]:
@@ -48,9 +49,10 @@ class CompetitionScout(BaseAgent):
         return count
 
     async def _save_opportunity(self, raw: dict):
+        from sqlalchemy import select
+
         from app.database import AsyncSessionLocal
         from app.models.opportunity import Opportunity
-        from sqlalchemy import select
 
         source_hash = raw.get("source_hash")
         if not source_hash:

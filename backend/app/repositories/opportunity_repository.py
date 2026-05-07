@@ -1,16 +1,15 @@
 """
 Opportunity Repository Implementation
 """
-from datetime import datetime, timezone
-from typing import List, Optional
+from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import select, desc
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.repositories.base import Repository
-from app.models.opportunity import Opportunity
 from app.core.specifications import Specification
+from app.models.opportunity import Opportunity
+from app.repositories.base import Repository
 
 
 class OpportunityRepository(Repository[Opportunity]):
@@ -22,14 +21,14 @@ class OpportunityRepository(Repository[Opportunity]):
     def _base_query(self):
         return select(Opportunity).where(Opportunity.is_deleted.is_(False))
     
-    async def get_by_id(self, id: UUID) -> Optional[Opportunity]:
+    async def get_by_id(self, id: UUID) -> Opportunity | None:
         """Get opportunity by ID."""
         result = await self.session.execute(
             self._base_query().where(Opportunity.id == id).limit(1)
         )
         return result.scalar_one_or_none()
     
-    async def get_all(self, skip: int = 0, limit: int = 100) -> List[Opportunity]:
+    async def get_all(self, skip: int = 0, limit: int = 100) -> list[Opportunity]:
         """Get all opportunities with pagination."""
         query = (
             self._base_query()
@@ -58,12 +57,12 @@ class OpportunityRepository(Repository[Opportunity]):
         entity = await self.get_by_id(id)
         if entity:
             entity.is_deleted = True
-            entity.deleted_at = datetime.now(timezone.utc)
+            entity.deleted_at = datetime.now(UTC)
             await self.session.flush()
             return True
         return False
     
-    async def find(self, specification: Specification[Opportunity]) -> List[Opportunity]:
+    async def find(self, specification: Specification[Opportunity]) -> list[Opportunity]:
         """Find opportunities matching specification."""
         query = self._base_query().order_by(desc(Opportunity.total_score))
         result = await self.session.execute(query)
@@ -88,7 +87,7 @@ class OpportunityRepository(Repository[Opportunity]):
         entity = await self.get_by_id(id)
         return entity is not None
     
-    async def find_by_status(self, status: str, limit: int = 100) -> List[Opportunity]:
+    async def find_by_status(self, status: str, limit: int = 100) -> list[Opportunity]:
         """Find opportunities by status."""
         query = (
             self._base_query()
@@ -99,7 +98,7 @@ class OpportunityRepository(Repository[Opportunity]):
         result = await self.session.execute(query)
         return list(result.scalars().all())
     
-    async def find_high_score(self, threshold: float = 80.0, limit: int = 10) -> List[Opportunity]:
+    async def find_high_score(self, threshold: float = 80.0, limit: int = 10) -> list[Opportunity]:
         """Find high-scoring opportunities."""
         query = (
             self._base_query()

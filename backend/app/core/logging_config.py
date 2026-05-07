@@ -8,12 +8,11 @@ import logging
 import os
 import re
 import sys
-from datetime import datetime, timezone
-from pathlib import Path
-from typing import Any, Dict
-from contextvars import ContextVar
 import uuid
-
+from contextvars import ContextVar
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any
 
 # Context variable for request ID
 request_id_var: ContextVar[str] = ContextVar('request_id', default='')
@@ -52,7 +51,7 @@ TOKEN_PREFIX_PATTERN = re.compile(r"\b(?:sk|pk|ghp|xox[baprs])-[A-Za-z0-9._-]{8,
 
 
 def _utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _is_sensitive_field(name: str) -> bool:
@@ -112,7 +111,7 @@ class JSONFormatter(logging.Formatter):
     
     def format(self, record: logging.LogRecord) -> str:
         """Format log record as JSON."""
-        log_data: Dict[str, Any] = {
+        log_data: dict[str, Any] = {
             "timestamp": _utc_now().isoformat(),
             "level": record.levelname,
             "logger": record.name,

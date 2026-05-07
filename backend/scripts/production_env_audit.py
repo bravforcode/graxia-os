@@ -67,8 +67,12 @@ def _check_compose_frontend_bridge(compose_file: Path, result: AuditResult) -> N
 
 def _check_required_secret_files(repo_root: Path, result: AuditResult) -> None:
     required_secret_files = {
-        repo_root / "secrets" / "backup_private_key.txt": "backup private key mount source must exist",
-        repo_root / "secrets" / "alertmanager_webhook_token.txt": "alertmanager webhook token file must exist",
+        repo_root
+        / "secrets"
+        / "backup_private_key.txt": "backup private key mount source must exist",
+        repo_root
+        / "secrets"
+        / "alertmanager_webhook_token.txt": "alertmanager webhook token file must exist",
     }
     for path, message in required_secret_files.items():
         ok = path.exists() and path.is_file()
@@ -150,7 +154,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Audit .env.production before Docker preflight")
     parser.add_argument("--env-file", default=str(REPO_ROOT / ".env.production"))
     parser.add_argument("--compose-file", default=str(REPO_ROOT / "docker-compose.supabase.yml"))
-    parser.add_argument("--frontend-env-file", default=str(REPO_ROOT / "frontend" / ".env.production"))
+    parser.add_argument(
+        "--frontend-env-file", default=str(REPO_ROOT / "frontend" / ".env.production")
+    )
     args = parser.parse_args()
 
     result = audit_production_env(

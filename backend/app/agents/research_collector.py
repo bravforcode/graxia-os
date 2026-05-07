@@ -1,12 +1,12 @@
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.agents.base import BaseAgent
+from app.core.embedder import embed_text_async
 from app.core.llm import llm_client
 from app.core.model_router import route_task
 from app.database import AsyncSessionLocal
 from app.models.knowledge import KnowledgeItem
-from app.core.embedder import embed_text_async
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ class ResearchCollectorAgent(BaseAgent):
             
             try:
                 from app.core.obsidian_hub import obsidian_hub
-                date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+                date_str = datetime.now(UTC).strftime("%Y-%m-%d")
                 obsidian_hub.write_research(date_str, summary)
             except Exception as e:
                 logger.warning(f"Could not write to obsidian hub: {e}")

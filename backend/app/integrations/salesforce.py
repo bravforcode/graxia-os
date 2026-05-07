@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 
 import httpx
@@ -8,6 +9,21 @@ import httpx
 from app.config import settings
 
 logger = logging.getLogger(__name__)
+
+
+def _validate_safe_email(email: str) -> bool:
+    """Validate email to prevent SOQL injection."""
+    # Basic email validation
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(email_pattern, email):
+        return False
+
+    # Check for dangerous characters that could cause SOQL injection
+    dangerous_chars = ["'", '"', ';', '--', '/*', '*/', 'xp_', 'sp_']
+    if any(char in email.lower() for char in dangerous_chars):
+        return False
+
+    return True
 
 
 class SalesforceClient:
@@ -20,6 +36,8 @@ class SalesforceClient:
 
     async def upsert_lead(self, *, email: str, fields: dict[str, Any]) -> dict[str, Any] | None:
         if not self.instance_url or not self.access_token:
+            return None
+        if not _validate_safe_email(email):
             return None
         escaped_email = email.replace("'", "\\'")
         query = (

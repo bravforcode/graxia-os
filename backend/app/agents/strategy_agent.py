@@ -1,5 +1,6 @@
 import logging
 from datetime import date, timedelta
+
 from app.agents.base import BaseAgent
 
 logger = logging.getLogger(__name__)
@@ -23,11 +24,12 @@ class StrategyAgent(BaseAgent):
             logger.error(f"StrategyAgent failed: {e}", exc_info=True)
 
     async def _gather_data(self) -> dict:
+        from sqlalchemy import desc, select
+
         from app.database import AsyncSessionLocal
         from app.models.metric import WeeklyMetric
-        from app.models.outcome_pattern import OutcomePattern
         from app.models.opportunity import Opportunity
-        from sqlalchemy import select, desc
+        from app.models.outcome_pattern import OutcomePattern
 
         async with AsyncSessionLocal() as db:
             # Last 4 weeks metrics

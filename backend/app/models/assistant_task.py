@@ -1,16 +1,15 @@
 """Assistant task model for task management."""
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import String, Integer, Text, TIMESTAMP, Index
+from sqlalchemy import TIMESTAMP, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import Base
+from .base import Base, TenantMixin
 
 
-class AssistantTask(Base):
+class AssistantTask(Base, TenantMixin):
     """
     Assistant task model for managing tasks and reminders.
     
@@ -34,22 +33,22 @@ class AssistantTask(Base):
     
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     title: Mapped[str] = mapped_column(String(500), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text)
-    task_type: Mapped[Optional[str]] = mapped_column(String(50))
+    description: Mapped[str | None] = mapped_column(Text)
+    task_type: Mapped[str | None] = mapped_column(String(50))
     priority: Mapped[int] = mapped_column(Integer, default=5, server_default="5")
     status: Mapped[str] = mapped_column(String(50), default="pending", server_default="pending", index=True)
-    due_date: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), index=True)
-    related_entity_type: Mapped[Optional[str]] = mapped_column(String(50))
-    related_entity_id: Mapped[Optional[UUID]] = mapped_column(PGUUID(as_uuid=True))
+    due_date: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), index=True)
+    related_entity_type: Mapped[str | None] = mapped_column(String(50))
+    related_entity_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True))
     assigned_to: Mapped[str] = mapped_column(String(100), default="user", server_default="user")
-    completed_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc)
+        TIMESTAMP(timezone=True), default=lambda: datetime.now(UTC)
     )
     updated_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True), 
-        default=lambda: datetime.now(timezone.utc), 
-        onupdate=lambda: datetime.now(timezone.utc)
+        default=lambda: datetime.now(UTC), 
+        onupdate=lambda: datetime.now(UTC)
     )
     
     __table_args__ = (
@@ -76,7 +75,7 @@ class AssistantTask(Base):
         """Check if task is overdue."""
         if not self.due_date or self.is_completed:
             return False
-        return datetime.now(timezone.utc) > self.due_date
+        return datetime.now(UTC) > self.due_date
     
     @property
     def is_urgent(self) -> bool:
@@ -85,17 +84,17 @@ class AssistantTask(Base):
             return True
         if self.due_date:
             hours_until_due = (
-                self.due_date - datetime.now(timezone.utc)
+                self.due_date - datetime.now(UTC)
             ).total_seconds() / 3600
             return hours_until_due <= 24
         return False
     
     @property
-    def days_until_due(self) -> Optional[int]:
+    def days_until_due(self) -> int | None:
         """Get number of days until task is due."""
         if not self.due_date:
             return None
-        delta = self.due_date - datetime.now(timezone.utc)
+        delta = self.due_date - datetime.now(UTC)
         return delta.days
     
     def mark_in_progress(self) -> None:
@@ -105,7 +104,7 @@ class AssistantTask(Base):
     def mark_completed(self) -> None:
         """Mark task as completed."""
         self.status = "completed"
-        self.completed_at = datetime.now(timezone.utc)
+        self.completed_at = datetime.now(UTC)
     
     def mark_cancelled(self) -> None:
         """Mark task as cancelled."""

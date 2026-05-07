@@ -1,11 +1,10 @@
 import logging
 import os
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 import yaml
-
 from app.core.logging_config import setup_logging
 from app.main import app
 from scripts.export_openapi import export_openapi
@@ -90,25 +89,34 @@ def test_production_deploy_scripts_use_explicit_env_file_and_audit_gate():
 
 def test_compose_has_backend_healthcheck_and_profile_safe_dependencies():
     repo_root = Path(__file__).resolve().parents[2]
-    compose = yaml.safe_load((repo_root / "docker-compose.yml").read_text(encoding="utf-8"))
-    services = compose["services"]
-
-    backend = services["backend"]
-    frontend = services["frontend"]
+    # Production compose: lean, no postgres/frontend (those are external in prod)
+    prod_compose = yaml.safe_load((repo_root / "docker-compose.yml").read_text(encoding="utf-8"))
+    backend = prod_compose["services"]["backend"]
 
     assert "healthcheck" in backend
-    assert backend["depends_on"]["postgres"]["required"] is False
     assert backend["depends_on"]["redis"]["condition"] == "service_healthy"
-    assert frontend["depends_on"]["backend"]["condition"] == "service_healthy"
+
+    # Dev compose has optional postgres and frontend service
+    dev_compose_path = repo_root / "docker-compose.dev.yml"
+    if dev_compose_path.exists():
+        dev_compose = yaml.safe_load(dev_compose_path.read_text(encoding="utf-8"))
+        dev_services = dev_compose["services"]
+        if "frontend" in dev_services and "backend" in dev_services.get("frontend", {}).get(
+            "depends_on", {}
+        ):
+            assert (
+                dev_services["frontend"]["depends_on"]["backend"]["condition"] == "service_healthy"
+            )
+        if "backend" in dev_services and "postgres" in dev_services["backend"].get(
+            "depends_on", {}
+        ):
+            assert dev_services["backend"]["depends_on"]["postgres"]["required"] is False
 
 
 def test_latest_users_migration_includes_social_auth_columns():
     backend_root = Path(__file__).resolve().parents[1]
     migration_path = (
-        backend_root
-        / "alembic"
-        / "versions"
-        / "004_add_social_auth_columns_to_users.py"
+        backend_root / "alembic" / "versions" / "004_add_social_auth_columns_to_users.py"
     )
     migration = migration_path.read_text(encoding="utf-8")
 
@@ -133,8 +141,7 @@ def test_setup_logging_falls_back_to_console_when_file_handlers_are_unavailable(
     try:
         setup_logging("INFO")
         assert any(
-            getattr(handler, "_bravos_json_logging", False)
-            for handler in root_logger.handlers
+            getattr(handler, "_bravos_json_logging", False) for handler in root_logger.handlers
         )
     finally:
         for handler in list(root_logger.handlers):

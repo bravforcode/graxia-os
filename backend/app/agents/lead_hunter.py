@@ -1,4 +1,5 @@
 import logging
+
 from app.agents.base import BaseAgent
 
 logger = logging.getLogger(__name__)
@@ -47,10 +48,11 @@ class LeadHunter(BaseAgent):
         return count
 
     async def _save_lead(self, raw: dict):
-        from app.database import AsyncSessionLocal
-        from app.core.career import upsert_job_posting_from_opportunity
-        from app.models.opportunity import Opportunity
         from sqlalchemy import select
+
+        from app.core.career import upsert_job_posting_from_opportunity
+        from app.database import AsyncSessionLocal
+        from app.models.opportunity import Opportunity
 
         source_hash = raw.get("source_hash")
         if not source_hash:

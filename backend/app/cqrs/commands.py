@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 
@@ -14,9 +13,9 @@ class CreateOpportunityCommand(Command):
     title: str
     source: str | None = None
     url: str | None = None
-    description: Optional[str] = None
-    deadline: Optional[datetime] = None
-    budget: Optional[float] = None
+    description: str | None = None
+    deadline: datetime | None = None
+    budget: float | None = None
 
 
 @dataclass(frozen=True)
@@ -39,16 +38,16 @@ class RejectOpportunityCommand(Command):
 
 @dataclass(frozen=True)
 class CreateSubmissionCommand(Command):
-    opportunity_id: Optional[UUID] = None
-    contact_id: Optional[UUID] = None
-    type: Optional[str] = None
-    title: Optional[str] = None
-    content: Optional[str] = None
-    subject_line: Optional[str] = None
-    proposed_value: Optional[float] = None
+    opportunity_id: UUID | None = None
+    contact_id: UUID | None = None
+    type: str | None = None
+    title: str | None = None
+    content: str | None = None
+    subject_line: str | None = None
+    proposed_value: float | None = None
     currency: str = "THB"
-    proposal_text: Optional[str] = None
-    created_by: Optional[str] = None
+    proposal_text: str | None = None
+    created_by: str | None = None
 
 
 @dataclass(frozen=True)
@@ -56,27 +55,27 @@ class MarkSubmissionWonCommand(Command):
     submission_id: UUID
     actual_value: float = 0.0
     value_usd: float = 0.0
-    won_at: Optional[datetime] = None
+    won_at: datetime | None = None
 
 
 @dataclass(frozen=True)
 class MarkSubmissionLostCommand(Command):
     submission_id: UUID
     lost_reason: str = "unknown"
-    reason: Optional[str] = None
-    lost_at: Optional[datetime] = None
+    reason: str | None = None
+    lost_at: datetime | None = None
 
 
 @dataclass(frozen=True)
 class CreateContactCommand(Command):
     name: str
-    email: Optional[str] = None
-    company: Optional[str] = None
-    role: Optional[str] = None
-    linkedin_url: Optional[str] = None
-    twitter_handle: Optional[str] = None
-    telegram_handle: Optional[str] = None
-    notes: Optional[str] = None
+    email: str | None = None
+    company: str | None = None
+    role: str | None = None
+    linkedin_url: str | None = None
+    twitter_handle: str | None = None
+    telegram_handle: str | None = None
+    notes: str | None = None
 
 
 @dataclass(frozen=True)
@@ -114,7 +113,7 @@ class ApproveActionCommand(Command):
 class RejectActionCommand(Command):
     approval_id: UUID
     rejected_by: str
-    reason: Optional[str] = None
+    reason: str | None = None
 
 
 @dataclass(frozen=True)
@@ -139,4 +138,4 @@ class TrackCostCommand(Command):
     service: str
     operation: str
     amount_usd: float
-    metadata: Optional[dict] = None
+    metadata: dict | None = None

@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter
 from sqlalchemy import select
@@ -16,12 +16,12 @@ def _as_utc(dt: datetime | None) -> datetime | None:
     if dt is None:
         return None
     if dt.tzinfo is None:
-        return dt.replace(tzinfo=timezone.utc)
-    return dt.astimezone(timezone.utc)
+        return dt.replace(tzinfo=UTC)
+    return dt.astimezone(UTC)
 
 
 def _derive_scraper_status(record: ScraperHealth) -> str:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     muted_until = _as_utc(record.muted_until)
     if record.is_muted and (muted_until is None or muted_until > now):
         return "muted"
@@ -39,7 +39,7 @@ async def get_scrapers_health():
         health_records = list(result.scalars().all())
 
         scrapers = []
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for record in health_records:
             last_run_at = _as_utc(record.last_attempted_at) or _as_utc(record.last_success_at)
             time_since_run = None
@@ -101,7 +101,7 @@ async def get_scraper_health(scraper_name: str):
 @router.get("/stats")
 async def get_scraper_stats():
     async with AsyncSessionLocal() as db:
-        since = datetime.now(timezone.utc) - timedelta(days=7)
+        since = datetime.now(UTC) - timedelta(days=7)
         result = await db.execute(select(ScraperHealth))
         records = list(result.scalars().all())
 

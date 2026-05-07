@@ -22,7 +22,7 @@
 1. เพิ่ม path ของ Obsidian vault ใน `.env`:
 
 ```bash
-OBSIDIAN_VAULT_PATH=C:/Users/YourName/Documents/ObsidianVault
+OBSIDIAN_VAULT_PATH=C:/Users/YourName/C:/Users/menum/OneDrive/Documents/Gracia
 ```
 
 2. Restart backend:
@@ -164,7 +164,7 @@ Response:
 ```json
 {
   "configured": true,
-  "vault_path": "C:/Users/YourName/Documents/ObsidianVault",
+  "vault_path": "C:/Users/YourName/C:/Users/menum/OneDrive/Documents/Gracia",
   "api_url": null
 }
 ```

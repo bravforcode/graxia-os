@@ -74,3 +74,50 @@ backend/C*/
 
 .vercel
 node_modules
+
+# === CLEANUP PHASE 1 ADDITIONS ===
+
+# All IDE configs (comprehensive)
+.ai/
+.openclaude/
+.windsurf/
+.qodo/
+.kiro/
+.superpowers/
+.graxia/
+.antigravityrules
+.graxiaignore
+
+# All cache and temp files
+.cache/
+*.tmp
+*.temp
+.tmp_*/
+*.pyc
+*.pyo
+
+# All backup files
+*.backup.*
+*.bak
+*~
+.env.backup.*
+.openclaude-profile.json.backup.*
+
+# Review and output folders (temporary)
+review/
+output/
+
+# Virtual environments
+.venv/
+venv/
+backend/venv/
+
+# Test artifacts
+backend/.state/
+backend/tests/conftest.py.bak
+test-results-*.md
+test_report.txt
+
+# Build artifacts
+frontend/dev_log.txt
+*.sqlite3

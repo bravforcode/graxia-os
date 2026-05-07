@@ -71,7 +71,7 @@ class BackupManifest:
         path.write_text(self.to_json() + "\n", encoding="utf-8")
 
     @classmethod
-    def from_json(cls, path: Path) -> "BackupManifest":
+    def from_json(cls, path: Path) -> BackupManifest:
         return cls(**json.loads(path.read_text(encoding="utf-8")))
 
 
@@ -105,6 +105,14 @@ def _sync_database_url(url: str) -> str:
 
 def parse_database_url(database_url: str) -> DatabaseConnection:
     parsed = urlsplit(_sync_database_url(database_url))
+    if "sqlite" in parsed.scheme:
+        return DatabaseConnection(
+            host="localhost",
+            port=0,
+            user="sqlite",
+            password="",
+            database=parsed.path.strip("/") or ":memory:",
+        )
     if parsed.scheme not in {"postgresql", "postgres"}:
         raise ValueError("DATABASE_URL must use postgresql:// or postgresql+asyncpg://")
     if not parsed.hostname or not parsed.path.strip("/"):
@@ -121,7 +129,9 @@ def parse_database_url(database_url: str) -> DatabaseConnection:
     )
 
 
-def _run_command(cmd: list[str], *, env: dict[str, str] | None = None, timeout: int = 1800) -> subprocess.CompletedProcess:
+def _run_command(
+    cmd: list[str], *, env: dict[str, str] | None = None, timeout: int = 1800
+) -> subprocess.CompletedProcess:
     logger.debug("Running command: %s", " ".join(cmd[:2]))
     result = subprocess.run(cmd, env=env, capture_output=True, text=True, timeout=timeout)
     if result.returncode != 0:
@@ -172,7 +182,9 @@ class ObjectStore:
         parts = [part for part in [self.prefix, artifact_type, retention_tier, name] if part]
         return "/".join(parts)
 
-    def upload_and_verify(self, local_path: Path, key: str, metadata: dict[str, Any] | None = None) -> None:
+    def upload_and_verify(
+        self, local_path: Path, key: str, metadata: dict[str, Any] | None = None
+    ) -> None:
         if not self.enabled():
             raise RuntimeError("BACKUP_BUCKET is not configured")
 
@@ -188,7 +200,9 @@ class ObjectStore:
         try:
             client.download_file(self.bucket, key, str(downloaded))
             if compute_sha256(downloaded) != compute_sha256(local_path):
-                raise RuntimeError(f"Uploaded backup checksum verification failed for s3://{self.bucket}/{key}")
+                raise RuntimeError(
+                    f"Uploaded backup checksum verification failed for s3://{self.bucket}/{key}"
+                )
         finally:
             downloaded.unlink(missing_ok=True)
 
@@ -204,7 +218,9 @@ class DatabaseBackup:
     ):
         self.backup_dir = Path(backup_dir or settings.BACKUP_DIR)
         self.backup_dir.mkdir(parents=True, exist_ok=True)
-        self.connection = parse_database_url(database_url or settings.EFFECTIVE_MIGRATION_DATABASE_URL)
+        self.connection = parse_database_url(
+            database_url or settings.EFFECTIVE_MIGRATION_DATABASE_URL
+        )
         self.object_store = object_store or ObjectStore()
 
     def _artifact_stem(self) -> str:
@@ -287,13 +303,23 @@ class DatabaseBackup:
             retention_tier="daily",
         )
         manifest.write_json(manifest_path)
-        return BackupResult(artifact_path=encrypted_path, manifest_path=manifest_path, manifest=manifest)
+        return BackupResult(
+            artifact_path=encrypted_path, manifest_path=manifest_path, manifest=manifest
+        )
 
     def upload_backup(self, result: BackupResult) -> BackupResult:
-        artifact_key = self.object_store.key_for("postgres", result.manifest.retention_tier, result.artifact_path.name)
-        manifest_key = self.object_store.key_for("manifests", result.manifest.retention_tier, result.manifest_path.name)
-        self.object_store.upload_and_verify(result.artifact_path, artifact_key, metadata=result.manifest.to_dict())
-        self.object_store.upload_and_verify(result.manifest_path, manifest_key, metadata={"backup_id": result.manifest.backup_id})
+        artifact_key = self.object_store.key_for(
+            "postgres", result.manifest.retention_tier, result.artifact_path.name
+        )
+        manifest_key = self.object_store.key_for(
+            "manifests", result.manifest.retention_tier, result.manifest_path.name
+        )
+        self.object_store.upload_and_verify(
+            result.artifact_path, artifact_key, metadata=result.manifest.to_dict()
+        )
+        self.object_store.upload_and_verify(
+            result.manifest_path, manifest_key, metadata={"backup_id": result.manifest.backup_id}
+        )
         return BackupResult(
             artifact_path=result.artifact_path,
             manifest_path=result.manifest_path,
@@ -318,7 +344,9 @@ class DatabaseBackup:
                 result = self.upload_backup(result)
                 uploaded = result.uploaded
             elif settings.APP_ENV.lower() == "production":
-                raise RuntimeError("Production backups require BACKUP_BUCKET and verified off-host upload")
+                raise RuntimeError(
+                    "Production backups require BACKUP_BUCKET and verified off-host upload"
+                )
 
             self.cleanup_local_backups()
             await self._send_notification(
@@ -345,7 +373,9 @@ class DatabaseBackup:
 class RedisSnapshotBackup:
     """Back up Redis snapshot files alongside PostgreSQL manifests."""
 
-    def __init__(self, backup_dir: Path | str | None = None, object_store: ObjectStore | None = None):
+    def __init__(
+        self, backup_dir: Path | str | None = None, object_store: ObjectStore | None = None
+    ):
         self.backup_dir = Path(backup_dir or settings.BACKUP_DIR)
         self.backup_dir.mkdir(parents=True, exist_ok=True)
         self.object_store = object_store or ObjectStore()
@@ -365,7 +395,9 @@ class RedisSnapshotBackup:
         recipient = (settings.BACKUP_ENCRYPTION_PUBLIC_KEY or "").strip()
         if not recipient:
             copied.unlink(missing_ok=True)
-            raise RuntimeError("BACKUP_ENCRYPTION_PUBLIC_KEY is required for encrypted Redis backups")
+            raise RuntimeError(
+                "BACKUP_ENCRYPTION_PUBLIC_KEY is required for encrypted Redis backups"
+            )
         _run_command(
             [
                 "age",
@@ -398,16 +430,28 @@ class RedisSnapshotBackup:
         return BackupResult(artifact_path=encrypted, manifest_path=manifest_path, manifest=manifest)
 
     def upload_backup(self, result: BackupResult) -> BackupResult:
-        artifact_key = self.object_store.key_for("redis", result.manifest.retention_tier, result.artifact_path.name)
-        manifest_key = self.object_store.key_for("manifests", result.manifest.retention_tier, result.manifest_path.name)
-        self.object_store.upload_and_verify(result.artifact_path, artifact_key, metadata=result.manifest.to_dict())
-        self.object_store.upload_and_verify(result.manifest_path, manifest_key, metadata={"backup_id": result.manifest.backup_id})
-        return BackupResult(result.artifact_path, result.manifest_path, result.manifest, uploaded=True)
+        artifact_key = self.object_store.key_for(
+            "redis", result.manifest.retention_tier, result.artifact_path.name
+        )
+        manifest_key = self.object_store.key_for(
+            "manifests", result.manifest.retention_tier, result.manifest_path.name
+        )
+        self.object_store.upload_and_verify(
+            result.artifact_path, artifact_key, metadata=result.manifest.to_dict()
+        )
+        self.object_store.upload_and_verify(
+            result.manifest_path, manifest_key, metadata={"backup_id": result.manifest.backup_id}
+        )
+        return BackupResult(
+            result.artifact_path, result.manifest_path, result.manifest, uploaded=True
+        )
 
 
 async def main() -> None:
     parser = argparse.ArgumentParser(description="Create encrypted PostgreSQL backups")
-    parser.add_argument("--local-only", action="store_true", help="Skip object-store upload even if configured")
+    parser.add_argument(
+        "--local-only", action="store_true", help="Skip object-store upload even if configured"
+    )
     args = parser.parse_args()
 
     backup = DatabaseBackup(object_store=ObjectStore(bucket="" if args.local_only else None))

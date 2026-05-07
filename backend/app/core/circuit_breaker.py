@@ -4,10 +4,11 @@ Circuit Breaker Pattern Implementation
 Prevents cascade failures by stopping calls to failing services.
 """
 import logging
-from datetime import datetime, timezone
+from collections.abc import Callable
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Callable, Any, Optional
 from functools import wraps
+from typing import Any
 
 from app.core.monitoring import metrics_collector
 
@@ -65,8 +66,8 @@ class CircuitBreaker:
         
         self.state = CircuitState.CLOSED
         self.failure_count = 0
-        self.last_failure_time: Optional[datetime] = None
-        self.last_success_time: Optional[datetime] = None
+        self.last_failure_time: datetime | None = None
+        self.last_success_time: datetime | None = None
         metrics_collector.set_circuit_breaker_state(self.name, 0)
     
     def call(self, func: Callable, *args, **kwargs) -> Any:
@@ -134,12 +135,12 @@ class CircuitBreaker:
         if not self.last_failure_time:
             return True
         
-        elapsed = datetime.now(timezone.utc) - self.last_failure_time
+        elapsed = datetime.now(UTC) - self.last_failure_time
         return elapsed.total_seconds() >= self.recovery_timeout
     
     def _on_success(self) -> None:
         """Handle successful call."""
-        self.last_success_time = datetime.now(timezone.utc)
+        self.last_success_time = datetime.now(UTC)
         
         if self.state == CircuitState.HALF_OPEN:
             # Transition to closed
@@ -155,7 +156,7 @@ class CircuitBreaker:
     def _on_failure(self) -> None:
         """Handle failed call."""
         self.failure_count += 1
-        self.last_failure_time = datetime.now(timezone.utc)
+        self.last_failure_time = datetime.now(UTC)
         
         logger.warning(
             f"CircuitBreaker[{self.name}]: Failure {self.failure_count}/{self.failure_threshold}"

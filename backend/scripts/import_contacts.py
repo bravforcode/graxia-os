@@ -20,7 +20,10 @@ def _load_dotenv(path: Path) -> dict[str, str]:
 
 def main() -> int:
     if len(sys.argv) < 2:
-        print("Usage: python scripts/import_contacts.py <contacts.json> [base_url] [email] [password]", file=sys.stderr)
+        print(
+            "Usage: python scripts/import_contacts.py <contacts.json> [base_url] [email] [password]",
+            file=sys.stderr,
+        )
         return 2
 
     path = Path(sys.argv[1]).expanduser().resolve()
@@ -29,7 +32,10 @@ def main() -> int:
     email = sys.argv[3] if len(sys.argv) >= 4 else dotenv.get("GOOGLE_WORKSPACE_EMAIL", "")
     password = sys.argv[4] if len(sys.argv) >= 5 else dotenv.get("ADMIN_DEFAULT_PASSWORD", "")
     if not email or not password:
-        print("Missing email/password (provide args 3/4 or set GOOGLE_WORKSPACE_EMAIL and ADMIN_DEFAULT_PASSWORD in .env)", file=sys.stderr)
+        print(
+            "Missing email/password (provide args 3/4 or set GOOGLE_WORKSPACE_EMAIL and ADMIN_DEFAULT_PASSWORD in .env)",
+            file=sys.stderr,
+        )
         return 2
 
     raw = json.loads(path.read_text(encoding="utf-8"))
@@ -38,7 +44,7 @@ def main() -> int:
     else:
         items = raw
     if not isinstance(items, list):
-        print("JSON must be a list of contacts or {\"items\": [...]} ", file=sys.stderr)
+        print('JSON must be a list of contacts or {"items": [...]} ', file=sys.stderr)
         return 2
 
     with httpx.Client(timeout=30.0) as client:

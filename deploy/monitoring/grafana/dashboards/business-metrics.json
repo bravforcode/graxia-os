@@ -1,0 +1,135 @@
+{
+  "dashboard": {
+    "title": "Business Metrics",
+    "tags": ["graxia", "business"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Opportunities Found (Today)",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(increase(opportunities_created_total[24h]))",
+            "legendFormat": "Opportunities"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Opportunities Scored (Today)",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(increase(opportunities_scored_total[24h]))",
+            "legendFormat": "Scored"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Submissions Sent (Today)",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(increase(submissions_sent_total[24h]))",
+            "legendFormat": "Submissions"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0}
+      },
+      {
+        "id": 4,
+        "title": "Success Rate",
+        "type": "gauge",
+        "targets": [
+          {
+            "expr": "sum(submissions_won_total) / sum(submissions_sent_total) * 100",
+            "legendFormat": "Win Rate %"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0}
+      },
+      {
+        "id": 5,
+        "title": "Opportunities by Status",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "sum by (status) (opportunities_by_status)",
+            "legendFormat": "{{status}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4}
+      },
+      {
+        "id": 6,
+        "title": "Revenue Generated (THB)",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "sum(increase(revenue_generated_thb[1h]))",
+            "legendFormat": "Revenue"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4}
+      },
+      {
+        "id": 7,
+        "title": "Opportunity Score Distribution",
+        "type": "histogram",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.5, sum(rate(opportunity_score_bucket[5m])) by (le))",
+            "legendFormat": "p50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(opportunity_score_bucket[5m])) by (le))",
+            "legendFormat": "p95"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12}
+      },
+      {
+        "id": 8,
+        "title": "Submission Outcomes",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "sum by (outcome) (increase(submissions_by_outcome[1h]))",
+            "legendFormat": "{{outcome}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12}
+      },
+      {
+        "id": 9,
+        "title": "Daily Revenue Target Progress",
+        "type": "bargauge",
+        "targets": [
+          {
+            "expr": "(sum(increase(revenue_generated_thb[24h])) / 1000) * 100",
+            "legendFormat": "Progress %"
+          }
+        ],
+        "gridPos": {"h": 6, "w": 24, "x": 0, "y": 20}
+      },
+      {
+        "id": 10,
+        "title": "Top Performing Opportunities",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "topk(10, opportunities_by_score)",
+            "legendFormat": "{{title}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 26}
+      }
+    ],
+    "refresh": "30s",
+    "time": {"from": "now-24h", "to": "now"}
+  }
+}

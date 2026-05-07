@@ -1,4 +1,5 @@
 import logging
+
 from app.agents.base import BaseAgent
 
 logger = logging.getLogger(__name__)
@@ -19,10 +20,10 @@ class FailureAnalysis(BaseAgent):
         pass  # wins handled by playbook_capture
 
     async def _analyze_loss(self, sub_id, lost_reason: str) -> None:
+        from app.core.identity import identity
         from app.database import AsyncSessionLocal
         from app.models.knowledge import KnowledgeItem
         from app.models.submission import Submission
-        from app.core.identity import identity
 
         async with AsyncSessionLocal() as db:
             sub = await db.get(Submission, sub_id) if sub_id else None

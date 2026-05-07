@@ -1,9 +1,8 @@
 """Email message model for individual emails within threads."""
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import String, Boolean, Text, TIMESTAMP, ForeignKey, Index
+from sqlalchemy import TIMESTAMP, Boolean, ForeignKey, Index, String, Text
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -35,11 +34,11 @@ class EmailMessage(Base):
     from_email: Mapped[str] = mapped_column(String(255), nullable=False)
     to_email: Mapped[str] = mapped_column(String(255), nullable=False)
     subject: Mapped[str] = mapped_column(String(500), nullable=False)
-    body: Mapped[Optional[str]] = mapped_column(Text)
+    body: Mapped[str | None] = mapped_column(Text)
     received_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
     is_read: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     created_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc)
+        TIMESTAMP(timezone=True), default=lambda: datetime.now(UTC)
     )
     
     # Relationships

@@ -4,7 +4,7 @@ Obsidian integration and second-brain automation.
 import asyncio
 import re
 import time
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -53,7 +53,7 @@ logger = get_logger(__name__)
 
 
 def _utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _slugify(value: str) -> str:
@@ -955,7 +955,7 @@ def parse_frontmatter(file_path: Path) -> dict[str, Any]:
     Returns empty dict if no frontmatter is found.
     """
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
     except Exception:
         return {}

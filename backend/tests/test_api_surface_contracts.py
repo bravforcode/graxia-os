@@ -1,10 +1,9 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from unittest.mock import AsyncMock
 
 import pytest
 import pytest_asyncio
-
 from app.models.approval_request import ApprovalRequest
 from app.models.automation_run import AutomationRun
 from app.models.skill_profile import SkillProfile
@@ -110,7 +109,7 @@ async def test_calendar_inbox_integrations_and_commands_routes_are_mounted(
 async def test_approvals_runs_and_skills_routes_are_mounted_and_work(
     async_client, db_session, monkeypatch, api_surface_session_factory
 ):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     approval = ApprovalRequest(
         title="Approve application",
         action_type="job_apply_submit",

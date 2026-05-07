@@ -1,11 +1,11 @@
 """Telegram bot package."""
 from app.telegram_bot.bot import (
-    setup_bot,
-    send_message,
+    get_application,
     send_approval_request,
+    send_message,
+    setup_bot,
     start_polling,
     stop_polling,
-    get_application
 )
 
 __all__ = [

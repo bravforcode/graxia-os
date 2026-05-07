@@ -1,5 +1,5 @@
 """Canonical authentication helpers."""
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
@@ -28,10 +28,10 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def _token_expiry(token_type: str, expires_delta: timedelta | None = None) -> datetime:
     if expires_delta is not None:
-        return datetime.now(timezone.utc) + expires_delta
+        return datetime.now(UTC) + expires_delta
     if token_type == "refresh":
-        return datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    return datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        return datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    return datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
 
 def extract_bearer_token(authorization_header: str | None) -> str | None:
@@ -45,7 +45,7 @@ def extract_bearer_token(authorization_header: str | None) -> str | None:
 
 
 def _encode_token(data: dict[str, Any], token_type: str, expires_delta: timedelta | None = None) -> str:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     payload = data.copy()
     payload.update(
         {

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/api/v1/outreach", tags=["outreach"])
 
 @router.get("/stats")
 async def outreach_stats(db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
-    today = datetime.now(timezone.utc).date()
+    today = datetime.now(UTC).date()
     sent_today = await db.scalar(
         select(func.count(NetworkInteraction.id)).where(
             NetworkInteraction.interaction_type.in_(

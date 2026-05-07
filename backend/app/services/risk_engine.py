@@ -6,9 +6,9 @@ import hashlib
 import hmac
 import struct
 import time
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Iterable
 
 from app.models.user import User
 

@@ -1,4 +1,5 @@
 import logging
+from datetime import UTC
 from pathlib import Path
 
 import yaml
@@ -75,7 +76,7 @@ def wire_event_handlers() -> None:
 
 
 async def seed_admin_user() -> None:
-    from datetime import datetime, timezone
+    from datetime import datetime
     from uuid import uuid4
 
     from sqlalchemy import select
@@ -95,12 +96,12 @@ async def seed_admin_user() -> None:
         if existing:
             if existing.role != "admin":
                 existing.role = "admin"
-                existing.updated_at = datetime.now(timezone.utc)
+                existing.updated_at = datetime.now(UTC)
                 await db.commit()
             return
 
         password = str(getattr(settings, "ADMIN_DEFAULT_PASSWORD", "changeme") or "changeme")
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         user = User(
             id=uuid4(),
             email=email,
@@ -154,7 +155,7 @@ async def check_system_ready() -> tuple[bool, str, list[str]]:
         profile_candidates[-1],
     )
     try:
-        with open(profile_path, "r", encoding="utf-8") as f:
+        with open(profile_path, encoding="utf-8") as f:
             profile = yaml.safe_load(f)
         name = profile.get("personal", {}).get("name", "")
         if "[YOUR" in name:
@@ -199,8 +200,8 @@ async def check_system_ready() -> tuple[bool, str, list[str]]:
         from sqlalchemy import inspect, text
 
         from app.database import AsyncSessionLocal, engine
-        from app.models.scoring_weight_history import ScoringWeightHistory
         from app.models import Base
+        from app.models.scoring_weight_history import ScoringWeightHistory
 
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
@@ -302,8 +303,9 @@ async def check_system_ready() -> tuple[bool, str, list[str]]:
         await _send_telegram("✅ Personal OS v3 online. Ready to find your next win.")
 
     try:
-        from app.agents.vault_indexer import vault_indexer_agent
         import asyncio
+
+        from app.agents.vault_indexer import vault_indexer_agent
         asyncio.create_task(vault_indexer_agent.index_vault())
     except Exception as e:
         logger.error(f"Failed to start vault indexer: {e}")

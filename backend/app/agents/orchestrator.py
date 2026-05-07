@@ -1,21 +1,26 @@
 import asyncio
 import logging
-from typing import Any, Dict, List
+from typing import Any
 from uuid import UUID
 
+from sqlalchemy import select
+
 from app.agents.base import BaseAgent
-from app.core.model_router import route_task
-from app.core.llm import llm_client
-from app.core.event_bus import event_bus
 from app.core.agent_registry import agent_registry
+from app.core.event_bus import event_bus
+from app.core.llm import llm_client
+from app.core.model_router import route_task
 from app.database import AsyncSessionLocal
 from app.models.orchestration import AgentTask
-from sqlalchemy import select
 
 logger = logging.getLogger(__name__)
 
 class AgentOrchestrator(BaseAgent):
     name = "orchestrator"
+
+    def __init__(self):
+        super().__init__()
+        self.semaphore = asyncio.Semaphore(50)
 
     async def start(self):
         """Start MAS orchestration services."""
@@ -51,10 +56,14 @@ class AgentOrchestrator(BaseAgent):
 
             agent_instance = agent_registry.get_agent(assigned_to)
             if agent_instance:
-                asyncio.create_task(self._execute_agent_task(agent_instance, task_id))
+                asyncio.create_task(self._bounded_execute(agent_instance, task_id))
             else:
                 logger.error(f"Unknown agent: {assigned_to}")
                 await self.fail_task(task_id, f"Agent {assigned_to} not found.")
+
+    async def _bounded_execute(self, agent_instance: BaseAgent, task_id: UUID):
+        async with self.semaphore:
+            await self._execute_agent_task(agent_instance, task_id)
 
     async def _execute_agent_task(self, agent_instance: BaseAgent, task_id: UUID):
         async with AsyncSessionLocal() as db:

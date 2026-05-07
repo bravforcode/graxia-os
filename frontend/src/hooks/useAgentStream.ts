@@ -2,6 +2,20 @@ import { useEffect, useRef, useState } from 'react'
 
 import { api, type EventStats, type SystemHealth } from '@/lib/api'
 
+function getStoredAccessToken(): string | null {
+  try {
+    // Read access token from httpOnly cookie is not possible in JS;
+    // try Authorization header cache stored by the API layer if available.
+    // Fallback: nothing — WS will degrade to polling if no token.
+    const raw = document.cookie
+      .split('; ')
+      .find((row) => row.startsWith('access_token='))
+    return raw ? raw.split('=').slice(1).join('=') : null
+  } catch {
+    return null
+  }
+}
+
 export type AgentFeedTone = 'neutral' | 'success' | 'warning' | 'danger'
 export type AgentConnectionState = 'connecting' | 'live' | 'fallback' | 'offline'
 export type AgentTransport = 'websocket' | 'polling'
@@ -191,6 +205,10 @@ export function useAgentStream() {
 
     try {
       const url = new URL(wsUrl)
+      const token = getStoredAccessToken()
+      if (token) {
+        url.searchParams.set('token', token)
+      }
       socket = new WebSocket(url.toString())
       setTransport('websocket')
       setConnectionState('connecting')

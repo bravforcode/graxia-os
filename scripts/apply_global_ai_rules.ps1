@@ -12,7 +12,7 @@ Use these rules for every request unless the user explicitly overrides them.
 ## Mandatory Workflow
 1. Select and use the best available skill first when relevant.
 2. Read Obsidian-synced context before implementing:
-   - C:\Users\menum\Documents\ObsidianVault\Second Brain\brain\latest.md
+   - C:\Users\menum\OneDrive\Documents\Gracia\Second Brain\brain\latest.md
    - Project context under identity/, docs/, and templates/
 3. Prefer official APIs and compliant automation.
 4. Default to human-in-the-loop for outbound actions:

@@ -1,175 +1,101 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# Personal Sovereign OS — Docker Compose
+# docker-compose.yml — PRODUCTION
+# Builds from image, no source mounts, no --reload.
+# Development: use docker-compose.dev.yml instead.
 #
-# Profiles:
-#   default (make up)         → postgres + redis + backend + celery + n8n
-#   supabase (make supabase-up) → redi-5..95s + backend + celery + n8n  (no local postgres)
-#
-# Database: set DATABASE_URL in .env
-#   Local:    postgresql+asyncpg://personal_os:changeme@postgres:5432/personal_os
-#   Supabase: postgresql://postgres.[REF]:[PASS]@aws-0-[REGION].pooler.supabase.com:5432/postgres
-# ─────────────────────────────────────────────────────────────────────────────
+# Usage:
+#   docker compose up -d
+#   docker compose logs -f backend
 
 services:
-  # ── Local Postgres (skip when using Supabase) ──────────────────────────────
-  postgres:
-    image: postgres:15-alpine
-    container_name: personal_os_postgres
-    profiles: ["default", "local"]
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-personal_os}
-      POSTGRES_USER: ${POSTGRES_USER:-personal_os}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-personal_os}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  # ── Redis (Upstash or local) ───────────────────────────────────────────────
   redis:
     image: redis:7-alpine
-    container_name: personal_os_redis
-    # Security: require password even in dev to match prod behavior
-    command: >
-      sh -c 'redis-server --appendonly yes
-      --requirepass "$${REDIS_PASSWORD:-localdev_redis_password}"'
+    container_name: graxia_redis
+    entrypoint: ["/docker-entrypoint-scripts/redis-entrypoint.sh"]
     ports:
       - "6379:6379"
+    environment:
+      - "REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD must be set}"
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-localdev_redis_password}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    volumes:
+      - redis_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - ./docker/redis-entrypoint.sh:/docker-entrypoint-scripts/redis-entrypoint.sh:ro
 
-  # ── Backend API ────────────────────────────────────────────────────────────
   backend:
-    build: ./backend
-    container_name: personal_os_backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: graxia-backend:${TAG:-latest}
+    container_name: graxia_backend
     env_file: .env
     environment:
       RUNNING_IN_DOCKER: "true"
       SCHEDULER_EMBEDDED: "false"
       TELEGRAM_POLLING_ENABLED: "true"
-    volumes:
-      - ./backend:/app
-      - ./identity:/identity:ro
     ports:
       - "8000:8000"
     depends_on:
-      postgres:
-        condition: service_healthy
-        required: false
       redis:
         condition: service_healthy
-        required: true
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
     restart: unless-stopped
 
-  # ── Celery Worker ──────────────────────────────────────────────────────────
   celery:
-    build: ./backend
-    container_name: personal_os_celery
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: graxia-backend:${TAG:-latest}
+    container_name: graxia_celery
     env_file: .env
     environment:
       RUNNING_IN_DOCKER: "true"
-    volumes:
-      - ./backend:/app
-      - ./identity:/identity:ro
+    command: celery -A app.tasks.celery_app worker --loglevel=info --concurrency=2
     depends_on:
-      postgres:
-        condition: service_healthy
-        required: false
       redis:
         condition: service_healthy
-        required: true
-    command: celery -A app.tasks.celery_app worker --loglevel=info --concurrency=2
     restart: unless-stopped
 
-  # ── Celery Beat Scheduler ─────────────────────────────────────────────────
   beat:
-    build: ./backend
-    container_name: personal_os_beat
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: graxia-backend:${TAG:-latest}
+    container_name: graxia_beat
     env_file: .env
     environment:
       RUNNING_IN_DOCKER: "true"
       SCHEDULER_EMBEDDED: "false"
-    volumes:
-      - ./backend:/app
-      - ./identity:/identity:ro
+    command: python -m app.tasks.beat_launcher
     depends_on:
       redis:
         condition: service_healthy
-        required: true
-    command: python -m app.tasks.beat_launcher
-    restart: unless-stopped
-
-  # ── Frontend (React + Vite) ────────────────────────────────────────────────
-  frontend:
-    image: oven/bun:1
-    container_name: personal_os_frontend
-    working_dir: /app
-    volumes:
-      - ./frontend:/app
-    ports:
-      - "5173:5173"
-    command: sh -c "bun install && bun run dev --host 0.0.0.0"
-    environment:
-      - VITE_DEV_PROXY_TARGET=http://backend:8000
-    depends_on:
-      backend:
-        condition: service_healthy
-        required: true
-    restart: unless-stopped
-
-  # ── Ollama (Local LLM inference) ──────────────────────────────────────────
-  ollama:
-    image: ollama/ollama:latest
-    container_name: personal_os_ollama
-    profiles: ["default", "local"]
-    ports:
-      - "11434:11434"
-    environment:
-      - OLLAMA_HOST=0.0.0.0:11434
-    volumes:
-      - ollama_data:/root/.ollama
-    # Uncomment for GPU support (NVIDIA):
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD-SHELL", "celery -A app.tasks.celery_app inspect ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
     restart: unless-stopped
 
-  # ── n8n Automation ─────────────────────────────────────────────────────────
   n8n:
     image: n8nio/n8n:latest
-    container_name: personal_os_n8n
+    container_name: graxia_n8n
     ports:
       - "5678:5678"
     environment:
       - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
-      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-changeme}
+      - "N8N_BASIC_AUTH_USER=${N8N_USER:?N8N_USER must be set}"
+      - "N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:?N8N_PASSWORD must be set}"
       - N8N_HOST=localhost
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
@@ -177,10 +103,8 @@ services:
       - GENERIC_TIMEZONE=Asia/Bangkok
     volumes:
       - n8n_data:/home/node/.n8n
-      - ./n8n/workflows:/home/node/.n8n/workflows:ro
     restart: unless-stopped
 
 volumes:
-  postgres_data:
-  ollama_data:
+  redis_data:
   n8n_data:

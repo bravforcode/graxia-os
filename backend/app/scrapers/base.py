@@ -5,9 +5,8 @@ Guarantees consistent health tracking and graceful degradation.
 import hashlib
 import logging
 from abc import ABC, abstractmethod
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from typing import Optional
 
 import httpx
 
@@ -32,7 +31,7 @@ class BaseScraper(ABC):
     source_name: str = "base"
 
     @abstractmethod
-    async def fetch(self, url: str) -> Optional[httpx.Response]:
+    async def fetch(self, url: str) -> httpx.Response | None:
         """GET request — returns None on failure (never raises)."""
         ...
 
@@ -42,7 +41,7 @@ class BaseScraper(ABC):
         ...
 
     @abstractmethod
-    async def normalize(self, raw_item: dict) -> Optional[dict]:
+    async def normalize(self, raw_item: dict) -> dict | None:
         """Map raw fields to opportunity schema — returns None if not normalizable."""
         ...
 
@@ -78,14 +77,15 @@ class BaseScraper(ABC):
 
     async def _is_muted(self) -> bool:
         try:
+            from sqlalchemy import select
+
             from app.database import AsyncSessionLocal
             from app.models.scraper_health import ScraperHealth
-            from sqlalchemy import select
             async with AsyncSessionLocal() as db:
                 q = await db.execute(select(ScraperHealth).where(ScraperHealth.source_name == self.source_name))
                 health = q.scalar_one_or_none()
                 if health and health.is_muted:
-                    if health.muted_until and datetime.now(timezone.utc) > health.muted_until:
+                    if health.muted_until and datetime.now(UTC) > health.muted_until:
                         health.is_muted = False
                         health.muted_until = None
                         health.consecutive_failures = 0
@@ -98,33 +98,35 @@ class BaseScraper(ABC):
 
     async def _record_attempt(self) -> None:
         try:
+            from sqlalchemy import select
+
             from app.database import AsyncSessionLocal
             from app.models.scraper_health import ScraperHealth
-            from sqlalchemy import select
             async with AsyncSessionLocal() as db:
                 q = await db.execute(select(ScraperHealth).where(ScraperHealth.source_name == self.source_name))
                 health = q.scalar_one_or_none()
                 if not health:
                     health = ScraperHealth(source_name=self.source_name)
                     db.add(health)
-                health.last_attempted_at = datetime.now(timezone.utc)
+                health.last_attempted_at = datetime.now(UTC)
                 health.total_runs = (health.total_runs or 0) + 1
                 await db.commit()
         except Exception as e:
             logger.warning(f"_record_attempt failed: {e}")
 
-    async def _record_result(self, success: bool, item_count: int, error: Optional[str] = None) -> None:
+    async def _record_result(self, success: bool, item_count: int, error: str | None = None) -> None:
         try:
+            from sqlalchemy import select
+
             from app.database import AsyncSessionLocal
             from app.models.scraper_health import ScraperHealth
-            from sqlalchemy import select
             async with AsyncSessionLocal() as db:
                 q = await db.execute(select(ScraperHealth).where(ScraperHealth.source_name == self.source_name))
                 health = q.scalar_one_or_none()
                 if not health:
                     health = ScraperHealth(source_name=self.source_name)
                     db.add(health)
-                now = datetime.now(timezone.utc)
+                now = datetime.now(UTC)
                 if success:
                     health.last_success_at = now
                     health.consecutive_failures = 0
@@ -151,6 +153,7 @@ class BaseScraper(ABC):
     async def _notify_muted(self, consecutive_failures: int) -> None:
         try:
             import redis.asyncio as aioredis
+
             from app.config import settings
             r = aioredis.from_url(settings.REDIS_URL)
             flag_key = f"scraper_muted_notified:{self.source_name}"
@@ -180,9 +183,10 @@ class BaseScraper(ABC):
 
     async def health_check(self) -> dict:
         try:
+            from sqlalchemy import select
+
             from app.database import AsyncSessionLocal
             from app.models.scraper_health import ScraperHealth
-            from sqlalchemy import select
             async with AsyncSessionLocal() as db:
                 q = await db.execute(select(ScraperHealth).where(ScraperHealth.source_name == self.source_name))
                 h = q.scalar_one_or_none()
@@ -199,7 +203,7 @@ class BaseScraper(ABC):
             pass
         return {"source_name": self.source_name, "status": "no_data"}
 
-    async def _safe_fetch(self, url: str, headers: Optional[dict] = None) -> Optional[httpx.Response]:
+    async def _safe_fetch(self, url: str, headers: dict | None = None) -> httpx.Response | None:
         _headers = {"User-Agent": _next_ua(), "Accept": "text/html,application/json,*/*"}
         if headers:
             _headers.update(headers)

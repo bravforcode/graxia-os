@@ -1,6 +1,32 @@
-# Brav OS / Personal OS
+# Graxia OS
 
-Brav OS คือ workspace สำหรับสร้าง Personal Sovereign OS: ระบบควบคุมงานหาโอกาส งาน outreach และ CRM ส่วนตัวที่ใช้ AI agents ช่วยค้นหา คัดกรอง จัดลำดับความสำคัญ ร่างข้อความ ติดตามผล และบันทึกความรู้ลง second brain โดยมีมนุษย์เป็นผู้อนุมัติการกระทำสำคัญก่อนส่งออกจริง
+**Your personal AI chief of staff.** Graxia OS finds leads, drafts outreach, manages approvals, tracks your revenue pipeline, and executes multi-agent tasks — autonomously, with human oversight at every decision point.
+
+## Quickstart (local development)
+
+```bash
+git clone <repo-url>
+cd "graxia os"
+cp .env.example .env
+
+# Edit .env — at minimum set:
+#   DATABASE_URL, SECRET_KEY, ADMIN_DEFAULT_EMAIL, ADMIN_DEFAULT_PASSWORD
+# For offline dev without Postgres, add:
+#   USE_SQLITE_FALLBACK=true
+
+# Start the full stack (development mode)
+docker compose -f docker-compose.dev.yml up
+```
+
+- Backend API: http://localhost:8000 (docs at `/docs`)
+- Frontend: http://localhost:5173
+- n8n: http://localhost:5678
+
+For production deployment see [SETUP_GUIDE.md](SETUP_GUIDE.md) and [docs/SECRETS_MANAGEMENT.md](docs/SECRETS_MANAGEMENT.md).
+
+---
+
+Graxia OS คือ workspace สำหรับสร้าง Personal Sovereign OS: ระบบควบคุมงานหาโอกาส งาน outreach และ CRM ส่วนตัวที่ใช้ AI agents ช่วยค้นหา คัดกรอง จัดลำดับความสำคัญ ร่างข้อความ ติดตามผล และบันทึกความรู้ลง second brain โดยมีมนุษย์เป็นผู้อนุมัติการกระทำสำคัญก่อนส่งออกจริง
 
 เป้าหมายของ repo นี้ไม่ใช่แค่ dashboard แต่เป็น control plane ที่รวม backend API, frontend operations UI, agent pipeline, job scheduler, integrations, monitoring และ production deployment path ไว้ในระบบเดียว
 
@@ -20,7 +46,7 @@ Brav OS คือ workspace สำหรับสร้าง Personal Sovereign
 
 ## What This System Does
 
-Brav OS ทำงานเป็น loop แบบนี้:
+Graxia OS ทำงานเป็น loop แบบนี้:
 
 1. Identity และ context ของ operator ถูกอ่านจาก `identity/` และ Obsidian vault ที่ตั้งค่าไว้
 2. Scrapers และ scheduled jobs ดึง opportunities, job postings, inbox/calendar context และข้อมูลที่เกี่ยวข้อง
@@ -69,10 +95,11 @@ Backend:
 - SQLAlchemy async
 - Alembic
 - PostgreSQL หรือ Supabase Postgres
-- Redis
+- Redis (with caching layer)
 - Celery และ Celery Beat
 - JWT auth, cookie sessions, CSRF, rate limiting, security headers
 - OpenClaw เป็น LLM path หลักตาม config ปัจจุบัน และ Gemini เป็น fallback/configurable route
+- Sentry error tracking (optional)
 
 Frontend:
 
@@ -94,6 +121,8 @@ Infrastructure:
 - Caddy
 - n8n
 - Prometheus, Alertmanager, Grafana, Loki, Promtail, cAdvisor, node exporter, Redis exporter, Flower
+- 5 Grafana dashboards (System, Application, Business, Celery, LLM Costs)
+- 15+ alert rules (Critical, Warning, Performance)
 
 ## Repository Layout
 
@@ -427,7 +456,7 @@ SERPAPI_KEY=...
 Obsidian:
 
 ```bash
-OBSIDIAN_VAULT_PATH=C:/Users/YourName/Documents/ObsidianVault
+OBSIDIAN_VAULT_PATH=C:/Users/YourName/C:/Users/menum/OneDrive/Documents/Gracia
 OBSIDIAN_ROOT_FOLDER=Second Brain
 OBSIDIAN_AUTO_BOOTSTRAP=true
 OBSIDIAN_AUTO_SYNC_ENABLED=true

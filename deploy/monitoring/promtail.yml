@@ -1,3 +1,7 @@
+# Promtail - Log collection for Graxia OS
+# NOTE: If no Loki server is available, logs are collected but not shipped.
+# To send to Grafana Cloud Loki, uncomment the clients section and add your URL.
+
 server:
   http_listen_port: 9080
   grpc_listen_port: 0
@@ -5,13 +9,14 @@ server:
 positions:
   filename: /tmp/positions.yaml
 
-clients:
-  - url: http://loki:3100/loki/api/v1/push
+# Uncomment and configure if you have a Loki instance:
+# clients:
+#   - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
-  - job_name: personal-os
+  - job_name: graxia-os
     static_configs:
       - targets: [localhost]
         labels:
-          job: personal-os
-          __path__: /var/log/personal-os/**/*.log
+          job: graxia-os
+          __path__: /var/log/graxia/**/*.log

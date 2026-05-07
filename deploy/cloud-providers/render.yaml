@@ -1,0 +1,98 @@
+# Render.com Deployment Configuration
+# สำหรับ deploy บน Render.com (ฟรี tier มี limitations)
+
+services:
+  # Backend API
+  - type: web
+    name: graxia-backend
+    runtime: docker
+    repo: https://github.com/your-username/graxia-os
+    branch: main
+    dockerfilePath: ./backend/Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: graxia-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: graxia-redis
+          property: connectionString
+      - key: APP_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+    healthCheckPath: /health
+    autoDeploy: true
+
+  # Frontend
+  - type: web
+    name: graxia-frontend
+    runtime: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://graxia-backend.onrender.com/api/v1
+
+  # Background Workers
+  - type: worker
+    name: graxia-worker-default
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerCommand: celery -A app.tasks.celery_app worker -Q default -c 2 -n default@%h
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: graxia-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: graxia-redis
+          property: connectionString
+
+  - type: worker
+    name: graxia-worker-critical
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerCommand: celery -A app.tasks.celery_app worker -Q critical -c 1 -n critical@%h
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: graxia-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: graxia-redis
+          property: connectionString
+
+  # Scheduler (Beat)
+  - type: worker
+    name: graxia-beat
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerCommand: python -m app.tasks.beat_launcher
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: graxia-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: graxia-redis
+          property: connectionString
+
+databases:
+  - name: graxia-db
+    databaseName: graxia
+    user: graxia
+    plan: starter
+
+redis:
+  - name: graxia-redis
+    plan: starter
+    ipAllowList: []

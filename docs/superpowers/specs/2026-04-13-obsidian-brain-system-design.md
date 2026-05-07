@@ -67,7 +67,7 @@ Location: `C:/Users/menum/.claude/hooks/`
 ### L4 — Obsidian Vault
 
 Persistent knowledge graph. Paths under:
-`C:/Users/menum/Documents/ObsidianVault/Second Brain/`
+`C:/Users/menum/OneDrive/Documents/Gracia/Second Brain/`
 
 ### L5 — Slash-Command Skills (5 files)
 
@@ -82,7 +82,7 @@ File: `C:/Users/menum/.claude/hooks/brain-config.json`
 
 ```json
 {
-  "vault_path": "C:/Users/menum/Documents/ObsidianVault/Second Brain",
+  "vault_path": "C:/Users/menum/OneDrive/Documents/Gracia/Second Brain",
   "hooks_path": "C:/Users/menum/.claude/hooks",
   "project_overrides": {
     "brav os": "brav-os"
@@ -567,7 +567,7 @@ Both systems share the same auto-detect rules in `~/.claude/CLAUDE.md`.
 ## Obsidian Vault Structure
 
 ```text
-C:/Users/menum/Documents/ObsidianVault/Second Brain/
+C:/Users/menum/OneDrive/Documents/Gracia/Second Brain/
   brain/
     latest.md              existing + "## Auto-injected" section added by injector
     patterns.json          machine-readable pattern store (v2)

@@ -1,13 +1,12 @@
 """Tests for Obsidian plugin manifest generation and Templater templates."""
+
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
 import pytest
-
 from app.integrations.obsidian_plugins import write_plugin_manifest, write_vault_templates
-
 
 # Skip permission tests on Windows due to permission model differences
 pytestmark = pytest.mark.skipif(

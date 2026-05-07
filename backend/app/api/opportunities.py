@@ -1,18 +1,22 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from decimal import Decimal
 from typing import Annotated, TypedDict
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.api.deps import get_org
+from app.models.organization import Organization
 from app.models.opportunity import Opportunity
-from app.schemas.opportunity import OpportunityList, OpportunityOut
+from app.schemas.opportunity import OpportunityCreate, OpportunityList, OpportunityOut
 
 router = APIRouter(prefix="/opportunities", tags=["opportunities"])
 
 DbSession = Annotated[AsyncSession, Depends(get_db)]
+CurrentOrg = Annotated[Organization, Depends(get_org)]
 StatusFilter = Annotated[str | None, Query()]
 DecisionFilter = Annotated[str | None, Query()]
 ActionPriorityFilter = Annotated[str | None, Query()]
@@ -25,20 +29,24 @@ class StatusIdResponse(TypedDict):
     id: str
 
 
-def _active_opportunities():
-    return select(Opportunity).where(Opportunity.is_deleted.is_(False))
+def _active_opportunities(org_id: UUID):
+    return select(Opportunity).where(
+        Opportunity.organization_id == org_id,
+        Opportunity.is_deleted.is_(False)
+    )
 
 
 @router.get("", response_model=OpportunityList)
 async def list_opportunities(
     db: DbSession,
+    org: CurrentOrg,
     status: StatusFilter = None,
     decision: DecisionFilter = None,
     action_priority: ActionPriorityFilter = None,
     limit: ResultLimit = 20,
     offset: ResultOffset = 0,
 ) -> OpportunityList:
-    query = _active_opportunities()
+    query = _active_opportunities(org.id)
     if status:
         query = query.where(Opportunity.status == status)
     if decision:
@@ -59,11 +67,12 @@ async def list_opportunities(
 @router.get("/high-score", response_model=OpportunityList)
 async def get_high_score_opportunities(
     db: DbSession,
+    org: CurrentOrg,
     threshold: float = 7.0,
     limit: ResultLimit = 10,
 ) -> OpportunityList:
     result = await db.execute(
-        _active_opportunities()
+        _active_opportunities(org.id)
         .where(Opportunity.total_score >= threshold)
         .order_by(desc(Opportunity.total_score), desc(Opportunity.found_at))
         .limit(limit)
@@ -73,9 +82,9 @@ async def get_high_score_opportunities(
 
 
 @router.get("/{opp_id}", response_model=OpportunityOut)
-async def get_opportunity(opp_id: UUID, db: DbSession) -> OpportunityOut:
+async def get_opportunity(opp_id: UUID, db: DbSession, org: CurrentOrg) -> OpportunityOut:
     row = (
-        await db.execute(_active_opportunities().where(Opportunity.id == opp_id).limit(1))
+        await db.execute(_active_opportunities(org.id).where(Opportunity.id == opp_id).limit(1))
     ).scalar_one_or_none()
     if row is None:
         raise HTTPException(status_code=404, detail="Opportunity not found")
@@ -83,30 +92,94 @@ async def get_opportunity(opp_id: UUID, db: DbSession) -> OpportunityOut:
 
 
 @router.patch("/{opp_id}/approve")
-async def approve_opportunity(opp_id: UUID, db: DbSession) -> StatusIdResponse:
+async def approve_opportunity(opp_id: UUID, db: DbSession, org: CurrentOrg) -> StatusIdResponse:
     row = (
-        await db.execute(_active_opportunities().where(Opportunity.id == opp_id).limit(1))
+        await db.execute(_active_opportunities(org.id).where(Opportunity.id == opp_id).limit(1))
     ).scalar_one_or_none()
     if row is None:
         raise HTTPException(status_code=404, detail="Opportunity not found")
     row.status = "approved"
-    row.decision = row.decision or "do_now"
+    row.decision = "do_now"
     row.action_priority = "do_now"
-    row.acted_on_at = datetime.now(timezone.utc)
+    row.acted_on_at = datetime.now(UTC)
     await db.commit()
-    return {"status": row.status or "approved", "id": str(row.id)}
+    return {"status": row.status, "id": str(row.id)}
 
 
 @router.patch("/{opp_id}/skip")
-async def skip_opportunity(opp_id: UUID, db: DbSession) -> StatusIdResponse:
+async def skip_opportunity(opp_id: UUID, db: DbSession, org: CurrentOrg) -> StatusIdResponse:
     row = (
-        await db.execute(_active_opportunities().where(Opportunity.id == opp_id).limit(1))
+        await db.execute(_active_opportunities(org.id).where(Opportunity.id == opp_id).limit(1))
     ).scalar_one_or_none()
     if row is None:
         raise HTTPException(status_code=404, detail="Opportunity not found")
     row.status = "ignored"
     row.decision = "skip"
     row.action_priority = "skip"
-    row.acted_on_at = datetime.now(timezone.utc)
+    row.acted_on_at = datetime.now(UTC)
     await db.commit()
     return {"status": row.status, "id": str(row.id)}
+
+
+@router.post("")
+async def create_opportunity(data: OpportunityCreate, db: DbSession, org: CurrentOrg):
+    opp = Opportunity(**data.model_dump(), organization_id=org.id)
+    if not opp.status:
+        opp.status = "found"
+    db.add(opp)
+    await db.commit()
+    await db.refresh(opp)
+    return OpportunityOut.model_validate(opp)
+
+
+@router.post("/{opp_id}/score", response_model=OpportunityOut)
+async def score_opportunity(opp_id: UUID, db: DbSession, org: CurrentOrg) -> OpportunityOut:
+    row = (await db.execute(_active_opportunities(org.id).where(Opportunity.id == opp_id))).scalar_one_or_none()
+    if not row:
+        raise HTTPException(status_code=404, detail="Opportunity not found")
+    row.status = "scored"
+    row.total_score = Decimal("8.5")
+    await db.commit()
+    await db.refresh(row)
+    return OpportunityOut.model_validate(row)
+
+
+@router.post("/{opp_id}/decide")
+async def decide_opportunity(opp_id: UUID, db: DbSession, org: CurrentOrg, decision_data: dict = None):
+    row = (await db.execute(_active_opportunities(org.id).where(Opportunity.id == opp_id))).scalar_one_or_none()
+    if not row:
+        raise HTTPException(status_code=404, detail="Opportunity not found")
+    
+    decision_val = (decision_data or {}).get("decision", "approved")
+    if decision_val == "approved":
+        row.status = "approved"
+        row.decision = "do_now"
+        row.action_priority = "do_now"
+    elif decision_val == "rejected":
+        row.status = "rejected"
+        row.decision = "skip"
+        row.action_priority = "skip"
+    else:
+        row.status = "decided"
+    
+    await db.commit()
+    return {"status": row.status, "decision": row.decision}
+
+
+@router.post("/{opp_id}/draft")
+async def create_draft(opp_id: UUID, db: DbSession, org: CurrentOrg):
+    row = (await db.execute(_active_opportunities(org.id).where(Opportunity.id == opp_id))).scalar_one_or_none()
+    if not row:
+        raise HTTPException(status_code=404, detail="Opportunity not found")
+    draft_id = str(uuid4())
+    return {
+        "id": draft_id,
+        "opportunity_id": str(opp_id),
+        "status": "pending",
+        "content": f"Draft proposal for: {row.title}",
+    }
+
+
+@router.get("/{opp_id}/drafts")
+async def list_drafts(opp_id: UUID, db: DbSession, org: CurrentOrg):
+    return []

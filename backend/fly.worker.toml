@@ -1,0 +1,23 @@
+# Fly.io Worker Configuration for Graxia OS
+# Runs Celery worker for background jobs
+
+app = "graxia-worker"
+primary_region = "sin"  # Singapore
+
+[build]
+  dockerfile = "Dockerfile.worker"
+
+[env]
+  APP_ENV = "production"
+  # Note: Add DATABASE_URL, REDIS_URL, and secrets via `fly secrets set`
+
+# Worker doesn't need HTTP service, just run the process
+[processes]
+  worker = "celery -A app.tasks.celery_app worker -Q default,critical -c 1 -n worker@%h --loglevel=info"
+
+[[vm]]
+  memory = "256mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+# No HTTP service needed for worker - it polls Redis

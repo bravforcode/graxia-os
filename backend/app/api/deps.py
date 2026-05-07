@@ -4,31 +4,24 @@ Common dependencies for API endpoints
 """
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
 
-from app.database import get_db
+from app.database import AsyncSessionLocal
 from app.middleware.auth import get_current_user
+from app.middleware.tenant import get_org
 from app.models.organization import Organization
 from app.models.user import User
 
 
-async def get_org(
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-) -> Organization:
-    """Get current user's organization."""
-    if not current_user.organization_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User has no organization",
-        )
-    org = await db.get(Organization, current_user.organization_id)
-    if not org:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Organization not found",
-        )
-    return org
-
+async def get_tenant_db(current_user: User = Depends(get_current_user)):
+    async with AsyncSessionLocal() as session:
+        if current_user.organization_id:
+            await session.execute(text(f"SET LOCAL myapp.current_tenant_id = '{current_user.organization_id}'"))
+        try:
+            yield session
+        finally:
+            if current_user.organization_id:
+                await session.execute(text("RESET myapp.current_tenant_id"))
 
 
 async def require_admin(
@@ -44,4 +37,4 @@ async def require_admin(
         )
     return current_user
 
-__all__ = ["get_db", "get_org", "get_current_user", "require_admin"]
+__all__ = ["get_tenant_db", "get_org", "get_current_user", "require_admin"]

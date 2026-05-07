@@ -4,14 +4,14 @@ Smart Scraper Base Class with Intelligent Failure Handling
 """
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from enum import Enum
-from typing import Optional
 
-from app.scrapers.base import BaseScraper
+from sqlalchemy import select
+
 from app.database import AsyncSessionLocal
 from app.models.scraper_health import ScraperHealth
-from sqlalchemy import select
+from app.scrapers.base import BaseScraper
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +104,7 @@ class SmartBaseScraper(BaseScraper):
             # Mute decision at threshold
             if new_weighted >= self.WEIGHTED_FAILURE_THRESHOLD and not health.is_muted:
                 health.is_muted = True
-                health.muted_until = datetime.now(timezone.utc) + timedelta(
+                health.muted_until = datetime.now(UTC) + timedelta(
                     hours=self.MUTE_DURATION_HOURS
                 )
                 await self._notify_muted(health.consecutive_failures or 0)
@@ -224,7 +224,7 @@ async def unmute_scraper(source_name: str) -> bool:
         return False
 
 
-async def get_scraper_health(source_name: str) -> Optional[dict]:
+async def get_scraper_health(source_name: str) -> dict | None:
     """Get detailed health status for a scraper."""
     async with AsyncSessionLocal() as db:
         result = await db.execute(

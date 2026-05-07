@@ -4,15 +4,16 @@ Follow-up Check Task
 Scheduled task to check for follow-ups needed.
 """
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
-from app.tasks.base import execute_managed_async_task, idempotent_task
-from app.tasks.celery_app import celery_app
+from sqlalchemy import and_, select
+
 from app.database import AsyncSessionLocal
 from app.models.submission import Submission
+from app.tasks.base import execute_managed_async_task, idempotent_task
+from app.tasks.celery_app import celery_app
 from app.tasks.queues import DEFAULT_QUEUE
 from app.telegram_bot.bot import send_message
-from sqlalchemy import select, and_
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ async def run_follow_up_check():
             # - Last updated > 7 days ago
             # - No follow-up in last 7 days
             
-            week_ago = datetime.now(timezone.utc) - timedelta(days=7)
+            week_ago = datetime.now(UTC) - timedelta(days=7)
             
             query = select(Submission).where(
                 and_(
@@ -58,7 +59,7 @@ async def run_follow_up_check():
 
 """
             for i, sub in enumerate(submissions[:5], 1):
-                days_ago = (datetime.now(timezone.utc) - sub.updated_at).days
+                days_ago = (datetime.now(UTC) - sub.updated_at).days
                 message += f"{i}. {sub.opportunity.title if sub.opportunity else 'Unknown'}\n"
                 message += f"   Status: {sub.status}\n"
                 message += f"   Last update: {days_ago} days ago\n\n"

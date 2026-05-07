@@ -126,7 +126,7 @@ export default function Jobs() {
 }
 
 function JobCard({ job }: { job: JobPosting }) {
-  const score = job.match_score ?? 0
+  const score = Number(job.match_score ?? 0)
   const createdAt = job.created_at ?? new Date().toISOString()
 
   return (

@@ -1,9 +1,9 @@
 """OpenClaw usage model for cost tracking."""
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from uuid import UUID, uuid4
 
-from sqlalchemy import String, Numeric, TIMESTAMP, Index
+from sqlalchemy import TIMESTAMP, Index, Numeric, String
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -29,7 +29,7 @@ class OpenClawUsage(Base):
     action: Mapped[str] = mapped_column(String(50), nullable=False)
     cost_usd: Mapped[Decimal] = mapped_column(Numeric(10, 4), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc), index=True
+        TIMESTAMP(timezone=True), default=lambda: datetime.now(UTC), index=True
     )
     
     __table_args__ = (

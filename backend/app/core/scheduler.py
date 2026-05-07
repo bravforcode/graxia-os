@@ -1,11 +1,12 @@
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from datetime import timedelta as timedelta_cls
+
+import pytz
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.schedulers.base import SchedulerNotRunningError
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
-import pytz
 
 from app.tasks.schedule import BEAT_SCHEDULE
 
@@ -15,7 +16,7 @@ BANGKOK = pytz.timezone("Asia/Bangkok")
 
 
 def _utc_now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 class PersonalOSScheduler:

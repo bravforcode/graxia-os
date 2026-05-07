@@ -1,0 +1,27 @@
+{
+  "languages": [],
+  "backend": [
+    {
+      "name": "FastAPI",
+      "version": null,
+      "confidence": 0.95
+    }
+  ],
+  "frontend": [],
+  "database": [
+    {
+      "name": "SQLAlchemy",
+      "version": null,
+      "confidence": 0.9
+    }
+  ],
+  "cache": [],
+  "workers": [
+    {
+      "name": "Celery",
+      "version": null,
+      "confidence": 0.95
+    }
+  ],
+  "overall_confidence": 0.9375
+}

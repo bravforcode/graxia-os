@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
-from uuid import uuid4
 from unittest.mock import AsyncMock
+from uuid import uuid4
 
 import pytest
-
 from app.agents.obsidian_sync import obsidian_sync_agent
 from app.core.bootstrap import wire_event_handlers
 from app.core.event_bus import event_bus
@@ -94,15 +93,13 @@ async def test_second_brain_bootstrap_creates_single_vault_scaffold(tmp_path: Pa
     assert (second_brain_root / "Projects" / "testlyn" / "Tasks.md").exists()
     assert (second_brain_root / "Projects" / "testlyn" / "Skills.md").exists()
     assert (second_brain_root / "Skills" / "Index.md").exists()
-    assert (second_brain_root / "Skills" / "Technical" / "fastapi.md").exists()
+    assert (second_brain_root / "Skills" / "Local" / "fastapi.md").exists()
 
     atlas = (second_brain_root / "Atlas.md").read_text(encoding="utf-8")
-    overview = (
-        second_brain_root / "Projects" / "testlyn" / "Overview.md"
-    ).read_text(encoding="utf-8")
-    skill_note = (
-        second_brain_root / "Skills" / "Technical" / "fastapi.md"
-    ).read_text(encoding="utf-8")
+    overview = (second_brain_root / "Projects" / "testlyn" / "Overview.md").read_text(
+        encoding="utf-8"
+    )
+    skill_note = (second_brain_root / "Skills" / "Local" / "fastapi.md").read_text(encoding="utf-8")
 
     assert "[[Dashboard]]" in atlas
     assert "Hospital management platform" in overview
@@ -145,7 +142,7 @@ async def test_obsidian_sync_agent_supports_current_entity_schemas(
                 deadline=date(2026, 4, 20),
                 tags=["python", "backend"],
                 raw_data={"project_slug": "testlyn"},
-                found_at=datetime(2026, 4, 10, tzinfo=timezone.utc),
+                found_at=datetime(2026, 4, 10, tzinfo=UTC),
             )
         )
         session.add(
@@ -156,10 +153,10 @@ async def test_obsidian_sync_agent_supports_current_entity_schemas(
                 status="sent",
                 type="proposal",
                 content="We can deliver the integration in two phases.",
-                sent_at=datetime(2026, 4, 10, 6, 30, tzinfo=timezone.utc),
+                sent_at=datetime(2026, 4, 10, 6, 30, tzinfo=UTC),
                 outcome_notes="Waiting for reply",
-                created_at=datetime(2026, 4, 10, 6, 0, tzinfo=timezone.utc),
-                updated_at=datetime(2026, 4, 10, 6, 30, tzinfo=timezone.utc),
+                created_at=datetime(2026, 4, 10, 6, 0, tzinfo=UTC),
+                updated_at=datetime(2026, 4, 10, 6, 30, tzinfo=UTC),
             )
         )
         session.add(
@@ -184,9 +181,9 @@ async def test_obsidian_sync_agent_supports_current_entity_schemas(
                 priority=8,
                 status="pending",
                 assigned_to="user",
-                due_date=datetime(2026, 4, 11, 9, 0, tzinfo=timezone.utc),
-                created_at=datetime(2026, 4, 10, 7, 0, tzinfo=timezone.utc),
-                updated_at=datetime(2026, 4, 10, 7, 0, tzinfo=timezone.utc),
+                due_date=datetime(2026, 4, 11, 9, 0, tzinfo=UTC),
+                created_at=datetime(2026, 4, 10, 7, 0, tzinfo=UTC),
+                updated_at=datetime(2026, 4, 10, 7, 0, tzinfo=UTC),
             )
         )
         session.add(
@@ -229,12 +226,12 @@ async def test_obsidian_sync_agent_supports_current_entity_schemas(
     submission_note = (
         second_brain_root / "Operations" / "Submissions" / f"SUB-{submission_id}.md"
     ).read_text(encoding="utf-8")
-    contact_note = (
-        second_brain_root / "CRM" / "Contacts" / "aom-founder.md"
-    ).read_text(encoding="utf-8")
-    task_note = (
-        second_brain_root / "Operations" / "Tasks" / f"TASK-{task_id}.md"
-    ).read_text(encoding="utf-8")
+    contact_note = (second_brain_root / "CRM" / "Contacts" / "aom-founder.md").read_text(
+        encoding="utf-8"
+    )
+    task_note = (second_brain_root / "Operations" / "Tasks" / f"TASK-{task_id}.md").read_text(
+        encoding="utf-8"
+    )
     knowledge_note = (
         second_brain_root / "Knowledge" / "Playbooks" / f"playbook-{knowledge_id}.md"
     ).read_text(encoding="utf-8")
@@ -287,9 +284,7 @@ def test_wire_event_handlers_registers_obsidian_automation_once():
 
 
 @pytest.mark.asyncio
-async def test_obsidian_api_exposes_bootstrap_and_context_capture_routes(
-    async_client, monkeypatch
-):
+async def test_obsidian_api_exposes_bootstrap_and_context_capture_routes(async_client, monkeypatch):
     monkeypatch.setattr(
         "app.api.obsidian.obsidian_sync_agent.bootstrap_second_brain",
         AsyncMock(

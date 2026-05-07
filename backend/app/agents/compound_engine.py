@@ -1,5 +1,5 @@
 import logging
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -29,14 +29,15 @@ class CompoundEngine(BaseAgent):
             return
 
         try:
+            from sqlalchemy import and_
+
             from app.database import AsyncSessionLocal
             from app.models.submission import Submission
             from app.telegram_bot.bot import send_message
-            from sqlalchemy import and_
 
             await send_message(f"💸 Win recorded: +{float(revenue):,.0f} THB")
 
-            today = datetime.now(timezone.utc).date()
+            today = datetime.now(UTC).date()
             async with AsyncSessionLocal() as db:
                 total_today = await db.scalar(
                     select(func.sum(Submission.actual_value)).where(
@@ -85,7 +86,7 @@ class CompoundEngine(BaseAgent):
         from app.models.submission import Submission
 
         week_start = date.today() - timedelta(days=date.today().weekday())
-        window_start = datetime.combine(week_start, time.min, tzinfo=timezone.utc)
+        window_start = datetime.combine(week_start, time.min, tzinfo=UTC)
         window_end = window_start + timedelta(days=7)
 
         async with AsyncSessionLocal() as db:

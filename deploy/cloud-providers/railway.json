@@ -1,0 +1,50 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "backend/Dockerfile"
+  },
+  "deploy": {
+    "startCommand": "python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT",
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 30,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  },
+  "services": {
+    "backend": {
+      "image": "graxia-backend:latest",
+      "build": {
+        "dockerfile": "backend/Dockerfile"
+      },
+      "environment": {
+        "APP_ENV": "production",
+        "LOG_LEVEL": "INFO"
+      },
+      "volumes": [
+        "/app/logs"
+      ]
+    },
+    "worker-default": {
+      "image": "graxia-backend:latest",
+      "command": "celery -A app.tasks.celery_app worker -Q default -c 2 -n default@%h",
+      "environment": {
+        "APP_ENV": "production"
+      }
+    },
+    "worker-critical": {
+      "image": "graxia-backend:latest",
+      "command": "celery -A app.tasks.celery_app worker -Q critical -c 1 -n critical@%h",
+      "environment": {
+        "APP_ENV": "production"
+      }
+    },
+    "beat": {
+      "image": "graxia-backend:latest",
+      "command": "python -m app.tasks.beat_launcher",
+      "environment": {
+        "APP_ENV": "production"
+      }
+    }
+  }
+}

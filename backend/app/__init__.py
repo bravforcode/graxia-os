@@ -5,7 +5,6 @@ from __future__ import annotations
 import os
 import platform
 
-
 if os.name == "nt":
     def _safe_machine() -> str:
         return os.environ.get("PROCESSOR_ARCHITECTURE") or "AMD64"

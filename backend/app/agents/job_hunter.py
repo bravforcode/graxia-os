@@ -5,20 +5,20 @@ Automatically discovers job opportunities from multiple platforms,
 scores them based on fit, and emits events for downstream processing.
 """
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Optional
 from uuid import uuid4
+
+from sqlalchemy import select
 
 from app.agents.base import BaseAgent
 from app.database import AsyncSessionLocal
 from app.models.job_posting import JobPosting
 from app.scrapers.devpost import DevpostScraper
 from app.scrapers.fastwork import FastworkScraper
+from app.scrapers.fiverr import FiverrScraper
 from app.scrapers.linkedin import LinkedInScraper
 from app.scrapers.upwork import UpworkScraper
-from app.scrapers.fiverr import FiverrScraper
-from sqlalchemy import select
 
 logger = logging.getLogger(__name__)
 
@@ -137,7 +137,7 @@ class JobHunterAgent(BaseAgent):
         logger.info(f"JobHunterAgent: completed - {result}")
         return result
     
-    async def _job_exists(self, source_hash: Optional[str]) -> bool:
+    async def _job_exists(self, source_hash: str | None) -> bool:
         """Check if job already exists by source_hash."""
         if not source_hash:
             return False
@@ -151,7 +151,7 @@ class JobHunterAgent(BaseAgent):
             logger.warning(f"Job existence check failed: {e}")
             return False
     
-    async def _save_job(self, job_data: dict) -> Optional[JobPosting]:
+    async def _save_job(self, job_data: dict) -> JobPosting | None:
         """Save job to database."""
         try:
             async with AsyncSessionLocal() as db:
@@ -168,8 +168,8 @@ class JobHunterAgent(BaseAgent):
                     source_hash=job_data.get("source_hash"),
                     raw_data=job_data.get("raw_data", {}),
                     status="discovered",
-                    created_at=datetime.now(timezone.utc),
-                    updated_at=datetime.now(timezone.utc)
+                    created_at=datetime.now(UTC),
+                    updated_at=datetime.now(UTC)
                 )
                 
                 db.add(job)
@@ -238,7 +238,7 @@ Score this job."""
                     job_obj.fit_summary = result.get("summary")
                     job_obj.matched_skills = result.get("matched_skills", [])
                     job_obj.skill_gap_list = result.get("skill_gaps", [])
-                    job_obj.last_scored_at = datetime.now(timezone.utc)
+                    job_obj.last_scored_at = datetime.now(UTC)
                     
                     await db.commit()
                     await db.refresh(job_obj)

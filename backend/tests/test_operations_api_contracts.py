@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
@@ -7,10 +7,9 @@ from uuid import uuid4
 
 import pytest
 import pytest_asyncio
-
 from app.core.event_bus import event_bus
-from app.models.audit import AuditLog
 from app.models.assistant_task import AssistantTask
+from app.models.audit import AuditLog
 from app.models.automation_run import AutomationRun
 from app.models.contact import Contact
 from app.models.network_interaction import NetworkInteraction
@@ -87,7 +86,7 @@ async def test_events_api_lists_replays_removes_and_clears_failed_events(
 async def test_scrapers_api_reports_health_and_stats(
     async_client, db_session, operations_session_factory
 ):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     db_session.add_all(
         [
             ScraperHealth(
@@ -163,7 +162,7 @@ async def test_scrapers_api_reports_health_and_stats(
 async def test_system_api_reports_health_costs_weights_audit_strategy_and_triggers(
     async_client, db_session, monkeypatch, operations_session_factory
 ):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     db_session.add_all(
         [
             ScraperHealth(
@@ -200,9 +199,7 @@ async def test_system_api_reports_health_costs_weights_audit_strategy_and_trigge
     )
     monkeypatch.setattr("app.api.system.llm_client.is_degraded", lambda: False)
     monkeypatch.setattr("app.api.system.llm_client.is_cost_paused", lambda: False)
-    monkeypatch.setattr(
-        "app.api.system.llm_client.get_call_count_today", AsyncMock(return_value=7)
-    )
+    monkeypatch.setattr("app.api.system.llm_client.get_call_count_today", AsyncMock(return_value=7))
     monkeypatch.setattr("app.api.system.llm_client.get_cost_today_usd", lambda: 0.42)
     monkeypatch.setattr("app.api.system.llm_client.get_cost_month_usd", lambda: 4.2)
     monkeypatch.setattr(
@@ -299,7 +296,9 @@ async def test_system_api_reports_health_costs_weights_audit_strategy_and_trigge
     assert rollback_response.json()["status"] == "rolled_back"
     assert rollback_response.json()["restored_version"] == 1
 
-    audit_response = await async_client.get("/api/v1/system/audit-log", params={"was_fallback": True})
+    audit_response = await async_client.get(
+        "/api/v1/system/audit-log", params={"was_fallback": True}
+    )
     assert audit_response.status_code == 200
     audit_payload = audit_response.json()
     assert len(audit_payload) == 1
@@ -334,7 +333,7 @@ async def test_system_api_reports_health_costs_weights_audit_strategy_and_trigge
 async def test_system_stats_are_derived_from_real_tables(
     async_client, db_session, operations_session_factory
 ):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     contact = Contact(
         name="Maya Chen",
         contact_type="lead",

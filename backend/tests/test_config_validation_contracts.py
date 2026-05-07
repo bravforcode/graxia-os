@@ -1,5 +1,4 @@
 import pytest
-
 from app.config import Settings
 
 
@@ -77,7 +76,9 @@ def test_production_configuration_rejects_wildcard_cors_origins():
     with pytest.raises(RuntimeError) as exc_info:
         settings.validate_production_configuration()
 
-    assert "ALLOWED_CORS_ORIGINS must contain only explicit production origins" in str(exc_info.value)
+    assert "ALLOWED_CORS_ORIGINS must contain only explicit production origins" in str(
+        exc_info.value
+    )
 
 
 def test_placeholder_detection_catches_frontend_and_example_placeholders():

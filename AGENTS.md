@@ -4,7 +4,7 @@
 
 At the start of any complex session, read:
 
-`C:\Users\menum\Documents\ObsidianVault\Second Brain\brain\latest.md`
+`C:\Users\menum\OneDrive\Documents\Gracia\Second Brain\brain\latest.md`
 
 Read this once per session only. Do not crawl the vault unless the user asks for a specific vault task.
 
@@ -12,7 +12,7 @@ Read this once per session only. Do not crawl the vault unless the user asks for
 
 The local cross-AI skills source of truth is:
 
-`C:\Users\menum\Documents\ObsidianVault\Second Brain\brain\skills-universal`
+`C:\Users\menum\OneDrive\Documents\Gracia\Second Brain\brain\skills-universal`
 
 Use this hub when the user asks to use a skill or when a task clearly matches a skill.
 
@@ -49,6 +49,6 @@ FastAPI + SQLAlchemy async, React/TS/Vite/Bun, PostgreSQL/Supabase, Redis/Celery
 
 ## Trusted Projects
 
-- `C:\brav os` - AI outreach/CRM system
+- `C:\graxia os` - Graxia Intelligence OS (AI-powered enterprise system)
 - `C:\vibecity.live`
 - `C:\TaskAm-main`

@@ -4,14 +4,24 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 REPORTS_DIR = REPO_ROOT / "reports"
 
 TOOLS = {
-    "bandit": ["bandit", "-r", "backend", "-f", "json", "-o", "reports/bandit-baseline.json", "--severity-level", "low"],
+    "bandit": [
+        "bandit",
+        "-r",
+        "backend",
+        "-f",
+        "json",
+        "-o",
+        "reports/bandit-baseline.json",
+        "--severity-level",
+        "low",
+    ],
     "semgrep_python": [
         "semgrep",
         "--config=p/python",
@@ -24,7 +34,16 @@ TOOLS = {
         "backend",
     ],
     "pip_audit": ["pip-audit", "--format", "json", "-o", "reports/pip-audit-baseline.json"],
-    "gitleaks": ["gitleaks", "detect", "--source", ".", "--report-format", "json", "--report-path", "reports/gitleaks-baseline.json"],
+    "gitleaks": [
+        "gitleaks",
+        "detect",
+        "--source",
+        ".",
+        "--report-format",
+        "json",
+        "--report-path",
+        "reports/gitleaks-baseline.json",
+    ],
     "trufflehog": ["trufflehog", "filesystem", ".", "--json"],
     "npm_audit": ["npm", "audit", "--json"],
 }
@@ -33,7 +52,7 @@ TOOLS = {
 def main() -> int:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     manifest: dict[str, object] = {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "repo_root": str(REPO_ROOT),
         "tools": {},
     }

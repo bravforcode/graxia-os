@@ -5,11 +5,12 @@ from app.tasks.queues import BACKGROUND_QUEUE
 
 
 async def sync_contacts_to_crm() -> dict[str, object]:
+    from sqlalchemy import desc, select
+
     from app.database import AsyncSessionLocal
     from app.integrations.hubspot import hubspot_client
     from app.integrations.salesforce import salesforce_client
     from app.models.contact import Contact
-    from sqlalchemy import desc, select
 
     hubspot = 0
     salesforce = 0

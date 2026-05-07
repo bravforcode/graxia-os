@@ -4,9 +4,8 @@ Specification Pattern
 Reusable business rules for filtering and validation.
 """
 from abc import ABC, abstractmethod
+from datetime import UTC, datetime
 from typing import Generic, TypeVar
-from datetime import datetime, timezone
-
 
 T = TypeVar('T')
 
@@ -84,7 +83,7 @@ class RecentOpportunity(Specification):
     def is_satisfied_by(self, opportunity) -> bool:
         if not opportunity.discovered_at:
             return False
-        age_days = (datetime.now(timezone.utc) - opportunity.discovered_at).days
+        age_days = (datetime.now(UTC) - opportunity.discovered_at).days
         return age_days <= self.days
 
 
@@ -97,7 +96,7 @@ class DeadlineApproaching(Specification):
     def is_satisfied_by(self, opportunity) -> bool:
         if not opportunity.deadline:
             return False
-        days_until = (opportunity.deadline - datetime.now(timezone.utc)).days
+        days_until = (opportunity.deadline - datetime.now(UTC)).days
         return 0 <= days_until <= self.days
 
 
@@ -128,7 +127,7 @@ class RecentSubmission(Specification):
     def is_satisfied_by(self, submission) -> bool:
         if not submission.sent_at:
             return False
-        age_days = (datetime.now(timezone.utc) - submission.sent_at).days
+        age_days = (datetime.now(UTC) - submission.sent_at).days
         return age_days <= self.days
 
 

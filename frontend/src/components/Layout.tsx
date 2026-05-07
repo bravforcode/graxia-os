@@ -27,6 +27,7 @@ import { useAgentStream, type AgentConnectionState, type AgentFeedItem, type Age
 import type { EventStats, SystemHealth } from '@/lib/api'
 import { cn, formatNumber } from '@/lib/utils'
 import { useUIStore } from '@/store/uiStore'
+import { CommandBar } from './layout/CommandBar'
 
 export type AppShellContext = {
   connectionState: AgentConnectionState
@@ -48,9 +49,13 @@ const navItems = [
   { path: '/leads', label: 'Leads', icon: UserPlus },
   { path: '/contacts', label: 'Contacts', icon: Users },
   { path: '/costs', label: 'Costs', icon: DollarSign },
-  { path: '/event-bus', label: 'Event Bus', icon: Activity },
   { path: '/metrics', label: 'Metrics', icon: BarChart3 },
   { path: '/settings', label: 'Settings', icon: Settings },
+]
+
+// Developer/system-level routes — not shown in primary nav
+const systemNavItems = [
+  { path: '/event-bus', label: 'Event Bus', icon: Activity },
 ]
 
 function isActivePath(pathname: string, path: string) {
@@ -106,6 +111,7 @@ export default function Layout() {
 
   return (
     <div className="relative min-h-screen overflow-hidden surface-grid">
+      <CommandBar />
       <a href="#main-content" className="skip-link">
         Skip to main content
       </a>
@@ -181,6 +187,32 @@ export default function Layout() {
                       active ? 'bg-[var(--color-accent-lime)]' : 'bg-transparent'
                     )}
                   />
+                </Link>
+              )
+            })}
+          </nav>
+
+          <nav aria-label="System" className="mt-2 px-1">
+            <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]">
+              System
+            </p>
+            {systemNavItems.map((item) => {
+              const Icon = item.icon
+              const active = isActivePath(location.pathname, item.path)
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={closeSidebar}
+                  className={cn(
+                    'group flex items-center gap-3 rounded-2xl px-3 py-2 text-xs font-medium transition duration-150',
+                    active
+                      ? 'bg-[rgba(88,224,255,0.12)] text-[var(--color-text-primary)]'
+                      : 'text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-secondary)]'
+                  )}
+                >
+                  <Icon size={15} />
+                  <span>{item.label}</span>
                 </Link>
               )
             })}

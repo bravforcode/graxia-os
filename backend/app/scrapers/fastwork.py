@@ -1,7 +1,8 @@
 import logging
-from typing import Optional
+
 import httpx
 from bs4 import BeautifulSoup
+
 from .base import BaseScraper
 
 logger = logging.getLogger(__name__)
@@ -14,7 +15,7 @@ class FastworkScraper(BaseScraper):
     def _get_url(self) -> str:
         return URL
 
-    async def fetch(self, url: str) -> Optional[httpx.Response]:
+    async def fetch(self, url: str) -> httpx.Response | None:
         return await self._safe_fetch(url)
 
     async def parse(self, response: httpx.Response) -> list[dict]:
@@ -38,7 +39,7 @@ class FastworkScraper(BaseScraper):
             logger.error(f"Fastwork parse error: {e}")
             return []
 
-    async def normalize(self, raw_item: dict) -> Optional[dict]:
+    async def normalize(self, raw_item: dict) -> dict | None:
         if not raw_item.get("title"):
             return None
         source_hash = self._compute_source_hash(raw_item.get("source_url", ""), raw_item.get("title", ""))

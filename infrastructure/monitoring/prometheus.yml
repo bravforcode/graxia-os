@@ -1,0 +1,89 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Prometheus Configuration for Graxia OS Brutal Mode
+# ═══════════════════════════════════════════════════════════════════════════════
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: graxia-brutal
+    replica: '{{.ExternalURL}}'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+# Rule files
+rule_files:
+  # - "rules/*.yml"
+
+# Scrape configurations
+scrape_configs:
+  # ── Prometheus Self ──
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # ── Graxia API ──
+  - job_name: 'graxia-api'
+    static_configs:
+      - targets: ['api:8000']
+    metrics_path: /metrics
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # ── Redis Cluster ──
+  - job_name: 'redis-cluster'
+    static_configs:
+      - targets: ['redis-node-1:6379', 'redis-node-2:6379', 'redis-node-3:6379']
+    scrape_interval: 30s
+
+  # ── ClickHouse ──
+  - job_name: 'clickhouse'
+    static_configs:
+      - targets: ['clickhouse:8123']
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  # ── Elasticsearch ──
+  - job_name: 'elasticsearch'
+    static_configs:
+      - targets: ['elasticsearch:9200']
+    metrics_path: /_prometheus/metrics
+    scrape_interval: 30s
+
+  # ── NATS ──
+  - job_name: 'nats'
+    static_configs:
+      - targets: ['nats:8222']
+    metrics_path: /varz
+    scrape_interval: 30s
+
+  # ── Traefik ──
+  - job_name: 'traefik'
+    static_configs:
+      - targets: ['traefik:8080']
+    metrics_path: /metrics
+    scrape_interval: 15s
+
+  # ── Docker Daemon (if enabled) ──
+  - job_name: 'docker'
+    static_configs:
+      - targets: ['host.docker.internal:9323']
+    scrape_interval: 30s
+
+  # ── Node Exporter (if running) ──
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 30s
+
+# Remote storage (optional - for long-term storage)
+# remote_write:
+#   - url: "http://thanos-receive:19291/api/v1/receive"
+
+# Remote read (optional)
+# remote_read:
+#   - url: "http://thanos-store:9090/api/v1/read"

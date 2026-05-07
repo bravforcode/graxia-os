@@ -1,0 +1,1040 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Graxia OS — BRUTAL MODE
+# Enterprise-Grade Infrastructure with 100+ Features
+# RAM: ~4GB total | Supports: 100,000+ concurrent users
+# ═══════════════════════════════════════════════════════════════════════════════
+
+version: "3.8"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TIER 1: CORE DATABASE & CACHE (Features 1-15)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+services:
+  # ── Redis Cluster Node 1 (Feature 31: Redis Cluster) ──
+  redis-node-1:
+    image: redis:7-alpine
+    container_name: graxia-redis-1
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+      - "16379:16379"
+    command: >
+      redis-server
+      --port 6379
+      --cluster-enabled yes
+      --cluster-config-file nodes.conf
+      --cluster-node-timeout 5000
+      --appendonly yes
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_node1_data:/data
+    networks:
+      graxia-cluster:
+        ipv4_address: 172.21.0.11
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis Cluster Node 2 ──
+  redis-node-2:
+    image: redis:7-alpine
+    container_name: graxia-redis-2
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+      - "16380:16379"
+    command: >
+      redis-server
+      --port 6379
+      --cluster-enabled yes
+      --cluster-config-file nodes.conf
+      --cluster-node-timeout 5000
+      --appendonly yes
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_node2_data:/data
+    networks:
+      graxia-cluster:
+        ipv4_address: 172.21.0.12
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis Cluster Node 3 ──
+  redis-node-3:
+    image: redis:7-alpine
+    container_name: graxia-redis-3
+    restart: unless-stopped
+    ports:
+      - "6381:6379"
+      - "16381:16379"
+    command: >
+      redis-server
+      --port 6379
+      --cluster-enabled yes
+      --cluster-config-file nodes.conf
+      --cluster-node-timeout 5000
+      --appendonly yes
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_node3_data:/data
+    networks:
+      graxia-cluster:
+        ipv4_address: 172.21.0.13
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis Cluster Setup (One-time init) ──
+  redis-cluster-setup:
+    image: redis:7-alpine
+    container_name: graxia-redis-setup
+    command: >
+      sh -c "
+        sleep 5 &&
+        redis-cli --cluster create
+          redis-node-1:6379
+          redis-node-2:6379
+          redis-node-3:6379
+          --cluster-replicas 0
+          --cluster-yes
+      "
+    depends_on:
+      - redis-node-1
+      - redis-node-2
+      - redis-node-3
+    networks:
+      - graxia-cluster
+    profiles:
+      - setup
+
+  # ── Valkey (Feature 32: Redis Fork - 30% faster) ──
+  valkey:
+    image: valkey/valkey:latest
+    container_name: graxia-valkey
+    restart: unless-stopped
+    ports:
+      - "6382:6379"
+    command: >
+      valkey-server
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - valkey_data:/data
+    networks:
+      graxia-cluster:
+        ipv4_address: 172.21.0.14
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # TIER 2: ANALYTICS & SEARCH (Features 33-35, 54-60)
+  # ═══════════════════════════════════════════════════════════════════════════════
+
+  # ── ClickHouse (Feature 35, 57: Analytics DB) ──
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: graxia-clickhouse
+    restart: unless-stopped
+    ports:
+      - "8123:8123" # HTTP
+      - "9000:9000" # Native
+    environment:
+      - CLICKHOUSE_DB=graxia_analytics
+      - CLICKHOUSE_USER=graxia
+      - CLICKHOUSE_PASSWORD=graxia_secure_2024
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./infrastructure/clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - graxia-cluster
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Elasticsearch (Feature 34: Search) ──
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: graxia-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - cluster.routing.allocation.disk.threshold_enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - graxia-cluster
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # ── Typesense (Feature 33: Full-Text Search) ──
+  typesense:
+    image: typesense/typesense:0.25.1
+    container_name: graxia-typesense
+    restart: unless-stopped
+    ports:
+      - "8108:8108"
+    environment:
+      - TYPESENSE_API_KEY=graxia_typesense_key_2024
+      - TYPESENSE_DATA_DIR=/data
+    volumes:
+      - typesense_data:/data
+    networks:
+      - graxia-cluster
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # TIER 3: MONITORING & OBSERVABILITY (Features 46, 58-60, 86-90)
+  # ═══════════════════════════════════════════════════════════════════════════════
+
+  # ── Prometheus (Feature 88: Metrics) ──
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: graxia-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--web.enable-lifecycle"
+      - "--storage.tsdb.retention.time=30d"
+    volumes:
+      - ./infrastructure/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - graxia-cluster
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ── Grafana (Feature 46: Dashboards) ──
+  grafana:
+    image: grafana/grafana:latest
+    container_name: graxia-grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000" # Changed from 3000 to avoid conflict with frontend
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=graxia_admin_2024
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3001
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infrastructure/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./infrastructure/monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - graxia-cluster
+    depends_on:
+      - prometheus
+      - clickhouse
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ── Loki (Feature 87: Log Aggregation) ──
+  loki:
+    image: grafana/loki:latest
+    container_name: graxia-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./infrastructure/monitoring/loki-config.yaml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    networks:
+      - graxia-cluster
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ── Promtail (Log Collector) ──
+  promtail:
+    image: grafana/promtail:latest
+    container_name: graxia-promtail
+    restart: unless-stopped
+    volumes:
+      - ./logs:/var/log/graxia:ro
+      - ./infrastructure/monitoring/promtail-config.yaml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - graxia-cluster
+    depends_on:
+      - loki
+
+  # ── Jaeger (Feature 86: Distributed Tracing) ──
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: graxia-jaeger
+    restart: unless-stopped
+    ports:
+      - "16686:16686" # UI
+      - "14268:14268" # Collector
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - graxia-cluster
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # TIER 4: MESSAGING & QUEUES (Features 95-97)
+  # ═══════════════════════════════════════════════════════════════════════════════
+
+  # ── NATS (Feature 96: Message Queue) ──
+  nats:
+    image: nats:latest
+    container_name: graxia-nats
+    restart: unless-stopped
+    ports:
+      - "4222:4222" # Client
+      - "8222:8222" # HTTP
+      - "6222:6222" # Cluster
+    command: >
+      --js
+      --store_dir /data/jetstream
+      --max_memory_store 256MB
+      --max_file_store 1GB
+    volumes:
+      - nats_data:/data/jetstream
+    networks:
+      - graxia-cluster
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ── RabbitMQ (Alternative Queue) ──
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: graxia-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672" # AMQP
+      - "15672:15672" # Management UI
+    environment:
+      - RABBITMQ_DEFAULT_USER=graxia
+      - RABBITMQ_DEFAULT_PASS=graxia_mq_2024
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - graxia-cluster
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # TIER 5: API GATEWAY & LOAD BALANCER (Features 76, 91)
+  # ═══════════════════════════════════════════════════════════════════════════════
+
+  # ── Traefik (API Gateway) ──
+  traefik:
+    image: traefik:v3.0
+    container_name: graxia-traefik
+    restart: unless-stopped
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=admin@graxia.io"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--metrics.prometheus=true"
+      - "--tracing.jaeger=true"
+      - "--accesslog=true"
+      - "--log.level=INFO"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080" # Dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - letsencrypt_data:/letsencrypt
+    networks:
+      - graxia-cluster
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # TIER 6: GRAXIA CORE SERVICES
+  # ═══════════════════════════════════════════════════════════════════════════════
+
+  # ── API Server (2 replicas for HA) ──
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.unified
+    container_name: graxia-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # Database: Supabase (external)
+      - DATABASE_URL=${DATABASE_URL}
+      # Redis Cluster (Feature 31)
+      - REDIS_URL=redis://redis-node-1:6379,redis-node-2:6379,redis-node-3:6379/0
+      - REDIS_CLUSTER=true
+      # Valkey (Feature 32: 30% faster Redis fork)
+      - VALKEY_URL=redis://valkey:6379/1
+      # ClickHouse Analytics (Feature 35, 57)
+      - CLICKHOUSE_URL=http://clickhouse:8123
+      - CLICKHOUSE_USER=graxia
+      - CLICKHOUSE_PASSWORD=graxia_secure_2024
+      # Elasticsearch (Feature 34)
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      # Typesense (Feature 33)
+      - TYPESENSE_API_KEY=graxia_typesense_key_2024
+      - TYPESENSE_URL=http://typesense:8108
+      # NATS (Feature 96)
+      - NATS_URL=nats://nats:4222
+      # Kafka (Feature 97)
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - KAFKA_CLIENT_ID=graxia-api
+      # MinIO S3 (Feature 59)
+      - S3_ENDPOINT=http://minio:9002
+      - S3_ACCESS_KEY=graxiaadmin
+      - S3_SECRET_KEY=graxiaadmin2024
+      - S3_BUCKET_DATA_LAKE=graxia-data-lake
+      - S3_BUCKET_MODELS=graxia-ml-models
+      - S3_BUCKET_LOGS=graxia-logs
+      # Vault (Feature 99)
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=graxia-vault-root-2024
+      # Kong API Gateway (Feature 76, 91)
+      - KONG_ADMIN_URL=http://kong:8001
+      # Monitoring (Features 86-90)
+      - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - METRICS_ENABLED=true
+      - PROMETHEUS_GATEWAY=http://prometheus:9090
+      # Security (Features 16-30)
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ADMIN_API_KEY=${ADMIN_API_KEY}
+      - WEBHOOK_HMAC_SECRET=${WEBHOOK_HMAC_SECRET}
+      # Trading (Features 71-75)
+      - TRADING_MODE=${TRADING_MODE:-PAPER}
+      - LIVE_TRADING_ENABLED=${LIVE_TRADING_ENABLED:-false}
+      # Notifications
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      # Payments (Features 81-85)
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID}
+      # Logging (Feature 87)
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - STRUCTURED_LOGGING=true
+      - LOKI_ENDPOINT=http://loki:3100
+    depends_on:
+      redis-node-1:
+        condition: service_healthy
+      redis-node-2:
+        condition: service_healthy
+      redis-node-3:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_started
+      nats:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+      vault:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - graxia-cluster
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+        reservations:
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`api.graxia.local`)"
+      - "traefik.http.routers.api.entrypoints=web"
+      - "traefik.http.services.api.loadbalancer.server.port=8000"
+      - "prometheus-job=api"
+      - "prometheus-port=8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      - ./logs:/app/logs
+
+  # ── Celery Worker (Feature 48: Background Jobs) ──
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.unified
+    container_name: graxia-worker
+    restart: unless-stopped
+    command: >
+      celery -A graxia.services.celery_app worker
+      -l info
+      -c 4
+      -Q celery,revenue,quant,analytics,notifications
+      --prefetch-multiplier 1
+      --max-tasks-per-child 1000
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=redis://redis-node-1:6379,redis-node-2:6379,redis-node-3:6379/0
+      - REDIS_CLUSTER=true
+      - CLICKHOUSE_URL=http://clickhouse:8123
+      - CLICKHOUSE_USER=graxia
+      - CLICKHOUSE_PASSWORD=graxia_secure_2024
+      - NATS_URL=nats://nats:4222
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - S3_ENDPOINT=http://minio:9002
+      - S3_ACCESS_KEY=graxiaadmin
+      - S3_SECRET_KEY=graxiaadmin2024
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=graxia-vault-root-2024
+      - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - TRADING_MODE=${TRADING_MODE:-PAPER}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    depends_on:
+      - redis-node-1
+      - nats
+      - kafka
+      - vault
+      - minio
+    networks:
+      - graxia-cluster
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+    volumes:
+      - ./logs:/app/logs
+
+  # ── Celery Beat (Scheduler) ──
+  beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.unified
+    container_name: graxia-beat
+    restart: unless-stopped
+    command: >
+      celery -A graxia.services.celery_app beat
+      -l info
+      --scheduler celery.beat.schedulers.DatabaseScheduler
+      --max-interval 300
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=redis://redis-node-1:6379,redis-node-2:6379,redis-node-3:6379/0
+      - REDIS_CLUSTER=true
+      - CLICKHOUSE_URL=http://clickhouse:8123
+      - CLICKHOUSE_USER=graxia
+      - CLICKHOUSE_PASSWORD=graxia_secure_2024
+      - NATS_URL=nats://nats:4222
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - S3_ENDPOINT=http://minio:9002
+      - S3_ACCESS_KEY=graxiaadmin
+      - S3_SECRET_KEY=graxiaadmin2024
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=graxia-vault-root-2024
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    depends_on:
+      - redis-node-1
+      - nats
+      - kafka
+      - vault
+      - minio
+    networks:
+      - graxia-cluster
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    volumes:
+      - ./logs:/app/logs
+
+  # ── Event Processor (Feature 95: Event-Driven) ──
+  event-processor:
+    build:
+      context: .
+      dockerfile: Dockerfile.unified
+    container_name: graxia-event-processor
+    restart: unless-stopped
+    command: python -m graxia.services.event_processor
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=redis://redis-node-1:6379,redis-node-2:6379,redis-node-3:6379/0
+      - NATS_URL=nats://nats:4222
+      - CLICKHOUSE_URL=http://clickhouse:8123
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    depends_on:
+      - nats
+      - clickhouse
+      - elasticsearch
+    networks:
+      - graxia-cluster
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    volumes:
+      - ./logs:/app/logs
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # TIER 7: ML & AI SERVICES (Features 61-75)
+  # ═══════════════════════════════════════════════════════════════════════════════
+
+  # ── pgvector (Feature 61: Vector DB) ──
+  pgvector:
+    image: ankane/pgvector:latest
+    container_name: graxia-pgvector
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=graxia
+      - POSTGRES_PASSWORD=graxia_vector_2024
+      - POSTGRES_DB=vector_store
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgvector_data:/var/lib/postgresql/data
+    networks:
+      - graxia-cluster
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    command: >
+      postgres
+      -c shared_buffers=128MB
+      -c effective_cache_size=256MB
+      -c max_connections=50
+
+  # ── ML Model Server (Feature 71: AI Trading Signals) ──
+  ml-server:
+    build:
+      context: ./ml_models
+      dockerfile: Dockerfile.ml
+    container_name: graxia-ml
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - MODEL_PATH=/models
+      - REDIS_URL=redis://redis-node-1:6379,redis-node-2:6379,redis-node-3:6379/0
+      - CLICKHOUSE_URL=http://clickhouse:8123
+    volumes:
+      - ./ml_models:/models:ro
+    networks:
+      - graxia-cluster
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # TIER 8: SECURITY & SECRETS (Features 16-30)
+  # ═══════════════════════════════════════════════════════════════════════════════
+
+  # ── Vault (Feature 99: Secrets Management) ──
+  vault:
+    image: hashicorp/vault:latest
+    container_name: graxia-vault
+    restart: unless-stopped
+    ports:
+      - "8200:8200"
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=graxia-vault-root-2024
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+      - VAULT_ADDR=http://0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - vault_data:/vault/file
+      - ./infrastructure/vault/init.sh:/vault/init.sh
+    networks:
+      - graxia-cluster
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    healthcheck:
+      test:
+        ["CMD", "wget", "--spider", "-q", "http://localhost:8200/v1/sys/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    entrypoint:
+      [
+        "sh",
+        "-c",
+        "vault server -dev -dev-root-token-id=graxia-vault-root-2024 & sleep 2 && /vault/init.sh && wait",
+      ]
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # TIER 8.5: DATA LAKE & STREAMING (Features 59, 97)
+  # ═══════════════════════════════════════════════════════════════════════════════
+
+  # ── MinIO (Feature 59: Data Lake / S3-Compatible Storage) ──
+  minio:
+    image: minio/minio:latest
+    container_name: graxia-minio
+    restart: unless-stopped
+    ports:
+      - "9001:9001"
+      - "9002:9002"
+    environment:
+      - MINIO_ROOT_USER=graxiaadmin
+      - MINIO_ROOT_PASSWORD=graxiaadmin2024
+      - MINIO_BROWSER=on
+    command: server /data --console-address ':9001' --address ':9002'
+    volumes:
+      - minio_data:/data
+    networks:
+      - graxia-cluster
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9002/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # ── MinIO Client (Bucket Setup) ──
+  minio-setup:
+    image: minio/mc:latest
+    container_name: graxia-minio-setup
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+        sleep 5;
+        /usr/bin/mc config host add graxia http://minio:9002 graxiaadmin graxiaadmin2024;
+        /usr/bin/mc mb -p graxia/graxia-data-lake;
+        /usr/bin/mc mb -p graxia/graxia-ml-models;
+        /usr/bin/mc mb -p graxia/graxia-backups;
+        /usr/bin/mc mb -p graxia/graxia-logs;
+        /usr/bin/mc policy set public graxia/graxia-data-lake;
+        echo 'MinIO buckets created';
+        exit 0;
+      "
+    networks:
+      - graxia-cluster
+    profiles:
+      - setup
+
+  # ── Kafka + Zookeeper (Feature 97: Stream Processing) ──
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: graxia-zookeeper
+    restart: unless-stopped
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
+      - ZOOKEEPER_TICK_TIME=2000
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_logs:/var/lib/zookeeper/log
+    networks:
+      - graxia-cluster
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo 'ruok' | nc localhost 2181 | grep imok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: graxia-kafka
+    restart: unless-stopped
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+      - KAFKA_LOG_RETENTION_HOURS=168
+      - KAFKA_LOG_SEGMENT_BYTES=1073741824
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - graxia-cluster
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "kafka-broker-api-versions",
+          "--bootstrap-server",
+          "localhost:9092",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ── Kafka Connect (For integrations) ──
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect:latest
+    container_name: graxia-kafka-connect
+    restart: unless-stopped
+    depends_on:
+      - kafka
+    ports:
+      - "8083:8083"
+    environment:
+      - CONNECT_BOOTSTRAP_SERVERS=kafka:29092
+      - CONNECT_REST_ADVERTISED_HOST_NAME=kafka-connect
+      - CONNECT_GROUP_ID=graxia-connect
+      - CONNECT_CONFIG_STORAGE_TOPIC=graxia-connect-configs
+      - CONNECT_OFFSET_STORAGE_TOPIC=graxia-connect-offsets
+      - CONNECT_STATUS_STORAGE_TOPIC=graxia-connect-status
+      - CONNECT_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_INTERNAL_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_INTERNAL_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_REST_PORT=8083
+    volumes:
+      - kafka_connect_data:/usr/share/java
+    networks:
+      - graxia-cluster
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # TIER 8.8: API GATEWAY ENHANCED (Features 91-94)
+  # ═══════════════════════════════════════════════════════════════════════════════
+
+  # ── Kong API Gateway (Feature 76, 91: GraphQL/gRPC Gateway) ──
+  kong-database:
+    image: postgres:15-alpine
+    container_name: graxia-kong-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=kong
+      - POSTGRES_DB=kong
+      - POSTGRES_PASSWORD=kongpass2024
+    volumes:
+      - kong_db_data:/var/lib/postgresql/data
+    networks:
+      - graxia-cluster
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "kong"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kong-migration:
+    image: kong:latest
+    container_name: graxia-kong-migration
+    command: kong migrations bootstrap
+    depends_on:
+      kong-database:
+        condition: service_healthy
+    environment:
+      - KONG_DATABASE=postgres
+      - KONG_PG_HOST=kong-database
+      - KONG_PG_PASSWORD=kongpass2024
+      - KONG_PASSWORD=graxia-kong-admin-2024
+    networks:
+      - graxia-cluster
+    profiles:
+      - setup
+
+  kong:
+    image: kong:latest
+    container_name: graxia-kong
+    restart: unless-stopped
+    depends_on:
+      kong-database:
+        condition: service_healthy
+    ports:
+      - "8001:8000" # Proxy
+      - "8444:8443" # Proxy SSL
+      - "8002:8001" # Admin API
+      - "8445:8444" # Admin API SSL
+      - "8446:8445" # Manager GUI
+    environment:
+      - KONG_DATABASE=postgres
+      - KONG_PG_HOST=kong-database
+      - KONG_PG_PASSWORD=kongpass2024
+      - KONG_PROXY_ACCESS_LOG=/dev/stdout
+      - KONG_ADMIN_ACCESS_LOG=/dev/stdout
+      - KONG_PROXY_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_ERROR_LOG=/dev/stderr
+      - KONG_PLUGINS=bundled,jwt,key-auth,acl,rate-limiting,prometheus
+      - KONG_DECLARATIVE_CONFIG=/kong/declarative/kong.yml
+    volumes:
+      - ./infrastructure/kong/kong.yml:/kong/declarative/kong.yml
+    networks:
+      - graxia-cluster
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # TIER 9: BACKUP & MAINTENANCE
+  # ═══════════════════════════════════════════════════════════════════════════════
+
+  # ── Database Backup ──
+  backup:
+    image: offen/docker-volume-backup:latest
+    container_name: graxia-backup
+    restart: unless-stopped
+    environment:
+      - BACKUP_CRON_EXPRESSION=0 2 * * *
+      - BACKUP_RETENTION_DAYS=30
+      - BACKUP_FILENAME=graxia-backup-%Y-%m-%dT%H-%M-%S.tar.gz
+    volumes:
+      - redis_node1_data:/backup/redis1:ro
+      - redis_node2_data:/backup/redis2:ro
+      - redis_node3_data:/backup/redis3:ro
+      - clickhouse_data:/backup/clickhouse:ro
+      - ./backups:/archive
+    networks:
+      - graxia-cluster
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# VOLUMES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+volumes:
+  redis_node1_data:
+  redis_node2_data:
+  redis_node3_data:
+  valkey_data:
+  clickhouse_data:
+  elasticsearch_data:
+  typesense_data:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  nats_data:
+  rabbitmq_data:
+  pgvector_data:
+  vault_data:
+  letsencrypt_data:
+  # New volumes for complete stack
+  minio_data:
+  zookeeper_data:
+  zookeeper_logs:
+  kafka_data:
+  kafka_connect_data:
+  kong_db_data:
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# NETWORKS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+networks:
+  graxia-cluster:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16

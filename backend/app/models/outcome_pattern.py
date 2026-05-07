@@ -1,8 +1,18 @@
 import uuid
+
 from sqlalchemy import (
-    UUID, CheckConstraint, Column, DateTime, ForeignKey,
-    Numeric, SmallInteger, String, Text, func,
+    UUID,
+    CheckConstraint,
+    Column,
+    DateTime,
+    ForeignKey,
+    Numeric,
+    SmallInteger,
+    String,
+    Text,
+    func,
 )
+
 from .base import Base
 
 

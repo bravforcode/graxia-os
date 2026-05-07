@@ -2,18 +2,17 @@ import asyncio
 from logging.config import fileConfig
 
 import app as _app_bootstrap  # noqa: F401 - install Windows platform import guards
-
+from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
-from alembic import context
 
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-from app.models import Base  # noqa: E402
 from app.config import settings  # noqa: E402
+from app.models import Base  # noqa: E402
 
 config.set_main_option("sqlalchemy.url", settings.EFFECTIVE_MIGRATION_DATABASE_URL)
 target_metadata = Base.metadata

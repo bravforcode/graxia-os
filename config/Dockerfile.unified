@@ -1,0 +1,71 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Graxia OS — Unified Dockerfile
+# Revenue OS + Quant OS in single optimized image
+# ═══════════════════════════════════════════════════════════════════════════════
+
+FROM python:3.11-slim as builder
+
+# Build dependencies
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PIP_NO_CACHE_DIR=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Install dependencies
+COPY requirements.unified.txt /tmp/requirements.txt
+RUN pip install --upgrade pip && \
+    pip install -r /tmp/requirements.txt
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Production stage
+# ═══════════════════════════════════════════════════════════════════════════════
+FROM python:3.11-slim as production
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONFAULTHANDLER=1
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy virtual environment
+COPY --from=builder /opt/venv /opt/venv
+
+# Create app directory
+WORKDIR /app
+
+# Copy application code
+COPY graxia/ /app/graxia/
+COPY alembic/ /app/alembic/
+COPY alembic.ini /app/alembic.ini
+
+# Create necessary directories
+RUN mkdir -p /app/logs /app/ml_models /app/uploads /app/data
+
+# Create non-root user
+RUN useradd -m -u 1000 graxia && \
+    chown -R graxia:graxia /app
+USER graxia
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Expose ports
+EXPOSE 8000 9090
+
+# Default command
+CMD ["python", "-m", "uvicorn", "graxia.api.unified_main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]

@@ -27,7 +27,9 @@ async def test_jobs_list_stats_and_detail_contract(async_client, seeded_records)
 
 
 @pytest.mark.asyncio
-async def test_email_thread_list_stats_messages_and_mark_read_contract(async_client, seeded_records):
+async def test_email_thread_list_stats_messages_and_mark_read_contract(
+    async_client, seeded_records
+):
     list_response = await async_client.get(
         "/api/v1/email-threads/",
         params={"category": "important", "unread_only": True},
@@ -133,7 +135,9 @@ async def test_contacts_support_lead_management_contract(async_client):
     delete_response = await async_client.delete(f"/api/v1/contacts/{contact_id}")
     assert delete_response.status_code == 204
 
-    after_delete_response = await async_client.get("/api/v1/contacts", params={"contact_type": "lead"})
+    after_delete_response = await async_client.get(
+        "/api/v1/contacts", params={"contact_type": "lead"}
+    )
     assert after_delete_response.status_code == 200
     assert after_delete_response.json()["total"] == 0
 

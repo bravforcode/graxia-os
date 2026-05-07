@@ -3,12 +3,11 @@ Distributed Tracing
 
 OpenTelemetry-compatible tracing for request tracking.
 """
-from typing import Optional, Dict, Any
-from datetime import datetime, timezone
 import uuid
 from contextvars import ContextVar
 from dataclasses import dataclass, field
-
+from datetime import UTC, datetime
+from typing import Any
 
 # Context variables
 trace_id_var: ContextVar[str] = ContextVar('trace_id', default='')
@@ -16,7 +15,7 @@ span_id_var: ContextVar[str] = ContextVar('span_id', default='')
 
 
 def _utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 @dataclass
@@ -24,11 +23,11 @@ class Span:
     """Trace span."""
     span_id: str
     trace_id: str
-    parent_span_id: Optional[str]
+    parent_span_id: str | None
     name: str
     start_time: datetime
-    end_time: Optional[datetime] = None
-    attributes: Dict[str, Any] = field(default_factory=dict)
+    end_time: datetime | None = None
+    attributes: dict[str, Any] = field(default_factory=dict)
     events: list = field(default_factory=list)
     status: str = "ok"
     
@@ -36,7 +35,7 @@ class Span:
         """Set span attribute."""
         self.attributes[key] = value
     
-    def add_event(self, name: str, attributes: Dict[str, Any] = None):
+    def add_event(self, name: str, attributes: dict[str, Any] = None):
         """Add event to span."""
         self.events.append({
             "name": name,
@@ -52,7 +51,7 @@ class Span:
         """End span."""
         self.end_time = _utc_now()
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert span to dictionary."""
         return {
             "span_id": self.span_id,
@@ -75,7 +74,7 @@ class Tracer:
     """Distributed tracer."""
     
     def __init__(self):
-        self.spans: Dict[str, Span] = {}
+        self.spans: dict[str, Span] = {}
     
     def start_trace(self, name: str) -> str:
         """Start a new trace."""
@@ -88,8 +87,8 @@ class Tracer:
     def start_span(
         self,
         name: str,
-        parent_span_id: Optional[str] = None,
-        attributes: Dict[str, Any] = None
+        parent_span_id: str | None = None,
+        attributes: dict[str, Any] = None
     ) -> Span:
         """Start a new span."""
         trace_id = trace_id_var.get()
@@ -116,7 +115,7 @@ class Tracer:
         """End a span."""
         span.end()
     
-    def get_span(self, span_id: str) -> Optional[Span]:
+    def get_span(self, span_id: str) -> Span | None:
         """Get span by ID."""
         return self.spans.get(span_id)
     
@@ -127,7 +126,7 @@ class Tracer:
             if span.trace_id == trace_id
         ]
     
-    def export_trace(self, trace_id: str) -> Dict[str, Any]:
+    def export_trace(self, trace_id: str) -> dict[str, Any]:
         """Export trace data."""
         spans = self.get_trace_spans(trace_id)
         return {
@@ -144,10 +143,10 @@ tracer = Tracer()
 class TraceContext:
     """Context manager for tracing."""
     
-    def __init__(self, name: str, attributes: Dict[str, Any] = None):
+    def __init__(self, name: str, attributes: dict[str, Any] = None):
         self.name = name
         self.attributes = attributes
-        self.span: Optional[Span] = None
+        self.span: Span | None = None
     
     def __enter__(self) -> Span:
         self.span = tracer.start_span(self.name, attributes=self.attributes)

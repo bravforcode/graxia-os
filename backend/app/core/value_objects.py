@@ -4,8 +4,8 @@ Value Objects Pattern
 Immutable, validated value objects for domain modeling.
 """
 from dataclasses import dataclass
-from decimal import Decimal
 from datetime import datetime
+from decimal import Decimal
 
 
 @dataclass(frozen=True)

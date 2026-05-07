@@ -5,17 +5,16 @@ import hashlib
 import logging
 import time
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable
-
-from fastapi import HTTPException, Request, status
-from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config import settings
 from app.core.auth import decode_access_token, extract_bearer_token
 from app.core.monitoring import metrics_collector
 from app.services.audit_service import log_audit_event
+from fastapi import HTTPException, Request, status
+from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +134,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     ) -> tuple[int, int | None]:
         now = time.time()
         window_start = now - rule.window_seconds
-        path_hash = hashlib.sha256(f"{method}:{path}:{rule.name}".encode("utf-8")).hexdigest()[:16]
+        path_hash = hashlib.sha256(f"{method}:{path}:{rule.name}".encode()).hexdigest()[:16]
         key = f"rate_limit:{rule.name}:{identifier}:{path_hash}"
 
         if redis_client:

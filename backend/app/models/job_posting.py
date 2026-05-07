@@ -5,6 +5,8 @@ from uuid import UUID as UUIDType
 
 from sqlalchemy import (
     UUID as SQLUUID,
+)
+from sqlalchemy import (
     CheckConstraint,
     Date,
     DateTime,

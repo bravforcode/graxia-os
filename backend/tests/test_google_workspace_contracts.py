@@ -4,7 +4,6 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
-
 from app.core.google_workspace import GoogleWorkspaceClient
 
 
@@ -45,13 +44,11 @@ def test_google_workspace_client_skips_initialization_when_credentials_are_place
 @pytest.mark.asyncio
 async def test_google_workspace_client_initializes_lazily_on_first_real_use(monkeypatch):
     monkeypatch.setattr("app.core.google_workspace.settings.GOOGLE_CLIENT_ID", "client-id")
-    monkeypatch.setattr("app.core.google_workspace.GoogleWorkspaceClient._has_real_credentials", lambda self: True)
     monkeypatch.setattr(
-        "app.core.google_workspace.settings.GOOGLE_CLIENT_SECRET", "client-secret"
+        "app.core.google_workspace.GoogleWorkspaceClient._has_real_credentials", lambda self: True
     )
-    monkeypatch.setattr(
-        "app.core.google_workspace.settings.GOOGLE_REFRESH_TOKEN", "refresh-token"
-    )
+    monkeypatch.setattr("app.core.google_workspace.settings.GOOGLE_CLIENT_SECRET", "client-secret")
+    monkeypatch.setattr("app.core.google_workspace.settings.GOOGLE_REFRESH_TOKEN", "refresh-token")
     monkeypatch.setattr(
         "app.core.google_workspace.settings.GOOGLE_WORKSPACE_EMAIL",
         "operator@example.com",

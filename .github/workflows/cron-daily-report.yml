@@ -1,0 +1,31 @@
+# Graxia OS - Daily Report Cron Job
+# Runs daily at 02:00 UTC (09:00 Bangkok time)
+
+name: Daily Report
+
+on:
+  schedule:
+    - cron: '0 2 * * *'   # Daily at 02:00 UTC
+  workflow_dispatch:
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Trigger Daily Report
+        run: |
+          curl -X POST "${{ secrets.GRAXIA_API_URL }}/api/v1/internal/daily-report" \
+            -H "Authorization: Bearer ${{ secrets.INTERNAL_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            --max-time 60 \
+            --fail \
+            -s | echo "Daily report generated"
+        
+      - name: Cleanup old data
+        run: |
+          curl -X POST "${{ secrets.GRAXIA_API_URL }}/api/v1/internal/cleanup" \
+            -H "Authorization: Bearer ${{ secrets.INTERNAL_API_KEY }}" \
+            --max-time 120 \
+            -s | echo "Cleanup completed"

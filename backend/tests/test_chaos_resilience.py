@@ -1,5 +1,4 @@
 import pytest
-
 from app.core.circuit_breaker import CircuitBreaker, CircuitBreakerError, CircuitState
 
 
@@ -71,8 +70,8 @@ class _FakeSession:
 
 @pytest.mark.asyncio
 async def test_unit_of_work_rolls_back_on_exception(monkeypatch: pytest.MonkeyPatch) -> None:
-    from app.core.unit_of_work import SQLAlchemyUnitOfWork
     import app.core.unit_of_work as uow_module
+    from app.core.unit_of_work import SQLAlchemyUnitOfWork
 
     session = _FakeSession()
     monkeypatch.setattr(uow_module, "AsyncSessionLocal", lambda: session)
@@ -88,8 +87,8 @@ async def test_unit_of_work_rolls_back_on_exception(monkeypatch: pytest.MonkeyPa
 
 @pytest.mark.asyncio
 async def test_unit_of_work_rolls_back_on_commit_failure(monkeypatch: pytest.MonkeyPatch) -> None:
-    from app.core.unit_of_work import SQLAlchemyUnitOfWork
     import app.core.unit_of_work as uow_module
+    from app.core.unit_of_work import SQLAlchemyUnitOfWork
 
     session = _FakeSession(fail_commit=True)
     monkeypatch.setattr(uow_module, "AsyncSessionLocal", lambda: session)

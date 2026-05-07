@@ -5,8 +5,7 @@ Direct HTTP scraping when OpenClaw is unavailable.
 """
 import hashlib
 import logging
-from typing import Optional
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 from bs4 import BeautifulSoup
@@ -28,7 +27,7 @@ class FallbackScraper:
         content = f"{source}:{source_id}"
         return hashlib.sha256(content.encode()).hexdigest()
     
-    async def fetch_html(self, url: str, timeout: int = 30) -> Optional[str]:
+    async def fetch_html(self, url: str, timeout: int = 30) -> str | None:
         """Fetch HTML content from URL."""
         try:
             async with httpx.AsyncClient(timeout=timeout) as client:
@@ -105,7 +104,7 @@ class LinkedInFallbackScraper(FallbackScraper):
                         "description": "Job found via LinkedIn RSS feed. Visit URL for full details.",
                         "required_skills": [],
                         "raw_data": {
-                            "scraped_at": datetime.now(timezone.utc).isoformat(),
+                            "scraped_at": datetime.now(UTC).isoformat(),
                             "scraper": "fallback"
                         }
                     })
@@ -175,7 +174,7 @@ class UpworkFallbackScraper(FallbackScraper):
                         "required_skills": [],
                         "raw_data": {
                             "pub_date": pub_date,
-                            "scraped_at": datetime.now(timezone.utc).isoformat(),
+                            "scraped_at": datetime.now(UTC).isoformat(),
                             "scraper": "fallback"
                         }
                     })
@@ -248,7 +247,7 @@ class FiverrFallbackScraper(FallbackScraper):
                         "required_skills": [],
                         "raw_data": {
                             "seller": seller,
-                            "scraped_at": datetime.now(timezone.utc).isoformat(),
+                            "scraped_at": datetime.now(UTC).isoformat(),
                             "scraper": "fallback"
                         }
                     })

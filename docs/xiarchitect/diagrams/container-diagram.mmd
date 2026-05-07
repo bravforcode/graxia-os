@@ -1,0 +1,27 @@
+flowchart TD
+    %% Container Diagram - C4 Level 2
+
+    %% Containers
+    API["API Layer<br/>FastAPI"]
+    Services["Service Layer<br/>Business Logic"]
+    Models["Data Models<br/>SQLAlchemy"]
+    Workers["Background Workers<br/>Celery"]
+    Agents["AI Agents<br/>LLM Integration"]
+
+    %% Infrastructure
+    DB[("PostgreSQL")]
+    Cache[("Redis")]
+
+    %% Connections
+    API --> Services
+    Services --> Models
+    Models --> DB
+    Workers --> Services
+    Workers --> Cache
+    API --> Cache
+
+    %% Styling
+    classDef container fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    classDef database fill:#50C878,stroke:#2E7D4E,color:#fff
+    class API,Services,Models,Workers,Agents container
+    class DB,Cache database

@@ -1,6 +1,6 @@
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -8,7 +8,11 @@ def main() -> int:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     import asyncio
 
-    out_path = Path(sys.argv[1]).expanduser().resolve() if len(sys.argv) >= 2 else Path("data/leads_export.json")
+    out_path = (
+        Path(sys.argv[1]).expanduser().resolve()
+        if len(sys.argv) >= 2
+        else Path("data/leads_export.json")
+    )
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     async def run() -> list[dict]:
@@ -48,7 +52,7 @@ def main() -> int:
         return items
 
     items = asyncio.run(run())
-    payload = {"generated_at": datetime.now(timezone.utc).isoformat(), "items": items}
+    payload = {"generated_at": datetime.now(UTC).isoformat(), "items": items}
     out_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     print(str(out_path))
     return 0
@@ -56,4 +60,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

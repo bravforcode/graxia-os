@@ -1,28 +1,28 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Annotated, Any, TypedDict, cast
 
 from fastapi import APIRouter, Query
-from sqlalchemy import desc, select, func
+from sqlalchemy import desc, func, select
 
 from app.config import settings
+from app.core.advanced_health import health_checker as advanced_health_checker
+from app.core.control_plane import create_run, mark_run_completed, mark_run_failed, mark_run_started
 from app.core.event_bus import event_bus
 from app.core.identity import WeightHistoryEntry, identity
 from app.core.llm import llm_client
-from app.core.runtime_state import get_runtime_state
-from app.core.control_plane import create_run, mark_run_completed, mark_run_failed, mark_run_started
-from app.core.redis_circuit_breaker import redis_circuit_breaker, openclaw_circuit_breaker
+from app.core.redis_circuit_breaker import openclaw_circuit_breaker, redis_circuit_breaker
 from app.core.redis_pool import redis_pool
-from app.core.advanced_health import health_checker as advanced_health_checker
-from app.tasks.queues import get_queue_depths
+from app.core.runtime_state import get_runtime_state
 from app.database import AsyncSessionLocal
-from app.models.audit import AuditLog
 from app.models.assistant_task import AssistantTask
+from app.models.audit import AuditLog
 from app.models.automation_run import AutomationRun
 from app.models.contact import Contact
 from app.models.network_interaction import NetworkInteraction
 from app.models.opportunity import Opportunity
 from app.models.scraper_health import ScraperHealth
+from app.tasks.queues import get_queue_depths
 
 router = APIRouter(prefix="/system", tags=["system"])
 
@@ -160,7 +160,7 @@ async def get_system_stats() -> StatsResponse:
     Includes 7-day performance history.
     """
     async with AsyncSessionLocal() as db:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         yesterday = now - timedelta(hours=24)
 
         active_contacts = Contact.is_deleted.is_(False)
@@ -605,7 +605,7 @@ async def health_detailed() -> DetailedHealthResponse:
 
     return {
         "status": status,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": lambda: datetime.now(UTC)().isoformat(),
         "redis": redis_health,
         "circuit_breakers": cb_states,
         "queues": queues,
@@ -625,7 +625,7 @@ async def predictive_test(request: dict[str, Any]) -> dict[str, Any]:
     metrics = request.get("metrics", {})
 
     # Record metrics in health checker
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     for metric_name, values in metrics.items():
         if isinstance(values, list):
@@ -657,7 +657,7 @@ async def predictive_test(request: dict[str, Any]) -> dict[str, Any]:
         "prediction": prediction,
         "service": service,
         "metrics_recorded": sum(len(v) if isinstance(v, list) else 1 for v in metrics.values()),
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": lambda: datetime.now(UTC)().isoformat(),
     }
 
 
@@ -715,7 +715,7 @@ async def resilience_status() -> dict[str, Any]:
     }
 
     return {
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": lambda: datetime.now(UTC)().isoformat(),
         "circuit_breakers": cb_status,
         "redis_pool": pool_status,
         "advanced_health": health_status,

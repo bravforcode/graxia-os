@@ -1,0 +1,33 @@
+# Graxia OS - Lead Hunter Cron Job
+# Runs every 15 minutes via GitHub Actions (free for public repos)
+
+name: Lead Hunter
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # Every 15 minutes
+  workflow_dispatch:          # Manual trigger
+
+jobs:
+  hunt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Trigger Lead Hunter API
+        uses: nick-fields/retry@v2
+        with:
+          timeout_seconds: 300
+          max_attempts: 3
+          retry_on: error
+          command: |
+            curl -X POST "${{ secrets.GRAXIA_API_URL }}/api/v1/internal/run-lead-hunter" \
+              -H "Authorization: Bearer ${{ secrets.INTERNAL_API_KEY }}" \
+              -H "Content-Type: application/json" \
+              --max-time 300 \
+              --fail \
+              -s | echo "Lead hunter triggered successfully"
+        
+      - name: Log completion
+        if: always()
+        run: echo "Lead hunter job completed at $(date -u)"

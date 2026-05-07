@@ -1,12 +1,26 @@
 {
-  "name": "brav-os",
-  "module": "index.ts",
-  "type": "module",
+  "name": "graxia-os",
+  "version": "7.2.0",
   "private": true,
+  "type": "module",
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "echo 'Run both in separate terminals: bun run dev:backend | bun run dev:frontend'",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "npm run build:frontend && echo 'Backend: no build needed'",
+    "build:frontend": "cd frontend && npm run build",
+    "install:all": "bun install && cd frontend && bun install && cd ../backend && pip install -r requirements.txt",
+    "test": "bun run test:frontend && cd backend && pytest -x",
+    "test:frontend": "cd frontend && bun run test",
+    "test:backend": "cd backend && pytest -x",
+    "lint": "cd frontend && bun run lint",
+    "start": "echo 'Run both in separate terminals: bun run start:backend | bun run start:frontend'",
+    "start:frontend": "cd frontend && bun run preview",
+    "start:backend": "cd backend && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+  },
   "devDependencies": {
     "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
   }
 }

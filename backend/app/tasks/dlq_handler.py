@@ -36,7 +36,7 @@ class DLQMessage:
         return json.dumps(asdict(self), sort_keys=True, default=str)
 
     @classmethod
-    def from_json(cls, payload: str) -> "DLQMessage":
+    def from_json(cls, payload: str) -> DLQMessage:
         return cls(**json.loads(payload))
 
 

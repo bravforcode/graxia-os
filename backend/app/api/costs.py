@@ -1,6 +1,6 @@
 import calendar
-from datetime import datetime, timedelta, timezone
-from typing import Annotated, Optional
+from datetime import UTC, datetime, timedelta
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
@@ -37,7 +37,7 @@ class UsageSummary(BaseModel):
 
 @router.get("/summary", response_model=CostSummary)
 async def get_cost_summary(db: DbSession):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     today = now.date()
     week_ago = now - timedelta(days=7)
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -80,11 +80,11 @@ async def get_cost_summary(db: DbSession):
 @router.get("/usage", response_model=UsageSummary)
 async def get_usage_history(
     db: DbSession,
-    platform: Optional[str] = Query(None, description="Filter by platform"),
+    platform: str | None = Query(None, description="Filter by platform"),
     days: int = Query(7, le=90, description="Number of days to look back"),
     limit: int = Query(100, le=500),
 ):
-    since = datetime.now(timezone.utc) - timedelta(days=days)
+    since = datetime.now(UTC) - timedelta(days=days)
     query = select(OpenClawUsage).where(OpenClawUsage.created_at >= since)
 
     if platform:
@@ -114,7 +114,7 @@ async def get_usage_history(
 
 @router.get("/forecast")
 async def get_cost_forecast(db: DbSession):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     days_elapsed = now.day
     days_in_month = calendar.monthrange(now.year, now.month)[1]

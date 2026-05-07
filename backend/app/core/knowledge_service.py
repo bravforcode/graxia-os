@@ -1,7 +1,9 @@
 import logging
 import math
 from typing import Any
+
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.chunker import VaultChunker
 from app.core.embedder import embed_batch_async, embed_text_async
 from app.core.knowledge_repository import KnowledgeRepository

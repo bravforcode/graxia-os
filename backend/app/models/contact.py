@@ -1,14 +1,26 @@
 import uuid
+
 from sqlalchemy import (
-    UUID, Boolean, CheckConstraint, Column, Date, DateTime,
-    ForeignKey, Index, SmallInteger, String, Text, func,
+    UUID,
+    Boolean,
+    CheckConstraint,
+    Column,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    SmallInteger,
+    String,
+    Text,
+    func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
-from .base import Base
+
+from .base import Base, TenantMixin
 
 
-class Contact(Base):
+class Contact(Base, TenantMixin):
     __tablename__ = "contacts"
     __table_args__ = (
         CheckConstraint(

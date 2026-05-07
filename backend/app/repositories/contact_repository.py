@@ -1,16 +1,15 @@
 """
 Contact Repository Implementation
 """
-from datetime import datetime, timezone
-from typing import List, Optional
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.repositories.base import Repository
-from app.models.contact import Contact
 from app.core.specifications import Specification
+from app.models.contact import Contact
+from app.repositories.base import Repository
 
 
 class ContactRepository(Repository[Contact]):
@@ -22,14 +21,14 @@ class ContactRepository(Repository[Contact]):
     def _base_query(self):
         return select(Contact).where(Contact.is_deleted.is_(False))
     
-    async def get_by_id(self, id: UUID) -> Optional[Contact]:
+    async def get_by_id(self, id: UUID) -> Contact | None:
         """Get contact by ID."""
         result = await self.session.execute(
             self._base_query().where(Contact.id == id).limit(1)
         )
         return result.scalar_one_or_none()
     
-    async def get_all(self, skip: int = 0, limit: int = 100) -> List[Contact]:
+    async def get_all(self, skip: int = 0, limit: int = 100) -> list[Contact]:
         """Get all contacts with pagination."""
         query = (
             self._base_query()
@@ -58,12 +57,12 @@ class ContactRepository(Repository[Contact]):
         entity = await self.get_by_id(id)
         if entity:
             entity.is_deleted = True
-            entity.deleted_at = datetime.now(timezone.utc)
+            entity.deleted_at = datetime.now(UTC)
             await self.session.flush()
             return True
         return False
     
-    async def find(self, specification: Specification[Contact]) -> List[Contact]:
+    async def find(self, specification: Specification[Contact]) -> list[Contact]:
         """Find contacts matching specification."""
         query = self._base_query().order_by(Contact.name)
         result = await self.session.execute(query)
@@ -88,13 +87,13 @@ class ContactRepository(Repository[Contact]):
         entity = await self.get_by_id(id)
         return entity is not None
     
-    async def find_by_email(self, email: str) -> Optional[Contact]:
+    async def find_by_email(self, email: str) -> Contact | None:
         """Find contact by email."""
         query = self._base_query().where(Contact.email == email)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
     
-    async def find_by_company(self, company: str, limit: int = 100) -> List[Contact]:
+    async def find_by_company(self, company: str, limit: int = 100) -> list[Contact]:
         """Find contacts by company."""
         query = (
             self._base_query()

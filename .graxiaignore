@@ -1,0 +1,16 @@
+**/*.log
+**/__pycache__/**
+**/.git/**
+**/fix_*.py
+**/test_redis*
+**/*.env
+**/scripts/legacy/**
+**/.cache/**
+**/.pytest_cache/**
+**/node_modules/**
+**/dist/**
+**/.vscode/**
+**/.cursor/**
+**/.claude/**
+**/*.sqlite
+**/*.db

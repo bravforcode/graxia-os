@@ -1,6 +1,7 @@
 import logging
-from app.database import AsyncSessionLocal
+
 from app.core.knowledge_service import KnowledgeService
+from app.database import AsyncSessionLocal
 
 logger = logging.getLogger(__name__)
 

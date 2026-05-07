@@ -110,6 +110,22 @@ verify:
 	bash -n backend/scripts/restore_database.sh
 	bash -n backend/scripts/smoke_tests.sh
 
+# ── Integration Tests ──────────────────────────────────────────────────
+test-integration:
+	cd backend && python -m pytest tests/integration -v
+
+test-integration-coverage:
+	cd backend && python -m pytest tests/integration --cov=app --cov-report=html
+
+# ── Monitoring ─────────────────────────────────────────────────────────
+setup-monitoring:
+	bash scripts/setup_monitoring.sh
+
+# ── Documentation ──────────────────────────────────────────────────────
+docs:
+	cd backend && python scripts/export_openapi.py --output openapi.json
+	@echo "API documentation generated at backend/openapi.json"
+
 .env:
 	cp .env.example .env
 	@echo "Created .env from .env.example - fill in your API keys"

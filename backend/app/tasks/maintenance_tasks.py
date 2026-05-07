@@ -96,9 +96,10 @@ async def run_autopilot_cycle() -> dict[str, object]:
 
     scraper_alerts: list[str] = []
     try:
+        from sqlalchemy import desc, select
+
         from app.database import AsyncSessionLocal
         from app.models.scraper_health import ScraperHealth
-        from sqlalchemy import desc, select
 
         async with AsyncSessionLocal() as db:
             rows = list(

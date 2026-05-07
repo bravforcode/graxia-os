@@ -1,7 +1,8 @@
 import logging
 import uuid
-from datetime import date, timedelta
+from datetime import UTC, date, timedelta
 from decimal import Decimal
+
 from app.agents.base import BaseAgent
 
 logger = logging.getLogger(__name__)
@@ -26,9 +27,10 @@ class DecisionEngine(BaseAgent):
 
     async def _get_cognitive_state(self) -> dict:
         try:
+            from sqlalchemy import desc, select
+
             from app.database import AsyncSessionLocal
             from app.models.cognitive_state import CognitiveState
-            from sqlalchemy import select, desc
             async with AsyncSessionLocal() as db:
                 q = await db.execute(select(CognitiveState).order_by(desc(CognitiveState.date)).limit(1))
                 state = q.scalar_one_or_none()
@@ -42,24 +44,26 @@ class DecisionEngine(BaseAgent):
 
     async def _get_workload(self) -> dict:
         try:
+            from datetime import datetime
+
+            from sqlalchemy import func, select
+
             from app.database import AsyncSessionLocal
-            from app.models.opportunity import Opportunity
             from app.models.content_draft import ContentDraft
-            from sqlalchemy import select, func
-            from datetime import datetime, timezone
+            from app.models.opportunity import Opportunity
             async with AsyncSessionLocal() as db:
                 do_now_count = await db.scalar(select(func.count()).where(Opportunity.decision == "do_now", Opportunity.status.in_(["decided", "approved", "in_progress"])))
                 pending_count = await db.scalar(select(func.count()).where(ContentDraft.status == "pending"))
                 week_start = date.today() - timedelta(days=date.today().weekday())
-                actioned_count = await db.scalar(select(func.count()).where(Opportunity.acted_on_at >= datetime(week_start.year, week_start.month, week_start.day, tzinfo=timezone.utc)))
+                actioned_count = await db.scalar(select(func.count()).where(Opportunity.acted_on_at >= datetime(week_start.year, week_start.month, week_start.day, tzinfo=UTC)))
                 return {"active_do_now": do_now_count or 0, "pending_approvals": pending_count or 0, "actioned_this_week": actioned_count or 0}
         except Exception:
             return {"active_do_now": 0, "pending_approvals": 0, "actioned_this_week": 0}
 
     async def _decide(self, opp_id: uuid.UUID) -> None:
+        from app.config import settings
         from app.database import AsyncSessionLocal
         from app.models.opportunity import Opportunity
-        from app.config import settings
 
         async with AsyncSessionLocal() as db:
             opp = await db.get(Opportunity, opp_id)

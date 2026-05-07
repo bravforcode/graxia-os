@@ -4,13 +4,13 @@ Cost Tracking and Forecasting
 Tracks AI API costs (OpenClaw + Gemini) and provides forecasting.
 """
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from typing import Optional
+
+from sqlalchemy import func, select
 
 from app.database import AsyncSessionLocal
 from app.models.openclaw_usage import OpenClawUsage
-from sqlalchemy import select, func
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ class CostTracker:
                     platform=platform,
                     action=action,
                     cost_usd=Decimal(str(cost_usd)),
-                    created_at=datetime.now(timezone.utc)
+                    created_at=datetime.now(UTC)
                 )
                 db.add(usage)
                 await db.commit()
@@ -72,7 +72,7 @@ class CostTracker:
                     platform=f"gemini/{model}",
                     action="generate",
                     cost_usd=Decimal(str(cost_usd)),
-                    created_at=datetime.now(timezone.utc)
+                    created_at=datetime.now(UTC)
                 )
                 db.add(usage)
                 await db.commit()
@@ -87,11 +87,11 @@ class CostTracker:
         except Exception as e:
             logger.error(f"Failed to track Gemini cost: {e}")
     
-    async def get_daily_cost(self, date: Optional[datetime] = None) -> float:
+    async def get_daily_cost(self, date: datetime | None = None) -> float:
         """Get total cost for a specific day."""
         try:
             if not date:
-                date = datetime.now(timezone.utc)
+                date = datetime.now(UTC)
             
             async with AsyncSessionLocal() as db:
                 # OpenClaw costs
@@ -112,7 +112,7 @@ class CostTracker:
     async def get_weekly_cost(self) -> float:
         """Get total cost for current week."""
         try:
-            week_ago = datetime.now(timezone.utc) - timedelta(days=7)
+            week_ago = datetime.now(UTC) - timedelta(days=7)
             
             async with AsyncSessionLocal() as db:
                 # OpenClaw costs
@@ -139,7 +139,7 @@ class CostTracker:
     async def get_monthly_cost(self) -> float:
         """Get total cost for current month."""
         try:
-            month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0)
+            month_start = datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0)
             
             async with AsyncSessionLocal() as db:
                 # OpenClaw costs
@@ -169,7 +169,7 @@ class CostTracker:
             current_cost = await self.get_monthly_cost()
             
             # Calculate days elapsed and remaining
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             month_start = now.replace(day=1, hour=0, minute=0, second=0)
             days_elapsed = (now - month_start).days + 1
             
@@ -206,7 +206,7 @@ class CostTracker:
     async def get_cost_breakdown(self, days: int = 7) -> dict:
         """Get cost breakdown by platform and action."""
         try:
-            since = datetime.now(timezone.utc) - timedelta(days=days)
+            since = datetime.now(UTC) - timedelta(days=days)
             
             async with AsyncSessionLocal() as db:
                 # By platform

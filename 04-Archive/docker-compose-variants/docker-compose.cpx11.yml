@@ -1,0 +1,166 @@
+# GRAXIA OS - Optimized for Hetzner CPX11 (2GB RAM)
+# Total memory budget: ~1900MB (leaving 100MB for OS buffer)
+
+name: graxia-cpx11
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  redis_data:
+  caddy_data:
+  caddy_config:
+  logs:
+
+services:
+  # Reverse Proxy + SSL (64MB)
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    networks: [internal]
+    volumes:
+      - ./deploy/Caddyfile.cpx11:/etc/caddy/Caddyfile:ro
+      - ./logs/caddy:/var/log/caddy
+      - caddy_data:/data
+      - caddy_config:/config
+    mem_limit: 64m
+    cpus: 0.25
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:2019/metrics"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Backend API (512MB)
+  backend:
+    image: ${BACKEND_IMAGE:-graxia-backend}:${IMAGE_TAG:-latest}
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks: [internal]
+    env_file:
+      - .env.production
+    environment:
+      - APP_ENV=production
+      - WORKERS=1
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+    mem_limit: 512m
+    cpus: 0.75
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./logs/backend:/app/logs
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Single Worker (512MB) - limited concurrency
+  worker:
+    image: ${BACKEND_IMAGE:-graxia-backend}:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    networks: [internal]
+    env_file:
+      - .env.production
+    command: celery -A app.tasks.celery_app worker -Q default,critical -c 2 -n worker@%h --max-tasks-per-child 50
+    environment:
+      - APP_ENV=production
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+    mem_limit: 512m
+    cpus: 0.5
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./logs/worker:/app/logs
+    security_opt:
+      - no-new-privileges:true
+
+  # Scheduler - Beat (128MB)
+  beat:
+    image: ${BACKEND_IMAGE:-graxia-backend}:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    networks: [internal]
+    env_file:
+      - .env.production
+    command: celery -A app.tasks.celery_app beat --max-interval 300
+    environment:
+      - APP_ENV=production
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - REDBEAT_REDIS_URL=redis://redis:6379/3
+    mem_limit: 128m
+    cpus: 0.25
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # Redis (384MB) - optimized for low memory
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks: [internal]
+    mem_limit: 384m
+    cpus: 0.25
+    command: >
+      sh -c '
+        redis-server
+        --maxmemory 320mb
+        --maxmemory-policy allkeys-lru
+        --appendonly yes
+        --appendfsync everysec
+        --save 60 1
+        --save 300 10
+        --tcp-backlog 511
+        --timeout 0
+        --tcp-keepalive 300
+        --databases 4
+      '
+    volumes:
+      - redis_data:/data
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  # Simple Log Aggregator (64MB)
+  # NOTE: promtail sends to Loki. If no Loki server, logs stay local.
+  # To disable: comment out this service.
+  promtail:
+    image: grafana/promtail:3.2.1
+    restart: unless-stopped
+    networks: [internal]
+    mem_limit: 64m
+    volumes:
+      - ./logs:/var/log/graxia:ro
+      - ./deploy/monitoring/promtail.yml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - backend

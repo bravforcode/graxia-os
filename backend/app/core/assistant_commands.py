@@ -292,13 +292,13 @@ async def _trigger_brief() -> str:
 
 
 async def _trigger_scan() -> str:
-    from app.tasks.daily_scan import run_daily_scan
     from app.core.control_plane import (
         create_run,
         mark_run_completed,
         mark_run_failed,
         mark_run_started,
     )
+    from app.tasks.daily_scan import run_daily_scan
 
     run = await create_run(
         name="Telegram/manual scan",

@@ -3,7 +3,8 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID as UUIDType
 
-from sqlalchemy import UUID as SQLUUID, Boolean, DateTime, String, Text, func
+from sqlalchemy import UUID as SQLUUID
+from sqlalchemy import Boolean, DateTime, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -28,7 +29,7 @@ class AuditLog(Base):
     request_path: Mapped[str | None] = mapped_column(String(500))
     request_method: Mapped[str | None] = mapped_column(String(16))
     outcome: Mapped[str] = mapped_column(String(20), nullable=False, default="success")
-    metadata_json: Mapped[dict[str, Any] | None] = mapped_column("metadata", JSONB, default=dict)
+    metadata_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, default=dict)
     details: Mapped[dict[str, Any] | None] = mapped_column(JSONB, default=dict)
     triggered_by: Mapped[str | None] = mapped_column(String(100))
     success: Mapped[bool | None] = mapped_column(Boolean, default=True)

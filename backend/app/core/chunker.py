@@ -2,7 +2,9 @@ import hashlib
 import re
 from dataclasses import dataclass
 from typing import Any
+
 import yaml
+
 
 @dataclass
 class Chunk:

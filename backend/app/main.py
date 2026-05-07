@@ -1,75 +1,51 @@
-import asyncio
 import logging
-import sys
 import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import PlainTextResponse
 
-from app.api.admin import router as admin_router
-from app.api.approvals import router as approvals_router
-from app.api.auth import router as auth_router
-from app.api.calendar import router as calendar_router
-from app.api.commands import router as commands_router
-from app.api.contacts import router as contacts_router
-from app.api.cognitive import router as cognitive_router
-from app.api.costs import router as costs_router
-from app.api.drafts import router as drafts_router
-from app.api.email_threads import router as email_threads_router
-from app.api.events import router as events_router
-from app.api.inbox import router as inbox_router
-from app.api.integrations import router as integrations_router
-from app.api.jobs import router as jobs_router
-from app.api.metrics import router as metrics_router
-from app.api.opportunities import router as opportunities_router
-from app.api.runs import router as runs_router
-from app.api.obsidian import router as obsidian_router
-from app.api.outreach import router as outreach_router
-from app.api.scrapers import router as scrapers_router
-from app.api.skills import router as skills_router
-from app.api.submissions import router as submissions_router
-from app.api.system import router as system_router
-from app.api.tasks import router as tasks_router
-from app.api.tracking import router as tracking_router
+from app.api.router import api_router
+from app.api.internal import router as internal_router
 from app.config import settings
-from app.cqrs.setup import setup_cqrs
-from app.core.event_bus import event_bus
 from app.core.logging_config import setup_logging
 from app.core.monitoring import metrics_collector
 from app.core.runtime_state import get_runtime_state, set_runtime_state
+from app.core.setup import init_sentry
+from app.core.swarm_bootstrap import initialize_graxia_components
+from app.cqrs.setup import setup_cqrs
 from app.middleware.auth import AuthMiddleware
 from app.middleware.rate_limit import RateLimitMiddleware, get_redis_client
+from app.core.security_hardening import (
+    APIKeyRotationTracker,
+    IPFilterMiddleware,
+    RequestSanitizationMiddleware,
+    SecureHeaders,
+    api_key_tracker,
+)
 from app.middleware.security import (
     CSRFMiddleware,
-    InputSanitizationMiddleware,
     RequestSizeLimitMiddleware,
     SecurityHeadersMiddleware,
 )
-from app.tasks.beat_lock import get_beat_lock_status
-from app.tasks.celery_app import celery_app
-from app.tasks.dlq_handler import DeadLetterQueue
-from app.tasks.queues import get_queue_depths
 
 setup_logging(settings.LOG_LEVEL)
 logger = logging.getLogger(__name__)
 
-setup_cqrs()
+# Initialize Error Tracking
+init_sentry()
 
+# Initialize CQRS
+setup_cqrs()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Personal OS starting up")
+    logger.info("Graxia OS starting up")
     set_runtime_state(False, "booting", [])
 
     settings.validate_production_configuration()
     redis_client = await get_redis_client()
     app.state.redis = redis_client
-    event_loop_task = asyncio.create_task(event_bus.start_processing())
-    scheduler = None
-    telegram_task = None
-    telegram_lock = None
 
     try:
         from app.core.bootstrap import (
@@ -78,48 +54,19 @@ async def lifespan(app: FastAPI):
             seed_admin_user,
             wire_event_handlers,
         )
-        from app.agents.obsidian_sync import obsidian_sync_agent
+
+        # Enterprise Database Policy: Schema creation MUST be handled by Alembic migrations.
+        logger.info("Database initialization bypassed. Ensure `alembic upgrade head` is run before deployment.")
 
         wire_event_handlers()
         await seed_admin_user()
-        if "pytest" not in sys.modules:
+
+        if not settings.TESTING:
             await initialize_telegram_notifier()
-        if "pytest" not in sys.modules and settings.SCHEDULER_EMBEDDED:
-            try:
-                from app.core.scheduler import scheduler as runtime_scheduler
 
-                runtime_scheduler.setup()
-                runtime_scheduler.start()
-                scheduler = runtime_scheduler
-                logger.info("Runtime scheduler started")
-            except Exception as exc:
-                logger.warning("Runtime scheduler not started: %s", exc)
-        if (
-            "pytest" not in sys.modules
-            and settings.TELEGRAM_POLLING_ENABLED
-            and settings.HAS_REAL_TELEGRAM_TOKEN
-        ):
-            try:
-                from app.core.telegram_lock import TelegramPollingSingletonLock
-                from app.telegram_bot.bot import run_polling_forever
+        # Initialize Graxia AI Components (Swarm, Pipeline, etc.)
+        await initialize_graxia_components()
 
-                if redis_client is not None:
-                    telegram_lock = TelegramPollingSingletonLock(redis_client)
-                    if await telegram_lock.acquire():
-                        telegram_task = asyncio.create_task(run_polling_forever())
-                        logger.info("Telegram polling started")
-                    else:
-                        logger.info("Telegram polling skipped: lock is already held")
-                else:
-                    logger.info("Telegram polling skipped: redis client unavailable")
-            except Exception as exc:
-                logger.warning("Telegram polling not started: %s", exc)
-        if settings.OBSIDIAN_AUTO_BOOTSTRAP:
-            try:
-                await obsidian_sync_agent.bootstrap_second_brain()
-                logger.info("Obsidian second brain bootstrapped")
-            except Exception as exc:
-                logger.warning("Obsidian bootstrap skipped: %s", exc)
         is_ready, mode, issues = await check_system_ready()
         set_runtime_state(is_ready, mode, issues)
         logger.info("Startup readiness mode=%s issues=%s", mode, len(issues))
@@ -131,31 +78,12 @@ async def lifespan(app: FastAPI):
 
     if hasattr(app.state, "redis") and app.state.redis:
         await app.state.redis.close()
-
-    if scheduler is not None:
-        scheduler.stop()
-
-    if telegram_task is not None:
-        telegram_task.cancel()
-        try:
-            await telegram_task
-        except asyncio.CancelledError:
-            pass
-    if telegram_lock is not None:
-        await telegram_lock.release()
-
-    event_bus.stop()
-    event_loop_task.cancel()
-    try:
-        await event_loop_task
-    except asyncio.CancelledError:
-        pass
-    logger.info("Personal OS shut down")
+    logger.info("Graxia OS shut down")
 
 
 app = FastAPI(
-    title="Personal Sovereign Enterprise OS",
-    description="Canonical API for the Personal OS control plane",
+    title="Graxia OS — Enterprise Revenue OS",
+    description="Canonical API for the Graxia OS control plane",
     version="3.0.0",
     lifespan=lifespan,
     docs_url=None if settings.STRICT_BOOTSTRAP else "/docs",
@@ -179,13 +107,171 @@ async def add_metrics_middleware(request: Request, call_next):
     return response
 
 
-# Middleware order is outermost-last. Keep rate limiting ahead of auth and CSRF.
-app.add_middleware(CSRFMiddleware)
-app.add_middleware(AuthMiddleware)
-app.add_middleware(RateLimitMiddleware)
-app.add_middleware(InputSanitizationMiddleware)
-app.add_middleware(RequestSizeLimitMiddleware)
+# ============================================================================
+# MIDDLEWARE STACK ARCHITECTURE
+# ============================================================================
+# 
+# Middleware execution order in FastAPI/Starlette:
+# - Middleware added LAST executes FIRST (outermost layer)
+# - Middleware added FIRST executes LAST (innermost layer)
+# 
+# Request Flow (top to bottom):
+#   1. CORS → 2. RequestSizeLimit → 3. IPFilter → 4. RateLimit → 
+#   5. SecurityHeaders → 6. CSRF → 7. Auth → 8. RequestSanitization → 
+#   9. Application Logic
+# 
+# Response Flow (bottom to top):
+#   9. Application Logic → 8. RequestSanitization → 7. Auth → 6. CSRF → 
+#   5. SecurityHeaders → 4. RateLimit → 3. IPFilter → 2. RequestSizeLimit → 
+#   1. CORS
+# 
+# ============================================================================
+# SECURITY LAYER DEPENDENCIES & RATIONALE
+# ============================================================================
+#
+# Layer 1: CORS (Outermost - Added Last)
+# ----------------------------------------
+# Purpose: Handle cross-origin requests, set CORS headers
+# Dependencies: None (must be outermost to handle preflight OPTIONS requests)
+# Security: Validates origin before any processing, prevents CSRF at browser level
+# Position: MUST be outermost to intercept all requests including preflight
+#
+# Layer 2: Request Size Limit
+# ----------------------------
+# Purpose: Reject oversized requests early to prevent DoS
+# Dependencies: None (should reject before expensive processing)
+# Security: Prevents memory exhaustion, reduces attack surface
+# Position: Second outermost to fail fast on large payloads
+#
+# Layer 3: IP Filtering (Enterprise)
+# -----------------------------------
+# Purpose: Block/allow requests based on source IP (whitelist/blacklist)
+# Dependencies: None (edge-level filtering)
+# Security: Network-level access control, blocks malicious IPs early
+# Position: Third layer to filter before rate limiting (save resources)
+#
+# Layer 4: Rate Limiting
+# -----------------------
+# Purpose: Throttle requests per IP/user to prevent abuse
+# Dependencies: Requires IP address (from Layer 3), uses Redis
+# Security: Prevents brute force, DoS, and API abuse
+# Position: Before authentication to protect auth endpoints from brute force
+#
+# Layer 5: Security Headers (Basic + Enterprise)
+# -----------------------------------------------
+# Purpose: Add security headers (CSP, HSTS, X-Frame-Options, etc.)
+# Dependencies: None (adds headers to all responses)
+# Security: Defense-in-depth browser protections (XSS, clickjacking, etc.)
+# Position: After rate limiting, before auth (headers apply to all responses)
+# Note: Two middleware (Basic + Enterprise) for modular security policies
+#
+# Layer 6: CSRF Protection
+# -------------------------
+# Purpose: Validate CSRF tokens for state-changing operations
+# Dependencies: Requires session_id from AuthMiddleware (Layer 7)
+# Security: Prevents cross-site request forgery attacks
+# Position: MUST be after AuthMiddleware to access request.state.session_id
+# Critical: Token validation uses constant-time comparison (timing attack protection)
+#
+# Layer 7: Authentication
+# ------------------------
+# Purpose: Validate JWT tokens, establish user identity and session
+# Dependencies: None (but provides session_id for CSRF layer)
+# Security: Enforces authentication, role-based access control (RBAC)
+# Position: After CSRF (CSRF needs session_id), before sanitization
+# Provides: request.state.session_id, request.state.authenticated_user_id
+#
+# Layer 8: Request Sanitization (Innermost - Added First)
+# --------------------------------------------------------
+# Purpose: Detect and block SQL injection, XSS patterns in query params/path
+# Dependencies: None (but benefits from auth context for logging)
+# Security: Input validation, prevents injection attacks
+# Position: Innermost (last defense before application logic)
+# Note: Uses regex patterns - may need context-aware improvements (see M-05)
+#
+# ============================================================================
+# CRITICAL ORDERING RULES
+# ============================================================================
+#
+# 1. CORS MUST be outermost (added last) to handle preflight requests
+# 2. IP Filtering MUST be before Rate Limiting (save resources on blocked IPs)
+# 3. Rate Limiting MUST be before Auth (protect auth endpoints from brute force)
+# 4. Auth MUST be before CSRF (CSRF needs session_id from auth)
+# 5. Request Sanitization SHOULD be innermost (last defense before app logic)
+#
+# ============================================================================
+# SECURITY IMPLICATIONS OF REORDERING
+# ============================================================================
+#
+# ❌ DANGEROUS: Moving CSRF before Auth
+#    → CSRF validation fails (no session_id available)
+#    → All state-changing requests blocked
+#
+# ❌ DANGEROUS: Moving Auth before Rate Limiting
+#    → Auth endpoints vulnerable to brute force
+#    → Attacker can exhaust auth resources
+#
+# ❌ DANGEROUS: Moving IP Filter after Rate Limiting
+#    → Blocked IPs consume rate limit resources
+#    → Legitimate users may be rate limited
+#
+# ❌ DANGEROUS: Moving CORS inward (not outermost)
+#    → Preflight OPTIONS requests may be blocked
+#    → CORS headers may not be added to error responses
+#
+# ✅ SAFE: Reordering Security Headers layers (Basic ↔ Enterprise)
+#    → Both add headers, order doesn't matter
+#
+# ✅ SAFE: Moving Request Sanitization up/down (within reason)
+#    → Independent validation, but innermost is optimal
+#
+# ============================================================================
+# ADDING NEW MIDDLEWARE
+# ============================================================================
+#
+# When adding new middleware, consider:
+# 1. Does it need data from other middleware? (add after dependencies)
+# 2. Should it fail fast? (add closer to outermost)
+# 3. Does it modify request.state? (document what it provides)
+# 4. Does it need authentication context? (add after AuthMiddleware)
+# 5. Does it need to run on all requests? (add before AuthMiddleware)
+#
+# Example: Adding a new "AuditLogMiddleware"
+# - Needs: authenticated_user_id (from AuthMiddleware)
+# - Position: After AuthMiddleware, before RequestSanitization
+# - Add: app.add_middleware(AuditLogMiddleware)  # Between Auth and Sanitization
+#
+# ============================================================================
+
+# Innermost execution (added first) - Last defense before application logic
+app.add_middleware(RequestSanitizationMiddleware)
+
+# CSRF Protection (depends on Auth for session_id, so Auth must execute first)
+app.add_middleware(CSRFMiddleware)  # Requires: request.state.session_id
+
+# Authentication (provides session_id for CSRF layer)
+app.add_middleware(AuthMiddleware)  # Provides: request.state.session_id
+
+# Security Headers (Defense-in-depth browser protections)
+# Single middleware reads from settings — configurable per environment (L-01, L-09)
 app.add_middleware(SecurityHeadersMiddleware)
+
+# Rate Limiting (Protect auth endpoints from brute force)
+app.add_middleware(RateLimitMiddleware)
+
+# IP Filtering (Block malicious IPs at edge before rate limiting)
+ip_whitelist = [ip.strip() for ip in settings.IP_WHITELIST.split(",") if ip.strip()] if settings.IP_WHITELIST else []
+ip_blacklist = [ip.strip() for ip in settings.IP_BLACKLIST.split(",") if ip.strip()] if settings.IP_BLACKLIST else []
+app.add_middleware(
+    IPFilterMiddleware,
+    whitelist=ip_whitelist,
+    blacklist=ip_blacklist,
+)
+
+# Request Size Limit (Fail fast on oversized requests)
+app.add_middleware(RequestSizeLimitMiddleware)
+
+# CORS (Outermost - added last) - Must handle preflight OPTIONS requests
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -194,57 +280,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth_router)
-app.include_router(admin_router, prefix="/api/v1")
-app.include_router(approvals_router, prefix="/api/v1")
-app.include_router(calendar_router, prefix="/api/v1")
-app.include_router(commands_router, prefix="/api/v1")
-app.include_router(opportunities_router, prefix="/api/v1")
-app.include_router(contacts_router, prefix="/api/v1")
-app.include_router(drafts_router, prefix="/api/v1")
-app.include_router(metrics_router, prefix="/api/v1")
-app.include_router(cognitive_router, prefix="/api/v1")
-app.include_router(submissions_router, prefix="/api/v1")
-app.include_router(system_router, prefix="/api/v1")
-app.include_router(inbox_router, prefix="/api/v1")
-app.include_router(integrations_router, prefix="/api/v1")
-app.include_router(jobs_router, prefix="/api/v1")
-app.include_router(runs_router, prefix="/api/v1")
-app.include_router(email_threads_router)
-app.include_router(obsidian_router)
-app.include_router(outreach_router)
-app.include_router(skills_router, prefix="/api/v1")
-app.include_router(tasks_router)
-app.include_router(costs_router)
-app.include_router(events_router)
-app.include_router(scrapers_router)
-app.include_router(tracking_router)
-app.include_router(orchestration_router, prefix="/api/v1/orchestration", tags=["orchestration"])
+# Unified API Router
+app.include_router(api_router)
 
-@app.get("/metrics", response_class=PlainTextResponse)
-async def get_metrics():
-    await metrics_collector.update_gauges()
-    queue_depths = await get_queue_depths(getattr(app.state, "redis", None), use_pool_fallback=False)
-    for queue_name, depth in queue_depths.items():
-        metrics_collector.set_queue_depth(queue_name, depth)
-    dlq = DeadLetterQueue(getattr(app.state, "redis", None))
-    metrics_collector.set_dlq_depth(await dlq.get_depth())
-    try:
-        inspect = celery_app.control.inspect(timeout=1.0)
-        workers = inspect.ping() or {}
-    except Exception:
-        workers = {}
-    metrics_collector.set_workers_online(len(workers))
-    await get_beat_lock_status(getattr(app.state, "redis", None))
-    return metrics_collector.export_metrics()
-
+# Internal API Router
+app.include_router(internal_router, prefix="/internal")
 
 @app.get("/health")
 async def root_health():
     readiness = get_runtime_state()
     return {
         "status": "ok" if readiness["is_ready"] else "degraded",
-        "service": "Personal OS API",
+        "service": "Graxia OS API",
         "readiness": readiness,
     }
 
@@ -252,9 +299,8 @@ async def root_health():
 @app.get("/")
 async def root():
     return {
-        "service": "Personal OS API",
+        "service": "Graxia OS API",
         "version": app.version,
-        "docs": "/docs",
         "health": "/health",
         "frontend": settings.FRONTEND_URL,
     }
@@ -263,3 +309,7 @@ async def root():
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     return Response(status_code=204)
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

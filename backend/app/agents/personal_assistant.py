@@ -5,17 +5,18 @@ Provides daily briefings, task management, notifications,
 and cost monitoring. Acts as the central coordinator.
 """
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+
+from sqlalchemy import and_, func, select
 
 from app.agents.base import BaseAgent
 from app.database import AsyncSessionLocal
 from app.models.assistant_task import AssistantTask
-from app.models.job_posting import JobPosting
 from app.models.contact import Contact
 from app.models.email_thread import EmailThread
+from app.models.job_posting import JobPosting
 from app.models.openclaw_usage import OpenClawUsage
-from sqlalchemy import select, func, and_
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +48,7 @@ class PersonalAssistantAgent(BaseAgent):
         super().__init__()
         self.max_notifications_per_hour = 10
         self._notification_count = 0
-        self._notification_reset_time = datetime.now(timezone.utc)
+        self._notification_reset_time = datetime.now(UTC)
     
     async def generate_daily_briefing(self) -> str:
         """
@@ -67,7 +68,7 @@ class PersonalAssistantAgent(BaseAgent):
             briefing_parts = []
             
             # Header
-            today = datetime.now(timezone.utc).strftime("%A, %B %d, %Y")
+            today = datetime.now(UTC).strftime("%A, %B %d, %Y")
             briefing_parts.append(f"📋 Daily Briefing - {today}\n")
             
             # 1. Top Jobs
@@ -145,7 +146,7 @@ class PersonalAssistantAgent(BaseAgent):
         """Get urgent and overdue tasks."""
         try:
             async with AsyncSessionLocal() as db:
-                now = datetime.now(timezone.utc)
+                now = datetime.now(UTC)
                 
                 # Overdue tasks
                 overdue_query = (
@@ -226,7 +227,7 @@ class PersonalAssistantAgent(BaseAgent):
         try:
             async with AsyncSessionLocal() as db:
                 # Contacts with no recent interaction
-                week_ago = datetime.now(timezone.utc).date() - timedelta(days=7)
+                week_ago = datetime.now(UTC).date() - timedelta(days=7)
                 query = (
                     select(Contact)
                     .where(Contact.value_score >= 7)
@@ -263,8 +264,8 @@ class PersonalAssistantAgent(BaseAgent):
         """Get yesterday's activity summary."""
         try:
             async with AsyncSessionLocal() as db:
-                yesterday = datetime.now(timezone.utc) - timedelta(days=1)
-                today = datetime.now(timezone.utc)
+                yesterday = datetime.now(UTC) - timedelta(days=1)
+                today = datetime.now(UTC)
                 
                 # Jobs discovered
                 jobs_query = select(func.count(JobPosting.id)).where(
@@ -313,7 +314,7 @@ class PersonalAssistantAgent(BaseAgent):
         """Get cost summary."""
         try:
             async with AsyncSessionLocal() as db:
-                today = datetime.now(timezone.utc).date()
+                today = datetime.now(UTC).date()
                 
                 # Today's cost
                 today_query = select(func.sum(OpenClawUsage.cost_usd)).where(
@@ -323,7 +324,7 @@ class PersonalAssistantAgent(BaseAgent):
                 today_cost = float(today_result.scalar() or 0)
                 
                 # Month's cost
-                month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0)
+                month_start = datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0)
                 month_query = select(func.sum(OpenClawUsage.cost_usd)).where(
                     OpenClawUsage.created_at >= month_start
                 )
@@ -405,7 +406,7 @@ class PersonalAssistantAgent(BaseAgent):
             True if sent, False if rate limited
         """
         # Check rate limit
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if now - self._notification_reset_time > timedelta(hours=1):
             self._notification_count = 0
             self._notification_reset_time = now
@@ -460,7 +461,7 @@ class PersonalAssistantAgent(BaseAgent):
                     "total_contacts": total_contacts,
                     "pending_tasks": pending_tasks,
                     "unread_emails": unread_emails,
-                    "timestamp": datetime.now(timezone.utc).isoformat()
+                    "timestamp": datetime.now(UTC).isoformat()
                 }
         except Exception as e:
             logger.error(f"System status failed: {e}")

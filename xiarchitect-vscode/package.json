@@ -1,0 +1,78 @@
+{
+  "name": "xiarchitect-vscode",
+  "displayName": "xiarchitect",
+  "description": "Repository-to-architecture intelligence for VS Code and Antigravity-compatible IDEs.",
+  "version": "0.1.0",
+  "publisher": "graxia",
+  "private": true,
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:xiarchitect.generateFullArchitecture",
+    "onCommand:xiarchitect.openArchitectureExplorer",
+    "onView:xiarchitect.architecture"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "xiarchitect.generateFullArchitecture",
+        "title": "xiarchitect: Generate Full Architecture"
+      },
+      {
+        "command": "xiarchitect.openArchitectureExplorer",
+        "title": "xiarchitect: Open Architecture Explorer"
+      },
+      {
+        "command": "xiarchitect.rescanWorkspace",
+        "title": "xiarchitect: Rescan Workspace"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "xiarchitect",
+          "title": "xiarchitect",
+          "icon": "media/xiarchitect.svg"
+        }
+      ]
+    },
+    "views": {
+      "xiarchitect": [
+        {
+          "id": "xiarchitect.architecture",
+          "name": "Architecture"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "xiarchitect",
+      "properties": {
+        "xiarchitect.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "description": "Python executable used to run the bundled xiarchitect engine."
+        },
+        "xiarchitect.outputDir": {
+          "type": "string",
+          "default": "docs/xiarchitect",
+          "description": "Workspace-relative output directory for generated xiarchitect artifacts."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "watch": "tsc -w -p ."
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.10",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.6.3"
+  }
+}

@@ -6,19 +6,19 @@ and generates auto-reply drafts.
 """
 import logging
 import re
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 from uuid import uuid4
+
+from sqlalchemy import select
 
 from app.agents.base import BaseAgent
 from app.core.google_workspace import google_workspace
 from app.core.tracking import verify_token
 from app.database import AsyncSessionLocal
-from app.models.email_thread import EmailThread
-from app.models.email_message import EmailMessage
 from app.models.assistant_task import AssistantTask
+from app.models.email_message import EmailMessage
+from app.models.email_thread import EmailThread
 from app.services.audit_service import log_audit_event
-from sqlalchemy import select
 
 logger = logging.getLogger(__name__)
 
@@ -116,7 +116,7 @@ class EmailManagerAgent(BaseAgent):
         
         return result
     
-    async def _process_email(self, msg_data: dict) -> Optional[EmailThread]:
+    async def _process_email(self, msg_data: dict) -> EmailThread | None:
         """Process single email message."""
         try:
             # Extract email data
@@ -171,9 +171,9 @@ class EmailManagerAgent(BaseAgent):
                 if thread_obj:
                     thread_obj.category = category
                     thread_obj.priority = priority
-                    thread_obj.last_message_at = datetime.now(timezone.utc)
+                    thread_obj.last_message_at = datetime.now(UTC)
                     thread_obj.unread_count = thread_obj.unread_count + 1
-                    thread_obj.updated_at = datetime.now(timezone.utc)
+                    thread_obj.updated_at = datetime.now(UTC)
                     
                     # Add participant if not exists
                     participants = thread_obj.participants or []
@@ -216,8 +216,8 @@ class EmailManagerAgent(BaseAgent):
                     has_attachments=False,
                     action_items=[],
                     status="unread",
-                    created_at=datetime.now(timezone.utc),
-                    updated_at=datetime.now(timezone.utc)
+                    created_at=datetime.now(UTC),
+                    updated_at=datetime.now(UTC)
                 )
                 db.add(thread)
                 await db.commit()
@@ -371,8 +371,8 @@ Extract action items."""
                         related_entity_type="email_thread",
                         related_entity_id=thread.id,
                         assigned_to="user",
-                        created_at=datetime.now(timezone.utc),
-                        updated_at=datetime.now(timezone.utc)
+                        created_at=datetime.now(UTC),
+                        updated_at=datetime.now(UTC)
                     )
                     
                     db.add(task)
@@ -409,9 +409,9 @@ Extract action items."""
                     to_email=headers.get("To", ""),
                     subject=headers.get("Subject", ""),
                     body=body,
-                    received_at=datetime.now(timezone.utc),
+                    received_at=datetime.now(UTC),
                     is_read=False,
-                    created_at=datetime.now(timezone.utc)
+                    created_at=datetime.now(UTC)
                 )
                 
                 db.add(message)
@@ -419,21 +419,21 @@ Extract action items."""
         except Exception as e:
             logger.error(f"Failed to save message: {e}")
     
-    def _extract_email_address(self, email_str: str) -> Optional[str]:
+    def _extract_email_address(self, email_str: str) -> str | None:
         """Extract email address from 'Name <email@example.com>' format."""
         match = re.search(r'<(.+?)>', email_str)
         if match:
             return match.group(1)
         return email_str if "@" in email_str else None
     
-    def _extract_name(self, email_str: str) -> Optional[str]:
+    def _extract_name(self, email_str: str) -> str | None:
         """Extract name from 'Name <email@example.com>' format."""
         match = re.match(r'(.+?)\s*<', email_str)
         if match:
             return match.group(1).strip('"')
         return None
     
-    def _parse_date(self, date_str: Optional[str]) -> Optional[datetime]:
+    def _parse_date(self, date_str: str | None) -> datetime | None:
         """Parse date string to datetime."""
         if not date_str:
             return None

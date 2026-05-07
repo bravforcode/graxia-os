@@ -3,7 +3,8 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID as UUIDType
 
-from sqlalchemy import UUID as SQLUUID, CheckConstraint, DateTime, String, Text, func
+from sqlalchemy import UUID as SQLUUID
+from sqlalchemy import CheckConstraint, DateTime, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 

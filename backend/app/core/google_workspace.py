@@ -5,8 +5,8 @@ Provides Gmail and Google Calendar integration with OAuth2 authentication.
 """
 import base64
 import logging
-from datetime import date, datetime, time, timedelta, timezone
-from typing import Optional, List, Dict, Any
+from datetime import UTC, date, datetime, time, timedelta
+from typing import Any
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -34,7 +34,7 @@ class GoogleWorkspaceClient:
         self.gmail_service = None
         self.calendar_service = None
         self._initialization_attempted = False
-        self._initialization_error: Optional[str] = None
+        self._initialization_error: str | None = None
 
     def _has_real_credentials(self) -> bool:
         return settings.HAS_REAL_GOOGLE_WORKSPACE_CREDENTIALS
@@ -103,7 +103,7 @@ class GoogleWorkspaceClient:
         self,
         max_results: int = 50,
         query: str = "is:unread"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         List Gmail messages.
         
@@ -132,7 +132,7 @@ class GoogleWorkspaceClient:
             logger.error(f"Gmail list messages failed: {e}")
             return []
     
-    async def get_message(self, message_id: str) -> Optional[Dict[str, Any]]:
+    async def get_message(self, message_id: str) -> dict[str, Any] | None:
         """
         Get full Gmail message by ID.
         
@@ -162,10 +162,10 @@ class GoogleWorkspaceClient:
         to: str,
         subject: str,
         body: str,
-        reply_to: Optional[str] = None,
+        reply_to: str | None = None,
         is_html: bool = False,
         extra_headers: dict[str, str] | None = None,
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Send Gmail message.
         
@@ -229,9 +229,9 @@ class GoogleWorkspaceClient:
     async def list_calendar_events(
         self,
         max_results: int = 10,
-        time_min: Optional[datetime] = None,
-        time_max: Optional[datetime] = None
-    ) -> List[Dict[str, Any]]:
+        time_min: datetime | None = None,
+        time_max: datetime | None = None
+    ) -> list[dict[str, Any]]:
         """
         List Google Calendar events.
         
@@ -248,7 +248,7 @@ class GoogleWorkspaceClient:
         
         try:
             if not time_min:
-                time_min = datetime.now(timezone.utc)
+                time_min = datetime.now(UTC)
             
             events_result = self.calendar_service.events().list(
                 calendarId='primary',
@@ -271,9 +271,9 @@ class GoogleWorkspaceClient:
         summary: str,
         start_time: datetime,
         end_time: datetime,
-        description: Optional[str] = None,
-        location: Optional[str] = None
-    ) -> Optional[str]:
+        description: str | None = None,
+        location: str | None = None
+    ) -> str | None:
         """
         Create Google Calendar event.
         
@@ -319,7 +319,7 @@ class GoogleWorkspaceClient:
             logger.error(f"Calendar create event failed: {e}")
             return None
 
-    def _headers_to_dict(self, payload: Optional[Dict[str, Any]]) -> Dict[str, str]:
+    def _headers_to_dict(self, payload: dict[str, Any] | None) -> dict[str, str]:
         headers = payload.get("headers", []) if isinstance(payload, dict) else []
         return {
             str(item.get("name") or ""): str(item.get("value") or "")
@@ -327,7 +327,7 @@ class GoogleWorkspaceClient:
             if isinstance(item, dict)
         }
 
-    def _extract_body_text(self, payload: Optional[Dict[str, Any]]) -> str:
+    def _extract_body_text(self, payload: dict[str, Any] | None) -> str:
         if not isinstance(payload, dict):
             return ""
         body = payload.get("body", {})
@@ -354,7 +354,7 @@ class GoogleWorkspaceClient:
                     return ""
         return ""
 
-    async def health(self) -> Dict[str, Any]:
+    async def health(self) -> dict[str, Any]:
         configured = self._has_real_credentials()
         if configured:
             self._ensure_initialized()
@@ -378,7 +378,7 @@ class GoogleWorkspaceClient:
     async def get_gmail_inbox_summary(
         self,
         max_results: int = 10,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if not self.gmail_service and not self._ensure_initialized():
             configured = self._has_real_credentials()
             return {
@@ -399,7 +399,7 @@ class GoogleWorkspaceClient:
                 max_results=max_results,
                 query="in:inbox",
             )
-            messages: list[Dict[str, Any]] = []
+            messages: list[dict[str, Any]] = []
             unread_count = 0
             for message_ref in message_refs:
                 full_message = await self.get_message(str(message_ref.get("id") or ""))
@@ -450,7 +450,7 @@ class GoogleWorkspaceClient:
         self,
         target_date: date,
         max_results: int = 10,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if not self.calendar_service and not self._ensure_initialized():
             configured = self._has_real_credentials()
             return {
@@ -466,7 +466,7 @@ class GoogleWorkspaceClient:
             }
 
         try:
-            tz = timezone.utc
+            tz = UTC
             start_of_day = datetime.combine(target_date, time.min, tzinfo=tz)
             end_of_day = start_of_day + timedelta(days=1)
             raw_events = await self.list_calendar_events(
@@ -474,7 +474,7 @@ class GoogleWorkspaceClient:
                 time_min=start_of_day,
                 time_max=end_of_day,
             )
-            events: list[Dict[str, Any]] = []
+            events: list[dict[str, Any]] = []
             for event in raw_events:
                 start = event.get("start") or {}
                 end = event.get("end") or {}
@@ -506,7 +506,7 @@ class GoogleWorkspaceClient:
                 "issues": [str(e)],
             }
 
-    async def health_check(self) -> Dict[str, Any]:
+    async def health_check(self) -> dict[str, Any]:
         """Check Google Workspace service health."""
         self._ensure_initialized()
         status = {

@@ -1,0 +1,370 @@
+{
+  "workspace_root": "C:\\Users\\menum\\graxia os\\graxia",
+  "total_files": 51,
+  "classified_files": 51,
+  "role_counts": {
+    "unknown": 47,
+    "api_route": 1,
+    "database_model": 2,
+    "documentation": 1
+  },
+  "files": [
+    {
+      "path": "database.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 312,
+      "is_sensitive": false
+    },
+    {
+      "path": "migrations\\versions\\0010_enterprise_revenue_os_merge.sql",
+      "role": "unknown",
+      "language": "unknown",
+      "size_bytes": 11334,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\agents\\chief_of_staff.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 2592,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\agents\\sales.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 1502,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\agents\\visionary.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 1323,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\agents\\__init__.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 338,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\celery\\celery_app.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 3698,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\celery\\tasks\\campaign_engine.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 3837,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\celery\\tasks\\daily_revenue_ops.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 4691,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\celery\\tasks\\hourly_monitor.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 4706,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\celery\\tasks\\send_pending_emails.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 4030,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\celery\\tasks\\weekly_review.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 5778,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\celery\\tasks\\__init__.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 445,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\celery\\__init__.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 73,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\constants.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 3803,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\core\\copywriter.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 8845,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\core\\db_ops.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 5339,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\core\\resend_client.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 3257,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\core\\scoring.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 5717,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\core\\__init__.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 39,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\db.py",
+      "role": "api_route",
+      "language": "python",
+      "size_bytes": 3869,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\enums.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 2539,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\models.py",
+      "role": "database_model",
+      "language": "python",
+      "size_bytes": 39874,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\README_PHASE2.md",
+      "role": "documentation",
+      "language": "markdown",
+      "size_bytes": 13830,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\schemas.py",
+      "role": "database_model",
+      "language": "python",
+      "size_bytes": 13133,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\services\\approval_service.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 10311,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\services\\campaign_service.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 14048,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\services\\email_service.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 14422,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\services\\fulfillment_service.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 10011,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\services\\order_service.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 7767,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\services\\scoring.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 1664,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\services\\__init__.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 78,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\tests\\conftest.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 4382,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\tests\\test_approval_service.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 6400,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\tests\\test_automation_locks.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 3249,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\tests\\test_campaign_service.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 9130,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\tests\\test_celery_tasks.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 8247,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\tests\\test_copywriter.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 3400,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\tests\\test_email_service.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 7011,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\tests\\test_fulfillment_service.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 7733,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\tests\\test_order_idempotency.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 5665,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\tests\\test_scoring.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 3818,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\tests\\__init__.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 74,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\revenue_os\\__init__.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 118,
+      "is_sensitive": false
+    },
+    {
+      "path": "packages\\__init__.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 72,
+      "is_sensitive": false
+    },
+    {
+      "path": "services\\revenue_os_api\\app.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 6901,
+      "is_sensitive": false
+    },
+    {
+      "path": "services\\revenue_os_api\\dependencies.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 5367,
+      "is_sensitive": false
+    },
+    {
+      "path": "services\\revenue_os_api\\middleware.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 4539,
+      "is_sensitive": false
+    },
+    {
+      "path": "services\\revenue_os_api\\__init__.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 528,
+      "is_sensitive": false
+    },
+    {
+      "path": "services\\__init__.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 36,
+      "is_sensitive": false
+    },
+    {
+      "path": "__init__.py",
+      "role": "unknown",
+      "language": "python",
+      "size_bytes": 91,
+      "is_sensitive": false
+    }
+  ]
+}

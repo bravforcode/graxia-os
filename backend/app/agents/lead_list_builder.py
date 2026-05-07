@@ -1,6 +1,6 @@
 import logging
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import urljoin, urlparse
@@ -145,7 +145,7 @@ class LeadListBuilder(BaseAgent):
 
         export_dir = Path(settings.LEADGEN_EXPORT_DIR)
         export_dir.mkdir(parents=True, exist_ok=True)
-        ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         export_path = export_dir / f"leads_{ts}.json"
 
         async with AsyncSessionLocal() as db:

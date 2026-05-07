@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional
 from uuid import UUID
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -11,29 +11,37 @@ class OpportunityOut(BaseModel):
     id: UUID
     type: str
     title: str
-    description: Optional[str] = None
-    source_url: Optional[str] = None
-    source_platform: Optional[str] = None
-    deadline: Optional[date] = None
-    total_score: Optional[Decimal] = None
-    scoring_rationale: Optional[str] = None
-    red_flags: Optional[list] = []
-    decision: Optional[str] = None
-    decision_confidence: Optional[Decimal] = None
-    decision_reasoning: Optional[str] = None
-    action_priority: Optional[str] = None
-    status: Optional[str] = None
-    prize_amount: Optional[str] = None
-    tags: Optional[list] = []
-    is_student_eligible: Optional[bool] = None
-    location_type: Optional[str] = None
-    fit_summary: Optional[str] = None
-    found_at: Optional[datetime] = None
-    money_score: Optional[int] = None
-    brand_score: Optional[int] = None
-    network_score: Optional[int] = None
-    startup_score: Optional[int] = None
-    effort_score: Optional[int] = None
+    description: str | None = None
+    source_url: str | None = None
+    source_platform: str | None = None
+    deadline: date | None = None
+    total_score: Decimal | None = None
+    scoring_rationale: str | None = None
+    red_flags: list | None = []
+    decision: str | None = None
+    decision_confidence: Decimal | None = None
+    decision_reasoning: str | None = None
+    action_priority: str | None = None
+    status: str | None = None
+    prize_amount: str | None = None
+    tags: list | None = []
+    is_student_eligible: bool | None = None
+    location_type: str | None = None
+    fit_summary: str | None = None
+    found_at: datetime | None = None
+    money_score: int | None = None
+    brand_score: int | None = None
+    network_score: int | None = None
+    startup_score: int | None = None
+    effort_score: int | None = None
+
+class OpportunityCreate(BaseModel):
+    title: str
+    type: str = "freelance"
+    description: str | None = None
+    source_url: str | None = None
+    source_platform: str | None = None
+    deadline: date | None = None
 
 class OpportunityList(BaseModel):
     total: int
