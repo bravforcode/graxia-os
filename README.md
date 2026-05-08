@@ -153,8 +153,32 @@ Infrastructure:
 │   ├── src/hooks/            frontend hooks
 │   ├── src/lib/              API client and shared utilities
 │   └── src/store/            UI state
+├── config/                   ✨ Configuration files (NEW)
+│   ├── docker-compose.*.yml  Multiple Docker Compose configurations
+│   ├── Dockerfile.*          Multiple Dockerfile variants
+│   ├── ecosystem.config.*    PM2 configurations
+│   ├── netlify.toml          Netlify deployment config
+│   ├── otel-collector-config.yaml  OpenTelemetry config
+│   ├── pyproject.toml        Python project config
+│   ├── pytest.ini            Pytest configuration
+│   ├── redis.conf            Redis configuration
+│   └── requirements.*.txt    Python requirements variants
+├── scripts/                  ✨ All scripts consolidated (NEW)
+│   ├── deployment/           Deployment scripts
+│   ├── ops/                  Operations and maintenance scripts
+│   ├── tests/                Test utilities
+│   ├── dev.ps1, dev.sh       Development startup scripts
+│   ├── start.ps1, start.sh   Production startup scripts
+│   ├── setup.sh              Setup and installation
+│   └── preflight.py          Pre-flight checks
 ├── deploy/                   Caddy, monitoring, systemd, smoke/rollback/deploy scripts
 ├── docs/                     runbooks, deployment docs, route manifest, security notes
+│   ├── archive/              ✨ Archived documentation (NEW)
+│   │   ├── old-docs/         Old documentation files
+│   │   └── old-guides/       Old setup and deployment guides
+│   ├── audits/               Security audit reports
+│   ├── CLEANUP_COMPLETION_REPORT.md  ✨ Cleanup report (NEW)
+│   └── NEXT_STEPS.md         ✨ Next steps guide (NEW)
 ├── identity/                 operator profile, positioning, templates, project identity
 ├── n8n/                      bundled workflow definitions
 ├── dashboard/                legacy static dashboard, not mounted by backend runtime
@@ -162,8 +186,19 @@ Infrastructure:
 ├── docker-compose.yml        local development stack
 ├── docker-compose.supabase.yml
 ├── Makefile
-└── verify.ps1
+└── .gitignore                ✨ Updated with comprehensive patterns
 ```
+
+**Recent Changes (2026-05-08):**
+- ✨ Created `config/` directory for all configuration files
+- ✨ Created `scripts/` directory consolidating all scripts
+- ✨ Created `docs/archive/` for old documentation
+- ✨ Updated `.gitignore` with comprehensive patterns
+- ✨ Removed cache and temp files
+- ✨ Removed secrets from git tracking
+- ✨ Cleaned up root directory (80+ → 64 items)
+
+See [docs/CLEANUP_COMPLETION_REPORT.md](docs/CLEANUP_COMPLETION_REPORT.md) for details.
 
 ## Backend Architecture
 
