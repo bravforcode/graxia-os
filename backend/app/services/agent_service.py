@@ -193,9 +193,24 @@ class AgentService:
         self,
         agent_id: UUID,
         team_id: UUID,
+        organization_id: UUID,
         role: str = "member",
     ) -> AgentTeamMember:
         """Add an agent to a team."""
+        # Verify both agent and team belong to the organization
+        agent = await self.get_agent(agent_id, organization_id)
+        if not agent:
+            raise ValueError("Agent not found in your organization")
+
+        team_result = await self.db.execute(
+            select(AgentTeam).where(
+                AgentTeam.id == team_id, AgentTeam.organization_id == organization_id
+            )
+        )
+        team = team_result.scalar_one_or_none()
+        if not team:
+            raise ValueError("Team not found in your organization")
+
         # Check if already a member
         existing = await self.db.execute(
             select(AgentTeamMember).where(
@@ -207,11 +222,6 @@ class AgentService:
         )
         if existing.scalar_one_or_none():
             raise ValueError("Agent is already a member of this team")
-
-        # Check team capacity
-        team = await self.db.get(AgentTeam, team_id)
-        if not team:
-            raise ValueError("Team not found")
 
         current_members = await self.db.scalar(
             select(func.count()).where(AgentTeamMember.team_id == team_id)
@@ -229,15 +239,25 @@ class AgentService:
         await self.db.commit()
         await self.db.refresh(membership)
 
-        logger.info(f"Added agent {agent_id} to team {team_id} as {role}")
+        logger.info(f"Added agent {agent_id} to team {team_id} as {role} for org {organization_id}")
         return membership
 
     async def remove_agent_from_team(
         self,
         agent_id: UUID,
         team_id: UUID,
+        organization_id: UUID,
     ) -> bool:
         """Remove an agent from a team."""
+        # Verify team belongs to org
+        team_result = await self.db.execute(
+            select(AgentTeam).where(
+                AgentTeam.id == team_id, AgentTeam.organization_id == organization_id
+            )
+        )
+        if not team_result.scalar_one_or_none():
+            return False
+
         result = await self.db.execute(
             select(AgentTeamMember).where(
                 and_(
@@ -254,11 +274,20 @@ class AgentService:
         await self.db.delete(membership)
         await self.db.commit()
 
-        logger.info(f"Removed agent {agent_id} from team {team_id}")
+        logger.info(f"Removed agent {agent_id} from team {team_id} for org {organization_id}")
         return True
 
-    async def get_team_members(self, team_id: UUID) -> list[Agent]:
+    async def get_team_members(self, team_id: UUID, organization_id: UUID) -> list[Agent]:
         """Get all agents in a team."""
+        # Verify team belongs to org
+        team_result = await self.db.execute(
+            select(AgentTeam).where(
+                AgentTeam.id == team_id, AgentTeam.organization_id == organization_id
+            )
+        )
+        if not team_result.scalar_one_or_none():
+            return []
+
         result = await self.db.execute(
             select(Agent).join(AgentTeamMember).where(AgentTeamMember.team_id == team_id)
         )
@@ -272,10 +301,16 @@ class AgentService:
         self,
         agent_id: UUID,
         skill_id: UUID,
+        organization_id: UUID,
         proficiency_level: int = 1,
         is_favorite: bool = False,
     ) -> AgentSkill:
         """Assign a skill to an agent."""
+        # Verify agent belongs to org
+        agent = await self.get_agent(agent_id, organization_id)
+        if not agent:
+            raise ValueError("Agent not found in your organization")
+
         # Check if already assigned
         existing = await self.db.execute(
             select(AgentSkill).where(
@@ -293,24 +328,30 @@ class AgentService:
             skill_id=skill_id,
             proficiency_level=proficiency_level,
             is_favorite=is_favorite,
-            learning_started_at=datetime.utcnow(),
+            learning_started_at=datetime.now(UTC),
         )
 
         self.db.add(agent_skill)
         await self.db.commit()
         await self.db.refresh(agent_skill)
 
-        logger.info(f"Assigned skill {skill_id} to agent {agent_id}")
+        logger.info(f"Assigned skill {skill_id} to agent {agent_id} for org {organization_id}")
         return agent_skill
 
     async def update_agent_skill_proficiency(
         self,
         agent_id: UUID,
         skill_id: UUID,
+        organization_id: UUID,
         proficiency_level: int,
         mastery_percentage: float,
     ) -> AgentSkill | None:
         """Update agent's skill proficiency."""
+        # Verify agent belongs to org
+        agent = await self.get_agent(agent_id, organization_id)
+        if not agent:
+            return None
+
         result = await self.db.execute(
             select(AgentSkill).where(
                 and_(
@@ -326,7 +367,7 @@ class AgentService:
 
         agent_skill.proficiency_level = proficiency_level
         agent_skill.mastery_percentage = Decimal(str(mastery_percentage))
-        agent_skill.updated_at = datetime.utcnow()
+        agent_skill.updated_at = datetime.now(UTC)
 
         await self.db.commit()
         return agent_skill
@@ -335,9 +376,15 @@ class AgentService:
         self,
         agent_id: UUID,
         skill_id: UUID,
+        organization_id: UUID,
         success: bool,
     ) -> None:
         """Record skill usage for an agent."""
+        # Verify agent belongs to org
+        agent = await self.get_agent(agent_id, organization_id)
+        if not agent:
+            return
+
         result = await self.db.execute(
             select(AgentSkill).where(
                 and_(
@@ -350,7 +397,7 @@ class AgentService:
 
         if agent_skill:
             agent_skill.usage_count += 1
-            agent_skill.last_used_at = datetime.utcnow()
+            agent_skill.last_used_at = datetime.now(UTC)
 
             if success:
                 agent_skill.success_count += 1
@@ -362,9 +409,15 @@ class AgentService:
     async def get_agent_skills(
         self,
         agent_id: UUID,
+        organization_id: UUID,
         min_proficiency: int | None = None,
     ) -> list[AgentSkill]:
         """Get all skills assigned to an agent."""
+        # Verify agent belongs to org
+        agent = await self.get_agent(agent_id, organization_id)
+        if not agent:
+            return []
+
         query = select(AgentSkill).where(AgentSkill.agent_id == agent_id)
 
         if min_proficiency:
@@ -382,6 +435,7 @@ class AgentService:
     async def update_reputation(
         self,
         agent_id: UUID,
+        organization_id: UUID,
         change_amount: float,
         reason_type: str,
         description: str | None = None,
@@ -390,9 +444,9 @@ class AgentService:
         context: dict[str, Any] | None = None,
     ) -> Agent:
         """Update agent's reputation score."""
-        agent = await self.get_agent(agent_id)
+        agent = await self.get_agent(agent_id, organization_id)
         if not agent:
-            raise ValueError(f"Agent {agent_id} not found")
+            raise ValueError(f"Agent {agent_id} not found in your organization")
 
         previous_score = agent.reputation_score
         new_score = max(0, min(100, previous_score + Decimal(str(change_amount))))
@@ -418,7 +472,7 @@ class AgentService:
         await self.db.refresh(agent)
 
         logger.info(
-            f"Updated reputation for {agent.agent_key}: "
+            f"Updated reputation for {agent.agent_key} in org {organization_id}: "
             f"{previous_score} -> {new_score} ({change_amount:+.2f})"
         )
         return agent
@@ -426,9 +480,15 @@ class AgentService:
     async def get_reputation_history(
         self,
         agent_id: UUID,
+        organization_id: UUID,
         limit: int = 50,
     ) -> list[AgentReputationLog]:
         """Get reputation change history for an agent."""
+        # Verify agent belongs to org
+        agent = await self.get_agent(agent_id, organization_id)
+        if not agent:
+            return []
+
         result = await self.db.execute(
             select(AgentReputationLog)
             .where(AgentReputationLog.agent_id == agent_id)
@@ -439,11 +499,12 @@ class AgentService:
 
     async def get_leaderboard(
         self,
+        organization_id: UUID,
         specialization: str | None = None,
         limit: int = 100,
     ) -> list[Agent]:
-        """Get agent leaderboard (Feature 31)."""
-        query = select(Agent).where(Agent.is_active)
+        """Get agent leaderboard (scoped to organization)."""
+        query = select(Agent).where(Agent.is_active, Agent.organization_id == organization_id)
 
         if specialization:
             query = query.where(Agent.specialization == specialization)
@@ -460,6 +521,7 @@ class AgentService:
     async def create_marketplace_listing(
         self,
         agent_id: UUID,
+        organization_id: UUID,
         title: str,
         description: str | None = None,
         listing_type: str = "skill",
@@ -469,6 +531,11 @@ class AgentService:
         deliverables: str | None = None,
     ) -> AgentMarketplaceListing:
         """Create a marketplace listing."""
+        # Verify agent belongs to org
+        agent = await self.get_agent(agent_id, organization_id)
+        if not agent:
+            raise ValueError("Agent not found in your organization")
+
         listing = AgentMarketplaceListing(
             agent_id=agent_id,
             title=title,
@@ -484,11 +551,12 @@ class AgentService:
         await self.db.commit()
         await self.db.refresh(listing)
 
-        logger.info(f"Created marketplace listing: {title} by agent {agent_id}")
+        logger.info(f"Created marketplace listing: {title} by agent {agent_id} in org {organization_id}")
         return listing
 
     async def browse_marketplace(
         self,
+        organization_id: UUID,
         listing_type: str | None = None,
         min_price: float | None = None,
         max_price: float | None = None,
@@ -496,8 +564,8 @@ class AgentService:
         limit: int = 50,
         offset: int = 0,
     ) -> tuple[list[AgentMarketplaceListing], int]:
-        """Browse marketplace listings."""
-        query = select(AgentMarketplaceListing)
+        """Browse marketplace listings (scoped to organization)."""
+        query = select(AgentMarketplaceListing).join(Agent).where(Agent.organization_id == organization_id)
 
         if listing_type:
             query = query.where(AgentMarketplaceListing.listing_type == listing_type)
@@ -529,16 +597,17 @@ class AgentService:
         self,
         mentor_id: UUID,
         mentee_id: UUID,
+        organization_id: UUID,
         focus_skills: list[UUID] | None = None,
         goals: list[str] | None = None,
     ) -> AgentMentorship:
         """Create a mentorship relationship."""
-        # Validate agents exist
-        mentor = await self.get_agent(mentor_id)
-        mentee = await self.get_agent(mentee_id)
+        # Validate agents exist and belong to org
+        mentor = await self.get_agent(mentor_id, organization_id)
+        mentee = await self.get_agent(mentee_id, organization_id)
 
         if not mentor or not mentee:
-            raise ValueError("Mentor or mentee not found")
+            raise ValueError("Mentor or mentee not found in your organization")
 
         if mentor_id == mentee_id:
             raise ValueError("Mentor and mentee cannot be the same agent")
@@ -555,17 +624,24 @@ class AgentService:
         await self.db.commit()
         await self.db.refresh(mentorship)
 
-        logger.info(f"Created mentorship: {mentor_id} -> {mentee_id}")
+        logger.info(f"Created mentorship: {mentor_id} -> {mentee_id} in org {organization_id}")
         return mentorship
 
-    async def accept_mentorship(self, mentorship_id: UUID) -> AgentMentorship:
+    async def accept_mentorship(self, mentorship_id: UUID, organization_id: UUID) -> AgentMentorship:
         """Accept a mentorship request."""
-        mentorship = await self.db.get(AgentMentorship, mentorship_id)
+        # Verify mentorship belongs to org (via mentor/mentee)
+        query = select(AgentMentorship).join(
+            Agent, Agent.id == AgentMentorship.mentor_id
+        ).where(AgentMentorship.id == mentorship_id, Agent.organization_id == organization_id)
+        
+        result = await self.db.execute(query)
+        mentorship = result.scalar_one_or_none()
+        
         if not mentorship:
-            raise ValueError("Mentorship not found")
+            raise ValueError("Mentorship not found in your organization")
 
         mentorship.status = MentorshipStatus.ACTIVE.value
-        mentorship.started_at = datetime.utcnow()
+        mentorship.started_at = datetime.now(UTC)
 
         await self.db.commit()
         await self.db.refresh(mentorship)
@@ -580,11 +656,17 @@ class AgentService:
         self,
         agent_id: UUID,
         skill_id: UUID,
+        organization_id: UUID,
         priority: int = 5,
         reason: str | None = None,
         use_case: str | None = None,
     ) -> AgentWishlist:
         """Add a skill to agent's wishlist."""
+        # Verify agent belongs to org
+        agent = await self.get_agent(agent_id, organization_id)
+        if not agent:
+            raise ValueError("Agent not found in your organization")
+
         # Check if already in wishlist
         existing = await self.db.execute(
             select(AgentWishlist).where(
@@ -609,15 +691,20 @@ class AgentService:
         await self.db.commit()
         await self.db.refresh(wishlist_item)
 
-        logger.info(f"Added skill {skill_id} to agent {agent_id} wishlist")
+        logger.info(f"Added skill {skill_id} to agent {agent_id} wishlist in org {organization_id}")
         return wishlist_item
 
-    async def get_agent_wishlist(self, agent_id: UUID) -> list[AgentWishlist]:
+    async def get_agent_wishlist(self, agent_id: UUID, organization_id: UUID) -> list[AgentWishlist]:
         """Get agent's skill wishlist."""
+        # Verify agent belongs to org
+        agent = await self.get_agent(agent_id, organization_id)
+        if not agent:
+            return []
+
         result = await self.db.execute(
             select(AgentWishlist)
             .where(AgentWishlist.agent_id == agent_id)
-            .where(not AgentWishlist.is_fulfilled)
+            .where(AgentWishlist.is_fulfilled == False)
             .order_by(AgentWishlist.priority)
         )
         return list(result.scalars().all())
@@ -630,6 +717,7 @@ class AgentService:
         self,
         agent_id: UUID,
         skill_id: UUID,
+        organization_id: UUID,
         title: str,
         proficiency_level_achieved: int,
         score_achieved: float,
@@ -637,14 +725,19 @@ class AgentService:
         expires_at: datetime | None = None,
     ) -> AgentCertificate:
         """Issue a skill certificate to an agent."""
+        # Verify agent belongs to org
+        agent = await self.get_agent(agent_id, organization_id)
+        if not agent:
+            raise ValueError("Agent not found in your organization")
+
         import hashlib
 
         # Generate certificate key
-        cert_key = f"CERT-{agent_id}-{skill_id}-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+        cert_key = f"CERT-{agent_id}-{skill_id}-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
 
         # Generate verification hash
         verification_hash = hashlib.sha256(
-            f"{agent_id}:{skill_id}:{score_achieved}:{datetime.utcnow()}".encode()
+            f"{agent_id}:{skill_id}:{score_achieved}:{datetime.now(UTC)}".encode()
         ).hexdigest()[:16]
 
         certificate = AgentCertificate(
@@ -663,14 +756,20 @@ class AgentService:
         await self.db.commit()
         await self.db.refresh(certificate)
 
-        logger.info(f"Issued certificate {cert_key} to agent {agent_id}")
+        logger.info(f"Issued certificate {cert_key} to agent {agent_id} in org {organization_id}")
         return certificate
 
     async def get_agent_certificates(
         self,
         agent_id: UUID,
+        organization_id: UUID,
     ) -> list[AgentCertificate]:
         """Get all certificates for an agent."""
+        # Verify agent belongs to org
+        agent = await self.get_agent(agent_id, organization_id)
+        if not agent:
+            return []
+
         result = await self.db.execute(
             select(AgentCertificate)
             .where(AgentCertificate.agent_id == agent_id)

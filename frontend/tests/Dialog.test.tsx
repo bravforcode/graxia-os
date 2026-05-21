@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
-import { Dialog } from '@/components/ui/Dialog'
+import { Dialog } from '@/components/ui/dialog'
 
 describe('Dialog', () => {
   it('renders dialog content when open', () => {

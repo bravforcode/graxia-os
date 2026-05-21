@@ -330,6 +330,7 @@ async def assign_skill_to_agent(
         agent_skill = await service.assign_skill_to_agent(
             agent_id=agent_id,
             skill_id=skill_id,
+            organization_id=org.id,
             proficiency_level=proficiency_level,
             is_favorite=is_favorite,
         )
@@ -358,7 +359,7 @@ async def get_agent_skills(
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
 
-    skills = await service.get_agent_skills(agent_id, min_proficiency)
+    skills = await service.get_agent_skills(agent_id, org.id, min_proficiency)
     logger.info(f"Tenant {org.id} listed skills for agent {agent_id}")
     return {
         "agent_id": agent_id,
@@ -419,7 +420,7 @@ async def get_team(
     if not team:
         raise HTTPException(status_code=404, detail="Team not found")
         
-    members = await service.get_team_members(team_id)
+    members = await service.get_team_members(team_id, org.id)
     logger.info(f"Tenant {org.id} accessed team {team_id}")
     return {
         "team": team,

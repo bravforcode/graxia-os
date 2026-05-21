@@ -5,7 +5,7 @@ import { axe } from 'jest-axe'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { vi } from 'vitest'
 
-import { Dialog } from '@/components/ui/Dialog'
+import { Dialog } from '@/components/ui/dialog'
 import Layout from '@/components/Layout'
 import Login from '@/pages/Login'
 import Register from '@/pages/Register'

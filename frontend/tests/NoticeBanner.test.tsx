@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 
-import { NoticeBanner } from '@/components/ui/NoticeBanner'
+import { NoticeBanner } from '@/components/ui/notice-banner'
 
 describe('NoticeBanner', () => {
   it('renders non-danger notices as polite status updates', () => {
