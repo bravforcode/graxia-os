@@ -9,6 +9,18 @@ from .opportunity import OpportunityList, OpportunityOut
 from .run import AutomationRunList, AutomationRunOut
 from .skill import SkillBootstrapResponse, SkillProfileList, SkillProfileOut
 from .submission import SubmissionCreate, SubmissionOut
+from .funnel import (
+    FunnelCheckoutSessionRead,
+    ConversionEventCreate,
+    ConversionEventRead,
+    DeliveryAccessRead,
+    DeliveryAssetCreate,
+    DeliveryAssetRead,
+    DigitalProductCreate,
+    DigitalProductRead,
+    DigitalProductUpdate,
+    FunnelOrderRead,
+)
 
 __all__ = [
     "OpportunityOut", "OpportunityList",
@@ -22,4 +34,8 @@ __all__ = [
     "SkillBootstrapResponse", "SkillProfileList", "SkillProfileOut",
     "JobPostingList", "JobPostingOut",
     "CommandExecuteRequest", "CommandExecuteResponse",
+    "DigitalProductCreate", "DigitalProductRead", "DigitalProductUpdate",
+    "DeliveryAssetCreate", "DeliveryAssetRead",
+    "FunnelCheckoutSessionRead", "FunnelOrderRead", "DeliveryAccessRead",
+    "ConversionEventCreate", "ConversionEventRead",
 ]
