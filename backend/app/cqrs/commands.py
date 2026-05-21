@@ -48,6 +48,7 @@ class CreateSubmissionCommand(Command):
     currency: str = "THB"
     proposal_text: str | None = None
     created_by: str | None = None
+    organization_id: UUID | None = None
 
 
 @dataclass(frozen=True)

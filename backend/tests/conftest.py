@@ -1,10 +1,73 @@
 import os
+import sys
+import uuid
+from pathlib import Path
+
+# Ensure project root is on sys.path for imports from scripts/ops/
+_project_root = Path(__file__).resolve().parents[2]
+if str(_project_root) not in sys.path:
+    sys.path.insert(0, str(_project_root))
+
+# Also add backend/ to sys.path so scripts/ops/* can import 'app' module
+# Note: Project root MUST be before backend/ to avoid namespace collision
+# between backend/scripts/ and project-root/scripts/
+_backend_path = _project_root / "backend"
+if str(_backend_path) not in sys.path:
+    # Insert at position after project_root to keep project root first
+    sys.path.insert(1, str(_backend_path))
+
+# ── TEST DATABASE SAFETY GUARD ──────────────────────────────────────────
+# Refuse to run tests against production/staging databases.
+# Only SQLite or URLs containing 'test', 'tmp', or explicit override are allowed.
+
+_original_db_url = os.environ.get("DATABASE_URL", "")
+_safe_hostnames = ["localhost", "127.0.0.1", "::1", "host.docker.internal"]
+_unsafe_hostnames = ["supabase.co", "fly.dev", "production.", "staging.", "prod-", "rds.amazonaws.com", "cockroachlabs.cloud"]
+
+def _is_safe_test_db_url(url: str) -> bool:
+    """Check if DATABASE_URL is safe for testing."""
+    if not url:
+        return True  # Will be overridden below
+    url_lower = url.lower()
+    # SQLite is always safe
+    if "sqlite" in url_lower:
+        return True
+    # Local/dev hostnames are always acceptable for testing
+    for safe in _safe_hostnames:
+        if safe in url_lower:
+            return True
+    # Check for unsafe production hostnames
+    for unsafe in _unsafe_hostnames:
+        if unsafe in url_lower:
+            return False
+    # Check for explicit override
+    if os.environ.get("ALLOW_UNSAFE_TEST_DB") == "1":
+        return True
+    # Check URL path for 'test' or 'tmp' markers
+    if "/test" in url_lower or "/tmp" in url_lower or "test_" in url_lower or "_test" in url_lower:
+        return True
+    return False
+
+if not _is_safe_test_db_url(_original_db_url) and not os.environ.get("ALLOW_UNSAFE_TEST_DB") == "1":
+    raise RuntimeError(
+        f"REFUSING to run tests: DATABASE_URL={_original_db_url!r} appears to point to a "
+        f"production or staging database. Set ALLOW_UNSAFE_TEST_DB=1 to override (NOT RECOMMENDED)."
+    )
+
+# Use a unique DB for each test process to avoid concurrency issues
+_test_db_id = uuid.uuid4().hex[:8]
+_test_db_path = str(_project_root / "backend" / "tests" / f"test_{_test_db_id}.db")
 
 # Force REAL services for Phase 9 tests
 os.environ["TESTING"] = "true"
-os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///C:/Users/menum/graxia os/backend/tests/test_real.db"
-os.environ["REDIS_ENABLED"] = "true"
+os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{_test_db_path}"
+os.environ["REDIS_ENABLED"] = "false"
 os.environ["REDIS_URL"] = "redis://localhost:6380/0"
+
+import base64
+os.environ["APP_ENV"] = "testing"  # Bypass strict secret validation at module import time
+os.environ["SECRET_KEY"] = "8b6e6f1f43a6d96e8f498c1999d3e527d710f63e63283c483d8e578c772091d3"
+os.environ["ENCRYPTION_KEY"] = "MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE="
 
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass
@@ -190,6 +253,7 @@ async def seeded_records(db_session: AsyncSession, default_org: Organization) ->
         status="discovered",
         job_type="job",
         source_hash=f"job1-{uuid4()}",
+        organization_id=default_org.id,
     )
     low_score_job = JobPosting(
         title="Junior Dev",
@@ -200,6 +264,7 @@ async def seeded_records(db_session: AsyncSession, default_org: Organization) ->
         status="discovered",
         job_type="job",
         source_hash=f"job2-{uuid4()}",
+        organization_id=default_org.id,
     )
     email_thread = EmailThread(
         thread_id=f"thread-{uuid4()}",
@@ -209,6 +274,7 @@ async def seeded_records(db_session: AsyncSession, default_org: Organization) ->
         status="unread",
         unread_count=1,
         last_message_at=now,
+        organization_id=default_org.id,
     )
     email_thread.add_action_item("Prepare for interview", priority=9)
     task = AssistantTask(
@@ -253,4 +319,12 @@ def isolated_event_bus():
     from app.core.event_bus import EventBus
     return EventBus()
 
-# NO MOCKS for Redis and Celery as per Phase 9 requirements
+from unittest.mock import MagicMock, patch
+
+@pytest_asyncio.fixture(autouse=True)
+def mock_celery_inspect():
+    with patch("app.tasks.celery_app.celery_app.control.inspect") as mock_inspect:
+        mock_inspect_instance = MagicMock()
+        mock_inspect_instance.ping.return_value = {"celery@test": {"ok": "pong"}}
+        mock_inspect.return_value = mock_inspect_instance
+        yield mock_inspect

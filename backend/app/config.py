@@ -226,6 +226,9 @@ class Settings(BaseSettings):
     TELEGRAM_POLLING_ENABLED: bool = False
     ALERTMANAGER_WEBHOOK_TOKEN: str = ""
     ALERTMANAGER_WEBHOOK_SECRET: str = ""
+    # Content Engine site rebuild webhooks (Bug Fix #2)
+    # Format: "site_a=https://api.vercel.com/deploy/hook/xxxx,site_b=https://..."
+    SITE_REBUILD_WEBHOOKS: str = ""
 
     # Event Bus Configuration
     EVENT_BUS_SHUTDOWN_TIMEOUT: int = 30  # Seconds to wait for graceful shutdown
@@ -254,6 +257,7 @@ class Settings(BaseSettings):
 
     # Email
     RESEND_API_KEY: str = ""
+    FROM_EMAIL: str = "Graxia <notifications@graxia.io>"
 
     # Identity
     IDENTITY_PATH: str = "/identity/profile.yaml"
@@ -360,60 +364,94 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_required_secrets(self):
-        """Validate that required secrets are configured in non-testing environments."""
-        if self.APP_ENV.lower() == "testing":
-            # Testing mode allows defaults for convenience
+        """
+        Validate required secrets at startup (TASK 2.1: H-01).
+        
+        Testing mode: Auto-populate with safe defaults
+        All other modes: Enforce strict validation
+        """
+        env = self.APP_ENV.lower()
+        
+        # Testing mode allows defaults for convenience
+        if env == "testing":
             if self.SECRET_KEY is None:
                 self.SECRET_KEY = "test-secret-key-min-32-chars-long-for-testing-purposes"
             if self.ENCRYPTION_KEY is None:
-                self.ENCRYPTION_KEY = "test-encryption-key-32-chars!!"
+                self.ENCRYPTION_KEY = "test-encryption-key-32-chars-long"
             if self.POSTGRES_PASSWORD is None:
-                self.POSTGRES_PASSWORD = "test-password"
+                self.POSTGRES_PASSWORD = "test-password-16-chars"
             return self
-
-        # For development and production, validate required secrets
-        required_secrets = {
-            "SECRET_KEY": self.SECRET_KEY,
-            "ENCRYPTION_KEY": self.ENCRYPTION_KEY,
-            "POSTGRES_PASSWORD": self.POSTGRES_PASSWORD,
-        }
-
-        # Check for missing or placeholder-looking secrets
-        missing = []
-        weak = []
         
-        for key, value in required_secrets.items():
-            if not value or self._looks_placeholder(value):
-                missing.append(key)
-            elif key == "SECRET_KEY" and len(value.strip()) < 32:
-                weak.append(f"{key} must be at least 32 characters (current: {len(value.strip())})")
-            elif key == "ENCRYPTION_KEY" and len(value.strip()) < 32:
-                weak.append(f"{key} must be at least 32 characters (current: {len(value.strip())})")
-            elif key == "POSTGRES_PASSWORD" and len(value.strip()) < 16:
-                weak.append(f"{key} must be at least 16 characters (current: {len(value.strip())})")
-
-        # Check entropy for SECRET_KEY
-        if self.SECRET_KEY and not self._looks_placeholder(self.SECRET_KEY):
-            entropy = self._entropy(self.SECRET_KEY)
-            if entropy < 4.0:
-                weak.append(f"SECRET_KEY has insufficient entropy ({entropy:.2f} bits, minimum 4.0)")
-
-        errors = []
-        if missing:
-            errors.append(
-                f"Required secrets not configured: {', '.join(missing)}. "
-                f"Set them in .env file before starting the application. "
-                f"Generate strong secrets using:\n"
-                f"  SECRET_KEY: openssl rand -hex 32\n"
-                f"  ENCRYPTION_KEY: openssl rand -hex 32\n"
-                f"  POSTGRES_PASSWORD: openssl rand -base64 32"
-            )
-        if weak:
-            errors.append("Weak secrets detected:\n  " + "\n  ".join(weak))
-
-        if errors:
-            raise RuntimeError("\n\n".join(errors))
-
+        # For all non-testing environments: enforce validation
+        missing_secrets = []
+        weak_secrets = []
+        
+        # Check for missing or placeholder secrets
+        secret_key = (self.SECRET_KEY or "").strip()
+        encryption_key = (self.ENCRYPTION_KEY or "").strip()
+        postgres_password = (self.POSTGRES_PASSWORD or "").strip()
+        
+        # All non-testing environments: enforce strict validation
+        # including placeholder detection and strength checks
+        if not secret_key or self._looks_placeholder(secret_key):
+            missing_secrets.append("SECRET_KEY")
+        if not encryption_key or self._looks_placeholder(encryption_key):
+            missing_secrets.append("ENCRYPTION_KEY")
+        if not postgres_password or self._looks_placeholder(postgres_password):
+            missing_secrets.append("POSTGRES_PASSWORD")
+        
+        # If any secrets are missing or placeholders, fail immediately
+        if missing_secrets:
+            error_parts = [
+                f"Required secrets not configured: {', '.join(missing_secrets)}",
+                "",
+                "These secrets must be set in your .env file with strong, non-placeholder values.",
+                "",
+                "Generate strong secrets using:",
+                "  SECRET_KEY:        openssl rand -base64 32",
+                "  ENCRYPTION_KEY:    openssl rand -hex 32",
+                "  POSTGRES_PASSWORD: openssl rand -base64 24",
+                "",
+                "Add them to your .env file:",
+                f"  SECRET_KEY={secret_key if secret_key and not self._looks_placeholder(secret_key) else '<generate-strong-secret>'}",
+                f"  ENCRYPTION_KEY={encryption_key if encryption_key and not self._looks_placeholder(encryption_key) else '<generate-strong-secret>'}",
+                f"  POSTGRES_PASSWORD={postgres_password if postgres_password and not self._looks_placeholder(postgres_password) else '<generate-strong-secret>'}",
+            ]
+            raise RuntimeError("\n".join(error_parts))
+        
+        # Check for weak secrets (length and entropy) — all non-testing modes
+        if len(secret_key) < 32:
+            weak_secrets.append(f"SECRET_KEY must be at least 32 characters (current: {len(secret_key)})")
+        elif self._entropy(secret_key) < 4.0:
+            weak_secrets.append("SECRET_KEY has insufficient entropy (too repetitive or predictable)")
+        
+        if len(encryption_key) < 32:
+            weak_secrets.append(f"ENCRYPTION_KEY must be at least 32 characters (current: {len(encryption_key)})")
+        elif self._entropy(encryption_key) < 3.0:
+            weak_secrets.append("ENCRYPTION_KEY has insufficient entropy (too repetitive or predictable)")
+        
+        if len(postgres_password) < 16:
+            weak_secrets.append(f"POSTGRES_PASSWORD must be at least 16 characters (current: {len(postgres_password)})")
+        elif self._entropy(postgres_password) < 2.5:
+            weak_secrets.append("POSTGRES_PASSWORD has insufficient entropy (too repetitive or predictable)")
+        
+        # If any secrets are weak, fail with detailed error
+        if weak_secrets:
+            error_parts = [
+                "Weak secrets detected:",
+                "",
+            ]
+            for weakness in weak_secrets:
+                error_parts.append(f"  - {weakness}")
+            error_parts.extend([
+                "",
+                "Generate strong secrets using:",
+                "  openssl rand -base64 32  # For SECRET_KEY",
+                "  openssl rand -hex 32     # For ENCRYPTION_KEY",
+                "  openssl rand -base64 24  # For POSTGRES_PASSWORD",
+            ])
+            raise RuntimeError("\n".join(error_parts))
+        
         return self
 
     @staticmethod
@@ -461,6 +499,23 @@ class Settings(BaseSettings):
     @property
     def HAS_REAL_SERPAPI_KEY(self) -> bool:
         return not self._looks_placeholder(self.SERPAPI_KEY)
+
+    @property
+    def SITE_REBUILD_WEBHOOK_MAP(self) -> dict[str, str]:
+        """Parse SITE_REBUILD_WEBHOOKS CSV into a dict.
+
+        Usage in tasks: settings.SITE_REBUILD_WEBHOOK_MAP.get(article.site)
+        .env format:    SITE_REBUILD_WEBHOOKS=site_a=https://...,site_b=https://...
+        """
+        result: dict[str, str] = {}
+        for pair in (self.SITE_REBUILD_WEBHOOKS or "").split(","):
+            pair = pair.strip()
+            if "=" in pair:
+                k, _, v = pair.partition("=")
+                k, v = k.strip(), v.strip()
+                if k and v:
+                    result[k] = v
+        return result
 
     @property
     def HAS_REAL_GOOGLE_CLIENT_ID(self) -> bool:

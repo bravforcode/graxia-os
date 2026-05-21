@@ -37,6 +37,7 @@ class CreateSubmissionHandler(CommandHandler[CreateSubmissionCommand, Submission
                 # Create submission
                 submission = Submission(
                     id=uuid4(),
+                    organization_id=command.organization_id,
                     opportunity_id=command.opportunity_id,
                     contact_id=command.contact_id,
                     type=command.type,

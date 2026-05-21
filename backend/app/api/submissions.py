@@ -12,7 +12,7 @@ from decimal import Decimal
 from typing import Annotated, TypedDict
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.cqrs.commands import (
     CreateSubmissionCommand,
@@ -21,6 +21,8 @@ from app.cqrs.commands import (
 )
 from app.cqrs.handlers import mediator
 from app.cqrs.queries import ListSubmissionsQuery
+from app.middleware.auth import get_current_user
+from app.models.user import User
 from app.schemas.submission import SubmissionCreate, SubmissionOut
 
 logger = logging.getLogger(__name__)
@@ -70,7 +72,7 @@ async def list_submissions(
 
 
 @router.post("", response_model=SubmissionOut, status_code=201)
-async def create_submission(data: SubmissionCreate) -> SubmissionOut:
+async def create_submission(data: SubmissionCreate, current_user: User = Depends(get_current_user)) -> SubmissionOut:
     """
     Create submission using CQRS Command.
     
@@ -89,6 +91,7 @@ async def create_submission(data: SubmissionCreate) -> SubmissionOut:
         subject_line=data.subject_line,
         proposed_value=data.proposed_value,
         currency=data.currency,
+        organization_id=current_user.organization_id,
     )
     
     # Send via mediator

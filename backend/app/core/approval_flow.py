@@ -197,8 +197,10 @@ class ApprovalFlowManager:
 
     async def _execute_job_apply(self, data: dict[str, Any]) -> bool:
         opportunity_id = _parse_uuid(data.get("opportunity_id") or data.get("job_id"))
+        org_id = _parse_uuid(data.get("organization_id"))
         now = datetime.now(UTC)
         submission = Submission(
+            organization_id=org_id,
             opportunity_id=opportunity_id,
             type="application",
             title=str(data.get("title") or data.get("job_url") or "Job application"),
