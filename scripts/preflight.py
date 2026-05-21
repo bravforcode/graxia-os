@@ -6,7 +6,6 @@ Cross-platform pre-deployment verification
 import os
 import sys
 import subprocess
-import json
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
@@ -392,7 +391,7 @@ def print_summary() -> None:
 def main():
     """Main preflight check"""
     # Get paths
-    root_path = Path(__file__).parent
+    root_path = Path(__file__).parent.parent
     backend_path = root_path / "backend"
     frontend_path = root_path / "frontend"
 
