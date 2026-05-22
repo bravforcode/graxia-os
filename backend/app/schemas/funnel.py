@@ -151,6 +151,32 @@ class FunnelOrderRead(BaseModel):
 
 # ── Delivery Access ───────────────────────────────────────────────────────
 
+# ── Orders ────────────────────────────────────────────────────────────
+
+class FunnelOrderItemRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    product_id: UUID
+    quantity: int
+    unit_amount: Decimal
+    total_amount: Decimal
+    currency: str
+
+class FunnelOrderRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    checkout_session_id: UUID
+    stripe_session_id: str | None = None
+    status: str
+    total_amount: Decimal
+    currency: str
+    customer_email: str | None = None
+    paid_at: datetime | None = None
+    created_at: datetime
+    items: list[FunnelOrderItemRead] = []
+
 class DeliveryAccessRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     
