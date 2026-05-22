@@ -82,6 +82,23 @@ class DeliveryAssetRead(DeliveryAssetBase):
 
 # ── Checkout Session ──────────────────────────────────────────────────────
 
+class FunnelCheckoutCreate(BaseModel):
+    customer_email: str | None = None
+    success_url: str
+    cancel_url: str
+
+class FunnelCheckoutRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    stripe_session_id: str | None = None
+    checkout_url: str | None = None
+    status: str
+    amount: Decimal
+    currency: str
+    customer_email: str | None = None
+    created_at: datetime
+
 class FunnelCheckoutSessionRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     

@@ -9,6 +9,7 @@ from app.database import get_db
 from app.middleware.tenant import get_org
 from app.models.organization import Organization
 from app.services.funnel_product_service import FunnelProductService
+from app.services.funnel_checkout_service import FunnelCheckoutService
 from app.schemas.funnel import (
     DigitalProductRead,
     DigitalProductCreate,
@@ -16,6 +17,8 @@ from app.schemas.funnel import (
     DeliveryAssetRead,
     DeliveryAssetCreate,
     DeliveryAssetUpdate,
+    FunnelCheckoutCreate,
+    FunnelCheckoutRead,
 )
 
 router = APIRouter()
@@ -23,6 +26,9 @@ logger = logging.getLogger(__name__)
 
 async def get_funnel_service(db: AsyncSession = Depends(get_db)) -> FunnelProductService:
     return FunnelProductService(db)
+
+async def get_checkout_service(db: AsyncSession = Depends(get_db)) -> FunnelCheckoutService:
+    return FunnelCheckoutService(db)
 
 # Products Endpoints
 
@@ -110,6 +116,25 @@ async def delete_product(
     if not success:
         raise HTTPException(status_code=404, detail="Product not found")
     return
+
+# Checkout Endpoints
+
+@router.post("/products/{product_id}/checkout", response_model=FunnelCheckoutRead)
+async def create_checkout_session(
+    product_id: UUID,
+    payload: FunnelCheckoutCreate,
+    org: Organization = Depends(get_org),
+    service: FunnelCheckoutService = Depends(get_checkout_service),
+):
+    """Create a Stripe checkout session for a product."""
+    result = await service.create_checkout_session(
+        organization_id=org.id,
+        product_id=product_id,
+        payload=payload,
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="Product not found or not published")
+    return result
 
 # Delivery Assets Endpoints
 

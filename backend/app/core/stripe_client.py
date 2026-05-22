@@ -45,6 +45,29 @@ async def cancel_stripe_subscription(subscription_id: str) -> stripe.Subscriptio
     return stripe.Subscription.cancel(subscription_id)
 
 
+async def create_stripe_checkout_session(
+    customer_id: str | None,
+    success_url: str,
+    cancel_url: str,
+    line_items: list[dict],
+    metadata: dict,
+    customer_email: str | None = None,
+) -> stripe.checkout.Session:
+    params = {
+        "mode": "payment",
+        "success_url": success_url,
+        "cancel_url": cancel_url,
+        "line_items": line_items,
+        "metadata": metadata,
+    }
+    if customer_id:
+        params["customer"] = customer_id
+    elif customer_email:
+        params["customer_email"] = customer_email
+    
+    return stripe.checkout.Session.create(**params)
+
+
 async def get_portal_url(customer_id: str, return_url: str) -> str:
     session = stripe.billing_portal.Session.create(customer=customer_id, return_url=return_url)
     return session.url
