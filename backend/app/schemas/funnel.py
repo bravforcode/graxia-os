@@ -20,7 +20,7 @@ class DigitalProductBase(BaseModel):
     sales_page_content: str | None = None
 
 class DigitalProductCreate(DigitalProductBase):
-    organization_id: UUID
+    pass
 
 class DigitalProductUpdate(BaseModel):
     name: str | None = None
@@ -59,8 +59,16 @@ class DeliveryAssetBase(BaseModel):
     is_active: bool = True
 
 class DeliveryAssetCreate(DeliveryAssetBase):
-    product_id: UUID
-    organization_id: UUID
+    pass
+
+class DeliveryAssetUpdate(BaseModel):
+    asset_type: str | None = None
+    title: str | None = None
+    description: str | None = None
+    storage_path: str | None = None
+    external_url: str | None = None
+    content_body: str | None = None
+    is_active: bool | None = None
 
 class DeliveryAssetRead(DeliveryAssetBase):
     model_config = ConfigDict(from_attributes=True)

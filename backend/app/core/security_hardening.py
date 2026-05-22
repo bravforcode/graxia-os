@@ -207,7 +207,8 @@ class RequestSanitizationMiddleware(BaseHTTPMiddleware):
             "cookie", "set-cookie", "authorization", "content-type", "content-length",
             "accept", "accept-encoding", "accept-language", "host", "user-agent",
             "referer", "connection", "cache-control", "pragma", "expires",
-            "if-none-match", "if-modified-since", "origin", "x-requested-with"
+            "if-none-match", "if-modified-since", "origin", "x-requested-with",
+            "x-csrf-token"
         }
 
     async def dispatch(self, request: Request, call_next):
