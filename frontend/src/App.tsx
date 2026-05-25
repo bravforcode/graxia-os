@@ -22,6 +22,22 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const ContentEngine = lazy(() => import("./pages/ContentEngine"));
+
+// Admin pages
+const AdminAgentControl = lazy(() => import("./pages/admin/AgentControl"));
+const AdminMCPTools = lazy(() => import("./pages/admin/MCPTools"));
+const AdminMCPToolDetail = lazy(() => import("./pages/admin/MCPToolDetail"));
+const AdminWorkflows = lazy(() => import("./pages/admin/Workflows"));
+const AdminWorkflowRun = lazy(() => import("./pages/admin/WorkflowRunDetail"));
+const AdminApprovals = lazy(() => import("./pages/admin/Approvals"));
+const AdminApprovalDetail = lazy(() => import("./pages/admin/ApprovalDetail"));
+const AdminContextPacks = lazy(() => import("./pages/admin/ContextPacks"));
+const AdminContextPackDetail = lazy(() => import("./pages/admin/ContextPackDetail"));
+const AdminWorkspaceExports = lazy(() => import("./pages/admin/WorkspaceExports"));
+const AdminFunnelAnalytics = lazy(() => import("./pages/admin/FunnelAnalytics"));
+const AdminAudit = lazy(() => import("./pages/admin/Audit"));
+const AdminReadiness = lazy(() => import("./pages/admin/Readiness"));
 
 function RouteFallback() {
   return (
@@ -61,7 +77,22 @@ export function AppRoutes() {
           <Route path="costs" element={<Costs />} />
           <Route path="event-bus" element={<EventBus />} />
           <Route path="agents" element={<Agents />} />
+          <Route path="content-engine" element={<ContentEngine />} />
           <Route path="settings" element={<Settings />} />
+          {/* Admin routes */}
+          <Route path="admin/agent-control" element={<AdminAgentControl />} />
+          <Route path="admin/mcp-tools" element={<AdminMCPTools />} />
+          <Route path="admin/mcp-tools/:name" element={<AdminMCPToolDetail />} />
+          <Route path="admin/workflows" element={<AdminWorkflows />} />
+          <Route path="admin/workflows/:run_id" element={<AdminWorkflowRun />} />
+          <Route path="admin/approvals" element={<AdminApprovals />} />
+          <Route path="admin/approvals/:id" element={<AdminApprovalDetail />} />
+          <Route path="admin/context-packs" element={<AdminContextPacks />} />
+          <Route path="admin/context-packs/:id" element={<AdminContextPackDetail />} />
+          <Route path="admin/workspace-exports" element={<AdminWorkspaceExports />} />
+          <Route path="admin/funnel/analytics" element={<AdminFunnelAnalytics />} />
+          <Route path="admin/audit" element={<AdminAudit />} />
+          <Route path="admin/readiness" element={<AdminReadiness />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
