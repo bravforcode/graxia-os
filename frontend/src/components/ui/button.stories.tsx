@@ -1,15 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Save, Sparkles } from 'lucide-react'
 
-import { Button } from '@/components/ui/Button'
+import { Button } from '@/components/ui/button'
 
 const meta = {
   title: 'Primitives/Button',
   component: Button,
   args: {
     children: 'Run action',
-    variant: 'primary',
-    size: 'md',
+    variant: 'default',
+    size: 'default',
     loading: false,
   },
   argTypes: {

@@ -42,6 +42,7 @@ export default function Onboarding() {
 
   useEffect(() => {
     fetchState()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchState = async () => {

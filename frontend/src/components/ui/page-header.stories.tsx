@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { RefreshCw, Sparkles } from 'lucide-react'
 
-import { Button } from '@/components/ui/Button'
-import { PageHeader } from '@/components/ui/PageHeader'
+import { Button } from '@/components/ui/button'
+import { PageHeader } from '@/components/ui/page-header'
 
 const meta = {
   title: 'Primitives/PageHeader',

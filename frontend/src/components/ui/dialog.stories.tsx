@@ -1,15 +1,15 @@
 import { useState, type ComponentProps } from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 
-import { Button } from '@/components/ui/Button'
-import { Dialog } from '@/components/ui/Dialog'
+import { Button } from '@/components/ui/button'
+import { Dialog } from '@/components/ui/dialog'
 
 const meta: Meta<typeof Dialog> = {
   title: 'Primitives/Dialog',
   component: Dialog,
   args: {
     open: true,
-    title: 'Reject draft',
+    
     description: 'Capture operator context before removing this draft from the active queue.',
     onClose: () => {},
     children: null,
@@ -34,7 +34,7 @@ function DialogStoryDemo(args: DialogStoryArgs) {
       <Dialog
         {...args}
         open={open}
-        title={args.title ?? 'Reject draft'}
+        
         onClose={() => setOpen(false)}
         footer={
           <>

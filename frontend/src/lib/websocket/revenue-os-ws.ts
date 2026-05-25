@@ -314,15 +314,12 @@ class RevenueOSWebSocket {
 let wsInstance: RevenueOSWebSocket | null = null;
 
 export function initializeRevenueOSWebSocket(
-  url?: string,
-  apiKey?: string,
+  url?: string
 ): RevenueOSWebSocket {
   const wsUrl =
     url || import.meta.env.VITE_WS_URL || "ws://localhost:8000/ws/revenue-os";
-  // TODO: replace with backend proxy — API key must stay server-side
-  const key = apiKey || "";
 
-  wsInstance = new RevenueOSWebSocket(wsUrl, key);
+  wsInstance = new RevenueOSWebSocket(wsUrl);
   return wsInstance;
 }
 

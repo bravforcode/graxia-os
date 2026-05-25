@@ -13,14 +13,15 @@ import {
   Users,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 
-import { Button } from "@/components/ui/Button";
-import { Dialog } from "@/components/ui/Dialog";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { MetricCard } from "@/components/ui/MetricCard";
-import { PageHeader } from "@/components/ui/PageHeader";
-import { Panel } from "@/components/ui/Panel";
-import { StatusPill } from "@/components/ui/StatusPill";
+import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
+import { EmptyState } from "@/components/ui/empty-state";
+import { MetricCard } from "@/components/ui/metric-card";
+import { PageHeader } from "@/components/ui/page-header";
+import { GlassCard } from "@/components/ui/glass-card";
+import { StatusPill } from "@/components/ui/status-pill";
 
 interface Agent {
   agent_id: string;
@@ -162,7 +163,12 @@ export default function AgentsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <RefreshCw className="h-8 w-8 animate-spin" />
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+        >
+          <RefreshCw className="h-8 w-8 text-primary" />
+        </motion.div>
       </div>
     );
   }
@@ -175,19 +181,23 @@ export default function AgentsPage() {
         description="จัดการ Agents ทั้งหมดในระบบ - Social, Business และ Negotiations"
         actions={
           <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              onClick={fetchData}
-              icon={<RefreshCw className="h-4 w-4" />}
-            >
-              Refresh
-            </Button>
-            <Button
-              onClick={() => setCreateDialogOpen(true)}
-              icon={<Plus className="h-4 w-4" />}
-            >
-              Create Agent
-            </Button>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                variant="secondary"
+                onClick={fetchData}
+                icon={<RefreshCw className="h-4 w-4" />}
+              >
+                Refresh
+              </Button>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                onClick={() => setCreateDialogOpen(true)}
+                icon={<Plus className="h-4 w-4" />}
+              >
+                Create Agent
+              </Button>
+            </motion.div>
           </div>
         }
       />
@@ -221,17 +231,25 @@ export default function AgentsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b">
+      <div className="flex gap-2 border-b border-white/10 relative">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 font-medium ${
+            className={`relative px-4 py-2 font-medium transition-colors ${
               activeTab === tab.id
-                ? "border-b-2 border-primary text-primary"
+                ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
+            {activeTab === tab.id && (
+              <motion.div
+                layoutId="activeTab"
+                className="absolute left-0 right-0 bottom-[-1px] h-[2px] bg-primary"
+                initial={false}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              />
+            )}
             {tab.label}
           </button>
         ))}
@@ -239,94 +257,147 @@ export default function AgentsPage() {
 
       {/* Content */}
       {activeTab === "negotiations" ? (
-        <div className="space-y-4">
-          {negotiations.length === 0 ? (
-            <EmptyState message="No active negotiations" />
-          ) : (
-            negotiations.map((neg) => (
-              <Panel
-                key={neg.id}
-                title={neg.task}
-                eyebrow={`${neg.initiator} → ${neg.responder}`}
+        <motion.div layout className="space-y-4">
+          <AnimatePresence mode="popLayout">
+            {negotiations.length === 0 ? (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
               >
-                <div className="flex items-center justify-between">
-                  <StatusPill
-                    label={neg.status}
-                    tone={neg.status === "pending" ? "warning" : "success"}
-                  />
-                  <span className="text-sm text-muted-foreground">
-                    Expires: {new Date(neg.expires_at).toLocaleTimeString()}
-                  </span>
-                </div>
-              </Panel>
-            ))
-          )}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredAgents.length === 0 ? (
-            <EmptyState message={`No ${activeTab} agents found`} />
-          ) : (
-            filteredAgents.map((agent) => (
-              <Panel
-                key={agent.agent_id}
-                title={agent.agent_name}
-                eyebrow={agent.agent_type}
-                actions={
-                  <StatusPill
-                    label={agent.is_available ? "Available" : "Busy"}
-                    tone={agent.is_available ? "success" : "warning"}
-                    pulse={agent.is_available}
-                  />
-                }
-              >
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">{agent.bio}</p>
-
-                  <div className="flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-1">
-                      <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                      <span>{agent.success_rate.toFixed(1)}% success</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Activity className="h-4 w-4 text-muted-foreground" />
-                      <span>{agent.completed_tasks} tasks</span>
+                <EmptyState message="No active negotiations" />
+              </motion.div>
+            ) : (
+              negotiations.map((neg) => (
+                <GlassCard
+                  key={neg.id}
+                  layout
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  intensity="low"
+                  className="p-5"
+                >
+                  <div className="mb-4 flex items-start justify-between gap-4">
+                    <div>
+                      <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-text-tertiary)]">
+                        {neg.initiator} → {neg.responder}
+                      </div>
+                      <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
+                        {neg.task}
+                      </h2>
                     </div>
                   </div>
-
-                  <div className="flex flex-wrap gap-1">
-                    {agent.capabilities.slice(0, 3).map((cap, idx) => (
-                      <span
-                        key={idx}
-                        className="text-xs bg-secondary px-2 py-1 rounded"
-                      >
-                        {cap.name} (Lv.{cap.skill_level})
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      variant="secondary"
-                      className="flex-1"
-                      onClick={() => {
-                        setSelectedAgent(agent);
-                        setMessageDialogOpen(true);
-                      }}
-                      icon={<Send className="h-4 w-4" />}
-                    >
-                      Message
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      icon={<Settings className="h-4 w-4" />}
+                  <div className="flex items-center justify-between">
+                    <StatusPill
+                      label={neg.status}
+                      tone={neg.status === "pending" ? "warning" : "success"}
                     />
+                    <span className="text-sm text-muted-foreground">
+                      Expires: {new Date(neg.expires_at).toLocaleTimeString()}
+                    </span>
                   </div>
-                </div>
-              </Panel>
-            ))
-          )}
-        </div>
+                </GlassCard>
+              ))
+            )}
+          </AnimatePresence>
+        </motion.div>
+      ) : (
+        <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <AnimatePresence mode="popLayout">
+            {filteredAgents.length === 0 ? (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="col-span-full"
+              >
+                <EmptyState message={`No ${activeTab} agents found`} />
+              </motion.div>
+            ) : (
+              filteredAgents.map((agent) => (
+                <GlassCard
+                  key={agent.agent_id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  intensity="medium"
+                  className="p-5 flex flex-col"
+                >
+                  <div className="mb-4 flex items-start justify-between gap-4">
+                    <div>
+                      <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-text-tertiary)]">
+                        {agent.agent_type}
+                      </div>
+                      <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
+                        {agent.agent_name}
+                      </h2>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <StatusPill
+                        label={agent.is_available ? "Available" : "Busy"}
+                        tone={agent.is_available ? "success" : "warning"}
+                        pulse={agent.is_available}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 flex-1 flex flex-col">
+                    <p className="text-sm text-muted-foreground flex-1">{agent.bio}</p>
+
+                    <div className="flex items-center gap-4 text-sm bg-black/20 p-3 rounded-lg border border-white/5">
+                      <div className="flex items-center gap-1">
+                        <TrendingUp className="h-4 w-4 text-emerald-400" />
+                        <span className="font-medium">{agent.success_rate.toFixed(1)}% success</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Activity className="h-4 w-4 text-cyan-400" />
+                        <span className="font-medium">{agent.completed_tasks} tasks</span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1.5">
+                      {agent.capabilities.slice(0, 3).map((cap, idx) => (
+                        <span
+                          key={idx}
+                          className="text-xs bg-white/5 border border-white/10 text-white/80 px-2 py-1 rounded-md"
+                        >
+                          {cap.name} <span className="opacity-50 ml-1">Lv.{cap.skill_level}</span>
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="flex gap-2 pt-4 mt-auto">
+                      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1">
+                        <Button
+                          variant="secondary"
+                          className="w-full"
+                          onClick={() => {
+                            setSelectedAgent(agent);
+                            setMessageDialogOpen(true);
+                          }}
+                          icon={<Send className="h-4 w-4" />}
+                        >
+                          Message
+                        </Button>
+                      </motion.div>
+                      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                        <Button
+                          variant="ghost"
+                          className="px-3"
+                          icon={<Settings className="h-4 w-4" />}
+                        />
+                      </motion.div>
+                    </div>
+                  </div>
+                </GlassCard>
+              ))
+            )}
+          </AnimatePresence>
+        </motion.div>
       )}
 
       {/* Create Agent Dialog */}
@@ -356,7 +427,7 @@ export default function AgentsPage() {
                 setNewAgent({ ...newAgent, name: e.target.value })
               }
               placeholder="e.g., Social Media Manager"
-              className="w-full px-3 py-2 border rounded-md"
+              className="input-field"
             />
           </div>
           <div>
@@ -366,7 +437,7 @@ export default function AgentsPage() {
               onChange={(e) =>
                 setNewAgent({ ...newAgent, agent_type: e.target.value })
               }
-              className="w-full px-3 py-2 border rounded-md"
+              className="input-field"
             >
               <option value="social">Social Media</option>
               <option value="business">Business</option>
@@ -383,7 +454,7 @@ export default function AgentsPage() {
               }
               placeholder="Agent's role and capabilities..."
               rows={3}
-              className="w-full px-3 py-2 border rounded-md"
+              className="input-field min-h-[5rem] resize-y"
             />
           </div>
         </div>
@@ -418,7 +489,7 @@ export default function AgentsPage() {
                 setNewMessage({ ...newMessage, topic: e.target.value })
               }
               placeholder="e.g., task_assignment"
-              className="w-full px-3 py-2 border rounded-md"
+              className="input-field"
             />
           </div>
           <div>
@@ -430,7 +501,7 @@ export default function AgentsPage() {
               }
               placeholder="Enter your message..."
               rows={4}
-              className="w-full px-3 py-2 border rounded-md"
+              className="input-field min-h-[5rem] resize-y"
             />
           </div>
         </div>

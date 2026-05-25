@@ -10,14 +10,16 @@ import {
   UserRound,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 
-import { Button } from "@/components/ui/Button";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { MetricCard } from "@/components/ui/MetricCard";
-import { NoticeBanner } from "@/components/ui/NoticeBanner";
-import { PageHeader } from "@/components/ui/PageHeader";
-import { Panel } from "@/components/ui/Panel";
-import { StatusPill } from "@/components/ui/StatusPill";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { MetricCard } from "@/components/ui/metric-card";
+import { NoticeBanner } from "@/components/ui/notice-banner";
+import { PageHeader } from "@/components/ui/page-header";
+import { GlassCard } from "@/components/ui/glass-card";
+import { AnimatedTooltip } from "@/components/ui/animated-tooltip";
+import { StatusPill } from "@/components/ui/status-pill";
 import { api, type Contact } from "@/lib/api";
 import { formatRelative } from "@/lib/utils";
 
@@ -185,29 +187,39 @@ export default function Leads() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <PageHeader
         eyebrow="Revenue pipeline"
         title="Leads"
         description="Qualified prospects, next follow-ups, and direct outreach readiness."
         actions={
-          <Button
-            variant="secondary"
-            icon={<RefreshCw size={16} />}
-            onClick={() => void leadQuery.refetch()}
-          >
-            Refresh
-          </Button>
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Button
+              variant="secondary"
+              icon={<RefreshCw size={16} />}
+              onClick={() => void leadQuery.refetch()}
+            >
+              Refresh
+            </Button>
+          </motion.div>
         }
       />
 
-      {notice ? (
-        <NoticeBanner
-          tone={notice.tone}
-          message={notice.text}
-          onDismiss={() => setNotice(null)}
-        />
-      ) : null}
+      <AnimatePresence>
+        {notice && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+          >
+            <NoticeBanner
+              tone={notice.tone}
+              message={notice.text}
+              onDismiss={() => setNotice(null)}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
@@ -242,20 +254,30 @@ export default function Leads() {
         />
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-        <Panel eyebrow="Capture" title="Add lead">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] items-start">
+        <GlassCard intensity="low" className="p-5">
+          <div className="mb-4">
+            <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-text-tertiary)]">
+              Capture
+            </div>
+            <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">Add lead</h2>
+          </div>
           <LeadForm
             draft={draft}
             setDraft={setDraft}
             saving={createMutation.isPending}
             onSubmit={handleCreate}
           />
-        </Panel>
+        </GlassCard>
 
-        <Panel
-          eyebrow="Pipeline"
-          title="Active lead list"
-          actions={
+        <GlassCard intensity="low" className="p-5 overflow-hidden flex flex-col">
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-white/5 pb-4">
+            <div>
+              <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--color-text-tertiary)]">
+                Pipeline
+              </div>
+              <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">Active lead list</h2>
+            </div>
             <div className="flex flex-wrap items-center gap-3">
               <label className="relative block">
                 <span className="sr-only">Search leads</span>
@@ -264,16 +286,16 @@ export default function Leads() {
                   className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]"
                 />
                 <input
-                  className="input-field max-w-[16rem] py-2 pl-9"
+                  className="input-field max-w-[16rem] py-2 pl-9 bg-black/20"
                   placeholder="Search leads"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                 />
               </label>
               <label className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
-                <span>Min score</span>
+                <span className="hidden sm:inline">Min score</span>
                 <select
-                  className="input-field min-w-[6rem] py-2"
+                  className="input-field min-w-[5rem] py-2 bg-black/20"
                   value={minScore}
                   onChange={(event) => setMinScore(event.target.value)}
                 >
@@ -283,49 +305,54 @@ export default function Leads() {
                   <option value="9">9+</option>
                 </select>
               </label>
-              <label className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
+              <label className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] cursor-pointer hover:text-white transition-colors">
                 <input
                   type="checkbox"
+                  className="rounded border-white/10 bg-black/20 text-primary focus:ring-primary focus:ring-offset-black"
                   checked={followupDueOnly}
                   onChange={(event) => setFollowupDueOnly(event.target.checked)}
                 />
                 <span>Due only</span>
               </label>
             </div>
-          }
-        >
-          {leadQuery.isLoading ? (
-            <EmptyState message="Loading leads..." />
-          ) : (leadQuery.data?.items ?? []).length ? (
-            <div className="grid gap-4 lg:grid-cols-2">
-              {(leadQuery.data?.items ?? []).map((lead) => (
-                <LeadCard
-                  key={lead.id}
-                  lead={lead}
-                  contacting={
-                    markContactedMutation.isPending &&
-                    markContactedMutation.variables?.id === lead.id
-                  }
-                  scheduling={
-                    scheduleFollowupMutation.isPending &&
-                    scheduleFollowupMutation.variables?.id === lead.id
-                  }
-                  deleting={
-                    deleteMutation.isPending &&
-                    deleteMutation.variables === lead.id
-                  }
-                  onMarkContacted={() => markContactedMutation.mutate(lead)}
-                  onScheduleFollowup={() =>
-                    scheduleFollowupMutation.mutate(lead)
-                  }
-                  onDelete={() => deleteMutation.mutate(lead.id)}
-                />
-              ))}
-            </div>
-          ) : (
-            <EmptyState message="No active leads match the current filters." />
-          )}
-        </Panel>
+          </div>
+
+          <div className="flex-1">
+            {leadQuery.isLoading ? (
+              <EmptyState message="Loading leads..." />
+            ) : (leadQuery.data?.items ?? []).length ? (
+              <motion.div layout className="grid gap-4 lg:grid-cols-2">
+                <AnimatePresence mode="popLayout">
+                  {(leadQuery.data?.items ?? []).map((lead) => (
+                    <LeadCard
+                      key={lead.id}
+                      lead={lead}
+                      contacting={
+                        markContactedMutation.isPending &&
+                        markContactedMutation.variables?.id === lead.id
+                      }
+                      scheduling={
+                        scheduleFollowupMutation.isPending &&
+                        scheduleFollowupMutation.variables?.id === lead.id
+                      }
+                      deleting={
+                        deleteMutation.isPending &&
+                        deleteMutation.variables === lead.id
+                      }
+                      onMarkContacted={() => markContactedMutation.mutate(lead)}
+                      onScheduleFollowup={() =>
+                        scheduleFollowupMutation.mutate(lead)
+                      }
+                      onDelete={() => deleteMutation.mutate(lead.id)}
+                    />
+                  ))}
+                </AnimatePresence>
+              </motion.div>
+            ) : (
+              <EmptyState message="No active leads match the current filters." />
+            )}
+          </div>
+        </GlassCard>
       </div>
     </div>
   );
@@ -404,9 +431,11 @@ function LeadForm({
           onChange={(event) => update("notes", event.target.value)}
         />
       </label>
-      <Button icon={<Plus size={16} />} loading={saving} onClick={onSubmit}>
-        Add lead
-      </Button>
+      <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+        <Button className="w-full justify-center" icon={<Plus size={16} />} loading={saving} onClick={onSubmit}>
+          Add lead
+        </Button>
+      </motion.div>
     </div>
   );
 }
@@ -429,10 +458,10 @@ function Field({
   max?: string;
 }) {
   return (
-    <label className="space-y-2 text-sm text-[var(--color-text-secondary)]">
+    <label className="space-y-1.5 text-sm text-[var(--color-text-secondary)] block">
       <span>{label}</span>
       <input
-        className="input-field"
+        className="input-field py-2"
         type={type}
         value={value}
         required={required}
@@ -461,82 +490,112 @@ function LeadCard({
   onScheduleFollowup: () => void;
   onDelete: () => void;
 }) {
+  const isHighValue = (lead.value_score ?? 0) >= 7;
+  
   return (
-    <article className="rounded-[24px] border border-[var(--color-border)] bg-[var(--color-bg-secondary)]/70 p-5">
+    <motion.article 
+      layout
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      className="rounded-2xl border border-white/5 bg-zinc-900/40 p-5 shadow-lg backdrop-blur-md transition-all hover:bg-zinc-900/60 hover:border-white/10"
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
             {lead.name}
           </h3>
           {lead.role ? (
-            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+            <p className="mt-0.5 text-sm text-[var(--color-text-secondary)]">
               {lead.role}
             </p>
           ) : null}
           {lead.company ? (
-            <p className="mt-1 text-sm text-[var(--color-text-tertiary)]">
+            <p className="mt-0.5 text-xs text-primary/80 font-medium">
               {lead.company}
             </p>
           ) : null}
         </div>
-        <StatusPill
-          label={`Score ${lead.value_score ?? 0}/10`}
-          tone={(lead.value_score ?? 0) >= 7 ? "success" : "info"}
-        />
+        <AnimatedTooltip content={isHighValue ? "High priority prospect based on recent activity." : "Standard priority prospect."}>
+          <div>
+            <StatusPill
+              label={`Score ${lead.value_score ?? 0}/10`}
+              tone={isHighValue ? "success" : "info"}
+            />
+          </div>
+        </AnimatedTooltip>
       </div>
 
-      <div className="mt-4 space-y-2 text-sm text-[var(--color-text-secondary)]">
+      <div className="mt-4 space-y-1.5 text-sm text-[var(--color-text-secondary)]">
         {lead.email ? (
-          <div className="truncate">Email: {lead.email}</div>
+          <div className="truncate flex items-center gap-2">
+            <Mail size={14} className="opacity-50" />
+            {lead.email}
+          </div>
         ) : null}
         {lead.next_followup_date ? (
-          <div>Next follow-up: {lead.next_followup_date}</div>
+          <div className="flex items-center gap-2">
+            <CalendarClock size={14} className="opacity-50 text-orange-400" />
+            <span className="text-orange-400/90 font-medium">Due: {lead.next_followup_date}</span>
+          </div>
         ) : null}
         {lead.last_contacted_at ? (
-          <div>Last contacted {formatRelative(lead.last_contacted_at)}</div>
+          <div className="text-xs mt-2 opacity-70">
+            Last touch: {formatRelative(lead.last_contacted_at)}
+          </div>
         ) : null}
       </div>
 
       {lead.followup_reason ? (
-        <p className="mt-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-primary)]/60 p-4 text-sm leading-6 text-[var(--color-text-secondary)]">
+        <div className="mt-4 rounded-xl border border-white/5 bg-black/20 p-3 text-sm leading-relaxed text-zinc-300 relative overflow-hidden">
+          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500/50 to-purple-500/50" />
+          <span className="opacity-70 mr-2 uppercase text-[10px] font-bold tracking-wider">Note</span>
           {lead.followup_reason}
-        </p>
+        </div>
       ) : null}
 
       {lead.notes ? (
-        <p className="mt-4 text-sm leading-6 text-[var(--color-text-tertiary)]">
+        <p className="mt-3 text-sm leading-6 text-[var(--color-text-tertiary)] italic pl-3 border-l-2 border-white/5">
           {lead.notes}
         </p>
       ) : null}
 
-      <div className="mt-5 flex flex-wrap gap-3">
-        <Button
-          size="sm"
-          variant="secondary"
-          loading={contacting}
-          onClick={onMarkContacted}
-        >
-          Mark contacted
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          loading={scheduling}
-          onClick={onScheduleFollowup}
-        >
-          Schedule +3d
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          loading={deleting}
-          icon={<Trash2 size={15} />}
-          onClick={onDelete}
-        >
-          Remove
-        </Button>
+      <div className="mt-5 flex flex-wrap gap-2 pt-2 border-t border-white/5">
+        <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="flex-1 min-w-[120px]">
+          <Button
+            size="sm"
+            variant="secondary"
+            className="w-full text-xs"
+            loading={contacting}
+            onClick={onMarkContacted}
+          >
+            Mark contacted
+          </Button>
+        </motion.div>
+        <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="flex-1 min-w-[120px]">
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full text-xs"
+            loading={scheduling}
+            onClick={onScheduleFollowup}
+          >
+            Schedule +3d
+          </Button>
+        </motion.div>
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="px-2 hover:text-red-400 hover:bg-red-400/10"
+            loading={deleting}
+            icon={<Trash2 size={15} />}
+            onClick={onDelete}
+            aria-label="Delete lead"
+          />
+        </motion.div>
       </div>
-    </article>
+    </motion.article>
   );
 }
 

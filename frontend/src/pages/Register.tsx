@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import { AuthShell } from '@/components/AuthShell'
 import { ControlPlaneUnavailable } from '@/components/ControlPlaneUnavailable'
-import { Button } from '@/components/ui/Button'
+import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/AuthContext'
 
 export default function Register() {
