@@ -4,6 +4,7 @@ from app.api.admin import router as admin_router
 from app.api.agents import router as agents_router
 from app.api.approvals import router as approvals_router
 from app.api.auth import router as auth_router
+from app.api.billing import router as billing_router
 from app.api.calendar import router as calendar_router
 from app.api.cognitive import router as cognitive_router
 from app.api.commands import router as commands_router
@@ -12,11 +13,13 @@ from app.api.costs import router as costs_router
 from app.api.drafts import router as drafts_router
 from app.api.email_threads import router as email_threads_router
 from app.api.events import router as events_router
+from app.api.funnel import router as funnel_router
 from app.api.inbox import router as inbox_router
 from app.api.integrations import router as integrations_router
 from app.api.jobs import router as jobs_router
 from app.api.metrics import router as metrics_router
 from app.api.obsidian import router as obsidian_router
+from app.api.onboarding import router as onboarding_router
 from app.api.opportunities import router as opportunities_router
 from app.api.orchestration import router as orchestration_router
 from app.api.outreach import router as outreach_router
@@ -33,6 +36,7 @@ api_router = APIRouter()
 
 # Authentication & Infrastructure
 api_router.include_router(auth_router)
+api_router.include_router(billing_router, prefix="/api/v1")
 api_router.include_router(metrics_router, prefix="/api/v1")
 api_router.include_router(system_router, prefix="/api/v1")
 
@@ -52,6 +56,7 @@ api_router.include_router(integrations_router, prefix="/api/v1")
 api_router.include_router(jobs_router, prefix="/api/v1")
 api_router.include_router(runs_router, prefix="/api/v1")
 api_router.include_router(skills_router, prefix="/api/v1")
+api_router.include_router(onboarding_router, prefix="/api/v1")
 
 # Specialized Routers (No prefix specified in original main.py)
 api_router.include_router(email_threads_router)
@@ -62,6 +67,9 @@ api_router.include_router(costs_router)
 api_router.include_router(events_router)
 api_router.include_router(scrapers_router)
 api_router.include_router(tracking_router)
+
+# Funnel & Revenue
+api_router.include_router(funnel_router)
 
 # Advanced Orchestration
 api_router.include_router(orchestration_router, prefix="/api/v1/orchestration", tags=["orchestration"])

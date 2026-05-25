@@ -9,6 +9,31 @@ from .opportunity import OpportunityList, OpportunityOut
 from .run import AutomationRunList, AutomationRunOut
 from .skill import SkillBootstrapResponse, SkillProfileList, SkillProfileOut
 from .submission import SubmissionCreate, SubmissionOut
+from .funnel import (
+    FunnelCheckoutSessionRead,
+    ConversionEventCreate,
+    ConversionEventRead,
+    DeliveryAccessGrant,
+    DeliveryAccessPublic,
+    DeliveryAccessRead,
+    DeliveryAssetCreate,
+    DeliveryAssetRead,
+    DeliveryEmailEventCreate,
+    DeliveryEmailEventRead,
+    DigitalProductCreate,
+    DigitalProductRead,
+    DigitalProductUpdate,
+    FunnelAnalyticsSummary,
+    FunnelOrderRead,
+    FunnelRecommendationCreate,
+    FunnelRecommendationRead,
+    LeadCaptureCreate,
+    LeadCaptureRead,
+    LeadMagnetCreate,
+    LeadMagnetPublic,
+    LeadMagnetRead,
+    LeadMagnetUpdate,
+)
 
 __all__ = [
     "OpportunityOut", "OpportunityList",
@@ -22,4 +47,14 @@ __all__ = [
     "SkillBootstrapResponse", "SkillProfileList", "SkillProfileOut",
     "JobPostingList", "JobPostingOut",
     "CommandExecuteRequest", "CommandExecuteResponse",
+    "DigitalProductCreate", "DigitalProductRead", "DigitalProductUpdate",
+    "DeliveryAssetCreate", "DeliveryAssetRead",
+    "DeliveryAccessGrant", "DeliveryAccessPublic", "DeliveryAccessRead",
+    "DeliveryEmailEventCreate", "DeliveryEmailEventRead",
+    "FunnelAnalyticsSummary",
+    "FunnelCheckoutSessionRead", "FunnelOrderRead",
+    "FunnelRecommendationCreate", "FunnelRecommendationRead",
+    "LeadCaptureCreate", "LeadCaptureRead",
+    "LeadMagnetCreate", "LeadMagnetPublic", "LeadMagnetRead", "LeadMagnetUpdate",
+    "ConversionEventCreate", "ConversionEventRead",
 ]

@@ -8,6 +8,13 @@ from .cognitive_state import CognitiveState
 from .contact import Contact
 from .contact_edge import ContactEdge
 from .content_draft import ContentDraft
+from .content_engine import (
+    AffiliateClick,
+    AffiliateProgram,
+    ContentArticle,
+    ContentKeyword,
+    RevenueSnapshot,
+)
 from .deploy_history import DeployHistory
 from .email_message import EmailMessage
 from .email_thread import EmailThread
@@ -31,6 +38,19 @@ from .scraper_run import ScraperRun
 from .skill_profile import SkillProfile
 from .submission import Submission
 from .user import User
+from .funnel import (
+    FunnelCheckoutSession,
+    ConversionEvent,
+    DeliveryAccess,
+    DeliveryAsset,
+    DeliveryEmailEvent,
+    DigitalProduct,
+    FunnelOrder,
+    FunnelOrderItem,
+    FunnelRecommendation,
+    LeadCapture,
+    LeadMagnet,
+)
 
 __all__ = [
     "Base",
@@ -64,4 +84,20 @@ __all__ = [
     "AgentMessage",
     "Organization",
     "UsageLog",
+    "ContentKeyword",
+    "ContentArticle",
+    "AffiliateProgram",
+    "AffiliateClick",
+    "RevenueSnapshot",
+    "DigitalProduct",
+    "DeliveryAsset",
+    "DeliveryEmailEvent",
+    "FunnelCheckoutSession",
+    "FunnelOrder",
+    "FunnelOrderItem",
+    "DeliveryAccess",
+    "ConversionEvent",
+    "FunnelRecommendation",
+    "LeadCapture",
+    "LeadMagnet",
 ]
