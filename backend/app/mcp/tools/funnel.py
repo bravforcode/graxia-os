@@ -658,6 +658,7 @@ async def handle_get_pending_approvals(
         stmt = (
             select(ApprovalRequest)
             .where(
+                ApprovalRequest.organization_id == org_uuid,
                 ApprovalRequest.status == status,
             )
             .order_by(ApprovalRequest.created_at.desc())

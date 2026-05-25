@@ -84,6 +84,7 @@ async def seed_admin_user() -> None:
     from app.core.auth import get_password_hash
     from app.database import AsyncSessionLocal
     from app.models.user import User
+    from app.models.organization import Organization
 
     email = (getattr(settings, "GOOGLE_WORKSPACE_EMAIL", "") or "").strip().lower()
     if not email:
@@ -92,10 +93,26 @@ async def seed_admin_user() -> None:
         email = "admin@local"
 
     async with AsyncSessionLocal() as db:
+        # Ensure at least one organization exists for multi-tenancy
+        org_result = await db.execute(select(Organization).limit(1))
+        org = org_result.scalar_one_or_none()
+        if not org:
+            org = Organization(
+                id=uuid4(),
+                name="Graxia OS",
+                slug="graxia-os",
+                status="active",
+                created_at=datetime.now(UTC),
+            )
+            db.add(org)
+            await db.flush()
+            logger.info("Created default organization: %s", org.id)
+
         existing = (await db.execute(select(User).where(User.email == email))).scalar_one_or_none()
         if existing:
-            if existing.role != "admin":
+            if existing.role != "admin" or not existing.organization_id:
                 existing.role = "admin"
+                existing.organization_id = org.id
                 existing.updated_at = datetime.now(UTC)
                 await db.commit()
             return
@@ -110,12 +127,13 @@ async def seed_admin_user() -> None:
             role="admin",
             is_active=True,
             totp_enabled=False,
+            organization_id=org.id,
             created_at=now,
             updated_at=now,
         )
         db.add(user)
         await db.commit()
-        logger.info("Seeded admin user: %s", email)
+        logger.info("Seeded admin user: %s (Org: %s)", email, org.id)
 
 
 async def _send_telegram(msg: str) -> None:

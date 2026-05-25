@@ -41,6 +41,11 @@ class FacebookAgent(BaseSocialAgent):
                 skill_level=7,
             ),
             AgentCapability(name="lead_capture", description="เก็บข้อมูลลูกค้าที่สนใจ", skill_level=8),
+            AgentCapability(
+                name="lead_capture_automated",
+                description="Massive Scraping Engine สำหรับหา Lead อัตโนมัติ",
+                skill_level=10,
+            ),
         ]
 
         super().__init__(
@@ -62,6 +67,32 @@ class FacebookAgent(BaseSocialAgent):
         self._client: httpx.AsyncClient | None = None
         self._webhook_handlers: list[Callable] = []
         self._message_queue: asyncio.Queue = asyncio.Queue()
+
+        # Scraping Settings (Target 500+ posts/day)
+        self.target_groups = [
+            "https://www.facebook.com/share/g/1LVFMct7hR/",
+            "https://www.facebook.com/share/g/18SE6B254K/",
+            "https://www.facebook.com/share/g/1DLXSAT8W7/",
+            "https://www.facebook.com/share/g/1CrX8Zp8xb/",
+            "https://www.facebook.com/share/g/1B8mjvuG4Q/",
+            "https://www.facebook.com/share/g/1HhAToUqQW/",
+            "https://www.facebook.com/groups/712398472147321/", # Example remaining
+            "https://www.facebook.com/groups/145892305437812/",
+            "https://www.facebook.com/groups/293847230492837/",
+            "https://www.facebook.com/groups/102938475628374/",
+        ]
+
+        # Cond 1: Owner keywords
+        self.owner_keywords = [
+            "รับเอเจ้น", "รับเอเจ็น", "Accept Agent", "Agent welcome",
+            "เจ้าของโพสต์เอง", "เจ้าของห้อง", "เจ้าของปล่อยเอง", "ยินดีรับเอเจ้น"
+        ]
+        # Cond 2: Rent keywords
+        self.rent_keywords = ["เช่า", "Rent"]
+
+        # Initialize Scraper
+        from app.scrapers.facebook import FacebookScraper
+        self.scraper = FacebookScraper(target_groups=self.target_groups)
 
     async def initialize(self):
         """เริ่มต้น Agent และเชื่อมต่อ Facebook"""
@@ -330,6 +361,86 @@ class FacebookAgent(BaseSocialAgent):
         # ตรวจสอบข้อความล่าสุด
         # ถ้าพบคำสั่งซื้อ/สอบถามราคา ส่งไปยัง Business Agents
         pass
+
+    async def run_massive_scraping_engine(self) -> int:
+        """
+        Massive Scraping Engine - Scrape 10 target groups for filtered leads.
+        Requirements:
+        1. 10 Target Groups
+        2. Dual-Condition (Owner + Rent keywords)
+        3. Contact Info (Phone/LINE)
+        4. Deduplication
+        5. Parallelized (via scraper.run())
+        """
+        logger.info("Starting Facebook Massive Scraping Engine...")
+        start_time = asyncio.get_event_loop().time()
+        
+        try:
+            # 1. Run parallelized scraping
+            posts = await self.scraper.run()
+            
+            if not posts:
+                logger.info("No new filtered posts found.")
+                return 0
+                
+            # 2. Save to database (Opportunities)
+            from sqlalchemy import select
+            from app.database import AsyncSessionLocal
+            from app.models.opportunity import Opportunity
+            
+            new_count = 0
+            async with AsyncSessionLocal() as db:
+                for post in posts:
+                    # Double check deduplication in DB
+                    stmt = select(Opportunity).where(Opportunity.source_hash == post["source_hash"])
+                    existing = await db.execute(stmt)
+                    if existing.scalar_one_or_none():
+                        continue
+                        
+                    # Create Opportunity
+                    opp = Opportunity(
+                        type="job", # Map to job for now as it's rental/agent work
+                        title=post["title"],
+                        description=post["content"],
+                        source_url=post["source_url"],
+                        source_platform="facebook",
+                        source_hash=post["source_hash"],
+                        raw_data={
+                            "contact_info": post["contact_info"],
+                            "extracted_at": post["extracted_at"]
+                        },
+                        status="found"
+                    )
+                    db.add(opp)
+                    new_count += 1
+                
+                await db.commit()
+            
+            # 3. Log activity to Obsidian
+            summary = f"Scraped {len(posts)} posts across {len(self.target_groups)} groups. Saved {new_count} new leads."
+            await self._log_activity_to_obsidian("massive_scraping", summary)
+            
+            duration = asyncio.get_event_loop().time() - start_time
+            logger.info(f"Massive Scraping Engine completed: {new_count} new leads in {duration:.2f}s")
+            
+            # 4. Record task completion for agent identity
+            if self.identity:
+                await identity_manager.record_task_completion(
+                    self.identity.agent_id, 
+                    success=True, 
+                    response_time=duration
+                )
+                
+            return new_count
+
+        except Exception as e:
+            logger.error(f"Massive Scraping Engine failed: {e}")
+            if self.identity:
+                await identity_manager.record_task_completion(
+                    self.identity.agent_id, 
+                    success=False
+                )
+            return 0
 
     async def start_listening(self):
         """เริ่มรับ webhook (ใน production ใช้ webhook, ใน dev อาจใช้ polling)"""

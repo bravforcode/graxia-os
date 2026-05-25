@@ -10,6 +10,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.context import AuthContext, LocalDevAuthContext
+from app.auth.dependencies import get_auth_context
 from app.database import get_db
 from app.models.funnel import (
     ConversionEvent,
@@ -58,13 +60,6 @@ router = APIRouter(prefix="/api/v1/funnel", tags=["funnel"])
 DbSession = Annotated[AsyncSession, Depends(get_db)]
 
 
-# ── Helper: extract org context ─────────────────────────────────────────────
-
-def _get_org_id() -> UUID:
-    """Placeholder: In production, extract from auth context."""
-    return UUID("00000000-0000-0000-0000-000000000001")
-
-
 # ═══════════════════════════════════════════════════════════════════════════════
 # DELIVERY ACCESS API
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -72,11 +67,12 @@ def _get_org_id() -> UUID:
 @router.post("/orders/{order_id}/delivery-access", response_model=dict)
 async def grant_delivery_access(
     order_id: UUID,
+    auth: AuthContext = Depends(get_auth_context),
     organization_id: UUID | None = None,
     db: DbSession = None,
 ):
     """Grant delivery access for an order. Creates access record and mock email."""
-    org_id = organization_id or _get_org_id()
+    org_id = organization_id or auth.organization_id
 
     # Verify order exists
     order = await db.get(FunnelOrder, order_id)
@@ -130,11 +126,12 @@ async def grant_delivery_access(
 @router.get("/delivery-access/{access_id}", response_model=DeliveryAccessRead)
 async def get_delivery_access(
     access_id: UUID,
+    auth: AuthContext = Depends(get_auth_context),
     organization_id: UUID | None = None,
     db: DbSession = None,
 ):
     """Get delivery access details (admin)."""
-    org_id = organization_id or _get_org_id()
+    org_id = organization_id or auth.organization_id
     access = await delivery_access_service.get_access_by_id(access_id, org_id, db=db)
     if access is None:
         raise HTTPException(status_code=404, detail="Delivery access not found")
@@ -144,11 +141,12 @@ async def get_delivery_access(
 @router.post("/delivery-access/{access_id}/revoke", response_model=dict)
 async def revoke_delivery_access(
     access_id: UUID,
+    auth: AuthContext = Depends(get_auth_context),
     organization_id: UUID | None = None,
     db: DbSession = None,
 ):
     """Revoke delivery access."""
-    org_id = organization_id or _get_org_id()
+    org_id = organization_id or auth.organization_id
     access = await delivery_access_service.revoke_access(access_id, org_id, db=db)
     if access is None:
         raise HTTPException(status_code=404, detail="Delivery access not found")
@@ -207,6 +205,7 @@ async def open_delivery(
 async def simulate_checkout_webhook(
     checkout_session_id: UUID,
     customer_email: str,
+    auth: AuthContext = Depends(get_auth_context),
     organization_id: UUID | None = None,
     db: DbSession = None,
 ):
@@ -215,7 +214,7 @@ async def simulate_checkout_webhook(
     Creates order, order items, delivery access, and mock email.
     Idempotent — re-running with same checkout_session_id returns existing order.
     """
-    org_id = organization_id or _get_org_id()
+    org_id = organization_id or auth.organization_id
     try:
         result = await funnel_webhook_handler.handle_checkout_completed(
             organization_id=org_id,
@@ -234,11 +233,12 @@ async def simulate_checkout_webhook(
 
 @router.get("/analytics/summary", response_model=FunnelAnalyticsSummary)
 async def get_analytics_summary(
+    auth: AuthContext = Depends(get_auth_context),
     organization_id: UUID | None = None,
     db: DbSession = None,
 ):
     """Get overall funnel analytics summary."""
-    org_id = organization_id or _get_org_id()
+    org_id = organization_id or auth.organization_id
     data = await funnel_analytics_service.get_summary(org_id, db=db)
     return FunnelAnalyticsSummary(**data)
 
@@ -246,11 +246,12 @@ async def get_analytics_summary(
 @router.get("/products/{product_id}/analytics", response_model=dict)
 async def get_product_analytics(
     product_id: UUID,
+    auth: AuthContext = Depends(get_auth_context),
     organization_id: UUID | None = None,
     db: DbSession = None,
 ):
     """Get analytics for a specific product."""
-    org_id = organization_id or _get_org_id()
+    org_id = organization_id or auth.organization_id
     data = await funnel_analytics_service.get_product_analytics(product_id, org_id, db=db)
     if not data:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -260,11 +261,12 @@ async def get_product_analytics(
 @router.get("/products/{product_id}/conversion", response_model=dict)
 async def get_product_conversion(
     product_id: UUID,
+    auth: AuthContext = Depends(get_auth_context),
     organization_id: UUID | None = None,
     db: DbSession = None,
 ):
     """Get conversion metrics for a specific product."""
-    org_id = organization_id or _get_org_id()
+    org_id = organization_id or auth.organization_id
     data = await funnel_analytics_service.get_product_analytics(product_id, org_id, db=db)
     if not data:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -285,11 +287,12 @@ async def get_product_conversion(
 @router.get("/products/{product_id}/delivery-open-rate", response_model=dict)
 async def get_product_delivery_open_rate(
     product_id: UUID,
+    auth: AuthContext = Depends(get_auth_context),
     organization_id: UUID | None = None,
     db: DbSession = None,
 ):
     """Get delivery open rate for a specific product."""
-    org_id = organization_id or _get_org_id()
+    org_id = organization_id or auth.organization_id
     data = await funnel_analytics_service.get_product_analytics(product_id, org_id, db=db)
     if not data:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -308,11 +311,12 @@ async def get_product_delivery_open_rate(
 async def track_product_view(
     product_id: UUID,
     session_id: str | None = None,
+    auth: AuthContext = Depends(get_auth_context),
     organization_id: UUID | None = None,
     db: DbSession = None,
 ):
     """Track a product view event."""
-    org_id = organization_id or _get_org_id()
+    org_id = organization_id or auth.organization_id
     event = ConversionEvent(
         id=uuid4(),
         organization_id=org_id,
@@ -346,11 +350,12 @@ async def track_delivery_opened(
 @router.get("/lead-magnets/{slug}", response_model=LeadMagnetPublic)
 async def get_lead_magnet_public(
     slug: str,
+    auth: AuthContext = Depends(get_auth_context),
     organization_id: UUID | None = None,
     db: DbSession = None,
 ):
     """Public: get lead magnet by slug."""
-    org_id = organization_id or _get_org_id()
+    org_id = organization_id or auth.organization_id
     magnet = await lead_magnet_service.get_by_slug(slug, org_id, db=db)
     if magnet is None:
         raise HTTPException(status_code=404, detail="Lead magnet not found")
@@ -365,11 +370,12 @@ async def capture_lead(
     utm_source: str | None = None,
     utm_medium: str | None = None,
     utm_campaign: str | None = None,
+    auth: AuthContext = Depends(get_auth_context),
     organization_id: UUID | None = None,
     db: DbSession = None,
 ):
     """Public: capture a lead from a lead magnet."""
-    org_id = organization_id or _get_org_id()
+    org_id = organization_id or auth.organization_id
     magnet = await lead_magnet_service.get_by_slug(slug, org_id, db=db)
     if magnet is None:
         raise HTTPException(status_code=404, detail="Lead magnet not found")
@@ -403,11 +409,12 @@ async def capture_lead(
 async def deliver_lead_magnet_asset(
     slug: str,
     email: str,
+    auth: AuthContext = Depends(get_auth_context),
     organization_id: UUID | None = None,
     db: DbSession = None,
 ):
     """Mock delivery of a free lead magnet asset after capture."""
-    org_id = organization_id or _get_org_id()
+    org_id = organization_id or auth.organization_id
     magnet = await lead_magnet_service.get_by_slug(slug, org_id, db=db)
     if magnet is None:
         raise HTTPException(status_code=404, detail="Lead magnet not found")
@@ -447,11 +454,12 @@ async def deliver_lead_magnet_asset(
 async def create_recommendation(
     product_id: UUID,
     rec_data: FunnelRecommendationCreate,
+    auth: AuthContext = Depends(get_auth_context),
     organization_id: UUID | None = None,
     db: DbSession = None,
 ):
     """Create a recommendation for a product."""
-    org_id = organization_id or _get_org_id()
+    org_id = organization_id or auth.organization_id
     rec = await funnel_recommendation_service.create(
         organization_id=org_id,
         product_id=product_id,
@@ -494,11 +502,12 @@ async def list_recommendations(
     product_id: UUID | None = None,
     status: str | None = None,
     limit: int = Query(default=20, ge=1, le=100),
+    auth: AuthContext = Depends(get_auth_context),
     organization_id: UUID | None = None,
     db: DbSession = None,
 ):
     """List funnel recommendations."""
-    org_id = organization_id or _get_org_id()
+    org_id = organization_id or auth.organization_id
     recs = await funnel_recommendation_service.list(
         organization_id=org_id,
         product_id=product_id,
@@ -533,11 +542,12 @@ async def list_recommendations(
 @router.get("/recommendations/{rec_id}", response_model=FunnelRecommendationRead)
 async def get_recommendation(
     rec_id: UUID,
+    auth: AuthContext = Depends(get_auth_context),
     organization_id: UUID | None = None,
     db: DbSession = None,
 ):
     """Get a single recommendation."""
-    org_id = organization_id or _get_org_id()
+    org_id = organization_id or auth.organization_id
     rec = await funnel_recommendation_service.get(rec_id, org_id, db=db)
     if rec is None:
         raise HTTPException(status_code=404, detail="Recommendation not found")
@@ -565,20 +575,23 @@ async def get_recommendation(
 @router.post("/recommendations/{rec_id}/submit-for-approval", response_model=dict)
 async def submit_recommendation_for_approval(
     rec_id: UUID,
+    auth: AuthContext = Depends(get_auth_context),
     organization_id: UUID | None = None,
     db: DbSession = None,
 ):
     """Submit a recommendation for human approval.
     Creates an ApprovalRequest linked to the recommendation.
     """
-    org_id = organization_id or _get_org_id()
+    org_id = organization_id or auth.organization_id
     rec = await funnel_recommendation_service.get(rec_id, org_id, db=db)
     if rec is None:
         raise HTTPException(status_code=404, detail="Recommendation not found")
 
     # Create approval request
+    from app.auth.context import LOCAL_DEV_ORGANIZATION_ID
     approval = ApprovalRequest(
         id=uuid4(),
+        organization_id=org_id,
         title=f"Recommendation: {rec.recommendation_type} - {rec.recommended_action[:100]}",
         action_type="funnel_recommendation",
         subject_type="funnel_recommendation",

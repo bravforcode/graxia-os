@@ -370,7 +370,7 @@ class EmailService:
         rendered = template_fn(**template_data)
 
         # Dev mode: log only
-        if not self.api_key or settings.ENVIRONMENT == "development":
+        if not self.api_key or settings.APP_ENV == "development":
             logger.info(f"[EMAIL DEV] To: {to} | Subject: {rendered['subject']}")
             logger.debug(f"[EMAIL DEV] HTML preview:\n{rendered['html'][:500]}...")
             return {"id": "dev-mode", "status": "logged"}

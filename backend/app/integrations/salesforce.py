@@ -11,19 +11,22 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 
-def _validate_safe_email(email: str) -> bool:
+def _validate_safe_email(email: str) -> str:
     """Validate email to prevent SOQL injection."""
+    if not email or not email.strip():
+        raise ValueError("Email cannot be empty")
+
     # Basic email validation
     email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     if not re.match(email_pattern, email):
-        return False
+        raise ValueError("Invalid email format")
 
     # Check for dangerous characters that could cause SOQL injection
     dangerous_chars = ["'", '"', ';', '--', '/*', '*/', 'xp_', 'sp_']
     if any(char in email.lower() for char in dangerous_chars):
-        return False
+        raise ValueError("Potential SOQL injection detected in email")
 
-    return True
+    return email
 
 
 class SalesforceClient:
@@ -37,7 +40,9 @@ class SalesforceClient:
     async def upsert_lead(self, *, email: str, fields: dict[str, Any]) -> dict[str, Any] | None:
         if not self.instance_url or not self.access_token:
             return None
-        if not _validate_safe_email(email):
+        try:
+            _validate_safe_email(email)
+        except ValueError:
             return None
         escaped_email = email.replace("'", "\\'")
         query = (

@@ -44,6 +44,7 @@ class OnboardingState(BaseModel):
     profile_data: dict[str, Any] | None
     first_scan_completed: bool
     is_complete: bool
+    required: bool  # Added to satisfy tests
     started_at: str
     updated_at: str
 
@@ -76,6 +77,7 @@ def _get_user_state(user: User) -> dict[str, Any]:
         "profile_data": {"full_name": user.full_name} if user.full_name else None,
         "first_scan_completed": is_complete,
         "is_complete": is_complete,
+        "required": not is_complete,
         "started_at": user.created_at.isoformat() if user.created_at else datetime.now(UTC).isoformat(),
         "updated_at": datetime.now(UTC).isoformat(),
     }
@@ -156,7 +158,7 @@ async def skip_onboarding(
 @router.get("/required")
 async def is_onboarding_required(
     user: User = Depends(get_current_user),
-) -> dict[str, bool]:
+) -> dict[str, Any]:
     """
     Check if user must complete onboarding before accessing dashboard.
     Used by frontend router guard.

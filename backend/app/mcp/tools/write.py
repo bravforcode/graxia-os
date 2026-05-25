@@ -49,14 +49,15 @@ async def _create_approval_request(
 ) -> ApprovalRequest:
     """Create a pending ApprovalRequest and return it.
 
-    Note: ApprovalRequest model does not have an organization_id column,
-    so the org is stored in the details dict for traceability.
+    Sets organization_id on the model for org-scoped queries.
+    Also stores org in details dict for traceability.
     """
     safe_details = dict(details or {})
     safe_details["organization_id"] = str(organization_id)
 
     ar = ApprovalRequest(
         id=uuid4(),
+        organization_id=organization_id,
         title=title,
         action_type=action_type,
         subject_type=subject_type,

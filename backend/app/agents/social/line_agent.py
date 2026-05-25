@@ -220,6 +220,24 @@ class LineAgent(BaseSocialAgent):
             logger.error(f"Failed to send LINE reply: {e}")
             return False
 
+    def _shorten_url(self, text: str) -> str:
+        """Simple URL shortening logic for LINE notifications."""
+        # Find URLs starting with dashboard domain or long strings
+        dashboard_url = getattr(settings, "DASHBOARD_URL", "https://bravos.ai")
+        
+        # Regex to find URLs
+        url_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+        
+        def replace_url(match):
+            url = match.group(0)
+            if len(url) > 50 and dashboard_url in url:
+                # Mock shortening: in production would call bit.ly or internal shortener
+                return f"{dashboard_url}/view/{url[-8:]}"
+            return url
+
+        import re
+        return re.sub(url_pattern, replace_url, text)
+
     async def send_multicast(self, user_ids: list[str], message: str) -> bool:
         """ส่งข้อความหลายคนพร้อมกัน (Multicast)"""
         if not self._client or len(user_ids) > 500:  # LINE limit
@@ -227,8 +245,11 @@ class LineAgent(BaseSocialAgent):
 
         try:
             url = f"{self.api_base}/bot/message/multicast"
+            
+            # Shorten URLs if needed
+            shortened_message = self._shorten_url(message)
 
-            payload = {"to": user_ids, "messages": [{"type": "text", "text": message}]}
+            payload = {"to": user_ids, "messages": [{"type": "text", "text": shortened_message}]}
 
             resp = await self._client.post(url, json=payload)
             resp.raise_for_status()
@@ -247,8 +268,11 @@ class LineAgent(BaseSocialAgent):
 
         try:
             url = f"{self.api_base}/bot/message/broadcast"
+            
+            # Shorten URLs if needed
+            shortened_message = self._shorten_url(message)
 
-            payload = {"messages": [{"type": "text", "text": message}]}
+            payload = {"messages": [{"type": "text", "text": shortened_message}]}
 
             resp = await self._client.post(url, json=payload)
             resp.raise_for_status()
@@ -256,7 +280,7 @@ class LineAgent(BaseSocialAgent):
             logger.info("LINE broadcast sent")
 
             # บันทึกลง Obsidian
-            await self._log_activity_to_obsidian("broadcast", message)
+            await self._log_activity_to_obsidian("broadcast", shortened_message)
 
             return True
 

@@ -103,13 +103,14 @@ async def list_contacts(
 
 
 @router.get("/stats", response_model=ContactStats)
-async def contact_stats(db: DbSession) -> ContactStats:
-    base = _active_contacts()
+async def contact_stats(db: DbSession, org: Organization = Depends(get_org)) -> ContactStats:
+    base = _active_contacts(org.id)
     total = int(await db.scalar(select(func.count()).select_from(base.subquery())) or 0)
     leads = int(
         await db.scalar(
             select(func.count(Contact.id)).where(
                 Contact.is_deleted.is_(False),
+                Contact.organization_id == org.id,
                 func.lower(Contact.contact_type) == "lead",
             )
         )
@@ -119,6 +120,7 @@ async def contact_stats(db: DbSession) -> ContactStats:
         await db.scalar(
             select(func.count(Contact.id)).where(
                 Contact.is_deleted.is_(False),
+                Contact.organization_id == org.id,
                 Contact.email.is_not(None),
                 Contact.email != "",
             )
@@ -129,6 +131,7 @@ async def contact_stats(db: DbSession) -> ContactStats:
         await db.scalar(
             select(func.count(Contact.id)).where(
                 Contact.is_deleted.is_(False),
+                Contact.organization_id == org.id,
                 Contact.next_followup_date <= date.today(),
             )
         )
@@ -136,7 +139,10 @@ async def contact_stats(db: DbSession) -> ContactStats:
     )
     type_rows = await db.execute(
         select(Contact.contact_type, func.count(Contact.id))
-        .where(Contact.is_deleted.is_(False))
+        .where(
+            Contact.is_deleted.is_(False),
+            Contact.organization_id == org.id
+        )
         .group_by(Contact.contact_type)
     )
     return ContactStats(
