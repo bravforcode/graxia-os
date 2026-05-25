@@ -7,25 +7,26 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#0a0a0a',
+        background: '#000000',
+        foreground: '#ffffff',
+        border: '#27272a', /* zinc-800 */
+        muted: '#18181b', /* zinc-900 */
         primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
+          DEFAULT: '#ffffff',
+          foreground: '#000000',
         },
-        cyber: {
-          blue: '#3b82f6',
-          purple: '#8b5cf6',
-          obsidian: '#0a0a0a',
+        secondary: {
+          DEFAULT: '#27272a',
+          foreground: '#ffffff',
         },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Space Grotesk', 'Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
+      boxShadow: {
+        'vercel': '0 0 0 1px rgba(255,255,255,0.1), 0 2px 4px rgba(0,0,0,0.5)',
+      }
     },
   },
   plugins: [],
