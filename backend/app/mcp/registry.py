@@ -9,10 +9,12 @@ from app.mcp.errors import (
     ERR_TOOL_NOT_FOUND,
     ERR_INTERNAL,
     ERR_HANDLER_ERROR,
+    ERR_DANGEROUS_BLOCKED,
     safe_error_response,
     handle_tool_error,
 )
 from app.mcp.audit import log_mcp_tool_call, redact_for_audit
+from app.mcp.permissions import risk_policy
 
 logger = logging.getLogger(__name__)
 
@@ -107,6 +109,28 @@ class MCPToolRegistry:
         if tool_def is None:
             return safe_error_response(
                 code=ERR_TOOL_NOT_FOUND,
+                request_id=request_id,
+                organization_id=org_id,
+            )
+
+        # Enforce risk policy before calling the handler
+        # DANGEROUS_BLOCKED tools are always blocked at the registry level
+        # APPROVAL_REQUIRED tools are NOT blocked here — the handler itself
+        # creates the ApprovalRequest and returns approval_required.
+        if risk_policy.is_blocked(name):
+            await log_mcp_tool_call(
+                organization_id=auth.organization_id if auth else None,
+                actor_type=auth.actor_type if auth else "unknown",
+                actor_id=auth.actor_id if auth else None,
+                tool_name=name,
+                risk_level=tool_def.risk_level,
+                status="blocked",
+                request_id=request_id,
+                input_summary_redacted="",
+            )
+            return safe_error_response(
+                code=ERR_DANGEROUS_BLOCKED,
+                message="This tool is intentionally blocked for safety.",
                 request_id=request_id,
                 organization_id=org_id,
             )

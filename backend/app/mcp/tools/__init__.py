@@ -1,1 +1,8 @@
-"""MCP tool implementations — read-only funnel and system tools."""
+"""MCP tools — system, funnel, write (approval-gated), and dangerous (blocked)."""
+from __future__ import annotations
+
+# Import all tool modules to trigger @mcp_registry.register decorators
+import app.mcp.tools.system  # noqa: F401
+import app.mcp.tools.funnel  # noqa: F401
+import app.mcp.tools.write  # noqa: F401
+import app.mcp.tools.dangerous  # noqa: F401
