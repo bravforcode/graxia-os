@@ -7,8 +7,8 @@ This repository currently has a verified development baseline. Treat production 
 Use `docker-compose.supabase.yml` for the always-on production stack when Supabase is the PostgreSQL source of truth.
 
 ```bash
-cp .env.production.template .env.production
-make supabase-preflight
+# Configure production secrets in .env.production
+# make supabase-preflight
 make supabase-prod-migrate
 make supabase-prod-up
 ```
@@ -44,6 +44,7 @@ curl http://localhost:8000/api/v1/system/health
 - Provide strong `SECRET_KEY` and `ENCRYPTION_KEY` values through the deployment secret store.
 - Set `ALLOWED_CORS_ORIGINS` to explicit frontend origins; do not use wildcard origins with credentials.
 - Run `python scripts/alembic_safe.py upgrade head` before serving traffic.
+- Review `config/` directory for environment-specific infrastructure overrides (e.g., Docker, PM2).
 
 ## Frontend Routing
 
