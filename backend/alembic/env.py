@@ -37,17 +37,22 @@ def do_run_migrations(connection: Connection) -> None:
 
 
 async def run_async_migrations() -> None:
+    url = config.get_main_option("sqlalchemy.url")
     configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = config.get_main_option("sqlalchemy.url")
+    configuration["sqlalchemy.url"] = url
+
+    # Supabase Transaction Pooler (PGBouncer) fix - only for PostgreSQL
     connect_args = {}
-    if settings.IS_MIGRATION_SUPABASE_TRANSACTION_MODE:
+    if url and "postgresql" in url:
         connect_args["statement_cache_size"] = 0
+
     connectable = async_engine_from_config(
         configuration,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
         connect_args=connect_args,
     )
+
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
     await connectable.dispose()

@@ -12,6 +12,7 @@ Create Date: 2026-04-17
 
 from collections.abc import Sequence
 
+import sqlalchemy as sa
 from alembic import op
 
 revision: str = "003_fix_users_table"
@@ -21,6 +22,16 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    columns = {c["name"]: c for c in inspector.get_columns("users")}
+
+    # Check if users table already looks like our modern UUID-based table
+    # from Base.metadata.create_all (happens on fresh Supabase installs)
+    if "id" in columns and str(columns["id"]["type"]) == "UUID":
+        print("💡 Users table already has UUID schema, skipping recreation.")
+        return
+
     # Rename the old incompatible table for safety rather than dropping it
     op.execute("ALTER TABLE users RENAME TO users_legacy_incompatible")
 
