@@ -50,7 +50,7 @@ services:
   backend:
     build: ./backend
     container_name: personal_os_backend
-    env_file: .env
+    env_file: ../.env.development
     environment:
       RUNNING_IN_DOCKER: "true"
       SCHEDULER_EMBEDDED: "false"
@@ -79,7 +79,7 @@ services:
   celery:
     build: ./backend
     container_name: personal_os_celery
-    env_file: .env
+    env_file: ../.env.development
     environment:
       RUNNING_IN_DOCKER: "true"
     volumes:
@@ -104,7 +104,7 @@ services:
   beat:
     build: ./backend
     container_name: personal_os_beat
-    env_file: .env
+    env_file: ../.env.development
     environment:
       RUNNING_IN_DOCKER: "true"
       SCHEDULER_EMBEDDED: "false"
@@ -176,8 +176,8 @@ services:
       - "5678:5678"
     environment:
       - N8N_BASIC_AUTH_ACTIVE=true
-      - "N8N_BASIC_AUTH_USER=${N8N_USER:?N8N_USER must be set}"
-      - "N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:?N8N_PASSWORD must be set}"
+      - "N8N_BASIC_AUTH_USER=${N8N_USER:-operator}"
+      - "N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-localdev_n8n_password}"
       - N8N_HOST=localhost
       - N8N_PORT=5678
       - N8N_PROTOCOL=http

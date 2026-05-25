@@ -132,13 +132,13 @@ jobs:
 
       - name: Validate shell scripts
         run: |
-          bash -n backend/scripts/backup_database.sh
-          bash -n backend/scripts/restore_database.sh
-          bash -n backend/scripts/smoke_tests.sh
-          bash -n deploy/scripts/harden-vps.sh
-          bash -n deploy/scripts/deploy.sh
-          bash -n deploy/scripts/rollback.sh
-          bash -n deploy/scripts/dr-rebuild.sh
+          bash -n scripts/ops/backup_database.sh
+          bash -n scripts/ops/restore_database.sh
+          bash -n scripts/tests/smoke_tests.sh
+          bash -n scripts/deployment/harden-vps.sh
+          bash -n scripts/deployment/deploy.sh
+          bash -n scripts/deployment/rollback.sh
+          bash -n scripts/deployment/dr-rebuild.sh
 
       - name: Validate Docker Compose
         run: TAG=${{ github.sha }} docker compose -f docker-compose.yml config > /dev/null
@@ -148,7 +148,7 @@ jobs:
           cp .env.production.template .env.production
           mkdir -p secrets
           printf '%s' 'AGE-SECRET-KEY-placeholder' > secrets/backup_private_key.txt
-          printf '%s' 'placeholder-token' > secrets/alertmanager_webhook_token.txt
+          TAG=${{ github.sha }} docker compose -f config/docker-compose.production.yml --env-file .env.production config > /dev/null
           BACKEND_DIGEST=sha256-test FRONTEND_DIGEST=sha256-test \
             docker compose -f docker-compose.prod.yml config > /dev/null
 
