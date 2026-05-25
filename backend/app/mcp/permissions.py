@@ -61,6 +61,11 @@ class RiskPolicy:
             "grant_delivery_access_manual",
             "revoke_delivery_access",
             "public_content_publish",
+            # Workspace approval tools
+            "send_customer_email",
+            "share_public_doc",
+            "create_real_calendar_event",
+            "move_drive_files",
         }
 
     def is_blocked(self, tool_name: str) -> bool:
