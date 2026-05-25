@@ -5,6 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.context import AuthContext
+from app.auth.dependencies import get_auth_context
 from app.core.control_plane import (
     ApprovalAlreadyProcessedError,
     queue_approval_request,
@@ -32,12 +34,15 @@ ResultOffset = Annotated[int, Query(ge=0)]
 @router.get("", response_model=ApprovalList)
 async def list_approvals(
     db: DbSession,
+    auth: AuthContext = Depends(get_auth_context),
     status: ApprovalStatus = None,
     batch_key: BatchKey = None,
     limit: ResultLimit = 20,
     offset: ResultOffset = 0,
 ) -> ApprovalList:
-    query = select(ApprovalRequest)
+    query = select(ApprovalRequest).where(
+        ApprovalRequest.organization_id == auth.organization_id
+    )
     if status:
         query = query.where(ApprovalRequest.status == status)
     if batch_key:
@@ -52,9 +57,9 @@ async def list_approvals(
 
 
 @router.get("/{approval_id}", response_model=ApprovalRequestOut)
-async def get_approval(approval_id: UUID, db: DbSession) -> ApprovalRequestOut:
+async def get_approval(approval_id: UUID, db: DbSession, auth: AuthContext = Depends(get_auth_context)) -> ApprovalRequestOut:
     approval = await db.get(ApprovalRequest, approval_id)
-    if approval is None:
+    if approval is None or approval.organization_id != auth.organization_id:
         raise HTTPException(status_code=404, detail="Approval not found")
     return ApprovalRequestOut.model_validate(approval)
 
@@ -62,8 +67,14 @@ async def get_approval(approval_id: UUID, db: DbSession) -> ApprovalRequestOut:
 @router.patch("/{approval_id}/approve", response_model=ApprovalDecisionResponse)
 async def approve_approval(
     approval_id: UUID,
+    db: DbSession = None,
+    auth: AuthContext = Depends(get_auth_context),
     note: str = "",
 ) -> ApprovalDecisionResponse:
+    # Verify org scope before resolving
+    approval = await db.get(ApprovalRequest, approval_id)
+    if approval is None or approval.organization_id != auth.organization_id:
+        raise HTTPException(status_code=404, detail="Approval not found")
     try:
         approval = await resolve_approval_request(approval_id, "approved", note=note or None)
     except ApprovalAlreadyProcessedError as exc:
@@ -80,8 +91,14 @@ async def approve_approval(
 @router.patch("/{approval_id}/reject", response_model=ApprovalDecisionResponse)
 async def reject_approval(
     approval_id: UUID,
+    db: DbSession = None,
+    auth: AuthContext = Depends(get_auth_context),
     note: str = "",
 ) -> ApprovalDecisionResponse:
+    # Verify org scope before resolving
+    approval = await db.get(ApprovalRequest, approval_id)
+    if approval is None or approval.organization_id != auth.organization_id:
+        raise HTTPException(status_code=404, detail="Approval not found")
     try:
         approval = await resolve_approval_request(approval_id, "rejected", note=note or None)
     except ApprovalAlreadyProcessedError as exc:

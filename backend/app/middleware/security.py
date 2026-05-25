@@ -109,7 +109,7 @@ def validate_csrf_token_signature(token: str, session_id: str, secret: str | Non
             current_time = int(time.time())
             expiry_seconds = settings.CSRF_TOKEN_EXPIRY_HOURS * 3600
             
-            if current_time - timestamp > expiry_seconds:
+            if current_time - timestamp >= expiry_seconds:
                 # Token expired
                 return False
             

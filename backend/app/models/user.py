@@ -31,6 +31,12 @@ class User(Base, TenantMixin):
     provider: Mapped[str | None] = mapped_column(String(50))
     provider_id: Mapped[str | None] = mapped_column(String(255))
     avatar_url: Mapped[str | None] = mapped_column(String(1024))
+    onboarding_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    @property
+    def onboarding_complete(self) -> bool:
+        """Check if user has completed onboarding."""
+        return self.onboarding_completed_at is not None
 
     # Relationships
     from sqlalchemy.orm import relationship

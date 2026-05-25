@@ -14,6 +14,7 @@ from app.core.runtime_state import get_runtime_state, set_runtime_state
 from app.core.setup import init_sentry
 from app.core.swarm_bootstrap import initialize_graxia_components
 from app.cqrs.setup import setup_cqrs
+from app.auth.middleware import AuthContextMiddleware
 from app.middleware.auth import AuthMiddleware
 from app.middleware.rate_limit import RateLimitMiddleware, get_redis_client
 from app.core.security_hardening import (
@@ -252,6 +253,9 @@ app.add_middleware(CSRFMiddleware)  # Requires: request.state.session_id
 # Authentication (provides session_id for CSRF layer)
 app.add_middleware(AuthMiddleware)  # Provides: request.state.session_id
 
+# AuthContext (org-scoped auth context for multi-tenancy)
+app.add_middleware(AuthContextMiddleware)  # Provides: request.state.auth_context
+
 # Security Headers (Defense-in-depth browser protections)
 # Single middleware reads from settings — configurable per environment (L-01, L-09)
 app.add_middleware(SecurityHeadersMiddleware)
@@ -300,9 +304,7 @@ async def root_health():
 async def root():
     return {
         "service": "Graxia OS API",
-        "version": app.version,
-        "health": "/health",
-        "frontend": settings.FRONTEND_URL,
+        "docs": "/docs",
     }
 
 

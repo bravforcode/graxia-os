@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.api.admin import router as admin_router
 from app.api.agents import router as agents_router
 from app.api.approvals import router as approvals_router
+from app.api.audit import router as audit_router
 from app.api.auth import router as auth_router
 from app.api.billing import router as billing_router
 from app.api.calendar import router as calendar_router
@@ -14,6 +15,7 @@ from app.api.drafts import router as drafts_router
 from app.api.email_threads import router as email_threads_router
 from app.api.events import router as events_router
 from app.api.funnel import router as funnel_router
+from app.api.health import router as health_router
 from app.api.inbox import router as inbox_router
 from app.api.mcp import router as mcp_router
 from app.api.integrations import router as integrations_router
@@ -74,6 +76,12 @@ api_router.include_router(funnel_router)
 
 # MCP Agent Control Plane
 api_router.include_router(mcp_router)
+
+# Health & Readiness
+api_router.include_router(health_router)
+
+# Audit Query API
+api_router.include_router(audit_router)
 
 # Advanced Orchestration
 api_router.include_router(orchestration_router, prefix="/api/v1/orchestration", tags=["orchestration"])
