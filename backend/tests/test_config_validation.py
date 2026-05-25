@@ -9,6 +9,7 @@ import os
 from unittest.mock import patch
 
 import pytest
+from hypothesis import given, strategies as st
 
 from app.config import Settings
 
@@ -417,3 +418,208 @@ class TestBackwardCompatibility:
         )
         
         assert settings.SECRET_KEY == custom_secret
+
+
+
+# ============================================================================
+# Property-Based Tests for Secret Validation
+# ============================================================================
+
+@given(
+    st.sampled_from([
+        "changeme",
+        "change-me",
+        "development-secret",
+        "placeholder",
+        "example",
+        "your_secret_here",
+        "your-secret-here",
+        "paste_your_key",
+        "replace_me",
+        "example.com",
+        "your-domain.com",
+        "your-project-ref",
+    ])
+)
+def test_placeholder_detection_property(placeholder_value: str):
+    """
+    Property Test: Placeholder Detection
+    
+    Property: For every string matching placeholder patterns, _looks_placeholder(value) must return True
+    
+    This property-based test verifies that:
+    1. All known placeholder patterns are detected
+    2. No placeholder values slip through validation
+    3. The detection is comprehensive
+    
+    SECURITY REQUIREMENT:
+    - All placeholder values must be rejected in production
+    - No weak secrets should pass validation
+    """
+    settings = Settings(APP_ENV="testing")
+    
+    # Test the _looks_placeholder method
+    assert settings._looks_placeholder(placeholder_value) is True, (
+        f"Placeholder detection failed for: {placeholder_value}. "
+        f"This value should be detected as a placeholder."
+    )
+    
+    # Test with variations (uppercase, mixed case, with whitespace)
+    assert settings._looks_placeholder(placeholder_value.upper()) is True
+    assert settings._looks_placeholder(placeholder_value.title()) is True
+    assert settings._looks_placeholder(f"  {placeholder_value}  ") is True
+
+
+@given(
+    st.text(min_size=32, max_size=128).filter(
+        lambda s: not any(
+            pattern in s.lower()
+            for pattern in [
+                "changeme", "change-me", "development", "default", "placeholder",
+                "example", "test", "demo", "your_", "your-", "paste_", "replace"
+            ]
+        )
+    )
+)
+def test_non_placeholder_detection_property(non_placeholder_value: str):
+    """
+    Property Test: Non-Placeholder Detection
+    
+    Property: For strings that don't match placeholder patterns, _looks_placeholder(value) must return False
+    
+    This property-based test verifies that:
+    1. Legitimate secrets are not falsely rejected
+    2. The placeholder detection is not too aggressive
+    3. Real secrets can pass validation
+    
+    SECURITY REQUIREMENT:
+    - Legitimate secrets must not be rejected
+    - No false positives in placeholder detection
+    """
+    settings = Settings(APP_ENV="testing")
+    
+    # Test that non-placeholder values are accepted
+    result = settings._looks_placeholder(non_placeholder_value)
+    
+    # If it's detected as placeholder, it should be because it's empty or matches a pattern
+    if result:
+        # Verify it's actually a placeholder (empty, or contains forbidden patterns)
+        assert (
+            not non_placeholder_value.strip()
+            or any(
+                pattern in non_placeholder_value.lower()
+                for pattern in ["your_", "your-", "paste_", "replace", "example.com"]
+            )
+        ), f"False positive: {non_placeholder_value[:50]} detected as placeholder but shouldn't be"
+
+
+@given(
+    st.sampled_from([
+        "changeme",
+        "change-me",
+        "development-secret",
+        "placeholder",
+        "example",
+        "test-secret",
+        "demo-key",
+    ])
+)
+def test_placeholder_in_production_errors_property(placeholder_pattern: str):
+    """
+    Property Test: Placeholder Rejection in Production
+    
+    Property: Any placeholder value in production configuration must generate an error
+    
+    This property-based test verifies that:
+    1. Production validation catches all placeholder values
+    2. No placeholder secrets can be deployed to production
+    3. Error messages are generated for each placeholder
+    
+    SECURITY REQUIREMENT:
+    - Production deployment must fail with placeholder secrets
+    - All placeholder patterns must be caught
+    """
+    # With the new validation, Settings should raise RuntimeError immediately
+    # when placeholder values are detected in production mode
+    with pytest.raises(RuntimeError) as exc_info:
+        Settings(
+            APP_ENV="production",
+            SECRET_KEY=f"strong-secret-key-{placeholder_pattern}-suffix-32chars",
+            ENCRYPTION_KEY=placeholder_pattern,
+            POSTGRES_PASSWORD="strong-password-16-chars",
+        )
+    
+    # Should have an error message mentioning the placeholder
+    error_message = str(exc_info.value).lower()
+    assert "required secrets not configured" in error_message or "weak secrets" in error_message, (
+        f"Production validation should catch placeholder: {placeholder_pattern}"
+    )
+
+@given(st.text(min_size=1, max_size=100))
+def test_entropy_calculation_property(secret_value: str):
+    """
+    Property Test: Entropy Calculation
+    
+    Property: Entropy calculation should be consistent and reasonable
+    
+    This property-based test verifies that:
+    1. Entropy is always >= 0
+    2. Entropy increases with character diversity
+    3. Entropy calculation is deterministic
+    
+    SECURITY REQUIREMENT:
+    - Low entropy secrets should be detected
+    - Entropy calculation should be accurate
+    """
+    settings = Settings(APP_ENV="testing")
+    
+    entropy = settings._entropy(secret_value)
+    
+    # Entropy should always be non-negative
+    assert entropy >= 0, f"Entropy should be non-negative, got {entropy}"
+    
+    # Entropy should be deterministic (same input = same output)
+    entropy2 = settings._entropy(secret_value)
+    assert entropy == entropy2, "Entropy calculation should be deterministic"
+    
+    # Very simple strings (all same character) should have low entropy
+    if len(set(secret_value)) == 1:
+        assert entropy < 1.0, f"Single-character string should have low entropy, got {entropy}"
+
+
+@given(
+    st.integers(min_value=32, max_value=128),
+    st.sampled_from(["abcdefghijklmnopqrstuvwxyz", "0123456789", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "!@#$%^&*()"])
+)
+def test_secret_length_requirements_property(length: int, charset: str):
+    """
+    Property Test: Secret Length Requirements
+    
+    Property: Secrets meeting length requirements should pass basic validation
+    
+    This property-based test verifies that:
+    1. Secrets of sufficient length are accepted
+    2. Length requirements are enforced consistently
+    3. Different character sets are handled correctly
+    
+    SECURITY REQUIREMENT:
+    - Minimum length requirements must be enforced
+    - Sufficient length secrets should pass validation
+    """
+    import random
+    import string
+    
+    # Generate a random secret of the specified length
+    secret = ''.join(random.choice(charset) for _ in range(length))
+    
+    settings = Settings(APP_ENV="testing")
+    
+    # Secret should not be detected as placeholder if it's random enough
+    if len(set(secret)) > 5:  # Has some diversity
+        is_placeholder = settings._looks_placeholder(secret)
+        # Should not be placeholder unless it accidentally contains forbidden patterns
+        if is_placeholder:
+            assert any(
+                pattern in secret.lower()
+                for pattern in ["changeme", "placeholder", "example", "your_", "paste_"]
+            ), f"Random secret falsely detected as placeholder: {secret[:20]}"

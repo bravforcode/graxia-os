@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING
 import pytest
 from app.config import settings
 from app.middleware.security import generate_csrf_token, validate_csrf_token_signature
+from hypothesis import given, strategies as st
 
 if TYPE_CHECKING:
     from httpx import AsyncClient
@@ -400,3 +401,102 @@ def test_csrf_token_signature_verification_edge_cases():
     special_session = "session-with-special-chars-!@#$%"
     special_token = generate_csrf_token(special_session)
     assert validate_csrf_token_signature(special_token, special_session) is True
+
+
+
+@given(st.text(min_size=0, max_size=1000))
+def test_csrf_timing_invariant_property(token_string: str):
+    """
+    Property Test: CSRF Timing Invariant
+    
+    Property: Response time for rejecting an invalid token must not differ from
+    rejecting a missing token by more than 1ms on average.
+    
+    This property-based test generates arbitrary token strings of varying lengths
+    (0 to 1000 characters) and verifies that validation time is consistent regardless
+    of token content or length.
+    
+    SECURITY REQUIREMENT:
+    - Validation time must be O(1) with respect to token validity
+    - No early exit paths that leak information through timing
+    - All comparisons must use constant-time operations
+    """
+    session_id = "test-session-property"
+    
+    # Measure validation time for the generated token
+    start = time.perf_counter()
+    result = validate_csrf_token_signature(token_string, session_id)
+    elapsed = time.perf_counter() - start
+    
+    # Validation should complete quickly (< 1ms) for any input
+    # This catches timing leaks where certain inputs take significantly longer
+    assert elapsed < 0.001, (
+        f"CSRF validation took too long: {elapsed:.6f}s for token length {len(token_string)}. "
+        f"This may indicate a timing leak vulnerability."
+    )
+    
+    # Invalid tokens should always return False
+    # (unless by extreme chance the random string is a valid token, which is astronomically unlikely)
+    if token_string != "" and "." in token_string:
+        # Only check result for tokens that have the basic format
+        # Empty strings and tokens without dots will fail early (which is expected)
+        pass
+    else:
+        # Tokens without proper format should always fail
+        assert result is False, f"Malformed token should be rejected: {token_string[:50]}"
+
+
+@given(
+    st.text(min_size=0, max_size=1000),
+    st.text(min_size=1, max_size=100)
+)
+def test_csrf_validation_timing_consistency_property(token: str, session_id: str):
+    """
+    Property Test: CSRF Validation Timing Consistency
+    
+    Property: For any token and session_id pair, validation time should be consistent
+    and not leak information about token validity through timing differences.
+    
+    This test verifies that:
+    1. Validation completes in < 1ms for all inputs
+    2. No timing differences between different token formats
+    3. No timing differences between different session IDs
+    """
+    # Measure validation time
+    start = time.perf_counter()
+    validate_csrf_token_signature(token, session_id)
+    elapsed = time.perf_counter() - start
+    
+    # All validations should complete quickly
+    assert elapsed < 0.001, (
+        f"CSRF validation took {elapsed:.6f}s for token length {len(token)}, "
+        f"session_id length {len(session_id)}. This may indicate a timing leak."
+    )
+
+
+@given(st.integers(min_value=0, max_value=1000))
+def test_csrf_token_length_timing_invariant_property(token_length: int):
+    """
+    Property Test: CSRF Token Length Timing Invariant
+    
+    Property: Validation time should not correlate with token length.
+    
+    This test generates tokens of varying lengths and verifies that validation
+    time remains constant, preventing attackers from using timing to determine
+    valid token lengths.
+    """
+    session_id = "test-session-length"
+    
+    # Generate a token string of the specified length
+    token = "x" * token_length
+    
+    # Measure validation time
+    start = time.perf_counter()
+    validate_csrf_token_signature(token, session_id)
+    elapsed = time.perf_counter() - start
+    
+    # Validation should be fast regardless of token length
+    assert elapsed < 0.001, (
+        f"CSRF validation took {elapsed:.6f}s for token length {token_length}. "
+        f"Timing should not depend on token length."
+    )

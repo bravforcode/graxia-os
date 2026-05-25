@@ -194,7 +194,7 @@ class TestTenantIsolation:
             id=uuid4(),
             title="Test Opportunity",
             organization_id=org.id,
-            status="open",
+            status="found",  # 'open' is not valid
         )
         db_session.add(opp)
         await db_session.commit()
@@ -268,6 +268,7 @@ class TestMultiTenantModels:
             company="Test Co",
             source_platform="linkedin",
             source_url="http://test.com/job",
+            job_type="job",
             organization_id=org.id,
             source_hash=f"hash-{uuid4()}",
         )

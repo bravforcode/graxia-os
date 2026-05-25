@@ -122,7 +122,6 @@ class UserFactory(Factory):
             "created_at": datetime.now(UTC),
             "updated_at": datetime.now(UTC),
             "onboarding_completed_at": None,
-            "deleted_at": None,
         }
         defaults.update(overrides)
         return defaults
