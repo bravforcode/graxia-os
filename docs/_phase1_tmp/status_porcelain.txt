@@ -1,0 +1,379 @@
+M  .env.example
+ M .github/workflows/ci.yml
+ M .github/workflows/deploy.yml
+ M .gitignore
+ M .venv/Scripts/python.exe
+ M .venv/Scripts/pythonw.exe
+ M 04-Archive/phase-reports/MIGRATION_INSTRUCTIONS_TH.md
+ M AGENTS.md
+ M CLAUDE.md
+ M Makefile
+ M README.md
+ M backend/alembic/env.py
+ M backend/alembic/versions/001_enterprise_baseline.py
+ M backend/alembic/versions/003_fix_users_table.py
+ M backend/app/agents/research_collector.py
+ M backend/app/agents/social/facebook_agent.py
+ M backend/app/agents/social/line_agent.py
+ M backend/app/agents/vault_indexer.py
+ M backend/app/ai/client.py
+M  backend/app/api/approvals.py
+A  backend/app/api/audit.py
+ M backend/app/api/auth.py
+ M backend/app/api/contacts.py
+M  backend/app/api/funnel.py
+A  backend/app/api/health.py
+ M backend/app/api/onboarding.py
+M  backend/app/api/router.py
+ M backend/app/api/system.py
+A  backend/app/auth/__init__.py
+A  backend/app/auth/context.py
+A  backend/app/auth/dependencies.py
+A  backend/app/auth/errors.py
+A  backend/app/auth/middleware.py
+ M backend/app/core/bootstrap.py
+ M backend/app/core/event_bus.py
+ M backend/app/core/rag.py
+ M backend/app/core/security.py
+ M backend/app/core/security_hardening.py
+ M backend/app/core/setup.py
+ M backend/app/core/unit_of_work.py
+ M backend/app/database.py
+ M backend/app/integrations/salesforce.py
+M  backend/app/main.py
+M  backend/app/mcp/tools/funnel.py
+M  backend/app/mcp/tools/write.py
+ M backend/app/middleware/auth.py
+ M backend/app/middleware/security.py
+M  backend/app/models/approval_request.py
+ M backend/app/models/email_thread.py
+ M backend/app/models/job_posting.py
+ M backend/app/models/opportunity.py
+ M backend/app/models/submission.py
+ M backend/app/models/user.py
+ M backend/app/services/email_service.py
+ M backend/app/services/knowledge_service.py
+ M backend/app/tasks/backup_tasks.py
+ M backend/app/tasks/celery_app.py
+ M backend/app/tasks/schedule.py
+ M backend/openapi.json
+ M backend/requirements.txt
+ D backend/scripts/__init__.py
+ M backend/tests/factories.py
+ M backend/tests/integration/test_knowledge_service.py
+ M backend/tests/test_approval_flow_contracts.py
+A  backend/tests/test_approval_org_scope.py
+A  backend/tests/test_audit_query.py
+A  backend/tests/test_auth_context.py
+ M backend/tests/test_backup_contracts.py
+ M backend/tests/test_billing.py
+ M backend/tests/test_bootstrap_contract.py
+ M backend/tests/test_chaos_resilience.py
+ M backend/tests/test_config_validation.py
+ M backend/tests/test_csrf_expiry.py
+ M backend/tests/test_csrf_timing.py
+ M backend/tests/test_email_service.py
+A  backend/tests/test_env_example_safety.py
+ M backend/tests/test_event_bus_backpressure.py
+ M backend/tests/test_event_bus_shutdown.py
+A  backend/tests/test_health_readiness.py
+ M backend/tests/test_migration_018.py
+ M backend/tests/test_onboarding.py
+ M backend/tests/test_operations_api_contracts.py
+ M backend/tests/test_production_env_audit.py
+ M backend/tests/test_security_features.py
+ M backend/tests/test_soft_delete_contracts.py
+ M backend/tests/test_tenancy.py
+ M backend/tests/test_tooling_contracts.py
+ D backend/venv/Lib/site-packages/pydantic-2.7.0.dist-info/INSTALLER
+ D backend/venv/Lib/site-packages/pydantic-2.7.0.dist-info/METADATA
+ D backend/venv/Lib/site-packages/pydantic-2.7.0.dist-info/RECORD
+ D backend/venv/Lib/site-packages/pydantic-2.7.0.dist-info/REQUESTED
+ D backend/venv/Lib/site-packages/pydantic-2.7.0.dist-info/WHEEL
+ D backend/venv/Lib/site-packages/pydantic-2.7.0.dist-info/licenses/LICENSE
+ M backend/venv/Lib/site-packages/pydantic/__init__.py
+ M backend/venv/Lib/site-packages/pydantic/_internal/_config.py
+ M backend/venv/Lib/site-packages/pydantic/_internal/_core_metadata.py
+ M backend/venv/Lib/site-packages/pydantic/_internal/_core_utils.py
+ M backend/venv/Lib/site-packages/pydantic/_internal/_dataclasses.py
+ M backend/venv/Lib/site-packages/pydantic/_internal/_decorators.py
+ M backend/venv/Lib/site-packages/pydantic/_internal/_decorators_v1.py
+ M backend/venv/Lib/site-packages/pydantic/_internal/_discriminated_union.py
+ M backend/venv/Lib/site-packages/pydantic/_internal/_docs_extraction.py
+ M backend/venv/Lib/site-packages/pydantic/_internal/_fields.py
+ M backend/venv/Lib/site-packages/pydantic/_internal/_generate_schema.py
+ M backend/venv/Lib/site-packages/pydantic/_internal/_generics.py
+ M backend/venv/Lib/site-packages/pydantic/_internal/_git.py
+ M backend/venv/Lib/site-packages/pydantic/_internal/_internal_dataclass.py
+ M backend/venv/Lib/site-packages/pydantic/_internal/_known_annotated_metadata.py
+ M backend/venv/Lib/site-packages/pydantic/_internal/_mock_val_ser.py
+ M backend/venv/Lib/site-packages/pydantic/_internal/_model_construction.py
+ M backend/venv/Lib/site-packages/pydantic/_internal/_repr.py
+ M backend/venv/Lib/site-packages/pydantic/_internal/_schema_generation_shared.py
+ M backend/venv/Lib/site-packages/pydantic/_internal/_signature.py
+ D backend/venv/Lib/site-packages/pydantic/_internal/_std_types_schema.py
+ M backend/venv/Lib/site-packages/pydantic/_internal/_typing_extra.py
+ M backend/venv/Lib/site-packages/pydantic/_internal/_utils.py
+ M backend/venv/Lib/site-packages/pydantic/_internal/_validate_call.py
+ M backend/venv/Lib/site-packages/pydantic/_internal/_validators.py
+ M backend/venv/Lib/site-packages/pydantic/_migration.py
+ M backend/venv/Lib/site-packages/pydantic/alias_generators.py
+ M backend/venv/Lib/site-packages/pydantic/aliases.py
+ M backend/venv/Lib/site-packages/pydantic/annotated_handlers.py
+ M backend/venv/Lib/site-packages/pydantic/class_validators.py
+ M backend/venv/Lib/site-packages/pydantic/color.py
+ M backend/venv/Lib/site-packages/pydantic/config.py
+ M backend/venv/Lib/site-packages/pydantic/dataclasses.py
+ M backend/venv/Lib/site-packages/pydantic/datetime_parse.py
+ M backend/venv/Lib/site-packages/pydantic/decorator.py
+ M backend/venv/Lib/site-packages/pydantic/deprecated/class_validators.py
+ M backend/venv/Lib/site-packages/pydantic/deprecated/config.py
+ M backend/venv/Lib/site-packages/pydantic/deprecated/copy_internals.py
+ M backend/venv/Lib/site-packages/pydantic/deprecated/decorator.py
+ M backend/venv/Lib/site-packages/pydantic/deprecated/json.py
+ M backend/venv/Lib/site-packages/pydantic/deprecated/tools.py
+ M backend/venv/Lib/site-packages/pydantic/env_settings.py
+ M backend/venv/Lib/site-packages/pydantic/error_wrappers.py
+ M backend/venv/Lib/site-packages/pydantic/errors.py
+ M backend/venv/Lib/site-packages/pydantic/fields.py
+ M backend/venv/Lib/site-packages/pydantic/functional_serializers.py
+ M backend/venv/Lib/site-packages/pydantic/functional_validators.py
+ M backend/venv/Lib/site-packages/pydantic/generics.py
+ M backend/venv/Lib/site-packages/pydantic/json.py
+ M backend/venv/Lib/site-packages/pydantic/json_schema.py
+ M backend/venv/Lib/site-packages/pydantic/main.py
+ M backend/venv/Lib/site-packages/pydantic/mypy.py
+ M backend/venv/Lib/site-packages/pydantic/networks.py
+ M backend/venv/Lib/site-packages/pydantic/parse.py
+ M backend/venv/Lib/site-packages/pydantic/plugin/__init__.py
+ M backend/venv/Lib/site-packages/pydantic/plugin/_loader.py
+ M backend/venv/Lib/site-packages/pydantic/plugin/_schema_validator.py
+ M backend/venv/Lib/site-packages/pydantic/root_model.py
+ M backend/venv/Lib/site-packages/pydantic/schema.py
+ M backend/venv/Lib/site-packages/pydantic/tools.py
+ M backend/venv/Lib/site-packages/pydantic/type_adapter.py
+ M backend/venv/Lib/site-packages/pydantic/types.py
+ M backend/venv/Lib/site-packages/pydantic/typing.py
+ M backend/venv/Lib/site-packages/pydantic/utils.py
+ M backend/venv/Lib/site-packages/pydantic/v1/__init__.py
+ M backend/venv/Lib/site-packages/pydantic/v1/_hypothesis_plugin.py
+ M backend/venv/Lib/site-packages/pydantic/v1/annotated_types.py
+ M backend/venv/Lib/site-packages/pydantic/v1/class_validators.py
+ M backend/venv/Lib/site-packages/pydantic/v1/color.py
+ M backend/venv/Lib/site-packages/pydantic/v1/config.py
+ M backend/venv/Lib/site-packages/pydantic/v1/dataclasses.py
+ M backend/venv/Lib/site-packages/pydantic/v1/datetime_parse.py
+ M backend/venv/Lib/site-packages/pydantic/v1/decorator.py
+ M backend/venv/Lib/site-packages/pydantic/v1/env_settings.py
+ M backend/venv/Lib/site-packages/pydantic/v1/error_wrappers.py
+ M backend/venv/Lib/site-packages/pydantic/v1/errors.py
+ M backend/venv/Lib/site-packages/pydantic/v1/fields.py
+ M backend/venv/Lib/site-packages/pydantic/v1/generics.py
+ M backend/venv/Lib/site-packages/pydantic/v1/json.py
+ M backend/venv/Lib/site-packages/pydantic/v1/main.py
+ M backend/venv/Lib/site-packages/pydantic/v1/mypy.py
+ M backend/venv/Lib/site-packages/pydantic/v1/networks.py
+ M backend/venv/Lib/site-packages/pydantic/v1/parse.py
+ M backend/venv/Lib/site-packages/pydantic/v1/schema.py
+ M backend/venv/Lib/site-packages/pydantic/v1/tools.py
+ M backend/venv/Lib/site-packages/pydantic/v1/types.py
+ M backend/venv/Lib/site-packages/pydantic/v1/typing.py
+ M backend/venv/Lib/site-packages/pydantic/v1/utils.py
+ D backend/venv/Lib/site-packages/pydantic/v1/v1.py
+ M backend/venv/Lib/site-packages/pydantic/v1/validators.py
+ M backend/venv/Lib/site-packages/pydantic/v1/version.py
+ M backend/venv/Lib/site-packages/pydantic/validate_call_decorator.py
+ M backend/venv/Lib/site-packages/pydantic/validators.py
+ M backend/venv/Lib/site-packages/pydantic/version.py
+ M backend/venv/Lib/site-packages/pydantic/warnings.py
+ D backend/venv/Lib/site-packages/pydantic_core-2.18.1.dist-info/INSTALLER
+ D backend/venv/Lib/site-packages/pydantic_core-2.18.1.dist-info/METADATA
+ D backend/venv/Lib/site-packages/pydantic_core-2.18.1.dist-info/RECORD
+ D backend/venv/Lib/site-packages/pydantic_core-2.18.1.dist-info/WHEEL
+ D backend/venv/Lib/site-packages/pydantic_core-2.18.1.dist-info/license_files/LICENSE
+ M backend/venv/Lib/site-packages/pydantic_core/__init__.py
+ M backend/venv/Lib/site-packages/pydantic_core/_pydantic_core.pyi
+ M backend/venv/Lib/site-packages/pydantic_core/core_schema.py
+ M bun.lock
+ M config/docker-compose.dev.yml
+ M config/docker-compose.production.yml
+ M docker-compose.yml
+ M docs/DEPLOYMENT.md
+ M docs/FINAL_VERIFICATION_REPORT.md
+ M docs/audits/2026-05-07-graxia-ultra-audit.md
+ D "ersmenumgraxia os\357\200\242 && git status"
+ M frontend/e2e/app-shell.spec.ts
+ M frontend/package.json
+ M frontend/playwright.config.ts
+ M frontend/src/components/AuthShell.tsx
+ M frontend/src/components/ControlPlaneUnavailable.tsx
+ M frontend/src/components/canvas/AgentCanvas.tsx
+ M frontend/src/components/layout/CommandBar.tsx
+ M frontend/src/components/ui/activity-feed.tsx
+ M frontend/src/components/ui/button.stories.tsx
+ M frontend/src/components/ui/button.tsx
+ M frontend/src/components/ui/dialog.stories.tsx
+ M frontend/src/components/ui/dialog.tsx
+ M frontend/src/components/ui/empty-state.stories.tsx
+ M frontend/src/components/ui/metric-card.stories.tsx
+ M frontend/src/components/ui/notice-banner.stories.tsx
+ M frontend/src/components/ui/notice-banner.tsx
+ M frontend/src/components/ui/page-header.stories.tsx
+ M frontend/src/components/ui/status-pill.stories.tsx
+ M frontend/src/components/ui/theme-toggle.tsx
+ M frontend/src/contexts/AuthContext.tsx
+ M frontend/src/hooks/useGraxiaStream.ts
+ M frontend/src/index.css
+ M frontend/src/lib/websocket/revenue-os-ws.ts
+ M frontend/src/main.tsx
+ M frontend/src/pages/Agents.tsx
+ M frontend/src/pages/ApprovalQueue.tsx
+ M frontend/src/pages/Contacts.tsx
+ M frontend/src/pages/Costs.tsx
+ M frontend/src/pages/Drafts.tsx
+ M frontend/src/pages/EmailThreads.tsx
+ M frontend/src/pages/EventBus.tsx
+ M frontend/src/pages/Jobs.tsx
+ M frontend/src/pages/Leads.tsx
+ M frontend/src/pages/Login.tsx
+ M frontend/src/pages/Metrics.tsx
+ M frontend/src/pages/Onboarding.tsx
+ M frontend/src/pages/Opportunities.tsx
+ M frontend/src/pages/Register.tsx
+ M frontend/src/pages/Settings.tsx
+ M frontend/src/pages/Tasks.tsx
+ M frontend/src/pages/UnifiedDashboard.tsx
+ M frontend/tailwind.config.js
+ M frontend/tests/Layout.test.tsx
+ M frontend/vite.config.ts
+A  scripts/check_staging_readiness.ps1
+A  scripts/check_staging_readiness.sh
+A  scripts/staging_smoke.ps1
+A  scripts/staging_smoke.sh
+ M tests/test_api_integration.py
+ M tests/test_api_security.py
+ M vercel.json
+?? .agents/
+?? .env.development
+?? .hypothesis/
+?? .lean-ctx-init
+?? .openclaude-profile.json
+?? .planning/
+?? .testsprite.json
+?? LEAN-CTX.md
+?? backend/.hypothesis/
+?? backend/alembic/versions/019_content_engine.py
+?? backend/alembic/versions/020_add_funnel_foundation.py
+?? backend/alembic/versions/1e9db9a3b0ba_merge_funnel_foundation_and_performance_.py
+?? backend/alembic/versions/6dd9193e3e73_add_tenancy_performance_indexes.py
+?? backend/alembic/versions/cef7acf8e4ed_final_head_merge.py
+?? backend/app/api/content_engine.py
+?? backend/app/models/content_engine.py
+?? backend/app/schemas/content_engine.py
+?? backend/app/scrapers/facebook.py
+?? backend/app/services/content_engine_service.py
+?? backend/app/tasks/content_engine_tasks.py
+?? backend/init_viewing_db.py
+?? backend/nul
+?? backend/scripts/verify_tenancy_indexes.py
+?? backend/seed_real_user.py
+?? backend/tests/test_funnel_foundation.py
+?? backend/tests/unit/test_workflow_service.py
+?? backups/
+?? config/README.md
+?? debug_connectivity.py
+?? docs/AGENTS.md
+?? docs/API_DOCUMENTATION.md
+?? docs/ARCHITECTURE.md
+?? docs/CROSS_REPO_MERGE_AUDIT.md
+?? docs/INSTRUCTIONS.md
+?? docs/OPERATIONAL_RUNBOOK.md
+?? docs/PRE_DEVELOPMENT_CHECKLIST.md
+?? docs/SKILLSMP_INTEGRATION_GUIDE.md
+?? docs/archive/CSRF_FIX_DEPLOYMENT.md
+?? docs/archive/TASK_1.2_COMPLETION_REPORT.md
+?? docs/archive/TASK_2.1_DEPLOYMENT.md
+?? docs/archive/TASK_2.2_DEPLOYMENT.md
+?? docs/archive/TASK_2.2_SUMMARY.md
+?? docs/archive/TASK_2.3_CHECKLIST.md
+?? docs/archive/TASK_2.3_DEPLOYMENT.md
+?? docs/archive/TASK_2.3_QUICK_REFERENCE.md
+?? docs/archive/TASK_2.3_SUMMARY.md
+?? docs/archive/TASK_2.4_DEPLOYMENT.md
+?? docs/archive/TASK_2.4_SUMMARY.md
+?? docs/archive/TASK_2.5_DEPLOYMENT.md
+?? docs/archive/WEBHOOK_HMAC_DEPLOYMENT.md
+?? extraterrestrial-escape/
+?? frontend/components.json
+?? frontend/e2e/chaos/
+?? frontend/e2e/global-setup.ts
+?? frontend/src/components/ui/animated-tooltip.tsx
+?? frontend/src/components/ui/card.tsx
+?? frontend/src/components/ui/command.tsx
+?? frontend/src/components/ui/dropdown-menu.tsx
+?? frontend/src/components/ui/glass-card.tsx
+?? frontend/src/components/ui/input.tsx
+?? frontend/src/components/ui/label.tsx
+?? frontend/src/components/ui/scroll-area.tsx
+?? frontend/src/components/ui/select.tsx
+?? frontend/src/components/ui/sheet.tsx
+?? frontend/src/components/ui/tabs.tsx
+?? frontend/src/components/ui/toast.tsx
+?? frontend/src/components/ui/toaster.tsx
+?? frontend/src/hooks/use-toast.ts
+?? frontend/src/pages/ContentEngine.tsx
+?? frontend/storageState.json
+?? knowledge.md
+?? n8n/workflows/content_engine_pipeline.json
+?? nul
+?? scripts/__init__.py
+?? scripts/legacy/
+?? scripts/ops/__init__.py
+?? scripts/ops/alembic_safe.py
+?? scripts/ops/approve_task.py
+?? scripts/ops/backup_database.py
+?? scripts/ops/backup_database.sh
+?? scripts/ops/benchmark_queries.py
+?? scripts/ops/check_destructive_migrations.py
+?? scripts/ops/check_meta.py
+?? scripts/ops/clear_test_data.py
+?? scripts/ops/current_migration.py
+?? scripts/ops/db_index_audit.py
+?? scripts/ops/enterprise_readiness.py
+?? scripts/ops/export_leads_json.py
+?? scripts/ops/export_openapi.py
+?? scripts/ops/fix_vector_dim.py
+?? scripts/ops/generate_route_manifest.py
+?? scripts/ops/import_contacts.py
+?? scripts/ops/init_db.py
+?? scripts/ops/inject_massive_data.py
+?? scripts/ops/production_env_audit.py
+?? scripts/ops/production_preflight.py
+?? scripts/ops/record_deploy.py
+?? scripts/ops/restore_database.py
+?? scripts/ops/restore_database.sh
+?? scripts/ops/run_backend.bat
+?? scripts/ops/run_security_baseline.py
+?? scripts/ops/run_server.py
+?? scripts/ops/scraper_recovery.py
+?? scripts/ops/skills_api_gateway.py
+?? scripts/ops/smoke_test_production.sh
+?? scripts/ops/smoke_tests.sh
+?? scripts/ops/soak_monitor.py
+?? scripts/ops/suggest_outreach_allowlist.py
+?? scripts/ops/test_webhook.py
+?? scripts/ops/test_webhook_signature.py
+?? scripts/ops/validate_production_config.py
+?? scripts/ops/verify_csrf_fix.py
+?? scripts/ops/verify_graceful_shutdown.py
+?? scripts/ops/verify_indexes.py
+?? scripts/ops/verify_mas_autonomy.py
+?? scripts/ops/verify_queue_limits.py
+?? scripts/ops/verify_secrets_validation.py
+?? scripts/ops/verify_system.py
+?? scripts/ops/verify_webhook_hmac.py
+?? scripts/tests/patch_chaos_tests.py
+?? sites/
+?? start-backend-simple.ps1
+?? start-graxia-ai-complete.ps1
+?? test_db.py
