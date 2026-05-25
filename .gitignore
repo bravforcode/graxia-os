@@ -138,3 +138,17 @@ test_report.txt
 # Build artifacts
 frontend/dev_log.txt
 *.sqlite3
+
+# Local-only agent and test artifacts
+frontend/storageState.json
+.agents/
+.planning/
+.hypothesis/
+backend/.hypothesis/
+.openclaude-profile.json
+.testsprite.json
+.lean-ctx-init
+backups/
+nul
+backend/nul
+LEAN-CTX.md
