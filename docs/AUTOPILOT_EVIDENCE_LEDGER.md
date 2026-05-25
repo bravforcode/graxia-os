@@ -66,3 +66,68 @@ PASS
 ### Next Phase Decision
 
 - continue to `Phase 3 — Shared Contract Compatibility`
+
+## Phase 3 — Shared Contract Compatibility
+
+### Verdict
+PASS
+
+### Commits
+| Commit | Purpose |
+|---|---|
+| current phase feat commit | add runtime contract compatibility layer |
+
+### Files Changed
+| Path | Type | Reason |
+|---|---|---|
+| `backend/app/runtime/__init__.py` | runtime | create runtime package boundary |
+| `backend/app/runtime/contracts/__init__.py` | runtime | export compatibility DTOs |
+| `backend/app/runtime/contracts/base.py` | runtime | shared schema version, enums, base fields |
+| `backend/app/runtime/contracts/business_event.py` | runtime | canonical business event contract |
+| `backend/app/runtime/contracts/task_envelope.py` | runtime | runtime task envelope contract |
+| `backend/app/runtime/contracts/approval.py` | runtime | approval compatibility contract |
+| `backend/app/runtime/contracts/context_packet.py` | runtime | context packet reference contract |
+| `backend/app/runtime/contracts/tool_result.py` | runtime | MCP/runtime tool result contract |
+| `backend/app/runtime/contracts/workflow.py` | runtime | workflow run reference contract |
+| `backend/app/runtime/contracts/readiness.py` | runtime | readiness DTOs |
+| `backend/app/runtime/contracts/audit_event.py` | runtime | audit event compatibility contract |
+| `backend/tests/test_runtime_contracts.py` | test | verify aliases, defaults, enums, and model compatibility |
+| `docs/PHASE3_SHARED_CONTRACT_COMPATIBILITY_REPORT.md` | docs | phase closeout |
+
+### Tests Run
+| Command | Result | Notes |
+|---|---|---|
+| `pytest backend/tests/test_runtime_contracts.py -q` | PASS | `8 passed` |
+| `pytest backend/tests/test_mcp_foundation.py -q` | PASS | `33 passed` |
+| `pytest backend/tests/test_approval_org_scope.py -q` | PASS | `5 passed` |
+| `python -m compileall backend/app` | PASS | runtime contracts compile cleanly |
+
+### Auto-Fixes
+| Issue | Fix | Evidence |
+|---|---|---|
+| donor/graxia naming mismatch risk | added explicit camelCase aliases with snake_case Python fields | contract tests pass with `model_validate` and `model_dump(by_alias=True)` |
+| schema-version drift risk | aligned `CURRENT_RUNTIME_SCHEMA_VERSION` to donor `agent-stack` `CURRENT_SCHEMA_VERSION = '2026-04-21'` | read-only donor inspection at `agent-stack/packages/shared-contracts/src/index.ts` |
+| approval model default-id assumption in test | made test provide explicit `approvalRequestId` | contract suite rerun passed |
+
+### Safety
+- `.env` read: no
+- secrets printed: no
+- `git add .` used: no
+- destructive command used: no
+- live provider called: no
+- agent-stack root copied: no
+
+### Readiness Gained
+
+- `CONTRACT_READY` achieved
+- Graxia now has a Python-native compatibility contract layer
+- donor contract shape is referenced without replacing Graxia DB/API/MCP/UI
+
+### Remaining Blockers
+
+- runtime adapters not implemented yet
+- no gateway/orchestration/worker bridge yet
+
+### Next Phase Decision
+
+- continue to `Phase 4 — Runtime Adapter Layer`
