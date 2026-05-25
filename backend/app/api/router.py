@@ -15,6 +15,7 @@ from app.api.email_threads import router as email_threads_router
 from app.api.events import router as events_router
 from app.api.funnel import router as funnel_router
 from app.api.inbox import router as inbox_router
+from app.api.mcp import router as mcp_router
 from app.api.integrations import router as integrations_router
 from app.api.jobs import router as jobs_router
 from app.api.metrics import router as metrics_router
@@ -70,6 +71,9 @@ api_router.include_router(tracking_router)
 
 # Funnel & Revenue
 api_router.include_router(funnel_router)
+
+# MCP Agent Control Plane
+api_router.include_router(mcp_router)
 
 # Advanced Orchestration
 api_router.include_router(orchestration_router, prefix="/api/v1/orchestration", tags=["orchestration"])
