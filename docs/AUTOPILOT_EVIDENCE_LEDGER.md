@@ -390,3 +390,60 @@ PASS
 ### Next Phase Decision
 
 - continue to `Phase 8 — Workflow / n8n Boundary`
+
+## Phase 8 — Workflow / n8n Boundary
+
+### Verdict
+PASS
+
+### Commits
+| Commit | Purpose |
+|---|---|
+| pending phase 8 commit | add runtime workflow orchestration boundary |
+
+### Files Changed
+| Path | Type | Reason |
+|---|---|---|
+| `backend/app/runtime/orchestration/__init__.py` | runtime | export orchestration boundary entrypoints |
+| `backend/app/runtime/orchestration/workflow_registry.py` | runtime | define runtime workflow names and backend aliases/placeholders |
+| `backend/app/runtime/orchestration/dispatcher.py` | runtime | add queue-boundary request/receipt abstraction |
+| `backend/app/runtime/orchestration/trace_store.py` | runtime | persist runtime workflow traces with correlation/event/context refs |
+| `backend/app/runtime/orchestration/service.py` | runtime | route local vs queue execution and adapt existing Graxia workflow runs |
+| `backend/tests/test_runtime_orchestration.py` | test | verify local, queue, alias, placeholder, and trace behaviors |
+| `docs/PHASE8_WORKFLOW_ORCHESTRATION_REPORT.md` | docs | phase closeout |
+
+### Tests Run
+| Command | Result | Notes |
+|---|---|---|
+| `python -m compileall backend/app` | PASS | orchestration modules compile cleanly |
+| `pytest backend/tests/test_runtime_orchestration.py -q` | PASS | `5 passed` |
+| `pytest backend/tests/test_mcp_workflow_tools.py -q` | PASS | `8 passed` |
+
+### Auto-Fixes
+| Issue | Fix | Evidence |
+|---|---|---|
+| local workflow fetch path could lose caller correlation and fall back to `auth.request_id` | stored real `correlation_id` in workflow metadata before saving | rerun `pytest backend/tests/test_runtime_orchestration.py -q` passed |
+
+### Safety
+- `.env` read: no
+- secrets printed: no
+- `git add .` used: no
+- destructive command used: no
+- live provider called: no
+- agent-stack root copied: no
+
+### Readiness Gained
+
+- workflow boundary now exists with `local|queue` execution modes
+- runtime traces preserve `correlationId`, `businessEventId`, and `contextPacketId`
+- existing Graxia `agent_workflows` remain primary local execution engine
+
+### Remaining Blockers
+
+- worker capability layer not implemented yet
+- queue backend remains injectable boundary only
+- trace persistence is still in-memory
+
+### Next Phase Decision
+
+- continue to `Phase 9 — Worker Capability Layer`
