@@ -8,8 +8,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.router import api_router
 from app.api.internal import router as internal_router
 from app.config import settings
+from app.core.exception_handlers import register_exception_handlers
 from app.core.logging_config import setup_logging
 from app.core.monitoring import metrics_collector
+from app.core.request_context import RequestContextMiddleware
 from app.core.runtime_state import get_runtime_state, set_runtime_state
 from app.core.setup import init_sentry
 from app.core.swarm_bootstrap import initialize_graxia_components
@@ -91,6 +93,8 @@ app = FastAPI(
     redoc_url=None if settings.STRICT_BOOTSTRAP else "/redoc",
     openapi_url=None if settings.STRICT_BOOTSTRAP else "/openapi.json",
 )
+
+register_exception_handlers(app)
 
 
 @app.middleware("http")
@@ -274,6 +278,9 @@ app.add_middleware(
 
 # Request Size Limit (Fail fast on oversized requests)
 app.add_middleware(RequestSizeLimitMiddleware)
+
+# Request / correlation IDs for all downstream security and error handling
+app.add_middleware(RequestContextMiddleware)
 
 # CORS (Outermost - added last) - Must handle preflight OPTIONS requests
 app.add_middleware(

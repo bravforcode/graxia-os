@@ -8,12 +8,14 @@ from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from app.audit.security_events import emit_security_event, fingerprint_token
 from app.config import settings
 from app.core.auth import decode_access_token, extract_bearer_token
+from app.core.errors import build_error_response
 from app.core.monitoring import metrics_collector
+from app.core.request_context import get_correlation_id, get_request_id
 from app.services.audit_service import log_audit_event
 from fastapi import HTTPException, Request, status
-from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 logger = logging.getLogger(__name__)
@@ -33,13 +35,20 @@ class RateLimitRule:
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    """Redis-backed sliding window rules for auth and API traffic."""
+    """Redis-backed sliding window rules for auth, public, and control-plane traffic."""
 
+    HEALTH_RULE = RateLimitRule("health", 120, 60)
     LOGIN_RULE = RateLimitRule("login", 10, 60)
     REGISTER_RULE = RateLimitRule("register", 5, 60)
     REFRESH_RULE = RateLimitRule("refresh", 30, 60)
-    ADMIN_RULE = RateLimitRule("admin", 60, 60)
-    API_RULE = RateLimitRule("api", 600, 60)
+    ADMIN_RULE = RateLimitRule("admin", 600, 60)
+    API_READ_RULE = RateLimitRule("api_read", 300, 60)
+    API_WRITE_RULE = RateLimitRule("api_write", 100, 60)
+    MCP_RULE = RateLimitRule("mcp", 120, 60)
+    WORKFLOW_RULE = RateLimitRule("workflow", 30, 60)
+    LEAD_CAPTURE_RULE = RateLimitRule("lead_capture", 20, 60)
+    CHECKOUT_RULE = RateLimitRule("checkout", 20, 60)
+    DELIVERY_RULE = RateLimitRule("delivery", 30, 60)
 
     async def dispatch(self, request: Request, call_next: Callable):
         if request.url.path == "/health":
@@ -61,6 +70,15 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             )
         except HTTPException as exc:
             metrics_collector.record_rate_limit(rule.name)
+            await emit_security_event(
+                request,
+                event_type="rate_limit.exceeded",
+                reason_code="RATE_LIMITED",
+                decision="blocked",
+                route_or_tool=request.url.path,
+                risk_level="LOW_WRITE",
+                redacted_payload={"rule": rule.name, "identifier": identifier},
+            )
             await log_audit_event(
                 app=request.app,
                 action="security.rate_limit",
@@ -75,13 +93,17 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 request_path=request.url.path,
                 request_method=request.method,
             )
-            return JSONResponse(
-                {"detail": exc.detail},
+            return build_error_response(
+                request,
+                code="RATE_LIMITED",
+                message="Too many requests",
                 status_code=exc.status_code,
                 headers=exc.headers or {},
             )
 
         response = await call_next(request)
+        response.headers.setdefault("X-Request-ID", get_request_id(request))
+        response.headers.setdefault("X-Correlation-ID", get_correlation_id(request))
         response.headers["RateLimit-Limit"] = str(rule.limit)
         response.headers["RateLimit-Remaining"] = str(max(remaining, 0))
         response.headers["RateLimit-Reset"] = str(rule.window_seconds)
@@ -91,16 +113,28 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
     def _resolve_rule(self, request: Request) -> RateLimitRule | None:
         path = request.url.path
+        if path.startswith("/api/v1/health"):
+            return self.HEALTH_RULE
         if path == "/api/v1/auth/login" and request.method == "POST":
             return self.LOGIN_RULE
         if path == "/api/v1/auth/register" and request.method == "POST":
             return self.REGISTER_RULE
         if path == "/api/v1/auth/refresh" and request.method == "POST":
             return self.REFRESH_RULE
+        if path.startswith("/api/v1/funnel/lead-magnets/") and path.endswith("/capture") and request.method == "POST":
+            return self.LEAD_CAPTURE_RULE
+        if path.startswith("/api/v1/billing/checkout") and request.method == "POST":
+            return self.CHECKOUT_RULE
+        if path.startswith("/api/v1/funnel/delivery/") and request.method == "GET":
+            return self.DELIVERY_RULE
+        if path.startswith("/api/v1/mcp") and request.method == "POST":
+            return self.MCP_RULE
+        if path.startswith("/api/v1/workflows") and request.method == "POST":
+            return self.WORKFLOW_RULE
         if path.startswith("/api/v1/admin"):
             return self.ADMIN_RULE
         if path.startswith("/api/v1") or path.startswith("/obsidian"):
-            return self.API_RULE
+            return self.API_READ_RULE if request.method == "GET" else self.API_WRITE_RULE
         return None
 
     def _resolve_identifier(self, request: Request, rule_name: str) -> str:
@@ -108,16 +142,23 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return request.headers.get("x-forwarded-for", "").split(",")[0].strip() or (
                 request.client.host if request.client else "unknown"
             )
+        if rule_name == "delivery":
+            delivery_token = request.url.path.rsplit("/", 1)[-1]
+            return f"delivery:{fingerprint_token(delivery_token) or 'unknown'}"
 
-        token = request.cookies.get(settings.ACCESS_COOKIE_NAME) or extract_bearer_token(
-            request.headers.get("Authorization")
-        )
+        auth_context = getattr(request.state, "auth_context", None)
+        if auth_context and auth_context.organization_id:
+            actor_id = auth_context.actor_id or auth_context.actor_type or "unknown"
+            return f"org:{auth_context.organization_id}:actor:{actor_id}"
+
+        token = extract_bearer_token(request.headers.get("Authorization"))
         if token:
             try:
                 payload = decode_access_token(token)
                 user_id = payload.get("sub")
                 if user_id:
-                    return str(user_id)
+                    org_id = payload.get("organization_id") or payload.get("org_id") or "unknown"
+                    return f"org:{org_id}:actor:{user_id}"
             except Exception:
                 pass
         return request.headers.get("x-forwarded-for", "").split(",")[0].strip() or (
@@ -147,7 +188,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             _, current_count, _, _ = await pipe.execute()
             current_count = int(current_count or 0)
             if current_count >= rule.limit:
-                retry_after = await self._retry_after_redis(redis_client, key, window_start, rule.window_seconds)
+                retry_after = await self._retry_after_redis(redis_client, key, rule.window_seconds)
                 raise HTTPException(
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                     detail="Rate limit exceeded",
@@ -168,7 +209,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         _memory_rate_limits[key] = history
         return rule.limit - len(history), None
 
-    async def _retry_after_redis(self, redis_client, key: str, window_start: float, window_seconds: int) -> int:
+    async def _retry_after_redis(self, redis_client, key: str, window_seconds: int) -> int:
         items = await redis_client.zrange(key, 0, 0, withscores=True)
         if not items:
             return window_seconds
@@ -180,7 +221,6 @@ async def get_redis_client():
     """Get Redis client for rate limiting."""
     try:
         import redis.asyncio as aioredis
-        from app.config import settings
 
         redis_client = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
         await redis_client.ping()

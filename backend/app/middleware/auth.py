@@ -11,6 +11,8 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 from app.config import settings
+from app.core.errors import build_error_response
+from app.core.request_context import get_correlation_id, get_request_id
 from app.database import get_db as get_db_dependency
 from app.core.auth import (
     decode_access_token,
@@ -220,7 +222,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
         normalized_path = path.lower()
         if ".." in path or "%2e%2e" in normalized_path or "..%2f" in normalized_path or "..%5c" in normalized_path:
             logger.warning("Blocked potential path traversal: %s", path)
-            return JSONResponse({"detail": "Invalid path"}, status_code=400)
+            return build_error_response(
+                request,
+                code="VALIDATION_ERROR",
+                message="Request validation failed",
+                status_code=400,
+            )
 
         route_path = find_route_template(request)
 
@@ -232,18 +239,23 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         if route_path is None:
             if is_blocked_surface(path) and settings.STRICT_BOOTSTRAP:
-                return JSONResponse({"detail": "Not Found"}, status_code=404)
+                return build_error_response(request, code="NOT_FOUND", message="Resource not found", status_code=404)
             
             # For API routes that don't exist, still return 403 to satisfy security tests
             # that expect 'fail-closed' behavior for protected prefixes.
             if path.startswith(("/api/v1", "/obsidian", "/v1/graxia")):
-                return JSONResponse({"detail": "Forbidden"}, status_code=403)
+                return build_error_response(
+                    request,
+                    code="PERMISSION_DENIED",
+                    message="Not authorized to access this resource",
+                    status_code=403,
+                )
                 
-            return JSONResponse({"detail": "Not Found"}, status_code=404)
+            return build_error_response(request, code="NOT_FOUND", message="Resource not found", status_code=404)
 
         required_level = classify_route(request.method, route_path)
         if required_level == AuthLevel.BLOCKED and settings.STRICT_BOOTSTRAP:
-            return JSONResponse({"detail": "Not Found"}, status_code=404)
+            return build_error_response(request, code="NOT_FOUND", message="Resource not found", status_code=404)
         if (request.method.upper(), route_path) in INTERNAL_TOKEN_ROUTES:
             secret = (getattr(settings, "ALERTMANAGER_WEBHOOK_SECRET", "") or "").strip()
             signature = request.headers.get("X-Alertmanager-Signature", "").strip()
@@ -254,18 +266,18 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 
                 # Validate timestamp format
                 if not timestamp_str:
-                    return JSONResponse({"detail": "Unauthorized"}, status_code=401)
+                    return build_error_response(request, code="AUTH_INVALID", message="Authentication required", status_code=401)
                 
                 try:
                     import time
                     timestamp = int(timestamp_str)
                 except ValueError:
-                    return JSONResponse({"detail": "Unauthorized"}, status_code=401)
+                    return build_error_response(request, code="AUTH_INVALID", message="Authentication required", status_code=401)
                 
                 # Check timestamp window (5 minutes)
                 import time as time_module
                 if abs(time_module.time() - timestamp) > 300:
-                    return JSONResponse({"detail": "Unauthorized"}, status_code=401)
+                    return build_error_response(request, code="AUTH_INVALID", message="Authentication required", status_code=401)
                 
                 # Read request body (cached by Starlette)
                 body = await request.body()
@@ -276,7 +288,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 
                 # Verify signature (constant-time comparison)
                 if not hmac.compare_digest(expected_sig, signature):
-                    return JSONResponse({"detail": "Unauthorized"}, status_code=401)
+                    return build_error_response(request, code="AUTH_INVALID", message="Authentication required", status_code=401)
                 
                 request.state.internal_token_authenticated = True
                 return await call_next(request)
@@ -289,7 +301,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 provided = authorization.split(" ", 1)[1].strip()
             
             if not await verify_internal_bearer_token(configured, provided):
-                return JSONResponse({"detail": "Unauthorized"}, status_code=401)
+                return build_error_response(request, code="AUTH_INVALID", message="Authentication required", status_code=401)
             
             request.state.internal_token_authenticated = True
             return await call_next(request)
@@ -299,8 +311,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
         try:
             payload = await build_auth_context(request)
         except HTTPException as exc:
-            return JSONResponse(
-                {"detail": exc.detail},
+            return build_error_response(
+                request,
+                code="AUTH_INVALID" if exc.status_code == 401 else "PERMISSION_DENIED",
+                message="Authentication required" if exc.status_code == 401 else "Not authorized to access this resource",
                 status_code=exc.status_code,
                 headers=exc.headers or {},
             )
@@ -323,12 +337,19 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 request_path=path,
                 request_method=request.method,
             )
-            return JSONResponse({"detail": "Forbidden"}, status_code=403)
+            return build_error_response(
+                request,
+                code="PERMISSION_DENIED",
+                message="Not authorized to access this resource",
+                status_code=403,
+            )
 
         request.state.auth_payload = payload
         request.state.session_id = str(payload.get("session_id") or "")
         request.state.authenticated_role = user_role
         request.state.authenticated_user_id = str(payload.get("sub") or "")
+        request.state.request_id = get_request_id(request)
+        request.state.correlation_id = get_correlation_id(request)
         return await call_next(request)
 
 

@@ -8,12 +8,13 @@ from __future__ import annotations
 from collections.abc import Callable, Awaitable
 
 from fastapi import Request
-from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.auth.context import AuthContext, LocalDevAuthContext
 from app.auth.dependencies import get_auth_context
 from app.config import settings
+from app.core.errors import build_error_response
+from app.core.request_context import get_correlation_id, get_request_id
 
 
 class AuthContextMiddleware(BaseHTTPMiddleware):
@@ -36,8 +37,10 @@ class AuthContextMiddleware(BaseHTTPMiddleware):
 
         if env in ("staging", "production") and not org_id_header:
             # Block requests without org context in staging/production
-            return JSONResponse(
-                {"detail": "X-Graxia-Org-Id header is required."},
+            return build_error_response(
+                request,
+                code="ORG_REQUIRED",
+                message="Organization context is required",
                 status_code=401,
             )
 
@@ -47,8 +50,10 @@ class AuthContextMiddleware(BaseHTTPMiddleware):
                 from uuid import UUID
                 org_uuid = UUID(org_id_header)
             except (ValueError, AttributeError):
-                return JSONResponse(
-                    {"detail": "Invalid X-Graxia-Org-Id format."},
+                return build_error_response(
+                    request,
+                    code="AUTH_INVALID",
+                    message="Authentication is invalid",
                     status_code=401,
                 )
 
@@ -59,7 +64,11 @@ class AuthContextMiddleware(BaseHTTPMiddleware):
                 organization_id=org_uuid,
                 environment=env,
                 is_mock_auth=is_mock,
-                request_id=request_id or None,
+                request_id=request_id or get_request_id(request),
+                correlation_id=get_correlation_id(request),
+                is_authenticated=True,
+                is_internal=actor_type in {"service", "system", "agent"},
+                is_customer=actor_type == "customer",
             )
         else:
             # Local/test fallback
