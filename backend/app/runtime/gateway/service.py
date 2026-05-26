@@ -315,6 +315,9 @@ class GatewayService:
     async def get_task_status(self, task_id: UUID) -> GatewayTaskStatusRecord | None:
         return self.repository.get_status(task_id)
 
+    async def list_task_statuses(self, limit: int = 20) -> list[GatewayTaskStatusRecord]:
+        return self.repository.list_statuses(limit)
+
     async def list_dead_letters(self, limit: int = 20) -> list[GatewayDeadLetterRecord]:
         return self.repository.list_dead_letters(limit)
 

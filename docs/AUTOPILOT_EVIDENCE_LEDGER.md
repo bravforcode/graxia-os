@@ -504,3 +504,62 @@ PASS
 ### Next Phase Decision
 
 - continue to `Phase 10 — MCP Runtime Alignment`
+
+## Phase 10 — MCP Runtime Alignment
+
+### Verdict
+PASS
+
+### Commits
+| Commit | Purpose |
+|---|---|
+| `<pending>` | align MCP tools with runtime layer |
+
+### Files Changed
+| Path | Type | Reason |
+|---|---|---|
+| `backend/app/mcp/tools/__init__.py` | runtime | register runtime-aligned MCP tools in the existing stack |
+| `backend/app/mcp/tools/runtime.py` | runtime | add runtime status, tasks, events, context, ROI, dead-letter approval, and safe workflow tools |
+| `backend/app/runtime/gateway/repository.py` | runtime | expose gateway task-status listing for MCP read surfaces |
+| `backend/app/runtime/gateway/service.py` | runtime | expose gateway task-status listing wrapper |
+| `backend/tests/test_mcp_runtime_tools.py` | test | verify runtime MCP tools across status, tasks, events, context, ROI, approvals, and safe workflow runs |
+| `docs/PHASE10_MCP_RUNTIME_ALIGNMENT_REPORT.md` | docs | phase closeout |
+
+### Tests Run
+| Command | Result | Notes |
+|---|---|---|
+| `pytest backend/tests/test_mcp_runtime_tools.py -q` | PASS | `7 passed` |
+| `python -m compileall backend/app` | PASS | runtime MCP modules compile cleanly |
+| `pytest backend/tests/test_mcp_foundation.py -q` | PASS | `33 passed` |
+| `pytest backend/tests/test_mcp_dangerous_tools.py -q` | PASS | `13 passed` |
+| `pytest backend/tests/test_mcp_approval_tools.py -q` | PASS | `13 passed` |
+
+### Auto-Fixes
+| Issue | Fix | Evidence |
+|---|---|---|
+| eager import chain `app.mcp.tools.runtime -> app.runtime.orchestration -> app.agent_workflows.service -> app.mcp.tools` created circular imports | replaced event/orchestration access with lazy helper imports in `app.mcp.tools.runtime` | `pytest backend/tests/test_mcp_runtime_tools.py -q` passes after rerun |
+| MCP read surface needed gateway task listing but gateway only exposed single-task getters | added `list_statuses()` in repository and `list_task_statuses()` in service | runtime task listing test passes |
+
+### Safety
+- `.env` read: no
+- secrets printed: no
+- `git add .` used: no
+- destructive command used: no
+- live provider called: no
+- agent-stack root copied: no
+
+### Readiness Gained
+
+- `MCP_READY` advanced to runtime-aligned tool readiness
+- existing Graxia MCP stack now exposes runtime status, task tracking, business events, context packets, token ROI, and approval-gated dead-letter requeue requests
+- dangerous tools remain blocked and approval-gated write tooling remains intact
+
+### Remaining Blockers
+
+- operator UI does not surface runtime MCP data yet
+- runtime task/event state is still in-memory only
+- no persisted token ROI telemetry backend yet
+
+### Next Phase Decision
+
+- continue to `Phase 11 — Operator UI Runtime Visibility`

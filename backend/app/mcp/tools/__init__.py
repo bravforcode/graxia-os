@@ -11,3 +11,4 @@ import app.mcp.tools.dangerous  # noqa: F401
 import app.mcp.tools.workspace  # noqa: F401
 import app.mcp.tools.context  # noqa: F401
 import app.mcp.tools.workflows  # noqa: F401
+import app.mcp.tools.runtime  # noqa: F401

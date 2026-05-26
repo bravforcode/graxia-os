@@ -127,6 +127,13 @@ class InMemoryGatewayRepository:
     def get_status(self, task_id: UUID) -> GatewayTaskStatusRecord | None:
         return self._status_records.get(task_id)
 
+    def list_statuses(self, limit: int = 20) -> list[GatewayTaskStatusRecord]:
+        return sorted(
+            self._status_records.values(),
+            key=lambda item: item.updated_at,
+            reverse=True,
+        )[:limit]
+
     def add_dead_letter(self, record: GatewayDeadLetterRecord) -> GatewayDeadLetterRecord:
         self._dead_letters[record.dead_letter_id] = record
         self._dead_letters_by_task[record.task_id] = record.dead_letter_id
