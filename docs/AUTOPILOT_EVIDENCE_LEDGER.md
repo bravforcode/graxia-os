@@ -447,3 +447,60 @@ PASS
 ### Next Phase Decision
 
 - continue to `Phase 9 — Worker Capability Layer`
+
+## Phase 9 — Worker Capability Layer
+
+### Verdict
+PASS
+
+### Commits
+| Commit | Purpose |
+|---|---|
+| `<pending>` | add Hermes-style runtime worker capability layer |
+
+### Files Changed
+| Path | Type | Reason |
+|---|---|---|
+| `backend/app/runtime/__init__.py` | runtime | export runtime worker entrypoints |
+| `backend/app/runtime/workers/__init__.py` | runtime | export worker service/context/provider symbols |
+| `backend/app/runtime/workers/capabilities.py` | runtime | define execution context and result types |
+| `backend/app/runtime/workers/mock_provider.py` | runtime | provide deterministic mock worker behavior and redaction/block rules |
+| `backend/app/runtime/workers/service.py` | runtime | register and execute runtime worker capabilities |
+| `backend/tests/test_runtime_worker_capabilities.py` | test | verify registry, deterministic summarize, approval gating, redaction, and dangerous blocking |
+| `docs/PHASE9_WORKER_CAPABILITY_REPORT.md` | docs | phase closeout |
+
+### Tests Run
+| Command | Result | Notes |
+|---|---|---|
+| `pytest backend/tests/test_runtime_worker_capabilities.py -q` | PASS | `5 passed` |
+| `python -m compileall backend/app` | PASS | worker modules compile cleanly |
+| `pytest backend/tests/test_runtime_orchestration.py -q` | PASS | workflow boundary unchanged |
+
+### Auto-Fixes
+| Issue | Fix | Evidence |
+|---|---|---|
+| missing runtime worker package caused `ModuleNotFoundError: No module named 'app.runtime.workers'` during RED phase | added additive `backend/app/runtime/workers/` package with deterministic service/provider | `pytest backend/tests/test_runtime_worker_capabilities.py -q` now passes |
+
+### Safety
+- `.env` read: no
+- secrets printed: no
+- `git add .` used: no
+- destructive command used: no
+- live provider called: no
+- agent-stack root copied: no
+
+### Readiness Gained
+
+- `RUNTIME_READY` advanced to worker capability readiness
+- Graxia runtime can now produce deterministic summaries, customer draft proposals, recommendation briefs, memory drafts, and tool proposals without real LLM calls
+- dangerous worker proposal paths are blocked before any MCP alignment work
+
+### Remaining Blockers
+
+- MCP runtime alignment not implemented yet
+- no persisted worker run store yet
+- real provider path remains intentionally disabled by default
+
+### Next Phase Decision
+
+- continue to `Phase 10 — MCP Runtime Alignment`
