@@ -75,7 +75,7 @@ PASS
 ### Commits
 | Commit | Purpose |
 |---|---|
-| current phase feat commit | add runtime contract compatibility layer |
+| `4941393` | add runtime contract compatibility layer |
 
 ### Files Changed
 | Path | Type | Reason |
@@ -131,3 +131,65 @@ PASS
 ### Next Phase Decision
 
 - continue to `Phase 4 — Runtime Adapter Layer`
+
+## Phase 4 — Runtime Adapter Layer
+
+### Verdict
+PASS
+
+### Commits
+| Commit | Purpose |
+|---|---|
+| pending phase 4 commit | add runtime adapter layer for existing Graxia systems |
+
+### Files Changed
+| Path | Type | Reason |
+|---|---|---|
+| `backend/app/runtime/adapters/__init__.py` | runtime | export adapter entrypoints |
+| `backend/app/runtime/adapters/approval_adapter.py` | runtime | map `ApprovalRequest` into `ApprovalContract` |
+| `backend/app/runtime/adapters/mcp_adapter.py` | runtime | map MCP responses into `ToolCallResult` |
+| `backend/app/runtime/adapters/workflow_adapter.py` | runtime | map workflow runs into `WorkflowRunRef` |
+| `backend/app/runtime/adapters/context_adapter.py` | runtime | map context packs into `ContextPacketRef` |
+| `backend/app/runtime/adapters/funnel_event_adapter.py` | runtime | build canonical `BusinessEvent` values from funnel actions |
+| `backend/app/runtime/adapters/audit_adapter.py` | runtime | map audit/readiness payloads into runtime contracts with redaction |
+| `backend/tests/test_runtime_adapters.py` | test | verify adapter mappings across approval, MCP, workflow, context, funnel, audit, and readiness |
+| `docs/PHASE4_RUNTIME_ADAPTER_REPORT.md` | docs | phase closeout |
+
+### Tests Run
+| Command | Result | Notes |
+|---|---|---|
+| `python -m compileall backend/app` | PASS | adapter modules compile cleanly |
+| `pytest backend/tests/test_runtime_adapters.py -q` | PASS | `7 passed` |
+| `pytest backend/tests/test_funnel_v5.py -q` | PASS | `26 passed` |
+| `pytest backend/tests/test_mcp_workflow_tools.py -q` | PASS | `8 passed` |
+
+### Auto-Fixes
+| Issue | Fix | Evidence |
+|---|---|---|
+| optional datetime/id fields causing invalid explicit `None` writes | adapters omit `createdAt`/`expiresAt` when source values are absent and rely on contract defaults | compile + adapter tests pass |
+| MCP approval metadata shape varies by tool | added approval id extraction for `approval_request_id`, `approvalRequestId`, `approval_id`, `approvalId` | `test_mcp_response_to_tool_result_maps_meta_and_error_state` passes |
+| audit payloads may contain secret-like keys | added `_safe_payload` redaction and risk derivation fallback | `test_audit_log_to_event_redacts_sensitive_metadata` passes |
+
+### Safety
+- `.env` read: no
+- secrets printed: no
+- `git add .` used: no
+- destructive command used: no
+- live provider called: no
+- agent-stack root copied: no
+
+### Readiness Gained
+
+- `ADAPTER_READY` achieved
+- existing Graxia approval, MCP, workflow, context, funnel, audit, and readiness shapes now map into runtime contracts
+- adapter layer remains additive and does not replace Graxia primary systems
+
+### Remaining Blockers
+
+- context correctness hardening not implemented yet
+- canonical event persistence/emission not implemented yet
+- gateway/orchestration/worker runtime boundaries not implemented yet
+
+### Next Phase Decision
+
+- continue to `Phase 5 — Context/Token Correctness Hardening`
