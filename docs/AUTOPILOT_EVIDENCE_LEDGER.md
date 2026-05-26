@@ -818,3 +818,65 @@ PASS
 ### Next Phase Decision
 
 - continue to `Phase 15 — Global Operations / Revenue Growth Loop`
+
+## Phase 15 — Global Operations / Revenue Growth Loop
+
+### Verdict
+PASS
+
+### Commits
+| Commit | Purpose |
+|---|---|
+| `3c28cba` | add global revenue operations loop |
+
+### Files Changed
+| Path | Type | Reason |
+|---|---|---|
+| `backend/app/mcp/tools/funnel.py` | mcp | add read-only opportunity and outcome-pattern summary tools |
+| `backend/app/agent_workflows/service.py` | workflow | register additive revenue-ops workflows |
+| `backend/app/agent_workflows/workflows/opportunity_scout.py` | workflow | surface top opportunities and draft operator brief |
+| `backend/app/agent_workflows/workflows/experiment_planner.py` | workflow | draft experiment planning brief from funnel metrics |
+| `backend/app/agent_workflows/workflows/content_plan_draft.py` | workflow | draft content plan and mock calendar milestone |
+| `backend/app/agent_workflows/workflows/failure_analysis_review.py` | workflow | summarize loss patterns into a draft review doc |
+| `backend/tests/test_mcp_workflow_tools.py` | test | verify new workflows are registered and runnable |
+| `backend/tests/test_revenue_ops_tools.py` | test | verify new read-only opportunity and outcome-pattern tools |
+| `backend/tests/test_mcp_readonly_tools.py` | test | make MCP registry boot deterministic in isolated test runs |
+| `docs/PHASE15_GLOBAL_REVENUE_OPS_REPORT.md` | docs | phase closeout |
+
+### Tests Run
+| Command | Result | Notes |
+|---|---|---|
+| `pytest backend/tests/test_revenue_ops_tools.py -q` | PASS | `2 passed` |
+| `pytest backend/tests/test_mcp_workflow_tools.py -q` | PASS | `9 passed` |
+| `pytest backend/tests/test_mcp_readonly_tools.py -q` | PASS | `19 passed` |
+| `python -m compileall backend/app` | PASS | workflow + MCP modules compile cleanly |
+
+### Auto-Fixes
+| Issue | Fix | Evidence |
+|---|---|---|
+| new MCP tool tests returned `TOOL_NOT_FOUND` when run directly | imported `app.mcp.tools` in `backend/tests/test_revenue_ops_tools.py` to force registry registration | rerun `pytest backend/tests/test_revenue_ops_tools.py -q` passed |
+| existing read-only MCP regression suite also depended on implicit registry boot order | imported `app.mcp.tools` in `backend/tests/test_mcp_readonly_tools.py` to make isolated runs deterministic | rerun `pytest backend/tests/test_mcp_readonly_tools.py -q` passed |
+
+### Safety
+- `.env` read: no
+- secrets printed: no
+- `git add .` used: no
+- destructive command used: no
+- live provider called: no
+- agent-stack root copied: no
+
+### Readiness Gained
+
+- `GLOBAL_OPS_READY` advanced locally through additive draft-only workflows
+- existing Graxia MCP/workflow surfaces now expose opportunity scouting and failure-analysis summaries
+- revenue-ops loop remains operator-reviewed and approval-safe
+
+### Remaining Blockers
+
+- no UI/runtime surface changes yet for these new workflows beyond existing generic workflow views
+- Phase 16 auth/org/rate-limit hardening is still pending
+- production remains dry-run only
+
+### Next Phase Decision
+
+- continue to `Phase 16 — Auth / Org / Rate Limiting`
