@@ -140,7 +140,7 @@ PASS
 ### Commits
 | Commit | Purpose |
 |---|---|
-| pending phase 4 commit | add runtime adapter layer for existing Graxia systems |
+| `bddcd87` | add runtime adapter layer for existing Graxia systems |
 
 ### Files Changed
 | Path | Type | Reason |
@@ -202,7 +202,7 @@ PASS
 ### Commits
 | Commit | Purpose |
 |---|---|
-| pending phase 5 commit | harden context correctness and token ROI controls |
+| `0e27000` | harden context correctness and token ROI controls |
 
 ### Files Changed
 | Path | Type | Reason |
@@ -269,3 +269,63 @@ PASS
 ### Next Phase Decision
 
 - continue to `Phase 6 — BusinessEvent Emission`
+
+## Phase 6 — BusinessEvent Emission
+
+### Verdict
+PASS
+
+### Commits
+| Commit | Purpose |
+|---|---|
+| pending phase 6 commit | emit canonical business events from funnel flows |
+
+### Files Changed
+| Path | Type | Reason |
+|---|---|---|
+| `backend/app/runtime/events/__init__.py` | runtime | export business-event service and repository |
+| `backend/app/runtime/events/types.py` | runtime | define canonical funnel/runtime event names |
+| `backend/app/runtime/events/repository.py` | runtime | add in-memory idempotent event storage |
+| `backend/app/runtime/events/service.py` | runtime | sanitize payloads and emit canonical `BusinessEvent` values |
+| `backend/app/services/funnel_service.py` | runtime | emit events for payment, order, delivery access, delivery open, lead capture, and recommendation creation |
+| `backend/app/api/funnel.py` | runtime | emit `approval.requested` after recommendation approval submission |
+| `backend/tests/test_business_event_emission.py` | test | verify canonical events from real funnel flows |
+| `docs/PHASE6_BUSINESS_EVENT_REPORT.md` | docs | phase closeout |
+
+### Tests Run
+| Command | Result | Notes |
+|---|---|---|
+| `python -m compileall backend/app` | PASS | runtime event modules compile cleanly |
+| `pytest backend/tests/test_business_event_emission.py -q` | PASS | `5 passed` |
+| `pytest backend/tests/test_funnel_v5.py -q` | PASS | `26 passed` |
+| `pytest backend/tests/test_approval_org_scope.py -q` | PASS | `5 passed` |
+
+### Auto-Fixes
+| Issue | Fix | Evidence |
+|---|---|---|
+| repository org filter compared UUID objects to strings | normalized `organization_id` comparison with `str(event.organization_id)` | `test_checkout_completed_emits_payment_order_and_delivery_events` passes |
+| package export pointed `business_event_repository` at wrong module | corrected `backend/app/runtime/events/__init__.py` import source | funnel and approval regression suites pass |
+| delivery-open test passed `str` into UUID lookup | wrapped `result[\"access_id\"]` with `UUID(...)` in test | `test_delivery_open_emits_business_event` passes |
+
+### Safety
+- `.env` read: no
+- secrets printed: no
+- `git add .` used: no
+- destructive command used: no
+- live provider called: no
+- agent-stack root copied: no
+
+### Readiness Gained
+
+- `EVENT_READY` achieved for current Graxia funnel flows
+- payment/order/delivery/lead/recommendation/approval events now emit canonically without raw-token leakage
+- event layer is additive and remains repository-backed, ready for future gateway bridge
+
+### Remaining Blockers
+
+- `checkout.started` and `product.published.requested` are deferred because this repo currently has no real creation/request route to hook safely
+- runtime gateway/orchestration/worker boundaries not implemented yet
+
+### Next Phase Decision
+
+- continue to `Phase 7 — Runtime Gateway Bridge`

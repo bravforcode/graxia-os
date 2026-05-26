@@ -13,6 +13,7 @@ from sqlalchemy import select, func, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import AsyncSessionLocal
+from app.runtime.events import business_event_service
 from app.models.funnel import (
     ConversionEvent,
     DeliveryAccess,
@@ -38,6 +39,12 @@ def _generate_access_token() -> str:
 def _hash_token(token: str) -> str:
     """Hash a token for storage. Never store raw tokens."""
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def _email_domain(email: str | None) -> str | None:
+    if not email or "@" not in email:
+        return None
+    return email.split("@", 1)[1].lower()
 
 
 # ── Delivery Access Service ────────────────────────────────────────────────
@@ -140,6 +147,21 @@ class DeliveryAccessService:
             access.download_count = (access.download_count or 0) + 1
             await session.commit()
             await session.refresh(access)
+            await business_event_service.emit(
+                organization_id=str(access.organization_id),
+                event_type="delivery.opened",
+                subject_type="delivery_access",
+                subject_id=str(access.id),
+                payload={
+                    "order_id": str(access.order_id),
+                    "product_id": str(access.product_id),
+                    "open_count": access.open_count,
+                },
+                actor_type="customer",
+                source="funnel-service",
+                correlation_id=f"delivery-open:{access.id}:{access.open_count}",
+                idempotency_key=f"delivery-open:{access.id}:{access.open_count}",
+            )
             return access
 
     async def get_access_by_id(
@@ -362,6 +384,24 @@ class LeadMagnetService:
                     session.add(capture)
                     await session.commit()
                     await session.refresh(capture)
+            await business_event_service.emit(
+                organization_id=str(organization_id),
+                event_type="lead.captured",
+                subject_type="lead_capture",
+                subject_id=str(capture.id),
+                payload={
+                    "lead_magnet_id": str(lead_magnet_id),
+                    "email_domain": _email_domain(email),
+                    "source": source,
+                    "utm_source": utm_source,
+                    "utm_medium": utm_medium,
+                    "utm_campaign": utm_campaign,
+                },
+                actor_type="customer",
+                source="funnel-service",
+                correlation_id=f"lead-capture:{capture.id}",
+                idempotency_key=f"lead-capture:{organization_id}:{lead_magnet_id}:{email.lower()}",
+            )
             return capture
         except Exception:
             logger.warning("Duplicate lead capture (org=%s, magnet=%s, email=%s)", organization_id, lead_magnet_id, email)
@@ -447,6 +487,24 @@ class FunnelRecommendationService:
                 session.add(rec)
                 await session.commit()
                 await session.refresh(rec)
+        await business_event_service.emit(
+            organization_id=str(organization_id),
+            event_type="recommendation.created",
+            subject_type="funnel_recommendation",
+            subject_id=str(rec.id),
+            payload={
+                "product_id": str(product_id),
+                "recommendation_type": recommendation_type,
+                "confidence": confidence,
+                "effort": effort,
+                "risk": risk,
+            },
+            actor_type="agent",
+            source="funnel-service",
+            risk_level="APPROVAL_REQUIRED",
+            correlation_id=f"recommendation:{rec.id}",
+            idempotency_key=f"recommendation:{rec.id}",
+        )
         return rec
 
     async def list(
@@ -795,6 +853,58 @@ class FunnelWebhookHandler:
             session.add(purchase_event)
 
             await session.commit()
+
+            correlation_id = f"checkout:{checkout_session_id}"
+            await business_event_service.emit(
+                organization_id=str(organization_id),
+                event_type="payment.succeeded",
+                subject_type="checkout_session",
+                subject_id=str(checkout_session_id),
+                payload={
+                    "order_id": str(order.id),
+                    "product_id": str(checkout.product_id),
+                    "amount": str(checkout.amount),
+                    "currency": checkout.currency,
+                    "customer_email_domain": _email_domain(customer_email or checkout.customer_email),
+                },
+                actor_type="customer",
+                source="funnel-webhook",
+                correlation_id=correlation_id,
+                idempotency_key=f"payment-succeeded:{checkout_session_id}",
+            )
+            await business_event_service.emit(
+                organization_id=str(organization_id),
+                event_type="order.created",
+                subject_type="funnel_order",
+                subject_id=str(order.id),
+                payload={
+                    "checkout_session_id": str(checkout_session_id),
+                    "product_id": str(checkout.product_id),
+                    "status": order.status,
+                    "total_amount": str(order.total_amount),
+                    "currency": order.currency,
+                },
+                actor_type="service",
+                source="funnel-webhook",
+                correlation_id=correlation_id,
+                idempotency_key=f"order-created:{order.id}",
+            )
+            await business_event_service.emit(
+                organization_id=str(organization_id),
+                event_type="delivery.access.granted",
+                subject_type="delivery_access",
+                subject_id=str(access.id),
+                payload={
+                    "order_id": str(order.id),
+                    "product_id": str(checkout.product_id),
+                    "delivery_access_id": str(access.id),
+                    "delivery_asset_id": str(access.delivery_asset_id) if access.delivery_asset_id else None,
+                },
+                actor_type="service",
+                source="funnel-webhook",
+                correlation_id=correlation_id,
+                idempotency_key=f"delivery-access-granted:{access.id}",
+            )
 
             return {
                 "order_id": str(order.id),

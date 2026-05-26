@@ -52,6 +52,7 @@ from app.services.funnel_service import (
     lead_magnet_service,
     mock_email_provider,
 )
+from app.runtime.events import business_event_service
 
 logger = logging.getLogger(__name__)
 
@@ -623,6 +624,24 @@ async def submit_recommendation_for_approval(
     rec.status = "pending_approval"
     rec.approval_request_id = approval.id
     await db.commit()
+
+    await business_event_service.emit(
+        organization_id=str(org_id),
+        event_type="approval.requested",
+        subject_type="approval_request",
+        subject_id=str(approval.id),
+        payload={
+            "action_type": approval.action_type,
+            "recommendation_id": str(rec.id),
+            "policy_class": approval.policy_class,
+        },
+        actor_type=auth.actor_type,
+        actor_id=auth.actor_id,
+        source="funnel-api",
+        risk_level="APPROVAL_REQUIRED",
+        correlation_id=f"approval-request:{approval.id}",
+        idempotency_key=f"approval-request:{approval.id}",
+    )
 
     return {
         "status": "submitted",
