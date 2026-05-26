@@ -22,6 +22,8 @@ from app.models.funnel import (
     FunnelRecommendation,
 )
 from app.models.approval_request import ApprovalRequest
+from app.models.opportunity import Opportunity
+from app.models.outcome_pattern import OutcomePattern
 
 
 async def _get_db() -> AsyncSession:
@@ -58,11 +60,36 @@ TOOL_INPUT_ORG_LIMIT = {
     "additionalProperties": False,
 }
 
+TOOL_INPUT_ORG_LIMIT_THRESHOLD = {
+    "type": "object",
+    "properties": {
+        "organization_id": {"type": "string", "description": "UUID of the organization"},
+        "limit": {"type": "integer", "description": "Max results", "default": 15},
+        "threshold": {"type": "number", "description": "Minimum total score", "default": 7.0},
+    },
+    "required": ["organization_id"],
+    "additionalProperties": False,
+}
+
 TOOL_OUTPUT_LIST = {
     "type": "object",
     "properties": {
         "items": {"type": "array", "items": {"type": "object"}},
         "total": {"type": "integer"},
+    },
+    "additionalProperties": False,
+}
+
+TOOL_OUTPUT_OUTCOME_SUMMARY = {
+    "type": "object",
+    "properties": {
+        "total_patterns": {"type": "integer"},
+        "positive_count": {"type": "integer"},
+        "negative_count": {"type": "integer"},
+        "neutral_count": {"type": "integer"},
+        "avg_actual_value_thb": {"type": "string"},
+        "top_lost_reasons": {"type": "array", "items": {"type": "object"}},
+        "recent_patterns": {"type": "array", "items": {"type": "object"}},
     },
     "additionalProperties": False,
 }
@@ -430,6 +457,179 @@ async def handle_get_revenue_summary(
             },
             organization_id=organization_id,
             estimated_tokens=20,
+        )
+
+
+@mcp_registry.register(
+    name="get_high_score_opportunities",
+    description="List the highest-scoring opportunities for an organization. Surfaces top candidates only, never mutates state.",
+    input_schema=TOOL_INPUT_ORG_LIMIT_THRESHOLD,
+    output_schema=TOOL_OUTPUT_LIST,
+    risk_level="READ_ONLY",
+)
+async def handle_get_high_score_opportunities(
+    auth: MCPAuthContext | None = None,
+    organization_id: str = "",
+    limit: int = 15,
+    threshold: float = 7.0,
+) -> MCPResponse:
+    """Return top-scoring opportunities for revenue-ops review."""
+    try:
+        org_uuid = UUID(organization_id)
+    except (ValueError, TypeError):
+        return MCPResponse.error_response(
+            code="INVALID_PARAMS",
+            message="Invalid organization_id.",
+            request_id=auth.request_id if auth else "",
+        )
+
+    if not validate_org_context(auth, org_uuid):
+        safe_org_not_found()
+
+    safe_limit = min(max(limit, 1), 25)
+
+    async with AsyncSessionLocal() as db:
+        stmt = (
+            select(Opportunity)
+            .where(
+                Opportunity.organization_id == org_uuid,
+                Opportunity.is_deleted.is_(False),
+                Opportunity.total_score.is_not(None),
+                Opportunity.total_score >= threshold,
+            )
+            .order_by(Opportunity.total_score.desc(), Opportunity.found_at.desc())
+            .limit(safe_limit)
+        )
+        result = await db.execute(stmt)
+        opportunities = result.scalars().all()
+
+        return MCPResponse.ok_response(
+            data={
+                "items": [
+                    {
+                        "id": str(item.id),
+                        "title": item.title,
+                        "type": item.type,
+                        "total_score": str(item.total_score) if item.total_score is not None else None,
+                        "status": item.status,
+                        "decision": item.decision,
+                        "action_priority": item.action_priority,
+                        "source_platform": item.source_platform,
+                        "found_at": item.found_at.isoformat() if item.found_at else None,
+                    }
+                    for item in opportunities
+                ],
+                "total": len(opportunities),
+            },
+            organization_id=organization_id,
+            estimated_tokens=max(20, len(opportunities) * 18),
+        )
+
+
+@mcp_registry.register(
+    name="get_outcome_patterns_summary",
+    description="Summarize historical outcome patterns for an organization. Supports failure analysis and experiment planning without exposing raw secrets.",
+    input_schema=TOOL_INPUT_ORG_LIMIT,
+    output_schema=TOOL_OUTPUT_OUTCOME_SUMMARY,
+    risk_level="READ_ONLY",
+)
+async def handle_get_outcome_patterns_summary(
+    auth: MCPAuthContext | None = None,
+    organization_id: str = "",
+    limit: int = 10,
+) -> MCPResponse:
+    """Return recent outcome-pattern summaries scoped through organization opportunities."""
+    try:
+        org_uuid = UUID(organization_id)
+    except (ValueError, TypeError):
+        return MCPResponse.error_response(
+            code="INVALID_PARAMS",
+            message="Invalid organization_id.",
+            request_id=auth.request_id if auth else "",
+        )
+
+    if not validate_org_context(auth, org_uuid):
+        safe_org_not_found()
+
+    safe_limit = min(max(limit, 1), 25)
+
+    async with AsyncSessionLocal() as db:
+        recent_stmt = (
+            select(OutcomePattern, Opportunity)
+            .join(Opportunity, Opportunity.id == OutcomePattern.opportunity_id)
+            .where(
+                Opportunity.organization_id == org_uuid,
+                Opportunity.is_deleted.is_(False),
+            )
+            .order_by(OutcomePattern.created_at.desc())
+            .limit(safe_limit)
+        )
+        recent_rows = (await db.execute(recent_stmt)).all()
+
+        counts_stmt = (
+            select(OutcomePattern.outcome, func.count(OutcomePattern.id))
+            .join(Opportunity, Opportunity.id == OutcomePattern.opportunity_id)
+            .where(
+                Opportunity.organization_id == org_uuid,
+                Opportunity.is_deleted.is_(False),
+            )
+            .group_by(OutcomePattern.outcome)
+        )
+        counts_rows = (await db.execute(counts_stmt)).all()
+        counts = {str(outcome or "unknown"): int(count) for outcome, count in counts_rows}
+
+        avg_value = await db.scalar(
+            select(func.coalesce(func.avg(OutcomePattern.actual_value_thb), 0))
+            .join(Opportunity, Opportunity.id == OutcomePattern.opportunity_id)
+            .where(
+                Opportunity.organization_id == org_uuid,
+                Opportunity.is_deleted.is_(False),
+            )
+        ) or 0
+
+        lost_stmt = (
+            select(OutcomePattern.lost_reason, func.count(OutcomePattern.id))
+            .join(Opportunity, Opportunity.id == OutcomePattern.opportunity_id)
+            .where(
+                Opportunity.organization_id == org_uuid,
+                Opportunity.is_deleted.is_(False),
+                OutcomePattern.lost_reason.is_not(None),
+                OutcomePattern.lost_reason != "",
+            )
+            .group_by(OutcomePattern.lost_reason)
+            .order_by(func.count(OutcomePattern.id).desc(), OutcomePattern.lost_reason.asc())
+            .limit(5)
+        )
+        lost_rows = (await db.execute(lost_stmt)).all()
+
+        return MCPResponse.ok_response(
+            data={
+                "total_patterns": sum(counts.values()),
+                "positive_count": counts.get("positive", 0),
+                "negative_count": counts.get("negative", 0),
+                "neutral_count": counts.get("neutral", 0),
+                "avg_actual_value_thb": str(avg_value),
+                "top_lost_reasons": [
+                    {"reason": str(reason), "count": int(count)}
+                    for reason, count in lost_rows
+                ],
+                "recent_patterns": [
+                    {
+                        "id": str(pattern.id),
+                        "opportunity_id": str(pattern.opportunity_id) if pattern.opportunity_id else None,
+                        "opportunity_title": opportunity.title,
+                        "opportunity_type": pattern.opportunity_type,
+                        "outcome": pattern.outcome,
+                        "lost_reason": pattern.lost_reason,
+                        "actual_value_thb": str(pattern.actual_value_thb or 0),
+                        "total_score": str(pattern.total_score) if pattern.total_score is not None else None,
+                        "created_at": pattern.created_at.isoformat() if pattern.created_at else None,
+                    }
+                    for pattern, opportunity in recent_rows
+                ],
+            },
+            organization_id=organization_id,
+            estimated_tokens=max(20, len(recent_rows) * 20),
         )
 
 

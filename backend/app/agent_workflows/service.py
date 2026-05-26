@@ -12,10 +12,14 @@ from app.agent_workflows.runner import WorkflowRunner
 from app.agent_workflows.schemas import WorkflowRun, WorkflowStatusSummary
 from app.agent_workflows.state import workflow_store
 from app.agent_workflows.workflows import (
+    content_plan_draft,
     customer_inbox_triage,
     daily_funnel_brief,
     delivery_failure_monitor,
+    experiment_planner,
+    failure_analysis_review,
     launch_plan_builder,
+    opportunity_scout,
     token_benchmark_review,
     weekly_revenue_review,
 )
@@ -41,6 +45,10 @@ class WorkflowEngineService:
             token_benchmark_review.definition(),
             delivery_failure_monitor.definition(),
             weekly_revenue_review.definition(),
+            opportunity_scout.definition(),
+            experiment_planner.definition(),
+            content_plan_draft.definition(),
+            failure_analysis_review.definition(),
         ]
         for wf in workflows:
             workflow_registry.register(wf)

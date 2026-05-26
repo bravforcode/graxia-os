@@ -32,7 +32,7 @@ def test_list_agent_workflows_tool():
         assert result.ok is True
         assert result.data is not None
         items = result.data.get("items", [])
-        assert len(items) >= 6  # At least 6 registered workflows
+        assert len(items) >= 10  # At least 10 registered workflows
         types = [i["workflow_type"] for i in items]
         assert "daily_funnel_brief" in types
         assert "launch_plan_builder" in types
@@ -40,6 +40,10 @@ def test_list_agent_workflows_tool():
         assert "token_benchmark_review" in types
         assert "delivery_failure_monitor" in types
         assert "weekly_revenue_review" in types
+        assert "opportunity_scout" in types
+        assert "experiment_planner" in types
+        assert "content_plan_draft" in types
+        assert "failure_analysis_review" in types
     asyncio.run(_test())
 
 
@@ -72,6 +76,23 @@ def test_run_agent_workflow_tool_launch_plan():
         assert result.ok is True
         assert result.data is not None
         assert result.data["workflow_type"] == "launch_plan_builder"
+    asyncio.run(_test())
+
+
+def test_run_agent_workflow_tool_opportunity_scout():
+    import asyncio
+    async def _test():
+        from app.mcp.tools.workflows import handle_run_agent_workflow
+        result = await handle_run_agent_workflow(
+            organization_id=TEST_ORG,
+            workflow_type="opportunity_scout",
+            inputs={"metadata": {"threshold": 7.5, "limit": 5}},
+        )
+        assert result.ok is True
+        assert result.data is not None
+        assert result.data["workflow_type"] == "opportunity_scout"
+        assert result.data["status"] == "completed"
+        assert result.data["steps_completed"] >= 3
     asyncio.run(_test())
 
 

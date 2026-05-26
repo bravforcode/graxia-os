@@ -7,6 +7,7 @@ import pytest
 import pytest_asyncio
 from uuid import UUID, uuid4
 
+import app.mcp.tools  # noqa: F401
 from app.mcp.registry import mcp_registry
 from app.mcp.schemas import MCPAuthContext, MCPResponse
 from app.database import AsyncSessionLocal
