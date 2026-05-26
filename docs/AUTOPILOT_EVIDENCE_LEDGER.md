@@ -689,3 +689,62 @@ PASS
 ### Next Phase Decision
 
 - continue to `Phase 13 — Integrated Staging Readiness Gate`
+
+## Phase 13 — Integrated Staging Readiness Gate
+
+### Verdict
+PASS
+
+### Commits
+| Commit | Purpose |
+|---|---|
+| `ecf8210` | add integrated staging readiness gate |
+
+### Files Changed
+| Path | Type | Reason |
+|---|---|---|
+| `backend/app/api/health.py` | runtime | replace shallow staging readiness with integrated runtime/context/MCP/provider guard checks |
+| `backend/tests/test_health_readiness.py` | test | lock embedded staging gate shape in root readiness response |
+| `backend/tests/test_staging_readiness_gate.py` | test | verify integrated staging gate keys, blockers, and conservative false state |
+| `scripts/check_staging_readiness.ps1` | scripts | align smoke script with richer staging readiness payload |
+| `docs/PHASE13_STAGING_READINESS_GATE_REPORT.md` | docs | phase closeout |
+
+### Tests Run
+| Command | Result | Notes |
+|---|---|---|
+| `pytest backend/tests/test_health_readiness.py -q` | PASS | `7 passed` |
+| `pytest backend/tests/test_staging_readiness_gate.py -q` | PASS | `3 passed` |
+| `python -m compileall backend/app` | PASS | backend compile clean |
+| `cd frontend && bun run build` | PASS | production build success |
+| `cd backend && alembic -c alembic.ini heads` | PASS | `021_add_funnel_v5_models (head)` |
+
+### Auto-Fixes
+| Issue | Fix | Evidence |
+|---|---|---|
+| `/api/v1/health/readiness/staging` was mostly hardcoded and could not prove runtime integration state | added shared staging gate builder with database/runtime/module/MCP/provider guard checks | `pytest backend/tests/test_staging_readiness_gate.py -q` passes |
+| `/api/v1/health/readiness` and `/api/v1/health/readiness/staging` could drift | root readiness now embeds the same staging gate payload and mirrors `staging_ready` from it | `test_readiness_endpoint_embeds_staging_gate` passes |
+| staging smoke script only checked shallow booleans | script now verifies runtime/context/provider guard keys exposed by the API | feature report + staged script diff |
+
+### Safety
+- `.env` read: no
+- secrets printed: no
+- `git add .` used: no
+- destructive command used: no
+- live provider called: no
+- agent-stack root copied: no
+
+### Readiness Gained
+
+- integrated staging readiness is now evidence-based instead of shallow hardcode
+- runtime contracts, adapters, gateway, orchestration, workers, context gate, token ROI controls, and MCP runtime tooling are surfaced in one gate payload
+- readiness remains conservative and keeps `staging_ready=false` until real staging env and non-mock auth are proven
+
+### Remaining Blockers
+
+- no deployed staging smoke execution proof exists inside the readiness endpoint itself
+- `staging_ready` remains false outside `APP_ENV=staging`
+- production launch gate dry-run is not implemented yet
+
+### Next Phase Decision
+
+- continue to `Phase 14 — Production Launch Gate Dry-Run`
