@@ -633,7 +633,7 @@ PASS
 ### Commits
 | Commit | Purpose |
 |---|---|
-| pending | add token ROI dashboard and HTTP MCP compatibility fix |
+| `736e34a` | add token ROI dashboard and HTTP MCP compatibility fix |
 
 ### Files Changed
 | Path | Type | Reason |
