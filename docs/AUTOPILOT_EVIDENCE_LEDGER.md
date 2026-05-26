@@ -338,7 +338,7 @@ PASS
 ### Commits
 | Commit | Purpose |
 |---|---|
-| pending phase 7 commit | add OpenClaw-style runtime gateway bridge |
+| `2140402` | add OpenClaw-style runtime gateway bridge |
 
 ### Files Changed
 | Path | Type | Reason |
