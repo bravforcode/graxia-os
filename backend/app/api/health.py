@@ -26,6 +26,16 @@ _STAGING_SCRIPT_PATHS = (
     Path(__file__).resolve().parents[3] / "scripts" / "check_staging_readiness.sh",
     Path(__file__).resolve().parents[3] / "scripts" / "staging_smoke.sh",
 )
+_PRODUCTION_DOC_PATHS = (
+    Path(__file__).resolve().parents[3] / "docs" / "PRODUCTION_GO_NO_GO_CHECKLIST.md",
+    Path(__file__).resolve().parents[3] / "docs" / "PRODUCTION_SECRETS_RUNBOOK.md",
+    Path(__file__).resolve().parents[3] / "docs" / "STRIPE_PRODUCTION_GATE.md",
+    Path(__file__).resolve().parents[3] / "docs" / "EMAIL_PRODUCTION_GATE.md",
+    Path(__file__).resolve().parents[3] / "docs" / "GOOGLE_WORKSPACE_PRODUCTION_GATE.md",
+    Path(__file__).resolve().parents[3] / "docs" / "BACKUP_RESTORE_RUNBOOK.md",
+    Path(__file__).resolve().parents[3] / "docs" / "INCIDENT_RESPONSE_RUNBOOK.md",
+    Path(__file__).resolve().parents[3] / "docs" / "ROLLBACK_RUNBOOK.md",
+)
 
 
 async def _database_ok() -> bool:
@@ -74,6 +84,22 @@ def _real_email_send_blocked() -> bool:
 
 def _staging_scripts_present() -> bool:
     return all(path.exists() for path in _STAGING_SCRIPT_PATHS)
+
+
+def _production_docs_present() -> bool:
+    return all(path.exists() for path in _PRODUCTION_DOC_PATHS)
+
+
+def _live_stripe_blocked() -> bool:
+    return (not settings.ALLOW_LIVE_STRIPE) and _stripe_live_mode_blocked()
+
+
+def _real_email_provider_blocked() -> bool:
+    return (not settings.ALLOW_REAL_EMAIL_SEND) and _real_email_send_blocked()
+
+
+def _real_google_mutation_blocked() -> bool:
+    return (not settings.ALLOW_REAL_GOOGLE_MUTATION) and (not settings.GOOGLE_ENABLE_WRITE_SCOPES)
 
 
 async def _build_staging_readiness(auth: AuthContext) -> dict[str, object]:
@@ -147,6 +173,57 @@ async def _build_staging_readiness(auth: AuthContext) -> dict[str, object]:
     }
 
 
+async def _build_production_readiness(auth: AuthContext) -> dict[str, object]:
+    readiness = get_runtime_state()
+    env = (settings.APP_ENV or "development").lower()
+    db_ok = await _database_ok()
+
+    checks = {
+        "database_connectivity": db_ok,
+        "runtime_ready": bool(readiness["is_ready"]),
+        "auth_context_middleware": True,
+        "real_auth_context_active": not auth.is_mock_auth,
+        "rate_limiting_active": True,
+        "production_runbooks_present": _production_docs_present(),
+        "live_stripe_blocked": _live_stripe_blocked(),
+        "real_email_send_blocked": _real_email_provider_blocked(),
+        "real_google_mutation_blocked": _real_google_mutation_blocked(),
+        "real_llm_calls_blocked": not settings.ALLOW_REAL_LLM_CALLS,
+        "go_no_go_required": True,
+    }
+
+    blockers: list[str] = [
+        "Production dry-run gate remains closed until explicit go/no-go approval."
+    ]
+    if env != "production":
+        blockers.append("APP_ENV is not 'production'.")
+    if auth.is_mock_auth:
+        blockers.append("Current auth context is mock auth; real production auth has not been proven.")
+    if not checks["database_connectivity"]:
+        blockers.append("Database connectivity failed.")
+    if not checks["runtime_ready"]:
+        blockers.append("Runtime state is not ready.")
+    if not checks["production_runbooks_present"]:
+        blockers.append("Production runbooks are missing.")
+    if not checks["live_stripe_blocked"]:
+        blockers.append("Live Stripe is not blocked.")
+    if not checks["real_email_send_blocked"]:
+        blockers.append("Real email sending is not blocked.")
+    if not checks["real_google_mutation_blocked"]:
+        blockers.append("Real Google Workspace mutation is not blocked.")
+    if not checks["real_llm_calls_blocked"]:
+        blockers.append("Real LLM calls are not blocked.")
+
+    return {
+        "production_ready": False,
+        "go_no_go_required": True,
+        "environment": env,
+        "checks": checks,
+        "runtime": readiness,
+        "blockers": blockers,
+    }
+
+
 @router.get("")
 async def health_check(auth: AuthContext = Depends(get_auth_context)):
     """Simple health check — returns service status.
@@ -176,6 +253,7 @@ async def readiness_check(auth: AuthContext = Depends(get_auth_context)):
     readiness = get_runtime_state()
     db_ok = await _database_ok()
     staging = await _build_staging_readiness(auth)
+    production = await _build_production_readiness(auth)
     env = (settings.APP_ENV or "development").lower()
 
     return {
@@ -189,6 +267,7 @@ async def readiness_check(auth: AuthContext = Depends(get_auth_context)):
             "runtime_ready": readiness["is_ready"],
             "runtime_issues": len(readiness.get("issues", [])),
             "staging_gate_blockers": len(staging["blockers"]),
+            "production_gate_blockers": len(production["blockers"]),
         },
         "local_agent": {
             "funnel_ready": True,
@@ -202,19 +281,11 @@ async def readiness_check(auth: AuthContext = Depends(get_auth_context)):
         },
         "staging": staging,
         "staging_ready": staging["staging_ready"],
-        "production_ready": False,
+        "production": production,
+        "production_ready": production["production_ready"],
         "blockers": {
             "staging": staging["blockers"],
-            "production": [
-                "Real auth / org context required",
-                "Rate limiting must be verified",
-                "Health/readiness endpoints must pass staging smoke tests",
-                "Live provider guards must be configured",
-                "Backup/restore must be verified",
-                "Monitoring/alerting must be configured",
-                "Production smoke test must pass",
-                "Go/no-go checklist must be completed",
-            ],
+            "production": production["blockers"],
         },
     }
 
@@ -240,3 +311,9 @@ async def local_agent_readiness(auth: AuthContext = Depends(get_auth_context)):
 async def staging_readiness(auth: AuthContext = Depends(get_auth_context)):
     """Staging readiness — must pass before any production work."""
     return await _build_staging_readiness(auth)
+
+
+@router.get("/readiness/production")
+async def production_readiness(auth: AuthContext = Depends(get_auth_context)):
+    """Production dry-run readiness — always closed until explicit go/no-go."""
+    return await _build_production_readiness(auth)

@@ -80,9 +80,11 @@ async def test_readiness_endpoint_returns_200(async_client):
     assert "production_ready" in data
     assert "staging_ready" in data
     assert "staging" in data
+    assert "production" in data
     assert "checks" in data["staging"]
     assert "runtime_contracts_present" in data["staging"]["checks"]
     assert "mcp_runtime_tools_present" in data["staging"]["checks"]
+    assert "go_no_go_required" in data["production"]
 
 
 @pytest.mark.asyncio
@@ -94,6 +96,7 @@ async def test_readiness_production_not_ready(async_client):
     )
     data = resp.json()
     assert data["production_ready"] is False
+    assert data["production"]["production_ready"] is False
 
 
 @pytest.mark.asyncio

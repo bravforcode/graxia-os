@@ -243,6 +243,7 @@ class Settings(BaseSettings):
     GOOGLE_REFRESH_TOKEN: str = ""
     GOOGLE_WORKSPACE_EMAIL: str = ""
     GOOGLE_ENABLE_WRITE_SCOPES: bool = False
+    ALLOW_REAL_GOOGLE_MUTATION: bool = False
 
     # SerpAPI
     SERPAPI_KEY: str = ""
@@ -254,10 +255,12 @@ class Settings(BaseSettings):
     STRIPE_PRICE_STARTER_MONTHLY: str = ""
     STRIPE_PRICE_PRO_MONTHLY: str = ""
     STRIPE_PRICE_ENTERPRISE_MONTHLY: str = ""
+    ALLOW_LIVE_STRIPE: bool = False
 
     # Email
     RESEND_API_KEY: str = ""
     FROM_EMAIL: str = "Graxia <notifications@graxia.io>"
+    ALLOW_REAL_EMAIL_SEND: bool = False
 
     # Identity
     IDENTITY_PATH: str = "/identity/profile.yaml"
@@ -322,6 +325,7 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     TESTING: bool = False
     SCHEDULER_EMBEDDED: bool = True
+    ALLOW_REAL_LLM_CALLS: bool = False
 
     # Monitoring & Error Tracking
     SENTRY_DSN: str = ""
