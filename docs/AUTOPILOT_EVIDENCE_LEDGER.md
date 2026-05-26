@@ -456,7 +456,7 @@ PASS
 ### Commits
 | Commit | Purpose |
 |---|---|
-| `<pending>` | add Hermes-style runtime worker capability layer |
+| `2323350` | add Hermes-style runtime worker capability layer |
 
 ### Files Changed
 | Path | Type | Reason |
