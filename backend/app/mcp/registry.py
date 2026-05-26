@@ -4,12 +4,15 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Awaitable
 
+from app.auth.permissions import normalize_permissions
 from app.mcp.schemas import MCPToolDefinition, MCPResponse, MCPAuthContext
 from app.mcp.errors import (
     ERR_TOOL_NOT_FOUND,
     ERR_INTERNAL,
     ERR_HANDLER_ERROR,
     ERR_DANGEROUS_BLOCKED,
+    ERR_AUTH_REQUIRED,
+    ERR_PERMISSION_DENIED,
     safe_error_response,
     handle_tool_error,
 )
@@ -20,6 +23,20 @@ logger = logging.getLogger(__name__)
 
 # Tool handler type: async function that takes (auth, **params) -> MCPResponse
 ToolHandler = Callable[..., Awaitable[MCPResponse]]
+
+
+def _is_system_bypass(auth: MCPAuthContext | None) -> bool:
+    return bool(auth and auth.actor_type == "system" and auth.actor_id == "system")
+
+
+def _has_tool_permission(auth: MCPAuthContext | None, required_permission: str) -> bool:
+    if not required_permission:
+        return True
+    if _is_system_bypass(auth):
+        return True
+    if auth is None:
+        return False
+    return required_permission in normalize_permissions(auth.permissions)
 
 
 class MCPToolRegistry:
@@ -131,6 +148,31 @@ class MCPToolRegistry:
             return safe_error_response(
                 code=ERR_DANGEROUS_BLOCKED,
                 message="This tool is intentionally blocked for safety.",
+                request_id=request_id,
+                organization_id=org_id,
+            )
+
+        if auth is None:
+            return safe_error_response(
+                code=ERR_AUTH_REQUIRED,
+                request_id=request_id,
+                organization_id=org_id,
+            )
+
+        if tool_def.required_permission and not _has_tool_permission(auth, tool_def.required_permission):
+            await log_mcp_tool_call(
+                organization_id=auth.organization_id if auth else None,
+                actor_type=auth.actor_type if auth else "unknown",
+                actor_id=auth.actor_id if auth else None,
+                tool_name=name,
+                risk_level=tool_def.risk_level,
+                status="blocked",
+                request_id=request_id,
+                input_summary_redacted=str(list(params.keys())) if params else "",
+                error_code=ERR_PERMISSION_DENIED,
+            )
+            return safe_error_response(
+                code=ERR_PERMISSION_DENIED,
                 request_id=request_id,
                 organization_id=org_id,
             )

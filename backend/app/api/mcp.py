@@ -7,7 +7,11 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
+
+from app.auth.context import AuthContext
+from app.auth.dependencies import require_organization
+from app.auth.org_boundary import assert_same_org
 
 from app.mcp.transports.http import handle_http_jsonrpc
 
@@ -19,7 +23,10 @@ router = APIRouter(prefix="/api/v1/mcp", tags=["mcp"])
 @router.post("/")
 @router.post("/tools/list")
 @router.post("/tools/call")
-async def mcp_jsonrpc(request: Request) -> dict[str, Any]:
+async def mcp_jsonrpc(
+    request: Request,
+    auth: AuthContext = Depends(require_organization),
+) -> dict[str, Any]:
     """Handle JSON-RPC requests via HTTP.
 
     Accepts JSON-RPC 2.0 format:
@@ -40,18 +47,24 @@ async def mcp_jsonrpc(request: Request) -> dict[str, Any]:
     if not isinstance(body, dict):
         raise HTTPException(status_code=400, detail="Request body must be a JSON object")
 
-    # Extract org from headers or body
-    organization_id = (
-        request.headers.get("X-Organization-ID", "")
-        or body.get("params", {}).get("organization_id", "")
-        or "00000000-0000-0000-0000-000000000001"
-    )
+    request_org_candidates = [
+        request.headers.get("X-Organization-ID", ""),
+        request.headers.get("X-Graxia-Org-Id", ""),
+        body.get("params", {}).get("organization_id", ""),
+    ]
+    for requested_org_id in request_org_candidates:
+        if requested_org_id:
+            assert_same_org(auth, requested_org_id)
+
+    organization_id = str(auth.organization_id)
 
     result = await handle_http_jsonrpc(
         body=body,
         organization_id=organization_id,
-        actor_type="api",
-        actor_id=request.headers.get("X-User-ID"),
+        actor_type=auth.actor_type,
+        actor_id=auth.actor_id or request.headers.get("X-User-ID"),
+        permissions=auth.permissions,
+        correlation_id=auth.correlation_id or auth.request_id or "",
     )
 
     return result

@@ -165,10 +165,16 @@ class MCPAuthContext:
     actor_type: str = "system"
     actor_id: str | None = None
     request_id: str = ""
+    correlation_id: str = ""
+    permissions: list[str] = field(default_factory=list)
+    scopes: list[str] = field(default_factory=list)
+    is_authenticated: bool = False
 
     def __post_init__(self):
         if not self.request_id:
             self.request_id = str(uuid.uuid4())
+        if not self.correlation_id:
+            self.correlation_id = self.request_id
 
     @staticmethod
     def system(organization_id: UUID | None = None) -> MCPAuthContext:
@@ -176,4 +182,6 @@ class MCPAuthContext:
             organization_id=organization_id,
             actor_type="system",
             actor_id="system",
+            permissions=[],
+            is_authenticated=True,
         )

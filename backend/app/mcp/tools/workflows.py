@@ -118,6 +118,7 @@ TOOL_OUTPUT_RUN_DETAIL = {
     input_schema=TOOL_INPUT_ORG,
     output_schema=TOOL_OUTPUT_WORKFLOW_LIST,
     risk_level="READ_ONLY",
+    required_permission="workflow:read",
 )
 async def handle_list_agent_workflows(
     organization_id: str,
@@ -166,6 +167,7 @@ async def handle_list_agent_workflows(
     },
     output_schema=TOOL_OUTPUT_WORKFLOW_RUN,
     risk_level="LOW_WRITE",
+    required_permission="workflow:run",
 )
 async def handle_run_agent_workflow(
     organization_id: str,
@@ -239,6 +241,7 @@ async def handle_run_agent_workflow(
     },
     output_schema=TOOL_OUTPUT_RUN_DETAIL,
     risk_level="READ_ONLY",
+    required_permission="workflow:read",
 )
 async def handle_get_agent_workflow_run(
     organization_id: str,

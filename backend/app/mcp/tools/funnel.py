@@ -466,6 +466,7 @@ async def handle_get_revenue_summary(
     input_schema=TOOL_INPUT_ORG_LIMIT_THRESHOLD,
     output_schema=TOOL_OUTPUT_LIST,
     risk_level="READ_ONLY",
+    required_permission="analytics:read",
 )
 async def handle_get_high_score_opportunities(
     auth: MCPAuthContext | None = None,
@@ -532,6 +533,7 @@ async def handle_get_high_score_opportunities(
     input_schema=TOOL_INPUT_ORG_LIMIT,
     output_schema=TOOL_OUTPUT_OUTCOME_SUMMARY,
     risk_level="READ_ONLY",
+    required_permission="analytics:read",
 )
 async def handle_get_outcome_patterns_summary(
     auth: MCPAuthContext | None = None,

@@ -24,6 +24,7 @@ TOOL_OUTPUT_STATUS = {
     input_schema=TOOL_INPUT_EMPTY,
     output_schema=TOOL_OUTPUT_STATUS,
     risk_level="READ_ONLY",
+    required_permission="system:read",
 )
 async def handle_get_system_status(
     auth: MCPAuthContext | None = None,
@@ -59,6 +60,7 @@ TOOL_OUTPUT_TEST_STATUS = {
     input_schema=TOOL_INPUT_EMPTY,
     output_schema=TOOL_OUTPUT_TEST_STATUS,
     risk_level="READ_ONLY",
+    required_permission="system:read",
 )
 async def handle_get_latest_test_status(
     auth: MCPAuthContext | None = None,
@@ -92,6 +94,7 @@ TOOL_OUTPUT_TOKEN_OPTIMIZER = {
     input_schema=TOOL_INPUT_EMPTY,
     output_schema=TOOL_OUTPUT_TOKEN_OPTIMIZER,
     risk_level="READ_ONLY",
+    required_permission="system:read",
 )
 async def handle_get_token_optimizer_status(
     auth: MCPAuthContext | None = None,
@@ -124,6 +127,7 @@ TOOL_OUTPUT_CONTEXT_ENGINE = {
     input_schema=TOOL_INPUT_EMPTY,
     output_schema=TOOL_OUTPUT_CONTEXT_ENGINE,
     risk_level="READ_ONLY",
+    required_permission="system:read",
 )
 async def handle_get_context_engine_status(
     auth: MCPAuthContext | None = None,
@@ -157,6 +161,7 @@ TOOL_OUTPUT_FUNNEL_PHASE = {
     input_schema=TOOL_INPUT_EMPTY,
     output_schema=TOOL_OUTPUT_FUNNEL_PHASE,
     risk_level="READ_ONLY",
+    required_permission="system:read",
 )
 async def handle_get_funnel_phase_status(
     auth: MCPAuthContext | None = None,

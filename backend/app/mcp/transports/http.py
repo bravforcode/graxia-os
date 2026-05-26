@@ -26,6 +26,8 @@ async def handle_http_jsonrpc(
     organization_id: str = "",
     actor_type: str = "api",
     actor_id: str | None = None,
+    permissions: list[str] | None = None,
+    correlation_id: str = "",
 ) -> dict:
     """Handle a JSON-RPC request via HTTP transport.
 
@@ -52,6 +54,9 @@ async def handle_http_jsonrpc(
         actor_type=actor_type,
         actor_id=actor_id or "api_client",
         request_id=request_id,
+        correlation_id=correlation_id or request_id,
+        permissions=list(permissions or []),
+        is_authenticated=actor_type not in {"anonymous"},
     )
 
     # tools/list
