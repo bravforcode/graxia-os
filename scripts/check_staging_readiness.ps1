@@ -52,6 +52,12 @@ try {
     $resp = Invoke-WebRequest -Uri "$BaseUrl/api/v1/health/readiness/staging" -Headers $headers -UseBasicParsing
     $body = $resp.Content | ConvertFrom-Json
     if ($body.staging_ready -eq $false) { Green "Staging readiness shows staging_ready: false" } else { Red "Staging readiness incorrect" }
+    if ($body.checks.runtime_contracts_present -eq $true) { Green "Runtime contracts present" } else { Red "Runtime contracts missing" }
+    if ($body.checks.runtime_gateway_present -eq $true) { Green "Runtime gateway present" } else { Red "Runtime gateway missing" }
+    if ($body.checks.mcp_runtime_tools_present -eq $true) { Green "MCP runtime tools present" } else { Red "MCP runtime tools missing" }
+    if ($body.checks.context_quality_gate_present -eq $true) { Green "Context quality gate present" } else { Red "Context quality gate missing" }
+    if ($body.checks.google_write_scopes_disabled -eq $true) { Green "Google write scopes disabled" } else { Red "Google write scopes enabled" }
+    if ($body.checks.stripe_live_mode_blocked -eq $true) { Green "Stripe live mode blocked" } else { Red "Stripe live mode not blocked" }
 } catch { Red "Staging readiness endpoint unreachable" }
 
 # ── 5. No Secrets in Responses ───────────────────────────────────────────────

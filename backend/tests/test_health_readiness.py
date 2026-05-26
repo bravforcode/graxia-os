@@ -16,13 +16,15 @@ from __future__ import annotations
 
 import pytest
 
+ORG_HEADERS = {"X-Graxia-Org-Id": "00000000-0000-0000-0000-000000000001"}
+
 
 @pytest.mark.asyncio
 async def test_health_endpoint_returns_200(async_client):
     """GET /api/v1/health should return 200 with status."""
     resp = await async_client.get(
         "/api/v1/health",
-        headers={"X-Graxia-Org-Id": "00000000-0000-0000-0000-000000000001"},
+        headers=ORG_HEADERS,
     )
     assert resp.status_code == 200
     data = resp.json()
@@ -37,7 +39,7 @@ async def test_health_reports_database_status(async_client):
     """Health endpoint must report database connectivity status."""
     resp = await async_client.get(
         "/api/v1/health",
-        headers={"X-Graxia-Org-Id": "00000000-0000-0000-0000-000000000001"},
+        headers=ORG_HEADERS,
     )
     assert resp.status_code == 200
     data = resp.json()
@@ -50,7 +52,7 @@ async def test_health_no_secrets_leaked(async_client):
     """Health response must not contain secret-like keys."""
     resp = await async_client.get(
         "/api/v1/health",
-        headers={"X-Graxia-Org-Id": "00000000-0000-0000-0000-000000000001"},
+        headers=ORG_HEADERS,
     )
     body = resp.text.lower()
     secret_keys = ["secret", "password", "token", "api_key"]
@@ -69,14 +71,18 @@ async def test_readiness_endpoint_returns_200(async_client):
     """GET /api/v1/health/readiness should return 200."""
     resp = await async_client.get(
         "/api/v1/health/readiness",
-        headers={"X-Graxia-Org-Id": "00000000-0000-0000-0000-000000000001"},
+        headers=ORG_HEADERS,
     )
     assert resp.status_code == 200
     data = resp.json()
     assert "readiness" in data
     assert "local_agent" in data
     assert "production_ready" in data
-    assert "staging_ready" in data or "staging_ready" not in data
+    assert "staging_ready" in data
+    assert "staging" in data
+    assert "checks" in data["staging"]
+    assert "runtime_contracts_present" in data["staging"]["checks"]
+    assert "mcp_runtime_tools_present" in data["staging"]["checks"]
 
 
 @pytest.mark.asyncio
@@ -84,7 +90,7 @@ async def test_readiness_production_not_ready(async_client):
     """Readiness must confirm production is NOT ready."""
     resp = await async_client.get(
         "/api/v1/health/readiness",
-        headers={"X-Graxia-Org-Id": "00000000-0000-0000-0000-000000000001"},
+        headers=ORG_HEADERS,
     )
     data = resp.json()
     assert data["production_ready"] is False
@@ -95,7 +101,7 @@ async def test_local_agent_readiness(async_client):
     """Local agent readiness must report all subsystems ready."""
     resp = await async_client.get(
         "/api/v1/health/readiness/local-agent",
-        headers={"X-Graxia-Org-Id": "00000000-0000-0000-0000-000000000001"},
+        headers=ORG_HEADERS,
     )
     assert resp.status_code == 200
     data = resp.json()
@@ -116,10 +122,14 @@ async def test_staging_readiness_reports_not_ready(async_client):
     """Staging readiness must confirm staging is NOT ready yet."""
     resp = await async_client.get(
         "/api/v1/health/readiness/staging",
-        headers={"X-Graxia-Org-Id": "00000000-0000-0000-0000-000000000001"},
+        headers=ORG_HEADERS,
     )
     assert resp.status_code == 200
     data = resp.json()
     assert data["staging_ready"] is False
+    assert data["environment"] in {"development", "testing", "staging"}
     assert "blockers" in data
     assert len(data["blockers"]) > 0
+    assert "checks" in data
+    assert data["checks"]["health_endpoints"] is True
+    assert data["checks"]["runtime_contracts_present"] is True
