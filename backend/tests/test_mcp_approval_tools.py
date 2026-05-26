@@ -9,6 +9,7 @@ from uuid import UUID, uuid4
 
 from app.mcp.registry import mcp_registry
 from app.mcp.schemas import MCPAuthContext, MCPResponse
+from app.models.organization import Organization
 from app.models.approval_request import ApprovalRequest
 from app.database import AsyncSessionLocal
 
@@ -51,6 +52,25 @@ class TestApprovalGatedTools:
 
     def _auth(self, org_id: UUID | None = None) -> MCPAuthContext:
         return MCPAuthContext.system(organization_id=org_id or TEST_ORG_ID)
+
+    @pytest_asyncio.fixture(autouse=True)
+    async def _seed_test_orgs(self):
+        async with AsyncSessionLocal() as db:
+            for org_id, slug in (
+                (TEST_ORG_ID, "mcp-test-org"),
+                (OTHER_ORG_ID, "mcp-other-org"),
+            ):
+                existing = await db.get(Organization, org_id)
+                if existing is None:
+                    db.add(
+                        Organization(
+                            id=org_id,
+                            name=f"Org {org_id}",
+                            slug=f"{slug}-{org_id.hex[:8]}",
+                            status="active",
+                        )
+                    )
+            await db.commit()
 
     # ── Product Tools ──────────────────────────────────────────────────────
 

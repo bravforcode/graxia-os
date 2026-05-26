@@ -278,7 +278,7 @@ PASS
 ### Commits
 | Commit | Purpose |
 |---|---|
-| pending phase 6 commit | emit canonical business events from funnel flows |
+| `b5dc175` | emit canonical business events from funnel flows |
 
 ### Files Changed
 | Path | Type | Reason |
@@ -329,3 +329,64 @@ PASS
 ### Next Phase Decision
 
 - continue to `Phase 7 — Runtime Gateway Bridge`
+
+## Phase 7 — Runtime Gateway Bridge
+
+### Verdict
+PASS
+
+### Commits
+| Commit | Purpose |
+|---|---|
+| pending phase 7 commit | add OpenClaw-style runtime gateway bridge |
+
+### Files Changed
+| Path | Type | Reason |
+|---|---|---|
+| `backend/app/runtime/gateway/__init__.py` | runtime | export gateway bridge entrypoints |
+| `backend/app/runtime/gateway/errors.py` | runtime | define gateway-specific blocked/dispatch errors |
+| `backend/app/runtime/gateway/policy.py` | runtime | evaluate dangerous and approval-required routes |
+| `backend/app/runtime/gateway/repository.py` | runtime | store intake, dispatch, status, audit, and dead-letter records |
+| `backend/app/runtime/gateway/dispatcher.py` | runtime | provide injectable task dispatch boundary |
+| `backend/app/runtime/gateway/service.py` | runtime | implement intake, dispatch, approval, idempotency, dead-letter, and replay flow |
+| `backend/tests/test_runtime_gateway_dispatch.py` | test | verify gateway dispatch, dangerous block, approval block, dead-letter replay, and idempotency |
+| `backend/tests/test_mcp_approval_tools.py` | test | seed fixed org rows so approval-FK assertions run against the real schema |
+| `docs/PHASE7_RUNTIME_GATEWAY_REPORT.md` | docs | phase closeout |
+
+### Tests Run
+| Command | Result | Notes |
+|---|---|---|
+| `python -m compileall backend/app` | PASS | gateway modules compile cleanly |
+| `pytest backend/tests/test_runtime_gateway_dispatch.py -q` | PASS | `5 passed` |
+| `pytest backend/tests/test_mcp_dangerous_tools.py -q` | PASS | `13 passed` |
+| `pytest backend/tests/test_mcp_approval_tools.py -q` | PASS | `13 passed` |
+
+### Auto-Fixes
+| Issue | Fix | Evidence |
+|---|---|---|
+| blocked gateway reason string mismatched the dangerous-path assertion | capitalized policy reason to `Dangerous MCP tool blocked: ...` | `pytest backend/tests/test_runtime_gateway_dispatch.py -q` passed after patch |
+| approval-gated MCP tests hit `sqlite3.IntegrityError: FOREIGN KEY constraint failed` on `approval_requests.organization_id` | seeded fixed `Organization` rows for `TEST_ORG_ID` and `OTHER_ORG_ID` in `backend/tests/test_mcp_approval_tools.py` | `pytest backend/tests/test_mcp_approval_tools.py -q` passed after patch |
+
+### Safety
+- `.env` read: no
+- secrets printed: no
+- `git add .` used: no
+- destructive command used: no
+- live provider called: no
+- agent-stack root copied: no
+
+### Readiness Gained
+
+- `RUNTIME_READY` advanced to gateway-intake/dispatch/dead-letter bridge readiness
+- Graxia now has additive task intake, approval blocking, dangerous blocking, idempotency, and replay primitives
+- runtime bridge reuses existing control-plane hook boundaries without replacing Graxia MCP/UI/domain
+
+### Remaining Blockers
+
+- workflow boundary not implemented yet
+- worker capability layer not implemented yet
+- gateway storage is still in-memory only
+
+### Next Phase Decision
+
+- continue to `Phase 8 — Workflow / n8n Boundary`
