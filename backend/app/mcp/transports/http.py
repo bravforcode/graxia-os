@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+from uuid import UUID
 from uuid import uuid4
 
 from app.mcp.errors import (
@@ -38,9 +39,16 @@ async def handle_http_jsonrpc(
     if not isinstance(params, dict):
         params = {}
 
+    parsed_org_id = None
+    if organization_id:
+        try:
+            parsed_org_id = UUID(str(organization_id))
+        except (ValueError, TypeError):
+            parsed_org_id = None
+
     # Build auth context
     auth = MCPAuthContext(
-        organization_id=organization_id,
+        organization_id=parsed_org_id,
         actor_type=actor_type,
         actor_id=actor_id or "api_client",
         request_id=request_id,

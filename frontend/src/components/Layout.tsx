@@ -75,6 +75,7 @@ const systemNavItems = [
 const adminNavItems = [
   { path: '/admin/agent-control', label: 'Agent Control', icon: Gauge },
   { path: '/admin/runtime', label: 'Runtime', icon: Server },
+  { path: '/admin/token-roi', label: 'Token ROI', icon: BarChart3 },
   { path: '/admin/mcp-tools', label: 'MCP Tools', icon: TerminalSquare },
   { path: '/admin/workflows', label: 'Workflows', icon: Workflow },
   { path: '/admin/approvals', label: 'Approvals', icon: ShieldCheck },

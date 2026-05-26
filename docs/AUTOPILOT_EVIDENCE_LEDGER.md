@@ -624,3 +624,68 @@ PASS
 ### Next Phase Decision
 
 - continue to `Phase 12 — Token ROI Dashboard`
+
+## Phase 12 — Token ROI Dashboard
+
+### Verdict
+PASS
+
+### Commits
+| Commit | Purpose |
+|---|---|
+| pending | add token ROI dashboard and HTTP MCP compatibility fix |
+
+### Files Changed
+| Path | Type | Reason |
+|---|---|---|
+| `backend/app/context_engine/token_roi.py` | runtime | extend ROI evaluator with quality/cache/escalation/staleness metrics |
+| `backend/app/mcp/tools/runtime.py` | runtime | expose enriched token ROI inputs and outputs through existing MCP runtime tool |
+| `backend/app/mcp/transports/http.py` | runtime | coerce `organization_id` to `UUID` for org-scoped HTTP MCP calls |
+| `backend/tests/test_token_roi.py` | test | cover new ROI penalties and recommendation branch |
+| `backend/tests/test_token_roi_api.py` | test | add MCP HTTP regression for token ROI dashboard metrics |
+| `frontend/src/lib/admin-api.ts` | frontend | add token ROI client input/output types and tool call helper |
+| `frontend/src/pages/admin/TokenROI.tsx` | frontend | add operator token ROI dashboard page |
+| `frontend/src/App.tsx` | frontend | register `/admin/token-roi` route |
+| `frontend/src/components/Layout.tsx` | frontend | expose Token ROI nav item |
+| `frontend/src/pages/admin/Runtime.tsx` | frontend | link runtime preview to dedicated ROI dashboard |
+| `docs/PHASE12_TOKEN_ROI_DASHBOARD_REPORT.md` | docs | phase closeout |
+
+### Tests Run
+| Command | Result | Notes |
+|---|---|---|
+| `pytest backend/tests/test_token_roi.py -q` | PASS | `3 passed` |
+| `pytest backend/tests/test_token_roi_api.py -q` | PASS | `1 passed` |
+| `pytest backend/tests/test_mcp_runtime_tools.py -q` | PASS | `7 passed` |
+| `python -m compileall backend/app` | PASS | backend runtime imports compile cleanly |
+| `cd frontend && bun run build` | PASS | production build includes `assets/TokenROI-wqJVP5cs.js` |
+
+### Auto-Fixes
+| Issue | Fix | Evidence |
+|---|---|---|
+| frontend helper rejected `TokenRoiInput` because `safeToolCall` expected `Record<string, unknown>` | spread `input` into `{ ...input }` before calling tool helper | frontend build passes |
+| HTTP MCP org auth used raw string `organization_id` against UUID-based auth validation | parse `organization_id` into `UUID` in `backend/app/mcp/transports/http.py` before building `MCPAuthContext` | `pytest backend/tests/test_token_roi_api.py -q` passes |
+| MCP HTTP API regression test used wrong org source and transport shape | derive org from bearer-token claim and pass `organization_id` in both transport `params` and tool `arguments` | API test now passes with `ok=True` |
+
+### Safety
+- `.env` read: no
+- secrets printed: no
+- `git add .` used: no
+- destructive command used: no
+- live provider called: no
+- agent-stack root copied: no
+
+### Readiness Gained
+
+- operator UI now has dedicated token ROI review surface
+- existing MCP runtime stack exposes richer token ROI metrics without adding a second control plane
+- HTTP MCP transport is now compatible with org-scoped runtime tools
+
+### Remaining Blockers
+
+- no persisted live token telemetry yet; dashboard is scenario-based
+- no browser/live runtime verification in this phase
+- runtime state remains in-memory until later persistence phases
+
+### Next Phase Decision
+
+- continue to `Phase 13 — Integrated Staging Readiness Gate`

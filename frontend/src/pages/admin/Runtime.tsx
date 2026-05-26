@@ -159,10 +159,10 @@ export default function RuntimePage() {
               <div className="mt-1 text-zinc-200">{tokenRoi?.recommendation || "No ROI recommendation available."}</div>
             </div>
             <div className="text-[11px] text-zinc-600">
-              Phase 11 shows runtime ROI evaluator baseline. Full token ROI dashboard lands in Phase 12.
+              Baseline evaluator preview only. Use the dedicated Token ROI dashboard for scenario analysis.
             </div>
-            <Link to="/admin/context-packs" className="inline-flex text-cyan-400 hover:text-cyan-300">
-              Open Context Packs →
+            <Link to="/admin/token-roi" className="inline-flex text-cyan-400 hover:text-cyan-300">
+              Open Token ROI dashboard →
             </Link>
           </div>
         </Panel>

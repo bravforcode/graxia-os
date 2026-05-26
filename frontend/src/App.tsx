@@ -39,6 +39,7 @@ const AdminFunnelAnalytics = lazy(() => import("./pages/admin/FunnelAnalytics"))
 const AdminAudit = lazy(() => import("./pages/admin/Audit"));
 const AdminReadiness = lazy(() => import("./pages/admin/Readiness"));
 const AdminRuntime = lazy(() => import("./pages/admin/Runtime"));
+const AdminTokenROI = lazy(() => import("./pages/admin/TokenROI"));
 
 function RouteFallback() {
   return (
@@ -93,6 +94,7 @@ export function AppRoutes() {
           <Route path="admin/workspace-exports" element={<AdminWorkspaceExports />} />
           <Route path="admin/funnel/analytics" element={<AdminFunnelAnalytics />} />
           <Route path="admin/runtime" element={<AdminRuntime />} />
+          <Route path="admin/token-roi" element={<AdminTokenROI />} />
           <Route path="admin/audit" element={<AdminAudit />} />
           <Route path="admin/readiness" element={<AdminReadiness />} />
         </Route>

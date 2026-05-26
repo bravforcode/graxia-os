@@ -216,11 +216,36 @@ export interface BusinessEventSummary {
 }
 
 export interface TokenRoiSummary {
+  tokens_saved: number;
   retry_cost: number;
   correction_cost: number;
+  quality_penalty: number;
+  escalation_penalty: number;
+  stale_context_penalty: number;
+  cache_credit: number;
   net_roi: number;
   profitable: boolean;
   recommendation: string;
+  compression_ratio: number;
+  cache_hit_rate: number;
+  quality_gate_failures: number;
+  auto_escalations: number;
+  stale_context_incidents: number;
+}
+
+export interface TokenRoiInput {
+  tokens_saved?: number;
+  retry_count?: number;
+  retry_token_cost?: number;
+  human_correction_count?: number;
+  human_correction_cost?: number;
+  quality_gate_passed?: boolean;
+  critical_context_lost?: boolean;
+  compression_ratio?: number;
+  cache_hit_rate?: number;
+  quality_gate_failures?: number;
+  auto_escalations?: number;
+  stale_context_incidents?: number;
 }
 
 // ─── MCP Tool functions ──────────────────────────────────────────────────────
@@ -361,18 +386,10 @@ export async function getBusinessEvent(eventId: string, orgId?: string): Promise
 }
 
 export async function getTokenRoiSummary(
-  input: {
-    tokens_saved?: number;
-    retry_count?: number;
-    retry_token_cost?: number;
-    human_correction_count?: number;
-    human_correction_cost?: number;
-    quality_gate_passed?: boolean;
-    critical_context_lost?: boolean;
-  } = {},
+  input: TokenRoiInput = {},
   orgId?: string,
 ): Promise<TokenRoiSummary | null> {
-  const res = await safeToolCall("get_token_roi_summary", input, orgId);
+  const res = await safeToolCall("get_token_roi_summary", { ...input }, orgId);
   if (!res.ok || !res.data) return null;
   return res.data as unknown as TokenRoiSummary;
 }
