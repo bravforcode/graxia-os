@@ -513,7 +513,7 @@ PASS
 ### Commits
 | Commit | Purpose |
 |---|---|
-| `<pending>` | align MCP tools with runtime layer |
+| `10a77f9` | align MCP tools with runtime layer |
 
 ### Files Changed
 | Path | Type | Reason |
