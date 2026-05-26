@@ -19,6 +19,7 @@ class ExclusionPolicy:
         self._exact_patterns: set[str] = {
             # Secret files — never index
             ".env",
+            ".env.*",
             ".env.local",
             ".env.development",
             ".env.staging",

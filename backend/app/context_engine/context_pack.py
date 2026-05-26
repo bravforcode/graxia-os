@@ -16,6 +16,8 @@ from uuid import uuid4
 from app.context_engine.diff_protocol import DiffProtocol
 from app.context_engine.exclusions import ExclusionPolicy
 from app.context_engine.retrieval_policy import RetrievalPolicy
+from app.context_engine.cache_key import build_context_cache_key, get_git_commit_hash
+from app.context_engine.critical_policy import is_critical_path
 from app.context_engine.schemas import (
     ContextPack,
     ContextPackFile,
@@ -76,6 +78,7 @@ class ContextPackBuilder:
         diffs: list[DiffContext] = []
         excluded_files: list[ExcludedFile] = []
         total_estimated = 0
+        budget_limit = int(token_budget * (1 + _MAX_BUDGET_OVERAGE))
 
         # Build project index
         from app.context_engine.project_indexer import ProjectIndexer
@@ -105,18 +108,24 @@ class ContextPackBuilder:
             for inc_path in include_paths:
                 matched = self._find_file_by_path(project_index, inc_path)
                 if matched:
-                    inc_pack = self._file_to_pack_file(matched, root, mode="full")
+                    include_mode = "full" if is_critical_path(matched.path) else "full"
+                    inc_pack = self._file_to_pack_file(matched, root, mode=include_mode)
                     inc_tokens = inc_pack.estimated_tokens
-                    if total_estimated + inc_tokens <= token_budget * (1 + _MAX_BUDGET_OVERAGE):
+                    if total_estimated + inc_tokens <= budget_limit:
                         included_files.append(inc_pack)
                         total_estimated += inc_tokens
                     else:
                         # Try summary mode instead
                         inc_pack_summary = self._file_to_pack_file(matched, root, mode="summary")
-                        if total_estimated + inc_pack_summary.estimated_tokens <= token_budget * (1 + _MAX_BUDGET_OVERAGE):
+                        if (
+                            not is_critical_path(matched.path)
+                            and total_estimated + inc_pack_summary.estimated_tokens <= budget_limit
+                        ):
                             included_files.append(inc_pack_summary)
                             total_estimated += inc_pack_summary.estimated_tokens
                         else:
+                            if is_critical_path(matched.path):
+                                warnings.append(f"Critical path could not fit as full content: {matched.path}")
                             included_files.append(self._file_to_pack_file(matched, root, mode="metadata_only"))
                 else:
                     warnings.append(f"Requested path not found in index: {inc_path}")
@@ -138,6 +147,10 @@ class ContextPackBuilder:
 
             if file_info.estimated_tokens <= 0:
                 mode = "metadata_only"
+            elif is_critical_path(file_info.path):
+                mode = "full" if total_estimated + file_info.estimated_tokens <= budget_limit else "metadata_only"
+                if mode != "full":
+                    warnings.append(f"Critical path downgraded due to budget pressure: {file_info.path}")
             elif file_info.estimated_tokens <= 200 and remaining >= file_info.estimated_tokens:
                 mode = "full"
             elif file_info.estimated_tokens <= 800 and remaining >= file_info.estimated_tokens:
@@ -147,7 +160,7 @@ class ContextPackBuilder:
 
             pack_file = self._file_to_pack_file(file_info, root, mode=mode)
 
-            if total_estimated + pack_file.estimated_tokens <= token_budget * (1 + _MAX_BUDGET_OVERAGE):
+            if total_estimated + pack_file.estimated_tokens <= budget_limit:
                 included_files.append(pack_file)
                 total_estimated += pack_file.estimated_tokens
 
@@ -191,10 +204,13 @@ class ContextPackBuilder:
             warnings.append("No files could be included within the given token budget. Try increasing token_budget.")
 
         # Build cache key
-        cache_key = self._build_cache_key(
-            root_path=str(root), task_type=task_type, goal=goal,
-            token_budget=token_budget, query=query,
-            include_paths=include_paths, must_preserve=must_preserve,
+        cache_key = build_context_cache_key(
+            task_type=task_type,
+            goal=goal,
+            selected_paths=[file.path for file in included_files],
+            file_hashes={file.path: file.sha256 for file in included_files if file.sha256},
+            compression_mode=self._infer_compression_mode(included_files, diffs),
+            git_commit_hash=get_git_commit_hash(str(root)),
         )
 
         return ContextPack(
@@ -310,18 +326,34 @@ class ContextPackBuilder:
         include_paths: list[str] | None,
         must_preserve: list[str] | None,
     ) -> str:
-        """Build a deterministic cache key."""
-        raw = json.dumps({
-            "root_path": root_path,
-            "task_type": task_type,
-            "goal": goal,
-            "token_budget": token_budget,
-            "query": query,
-            "include_paths": sorted(include_paths) if include_paths else [],
-            "must_preserve": sorted(must_preserve) if must_preserve else [],
-            "policy_version": 1,
-        }, sort_keys=True)
+        """Legacy deterministic request key for service pre-cache lookups."""
+        raw = json.dumps(
+            {
+                "root_path": root_path,
+                "task_type": task_type,
+                "goal": goal,
+                "token_budget": token_budget,
+                "query": query,
+                "include_paths": sorted(include_paths) if include_paths else [],
+                "must_preserve": sorted(must_preserve) if must_preserve else [],
+                "policy_version": 1,
+            },
+            sort_keys=True,
+        )
         return hashlib.sha256(raw.encode()).hexdigest()[:16]
+
+    @staticmethod
+    def _infer_compression_mode(
+        included_files: list[ContextPackFile], diffs: list[DiffContext],
+    ) -> str:
+        modes = {file.content_mode for file in included_files}
+        if modes == {"full"} and not diffs:
+            return "none"
+        if modes and modes.issubset({"full", "diff"}):
+            return "diff"
+        if "summary" in modes:
+            return "summary"
+        return "compact"
 
     @staticmethod
     def _empty_pack(

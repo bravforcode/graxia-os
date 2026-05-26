@@ -193,3 +193,79 @@ PASS
 ### Next Phase Decision
 
 - continue to `Phase 5 — Context/Token Correctness Hardening`
+
+## Phase 5 — Context/Token Correctness Hardening
+
+### Verdict
+PASS
+
+### Commits
+| Commit | Purpose |
+|---|---|
+| pending phase 5 commit | harden context correctness and token ROI controls |
+
+### Files Changed
+| Path | Type | Reason |
+|---|---|---|
+| `backend/app/context_engine/critical_policy.py` | runtime | define critical path rules and aggressive compression policy |
+| `backend/app/context_engine/cache_key.py` | runtime | add hash-aware cache keys with git/no-git support |
+| `backend/app/context_engine/quality_gate.py` | runtime | validate packs for missing paths, missing errors, secret paths, and critical compression |
+| `backend/app/context_engine/escalation.py` | runtime | bounded escalation decisions for failure-driven context expansion |
+| `backend/app/context_engine/multi_agent_registry.py` | runtime | detect inconsistent context packs across agents |
+| `backend/app/context_engine/token_roi.py` | runtime | compute retry-aware token ROI |
+| `backend/app/context_engine/context_pack.py` | runtime | wire critical-policy decisions and final hash-aware cache keys |
+| `backend/app/context_engine/service.py` | runtime | run quality gate after pack build and surface warnings |
+| `backend/app/context_engine/exclusions.py` | runtime | exclude `.env.*` generically |
+| `backend/app/context_engine/__init__.py` | runtime | export new correctness modules |
+| `backend/tests/test_context_quality_gate.py` | test | verify missing-path/error and critical-compression checks |
+| `backend/tests/test_context_cache_key.py` | test | verify hash-aware cache invalidation |
+| `backend/tests/test_context_auto_escalation.py` | test | verify bounded escalation |
+| `backend/tests/test_context_multi_agent_registry.py` | test | verify multi-agent consistency detection |
+| `backend/tests/test_token_roi.py` | test | verify ROI penalties and recommendations |
+| `docs/PHASE5_CONTEXT_CORRECTNESS_REPORT.md` | docs | phase closeout |
+
+### Tests Run
+| Command | Result | Notes |
+|---|---|---|
+| `python -m compileall backend/app` | PASS | context modules compile cleanly |
+| `pytest backend/tests/test_context_quality_gate.py -q` | PASS | `4 passed` |
+| `pytest backend/tests/test_context_cache_key.py -q` | PASS | `2 passed` |
+| `pytest backend/tests/test_context_auto_escalation.py -q` | PASS | `2 passed` |
+| `pytest backend/tests/test_context_multi_agent_registry.py -q` | PASS | `2 passed` |
+| `pytest backend/tests/test_token_roi.py -q` | PASS | `2 passed` |
+| `pytest backend/tests/test_context_engine_pack.py -q` | PASS | `8 passed` |
+| `pytest backend/tests/test_context_engine_diff_cache.py -q` | PASS | `13 passed` |
+| `pytest backend/tests/test_mcp_context_tools.py -q` | PASS | `17 passed` |
+| `pytest backend/tests/test_workflow_token_benchmark_review.py -q` | PASS | `4 passed` |
+
+### Auto-Fixes
+| Issue | Fix | Evidence |
+|---|---|---|
+| cache invalidation needed file-hash awareness | added `build_context_cache_key()` and used included-file hashes in final pack key | `test_cache_key_changes_when_file_hash_changes` passes |
+| critical files could silently downgrade into weak modes | added `critical_policy` and quality-gate enforcement | `test_critical_files_never_aggressive_compressed` passes |
+| Windows `tmp_path` fixture hit `PermissionError` in this environment | switched cache-key test to `tempfile.TemporaryDirectory()` | rerun `pytest backend/tests/test_context_cache_key.py -q` passed |
+| context packs could miss key error text without signal | added quality gate `MISSING_ERROR_MESSAGE` finding | `test_quality_gate_catches_missing_error_message` passes |
+
+### Safety
+- `.env` read: no
+- secrets printed: no
+- `git add .` used: no
+- destructive command used: no
+- live provider called: no
+- agent-stack root copied: no
+
+### Readiness Gained
+
+- `CONTEXT_SAFE` achieved for local-dev review flows
+- context packs now have correctness checks, bounded escalation, and retry-aware ROI metrics
+- multi-agent consistency can be validated before orchestration layers are added
+
+### Remaining Blockers
+
+- canonical business-event service not implemented yet
+- runtime gateway/orchestration/worker boundaries not implemented yet
+- no staging readiness integration for new context metrics yet
+
+### Next Phase Decision
+
+- continue to `Phase 6 — BusinessEvent Emission`

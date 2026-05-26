@@ -15,6 +15,7 @@ from app.context_engine.context_pack import ContextPackBuilder
 from app.context_engine.diff_protocol import DiffProtocol
 from app.context_engine.exclusions import ExclusionPolicy
 from app.context_engine.project_indexer import ProjectIndexer
+from app.context_engine.quality_gate import evaluate_context_pack
 from app.context_engine.retrieval_policy import RetrievalPolicy
 from app.context_engine.schemas import (
     ContextGraph,
@@ -103,6 +104,14 @@ class ContextEngineService:
             include_paths=include_paths,
             must_preserve=must_preserve,
         )
+
+        gate = evaluate_context_pack(
+            pack,
+            required_paths=include_paths or None,
+            expected_error_text=query if task_type == "test_failure_debug" and query else None,
+        )
+        if not gate.passed:
+            pack.warnings.extend(f"{finding.code}: {finding.message}" for finding in gate.findings)
 
         # Store in cache
         if use_cache and self.cache and pack.cache_key:
