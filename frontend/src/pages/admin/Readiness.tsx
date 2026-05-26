@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { listTools, getAgentWorkflowStatus, type MCPToolDefinition } from "@/lib/admin-api";
+import { getAgentWorkflowStatus, getRuntimeStatus, listTools, type MCPToolDefinition, type RuntimeStatus } from "@/lib/admin-api";
 
 interface ReadinessCheck {
   key: string;
@@ -18,6 +18,7 @@ export default function ReadinessPage() {
   const [loading, setLoading] = useState(true);
   const [checks, setChecks] = useState<ReadinessCheck[]>([]);
   const [tools, setTools] = useState<MCPToolDefinition[]>([]);
+  const [runtimeStatus, setRuntimeStatus] = useState<RuntimeStatus | null>(null);
 
   useEffect(() => {
     loadReadiness();
@@ -25,15 +26,20 @@ export default function ReadinessPage() {
 
   async function loadReadiness() {
     setLoading(true);
-    const allTools = await listTools();
+    const [allTools, workflowStatus, runtime] = await Promise.all([
+      listTools(),
+      getAgentWorkflowStatus(),
+      getRuntimeStatus(),
+    ]);
     setTools(allTools);
-    await getAgentWorkflowStatus();
+    setRuntimeStatus(runtime);
 
     const toolNames = allTools.map((t) => t.name);
     const hasFunnelTools = toolNames.some((n) => ["get_revenue_summary", "get_recent_orders", "get_conversion_summary", "get_checkout_abandonment", "get_delivery_open_rate"].includes(n));
     const hasWorkspaceTools = toolNames.some((n) => ["create_launch_doc", "export_revenue_summary_to_sheet", "create_launch_calendar_plan", "draft_customer_reply"].includes(n));
-    const hasContextTools = toolNames.some((n) => ["build_context_pack", "search_project_context", "get_project_index_summary", "get_context_pack"].includes(n));
-    const hasWorkflowTools = toolNames.some((n) => ["list_agent_workflows", "run_agent_workflow", "get_agent_workflow_run", "get_agent_workflow_status"].includes(n));
+    const hasContextTools = toolNames.some((n) => ["build_context_pack", "search_project_context", "get_project_index_summary", "get_context_pack", "build_runtime_context_packet", "get_token_roi_summary"].includes(n));
+    const hasWorkflowTools = toolNames.some((n) => ["list_agent_workflows", "run_agent_workflow", "get_agent_workflow_run", "get_agent_workflow_status", "run_safe_workflow"].includes(n));
+    const hasRuntimeTools = toolNames.some((n) => ["get_runtime_status", "list_runtime_tasks", "list_business_events", "list_dead_letters"].includes(n));
     const hasMCPReadonly = allTools.filter((t) => t.risk_level === "READ_ONLY").length >= 3;
     const hasMCPWrite = allTools.filter((t) => t.risk_level === "LOW_WRITE" || t.risk_level === "APPROVAL_REQUIRED").length >= 3;
     const hasUI = true; // This page IS the UI
@@ -44,9 +50,9 @@ export default function ReadinessPage() {
       { key: "LOCAL_MCP_WRITE_READY",     label: "MCP Write",             status: hasMCPWrite ? "ready" : "not_ready", details: `${allTools.filter((t) => t.risk_level === 'LOW_WRITE' || t.risk_level === 'APPROVAL_REQUIRED').length} write tools` },
       { key: "LOCAL_WORKSPACE_READY",     label: "Workspace Readiness",   status: hasWorkspaceTools ? "ready" : "not_ready", details: hasWorkspaceTools ? "Workspace tools registered" : "Missing workspace tools" },
       { key: "LOCAL_CONTEXT_READY",       label: "Context Readiness",     status: hasContextTools ? "ready" : "not_ready", details: hasContextTools ? "Context engine tools registered" : "Missing context tools" },
-      { key: "LOCAL_WORKFLOW_READY",      label: "Workflow Readiness",    status: hasWorkflowTools ? "ready" : "not_ready", details: hasWorkflowTools ? "Workflow tools registered" : "Missing workflow tools" },
+      { key: "LOCAL_WORKFLOW_READY",      label: "Workflow Readiness",    status: hasWorkflowTools && hasRuntimeTools && runtime !== null ? "ready" : "not_ready", details: hasWorkflowTools ? `Workflow tools registered · latest runs: ${workflowStatus?.total_runs ?? 0}` : "Missing workflow tools" },
       { key: "LOCAL_UI_READY",            label: "UI Readiness",          status: "ready", details: "Operator UI is loaded and operational" },
-      { key: "FULL_LOCAL_AGENT_READY",    label: "Full Agent Readiness",  status: hasFunnelTools && hasWorkspaceTools && hasContextTools && hasWorkflowTools && hasUI ? "ready" : "not_ready", details: "All local systems must be ready" },
+      { key: "FULL_LOCAL_AGENT_READY",    label: "Full Agent Readiness",  status: hasFunnelTools && hasWorkspaceTools && hasContextTools && hasWorkflowTools && hasRuntimeTools && hasUI && Boolean(runtime?.worker_capability_count) ? "ready" : "not_ready", details: runtime ? `${runtime.gateway_task_count} tasks · ${runtime.business_event_count} events · ${runtime.worker_capability_count} worker capabilities` : "Missing runtime evidence" },
     ];
 
     setChecks(items);
@@ -111,6 +117,23 @@ export default function ReadinessPage() {
               ))}
             </div>
           </Panel>
+
+          {runtimeStatus && (
+            <Panel title="Runtime Evidence" eyebrow="RUNTIME">
+              <div className="grid grid-cols-2 gap-2 text-xs text-zinc-400">
+                <div>Gateway tasks</div>
+                <div className="text-right text-zinc-200">{runtimeStatus.gateway_task_count}</div>
+                <div>Dead letters</div>
+                <div className="text-right text-zinc-200">{runtimeStatus.dead_letter_count}</div>
+                <div>Workflow traces</div>
+                <div className="text-right text-zinc-200">{runtimeStatus.workflow_trace_count}</div>
+                <div>Business events</div>
+                <div className="text-right text-zinc-200">{runtimeStatus.business_event_count}</div>
+                <div>Worker capabilities</div>
+                <div className="text-right text-zinc-200">{runtimeStatus.worker_capability_count}</div>
+              </div>
+            </Panel>
+          )}
 
           {/* Staging / Production blockers */}
           <Panel title="Staging &amp; Production" eyebrow="BLOCKERS">

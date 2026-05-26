@@ -5,10 +5,10 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { listTools, type MCPToolDefinition } from "@/lib/admin-api";
+import { getRuntimeStatus, listBusinessEvents, listDeadLetters, listTools, type MCPToolDefinition } from "@/lib/admin-api";
 
 interface AuditEvent {
-  type: "tool_call" | "workflow_run" | "approval" | "dangerous_blocked" | "error";
+  type: "tool_call" | "workflow_run" | "approval" | "dangerous_blocked" | "error" | "business_event" | "runtime_task";
   summary: string;
   timestamp: string;
   details?: Record<string, unknown>;
@@ -25,13 +25,16 @@ export default function AuditPage() {
 
   async function loadAudit() {
     setLoading(true);
-    const allTools = await listTools();
+    const [allTools, runtimeStatus, deadLetters, events] = await Promise.all([
+      listTools(),
+      getRuntimeStatus(),
+      listDeadLetters(20),
+      listBusinessEvents(),
+    ]);
     setTools(allTools);
 
-    // Build audit events from tool availability
     const auditEvents: AuditEvent[] = [];
 
-    // Check if dangerous tools are properly blocked
     const dangerousTools = allTools.filter((t) => t.risk_level === "DANGEROUS_BLOCKED" || t.risk_level === "DANGEROUS");
     dangerousTools.forEach((t) => {
       auditEvents.push({
@@ -41,25 +44,38 @@ export default function AuditPage() {
       });
     });
 
-    // Approval-required tools
-    const approvalTools = allTools.filter((t) => t.requires_approval);
-    approvalTools.forEach((t) => {
+    deadLetters.forEach((item) => {
       auditEvents.push({
-        type: "tool_call",
-        summary: `Approval-gated tool "${t.name}" requires human review`,
+        type: "error",
+        summary: `Dead letter ${item.dead_letter_id.slice(0, 12)} recorded: ${item.reason}`,
         timestamp: new Date().toISOString(),
+        details: {
+          task_id: item.task_id,
+          replay_count: item.replay_count,
+        },
       });
     });
 
-    // Check workflow tools
-    const workflowTools = allTools.filter((t) => t.name.startsWith("get_agent_workflow") || t.name === "list_agent_workflows" || t.name === "run_agent_workflow");
-    workflowTools.forEach((t) => {
+    events.slice(0, 20).forEach((event) => {
       auditEvents.push({
-        type: "workflow_run",
-        summary: `Workflow tool "${t.name}" registered (${t.risk_level})`,
+        type: "business_event",
+        summary: `${event.event_type} → ${event.subject_type}:${event.subject_id}`,
         timestamp: new Date().toISOString(),
+        details: {
+          event_id: event.event_id,
+          correlation_id: event.correlation_id,
+        },
       });
     });
+
+    if (runtimeStatus) {
+      auditEvents.unshift({
+        type: "runtime_task",
+        summary: `Runtime snapshot: ${runtimeStatus.gateway_task_count} tasks, ${runtimeStatus.dead_letter_count} dead letters, ${runtimeStatus.business_event_count} events`,
+        timestamp: new Date().toISOString(),
+        details: runtimeStatus as unknown as Record<string, unknown>,
+      });
+    }
 
     setEvents(auditEvents);
     setLoading(false);
@@ -71,6 +87,8 @@ export default function AuditPage() {
     approval: ShieldAlert,
     dangerous_blocked: AlertTriangle,
     error: XCircle,
+    business_event: ScrollText,
+    runtime_task: Workflow,
   };
 
   return (
@@ -86,7 +104,7 @@ export default function AuditPage() {
       />
 
       <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-400">
-        <strong>Note:</strong> Audit view shows current tool registration state. Full runtime audit history requires a backend audit query endpoint.
+        <strong>Note:</strong> Audit view shows current runtime evidence plus policy state. Full persisted audit history still depends on the backend audit query endpoint.
       </div>
 
       {loading && (
@@ -120,6 +138,14 @@ export default function AuditPage() {
                         <span className="text-xs text-zinc-300">{event.summary}</span>
                       </div>
                       <div className="text-[10px] text-zinc-600">{event.timestamp}</div>
+                      {event.details && (
+                        <details className="mt-2">
+                          <summary className="cursor-pointer text-[10px] text-zinc-500 hover:text-zinc-400">Details</summary>
+                          <div className="mt-2 rounded-lg bg-black/40 p-2">
+                            <pre className="overflow-auto text-[10px] text-zinc-500">{JSON.stringify(event.details, null, 2)}</pre>
+                          </div>
+                        </details>
+                      )}
                     </div>
                   </div>
                 );

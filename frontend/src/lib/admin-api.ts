@@ -181,6 +181,48 @@ export interface WorkspaceExportItem {
   created_at: string;
 }
 
+export interface RuntimeStatus {
+  gateway_task_count: number;
+  dead_letter_count: number;
+  workflow_trace_count: number;
+  business_event_count: number;
+  worker_capability_count: number;
+  worker_capabilities: string[];
+  execution_modes: string[];
+}
+
+export interface RuntimeTaskSummary {
+  task_id: string;
+  correlation_id: string;
+  target: string;
+  status: string;
+  risk_level: string;
+  dead_lettered: boolean;
+}
+
+export interface DeadLetterSummary {
+  dead_letter_id: string;
+  task_id: string;
+  reason: string;
+  replay_count: number;
+}
+
+export interface BusinessEventSummary {
+  event_id: string;
+  event_type: string;
+  subject_type: string;
+  subject_id: string;
+  correlation_id: string;
+}
+
+export interface TokenRoiSummary {
+  retry_cost: number;
+  correction_cost: number;
+  net_roi: number;
+  profitable: boolean;
+  recommendation: string;
+}
+
 // ─── MCP Tool functions ──────────────────────────────────────────────────────
 
 export async function listTools(orgId?: string): Promise<MCPToolDefinition[]> {
@@ -268,6 +310,71 @@ export async function getAgentWorkflowPolicy(
   }, orgId);
   if (!res.ok || !res.data) return null;
   return res.data as unknown as WorkflowPolicy;
+}
+
+// ─── Runtime functions ───────────────────────────────────────────────────────
+
+export async function getRuntimeStatus(orgId?: string): Promise<RuntimeStatus | null> {
+  const res = await safeToolCall("get_runtime_status", {}, orgId);
+  if (!res.ok || !res.data) return null;
+  return res.data as unknown as RuntimeStatus;
+}
+
+export async function listRuntimeTasks(limit = 20, orgId?: string): Promise<RuntimeTaskSummary[]> {
+  const res = await safeToolCall("list_runtime_tasks", { limit }, orgId);
+  if (!res.ok || !res.data) return [];
+  return ((res.data.items as RuntimeTaskSummary[] | undefined) || []);
+}
+
+export async function getRuntimeTask(taskId: string, orgId?: string): Promise<Record<string, unknown> | null> {
+  const res = await safeToolCall("get_runtime_task", { task_id: taskId }, orgId);
+  if (!res.ok || !res.data) return null;
+  return res.data;
+}
+
+export async function listDeadLetters(limit = 20, orgId?: string): Promise<DeadLetterSummary[]> {
+  const res = await safeToolCall("list_dead_letters", { limit }, orgId);
+  if (!res.ok || !res.data) return [];
+  return ((res.data.items as DeadLetterSummary[] | undefined) || []);
+}
+
+export async function requestDeadLetterRequeue(
+  deadLetterId: string,
+  orgId?: string,
+): Promise<MCPToolCallResponse> {
+  return safeToolCall("request_dead_letter_requeue", { dead_letter_id: deadLetterId }, orgId);
+}
+
+export async function listBusinessEvents(
+  params?: { event_type?: string },
+  orgId?: string,
+): Promise<BusinessEventSummary[]> {
+  const res = await safeToolCall("list_business_events", params || {}, orgId);
+  if (!res.ok || !res.data) return [];
+  return ((res.data.items as BusinessEventSummary[] | undefined) || []);
+}
+
+export async function getBusinessEvent(eventId: string, orgId?: string): Promise<Record<string, unknown> | null> {
+  const res = await safeToolCall("get_business_event", { event_id: eventId }, orgId);
+  if (!res.ok || !res.data) return null;
+  return res.data;
+}
+
+export async function getTokenRoiSummary(
+  input: {
+    tokens_saved?: number;
+    retry_count?: number;
+    retry_token_cost?: number;
+    human_correction_count?: number;
+    human_correction_cost?: number;
+    quality_gate_passed?: boolean;
+    critical_context_lost?: boolean;
+  } = {},
+  orgId?: string,
+): Promise<TokenRoiSummary | null> {
+  const res = await safeToolCall("get_token_roi_summary", input, orgId);
+  if (!res.ok || !res.data) return null;
+  return res.data as unknown as TokenRoiSummary;
 }
 
 // ─── Context functions ───────────────────────────────────────────────────────

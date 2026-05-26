@@ -563,3 +563,64 @@ PASS
 ### Next Phase Decision
 
 - continue to `Phase 11 — Operator UI Runtime Visibility`
+
+## Phase 11 — Operator UI Runtime Visibility
+
+### Verdict
+PASS
+
+### Commits
+| Commit | Purpose |
+|---|---|
+| `PENDING` | add runtime visibility to operator UI |
+
+### Files Changed
+| Path | Type | Reason |
+|---|---|---|
+| `frontend/src/lib/admin-api.ts` | frontend | add runtime MCP client types and helper functions |
+| `frontend/src/pages/admin/Runtime.tsx` | frontend | add runtime status/tasks/events/dead-letter/operator page |
+| `frontend/src/App.tsx` | frontend | register `/admin/runtime` route |
+| `frontend/src/components/Layout.tsx` | frontend | expose Runtime nav in existing admin sidebar |
+| `frontend/src/pages/admin/AgentControl.tsx` | frontend | replace fake readiness statuses with runtime evidence and add runtime metrics/link |
+| `frontend/src/pages/admin/Audit.tsx` | frontend | surface runtime snapshot, dead letters, and business-event evidence |
+| `frontend/src/pages/admin/Readiness.tsx` | frontend | evaluate readiness from runtime/tool data instead of static claims |
+| `docs/PHASE11_OPERATOR_UI_RUNTIME_VISIBILITY_REPORT.md` | docs | phase closeout |
+
+### Tests Run
+| Command | Result | Notes |
+|---|---|---|
+| `cd frontend && bun run build` | PASS | production build includes `assets/Runtime-wI-E8Jlg.js` |
+| `python -m compileall backend/app` | PASS | backend runtime imports compile cleanly |
+| `pytest backend/tests/test_mcp_runtime_tools.py -q` | PASS | `7 passed` |
+| `pytest backend/tests/test_mcp_foundation.py -q` | PASS | `33 passed` |
+
+### Auto-Fixes
+| Issue | Fix | Evidence |
+|---|---|---|
+| `AgentControl` marked every readiness row as ready because it checked `item.key.includes("READY")` | replaced static badge logic with actual tool/runtime evidence map | frontend build passes and readiness rows are now data-backed |
+| `Audit` only reflected tool registration state | switched to runtime snapshot + dead letters + business events while keeping blocked-tool evidence | `bun run build` passes with new runtime audit view |
+| operator UI had no direct runtime view even after Phase 10 MCP alignment | added `/admin/runtime` route and sidebar entry using existing UI shell | built bundle contains `assets/Runtime-wI-E8Jlg.js` |
+
+### Safety
+- `.env` read: no
+- secrets printed: no
+- `git add .` used: no
+- destructive command used: no
+- live provider called: no
+- agent-stack root copied: no
+
+### Readiness Gained
+
+- `UI_READY` advanced to runtime visibility readiness
+- existing Graxia operator UI now exposes runtime tasks, dead letters, business events, worker capabilities, and runtime readiness evidence
+- approval-gated dead-letter requeue is visible without bypassing policy
+
+### Remaining Blockers
+
+- no browser/live runtime verification in this phase
+- token ROI is only evaluator baseline preview; full telemetry dashboard remains Phase 12
+- runtime state remains in-memory until later persistence phases
+
+### Next Phase Decision
+
+- continue to `Phase 12 — Token ROI Dashboard`

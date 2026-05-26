@@ -74,6 +74,7 @@ const systemNavItems = [
 
 const adminNavItems = [
   { path: '/admin/agent-control', label: 'Agent Control', icon: Gauge },
+  { path: '/admin/runtime', label: 'Runtime', icon: Server },
   { path: '/admin/mcp-tools', label: 'MCP Tools', icon: TerminalSquare },
   { path: '/admin/workflows', label: 'Workflows', icon: Workflow },
   { path: '/admin/approvals', label: 'Approvals', icon: ShieldCheck },
@@ -81,8 +82,8 @@ const adminNavItems = [
   { path: '/admin/workspace-exports', label: 'Workspace', icon: HardDrive },
   { path: '/admin/funnel/analytics', label: 'Funnel', icon: Activity },
   { path: '/admin/audit', label: 'Audit', icon: ScrollText },
-  { path: '/admin/readiness', label: 'Readiness', icon: Server },
-]
+  { path: '/admin/readiness', label: 'Readiness', icon: CheckSquare },
+] 
 
 function isActivePath(pathname: string, path: string) {
   return path === '/' ? pathname === path : pathname === path || pathname.startsWith(`${path}/`)

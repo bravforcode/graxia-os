@@ -9,7 +9,7 @@ import { MetricCard } from "@/components/admin/MetricCard";
 import { PageHeader } from "@/components/ui/page-header";
 import { Panel } from "@/components/ui/panel";
 import { cn } from "@/lib/utils";
-import { getAgentWorkflowStatus, runAgentWorkflow, type WorkflowStatus } from "@/lib/admin-api";
+import { getAgentWorkflowStatus, getRuntimeStatus, listTools, runAgentWorkflow, type RuntimeStatus, type WorkflowStatus } from "@/lib/admin-api";
 
 const readinessItems = [
   { key: "LOCAL_FUNNEL_READY",        label: "Funnel" },
@@ -38,12 +38,71 @@ const statusLinks = [
 export default function AgentControl() {
   const navigate = useNavigate();
   const [wfStatus, setWfStatus] = useState<WorkflowStatus | null>(null);
+  const [runtimeStatus, setRuntimeStatus] = useState<RuntimeStatus | null>(null);
+  const [readinessMap, setReadinessMap] = useState<Record<string, boolean>>({});
   const [running, setRunning] = useState<string | null>(null);
   const [runResult, setRunResult] = useState<{ type: string; ok: boolean; msg: string } | null>(null);
 
   useEffect(() => {
-    getAgentWorkflowStatus().then(setWfStatus);
+    void loadStatus();
   }, []);
+
+  async function loadStatus() {
+    const [status, runtime, tools] = await Promise.all([
+      getAgentWorkflowStatus(),
+      getRuntimeStatus(),
+      listTools(),
+    ]);
+    setWfStatus(status);
+    setRuntimeStatus(runtime);
+    const toolNames = tools.map((tool) => tool.name);
+    const hasFunnelTools = toolNames.some((name) => [
+      "get_revenue_summary",
+      "get_recent_orders",
+      "get_conversion_summary",
+      "get_checkout_abandonment",
+      "get_delivery_open_rate",
+    ].includes(name));
+    const hasWorkspaceTools = toolNames.some((name) => [
+      "create_launch_doc",
+      "export_revenue_summary_to_sheet",
+      "create_launch_calendar_plan",
+      "draft_customer_reply",
+    ].includes(name));
+    const hasContextTools = toolNames.some((name) => [
+      "build_context_pack",
+      "search_project_context",
+      "get_project_index_summary",
+      "get_context_pack",
+      "build_runtime_context_packet",
+      "get_token_roi_summary",
+    ].includes(name));
+    const hasWorkflowTools = toolNames.some((name) => [
+      "list_agent_workflows",
+      "run_agent_workflow",
+      "get_agent_workflow_run",
+      "get_agent_workflow_status",
+      "run_safe_workflow",
+    ].includes(name));
+    const readiness = {
+      LOCAL_FUNNEL_READY: hasFunnelTools,
+      LOCAL_MCP_READONLY_READY: tools.filter((tool) => tool.risk_level === "READ_ONLY").length >= 3,
+      LOCAL_MCP_WRITE_READY: tools.filter((tool) => tool.risk_level === "LOW_WRITE" || tool.risk_level === "APPROVAL_REQUIRED").length >= 3,
+      LOCAL_WORKSPACE_READY: hasWorkspaceTools,
+      LOCAL_CONTEXT_READY: hasContextTools,
+      LOCAL_WORKFLOW_READY: hasWorkflowTools && runtime !== null,
+      LOCAL_UI_READY: true,
+      FULL_LOCAL_AGENT_READY: Boolean(
+        runtime &&
+        hasFunnelTools &&
+        hasWorkspaceTools &&
+        hasContextTools &&
+        hasWorkflowTools &&
+        runtime.worker_capability_count > 0,
+      ),
+    };
+    setReadinessMap(readiness);
+  }
 
   async function handleQuickAction(workflow: string, label: string) {
     setRunning(workflow);
@@ -52,8 +111,7 @@ export default function AgentControl() {
     setRunning(null);
     if (result) {
       setRunResult({ type: workflow, ok: true, msg: `${label}: ${result.status} (${result.steps_completed} steps)` });
-      // Refresh status
-      getAgentWorkflowStatus().then(setWfStatus);
+      await loadStatus();
     } else {
       setRunResult({ type: workflow, ok: false, msg: `${label}: failed to run` });
     }
@@ -85,22 +143,22 @@ export default function AgentControl() {
       />
 
       {/* Readiness Status */}
-      <Panel title="System Readiness" eyebrow="STATUS">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {readinessItems.map((item) => (
-            <div key={item.key} className="flex items-center gap-2 rounded-lg bg-zinc-800/40 px-3 py-2">
-              <StatusBadge status={item.key.includes("READY") ? "ready" : "not_ready"} />
-              <span className="text-xs text-zinc-400">{item.label}</span>
-            </div>
-          ))}
-        </div>
-      </Panel>
+        <Panel title="System Readiness" eyebrow="STATUS">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {readinessItems.map((item) => (
+              <div key={item.key} className="flex items-center gap-2 rounded-lg bg-zinc-800/40 px-3 py-2">
+                <StatusBadge status={readinessMap[item.key] ? "ready" : "not_ready"} />
+                <span className="text-xs text-zinc-400">{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </Panel>
 
       {/* Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <MetricCard title="Workflow Runs" value={wfStatus?.total_runs ?? 0} subtitle="Total runs" />
-        <MetricCard title="Completed" value={wfStatus?.completed ?? 0} subtitle="Successful runs" status="up" />
-        <MetricCard title="Failed" value={wfStatus?.failed ?? 0} subtitle="Failed runs" status={wfStatus?.failed ? "critical" : "neutral"} />
+        <MetricCard title="Runtime Tasks" value={runtimeStatus?.gateway_task_count ?? 0} subtitle="Tracked by gateway" status="up" />
+        <MetricCard title="Dead Letters" value={runtimeStatus?.dead_letter_count ?? 0} subtitle="Approval-gated requeue" status={runtimeStatus?.dead_letter_count ? "critical" : "neutral"} />
       </div>
 
       {/* Quick Actions */}
@@ -144,6 +202,17 @@ export default function AgentControl() {
       {/* Quick Links */}
       <Panel title="Quick Links" eyebrow="NAVIGATE">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <button
+            onClick={() => navigate("/admin/runtime")}
+            className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-left transition-all hover:border-zinc-700 hover:bg-zinc-900/80"
+          >
+            <Activity className="h-5 w-5 text-zinc-400" />
+            <div>
+              <div className="text-sm font-medium text-white">Runtime</div>
+              <div className="text-xs text-zinc-500">{runtimeStatus?.gateway_task_count ?? 0} tasks</div>
+            </div>
+            <ExternalLink className="h-3 w-3 text-zinc-600 ml-auto" />
+          </button>
           {statusLinks.map((link) => (
             <button
               key={link.path}

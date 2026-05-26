@@ -38,6 +38,7 @@ const AdminWorkspaceExports = lazy(() => import("./pages/admin/WorkspaceExports"
 const AdminFunnelAnalytics = lazy(() => import("./pages/admin/FunnelAnalytics"));
 const AdminAudit = lazy(() => import("./pages/admin/Audit"));
 const AdminReadiness = lazy(() => import("./pages/admin/Readiness"));
+const AdminRuntime = lazy(() => import("./pages/admin/Runtime"));
 
 function RouteFallback() {
   return (
@@ -91,6 +92,7 @@ export function AppRoutes() {
           <Route path="admin/context-packs/:id" element={<AdminContextPackDetail />} />
           <Route path="admin/workspace-exports" element={<AdminWorkspaceExports />} />
           <Route path="admin/funnel/analytics" element={<AdminFunnelAnalytics />} />
+          <Route path="admin/runtime" element={<AdminRuntime />} />
           <Route path="admin/audit" element={<AdminAudit />} />
           <Route path="admin/readiness" element={<AdminReadiness />} />
         </Route>
