@@ -1,7 +1,9 @@
 #!/usr/bin/env pwsh
 # ──────────────────────────────────────────────────────────────────────────────
-# Beta Smoke Script — Phase 19 Controlled External Beta
-# Tests all beta readiness gates, kill switch, allowlist, and drill workflows.
+# Beta Smoke Script — Phase 20 Limited Beta Launch Packet
+# Tests all beta readiness gates, kill switch, allowlist, drill workflows,
+# launch policy, invite template, onboarding checklist, session script,
+# no-live-payment mode, limited beta pilot readiness, and all safety guards.
 # ──────────────────────────────────────────────────────────────────────────────
 
 $BaseUrl = if ($env:BASE_URL) { $env:BASE_URL } else { "http://127.0.0.1:8000" }
@@ -57,43 +59,44 @@ function CheckJsonField($Label, $Path, $Field, $Expected) {
 
 Write-Host ""
 Write-Host "┌──────────────────────────────────────────────────────────────┐"
-Write-Host "│  Phase 19 — Controlled External Beta Smoke                  │"
+Write-Host "│  Phase 20 — Limited Beta Launch Packet Smoke                │"
 Write-Host "└──────────────────────────────────────────────────────────────┘"
 Write-Host ""
 
-# 1. Health
+# 1. Health / Readiness
 Write-Host "  ● Health check"
 Check "Health endpoint responds 200" "GET" "/api/v1/health" 200
-
-# 2. Readiness
-Write-Host "  ● Readiness endpoint"
 Check "Readiness endpoint responds 200" "GET" "/api/v1/health/readiness" 200
 
-# 3. Production readiness returns false
+# 2. Production readiness returns false
 Write-Host "  ● Production readiness gate"
 Check "Production readiness responds 200" "GET" "/api/v1/health/readiness/production" 200
 CheckJsonField "production_ready is false" "/api/v1/health/readiness/production" "production_ready" "False"
 
-# 4. Beta readiness
-Write-Host "  ● Beta readiness gate"
-Check "Beta readiness responds 200" "GET" "/api/v1/health/readiness/beta" 200
-
-# 5. Beta kill switch
-Write-Host "  ● Beta kill switch"
-CheckJsonField "beta_enabled from beta readiness" "/api/v1/health/readiness/beta" "beta_enabled" "False"
-
-# 6. Staging readiness
+# 3. Staging readiness
 Write-Host "  ● Staging readiness"
 Check "Staging readiness responds 200" "GET" "/api/v1/health/readiness/staging" 200
 
-# 7. Safe error
+# 4. Beta readiness
+Write-Host "  ● Beta readiness gate"
+Check "Beta readiness responds 200" "GET" "/api/v1/health/readiness/beta" 200
+CheckJsonField "beta_enabled from beta readiness" "/api/v1/health/readiness/beta" "beta_enabled" "False"
+CheckJsonField "kill_switch_enabled from beta readiness" "/api/v1/health/readiness/beta" "kill_switch_enabled" "True"
+
+# 5. Limited beta pilot readiness (Phase 20)
+Write-Host "  ● Limited beta pilot readiness"
+Check "Limited beta pilot readiness responds 200" "GET" "/api/v1/health/readiness/limited-beta-pilot" 200
+CheckJsonField "no_live_payment_mode in limited beta pilot" "/api/v1/health/readiness/limited-beta-pilot" "no_live_payment_mode" "True"
+CheckJsonField "limited_beta_pilot_ready_flag" "/api/v1/health/readiness/limited-beta-pilot" "limited_beta_pilot_ready_flag" "False"
+
+# 6. Safe error
 Write-Host "  ● Safe error contract"
 Check "Safe error from bad delivery token" "GET" "/api/v1/delivery/open/bad-token-12345" 404
 
-# 8. Request correlation
+# 7. Request correlation
 Write-Host "  ● Request correlation"
 try {
-    $response = Invoke-WebRequest -Uri "http://127.0.0.1:8000/api/v1/health" -Method Get -UseBasicParsing
+    $response = Invoke-WebRequest -Uri "${BaseUrl}/api/v1/health" -Method Get -UseBasicParsing
     if ($response.Headers["X-Request-ID"]) {
         Write-Host "  ✓ X-Request-ID header present" -ForegroundColor Green
         $script:Pass++
@@ -114,7 +117,7 @@ try {
     $script:Fail++
 }
 
-# 9. Auth-required route denial
+# 8. Auth-required route denial
 Write-Host "  ● Auth-required route denial"
 Check "Protected route returns 401" "GET" "/api/v1/delivery/customer/profile" 401
 
