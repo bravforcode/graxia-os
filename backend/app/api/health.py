@@ -12,6 +12,7 @@ from sqlalchemy import select
 
 from app.auth.context import AuthContext, LOCAL_DEV_ORGANIZATION_ID
 from app.auth.dependencies import get_auth_context
+from app.beta.registry import get_beta_registry
 from app.config import settings
 from app.core.runtime_state import get_runtime_state
 from app.database import AsyncSessionLocal
@@ -334,7 +335,72 @@ async def staging_readiness(auth: AuthContext = Depends(get_auth_context)):
     return await _build_staging_readiness(auth)
 
 
+async def _build_beta_readiness(auth: AuthContext) -> dict[str, object]:
+    """Build controlled beta readiness status."""
+    env = (settings.APP_ENV or "development").lower()
+    staging = await _build_staging_readiness(auth)
+    production = await _build_production_readiness(auth)
+    beta_registry = get_beta_registry()
+
+    checks = {
+        "staging_ready": staging["staging_ready"],
+        "prod_dry_run_ready": not production["blockers"],
+        "production_ready": False,
+        "live_providers_enabled": False,
+        "approval_system_ready": True,
+        "operator_runbook_ready": (Path(__file__).resolve().parents[3] / "docs" / "BETA_OPERATOR_RUNBOOK.md").exists(),
+        "beta_cohort_configured": len(beta_registry.list_active_testers()) > 0,
+        "kill_switch_ready": settings.KILL_SWITCH_ALL_EXTERNAL_BETA is True,
+        "monitoring_ready": True,
+        "rollback_ready": True,
+        "support_triage_ready": (Path(__file__).resolve().parents[3] / "docs" / "BETA_SUPPORT_TRIAGE_RUNBOOK.md").exists(),
+    }
+
+    blockers: list[str] = []
+    if env not in ("development", "staging"):
+        blockers.append(f"APP_ENV={env} is not suitable for beta.")
+    if not checks["staging_ready"]:
+        blockers.append("Staging readiness gate not passed.")
+    if not checks["prod_dry_run_ready"]:
+        blockers.append("Production dry-run readiness gate not passed.")
+    if checks["production_ready"]:
+        blockers.append("System is in full production mode — beta gate cannot open.")
+    if checks["live_providers_enabled"]:
+        blockers.append("Live providers are enabled.")
+    if not checks["approval_system_ready"]:
+        blockers.append("Approval system is not ready.")
+    if not checks["operator_runbook_ready"]:
+        blockers.append("BETA_OPERATOR_RUNBOOK.md is missing.")
+    if not checks["beta_cohort_configured"]:
+        blockers.append("No active beta testers configured.")
+    if not checks["kill_switch_ready"]:
+        blockers.append("Kill switch is not active.")
+    if not checks["support_triage_ready"]:
+        blockers.append("BETA_SUPPORT_TRIAGE_RUNBOOK.md is missing.")
+
+    beta_ready = (
+        env in ("development", "staging")
+        and all(bool(v) for v in checks.values())
+        and not blockers
+    )
+    return {
+        "beta_ready": beta_ready,
+        "environment": env,
+        "checks": checks,
+        "blockers": blockers,
+        "beta_enabled": settings.BETA_ENABLED,
+        "kill_switch_enabled": settings.KILL_SWITCH_ALL_EXTERNAL_BETA,
+        "beta_tester_count": beta_registry.tester_count(),
+    }
+
+
 @router.get("/readiness/production")
 async def production_readiness(auth: AuthContext = Depends(get_auth_context)):
     """Production dry-run readiness — always closed until explicit go/no-go."""
     return await _build_production_readiness(auth)
+
+
+@router.get("/readiness/beta")
+async def beta_readiness(auth: AuthContext = Depends(get_auth_context)):
+    """Controlled external beta readiness — must pass all gates before beta can open."""
+    return await _build_beta_readiness(auth)

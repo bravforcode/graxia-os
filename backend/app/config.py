@@ -336,6 +336,14 @@ class Settings(BaseSettings):
     SENTRY_TRACES_SAMPLE_RATE: float = 0.1
     SENTRY_PROFILES_SAMPLE_RATE: float = 0.1
 
+    # Beta / Controlled External Beta (Phase 19)
+    BETA_ENABLED: bool = False
+    BETA_MCP_TOOLS_ENABLED: bool = False
+    BETA_WORKFLOWS_ENABLED: bool = False
+    BETA_PUBLIC_FUNNEL_ENABLED: bool = False
+    BETA_OPERATOR_UI_ENABLED: bool = False
+    KILL_SWITCH_ALL_EXTERNAL_BETA: bool = True  # Locked by default until explicitly opened
+
     # Enterprise Security - Rate Limiting
     RATE_LIMIT_REQUESTS_PER_MINUTE: int = 100
     RATE_LIMIT_BURST: int = 10
