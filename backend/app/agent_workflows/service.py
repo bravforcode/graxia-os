@@ -29,6 +29,7 @@ from app.agent_workflows.workflows import (
 )
 from app.mcp.auth import MCPAuthContext
 from app.auth.permissions import normalize_permissions
+from app.audit.security_events import emit_security_event_from_context
 
 # Import MCP tools to register tool handlers with the global registry.
 # The @mcp_registry.register decorators fire at import time.
@@ -94,6 +95,25 @@ class WorkflowEngineService:
         if missing:
             raise WorkflowPolicyViolationError(
                 f"Workflow permission denied: missing {', '.join(missing)}."
+            )
+
+    async def _emit_workflow_denied(
+        self,
+        workflow_type: str,
+        organization_id: str,
+        auth_ctx: MCPAuthContext,
+        reason: str,
+    ) -> None:
+        _req = getattr(auth_ctx, '_request', None)
+        if _req is not None:
+            await emit_security_event_from_context(
+                _req,
+                event_type="workflow.permission.denied",
+                reason_code=reason,
+                decision="blocked",
+                route_or_tool=workflow_type,
+                risk_level="LOW_WRITE",
+                redacted_payload={"workflow_type": workflow_type, "organization_id": str(organization_id)[:8] + "..."},
             )
 
     async def run_workflow(

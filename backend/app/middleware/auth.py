@@ -51,6 +51,12 @@ PUBLIC_ROUTES: set[tuple[str, str]] = {
     ("POST", "/api/v1/auth/test-session"),
     ("GET", "/"),
     ("GET", "/favicon.ico"),
+    # Public delivery & tracking endpoints (rate-limited by token fingerprint)
+    ("GET", "/api/v1/funnel/delivery/{access_token}"),
+    ("POST", "/api/v1/funnel/events/delivery-opened"),
+    ("POST", "/api/v1/funnel/events/product-view"),
+    # Public billing plans
+    ("GET", "/api/v1/billing/plans"),
 }
 
 BLOCKED_PREFIXES = ("/docs", "/redoc", "/openapi.json", "/metrics", "/flower", "/admin")

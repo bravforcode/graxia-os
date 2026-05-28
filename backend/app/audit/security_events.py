@@ -85,3 +85,41 @@ async def emit_security_event(
         )
     except Exception:
         logger.warning("Failed to emit security audit event: %s", event_type, exc_info=True)
+
+
+async def emit_security_event_from_context(
+    request: Request,
+    *,
+    event_type: str,
+    reason_code: str,
+    decision: str,
+    route_or_tool: str | None = None,
+    risk_level: str = "LOW_WRITE",
+    redacted_payload: Mapping[str, Any] | None = None,
+) -> None:
+    """Emit a security event from an MCP context where actor info is explicit."""
+    try:
+        await log_audit_event(
+            app=request.app,
+            action=f"security.{event_type}",
+            event_type=event_type,
+            event_category="security",
+            severity="WARNING" if decision == "blocked" else "ERROR",
+            outcome=decision,
+            success=False,
+            metadata={
+                "reason_code": reason_code,
+                "risk_level": risk_level,
+                "route_or_tool": route_or_tool or request.url.path,
+                "request_id": get_request_id(request),
+                "correlation_id": get_correlation_id(request),
+                "payload": redact_security_payload(redacted_payload),
+            },
+            ip_address=request.client.host if request.client else "unknown",
+            user_agent=request.headers.get("user-agent"),
+            request_path=request.url.path,
+            request_method=request.method,
+            error_message=reason_code,
+        )
+    except Exception:
+        logger.warning("Failed to emit context security audit event: %s", event_type, exc_info=True)

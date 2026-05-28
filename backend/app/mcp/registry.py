@@ -21,6 +21,8 @@ from app.mcp.errors import (
 from app.mcp.audit import log_mcp_tool_call, redact_for_audit
 from app.mcp.permissions import risk_policy
 
+from app.audit.security_events import emit_security_event
+
 logger = logging.getLogger(__name__)
 
 # Tool handler type: async function that takes (auth, **params) -> MCPResponse
@@ -150,6 +152,7 @@ class MCPToolRegistry:
         # DANGEROUS_BLOCKED tools are always blocked at the registry level
         # APPROVAL_REQUIRED tools are NOT blocked here — the handler itself
         # creates the ApprovalRequest and returns approval_required.
+        # Emit security event and block dangerous tools
         if risk_policy.is_blocked(name):
             await log_mcp_tool_call(
                 organization_id=auth.organization_id if auth else None,
@@ -161,6 +164,18 @@ class MCPToolRegistry:
                 request_id=request_id,
                 input_summary_redacted="",
             )
+            # Use a minimal request-like object for emit_security_event
+            _req = getattr(auth, '_request', None)
+            if _req is not None:
+                await emit_security_event(
+                    _req,
+                    event_type="mcp.dangerous.blocked",
+                    reason_code=ERR_DANGEROUS_BLOCKED,
+                    decision="blocked",
+                    route_or_tool=name,
+                    risk_level="DANGEROUS",
+                    redacted_payload={"tool_name": name},
+                )
             return safe_error_response(
                 code=ERR_DANGEROUS_BLOCKED,
                 message="This tool is intentionally blocked for safety.",
@@ -187,6 +202,17 @@ class MCPToolRegistry:
                 input_summary_redacted=str(list(params.keys())) if params else "",
                 error_code=ERR_PERMISSION_DENIED,
             )
+            _req = getattr(auth, '_request', None)
+            if _req is not None:
+                await emit_security_event(
+                    _req,
+                    event_type="mcp.permission.denied",
+                    reason_code=ERR_PERMISSION_DENIED,
+                    decision="blocked",
+                    route_or_tool=name,
+                    risk_level=tool_def.risk_level,
+                    redacted_payload={"tool_name": name, "required_permission": tool_def.required_permission},
+                )
             return safe_error_response(
                 code=ERR_PERMISSION_DENIED,
                 request_id=request_id,
@@ -205,6 +231,17 @@ class MCPToolRegistry:
                 input_summary_redacted=str(list(params.keys())) if params else "",
                 error_code=ERR_ORG_MISMATCH,
             )
+            _req = getattr(auth, '_request', None)
+            if _req is not None:
+                await emit_security_event(
+                    _req,
+                    event_type="org.boundary.denied",
+                    reason_code=ERR_ORG_MISMATCH,
+                    decision="blocked",
+                    route_or_tool=name,
+                    risk_level=tool_def.risk_level,
+                    redacted_payload={"tool_name": name},
+                )
             return safe_error_response(
                 code=ERR_ORG_MISMATCH,
                 request_id=request_id,
