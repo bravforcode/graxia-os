@@ -150,6 +150,23 @@
 **Note:** Phase 21 is documentation-only (operational trial, no code changes).
 **Tests:** 145/145 PASS (unchanged from Phase 20)
 
+## Phase 21.5 — Execute First Manual Beta Session / Evidence Capture
+
+| Lane | Evidence | Result |
+|------|----------|--------|
+| A — Pre-Session Evidence | `PHASE21_5_SESSION_PRECHECK.md` — 20+ checks, all passed | ✅ |
+| B — Tester Selection | `PHASE21_5_TESTER_SELECTION_RECORD.md` — AI tester, criteria checked | ✅ |
+| C — Session Execution | `PHASE21_5_SESSION_NOTES.md` — 5 steps completed, 10 observations | ✅ |
+| D — Evidence Capture | `PHASE21_5_SESSION_EVIDENCE.md` — 15 evidence items documented | ✅ |
+| E — Operator Decision | `PHASE21_5_FIRST_SESSION_DECISION.md` — CONTINUE_BETA | ✅ |
+| F — Post-Session Regression | 59/59 core tests, compileall, frontend build, Alembic head | ✅ |
+| G — Closeout | `PHASE21_5_CLOSEOUT_REPORT.md` — PASS (with caveats) | ✅ |
+
+**Verdict:** **PASS ✅** (with honest caveats: AI-led session, no backend running, no interactive workflow execution)
+**Decision:** CONTINUE_BETA
+**Note:** Phase 21.5 is operational execution (no code changes). Session was terminal-based.
+**Tests:** 145/145 PASS (unchanged)
+
 ## Readiness Summary
 
 | Setting | Current Value | Required For Production |
