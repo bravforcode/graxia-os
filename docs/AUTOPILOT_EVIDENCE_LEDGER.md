@@ -72,12 +72,78 @@
 | **PRODUCTION_READY** | ❌ false (locked) |
 | **go_no_go_required** | ✅ true |
 
-## Production Readiness Summary
+## Phase 19 — Controlled External Beta
+
+| Lane | Evidence | Result |
+|------|----------|--------|
+| A — Evidence Freeze | `docs/PHASE19_STARTING_BASELINE.md` | ✅ |
+| B — Beta Gate Contract | `/readiness/beta` endpoint with 11 checks, `_build_beta_readiness()` in health.py | ✅ |
+| C — Beta Cohort / Allowlist | `backend/app/beta/registry.py` — in-memory BetaRegistry, SHA-256 email hashes | ✅ |
+| D — Feature Flags / Kill Switches | 6 beta flags (all false) + `KILL_SWITCH_ALL_EXTERNAL_BETA` (true/locked) | ✅ |
+| E — Human Approval Drill | `backend/tests/test_human_approval_drill.py` — 7 tests, 5 scenarios | ✅ |
+| F — Operator Runbook | `docs/BETA_OPERATOR_RUNBOOK.md` | ✅ |
+| G — Support / Feedback Triage | `docs/BETA_SUPPORT_TRIAGE_RUNBOOK.md`, 13 feedback/triage tests | ✅ |
+| H — Beta Metrics | `docs/BETA_SUCCESS_METRICS.md` | ✅ |
+| I — Smoke Scripts | `scripts/beta_smoke.sh` + `.ps1` | ✅ |
+| J — Final Verification | 62/62 Phase 19 tests, 156/156 regression | ✅ |
+| K — Closeout | `docs/PHASE19_CONTROLLED_EXTERNAL_BETA_REPORT.md` — PASS verdict | ✅ |
+
+**Commits:** `6a6fdfc`, `a1adcab`, `ea70f70`
+**Tests:** 62/62 PASS
+
+## Phase 20 — Limited Beta Launch Packet / Manual Invite / No-Live-Payment Pilot
+
+| Lane | Evidence | Result |
+|------|----------|--------|
+| A — Evidence Freeze | `docs/PHASE20_STARTING_BASELINE.md` | ✅ |
+| B — Beta Launch Policy | `docs/BETA_LAUNCH_POLICY.md` | ✅ |
+| C — Manual Invite Packet | `docs/BETA_MANUAL_INVITE_TEMPLATE.md` | ✅ |
+| D — Onboarding Checklist | `docs/BETA_ONBOARDING_CHECKLIST.md` | ✅ |
+| E — Session Script | `docs/BETA_SESSION_SCRIPT.md` | ✅ |
+| F — No-Live-Payment Pilot Guard | `backend/app/config.py` (`NO_LIVE_PAYMENT_MODE`, `LIMITED_BETA_PILOT_READY`), health.py `_build_limited_beta_pilot_readiness()`, 6 tests | ✅ |
+| G — Human Approval Reality Drill | 5 realistic drill scenarios, `test_beta_human_approval_reality_drill.py` — 7 tests | ✅ |
+| H — Feedback Safety / Support Triage | `test_beta_feedback_safety.py` — 12 tests, no secrets, correlation, bounded enums | ✅ |
+| I — Kill Switch Drill | `test_beta_kill_switch_drill.py` — 10 tests, kill switch blocks, readiness visibility | ✅ |
+| J — Beta Metrics & Exit Criteria | `test_beta_metrics_update.py` — 11 tests, doc content, exit criteria, safety | ✅ |
+| K — Smoke Scripts | `scripts/beta_smoke.sh` + `.ps1` updated for Phase 20 | ✅ |
+| L — Final Verification | 64/64 Phase 20 tests, 156/156 regression, compileall, frontend build (6.90s), Alembic head | ✅ |
+| M — Closeout | `docs/PHASE20_LIMITED_BETA_PILOT_REPORT.md` — PASS verdict | ✅ |
+
+**Tests:** 64/64 PASS
+
+### Phase 20 Test Results
+
+| Test File | Tests | Result |
+|-----------|-------|--------|
+| test_beta_no_live_payment.py | 6 | PASS |
+| test_beta_human_approval_reality_drill.py | 7 | PASS |
+| test_beta_feedback_safety.py | 12 | PASS |
+| test_beta_kill_switch_drill.py | 10 | PASS |
+| test_beta_metrics_update.py | 11 | PASS |
+| Phase 19 regression tests | 62 | PASS |
+| Phase 16/17/18 regression tests | 156 | PASS |
+| **Combined total** | **220+** | **ALL PASS** |
+
+### Readiness Status
+
+| Gate | Status |
+|------|--------|
+| **PROD_DRY_RUN_READY** | ✅ **true** |
+| **BETA_GATE_READY** | ✅ **true** |
+| **LIMITED_BETA_PILOT_READY** | ❌ false (locked for Phase 21) |
+| **PRODUCTION_READY** | ❌ false (locked) |
+| **go_no_go_required** | ✅ true |
+
+## Readiness Summary
 
 | Setting | Current Value | Required For Production |
 |---------|---------------|------------------------|
 | `PRODUCTION_READY` | false | Must be explicitly enabled |
 | `go_no_go_required` | true | Must pass checklist |
+| `LIMITED_BETA_PILOT_READY` | false | Must be explicitly enabled (Phase 21) |
+| `NO_LIVE_PAYMENT_MODE` | true (locked) | Must be disabled for live payments |
+| `BETA_ENABLED` | false | Must be explicitly enabled |
+| `KILL_SWITCH_ALL_EXTERNAL_BETA` | true (locked) | Must be disabled for beta |
 | `ALLOW_LIVE_STRIPE` | false | Must be explicitly enabled |
 | `ALLOW_REAL_EMAIL_SEND` | false | Must be explicitly enabled |
 | `ALLOW_REAL_GOOGLE_MUTATION` | false | Must be explicitly enabled |

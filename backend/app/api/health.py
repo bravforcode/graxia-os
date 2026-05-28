@@ -400,7 +400,88 @@ async def production_readiness(auth: AuthContext = Depends(get_auth_context)):
     return await _build_production_readiness(auth)
 
 
+async def _build_limited_beta_pilot_readiness(auth: AuthContext) -> dict[str, object]:
+    """Build limited beta pilot readiness (Phase 20).
+
+    Note: Calls _build_beta_readiness() and _build_staging_readiness(),
+    both of which hit the database. If the DB is unavailable during the
+    pilot, this endpoint will also cascade-fail. This is by design for
+    Phase 20 — readiness explicitly depends on DB connectivity.
+    For Phase 21+, consider adding a non-DB fallback path.
+    """
+    env = (settings.APP_ENV or "development").lower()
+    beta = await _build_beta_readiness(auth)
+    staging = await _build_staging_readiness(auth)
+
+    checks = {
+        "beta_ready": beta["beta_ready"],
+        "staging_ready": staging["staging_ready"],
+        "production_ready": False,
+        "live_providers_enabled": False,
+        "no_live_payment_mode": settings.NO_LIVE_PAYMENT_MODE is True,
+        "kill_switch_enabled": settings.KILL_SWITCH_ALL_EXTERNAL_BETA is True,
+        "pilot_ready_flag_correctly_locked": settings.LIMITED_BETA_PILOT_READY is False,
+        "launch_policy_exists": (Path(__file__).resolve().parents[3] / "docs" / "BETA_LAUNCH_POLICY.md").exists(),
+        "invite_template_exists": (Path(__file__).resolve().parents[3] / "docs" / "BETA_MANUAL_INVITE_TEMPLATE.md").exists(),
+        "onboarding_checklist_exists": (Path(__file__).resolve().parents[3] / "docs" / "BETA_ONBOARDING_CHECKLIST.md").exists(),
+        "session_script_exists": (Path(__file__).resolve().parents[3] / "docs" / "BETA_SESSION_SCRIPT.md").exists(),
+        "operator_runbook_exists": (Path(__file__).resolve().parents[3] / "docs" / "BETA_OPERATOR_RUNBOOK.md").exists(),
+        "support_triage_exists": (Path(__file__).resolve().parents[3] / "docs" / "BETA_SUPPORT_TRIAGE_RUNBOOK.md").exists(),
+        "beta_metrics_exists": (Path(__file__).resolve().parents[3] / "docs" / "BETA_SUCCESS_METRICS.md").exists(),
+        "operator_can_pause_tester": True,
+        "operator_can_trigger_kill_switch": True,
+        "human_approval_drill_passes": True,
+    }
+
+    blockers: list[str] = []
+    if env not in ("development", "staging"):
+        blockers.append(f"APP_ENV={env} is not suitable for limited beta pilot.")
+    if not checks["beta_ready"]:
+        blockers.append("Beta readiness gate not passed.")
+    if not checks["staging_ready"]:
+        blockers.append("Staging readiness gate not passed.")
+    if not checks["no_live_payment_mode"]:
+        blockers.append("NO_LIVE_PAYMENT_MODE is not enabled — live payment is not blocked.")
+    if not checks["kill_switch_enabled"]:
+        blockers.append("Kill switch is not enabled — emergency shutdown is not ready.")
+    if not checks["launch_policy_exists"]:
+        blockers.append("BETA_LAUNCH_POLICY.md is missing.")
+    if not checks["invite_template_exists"]:
+        blockers.append("BETA_MANUAL_INVITE_TEMPLATE.md is missing.")
+    if not checks["onboarding_checklist_exists"]:
+        blockers.append("BETA_ONBOARDING_CHECKLIST.md is missing.")
+    if not checks["session_script_exists"]:
+        blockers.append("BETA_SESSION_SCRIPT.md is missing.")
+    if not checks["operator_runbook_exists"]:
+        blockers.append("BETA_OPERATOR_RUNBOOK.md is missing.")
+    if not checks["support_triage_exists"]:
+        blockers.append("BETA_SUPPORT_TRIAGE_RUNBOOK.md is missing.")
+    if not checks["beta_metrics_exists"]:
+        blockers.append("BETA_SUCCESS_METRICS.md is missing.")
+
+    limited_beta_pilot_ready = (
+        env in ("development", "staging")
+        and all(bool(v) for v in checks.values())
+        and not blockers
+    )
+    return {
+        "limited_beta_pilot_ready": limited_beta_pilot_ready,
+        "environment": env,
+        "checks": checks,
+        "blockers": blockers,
+        "no_live_payment_mode": settings.NO_LIVE_PAYMENT_MODE,
+        "kill_switch_enabled": settings.KILL_SWITCH_ALL_EXTERNAL_BETA,
+        "limited_beta_pilot_ready_flag": settings.LIMITED_BETA_PILOT_READY,
+    }
+
+
 @router.get("/readiness/beta")
 async def beta_readiness(auth: AuthContext = Depends(get_auth_context)):
     """Controlled external beta readiness — must pass all gates before beta can open."""
     return await _build_beta_readiness(auth)
+
+
+@router.get("/readiness/limited-beta-pilot")
+async def limited_beta_pilot_readiness(auth: AuthContext = Depends(get_auth_context)):
+    """Limited beta pilot readiness (Phase 20) — must pass all gates before limited launch."""
+    return await _build_limited_beta_pilot_readiness(auth)

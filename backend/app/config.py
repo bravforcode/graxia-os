@@ -344,6 +344,10 @@ class Settings(BaseSettings):
     BETA_OPERATOR_UI_ENABLED: bool = False
     KILL_SWITCH_ALL_EXTERNAL_BETA: bool = True  # Locked by default until explicitly opened
 
+    # Limited Beta Pilot / No-Live-Payment (Phase 20)
+    NO_LIVE_PAYMENT_MODE: bool = True  # Locked by default; blocks all payment processing
+    LIMITED_BETA_PILOT_READY: bool = False  # Set to true only after Phase 20 exit criteria met
+
     # Enterprise Security - Rate Limiting
     RATE_LIMIT_REQUESTS_PER_MINUTE: int = 100
     RATE_LIMIT_BURST: int = 10
