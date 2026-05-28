@@ -54,3 +54,23 @@ async def test_registry_keeps_dangerous_tools_blocked_without_auth():
     assert resp.ok is False
     assert resp.error is not None
     assert resp.error.code == "DANGEROUS_TOOL_BLOCKED"
+
+
+@pytest.mark.asyncio
+async def test_registry_blocks_org_mismatch_even_with_permission():
+    auth = MCPAuthContext(
+        organization_id=uuid4(),
+        actor_type="user",
+        actor_id="user-3",
+        permissions=["workflow:read"],
+        is_authenticated=True,
+    )
+    other_org = str(uuid4())
+    resp = await mcp_registry.call_tool(
+        "list_agent_workflows",
+        {"organization_id": other_org},
+        auth=auth,
+    )
+    assert resp.ok is False
+    assert resp.error is not None
+    assert resp.error.code == "ORG_MISMATCH"

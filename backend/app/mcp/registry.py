@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Callable, Awaitable
+from uuid import UUID
 
 from app.auth.permissions import normalize_permissions
 from app.mcp.schemas import MCPToolDefinition, MCPResponse, MCPAuthContext
@@ -13,6 +14,7 @@ from app.mcp.errors import (
     ERR_DANGEROUS_BLOCKED,
     ERR_AUTH_REQUIRED,
     ERR_PERMISSION_DENIED,
+    ERR_ORG_MISMATCH,
     safe_error_response,
     handle_tool_error,
 )
@@ -37,6 +39,20 @@ def _has_tool_permission(auth: MCPAuthContext | None, required_permission: str) 
     if auth is None:
         return False
     return required_permission in normalize_permissions(auth.permissions)
+
+
+def _org_matches(auth: MCPAuthContext | None, params: dict[str, Any]) -> bool:
+    if _is_system_bypass(auth):
+        return True
+    if auth is None or auth.organization_id is None:
+        return False
+    raw_org = params.get("organization_id")
+    if raw_org in (None, ""):
+        return True
+    try:
+        return UUID(str(raw_org)) == auth.organization_id
+    except (TypeError, ValueError):
+        return False
 
 
 class MCPToolRegistry:
@@ -173,6 +189,24 @@ class MCPToolRegistry:
             )
             return safe_error_response(
                 code=ERR_PERMISSION_DENIED,
+                request_id=request_id,
+                organization_id=org_id,
+            )
+
+        if not _org_matches(auth, params):
+            await log_mcp_tool_call(
+                organization_id=auth.organization_id if auth else None,
+                actor_type=auth.actor_type if auth else "unknown",
+                actor_id=auth.actor_id if auth else None,
+                tool_name=name,
+                risk_level=tool_def.risk_level,
+                status="blocked",
+                request_id=request_id,
+                input_summary_redacted=str(list(params.keys())) if params else "",
+                error_code=ERR_ORG_MISMATCH,
+            )
+            return safe_error_response(
+                code=ERR_ORG_MISMATCH,
                 request_id=request_id,
                 organization_id=org_id,
             )

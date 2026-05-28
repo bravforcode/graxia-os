@@ -5,7 +5,11 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from app.agent_workflows.errors import WorkflowNotFoundError
+from app.agent_workflows.errors import (
+    WorkflowNotFoundError,
+    WorkflowOrgMismatchError,
+    WorkflowPolicyViolationError,
+)
 from app.agent_workflows.policies import default_workflow_policy
 from app.agent_workflows.registry import workflow_registry
 from app.agent_workflows.runner import WorkflowRunner
@@ -24,10 +28,25 @@ from app.agent_workflows.workflows import (
     weekly_revenue_review,
 )
 from app.mcp.auth import MCPAuthContext
+from app.auth.permissions import normalize_permissions
 
 # Import MCP tools to register tool handlers with the global registry.
 # The @mcp_registry.register decorators fire at import time.
 import app.mcp.tools  # noqa: F401
+
+
+WORKFLOW_REQUIRED_PERMISSIONS: dict[str, set[str]] = {
+    "opportunity_scout": {"workflow:run", "analytics:read"},
+    "failure_analysis_review": {"workflow:run", "analytics:read"},
+    "daily_funnel_brief": {"workflow:run", "analytics:read"},
+    "weekly_revenue_review": {"workflow:run", "analytics:read"},
+    "content_plan_draft": {"workflow:run"},
+    "experiment_planner": {"workflow:run"},
+    "launch_plan_builder": {"workflow:run"},
+    "customer_inbox_triage": {"workflow:run"},
+    "delivery_failure_monitor": {"workflow:run"},
+    "token_benchmark_review": {"workflow:run"},
+}
 
 
 class WorkflowEngineService:
@@ -53,6 +72,30 @@ class WorkflowEngineService:
         for wf in workflows:
             workflow_registry.register(wf)
 
+    @staticmethod
+    def _is_system_bypass(auth_ctx: MCPAuthContext) -> bool:
+        return auth_ctx.actor_type == "system" and auth_ctx.actor_id == "system"
+
+    def _require_workflow_access(
+        self,
+        workflow_type: str,
+        organization_id: str,
+        auth_ctx: MCPAuthContext,
+    ) -> None:
+        if auth_ctx.organization_id is None:
+            raise WorkflowPolicyViolationError("Workflow auth context requires organization scope.")
+        if str(auth_ctx.organization_id) != str(organization_id) and not self._is_system_bypass(auth_ctx):
+            raise WorkflowOrgMismatchError("Resource not found.")
+        if self._is_system_bypass(auth_ctx):
+            return
+        permissions = normalize_permissions(auth_ctx.permissions)
+        required = WORKFLOW_REQUIRED_PERMISSIONS.get(workflow_type, {"workflow:run"})
+        missing = sorted(required.difference(permissions))
+        if missing:
+            raise WorkflowPolicyViolationError(
+                f"Workflow permission denied: missing {', '.join(missing)}."
+            )
+
     async def run_workflow(
         self,
         workflow_type: str,
@@ -61,6 +104,7 @@ class WorkflowEngineService:
         auth_ctx: MCPAuthContext,
     ) -> WorkflowRun:
         """Run a workflow by type."""
+        self._require_workflow_access(workflow_type, organization_id, auth_ctx)
         definition = workflow_registry.get(workflow_type)
 
         # Merge inputs into WorkflowInputs-compatible dict
