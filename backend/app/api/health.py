@@ -35,6 +35,7 @@ _PRODUCTION_DOC_PATHS = (
     Path(__file__).resolve().parents[3] / "docs" / "BACKUP_RESTORE_RUNBOOK.md",
     Path(__file__).resolve().parents[3] / "docs" / "INCIDENT_RESPONSE_RUNBOOK.md",
     Path(__file__).resolve().parents[3] / "docs" / "ROLLBACK_RUNBOOK.md",
+    Path(__file__).resolve().parents[3] / "docs" / "MONITORING_ALERTING_RUNBOOK.md",
 )
 
 
@@ -205,7 +206,9 @@ async def _build_production_readiness(auth: AuthContext) -> dict[str, object]:
         "real_email_send_blocked": _real_email_provider_blocked(),
         "real_google_mutation_blocked": _real_google_mutation_blocked(),
         "real_llm_calls_blocked": not settings.ALLOW_REAL_LLM_CALLS,
+        "production_db_blocked": not settings.ALLOW_PRODUCTION_DB,
         "go_no_go_required": True,
+        "production_ready": False,
     }
 
     blockers: list[str] = [
@@ -229,6 +232,8 @@ async def _build_production_readiness(auth: AuthContext) -> dict[str, object]:
         blockers.append("Real Google Workspace mutation is not blocked.")
     if not checks["real_llm_calls_blocked"]:
         blockers.append("Real LLM calls are not blocked.")
+    if not checks["production_db_blocked"]:
+        blockers.append("Production database is not blocked.")
 
     return {
         "production_ready": False,

@@ -1,24 +1,65 @@
 # Google Workspace Production Gate
 
-## Default
+> Dry-run verification for Google Workspace integration (Gmail, Calendar, Drive) before enabling write scopes.
 
-- `ALLOW_REAL_GOOGLE_MUTATION=false`
-- `GOOGLE_ENABLE_WRITE_SCOPES=false`
+## Guard Implementation
 
-## Preconditions
+### Current Status
 
-- read-only workspace tools verified first
-- write scopes reviewed
-- approval path verified for every write action
+| Setting | Value | Description |
+|---------|-------|-------------|
+| `ALLOW_REAL_GOOGLE_MUTATION` | `false` | Blocks real Google API mutations |
+| `GOOGLE_ENABLE_WRITE_SCOPES` | `false` | Disables write OAuth scopes |
 
-## Enablement Sequence
+### Enforcement
 
-1. verify read-only production dry-run
-2. explicit human approval for mutation scope
-3. enable write scopes and mutation flag together
-4. verify audit trail
+1. `ALLOW_REAL_GOOGLE_MUTATION=false` blocks all write operations
+2. `GOOGLE_ENABLE_WRITE_SCOPES=false` prevents OAuth scope requests for write
+3. `_real_google_mutation_blocked()` in `health.py` checks both flags
+4. Production readiness gate requires `real_google_mutation_blocked` for lock
 
-## Rollback
+### Protected Operations (blocked when ALLOW_REAL_GOOGLE_MUTATION=false)
 
-- set `ALLOW_REAL_GOOGLE_MUTATION=false`
-- set `GOOGLE_ENABLE_WRITE_SCOPES=false`
+- Sending emails via Gmail API
+- Creating/updating Calendar events
+- Modifying Google Drive files
+- Creating Google Docs/Sheets
+- Any Google Workspace mutation that affects real data
+
+### Protected Data (never exposed)
+
+- Google OAuth tokens — never logged
+- Google API keys — never logged
+- Email content for denied requests — redacted from audit
+- Calendar event details — redacted from audit
+
+## Production Go-Live Checklist
+
+Before setting `ALLOW_REAL_GOOGLE_MUTATION=true`:
+
+- [ ] Google Cloud project configured for production
+- [ ] OAuth consent screen published (not testing)
+- [ ] OAuth scopes verified for minimum access
+- [ ] Gmail API enabled in Google Cloud Console
+- [ ] Calendar API enabled in Google Cloud Console (if needed)
+- [ ] Drive API enabled in Google Cloud Console (if needed)
+- [ ] API rate limits reviewed
+- [ ] Token refresh mechanism verified
+- [ ] Disconnection/re-auth flow tested
+- [ ] Approval flow verified (human approval before auto-send)
+
+## Dry-Run Test Commands
+
+```bash
+# Verify Google mutation is blocked
+python -c "from app.config import settings; print(not settings.ALLOW_REAL_GOOGLE_MUTATION)"
+# Expected: True
+
+# Verify write scopes are disabled
+python -c "from app.config import settings; print(not settings.GOOGLE_ENABLE_WRITE_SCOPES)"
+# Expected: True
+
+# Verify production readiness endpoint
+curl -s http://localhost:8000/api/v1/health/readiness/production | python -m json.tool
+# Check: production_ready=false, checks.real_google_mutation_blocked=true
+```

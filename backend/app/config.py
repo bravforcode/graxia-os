@@ -326,6 +326,10 @@ class Settings(BaseSettings):
     TESTING: bool = False
     SCHEDULER_EMBEDDED: bool = True
     ALLOW_REAL_LLM_CALLS: bool = False
+    ALLOW_PRODUCTION_DB: bool = False
+
+    # Production Readiness Gate
+    PRODUCTION_READY: bool = False
 
     # Monitoring & Error Tracking
     SENTRY_DSN: str = ""
