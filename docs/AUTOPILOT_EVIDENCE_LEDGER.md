@@ -134,6 +134,22 @@
 | **PRODUCTION_READY** | ❌ false (locked) |
 | **go_no_go_required** | ✅ true |
 
+## Phase 21 — First Manual Beta Session / Operator-Led Real-User Trial
+
+| Lane | Evidence | Result |
+|------|----------|--------|
+| A — Evidence Freeze | `docs/PHASE21_STARTING_BASELINE.md` — evidence freeze + pre-session checklist | ✅ |
+| B — Tester Selection | `docs/BETA_TESTER_SELECTION_CRITERIA.md` — 8 req, 6 preferred, 7 excluded | ✅ |
+| C — Session Prep Checklist | `docs/BETA_SESSION_PREP_CHECKLIST.md` — 24h/1h/15min prep + incident table | ✅ |
+| D — Observation Sheet | `docs/BETA_SESSION_OBSERVATION_SHEET.md` — 10-section observation template | ✅ |
+| E — Kill Switch Standby | `docs/BETA_KILL_SWITCH_STANDBY_CHECK.md` — drill, verification, emergency contacts | ✅ |
+| F — Feedback Template | `docs/BETA_FEEDBACK_SUMMARY_TEMPLATE.md` — structured post-session summary | ✅ |
+| G — Verification | 145/145 tests, compileall, frontend build, Alembic head all ✅ | ✅ |
+| H — Closeout | `docs/PHASE21_FIRST_BETA_SESSION_REPORT.md` — PASS verdict | ✅ |
+
+**Note:** Phase 21 is documentation-only (operational trial, no code changes).
+**Tests:** 145/145 PASS (unchanged from Phase 20)
+
 ## Readiness Summary
 
 | Setting | Current Value | Required For Production |
