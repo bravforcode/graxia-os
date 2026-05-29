@@ -228,14 +228,17 @@ class LineAgent(BaseSocialAgent):
         # Regex to find URLs
         url_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
         
+        import hashlib
+        import re
+
         def replace_url(match):
             url = match.group(0)
-            if len(url) > 50 and dashboard_url in url:
-                # Mock shortening: in production would call bit.ly or internal shortener
-                return f"{dashboard_url}/view/{url[-8:]}"
+            if len(url) > 30:
+                # Use a deterministic hash for the URL to make it short and consistent
+                url_hash = hashlib.md5(url.encode()).hexdigest()[:8]
+                return f"{dashboard_url}/l/{url_hash}"
             return url
 
-        import re
         return re.sub(url_pattern, replace_url, text)
 
     async def send_multicast(self, user_ids: list[str], message: str) -> bool:

@@ -24,22 +24,18 @@ class FacebookScraper(BaseScraper):
     
     def __init__(self, target_groups: list[str] = None):
         self.target_groups = target_groups or [
-            "https://www.facebook.com/share/g/1LVFMct7hR/",
-            "https://www.facebook.com/share/g/18SE6B254K/",
-            "https://www.facebook.com/share/g/1DLXSAT8W7/",
-            "https://www.facebook.com/share/g/1CrX8Zp8xb/",
-            "https://www.facebook.com/share/g/1B8mjvuG4Q/",
-            "https://www.facebook.com/share/g/1HhAToUqQW/",
-            "https://www.facebook.com/groups/712398472147321/",
-            "https://www.facebook.com/groups/145892305437812/",
-            "https://www.facebook.com/groups/293847230492837/",
-            "https://www.facebook.com/groups/102938475628374/",
+            "https://www.facebook.com/share/g/1LVFMct7hR/?mibextid=wwXIfr",
+            "https://www.facebook.com/share/g/18SE6B254K/?mibextid=wwXIfr",
+            "https://www.facebook.com/share/g/1DLXSAT8W7/?mibextid=wwXIfr",
+            "https://www.facebook.com/share/g/1CrX8Zp8xb/?mibextid=wwXIfr",
+            "https://www.facebook.com/share/g/1B8mjvuG4Q/?mibextid=wwXIfr",
+            "https://www.facebook.com/share/g/1HhAToUqQW/?mibextid=wwXIfr",
         ]
         
         # Condition 1: Owner keywords
         self.owner_keywords = [
-            "รับเอเจ้น", "รับเอเจ็น", "Accept Agent", "Agent welcome",
-            "เจ้าของโพสต์เอง", "เจ้าของห้อง", "เจ้าของปล่อยเอง", "ยินดีรับเอเจ้น"
+            "Owner post", "เจ้าของ", "เจ้าของปล่อยเช่า", "Agent welcome", "Agent wellcome",
+            "เจ้าของโพสต์เอง", "เจ้าของโพสเอง", "เจ้าของห้อง", "เจ้าของปล่อยเอง", "ยินดีรับเอเจ้น"
         ]
         
         # Condition 2: Rent keywords
@@ -50,7 +46,7 @@ class FacebookScraper(BaseScraper):
         self.line_id_pattern = re.compile(r"line(?:\s*id)?\s*[:\-\s]\s*([a-zA-Z0-9_\-\.]+)", re.IGNORECASE)
 
     async def run(self) -> list[dict]:
-        """Parallelized scraping of all target groups."""
+        """Parallelized scraping of all target groups with strict filtering."""
         if await self._is_muted():
             logger.info(f"Scraper {self.source_name}: muted — skipping")
             return []
@@ -67,7 +63,7 @@ class FacebookScraper(BaseScraper):
             elif isinstance(res, Exception):
                 logger.error(f"Group scraping task failed: {res}")
         
-        # Deduplication
+        # Deduplication by both hash and contact info
         deduped = self._dedup(all_posts)
         
         await self._record_result(
@@ -75,6 +71,25 @@ class FacebookScraper(BaseScraper):
             item_count=len(deduped)
         )
         
+        return deduped
+
+    def _dedup(self, posts: list[dict]) -> list[dict]:
+        seen_hash = set()
+        seen_contact = set()
+        deduped = []
+        for p in posts:
+            h = p.get("source_hash")
+            contact = p.get("contact_info")
+            contact_key = f"{contact.get('phone')}_{contact.get('line_id')}" if contact else None
+            
+            if h not in seen_hash:
+                if contact_key and contact_key in seen_contact:
+                    continue
+                
+                seen_hash.add(h)
+                if contact_key:
+                    seen_contact.add(contact_key)
+                deduped.append(p)
         return deduped
 
     async def scrape_group(self, url: str) -> list[dict]:
@@ -115,11 +130,11 @@ class FacebookScraper(BaseScraper):
                     
                 content = text_container.get_text(separator=" ", strip=True)
                 
-                # Apply Filters
+                # Apply Filters (Dual-Condition)
                 if not self._apply_filters(content):
                     continue
                     
-                # Extract Contact
+                # Extract Contact (Mandatory)
                 contact_info = self._extract_contact(content)
                 if not contact_info:
                     continue
@@ -151,13 +166,15 @@ class FacebookScraper(BaseScraper):
 
     def _apply_filters(self, content: str) -> bool:
         """Apply Owner and Rent keyword filters (Dual-Condition)."""
+        content_lower = content.lower()
+        
         # Condition 1: Owner Keywords
-        has_owner = any(kw.lower() in content.lower() for kw in self.owner_keywords)
+        has_owner = any(kw.lower() in content_lower for kw in self.owner_keywords)
         if not has_owner:
             return False
             
         # Condition 2: Rent Keywords
-        has_rent = any(kw.lower() in content.lower() for kw in self.rent_keywords)
+        has_rent = any(kw.lower() in content_lower for kw in self.rent_keywords)
         if not has_rent:
             return False
             

@@ -8,6 +8,7 @@ import {
   Search,
   Trash2,
   UserRound,
+  Cpu,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -59,6 +60,7 @@ export default function Leads() {
     tone: NoticeTone;
     text: string;
   } | null>(null);
+  const [selectedLeadForStatus, setSelectedLeadForStatus] = useState<Contact | null>(null);
 
   const leadQuery = useQuery({
     queryKey: ["leads", search, minScore, followupDueOnly],
@@ -103,6 +105,7 @@ export default function Leads() {
         next_followup_date: draft.next_followup_date || undefined,
         followup_reason: draft.followup_reason.trim() || undefined,
         notes: draft.notes.trim() || undefined,
+        status: "New",
       }),
     onSuccess: async () => {
       setDraft(emptyDraft);
@@ -117,6 +120,19 @@ export default function Leads() {
     },
     onError: () => {
       setNotice({ tone: "danger", text: "Lead could not be saved." });
+    },
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      api.updateContact(id, { status }),
+    onSuccess: async () => {
+      setNotice({ tone: "success", text: "Status updated successfully." });
+      await queryClient.invalidateQueries({ queryKey: ["leads"] });
+      setSelectedLeadForStatus(null);
+    },
+    onError: () => {
+      setNotice({ tone: "danger", text: "Failed to update status." });
     },
   });
 
@@ -193,15 +209,17 @@ export default function Leads() {
         title="Leads"
         description="Qualified prospects, next follow-ups, and direct outreach readiness."
         actions={
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <Button
-              variant="secondary"
-              icon={<RefreshCw size={16} />}
-              onClick={() => void leadQuery.refetch()}
-            >
-              Refresh
-            </Button>
-          </motion.div>
+          <div className="flex gap-2">
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                variant="secondary"
+                icon={<RefreshCw size={16} className={leadQuery.isFetching ? "animate-spin" : ""} />}
+                onClick={() => void leadQuery.refetch()}
+              >
+                Refresh
+              </Button>
+            </motion.div>
+          </div>
         }
       />
 
@@ -344,6 +362,7 @@ export default function Leads() {
                         scheduleFollowupMutation.mutate(lead)
                       }
                       onDelete={() => deleteMutation.mutate(lead.id)}
+                      onUpdateStatus={(lead) => setSelectedLeadForStatus(lead)}
                     />
                   ))}
                 </AnimatePresence>
@@ -354,6 +373,72 @@ export default function Leads() {
           </div>
         </GlassCard>
       </div>
+
+      {/* Status Selection Popup (Brav OS Modal) */}
+      <AnimatePresence>
+        {selectedLeadForStatus && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-zinc-900 border border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-blue-600/20 rounded-lg">
+                  <Cpu className="w-5 h-5 text-blue-500" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Update Status</h3>
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-mono">Core Lifecycle Management</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-2 mb-8">
+                {['New', 'Discovery', 'High Intent', 'Nurturing', 'Closed', 'Lost'].map((s) => (
+                  <button
+                    key={s}
+                    disabled={updateStatusMutation.isPending}
+                    onClick={() => updateStatusMutation.mutate({ id: selectedLeadForStatus.id, status: s })}
+                    className={`w-full text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-between group
+                      ${selectedLeadForStatus.status === s 
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' 
+                        : 'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white border border-transparent hover:border-white/10'}`}
+                  >
+                    {s}
+                    {selectedLeadForStatus.status === s && <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />}
+                  </button>
+                ))}
+              </div>
+              
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setSelectedLeadForStatus(null)}
+                  className="flex-1 py-3 text-xs font-bold uppercase tracking-widest text-zinc-500 hover:text-white transition-colors bg-white/5 rounded-xl"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <section id="lead-form" className="mt-12 pt-12 border-t border-white/5">
+        <PageHeader
+          eyebrow="Onboarding"
+          title="Add New Asset"
+          description="Manually ingest a high-value lead into the autonomous pipeline."
+        />
+        <GlassCard intensity="low" className="mt-8 p-8 max-w-4xl">
+          <LeadForm
+            draft={draft}
+            setDraft={setDraft}
+            saving={createMutation.isPending}
+            onSubmit={handleCreate}
+          />
+        </GlassCard>
+      </section>
     </div>
   );
 }
@@ -481,6 +566,7 @@ function LeadCard({
   onMarkContacted,
   onScheduleFollowup,
   onDelete,
+  onUpdateStatus,
 }: {
   lead: Contact;
   contacting: boolean;
@@ -489,6 +575,7 @@ function LeadCard({
   onMarkContacted: () => void;
   onScheduleFollowup: () => void;
   onDelete: () => void;
+  onUpdateStatus: (lead: Contact) => void;
 }) {
   const isHighValue = (lead.value_score ?? 0) >= 7;
   
@@ -501,29 +588,41 @@ function LeadCard({
       className="rounded-2xl border border-white/5 bg-zinc-900/40 p-5 shadow-lg backdrop-blur-md transition-all hover:bg-zinc-900/60 hover:border-white/10"
     >
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
+        <div className="min-w-0">
+          <h3 className="text-lg font-semibold text-[var(--color-text-primary)] truncate">
             {lead.name}
           </h3>
           {lead.role ? (
-            <p className="mt-0.5 text-sm text-[var(--color-text-secondary)]">
+            <p className="mt-0.5 text-sm text-[var(--color-text-secondary)] truncate">
               {lead.role}
             </p>
           ) : null}
           {lead.company ? (
-            <p className="mt-0.5 text-xs text-primary/80 font-medium">
+            <p className="mt-0.5 text-xs text-primary/80 font-medium truncate">
               {lead.company}
             </p>
           ) : null}
         </div>
-        <AnimatedTooltip content={isHighValue ? "High priority prospect based on recent activity." : "Standard priority prospect."}>
-          <div>
-            <StatusPill
-              label={`Score ${lead.value_score ?? 0}/10`}
-              tone={isHighValue ? "success" : "info"}
-            />
-          </div>
-        </AnimatedTooltip>
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          <AnimatedTooltip content={isHighValue ? "High priority prospect based on recent activity." : "Standard priority prospect."}>
+            <div>
+              <StatusPill
+                label={`Score ${lead.value_score ?? 0}/10`}
+                tone={isHighValue ? "success" : "info"}
+              />
+            </div>
+          </AnimatedTooltip>
+          <button 
+            onClick={() => onUpdateStatus(lead)}
+            className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-all active:scale-95
+              ${lead.status === 'High Intent' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20' : 
+                lead.status === 'Lost' ? 'bg-rose-500/10 border-rose-500/20 text-rose-400 hover:bg-rose-500/20' : 
+                lead.status === 'New' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400 hover:bg-blue-500/20' :
+                'bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10'}`}
+          >
+            {lead.status || 'New'}
+          </button>
+        </div>
       </div>
 
       <div className="mt-4 space-y-1.5 text-sm text-[var(--color-text-secondary)]">
@@ -587,7 +686,7 @@ function LeadCard({
           <Button
             size="sm"
             variant="ghost"
-            className="px-2 hover:text-red-400 hover:bg-red-400/10"
+            className="px-2 hover:text-rose-400 hover:bg-rose-400/10"
             loading={deleting}
             icon={<Trash2 size={15} />}
             onClick={onDelete}
