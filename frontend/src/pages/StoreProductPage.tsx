@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLang } from "../i18n/LanguageContext";
-import { PRODUCTS, CATEGORY_META, formatPrice, formatSalesCount, type ProductCatalogItem } from "../data/products";
+import { PRODUCTS, CATEGORY_META, formatPrice, formatSalesCount, getLocalizedName, getLocalizedShortDescription, getLocalizedDescription, type ProductCatalogItem } from "../data/products";
 import { ANIMATIONS, staggerDelay } from "../lib/animations";
 import { ScrollReveal } from "../components/ui/ScrollReveal";
 import { SkeletonProductDetail } from "../components/ui/Skeleton";
@@ -120,10 +120,10 @@ export default function StoreProductPage() {
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-display font-extrabold tracking-tight leading-[1.1]">
-              <span className="bg-gradient-to-r from-white via-white to-slate-300 bg-clip-text text-transparent">{product.name}</span>
+              <span className="bg-gradient-to-r from-white via-white to-slate-300 bg-clip-text text-transparent">{getLocalizedName(product, locale)}</span>
             </h1>
 
-            <p className="text-lg text-slate-300 font-medium leading-relaxed max-w-2xl">{product.shortDescription}</p>
+            <p className="text-lg text-slate-300 font-medium leading-relaxed max-w-2xl">{getLocalizedShortDescription(product, locale)}</p>
 
             <div className="flex flex-wrap items-center gap-4 text-sm">
               <div className="flex items-center gap-1.5">
@@ -148,7 +148,7 @@ export default function StoreProductPage() {
               </div>
             </div>
 
-            <div className="pt-4 text-sm text-slate-400 leading-relaxed space-y-4"><p>{product.description}</p></div>
+            <div className="pt-4 text-sm text-slate-400 leading-relaxed space-y-4"><p>{getLocalizedDescription(product, locale)}</p></div>
           </div>
 
           {/* Checkout Card */}

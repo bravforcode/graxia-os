@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import { translations, type Locale } from "./translations";
+import { preloadThaiProducts } from "../data/products";
 
 interface LanguageContextType {
   locale: Locale;
@@ -19,6 +20,11 @@ function getInitialLocale(): Locale {
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [locale, setLocale] = useState<Locale>(getInitialLocale);
+
+  // Eagerly preload Thai product data when locale is TH
+  useEffect(() => {
+    if (locale === "th") preloadThaiProducts();
+  }, [locale]);
 
   const toggle = useCallback(() => {
     setLocale((prev) => {

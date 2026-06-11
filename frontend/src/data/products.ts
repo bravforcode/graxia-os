@@ -37,64 +37,16 @@ export type ProductCategory =
   | "health"
   | "content";
 
-export const CATEGORY_META: Record<
-  ProductCategory,
-  { label: string; icon: string; description: string; color: string }
-> = {
-  "ai-automation": {
-    label: "AI & Automation",
-    icon: "🤖",
-    description: "AI prompts, workflows, and automation templates",
-    color: "from-violet-500 to-purple-600",
-  },
-  productivity: {
-    label: "Productivity",
-    icon: "⚡",
-    description: "Notion templates, dashboards, and life OS systems",
-    color: "from-amber-500 to-orange-600",
-  },
-  design: {
-    label: "Design Assets",
-    icon: "🎨",
-    description: "UI kits, icons, templates, and brand assets",
-    color: "from-pink-500 to-rose-600",
-  },
-  developer: {
-    label: "Developer Tools",
-    icon: "💻",
-    description: "Code templates, boilerplates, and component libraries",
-    color: "from-cyan-500 to-blue-600",
-  },
-  marketing: {
-    label: "Marketing",
-    icon: "📈",
-    description: "Swipe files, ad templates, and copywriting frameworks",
-    color: "from-emerald-500 to-green-600",
-  },
-  finance: {
-    label: "Finance & Tax",
-    icon: "💰",
-    description: "Budget trackers, tax templates, and financial dashboards",
-    color: "from-yellow-500 to-amber-600",
-  },
-  education: {
-    label: "Education",
-    icon: "📚",
-    description: "Courses, guides, and learning resources",
-    color: "from-indigo-500 to-blue-600",
-  },
-  health: {
-    label: "Health & Wellness",
-    icon: "🏋️",
-    description: "Fitness plans, meal prep, and wellness trackers",
-    color: "from-red-500 to-rose-600",
-  },
-  content: {
-    label: "Content Creation",
-    icon: "🎬",
-    description: "Video templates, social media, and creator tools",
-    color: "from-teal-500 to-cyan-600",
-  },
+export const CATEGORY_META: Record<ProductCategory, { icon: string }> = {
+  "ai-automation": { icon: "🤖" },
+  productivity: { icon: "⚡" },
+  design: { icon: "🎨" },
+  developer: { icon: "💻" },
+  marketing: { icon: "📈" },
+  finance: { icon: "💰" },
+  education: { icon: "📚" },
+  health: { icon: "🏋️" },
+  content: { icon: "🎬" },
 };
 
 export const PRODUCTS: ProductCatalogItem[] = [
@@ -1006,8 +958,69 @@ export function searchProducts(query: string): ProductCatalogItem[] {
     (p) =>
       p.name.toLowerCase().includes(q) ||
       p.shortDescription.toLowerCase().includes(q) ||
-      p.tags.some((t) => t.includes(q))
+      p.tags.some((t) => t.includes(q)) ||
+      (_thCache?.[p.id]?.nameTh?.toLowerCase().includes(q) ?? false) ||
+      (_thCache?.[p.id]?.shortDescriptionTh?.toLowerCase().includes(q) ?? false)
   );
+}
+
+// ── Lazy-loaded Thai Product Translations ───────────────────────────────
+// Data lives in products-th.ts (separate chunk) and is loaded on-demand
+// when the user switches to Thai locale. Falls back to English if not loaded.
+
+type ThProduct = { nameTh: string; shortDescriptionTh: string; descriptionTh: string };
+
+let _thCache: Record<string, ThProduct> | null = null;
+let _thPromise: Promise<void> | null = null;
+
+/** Preload Thai product data. Safe to call multiple times — only loads once. */
+export function preloadThaiProducts(): void {
+  if (_thCache || _thPromise) return;
+  _thPromise = import("./products-th").then((mod) => {
+    _thCache = mod.PRODUCTS_TH;
+  });
+}
+
+/** Synchronous access to cached Thai data. Returns null if not yet loaded. */
+export function getPRODUCTS_TH(): Record<string, ThProduct> | null {
+  return _thCache;
+}
+
+/** Synchronous check — returns cached data if loaded, null otherwise. */
+function getThProduct(id: string): ThProduct | null {
+  return _thCache?.[id] ?? null;
+}
+
+// ── Locale-aware helpers ───────────────────────────────────────────────
+
+export function getLocalizedName(product: ProductCatalogItem, locale: string): string {
+  if (locale === "th") {
+    const th = getThProduct(product.id);
+    if (th?.nameTh) return th.nameTh;
+  }
+  return product.name;
+}
+
+export function getLocalizedShortDescription(
+  product: ProductCatalogItem,
+  locale: string
+): string {
+  if (locale === "th") {
+    const th = getThProduct(product.id);
+    if (th?.shortDescriptionTh) return th.shortDescriptionTh;
+  }
+  return product.shortDescription;
+}
+
+export function getLocalizedDescription(
+  product: ProductCatalogItem,
+  locale: string
+): string {
+  if (locale === "th") {
+    const th = getThProduct(product.id);
+    if (th?.descriptionTh) return th.descriptionTh;
+  }
+  return product.description;
 }
 
 export function formatPrice(amount: number, currency: string = "THB"): string {

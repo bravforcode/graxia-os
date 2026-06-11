@@ -15,8 +15,12 @@ import { useLang } from "../i18n/LanguageContext";
 import {
   PRODUCTS,
   CATEGORY_META,
+  getPRODUCTS_TH,
   formatPrice,
   formatSalesCount,
+  getLocalizedName,
+  getLocalizedShortDescription,
+  preloadThaiProducts,
   type ProductCategory,
 } from "../data/products";
 import { ANIMATIONS, staggerDelay } from "../lib/animations";
@@ -46,7 +50,12 @@ export default function StorePage() {
     if (search.trim()) {
       const q = search.toLowerCase();
       items = items.filter(
-        (p) => p.name.toLowerCase().includes(q) || p.shortDescription.toLowerCase().includes(q) || p.tags.some((t) => t.includes(q))
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.shortDescription.toLowerCase().includes(q) ||
+          p.tags.some((t) => t.includes(q)) ||
+          (getPRODUCTS_TH()?.[p.id]?.nameTh?.toLowerCase().includes(q) ?? false) ||
+          (getPRODUCTS_TH()?.[p.id]?.shortDescriptionTh?.toLowerCase().includes(q) ?? false)
       );
     }
     switch (sortBy) {
@@ -206,7 +215,7 @@ export default function StorePage() {
                 className={`group bg-slate-900/40 border border-slate-800/60 rounded-3xl overflow-hidden flex flex-col animate-fade-in-up ${ANIMATIONS.cardHoverGlow}`}
                 style={staggerDelay(i)}>
                 <div className="relative h-44 overflow-hidden">
-                  <img src={product.coverImageUrl} alt={product.name} loading="lazy"
+                  <img src={product.coverImageUrl} alt={getLocalizedName(product, locale)} loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
                   {product.badge && (
@@ -225,9 +234,9 @@ export default function StorePage() {
                     </span>
                   </div>
                   <h3 className="font-bold text-sm text-white group-hover:text-indigo-300 transition-colors duration-200 mb-1.5 line-clamp-2">
-                    {product.name}
+                    {getLocalizedName(product, locale)}
                   </h3>
-                  <p className="text-xs text-slate-500 line-clamp-2 mb-4 flex-1">{product.shortDescription}</p>
+                  <p className="text-xs text-slate-500 line-clamp-2 mb-4 flex-1">{getLocalizedShortDescription(product, locale)}</p>
                   <div className="flex items-end justify-between pt-3 border-t border-slate-800/60">
                     <div>
                       <span className="text-xl font-extrabold text-white">{formatPrice(product.priceAmount)}</span>

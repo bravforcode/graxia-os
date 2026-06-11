@@ -6,7 +6,7 @@ import {
   Lock, Award, ArrowLeft,
 } from "lucide-react";
 import { useLang } from "../../i18n/LanguageContext";
-import { PRODUCTS, CATEGORY_META, formatPrice, formatSalesCount, type ProductCatalogItem } from "../../data/products";
+import { PRODUCTS, CATEGORY_META, formatPrice, formatSalesCount, getLocalizedName, getLocalizedShortDescription, getLocalizedDescription, type ProductCatalogItem } from "../../data/products";
 import { funnelApi, type DigitalProduct } from "../../api/funnel";
 import { ANIMATIONS, staggerDelay } from "../../lib/animations";
 import { ScrollReveal } from "../../components/ui/ScrollReveal";
@@ -159,9 +159,9 @@ export default function PublicProductPage() {
   };
 
   const cp = catalogProduct;
-  const productName = cp?.name || product?.name || "Product";
-  const productDesc = cp?.shortDescription || product?.short_description || "";
-  const fullDesc = cp?.description || product?.sales_page_content || "";
+  const productName = cp ? getLocalizedName(cp, locale) : product?.name || "Product";
+  const productDesc = cp ? getLocalizedShortDescription(cp, locale) : product?.short_description || "";
+  const fullDesc = cp ? getLocalizedDescription(cp, locale) : product?.sales_page_content || "";
   const price = cp?.priceAmount || parseFloat(product?.price_amount?.toString() || "0");
   const currency = cp?.currency || product?.currency || "USD";
   const features = cp?.features || [];

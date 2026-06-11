@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useLang } from "../i18n/LanguageContext";
-import { PRODUCTS, CATEGORY_META, formatPrice, formatSalesCount, type ProductCategory } from "../data/products";
+import { PRODUCTS, CATEGORY_META, formatPrice, formatSalesCount, getLocalizedName, getLocalizedShortDescription, type ProductCategory } from "../data/products";
 import { ANIMATIONS, staggerDelay } from "../lib/animations";
 import { ScrollReveal } from "../components/ui/ScrollReveal";
 
@@ -280,7 +280,7 @@ export default function LandingPage() {
                 <div className="relative h-48 overflow-hidden">
                   <img
                     src={product.coverImageUrl}
-                    alt={product.name}
+                    alt={getLocalizedName(product, locale)}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
                   />
@@ -300,8 +300,8 @@ export default function LandingPage() {
                       <Star size={10} className="fill-amber-400" /> {product.rating}
                     </span>
                   </div>
-                  <h3 className="font-bold text-lg text-white group-hover:text-indigo-300 transition-colors duration-200">{product.name}</h3>
-                  <p className="text-sm text-slate-400 line-clamp-2">{product.shortDescription}</p>
+                  <h3 className="font-bold text-lg text-white group-hover:text-indigo-300 transition-colors duration-200">{getLocalizedName(product, locale)}</h3>
+                  <p className="text-sm text-slate-400 line-clamp-2">{getLocalizedShortDescription(product, locale)}</p>
                   <div className="flex items-center justify-between pt-2">
                     <span className="text-2xl font-extrabold text-white">{formatPrice(product.priceAmount)}</span>
                     <span className="text-xs text-slate-500">{formatSalesCount(product.salesCount)} {t("featured.sold")}</span>
