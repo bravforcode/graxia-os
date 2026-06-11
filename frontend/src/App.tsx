@@ -6,6 +6,8 @@ import Layout from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
 import { LanguageProvider } from "./i18n/LanguageContext";
+import ExitIntentPopup from "./components/ui/ExitIntentPopup";
+import SocialProofPopup from "./components/ui/SocialProofPopup";
 
 const UnifiedDashboard = lazy(() => import("./pages/UnifiedDashboard"));
 const ApprovalQueue = lazy(() => import("./pages/ApprovalQueue"));
@@ -105,6 +107,8 @@ function App() {
         <LanguageProvider>
           <AuthProvider>
             <AppRoutes />
+            <ExitIntentPopup />
+            <SocialProofPopup />
           </AuthProvider>
         </LanguageProvider>
       </BrowserRouter>
