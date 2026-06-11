@@ -1,7 +1,7 @@
 import pytest
 from uuid import uuid4
 from decimal import Decimal
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 
 from httpx import AsyncClient
 from sqlalchemy import select
@@ -126,3 +126,95 @@ class TestFunnelWebhookDelivery:
         stmt = select(DeliveryAccess).where(DeliveryAccess.order_id == orders[0].id)
         access_res = await db_session.execute(stmt)
         assert len(access_res.scalars().all()) == 1
+
+    async def test_expired_session_sends_abandoned_cart_and_sets_dedup_flag(
+        self, async_client: AsyncClient, db_session: AsyncSession, mock_webhook_signature
+    ):
+        """3. checkout.session.expired fires abandoned cart email and sets dedup flag"""
+        org = await OrganizationFactory.build(db_session)
+        prod = DigitalProduct(
+            id=uuid4(), organization_id=org.id, name="Test Prod", slug="p-exp-aban",
+            price_amount=Decimal("200.00"), currency="THB", status="published"
+        )
+        checkout = FunnelCheckoutSession(
+            id=uuid4(), organization_id=org.id, product_id=prod.id,
+            status="pending", amount=Decimal("200.00"), currency="THB",
+            customer_email="cart@abandon.com"
+        )
+        db_session.add_all([prod, checkout])
+        await db_session.commit()
+
+        event_data = {
+            "metadata": {
+                "organization_id": str(org.id),
+                "product_id": str(prod.id),
+                "funnel_checkout_session_id": str(checkout.id)
+            }
+        }
+        mock_webhook_signature.return_value = {
+            "type": "checkout.session.expired",
+            "data": {"object": event_data}
+        }
+
+        with patch("app.services.automation_email_service.email_service.send_email", new_callable=AsyncMock) as mock_send:
+            response = await async_client.post(
+                "/api/v1/funnel/webhooks/stripe",
+                headers={"stripe-signature": "valid"},
+                content="{}"
+            )
+            assert response.status_code == 200
+            mock_send.assert_called_once()
+            call_kwargs = mock_send.call_args
+            assert call_kwargs.kwargs["to"] == "cart@abandon.com"
+            assert call_kwargs.kwargs["template_name"] == "funnel_automation_abandoned_cart"
+
+        # Verify dedup flag was set
+        stmt = select(FunnelCheckoutSession).where(FunnelCheckoutSession.id == checkout.id)
+        res = await db_session.execute(stmt)
+        session = res.scalar_one()
+        assert session.abandoned_email_sent_at is not None
+
+    async def test_duplicate_expired_event_is_deduped(
+        self, async_client: AsyncClient, db_session: AsyncSession, mock_webhook_signature
+    ):
+        """4. Second checkout.session.expired for same session is a no-op"""
+        org = await OrganizationFactory.build(db_session)
+        prod = DigitalProduct(
+            id=uuid4(), organization_id=org.id, name="P", slug="p-exp-dedup",
+            price_amount=Decimal("1"), status="published"
+        )
+        checkout = FunnelCheckoutSession(
+            id=uuid4(), organization_id=org.id, product_id=prod.id,
+            status="pending", amount=Decimal("1"), currency="THB",
+            customer_email="dup@test.com"
+        )
+        db_session.add_all([prod, checkout])
+        await db_session.commit()
+
+        event_data = {
+            "metadata": {
+                "organization_id": str(org.id),
+                "product_id": str(prod.id),
+                "funnel_checkout_session_id": str(checkout.id)
+            }
+        }
+        mock_webhook_signature.return_value = {
+            "type": "checkout.session.expired",
+            "data": {"object": event_data}
+        }
+
+        # First call — should send email
+        with patch("app.services.automation_email_service.email_service.send_email", new_callable=AsyncMock) as mock_send:
+            await async_client.post(
+                "/api/v1/funnel/webhooks/stripe",
+                headers={"stripe-signature": "valid"}, content="{}"
+            )
+            assert mock_send.call_count == 1
+
+        # Second call — dedup flag set, should NOT send email
+        with patch("app.services.automation_email_service.email_service.send_email", new_callable=AsyncMock) as mock_send:
+            await async_client.post(
+                "/api/v1/funnel/webhooks/stripe",
+                headers={"stripe-signature": "valid"}, content="{}"
+            )
+            mock_send.assert_not_called()

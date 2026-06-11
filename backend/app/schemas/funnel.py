@@ -283,3 +283,178 @@ class LeadCaptureResponse(BaseModel):
     raw_token: Optional[str] = None
     delivery_url: Optional[str] = None
 
+
+# ── Coupon ────────────────────────────────────────────────────────────────
+
+class CouponCreate(BaseModel):
+    code: str = Field(..., max_length=50)
+    coupon_type: str  # percentage | fixed
+    discount_value: Decimal
+    currency: Optional[str] = "THB"
+    min_order_amount: Optional[Decimal] = Decimal("0")
+    max_uses: Optional[int] = None
+    product_id: Optional[UUID] = None
+    expires_at: Optional[datetime] = None
+    description: Optional[str] = None
+
+class CouponUpdate(BaseModel):
+    code: Optional[str] = None
+    coupon_type: Optional[str] = None
+    discount_value: Optional[Decimal] = None
+    min_order_amount: Optional[Decimal] = None
+    max_uses: Optional[int] = None
+    status: Optional[str] = None
+    expires_at: Optional[datetime] = None
+    description: Optional[str] = None
+
+class CouponRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    organization_id: UUID
+    code: str
+    coupon_type: str
+    discount_value: Decimal
+    currency: str
+    min_order_amount: Decimal
+    max_uses: Optional[int]
+    used_count: int
+    product_id: Optional[UUID]
+    status: str
+    expires_at: Optional[datetime]
+    description: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+
+class CouponValidateRequest(BaseModel):
+    code: str
+    order_amount: Decimal
+    product_id: Optional[UUID] = None
+
+class CouponValidateResponse(BaseModel):
+    is_valid: bool
+    message: str
+    discount_amount: Optional[Decimal] = None
+    final_amount: Optional[Decimal] = None
+
+
+# ── Review ────────────────────────────────────────────────────────────────
+
+class ReviewCreate(BaseModel):
+    product_id: UUID
+    order_id: Optional[UUID] = None
+    contact_id: Optional[UUID] = None
+    customer_name: str = Field(..., max_length=255)
+    customer_email: str = Field(..., max_length=255)
+    rating: int = Field(..., ge=1, le=5)
+    title: Optional[str] = Field(None, max_length=255)
+    body: Optional[str] = None
+
+class ReviewUpdate(BaseModel):
+    rating: Optional[int] = Field(None, ge=1, le=5)
+    title: Optional[str] = None
+    body: Optional[str] = None
+    status: Optional[str] = None
+
+class ReviewRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    organization_id: UUID
+    product_id: UUID
+    order_id: Optional[UUID]
+    customer_name: str
+    customer_email: str
+    rating: int
+    title: Optional[str]
+    body: Optional[str]
+    status: str
+    is_verified_purchase: bool
+    created_at: datetime
+    updated_at: datetime
+
+class ReviewStats(BaseModel):
+    total_reviews: int
+    average_rating: float
+    rating_distribution: dict[str, int]
+
+
+# ── Bundle ────────────────────────────────────────────────────────────────
+
+class BundleCreate(BaseModel):
+    name: str = Field(..., max_length=255)
+    slug: str = Field(..., max_length=255)
+    description: Optional[str] = None
+    discount_type: str  # percentage | fixed
+    discount_value: Decimal
+    product_ids: Optional[List[UUID]] = None
+    cover_image_url: Optional[str] = None
+    badge: Optional[str] = None
+
+class BundleUpdate(BaseModel):
+    name: Optional[str] = None
+    slug: Optional[str] = None
+    description: Optional[str] = None
+    discount_type: Optional[str] = None
+    discount_value: Optional[Decimal] = None
+    product_ids: Optional[List[UUID]] = None
+    status: Optional[str] = None
+    cover_image_url: Optional[str] = None
+    badge: Optional[str] = None
+
+class BundleRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    organization_id: UUID
+    name: str
+    slug: str
+    description: Optional[str]
+    discount_type: str
+    discount_value: Decimal
+    status: str
+    cover_image_url: Optional[str]
+    product_ids: Optional[List[str]]
+    sales_count: int
+    badge: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+
+
+# ── Email Sequence ────────────────────────────────────────────────────────
+
+class EmailSequenceCreate(BaseModel):
+    name: str = Field(..., max_length=255)
+    trigger_type: str  # welcome, abandoned_cart, post_purchase, etc.
+    delay_hours: int = 0
+    subject_template: str = Field(..., max_length=500)
+    body_template: str
+    product_id: Optional[UUID] = None
+
+class EmailSequenceUpdate(BaseModel):
+    name: Optional[str] = None
+    trigger_type: Optional[str] = None
+    delay_hours: Optional[int] = None
+    subject_template: Optional[str] = None
+    body_template: Optional[str] = None
+    status: Optional[str] = None
+    product_id: Optional[UUID] = None
+
+class EmailSequenceRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    organization_id: UUID
+    name: str
+    trigger_type: str
+    status: str
+    delay_hours: int
+    subject_template: str
+    body_template: str
+    product_id: Optional[UUID]
+    total_sent: int
+    total_opened: int
+    total_clicked: int
+    created_at: datetime
+    updated_at: datetime
+

@@ -329,6 +329,20 @@ async def register(user_data: UserRegister, request: Request, response: Response
         await db.commit()
     except Exception as exc:
         logger.warning("Auth register audit logging skipped: %s", exc)
+
+    # ── AUTOMATION: Welcome email ──
+    try:
+        if user.organization_id:
+            from app.services.automation_email_service import AutomationEmailService
+            automation_svc = AutomationEmailService(db)
+            await automation_svc.trigger_welcome(
+                organization_id=user.organization_id,
+                customer_email=user.email,
+                customer_name=user.full_name or user.email.split("@")[0],
+            )
+    except Exception as exc:
+        logger.warning("Welcome email automation skipped: %s", exc)
+
     logger.info("New user registered: %s", user.email)
     return auth_response
 
@@ -407,6 +421,20 @@ async def social_login(
             if _is_database_unavailable_error(exc):
                 _raise_database_unavailable(exc)
             raise
+
+        # ── AUTOMATION: Welcome email for social signup ──
+        try:
+            if user.organization_id:
+                from app.services.automation_email_service import AutomationEmailService
+                automation_svc = AutomationEmailService(db)
+                await automation_svc.trigger_welcome(
+                    organization_id=user.organization_id,
+                    customer_email=user.email,
+                    customer_name=full_name or user.email.split("@")[0],
+                )
+        except Exception as exc:
+            logger.warning("Welcome email automation skipped for social signup: %s", exc)
+
         logger.info("Created new social user: %s via %s", email, payload.provider)
     else:
         from datetime import datetime

@@ -132,6 +132,7 @@ class FunnelCheckoutSession(Base, TenantMixin):
     metadata_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, default=dict)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    abandoned_email_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
@@ -325,4 +326,161 @@ class LeadMagnet(Base, TenantMixin):
     )
 
     target_product: Mapped["DigitalProduct"] = relationship("DigitalProduct", lazy="selectin")
+
+
+class Coupon(Base, TenantMixin):
+    """Automated discount coupons — percentage or fixed amount."""
+    __tablename__ = "funnel_coupons"
+    __table_args__ = (
+        CheckConstraint(
+            "coupon_type IN ('percentage', 'fixed')",
+            name="ck_coupon_type",
+        ),
+        CheckConstraint(
+            "status IN ('active', 'expired', 'disabled')",
+            name="ck_coupon_status",
+        ),
+        CheckConstraint("discount_value > 0", name="ck_coupon_discount_positive"),
+        Index("ix_funnel_coupons_code", "code", unique=True),
+    )
+
+    id: Mapped[UUIDType] = mapped_column(
+        SQLUUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    code: Mapped[str] = mapped_column(String(50), nullable=False)
+    coupon_type: Mapped[str] = mapped_column(String(20), nullable=False)  # percentage | fixed
+    discount_value: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    currency: Mapped[str] = mapped_column(String(10), default="THB", nullable=False)
+    min_order_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0, nullable=False)
+    max_uses: Mapped[int | None] = mapped_column(Integer)
+    used_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    product_id: Mapped[UUIDType | None] = mapped_column(
+        SQLUUID(as_uuid=True), ForeignKey("digital_products.id", ondelete="SET NULL"), nullable=True
+    )
+    status: Mapped[str] = mapped_column(String(50), default="active", nullable=False)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    description: Mapped[str | None] = mapped_column(String(255))
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class ProductReview(Base, TenantMixin):
+    """Customer reviews — collected automatically after purchase."""
+    __tablename__ = "funnel_reviews"
+    __table_args__ = (
+        CheckConstraint(
+            "rating >= 1 AND rating <= 5",
+            name="ck_review_rating_range",
+        ),
+        CheckConstraint(
+            "status IN ('pending', 'published', 'hidden')",
+            name="ck_review_status",
+        ),
+    )
+
+    id: Mapped[UUIDType] = mapped_column(
+        SQLUUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    product_id: Mapped[UUIDType] = mapped_column(
+        SQLUUID(as_uuid=True), ForeignKey("digital_products.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    order_id: Mapped[UUIDType | None] = mapped_column(
+        SQLUUID(as_uuid=True), ForeignKey("funnel_orders.id", ondelete="SET NULL"), nullable=True
+    )
+    contact_id: Mapped[UUIDType | None] = mapped_column(
+        SQLUUID(as_uuid=True), ForeignKey("contacts.id", ondelete="SET NULL"), nullable=True
+    )
+    customer_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    customer_email: Mapped[str] = mapped_column(String(255), nullable=False)
+    rating: Mapped[int] = mapped_column(Integer, nullable=False)
+    title: Mapped[str | None] = mapped_column(String(255))
+    body: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(50), default="published", nullable=False)
+    is_verified_purchase: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class EmailSequence(Base, TenantMixin):
+    """Automated email sequences — welcome, abandoned cart, post-purchase."""
+    __tablename__ = "funnel_email_sequences"
+    __table_args__ = (
+        CheckConstraint(
+            "trigger_type IN ('welcome', 'abandoned_cart', 'post_purchase', 'review_request', 'cross_sell', 'win_back')",
+            name="ck_email_trigger_type",
+        ),
+        CheckConstraint(
+            "status IN ('active', 'paused', 'draft')",
+            name="ck_email_seq_status",
+        ),
+    )
+
+    id: Mapped[UUIDType] = mapped_column(
+        SQLUUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    trigger_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    status: Mapped[str] = mapped_column(String(50), default="draft", nullable=False)
+    delay_hours: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    subject_template: Mapped[str] = mapped_column(String(500), nullable=False)
+    body_template: Mapped[str] = mapped_column(Text, nullable=False)
+    product_id: Mapped[UUIDType | None] = mapped_column(
+        SQLUUID(as_uuid=True), ForeignKey("digital_products.id", ondelete="SET NULL"), nullable=True
+    )
+    total_sent: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    total_opened: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    total_clicked: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class BundleDeal(Base, TenantMixin):
+    """Product bundles — auto-suggested bundles with discount."""
+    __tablename__ = "funnel_bundles"
+    __table_args__ = (
+        CheckConstraint(
+            "discount_type IN ('percentage', 'fixed')",
+            name="ck_bundle_discount_type",
+        ),
+        CheckConstraint(
+            "status IN ('active', 'inactive')",
+            name="ck_bundle_status",
+        ),
+    )
+
+    id: Mapped[UUIDType] = mapped_column(
+        SQLUUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    slug: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    discount_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    discount_value: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    status: Mapped[str] = mapped_column(String(50), default="active", nullable=False)
+    cover_image_url: Mapped[str | None] = mapped_column(Text)
+    product_ids: Mapped[list | None] = mapped_column(JSONB, default=list)
+    sales_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    badge: Mapped[str | None] = mapped_column(String(50))
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 

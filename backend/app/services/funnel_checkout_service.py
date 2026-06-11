@@ -92,6 +92,16 @@ class FunnelCheckoutService:
             checkout_session.status = "pending"
             await self.db.commit()
 
+            # Schedule abandoned cart check (1 hour delay)
+            try:
+                from app.tasks.funnel_automation_tasks import check_and_send_abandoned_cart
+                check_and_send_abandoned_cart.apply_async(
+                    args=[str(organization_id), str(checkout_session.id)],
+                    countdown=3600,  # 1 hour
+                )
+            except Exception as e:
+                logger.warning(f"Failed to schedule abandoned cart check: {e}")
+
             return {
                 "id": checkout_session.id,
                 "organization_id": checkout_session.organization_id,

@@ -108,4 +108,9 @@ BEAT_SCHEDULE = {
         "schedule": crontab(minute="*/30"),
         "options": {"queue": BACKGROUND_QUEUE},
     },
+    "win-back-emails": {
+        "task": "tasks.funnel_automation.send_win_back_emails",
+        "schedule": crontab(hour=10, minute=0),
+        "options": {"queue": BACKGROUND_QUEUE},
+    },
 }

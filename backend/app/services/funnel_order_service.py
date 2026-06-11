@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.funnel import DigitalProduct, FunnelCheckoutSession, FunnelOrder, FunnelOrderItem
 from app.services.funnel_delivery_service import FunnelDeliveryService
+from app.services.automation_email_service import AutomationEmailService
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +126,31 @@ class FunnelOrderService:
         except Exception as e:
             logger.error(f"Error triggering delivery email for order {order.id}: {e}")
 
-        logger.info(f"Order {order.id} created, delivery granted, and email queued from Stripe session {stripe_session_id}")
+        # ── AUTOMATION TRIGGERS ──
+        # Fire-and-forget: welcome (post-purchase), review request (3 days), cross-sell (7 days)
+        try:
+            automation_svc = AutomationEmailService(self.db)
+            await automation_svc.trigger_post_purchase(
+                organization_id=organization_id,
+                order_id=order.id,
+            )
+        except Exception as e:
+            logger.error(f"[AUTOMATION] Post-purchase trigger failed for order {order.id}: {e}")
+
+        try:
+            from app.tasks.funnel_automation_tasks import send_review_request, send_cross_sell
+            send_review_request.apply_async(
+                args=[str(organization_id), str(order.id)],
+                countdown=3 * 24 * 3600,  # 3 days
+            )
+            send_cross_sell.apply_async(
+                args=[str(organization_id), str(order.id)],
+                countdown=7 * 24 * 3600,  # 7 days
+            )
+        except Exception as e:
+            logger.error(f"[AUTOMATION] Failed to schedule review/cross-sell for order {order.id}: {e}")
+
+        logger.info(f"Order {order.id} created, delivery granted, automation triggered from Stripe session {stripe_session_id}")
         return order
 
     async def get_order(self, organization_id: UUID, order_id: UUID) -> Optional[FunnelOrder]:
