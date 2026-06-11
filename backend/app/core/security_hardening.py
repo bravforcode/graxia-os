@@ -182,7 +182,7 @@ class RequestSanitizationMiddleware(BaseHTTPMiddleware):
     XSS_PATTERNS = [
         r"<script[^>]*>[\s\S]*?</script>",  # Script tags
         r"javascript:",  # JavaScript protocol
-        r"on\w+\s*=",  # Event handlers
+        r"\bon\w+\s*=",  # Event handlers
         r"<iframe",  # Iframe injection
         r"<object",  # Object injection
         r"<embed",  # Embed injection

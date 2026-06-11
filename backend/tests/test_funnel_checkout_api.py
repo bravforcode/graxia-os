@@ -115,3 +115,109 @@ class TestFunnelCheckoutAPI:
             "success_url": "http://s", "cancel_url": "http://c"
         })
         assert response.status_code == 404 # Service returns None on exception
+
+    async def test_public_product_retrieval_by_slug(
+        self, public_async_client: AsyncClient, db_session: AsyncSession
+    ):
+        """10. Public retrieval of a published product by organization and slug works"""
+        org = await OrganizationFactory.build(db_session)
+        product = DigitalProduct(
+            id=uuid4(),
+            organization_id=org.id,
+            name="Public Ebook",
+            slug="public-ebook",
+            price_amount=Decimal("150.00"),
+            currency="THB",
+            status="published"
+        )
+        db_session.add(product)
+        await db_session.commit()
+
+        # Retrieve published product
+        response = await public_async_client.get(
+            f"/api/v1/funnel/public/products/{org.id}/public-ebook"
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == str(product.id)
+        assert data["slug"] == "public-ebook"
+        assert data["price_amount"] == "150.00"
+
+        # Try to retrieve with invalid org
+        response_invalid_org = await public_async_client.get(
+            f"/api/v1/funnel/public/products/{uuid4()}/public-ebook"
+        )
+        assert response_invalid_org.status_code == 404
+
+        # Try to retrieve with invalid slug
+        response_invalid_slug = await public_async_client.get(
+            f"/api/v1/funnel/public/products/{org.id}/invalid-slug"
+        )
+        assert response_invalid_slug.status_code == 404
+
+        # Draft product should return 404
+        draft_product = DigitalProduct(
+            id=uuid4(),
+            organization_id=org.id,
+            name="Draft Ebook",
+            slug="draft-ebook",
+            price_amount=Decimal("100.00"),
+            currency="THB",
+            status="draft"
+        )
+        db_session.add(draft_product)
+        await db_session.commit()
+
+        response_draft = await public_async_client.get(
+            f"/api/v1/funnel/public/products/{org.id}/draft-ebook"
+        )
+        assert response_draft.status_code == 404
+
+    async def test_public_checkout_creation(
+        self, public_async_client: AsyncClient, db_session: AsyncSession, mock_stripe_session
+    ):
+        """11. Public checkout session creation works for a published product with correct org"""
+        org = await OrganizationFactory.build(db_session)
+        product = DigitalProduct(
+            id=uuid4(),
+            organization_id=org.id,
+            name="Public Live Ebook",
+            slug="public-live-ebook",
+            price_amount=Decimal("250.00"),
+            currency="THB",
+            status="published"
+        )
+        db_session.add(product)
+        await db_session.commit()
+
+        payload = {
+            "organization_id": str(org.id),
+            "customer_email": "public-buyer@example.com",
+            "success_url": "https://example.com/success",
+            "cancel_url": "https://example.com/cancel"
+        }
+
+        # Successful public checkout creation
+        response = await public_async_client.post(
+            f"/api/v1/funnel/public/products/{product.id}/checkout",
+            json=payload
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["stripe_session_id"] == "cs_test_123"
+        assert data["checkout_url"] == "https://checkout.stripe.com/test_url"
+        assert data["status"] == "pending"
+
+        # Should return 404 if mismatched organization_id is passed in the payload
+        mismatched_payload = {
+            "organization_id": str(uuid4()),
+            "customer_email": "public-buyer@example.com",
+            "success_url": "https://example.com/success",
+            "cancel_url": "https://example.com/cancel"
+        }
+        response_mismatch = await public_async_client.post(
+            f"/api/v1/funnel/public/products/{product.id}/checkout",
+            json=mismatched_payload
+        )
+        assert response_mismatch.status_code == 404
+

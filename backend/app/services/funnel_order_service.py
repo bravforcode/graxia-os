@@ -7,12 +7,14 @@ from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.funnel import DigitalProduct, FunnelCheckoutSession, FunnelOrder, FunnelOrderItem
+from app.services.funnel_delivery_service import FunnelDeliveryService
 
 logger = logging.getLogger(__name__)
 
 class FunnelOrderService:
     def __init__(self, db: AsyncSession):
         self.db = db
+        self.delivery_service = FunnelDeliveryService(db)
 
     async def create_order_from_checkout_completed(self, session_data: dict) -> Optional[FunnelOrder]:
         """
@@ -102,8 +104,28 @@ class FunnelOrderService:
 
         await self.db.commit()
         await self.db.refresh(order)
-        
-        logger.info(f"Order {order.id} created from Stripe session {stripe_session_id}")
+
+        # ── GRANT DELIVERY ACCESS ──
+        # Grant access immediately after successful payment/order creation
+        delivery_accesses = await self.delivery_service.grant_delivery_access_for_order(
+            organization_id=organization_id,
+            order_id=order.id
+        )
+
+        # ── EMAIL CUSTOMER SECURE LINKS ──
+        try:
+            from app.services.funnel_delivery_email_service import FunnelDeliveryEmailService
+            email_svc = FunnelDeliveryEmailService(self.db)
+            await email_svc.send_delivery_links(
+                organization_id=organization_id,
+                order_id=order.id,
+                customer_email=order.customer_email,
+                delivery_accesses=delivery_accesses
+            )
+        except Exception as e:
+            logger.error(f"Error triggering delivery email for order {order.id}: {e}")
+
+        logger.info(f"Order {order.id} created, delivery granted, and email queued from Stripe session {stripe_session_id}")
         return order
 
     async def get_order(self, organization_id: UUID, order_id: UUID) -> Optional[FunnelOrder]:

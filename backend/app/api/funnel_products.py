@@ -18,6 +18,7 @@ from app.schemas.funnel import (
     DeliveryAssetCreate,
     DeliveryAssetUpdate,
     FunnelCheckoutCreate,
+    FunnelCheckoutCreatePublic,
     FunnelCheckoutRead,
 )
 
@@ -197,3 +198,34 @@ async def deactivate_asset(
     if not success:
         raise HTTPException(status_code=404, detail="Asset not found")
     return await service.get_delivery_asset(org.id, asset_id)
+
+
+# Public Endpoints (Whitelisted from general auth in middleware)
+
+@router.get("/public/products/{organization_id}/{slug}", response_model=DigitalProductRead)
+async def get_public_product_by_slug(
+    organization_id: UUID,
+    slug: str,
+    service: FunnelProductService = Depends(get_funnel_service),
+):
+    """Retrieve a published product by organization and slug."""
+    product = await service.get_product_by_slug(organization_id, slug)
+    if not product or product.status != "published":
+        raise HTTPException(status_code=404, detail="Product not found or not published")
+    return product
+
+@router.post("/public/products/{product_id}/checkout", response_model=FunnelCheckoutRead)
+async def create_public_checkout_session(
+    product_id: UUID,
+    payload: FunnelCheckoutCreatePublic,
+    service: FunnelCheckoutService = Depends(get_checkout_service),
+):
+    """Create a Stripe checkout session for a public buyer (tenant isolated)."""
+    result = await service.create_checkout_session(
+        organization_id=payload.organization_id,
+        product_id=product_id,
+        payload=payload,
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="Product not found or not published")
+    return result

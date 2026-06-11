@@ -1,9 +1,11 @@
 import { Suspense, lazy } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { PageTransition } from "./components/ui/PageTransition";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import Layout from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
+import { LanguageProvider } from "./i18n/LanguageContext";
 
 const UnifiedDashboard = lazy(() => import("./pages/UnifiedDashboard"));
 const ApprovalQueue = lazy(() => import("./pages/ApprovalQueue"));
@@ -22,10 +24,21 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+const StorePage = lazy(() => import("./pages/StorePage"));
+const StoreProductPage = lazy(() => import("./pages/StoreProductPage"));
+
+// Funnel Pages
+const ProductList = lazy(() => import("./pages/funnel/ProductList"));
+const ProductEditor = lazy(() => import("./pages/funnel/ProductEditor"));
+const PublicProductPage = lazy(() => import("./pages/funnel/PublicProductPage"));
+const CheckoutSuccess = lazy(() => import("./pages/funnel/CheckoutSuccess"));
+const DeliveryAccessPage = lazy(() => import("./pages/funnel/DeliveryAccessPage"));
+const FunnelAnalytics = lazy(() => import("./pages/funnel/FunnelAnalytics"));
 
 function RouteFallback() {
   return (
-    <div className="min-h-screen bg-gray-50 p-6 text-sm text-gray-600">
+    <div className="min-h-screen bg-slate-950 p-6 text-sm text-slate-400">
       Loading...
     </div>
   );
@@ -38,10 +51,16 @@ export function AppRoutes() {
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/store" element={<PageTransition><StorePage /></PageTransition>} />
+        <Route path="/store/:slug" element={<PageTransition><StoreProductPage /></PageTransition>} />
+        <Route path="/f/:organization_id/:slug" element={<PublicProductPage />} />
+        <Route path="/checkout/success" element={<CheckoutSuccess />} />
+        <Route path="/delivery/:token" element={<DeliveryAccessPage />} />
 
         {/* Protected routes */}
+        <Route path="/" element={<PageTransition><LandingPage /></PageTransition>} />
         <Route
-          path="/"
+          path="/app"
           element={
             <ProtectedRoute>
               <Layout />
@@ -62,6 +81,11 @@ export function AppRoutes() {
           <Route path="event-bus" element={<EventBus />} />
           <Route path="agents" element={<Agents />} />
           <Route path="settings" element={<Settings />} />
+          
+          {/* Funnel Routes */}
+          <Route path="products" element={<ProductList />} />
+          <Route path="products/:id" element={<ProductEditor />} />
+          <Route path="funnel/analytics" element={<FunnelAnalytics />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
@@ -78,9 +102,11 @@ function App() {
           v7_relativeSplatPath: true,
         }}
       >
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
+        </LanguageProvider>
       </BrowserRouter>
     </ErrorBoundary>
   );

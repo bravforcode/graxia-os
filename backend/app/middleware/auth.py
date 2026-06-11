@@ -42,6 +42,13 @@ PUBLIC_ROUTES: set[tuple[str, str]] = {
     ("GET", "/health"),
     ("GET", "/"),
     ("GET", "/favicon.ico"),
+    ("GET", "/api/v1/funnel/delivery/{token}"),
+    ("POST", "/api/v1/funnel/delivery/{token}/consume"),
+    ("POST", "/api/v1/funnel/webhooks/stripe"),
+    ("POST", "/api/v1/funnel/events"),
+    ("POST", "/api/v1/public/funnel/lead-magnets/{slug}/capture"),
+    ("GET", "/api/v1/funnel/public/products/{organization_id}/{slug}"),
+    ("POST", "/api/v1/funnel/public/products/{product_id}/checkout"),
 }
 
 BLOCKED_PREFIXES = ("/docs", "/redoc", "/openapi.json", "/metrics", "/flower", "/admin")
@@ -63,6 +70,11 @@ CSRF_EXEMPT_PATHS = {
     "/api/v1/auth/logout",
     "/api/v1/integrations/alerts/telegram",
     "/api/v1/contacts/bulk",
+    "/api/v1/funnel/delivery/{token}/consume",
+    "/api/v1/funnel/webhooks/stripe",
+    "/api/v1/funnel/events",
+    "/api/v1/public/funnel/lead-magnets/{slug}/capture",
+    "/api/v1/funnel/public/products/{product_id}/checkout",
 }
 INTERNAL_TOKEN_ROUTES: set[tuple[str, str]] = {
     ("POST", "/api/v1/integrations/alerts/telegram"),

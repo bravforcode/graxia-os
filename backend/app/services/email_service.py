@@ -318,6 +318,70 @@ Need help? Contact support@graxia.io
 """,
         }
 
+    @staticmethod
+    def funnel_delivery(to_name: str, delivery_items: list[dict]) -> dict[str, str]:
+        items_html = "\n".join([
+            f"""<tr>
+                <td style="padding:15px;border-bottom:1px solid #e5e7eb;">
+                    <p style="margin:0 0 5px;color:#111;font-weight:600;">{item['product_name']}</p>
+                    <p style="margin:0 0 10px;color:#666;font-size:14px;">Access expires on: {item['expires_at']}</p>
+                    <a href="{item['download_url']}" style="display:inline-block;padding:8px 16px;background:#2563eb;color:#fff;text-decoration:none;border-radius:4px;font-weight:600;font-size:14px;">Access Digital Asset</a>
+                </td>
+            </tr>"""
+            for item in delivery_items
+        ])
+
+        items_text = "\n\n".join([
+            f"• {item['product_name']}\n  Access Link: {item['download_url']}\n  Expires: {item['expires_at']}"
+            for item in delivery_items
+        ])
+
+        return {
+            "subject": "🎁 Your digital product delivery is ready!",
+            "html": f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Digital Delivery</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                    <tr>
+                        <td style="padding:40px 40px 20px;">
+                            <h1 style="margin:0 0 20px;color:#111;font-size:28px;font-weight:700;">Thank you for your purchase!</h1>
+                            <p style="margin:0 0 20px;color:#444;font-size:16px;line-height:1.6;">
+                                Hi {to_name}, your payment was processed successfully. You can access your digital products using the secure download links below:
+                            </p>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;">
+                                {items_html}
+                            </table>
+                            <p style="margin:20px 0 0;color:#666;font-size:14px;line-height:1.6;">
+                                Need help? Reply to this email or contact <a href="mailto:support@graxia.io" style="color:#2563eb;">support@graxia.io</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+""",
+            "text": f"""Thank you for your purchase!
+
+Hi {to_name}, your payment was processed successfully. You can access your digital products using the secure download links below:
+
+{items_text}
+
+Need help? Contact support@graxia.io
+""",
+        }
+
 
 # Global idempotency cache
 _sent_keys: set[str] = set()
@@ -494,5 +558,10 @@ TEMPLATES = {
         "subject": "Draft Ready",
         "html": "<html><body>Draft ready</body></html>",
         "text": "Draft ready",
+    },
+    "funnel_delivery": {
+        "subject": "Your Digital Delivery",
+        "html": "<html><body>Delivery</body></html>",
+        "text": "Delivery",
     },
 }

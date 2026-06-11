@@ -46,6 +46,7 @@ from .funnel import (
     DigitalProduct,
     FunnelOrder,
     FunnelOrderItem,
+    LeadMagnet,
 )
 
 __all__ = [
@@ -92,4 +93,5 @@ __all__ = [
     "FunnelOrderItem",
     "DeliveryAccess",
     "ConversionEvent",
+    "LeadMagnet",
 ]

@@ -24,7 +24,7 @@ class FunnelProductService:
         self, organization_id: UUID, payload: DigitalProductCreate
     ) -> DigitalProduct:
         product = DigitalProduct(
-            **payload.model_dump(),
+            **payload.model_dump(exclude={"organization_id"}),
             organization_id=organization_id,
         )
         self.db.add(product)
@@ -63,6 +63,19 @@ class FunnelProductService:
         stmt = select(DigitalProduct).where(
             and_(
                 DigitalProduct.id == product_id,
+                DigitalProduct.organization_id == organization_id,
+                DigitalProduct.is_deleted == False,
+            )
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_product_by_slug(
+        self, organization_id: UUID, slug: str
+    ) -> Optional[DigitalProduct]:
+        stmt = select(DigitalProduct).where(
+            and_(
+                DigitalProduct.slug == slug,
                 DigitalProduct.organization_id == organization_id,
                 DigitalProduct.is_deleted == False,
             )
@@ -154,7 +167,7 @@ class FunnelProductService:
             return None
 
         asset = DeliveryAsset(
-            **payload.model_dump(),
+            **payload.model_dump(exclude={"product_id", "organization_id"}),
             product_id=product_id,
             organization_id=organization_id,
         )

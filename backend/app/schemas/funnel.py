@@ -1,6 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Any
+from typing import Any, Optional, List
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -11,38 +11,38 @@ from pydantic import BaseModel, ConfigDict, Field
 class DigitalProductBase(BaseModel):
     name: str = Field(..., max_length=255)
     slug: str = Field(..., max_length=255)
-    description: str | None = None
-    short_description: str | None = Field(None, max_length=500)
+    description: Optional[str] = None
+    short_description: Optional[str] = Field(None, max_length=500)
     product_type: str = "other"
     price_amount: Decimal = Field(default=Decimal("0"), ge=0)
     currency: str = Field(default="THB", max_length=10)
-    cover_image_url: str | None = None
-    sales_page_content: str | None = None
+    cover_image_url: Optional[str] = None
+    sales_page_content: Optional[str] = None
 
 class DigitalProductCreate(DigitalProductBase):
-    pass
+    organization_id: Optional[UUID] = None
 
 class DigitalProductUpdate(BaseModel):
-    name: str | None = None
-    slug: str | None = None
-    description: str | None = None
-    short_description: str | None = None
-    status: str | None = None
-    product_type: str | None = None
-    price_amount: Decimal | None = None
-    currency: str | None = None
-    cover_image_url: str | None = None
-    sales_page_content: str | None = None
+    name: Optional[str] = None
+    slug: Optional[str] = None
+    description: Optional[str] = None
+    short_description: Optional[str] = None
+    status: Optional[str] = None
+    product_type: Optional[str] = None
+    price_amount: Optional[Decimal] = None
+    currency: Optional[str] = None
+    cover_image_url: Optional[str] = None
+    sales_page_content: Optional[str] = None
 
 class DigitalProductRead(DigitalProductBase):
     model_config = ConfigDict(from_attributes=True)
-    
+
     id: UUID
     organization_id: UUID
     status: str
-    stripe_price_id: str | None = None
-    stripe_product_id: str | None = None
-    published_at: datetime | None = None
+    stripe_price_id: Optional[str] = None
+    stripe_product_id: Optional[str] = None
+    published_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 
@@ -52,27 +52,28 @@ class DigitalProductRead(DigitalProductBase):
 class DeliveryAssetBase(BaseModel):
     asset_type: str
     title: str = Field(..., max_length=255)
-    description: str | None = None
-    storage_path: str | None = None
-    external_url: str | None = None
-    content_body: str | None = None
+    description: Optional[str] = None
+    storage_path: Optional[str] = None
+    external_url: Optional[str] = None
+    content_body: Optional[str] = None
     is_active: bool = True
 
 class DeliveryAssetCreate(DeliveryAssetBase):
-    pass
+    product_id: Optional[UUID] = None
+    organization_id: Optional[UUID] = None
 
 class DeliveryAssetUpdate(BaseModel):
-    asset_type: str | None = None
-    title: str | None = None
-    description: str | None = None
-    storage_path: str | None = None
-    external_url: str | None = None
-    content_body: str | None = None
-    is_active: bool | None = None
+    asset_type: Optional[str] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    storage_path: Optional[str] = None
+    external_url: Optional[str] = None
+    content_body: Optional[str] = None
+    is_active: Optional[bool] = None
 
 class DeliveryAssetRead(DeliveryAssetBase):
     model_config = ConfigDict(from_attributes=True)
-    
+
     id: UUID
     product_id: UUID
     organization_id: UUID
@@ -83,38 +84,45 @@ class DeliveryAssetRead(DeliveryAssetBase):
 # ── Checkout Session ──────────────────────────────────────────────────────
 
 class FunnelCheckoutCreate(BaseModel):
-    customer_email: str | None = None
+    contact_id: Optional[UUID] = None
+    customer_email: Optional[str] = None
     success_url: str
     cancel_url: str
+    metadata: Optional[dict[str, Any]] = None
+
+class FunnelCheckoutCreatePublic(FunnelCheckoutCreate):
+    organization_id: UUID
 
 class FunnelCheckoutRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     id: UUID
-    stripe_session_id: str | None = None
-    checkout_url: str | None = None
+    organization_id: UUID
+    product_id: UUID
     status: str
+    stripe_session_id: Optional[str] = None
+    checkout_url: Optional[str] = Field(None, validation_alias="stripe_checkout_url")
     amount: Decimal
     currency: str
-    customer_email: str | None = None
+    customer_email: Optional[str] = None
     created_at: datetime
 
 class FunnelCheckoutSessionRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    
+
     id: UUID
     organization_id: UUID
     product_id: UUID
-    contact_id: UUID | None = None
-    user_id: UUID | None = None
-    stripe_session_id: str | None = None
+    contact_id: Optional[UUID] = None
+    user_id: Optional[UUID] = None
+    stripe_session_id: Optional[str] = None
     status: str
     amount: Decimal
     currency: str
-    customer_email: str | None = None
-    metadata_json: dict[str, Any] | None = None
-    expires_at: datetime | None = None
-    completed_at: datetime | None = None
+    customer_email: Optional[str] = None
+    metadata_json: Optional[dict[str, Any]] = None
+    expires_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 
@@ -123,7 +131,7 @@ class FunnelCheckoutSessionRead(BaseModel):
 
 class FunnelOrderItemRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    
+
     id: UUID
     product_id: UUID
     quantity: int
@@ -134,83 +142,144 @@ class FunnelOrderItemRead(BaseModel):
 
 class FunnelOrderRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    
+
     id: UUID
     organization_id: UUID
-    contact_id: UUID | None = None
-    user_id: UUID | None = None
+    contact_id: Optional[UUID] = None
+    user_id: Optional[UUID] = None
     status: str
     subtotal_amount: Decimal
     total_amount: Decimal
     currency: str
-    customer_email: str | None = None
-    paid_at: datetime | None = None
+    customer_email: Optional[str] = None
+    paid_at: Optional[datetime] = None
     created_at: datetime
-    items: list[FunnelOrderItemRead]
+    items: List[FunnelOrderItemRead] = []
 
 
 # ── Delivery Access ───────────────────────────────────────────────────────
 
-# ── Orders ────────────────────────────────────────────────────────────
-
-class FunnelOrderItemRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    product_id: UUID
-    quantity: int
-    unit_amount: Decimal
-    total_amount: Decimal
-    currency: str
-
-class FunnelOrderRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    checkout_session_id: UUID
-    stripe_session_id: str | None = None
-    status: str
-    total_amount: Decimal
-    currency: str
-    customer_email: str | None = None
-    paid_at: datetime | None = None
-    created_at: datetime
-    items: list[FunnelOrderItemRead] = []
-
 class DeliveryAccessRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    
+
     id: UUID
+    organization_id: UUID
     order_id: UUID
     product_id: UUID
-    asset_id: UUID | None = None
+    asset_id: Optional[UUID] = None
     status: str
-    expires_at: datetime | None = None
-    first_accessed_at: datetime | None = None
-    last_accessed_at: datetime | None = None
     download_count: int
-    max_downloads: int | None = None
+    max_downloads: Optional[int] = None
+    expires_at: Optional[datetime] = None
+    first_accessed_at: Optional[datetime] = None
+    last_accessed_at: Optional[datetime] = None
     created_at: datetime
+
+class DeliveryAccessGrantResponse(BaseModel):
+    access_id: UUID
+    raw_token: str  # Only returned once at creation
+
+class DeliveryPayload(BaseModel):
+    product_name: str
+    asset_title: str
+    asset_type: str
+    content_body: Optional[str] = None
+    external_url: Optional[str] = None
+    expires_at: Optional[datetime] = None
+    downloads_remaining: Optional[int] = None
 
 
 # ── Conversion Event ──────────────────────────────────────────────────────
 
 class ConversionEventCreate(BaseModel):
     event_type: str
-    product_id: UUID | None = None
-    contact_id: UUID | None = None
-    order_id: UUID | None = None
-    session_id: str | None = None
-    source: str | None = None
-    medium: str | None = None
-    campaign: str | None = None
-    referrer: str | None = None
-    metadata_json: dict[str, Any] | None = None
+    product_id: Optional[UUID] = None
+    contact_id: Optional[UUID] = None
+    order_id: Optional[UUID] = None
+    session_id: Optional[str] = None
+    source: Optional[str] = None
+    medium: Optional[str] = None
+    campaign: Optional[str] = None
+    referrer: Optional[str] = None
+    metadata_json: Optional[dict[str, Any]] = None
+
+class ConversionEventCreatePublic(ConversionEventCreate):
+    organization_id: UUID
 
 class ConversionEventRead(ConversionEventCreate):
     model_config = ConfigDict(from_attributes=True)
-    
+
     id: UUID
     organization_id: UUID
     occurred_at: datetime
     created_at: datetime
+
+class FunnelAnalyticsSummary(BaseModel):
+    views: int
+    unique_visitors: int
+    leads: int
+    checkout_starts: int
+    purchases: int
+    delivery_opened: int
+    lead_conversion_rate: float
+    checkout_rate: float
+    purchase_conversion_rate: float
+    checkout_to_purchase_rate: float
+    sales_count: int
+    total_revenue: float
+    average_order_value: float
+
+class FunnelDailyAnalytics(BaseModel):
+    date: str
+    views: int
+    leads: int
+    purchases: int
+    revenue: float
+
+
+# ── Lead Magnet ───────────────────────────────────────────────────────────
+
+class LeadMagnetBase(BaseModel):
+    name: str = Field(..., max_length=255)
+    slug: str = Field(..., max_length=255)
+    target_product_id: Optional[UUID] = None
+    promise: Optional[str] = None
+    file_url: Optional[str] = Field(None, max_length=500)
+    landing_page_url: Optional[str] = Field(None, max_length=500)
+
+class LeadMagnetCreate(LeadMagnetBase):
+    organization_id: Optional[UUID] = None
+
+class LeadMagnetUpdate(BaseModel):
+    name: Optional[str] = None
+    slug: Optional[str] = None
+    target_product_id: Optional[UUID] = None
+    promise: Optional[str] = None
+    file_url: Optional[str] = None
+    landing_page_url: Optional[str] = None
+    status: Optional[str] = None
+
+class LeadMagnetRead(LeadMagnetBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    organization_id: UUID
+    status: str
+    opt_in_count: int
+    created_at: datetime
+    updated_at: datetime
+
+class LeadCaptureRequest(BaseModel):
+    organization_id: UUID
+    email: str = Field(..., max_length=300)
+    name: Optional[str] = Field(None, max_length=300)
+    source: Optional[str] = None
+    medium: Optional[str] = None
+    campaign: Optional[str] = None
+    referrer: Optional[str] = None
+
+class LeadCaptureResponse(BaseModel):
+    contact_id: UUID
+    raw_token: Optional[str] = None
+    delivery_url: Optional[str] = None
+

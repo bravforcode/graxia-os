@@ -5,7 +5,7 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "/api/v1").replace(
   "",
 );
 
-const client = axios.create({
+export const client = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
   headers: {
@@ -13,7 +13,7 @@ const client = axios.create({
   },
 });
 
-const publicClient = axios.create({
+export const publicClient = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
   headers: {
@@ -32,6 +32,7 @@ export interface User {
   full_name?: string;
   role: string;
   is_active: boolean;
+  organization_id?: string;
   created_at: string;
 }
 

@@ -94,6 +94,8 @@ class FunnelCheckoutService:
 
             return {
                 "id": checkout_session.id,
+                "organization_id": checkout_session.organization_id,
+                "product_id": checkout_session.product_id,
                 "stripe_session_id": stripe_session.id,
                 "checkout_url": stripe_session.url,
                 "status": checkout_session.status,

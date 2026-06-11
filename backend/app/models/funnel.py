@@ -290,3 +290,39 @@ class ConversionEvent(Base, TenantMixin):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+
+
+class LeadMagnet(Base, TenantMixin):
+    __tablename__ = "funnel_lead_magnets"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('draft', 'published', 'archived')",
+            name="ck_lead_magnet_status",
+        ),
+        CheckConstraint("opt_in_count >= 0", name="ck_lead_magnet_opt_in_count_non_negative"),
+        Index("ix_funnel_lead_magnets_org_slug", "organization_id", "slug", unique=True),
+    )
+
+    id: Mapped[UUIDType] = mapped_column(
+        SQLUUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    slug: Mapped[str] = mapped_column(String(255), nullable=False)
+    target_product_id: Mapped[UUIDType | None] = mapped_column(
+        SQLUUID(as_uuid=True), ForeignKey("digital_products.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    promise: Mapped[str | None] = mapped_column(Text)
+    file_url: Mapped[str | None] = mapped_column(String(500))
+    landing_page_url: Mapped[str | None] = mapped_column(String(500))
+    status: Mapped[str] = mapped_column(String(50), default="draft", nullable=False)
+    opt_in_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    target_product: Mapped["DigitalProduct"] = relationship("DigitalProduct", lazy="selectin")
+

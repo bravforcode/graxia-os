@@ -380,6 +380,10 @@ class Settings(BaseSettings):
                 self.ENCRYPTION_KEY = "test-encryption-key-32-chars-long"
             if self.POSTGRES_PASSWORD is None:
                 self.POSTGRES_PASSWORD = "test-password-16-chars"
+            if not self.STRIPE_WEBHOOK_SECRET:
+                self.STRIPE_WEBHOOK_SECRET = "whsec_test"
+            if not self.STRIPE_SECRET_KEY:
+                self.STRIPE_SECRET_KEY = "sk_test"
             return self
         
         # For all non-testing environments: enforce validation
