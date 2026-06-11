@@ -17,6 +17,7 @@ from app.api.funnel_webhooks import router as funnel_webhooks_router
 from app.api.funnel_delivery import router as funnel_delivery_router
 from app.api.funnel_analytics import router as funnel_analytics_router
 from app.api.funnel_ai import router as funnel_ai_router
+from app.api.funnel_automation import router as funnel_automation_router
 from app.api.lead_magnets import router as lead_magnets_router
 from app.api.inbox import router as inbox_router
 from app.api.integrations import router as integrations_router
@@ -65,6 +66,7 @@ api_router.include_router(funnel_delivery_router, prefix="/api/v1/funnel", tags=
 api_router.include_router(funnel_analytics_router, prefix="/api/v1/funnel", tags=["funnel"])
 api_router.include_router(funnel_ai_router, prefix="/api/v1/funnel", tags=["funnel_ai"])
 api_router.include_router(lead_magnets_router, prefix="/api/v1", tags=["funnel"])
+api_router.include_router(funnel_automation_router, prefix="/api/v1/funnel", tags=["funnel_automation"])
 api_router.include_router(funnel_webhooks_router, prefix="/api/v1/funnel/webhooks", tags=["funnel_webhooks"])
 api_router.include_router(email_threads_router)
 api_router.include_router(obsidian_router)

@@ -319,6 +319,421 @@ Need help? Contact support@graxia.io
         }
 
     @staticmethod
+    def funnel_automation_welcome(to_name: str, store_url: str) -> dict[str, str]:
+        return {
+            "subject": "Welcome to Ai Factory — here's your quick start guide",
+            "html": f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                    <tr>
+                        <td style="padding:40px 40px 20px;">
+                            <h1 style="margin:0 0 20px;color:#111;font-size:28px;font-weight:700;">Welcome to Ai Factory, {to_name}!</h1>
+                            <p style="margin:0 0 20px;color:#444;font-size:16px;line-height:1.6;">
+                                You now have access to 25+ battle-tested digital products for creators, freelancers, and founders.
+                            </p>
+                            <p style="margin:0 0 10px;color:#444;font-size:16px;line-height:1.6;"><strong>Here's what to do next:</strong></p>
+                            <ol style="margin:0 0 30px;padding-left:20px;color:#444;font-size:16px;line-height:1.8;">
+                                <li>Browse our store for the perfect template or tool</li>
+                                <li>Start with our bestseller: ChatGPT Power Prompts Bundle</li>
+                                <li>Every product comes with lifetime updates</li>
+                            </ol>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{store_url}" style="display:inline-block;padding:14px 32px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:16px;">Browse Products</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="margin:30px 0 0;color:#666;font-size:14px;line-height:1.6;">
+                                Need help? Reply to this email or contact <a href="mailto:support@graxia.io" style="color:#2563eb;">support@graxia.io</a>
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:20px 40px;background:#f8f9fa;border-top:1px solid #e5e7eb;">
+                            <p style="margin:0;color:#888;font-size:12px;text-align:center;">Ai Factory · Digital Products for Creators</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+""",
+            "text": f"""Welcome to Ai Factory, {to_name}!
+
+You now have access to 25+ battle-tested digital products.
+
+Next steps:
+1. Browse our store: {store_url}
+2. Start with our bestseller: ChatGPT Power Prompts Bundle
+3. Every product comes with lifetime updates
+
+Need help? Contact support@graxia.io
+""",
+        }
+
+    @staticmethod
+    def funnel_automation_abandoned_cart(to_name: str, product_name: str, product_benefits: str, price: str, checkout_url: str) -> dict[str, str]:
+        return {
+            "subject": "You left something behind — complete your purchase",
+            "html": f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Your Purchase</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                    <tr>
+                        <td style="padding:40px 40px 20px;">
+                            <h1 style="margin:0 0 20px;color:#111;font-size:28px;font-weight:700;">You left something behind</h1>
+                            <p style="margin:0 0 20px;color:#444;font-size:16px;line-height:1.6;">
+                                Hi {to_name}, you were checking out <strong>{product_name}</strong> but didn't complete your purchase.
+                            </p>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f9fa;border-radius:6px;margin:20px 0;">
+                                <tr>
+                                    <td style="padding:20px;">
+                                        <p style="margin:0 0 10px;color:#111;font-weight:600;font-size:16px;">Here's what you'd get:</p>
+                                        <p style="margin:0;color:#444;font-size:14px;line-height:1.8;">{product_benefits}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="margin:20px 0;color:#444;font-size:16px;line-height:1.6;">
+                                Price: <strong>{price} THB</strong> (one-time payment, lifetime updates)<br>
+                                Plus: 30-day money-back guarantee. Zero risk.
+                            </p>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{checkout_url}" style="display:inline-block;padding:14px 32px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:16px;">Complete Purchase</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="margin:20px 0 0;color:#666;font-size:14px;line-height:1.6;">
+                                Questions? Just reply to this email.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:20px 40px;background:#f8f9fa;border-top:1px solid #e5e7eb;">
+                            <p style="margin:0;color:#888;font-size:12px;text-align:center;">Ai Factory · Digital Products for Creators</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+""",
+            "text": f"""You left something behind
+
+Hi {to_name}, you were checking out {product_name} but didn't complete your purchase.
+
+Here's what you'd get:
+{product_benefits}
+
+Price: {price} THB (one-time payment, lifetime updates)
+Plus: 30-day money-back guarantee. Zero risk.
+
+Complete your purchase: {checkout_url}
+
+Questions? Just reply to this email.
+""",
+        }
+
+    @staticmethod
+    def funnel_automation_post_purchase(to_name: str, product_name: str, delivery_url: str, review_url: str) -> dict[str, str]:
+        return {
+            "subject": "Thank you for your purchase — here's how to get started",
+            "html": f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thank You</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                    <tr>
+                        <td style="padding:40px 40px 20px;">
+                            <h1 style="margin:0 0 20px;color:#111;font-size:28px;font-weight:700;">Thank you for your purchase!</h1>
+                            <p style="margin:0 0 20px;color:#444;font-size:16px;line-height:1.6;">
+                                Hi {to_name}, thank you for purchasing <strong>{product_name}</strong>. Your payment was processed successfully.
+                            </p>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border-radius:6px;margin:20px 0;">
+                                <tr>
+                                    <td style="padding:20px;">
+                                        <p style="margin:0 0 10px;color:#16a34a;font-weight:600;font-size:16px;">Quick start tips:</p>
+                                        <ul style="margin:0;padding-left:20px;color:#444;font-size:14px;line-height:1.8;">
+                                            <li>Read the included guide first</li>
+                                            <li>Start using the templates/tools immediately</li>
+                                            <li>You get lifetime updates — no extra cost</li>
+                                        </ul>
+                                    </td>
+                                </tr>
+                            </table>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{delivery_url}" style="display:inline-block;padding:14px 32px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:16px;">Access Your Purchase</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="margin:20px 0 0;color:#666;font-size:14px;line-height:1.6;">
+                                Love it? <a href="{review_url}" style="color:#2563eb;">Leave a review</a> and help other creators find it.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:20px 40px;background:#f8f9fa;border-top:1px solid #e5e7eb;">
+                            <p style="margin:0;color:#888;font-size:12px;text-align:center;">Ai Factory · Digital Products for Creators</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+""",
+            "text": f"""Thank you for your purchase!
+
+Hi {to_name}, thank you for purchasing {product_name}. Your payment was processed successfully.
+
+Quick start tips:
+- Read the included guide first
+- Start using the templates/tools immediately
+- You get lifetime updates — no extra cost
+
+Access your purchase: {delivery_url}
+
+Love it? Leave a review: {review_url}
+""",
+        }
+
+    @staticmethod
+    def funnel_automation_review_request(to_name: str, product_name: str, review_url: str) -> dict[str, str]:
+        return {
+            "subject": f"How's {product_name}? We'd love your feedback",
+            "html": f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>We'd Love Your Feedback</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                    <tr>
+                        <td style="padding:40px 40px 20px;">
+                            <h1 style="margin:0 0 20px;color:#111;font-size:28px;font-weight:700;">How's it working for you?</h1>
+                            <p style="margin:0 0 20px;color:#444;font-size:16px;line-height:1.6;">
+                                Hi {to_name}, you purchased <strong>{product_name}</strong> a few days ago. We'd love to hear how it's going.
+                            </p>
+                            <p style="margin:0 0 20px;color:#444;font-size:16px;line-height:1.6;">
+                                A quick review helps other creators make confident choices — and helps us improve.
+                            </p>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{review_url}" style="display:inline-block;padding:14px 32px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:16px;">Leave a 1-Minute Review</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="margin:20px 0 0;color:#666;font-size:14px;line-height:1.6;">
+                                Your feedback directly helps us improve. Thanks!
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:20px 40px;background:#f8f9fa;border-top:1px solid #e5e7eb;">
+                            <p style="margin:0;color:#888;font-size:12px;text-align:center;">Ai Factory · Digital Products for Creators</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+""",
+            "text": f"""How's {product_name} working for you?
+
+Hi {to_name}, you purchased {product_name} a few days ago. We'd love to hear how it's going.
+
+A quick review helps other creators make confident choices:
+{review_url}
+
+Thanks!
+""",
+        }
+
+    @staticmethod
+    def funnel_automation_cross_sell(to_name: str, product_name: str, recommendations: str, store_url: str) -> dict[str, str]:
+        return {
+            "subject": "You might also like these — based on your purchase",
+            "html": f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recommended For You</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                    <tr>
+                        <td style="padding:40px 40px 20px;">
+                            <h1 style="margin:0 0 20px;color:#111;font-size:28px;font-weight:700;">You might also like these</h1>
+                            <p style="margin:0 0 20px;color:#444;font-size:16px;line-height:1.6;">
+                                Hi {to_name}, since you purchased <strong>{product_name}</strong>, we thought you'd love these:
+                            </p>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f9fa;border-radius:6px;margin:20px 0;">
+                                <tr>
+                                    <td style="padding:20px;">
+                                        <p style="margin:0;color:#444;font-size:15px;line-height:1.8;">{recommendations}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin:10px 0;">
+                                <tr><td style="padding:5px 0;color:#444;font-size:14px;line-height:1.6;">✓ Instant digital delivery</td></tr>
+                                <tr><td style="padding:5px 0;color:#444;font-size:14px;line-height:1.6;">✓ 30-day money-back guarantee</td></tr>
+                                <tr><td style="padding:5px 0;color:#444;font-size:14px;line-height:1.6;">✓ Lifetime free updates</td></tr>
+                            </table>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{store_url}" style="display:inline-block;padding:14px 32px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:16px;">Browse More Products</a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:20px 40px;background:#f8f9fa;border-top:1px solid #e5e7eb;">
+                            <p style="margin:0;color:#888;font-size:12px;text-align:center;">Ai Factory · Digital Products for Creators</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+""",
+            "text": f"""You might also like these
+
+Hi {to_name}, since you purchased {product_name}, we thought you'd love these:
+
+{recommendations}
+
+Each product comes with:
+- Instant digital delivery
+- 30-day money-back guarantee
+- Lifetime free updates
+
+Browse more: {store_url}
+""",
+        }
+
+    @staticmethod
+    def funnel_automation_win_back(to_name: str, new_products: str, store_url: str) -> dict[str, str]:
+        return {
+            "subject": "We miss you — here's 15% off to come back",
+            "html": f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>We Miss You</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);border-top:4px solid #f59e0b;">
+                    <tr>
+                        <td style="padding:40px 40px 20px;">
+                            <h1 style="margin:0 0 20px;color:#111;font-size:28px;font-weight:700;">We miss you, {to_name}!</h1>
+                            <p style="margin:0 0 20px;color:#444;font-size:16px;line-height:1.6;">
+                                It's been a while since you visited Ai Factory. We've added some amazing new products since then.
+                            </p>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:#fffbeb;border:1px solid #fbbf24;border-radius:6px;margin:20px 0;">
+                                <tr>
+                                    <td style="padding:20px;text-align:center;">
+                                        <p style="margin:0 0 5px;color:#92400e;font-size:14px;text-transform:uppercase;letter-spacing:1px;">Your exclusive offer</p>
+                                        <p style="margin:0;color:#92400e;font-size:32px;font-weight:700;">15% OFF</p>
+                                        <p style="margin:5px 0 0;color:#92400e;font-size:16px;">Code: <strong>WELCOMEBACK15</strong></p>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="margin:20px 0 10px;color:#444;font-size:16px;line-height:1.6;"><strong>New arrivals:</strong></p>
+                            <p style="margin:0 0 20px;color:#444;font-size:14px;line-height:1.8;">{new_products}</p>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{store_url}" style="display:inline-block;padding:14px 32px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:16px;">Browse Now</a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:20px 40px;background:#f8f9fa;border-top:1px solid #e5e7eb;">
+                            <p style="margin:0;color:#888;font-size:12px;text-align:center;">Ai Factory · Digital Products for Creators</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+""",
+            "text": f"""We miss you, {to_name}!
+
+It's been a while since you visited Ai Factory. Here's 15% off your next purchase:
+
+Code: WELCOMEBACK15
+
+New arrivals:
+{new_products}
+
+Browse now: {store_url}
+""",
+        }
+
+    @staticmethod
     def funnel_delivery(to_name: str, delivery_items: list[dict]) -> dict[str, str]:
         items_html = "\n".join([
             f"""<tr>
