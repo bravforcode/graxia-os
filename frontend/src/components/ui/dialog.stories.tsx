@@ -60,5 +60,5 @@ function DialogStoryDemo(args: DialogStoryArgs) {
 }
 
 export const Default: Story = {
-  render: (args) => <DialogStoryDemo {...args} />,
+  render: (args: DialogStoryArgs) => <DialogStoryDemo {...args} />,
 }
