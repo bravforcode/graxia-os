@@ -9,7 +9,7 @@ services:
   - type: web
     name: graxia-backend
     runtime: docker
-    repo: https://github.com/menum/graxia-os-funnel
+    repo: https://github.com/bravforcode/graxia-os.git
     branch: main
     dockerfilePath: ./backend/Dockerfile
     envVars:

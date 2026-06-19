@@ -14,8 +14,9 @@ PLAN_PRICE_MAP: dict[str, str] = {}  # populated at runtime
 
 def _price_map() -> dict[str, str]:
     return {
-        "starter": settings.STRIPE_PRICE_STARTER,
-        "pro": settings.STRIPE_PRICE_PRO,
+        "starter": settings.STRIPE_PRICE_STARTER_MONTHLY,
+        "pro": settings.STRIPE_PRICE_PRO_MONTHLY,
+        "enterprise": settings.STRIPE_PRICE_ENTERPRISE_MONTHLY,
     }
 
 
