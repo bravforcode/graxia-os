@@ -1,6 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import {
-  ArrowLeft, Star, Users, Download, Check, ChevronDown, Shield,
+  ArrowLeft, Star, Users, Download, Check, ChevronDown,
   ShieldCheck, Award, Clock, ArrowRight, CheckCircle, Gift,
   TrendingUp, Globe,
 } from "lucide-react";

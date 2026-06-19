@@ -1,16 +1,23 @@
-# Render.com Deployment Configuration
-# สำหรับ deploy บน Render.com (ฟรี tier มี limitations)
+# Render.com Blueprint Deployment
+# 1. Push repo to GitHub
+# 2. Render Dashboard > Blueprint > Connect repo
+# 3. Fill env vars marked sync:false in Render dashboard
+# 4. Deploy!
 
 services:
-  # Backend API
+  # ── Backend API ─────────────────────────────────────────────────────
   - type: web
     name: graxia-backend
     runtime: docker
-    repo: https://github.com/your-username/graxia-os
+    repo: https://github.com/menum/graxia-os-funnel
     branch: main
     dockerfilePath: ./backend/Dockerfile
     envVars:
       - key: DATABASE_URL
+        fromDatabase:
+          name: graxia-db
+          property: connectionString
+      - key: DATABASE_MIGRATION_URL
         fromDatabase:
           name: graxia-db
           property: connectionString
@@ -19,24 +26,42 @@ services:
           type: redis
           name: graxia-redis
           property: connectionString
-      - key: APP_ENV
-        value: production
-      - key: LOG_LEVEL
-        value: INFO
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: graxia-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: graxia-redis
+          property: connectionString
+      - { key: APP_ENV, value: production }
+      - { key: REQUIRE_SUPABASE, value: "false" }
+      - { key: SCHEDULER_EMBEDDED, value: "false" }
+      - { key: COOKIE_SECURE, value: "true" }
+      - { key: FRONTEND_URL, value: "https://graxia-os-funnel.vercel.app" }
+      - { key: ALLOWED_CORS_ORIGINS, value: "https://graxia-os-funnel.vercel.app" }
+      - { key: CORS_ORIGINS, value: "https://graxia-os-funnel.vercel.app" }
+      - { key: APP_HOST, value: "graxia-backend.onrender.com" }
+      - key: APP_BASE_URL
+        value: https://graxia-backend.onrender.com
+      # Manual env vars (fill in Render dashboard)
+      - { key: SECRET_KEY, sync: false }
+      - { key: ENCRYPTION_KEY, sync: false }
+      - { key: CSRF_SECRET, sync: false }
+      - { key: ADMIN_API_KEY, sync: false }
+      - { key: STRIPE_SECRET_KEY, sync: false }
+      - { key: STRIPE_PUBLISHABLE_KEY, sync: false }
+      - { key: STRIPE_WEBHOOK_SECRET, sync: false }
+      - { key: STRIPE_PRICE_STARTER_MONTHLY, sync: false }
+      - { key: STRIPE_PRICE_PRO_MONTHLY, sync: false }
+      - { key: STRIPE_PRICE_ENTERPRISE_MONTHLY, sync: false }
+      - { key: LOG_LEVEL, value: INFO }
     healthCheckPath: /health
     autoDeploy: true
 
-  # Frontend
-  - type: web
-    name: graxia-frontend
-    runtime: static
-    buildCommand: cd frontend && npm install && npm run build
-    staticPublishPath: ./frontend/dist
-    envVars:
-      - key: VITE_API_BASE_URL
-        value: https://graxia-backend.onrender.com/api/v1
-
-  # Background Workers
+  # ── Celery Workers + Beat ───────────────────────────────────────────
   - type: worker
     name: graxia-worker-default
     runtime: docker
@@ -52,6 +77,20 @@ services:
           type: redis
           name: graxia-redis
           property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: graxia-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: graxia-redis
+          property: connectionString
+      - { key: APP_ENV, value: production }
+      - { key: REQUIRE_SUPABASE, value: "false" }
+      - { key: SECRET_KEY, sync: false }
+      - { key: ENCRYPTION_KEY, sync: false }
 
   - type: worker
     name: graxia-worker-critical
@@ -68,8 +107,21 @@ services:
           type: redis
           name: graxia-redis
           property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: graxia-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: graxia-redis
+          property: connectionString
+      - { key: APP_ENV, value: production }
+      - { key: REQUIRE_SUPABASE, value: "false" }
+      - { key: SECRET_KEY, sync: false }
+      - { key: ENCRYPTION_KEY, sync: false }
 
-  # Scheduler (Beat)
   - type: worker
     name: graxia-beat
     runtime: docker
@@ -85,6 +137,20 @@ services:
           type: redis
           name: graxia-redis
           property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: graxia-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: graxia-redis
+          property: connectionString
+      - { key: APP_ENV, value: production }
+      - { key: REQUIRE_SUPABASE, value: "false" }
+      - { key: SECRET_KEY, sync: false }
+      - { key: ENCRYPTION_KEY, sync: false }
 
 databases:
   - name: graxia-db

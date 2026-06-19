@@ -5,22 +5,20 @@ import {
   Save, 
   Trash2, 
   Plus, 
-  FileText, 
-  Link as LinkIcon, 
   Check, 
   AlertTriangle,
   File,
   Lock,
   Globe,
-  Settings,
-  Archive,
   BookOpen
 } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
 import { funnelApi, type DigitalProduct, type DeliveryAsset } from "../../api/funnel";
 
 export default function ProductEditor() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const isNew = !id || id === "new";
 
   // Product Form State

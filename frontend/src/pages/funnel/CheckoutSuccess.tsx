@@ -1,11 +1,9 @@
-import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { 
   CheckCircle, 
   Mail, 
   ArrowRight, 
-  ShieldCheck, 
-  FileText, 
+  ShieldCheck,
   Clock 
 } from "lucide-react";
 

@@ -261,7 +261,6 @@ export default function ProductList() {
                 {filteredProducts.map((product) => {
                   const isPublished = product.status === "published";
                   const isDraft = product.status === "draft";
-                  const isArchived = product.status === "archived";
 
                   return (
                     <tr key={product.id} className="hover:bg-slate-950/15 transition-colors">

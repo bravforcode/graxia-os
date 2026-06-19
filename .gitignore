@@ -121,3 +121,10 @@ test_report.txt
 # Build artifacts
 frontend/dev_log.txt
 *.sqlite3
+
+# LanceDB vector database
+lancedb/
+
+# Junk files
+nul
+Usersmenumgraxia-os-funnelbackendvenv/

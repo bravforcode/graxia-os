@@ -3,12 +3,10 @@ import { useParams } from "react-router-dom";
 import { 
   Download, 
   Lock, 
-  FileText, 
   ExternalLink, 
   AlertTriangle,
   Clock,
-  CheckCircle,
-  Eye
+  CheckCircle
 } from "lucide-react";
 import { funnelApi, type DeliveryPayload } from "../../api/funnel";
 
@@ -194,7 +192,7 @@ export default function DeliveryAccessPage() {
                   Your secured file `{unlockedPayload?.asset_title}` can be downloaded below.
                 </p>
                 <button
-                  onClick={() => alert(`Initiating direct download of file from path: ${unlockedPayload?.content_body || unlockedPayload?.storage_path}`)}
+                  onClick={() => alert(`Initiating direct download of file from path: ${unlockedPayload?.content_body || unlockedPayload?.external_url}`)}
                   className="w-full py-3.5 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-lg"
                 >
                   Download Secured {unlockedPayload?.asset_type.toUpperCase()} File

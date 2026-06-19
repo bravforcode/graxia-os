@@ -12,7 +12,6 @@ import {
   Lock,
   CreditCard,
   Play,
-  Award,
   Target,
   Layers,
   MousePointer,
@@ -410,7 +409,7 @@ export default function LandingPage() {
               { step: "01", titleKey: "howItWorks.step1.title", descKey: "howItWorks.step1.desc", icon: MousePointer },
               { step: "02", titleKey: "howItWorks.step2.title", descKey: "howItWorks.step2.desc", icon: CreditCard },
               { step: "03", titleKey: "howItWorks.step3.title", descKey: "howItWorks.step3.desc", icon: Sparkles },
-            ].map(({ step, titleKey, descKey, icon: Icon }, i) => (
+            ].map(({ step, titleKey, descKey }, i) => (
               <div
                 key={step}
                 className="flex items-start gap-6 p-6 bg-slate-900/40 border border-slate-800/60 rounded-3xl group hover:border-slate-700/80 transition-all duration-300 animate-fade-in-up"

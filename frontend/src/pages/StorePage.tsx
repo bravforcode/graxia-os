@@ -20,7 +20,6 @@ import {
   formatSalesCount,
   getLocalizedName,
   getLocalizedShortDescription,
-  preloadThaiProducts,
   type ProductCategory,
 } from "../data/products";
 import { ANIMATIONS, staggerDelay } from "../lib/animations";

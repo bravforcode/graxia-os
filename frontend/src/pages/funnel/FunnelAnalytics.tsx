@@ -9,7 +9,6 @@ import {
   ArrowLeft,
   Calendar,
   Layers,
-  ArrowUpRight,
   Sparkles,
   AlertTriangle,
   AlertCircle,
