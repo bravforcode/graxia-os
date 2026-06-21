@@ -115,3 +115,9 @@ class CircuitBreakerError(QuantException):
     def __init__(self, message: str, breaker_type: str = "", context: dict = None):
         super().__init__(message, "CIRCUIT_BREAKER", context)
         self.breaker_type = breaker_type
+
+
+class StrictMTFViolation(QuantException):
+    """Raised when strict_mtf=True but no cursor is set — blocks static fallback."""
+    def __init__(self, message: str = "strict_mtf enabled but no MTF cursor set", context: dict = None):
+        super().__init__(message, "STRICT_MTF_VIOLATION", context)

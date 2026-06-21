@@ -19,6 +19,7 @@ from ..core.enums import (
     OrderSide, OrderType, OrderStatus, PositionType, CloseReason, SignalType
 )
 from ..core.config import get_config
+from ..core.exceptions import StrictMTFViolation
 from ..core.lookahead_guard import LookaheadGuard, LookaheadViolation
 from ..strategies.base import Strategy, Signal
 
@@ -34,6 +35,7 @@ class BacktestConfig:
     units_per_lot: float = 100000.0
     start_date: Optional[date] = None
     end_date: Optional[date] = None
+    strict_mtf: bool = False  # ponytail: default False for backtest compat
 
 
 @dataclass
@@ -174,6 +176,13 @@ class BacktestEngine:
         
         if not self.ohlcv_data:
             raise ValueError("No data loaded. Call load_data() first.")
+        
+        # Strict MTF: block static fallback if no cursor set
+        if self.config.strict_mtf and self._mtf_cursor is None:
+            raise StrictMTFViolation(
+                "strict_mtf=True but no MTF cursor set. "
+                "Call set_multi_timeframe() before run(), or set strict_mtf=False."
+            )
         
         # Reset state
         self._reset()

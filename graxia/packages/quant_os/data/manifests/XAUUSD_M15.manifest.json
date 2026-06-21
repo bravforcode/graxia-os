@@ -1,0 +1,17 @@
+{
+  "dataset_id": "XAUUSD_M15_MT5_2024_05_03_2026_06_20",
+  "symbol": "XAUUSD",
+  "broker_symbol": "XAUUSD",
+  "source": "MT5",
+  "timeframe": "M15",
+  "timezone": "UTC",
+  "first_timestamp_utc": "2024-05-03 18:15:00",
+  "last_timestamp_utc": "2026-06-20 03:00:00",
+  "bar_count": 50000,
+  "csv_sha256": "d2606c545920d81b5d33b97a2a14772337100fc88a22a2a6f72f8b7bd89824cc",
+  "column_schema": ["time", "open", "high", "low", "close", "volume"],
+  "ingested_at_utc": "2026-06-20T00:00:00Z",
+  "data_quality_status": "VALIDATED",
+  "synthetic": false,
+  "known_gaps": []
+}
