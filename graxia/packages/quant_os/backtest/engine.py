@@ -283,6 +283,10 @@ class BacktestEngine:
         
         if signal.stop_loss:
             risk_per_unit = abs(entry_price - signal.stop_loss)
+            # Safety net: reject SL too tight (ponytail: per-symbol minimum, not optimization)
+            min_sl = Decimal("10.0") if "XAU" in signal.symbol else Decimal("0.0010")
+            if risk_per_unit < min_sl:
+                return
             if risk_per_unit <= 0:
                 return
             risk_amount = self.balance * Decimal(str(self.config.risk_per_trade_pct)) / 100

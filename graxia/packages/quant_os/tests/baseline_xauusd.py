@@ -1,5 +1,6 @@
 """
-Baseline backtest: All 13 gold_bot strategies on XAUUSD D1 real data.
+Baseline backtest: All 13 gold_bot strategies on XAUUSD.
+MT5 real data: D1 (backtest base), H1 + M15 (available to strategies).
 No regime filter, no confluence — raw baseline.
 """
 import sys, os
@@ -40,17 +41,35 @@ strategies = [
 ]
 
 data_dir = os.path.join("graxia", "packages", "quant_os", "data")
+DATE_FMT = "%Y-%m-%d %H:%M:%S"
 
-# Load D1 data
-print("Loading XAUUSD D1 data...")
-csv_path = os.path.join(data_dir, "XAUUSD_D1.csv")
-data_d1, ts_d1 = load_csv_data(csv_path, date_column="time", date_format="%Y-%m-%d %H:%M:%S%z")
+# Load all three timeframes from MT5
+print("Loading MT5 data...")
+csv_d1 = os.path.join(data_dir, "XAUUSD_D1.csv")
+csv_h1 = os.path.join(data_dir, "XAUUSD_H1.csv")
+csv_m15 = os.path.join(data_dir, "XAUUSD_M15.csv")
+
+data_d1, ts_d1 = load_csv_data(csv_d1, date_column="time", date_format=DATE_FMT)
+data_h1, ts_h1 = load_csv_data(csv_h1, date_column="time", date_format=DATE_FMT)
+data_m15, ts_m15 = load_csv_data(csv_m15, date_column="time", date_format=DATE_FMT)
+
 print(f"  D1: {len(data_d1['close'])} bars, {ts_d1[0]} to {ts_d1[-1]}")
+print(f"  H1: {len(data_h1['close'])} bars, {ts_h1[0]} to {ts_h1[-1]}")
+print(f"  M15: {len(data_m15['close'])} bars, {ts_m15[0]} to {ts_m15[-1]}")
 
-# Use last 500 bars for quick verification
-data = {k: v[-500:] for k, v in data_d1.items()}
-timestamps = ts_d1[-500:]
-print(f"  Using last {len(data['close'])} bars for backtest")
+# Use last 200 D1 bars for backtest
+N = 200
+data_base = {k: v[-N:] for k, v in data_d1.items()}
+ts_base = ts_d1[-N:]
+print(f"\nBacktest: last {N} D1 bars ({ts_base[0]} to {ts_base[-1]})")
+
+# Build multi-TF dict (small enough for in-memory strategy access)
+multi_tf = {
+    "D1": data_base,
+    "H1": {k: v[-500:] for k, v in data_h1.items()},
+    "M15": {k: v[-2000:] for k, v in data_m15.items()},
+}
+print(f"  Multi-TF: H1={len(multi_tf['H1']['close'])} bars, M15={len(multi_tf['M15']['close'])} bars")
 
 config = BacktestConfig(
     initial_capital=10000, slippage_pips=0.5, commission_per_lot=3.5,
@@ -65,10 +84,10 @@ sl_diagnostics = {}
 for name, cls in strategies:
     try:
         gold_strat = cls()
-        adapter = GoldStrategyAdapter(gold_strat)
+        adapter = GoldStrategyAdapter(gold_strat, multi_tf_data=multi_tf)
         engine = BacktestEngine(config)
         engine.set_strategy(adapter)
-        engine.load_data(data, timestamps)
+        engine.load_data(data_base, ts_base)
         r = engine.run()
         m = r["metrics"]
         results.append((name, m))
