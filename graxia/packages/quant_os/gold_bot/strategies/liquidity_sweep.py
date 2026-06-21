@@ -20,6 +20,10 @@ class LiquiditySweepStrategy(GoldStrategy):
         if len(close) < 30:
             return None
         
+        # ponytail: ATR-based SL buffer for symbol adaptivity
+        atr_val = self._calc_atr(high, low, close) or 5.0
+        sl_buffer = atr_val * 0.5  # 0.5x ATR buffer
+        
         score = 0
         direction = SignalDirection.NEUTRAL
         
@@ -37,7 +41,7 @@ class LiquiditySweepStrategy(GoldStrategy):
                         score = 80
                         direction = SignalDirection.SELL
                         entry = current_price
-                        sl = sweep_high + 15  # ponytail: 15pt buffer for gold volatility
+                        sl = sweep_high + sl_buffer  # ATR-based buffer
                         tp = current_price - (sl - current_price) * 2.5  # 2.5x R:R
                         break
                 
@@ -48,7 +52,7 @@ class LiquiditySweepStrategy(GoldStrategy):
                         score = 80
                         direction = SignalDirection.BUY
                         entry = current_price
-                        sl = min(sweep_low) - 15  # ponytail: 15pt buffer for gold volatility
+                        sl = min(sweep_low) - sl_buffer  # ATR-based buffer
                         tp = current_price + (current_price - sl) * 2.5  # 2.5x R:R
                         break
             

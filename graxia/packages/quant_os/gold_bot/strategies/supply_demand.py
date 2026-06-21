@@ -45,9 +45,10 @@ class SupplyDemandStrategy(GoldStrategy):
         if zone_range <= 0:
             return None
         
-        # Enforce minimum SL distance — use fixed minimum, not zone-derived
-        # ponytail: zone_range*0.1 was too small on D1, always hit the floor
-        min_sl = MIN_SL_DISTANCE.get(symbol, 15.0)
+        # Enforce minimum SL distance — use ATR-based minimum for symbol adaptivity
+        # ponytail: ATR-based minimum scales with symbol volatility
+        atr_val = self._calc_atr(m15_high, m15_low, m15_close) or 10
+        min_sl = max(atr_val * 1.5, MIN_SL_DISTANCE.get(symbol, 15.0))
         sl_distance = min_sl  # Always use minimum for consistency
         
         # Price near demand zone

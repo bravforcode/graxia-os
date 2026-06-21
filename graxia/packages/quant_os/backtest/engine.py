@@ -283,8 +283,13 @@ class BacktestEngine:
         
         if signal.stop_loss:
             risk_per_unit = abs(entry_price - signal.stop_loss)
-            # Safety net: reject SL too tight (ponytail: per-symbol minimum, not optimization)
-            min_sl = Decimal("10.0") if "XAU" in signal.symbol else Decimal("0.0010")
+            # Safety net: reject SL too tight (ponytail: per-symbol minimum)
+            if "XAU" in signal.symbol:
+                min_sl = Decimal("5.0")
+            elif "JPY" in signal.symbol:
+                min_sl = Decimal("0.05")
+            else:
+                min_sl = Decimal("0.0005")  # 5 pips for forex
             if risk_per_unit < min_sl:
                 return
             if risk_per_unit <= 0:
