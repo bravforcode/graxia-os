@@ -132,7 +132,8 @@ class Strategy(ABC):
         symbol: str,
         ohlcv_data: Dict[str, List],  # OHLCV data
         indicators: Optional[Dict[str, Any]] = None,
-        regime: Optional[RegimeType] = None
+        regime: Optional[RegimeType] = None,
+        **kwargs,
     ) -> Optional[Signal]:
         """
         Generate trading signal from market data.

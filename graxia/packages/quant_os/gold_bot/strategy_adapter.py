@@ -1,31 +1,43 @@
 from decimal import Decimal
+from datetime import datetime
+from typing import Optional, Dict, List
 
 
 class GoldStrategyAdapter:
     """
-    Adapts gold_bot strategies (which expect multi-timeframe nested dict)
-    to work with backtest engine (which passes flat ohlcv_data per bar).
+    Adapts gold_bot strategies to the backtest engine with point-in-time MTF data.
     
-    Gold strategies expect: data["M15"]["close"] = [...]
-    Backtest engine provides: ohlcv_data["close"] = [...] (current TF only)
+    When a MultiTimeframeCursor is set (via engine.set_multi_timeframe),
+    lower TF data is sliced to timestamp <= current_time before passing
+    to the strategy. This prevents look-ahead leakage.
     
-    If multi_tf_data is provided (dict mapping TF strings to ohlcv dicts),
-    uses real data for each timeframe. Otherwise maps all TFs to same data.
+    Without cursor, falls back to static multi_tf_data (legacy, leaky).
     """
     
     def __init__(self, gold_strategy, multi_tf_data=None):
         self.gold_strategy = gold_strategy
         self.id = gold_strategy.__class__.__name__
         self.target_tf = getattr(gold_strategy, 'min_timeframe', 'M15')
-        # Store real multi-TF data if provided
+        # Legacy static data (leaky — use cursor instead)
         self.multi_tf_data = multi_tf_data or {}
+        # Cursor for point-in-time slicing (set by engine each bar)
+        self._sliced_data = None
     
-    def generate_signal(self, symbol, ohlcv_data, indicators=None, regime=None):
-        # Build nested data: use real multi-TF data where available,
-        # fall back to current bar data for missing TFs
-        nested_data = {}
-        for tf in ["M1", "M5", "M15", "H1", "H4", "D1"]:
-            nested_data[tf] = self.multi_tf_data.get(tf, ohlcv_data)
+    def _set_mtf_cursor(self, sliced_data: Dict[str, Dict[str, List]]):
+        """Called by engine each bar with point-in-time sliced data."""
+        self._sliced_data = sliced_data
+    
+    def generate_signal(self, symbol, ohlcv_data, indicators=None, regime=None, **kwargs):
+        current_time = kwargs.get("current_time")
+        
+        # Prefer point-in-time sliced data from cursor
+        if self._sliced_data is not None:
+            nested_data = self._sliced_data
+        else:
+            # Fallback: static data (LEAKY — only for backward compat)
+            nested_data = {}
+            for tf in ["M1", "M5", "M15", "H1", "H4", "D1"]:
+                nested_data[tf] = self.multi_tf_data.get(tf, ohlcv_data)
         
         current_price = ohlcv_data["close"][-1] if ohlcv_data.get("close") else 0
         

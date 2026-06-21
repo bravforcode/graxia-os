@@ -87,7 +87,8 @@ class BacktestEngine:
     Usage:
         engine = BacktestEngine(config)
         engine.set_strategy(my_strategy)
-        engine.load_data(ohlcv_data)
+        engine.load_data(ohlcv_data, timestamps)
+        engine.set_multi_timeframe(h1_data, h1_ts, m15_data, m15_ts)  # optional
         results = engine.run()
     """
     
@@ -110,6 +111,9 @@ class BacktestEngine:
         self.timestamps: List[datetime] = []
         self.current_index: int = 0
         
+        # Multi-TF cursor (ponytail: set via set_multi_timeframe)
+        self._mtf_cursor = None
+        
         # Metrics tracking
         self._daily_pnl: float = 0.0
         self._peak_equity_pct: float = 0.0
@@ -118,6 +122,25 @@ class BacktestEngine:
     def set_strategy(self, strategy: Strategy) -> None:
         """Set the strategy to backtest"""
         self.strategy = strategy
+    
+    def set_multi_timeframe(
+        self,
+        h1_data: Dict[str, List], h1_ts: List[datetime],
+        m15_data: Dict[str, List], m15_ts: List[datetime],
+    ) -> None:
+        """
+        Set multi-timeframe data for point-in-time slicing.
+        
+        MUST be called before run() when strategy needs multi-TF data.
+        Creates a cursor that slices lower TFs to timestamp <= current bar.
+        """
+        from .mtf_cursor import MultiTimeframeCursor
+        self._mtf_cursor = MultiTimeframeCursor(
+            d1_data=self.ohlcv_data,
+            d1_ts=self.timestamps,
+            h1_data=h1_data, h1_ts=h1_ts,
+            m15_data=m15_data, m15_ts=m15_ts,
+        )
     
     def load_data(self, data: Dict[str, List], timestamps: Optional[List[datetime]] = None) -> None:
         """
@@ -181,11 +204,17 @@ class BacktestEngine:
             # 3. Generate signal from strategy
             bar_data = guard.get_slice(self.ohlcv_data)
             
+            # If adapter has cursor, inject sliced multi-TF data
+            if self._mtf_cursor and hasattr(self.strategy, '_set_mtf_cursor'):
+                sliced = self._mtf_cursor.slice_as_of(current_time)
+                self.strategy._set_mtf_cursor(sliced)
+            
             signal = self.strategy.generate_signal(
                 symbol="BACKTEST",
                 ohlcv_data=bar_data,
                 indicators=indicators,
-                regime=None
+                regime=None,
+                current_time=current_time,
             )
             
             # 4. Execute signal

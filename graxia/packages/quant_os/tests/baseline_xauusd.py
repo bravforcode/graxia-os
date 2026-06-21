@@ -71,6 +71,12 @@ multi_tf = {
 }
 print(f"  Multi-TF: H1={len(multi_tf['H1']['close'])} bars, M15={len(multi_tf['M15']['close'])} bars")
 
+# Prepare H1/M15 for cursor (ponytail: full arrays, cursor slices per bar)
+h1_for_cursor = {k: v[-5000:] for k, v in data_h1.items()}
+ts_h1_for_cursor = ts_h1[-5000:]
+m15_for_cursor = {k: v[-20000:] for k, v in data_m15.items()}
+ts_m15_for_cursor = ts_m15[-20000:]
+
 config = BacktestConfig(
     initial_capital=10000, slippage_pips=0.5, commission_per_lot=3.5,
     risk_per_trade_pct=1.0, units_per_lot=100, max_positions=3,
@@ -88,6 +94,11 @@ for name, cls in strategies:
         engine = BacktestEngine(config)
         engine.set_strategy(adapter)
         engine.load_data(data_base, ts_base)
+        # Wire MTF cursor for point-in-time slicing (no leakage)
+        engine.set_multi_timeframe(
+            h1_for_cursor, ts_h1_for_cursor,
+            m15_for_cursor, ts_m15_for_cursor,
+        )
         r = engine.run()
         m = r["metrics"]
         results.append((name, m))
