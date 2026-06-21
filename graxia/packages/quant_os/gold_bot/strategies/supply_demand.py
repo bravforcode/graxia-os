@@ -9,7 +9,7 @@ from ..core.engine import StrategySignal, SignalDirection
 
 # Minimum SL distance per symbol (price units) — below this, sizing explodes
 MIN_SL_DISTANCE = {
-    "XAUUSD": 10.0,   # $10 — gold daily range ~$15-30
+    "XAUUSD": 18.0,   # $18 — gold needs room, daily ATR ~$20-30
     "EURUSD": 0.0020,  # 20 pips
     "GBPUSD": 0.0020,
     "USDJPY": 0.20,
@@ -45,9 +45,10 @@ class SupplyDemandStrategy(GoldStrategy):
         if zone_range <= 0:
             return None
         
-        # Enforce minimum SL distance
-        min_sl = MIN_SL_DISTANCE.get(symbol, 5.0)
-        sl_distance = max(zone_range * 0.1, min_sl)
+        # Enforce minimum SL distance — use fixed minimum, not zone-derived
+        # ponytail: zone_range*0.1 was too small on D1, always hit the floor
+        min_sl = MIN_SL_DISTANCE.get(symbol, 15.0)
+        sl_distance = min_sl  # Always use minimum for consistency
         
         # Price near demand zone
         if (current_price - avg_low) / zone_range < 0.2:
