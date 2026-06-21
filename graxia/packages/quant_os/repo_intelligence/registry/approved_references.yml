@@ -1,0 +1,297 @@
+# Approved References
+# Repositories with explicit read-only or isolated-execute permissions.
+# Quarantined repos are excluded.
+---
+approved_references:
+
+  # === APPROVED_DIFFERENTIAL_ORACLE ===
+  - repo_id: mementum_backtrader
+    scope: event-driven independent ledger for Forex/Gold research
+    permissions_granted:
+      - read_only_reference
+      - isolated_execute
+      - research_import
+      - differential_oracle
+
+  - repo_id: kernc_backtesting_py
+    scope: rule-level independent backtest for Forex/Gold research
+    permissions_granted:
+      - read_only_reference
+      - isolated_execute
+      - research_import
+      - differential_oracle
+
+  - repo_id: polakowo_vectorbt
+    scope: parameter surface, walk-forward, analytics for Forex/Gold research
+    permissions_granted:
+      - read_only_reference
+      - isolated_execute
+      - research_import
+      - differential_oracle
+
+  - repo_id: quantconnect_lean
+    scope: optional final oracle, independent event-driven reproduction
+    permissions_granted:
+      - read_only_reference
+      - isolated_execute
+      - research_import
+      - differential_oracle
+
+  # === APPROVED_ARCHITECTURE_REFERENCE ===
+  - repo_id: stocksharp_stocksharp
+    scope: architecture and optional C# cross-check, reference only
+    permissions_granted:
+      - read_only_reference
+      - isolated_execute
+
+  - repo_id: fasiondog_hikyuu
+    scope: framework comparison, research reference
+    permissions_granted:
+      - read_only_reference
+      - isolated_execute
+
+  - repo_id: enzoampil_fastquant
+    scope: exploratory benchmark, research reference
+    permissions_granted:
+      - read_only_reference
+      - isolated_execute
+
+  - repo_id: lumiwealth_lumibot
+    scope: paper/live lifecycle reference, architecture reference
+    permissions_granted:
+      - read_only_reference
+      - isolated_execute
+
+  - repo_id: barter_rs_barter_rs
+    scope: Rust event-driven paper/live architecture, reference only
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: superalgos_superalgos
+    scope: dashboard and workflow ideas, monitoring reference
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: nkaz001_hftbacktest
+    scope: order-book/latency concepts, reference only, no L2/L3 data
+    permissions_granted:
+      - read_only_reference
+
+  # === APPROVED_HYPOTHESIS_CORPUS ===
+  - repo_id: edtechre_pybroker
+    scope: ML research comparator, research only
+    permissions_granted:
+      - read_only_reference
+      - isolated_execute
+
+  - repo_id: scottfreellc_alphapy
+    scope: ML/feature research ideas, offline only
+    permissions_granted:
+      - read_only_reference
+      - isolated_execute
+
+  - repo_id: jesuistm_quant_trading
+    scope: strategy hypothesis source, hypothesis only
+    permissions_granted:
+      - read_only_reference
+      - isolated_execute
+
+  - repo_id: xavierleeeugene_trading_strategies
+    scope: strategy hypothesis source, hypothesis only
+    permissions_granted:
+      - read_only_reference
+      - isolated_execute
+
+  - repo_id: jadelam_algorithmictrading
+    scope: strategy hypothesis source, hypothesis only
+    permissions_granted:
+      - read_only_reference
+      - isolated_execute
+
+  - repo_id: asavinov_intelligent_trading_bot
+    scope: ML pipeline ideas, offline only
+    permissions_granted:
+      - read_only_reference
+      - isolated_execute
+
+  - repo_id: tonyma_walk_forward_backtester
+    scope: protocol comparison, offline only
+    permissions_granted:
+      - read_only_reference
+      - isolated_execute
+
+  - repo_id: staituned_financial_sentiment
+    scope: sentiment feature ideas, shadow features only
+    permissions_granted:
+      - read_only_reference
+      - isolated_execute
+
+  # === APPROVED_DATA_REFERENCE ===
+  - repo_id: alihanucar_fredapi
+    scope: macro-data adapter reference, macro research
+    permissions_granted:
+      - read_only_reference
+      - isolated_execute
+      - research_import
+
+  # === CRYPTO_ONLY_REFERENCE ===
+  - repo_id: hummingbot_hummingbot
+    scope: order lifecycle and connector patterns, crypto architecture reference
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: drakkar_software_octobot
+    scope: plugin and bot orchestration patterns, architecture reference
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: whittlem_pycryptobot
+    scope: bot configuration patterns, crypto-only
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: cryptognome_tv_webhook
+    scope: webhook validation patterns, crypto-only
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: coinquanta_awesome_crypto_api
+    scope: data source catalog, crypto-only
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: stephan_akkerman_crypto_ohlcv
+    scope: crypto OHLCV ideas, crypto-only
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: sashaflores_crypto_sentiment
+    scope: crypto sentiment ideas, crypto-only
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: john_gee3_newsapi_crypto_sentiment
+    scope: research methodology only, crypto-only
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: sajanpoudel_cryptosensei
+    scope: crypto news/sentiment ideas, crypto-only
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: gazbert_bxbot
+    scope: crypto exchange patterns, no MT5 runtime
+    permissions_granted:
+      - read_only_reference
+
+  # === VERIFY_IDENTITY_ONLY ===
+  - repo_id: austin_starks_nexttrade
+    scope: framework idea review, read-only
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: socktrader_socktrader
+    scope: review source and project identity, verify first
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: finanzobot_finanzobot
+    scope: review source and project identity, verify first
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: quantweb3_nexustrader
+    scope: inventory/research only, verify first
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: trading_bot_tv_webhook
+    scope: webhook validation patterns, non-execution reference
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: elias_aboukhater_trading_bot
+    scope: portfolio/rebalancing ideas, future only
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: backpack455_trading_bot
+    scope: portfolio/rebalancing ideas, future only
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: kiploks_walk_forward_validator
+    scope: verify project validity and WFO ideas, offline only
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: cluster2600_elvis
+    scope: stress/Monte Carlo ideas, offline only
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: robert_zag_stockanalysis
+    scope: analytics reference, offline only
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: anthonydickson_algotrader
+    scope: execution/strategy patterns, offline only
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: elitequant_elitequant
+    scope: architecture/strategy ideas, offline only
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: ro234jk_trading_bot
+    scope: source review only, verify first
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: mun_min_ml_trading_bot
+    scope: ML experiment ideas, offline only
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: zeroxemmkty_quantmuse
+    scope: ML/quant ideas, offline only
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: eugeneow_trading
+    scope: ML/research ideas, offline only
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: hamidreza_rhz_ml_strategy
+    scope: ML pitfalls/ideas, offline only
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: trading_bot_robo_advisor_stock_bots
+    scope: RL ideas, simulator only
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: alternative_macro_signals_api_docs
+    scope: macro data catalog, verify first
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: br0ski777_crypto_news_mcp
+    scope: external integration reference, no runtime access
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: michaelchu_optopsy
+    scope: options analytics reference, out of current scope
+    permissions_granted:
+      - read_only_reference
+
+  - repo_id: algotraders_stock_analysis_engine
+    scope: market data architecture ideas, no broker credentials
+    permissions_granted:
+      - read_only_reference

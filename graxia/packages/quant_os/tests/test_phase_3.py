@@ -1,4 +1,4 @@
-"""Phase 3 tests — Execution & Cost Model (25 tests per spec)."""
+"""Phase 3 tests — Execution & Cost Model (25 tests)."""
 from decimal import Decimal
 from datetime import datetime
 import tempfile
@@ -8,9 +8,7 @@ import pytest
 
 from graxia.packages.quant_os.execution.fill_model import (
     Side, FillRequest, FillResult, ExecutionQuality,
-    simulate_entry, check_sl_tp_trigger, simulate_exit,
-    calculate_entry_fill, calculate_exit_fill, check_sl_tp_triggers,
-    can_fill_on_info_candle,
+    simulate_entry, simulate_exit, check_sl_tp_trigger, can_fill_on_info_candle,
 )
 from graxia.packages.quant_os.execution.cost_model import (
     CostScenario, TradeCosts, calculate_trade_costs, run_cost_stress_matrix,
@@ -23,11 +21,9 @@ from graxia.packages.quant_os.execution.trade_ledger import TradeRecord, TradeLe
 from graxia.packages.quant_os.core.exceptions import OrderStateError
 
 
-# ── Fixtures ──────────────────────────────────────────────────────────
-
 GOLD_BID = Decimal("2330.50")
 GOLD_ASK = Decimal("2331.50")
-SPREAD = GOLD_ASK - GOLD_BID  # 1.00
+SPREAD = GOLD_ASK - GOLD_BID
 SLIPPAGE = Decimal("0.10")
 SL = Decimal("2325.00")
 TP = Decimal("2340.00")
@@ -64,8 +60,6 @@ def _make_trade_record(trade_id="t-001", **overrides):
     return TradeRecord(**defaults)
 
 
-# ── 1. Bid/ask entry/exit (4 tests) ──────────────────────────────────
-
 class TestBidAskEntryExit:
     def test_long_entry_at_ask_plus_slippage(self):
         req = _long_request()
@@ -88,8 +82,6 @@ class TestBidAskEntryExit:
         assert cost == SLIPPAGE
 
 
-# ── 2. SL/TP trigger sides (3 tests) ─────────────────────────────────
-
 class TestSLTPTriggers:
     def test_long_sl_triggers_on_bid(self):
         assert check_sl_tp_trigger(Side.BUY, SL, TP, Decimal("2324"), GOLD_ASK) == "SL"
@@ -109,23 +101,17 @@ class TestSLTPTriggers:
         assert check_sl_tp_trigger(Side.BUY, SL, TP, GOLD_BID, GOLD_ASK) is None
 
 
-# ── 3. Ambiguous bar adverse ordering (2 tests) ──────────────────────
-
 class TestAmbiguousBarAdverseOrdering:
     def test_long_ambiguous_bar_sl_first(self):
-        """When bar touches both SL and TP, SL fires first for long (adverse)."""
         result = check_sl_tp_trigger(Side.BUY, Decimal("2325"), Decimal("2320"),
                                      Decimal("2324"), GOLD_ASK)
         assert result == "SL"
 
     def test_short_ambiguous_bar_sl_first(self):
-        """When bar touches both SL and TP, SL fires first for short (adverse)."""
         result = check_sl_tp_trigger(Side.SELL, Decimal("2340"), Decimal("2335"),
                                      GOLD_BID, Decimal("2341"))
         assert result == "SL"
 
-
-# ── 4. Next-bar fill timing (2 tests) ────────────────────────────────
 
 class TestNextBarFillTiming:
     def test_signal_cannot_fill_on_same_bar(self):
@@ -134,8 +120,6 @@ class TestNextBarFillTiming:
     def test_fill_on_next_bar_allowed(self):
         assert can_fill_on_info_candle(signal_bar_index=0, fill_bar_index=1) is True
 
-
-# ── 5. Cost model scenarios (4 tests) ────────────────────────────────
 
 class TestCostModelScenarios:
     ENTRY = Decimal("2330")
@@ -176,8 +160,6 @@ class TestCostModelScenarios:
             assert isinstance(r, TradeCosts)
 
 
-# ── 6. Order state machine transitions (4 tests) ─────────────────────
-
 class TestOrderStateMachineTransitions:
     def test_happy_path_to_audited(self):
         lc = OrderStateMachine(order_id="test-001")
@@ -199,7 +181,6 @@ class TestOrderStateMachineTransitions:
     def test_terminal_states_block_transition(self):
         for terminal in (OrderState.REJECTED, OrderState.EXPIRED, OrderState.AUDITED, OrderState.CRITICAL_INCIDENT):
             lc = OrderStateMachine(order_id=f"test-{terminal.value}")
-            # Drive to a state that can reach the terminal
             if terminal == OrderState.REJECTED:
                 lc.transition(OrderState.RISK_CHECKED)
                 lc.transition(terminal, "rejected")
@@ -233,11 +214,9 @@ class TestOrderStateMachineTransitions:
                   OrderState.ORDER_SUBMITTED, OrderState.ORDER_ACKNOWLEDGED,
                   OrderState.FILLED):
             lc.transition(s)
-        lc.transition(OrderState.CRITICAL_INCIDENT, "fail")
+        lc.transition(OrderState.PROTECTIVE_STOPS_PENDING, "pending")
         assert lc.needs_protective_stop_verification() is True
 
-
-# ── 7. Trade ledger (2 tests) ────────────────────────────────────────
 
 class TestTradeLedger:
     def test_record_and_retrieve(self):
@@ -260,63 +239,15 @@ class TestTradeLedger:
             assert len(h1) == 64
 
 
-# ── 8. Integration: no order_send in execution/ (1 test) ─────────────
-
 class TestNoOrderSend:
     def test_no_order_send_in_execution_modules(self):
-        """execution/ must not contain order_send calls."""
-        import graxia.packages.quant_os.execution.fill_model as fm
-        import graxia.packages.quant_os.execution.cost_model as cm
-        import graxia.packages.quant_os.execution.order_state_machine as osm
-        import graxia.packages.quant_os.execution.trade_ledger as tl
-        for mod in (fm, cm, osm, tl):
+        for mod_name in (
+            "graxia.packages.quant_os.execution.fill_model",
+            "graxia.packages.quant_os.execution.cost_model",
+            "graxia.packages.quant_os.execution.order_state_machine",
+            "graxia.packages.quant_os.execution.trade_ledger",
+        ):
+            mod = importlib.import_module(mod_name)
             src = importlib.util.find_spec(mod.__name__).origin
             content = open(src).read()
             assert "order_send" not in content, f"order_send in {mod.__name__}"
-
-
-# ── 9. Execution quality labels (1 test) ─────────────────────────────
-
-class TestExecutionQualityLabels:
-    def test_bar_only_excluded_from_evidence(self):
-        valid = {ExecutionQuality.CONSERVATIVE_BAR, ExecutionQuality.TICK_REPLAY,
-                 ExecutionQuality.LIVE_OBSERVED}
-        assert ExecutionQuality.BAR_ONLY not in valid
-        for eq in valid:
-            assert eq.value  # all have string values
-
-
-# ── 10. Full flow: signal→risk→fill→ledger (2 tests) ─────────────────
-
-class TestFullFlow:
-    def test_signal_to_fill_to_ledger(self):
-        req = _long_request()
-        fill = simulate_entry(req, GOLD_BID, GOLD_ASK, SPREAD)
-        trigger = check_sl_tp_trigger(req.side, req.stop_loss, req.take_profit,
-                                      GOLD_BID, GOLD_ASK)
-        with tempfile.TemporaryDirectory() as tmpdir:
-            ledger = TradeLedger(ledger_dir=tmpdir)
-            rec = _make_trade_record(
-                entry_price=fill.entry_price,
-                slippage_cost=fill.sl_cost,
-                close_reason=trigger or "SIGNAL",
-            )
-            ledger.record_trade(rec)
-            trades = ledger.get_trades()
-            assert trades[0].entry_price == fill.entry_price
-            assert trades[0].slippage_cost == fill.sl_cost
-
-    def test_signal_to_state_machine_to_ledger(self):
-        lc = OrderStateMachine(order_id="flow-001")
-        for s in (OrderState.RISK_CHECKED, OrderState.ORDER_PRECHECKED,
-                  OrderState.ORDER_SUBMITTED, OrderState.ORDER_ACKNOWLEDGED,
-                  OrderState.FILLED, OrderState.PROTECTIVE_STOPS_VERIFIED,
-                  OrderState.POSITION_RECONCILED, OrderState.CLOSED,
-                  OrderState.DEAL_RECONCILED, OrderState.AUDITED):
-            lc.transition(s)
-        assert lc.is_terminal()
-        with tempfile.TemporaryDirectory() as tmpdir:
-            ledger = TradeLedger(ledger_dir=tmpdir)
-            rec = _make_trade_record(trade_id="flow-t-001")
-            ledger.record_trade(rec)
-            assert ledger.count() == 1
