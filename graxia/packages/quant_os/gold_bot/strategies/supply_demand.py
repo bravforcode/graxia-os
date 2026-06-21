@@ -9,7 +9,7 @@ from ..core.engine import StrategySignal, SignalDirection
 
 # Minimum SL distance per symbol (price units) — below this, sizing explodes
 MIN_SL_DISTANCE = {
-    "XAUUSD": 18.0,   # $18 — gold needs room, daily ATR ~$20-30
+    "XAUUSD": 28.0,   # ponytail: $28 — gold daily ATR ~$20-30, need room
     "EURUSD": 0.0020,  # 20 pips
     "GBPUSD": 0.0020,
     "USDJPY": 0.20,
@@ -51,25 +51,27 @@ class SupplyDemandStrategy(GoldStrategy):
         sl_distance = min_sl  # Always use minimum for consistency
         
         # Price near demand zone
-        if (current_price - avg_low) / zone_range < 0.2:
+        # ponytail: tightened zone threshold from 0.2 to 0.12 for fewer, higher-quality entries
+        if (current_price - avg_low) / zone_range < 0.12:
             score = 70
             direction = SignalDirection.BUY
             entry = current_price
             sl = current_price - sl_distance
-            tp = current_price + sl_distance * 2.0
+            tp = current_price + sl_distance * 1.5  # ponytail: realistic 1.5x for gold
         # Price near supply zone
-        elif (avg_high - current_price) / zone_range < 0.2:
+        elif (avg_high - current_price) / zone_range < 0.12:
             score = 70
             direction = SignalDirection.SELL
             entry = current_price
             sl = current_price + sl_distance
-            tp = current_price - sl_distance * 2.0
+            tp = current_price - sl_distance * 1.5
         
         # Volume confirmation
+        # ponytail: raised threshold from 1.2 to 1.4 for stronger confirmation
         volume = self._get_volume(data, "M15")
         if volume and len(volume) > 20:
             avg_vol = sum(volume[-20:]) / 20
-            if volume[-1] > avg_vol * 1.2:
+            if volume[-1] > avg_vol * 1.4:
                 score += 10
         
         if score < 50:

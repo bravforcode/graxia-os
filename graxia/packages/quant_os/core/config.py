@@ -82,6 +82,9 @@ class QuantConfig:
     ml_retrain_interval_days: int = 7
     ml_drift_threshold: float = 0.10
     
+    # ==================== LOT SIZE ====================
+    units_per_lot: float = 100000.0
+    
     # ==================== PAPER TRADING ====================
     paper_initial_capital: float = 10000.0
     paper_slippage_pips: float = 0.5

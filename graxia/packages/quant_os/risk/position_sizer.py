@@ -32,8 +32,9 @@ class PositionSizeResult:
 class PositionSizer(ABC):
     """Abstract base class for position sizing"""
     
-    def __init__(self, name: str):
+    def __init__(self, name: str, units_per_lot: float = 100000.0):
         self.name = name
+        self.units_per_lot = units_per_lot
         self.config = get_config()
     
     @abstractmethod
@@ -105,8 +106,8 @@ class FixedFractionalSizer(PositionSizer):
     Default: 1% as per golden rules.
     """
     
-    def __init__(self, risk_pct: Optional[float] = None):
-        super().__init__("FixedFractional")
+    def __init__(self, risk_pct: Optional[float] = None, units_per_lot: float = 100000.0):
+        super().__init__("FixedFractional", units_per_lot)
         self.risk_pct = risk_pct or GOLDEN_RULES.MAX_RISK_PER_TRADE_PCT
     
     def calculate(
@@ -139,9 +140,9 @@ class FixedFractionalSizer(PositionSizer):
         units = risk_amount / price_risk
         
         # Standard forex lot = 100,000 units
-        lots = units / Decimal("100000")
+        lots = units / Decimal(str(self.units_per_lot))
         lots = lots.quantize(Decimal("0.01"), rounding=ROUND_DOWN)  # Round to 2 decimals
-        units = lots * Decimal("100000")
+        units = lots * Decimal(str(self.units_per_lot))
         
         # Calculate notional value
         notional = units * entry_price
@@ -178,8 +179,8 @@ class KellySizer(PositionSizer):
     Uses half-Kelly for safety (conservative Kelly).
     """
     
-    def __init__(self, win_rate: float = 0.55, avg_win: float = 1.5, avg_loss: float = 1.0):
-        super().__init__("Kelly")
+    def __init__(self, win_rate: float = 0.55, avg_win: float = 1.5, avg_loss: float = 1.0, units_per_lot: float = 100000.0):
+        super().__init__("Kelly", units_per_lot)
         self.win_rate = win_rate
         self.avg_win = avg_win
         self.avg_loss = avg_loss
@@ -230,9 +231,9 @@ class KellySizer(PositionSizer):
             )
         
         units = risk_amount / price_risk
-        lots = units / Decimal("100000")
+        lots = units / Decimal(str(self.units_per_lot))
         lots = lots.quantize(Decimal("0.01"), rounding=ROUND_DOWN)
-        units = lots * Decimal("100000")
+        units = lots * Decimal(str(self.units_per_lot))
         notional = units * entry_price
         
         lots, units, notional = self._apply_limits(lots, units, notional, account_balance)
@@ -269,8 +270,8 @@ class ATRSizer(PositionSizer):
     Higher volatility = smaller position.
     """
     
-    def __init__(self, atr_multiple: float = 1.5, base_risk_pct: float = 1.0):
-        super().__init__("ATR")
+    def __init__(self, atr_multiple: float = 1.5, base_risk_pct: float = 1.0, units_per_lot: float = 100000.0):
+        super().__init__("ATR", units_per_lot)
         self.atr_multiple = atr_multiple
         self.base_risk_pct = base_risk_pct
     
@@ -299,9 +300,9 @@ class ATRSizer(PositionSizer):
         
         # Calculate units based on ATR stop
         units = risk_amount / atr_stop_distance
-        lots = units / Decimal("100000")
+        lots = units / Decimal(str(self.units_per_lot))
         lots = lots.quantize(Decimal("0.01"), rounding=ROUND_DOWN)
-        units = lots * Decimal("100000")
+        units = lots * Decimal(str(self.units_per_lot))
         notional = units * entry_price
         
         lots, units, notional = self._apply_limits(lots, units, notional, account_balance)
@@ -332,9 +333,10 @@ class AntiMartingaleSizer(PositionSizer):
         self,
         base_risk_pct: float = 1.0,
         consecutive_losses: int = 0,
-        consecutive_wins: int = 0
+        consecutive_wins: int = 0,
+        units_per_lot: float = 100000.0
     ):
-        super().__init__("AntiMartingale")
+        super().__init__("AntiMartingale", units_per_lot)
         self.base_risk_pct = base_risk_pct
         self.consecutive_losses = consecutive_losses
         self.consecutive_wins = consecutive_wins
@@ -351,17 +353,17 @@ class AntiMartingaleSizer(PositionSizer):
         # Adjust risk based on streak
         adjustment = 1.0
         
-        # Reduce size after losses
-        if self.consecutive_losses >= 2:
-            adjustment = 0.5  # Half size after 2 losses
-        elif self.consecutive_losses >= 3:
+        # Reduce size after losses (check higher streaks first)
+        if self.consecutive_losses >= 3:
             adjustment = 0.25  # Quarter size after 3+ losses
+        elif self.consecutive_losses >= 2:
+            adjustment = 0.5  # Half size after 2 losses
         
-        # Increase size after wins (capped)
-        if self.consecutive_wins >= 2:
-            adjustment = min(adjustment * 1.25, 1.5)  # Max 1.5x
-        elif self.consecutive_wins >= 3:
+        # Increase size after wins (capped, check higher streaks first)
+        if self.consecutive_wins >= 3:
             adjustment = min(adjustment * 1.5, 2.0)  # Max 2x
+        elif self.consecutive_wins >= 2:
+            adjustment = min(adjustment * 1.25, 1.5)  # Max 1.5x
         
         adjusted_risk = self.base_risk_pct * adjustment
         
@@ -385,9 +387,9 @@ class AntiMartingaleSizer(PositionSizer):
             )
         
         units = risk_amount / price_risk
-        lots = units / Decimal("100000")
+        lots = units / Decimal(str(self.units_per_lot))
         lots = lots.quantize(Decimal("0.01"), rounding=ROUND_DOWN)
-        units = lots * Decimal("100000")
+        units = lots * Decimal(str(self.units_per_lot))
         notional = units * entry_price
         
         lots, units, notional = self._apply_limits(lots, units, notional, account_balance)

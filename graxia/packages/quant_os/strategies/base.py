@@ -172,7 +172,8 @@ class Strategy(ABC):
         account_balance: Decimal,
         entry_price: Decimal,
         stop_loss: Decimal,
-        risk_pct: Optional[float] = None
+        risk_pct: Optional[float] = None,
+        units_per_lot: float = 100000.0,
     ) -> Decimal:
         """
         Calculate position size based on risk parameters.
@@ -186,10 +187,9 @@ class Strategy(ABC):
         if price_risk == 0:
             return Decimal("0")
         
-        # For forex, convert to lot size
-        # Standard lot = 100,000 units
+        # Convert to lot size
         units = risk_amount / price_risk
-        lots = units / Decimal("100000")
+        lots = units / Decimal(str(units_per_lot))
         
         return lots.quantize(Decimal("0.01"))  # Round to 2 decimal places
     

@@ -82,6 +82,7 @@ class RiskEngine:
         self.position_sizer = position_sizer
         self.circuit_breaker = circuit_breaker
         self.kill_switch = kill_switch
+        self.units_per_lot = getattr(self.config, 'units_per_lot', 100000.0)
         
         # Track daily stats
         self._daily_stats: Dict[str, Any] = {}
@@ -165,7 +166,7 @@ class RiskEngine:
         max_size = limits.get("max_position_size", float('inf'))
         
         # Calculate position value (simplified - needs price lookup)
-        position_value = float(order.quantity) * 100000  # Rough estimate
+        position_value = float(order.quantity) * self.units_per_lot
         
         if position_value > max_size:
             return RiskCheckResult.fail_check(
@@ -180,12 +181,12 @@ class RiskEngine:
         # This would query current positions and calculate exposure
         # Simplified for now
         current_exposure = await self._get_current_exposure()
-        order_exposure = float(order.quantity) * 100000  # Rough estimate
+        order_exposure = float(order.quantity) * self.units_per_lot
         total_exposure = current_exposure + order_exposure
         
         max_exposure = float(self.config.max_portfolio_exposure_pct) / 100.0
-        # Assuming $100k portfolio for demo
-        portfolio_value = 100000.0
+        # ponytail: simplified portfolio value, needs actual equity lookup
+        portfolio_value = self.units_per_lot
         max_exposure_value = portfolio_value * max_exposure
         
         if total_exposure > max_exposure_value:
@@ -212,7 +213,7 @@ class RiskEngine:
         """Check daily loss limit"""
         daily_pnl = await self._get_daily_pnl()
         max_daily_loss = float(self.config.max_daily_loss_pct) / 100.0
-        portfolio_value = 100000.0  # Simplified
+        portfolio_value = self.units_per_lot  # ponytail: simplified
         max_loss_value = portfolio_value * max_daily_loss
         
         if daily_pnl < -max_loss_value:
@@ -290,7 +291,7 @@ class RiskEngine:
         total_risk = risk_per_unit * float(order.quantity)
         
         # Compare to max risk per trade
-        portfolio_value = 100000.0  # Simplified
+        portfolio_value = self.units_per_lot  # ponytail: simplified
         max_risk = portfolio_value * (float(self.config.max_risk_per_trade_pct) / 100.0)
         
         if total_risk > max_risk:
@@ -301,26 +302,82 @@ class RiskEngine:
         
         return RiskCheckResult.pass_check("RISK_PER_TRADE")
     
-    # Helper methods - would integrate with database in real implementation
     async def _get_current_exposure(self) -> float:
-        """Get current portfolio exposure"""
-        # Would query positions from database
-        return 0.0
+        """Get current portfolio exposure from open positions"""
+        if not self.db:
+            return 0.0
+        
+        try:
+            from ..data.models import Position
+            from sqlalchemy import func
+            
+            result = self.db.query(
+                func.sum(Position.quantity * Position.current_price)
+            ).filter(
+                Position.is_open == True
+            ).scalar()
+            
+            return float(result) if result else 0.0
+        except Exception:
+            return 0.0
     
     async def _get_open_position_count(self) -> int:
         """Get number of open positions"""
-        # Would query positions from database
-        return 0
+        if not self.db:
+            return 0
+        
+        try:
+            from ..data.models import Position
+            
+            count = self.db.query(Position).filter(
+                Position.is_open == True
+            ).count()
+            
+            return count
+        except Exception:
+            return 0
     
     async def _get_daily_pnl(self) -> float:
-        """Get today's P&L"""
-        # Would calculate from trades
-        return 0.0
+        """Get today's P&L from trades"""
+        if not self.db:
+            return 0.0
+        
+        try:
+            from ..data.models import Fill
+            from sqlalchemy import func
+            from datetime import date
+            
+            today = date.today()
+            
+            result = self.db.query(
+                func.sum(Fill.realized_pnl)
+            ).filter(
+                func.date(Fill.filled_at) == today
+            ).scalar()
+            
+            return float(result) if result else 0.0
+        except Exception:
+            return 0.0
     
     async def _get_current_drawdown(self) -> float:
-        """Get current drawdown percentage"""
-        # Would calculate from portfolio snapshots
-        return 0.0
+        """Get current drawdown percentage from portfolio snapshots"""
+        if not self.db:
+            return 0.0
+        
+        try:
+            from ..data.models import PortfolioSnapshot
+            
+            # Get latest snapshot
+            latest = self.db.query(PortfolioSnapshot).order_by(
+                PortfolioSnapshot.snapshot_date.desc()
+            ).first()
+            
+            if latest and latest.peak_equity > 0:
+                return float((latest.peak_equity - latest.equity) / latest.peak_equity * 100)
+            
+            return 0.0
+        except Exception:
+            return 0.0
 
 
 class RiskMonitor:
@@ -362,7 +419,7 @@ class RiskMonitor:
             ))
         
         # Check daily loss
-        portfolio_value = 100000.0
+        portfolio_value = getattr(self.config, 'units_per_lot', 100000.0)
         max_daily_loss = portfolio_value * float(self.config.max_daily_loss_pct) / 100.0
         if self._daily_pnl < -max_daily_loss:
             violations.append(RiskCheckResult.fail_check(

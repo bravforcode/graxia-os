@@ -174,7 +174,7 @@ class PaperBroker(BrokerAdapter):
                 fill_price = market_price - slippage
             
             # Simulate commission
-            lot_size = Decimal("100000")  # Standard forex lot
+            lot_size = Decimal(str(getattr(self.config, 'units_per_lot', 100000)))
             lots = order.quantity / lot_size
             commission = lots * Decimal(str(self.config.paper_commission_per_lot))
             
