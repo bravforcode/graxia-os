@@ -3,7 +3,7 @@
 
 mt5:
   # Path to MT5 terminal64.exe (leave empty for default)
-  path: "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
+  path: "C:\\Program Files\\Pepperstone MetaTrader 5\\terminal64.exe"
   
   # Login credentials
   login: 61547941
