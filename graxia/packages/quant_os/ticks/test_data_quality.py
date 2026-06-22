@@ -46,3 +46,19 @@ def test_duplicate_detection():
     checker.check_tick({"bid": 100, "ask": 101, "ingest_sequence": 1})
     incidents = checker.check_tick({"bid": 100, "ask": 101, "ingest_sequence": 1})
     assert any(i.incident_type == "duplicate" for i in incidents)
+
+
+def test_stale_tick_detection():
+    checker = DataQualityChecker(stale_threshold_ms=100)
+    checker.check_tick({"bid": 100, "ask": 101, "source_time_msc": 1000, "ingest_sequence": 1})
+    checker._last_source_time_ms = 1000
+    checker._last_sequence = 2
+    incidents = checker.check_tick({"bid": 100, "ask": 101, "source_time_msc": 800, "ingest_sequence": 3})
+    assert any(i.incident_type == "stale" for i in incidents)
+
+
+def test_session_break_detection():
+    checker = DataQualityChecker()
+    checker.check_tick({"bid": 100, "ask": 101, "source_time_msc": 1000000, "ingest_sequence": 1})
+    incidents = checker.check_tick({"bid": 100, "ask": 101, "source_time_msc": 1360000, "ingest_sequence": 2})
+    assert any(i.incident_type == "session_break" for i in incidents)

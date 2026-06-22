@@ -86,6 +86,24 @@ class DataQualityChecker:
                 f"seq={ingest_seq}", "warning"
             ))
 
+        # Rule: stale tick (source time too old)
+        if source_time_ms > 0 and self._last_source_time_ms > 0:
+            age_ms = self._last_source_time_ms - source_time_ms
+            if age_ms > self.stale_threshold_ms:
+                incidents.append(QualityIncident(
+                    IncidentType.STALE.value, tick_id,
+                    f"age={age_ms}ms", "warning"
+                ))
+
+        # Rule: session break (large time gap > 5 minutes)
+        if source_time_ms > 0 and self._last_source_time_ms > 0:
+            gap_ms = source_time_ms - self._last_source_time_ms
+            if gap_ms > 300_000:
+                incidents.append(QualityIncident(
+                    IncidentType.SESSION_BREAK.value, tick_id,
+                    f"gap={gap_ms}ms", "warning"
+                ))
+
         # Update state
         if source_time_ms > 0:
             self._last_source_time_ms = source_time_ms
