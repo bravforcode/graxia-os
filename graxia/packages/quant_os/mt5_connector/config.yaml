@@ -3,12 +3,12 @@
 
 mt5:
   # Path to MT5 terminal64.exe (leave empty for default)
-  path: ""
+  path: "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
   
   # Login credentials
-  login: 0  # Your MT5 account number
-  password: ""  # Your MT5 password
-  server: ""  # Your broker server (e.g., "Pepperstone-Demo")
+  login: 61547941
+  password: "!muyrwBf4v"
+  server: "mt5-demo01.pepperstone.com"
   
   # Connection timeout (milliseconds)
   timeout: 10000

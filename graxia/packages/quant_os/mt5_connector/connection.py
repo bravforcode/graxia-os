@@ -129,7 +129,7 @@ class MT5Connection:
             min_volume=info.volume_min,
             max_volume=info.volume_max,
             volume_step=info.volume_step,
-            trade_allowed=info.trade_allowed,
+            trade_allowed=info.visible,
         )
     
     def get_tick(self, symbol: str) -> Optional[dict]:

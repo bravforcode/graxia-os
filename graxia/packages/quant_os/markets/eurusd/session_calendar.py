@@ -18,20 +18,21 @@ class TradingSession:
 
 # EURUSD active sessions (UTC)
 SESSIONS = [
-    TradingSession("Asian", time(0, 0), time(6, 0), SessionType.ASIAN),
-    TradingSession("London", time(7, 0), time(16, 0), SessionType.LONDON),
-    TradingSession("NewYork", time(12, 0), time(21, 0), SessionType.NEW_YORK),
-    TradingSession("London-NY Overlap", time(12, 0), time(16, 0), SessionType.LONDON_NY_OVERLAP),
+    TradingSession("Asian", time(0, 0), time(8, 0), SessionType.ASIAN),
+    TradingSession("London", time(8, 0), time(16, 0), SessionType.LONDON),
+    TradingSession("NewYork", time(13, 0), time(21, 0), SessionType.NEW_YORK),
+    TradingSession("London-NY Overlap", time(13, 0), time(16, 0), SessionType.LONDON_NY_OVERLAP),
 ]
 
 def get_active_session(utc_hour: int) -> SessionType:
-    if 12 <= utc_hour < 16:
+    # ponytail: overlap checked first since it's the highest-priority subset
+    if 13 <= utc_hour < 16:
         return SessionType.LONDON_NY_OVERLAP
-    if 7 <= utc_hour < 16:
+    if 8 <= utc_hour < 16:
         return SessionType.LONDON
-    if 12 <= utc_hour < 21:
+    if 13 <= utc_hour < 21:
         return SessionType.NEW_YORK
-    if 0 <= utc_hour < 6:
+    if 0 <= utc_hour < 8:
         return SessionType.ASIAN
     return SessionType.OFF_HOURS
 
