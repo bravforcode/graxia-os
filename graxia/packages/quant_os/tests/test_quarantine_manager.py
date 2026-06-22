@@ -4,9 +4,14 @@ from pathlib import Path
 
 from graxia.packages.quant_os.quarantine_manager import QuarantineEntry, QuarantineManager
 
-# Use local temp dir to avoid Windows permission issues with system temp
+# Use local temp dir, clean before each test
 _LOCAL_TEMP = Path(__file__).parent / ".test_tmp"
 _LOCAL_TEMP.mkdir(exist_ok=True)
+
+
+def _clean():
+    for f in _LOCAL_TEMP.glob("*.json"):
+        f.unlink(missing_ok=True)
 
 
 def _entry(test_id="test_alpha", reason="flaky", owner="alice", issue_id="ISS-001", expiry="2026-12-31"):
@@ -25,6 +30,7 @@ def _qm_path(name="q.json"):
 
 
 def test_quarantine_add_entry():
+    _clean()
     mgr = QuarantineManager(_qm_path("add.json"))
     entry = _entry()
     mgr.add(entry)
@@ -34,6 +40,7 @@ def test_quarantine_add_entry():
 
 
 def test_quarantine_remove_entry():
+    _clean()
     mgr = QuarantineManager(_qm_path("remove.json"))
     mgr.add(_entry())
     assert mgr.remove("test_alpha") is True
@@ -42,6 +49,7 @@ def test_quarantine_remove_entry():
 
 
 def test_quarantine_is_quarantined():
+    _clean()
     mgr = QuarantineManager(_qm_path("check.json"))
     assert mgr.is_quarantined("nope") is False
     mgr.add(_entry())
@@ -49,6 +57,7 @@ def test_quarantine_is_quarantined():
 
 
 def test_quarantine_integrity():
+    _clean()
     path = Path(_qm_path("integrity.json"))
     mgr = QuarantineManager(str(path))
     mgr.add(_entry())
@@ -66,6 +75,7 @@ def test_quarantine_integrity():
 
 
 def test_quarantine_list_entries():
+    _clean()
     mgr = QuarantineManager(_qm_path("list.json"))
     mgr.add(_entry())
     mgr.add(_entry(test_id="test_beta", owner="bob"))
