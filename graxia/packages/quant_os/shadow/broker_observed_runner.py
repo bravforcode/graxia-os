@@ -20,12 +20,12 @@ from typing import Optional
 # AST isolation: no execution imports allowed
 # broker/execution/order/position/trade modules are FORBIDDEN here
 
-from shadow.pipeline import (
+from graxia.packages.quant_os.shadow.pipeline import (
     ShadowPipeline, ShadowSignal, ShadowSignalOutcome, PositionStatus,
     validate_signal_geometry, SpreadShockGate, SignalDeduplicator,
 )
-from markets.eurusd.session_calendar import EURUSDSessionCalendar
-from markets.eurusd.event_calendar import EURUSDEventCalendar
+from graxia.packages.quant_os.markets.eurusd.session_calendar import EURUSDSessionCalendar
+from graxia.packages.quant_os.markets.eurusd.event_calendar import EURUSDEventCalendar
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
@@ -69,9 +69,15 @@ class BrokerSnapshot:
 class BrokerSignalEvidence:
     """Full evidence trail for every shadow signal."""
     signal_id: str
+    # Raw MT5 tick timestamps (for debugging)
+    raw_tick_time_seconds: int = 0
+    raw_tick_time_msc: int = 0
     # UTC timestamps (both required for delay measurement)
-    broker_tick_time_utc: str = ""  # from MT5 tick.time
+    broker_tick_time_utc: str = ""  # from MT5 tick.time_msc, converted to UTC
     received_at_utc: str = ""       # when we received/processed
+    observed_transport_delay_ms: float = 0.0  # received - broker tick
+    clock_anomaly: str = ""  # "BROKER_CLOCK_ANOMALY" if offset unresolved
+    # Symbol / tick state
     symbol: str = ""
     direction: str = ""
     entry_price: float = 0.0
@@ -105,6 +111,15 @@ class BrokerSignalEvidence:
     entry_hash: str = ""
     previous_hash: str = ""
     record_hash: str = ""
+    # Tick-None diagnostics
+    mt5_last_error: str = ""
+    terminal_connected: Optional[bool] = None
+    symbol_visible: Optional[bool] = None
+    symbol_trade_mode: str = ""
+    symbol_select_result: str = ""
+    market_session_state: str = ""
+    reconnect_counter: int = 0
+    last_good_tick_time_utc: str = ""
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -281,8 +296,45 @@ class MT5ReadOnly:
             return None
         return {
             "bid": tick.bid, "ask": tick.ask, "last": tick.last,
-            "volume": tick.volume, "time": tick.time, "flags": tick.flags,
+            "volume": tick.volume, "time": tick.time,
+            "time_msc": tick.time_msc, "flags": tick.flags,
         }
+
+    def get_tick_diagnostics(self, symbol: str) -> dict:
+        """Collect diagnostics when tick is None."""
+        diag = {
+            "mt5_last_error": str(self._mt5.last_error()) if self._mt5 else "no_mt5",
+            "terminal_connected": False,
+            "symbol_visible": False,
+            "symbol_trade_mode": "UNKNOWN",
+            "symbol_select_result": "NOT_ATTEMPTED",
+        }
+        if not self._connected:
+            return diag
+        # terminal_info
+        try:
+            ti = self._mt5.terminal_info()
+            if ti:
+                diag["terminal_connected"] = ti.connected
+        except Exception:
+            pass
+        # symbol_info
+        try:
+            si = self._mt5.symbol_info(symbol)
+            if si:
+                diag["symbol_visible"] = si.visible
+                diag["symbol_trade_mode"] = str(si.trade_mode)
+            else:
+                diag["symbol_trade_mode"] = "SYMBOL_NOT_FOUND"
+        except Exception:
+            pass
+        # symbol_select
+        try:
+            sel = self._mt5.symbol_select(symbol, True)
+            diag["symbol_select_result"] = str(sel)
+        except Exception:
+            diag["symbol_select_result"] = "EXCEPTION"
+        return diag
 
     def get_bars(self, symbol: str, timeframe: int, count: int = 100) -> Optional[list]:
         if not self._connected:
@@ -347,6 +399,7 @@ class BrokerObservedShadowRunner:
         self._session_id: str = ""
         self._reconnect_count: int = 0
         self._stale_count: int = 0
+        self._last_good_tick_utc: str = ""
 
     def connect(self) -> bool:
         ok = self._mt5.connect()
@@ -421,7 +474,8 @@ class BrokerObservedShadowRunner:
         if tick is None:
             self._stale_count += 1
             logger.warning(f"Stale tick (count={self._stale_count})")
-            # Fail closed: record rejection
+            # Collect diagnostics
+            diag = self._mt5.get_tick_diagnostics(self.symbol)
             sig_id = self._next_id()
             ev = BrokerSignalEvidence(
                 signal_id=sig_id,
@@ -433,11 +487,19 @@ class BrokerObservedShadowRunner:
                 stop_loss=0.0,
                 take_profit=None,
                 outcome="rejected_stale_tick",
-                rejection_reason="MT5 tick_info returned None",
+                rejection_reason=f"MT5 tick_info returned None | {diag['mt5_last_error']}",
                 event_risk_state=self._get_event_state(now),
                 market_health_state="DISCONNECTED",
                 strategy_version=self.strategy_version,
                 feature_hash=self.feature_hash,
+                mt5_last_error=diag["mt5_last_error"],
+                terminal_connected=diag["terminal_connected"],
+                symbol_visible=diag["symbol_visible"],
+                symbol_trade_mode=diag["symbol_trade_mode"],
+                symbol_select_result=diag["symbol_select_result"],
+                market_session_state=self._get_session_state(now),
+                reconnect_counter=self._reconnect_count,
+                last_good_tick_time_utc=self._last_good_tick_utc,
             )
             self._evidence.append(ev)
             entry = self._ledger.append(sig_id, "rejected_stale_tick", 0.0, now.isoformat())
@@ -448,7 +510,18 @@ class BrokerObservedShadowRunner:
         bid = tick["bid"]
         ask = tick["ask"]
         spread = ask - bid
-        tick_time = datetime.fromtimestamp(tick["time"], tz=timezone.utc)
+        raw_seconds = tick["time"]
+        raw_msc = tick.get("time_msc", raw_seconds * 1000)
+        # Convert to UTC-aware datetime using time_msc (milliseconds)
+        broker_tick_utc = datetime.fromtimestamp(raw_msc / 1000, tz=timezone.utc)
+        # Calculate transport delay
+        delay_ms = (now - broker_tick_utc).total_seconds() * 1000
+        # Check for clock anomaly (> 60s offset is suspicious)
+        clock_anomaly = ""
+        if abs(delay_ms) > 60000:
+            clock_anomaly = f"BROKER_CLOCK_ANOMALY: delay={delay_ms:.0f}ms"
+            logger.warning(clock_anomaly)
+        self._last_good_tick_utc = broker_tick_utc.isoformat()
 
         # 3. Spread tracking
         self._spread_tracker.record(spread)
@@ -470,8 +543,12 @@ class BrokerObservedShadowRunner:
             sig_id = self._next_id()
             ev = BrokerSignalEvidence(
                 signal_id=sig_id,
-                broker_tick_time_utc=tick_time.isoformat(),
+                raw_tick_time_seconds=raw_seconds,
+                raw_tick_time_msc=raw_msc,
+                broker_tick_time_utc=broker_tick_utc.isoformat(),
                 received_at_utc=now.isoformat(),
+                observed_transport_delay_ms=delay_ms,
+                clock_anomaly=clock_anomaly,
                 symbol=self.symbol, direction="", entry_price=bid,
                 stop_loss=0, take_profit=None,
                 outcome="rejected_insufficient_bars",
@@ -539,8 +616,12 @@ class BrokerObservedShadowRunner:
         # 10. Build evidence
         ev = BrokerSignalEvidence(
             signal_id=sig_id,
-            broker_tick_time_utc=tick_time.isoformat(),
+            raw_tick_time_seconds=raw_seconds,
+            raw_tick_time_msc=raw_msc,
+            broker_tick_time_utc=broker_tick_utc.isoformat(),
             received_at_utc=now.isoformat(),
+            observed_transport_delay_ms=delay_ms,
+            clock_anomaly=clock_anomaly,
             symbol=self.symbol,
             direction=direction,
             entry_price=entry_price,
