@@ -69,14 +69,16 @@ class BrokerIdentityGuard:
         
         return len(self._violations) == 0, self._violations
     
-    def compute_fingerprint(self, server: str, login: int) -> ProfileFingerprint:
-        """Compute fingerprint for the actual profile."""
+    def compute_fingerprint(self, server: str, login: int,
+                            mode: str = "", currency: str = "") -> ProfileFingerprint:
+        """Compute fingerprint for the actual profile with timestamp."""
+        from datetime import datetime, timezone
         return ProfileFingerprint(
             server_hash=hashlib.sha256(server.encode()).hexdigest(),
             login_hash=hashlib.sha256(str(login).encode()).hexdigest(),
-            account_mode="",
-            account_currency="",
-            captured_at=""
+            account_mode=mode,
+            account_currency=currency,
+            captured_at=datetime.now(timezone.utc).isoformat()
         )
     
     def is_violation(self) -> bool:

@@ -17,8 +17,9 @@ SECRET_PATTERNS = [
 
 
 class SecretScanner:
-    def __init__(self, root: str):
+    def __init__(self, root: str, max_depth: int = 0):
         self.root = Path(root)
+        self.max_depth = max_depth  # 0 = unlimited
         self.findings: list[dict] = []
 
     def scan(self) -> list[dict]:
@@ -34,11 +35,15 @@ class SecretScanner:
         return self.findings
 
     def _get_tracked_files(self) -> list[Path]:
-        """Get git tracked files (skip .git)."""
+        """Get git tracked files (skip .git), respecting max_depth."""
         files = []
         for p in self.root.rglob('*'):
             if '.git' in p.parts or '__pycache__' in p.parts:
                 continue
+            if self.max_depth > 0:
+                rel = p.relative_to(self.root)
+                if len(rel.parts) > self.max_depth:
+                    continue
             if p.is_file():
                 files.append(p)
         return files

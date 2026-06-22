@@ -57,3 +57,21 @@ def test_broker_connection_repr_no_leak():
     assert "secret123" not in r
     assert "MetaQuotes-Demo" in r
     assert "12345678" in r
+
+
+def test_broker_connection_from_mt5():
+    """from_mt5() works when MT5 is available, skips cleanly otherwise."""
+    import pytest
+    try:
+        import MetaTrader5 as mt5
+        if not mt5.initialize():
+            pytest.skip("MT5 not running")
+        try:
+            conn = BrokerConnection.from_mt5()
+            assert conn.server
+            assert conn.login > 0
+            assert conn.account_mode in ("DEMO", "LIVE")
+        finally:
+            mt5.shutdown()
+    except (ImportError, ConnectionError):
+        pytest.skip("MT5 not available")
