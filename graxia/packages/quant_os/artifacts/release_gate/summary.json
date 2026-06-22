@@ -1,0 +1,18 @@
+{
+  "run_a": {
+    "returncode": 1,
+    "duration_s": 22.91,
+    "stdout_lines": 22
+  },
+  "run_b": {
+    "returncode": 0,
+    "duration_s": 23.23,
+    "stdout_lines": 10
+  },
+  "comparison_errors": [
+    "Return code mismatch: A=1 B=0",
+    "Pass count mismatch: A=516 B=518",
+    "Fail count mismatch: A=2 B=0"
+  ],
+  "verdict": "FAIL"
+}

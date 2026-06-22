@@ -1,5 +1,5 @@
 import pytest
-from validation.regime_analyzer import RegimeAnalyzer, RegimeType, TradeConcentration
+from graxia.packages.quant_os.validation.regime_analyzer import RegimeAnalyzer, RegimeType, TradeConcentration
 
 class TestRegimeAnalyzer:
     def test_classify_trending_up(self):

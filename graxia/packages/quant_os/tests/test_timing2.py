@@ -1,4 +1,5 @@
 import sys, os, time
+from decimal import Decimal
 sys.path.insert(0, os.getcwd())
 
 from graxia.packages.quant_os.backtest.data_loader import load_csv_data
@@ -28,8 +29,8 @@ N = 100
 data_base = {k: v[-N:] for k, v in d1.items()}
 ts_base = ts1[-N:]
 
-config = BacktestConfig(strict_mtf=False, 
-    initial_capital=10000, slippage_pips=0.5, commission_per_lot=3.5,
+config = BacktestConfig(strict_mtf=False,
+    initial_capital=Decimal("10000"), slippage_pips=0.5, commission_per_lot=Decimal("3.5"),
 )
 
 strategies = [

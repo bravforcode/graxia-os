@@ -4,22 +4,23 @@ Tests for event models, point-in-time store, risk gate, stabilization, macro pol
 """
 
 import hashlib
+import os
 import sys
 from datetime import datetime, timedelta, timezone
 from dataclasses import replace
 
 import pytest
 
-from news_events.event_models import (
+from graxia.packages.quant_os.news_events.event_models import (
     EconomicEvent, EventStatus, EventImportance, GateState,
 )
-from news_events.event_store import EventStore
-from news_events.event_risk_gate import EventRiskGate, GateResult
-from news_events.stabilization_gate import StabilizationGate
-from news_events.macro_policy import (
+from graxia.packages.quant_os.news_events.event_store import EventStore
+from graxia.packages.quant_os.news_events.event_risk_gate import EventRiskGate, GateResult
+from graxia.packages.quant_os.news_events.stabilization_gate import StabilizationGate
+from graxia.packages.quant_os.news_events.macro_policy import (
     MacroSourceRole, MacroObservation, MacroPolicyGuard, LLMPolicyGuard,
 )
-from news_events.integration import NewsEventIntegration
+from graxia.packages.quant_os.news_events.integration import NewsEventIntegration
 
 
 # ---------------------------------------------------------------------------
@@ -399,7 +400,7 @@ class TestFailClosedDefaults:
 class TestImportIsolation:
     def test_news_events_cannot_import_gold_bot_execution(self):
         """Verify news_events package does not import execution modules."""
-        import news_events
+        import graxia.packages.quant_os.news_events
         source_files = [
             "event_models.py",
             "event_store.py",
@@ -408,8 +409,9 @@ class TestImportIsolation:
             "macro_policy.py",
             "integration.py",
         ]
+        pkg_dir = os.path.join(os.path.dirname(__file__), "..", "news_events")
         for fname in source_files:
-            with open(f"news_events/{fname}", "r") as f:
+            with open(os.path.join(pkg_dir, fname), "r") as f:
                 content = f.read()
             assert "execution" not in content.lower().split("import")[0] if "import" in content.lower() else True, \
                 f"news_events/{fname} must not import execution modules"
@@ -421,8 +423,9 @@ class TestImportIsolation:
             "event_models.py", "event_store.py", "event_risk_gate.py",
             "stabilization_gate.py", "macro_policy.py", "integration.py",
         ]
+        pkg_dir = os.path.join(os.path.dirname(__file__), "..", "news_events")
         for fname in source_files:
-            with open(f"news_events/{fname}", "r") as f:
+            with open(os.path.join(pkg_dir, fname), "r") as f:
                 content = f.read()
             for forbidden in forbidden_imports:
                 assert forbidden not in content, \

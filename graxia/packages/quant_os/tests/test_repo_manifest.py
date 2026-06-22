@@ -1,5 +1,5 @@
 import pytest
-from repo_intelligence.manifest import (
+from graxia.packages.quant_os.repo_intelligence.manifest import (
     RepoManifest, RepoManifestEntry, RepoTier, RepoPermissions
 )
 import tempfile, os

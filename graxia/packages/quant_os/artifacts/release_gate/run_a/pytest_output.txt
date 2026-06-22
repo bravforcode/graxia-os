@@ -1,0 +1,22 @@
+........................................................................ [ 13%]
+........................................................................ [ 27%]
+........................................................................ [ 41%]
+........................................................................ [ 55%]
+........................................................................ [ 69%]
+........................................................................ [ 83%]
+F.F..................................................................... [ 97%]
+..............                                                           [100%]
+================================== FAILURES ===================================
+___________________ TestShadowPipeline.test_session_summary ___________________
+graxia\packages\quant_os\tests\test_phase_6_shadow.py:82: in test_session_summary
+    assert summary["accepted"] == 1
+E   assert 2 == 1
+____________ TestShadowPipeline.test_session_summary_all_rejected _____________
+graxia\packages\quant_os\tests\test_phase_6_shadow.py:101: in test_session_summary_all_rejected
+    assert summary["accepted"] == 0
+E   assert 3 == 0
+=========================== short test summary info ===========================
+FAILED graxia/packages/quant_os/tests/test_phase_6_shadow.py::TestShadowPipeline::test_session_summary
+FAILED graxia/packages/quant_os/tests/test_phase_6_shadow.py::TestShadowPipeline::test_session_summary_all_rejected
+2 failed, 516 passed, 2 warnings in 20.43s
+

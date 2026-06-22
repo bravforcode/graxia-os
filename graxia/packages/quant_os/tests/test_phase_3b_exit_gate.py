@@ -1,8 +1,8 @@
 import pytest
 from dataclasses import dataclass, field
 from typing import Optional
-from validation.exit_gate import ExitGateEvaluator, ExitGateResult
-from validation.regime_analyzer import RegimeSlice, RegimeType, TradeConcentration
+from graxia.packages.quant_os.validation.exit_gate import ExitGateEvaluator, ExitGateResult
+from graxia.packages.quant_os.validation.regime_analyzer import RegimeSlice, RegimeType, TradeConcentration
 
 
 # Minimal stubs to avoid native_runner's broken backtest.engine import chain

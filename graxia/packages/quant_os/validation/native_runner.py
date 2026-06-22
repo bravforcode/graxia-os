@@ -111,7 +111,7 @@ class NativeRunner:
             return result
     
     def run_all_cost_scenarios(self, strategy, data: Dict[str, List], timestamps: list, locked_inputs: LockedInputs) -> List[ValidationResult]:
-        from validation.cost_scenarios import ALL_SCENARIOS
+        from graxia.packages.quant_os.validation.cost_scenarios import ALL_SCENARIOS
         results = []
         for scenario in ALL_SCENARIOS:
             config = RunConfig(
