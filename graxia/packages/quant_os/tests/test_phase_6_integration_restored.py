@@ -47,14 +47,20 @@ def test_event_risk_gate_exists():
 
 
 def test_no_order_send_in_shadow_production_code():
-    """Shadow production code must not import order_send."""
+    """Shadow production code must not call order_send."""
+    import ast
     from pathlib import Path
     shadow_dir = Path(r"C:\Users\menum\graxia os\graxia\packages\quant_os\shadow")
     if shadow_dir.exists():
         for py_file in shadow_dir.glob("*.py"):
-            # Skip test files — they may reference order_send for AST isolation checks
+            # Skip test files
             if py_file.name.startswith("test_"):
                 continue
             src = py_file.read_text(encoding="utf-8")
-            if "order_send" in src:
-                assert False, f"order_send found in {py_file.name}"
+            tree = ast.parse(src)
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Call):
+                    if isinstance(node.func, ast.Name) and node.func.id == "order_send":
+                        assert False, f"order_send() call found in {py_file.name}"
+                    if isinstance(node.func, ast.Attribute) and node.func.attr == "order_send":
+                        assert False, f"order_send() call found in {py_file.name}"

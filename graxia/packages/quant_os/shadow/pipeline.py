@@ -51,6 +51,10 @@ class ShadowSignal:
     # BE-P8.1: geometry validation detail
     geometry_ok: bool = False
     spread_at_signal: float = 0.0
+    # BE-P8.2: dedup metadata
+    strategy_version: str = ""
+    feature_hash: str = ""
+    closed_candle_time: Optional[str] = None
 
     def to_dict(self) -> dict:
         return {
@@ -71,6 +75,9 @@ class ShadowSignal:
             "hypothetical_slippage_cost": self.hypothetical_slippage_cost,
             "geometry_ok": self.geometry_ok,
             "spread_at_signal": self.spread_at_signal,
+            "strategy_version": self.strategy_version,
+            "feature_hash": self.feature_hash,
+            "closed_candle_time": self.closed_candle_time,
         }
 
     def fingerprint(self) -> str:
@@ -190,16 +197,22 @@ def validate_signal_geometry(
     if entry_price <= 0 or stop_loss <= 0:
         return False, "ZERO_PRICE"
 
+    # Check equality first — distinct from wrong-side for analytics
+    if stop_loss == entry_price:
+        return False, f"SL_ZERO_DISTANCE: SL={stop_loss} == entry={entry_price}"
+    if take_profit is not None and take_profit == entry_price:
+        return False, f"TP_ZERO_DISTANCE: TP={take_profit} == entry={entry_price}"
+
     if direction == "BUY":
-        if stop_loss >= entry_price:
-            return False, f"SL_WRONG_SIDE: BUY SL={stop_loss} >= entry={entry_price}"
-        if take_profit is not None and take_profit <= entry_price:
-            return False, f"TP_WRONG_SIDE: BUY TP={take_profit} <= entry={entry_price}"
+        if stop_loss > entry_price:
+            return False, f"SL_WRONG_SIDE: BUY SL={stop_loss} > entry={entry_price}"
+        if take_profit is not None and take_profit < entry_price:
+            return False, f"TP_WRONG_SIDE: BUY TP={take_profit} < entry={entry_price}"
     elif direction == "SELL":
-        if stop_loss <= entry_price:
-            return False, f"SL_WRONG_SIDE: SELL SL={stop_loss} <= entry={entry_price}"
-        if take_profit is not None and take_profit >= entry_price:
-            return False, f"TP_WRONG_SIDE: SELL TP={take_profit} >= entry={entry_price}"
+        if stop_loss < entry_price:
+            return False, f"SL_WRONG_SIDE: SELL SL={stop_loss} < entry={entry_price}"
+        if take_profit is not None and take_profit > entry_price:
+            return False, f"TP_WRONG_SIDE: SELL TP={take_profit} > entry={entry_price}"
     else:
         return False, f"INVALID_DIRECTION: {direction}"
 
@@ -261,29 +274,41 @@ class SpreadShockGate:
 # ── Deduplication ────────────────────────────────────────────────────
 
 class SignalDeduplicator:
-    """Reject duplicate signals: same direction + same candle window.
+    """Reject duplicate signals: same strategy + symbol + candle + direction + features.
 
-    ponytail: timestamp-based bucketing, not feature hashing.
+    Dedup key: strategy_version:symbol:closed_candle_time:direction:feature_hash
+    New signals are allowed when feature state changes or candle advances.
     """
 
     def __init__(self, candle_seconds: int = 60):
         self.candle_seconds = candle_seconds
-        self._last_signal_key: Optional[str] = None
-        self._last_signal_time: Optional[datetime] = None
+        self._seen: dict[str, datetime] = {}  # key → last seen time
+
+    def _make_key(
+        self, strategy_version: str, symbol: str, direction: str,
+        closed_candle_time: Optional[str], feature_hash: str,
+    ) -> str:
+        candle = closed_candle_time or "none"
+        return f"{strategy_version}:{symbol}:{candle}:{direction}:{feature_hash}"
 
     def is_duplicate(
-        self, symbol: str, direction: str, entry_price: float, timestamp: datetime
+        self, strategy_version: str, symbol: str, direction: str,
+        closed_candle_time: Optional[str], feature_hash: str, timestamp: datetime,
     ) -> bool:
-        key = f"{symbol}:{direction}"
-        if self._last_signal_key == key and self._last_signal_time is not None:
-            elapsed = (timestamp - self._last_signal_time).total_seconds()
+        key = self._make_key(strategy_version, symbol, direction, closed_candle_time, feature_hash)
+        last_seen = self._seen.get(key)
+        if last_seen is not None:
+            elapsed = (timestamp - last_seen).total_seconds()
             if elapsed < self.candle_seconds:
                 return True
         return False
 
-    def record(self, symbol: str, direction: str, timestamp: datetime) -> None:
-        self._last_signal_key = f"{symbol}:{direction}"
-        self._last_signal_time = timestamp
+    def record(
+        self, strategy_version: str, symbol: str, direction: str,
+        closed_candle_time: Optional[str], feature_hash: str, timestamp: datetime,
+    ) -> None:
+        key = self._make_key(strategy_version, symbol, direction, closed_candle_time, feature_hash)
+        self._seen[key] = timestamp
 
 
 # ── Main pipeline ────────────────────────────────────────────────────
@@ -401,9 +426,10 @@ class ShadowPipeline:
             self._current_session.add_signal(signal)
             return signal
 
-        # Gate 7: Deduplication (BE-P8.1)
+        # Gate 7: Deduplication (BE-P8.2)
         if self._dedup.is_duplicate(
-            signal.symbol, signal.direction, signal.entry_price, signal.timestamp
+            signal.strategy_version, signal.symbol, signal.direction,
+            signal.closed_candle_time, signal.feature_hash, signal.timestamp,
         ):
             signal.outcome = ShadowSignalOutcome.REJECTED_DUPLICATE
             signal.rejection_reason = "DUPLICATE_SAME_CANDLE"
@@ -412,7 +438,10 @@ class ShadowPipeline:
 
         # Accept
         signal.outcome = ShadowSignalOutcome.ACCEPTED
-        self._dedup.record(signal.symbol, signal.direction, signal.timestamp)
+        self._dedup.record(
+            signal.strategy_version, signal.symbol, signal.direction,
+            signal.closed_candle_time, signal.feature_hash, signal.timestamp,
+        )
         self._current_session.add_signal(signal)
         return signal
 
