@@ -19,11 +19,6 @@ from mt5_connector.connection import MT5Connection
 from shadow.pipeline import ShadowPipeline, ShadowSignal, ShadowSignalOutcome
 from shadow.failure_rules import FailureRuleChecker
 from shadow.telemetry import ShadowTelemetry
-from market_data.tick_recorder import TickRecorder
-from market_data.feed_health import FeedHealthMonitor
-from market_data.spread_monitor import SpreadMonitor
-from news_events.event_risk_gate import EventRiskGate
-from news_events.event_store import EventStore
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
@@ -40,11 +35,6 @@ class ShadowRunner:
         self._pipeline = ShadowPipeline()
         self._failure_checker = FailureRuleChecker()
         self._telemetry = ShadowTelemetry()
-        self._tick_recorder = None  # Initialized per-symbol
-        self._feed_health = None  # Initialized per-symbol
-        self._spread_monitor = None  # Initialized per-symbol
-        self._event_store = EventStore()
-        self._event_gate = EventRiskGate(self._event_store)
 
         self._running = False
         self._signal_count = 0
@@ -66,19 +56,6 @@ class ShadowRunner:
 
     def _collect_tick(self, symbol: str) -> Optional[dict]:
         tick = self._mt5.get_tick(symbol)
-        if tick is None:
-            return None
-
-        self._tick_recorder.record_tick(
-            symbol=symbol,
-            bid=tick['bid'],
-            ask=tick['ask'],
-            timestamp=datetime.utcnow(),
-        )
-
-        self._feed_health.record_tick(datetime.utcnow())
-        self._spread_monitor.update(tick['bid'], tick['ask'])
-
         return tick
 
     def _evaluate_signal(self, symbol: str, tick: dict, bars: list) -> ShadowSignal:
@@ -164,10 +141,6 @@ class ShadowRunner:
     def run(self, symbol: str = 'XAUUSD', duration_seconds: int = 300, interval_seconds: int = 60):
         if not self.connect():
             return
-
-        self._tick_recorder = TickRecorder(symbol=symbol, session_id=self._session_id)
-        self._feed_health = FeedHealthMonitor(symbol=symbol)
-        self._spread_monitor = SpreadMonitor(symbol=symbol)
 
         self._running = True
         self._telemetry.start(self._session_id)
