@@ -35,7 +35,4 @@ def test_missing_sl_no_trades():
 def test_invalid_sl_no_trades():
     result = _run_scenario(7)  # invalid_sl_rejected
     trades = result.get("trades", [])
-    # ponytail: engine doesn't validate SL direction yet; assert current
-    # behavior (1 trade opened). Upgrade to == 0 once engine rejects
-    # SL above entry for LONG / below entry for SHORT.
-    assert len(trades) == 1, f"Expected 1 trade (engine lacks SL validation), got {len(trades)}"
+    assert len(trades) == 0, f"Expected 0 trades for invalid SL (SL above entry for LONG), got {len(trades)}"

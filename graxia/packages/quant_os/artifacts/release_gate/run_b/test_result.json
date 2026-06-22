@@ -1,5 +1,13 @@
 {
   "returncode": 0,
-  "duration_s": 23.23,
-  "stdout_lines": 10
+  "duration_s": 45.9,
+  "stdout_lines": 10,
+  "stats": {
+    "passed": 562,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "xfailed": 0,
+    "xpassed": 0
+  }
 }

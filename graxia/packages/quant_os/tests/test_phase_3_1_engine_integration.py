@@ -188,13 +188,14 @@ def test_no_legacy_tokens_in_engine():
 def test_signal_at_bar_t_fills_at_bar_t_plus_1():
     """Signal generated on bar t must fill on bar t+1, not bar t."""
     sig = _make_signal(SignalType.BUY, entry=2005, sl=2000, tp=2015)
-    # Place signal at bar 1 → fill at bar 2
-    signals = [None, sig] + [None] * 18
+    # Engine loop starts at i=1, MockStrategy returns signals[call_count] where call_count starts at 0.
+    # signals[0] consumed at i=1 (bar_index=1), fill at timestamps[2] (bar t+1).
+    signals = [sig] + [None] * 19
     engine, results = _run_engine(signals, n_bars=20)
     if results["trades"]:
         t = results["trades"][0]
         entry_time = datetime.fromisoformat(t["entry_time"])
-        expected_fill_time = _make_timestamps(20)[2]  # bar index 2
+        expected_fill_time = _make_timestamps(20)[2]  # bar_index 1 + 1 = 2
         assert entry_time == expected_fill_time, (
             f"Fill at {entry_time}, expected bar 2 = {expected_fill_time}"
         )

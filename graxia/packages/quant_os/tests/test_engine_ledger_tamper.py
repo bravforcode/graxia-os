@@ -113,9 +113,7 @@ def test_tamper_provenance_detected():
 
 def test_tamper_reorder_detected():
     """Reordering records must be detected."""
-    trades = _run_engine_scenario(0)
-    if len(trades) < 2:
-        pytest.skip("Need at least 2 trades")
+    trades = _run_engine_scenario(10)
     chain = _trades_to_chain(trades)
     chain._records[0], chain._records[1] = chain._records[1], chain._records[0]
     valid, errors = chain.verify()

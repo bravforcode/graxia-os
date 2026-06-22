@@ -1,8 +1,7 @@
 """E2E: Entry must carry valid timestamp and fill from signal.
 
-Engine fills on signal bar (not next bar) — entry_time equals current
-bar timestamp. These tests assert the trade is created with valid data.
-Upgrade to strict next-bar assertion once engine defers fill to bar i+1.
+Engine fills on next bar (signal at bar N → fill at bar N+1 open).
+entry_time equals the fill bar timestamp, not the signal bar.
 """
 from graxia.packages.quant_os.backtest.engine_e2e_fixture import get_all_scenarios, DeterministicStrategy
 from graxia.packages.quant_os.backtest.engine import BacktestEngine
@@ -33,6 +32,10 @@ def test_long_entry_at_next_bar():
     assert "entry_time" in trade
     assert "T" in trade["entry_time"], f"entry_time not ISO: {trade['entry_time']}"
     assert trade["strategy_id"] == "deterministic"
+    # Next-bar fill: DeterministicStrategy returns signal at i=1 → entry at i=2
+    assert trade["entry_time"] == "2025-01-06T02:00:00", (
+        f"Expected next-bar entry at ts[2], got {trade['entry_time']}"
+    )
 
 
 def test_short_entry_at_next_bar():
@@ -43,3 +46,7 @@ def test_short_entry_at_next_bar():
     assert "entry_time" in trade
     assert "T" in trade["entry_time"], f"entry_time not ISO: {trade['entry_time']}"
     assert trade["strategy_id"] == "deterministic"
+    # Next-bar fill: DeterministicStrategy returns signal at i=1 → entry at i=2
+    assert trade["entry_time"] == "2025-01-06T02:00:00", (
+        f"Expected next-bar entry at ts[2], got {trade['entry_time']}"
+    )

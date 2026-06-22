@@ -412,6 +412,15 @@ class BacktestEngine:
 
         side = _exec_side(signal.signal_type)
 
+        # Reject invalid SL direction
+        entry_price = signal.entry_price or bar_close
+        if signal.signal_type == SignalType.BUY and signal.stop_loss >= entry_price:
+            self._log_critical_incident("INVALID_SL_DIRECTION", signal)
+            return
+        if signal.signal_type == SignalType.SELL and signal.stop_loss <= entry_price:
+            self._log_critical_incident("INVALID_SL_DIRECTION", signal)
+            return
+
         # Historical sizing — deterministic, no MT5
         entry_price = signal.entry_price or bar_close
         volume = _historical_size(
@@ -458,11 +467,12 @@ class BacktestEngine:
         pos_id = str(uuid4())[:8]
         pos_side = PositionType.LONG if side == FillSide.BUY else PositionType.SHORT
 
+        fill_time = self.timestamps[bar_index + 1] if bar_index + 1 < len(self.timestamps) else current_time
         self.positions[pos_id] = BacktestPosition(
             id=pos_id, symbol=signal.symbol, side=pos_side,
             entry_price=result.entry_price, quantity=volume,
             stop_loss=signal.stop_loss, take_profit=signal.take_profit,
-            entry_time=current_time,
+            entry_time=fill_time,
             strategy_id=self.strategy.id if self.strategy else "",
             entry_spread_cost=result.spread_cost,
             entry_slippage_cost=result.slippage_cost,

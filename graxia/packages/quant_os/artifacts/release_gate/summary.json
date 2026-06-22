@@ -1,18 +1,45 @@
 {
   "run_a": {
-    "returncode": 1,
-    "duration_s": 22.91,
-    "stdout_lines": 22
+    "returncode": 0,
+    "duration_s": 44.71,
+    "stdout_lines": 10,
+    "stats": {
+      "passed": 562,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "xfailed": 0,
+      "xpassed": 0
+    },
+    "e2e_seal": "e9201136632abc019b84576a758a0adde9f750a3c4175b7a3b5d8be5b58f7c38"
   },
   "run_b": {
     "returncode": 0,
-    "duration_s": 23.23,
-    "stdout_lines": 10
+    "duration_s": 45.9,
+    "stdout_lines": 10,
+    "stats": {
+      "passed": 562,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "xfailed": 0,
+      "xpassed": 0
+    },
+    "e2e_seal": "e9201136632abc019b84576a758a0adde9f750a3c4175b7a3b5d8be5b58f7c38"
   },
-  "comparison_errors": [
-    "Return code mismatch: A=1 B=0",
-    "Pass count mismatch: A=516 B=518",
-    "Fail count mismatch: A=2 B=0"
-  ],
-  "verdict": "FAIL"
+  "checks": {
+    "git_clean": false,
+    "collection_clean": true,
+    "all_passed": true,
+    "no_failures": true,
+    "no_errors": true,
+    "no_flaky": true,
+    "quarantine_consistent": true,
+    "reproducible": true,
+    "ledger_seal_match": true
+  },
+  "verdict": "FAIL",
+  "failures": [
+    "Uncommitted changes: LAUDE.md, raxia/packages/quant_os/artifacts/release_gate/run_a/e2e_output.txt, raxia/packages/quant_os/artifacts/release_gate/run_a/git_commit.txt, raxia/packages/quant_os/artifacts/release_gate/run_a/pytest_output.txt, raxia/packages/quant_os/artifacts/release_gate/run_a/test_result.json, raxia/packages/quant_os/artifacts/release_gate/run_b/e2e_output.txt, raxia/packages/quant_os/artifacts/release_gate/run_b/git_commit.txt, raxia/packages/quant_os/artifacts/release_gate/run_b/pytest_output.txt, raxia/packages/quant_os/artifacts/release_gate/run_b/test_result.json, raxia/packages/quant_os/artifacts/release_gate/summary.json, raxia/packages/quant_os/backtest/engine.py, raxia/packages/quant_os/scripts/run_release_gate.py, raxia/packages/quant_os/tests/test_e2e_critical_incident.py, raxia/packages/quant_os/tests/test_e2e_next_bar_entry.py, raxia/packages/quant_os/tests/test_engine_ledger_tamper.py, raxia/packages/quant_os/tests/test_phase_3_1_engine_integration.py, raxia/packages/quant_os/tests/test_phase_7_canary.py, ytest.ini, epos/hftbacktest, graxia/packages/quant_os/mt5_connector/, graxia/packages/quant_os/reports/COMPLIANCE_MATRIX.md, graxia/packages/quant_os/reports/PHASE_3_1A_2_TEST_DISPOSITION.md, graxia/packages/quant_os/scripts/e2e_release_gate.py, graxia/packages/quant_os/tests/test_e2e_full_pipeline.py, graxia/packages/quant_os/tests/test_quarantine_integrity.py"
+  ]
 }

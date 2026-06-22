@@ -1,7 +1,7 @@
 import pytest
-from canary.config import CanaryConfig
-from canary.broker_validator import BrokerValidator, BrokerValidationReport
-from canary.order_lifecycle import (
+from graxia.packages.quant_os.canary.config import CanaryConfig
+from graxia.packages.quant_os.canary.broker_validator import BrokerValidator, BrokerValidationReport
+from graxia.packages.quant_os.canary.order_lifecycle import (
     CanaryOrder, OrderState, PostFillVerifier, TERMINAL_STATES, VALID_TRANSITIONS
 )
 
