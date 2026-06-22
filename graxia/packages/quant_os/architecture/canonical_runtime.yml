@@ -124,6 +124,95 @@ responsibilities:
     prohibited: []
     notes: "Validates data before trading decisions. Checks freshness, gaps, consistency."
 
+  # ── Live Readiness (Phase 3.2) ─────────────────────────────────
+
+  mt5_readonly_client:
+    canonical: "live_readiness/mt5_readonly_client.py"
+    prohibited: []
+    notes: "Read-only wrapper around MT5 API. Blocks order_send/modify/close at class level."
+
+  account_snapshot_mt5:
+    canonical: "live_readiness/account_snapshot_service.py"
+    prohibited: []
+    notes: "Captures account state from MT5 via Mt5ReadOnlyClient. Decimal precision, SHA-256 hash."
+
+  symbol_snapshot:
+    canonical: "live_readiness/symbol_snapshot_service.py"
+    prohibited: []
+    notes: "Captures symbol state from MT5. Decimal precision, SHA-256 hash."
+
+  broker_profile:
+    canonical: "live_readiness/broker_profile.py"
+    prohibited: []
+    notes: "BrokerProfile dataclass — expected runtime config per broker (server, currency, symbols)."
+
+  mt5_runtime_verifier:
+    canonical: "live_readiness/mt5_runtime_verifier.py"
+    prohibited: []
+    notes: "Full 17-step MT5 verification sequence. Returns RuntimeCapabilities."
+
+  runtime_capabilities:
+    canonical: "live_readiness/runtime_capabilities.py"
+    prohibited: []
+    notes: "RuntimeCapabilities dataclass — snapshot of what MT5 can do right now."
+
+  live_readiness_smoke_report:
+    canonical: "live_readiness/smoke_report.py"
+    prohibited: []
+    notes: "MT5-specific smoke report from BrokerProfile + RuntimeCapabilities."
+
+  # ── Market Data ────────────────────────────────────────────────
+
+  account_snapshot_generic:
+    canonical: "market_data/account_snapshot.py"
+    prohibited: []
+    notes: "Generic account snapshot from raw values (no MT5 dependency). Float precision."
+
+  clock_guard:
+    canonical: "market_data/clock_guard.py"
+    prohibited: []
+    notes: "Clock drift detection — compares MT5 server time vs local UTC."
+
+  data_watermark:
+    canonical: "market_data/data_watermark.py"
+    prohibited: []
+    notes: "Tracks freshest tick per symbol, staleness/gap metrics, SHA-256 watermark hash."
+
+  feed_health:
+    canonical: "market_data/feed_health.py"
+    prohibited: []
+    notes: "Per-symbol feed health monitor. State machine: HEALTHY → STALE_FEED → DISCONNECTED."
+
+  market_health:
+    canonical: "market_data/market_health.py"
+    prohibited: []
+    notes: "Central health state machine. Aggregates all subsystem signals. Only HEALTHY permits orders."
+
+  market_session_guard:
+    canonical: "market_data/market_session_guard.py"
+    prohibited: []
+    notes: "Determines if market is open (weekend, holiday, session hours). Fails closed."
+
+  market_data_smoke_report:
+    canonical: "market_data/smoke_report.py"
+    prohibited: []
+    notes: "Market data subsystem smoke report. Evaluates feed, spread, clock, session, tick, watermark, account."
+
+  spread_monitor:
+    canonical: "market_data/spread_monitor.py"
+    prohibited: []
+    notes: "Rolling baseline spread tracking with wide-spread anomaly detection."
+
+  tick_recorder:
+    canonical: "market_data/tick_recorder.py"
+    prohibited: []
+    notes: "Records raw ticks with quality checks (stale, gap, out-of-order)."
+
+  tick_store:
+    canonical: "market_data/tick_store.py"
+    prohibited: []
+    notes: "Persists TickRecords as JSONL files, one per symbol per day."
+
 # ═══════════════════════════════════════════════════════════════════
 # FILE STATUS CLASSIFICATION
 # ═══════════════════════════════════════════════════════════════════
@@ -239,6 +328,25 @@ file_classification:
     - "run_ml_train.py"
     - "run_paper_trading.py"
     - "pine_script/QuantBot_Ensemble.pine"
+    - "live_readiness/__init__.py"
+    - "live_readiness/mt5_readonly_client.py"
+    - "live_readiness/account_snapshot_service.py"
+    - "live_readiness/symbol_snapshot_service.py"
+    - "live_readiness/broker_profile.py"
+    - "live_readiness/mt5_runtime_verifier.py"
+    - "live_readiness/runtime_capabilities.py"
+    - "live_readiness/smoke_report.py"
+    - "market_data/__init__.py"
+    - "market_data/account_snapshot.py"
+    - "market_data/clock_guard.py"
+    - "market_data/data_watermark.py"
+    - "market_data/feed_health.py"
+    - "market_data/market_health.py"
+    - "market_data/market_session_guard.py"
+    - "market_data/smoke_report.py"
+    - "market_data/spread_monitor.py"
+    - "market_data/tick_recorder.py"
+    - "market_data/tick_store.py"
 
   # ── LEGACY_READ_ONLY — Kept for reference, not production path ─
   LEGACY_READ_ONLY:

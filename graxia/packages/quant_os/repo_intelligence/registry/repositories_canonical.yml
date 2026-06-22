@@ -1,6 +1,6 @@
 # Repository Intelligence Registry — Canonical
-# Single source of truth for all registered external repositories.
-# Reconciled: 2026-06-22
+# Single source of truth for all registered external AND internal repositories.
+# Reconciled: 2026-06-22 (Phase 1R-H: 56 external + 14 internal = 70 total)
 # Replaces: repositories.yml, approved_references.yml, quarantined_repositories.yml, repository_decisions.yml
 # ponytail: merged 4 files into 1 canonical source, old files preserved as-is
 ---
@@ -797,6 +797,246 @@ repositories:
     credential_permission: false
     network_permission: false
     quarantine_status: false
+
+  # === H. Internal runtime packages (Phase 1R-H) ===
+
+  - repo_id: internal_backtest
+    canonical_url: "local://quant_os/backtest"
+    owner: quant_os
+    name: backtest
+    asset_scope: "backtest engine, data loader, walk-forward, metrics"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 6
+
+  - repo_id: internal_broker
+    canonical_url: "local://quant_os/broker"
+    owner: quant_os
+    name: broker
+    asset_scope: "MT5 gateway, contract spec, contract snapshot store"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 4
+
+  - repo_id: internal_core
+    canonical_url: "local://quant_os/core"
+    owner: quant_os
+    name: core
+    asset_scope: "config, enums, exceptions, ML pipeline, hyperopt, regime filter, bias detector, monte carlo, stability"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 22
+
+  - repo_id: internal_data
+    canonical_url: "local://quant_os/data"
+    owner: quant_os
+    name: data
+    asset_scope: "data feed, pipeline, quality gate, models, CSV datasets (EURUSD, GBPUSD, XAUUSD multi-timeframe)"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_DATA_REFERENCE
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 5
+
+  - repo_id: internal_execution
+    canonical_url: "local://quant_os/execution"
+    owner: quant_os
+    name: execution
+    asset_scope: "order state machine, broker adapter, fill model, cost model, idempotency, trade ledger, execution simulator"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 13
+
+  - repo_id: internal_live_readiness
+    canonical_url: "local://quant_os/live_readiness"
+    owner: quant_os
+    name: live_readiness
+    asset_scope: "broker profile, MT5 runtime verifier, account snapshot, runtime capabilities, smoke report"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 8
+
+  - repo_id: internal_market_data
+    canonical_url: "local://quant_os/market_data"
+    owner: quant_os
+    name: market_data
+    asset_scope: "market health, spread monitor, tick recorder/store, clock guard, feed health, data watermark"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 11
+
+  - repo_id: internal_ml
+    canonical_url: "local://quant_os/ml"
+    owner: quant_os
+    name: ml
+    asset_scope: "ML pipeline, model definitions"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 2
+
+  - repo_id: internal_monitoring
+    canonical_url: "local://quant_os/monitoring"
+    owner: quant_os
+    name: monitoring
+    asset_scope: "alerts, metrics, telegram notifications"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 4
+
+  - repo_id: internal_news_events
+    canonical_url: "local://quant_os/news_events"
+    owner: quant_os
+    name: news_events
+    asset_scope: "event models, event risk gate, event store, macro policy, stabilization gate"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 7
+
+  - repo_id: internal_risk
+    canonical_url: "local://quant_os/risk"
+    owner: quant_os
+    name: risk
+    asset_scope: "risk engine, circuit breaker, kill switch, position sizer, pre-trade risk, risk policy, risk ledger"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 11
+
+  - repo_id: internal_strategies
+    canonical_url: "local://quant_os/strategies"
+    owner: quant_os
+    name: strategies
+    asset_scope: "strategy base, ensemble, MLB, MRB, MTM"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 6
+
+  - repo_id: internal_api
+    canonical_url: "local://quant_os/api"
+    owner: quant_os
+    name: api
+    asset_scope: "FastAPI endpoints: admin, orders, positions, risk, webhook"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 7
+
+  - repo_id: internal_gold_bot
+    canonical_url: "local://quant_os/gold_bot"
+    owner: quant_os
+    name: gold_bot
+    asset_scope: "XAUUSD trading bot: AI modules, strategy adapter, monitoring, demo runner"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 30
 
   # === G. Quarantined (zero trust) ===
 

@@ -208,8 +208,8 @@ class TestLookaheadGuardRegression:
         
         try:
             config = BacktestConfig(
-                initial_capital=10000,
-                units_per_lot=100,
+                initial_capital=Decimal("10000"),
+                strict_mtf=False,
             )
             
             engine = BacktestEngine(config)

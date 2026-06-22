@@ -90,6 +90,7 @@ def calculate_metrics(
         BacktestMetrics with all calculated metrics
     """
     metrics = BacktestMetrics()
+    initial_capital = float(initial_capital)  # ponytail: accept Decimal from engine
     
     if not trades:
         return metrics
@@ -102,7 +103,7 @@ def calculate_metrics(
     
     # P&L
     metrics.total_pnl = sum(float(t.pnl) for t in trades)
-    metrics.total_return_pct = (metrics.total_pnl / initial_capital * 100) if initial_capital > 0 else 0
+    metrics.total_return_pct = (metrics.total_pnl / float(initial_capital) * 100) if float(initial_capital) > 0 else 0
     
     wins = [float(t.pnl) for t in trades if t.pnl > 0]
     losses = [float(t.pnl) for t in trades if t.pnl < 0]
@@ -195,7 +196,7 @@ def _consecutive_streaks(trades: list) -> tuple:
 
 def _calculate_drawdown(equity_curve: list, initial_capital: float) -> tuple:
     """Calculate max drawdown from equity curve"""
-    peak = initial_capital
+    peak = float(initial_capital)
     max_dd = 0.0
     max_dd_pct = 0.0
     current_dd_start = 0

@@ -23,9 +23,8 @@ multi_tf = {
     "M15": {k: v[-20000:] for k, v in m15.items()},
 }
 
-config = BacktestConfig(
+config = BacktestConfig(strict_mtf=False, 
     initial_capital=10000, slippage_pips=0.5, commission_per_lot=3.5,
-    risk_per_trade_pct=1.0, units_per_lot=100, max_positions=3,
 )
 
 gold_strat = OrderBlockStrategy()
