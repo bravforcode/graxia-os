@@ -151,22 +151,40 @@ class MT5Connection:
         }
     
     def get_bars(self, symbol: str, timeframe: int, count: int = 100) -> Optional[list]:
-        """Get historical bars."""
+        """Get historical bars using date range (more reliable).
+        
+        timeframe: Use MT5 constants (mt5.TIMEFRAME_H1=16385, mt5.TIMEFRAME_D1=16408)
+        or shortcuts: 1=M1, 5=M5, 15=M15, 30=M30, 60=H1, 240=H4, 1440=D1
+        """
         if not self._connected:
             return None
         
-        rates = self._mt5.copy_rates_from_pos(symbol, timeframe, 0, count)
+        # Map simple integers to MT5 constants if needed
+        tf_map = {
+            1: self._mt5.TIMEFRAME_M1, 5: self._mt5.TIMEFRAME_M5,
+            15: self._mt5.TIMEFRAME_M15, 30: self._mt5.TIMEFRAME_M30,
+            60: self._mt5.TIMEFRAME_H1, 240: self._mt5.TIMEFRAME_H4,
+            1440: self._mt5.TIMEFRAME_D1,
+        }
+        mt5_tf = tf_map.get(timeframe, timeframe)
+        
+        from datetime import timedelta, datetime as dt
+        now = dt.utcnow()
+        to = now
+        # Estimate time range: count bars * timeframe in seconds
+        fr = now - timedelta(seconds=count * 60 * 60)  # conservative estimate
+        rates = self._mt5.copy_rates_range(symbol, mt5_tf, fr, to)
         if rates is None:
             return None
         
         return [
             {
-                "time": r[0],
+                "time": int(r[0]),
                 "open": r[1],
                 "high": r[2],
                 "low": r[3],
                 "close": r[4],
-                "volume": r[5],
+                "volume": int(r[5]),
             }
             for r in rates
         ]
