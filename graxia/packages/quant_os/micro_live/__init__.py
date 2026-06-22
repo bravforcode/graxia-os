@@ -1,1 +1,1 @@
-"""Guarded Micro-Live Review — governance review before first live order."""
+"""Phase 9 — Micro-live review modules."""
