@@ -1,0 +1,80 @@
+{
+  "session_id": "shadow_20260622_105638",
+  "total_signals": 3,
+  "accepted": 0,
+  "rejected": 3,
+  "records": [
+    {
+      "signal_id": "SIG-000001",
+      "timestamp": "2026-06-22T10:56:39.053327",
+      "symbol": "XAUUSD",
+      "direction": "BUY",
+      "entry_price": 4205.58,
+      "stop_loss": 4204.279999999999,
+      "take_profit": 4208.180000000002,
+      "outcome": "hit_tp",
+      "rejection_reason": "",
+      "tick_evidence": {
+        "bid": 4205.45,
+        "ask": 4205.58,
+        "spread": 0.13000000000010914,
+        "timestamp": "2026-06-22T10:56:39.053327"
+      },
+      "hypothetical_pnl": 2.600000000002183,
+      "hypothetical_costs": 0.1950000000001637,
+      "net_pnl": 2.405000000002019,
+      "exit_price": 4208.180000000002,
+      "exit_reason": "TP",
+      "bars_held": 1,
+      "volume": 0.01
+    },
+    {
+      "signal_id": "SIG-000002",
+      "timestamp": "2026-06-22T10:56:44.055250",
+      "symbol": "XAUUSD",
+      "direction": "BUY",
+      "entry_price": 4205.65,
+      "stop_loss": 4204.350000000008,
+      "take_profit": 4208.249999999984,
+      "outcome": "hit_tp",
+      "rejection_reason": "",
+      "tick_evidence": {
+        "bid": 4205.52,
+        "ask": 4205.65,
+        "spread": 0.12999999999919964,
+        "timestamp": "2026-06-22T10:56:44.054705"
+      },
+      "hypothetical_pnl": 2.599999999983993,
+      "hypothetical_costs": 0.19499999999879947,
+      "net_pnl": 2.4049999999851934,
+      "exit_price": 4208.249999999984,
+      "exit_reason": "TP",
+      "bars_held": 1,
+      "volume": 0.01
+    },
+    {
+      "signal_id": "SIG-000003",
+      "timestamp": "2026-06-22T10:56:49.055694",
+      "symbol": "XAUUSD",
+      "direction": "BUY",
+      "entry_price": 4205.6,
+      "stop_loss": 4204.299999999999,
+      "take_profit": 4208.200000000003,
+      "outcome": "hit_tp",
+      "rejection_reason": "",
+      "tick_evidence": {
+        "bid": 4205.47,
+        "ask": 4205.6,
+        "spread": 0.13000000000010914,
+        "timestamp": "2026-06-22T10:56:49.055694"
+      },
+      "hypothetical_pnl": 2.600000000002183,
+      "hypothetical_costs": 0.1950000000001637,
+      "net_pnl": 2.405000000002019,
+      "exit_price": 4208.200000000003,
+      "exit_reason": "TP",
+      "bars_held": 1,
+      "volume": 0.01
+    }
+  ]
+}
