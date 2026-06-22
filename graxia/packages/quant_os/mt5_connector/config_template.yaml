@@ -1,14 +1,10 @@
 # MT5 Connection Configuration
-# Copy to mt5_connector/config.yaml and fill in your details
+# Copy to mt5_connector/config.yaml and use the MT5 terminal session you are already logged into.
+# Do not store login, password, or server here.
 
 mt5:
   # Path to MT5 terminal64.exe (leave empty for default)
   path: ""
-  
-  # Login credentials
-  login: 0  # Your MT5 account number
-  password: ""  # Your MT5 password
-  server: ""  # Your broker server (e.g., "Pepperstone-Demo")
   
   # Connection timeout (milliseconds)
   timeout: 10000

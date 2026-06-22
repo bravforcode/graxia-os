@@ -5,7 +5,7 @@ import os
 import platform
 import subprocess
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -17,7 +17,7 @@ class ReleaseTruthRunner:
     def run(self, run_id: str = "") -> dict:
         """Run full release truth capture."""
         if not run_id:
-            run_id = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+            run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
 
         run_dir = self.output_dir / run_id
         run_dir.mkdir(parents=True, exist_ok=True)
@@ -89,12 +89,23 @@ class ReleaseTruthRunner:
         output_file = run_dir / "pytest_output.txt"
         collection_file = run_dir / "test_collection.json"
         summary_file = run_dir / "test_summary.json"
+        collect_command_file = run_dir / "collect_command.txt"
+        pytest_command_file = run_dir / "pytest_command.txt"
+        collect_cmd = [
+            sys.executable, "-m", "pytest", "--collect-only", "-q",
+            "graxia/packages/quant_os/tests/",
+        ]
+        pytest_cmd = [
+            sys.executable, "-m", "pytest", "-q", "--tb=line",
+            "graxia/packages/quant_os/tests/",
+        ]
+        collect_command_file.write_text(" ".join(collect_cmd))
+        pytest_command_file.write_text(" ".join(pytest_cmd))
 
         # Run collection
         try:
             result = subprocess.run(
-                [sys.executable, "-m", "pytest", "--collect-only", "-q",
-                 "graxia/packages/quant_os/tests/"],
+                collect_cmd,
                 capture_output=True, text=True, timeout=300, cwd=self.root
             )
             collection_file.write_text(result.stdout)
@@ -104,8 +115,7 @@ class ReleaseTruthRunner:
         # Run tests
         try:
             result = subprocess.run(
-                [sys.executable, "-m", "pytest", "-q", "--tb=line",
-                 "graxia/packages/quant_os/tests/"],
+                pytest_cmd,
                 capture_output=True, text=True, timeout=600, cwd=self.root
             )
             output_file.write_text(result.stdout + result.stderr)

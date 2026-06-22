@@ -333,9 +333,6 @@ class MT5BrokerAdapter(BrokerAdapter):
             # Initialize MT5
             if not self.mt5.initialize(
                 path=self.config.mt5_path,
-                login=self.config.mt5_login,
-                password=self.config.mt5_password,
-                server=self.config.mt5_server,
                 timeout=self.config.mt5_timeout_ms
             ):
                 raise BrokerError("MT5 initialization failed", broker="MT5")

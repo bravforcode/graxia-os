@@ -8,7 +8,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).parent.parent.parent.parent
+SCRIPT_PATH = Path(__file__).resolve()
+PACKAGE_ROOT = SCRIPT_PATH.parents[1]
+REPO_ROOT = SCRIPT_PATH.parents[4]
+SHADOW_RESULTS_DIR = PACKAGE_ROOT / "shadow_results"
+ARTIFACTS_DIR = PACKAGE_ROOT / "artifacts"
+TRACKED_SCOPE = str(PACKAGE_ROOT.relative_to(REPO_ROOT)).replace("\\", "/")
 
 # Patterns that indicate real secrets (not test fixtures)
 SECRET_PATTERNS = [
@@ -91,7 +96,7 @@ def scan_git_tracked() -> list[dict]:
     findings = []
     try:
         result = subprocess.run(
-            ["git", "ls-files"],
+            ["git", "ls-files", "--", TRACKED_SCOPE],
             capture_output=True, text=True, cwd=str(REPO_ROOT)
         )
         for line in result.stdout.splitlines():
@@ -103,15 +108,25 @@ def scan_git_tracked() -> list[dict]:
     return findings
 
 
+def scan_artifacts() -> list[dict]:
+    """Scan generated artifacts under the package workspace."""
+    findings = []
+    if not ARTIFACTS_DIR.exists():
+        return findings
+    for f in ARTIFACTS_DIR.rglob("*"):
+        if f.is_file():
+            findings.extend(scan_file(f))
+    return findings
+
+
 def scan_shadow_results() -> list[dict]:
     """Scan shadow_results directory."""
     findings = []
-    results_dir = REPO_ROOT / "graxia" / "packages" / "quant_os" / "shadow_results"
-    if not results_dir.exists():
+    if not SHADOW_RESULTS_DIR.exists():
         return findings
-    for f in results_dir.glob("*.json"):
+    for f in SHADOW_RESULTS_DIR.glob("*.json"):
         findings.extend(scan_file(f))
-    for f in results_dir.glob("*.log"):
+    for f in SHADOW_RESULTS_DIR.glob("*.log"):
         findings.extend(scan_file(f))
     return findings
 
@@ -132,6 +147,11 @@ def main():
     results_findings = scan_shadow_results()
     all_findings.extend(results_findings)
     print(f"  {len(results_findings)} findings")
+
+    print("\n--- Artifacts ---")
+    artifact_findings = scan_artifacts()
+    all_findings.extend(artifact_findings)
+    print(f"  {len(artifact_findings)} findings")
 
     # Print findings
     if all_findings:

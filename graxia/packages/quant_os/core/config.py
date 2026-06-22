@@ -7,6 +7,8 @@ from dataclasses import dataclass, field
 from .golden_rules import GOLDEN_RULES, HARD_LIMITS
 from .enums import TradingMode, SystemState
 
+BROKER_CREDENTIAL_ENV_KEYS = ("MT5_LOGIN", "MT5_PASSWORD", "MT5_SERVER")
+
 
 @dataclass
 class QuantConfig:
@@ -26,10 +28,7 @@ class QuantConfig:
     database_url: str = ""
     redis_url: str = "redis://localhost:6379/0"
     
-    # ==================== MT5 BROKER ====================
-    mt5_login: int = 0
-    mt5_password: str = ""
-    mt5_server: str = "ICMarketsSC-Demo"
+    # ==================== MT5 TERMINAL ====================
     mt5_path: str = r"C:\Program Files\MetaTrader 5\terminal64.exe"
     mt5_timeout_ms: int = 10000
     
@@ -134,10 +133,8 @@ class QuantConfig:
         self.database_url = os.getenv("DATABASE_URL", self.database_url)
         self.redis_url = os.getenv("REDIS_URL", self.redis_url)
         
-        # MT5
-        self.mt5_login = int(os.getenv("MT5_LOGIN", self.mt5_login))
-        self.mt5_password = os.getenv("MT5_PASSWORD", self.mt5_password)
-        self.mt5_server = os.getenv("MT5_SERVER", self.mt5_server)
+        # MT5 terminal-session-only policy
+        self._reject_broker_credentials()
         self.mt5_path = os.getenv("MT5_PATH", self.mt5_path)
         self.mt5_timeout_ms = int(os.getenv("MT5_TIMEOUT_MS", self.mt5_timeout_ms))
         
@@ -161,6 +158,16 @@ class QuantConfig:
         
         # Micro trading
         self.micro_max_position_size = float(os.getenv("MICRO_MAX_POSITION_SIZE", self.micro_max_position_size))
+
+    def _reject_broker_credentials(self):
+        """Fail closed if broker credentials are injected via env."""
+        forbidden = [key for key in BROKER_CREDENTIAL_ENV_KEYS if os.getenv(key, "").strip()]
+        if forbidden:
+            keys = ", ".join(forbidden)
+            raise ValueError(
+                f"Broker credential env vars are forbidden: {keys}. "
+                "Use terminal-session-only MT5 authentication."
+            )
     
     def _enforce_hard_limits(self):
         """Ensure soft limits don't exceed hard limits"""
