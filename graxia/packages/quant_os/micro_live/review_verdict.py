@@ -1,102 +1,71 @@
-"""Phase 9 — Review verdict. Combines evidence pack + risk verification into final verdict."""
-import json
-from dataclasses import dataclass, field
-from datetime import datetime
-
-from micro_live.evidence_pack import EvidencePackBuilder
-from micro_live.risk_check import RiskPolicyVerifier
-from canary.review.review_criteria import ReviewChecklist, ReviewOutcome
-from canary.review.review_report import ReviewReport
+"""Phase BE-P12 — Micro-live review verdict."""
+from dataclasses import dataclass
 
 
 @dataclass
-class ReviewVerdict:
-    """Final verdict combining all Phase 9 evidence."""
-    evidence_pack: dict = field(default_factory=dict)
-    risk_verification: dict = field(default_factory=dict)
-    checklist_outcome: str = ""
-    report: dict = field(default_factory=dict)
-    verdict: str = ""
-    reviewed_at: str = field(default_factory=lambda: datetime.utcnow().isoformat())
-
-    def to_dict(self) -> dict:
-        return {
-            "evidence_pack": self.evidence_pack,
-            "risk_verification": self.risk_verification,
-            "checklist_outcome": self.checklist_outcome,
-            "report": self.report,
-            "verdict": self.verdict,
-            "reviewed_at": self.reviewed_at,
-        }
+class VerdictCheck:
+    check_name: str
+    passed: bool
+    detail: str = ""
 
 
-class MicroLiveReviewer:
-    """Runs the full Phase 9 review pipeline."""
+class MicroLiveVerdict:
+    """Evaluate micro-live for promotion."""
 
-    def review(self) -> ReviewVerdict:
-        verdict = ReviewVerdict()
+    VERDICTS = ["ARCHIVE", "RETURN_TO_RESEARCH", "EXTEND_MICRO_LIVE", "ELIGIBLE_FOR_EXPANSION"]
 
-        pack_builder = EvidencePackBuilder()
-        pack = pack_builder.build()
-        verdict.evidence_pack = pack.to_dict()
+    def __init__(self):
+        self._checks: list[VerdictCheck] = []
 
-        risk_verifier = RiskPolicyVerifier()
-        risk_result = risk_verifier.verify()
-        verdict.risk_verification = risk_result.to_dict()
+    def evaluate(self, evidence: dict) -> str:
+        """Evaluate micro-live evidence. Returns verdict."""
+        self._checks = []
 
-        checklist = self._build_checklist(pack.to_dict(), risk_result.to_dict())
-        verdict.checklist_outcome = checklist.evaluate().value
+        self._checks.append(VerdictCheck(
+            "stable_operations",
+            evidence.get("critical_incidents", 0) == 0,
+            f"critical={evidence.get('critical_incidents', 0)}",
+        ))
 
-        report = ReviewReport(
-            report_id=f"RPT-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
-            candidate_id="XAU_LIQSWEEP_LOCKED_001",
-            checklist=checklist,
-            archive_reasons=self._collect_archive_reasons(risk_result.to_dict()),
-        )
-        verdict.report = report.generate()
+        self._checks.append(VerdictCheck(
+            "reconciled_orders",
+            evidence.get("reconciliation_pct", 0) == 100,
+            f"reconciliation={evidence.get('reconciliation_pct', 0)}%",
+        ))
 
-        if (
-            risk_result.to_dict()["all_passed"]
-            and verdict.checklist_outcome == ReviewOutcome.ELIGIBLE_FOR_MICRO_LIVE_CANARY.value
-        ):
-            verdict.verdict = "APPROVED"
-        elif verdict.checklist_outcome == ReviewOutcome.EXTEND_DEMO.value:
-            verdict.verdict = "CONDITIONAL_APPROVAL"
+        self._checks.append(VerdictCheck(
+            "cost_gap_stable",
+            evidence.get("cost_gap_pct", 100) <= 50,
+            f"gap={evidence.get('cost_gap_pct', 100)}%",
+        ))
+
+        self._checks.append(VerdictCheck(
+            "no_safety_incidents",
+            evidence.get("safety_incidents", 0) == 0,
+            f"safety={evidence.get('safety_incidents', 0)}",
+        ))
+
+        self._checks.append(VerdictCheck(
+            "sufficient_window",
+            evidence.get("days_run", 0) >= 30,
+            f"days={evidence.get('days_run', 0)}",
+        ))
+
+        passed = sum(1 for c in self._checks if c.passed)
+        total = len(self._checks)
+
+        if passed == total:
+            return "ELIGIBLE_FOR_EXPANSION"
+        elif evidence.get("critical_incidents", 0) > 0:
+            return "ARCHIVE"
+        elif evidence.get("days_run", 0) < 30:
+            return "EXTEND_MICRO_LIVE"
         else:
-            verdict.verdict = "NOT_APPROVED"
+            return "RETURN_TO_RESEARCH"
 
-        return verdict
+    def get_checks(self) -> list[VerdictCheck]:
+        return self._checks.copy()
 
-    def _build_checklist(self, evidence: dict, risk: dict) -> ReviewChecklist:
-        backtest_ok = evidence.get("release_gate", {}).get("checks", {}).get("all_passed", False)
-        drill_results = evidence.get("drill_results", [])
-        drills_passed = all(d.get("passed", False) for d in drill_results) if drill_results else False
-        critical_incidents = sum(1 for d in drill_results if not d.get("passed", True))
-        return ReviewChecklist(
-            backtest_passes_gate=backtest_ok,
-            demo_campaign_passes_gate=drills_passed,
-            critical_incidents_zero=critical_incidents == 0,
-            protective_stop_verification_100=True,
-            reconciliation_accuracy_100=True,
-            no_stale_data_trades=True,
-            no_risk_budget_breaches=risk.get("risk_budgets_ok", False),
-            no_duplicate_submissions=True,
-            cost_model_gap_within_tolerance=True,
-            strategy_distribution_consistent=True,
-            independent_oracle_match=True,
-            no_archive_reasons_present=risk.get("all_passed", False),
-        )
-
-    def _collect_archive_reasons(self, risk: dict) -> list:
-        reasons = []
-        if not risk.get("micro_live_policy_valid", False):
-            reasons.append("micro_live_policy_invalid")
-        if not risk.get("canary_config_valid", False):
-            reasons.append("canary_config_invalid")
-        if not risk.get("risk_budgets_ok", False):
-            reasons.append("risk_budgets_exceeded")
-        if not risk.get("kill_switch_present", False):
-            reasons.append("kill_switch_missing")
-        if not risk.get("no_auto_resume", False):
-            reasons.append("auto_resume_forbidden")
-        return reasons
+    def summary(self) -> dict:
+        passed = sum(1 for c in self._checks if c.passed)
+        return {"total": len(self._checks), "passed": passed, "all_passed": passed == len(self._checks)}
