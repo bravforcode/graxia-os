@@ -87,5 +87,36 @@ def check_sl_tp_trigger(
     return None
 
 
+def check_sl_tp_trigger_ambiguous(
+    side: Side,
+    stop_loss: Decimal,
+    take_profit: Decimal,
+    bid: Decimal,
+    ask: Decimal,
+    bar_high: Decimal,
+    bar_low: Decimal,
+) -> tuple[str | None, bool]:
+    """Check SL/TP trigger using bar high/low for ambiguity detection.
+
+    Returns (trigger, is_ambiguous) where:
+    - trigger is "SL", "TP", or None
+    - is_ambiguous is True when both SL and TP could have been touched
+    """
+    if side == Side.BUY:
+        sl_hit = bar_low <= stop_loss
+        tp_hit = bar_high >= take_profit
+    else:
+        sl_hit = bar_high >= stop_loss
+        tp_hit = bar_low <= take_profit
+
+    if sl_hit and tp_hit:
+        return "SL", True
+    if sl_hit:
+        return "SL", False
+    if tp_hit:
+        return "TP", False
+    return None, False
+
+
 def can_fill_on_info_candle(signal_bar_index: int, fill_bar_index: int) -> bool:
     return fill_bar_index > signal_bar_index

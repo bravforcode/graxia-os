@@ -2,7 +2,7 @@
 Backtest Engine - Core backtesting framework
 
 Simulates strategy execution on historical data with:
-- Realistic fill model (slippage, commission)
+- Realistic fill model (slippage, commission) via ExecutionSimulator
 - Position tracking with SL/TP
 - Equity curve generation
 - Walk-forward support
@@ -10,7 +10,7 @@ Simulates strategy execution on historical data with:
 
 from dataclasses import dataclass, field
 from datetime import datetime, date
-from decimal import Decimal
+from decimal import Decimal, ROUND_DOWN
 from typing import Optional, Dict, Any, List, Callable
 from uuid import uuid4
 import json
@@ -22,20 +22,81 @@ from ..core.config import get_config
 from ..core.exceptions import StrictMTFViolation
 from ..core.lookahead_guard import LookaheadGuard, LookaheadViolation
 from ..strategies.base import Strategy, Signal
+from ..execution.execution_simulator import (
+    BacktestExecutionSimulator,
+    OrderIntent,
+    MarketSnapshot,
+    Position as ExecPosition,
+    ExecutionResult,
+    ContractSpec,
+)
+from ..execution.fill_model import ExecutionQuality, Side as FillSide, simulate_exit as fill_simulate_exit
+from ..execution.conservative_bar_model import estimate_bid_ask_from_bar
+
+
+@dataclass(frozen=True)
+class InlineContractSpec:
+    """Deterministic contract spec for backtest sizing."""
+    symbol: str = ""
+    trade_contract_size: Decimal = Decimal("100")
+    trade_tick_size: Decimal = Decimal("0.01")
+    trade_tick_value: Decimal = Decimal("1.0")
+    volume_step: Decimal = Decimal("0.01")
+    volume_min: Decimal = Decimal("0.01")
+    volume_max: Decimal = Decimal("100")
+    stops_level_points: Decimal = Decimal("0")
+    snapshot_hash: str = "inline"
+
+
+def _historical_size(
+    equity: Decimal,
+    risk_per_trade_bps: int,
+    entry_price: Decimal,
+    stop_loss: Decimal,
+    contract: InlineContractSpec,
+) -> Decimal:
+    """Deterministic sizing. No MT5. No live broker."""
+    if stop_loss == 0 or entry_price == 0:
+        return Decimal("0")
+    risk_budget = equity * Decimal(str(risk_per_trade_bps)) / Decimal("10000")
+    stop_distance = abs(entry_price - stop_loss)
+    if stop_distance <= 0:
+        return Decimal("0")
+    ticks = stop_distance / contract.trade_tick_size
+    one_lot_loss = ticks * contract.trade_tick_value
+    if one_lot_loss <= 0:
+        return Decimal("0")
+    raw_volume = risk_budget / one_lot_loss
+    # ponytail: round DOWN to volume_step
+    if contract.volume_step > 0:
+        rounded = (raw_volume / contract.volume_step).to_integral_value(rounding=ROUND_DOWN) * contract.volume_step
+    else:
+        rounded = raw_volume
+    if rounded < contract.volume_min:
+        return Decimal("0")
+    return rounded
+
+
+def _exec_side(signal_type: SignalType) -> FillSide:
+    """Map SignalType to fill_model Side."""
+    if signal_type == SignalType.BUY:
+        return FillSide.BUY
+    return FillSide.SELL
 
 
 @dataclass
 class BacktestConfig:
     """Backtest configuration"""
-    initial_capital: float = 10000.0
+    initial_capital: Decimal = Decimal("10000")
     slippage_pips: float = 0.5
-    commission_per_lot: float = 3.5
+    commission_per_lot: Decimal = Decimal("3.5")
     max_positions: int = 5
-    risk_per_trade_pct: float = 1.0
-    units_per_lot: float = 100000.0
+    risk_per_trade_bps: int = 10
     start_date: Optional[date] = None
     end_date: Optional[date] = None
-    strict_mtf: bool = False  # ponytail: default False for backtest compat
+    strict_mtf: bool = True
+    cost_scenario: str = "base"
+    enable_swap: bool = True
 
 
 @dataclass
@@ -51,6 +112,10 @@ class BacktestPosition:
     entry_time: Optional[datetime] = None
     strategy_id: str = ""
     unrealized_pnl: Decimal = Decimal("0")
+    entry_spread_cost: Decimal = Decimal("0")
+    entry_slippage_cost: Decimal = Decimal("0")
+    execution_quality: str = ""
+    signal_bar_index: int = -1
 
 
 @dataclass
@@ -70,6 +135,14 @@ class BacktestTrade:
     close_reason: CloseReason
     strategy_id: str = ""
     stop_loss: Optional[Decimal] = None
+    take_profit: Optional[Decimal] = None
+    execution_quality: str = ""
+    entry_spread_cost: Decimal = Decimal("0")
+    entry_slippage_cost: Decimal = Decimal("0")
+    exit_slippage_cost: Decimal = Decimal("0")
+    ambiguous_bar: bool = False
+    signal_id: str = ""
+    order_intent_id: str = ""
 
 
 @dataclass
@@ -96,6 +169,9 @@ class BacktestEngine:
     
     def __init__(self, config: Optional[BacktestConfig] = None):
         self.config = config or BacktestConfig()
+        
+        # Execution simulator
+        self._simulator = BacktestExecutionSimulator()
         
         # State
         self.balance = Decimal(str(self.config.initial_capital))
@@ -204,8 +280,14 @@ class BacktestEngine:
             guard.advance()
             current_time = self.timestamps[i] if i < len(self.timestamps) else datetime.utcnow()
             
+            # Current bar OHLCV
+            bar_open = Decimal(str(open_price[i]))
+            bar_high = Decimal(str(high[i]))
+            bar_low = Decimal(str(low[i]))
+            bar_close = Decimal(str(close[i]))
+            
             # 1. Check stop loss / take profit on existing positions
-            self._check_exits(high[i], low[i], close[i], current_time)
+            self._check_exits(bar_high, bar_low, bar_close, current_time, i)
             
             # 2. Calculate indicators up to current bar
             indicators = self._calculate_indicators(i)
@@ -226,12 +308,12 @@ class BacktestEngine:
                 current_time=current_time,
             )
             
-            # 4. Execute signal
+            # 4. Execute signal (fills on NEXT bar)
             if signal and signal.signal_type in [SignalType.BUY, SignalType.SELL]:
-                self._execute_signal(signal, close[i], current_time)
+                self._execute_signal(signal, bar_open, bar_high, bar_low, bar_close, current_time, i)
             
             # 5. Update equity
-            self._update_equity(close[i], current_time)
+            self._update_equity(float(bar_close), current_time)
         
         # Close any remaining positions at last price
         self._close_all_positions(close[-1], self.timestamps[-1] if self.timestamps else datetime.utcnow())
@@ -305,137 +387,193 @@ class BacktestEngine:
             print(f"Indicator calculation error: {e}")
             return {}
     
-    def _execute_signal(self, signal: Signal, current_price: float, current_time: datetime) -> None:
-        """Execute a trading signal"""
-        # Check max positions
+    def _execute_signal(
+        self,
+        signal: Signal,
+        bar_open: Decimal,
+        bar_high: Decimal,
+        bar_low: Decimal,
+        bar_close: Decimal,
+        current_time: datetime,
+        bar_index: int,
+    ) -> None:
+        """Execute a trading signal via ExecutionSimulator with next-bar fill."""
         if len(self.positions) >= self.config.max_positions:
             return
-        
-        # Check if already have position in this symbol
+
         for pos in self.positions.values():
             if pos.symbol == signal.symbol:
                 return
-        
-        # Calculate position size based on risk
-        entry_price = Decimal(str(current_price))
-        
-        if signal.stop_loss:
-            risk_per_unit = abs(entry_price - signal.stop_loss)
-            # Safety net: reject SL too tight (ponytail: per-symbol minimum)
-            if "XAU" in signal.symbol:
-                min_sl = Decimal("5.0")
-            elif "JPY" in signal.symbol:
-                min_sl = Decimal("0.05")
-            else:
-                min_sl = Decimal("0.0005")  # 5 pips for forex
-            if risk_per_unit < min_sl:
-                return
-            if risk_per_unit <= 0:
-                return
-            risk_amount = self.balance * Decimal(str(self.config.risk_per_trade_pct)) / 100
-            quantity = risk_amount / risk_per_unit
-        else:
-            # Default: risk 1% of balance with 50 pip stop
-            pip_value = Decimal("0.01") if "JPY" in signal.symbol else Decimal("0.0001")
-            risk_per_unit = pip_value * 50
-            risk_amount = self.balance * Decimal(str(self.config.risk_per_trade_pct)) / 100
-            quantity = risk_amount / risk_per_unit if risk_per_unit > 0 else Decimal("0")
-        
-        if quantity <= 0:
+
+        # CRITICAL: reject if no stop loss
+        if not signal.stop_loss or signal.stop_loss <= 0:
+            self._log_critical_incident("MISSING_SL", signal)
             return
-        
-        # Cap position size: max 50% of capital at risk (ponytail: sanity check, not optimization)
-        max_notional = self.balance * Decimal("0.5")
-        max_quantity = max_notional / entry_price if entry_price > 0 else Decimal("0")
-        if quantity > max_quantity:
-            quantity = max_quantity
-        
-        # Apply slippage
-        slippage_pips = Decimal(str(self.config.slippage_pips))
-        pip_value = Decimal("0.01") if "JPY" in signal.symbol else Decimal("0.0001")
-        slippage = slippage_pips * pip_value
-        
-        if signal.signal_type == SignalType.BUY:
-            fill_price = entry_price + slippage
-            pos_side = PositionType.LONG
-        else:
-            fill_price = entry_price - slippage
-            pos_side = PositionType.SHORT
-        
-        # Calculate commission
-        lots = quantity / Decimal(str(self.config.units_per_lot))
-        commission = lots * Decimal(str(self.config.commission_per_lot))
-        self.balance -= commission
-        
-        # Create position
-        pos_id = str(uuid4())[:8]
-        self.positions[pos_id] = BacktestPosition(
-            id=pos_id,
-            symbol=signal.symbol,
-            side=pos_side,
-            entry_price=fill_price,
-            quantity=quantity,
+
+        side = _exec_side(signal.signal_type)
+
+        # Historical sizing — deterministic, no MT5
+        entry_price = signal.entry_price or bar_close
+        volume = _historical_size(
+            equity=self.equity,
+            risk_per_trade_bps=self.config.risk_per_trade_bps,
+            entry_price=entry_price,
             stop_loss=signal.stop_loss,
-            take_profit=signal.take_profit,
+            contract=InlineContractSpec(symbol=signal.symbol),
+        )
+        if volume <= 0:
+            return
+
+        # Build snapshot from current bar
+        spread = Decimal("0.01") * Decimal("2")  # 2 pips default
+        bid, ask = estimate_bid_ask_from_bar(bar_open, bar_high, bar_low, bar_close, spread)
+        snapshot = MarketSnapshot(
+            bid=bid, ask=ask, spread=spread,
+            high=bar_high, low=bar_low, close=bar_close,
+            timestamp=current_time, symbol=signal.symbol,
+        )
+
+        contract_spec = ContractSpec(
+            contract_size=Decimal("100"),
+            commission_per_lot=self.config.commission_per_lot,
+            spread_points=spread,
+        )
+
+        intent = OrderIntent(
+            symbol=signal.symbol, side=side, volume=volume,
+            stop_loss=signal.stop_loss, take_profit=signal.take_profit,
+            strategy_id=self.strategy.id if self.strategy else "",
+            signal_id=signal.id,
+            execution_quality=ExecutionQuality.BAR_ONLY,
+        )
+
+        result = self._simulator.submit_intent(
+            intent, snapshot, self._bar_dicts(), bar_index,
+            contract_spec=contract_spec,
+        )
+
+        if result.entry_price <= 0 or volume <= 0:
+            return
+
+        pos_id = str(uuid4())[:8]
+        pos_side = PositionType.LONG if side == FillSide.BUY else PositionType.SHORT
+
+        self.positions[pos_id] = BacktestPosition(
+            id=pos_id, symbol=signal.symbol, side=pos_side,
+            entry_price=result.entry_price, quantity=volume,
+            stop_loss=signal.stop_loss, take_profit=signal.take_profit,
             entry_time=current_time,
             strategy_id=self.strategy.id if self.strategy else "",
+            entry_spread_cost=result.spread_cost,
+            entry_slippage_cost=result.slippage_cost,
+            execution_quality=result.execution_quality.value,
+            signal_bar_index=bar_index,
         )
+        self.balance -= result.commission
     
-    def _check_exits(self, high: float, low: float, close: float, current_time: datetime) -> None:
-        """Check stop loss and take profit on all open positions"""
-        to_close = []
-        
+    def _check_exits(
+        self,
+        bar_high: Decimal,
+        bar_low: Decimal,
+        bar_close: Decimal,
+        current_time: datetime,
+        bar_index: int,
+    ) -> None:
+        """Check stop loss and take profit on all open positions using fill_model."""
+        if not self.positions:
+            return
+
+        spread = Decimal("0.01") * Decimal("2")
+        bid, ask = estimate_bid_ask_from_bar(
+            Decimal("0"), bar_high, bar_low, bar_close, spread
+        )
+        snapshot = MarketSnapshot(
+            bid=bid,
+            ask=ask,
+            spread=spread,
+            high=bar_high,
+            low=bar_low,
+            close=bar_close,
+            timestamp=current_time,
+        )
+
+        exec_positions = []
+        pos_map = {}
         for pos_id, pos in self.positions.items():
-            high_dec = Decimal(str(high))
-            low_dec = Decimal(str(low))
-            
-            # Check stop loss
-            if pos.stop_loss:
-                if pos.side == PositionType.LONG and low_dec <= pos.stop_loss:
-                    to_close.append((pos_id, pos.stop_loss, CloseReason.STOP_LOSS))
-                    continue
-                elif pos.side == PositionType.SHORT and high_dec >= pos.stop_loss:
-                    to_close.append((pos_id, pos.stop_loss, CloseReason.STOP_LOSS))
-                    continue
-            
-            # Check take profit
-            if pos.take_profit:
-                if pos.side == PositionType.LONG and high_dec >= pos.take_profit:
-                    to_close.append((pos_id, pos.take_profit, CloseReason.TAKE_PROFIT))
-                    continue
-                elif pos.side == PositionType.SHORT and low_dec <= pos.take_profit:
-                    to_close.append((pos_id, pos.take_profit, CloseReason.TAKE_PROFIT))
-                    continue
-        
-        # Execute closes
-        for pos_id, exit_price, reason in to_close:
-            self._close_position(pos_id, exit_price, current_time, reason)
+            exec_side = FillSide.BUY if pos.side == PositionType.LONG else FillSide.SELL
+            ep = ExecPosition(
+                trade_id=pos_id,
+                symbol=pos.symbol,
+                side=exec_side,
+                entry_price=pos.entry_price,
+                volume=pos.quantity,
+                stop_loss=pos.stop_loss or Decimal("0"),
+                take_profit=pos.take_profit,
+                strategy_id=pos.strategy_id,
+                signal_bar_index=pos.signal_bar_index,
+            )
+            exec_positions.append(ep)
+            pos_map[pos_id] = pos
+
+        events = self._simulator.evaluate_open_positions(
+            exec_positions, snapshot, bar_high, bar_low,
+        )
+
+        for event in events:
+            pos_id = event.trade_id
+            pos = pos_map.get(pos_id)
+            if not pos:
+                continue
+
+            if event.event_type.value == "STOP_LOSS":
+                reason = CloseReason.STOP_LOSS
+            elif event.event_type.value == "TAKE_PROFIT":
+                reason = CloseReason.TAKE_PROFIT
+            elif event.event_type.value == "AMBIGUOUS":
+                reason = CloseReason.AMBIGUOUS
+            elif event.event_type.value == "TIME_STOP":
+                reason = CloseReason.MANUAL
+            else:
+                continue
+
+            exit_slippage = Decimal(str(self.config.slippage_pips)) * Decimal("0.01")
+            exec_side = FillSide.BUY if pos.side == PositionType.LONG else FillSide.SELL
+            exit_price, exit_slip = fill_simulate_exit(exec_side, bid, ask, exit_slippage)
+
+            self._close_position(pos_id, exit_price, current_time, reason, exit_slip)
     
-    def _close_position(self, pos_id: str, exit_price: Decimal, exit_time: datetime, reason: CloseReason) -> None:
-        """Close a position and record the trade"""
+    def _close_position(
+        self,
+        pos_id: str,
+        exit_price: Decimal,
+        exit_time: datetime,
+        reason: CloseReason,
+        exit_slippage_cost: Decimal = Decimal("0"),
+    ) -> None:
+        """Close a position and record the trade with full execution quality info."""
         pos = self.positions.pop(pos_id, None)
         if not pos:
             return
-        
+
         # Calculate P&L
         if pos.side == PositionType.LONG:
             pnl = (exit_price - pos.entry_price) * pos.quantity
         else:
             pnl = (pos.entry_price - exit_price) * pos.quantity
-        
+
         # Commission on exit
-        lots = pos.quantity / Decimal(str(self.config.units_per_lot))
+        lots = pos.quantity / Decimal("100")
         exit_commission = lots * Decimal(str(self.config.commission_per_lot))
-        pnl -= exit_commission
-        
-        # Update balance
+        total_fees = exit_commission
+
+        pnl -= total_fees
         self.balance += pnl
-        
-        # Calculate return %
+
         notional = pos.entry_price * pos.quantity
         return_pct = (pnl / notional * 100) if notional > 0 else Decimal("0")
-        
-        # Record trade
+
+        is_ambiguous = reason == CloseReason.AMBIGUOUS
+
         self.trades.append(BacktestTrade(
             id=pos.id,
             symbol=pos.symbol,
@@ -447,16 +585,41 @@ class BacktestEngine:
             exit_time=exit_time,
             pnl=pnl,
             return_pct=return_pct,
-            fees=exit_commission,
+            fees=total_fees,
             close_reason=reason,
             strategy_id=pos.strategy_id,
             stop_loss=pos.stop_loss,
+            take_profit=pos.take_profit,
+            execution_quality=pos.execution_quality,
+            entry_spread_cost=pos.entry_spread_cost,
+            entry_slippage_cost=pos.entry_slippage_cost,
+            exit_slippage_cost=exit_slippage_cost,
+            ambiguous_bar=is_ambiguous,
         ))
     
     def _close_all_positions(self, last_price: float, current_time: datetime) -> None:
-        """Close all remaining positions"""
+        """Close all remaining positions at last price"""
+        last_dec = Decimal(str(last_price))
         for pos_id in list(self.positions.keys()):
-            self._close_position(pos_id, Decimal(str(last_price)), current_time, CloseReason.MANUAL)
+            self._close_position(pos_id, last_dec, current_time, CloseReason.MANUAL)
+
+    def _log_critical_incident(self, incident_type: str, signal=None):
+        """Log critical incident. No silent fallback."""
+        import logging
+        logging.critical(f"CRITICAL_INCIDENT: {incident_type} signal={signal}")
+
+    def _bar_dicts(self) -> List[dict]:
+        """Convert loaded OHLCV arrays to list-of-dicts for the simulator."""
+        n = len(self.ohlcv_data["close"])
+        bars = []
+        for i in range(n):
+            bars.append({
+                "open": Decimal(str(self.ohlcv_data["open"][i])),
+                "high": Decimal(str(self.ohlcv_data["high"][i])),
+                "low": Decimal(str(self.ohlcv_data["low"][i])),
+                "close": Decimal(str(self.ohlcv_data["close"][i])),
+            })
+        return bars
     
     def _update_equity(self, current_price: float, current_time: datetime) -> None:
         """Update equity curve point"""
@@ -497,12 +660,22 @@ class BacktestEngine:
             equity_curve=self.equity_curve,
         )
         
-        return {
+        # Execution quality breakdown
+        total_spread_cost = sum(t.entry_spread_cost for t in self.trades)
+        total_slippage_cost = sum(
+            t.entry_slippage_cost + t.exit_slippage_cost for t in self.trades
+        )
+        quality_counts: Dict[str, int] = {}
+        for t in self.trades:
+            q = t.execution_quality or "unknown"
+            quality_counts[q] = quality_counts.get(q, 0) + 1
+        
+        result = {
             "config": {
-                "initial_capital": self.config.initial_capital,
+                "initial_capital": float(self.config.initial_capital),
                 "slippage_pips": self.config.slippage_pips,
-                "commission_per_lot": self.config.commission_per_lot,
-                "risk_per_trade_pct": self.config.risk_per_trade_pct,
+                "commission_per_lot": float(self.config.commission_per_lot),
+                "risk_per_trade_bps": self.config.risk_per_trade_bps,
                 "strategy": self.strategy.id if self.strategy else "unknown",
             },
             "metrics": metrics,
@@ -515,6 +688,7 @@ class BacktestEngine:
                     "exit_price": float(t.exit_price),
                     "quantity": float(t.quantity),
                     "stop_loss": float(t.stop_loss) if t.stop_loss else None,
+                    "take_profit": float(t.take_profit) if t.take_profit else None,
                     "entry_time": t.entry_time.isoformat(),
                     "exit_time": t.exit_time.isoformat(),
                     "pnl": float(t.pnl),
@@ -522,6 +696,11 @@ class BacktestEngine:
                     "fees": float(t.fees),
                     "close_reason": t.close_reason.value,
                     "strategy_id": t.strategy_id,
+                    "execution_quality": t.execution_quality,
+                    "entry_spread_cost": float(t.entry_spread_cost),
+                    "entry_slippage_cost": float(t.entry_slippage_cost),
+                    "exit_slippage_cost": float(t.exit_slippage_cost),
+                    "ambiguous_bar": t.ambiguous_bar,
                 }
                 for t in self.trades
             ],
@@ -535,4 +714,11 @@ class BacktestEngine:
                 }
                 for p in self.equity_curve[::max(1, len(self.equity_curve)//500)]  # Downsample
             ],
+            "execution": {
+                "total_spread_cost": float(total_spread_cost),
+                "total_slippage_cost": float(total_slippage_cost),
+                "quality_breakdown": quality_counts,
+            },
         }
+        
+        return result

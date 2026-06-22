@@ -42,6 +42,7 @@ class CheatingStrategy(Strategy):
         ohlcv_data: Dict[str, List],
         indicators: Optional[Dict] = None,
         regime: Optional[RegimeType] = None,
+        **kwargs,
     ) -> Optional[Signal]:
         close = ohlcv_data.get("close", [])
         current_idx = len(close) - 1

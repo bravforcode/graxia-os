@@ -11,9 +11,8 @@
 | Phase 1R | Repository Intelligence | 9/9 | PASS |
 
 ## Current Phase
-
-- G0 (Freeze + Canonical Runtime Map): PASS_TO_PHASE_3_1
-- G0.1 Closeout: PASS_TO_PHASE_3_1 (commit `58ccd77`, 6/6 tests PASS)
+- G0: PASS_TO_PHASE_3_1
+- Phase 3.1 (Canonical Engine Integration): IN PROGRESS
 
 ## Strategy Status
 
@@ -25,7 +24,7 @@
 
 ## Evidence Level
 
-- **UNIT_ONLY** — unit tests pass, no end-to-end integration yet
+- **INTEGRATION_WIRED** — engine wires fill_model, cost_model, sizing, ledger, state machine
 
 ## Last Updated
 

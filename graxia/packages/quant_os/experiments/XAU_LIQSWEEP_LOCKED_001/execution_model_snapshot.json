@@ -22,5 +22,6 @@
     "fail_loud": true,
     "no_mock_data": true
   },
-  "cost_scenario": "BASE"
+  "cost_scenario": "BASE",
+  "currently_wired": false
 }

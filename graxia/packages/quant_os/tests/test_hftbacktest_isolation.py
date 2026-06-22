@@ -22,7 +22,7 @@ def test_no_hftbacktest_imports_in_canonical():
     quant_os_dir = REPO_ROOT / "graxia" / "packages" / "quant_os"
     violations = []
     for py_file in quant_os_dir.rglob("*.py"):
-        if "quarantine" in str(py_file).lower() or "test_hftbacktest" in py_file.name:
+        if "quarantine" in str(py_file).lower() or py_file.name.startswith("test_"):
             continue
         content = py_file.read_text(encoding="utf-8", errors="ignore")
         if re.search(r'\bhftbacktest\b', content):

@@ -108,9 +108,12 @@ def next_bar_fill(
         bar["open"], bar["high"], bar["low"], bar["close"], spread
     )
     fill = simulate_entry(signal, bid, ask, ask - bid)
-    trigger = check_sl_tp_trigger(signal.side, signal.stop_loss, signal.take_profit, bid, ask)
     return FillResult(
         entry_price=fill.entry_price,
         sl_cost=fill.sl_cost,
-        triggered=trigger is not None,
+        exit_price=fill.exit_price,
+        slippage_cost=fill.slippage_cost,
+        execution_quality=fill.execution_quality,
+        is_ambiguous=fill.is_ambiguous,
+        ambiguous_path=fill.ambiguous_path,
     )

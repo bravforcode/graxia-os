@@ -2,7 +2,7 @@
 
 from enum import Enum
 
-from graxia.packages.quant_os.core.exceptions import OrderStateError
+from ..core.exceptions import OrderStateError
 
 
 class OrderState(Enum):

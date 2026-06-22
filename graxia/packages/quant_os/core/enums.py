@@ -168,6 +168,7 @@ class CloseReason(str, Enum):
     KILL_SWITCH = "KILL_SWITCH"
     EXPIRED = "EXPIRED"
     REVERSE_SIGNAL = "REVERSE_SIGNAL"
+    AMBIGUOUS = "AMBIGUOUS"
 
 
 class ReconciliationStatus(str, Enum):
