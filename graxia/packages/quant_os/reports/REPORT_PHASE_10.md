@@ -29,7 +29,28 @@ Each phase requires passing all gates before advancing:
 - [x] Report generation working
 
 ## Test Results
-[Fill from test run]
+```
+18 passed, 2 warnings in 0.31s
+
+TestExpansionPlanner::test_create_planner PASSED
+TestExpansionPlanner::test_get_current_step PASSED
+TestExpansionPlanner::test_get_step_by_phase PASSED
+TestExpansionPlanner::test_can_advance_initial PASSED
+TestExpansionPlanner::test_cannot_advance_with_unpassed_gates PASSED
+TestExpansionPlanner::test_can_advance_after_gates_pass PASSED
+TestExpansionPlanner::test_step_to_dict PASSED
+TestExpansionPlanner::test_planner_to_dict PASSED
+TestExpansionPlanner::test_phase_1_risk_limits PASSED
+TestExpansionPlanner::test_phase_5_has_most_symbols PASSED
+TestExpansionTracker::test_get_status PASSED
+TestExpansionTracker::test_complete_gate PASSED
+TestExpansionTracker::test_complete_gate_nonexistent PASSED
+TestExpansionTracker::test_start_phase PASSED
+TestExpansionTracker::test_complete_phase PASSED
+TestExpansionTracker::test_cannot_complete_without_gates PASSED
+TestExpansionTracker::test_export_report PASSED
+TestExpansionTracker::test_report_summary PASSED
+```
 
 ## Verdict
-[PASS / CONDITIONAL_PASS / FAIL]
+**PASS**
