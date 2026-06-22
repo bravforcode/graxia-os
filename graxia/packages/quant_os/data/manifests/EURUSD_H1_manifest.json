@@ -1,0 +1,18 @@
+{
+  "symbol": "EURUSD",
+  "timeframe": "H1",
+  "source": "MT5",
+  "rows": 50000,
+  "start_date": "2018-06-01 21:00:00",
+  "end_date": "2026-06-19 23:00:00",
+  "sha256": "0eb9dd7d9b3efb461523884002a890a0a297e29c8a5a651f89f612ffc47bab7a",
+  "columns": [
+    "time",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+  ],
+  "created_at": "2026-06-22"
+}

@@ -1,8 +1,8 @@
 import pytest
-from markets.eurusd.contract_snapshot import EURUSDContractSnapshot, XAUUSDContractSnapshot
-from markets.eurusd.session_calendar import get_active_session, is_liquidity_session, SessionType
-from markets.eurusd.event_calendar import get_event_blackout, get_high_impact_events, EventImpact
-from markets.eurusd.hypothesis import (
+from graxia.packages.quant_os.markets.eurusd.contract_snapshot import EURUSDContractSnapshot, XAUUSDContractSnapshot
+from graxia.packages.quant_os.markets.eurusd.session_calendar import get_active_session, is_liquidity_session, SessionType
+from graxia.packages.quant_os.markets.eurusd.event_calendar import get_event_blackout, get_high_impact_events, EventImpact
+from graxia.packages.quant_os.markets.eurusd.hypothesis import (
     EURUSDHypothesis, HypothesisRegistry, HypothesisStatus, ValidationProtocol
 )
 

@@ -1,5 +1,5 @@
 import pytest
-from markets.eurusd.anti_contamination import AntiContaminationGuard
+from graxia.packages.quant_os.markets.eurusd.anti_contamination import AntiContaminationGuard
 
 class TestAntiContamination:
     def test_clean_params(self):
