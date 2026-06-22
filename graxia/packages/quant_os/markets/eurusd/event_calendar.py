@@ -1,45 +1,40 @@
+"""Phase BE-P7 — EURUSD event calendar."""
 from dataclasses import dataclass
-from enum import Enum
 
-class EventRegion(Enum):
-    US = "US"
-    EU = "EU"
-    UK = "UK"
-    JAPAN = "JAPAN"
 
-class EventImpact(Enum):
-    HIGH = "HIGH"
-    MEDIUM = "MEDIUM"
-    LOW = "LOW"
-
-@dataclass(frozen=True)
-class EventMapping:
+@dataclass
+class EconomicEvent:
     event_name: str
-    region: EventRegion
-    impact: EventImpact
-    typical_impact_pips: float
-    blackout_before_minutes: int
-    blackout_after_minutes: int
+    country: str
+    currency: str
+    typical_impact: str  # HIGH, MEDIUM, LOW
+    typical_frequency: str  # monthly, quarterly, etc.
 
-# Key EURUSD events
-KEY_EVENTS = [
-    EventMapping("NFP", EventRegion.US, EventImpact.HIGH, 50.0, 30, 15),
-    EventMapping("CPI YoY", EventRegion.US, EventImpact.HIGH, 30.0, 30, 15),
-    EventMapping("FOMC Rate Decision", EventRegion.US, EventImpact.HIGH, 40.0, 60, 30),
-    EventMapping("ECB Rate Decision", EventRegion.EU, EventImpact.HIGH, 40.0, 60, 30),
-    EventMapping("GDP YoY", EventRegion.US, EventImpact.HIGH, 25.0, 30, 15),
-    EventMapping("PMI Manufacturing", EventRegion.US, EventImpact.MEDIUM, 15.0, 15, 10),
-    EventMapping("Retail Sales MoM", EventRegion.US, EventImpact.MEDIUM, 12.0, 15, 10),
-    EventMapping("Unemployment Rate", EventRegion.US, EventImpact.MEDIUM, 10.0, 15, 10),
-    EventMapping("ECB Press Conference", EventRegion.EU, EventImpact.HIGH, 35.0, 30, 30),
-    EventMapping("German ZEW", EventRegion.EU, EventImpact.MEDIUM, 8.0, 15, 10),
-]
 
-def get_event_blackout(event_name: str) -> tuple[int, int]:
-    for e in KEY_EVENTS:
-        if e.event_name == event_name:
-            return e.blackout_before_minutes, e.blackout_after_minutes
-    return 15, 10  # Default
+class EURUSDEventCalendar:
+    """EURUSD economic event mapping."""
 
-def get_high_impact_events() -> list[EventMapping]:
-    return [e for e in KEY_EVENTS if e.impact == EventImpact.HIGH]
+    def __init__(self):
+        self._events = [
+            EconomicEvent("NFP", "US", "USD", "HIGH", "monthly"),
+            EconomicEvent("FOMC", "US", "USD", "HIGH", "8x/year"),
+            EconomicEvent("CPI", "US", "USD", "HIGH", "monthly"),
+            EconomicEvent("GDP", "US", "USD", "HIGH", "quarterly"),
+            EconomicEvent("ECB_RATE", "EU", "EUR", "HIGH", "6x/year"),
+            EconomicEvent("ECB_PRESS_CONF", "EU", "EUR", "HIGH", "6x/year"),
+            EconomicEvent("CPI_EU", "EU", "EUR", "HIGH", "monthly"),
+            EconomicEvent("GDP_EU", "EU", "EUR", "HIGH", "quarterly"),
+            EconomicEvent("PMI_US", "US", "USD", "MEDIUM", "monthly"),
+            EconomicEvent("PMI_EU", "EU", "EUR", "MEDIUM", "monthly"),
+            EconomicEvent("RETAIL_SALES_US", "US", "USD", "MEDIUM", "monthly"),
+            EconomicEvent("UNEMPLOYMENT_US", "US", "USD", "MEDIUM", "monthly"),
+        ]
+
+    def get_events(self) -> list[EconomicEvent]:
+        return self._events.copy()
+
+    def get_high_impact(self) -> list[EconomicEvent]:
+        return [e for e in self._events if e.typical_impact == "HIGH"]
+
+    def get_by_currency(self, currency: str) -> list[EconomicEvent]:
+        return [e for e in self._events if e.currency == currency]

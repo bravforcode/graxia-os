@@ -1,5 +1,4 @@
-"""Tests for EURUSD validation protocol (BE-P7 API)."""
-import pytest
+"""Tests for EURUSD validation protocol."""
 from graxia.packages.quant_os.markets.eurusd.validation_protocol import EURUSDValidationProtocol
 
 
@@ -17,9 +16,10 @@ def test_protocol_passes_all():
 
 def test_protocol_fails_missing():
     proto = EURUSDValidationProtocol()
-    evidence = {"separate_dataset": True}
+    evidence = {"separate_dataset": True, "separate_contract": True}
     ok, issues = proto.validate(evidence)
     assert not ok
+    assert len(issues) > 0
 
 
 def test_protocol_fails_xauusd_transfer():
