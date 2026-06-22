@@ -94,34 +94,49 @@ None.
 4. `trade_ledger` has never been written to during a backtest run
 5. `order_state_machine` has never been exercised in a backtest context
 
-## Gate checklist
+## Gate checklist (G0.1 Closeout)
 - [x] Canonical runtime map exists (`architecture/canonical_runtime.yml`)
 - [x] Every duplicate/legacy module has a decision (82 ACTIVE, 11 LEGACY, 37 TEST, 1 DEPRECATED, 4 QUARANTINED)
-- [x] No critical hardcode reachable from canonical production mode (docstring mentions only — regression guard active)
+- [x] No critical hardcode reachable from canonical production mode (AST-aware regression guard, not token grep)
 - [x] Repository inventory count is reconciled (56, no discrepancy)
-- [x] Clean process import and micro-run pass (3/4 tests pass; 1 expected fail = regression guard)
+- [x] Clean process import and micro-run pass (6/6 tests PASS — no expected fail)
 - [x] XAU candidate strategy/data/parameters are frozen and hashed
 - [x] Worktree status is clean except explicitly quarantined submodules
 - [x] No external repository affects build/test output without registry approval
+- [x] G0 commit SHA consistent across all artifacts (experiment_manifest, REPORT_G0, STATUS)
+- [x] hftbacktest quarantined reproducibly (upstream SHA `5f3ec40b`, dirty diff hash recorded, isolation test PASS)
+- [x] Freeze integrity verified (strategy hash, 3 data manifests, CSV checksums, execution model = CURRENTLY_UNWIRED)
+- [x] Engine path labeled LEGACY_CLOSE_PRICE in canonical runtime map
 
 ## Verdict
 
 ```
-CONDITIONAL_PASS
+PASS_TO_PHASE_3_1
 ```
 
-**Conditions for unconditional PASS:**
-1. `test_no_forbidden_tokens_in_canonical_modules` must pass — requires cleaning docstring references to `risk_per_trade_pct` in 3 canonical modules (trivial)
-2. All 4 clean-process tests must pass
+**Rationale:** All G0.1 closeout conditions met:
+1. AST-aware regression guard passes (no false positives from docstrings)
+2. All 6 clean-process tests PASS (no expected fail)
+3. G0 commit SHA `58ccd77` consistent across all artifacts
+4. hftbacktest quarantine reproducible with upstream SHA and dirty diff hash
+5. All freeze hashes verified (strategy, manifests, CSVs)
+6. Engine path correctly labeled LEGACY_CLOSE_PRICE
 
-**Rationale:** All G0 deliverables exist. The canonical runtime map is complete. The freeze manifest is immutable. The 10 gaps identified in the engine integration audit define the Phase 3.1 scope precisely. No showstopper.
+## G0.1 Closeout Evidence
+- Commit: `58ccd772c9d38065a8e2d09413898f61e8981843`
+- Python: 3.12.10
+- pip: 26.0.1
+- Dependency lock SHA-256: `ff212b8232eeec7e0198dd59c822ef0b57ce88a2938de2245ed5160ef2a9a4dd`
+- G0 tests: 6/6 PASS
+- Reports: `G0_FREEZE_INTEGRITY.md`, `G0_CLEAN_PROCESS_EVIDENCE.md`
+- Quarantine: `quarantine_hftbacktest.json`
 
 ## Next permitted work
 **Phase 3.1 — Canonical Engine Integration and Legacy Path Retirement**
 
 The engine integration audit identified 10 gaps (2 Critical, 3 High, 3 Medium, 2 Low). Phase 3.1 must:
-1. Wire `_execute_signal()` → `position_sizer_v2.size_position()`
-2. Replace close-price fills with bid/ask from `fill_model.py`
+1. Wire `_execute_signal()` → `position_sizer_v2.size_position()` (HistoricalSizingProvider protocol)
+2. Replace close-price fills with bid/ask from `fill_model.py` (ConservativeBarFillModel)
 3. Add cost model integration (spread, slippage, commission, swap)
 4. Wire `trade_ledger.record_trade()` into the engine
 5. Add `order_state_machine` exercise in backtest path

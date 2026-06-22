@@ -12,7 +12,8 @@
 
 ## Current Phase
 
-- G0 (Freeze + Canonical Runtime Map): IN PROGRESS
+- G0 (Freeze + Canonical Runtime Map): PASS_TO_PHASE_3_1
+- G0.1 Closeout: PASS_TO_PHASE_3_1 (commit `58ccd77`, 6/6 tests PASS)
 
 ## Strategy Status
 
