@@ -58,3 +58,14 @@ def test_broker_identity_guard_violations_reported():
     violations = guard.get_violations()
     assert len(violations) == 4
     assert guard.get_violations() == violations  # returns copy
+
+
+def test_compute_fingerprint_has_timestamp():
+    guard = _make_guard()
+    fp = guard.compute_fingerprint("broker.example.com", 12345, "DEMO", "USD")
+    assert fp.server_hash  # non-empty
+    assert fp.login_hash   # non-empty
+    assert fp.account_mode == "DEMO"
+    assert fp.account_currency == "USD"
+    assert fp.captured_at  # has timestamp
+    assert "T" in fp.captured_at  # ISO format

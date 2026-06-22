@@ -1,0 +1,16 @@
+{
+  "version": "1.0",
+  "updated_at": "2026-06-22T10:40:11.016587",
+  "entries": [
+    {
+      "test_id": "test_alpha",
+      "reason": "flaky",
+      "owner": "alice",
+      "issue_id": "ISS-001",
+      "expiry": "2026-12-31",
+      "created_at": "2026-06-22T00:00:00",
+      "signature": "c70af05177f9f4f9"
+    }
+  ],
+  "manifest_hash": "0eaea112f8802c47dc8521bd13c9a4b7aa40a3f78bd2c2c9cf6c0ef036653eb5"
+}
