@@ -523,6 +523,28 @@ class PepperstoneCampaignRunner:
 
     def run(self, duration_seconds: int = 86400, interval_seconds: int = 60) -> dict:
         """Run 24h shadow campaign."""
+        # Connect to MT5 first
+        if not self._mt5.connect(timeout=30000):
+            logger.error("MT5 connection failed")
+            return {"error": "MT5_CONNECTION_FAILED"}
+
+        # Validate broker profile
+        acct = self._mt5.get_account_info()
+        sym_info = self._mt5.get_symbol_info(self.symbol)
+        if not acct or not sym_info:
+            logger.error("Failed to get broker info")
+            return {"error": "BROKER_INFO_FAILED"}
+
+        match, issues = validate_broker_match(
+            acct["server"], acct["login"], sym_info["contract_size"],
+            sym_info["digits"], sym_info["point"], self._profile,
+        )
+        if not match:
+            logger.error(f"Broker profile mismatch: {issues}")
+            return {"error": "PROFILE_MISMATCH", "issues": issues}
+
+        logger.info(f"Broker: {acct['server']} | Profile match: True")
+
         self._session_id = f"pepperstone_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
         self._pipeline.start_session(self._session_id)
 
@@ -555,6 +577,7 @@ class PepperstoneCampaignRunner:
                 break
 
         self._pipeline.end_session()
+        self._mt5.disconnect()
         return self._build_summary()
 
     def _build_summary(self) -> dict:
