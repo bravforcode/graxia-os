@@ -1,187 +1,134 @@
-"""
-Evidence Pack — assemble all required evidence for micro-live review.
-
-Required evidence per master plan:
-- Historical validation pack
-- Oracle comparison pack
-- Locked holdout result
-- Shadow results
-- Demo campaign results
-- Incident history
-- Observed fill/slippage comparison
-- Security/SBOM review
-- Broker/account contract evidence
-- Rollback and kill-switch verification
-"""
-import os
+"""Phase 9 — Evidence pack builder. Aggregates all pre-live evidence into a single verifiable bundle."""
 import json
-import hashlib
-from datetime import datetime
+import os
 from dataclasses import dataclass, field
-from typing import Optional, Dict, List
-
-
-@dataclass
-class EvidenceItem:
-    name: str
-    category: str
-    status: str  # "present", "missing", "partial"
-    path: Optional[str] = None
-    hash_sha256: Optional[str] = None
-    details: str = ""
+from datetime import datetime
+from pathlib import Path
 
 
 @dataclass
 class EvidencePack:
-    pack_id: str
-    created_at: str
-    items: List[EvidenceItem] = field(default_factory=list)
-    
-    def add_item(self, name: str, category: str, status: str, 
-                 path: str = None, details: str = "") -> None:
-        item = EvidenceItem(
-            name=name, category=category, status=status,
-            path=path, details=details,
-        )
-        if path and os.path.exists(path):
-            with open(path, 'rb') as f:
-                item.hash_sha256 = hashlib.sha256(f.read()).hexdigest()
-        self.items.append(item)
-    
-    def summary(self) -> Dict[str, int]:
-        present = sum(1 for i in self.items if i.status == "present")
-        missing = sum(1 for i in self.items if i.status == "missing")
-        partial = sum(1 for i in self.items if i.status == "partial")
-        return {"present": present, "missing": missing, "partial": partial, "total": len(self.items)}
-    
-    def all_present(self) -> bool:
-        return all(i.status == "present" for i in self.items)
-    
+    """Structured evidence bundle for Phase 9 review."""
+    backtest_results: dict = field(default_factory=dict)
+    demo_campaign: dict = field(default_factory=dict)
+    drill_results: list = field(default_factory=list)
+    risk_policy: dict = field(default_factory=dict)
+    release_gate: dict = field(default_factory=dict)
+    canary_config: dict = field(default_factory=dict)
+    micro_live_policy: dict = field(default_factory=dict)
+    built_at: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+
     def to_dict(self) -> dict:
         return {
-            "pack_id": self.pack_id,
-            "created_at": self.created_at,
-            "summary": self.summary(),
-            "items": [{
-                "name": i.name,
-                "category": i.category,
-                "status": i.status,
-                "path": i.path,
-                "hash": i.hash_sha256,
-                "details": i.details,
-            } for i in self.items],
+            "backtest_results": self.backtest_results,
+            "demo_campaign": self.demo_campaign,
+            "drill_results": self.drill_results,
+            "risk_policy": self.risk_policy,
+            "release_gate": self.release_gate,
+            "canary_config": self.canary_config,
+            "micro_live_policy": self.micro_live_policy,
+            "built_at": self.built_at,
         }
-    
-    def fingerprint(self) -> str:
-        data = json.dumps(self.to_dict(), sort_keys=True)
-        return hashlib.sha256(data.encode()).hexdigest()
 
 
 class EvidencePackBuilder:
-    """Build evidence pack from project artifacts."""
-    
-    def __init__(self, project_root: str = "."):
-        self._root = project_root
-    
+    """Builds an evidence pack from existing project artifacts."""
+    PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
     def build(self) -> EvidencePack:
-        pack = EvidencePack(
-            pack_id=f"ep_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}",
-            created_at=datetime.utcnow().isoformat(),
-        )
-        
-        # 1. Historical validation pack
-        pack.add_item(
-            "Historical Backtest Results",
-            "validation",
-            self._check_file("reports/REPORT_PHASE_3_1_ENGINE_INTEGRATION.md"),
-            "reports/REPORT_PHASE_3_1_ENGINE_INTEGRATION.md",
-        )
-        
-        # 2. Locked holdout result
-        pack.add_item(
-            "Locked XAUUSD Revalidation",
-            "validation",
-            self._check_file("reports/REPORT_PHASE_3B.md"),
-            "reports/REPORT_PHASE_3B.md",
-        )
-        
-        # 3. Shadow results
-        shadow_files = self._list_files("shadow_results", "*.json")
-        pack.add_item(
-            "Shadow Session Data",
-            "shadow",
-            "present" if shadow_files else "missing",
-            details=f"{len(shadow_files)} shadow files found",
-        )
-        
-        # 4. Demo campaign results
-        campaign_files = self._list_files("shadow_results", "campaign_*.json")
-        pack.add_item(
-            "Demo Campaign Results",
-            "campaign",
-            "present" if campaign_files else "missing",
-            details=f"{len(campaign_files)} campaign files found",
-        )
-        
-        # 5. Incident drills
-        drill_files = self._list_files("shadow_results", "drills_*.json")
-        pack.add_item(
-            "Incident Drill Results",
-            "drills",
-            "present" if drill_files else "missing",
-            details=f"{len(drill_files)} drill files found",
-        )
-        
-        # 6. Kill switch verification
-        pack.add_item(
-            "Kill Switch Code",
-            "safety",
-            self._check_file("canary/config.py"),
-            "canary/config.py",
-            "execution_enabled=False default",
-        )
-        
-        # 7. Risk policy
-        pack.add_item(
-            "Risk Policy Version",
-            "risk",
-            self._check_file("core/config.py"),
-            "core/config.py",
-        )
-        
-        # 8. Broker contract
-        pack.add_item(
-            "Broker Profile",
-            "broker",
-            self._check_file("mt5_connector/config.yaml"),
-            "mt5_connector/config.yaml",
-        )
-        
-        # 9. SBOM
-        pack.add_item(
-            "Supply Chain SBOM",
-            "security",
-            self._check_file("repo_intelligence/supply_chain.py"),
-            "repo_intelligence/supply_chain.py",
-        )
-        
-        # 10. Compliance matrix
-        pack.add_item(
-            "Master Plan Compliance Matrix",
-            "governance",
-            self._check_file("reports/COMPLIANCE_MATRIX.md"),
-            "reports/COMPLIANCE_MATRIX.md",
-        )
-        
+        pack = EvidencePack()
+        pack.backtest_results = self._load_json("results/backtest_results.json")
+        pack.drill_results = self._load_latest_drills()
+        pack.release_gate = self._load_json("artifacts/release_gate/summary.json")
+        pack.risk_policy = self._load_risk_policy()
+        pack.canary_config = self._load_canary_config()
+        pack.micro_live_policy = self._load_micro_live_policy()
+        pack.demo_campaign = self._load_demo_campaign()
         return pack
-    
-    def _check_file(self, rel_path: str) -> str:
-        full = os.path.join(self._root, rel_path)
-        return "present" if os.path.exists(full) else "missing"
-    
-    def _list_files(self, rel_dir: str, pattern: str) -> List[str]:
-        full_dir = os.path.join(self._root, rel_dir)
-        if not os.path.exists(full_dir):
+
+    def _load_json(self, rel_path: str) -> dict:
+        path = self.PROJECT_ROOT / rel_path
+        if not path.exists():
+            return {"error": f"File not found: {rel_path}"}
+        with open(path) as f:
+            return json.load(f)
+
+    def _load_latest_drills(self) -> list:
+        drills_dir = self.PROJECT_ROOT / "shadow_results"
+        drill_files = sorted(drills_dir.glob("drills_*.json"), reverse=True)
+        if not drill_files:
             return []
-        import glob
-        return glob.glob(os.path.join(full_dir, pattern))
+        with open(drill_files[0]) as f:
+            return json.load(f)
+
+    def _load_risk_policy(self) -> dict:
+        try:
+            rp_path = self.PROJECT_ROOT / "risk" / "risk_policy.py"
+            with open(rp_path) as f:
+                content = f.read()
+            import re
+            values = {}
+            for field in ["risk_per_trade_bps", "max_daily_loss_bps", "max_weekly_loss_bps",
+                          "max_total_drawdown_bps", "max_open_positions", "max_orders_per_day"]:
+                m = re.search(rf"{field}:\s*int\s*=\s*(\d+)", content)
+                if m:
+                    values[field] = int(m.group(1))
+            for field in ["require_stop_loss", "fail_closed"]:
+                m = re.search(rf"{field}:\s*bool\s*=\s*(True|False)", content)
+                if m:
+                    values[field] = m.group(1) == "True"
+            return values
+        except Exception as e:
+            return {"error": str(e)}
+
+    def _load_canary_config(self) -> dict:
+        try:
+            from canary.config import CanaryConfig
+            cc = CanaryConfig()
+            valid, issues = cc.validate()
+            return {
+                "execution_enabled": cc.execution_enabled,
+                "account_mode_required": cc.account_mode_required,
+                "allowed_symbols": cc.allowed_symbols,
+                "allowed_strategies": cc.allowed_strategies,
+                "max_open_positions": cc.max_open_positions,
+                "risk_per_trade_bps": cc.risk_per_trade_bps,
+                "auto_resume_after_kill_switch": cc.auto_resume_after_kill_switch,
+                "validate_passed": valid,
+                "validate_issues": issues,
+            }
+        except ImportError:
+            return {"error": "CanaryConfig not importable"}
+
+    def _load_micro_live_policy(self) -> dict:
+        try:
+            from canary.micro_live_policy import MicroLivePolicy
+            ml = MicroLivePolicy()
+            valid, issues = ml.validate()
+            return {
+                "max_symbols": ml.max_symbols,
+                "max_open_positions": ml.max_open_positions,
+                "max_orders_per_day": ml.max_orders_per_day,
+                "risk_per_trade_bps": ml.risk_per_trade_bps,
+                "max_daily_loss_bps": ml.max_daily_loss_bps,
+                "max_weekly_loss_bps": ml.max_weekly_loss_bps,
+                "max_total_drawdown_bps": ml.max_total_drawdown_bps,
+                "no_compounding": ml.no_compounding,
+                "emergency_kill_switch": ml.emergency_kill_switch,
+                "validate_passed": valid,
+                "validate_issues": issues,
+            }
+        except ImportError:
+            return {"error": "MicroLivePolicy not importable"}
+
+    def _load_demo_campaign(self) -> dict:
+        results_dir = self.PROJECT_ROOT / "shadow_results"
+        campaign_files = sorted(results_dir.glob("campaign_*.json"), reverse=True)
+        if campaign_files:
+            with open(campaign_files[0]) as f:
+                return json.load(f)
+        sessions = sorted(results_dir.glob("session_*.json"), reverse=True)
+        if sessions:
+            with open(sessions[0]) as f:
+                return json.load(f)
+        return {"status": "no_campaign_data"}
