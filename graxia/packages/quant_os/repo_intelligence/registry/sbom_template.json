@@ -1,0 +1,57 @@
+{
+  "spdx_version": "SPDX-2.3",
+  "data_license": "CC0-1.0",
+  "name": "quant-os-oracle-environments",
+  "document_namespace": "https://quant-os.local/sbom/oracle-envs",
+  "creation_info": {
+    "created": "2026-06-22T00:00:00Z",
+    "creators": ["quant_os_team"],
+    "license_list_version": "3.19"
+  },
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-quant-os-canonical",
+      "name": "quant_os_canonical",
+      "version": "3.1A.2",
+      "downloadLocation": "https://github.com/quant-os/quant_os",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Proprietary",
+      "licenseDeclared": "Proprietary",
+      "copyrightText": "quant_os_team",
+      "comment": "Canonical runtime — no oracle imports allowed"
+    },
+    {
+      "SPDXID": "SPDXRef-vectorbt-oracle",
+      "name": "vectorbt",
+      "version": "TBD",
+      "downloadLocation": "https://github.com/polakowo/vectorbt",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0-with-Commons-Clause",
+      "licenseDeclared": "Apache-2.0-with-Commons-Clause",
+      "copyrightText": "vectorbt contributors",
+      "comment": "Isolated research oracle — no production import"
+    },
+    {
+      "SPDXID": "SPDXRef-backtesting-py-oracle",
+      "name": "backtesting",
+      "version": "TBD",
+      "downloadLocation": "https://github.com/kernc/backtesting.py",
+      "filesAnalyzed": false,
+      "licenseConcluded": "AGPL-3.0-or-later",
+      "licenseDeclared": "AGPL-3.0-or-later",
+      "copyrightText": "backtesting.py contributors",
+      "comment": "Isolated research oracle — no production import"
+    },
+    {
+      "SPDXID": "SPDXRef-backtrader-oracle",
+      "name": "backtrader",
+      "version": "TBD",
+      "downloadLocation": "https://github.com/mementum/backtrader",
+      "filesAnalyzed": false,
+      "licenseConcluded": "GPL-3.0-only",
+      "licenseDeclared": "GPL-3.0-only",
+      "copyrightText": "backtrader contributors",
+      "comment": "Isolated research oracle — no production import"
+    }
+  ]
+}
