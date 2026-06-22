@@ -18,25 +18,25 @@ class TestGeometryValidation:
     """Every case from the user's audit must be rejected."""
 
     def test_sl_equals_entry_buy(self):
-        """SIG-000005: entry=SL=TP must be rejected."""
+        """SIG-000005: entry=SL=TP must be rejected as SL_ZERO_DISTANCE."""
         ok, reason = validate_signal_geometry("BUY", 4203.53, 4203.53, 4203.53)
         assert ok is False
-        assert "SL_WRONG_SIDE" in reason
+        assert "SL_ZERO_DISTANCE" in reason
 
     def test_sl_equals_entry_sell(self):
         ok, reason = validate_signal_geometry("SELL", 4203.53, 4203.53, 4201.0)
         assert ok is False
-        assert "SL_WRONG_SIDE" in reason
+        assert "SL_ZERO_DISTANCE" in reason
 
     def test_tp_equals_entry_buy(self):
         ok, reason = validate_signal_geometry("BUY", 4200.0, 4199.0, 4200.0)
         assert ok is False
-        assert "TP_WRONG_SIDE" in reason
+        assert "TP_ZERO_DISTANCE" in reason
 
     def test_tp_equals_entry_sell(self):
         ok, reason = validate_signal_geometry("SELL", 4200.0, 4201.0, 4200.0)
         assert ok is False
-        assert "TP_WRONG_SIDE" in reason
+        assert "TP_ZERO_DISTANCE" in reason
 
     def test_sl_wrong_side_buy(self):
         """BUY SL above entry."""
@@ -131,30 +131,51 @@ class TestSpreadShockGate:
 # ── Deduplication tests ──────────────────────────────────────────────
 
 class TestDeduplication:
-    """Same setup + same candle must produce at most 1 intent."""
+    """Same strategy + symbol + candle + direction + features must produce at most 1 intent."""
 
     def test_duplicate_within_window(self):
         dedup = SignalDeduplicator(candle_seconds=60)
         t1 = datetime(2026, 1, 1, 12, 0, 0)
         t2 = datetime(2026, 1, 1, 12, 0, 30)  # 30s later
-        assert dedup.is_duplicate("XAUUSD", "BUY", 4200.0, t1) is False
-        dedup.record("XAUUSD", "BUY", t1)
-        assert dedup.is_duplicate("XAUUSD", "BUY", 4201.0, t2) is True
+        assert dedup.is_duplicate("v1", "XAUUSD", "BUY", "2026-01-01T12:00:00", "hash_a", t1) is False
+        dedup.record("v1", "XAUUSD", "BUY", "2026-01-01T12:00:00", "hash_a", t1)
+        assert dedup.is_duplicate("v1", "XAUUSD", "BUY", "2026-01-01T12:00:00", "hash_a", t2) is True
 
     def test_no_duplicate_after_window(self):
         dedup = SignalDeduplicator(candle_seconds=60)
         t1 = datetime(2026, 1, 1, 12, 0, 0)
         t2 = datetime(2026, 1, 1, 12, 1, 0)  # 61s later
-        assert dedup.is_duplicate("XAUUSD", "BUY", 4200.0, t1) is False
-        dedup.record("XAUUSD", "BUY", t1)
-        assert dedup.is_duplicate("XAUUSD", "BUY", 4201.0, t2) is False
+        assert dedup.is_duplicate("v1", "XAUUSD", "BUY", "2026-01-01T12:00:00", "hash_a", t1) is False
+        dedup.record("v1", "XAUUSD", "BUY", "2026-01-01T12:00:00", "hash_a", t1)
+        assert dedup.is_duplicate("v1", "XAUUSD", "BUY", "2026-01-01T12:00:00", "hash_a", t2) is False
 
     def test_different_direction_not_duplicate(self):
         dedup = SignalDeduplicator(candle_seconds=60)
         t1 = datetime(2026, 1, 1, 12, 0, 0)
         t2 = datetime(2026, 1, 1, 12, 0, 30)
-        dedup.record("XAUUSD", "BUY", t1)
-        assert dedup.is_duplicate("XAUUSD", "SELL", 4200.0, t2) is False
+        dedup.record("v1", "XAUUSD", "BUY", "2026-01-01T12:00:00", "hash_a", t1)
+        assert dedup.is_duplicate("v1", "XAUUSD", "SELL", "2026-01-01T12:00:00", "hash_a", t2) is False
+
+    def test_different_feature_hash_not_duplicate(self):
+        dedup = SignalDeduplicator(candle_seconds=60)
+        t1 = datetime(2026, 1, 1, 12, 0, 0)
+        t2 = datetime(2026, 1, 1, 12, 0, 30)
+        dedup.record("v1", "XAUUSD", "BUY", "2026-01-01T12:00:00", "hash_a", t1)
+        assert dedup.is_duplicate("v1", "XAUUSD", "BUY", "2026-01-01T12:00:00", "hash_b", t2) is False
+
+    def test_different_strategy_not_duplicate(self):
+        dedup = SignalDeduplicator(candle_seconds=60)
+        t1 = datetime(2026, 1, 1, 12, 0, 0)
+        t2 = datetime(2026, 1, 1, 12, 0, 30)
+        dedup.record("v1", "XAUUSD", "BUY", "2026-01-01T12:00:00", "hash_a", t1)
+        assert dedup.is_duplicate("v2", "XAUUSD", "BUY", "2026-01-01T12:00:00", "hash_a", t2) is False
+
+    def test_different_candle_not_duplicate(self):
+        dedup = SignalDeduplicator(candle_seconds=60)
+        t1 = datetime(2026, 1, 1, 12, 0, 0)
+        t2 = datetime(2026, 1, 1, 12, 0, 30)
+        dedup.record("v1", "XAUUSD", "BUY", "2026-01-01T12:00:00", "hash_a", t1)
+        assert dedup.is_duplicate("v1", "XAUUSD", "BUY", "2026-01-01T12:01:00", "hash_a", t2) is False
 
 
 # ── Pipeline integration tests ───────────────────────────────────────
@@ -178,6 +199,9 @@ class TestShadowPipelineGates:
             hypothetical_fill_price=4200.0,
             hypothetical_spread_cost=0.13,
             hypothetical_slippage_cost=0.065,
+            strategy_version="locked_v1",
+            feature_hash="abc123",
+            closed_candle_time="2026-01-01T11:59:00",
         )
         defaults.update(overrides)
         return ShadowSignal(**defaults)
@@ -202,17 +226,21 @@ class TestShadowPipelineGates:
         """SIG-000045 scenario: spread 0.31 from baseline ~0.13."""
         pipeline = ShadowPipeline(spread_min_samples=5)
         pipeline.start_session("test")
-        # Build baseline
+        # Build baseline — each signal needs unique dedup key
         for i in range(10):
             sig = self._make_signal(
                 signal_id=f"BASE-{i}",
                 hypothetical_spread_cost=0.13,
+                timestamp=datetime(2026, 1, 1, 12, i, 0),
+                closed_candle_time=f"2026-01-01T11:{59-i:02d}:00",
             )
             pipeline.process_signal(sig)
         # Now send shock
         shock_sig = self._make_signal(
             signal_id="SHOCK-001",
             hypothetical_spread_cost=0.31,
+            timestamp=datetime(2026, 1, 1, 12, 10, 0),
+            closed_candle_time="2026-01-01T11:49:00",
         )
         result = pipeline.process_signal(shock_sig)
         assert result.outcome == ShadowSignalOutcome.REJECTED_SPREAD_SHOCK
@@ -402,6 +430,9 @@ class TestReproduceOriginalFailure:
             hypothetical_fill_price=4203.53,
             hypothetical_spread_cost=0.0,
             hypothetical_slippage_cost=0.0,
+            strategy_version="locked_v1",
+            feature_hash="abc123",
+            closed_candle_time="2026-06-22T09:29:00",
         )
         result = pipeline.process_signal(sig)
         assert result.outcome == ShadowSignalOutcome.REJECTED_GEOMETRY
@@ -428,6 +459,9 @@ class TestReproduceOriginalFailure:
                 hypothetical_fill_price=4200.0 + i,
                 hypothetical_spread_cost=0.13,
                 hypothetical_slippage_cost=0.065,
+                strategy_version="locked_v1",
+                feature_hash="abc123",
+                closed_candle_time=f"2026-06-22T09:{25+i:02d}:00",
             )
             pipeline.process_signal(sig)
         # Now send the shock spread
@@ -446,6 +480,9 @@ class TestReproduceOriginalFailure:
             hypothetical_fill_price=4211.34,
             hypothetical_spread_cost=0.31,
             hypothetical_slippage_cost=0.155,
+            strategy_version="locked_v1",
+            feature_hash="abc123",
+            closed_candle_time="2026-06-22T10:09:00",
         )
         result = pipeline.process_signal(shock)
         assert result.outcome == ShadowSignalOutcome.REJECTED_SPREAD_SHOCK
