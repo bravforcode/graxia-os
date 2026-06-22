@@ -69,17 +69,18 @@ class BrokerSnapshot:
 class BrokerSignalEvidence:
     """Full evidence trail for every shadow signal."""
     signal_id: str
-    timestamp: str
-    symbol: str
-    direction: str
-    entry_price: float
-    stop_loss: float
-    take_profit: Optional[float]
+    # UTC timestamps (both required for delay measurement)
+    broker_tick_time_utc: str = ""  # from MT5 tick.time
+    received_at_utc: str = ""       # when we received/processed
+    symbol: str = ""
+    direction: str = ""
+    entry_price: float = 0.0
+    stop_loss: float = 0.0
+    take_profit: Optional[float] = None
     # Gate outcomes
-    outcome: str
+    outcome: str = ""
     rejection_reason: str = ""
     # Broker-observed tick data
-    broker_tick_time: str = ""
     bid: float = 0.0
     ask: float = 0.0
     spread_raw: float = 0.0
@@ -424,7 +425,8 @@ class BrokerObservedShadowRunner:
             sig_id = self._next_id()
             ev = BrokerSignalEvidence(
                 signal_id=sig_id,
-                timestamp=now.isoformat(),
+                broker_tick_time_utc="",
+                received_at_utc=now.isoformat(),
                 symbol=self.symbol,
                 direction="",
                 entry_price=0.0,
@@ -467,12 +469,13 @@ class BrokerObservedShadowRunner:
         if not bars or len(bars) < 2:
             sig_id = self._next_id()
             ev = BrokerSignalEvidence(
-                signal_id=sig_id, timestamp=now.isoformat(),
+                signal_id=sig_id,
+                broker_tick_time_utc=tick_time.isoformat(),
+                received_at_utc=now.isoformat(),
                 symbol=self.symbol, direction="", entry_price=bid,
                 stop_loss=0, take_profit=None,
                 outcome="rejected_insufficient_bars",
                 rejection_reason="Need >= 2 bars",
-                broker_tick_time=tick_time.isoformat(),
                 bid=bid, ask=ask, spread_raw=spread,
                 spread_percentile=spread_pct,
                 contract_snapshot_id=contract_id,
@@ -536,7 +539,8 @@ class BrokerObservedShadowRunner:
         # 10. Build evidence
         ev = BrokerSignalEvidence(
             signal_id=sig_id,
-            timestamp=now.isoformat(),
+            broker_tick_time_utc=tick_time.isoformat(),
+            received_at_utc=now.isoformat(),
             symbol=self.symbol,
             direction=direction,
             entry_price=entry_price,
@@ -544,7 +548,6 @@ class BrokerObservedShadowRunner:
             take_profit=tp,
             outcome=result.outcome.value,
             rejection_reason=result.rejection_reason,
-            broker_tick_time=tick_time.isoformat(),
             bid=bid,
             ask=ask,
             spread_raw=spread,
