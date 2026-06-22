@@ -1,47 +1,101 @@
-"""Phase 8 — Demo campaign scorecard."""
-from dataclasses import dataclass, field
+"""Phase BE-P10 — Demo scorecard for promotion decisions."""
+from dataclasses import dataclass
 
 
 @dataclass
+class ScorecardCheck:
+    check_name: str
+    description: str
+    passed: bool = False
+    detail: str = ""
+
+
 class DemoScorecard:
-    order_intent_count: int = 0
-    order_submission_count: int = 0
-    broker_rejection_count: int = 0
-    broker_rejection_reasons: list = field(default_factory=list)
-    fill_latency_ms: float = 0
-    expected_vs_observed_entry_deviation: float = 0
-    expected_vs_observed_exit_deviation: float = 0
-    spread_distribution: list = field(default_factory=list)
-    slippage_distribution: list = field(default_factory=list)
-    commission_swap_reconciliation: float = 0
-    protective_stop_verification_rate_pct: float = 0
-    position_deal_reconciliation_rate_pct: float = 0
-    stale_data_trades: int = 0
-    risk_limit_breaches: int = 0
-    critical_incidents: int = 0
-    model_vs_demo_pnl_gap: float = 0
-
-    def evaluate(self) -> dict:
-        """Evaluate scorecard against promotion gates."""
-        issues = []
-
-        if self.critical_incidents > 0:
-            issues.append(f"CRITICAL_INCIDENTS: {self.critical_incidents}")
-
-        if self.stale_data_trades > 0:
-            issues.append(f"STALE_DATA_TRADES: {self.stale_data_trades}")
-
-        if self.risk_limit_breaches > 0:
-            issues.append(f"RISK_LIMIT_BREACHES: {self.risk_limit_breaches}")
-
-        if self.protective_stop_verification_rate_pct < 100:
-            issues.append(f"PROTECTIVE_STOP_VERIFICATION: {self.protective_stop_verification_rate_pct}%")
-
-        if self.position_deal_reconciliation_rate_pct < 100:
-            issues.append(f"RECONCILIATION_RATE: {self.position_deal_reconciliation_rate_pct}%")
-
+    """Evaluate demo campaign against promotion gates."""
+    
+    def __init__(self):
+        self._checks: list[ScorecardCheck] = []
+    
+    def evaluate(self, metrics: dict) -> list[ScorecardCheck]:
+        """Evaluate all promotion gates."""
+        self._checks = []
+        
+        self._checks.append(ScorecardCheck(
+            "no_unexplained_order",
+            "All orders have clear signal provenance",
+            metrics.get("unexplained_orders", 0) == 0,
+            f"unexplained={metrics.get('unexplained_orders', 0)}",
+        ))
+        
+        self._checks.append(ScorecardCheck(
+            "no_unprotected_position",
+            "All positions have protective stops",
+            metrics.get("unprotected_positions", 0) == 0,
+            f"unprotected={metrics.get('unprotected_positions', 0)}",
+        ))
+        
+        self._checks.append(ScorecardCheck(
+            "no_stale_data_order",
+            "No orders from stale data",
+            metrics.get("stale_data_orders", 0) == 0,
+            f"stale={metrics.get('stale_data_orders', 0)}",
+        ))
+        
+        self._checks.append(ScorecardCheck(
+            "no_event_blocked_order",
+            "No orders bypassed event gate",
+            metrics.get("event_bypass_orders", 0) == 0,
+            f"bypass={metrics.get('event_bypass_orders', 0)}",
+        ))
+        
+        self._checks.append(ScorecardCheck(
+            "no_risk_breach",
+            "No risk policy breaches",
+            metrics.get("risk_breaches", 0) == 0,
+            f"breaches={metrics.get('risk_breaches', 0)}",
+        ))
+        
+        self._checks.append(ScorecardCheck(
+            "full_reconciliation",
+            "100% reconciliation for submitted orders",
+            metrics.get("reconciliation_pct", 0) == 100,
+            f"reconciliation={metrics.get('reconciliation_pct', 0)}%",
+        ))
+        
+        self._checks.append(ScorecardCheck(
+            "zero_critical_incidents",
+            "Zero unresolved critical incidents",
+            metrics.get("critical_incidents", 0) == 0,
+            f"critical={metrics.get('critical_incidents', 0)}",
+        ))
+        
+        self._checks.append(ScorecardCheck(
+            "cost_gap_within_tolerance",
+            "Model-to-demo cost gap within tolerance",
+            metrics.get("cost_gap_pct", 0) <= 50,
+            f"gap={metrics.get('cost_gap_pct', 0)}%",
+        ))
+        
+        self._checks.append(ScorecardCheck(
+            "labeled_demo_observed",
+            "Strategy result labeled DEMO_OBSERVED",
+            metrics.get("evidence_label") == "DEMO_OBSERVED",
+            f"label={metrics.get('evidence_label')}",
+        ))
+        
+        return self._checks
+    
+    def all_passed(self) -> bool:
+        return all(c.passed for c in self._checks)
+    
+    def get_failed(self) -> list[ScorecardCheck]:
+        return [c for c in self._checks if not c.passed]
+    
+    def summary(self) -> dict:
+        passed = sum(1 for c in self._checks if c.passed)
         return {
-            "passed": len(issues) == 0,
-            "issues": issues,
-            "verdict": "PASS" if len(issues) == 0 else "FAIL",
+            "total": len(self._checks),
+            "passed": passed,
+            "failed": len(self._checks) - passed,
+            "all_passed": self.all_passed(),
         }
