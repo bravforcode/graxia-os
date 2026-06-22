@@ -124,9 +124,11 @@ class TestShadowPipeline:
     def test_multiple_signals_accepted(self):
         pipeline = ShadowPipeline()
         pipeline.start_session("SES-001")
+        base = datetime(2025, 1, 15, 14, 0, 0)
         for i in range(5):
             signal = _make_signal()
             signal.signal_id = f"SIG-{i:03d}"
+            signal.timestamp = datetime(2025, 1, 15, 14, i, 0)  # 1 min apart to avoid dedup
             result = pipeline.process_signal(signal)
             assert result.outcome == ShadowSignalOutcome.ACCEPTED
 
