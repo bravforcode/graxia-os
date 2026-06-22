@@ -1,41 +1,42 @@
+"""Phase BE-P7 — EURUSD session calendar."""
 from dataclasses import dataclass
-from datetime import time
-from enum import Enum
 
-class SessionType(Enum):
-    ASIAN = "asian"
-    LONDON = "london"
-    NEW_YORK = "new_york"
-    LONDON_NY_OVERLAP = "london_ny_overlap"
-    OFF_HOURS = "off_hours"
 
-@dataclass(frozen=True)
+@dataclass
 class TradingSession:
     name: str
-    open_time: time
-    close_time: time
-    session_type: SessionType
+    open_hour_utc: int
+    close_hour_utc: int
+    typical_spread_pips: float
+    typical_volume: str  # high, medium, low
 
-# EURUSD active sessions (UTC)
-SESSIONS = [
-    TradingSession("Asian", time(0, 0), time(8, 0), SessionType.ASIAN),
-    TradingSession("London", time(8, 0), time(16, 0), SessionType.LONDON),
-    TradingSession("NewYork", time(13, 0), time(21, 0), SessionType.NEW_YORK),
-    TradingSession("London-NY Overlap", time(13, 0), time(16, 0), SessionType.LONDON_NY_OVERLAP),
-]
 
-def get_active_session(utc_hour: int) -> SessionType:
-    # ponytail: overlap checked first since it's the highest-priority subset
-    if 13 <= utc_hour < 16:
-        return SessionType.LONDON_NY_OVERLAP
-    if 8 <= utc_hour < 16:
-        return SessionType.LONDON
-    if 13 <= utc_hour < 21:
-        return SessionType.NEW_YORK
-    if 0 <= utc_hour < 8:
-        return SessionType.ASIAN
-    return SessionType.OFF_HOURS
+class EURUSDSessionCalendar:
+    """EURUSD trading sessions."""
 
-def is_liquidity_session(utc_hour: int) -> bool:
-    session = get_active_session(utc_hour)
-    return session in (SessionType.LONDON, SessionType.NEW_YORK, SessionType.LONDON_NY_OVERLAP)
+    def __init__(self):
+        self._sessions = [
+            TradingSession("asian", 0, 7, 1.5, "low"),
+            TradingSession("london", 7, 16, 0.8, "high"),
+            TradingSession("new_york", 13, 21, 1.0, "high"),
+            TradingSession("overlap_london_ny", 13, 16, 0.6, "very_high"),
+        ]
+
+    def get_sessions(self) -> list[TradingSession]:
+        return self._sessions.copy()
+
+    def get_session(self, name: str) -> TradingSession | None:
+        for s in self._sessions:
+            if s.name == name:
+                return s
+        return None
+
+    def is_session_open(self, hour_utc: int) -> bool:
+        for s in self._sessions:
+            if s.open_hour_utc <= hour_utc < s.close_hour_utc:
+                return True
+        return False
+
+    def get_active_sessions(self, hour_utc: int) -> list[TradingSession]:
+        return [s for s in self._sessions
+                if s.open_hour_utc <= hour_utc < s.close_hour_utc]
