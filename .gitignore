@@ -18,6 +18,11 @@ coverage/
 .env
 .env.*
 !.env.example
+
+# MT5 credentials — NEVER commit
+mt5_connector/config.yaml
+*.secret.yaml
+secret*.yaml
 .env.production
 .env.backup-*
 .env.bak*

@@ -1,29 +1,24 @@
 # MT5 Connection Configuration
-# Copy to mt5_connector/config.yaml and fill in your details
+# This file is gitignored — never commit credentials
+# See config.template.yaml for format
 
 mt5:
-  # Path to MT5 terminal64.exe (leave empty for default)
-  path: "C:\\Program Files\\Pepperstone MetaTrader 5\\terminal64.exe"
-  
-  # Login credentials
-  login: 61547941
-  password: "!muyrwBf4v"
-  server: "mt5-demo01.pepperstone.com"
+  # Path to MT5 terminal64.exe — use terminal you are logged into
+  path: ""
   
   # Connection timeout (milliseconds)
-  timeout: 10000
-  
+  timeout: 30000
+
   # Allowed symbols
   symbols:
     - XAUUSD
-  
+
   # Timeframe for bar data (MT5 constant)
-  # 1=M1, 5=M5, 15=M15, 30=M30, 60=H1, 240=H4, 1440=D1
   timeframe: 60  # H1
 
 # Demo canary settings
 canary:
-  execution_enabled: false  # Set to true only after Phase 8 approval
+  execution_enabled: false
   account_mode: DEMO
   max_open_positions: 1
   max_orders_per_day: 3
