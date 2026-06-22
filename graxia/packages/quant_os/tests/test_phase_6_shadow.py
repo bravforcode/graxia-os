@@ -1,11 +1,11 @@
 import pytest
 import json
 from datetime import datetime
-from shadow.pipeline import (
+from graxia.packages.quant_os.shadow.pipeline import (
     ShadowPipeline, ShadowSignal, ShadowSession, ShadowSignalOutcome
 )
-from shadow.failure_rules import FailureRuleChecker, FAILURE_RULES
-from shadow.telemetry import ShadowTelemetry, TelemetrySummary
+from graxia.packages.quant_os.shadow.failure_rules import FailureRuleChecker, FAILURE_RULES
+from graxia.packages.quant_os.shadow.telemetry import ShadowTelemetry, TelemetrySummary
 
 
 def _make_signal(outcome=None, event_state="CLEAR", health_state="HEALTHY", sl=1.0):
