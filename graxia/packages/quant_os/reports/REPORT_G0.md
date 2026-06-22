@@ -2,7 +2,7 @@
 
 ## Scope and frozen inputs
 - Phase: G0 (Freeze + Provenance + Canonical Runtime Map)
-- Git commit: `20b2c848079ec714eead28f6558080899698790a`
+- Git commit: `0be33752c9d38065a8e2d09413898f61e8981843`
 - Strategy: XAUUSD liquidity_sweep
 - Strategy hash: `30f815ab60aa03fc51175bc75bde4609e5b14a4ef43aebedc443c9c0e498f3a3`
 - Data manifests: 3 (D1/H1/M15 XAUUSD), checksums verified

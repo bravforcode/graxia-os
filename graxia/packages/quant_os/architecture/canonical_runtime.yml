@@ -50,7 +50,7 @@ responsibilities:
   backtest_execution:
     canonical: "backtest/engine.py"
     prohibited: []
-    notes: "BacktestEngine with MTF cursor integration, signal execution, equity tracking."
+    notes: "BacktestEngine with MTF cursor integration, signal execution, equity tracking. CURRENTLY USES LEGACY_CLOSE_PRICE path — inline sizing, close-price fills, no bid/ask, no cost model, no ledger. Phase 3.1 will wire to ConservativeBarFillModel + CostModel + TradeLedger + OrderStateMachine."
 
   cost_model:
     canonical: "execution/cost_model.py"
@@ -125,7 +125,6 @@ file_classification:
   # ── ACTIVE — Canonical modules ──────────────────────────────────
   ACTIVE:
     - "backtest/mtf_cursor.py"
-    - "backtest/engine.py"
     - "backtest/data_loader.py"
     - "backtest/metrics.py"
     - "backtest/walk_forward.py"
@@ -232,6 +231,10 @@ file_classification:
     - "run_paper_trading.py"
     - "pine_script/QuantBot_Ensemble.pine"
 
+  # ── LEGACY_CLOSE_PRICE — Engine uses legacy fill path ──────────
+  LEGACY_CLOSE_PRICE:
+    - "backtest/engine.py"
+
   # ── LEGACY_READ_ONLY — Kept for reference, not production path ─
   LEGACY_READ_ONLY:
     - "risk/position_sizer.py"
@@ -328,3 +331,8 @@ ambiguities:
     files: ["risk/engine.py", "risk/pre_trade_risk.py"]
     description: "risk/engine.py has 17 pre-trade checks (older). risk/pre_trade_risk.py is the newer, simpler pre-trade check."
     resolution: "pre_trade_risk.py is CANONICAL. risk/engine.py is LEGACY_READ_ONLY."
+
+  - id: "engine_legacy_fill_path"
+    files: ["backtest/engine.py"]
+    description: "Engine uses inline sizing and close-price fills. Does not call position_sizer_v2, fill_model, cost_model, order_state_machine, or trade_ledger. Phase 3.1 scope."
+    resolution: "Phase 3.1 will wire all execution components. Until then, engine is LEGACY_CLOSE_PRICE."
