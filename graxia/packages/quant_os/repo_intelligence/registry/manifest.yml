@@ -1,0 +1,1128 @@
+- name: mementum_backtrader
+  tier: A
+  role: APPROVED_DIFFERENTIAL_ORACLE
+  asset_class: event-driven independent ledger for Forex/Gold research
+  runtime_boundary: isolated_research_container
+  permissions:
+    execution: true
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/mementum/backtrader
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: kernc_backtesting_py
+  tier: A
+  role: APPROVED_DIFFERENTIAL_ORACLE
+  asset_class: rule-level independent backtest for Forex/Gold research
+  runtime_boundary: isolated_research_container
+  permissions:
+    execution: true
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/kernc/backtesting.py
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: polakowo_vectorbt
+  tier: A
+  role: APPROVED_DIFFERENTIAL_ORACLE
+  asset_class: parameter surface, walk-forward, analytics for Forex/Gold research
+  runtime_boundary: isolated_research_container
+  permissions:
+    execution: true
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/polakowo/vectorbt
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: quantconnect_lean
+  tier: A
+  role: APPROVED_DIFFERENTIAL_ORACLE
+  asset_class: optional final oracle, independent event-driven reproduction
+  runtime_boundary: isolated_research_container
+  permissions:
+    execution: true
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/QuantConnect/Lean
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: stocksharp_stocksharp
+  tier: B
+  role: APPROVED_ARCHITECTURE_REFERENCE
+  asset_class: architecture and optional C# cross-check, reference only
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/StockSharp/StockSharp
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: fasiondog_hikyuu
+  tier: B
+  role: APPROVED_ARCHITECTURE_REFERENCE
+  asset_class: framework comparison, research reference
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/fasiondog/hikyuu
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: enzoampil_fastquant
+  tier: B
+  role: APPROVED_ARCHITECTURE_REFERENCE
+  asset_class: exploratory benchmark, research reference
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/enzoampil/fastquant
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: lumiwealth_lumibot
+  tier: B
+  role: APPROVED_ARCHITECTURE_REFERENCE
+  asset_class: paper/live lifecycle reference, architecture reference
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/Lumiwealth/lumibot
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: barter_rs_barter_rs
+  tier: B
+  role: APPROVED_ARCHITECTURE_REFERENCE
+  asset_class: Rust event-driven paper/live architecture, reference only
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/barter-rs/barter-rs
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: superalgos_superalgos
+  tier: B
+  role: APPROVED_ARCHITECTURE_REFERENCE
+  asset_class: dashboard and workflow ideas, monitoring reference
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/superalgos/Superalgos
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: nkaz001_hftbacktest
+  tier: B
+  role: APPROVED_ARCHITECTURE_REFERENCE
+  asset_class: order-book/latency concepts, reference only, no L2/L3 data
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/nkaz001/hftbacktest
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: edtechre_pybroker
+  tier: C
+  role: APPROVED_HYPOTHESIS_CORPUS
+  asset_class: ML research comparator, research only
+  runtime_boundary: hypothesis_only
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/edtechre/pybroker
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: scottfreellc_alphapy
+  tier: C
+  role: APPROVED_HYPOTHESIS_CORPUS
+  asset_class: ML/feature research ideas, offline only
+  runtime_boundary: hypothesis_only
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/ScottfreeLLC/AlphaPy
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: jesuistm_quant_trading
+  tier: C
+  role: APPROVED_HYPOTHESIS_CORPUS
+  asset_class: strategy hypothesis source, hypothesis only
+  runtime_boundary: hypothesis_only
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/je-suis-tm/quant-trading
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: xavierleeeugene_trading_strategies
+  tier: C
+  role: APPROVED_HYPOTHESIS_CORPUS
+  asset_class: strategy hypothesis source, hypothesis only
+  runtime_boundary: hypothesis_only
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/Xavierleeeugene/Trading_Strategies
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: jadelam_algorithmictrading
+  tier: C
+  role: APPROVED_HYPOTHESIS_CORPUS
+  asset_class: strategy hypothesis source, hypothesis only
+  runtime_boundary: hypothesis_only
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/jade-lam/AlgorithmicTrading
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: asavinov_intelligent_trading_bot
+  tier: C
+  role: APPROVED_HYPOTHESIS_CORPUS
+  asset_class: ML pipeline ideas, offline only
+  runtime_boundary: hypothesis_only
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/asavinov/intelligent-trading-bot
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: tonyma_walk_forward_backtester
+  tier: C
+  role: APPROVED_HYPOTHESIS_CORPUS
+  asset_class: protocol comparison, offline only
+  runtime_boundary: hypothesis_only
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/TonyMa1/walk-forward-backtester
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: staituned_financial_sentiment
+  tier: C
+  role: APPROVED_HYPOTHESIS_CORPUS
+  asset_class: sentiment feature ideas, shadow features only
+  runtime_boundary: hypothesis_only
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/stAItuned/financial-sentiment-analysis
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: alihanucar_fredapi
+  tier: D
+  role: APPROVED_DATA_REFERENCE
+  asset_class: macro-data adapter reference, macro research
+  runtime_boundary: data_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/alihanucar/fredapi
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: hummingbot_hummingbot
+  tier: C
+  role: CRYPTO_ONLY_REFERENCE
+  asset_class: order lifecycle and connector patterns, crypto architecture reference
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/hummingbot/hummingbot
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: drakkar_software_octobot
+  tier: C
+  role: CRYPTO_ONLY_REFERENCE
+  asset_class: plugin and bot orchestration patterns, architecture reference
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/Drakkar-Software/OctoBot
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: whittlem_pycryptobot
+  tier: C
+  role: CRYPTO_ONLY_REFERENCE
+  asset_class: bot configuration patterns, crypto-only
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/whittlem/pycryptobot
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: cryptognome_tv_webhook
+  tier: C
+  role: CRYPTO_ONLY_REFERENCE
+  asset_class: webhook validation patterns, crypto-only
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/CryptoGnome/Tradingview-Webhook-Bot
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: coinquanta_awesome_crypto_api
+  tier: C
+  role: CRYPTO_ONLY_REFERENCE
+  asset_class: data source catalog, crypto-only
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/CoinQuanta/awesome-crypto-api
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: stephan_akkerman_crypto_ohlcv
+  tier: C
+  role: CRYPTO_ONLY_REFERENCE
+  asset_class: crypto OHLCV ideas, crypto-only
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/StephanAkkerman/crypto-ohlcv
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: sashaflores_crypto_sentiment
+  tier: C
+  role: CRYPTO_ONLY_REFERENCE
+  asset_class: crypto sentiment ideas, crypto-only
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/SashaFlores/Crypto-Sentiment-Analysis
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: john_gee3_newsapi_crypto_sentiment
+  tier: C
+  role: CRYPTO_ONLY_REFERENCE
+  asset_class: research methodology only, crypto-only
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/John-Gee3/Using-NewsAPI-to-scrap-data-for-crypto-sentiment-and-NER-analysis
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: sajanpoudel_cryptosensei
+  tier: C
+  role: CRYPTO_ONLY_REFERENCE
+  asset_class: crypto news/sentiment ideas, crypto-only
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/sajanpoudel/CryptoSensei
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: gazbert_bxbot
+  tier: C
+  role: CRYPTO_ONLY_REFERENCE
+  asset_class: crypto exchange patterns, no MT5 runtime
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/gazbert/bxbot
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: austin_starks_nexttrade
+  tier: C
+  role: VERIFY_IDENTITY_ONLY
+  asset_class: framework idea review, read-only
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/austin-starks/NextTrade
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: socktrader_socktrader
+  tier: C
+  role: VERIFY_IDENTITY_ONLY
+  asset_class: review source and project identity, verify first
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/SockTrader/SockTrader
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: finanzobot_finanzobot
+  tier: C
+  role: VERIFY_IDENTITY_ONLY
+  asset_class: review source and project identity, verify first
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/finanzobot/finanzobot
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: quantweb3_nexustrader
+  tier: C
+  role: VERIFY_IDENTITY_ONLY
+  asset_class: inventory/research only, verify first
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/Quantweb3-com/NexusTrader
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: trading_bot_tv_webhook
+  tier: C
+  role: VERIFY_IDENTITY_ONLY
+  asset_class: webhook validation patterns, non-execution reference
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/trading-bot/Tradingview-Webhook-Bot
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: elias_aboukhater_trading_bot
+  tier: C
+  role: VERIFY_IDENTITY_ONLY
+  asset_class: portfolio/rebalancing ideas, future only
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/EliasAbouKhater/trading-bot
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: backpack455_trading_bot
+  tier: C
+  role: VERIFY_IDENTITY_ONLY
+  asset_class: portfolio/rebalancing ideas, future only
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/backpack455/trading-bot
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: kiploks_walk_forward_validator
+  tier: C
+  role: VERIFY_IDENTITY_ONLY
+  asset_class: verify project validity and WFO ideas, offline only
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/kiploks/walk-forward-validator
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: cluster2600_elvis
+  tier: C
+  role: VERIFY_IDENTITY_ONLY
+  asset_class: stress/Monte Carlo ideas, offline only
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/cluster2600/ELVIS
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: robert_zag_stockanalysis
+  tier: C
+  role: VERIFY_IDENTITY_ONLY
+  asset_class: analytics reference, offline only
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/robert-zag/StockAnalysis
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: anthonydickson_algotrader
+  tier: C
+  role: VERIFY_IDENTITY_ONLY
+  asset_class: execution/strategy patterns, offline only
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/AnthonyDickson/AlgoTrader
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: elitequant_elitequant
+  tier: C
+  role: VERIFY_IDENTITY_ONLY
+  asset_class: architecture/strategy ideas, offline only
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/EliteQuant/EliteQuant
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: ro234jk_trading_bot
+  tier: C
+  role: VERIFY_IDENTITY_ONLY
+  asset_class: source review only, verify first
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/ro234jk/Trading-Bot.
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: mun_min_ml_trading_bot
+  tier: C
+  role: VERIFY_IDENTITY_ONLY
+  asset_class: ML experiment ideas, offline only
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/Mun-Min/ML_Trading_Bot
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: zeroxemmkty_quantmuse
+  tier: C
+  role: VERIFY_IDENTITY_ONLY
+  asset_class: ML/quant ideas, offline only
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/0xemmkty/QuantMuse
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: eugeneow_trading
+  tier: C
+  role: VERIFY_IDENTITY_ONLY
+  asset_class: ML/research ideas, offline only
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/EugeneOw/trading
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: hamidreza_rhz_ml_strategy
+  tier: C
+  role: VERIFY_IDENTITY_ONLY
+  asset_class: ML pitfalls/ideas, offline only
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/hamidreza-rhz/Technical-Analysis-ML-Strategy-Optimization
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: trading_bot_robo_advisor_stock_bots
+  tier: C
+  role: VERIFY_IDENTITY_ONLY
+  asset_class: RL ideas, simulator only
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/trading-bot-robo-advisor/Stock-Trading-Bots
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: alternative_macro_signals_api_docs
+  tier: C
+  role: VERIFY_IDENTITY_ONLY
+  asset_class: macro data catalog, verify first
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/alternative-macro-signals/api-docs
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: br0ski777_crypto_news_mcp
+  tier: C
+  role: VERIFY_IDENTITY_ONLY
+  asset_class: external integration reference, no runtime access
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://claudemarketplaces.com/mcp/io.github.br0ski777/crypto-news
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: michaelchu_optopsy
+  tier: C
+  role: VERIFY_IDENTITY_ONLY
+  asset_class: options analytics reference, out of current scope
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/michaelchu/optopsy
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: algotraders_stock_analysis_engine
+  tier: C
+  role: VERIFY_IDENTITY_ONLY
+  asset_class: market data architecture ideas, no broker credentials
+  runtime_boundary: read_only_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/AlgoTraders/stock-analysis-engine
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: internal_backtest
+  tier: C
+  role: APPROVED_HYPOTHESIS_CORPUS
+  asset_class: backtest engine, data loader, walk-forward, metrics
+  runtime_boundary: hypothesis_only
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: local://quant_os/backtest
+  pinned_commit: N/A
+  license: INTERNAL
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: internal_broker
+  tier: C
+  role: APPROVED_HYPOTHESIS_CORPUS
+  asset_class: MT5 gateway, contract spec, contract snapshot store
+  runtime_boundary: hypothesis_only
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: local://quant_os/broker
+  pinned_commit: N/A
+  license: INTERNAL
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: internal_core
+  tier: C
+  role: APPROVED_HYPOTHESIS_CORPUS
+  asset_class: config, enums, exceptions, ML pipeline, hyperopt, regime filter, bias
+    detector, monte carlo, stability
+  runtime_boundary: hypothesis_only
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: local://quant_os/core
+  pinned_commit: N/A
+  license: INTERNAL
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: internal_data
+  tier: D
+  role: APPROVED_DATA_REFERENCE
+  asset_class: data feed, pipeline, quality gate, models, CSV datasets (EURUSD, GBPUSD,
+    XAUUSD multi-timeframe)
+  runtime_boundary: data_reference
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: local://quant_os/data
+  pinned_commit: N/A
+  license: INTERNAL
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: internal_execution
+  tier: C
+  role: APPROVED_HYPOTHESIS_CORPUS
+  asset_class: order state machine, broker adapter, fill model, cost model, idempotency,
+    trade ledger, execution simulator
+  runtime_boundary: hypothesis_only
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: local://quant_os/execution
+  pinned_commit: N/A
+  license: INTERNAL
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: internal_live_readiness
+  tier: C
+  role: APPROVED_HYPOTHESIS_CORPUS
+  asset_class: broker profile, MT5 runtime verifier, account snapshot, runtime capabilities,
+    smoke report
+  runtime_boundary: hypothesis_only
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: local://quant_os/live_readiness
+  pinned_commit: N/A
+  license: INTERNAL
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: internal_market_data
+  tier: C
+  role: APPROVED_HYPOTHESIS_CORPUS
+  asset_class: market health, spread monitor, tick recorder/store, clock guard, feed
+    health, data watermark
+  runtime_boundary: hypothesis_only
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: local://quant_os/market_data
+  pinned_commit: N/A
+  license: INTERNAL
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: internal_ml
+  tier: C
+  role: APPROVED_HYPOTHESIS_CORPUS
+  asset_class: ML pipeline, model definitions
+  runtime_boundary: hypothesis_only
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: local://quant_os/ml
+  pinned_commit: N/A
+  license: INTERNAL
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: internal_monitoring
+  tier: C
+  role: APPROVED_HYPOTHESIS_CORPUS
+  asset_class: alerts, metrics, telegram notifications
+  runtime_boundary: hypothesis_only
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: local://quant_os/monitoring
+  pinned_commit: N/A
+  license: INTERNAL
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: internal_news_events
+  tier: C
+  role: APPROVED_HYPOTHESIS_CORPUS
+  asset_class: event models, event risk gate, event store, macro policy, stabilization
+    gate
+  runtime_boundary: hypothesis_only
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: local://quant_os/news_events
+  pinned_commit: N/A
+  license: INTERNAL
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: internal_risk
+  tier: C
+  role: APPROVED_HYPOTHESIS_CORPUS
+  asset_class: risk engine, circuit breaker, kill switch, position sizer, pre-trade
+    risk, risk policy, risk ledger
+  runtime_boundary: hypothesis_only
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: local://quant_os/risk
+  pinned_commit: N/A
+  license: INTERNAL
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: internal_strategies
+  tier: C
+  role: APPROVED_HYPOTHESIS_CORPUS
+  asset_class: strategy base, ensemble, MLB, MRB, MTM
+  runtime_boundary: hypothesis_only
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: local://quant_os/strategies
+  pinned_commit: N/A
+  license: INTERNAL
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: internal_api
+  tier: C
+  role: APPROVED_HYPOTHESIS_CORPUS
+  asset_class: 'FastAPI endpoints: admin, orders, positions, risk, webhook'
+  runtime_boundary: hypothesis_only
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: local://quant_os/api
+  pinned_commit: N/A
+  license: INTERNAL
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: internal_gold_bot
+  tier: C
+  role: APPROVED_HYPOTHESIS_CORPUS
+  asset_class: 'XAUUSD trading bot: AI modules, strategy adapter, monitoring, demo
+    runner'
+  runtime_boundary: hypothesis_only
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: local://quant_os/gold_bot
+  pinned_commit: N/A
+  license: INTERNAL
+  review_verdict: APPROVED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: solana_arbitrage_bot
+  tier: Q
+  role: QUARANTINED
+  asset_class: MEV/arbitrage taxonomy research only
+  runtime_boundary: quarantine
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/solana-arbitrage-bot/solana-arbitrage-bot
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: QUARANTINED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: solana_trading_cli
+  tier: Q
+  role: QUARANTINED
+  asset_class: CLI trading tool with direct wallet/RPC integration
+  runtime_boundary: quarantine
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/solana-trading-cli/solana-trading-cli
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: QUARANTINED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: solana_mev_bot
+  tier: Q
+  role: QUARANTINED
+  asset_class: MEV bot with sandwich/frontrun patterns
+  runtime_boundary: quarantine
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/solana-mev-bot/solana-mev-bot
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: QUARANTINED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED
+- name: bsc_fourmeme_bot
+  tier: Q
+  role: QUARANTINED
+  asset_class: BSC meme token sniper bot
+  runtime_boundary: quarantine
+  permissions:
+    execution: false
+    network: false
+    secrets: false
+    production_import: false
+  canonical_url: https://github.com/bsc-fourmeme-bot/bsc-fourmeme-bot
+  pinned_commit: PLACEHOLDER
+  license: UNKNOWN
+  review_verdict: QUARANTINED
+  sbom_status: NOT_GENERATED
+  security_scan: NOT_SCANNED

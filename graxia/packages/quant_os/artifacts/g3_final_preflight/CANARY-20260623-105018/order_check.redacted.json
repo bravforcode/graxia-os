@@ -1,0 +1,10 @@
+{
+  "request_redacted": {
+    "symbol": "XAUUSD",
+    "volume": 0.01,
+    "type": "BUY"
+  },
+  "retcode": 0,
+  "comment": "Done",
+  "label": "PRECHECK_ONLY_NOT_EXECUTION_PROOF"
+}

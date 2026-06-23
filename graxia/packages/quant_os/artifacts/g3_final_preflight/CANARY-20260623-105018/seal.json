@@ -1,0 +1,13 @@
+{
+  "canary_id": "CANARY-20260623-105018",
+  "plan_hash": "3949a54364a05873c6f6fbc9b714ebe2a6f5e412689689fe094f9ba93012b30d",
+  "seal_hash": "620336ce730767c6497db5824af9867978291bd314a190a1b2c83bf69f7ec4f9",
+  "artifacts": {
+    "plan.json": "3949a54364a05873c6f6fbc9b714ebe2a6f5e412689689fe094f9ba93012b30d",
+    "market_snapshot.json": "0f5b27844280133b720b2bc78f5b5e57bfbc5407792bbb39048e344b800dd431",
+    "preflight.redacted.json": "602aeac33f53047da081193a0778de9ae567bc839e13efcd4390f2102f6e24b1",
+    "order_check.redacted.json": "047b63207a3c686e3b1e780787ae81c7703d4383b77dad9ab4a89ada16b90b3f",
+    "margin.redacted.json": "1325789bd1b1defccf5969a92803e59188873eaf579484e84b6db744def4528d",
+    "positions_orders_before_after.json": "9008330d2cc8cc5545269cdf7da9c2892c956589670e779cbd1d6c4166f10653"
+  }
+}

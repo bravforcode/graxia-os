@@ -1,0 +1,25 @@
+{
+  "guards": {
+    "account_mode": "DEMO",
+    "profile_hash": "b2a952e42de3af5e...",
+    "terminal_path_hash": "ade8f62fe5607126...",
+    "feature_gate": "OFF",
+    "kill_switch": "ON",
+    "positions_before": 0,
+    "orders_before": 0,
+    "sl_below_bid": true,
+    "tp_above_ask": true,
+    "planned_gross_rr": 1.0,
+    "rr_within_tolerance": true,
+    "projected_loss_usd": 0.63,
+    "projected_margin_usd": 20.62,
+    "order_check_passed": true,
+    "order_check_retcode": 0,
+    "order_check_comment": "Done",
+    "order_check_label": "PRECHECK_ONLY_NOT_EXECUTION_PROOF",
+    "positions_after": 0,
+    "orders_after": 0,
+    "order_submission_count": 0
+  },
+  "verdict": "READY_FOR_HUMAN_G3_SEND_REVIEW"
+}
