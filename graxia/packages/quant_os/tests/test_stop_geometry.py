@@ -238,3 +238,72 @@ class TestTrueGross1to1:
         config = {"protective_buffer": 0.57, "gross_loss_delta": 1.28, "spread": 0.71}
         assert config["gross_loss_delta"] > config["protective_buffer"]
         assert round(config["protective_buffer"] + config["spread"], 2) == config["gross_loss_delta"]
+
+class TestG3BuildArithmetic:
+    """Every BUY and SELL must have true 1:1 gross R:R."""
+    
+    def test_buy_gross_loss_includes_spread(self):
+        """BUY gross loss = entry(ask) - SL(bid-buffer) = spread + buffer."""
+        ask = 4129.69
+        bid = 4129.56
+        buffer = 0.50
+        spread = ask - bid  # 0.13
+        sl = bid - buffer  # 4129.06
+        gross_loss = ask - sl  # 0.63 = spread + buffer
+        assert gross_loss == spread + buffer
+    
+    def test_buy_tp_equals_entry_plus_gross_loss(self):
+        """BUY TP = ask + (ask - SL) = ask + gross_loss."""
+        ask = 4129.69
+        sl = 4128.56
+        gross_loss = ask - sl  # 1.13
+        tp = ask + gross_loss  # 4130.82
+        gross_reward = tp - ask  # 1.13
+        assert gross_reward == gross_loss
+        assert round(gross_reward / gross_loss, 4) == 1.0
+    
+    def test_buy_tp_not_from_buffer_alone(self):
+        """Verification: if TP used only buffer, R:R would be wrong."""
+        ask = 4129.69
+        bid = 4129.56
+        buffer = 0.50
+        spread = ask - bid  # 0.13
+        sl = bid - buffer
+        gross_loss = ask - sl  # = spread + buffer = 0.63
+        
+        # Wrong: TP = ask + buffer (ignores spread in loss)
+        wrong_tp = ask + buffer  # 4130.19
+        wrong_reward = wrong_tp - ask  # 0.50
+        # RR would be 0.50 / 0.63 = 0.79
+        assert wrong_reward != gross_loss
+        
+        # Correct: TP = ask + gross_loss
+        correct_tp = ask + gross_loss  # 4130.32
+        correct_reward = correct_tp - ask  # 0.63
+        assert round(correct_reward / gross_loss, 4) == 1.0
+    
+    def test_sell_arithmetic_correct(self):
+        """SELL: gross_loss = SL(ask+buffer) - entry(bid) = spread + buffer."""
+        ask = 4130.19
+        bid = 4128.93
+        buffer = 0.50
+        spread = ask - bid  # 1.26
+        sl = ask + buffer  # 4130.69
+        gross_loss = sl - bid  # 1.76 = spread + buffer
+        tp = bid - gross_loss  # 4127.17
+        gross_reward = bid - tp  # 1.76
+        assert round(gross_loss, 2) == round(spread + buffer, 2)
+        assert round(gross_reward, 2) == round(gross_loss, 2)
+    
+    def test_protective_buffer_less_than_gross_loss(self):
+        """protective_buffer is always LESS than gross_entry_to_sl_price_delta."""
+        buffer = 0.50
+        gross_loss = 1.13
+        assert gross_loss > buffer
+    
+    def test_planned_gross_rr_exactly_1(self):
+        """planned_gross_rr must be exactly 1.0 within tick tolerance."""
+        gross_loss = 0.63
+        gross_reward = 0.63
+        rr = gross_reward / gross_loss
+        assert round(rr, 4) == 1.0

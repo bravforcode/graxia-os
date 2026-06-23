@@ -51,45 +51,43 @@ def calibrate_side(mt5, side: str, tick, sym) -> dict:
         distance = normalize_price(required_stop_distance_price * i, sym.trade_tick_size)
         
         if side == "BUY":
+            entry = tick.ask
             sl = normalize_price(tick.bid - distance, sym.trade_tick_size)
-            gross_loss_delta = normalize_price(tick.ask - sl, sym.trade_tick_size)
-            tp = normalize_price(tick.ask + gross_loss_delta, sym.trade_tick_size)
-            tp_delta = tp - tick.ask
+            gross_loss_delta = normalize_price(entry - sl, sym.trade_tick_size)
+            tp = normalize_price(entry + gross_loss_delta, sym.trade_tick_size)
+            gross_reward_delta = normalize_price(tp - entry, sym.trade_tick_size)
             sl_valid = sl < tick.bid
             tp_valid = tp > tick.ask
         else:  # SELL
+            entry = tick.bid
             sl = normalize_price(tick.ask + distance, sym.trade_tick_size)
-            gross_loss_delta = normalize_price(sl - tick.bid, sym.trade_tick_size)
-            tp = normalize_price(tick.bid - gross_loss_delta, sym.trade_tick_size)
-            tp_delta = tick.bid - tp
+            gross_loss_delta = normalize_price(sl - entry, sym.trade_tick_size)
+            tp = normalize_price(entry - gross_loss_delta, sym.trade_tick_size)
+            gross_reward_delta = normalize_price(entry - tp, sym.trade_tick_size)
             sl_valid = sl > tick.ask
             tp_valid = tp < tick.bid
-        gross_rr = round(tp_delta / gross_loss_delta, 6) if gross_loss_delta > 0 else 0
-        valid = sl_valid and tp_valid
         
         candidates.append({
             "candidate": i,
-            "distance_mt5_points": round(distance / sym.point) if sym.point > 0 else 0,
-            "distance_price": distance,
-            "gross_loss_delta": gross_loss_delta,
-            "gross_reward_delta": tp_delta,
-            "planned_gross_rr": gross_rr,
+            "protective_buffer_price": distance,
+            "entry": entry,
             "sl": sl,
             "tp": tp,
-            "sl_below_bid": sl < tick.bid if side == "BUY" else "N/A",
-            "sl_above_ask": sl > tick.ask if side == "SELL" else "N/A",
-            "tp_above_ask": tp > tick.ask if side == "BUY" else "N/A",
-            "tp_below_bid": tp < tick.bid if side == "SELL" else "N/A",
+            "gross_entry_to_sl_price_delta": gross_loss_delta,
+            "gross_entry_to_tp_price_delta": gross_reward_delta,
+            "planned_gross_rr": round(gross_reward_delta / gross_loss_delta, 6) if gross_loss_delta > 0 else 0,
+            "spread_price": tick.ask - tick.bid,
+            "bid": tick.bid,
+            "ask": tick.ask,
             "sl_valid": sl_valid,
             "tp_valid": tp_valid,
-            "geometry_valid": valid,
         })
     
     # order_check for each valid candidate
     results = []
     passing = None
     for c in candidates:
-        if not c["geometry_valid"]:
+        if not (c["sl_valid"] and c["tp_valid"]):
             results.append({"candidate": c["candidate"], "geometry": "INVALID", "retcode": -1, "comment": "SL on wrong side of quote"})
             continue
         
@@ -115,7 +113,7 @@ def calibrate_side(mt5, side: str, tick, sym) -> dict:
         
         result = {
             "candidate": c["candidate"],
-            "distance": c["distance_price"],
+            "distance": c["protective_buffer_price"],
             "sl": c["sl"],
             "tp": c["tp"],
             "retcode": retcode,
@@ -137,9 +135,10 @@ def calibrate_side(mt5, side: str, tick, sym) -> dict:
         evidence["sl_distance_from_quote"] = sl_dist
         evidence["tp_distance_from_quote"] = tp_dist
         evidence["spread_price"] = tick.ask - tick.bid
-        evidence["gross_loss_delta"] = passing["gross_loss_delta"]
-        evidence["gross_reward_delta"] = passing["gross_reward_delta"]
-        evidence["planned_gross_rr"] = passing["planned_gross_rr"]
+        match = next((c for c in candidates if c["candidate"] == passing["candidate"]), None)
+        evidence["gross_loss_delta"] = match["gross_entry_to_sl_price_delta"] if match else 0
+        evidence["gross_reward_delta"] = match["gross_entry_to_tp_price_delta"] if match else 0
+        evidence["planned_gross_rr"] = match["planned_gross_rr"] if match else 0
         evidence["protective_buffer_price"] = required_stop_distance_price
     
     return {

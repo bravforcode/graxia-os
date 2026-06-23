@@ -1,0 +1,10 @@
+{
+  "buy": {
+    "volume": 0.01,
+    "margin": "See preflight margin check"
+  },
+  "sell": {
+    "volume": 0.01,
+    "margin": "See preflight margin check"
+  }
+}
