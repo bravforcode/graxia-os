@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0",
+  "generated_at_utc": "2026-06-23T10:01:23Z",
+  "commit_sha": "dec232f",
+  "suite": "test_g2_preflight.py",
+  "command": "python -m pytest tests/test_g2_preflight.py -v",
+  "collected": 47,
+  "passed": 47,
+  "failed": 0
+}

@@ -1,0 +1,30 @@
+{
+  "test": "g2_broker_preflight_dry_run",
+  "generated_at_utc": "2026-06-23T09:58:16.245772",
+  "profile_fingerprint": "b2a952e42de3af5e5c5e8eecfaec788c794f9cb3bb75d1b407badf26694ef3cb",
+  "terminal_fingerprint": "ade8f62fe56071266d682245044bcf0aa6c07d2a6a2c52eea0b6f173e2c8cf67",
+  "account_mode": "DEMO",
+  "balance_redacted": -6657312864048568267,
+  "contract": {
+    "contract_size": 100.0,
+    "volume_min": 0.01,
+    "volume_max": 50.0,
+    "volume_step": 0.01,
+    "point": 0.01,
+    "tick_size": 0.01,
+    "tick_value": 1.0
+  },
+  "positions_count": 0,
+  "orders_count": 0,
+  "spread": 0.17,
+  "bid": 4120.18,
+  "ask": 4120.35,
+  "margin_0_01_buy": 20.6,
+  "margin_0_01_sell": 20.6,
+  "order_check_passed": false,
+  "order_check_detail": "OrderCheckResult(retcode=10016, balance=0.0, equity=0.0, profit=0.0, margin=0.0, margin_free=0.0, margin_level=0.0, comment='Invalid stops', request=TradeRequest(action=1, magic=100, order=0, symbol='XAUUSD', volume=0.01, price=4120.35, stoplimit=0.0, sl=4120.25, tp=4120.450000000001, deviation=10, type=0, type_filling=1, type_time=0, expiration=0, comment='G2_PREFLIGHT_DRY_RUN', position=0, position_by=0))",
+  "plan_hash": "2b63b5c3736ebeefe97176c40217d56f0cead2776eb783e8891be8e740e9a7ff",
+  "order_submission_count": 0,
+  "verdict": "PASS_CHECK_NOT_REQUIRED",
+  "note": "READ ONLY \u2014 no order submitted. order_submission_count=0 confirmed."
+}
