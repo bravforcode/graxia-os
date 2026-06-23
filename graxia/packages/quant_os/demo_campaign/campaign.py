@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from mt5_connector.connection import MT5Connection
 from mt5_connector.shadow_runner import ShadowRunnerV2, SignalOutcome, SignalRecord
+from mt5_connector.terminal_session_policy import load_terminal_session_config
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
@@ -99,8 +100,7 @@ class DemoCampaign:
     """Run a multi-day demo campaign with monitoring."""
     
     def __init__(self, config_path: str = 'mt5_connector/config.yaml'):
-        with open(config_path) as f:
-            self._config = yaml.safe_load(f)
+        self._config = load_terminal_session_config(config_path)
         
         self._mt5 = MT5Connection()
         self._runner = ShadowRunnerV2(config_path)

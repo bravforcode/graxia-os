@@ -323,6 +323,14 @@ class MT5BrokerAdapter(BrokerAdapter):
         super().__init__("MT5")
         self.mt5 = None
         self.config = get_config()
+
+    def _initialize_kwargs(self) -> dict:
+        """Terminal-session-only MT5 initialization contract."""
+        self.config.assert_terminal_session_only()
+        return {
+            "path": self.config.mt5_path,
+            "timeout": self.config.mt5_timeout_ms,
+        }
     
     async def connect(self) -> bool:
         """Connect to MT5 terminal"""
@@ -331,10 +339,7 @@ class MT5BrokerAdapter(BrokerAdapter):
             self.mt5 = mt5
             
             # Initialize MT5
-            if not self.mt5.initialize(
-                path=self.config.mt5_path,
-                timeout=self.config.mt5_timeout_ms
-            ):
+            if not self.mt5.initialize(**self._initialize_kwargs()):
                 raise BrokerError("MT5 initialization failed", broker="MT5")
             
             # Verify connection

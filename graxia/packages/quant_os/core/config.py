@@ -1,13 +1,54 @@
 """Configuration management for Quant OS"""
 
 import os
-from typing import List, Optional
+import hashlib
+from collections.abc import Mapping
+from typing import Any, List, Optional
 from dataclasses import dataclass, field
 
 from .golden_rules import GOLDEN_RULES, HARD_LIMITS
 from .enums import TradingMode, SystemState
 
 BROKER_CREDENTIAL_ENV_KEYS = ("MT5_LOGIN", "MT5_PASSWORD", "MT5_SERVER")
+BROKER_CREDENTIAL_CONFIG_KEYS = ("login", "password", "server")
+
+
+def _has_nonempty_value(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value.strip())
+    if isinstance(value, (list, tuple, set, dict)):
+        return len(value) > 0
+    return True
+
+
+def find_forbidden_broker_config_keys(config: Mapping[str, Any], prefix: str = "") -> list[str]:
+    """Return credential-shaped config keys that violate terminal-session-only policy."""
+    forbidden: list[str] = []
+    for key, value in config.items():
+        qualified_key = f"{prefix}.{key}" if prefix else str(key)
+        if key in BROKER_CREDENTIAL_CONFIG_KEYS and _has_nonempty_value(value):
+            forbidden.append(qualified_key)
+        if isinstance(value, Mapping):
+            forbidden.extend(find_forbidden_broker_config_keys(value, qualified_key))
+    return forbidden
+
+
+def reject_broker_credential_config(config: Mapping[str, Any], context: str = "MT5 config") -> None:
+    """Fail closed if repo-owned config includes broker credentials."""
+    forbidden = find_forbidden_broker_config_keys(config)
+    if forbidden:
+        keys = ", ".join(sorted(forbidden))
+        raise ValueError(
+            f"{context} contains forbidden broker credential keys: {keys}. "
+            "Use terminal-session-only MT5 authentication."
+        )
+
+
+def hash_terminal_session_value(value: Any) -> str:
+    """Stable SHA-256 helper for redacted runtime evidence."""
+    return hashlib.sha256(str(value).encode("utf-8")).hexdigest()
 
 
 @dataclass
@@ -166,6 +207,20 @@ class QuantConfig:
             keys = ", ".join(forbidden)
             raise ValueError(
                 f"Broker credential env vars are forbidden: {keys}. "
+                "Use terminal-session-only MT5 authentication."
+            )
+
+    def assert_terminal_session_only(self) -> None:
+        """Defend against credential-shaped attributes being injected onto config objects."""
+        self._reject_broker_credentials()
+        forbidden = []
+        for attr in ("mt5_login", "mt5_password", "mt5_server"):
+            if _has_nonempty_value(getattr(self, attr, None)):
+                forbidden.append(attr)
+        if forbidden:
+            keys = ", ".join(sorted(forbidden))
+            raise ValueError(
+                f"Broker credential config fields are forbidden: {keys}. "
                 "Use terminal-session-only MT5 authentication."
             )
     

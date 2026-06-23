@@ -26,6 +26,10 @@ from enum import Enum
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from mt5_connector.connection import MT5Connection
+from mt5_connector.terminal_session_policy import (
+    load_terminal_session_config,
+    redact_account_identity,
+)
 from shadow.pipeline import ShadowPipeline, ShadowSignal, ShadowSignalOutcome
 from shadow.failure_rules import FailureRuleChecker
 from shadow.telemetry import ShadowTelemetry
@@ -187,8 +191,7 @@ class ShadowRunnerV2:
     """Collect live MT5 data with integrity gates, never submit orders."""
 
     def __init__(self, config_path: str = 'mt5_connector/config.yaml'):
-        with open(config_path) as f:
-            self._config = yaml.safe_load(f)
+        self._config = load_terminal_session_config(config_path)
 
         self._mt5 = MT5Connection()
         self._pipeline = ShadowPipeline()
@@ -206,7 +209,8 @@ class ShadowRunnerV2:
         ok = self._mt5.connect(path=cfg.get('path'), timeout=cfg.get('timeout', 10000))
         if ok:
             info = self._mt5.get_account_info()
-            logger.info(f"Connected: {info.login}@{info.server} Balance={info.balance}")
+            identity = redact_account_identity(info.login, info.server)
+            logger.info(f"Connected: {identity} Balance={info.balance}")
         else:
             logger.error("MT5 connection failed")
         return ok

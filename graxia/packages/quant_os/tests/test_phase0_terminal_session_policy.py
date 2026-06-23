@@ -5,8 +5,16 @@ from types import SimpleNamespace
 
 import pytest
 
-from graxia.packages.quant_os.core.config import QuantConfig, reset_config
+from graxia.packages.quant_os.core.config import (
+    QuantConfig,
+    reject_broker_credential_config,
+    reset_config,
+)
 from graxia.packages.quant_os.execution.broker_adapter import MT5BrokerAdapter
+from graxia.packages.quant_os.mt5_connector.shadow_runner import ShadowRunnerV2
+from graxia.packages.quant_os.mt5_connector.terminal_session_policy import (
+    load_terminal_session_config,
+)
 
 
 @pytest.mark.parametrize("env_key, env_value", [
@@ -52,6 +60,57 @@ def test_mt5_broker_adapter_initializes_without_broker_credentials(monkeypatch) 
 
     asyncio.run(adapter.disconnect())
     reset_config()
+
+
+def test_quant_config_rejects_nested_broker_credential_config_without_echoing_value() -> None:
+    with pytest.raises(ValueError, match="mt5.login") as exc_info:
+        reject_broker_credential_config({"mt5": {"login": "12345678"}}, context="test config")
+
+    assert "12345678" not in str(exc_info.value)
+
+
+def test_terminal_session_config_loader_rejects_credential_keys_without_echoing_value(tmp_path: Path) -> None:
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        "mt5:\n"
+        "  path: C:\\\\Program Files\\\\MetaTrader 5\\\\terminal64.exe\n"
+        "  timeout: 10000\n"
+        "  login: 12345678\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="mt5.login") as exc_info:
+        load_terminal_session_config(str(config_path))
+
+    assert "12345678" not in str(exc_info.value)
+
+
+def test_shadow_runner_connect_logs_redacted_identity(tmp_path: Path, caplog) -> None:
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        "mt5:\n"
+        "  path: C:\\\\Program Files\\\\MetaTrader 5\\\\terminal64.exe\n"
+        "  timeout: 10000\n",
+        encoding="utf-8",
+    )
+    runner = ShadowRunnerV2(config_path=str(config_path))
+    runner._mt5 = SimpleNamespace(
+        connect=lambda **_: True,
+        get_account_info=lambda: SimpleNamespace(
+            login=12345678,
+            server="Pepperstone-Demo",
+            balance=10000.0,
+        ),
+        disconnect=lambda: None,
+    )
+
+    with caplog.at_level("INFO"):
+        assert runner.connect() is True
+
+    assert "login_sha256=" in caplog.text
+    assert "server_sha256=" in caplog.text
+    assert "12345678" not in caplog.text
+    assert "Pepperstone-Demo" not in caplog.text
 
 
 def test_mt5_config_template_has_no_credential_keys() -> None:

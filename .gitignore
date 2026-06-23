@@ -115,6 +115,8 @@ node_modules
 
 # Review and output folders (temporary)
 review/
+!graxia/packages/quant_os/canary/review/
+!graxia/packages/quant_os/canary/review/*.py
 output/
 
 # Virtual environments
