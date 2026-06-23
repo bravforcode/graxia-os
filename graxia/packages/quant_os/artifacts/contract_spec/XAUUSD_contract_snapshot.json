@@ -1,0 +1,130 @@
+{
+  "generated_at_utc": "2026-06-23T09:19:07.977891",
+  "terminal_path_fingerprint": "ade8f62fe56071266d682245044bcf0aa6c07d2a6a2c52eea0b6f173e2c8cf67",
+  "profile_fingerprint": "b2a952e42de3af5e5c5e8eecfaec788c794f9cb3bb75d1b407badf26694ef3cb",
+  "account_mode": "DEMO",
+  "contracts": {
+    "XAUUSD": {
+      "symbol": "XAUUSD",
+      "trade_contract_size": 100.0,
+      "volume_min": 0.01,
+      "volume_max": 50.0,
+      "volume_step": 0.01,
+      "point": 0.01,
+      "trade_tick_size": 0.01,
+      "trade_tick_value": 1.0,
+      "currency_profit": "USD",
+      "currency_margin": "XAU",
+      "trade_stops_level": 0,
+      "trade_freeze_level": 0,
+      "fetched_at_utc": "2026-06-23T09:19:07.974893",
+      "contract_hash": "a7866b3018e83492c932108e0cd6a2e958adef02252b5df2464b27339ec0b979",
+      "profile_hash": "b2a952e42de3af5e5c5e8eecfaec788c794f9cb3bb75d1b407badf26694ef3cb",
+      "cross_check": {
+        "0.01_lot_BUY": {
+          "profit_estimate": 0.1,
+          "loss_estimate": -0.1,
+          "margin_estimate": 20.55,
+          "entry": 4110.53,
+          "sl_distance_points": 10
+        },
+        "0.01_lot_SELL": {
+          "profit_estimate": 0.1,
+          "loss_estimate": -0.1,
+          "margin_estimate": 20.55,
+          "entry": 4110.4,
+          "sl_distance_points": 10
+        },
+        "0.1_lot_BUY": {
+          "profit_estimate": 1.0,
+          "loss_estimate": -1.0,
+          "margin_estimate": 205.53,
+          "entry": 4110.53,
+          "sl_distance_points": 10
+        },
+        "0.1_lot_SELL": {
+          "profit_estimate": 1.0,
+          "loss_estimate": -1.0,
+          "margin_estimate": 205.52,
+          "entry": 4110.4,
+          "sl_distance_points": 10
+        },
+        "1.0_lot_BUY": {
+          "profit_estimate": 10.0,
+          "loss_estimate": -10.0,
+          "margin_estimate": 2055.27,
+          "entry": 4110.53,
+          "sl_distance_points": 10
+        },
+        "1.0_lot_SELL": {
+          "profit_estimate": 10.0,
+          "loss_estimate": -10.0,
+          "margin_estimate": 2055.2,
+          "entry": 4110.4,
+          "sl_distance_points": 10
+        }
+      }
+    },
+    "EURUSD": {
+      "symbol": "EURUSD",
+      "trade_contract_size": 100000.0,
+      "volume_min": 0.01,
+      "volume_max": 100.0,
+      "volume_step": 0.01,
+      "point": 1e-05,
+      "trade_tick_size": 1e-05,
+      "trade_tick_value": 1.0,
+      "currency_profit": "USD",
+      "currency_margin": "EUR",
+      "trade_stops_level": 0,
+      "trade_freeze_level": 0,
+      "fetched_at_utc": "2026-06-23T09:19:07.976890",
+      "contract_hash": "7d421961628f52c72285d1e8a013c5ceb2786a356259a822712c4bbe912c1cc9",
+      "profile_hash": "b2a952e42de3af5e5c5e8eecfaec788c794f9cb3bb75d1b407badf26694ef3cb",
+      "cross_check": {
+        "0.01_lot_BUY": {
+          "profit_estimate": 0.1,
+          "loss_estimate": -0.1,
+          "margin_estimate": 5.7,
+          "entry": 1.14081,
+          "sl_distance_points": 10
+        },
+        "0.01_lot_SELL": {
+          "profit_estimate": 0.1,
+          "loss_estimate": -0.1,
+          "margin_estimate": 5.7,
+          "entry": 1.14081,
+          "sl_distance_points": 10
+        },
+        "0.1_lot_BUY": {
+          "profit_estimate": 1.0,
+          "loss_estimate": -1.0,
+          "margin_estimate": 57.04,
+          "entry": 1.14081,
+          "sl_distance_points": 10
+        },
+        "0.1_lot_SELL": {
+          "profit_estimate": 1.0,
+          "loss_estimate": -1.0,
+          "margin_estimate": 57.04,
+          "entry": 1.14081,
+          "sl_distance_points": 10
+        },
+        "1.0_lot_BUY": {
+          "profit_estimate": 10.0,
+          "loss_estimate": -10.0,
+          "margin_estimate": 570.41,
+          "entry": 1.14081,
+          "sl_distance_points": 10
+        },
+        "1.0_lot_SELL": {
+          "profit_estimate": 10.0,
+          "loss_estimate": -10.0,
+          "margin_estimate": 570.41,
+          "entry": 1.14081,
+          "sl_distance_points": 10
+        }
+      }
+    }
+  }
+}
