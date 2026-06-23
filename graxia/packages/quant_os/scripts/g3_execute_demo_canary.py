@@ -102,31 +102,80 @@ def query_canonical_utc_tick(symbol, mt5_conn):
             "error": "no ticks from copy_ticks_range",
         }
     last = ticks[-1]
-    last_epoch = int(last[0])
-    last_msc = int(last[5]) if len(last) > 5 else last_epoch * 1000
-    tick_dt = datetime.fromtimestamp(last_msc / 1000, tz=timezone.utc)
-    now_epoch = time.time()
-    age_ms = float((now_epoch - last_msc / 1000) * 1000)
-    consistent = bool(age_ms is not None and 0 <= age_ms < 15000)
-    status = "TIME_SOURCE_CONSISTENT" if consistent else "TIME_SOURCE_INCONSISTENT"
+    # copy_ticks_range returns structured array with named fields:
+    # time(int), time_msc(long), bid(float), ask(float), last(float), volume(long), flags(int)
+    # Use named field access for correctness, fall back to positional for compat.
+    try:
+        tick_time = int(last['time'])
+        tick_msc = int(last['time_msc'])
+        tick_bid = float(last['bid'])
+        tick_ask = float(last['ask'])
+    except (IndexError, ValueError, TypeError):
+        # Positional fallback for numpy array compat
+        tick_time = int(last[0])
+        tick_msc = int(last[1]) if len(last) > 1 else tick_time * 1000
+        tick_bid = float(last[2]) if len(last) > 2 else 0.0
+        tick_ask = float(last[3]) if len(last) > 3 else 0.0
+    
+    # Scan backward from last to find tick with valid bid/ask
+    for i in range(len(ticks) - 1, -1, -1):
+        row = ticks[i]
+        try:
+            rb = float(row['bid'] if 'bid' in row.dtype.names else row[2])
+            ra = float(row['ask'] if 'ask' in row.dtype.names else row[3])
+        except:
+            rb = float(row[2]) if len(row) > 2 else 0
+            ra = float(row[3]) if len(row) > 3 else 0
+        if rb > 0 and ra > 0 and ra >= rb:
+            row_msc = int(row['time_msc'] if 'time_msc' in row.dtype.names else row[1])
+            tick_dt = datetime.fromtimestamp(row_msc / 1000, tz=timezone.utc)
+            target_epoch = row_msc / 1000
+            age_ms = float((time.time() - target_epoch) * 1000)
+            consistent = bool(0 <= age_ms < 15000)
+            status = "TIME_SOURCE_CONSISTENT" if consistent else "TIME_SOURCE_INCONSISTENT"
+            return {
+                "canonical_tick_time_utc": tick_dt.isoformat(),
+                "local_received_at_utc": now_utc.isoformat(),
+                "canonical_tick_age_ms": float(round(age_ms, 1)),
+                "canonical_tick_count": int(len(ticks)),
+                "time_authority_status": status,
+                "quote_source": "copy_ticks_range_utc_aware",
+                "canonical_bid": float(rb),
+                "canonical_ask": float(ra),
+                "found_valid_tick": True,
+                "scan_depth": len(ticks) - i,
+            }
+    
+    # No valid tick found
     return {
-        "canonical_tick_time_utc": tick_dt.isoformat(),
+        "canonical_tick_time_utc": None,
         "local_received_at_utc": now_utc.isoformat(),
-        "canonical_tick_age_ms": float(round(age_ms, 1)),
+        "canonical_tick_age_ms": None,
         "canonical_tick_count": int(len(ticks)),
-        "time_authority_status": status,
+        "time_authority_status": "CANONICAL_TICK_INVALID_PRICE",
         "quote_source": "copy_ticks_range_utc_aware",
-        "canonical_bid": float(last[1]),
-        "canonical_ask": float(last[2]),
-        "error": None,
+        "canonical_bid": None,
+        "canonical_ask": None,
+        "error": "no valid tick (bid>0, ask>0, ask>=bid) in window",
+        "found_valid_tick": False,
     }
 
 
 def check_native_quote_divergence(native_tick, canonical_info, tick_size):
-    """Compare symbol_info_tick prices vs canonical tick source."""
+    """Compare symbol_info_tick prices vs canonical tick source.
+    
+    native_tick may be None (e.g., during canonical tick scan before symbol_info_tick is called).
+    canonical_info is a dict with keys: canonical_bid, canonical_ask.
+    """
+    cb = canonical_info.get("canonical_bid") if isinstance(canonical_info, dict) else None
+    ca = canonical_info.get("canonical_ask") if isinstance(canonical_info, dict) else None
+    if native_tick is None or cb is None or ca is None:
+        return {"bid_divergence_ticks": 0, "ask_divergence_ticks": 0,
+                "quote_price_divergence_passed": True,
+                "max_divergence_ticks": 5, "quote_divergence_verdict": "NO_DIVERGENCE_CHECK",
+                "native_quote_source": "LIVE_PRICE_INPUT_WITH_UNTRUSTED_NATIVE_TIMESTAMP"}
     nb = float(native_tick.bid)
     na = float(native_tick.ask)
-    cb = canonical_info.get("canonical_bid")
     ca = canonical_info.get("canonical_ask")
     if cb is None or ca is None:
         return {
@@ -224,9 +273,15 @@ def main():
         mt5.shutdown()
         return 1
 
+    # ── Canonical UTC Tick Authority ──
+    # Run BEFORE market snapshot so plan geometry uses canonical bid/ask (coherent with timestamp).
+    # symbol_info_tick() bid/ask are used only for divergence comparison.
+    canonical = query_canonical_utc_tick(SYMBOL, mt5)
+    
     # ── Market snapshot ──
-    bid = tick.bid
-    ask = tick.ask
+    # Plan geometry uses CANONICAL bid/ask from copy_ticks_range.
+    bid = canonical.get("canonical_bid") or tick.bid
+    ask = canonical.get("canonical_ask") or tick.ask
     spread_price = round(ask - bid, 8)
     tick_size = sym.trade_tick_size
     point = sym.point
@@ -294,11 +349,7 @@ def main():
         return 1
 
     # ── Canonical UTC Tick Authority ──
-    # tick.time is MT5 server timestamp — NOT trusted for time decisions.
-    # Use copy_ticks_range UTC-aware query as the canonical timestamp source.
-    # symbol_info_tick is LIVE_PRICE_INPUT_WITH_UNTRUSTED_NATIVE_TIMESTAMP only.
-    canonical = query_canonical_utc_tick(SYMBOL, mt5)
-    quote_div = check_native_quote_divergence(tick, canonical, tick_size)
+    # ── Canonical UTC tick data extracted from pre-snapshot query ──
     tick_age_ms = canonical.get("canonical_tick_age_ms", None)
     canonical_tick_time_utc = canonical.get("canonical_tick_time_utc")
     local_received_at_utc = canonical.get("local_received_at_utc")
@@ -306,6 +357,7 @@ def main():
     time_authority_status = canonical.get("time_authority_status", "CANONICAL_TICK_UNAVAILABLE")
     quote_source = canonical.get("quote_source", "unknown")
     tick_fresh = bool(tick_age_ms is not None and 0 <= tick_age_ms < 5000)
+    quote_div = check_native_quote_divergence(tick, canonical, tick_size)
 
     # Block if canonical UTC tick authority is inconsistent
     if time_authority_status != "TIME_SOURCE_CONSISTENT":
