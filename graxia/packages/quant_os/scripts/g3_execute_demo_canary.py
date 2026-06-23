@@ -26,6 +26,9 @@ from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 import MetaTrader5 as mt5
 
+# Ensure package root on path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from execution.demo_canary.state_machine import CanaryStateMachine
 from execution.demo_canary.enums import CanaryState, CanaryActor
 from execution.demo_canary.feature_gate import is_execution_enabled, enable_execution, disable_execution
