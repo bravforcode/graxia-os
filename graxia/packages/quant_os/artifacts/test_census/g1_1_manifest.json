@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "generated_at_utc": "2026-06-23T09:44:52Z",
+  "commit_sha": "d150d09",
+  "suites": {
+    "execution_guards": {"collected": 15, "passed": 15, "failed": 0},
+    "canary_plan": {"collected": 9, "passed": 9, "failed": 0},
+    "state_machine": {"collected": 7, "passed": 7, "failed": 0},
+    "evidence_bundle": {"collected": 3, "passed": 3, "failed": 0},
+    "import_isolation": {"collected": 3, "passed": 3, "failed": 0},
+    "contract_spec": {"collected": 25, "passed": 25, "failed": 0},
+    "metric_invalidation": {"collected": 10, "passed": 10, "failed": 0}
+  },
+  "total_collected": 72,
+  "total_passed": 72,
+  "total_failed": 0
+}

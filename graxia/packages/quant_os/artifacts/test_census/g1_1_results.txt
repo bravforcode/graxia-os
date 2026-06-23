@@ -1,0 +1,175 @@
+=== G1.1 TEST CENSUS ===
+
+--- execution_guards ---
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\menum\AppData\Local\Programs\Python\Python312\python.exe
+cachedir: .pytest_cache
+hypothesis profile 'default' -> database=DirectoryBasedExampleDatabase(WindowsPath('C:/Users/menum/graxia os/graxia/packages/quant_os/.hypothesis/examples'))
+rootdir: C:\Users\menum\graxia os
+configfile: pytest.ini
+plugins: anyio-4.13.0, hypothesis-6.100.0, langsmith-0.7.35, asyncio-0.23.5, mock-3.15.1
+asyncio: mode=Mode.AUTO
+collecting ... collected 15 items
+
+tests\test_execution_guards.py::TestDemoAccountGuard::test_demo_account_passes PASSED [  6%]
+tests\test_execution_guards.py::TestDemoAccountGuard::test_live_account_rejected PASSED [ 13%]
+tests\test_execution_guards.py::TestBrokerProfileGuard::test_correct_hash_passes PASSED [ 20%]
+tests\test_execution_guards.py::TestBrokerProfileGuard::test_wrong_hash_rejected PASSED [ 26%]
+tests\test_execution_guards.py::TestBrokerProfileGuard::test_empty_hash_rejected PASSED [ 33%]
+tests\test_execution_guards.py::TestTerminalPathGuard::test_correct_path_passes PASSED [ 40%]
+tests\test_execution_guards.py::TestTerminalPathGuard::test_wrong_path_rejected PASSED [ 46%]
+tests\test_execution_guards.py::TestSymbolGuard::test_xauusd_passes PASSED [ 53%]
+tests\test_execution_guards.py::TestSymbolGuard::test_eurusd_rejected PASSED [ 60%]
+tests\test_execution_guards.py::TestFeatureGate::test_default_off PASSED [ 66%]
+tests\test_execution_guards.py::TestFeatureGate::test_enable_toggle PASSED [ 73%]
+tests\test_execution_guards.py::TestKillSwitch::test_default_active PASSED [ 80%]
+tests\test_execution_guards.py::TestKillSwitch::test_release_and_reactivate PASSED [ 86%]
+tests\test_execution_guards.py::TestExecutionMutex::test_acquire_release PASSED [ 93%]
+tests\test_execution_guards.py::TestExecutionMutex::test_double_acquire_fails PASSED [100%]
+
+======================= 15 passed, 2 warnings in 0.33s ========================
+
+--- canary_plan ---
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\menum\AppData\Local\Programs\Python\Python312\python.exe
+cachedir: .pytest_cache
+hypothesis profile 'default' -> database=DirectoryBasedExampleDatabase(WindowsPath('C:/Users/menum/graxia os/graxia/packages/quant_os/.hypothesis/examples'))
+rootdir: C:\Users\menum\graxia os
+configfile: pytest.ini
+plugins: anyio-4.13.0, hypothesis-6.100.0, langsmith-0.7.35, asyncio-0.23.5, mock-3.15.1
+asyncio: mode=Mode.AUTO
+collecting ... collected 9 items
+
+tests\test_canary_plan.py::TestDemoCanaryPlan::test_plan_immutable PASSED [ 11%]
+tests\test_canary_plan.py::TestDemoCanaryPlan::test_plan_hash_deterministic PASSED [ 22%]
+tests\test_canary_plan.py::TestDemoCanaryPlan::test_different_ids_different_hashes PASSED [ 33%]
+tests\test_canary_plan.py::TestDemoCanaryPlan::test_strategy_hash_must_be_none PASSED [ 44%]
+tests\test_canary_plan.py::TestDemoCanaryPlan::test_non_xauusd_rejected PASSED [ 55%]
+tests\test_canary_plan.py::TestDemoCanaryPlan::test_negative_volume_rejected PASSED [ 66%]
+tests\test_canary_plan.py::TestApprovalVerifier::test_valid_approval_passes PASSED [ 77%]
+tests\test_canary_plan.py::TestApprovalVerifier::test_wrong_canary_id_rejected PASSED [ 88%]
+tests\test_canary_plan.py::TestApprovalVerifier::test_replay_nonce_rejected PASSED [100%]
+
+======================== 9 passed, 2 warnings in 0.29s ========================
+
+--- state_machine ---
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\menum\AppData\Local\Programs\Python\Python312\python.exe
+cachedir: .pytest_cache
+hypothesis profile 'default' -> database=DirectoryBasedExampleDatabase(WindowsPath('C:/Users/menum/graxia os/graxia/packages/quant_os/.hypothesis/examples'))
+rootdir: C:\Users\menum\graxia os
+configfile: pytest.ini
+plugins: anyio-4.13.0, hypothesis-6.100.0, langsmith-0.7.35, asyncio-0.23.5, mock-3.15.1
+asyncio: mode=Mode.AUTO
+collecting ... collected 7 items
+
+tests\test_state_machine.py::TestStateMachine::test_initial_state_draft PASSED [ 14%]
+tests\test_state_machine.py::TestStateMachine::test_draft_to_profile_verified PASSED [ 28%]
+tests\test_state_machine.py::TestStateMachine::test_forbidden_transition_raises_error PASSED [ 42%]
+tests\test_state_machine.py::TestStateMachine::test_draft_to_rejected PASSED [ 57%]
+tests\test_state_machine.py::TestStateMachine::test_full_path_to_mutex PASSED [ 71%]
+tests\test_state_machine.py::TestStateMachine::test_is_terminal_states PASSED [ 85%]
+tests\test_state_machine.py::TestStateMachine::test_event_has_all_fields PASSED [100%]
+
+======================== 7 passed, 2 warnings in 0.28s ========================
+
+--- evidence_bundle ---
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\menum\AppData\Local\Programs\Python\Python312\python.exe
+cachedir: .pytest_cache
+hypothesis profile 'default' -> database=DirectoryBasedExampleDatabase(WindowsPath('C:/Users/menum/graxia os/graxia/packages/quant_os/.hypothesis/examples'))
+rootdir: C:\Users\menum\graxia os
+configfile: pytest.ini
+plugins: anyio-4.13.0, hypothesis-6.100.0, langsmith-0.7.35, asyncio-0.23.5, mock-3.15.1
+asyncio: mode=Mode.AUTO
+collecting ... collected 3 items
+
+tests\test_evidence_bundle.py::TestEvidenceBundle::test_add_and_seal PASSED [ 33%]
+tests\test_evidence_bundle.py::TestEvidenceBundle::test_verify_passes PASSED [ 66%]
+tests\test_evidence_bundle.py::TestEvidenceBundle::test_verify_fails_on_tamper PASSED [100%]
+
+======================== 3 passed, 2 warnings in 0.30s ========================
+
+--- import_isolation ---
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\menum\AppData\Local\Programs\Python\Python312\python.exe
+cachedir: .pytest_cache
+hypothesis profile 'default' -> database=DirectoryBasedExampleDatabase(WindowsPath('C:/Users/menum/graxia os/graxia/packages/quant_os/.hypothesis/examples'))
+rootdir: C:\Users\menum\graxia os
+configfile: pytest.ini
+plugins: anyio-4.13.0, hypothesis-6.100.0, langsmith-0.7.35, asyncio-0.23.5, mock-3.15.1
+asyncio: mode=Mode.AUTO
+collecting ... collected 3 items
+
+tests\test_execution_import_isolation.py::test_order_send_only_in_allowlist PASSED [ 33%]
+tests\test_execution_import_isolation.py::test_broker_adapter_has_order_submission_disabled PASSED [ 66%]
+tests\test_execution_import_isolation.py::test_submission_enabled_is_callable PASSED [100%]
+
+======================== 3 passed, 2 warnings in 0.32s ========================
+
+--- contract_spec ---
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\menum\AppData\Local\Programs\Python\Python312\python.exe
+cachedir: .pytest_cache
+hypothesis profile 'default' -> database=DirectoryBasedExampleDatabase(WindowsPath('C:/Users/menum/graxia os/graxia/packages/quant_os/.hypothesis/examples'))
+rootdir: C:\Users\menum\graxia os
+configfile: pytest.ini
+plugins: anyio-4.13.0, hypothesis-6.100.0, langsmith-0.7.35, asyncio-0.23.5, mock-3.15.1
+asyncio: mode=Mode.AUTO
+collecting ... collected 25 items
+
+tests\test_contract_spec.py::TestContractSpecXAUUSD::test_xauusd_contract_size PASSED [  4%]
+tests\test_contract_spec.py::TestContractSpecXAUUSD::test_xauusd_pnl_calculation PASSED [  8%]
+tests\test_contract_spec.py::TestContractSpecEURUSD::test_eurusd_contract_size PASSED [ 12%]
+tests\test_contract_spec.py::TestContractSpecFailures::test_missing_symbol_raises_error PASSED [ 16%]
+tests\test_contract_spec.py::TestContractSpecFailures::test_no_connection_raises_error PASSED [ 20%]
+tests\test_contract_spec.py::TestContractSpecFailures::test_stale_spec_rejected PASSED [ 24%]
+tests\test_contract_spec.py::TestContractSpecFailures::test_fresh_spec_valid PASSED [ 28%]
+tests\test_contract_spec.py::TestContractSpecFailures::test_hash_deterministic PASSED [ 32%]
+tests\test_contract_spec.py::TestContractSpecFailures::test_hash_mismatch_detected PASSED [ 36%]
+tests\test_contract_spec.py::TestVolumeStep::test_volume_step_stored_correctly PASSED [ 40%]
+tests\test_contract_spec.py::TestVolumeStep::test_volume_min_stored_correctly PASSED [ 44%]
+tests\test_contract_spec.py::TestVolumeStep::test_volume_max_stored_correctly PASSED [ 48%]
+tests\test_contract_spec.py::TestContractSpecNumericExamples::test_xauusd_1_lot_1000_point_sl PASSED [ 52%]
+tests\test_contract_spec.py::TestContractSpecNumericExamples::test_xauusd_0_01_lot_1000_point_sl PASSED [ 56%]
+tests\test_contract_spec.py::TestContractSpecNumericExamples::test_xauusd_0_01_lot_10_point_sl PASSED [ 60%]
+tests\test_contract_spec.py::TestContractSpecNumericExamples::test_eurusd_1_lot_10_pip_sl PASSED [ 64%]
+tests\test_contract_spec.py::TestContractSpecNumericExamples::test_eurusd_0_01_lot_10_pip_sl PASSED [ 68%]
+tests\test_contract_spec.py::TestContractSpecNumericExamples::test_unit_labels_unambiguous PASSED [ 72%]
+tests\test_contract_spec.py::TestContractSpecNumericExamples::test_xauusd_pips_unsupported PASSED [ 76%]
+tests\test_contract_spec.py::TestContractSpecNumericExamples::test_eurusd_pips_supported PASSED [ 80%]
+tests\test_contract_spec.py::TestContractSpecDirection::test_xauusd_buy_sell_symmetric_risk[BUY-<lambda>] PASSED [ 84%]
+tests\test_contract_spec.py::TestContractSpecDirection::test_xauusd_buy_sell_symmetric_risk[SELL-<lambda>] PASSED [ 88%]
+tests\test_contract_spec.py::TestContractSpecVolumeStep::test_xauusd_volume_step_valid PASSED [ 92%]
+tests\test_contract_spec.py::TestContractSpecVolumeStep::test_xauusd_volume_step_invalid PASSED [ 96%]
+tests\test_contract_spec.py::TestContractSpecVolumeStep::test_xauusd_volume_bounds PASSED [100%]
+
+======================= 25 passed, 2 warnings in 0.29s ========================
+
+--- metric_invalidation ---
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\menum\AppData\Local\Programs\Python\Python312\python.exe
+cachedir: .pytest_cache
+hypothesis profile 'default' -> database=DirectoryBasedExampleDatabase(WindowsPath('C:/Users/menum/graxia os/graxia/packages/quant_os/.hypothesis/examples'))
+rootdir: C:\Users\menum\graxia os
+configfile: pytest.ini
+plugins: anyio-4.13.0, hypothesis-6.100.0, langsmith-0.7.35, asyncio-0.23.5, mock-3.15.1
+asyncio: mode=Mode.AUTO
+collecting ... collected 10 items
+
+tests\test_metric_invalidation.py::test_gross_pnl_invalid PASSED         [ 10%]
+tests\test_metric_invalidation.py::test_expectancy_invalid PASSED        [ 20%]
+tests\test_metric_invalidation.py::test_win_rate_simulated_only PASSED   [ 30%]
+tests\test_metric_invalidation.py::test_signal_count_partially_valid PASSED [ 40%]
+tests\test_metric_invalidation.py::test_process_restarts_valid PASSED    [ 50%]
+tests\test_metric_invalidation.py::test_pnl_not_usable PASSED            [ 60%]
+tests\test_metric_invalidation.py::test_uptime_usable PASSED             [ 70%]
+tests\test_metric_invalidation.py::test_unknown_metric_returns_undetermined PASSED [ 80%]
+tests\test_metric_invalidation.py::test_shape_ratio_invalid_for_decision PASSED [ 90%]
+tests\test_metric_invalidation.py::test_all_registry_metrics_have_classification PASSED [100%]
+
+======================= 10 passed, 2 warnings in 0.28s ========================
+
+=== FULL SUMMARY ===
+........................................................................ [100%]
+72 passed, 2 warnings in 0.58s

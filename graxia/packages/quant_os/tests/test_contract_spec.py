@@ -263,6 +263,35 @@ class TestContractSpecNumericExamples:
         assert xauusd_points != price_delta
         assert price_delta == 10.0
 
+    def test_xauusd_pips_unsupported(self):
+        """XAUUSD to_pips should return None."""
+        spec = ContractSpec(
+            symbol="XAUUSD", contract_size=100,
+            volume_min=0.01, volume_max=50.0, volume_step=0.01,
+            point=0.01, tick_size=0.01, tick_value=1.0,
+            currency_profit="USD", currency_margin="USD",
+            stops_level=0, freeze_level=0,
+            profile_hash="test",
+            snapshot_timestamp=datetime.utcnow(),
+        )
+        assert spec.supports_pips() is False
+        assert spec.to_pips(10.0) is None
+
+    def test_eurusd_pips_supported(self):
+        """EURUSD to_pips should return a value, not None."""
+        spec = ContractSpec(
+            symbol="EURUSD", contract_size=100000,
+            volume_min=0.01, volume_max=50.0, volume_step=0.01,
+            point=0.00001, tick_size=0.00001, tick_value=1.0,
+            currency_profit="USD", currency_margin="USD",
+            stops_level=0, freeze_level=0,
+            profile_hash="test",
+            snapshot_timestamp=datetime.utcnow(),
+        )
+        assert spec.supports_pips() is True
+        assert spec.to_pips(0.0010) is not None
+        assert spec.to_pips(0.0010) == 10.0
+
 
 class TestContractSpecDirection:
     """Long and short positions must produce symmetric risk."""

@@ -77,15 +77,32 @@ class ContractSpec:
             return 0
         return int(round(price_delta / self.tick_size))
 
-    def to_pips(self, price_delta: float) -> float:
+    def supports_pips(self) -> bool:
+        """Whether this symbol has a standard pip definition.
+
+        Forex pairs (EURUSD, GBPUSD, etc.) support pips.
+        Metals (XAUUSD, XAGUSD, XAU*, XAG*) and CFDs do not.
+        """
+        if self.symbol.startswith("XAU") or self.symbol.startswith("XAG"):
+            return False
+        if "CFD" in self.symbol.upper() or "METAL" in self.symbol.upper():
+            return False
+        return True
+
+    def to_pips(self, price_delta: float) -> Optional[float]:
         """Convert a price delta to pips.
 
         1 pip = 10 points for standard forex.
         XAUUSD does NOT have a standard pip definition; this is most
         meaningful for forex pairs like EURUSD.
 
+        Returns None for symbols without standard pip definitions (metals, CFDs).
+
         EURUSD (point=1e-5): to_pips(0.0010) → 10.0  (10 pip = 100 pt)
+        XAUUSD: to_pips(...) → None
         """
+        if not self.supports_pips():
+            return None
         if self.point == 0:
             return 0.0
         return price_delta / (self.point * 10)

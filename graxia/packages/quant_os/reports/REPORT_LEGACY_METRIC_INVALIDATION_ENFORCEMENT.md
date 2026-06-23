@@ -62,10 +62,12 @@ if not is_metric_usable("gross_pnl"):
 ### Root Cause
 All legacy shadow campaign metrics used `units_per_lot=100000` (forex standard). For XAUUSD, the correct contract size is `trade_contract_size=100` (confirmed by Pepperstone runtime snapshot and MT5 `order_calc_profit()`).
 
+Historical legacy P&L cannot be corrected by scalar division. It remains INVALID_FOR_DECISION.
+
 ### Sizing Error Magnitude
-- Old: 1 lot XAUUSD risk = 10,000 × 100,000 × 0.01 = **$10,000,000** per point
-- Correct: 1 lot XAUUSD risk = 1.0 × 100 × 0.01 = **$1.00** per point
-- Error: **1,000,000× overstatement** (six orders of magnitude)
+The contract-size defect introduced at least a 1000x sizing-model mismatch for XAUUSD versus the intended broker contract interpretation.
+
+Historical legacy P&L cannot be corrected by scalar division. It remains INVALID_FOR_DECISION.
 
 ### Metrics Affected
 Every metric that depends on position sizing, contract value, or P&L is invalid:

@@ -318,6 +318,11 @@ class PaperBroker(BrokerAdapter):
         self.prices[symbol] = {"bid": bid, "ask": ask}
 
 
+# Order submission global lock — see execution/demo_canary/order_submission.py
+_submission_enabled = False
+_submission_guard_msg = "Order submission is LOCKED until G3. Use execution/demo_canary/order_submission.py"
+
+
 class MT5BrokerAdapter(BrokerAdapter):
     """
     MetaTrader 5 broker adapter.
@@ -407,6 +412,8 @@ class MT5BrokerAdapter(BrokerAdapter):
     
     async def place_order(self, order: Order) -> BrokerOrderResponse:
         """Place order via MT5"""
+        if not _submission_enabled:
+            raise RuntimeError(_submission_guard_msg)
         try:
             # Map order type
             if order.order_type == OrderType.MARKET:
@@ -423,7 +430,8 @@ class MT5BrokerAdapter(BrokerAdapter):
             
             # Build request
             request = {
-                "action": self.mt5.TRADE_ACTION_DEAL if order.order_type == OrderType.MARKET else self.mt5.TRADE_ACTION_PENDING,
+                # QUARANTINED for G1.1. See order_submission.py for sole allowlist.
+                # "action": self.mt5.TRADE_ACTION_DEAL if order.order_type == OrderType.MARKET else self.mt5.TRADE_ACTION_PENDING,
                 "symbol": order.symbol,
                 "volume": float(order.quantity),
                 "type": mt5_type,
@@ -437,8 +445,8 @@ class MT5BrokerAdapter(BrokerAdapter):
                 "type_filling": self.mt5.ORDER_FILLING_IOC,
             }
             
-            # Send order
-            result = self.mt5.order_send(request)
+            # QUARANTINED for G1.1. See order_submission.py for sole allowlist.
+            # result = self.mt5.order_send(request)
             
             if result.retcode != self.mt5.TRADE_RETCODE_DONE:
                 return BrokerOrderResponse(
@@ -463,12 +471,16 @@ class MT5BrokerAdapter(BrokerAdapter):
             )
     
     async def cancel_order(self, broker_order_id: str) -> bool:
+        if not _submission_enabled:
+            raise RuntimeError(_submission_guard_msg)
         try:
             request = {
-                "action": self.mt5.TRADE_ACTION_REMOVE,
+                # QUARANTINED for G1.1. See order_submission.py for sole allowlist.
+                # "action": self.mt5.TRADE_ACTION_REMOVE,
                 "order": int(broker_order_id)
             }
-            result = self.mt5.order_send(request)
+            # QUARANTINED for G1.1. See order_submission.py for sole allowlist.
+            # result = self.mt5.order_send(request)
             return result.retcode == self.mt5.TRADE_RETCODE_DONE
         except Exception:
             return False
