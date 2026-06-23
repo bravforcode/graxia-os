@@ -1,8 +1,9 @@
 import time, sys, os
+from pathlib import Path
 sys.path.insert(0, os.getcwd())
 from graxia.packages.quant_os.backtest.data_loader import load_csv_data
 
-data_dir = os.path.join("graxia", "packages", "quant_os", "data")
+data_dir = str(Path(__file__).parent.parent / "data")
 fmt = "%Y-%m-%d %H:%M:%S"
 
 t0 = time.time()

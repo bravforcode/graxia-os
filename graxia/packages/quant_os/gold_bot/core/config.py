@@ -44,9 +44,7 @@ class BotConfig:
     ai_min_confidence: float = 0.6
     
     # === MT5 ===
-    mt5_login: int = 0
-    mt5_password: str = ""
-    mt5_server: str = "ICMarketsSC-Demo"
+    # Credentials are terminal-session-only. Do not add login/password/server fields.
     mt5_path: str = r"C:\Program Files\MetaTrader 5\terminal64.exe"
     mt5_timeout_ms: int = 10000
     
@@ -73,9 +71,6 @@ class BotConfig:
     
     def __post_init__(self):
         """Load from environment variables"""
-        self.mt5_login = int(os.getenv("MT5_LOGIN", self.mt5_login))
-        self.mt5_password = os.getenv("MT5_PASSWORD", self.mt5_password)
-        self.mt5_server = os.getenv("MT5_SERVER", self.mt5_server)
         self.telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN", self.telegram_bot_token)
         self.telegram_chat_id = os.getenv("TELEGRAM_CHAT_ID", self.telegram_chat_id)
     

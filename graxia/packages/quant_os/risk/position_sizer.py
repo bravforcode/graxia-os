@@ -32,10 +32,13 @@ class PositionSizeResult:
 class PositionSizer(ABC):
     """Abstract base class for position sizing"""
     
-    def __init__(self, name: str, units_per_lot: float = 100000.0):
+    def __init__(self, name: str, units_per_lot: float = None):
         self.name = name
-        self.units_per_lot = units_per_lot
         self.config = get_config()
+        if units_per_lot is None:
+            self.units_per_lot = getattr(self.config, 'units_per_lot', 100.0)
+        else:
+            self.units_per_lot = units_per_lot
     
     @abstractmethod
     def calculate(
@@ -106,7 +109,7 @@ class FixedFractionalSizer(PositionSizer):
     Default: 1% as per golden rules.
     """
     
-    def __init__(self, risk_pct: Optional[float] = None, units_per_lot: float = 100000.0):
+    def __init__(self, risk_pct: Optional[float] = None, units_per_lot: float = None):
         super().__init__("FixedFractional", units_per_lot)
         self.risk_pct = risk_pct or GOLDEN_RULES.MAX_RISK_PER_TRADE_PCT
     
@@ -179,7 +182,7 @@ class KellySizer(PositionSizer):
     Uses half-Kelly for safety (conservative Kelly).
     """
     
-    def __init__(self, win_rate: float = 0.55, avg_win: float = 1.5, avg_loss: float = 1.0, units_per_lot: float = 100000.0):
+    def __init__(self, win_rate: float = 0.55, avg_win: float = 1.5, avg_loss: float = 1.0, units_per_lot: float = None):
         super().__init__("Kelly", units_per_lot)
         self.win_rate = win_rate
         self.avg_win = avg_win
@@ -270,7 +273,7 @@ class ATRSizer(PositionSizer):
     Higher volatility = smaller position.
     """
     
-    def __init__(self, atr_multiple: float = 1.5, base_risk_pct: float = 1.0, units_per_lot: float = 100000.0):
+    def __init__(self, atr_multiple: float = 1.5, base_risk_pct: float = 1.0, units_per_lot: float = None):
         super().__init__("ATR", units_per_lot)
         self.atr_multiple = atr_multiple
         self.base_risk_pct = base_risk_pct
@@ -334,7 +337,7 @@ class AntiMartingaleSizer(PositionSizer):
         base_risk_pct: float = 1.0,
         consecutive_losses: int = 0,
         consecutive_wins: int = 0,
-        units_per_lot: float = 100000.0
+        units_per_lot: float = None
     ):
         super().__init__("AntiMartingale", units_per_lot)
         self.base_risk_pct = base_risk_pct

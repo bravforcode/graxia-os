@@ -174,7 +174,7 @@ class Strategy(ABC):
         entry_price: Decimal,
         stop_loss: Decimal,
         risk_pct: Optional[float] = None,
-        units_per_lot: float = 100000.0,
+        units_per_lot: float = None,
     ) -> Decimal:
         """
         Calculate position size based on risk parameters.
@@ -182,6 +182,9 @@ class Strategy(ABC):
         Returns:
             Position size in lots/units
         """
+        if units_per_lot is None:
+            units_per_lot = getattr(self.config, 'units_per_lot', 100.0)
+        
         risk_amount = account_balance * Decimal(str(risk_pct or self.config.risk_per_trade_pct)) / 100
         
         price_risk = abs(entry_price - stop_loss)

@@ -133,7 +133,7 @@ class QuantConfig:
     ml_drift_threshold: float = 0.10
     
     # ==================== LOT SIZE ====================
-    units_per_lot: float = 100000.0
+    units_per_lot: float = 100.0
     
     # ==================== PAPER TRADING ====================
     paper_initial_capital: float = 10000.0

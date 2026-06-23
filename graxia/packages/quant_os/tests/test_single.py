@@ -1,4 +1,5 @@
 import sys, os, time
+from pathlib import Path
 sys.path.insert(0, os.getcwd())
 
 from graxia.packages.quant_os.backtest.data_loader import load_csv_data
@@ -6,7 +7,7 @@ from graxia.packages.quant_os.backtest.engine import BacktestEngine, BacktestCon
 from graxia.packages.quant_os.gold_bot.strategy_adapter import GoldStrategyAdapter
 from graxia.packages.quant_os.gold_bot.strategies.order_block import OrderBlockStrategy
 
-data_dir = os.path.join("graxia", "packages", "quant_os", "data")
+data_dir = str(Path(__file__).parent.parent / "data")
 fmt = "%Y-%m-%d %H:%M:%S"
 
 d1, ts1 = load_csv_data(os.path.join(data_dir, "XAUUSD_D1.csv"), date_column="time", date_format=fmt)

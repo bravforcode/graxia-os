@@ -1,0 +1,30 @@
+{
+  "generated_at": "2026-06-23",
+  "total_quarantined": 3,
+  "quarantine_entries": [
+    {
+      "test_id": "tests/test_phase_be_p1.py::test_data_manifest_hashes_exist",
+      "owner": "system",
+      "issue": "Path resolved from monorepo root instead of package root",
+      "fix_applied": "Changed Path('graxia/packages/quant_os/scripts/...') to Path(__file__).parent.parent / 'scripts' / '...'",
+      "expiry": "FIXED",
+      "status": "resolved"
+    },
+    {
+      "test_id": "tests/test_phase_be_p1.py::test_release_truth_script_exists",
+      "owner": "system",
+      "issue": "Path resolved from monorepo root instead of package root",
+      "fix_applied": "Changed Path('graxia/packages/quant_os/scripts/...') to Path(__file__).parent.parent / 'scripts' / '...'",
+      "expiry": "FIXED",
+      "status": "resolved"
+    },
+    {
+      "test_id": "tests/test_phase_be_p1.py::test_verify_reproducibility_exists",
+      "owner": "system",
+      "issue": "Path resolved from monorepo root instead of package root",
+      "fix_applied": "Changed Path('graxia/packages/quant_os/scripts/...') to Path(__file__).parent.parent / 'scripts' / '...'",
+      "expiry": "FIXED",
+      "status": "resolved"
+    }
+  ]
+}

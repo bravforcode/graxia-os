@@ -1,0 +1,11 @@
+{
+  "generated_at": "2026-06-23",
+  "total_skipped": 1,
+  "skips": [
+    {
+      "test_id": "tests/test_vwap.py::test_deprecated_vwap",
+      "reason": "DEPRECATED: data format mismatch, covered by test_timing.py",
+      "file": "tests/test_vwap.py"
+    }
+  ]
+}

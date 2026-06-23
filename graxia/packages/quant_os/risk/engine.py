@@ -82,7 +82,7 @@ class RiskEngine:
         self.position_sizer = position_sizer
         self.circuit_breaker = circuit_breaker
         self.kill_switch = kill_switch
-        self.units_per_lot = getattr(self.config, 'units_per_lot', 100000.0)
+        self.units_per_lot = getattr(self.config, 'units_per_lot', 100.0)
         
         # Track daily stats
         self._daily_stats: Dict[str, Any] = {}
@@ -419,7 +419,7 @@ class RiskMonitor:
             ))
         
         # Check daily loss
-        portfolio_value = getattr(self.config, 'units_per_lot', 100000.0)
+        portfolio_value = getattr(self.config, 'units_per_lot', 100.0)
         max_daily_loss = portfolio_value * float(self.config.max_daily_loss_pct) / 100.0
         if self._daily_pnl < -max_daily_loss:
             violations.append(RiskCheckResult.fail_check(

@@ -1,5 +1,6 @@
 import sys, os, time
 from decimal import Decimal
+from pathlib import Path
 sys.path.insert(0, os.getcwd())
 
 from graxia.packages.quant_os.backtest.data_loader import load_csv_data
@@ -20,7 +21,7 @@ from graxia.packages.quant_os.gold_bot.strategies.liquidity_sweep import Liquidi
 from graxia.packages.quant_os.gold_bot.strategies.fair_value_gap import FairValueGapStrategy
 from graxia.packages.quant_os.gold_bot.strategies.opening_range import OpeningRangeStrategy
 
-data_dir = os.path.join("graxia", "packages", "quant_os", "data")
+data_dir = str(Path(__file__).parent.parent / "data")
 fmt = "%Y-%m-%d %H:%M:%S"
 
 d1, ts1 = load_csv_data(os.path.join(data_dir, "XAUUSD_D1.csv"), date_column="time", date_format=fmt)

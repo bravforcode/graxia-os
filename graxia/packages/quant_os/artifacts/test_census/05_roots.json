@@ -1,0 +1,24 @@
+{
+  "generated_at": "2026-06-23",
+  "test_directories": [
+    "tests/",
+    "canary/"
+  ],
+  "test_files_count": 78,
+  "total_tests_collected": 789,
+  "roots": [
+    "tests/",
+    "canary/test_weekly_report.py",
+    "canary/test_order_lifecycle.py",
+    "canary/test_drills.py",
+    "canary/test_demo_scorecard.py",
+    "canary/test_demo_preflight.py",
+    "canary/test_demo_order_guard.py",
+    "canary/test_demo_canary_runner.py",
+    "canary/test_demo_canary_config.py",
+    "canary/test_demo_campaign.py",
+    "canary/test_daily_report.py",
+    "canary/test_be_p9_integration.py",
+    "canary/test_be_p10_integration.py"
+  ]
+}
