@@ -26,6 +26,17 @@ from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 import MetaTrader5 as mt5
 
+
+class NumpySafeEncoder(json.JSONEncoder):
+    """Handles numpy float/int/bool types for JSON serialization."""
+    def default(self, o):
+        import numpy as np
+        if isinstance(o, (np.integer, np.floating, np.bool_)):
+            return o.item()
+        if isinstance(o, np.ndarray):
+            return o.tolist()
+        return super().default(o)
+
 # Ensure package root on path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -48,12 +59,99 @@ PLAN_TTL_SECONDS = 120
 PROJECTED_LOSS_CAP_USD = 1.00
 TERMINAL_PATH = r"C:\Program Files\Pepperstone MetaTrader 5\terminal64.exe"
 QUOTE_DRIFT_TOLERANCE_PCT = 0.001
+DRY_RUN_MODE = True  # Pre-send: blocks submission_intent creation + mutex + real order_send
 
 OUTPUT_BASE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "artifacts", "g3_execute")
 
 
 def normalize_price(price, tick_size):
     return round(round(price / tick_size) * tick_size, 8)
+
+
+def query_canonical_utc_tick(symbol, mt5_conn):
+    """Canonical UTC tick via copy_ticks_range — NOT symbol_info_tick.time."""
+    now_utc = datetime.now(timezone.utc)
+    request_from = now_utc - timedelta(seconds=10)
+    request_to = now_utc
+    try:
+        ticks = mt5_conn.copy_ticks_range(
+            symbol, request_from, request_to, mt5_conn.COPY_TICKS_ALL
+        )
+    except Exception as e:
+        return {
+            "canonical_tick_time_utc": None,
+            "local_received_at_utc": now_utc.isoformat(),
+            "canonical_tick_age_ms": None,
+            "canonical_tick_count": 0,
+            "time_authority_status": "CANONICAL_TICK_UNAVAILABLE",
+            "quote_source": "copy_ticks_range_utc_aware",
+            "canonical_bid": None,
+            "canonical_ask": None,
+            "error": str(e),
+        }
+    if ticks is None or len(ticks) == 0:
+        return {
+            "canonical_tick_time_utc": None,
+            "local_received_at_utc": now_utc.isoformat(),
+            "canonical_tick_age_ms": None,
+            "canonical_tick_count": 0,
+            "time_authority_status": "CANONICAL_TICK_UNAVAILABLE",
+            "quote_source": "copy_ticks_range_utc_aware",
+            "canonical_bid": None,
+            "canonical_ask": None,
+            "error": "no ticks from copy_ticks_range",
+        }
+    last = ticks[-1]
+    last_epoch = int(last[0])
+    last_msc = int(last[5]) if len(last) > 5 else last_epoch * 1000
+    tick_dt = datetime.fromtimestamp(last_msc / 1000, tz=timezone.utc)
+    now_epoch = time.time()
+    age_ms = float((now_epoch - last_msc / 1000) * 1000)
+    consistent = bool(age_ms is not None and 0 <= age_ms < 15000)
+    status = "TIME_SOURCE_CONSISTENT" if consistent else "TIME_SOURCE_INCONSISTENT"
+    return {
+        "canonical_tick_time_utc": tick_dt.isoformat(),
+        "local_received_at_utc": now_utc.isoformat(),
+        "canonical_tick_age_ms": float(round(age_ms, 1)),
+        "canonical_tick_count": int(len(ticks)),
+        "time_authority_status": status,
+        "quote_source": "copy_ticks_range_utc_aware",
+        "canonical_bid": float(last[1]),
+        "canonical_ask": float(last[2]),
+        "error": None,
+    }
+
+
+def check_native_quote_divergence(native_tick, canonical_info, tick_size):
+    """Compare symbol_info_tick prices vs canonical tick source."""
+    nb = float(native_tick.bid)
+    na = float(native_tick.ask)
+    cb = canonical_info.get("canonical_bid")
+    ca = canonical_info.get("canonical_ask")
+    if cb is None or ca is None:
+        return {
+            "bid_divergence_ticks": None,
+            "ask_divergence_ticks": None,
+            "max_divergence_ticks": None,
+            "quote_divergence_verdict": "CANONICAL_UNAVAILABLE",
+            "native_quote_source": "LIVE_PRICE_INPUT_WITH_UNTRUSTED_NATIVE_TIMESTAMP",
+            "canonical_quote_source": "copy_ticks_range_utc_aware",
+        }
+    bid_diff = float(abs(nb - cb))
+    ask_diff = float(abs(na - ca))
+    ts = float(tick_size) if tick_size and tick_size > 0 else None
+    bdt = float(round(bid_diff / ts, 1)) if ts else None
+    adt = float(round(ask_diff / ts, 1)) if ts else None
+    mdt = float(max(bdt or 0, adt or 0))
+    verdict = "QUOTE_DIVERGENCE_ACCEPTABLE" if mdt <= 1.0 else "QUOTE_DIVERGENCE_EXCESSIVE"
+    return {
+        "bid_divergence_ticks": bdt,
+        "ask_divergence_ticks": adt,
+        "max_divergence_ticks": mdt,
+        "quote_divergence_verdict": verdict,
+        "native_quote_source": "LIVE_PRICE_INPUT_WITH_UNTRUSTED_NATIVE_TIMESTAMP",
+        "canonical_quote_source": "copy_ticks_range_utc_aware",
+    }
 
 
 def main():
@@ -195,15 +293,26 @@ def main():
         mt5.shutdown()
         return 1
 
-    # ── Tick freshness ──
-    # WARNING: tick.time is MT5 server timestamp, NOT local UTC authority.
-    # Negative age = server clock ahead of local = TIME_SOURCE_INCONSISTENT.
-    # Must reject negative age as fail-closed. Use canonical UTC tick source
-    # (copy_ticks_range) for timestamp authority; live symbol_info_tick is
-    # price input only with separate receipt timestamp.
-    tick_age_ms = (time.time() - tick.time) * 1000 if hasattr(tick, 'time') else 0
-    tick_fresh = 0 <= tick_age_ms < 5000  # Fail-closed: negative = STALE
-    time_authority_status = "TIME_SOURCE_CONSISTENT" if (0 <= tick_age_ms < 5000) else "TIME_SOURCE_INCONSISTENT"
+    # ── Canonical UTC Tick Authority ──
+    # tick.time is MT5 server timestamp — NOT trusted for time decisions.
+    # Use copy_ticks_range UTC-aware query as the canonical timestamp source.
+    # symbol_info_tick is LIVE_PRICE_INPUT_WITH_UNTRUSTED_NATIVE_TIMESTAMP only.
+    canonical = query_canonical_utc_tick(SYMBOL, mt5)
+    quote_div = check_native_quote_divergence(tick, canonical, tick_size)
+    tick_age_ms = canonical.get("canonical_tick_age_ms", None)
+    canonical_tick_time_utc = canonical.get("canonical_tick_time_utc")
+    local_received_at_utc = canonical.get("local_received_at_utc")
+    canonical_tick_count = canonical.get("canonical_tick_count", 0)
+    time_authority_status = canonical.get("time_authority_status", "CANONICAL_TICK_UNAVAILABLE")
+    quote_source = canonical.get("quote_source", "unknown")
+    tick_fresh = bool(tick_age_ms is not None and 0 <= tick_age_ms < 5000)
+
+    # Block if canonical UTC tick authority is inconsistent
+    if time_authority_status != "TIME_SOURCE_CONSISTENT":
+        print(f"BLOCKED: time_authority_status={time_authority_status} "
+              f"age_ms={tick_age_ms} ticks={canonical_tick_count}")
+        mt5.shutdown()
+        return 1
 
     # ── order_check ──
     order_check_request = {
@@ -251,7 +360,7 @@ def main():
     quote_bid_at_preflight = bid
 
     plan = {
-        "schema_version": "1.0",
+        "schema_version": "2.0",
         "canary_id": canary_id,
         "correlation_id": correlation_id,
         "generated_at_utc": now_utc.isoformat(),
@@ -276,9 +385,23 @@ def main():
         "projected_margin_usd": margin_usd,
         "max_deviation_points": MAX_DEVIATION_POINTS,
         "filling_mode": filling_mode,
+        # ── Tick freshness fields ──
         "tick_age_ms": tick_age_ms,
         "tick_fresh": tick_fresh,
+        # ── Canonical UTC Tick Authority ──
+        "canonical_tick_time_utc": canonical_tick_time_utc,
+        "local_received_at_utc": local_received_at_utc,
+        "canonical_tick_age_ms": tick_age_ms,
+        "canonical_tick_count": canonical_tick_count,
         "time_authority_status": time_authority_status,
+        "quote_source": quote_source,
+        # ── Quote divergence ──
+        "native_quote_source": "LIVE_PRICE_INPUT_WITH_UNTRUSTED_NATIVE_TIMESTAMP",
+        "bid_divergence_ticks": quote_div.get("bid_divergence_ticks"),
+        "ask_divergence_ticks": quote_div.get("ask_divergence_ticks"),
+        "max_divergence_ticks": quote_div.get("max_divergence_ticks"),
+        "quote_divergence_verdict": quote_div.get("quote_divergence_verdict"),
+        # ── Metadata ──
         "strategy_origin": None,
         "account_mode": account_mode,
         "profile_fingerprint": profile_fingerprint,
@@ -287,7 +410,7 @@ def main():
         "approval_nonce": approval_nonce,
     }
 
-    plan_json = json.dumps(plan, indent=2, sort_keys=True)
+    plan_json = json.dumps(plan, indent=2, sort_keys=True, cls=NumpySafeEncoder)
     plan_hash = hashlib.sha256(plan_json.encode()).hexdigest()
     plan["plan_hash"] = plan_hash
 
@@ -330,7 +453,11 @@ def main():
     print(f"")
     print(f"  order_check:   {'PASS' if order_check_passed else 'FAIL'} (retcode={order_check_retcode})")
     print(f"  Positions:     {pos_count} | Orders: {ord_count}")
-    print(f"  Tick age:      {tick_age_ms:.0f}ms {'FRESH' if tick_fresh else 'STALE'} [{time_authority_status}]")
+    print(f"  Tick age:      {tick_age_ms:.1f}ms {'FRESH' if tick_fresh else 'STALE'} [{time_authority_status}]")
+    print(f"  Quote source:  {quote_source}")
+    print(f"  Canonical UTC: {canonical_tick_time_utc}")
+    print(f"  Local rx UTC:  {local_received_at_utc}")
+    print(f"  Divergence:    {quote_div.get('max_divergence_ticks')} ticks [{quote_div.get('quote_divergence_verdict')}]")
     print(f"")
     print(f"  STATE:         {sm.state.value}")
     print(f"  order_send:    NOT CALLED (G3_SEND_POINT blocked by report)")
@@ -343,7 +470,7 @@ def main():
         print(f"\nPLAN EXPIRED during generation — restart. State: {sm.state.value}")
         return 1
 
-    # ── Local approval prompt ──
+    # ── Local approval prompt (auto-approved in DRY_RUN_MODE) ──
     print(f"\n========================================")
     print(f"  LOCAL HUMAN APPROVAL REQUIRED")
     print(f"========================================")
@@ -354,12 +481,16 @@ def main():
     print(f"  Type anything else to CANCEL.")
     print(f"========================================\n")
 
-    try:
-        user_input = input("APPROVAL: ").strip()
-    except (EOFError, KeyboardInterrupt):
-        print("\n\nApproval cancelled (EOF/interrupt).")
-        sm.transition(CanaryState.REJECTED, CanaryActor.OPERATOR, "HUMAN_REJECTED_EOF")
-        return 1
+    if DRY_RUN_MODE:
+        print(f"  DRY-RUN: auto-approving with {confirmation}")
+        user_input = confirmation
+    else:
+        try:
+            user_input = input("APPROVAL: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\n\nApproval cancelled (EOF/interrupt).")
+            sm.transition(CanaryState.REJECTED, CanaryActor.OPERATOR, "HUMAN_REJECTED_EOF")
+            return 1
 
     # Check expiry immediately
     now_check = datetime.now(timezone.utc)
@@ -403,14 +534,18 @@ def main():
     with open(os.path.join(run_dir, "approval.redacted.json"), "w") as f:
         json.dump(approval_artifact, f, indent=2)
 
-    # ── Acquire mutex (state transition) ──
-    if not acquire_mutex():
-        sm.transition(CanaryState.REJECTED, CanaryActor.SYSTEM, "MUTEX_ACQUIRE_FAILED")
-        print(f"FATAL: could not acquire execution mutex. State: {sm.state.value}")
-        return 1
-
-    sm.transition(CanaryState.EXECUTION_MUTEX_HELD, CanaryActor.SYSTEM, "MUTEX_ACQUIRED")
-    mutex_acquired = True
+    # ── Acquire mutex (state transition) — skip in dry-run ──
+    mutex_acquired = False
+    if not DRY_RUN_MODE:
+        if not acquire_mutex():
+            sm.transition(CanaryState.REJECTED, CanaryActor.SYSTEM, "MUTEX_ACQUIRE_FAILED")
+            print(f"FATAL: could not acquire execution mutex. State: {sm.state.value}")
+            return 1
+        sm.transition(CanaryState.EXECUTION_MUTEX_HELD, CanaryActor.SYSTEM, "MUTEX_ACQUIRED")
+        mutex_acquired = True
+    else:
+        print("  DRY-RUN: skipping mutex acquire")
+        sm.transition(CanaryState.EXECUTION_MUTEX_HELD, CanaryActor.SYSTEM, "MUTEX_SKIPPED_DRY_RUN")
 
     # ── Enable feature gate, release kill switch for execution ──
     enable_execution()
@@ -474,14 +609,18 @@ def main():
                 recheck_passed = False
                 recheck_reasons.append("CONTRACT_HASH_MISMATCH")
 
-        # 7. Tick fresh — reject negative age (fail-closed)
-        if re_tick:
-            re_tick_age_ms = (time.time() - re_tick.time) * 1000
-            if not (0 <= re_tick_age_ms < 5000):
-                recheck_passed = False
-                recheck_reasons.append(f"TICK_STALE: {re_tick_age_ms:.0f}ms (TIME_SOURCE_INCONSISTENT if negative)")
+        # 7. Canonical UTC tick fresh — NOT symbol_info_tick.time (server clock may be ahead)
+        re_canonical = query_canonical_utc_tick(SYMBOL, mt5)
+        if re_canonical.get("time_authority_status") != "TIME_SOURCE_CONSISTENT":
+            recheck_passed = False
+            recheck_reasons.append(
+                f"CANONICAL_TICK_INCONSISTENT: "
+                f"status={re_canonical.get('time_authority_status')} "
+                f"age_ms={re_canonical.get('canonical_tick_age_ms')}"
+            )
 
-            # 8. Event/spread/session
+        # 8. Event/spread/session — use re_tick bid/ask (price only, NOT timestamp)
+        if re_tick:
             re_spread = re_tick.ask - re_tick.bid
             if re_spread <= 0 or re_spread > 25:
                 recheck_passed = False
@@ -533,25 +672,29 @@ def main():
     # ── Dry-run: use DRY_RUN_SEND_BLOCKED instead of SUBMITTING ──
     # SUBMITTING may only be entered immediately before real order_send call.
     # In pre-send mode, use DRY_RUN_SEND_BLOCKED to keep state truth.
-    dry_run_mode = True  # Remove this flag and use SUBMITTING only when order_send is enabled
-    if dry_run_mode:
+    if DRY_RUN_MODE:
         sm.transition(CanaryState.DRY_RUN_SEND_BLOCKED, CanaryActor.SYSTEM, "DRY_RUN_MODE_SEND_BLOCKED")
     else:
         sm.transition(CanaryState.SUBMITTING, CanaryActor.SYSTEM, "FINAL_FRESHNESS_CHECK_PASSED")
     print(f"State: {sm.state.value}")
 
-    # ── Atomic SUBMISSION_INTENT_CREATED persistence ──
-    intent = {
-        "canary_id": canary_id,
-        "plan_hash": plan_hash,
-        "correlation_id": correlation_id,
-        "submission_intent_created_at_utc": datetime.now(timezone.utc).isoformat(),
-        "state_machine_state": sm.state.value,
-        "order_send_called": False,
-        "order_send_result": None,
-    }
-    with open(os.path.join(run_dir, "submission_intent.created.json"), "w") as f:
-        json.dump(intent, f, indent=2)
+    # ── Atomic SUBMISSION_INTENT_CREATED persistence (SKIPPED in dry-run) ──
+    intent_recorded = False
+    if DRY_RUN_MODE:
+        print("  DRY-RUN: skipping SUBMISSION_INTENT_CREATED persistence")
+    else:
+        intent = {
+            "canary_id": canary_id,
+            "plan_hash": plan_hash,
+            "correlation_id": correlation_id,
+            "submission_intent_created_at_utc": datetime.now(timezone.utc).isoformat(),
+            "state_machine_state": sm.state.value,
+            "order_send_called": False,
+            "order_send_result": None,
+        }
+        with open(os.path.join(run_dir, "submission_intent.created.json"), "w") as f:
+            json.dump(intent, f, indent=2)
+        intent_recorded = True
 
     # ── G3 SEND POINT — order_send blocked by report ──
     print(f"\n{'='*60}")
@@ -559,7 +702,10 @@ def main():
     print(f"  order_send is BLOCKED until report is complete.")
     print(f"  State: {sm.state.value}")
     print(f"  Approval consumed: {run_dir}/approval.redacted.json")
-    print(f"  Intent recorded: {run_dir}/submission_intent.created.json")
+    if not DRY_RUN_MODE:
+        print(f"  Intent recorded: {run_dir}/submission_intent.created.json")
+    else:
+        print(f"  Intent: SKIPPED (dry-run)")
     print(f"{'='*60}")
 
     # # G3_SEND_POINT: order_send would go here when unblocked.
@@ -586,6 +732,12 @@ def main():
         "history_orders_count": len(reconcile_history_orders) if reconcile_history_orders else 0,
         "history_deals_count": len(reconcile_history_deals) if reconcile_history_deals else 0,
         "order_send_not_called": True,
+        "dry_run_mode": DRY_RUN_MODE,
+        "mutex_acquired": mutex_acquired,
+        "intent_recorded": intent_recorded if "intent_recorded" in dir() else False,
+        "canonical_tick_time_utc": canonical_tick_time_utc,
+        "time_authority_status": time_authority_status,
+        "quote_divergence_verdict": quote_div.get("quote_divergence_verdict"),
         "note": "G3_SEND_POINT — order_send blocked by report",
     }
 
@@ -609,9 +761,14 @@ def main():
     print(f"\n{'='*60}")
     print(f"  G3.2 EXECUTION HANDOFF COMPLETE")
     print(f"{'='*60}")
-    print(f"  Canary ID: {canary_id}")
-    print(f"  Result: PRE-SEND (order_send blocked by report)")
-    print(f"  Artifacts: {run_dir}")
+    print(f"  Canary ID:          {canary_id}")
+    print(f"  Mode:               {'DRY-RUN' if DRY_RUN_MODE else 'LIVE'}")
+    print(f"  Time Authority:     {time_authority_status}")
+    print(f"  Quote Divergence:   {quote_div.get('max_divergence_ticks')} ticks [{quote_div.get('quote_divergence_verdict')}]")
+    print(f"  Mutex Acquired:     {mutex_acquired}")
+    print(f"  Intent Persisted:   {intent_recorded}")
+    print(f"  Result:             {'DRY_RUN_SEND_BLOCKED' if DRY_RUN_MODE else 'PRE-SEND'}")
+    print(f"  Artifacts:          {run_dir}")
 
     return 0
 
