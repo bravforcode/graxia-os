@@ -1,0 +1,254 @@
+{
+  "run_id": "20260623_100719",
+  "generated_at_utc": "2026-06-23T10:07:19.764277+00:00",
+  "symbol": "XAUUSD",
+  "volume": 0.01,
+  "profile_hash": "b2a952e42de3af5e...",
+  "terminal_hash": "ade8f62fe5607126...",
+  "contract_size": 100.0,
+  "tick_size": 0.01,
+  "point": 0.01,
+  "digits": 2,
+  "positions_before": 0,
+  "orders_before": 0,
+  "buy": {
+    "side": "BUY",
+    "entry": 4130.2,
+    "bid": 4130.01,
+    "ask": 4130.2,
+    "spread": 0.18999999999959982,
+    "required_distance": 0.57,
+    "stops_level": 0,
+    "freeze_level": 0,
+    "candidates": [
+      {
+        "candidate": 1,
+        "distance_mt5_points": 57,
+        "distance_price": 0.57,
+        "sl": 4129.63,
+        "tp": 4130.77,
+        "sl_below_bid": true,
+        "sl_above_ask": "N/A",
+        "geometry_valid": true
+      },
+      {
+        "candidate": 2,
+        "distance_mt5_points": 114,
+        "distance_price": 1.14,
+        "sl": 4129.06,
+        "tp": 4131.34,
+        "sl_below_bid": true,
+        "sl_above_ask": "N/A",
+        "geometry_valid": true
+      },
+      {
+        "candidate": 3,
+        "distance_mt5_points": 171,
+        "distance_price": 1.71,
+        "sl": 4128.49,
+        "tp": 4131.91,
+        "sl_below_bid": true,
+        "sl_above_ask": "N/A",
+        "geometry_valid": true
+      },
+      {
+        "candidate": 4,
+        "distance_mt5_points": 228,
+        "distance_price": 2.28,
+        "sl": 4127.92,
+        "tp": 4132.48,
+        "sl_below_bid": true,
+        "sl_above_ask": "N/A",
+        "geometry_valid": true
+      },
+      {
+        "candidate": 5,
+        "distance_mt5_points": 285,
+        "distance_price": 2.85,
+        "sl": 4127.35,
+        "tp": 4133.05,
+        "sl_below_bid": true,
+        "sl_above_ask": "N/A",
+        "geometry_valid": true
+      }
+    ],
+    "order_check_results": [
+      {
+        "candidate": 1,
+        "distance": 0.57,
+        "sl": 4129.63,
+        "tp": 4130.77,
+        "retcode": 0,
+        "comment": "Done",
+        "passed": true
+      },
+      {
+        "candidate": 2,
+        "distance": 1.14,
+        "sl": 4129.06,
+        "tp": 4131.34,
+        "retcode": 0,
+        "comment": "Done",
+        "passed": true
+      },
+      {
+        "candidate": 3,
+        "distance": 1.71,
+        "sl": 4128.49,
+        "tp": 4131.91,
+        "retcode": 0,
+        "comment": "Done",
+        "passed": true
+      },
+      {
+        "candidate": 4,
+        "distance": 2.28,
+        "sl": 4127.92,
+        "tp": 4132.48,
+        "retcode": 0,
+        "comment": "Done",
+        "passed": true
+      },
+      {
+        "candidate": 5,
+        "distance": 2.85,
+        "sl": 4127.35,
+        "tp": 4133.05,
+        "retcode": 0,
+        "comment": "Done",
+        "passed": true
+      }
+    ],
+    "passing_candidate": {
+      "candidate": 1,
+      "distance": 0.57,
+      "sl": 4129.63,
+      "tp": 4130.77,
+      "retcode": 0,
+      "comment": "Done",
+      "passed": true
+    }
+  },
+  "sell": {
+    "side": "SELL",
+    "entry": 4130.01,
+    "bid": 4130.01,
+    "ask": 4130.2,
+    "spread": 0.18999999999959982,
+    "required_distance": 0.57,
+    "stops_level": 0,
+    "freeze_level": 0,
+    "candidates": [
+      {
+        "candidate": 1,
+        "distance_mt5_points": 57,
+        "distance_price": 0.57,
+        "sl": 4130.58,
+        "tp": 4129.44,
+        "sl_below_bid": "N/A",
+        "sl_above_ask": true,
+        "geometry_valid": true
+      },
+      {
+        "candidate": 2,
+        "distance_mt5_points": 114,
+        "distance_price": 1.14,
+        "sl": 4131.15,
+        "tp": 4128.87,
+        "sl_below_bid": "N/A",
+        "sl_above_ask": true,
+        "geometry_valid": true
+      },
+      {
+        "candidate": 3,
+        "distance_mt5_points": 171,
+        "distance_price": 1.71,
+        "sl": 4131.72,
+        "tp": 4128.3,
+        "sl_below_bid": "N/A",
+        "sl_above_ask": true,
+        "geometry_valid": true
+      },
+      {
+        "candidate": 4,
+        "distance_mt5_points": 228,
+        "distance_price": 2.28,
+        "sl": 4132.29,
+        "tp": 4127.73,
+        "sl_below_bid": "N/A",
+        "sl_above_ask": true,
+        "geometry_valid": true
+      },
+      {
+        "candidate": 5,
+        "distance_mt5_points": 285,
+        "distance_price": 2.85,
+        "sl": 4132.86,
+        "tp": 4127.16,
+        "sl_below_bid": "N/A",
+        "sl_above_ask": true,
+        "geometry_valid": true
+      }
+    ],
+    "order_check_results": [
+      {
+        "candidate": 1,
+        "distance": 0.57,
+        "sl": 4130.58,
+        "tp": 4129.44,
+        "retcode": 0,
+        "comment": "Done",
+        "passed": true
+      },
+      {
+        "candidate": 2,
+        "distance": 1.14,
+        "sl": 4131.15,
+        "tp": 4128.87,
+        "retcode": 0,
+        "comment": "Done",
+        "passed": true
+      },
+      {
+        "candidate": 3,
+        "distance": 1.71,
+        "sl": 4131.72,
+        "tp": 4128.3,
+        "retcode": 0,
+        "comment": "Done",
+        "passed": true
+      },
+      {
+        "candidate": 4,
+        "distance": 2.28,
+        "sl": 4132.29,
+        "tp": 4127.73,
+        "retcode": 0,
+        "comment": "Done",
+        "passed": true
+      },
+      {
+        "candidate": 5,
+        "distance": 2.85,
+        "sl": 4132.86,
+        "tp": 4127.16,
+        "retcode": 0,
+        "comment": "Done",
+        "passed": true
+      }
+    ],
+    "passing_candidate": {
+      "candidate": 1,
+      "distance": 0.57,
+      "sl": 4130.58,
+      "tp": 4129.44,
+      "retcode": 0,
+      "comment": "Done",
+      "passed": true
+    }
+  },
+  "positions_after": "NOT_CHECKED_AFTER_DISCONNECT",
+  "orders_after": "NOT_CHECKED_AFTER_DISCONNECT",
+  "order_submission_count": 0,
+  "verdict": "PASS_TO_G3_REVIEW"
+}

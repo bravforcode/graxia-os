@@ -1,0 +1,10 @@
+{
+  "bid": 4130.01,
+  "ask": 4130.2,
+  "spread": 0.18999999999959982,
+  "tick_size": 0.01,
+  "point": 0.01,
+  "digits": 2,
+  "stops_level": 0,
+  "freeze_level": 0
+}
