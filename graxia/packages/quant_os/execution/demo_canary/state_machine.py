@@ -44,6 +44,7 @@ ALLOWED_TRANSITIONS = {
     ],
     CanaryState.EXECUTION_MUTEX_HELD: [
         (CanaryState.SUBMITTING, CanaryActor.SYSTEM, "FINAL_FRESHNESS_CHECK_PASSED"),
+        (CanaryState.DRY_RUN_SEND_BLOCKED, CanaryActor.SYSTEM, "DRY_RUN_MODE_SEND_BLOCKED"),
     ],
     # Post-submit states (not active in G1.1 — reserved for G3)
     CanaryState.SUBMITTING: [(CanaryState.SUBMISSION_RECEIPT_RECORDED, CanaryActor.BROKER, "ORDER_SUBMITTED")],

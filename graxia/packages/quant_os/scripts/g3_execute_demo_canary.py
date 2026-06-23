@@ -196,8 +196,14 @@ def main():
         return 1
 
     # ── Tick freshness ──
+    # WARNING: tick.time is MT5 server timestamp, NOT local UTC authority.
+    # Negative age = server clock ahead of local = TIME_SOURCE_INCONSISTENT.
+    # Must reject negative age as fail-closed. Use canonical UTC tick source
+    # (copy_ticks_range) for timestamp authority; live symbol_info_tick is
+    # price input only with separate receipt timestamp.
     tick_age_ms = (time.time() - tick.time) * 1000 if hasattr(tick, 'time') else 0
-    tick_fresh = tick_age_ms < 5000
+    tick_fresh = 0 <= tick_age_ms < 5000  # Fail-closed: negative = STALE
+    time_authority_status = "TIME_SOURCE_CONSISTENT" if (0 <= tick_age_ms < 5000) else "TIME_SOURCE_INCONSISTENT"
 
     # ── order_check ──
     order_check_request = {
@@ -272,6 +278,7 @@ def main():
         "filling_mode": filling_mode,
         "tick_age_ms": tick_age_ms,
         "tick_fresh": tick_fresh,
+        "time_authority_status": time_authority_status,
         "strategy_origin": None,
         "account_mode": account_mode,
         "profile_fingerprint": profile_fingerprint,
@@ -323,7 +330,7 @@ def main():
     print(f"")
     print(f"  order_check:   {'PASS' if order_check_passed else 'FAIL'} (retcode={order_check_retcode})")
     print(f"  Positions:     {pos_count} | Orders: {ord_count}")
-    print(f"  Tick age:      {tick_age_ms:.0f}ms {'FRESH' if tick_fresh else 'STALE'}")
+    print(f"  Tick age:      {tick_age_ms:.0f}ms {'FRESH' if tick_fresh else 'STALE'} [{time_authority_status}]")
     print(f"")
     print(f"  STATE:         {sm.state.value}")
     print(f"  order_send:    NOT CALLED (G3_SEND_POINT blocked by report)")
@@ -467,12 +474,12 @@ def main():
                 recheck_passed = False
                 recheck_reasons.append("CONTRACT_HASH_MISMATCH")
 
-        # 7. Tick fresh
+        # 7. Tick fresh — reject negative age (fail-closed)
         if re_tick:
             re_tick_age_ms = (time.time() - re_tick.time) * 1000
-            if re_tick_age_ms >= 5000:
+            if not (0 <= re_tick_age_ms < 5000):
                 recheck_passed = False
-                recheck_reasons.append(f"TICK_STALE: {re_tick_age_ms:.0f}ms")
+                recheck_reasons.append(f"TICK_STALE: {re_tick_age_ms:.0f}ms (TIME_SOURCE_INCONSISTENT if negative)")
 
             # 8. Event/spread/session
             re_spread = re_tick.ask - re_tick.bid
@@ -523,8 +530,14 @@ def main():
 
     print("FINAL RECHECK: ALL PASSED")
 
-    # ── Advance to SUBMITTING ──
-    sm.transition(CanaryState.SUBMITTING, CanaryActor.SYSTEM, "FINAL_FRESHNESS_CHECK_PASSED")
+    # ── Dry-run: use DRY_RUN_SEND_BLOCKED instead of SUBMITTING ──
+    # SUBMITTING may only be entered immediately before real order_send call.
+    # In pre-send mode, use DRY_RUN_SEND_BLOCKED to keep state truth.
+    dry_run_mode = True  # Remove this flag and use SUBMITTING only when order_send is enabled
+    if dry_run_mode:
+        sm.transition(CanaryState.DRY_RUN_SEND_BLOCKED, CanaryActor.SYSTEM, "DRY_RUN_MODE_SEND_BLOCKED")
+    else:
+        sm.transition(CanaryState.SUBMITTING, CanaryActor.SYSTEM, "FINAL_FRESHNESS_CHECK_PASSED")
     print(f"State: {sm.state.value}")
 
     # ── Atomic SUBMISSION_INTENT_CREATED persistence ──
