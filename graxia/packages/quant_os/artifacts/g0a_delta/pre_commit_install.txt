@@ -1,0 +1,1 @@
+PASS: pre-commit installed at shared .git/hooks/pre-commit (exit 0)

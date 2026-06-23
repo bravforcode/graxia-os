@@ -1,0 +1,2 @@
+Security check: Passed (exit 0)
+All-files scan completed successfully.

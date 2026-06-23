@@ -1,0 +1,1 @@
+PASS: .pre-commit-config.yaml is valid (exit code 0)

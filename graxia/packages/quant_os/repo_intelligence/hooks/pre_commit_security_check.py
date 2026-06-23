@@ -12,15 +12,15 @@ from pathlib import Path
 
 # --- Patterns ---
 
-# password = "value" or password = 'value' (non-empty, non-placeholder)
+# password = "value", password: "value", or password: 'value' (non-empty, non-placeholder)
 PASSWORD_RE = re.compile(
-    r'''password\s*=\s*(["'])(?!\1)(?!\s*\1).+?\1''',
+    r'''password\s*[:=]\s*(["'])(?!\1)(?!\s*\1).+?\1''',
     re.IGNORECASE,
 )
 
-# api_key = "value" or api_key = 'value'
+# api_key = "value", api_key: "value", or api_key: 'value'
 API_KEY_RE = re.compile(
-    r'''api[_-]?key\s*=\s*(["'])(?!\1)(?!\s*\1).+?\1''',
+    r'''api[_-]?key\s*[:=]\s*(["'])(?!\1)(?!\s*\1).+?\1''',
     re.IGNORECASE,
 )
 
@@ -48,10 +48,10 @@ ORDER_SEND_ALLOWLIST = {
 
 
 def _get_staged_files() -> list[str]:
-    """Return list of staged .py files (added or modified)."""
+    """Return list of all staged files (added or modified)."""
     try:
         result = subprocess.run(
-            ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM", "--", "*.py"],
+            ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],
             capture_output=True, text=True, check=True,
         )
         return [f for f in result.stdout.strip().splitlines() if f]
@@ -112,7 +112,7 @@ def run_check() -> int:
     """Main entry point. Returns 0 if clean, 1 if findings."""
     staged = _get_staged_files()
     if not staged:
-        print("Security check: no staged Python files.")
+        print("Security check: no staged files.")
         return 0
 
     all_findings: list[str] = []

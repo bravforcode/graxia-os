@@ -166,6 +166,7 @@ class TestHardcodeAudit:
             ("core", "config.py"),
             ("risk", "position_sizer.py"),
             ("risk", "risk_policy.py"),
+            ("risk", "contract_spec.py"),
             ("backtest", "engine.py"),
             ("strategies", "base.py"),
             ("risk", "engine.py"),
