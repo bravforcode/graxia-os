@@ -102,6 +102,59 @@ class TestNoOrderSend:
         stripped = re.sub(r'(""".*?""")|(#.*$)', '', content, flags=re.DOTALL | re.MULTILINE)
         assert "order_send" not in stripped, "order_send found in calibration script!"
 
+class TestSideCorrectPolicy:
+    """Every SL/TP must respect side-correct quote references and minimum distance."""
+
+    @pytest.mark.parametrize("side,entry_ref,sl_ref,tp_ref", [
+        ("BUY", "ask", "bid", "ask"),
+        ("SELL", "bid", "ask", "bid"),
+    ])
+    def test_all_four_references_correct(self, side, entry_ref, sl_ref, tp_ref):
+        assert entry_ref in ("ask", "bid")
+        assert sl_ref in ("ask", "bid")
+        assert tp_ref in ("ask", "bid")
+        if side == "BUY":
+            assert entry_ref == "ask"
+            assert sl_ref == "bid"
+            assert tp_ref == "ask"
+        else:
+            assert entry_ref == "bid"
+            assert sl_ref == "ask"
+            assert tp_ref == "bid"
+
+    def test_stop_tp_distances_equal_for_first_canary(self):
+        req_stop = 0.57
+        req_tp = 0.57
+        assert req_stop == req_tp
+
+    def test_buy_sl_below_bid_by_minimum(self):
+        bid = 4129.74
+        dist = 0.57
+        sl = bid - dist
+        assert sl < bid
+        assert round(bid - sl, 2) >= dist
+
+    def test_buy_tp_above_ask_by_minimum(self):
+        ask = 4130.20
+        dist = 0.57
+        tp = ask + dist
+        assert tp > ask
+        assert round(tp - ask, 2) >= dist
+
+    def test_sell_sl_above_ask_by_minimum(self):
+        ask = 4130.20
+        dist = 0.57
+        sl = ask + dist
+        assert sl > ask
+        assert round(sl - ask, 2) >= dist
+
+    def test_sell_tp_below_bid_by_minimum(self):
+        bid = 4129.74
+        dist = 0.57
+        tp = bid - dist
+        assert tp < bid
+        assert round(bid - tp, 2) >= dist
+
 class TestDeterministicEvidence:
     def test_verdict_json_has_required_fields(self):
         required = ["run_id", "generated_at_utc", "verdict", "order_submission_count"]

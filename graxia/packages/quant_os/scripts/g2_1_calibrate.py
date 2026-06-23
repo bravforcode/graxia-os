@@ -37,27 +37,30 @@ def calibrate_side(mt5, side: str, tick, sym) -> dict:
     """Calibrate stop geometry for one side. Returns candidate matrix + passing result or None."""
     entry = tick.ask if side == "BUY" else tick.bid
     spread_price = tick.ask - tick.bid
-    required_dist = compute_required_distance(
+    required_stop_distance_price = compute_required_distance(
         spread_price, sym.trade_stops_level, sym.trade_freeze_level, sym.point
     )
+    required_tp_distance_price = required_stop_distance_price  # 1:1 for first canary
     
-    # Normalize required dist to tick_size
-    required_dist = normalize_price(required_dist, sym.trade_tick_size)
+    # Normalize required dists to tick_size
+    required_stop_distance_price = normalize_price(required_stop_distance_price, sym.trade_tick_size)
+    required_tp_distance_price = normalize_price(required_tp_distance_price, sym.trade_tick_size)
     
     candidates = []
     for i in range(1, MAX_CANDIDATES_PER_SIDE + 1):
-        distance = normalize_price(required_dist * i, sym.trade_tick_size)
+        distance = normalize_price(required_stop_distance_price * i, sym.trade_tick_size)
         
         if side == "BUY":
-            sl = normalize_price(entry - distance, sym.trade_tick_size)
-            tp = normalize_price(entry + distance, sym.trade_tick_size)
-            # Verify SL is below bid
-            valid = sl < tick.bid
+            sl = normalize_price(tick.bid - distance, sym.trade_tick_size)
+            tp = normalize_price(tick.ask + distance, sym.trade_tick_size)
+            sl_valid = sl < tick.bid
+            tp_valid = tp > tick.ask
         else:  # SELL
-            sl = normalize_price(entry + distance, sym.trade_tick_size)
-            tp = normalize_price(entry - distance, sym.trade_tick_size)
-            # Verify SL is above ask
-            valid = sl > tick.ask
+            sl = normalize_price(tick.ask + distance, sym.trade_tick_size)
+            tp = normalize_price(tick.bid - distance, sym.trade_tick_size)
+            sl_valid = sl > tick.ask
+            tp_valid = tp < tick.bid
+        valid = sl_valid and tp_valid
         
         candidates.append({
             "candidate": i,
@@ -67,6 +70,10 @@ def calibrate_side(mt5, side: str, tick, sym) -> dict:
             "tp": tp,
             "sl_below_bid": sl < tick.bid if side == "BUY" else "N/A",
             "sl_above_ask": sl > tick.ask if side == "SELL" else "N/A",
+            "tp_above_ask": tp > tick.ask if side == "BUY" else "N/A",
+            "tp_below_bid": tp < tick.bid if side == "SELL" else "N/A",
+            "sl_valid": sl_valid,
+            "tp_valid": tp_valid,
             "geometry_valid": valid,
         })
     
@@ -112,15 +119,28 @@ def calibrate_side(mt5, side: str, tick, sym) -> dict:
         if passed and passing is None:
             passing = result
     
+    # Evidence fields
+    evidence = {}
+    if passing:
+        evidence["required_stop_distance_price"] = required_stop_distance_price
+        evidence["required_tp_distance_price"] = required_tp_distance_price
+        if passing:
+            sl_dist = abs(passing["sl"] - (tick.bid if side == "BUY" else tick.ask))
+            tp_dist = abs(passing["tp"] - (tick.ask if side == "BUY" else tick.bid))
+            evidence["sl_distance_from_quote"] = sl_dist
+            evidence["tp_distance_from_quote"] = tp_dist
+    
     return {
         "side": side,
         "entry": entry,
         "bid": tick.bid,
         "ask": tick.ask,
         "spread": spread_price,
-        "required_distance": required_dist,
+        "required_stop_distance_price": required_stop_distance_price,
+        "required_tp_distance_price": required_tp_distance_price,
         "stops_level": sym.trade_stops_level,
         "freeze_level": sym.trade_freeze_level,
+        "evidence": evidence,
         "candidates": candidates,
         "order_check_results": results,
         "passing_candidate": passing,

@@ -1,0 +1,106 @@
+{
+  "buy": [
+    {
+      "candidate": 1,
+      "distance_mt5_points": 57,
+      "distance_price": 0.57,
+      "sl": 4130.15,
+      "tp": 4131.29,
+      "sl_below_bid": true,
+      "sl_above_ask": "N/A",
+      "geometry_valid": true
+    },
+    {
+      "candidate": 2,
+      "distance_mt5_points": 114,
+      "distance_price": 1.14,
+      "sl": 4129.58,
+      "tp": 4131.86,
+      "sl_below_bid": true,
+      "sl_above_ask": "N/A",
+      "geometry_valid": true
+    },
+    {
+      "candidate": 3,
+      "distance_mt5_points": 171,
+      "distance_price": 1.71,
+      "sl": 4129.01,
+      "tp": 4132.43,
+      "sl_below_bid": true,
+      "sl_above_ask": "N/A",
+      "geometry_valid": true
+    },
+    {
+      "candidate": 4,
+      "distance_mt5_points": 228,
+      "distance_price": 2.28,
+      "sl": 4128.44,
+      "tp": 4133.0,
+      "sl_below_bid": true,
+      "sl_above_ask": "N/A",
+      "geometry_valid": true
+    },
+    {
+      "candidate": 5,
+      "distance_mt5_points": 285,
+      "distance_price": 2.85,
+      "sl": 4127.87,
+      "tp": 4133.57,
+      "sl_below_bid": true,
+      "sl_above_ask": "N/A",
+      "geometry_valid": true
+    }
+  ],
+  "sell": [
+    {
+      "candidate": 1,
+      "distance_mt5_points": 57,
+      "distance_price": 0.57,
+      "sl": 4131.1,
+      "tp": 4129.96,
+      "sl_below_bid": "N/A",
+      "sl_above_ask": true,
+      "geometry_valid": true
+    },
+    {
+      "candidate": 2,
+      "distance_mt5_points": 114,
+      "distance_price": 1.14,
+      "sl": 4131.67,
+      "tp": 4129.39,
+      "sl_below_bid": "N/A",
+      "sl_above_ask": true,
+      "geometry_valid": true
+    },
+    {
+      "candidate": 3,
+      "distance_mt5_points": 171,
+      "distance_price": 1.71,
+      "sl": 4132.24,
+      "tp": 4128.82,
+      "sl_below_bid": "N/A",
+      "sl_above_ask": true,
+      "geometry_valid": true
+    },
+    {
+      "candidate": 4,
+      "distance_mt5_points": 228,
+      "distance_price": 2.28,
+      "sl": 4132.81,
+      "tp": 4128.25,
+      "sl_below_bid": "N/A",
+      "sl_above_ask": true,
+      "geometry_valid": true
+    },
+    {
+      "candidate": 5,
+      "distance_mt5_points": 285,
+      "distance_price": 2.85,
+      "sl": 4133.38,
+      "tp": 4127.68,
+      "sl_below_bid": "N/A",
+      "sl_above_ask": true,
+      "geometry_valid": true
+    }
+  ]
+}
