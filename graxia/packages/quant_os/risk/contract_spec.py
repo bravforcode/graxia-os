@@ -44,6 +44,52 @@ class ContractSpec:
         raw = f"{self.symbol}:{self.contract_size}:{self.volume_min}:{self.volume_max}:{self.volume_step}:{self.point}:{self.tick_size}:{self.tick_value}:{self.currency_profit}:{self.currency_margin}:{self.stops_level}:{self.freeze_level}"
         return hashlib.sha256(raw.encode()).hexdigest()
 
+    # ── Unit Semantics ────────────────────────────────────────────────
+    # These methods disambiguate "point" (MT5 raw unit) from "price_delta"
+    # (USD change).  On XAUUSD point=0.01, a $10 price change is 1000
+    # MT5 points.  Previously the code and reports conflated the two,
+    # calling $10 "10pt" — this is the canonical fix.
+
+    @staticmethod
+    def price_delta(price_from: float, price_to: float) -> float:
+        """Absolute USD price change between two price levels.
+
+        Example: price_delta(2000, 1990) = $10.00
+        """
+        return abs(price_from - price_to)
+
+    def to_mt5_points(self, price_delta: float) -> int:
+        """Raw MT5 point count for a given price delta.
+
+        XAUUSD (point=0.01):  to_mt5_points(10.00) → 1000
+        EURUSD (point=1e-5):  to_mt5_points(0.0010) → 100
+        """
+        if self.point == 0:
+            return 0
+        return int(round(price_delta / self.point))
+
+    def to_tick_count(self, price_delta: float) -> int:
+        """Number of ticks = price_delta / tick_size.
+
+        For most symbols tick_size == point, so tick_count == mt5_points.
+        """
+        if self.tick_size == 0:
+            return 0
+        return int(round(price_delta / self.tick_size))
+
+    def to_pips(self, price_delta: float) -> float:
+        """Convert a price delta to pips.
+
+        1 pip = 10 points for standard forex.
+        XAUUSD does NOT have a standard pip definition; this is most
+        meaningful for forex pairs like EURUSD.
+
+        EURUSD (point=1e-5): to_pips(0.0010) → 10.0  (10 pip = 100 pt)
+        """
+        if self.point == 0:
+            return 0.0
+        return price_delta / (self.point * 10)
+
 
 class ContractSpecResolver:
     """Resolves ContractSpec from MT5 runtime snapshot.
@@ -91,6 +137,15 @@ class ContractSpecResolver:
         )
 
         self._cache[symbol] = spec
+        return spec
+
+    def resolve_or_fail(self, symbol: str, profile_hash: str = "") -> ContractSpec:
+        """Resolve ContractSpec. Fail CLOSED if missing/stale/mismatched."""
+        spec = self.resolve(symbol, profile_hash)
+        if spec is None:
+            raise ContractSpecError(f"ContractSpec not found for {symbol}", symbol)
+        if spec.is_stale:
+            raise ContractSpecError(f"ContractSpec stale for {symbol}", symbol)
         return spec
 
     def clear_cache(self):

@@ -4,31 +4,44 @@
 - Branch: `phase0-baseline-safety-freeze-20260623`
 - HEAD: `6f5500d103462944b7f857c93c3c6ed6de4e97ee`
 
-## Command
+## Active worktree command
 
 ```powershell
-git status --short --branch -- graxia/packages/quant_os
+git status --short --branch -- .
 ```
 
-## Observed State
+## Active worktree observed state
 
 ```text
 ## phase0-baseline-safety-freeze-20260623
- M graxia/packages/quant_os/repo_intelligence/hooks/pre_commit_check.py
- M graxia/packages/quant_os/repo_intelligence/hooks/registry_check.py
- M graxia/packages/quant_os/tests/.test_tmp/list.json
- M graxia/packages/quant_os/tests/test_repo_hooks.py
- M graxia/packages/quant_os/tests/test_secret_scan_script.py
-?? graxia/packages/quant_os/04-Archive/
-?? graxia/packages/quant_os/docs/archive/
-?? graxia/packages/quant_os/scripts/check_env.py
+ M reports/G0_CREDENTIAL_ROTATION_STATUS.md
+ M reports/G0_GIT_CLEAN_STATE_CURRENT.md
+ M reports/G0_HOOK_ENFORCEMENT_STATUS.md
+ M reports/G0_TEST_CENSUS_RECONCILIATION.md
+ M reports/REPORT_PHASE_0_BASELINE_AND_SAFETY_FREEZE.md
+?? reports/G0_CREDENTIAL_ROTATION_ATTESTATION_TEMPLATE.md
+```
+
+## Isolated verification worktree
+- Path: `C:\tmp\quant_os_phase0a_verify`
+- Start state before artifact generation:
+
+```text
+## HEAD (no branch)
+```
+
+- State after release-truth bundle generation:
+
+```text
+## HEAD (no branch)
+?? artifacts/
 ```
 
 ## Interpretation
-- The isolated `graxia/packages/quant_os` worktree is not clean.
-- The current package-scope dirty state is not limited to Phase 0A evidence files.
-- `tests/.test_tmp/list.json` still differs inside the package workspace.
-- Additional in-package tracked and untracked paths exist outside the allowed Phase 0A ownership surface.
+- The active package worktree is not clean.
+- Current active dirt is limited to Phase 0A report refresh files.
+- The isolated verification worktree can start clean, but evidence generation itself creates `artifacts/` and ends the worktree dirty unless that output path is externalized.
 
 ## Gate Impact
-- Gate G0 clean-state cannot be marked `PASS` on this branch snapshot.
+- Gate G0 clean-state cannot be marked `PASS` on the active branch snapshot.
+- The isolated worktree proves a clean starting point is possible, but not yet preserved through the full verification flow.

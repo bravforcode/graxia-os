@@ -32,6 +32,7 @@ from ..core.config import get_config
 from ..core.golden_rules import GOLDEN_RULES
 from ..core.exceptions import RiskViolationError
 from ..execution.order import Order
+from .contract_spec import ContractSpec, ContractSpecError
 
 
 @dataclass
@@ -75,18 +76,24 @@ class RiskEngine:
         db_session=None,
         position_sizer=None,
         circuit_breaker=None,
-        kill_switch=None
+        kill_switch=None,
+        contract_spec_resolver=None,
     ):
         self.db = db_session
         self.config = get_config()
         self.position_sizer = position_sizer
         self.circuit_breaker = circuit_breaker
         self.kill_switch = kill_switch
-        self.units_per_lot = getattr(self.config, 'units_per_lot', 100.0)
+        self.contract_spec_resolver = contract_spec_resolver
         
-        # Track daily stats
         self._daily_stats: Dict[str, Any] = {}
         self._last_trade_times: Dict[str, datetime] = {}
+    
+    def _resolve_spec(self, symbol: str) -> ContractSpec:
+        """Get ContractSpec for symbol or fail closed."""
+        if self.contract_spec_resolver is None:
+            raise ContractSpecError("No ContractSpecResolver configured", symbol)
+        return self.contract_spec_resolver.resolve_or_fail(symbol)
     
     async def check_order(self, order: Order) -> RiskCheckResult:
         """
@@ -161,12 +168,15 @@ class RiskEngine:
     
     async def _check_position_size(self, order: Order) -> RiskCheckResult:
         """Validate position size against limits"""
-        # Get mode-specific limits
+        try:
+            spec = self._resolve_spec(order.symbol)
+        except ContractSpecError as e:
+            return RiskCheckResult.fail_check("POSITION_SIZE", str(e))
+        
         limits = self.config.get_mode_risk_limits()
         max_size = limits.get("max_position_size", float('inf'))
         
-        # Calculate position value (simplified - needs price lookup)
-        position_value = float(order.quantity) * self.units_per_lot
+        position_value = float(order.quantity) * spec.contract_size
         
         if position_value > max_size:
             return RiskCheckResult.fail_check(
@@ -178,15 +188,17 @@ class RiskEngine:
     
     async def _check_portfolio_exposure(self, order: Order) -> RiskCheckResult:
         """Check total portfolio exposure"""
-        # This would query current positions and calculate exposure
-        # Simplified for now
+        try:
+            spec = self._resolve_spec(order.symbol)
+        except ContractSpecError as e:
+            return RiskCheckResult.fail_check("PORTFOLIO_EXPOSURE", str(e))
+        
         current_exposure = await self._get_current_exposure()
-        order_exposure = float(order.quantity) * self.units_per_lot
+        order_exposure = float(order.quantity) * spec.contract_size
         total_exposure = current_exposure + order_exposure
         
         max_exposure = float(self.config.max_portfolio_exposure_pct) / 100.0
-        # ponytail: simplified portfolio value, needs actual equity lookup
-        portfolio_value = self.units_per_lot
+        portfolio_value = float(self.config.paper_initial_capital)
         max_exposure_value = portfolio_value * max_exposure
         
         if total_exposure > max_exposure_value:
@@ -213,7 +225,7 @@ class RiskEngine:
         """Check daily loss limit"""
         daily_pnl = await self._get_daily_pnl()
         max_daily_loss = float(self.config.max_daily_loss_pct) / 100.0
-        portfolio_value = self.units_per_lot  # ponytail: simplified
+        portfolio_value = float(self.config.paper_initial_capital)
         max_loss_value = portfolio_value * max_daily_loss
         
         if daily_pnl < -max_loss_value:
@@ -281,7 +293,6 @@ class RiskEngine:
         if order.stop_price is None:
             return RiskCheckResult.pass_check("RISK_PER_TRADE")
         
-        # Calculate risk amount
         from ..core.enums import OrderSide
         if order.side == OrderSide.BUY:
             risk_per_unit = float(order.price or 0) - float(order.stop_price)
@@ -290,8 +301,7 @@ class RiskEngine:
         
         total_risk = risk_per_unit * float(order.quantity)
         
-        # Compare to max risk per trade
-        portfolio_value = self.units_per_lot  # ponytail: simplified
+        portfolio_value = float(self.config.paper_initial_capital)
         max_risk = portfolio_value * (float(self.config.max_risk_per_trade_pct) / 100.0)
         
         if total_risk > max_risk:
@@ -419,7 +429,7 @@ class RiskMonitor:
             ))
         
         # Check daily loss
-        portfolio_value = getattr(self.config, 'units_per_lot', 100.0)
+        portfolio_value = float(self.config.paper_initial_capital)
         max_daily_loss = portfolio_value * float(self.config.max_daily_loss_pct) / 100.0
         if self._daily_pnl < -max_daily_loss:
             violations.append(RiskCheckResult.fail_check(

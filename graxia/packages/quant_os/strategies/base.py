@@ -8,6 +8,7 @@ from typing import Optional, Dict, Any, List
 from uuid import uuid4
 
 from ..core.enums import SignalType, RegimeType
+from ..risk.contract_spec import ContractSpec, ContractSpecError
 
 
 @dataclass
@@ -174,16 +175,23 @@ class Strategy(ABC):
         entry_price: Decimal,
         stop_loss: Decimal,
         risk_pct: Optional[float] = None,
-        units_per_lot: float = None,
+        contract_spec: ContractSpec = None,
     ) -> Decimal:
         """
         Calculate position size based on risk parameters.
         
+        Args:
+            account_balance: Current account balance
+            entry_price: Planned entry price
+            stop_loss: Stop loss price
+            risk_pct: Risk percentage (default from config)
+            contract_spec: ContractSpec for the symbol (mandatory)
+        
         Returns:
-            Position size in lots/units
+            Position size in lots
         """
-        if units_per_lot is None:
-            units_per_lot = getattr(self.config, 'units_per_lot', 100.0)
+        if contract_spec is None:
+            raise ContractSpecError("ContractSpec required for position sizing", "unknown")
         
         risk_amount = account_balance * Decimal(str(risk_pct or self.config.risk_per_trade_pct)) / 100
         
@@ -191,11 +199,10 @@ class Strategy(ABC):
         if price_risk == 0:
             return Decimal("0")
         
-        # Convert to lot size
         units = risk_amount / price_risk
-        lots = units / Decimal(str(units_per_lot))
+        lots = units / Decimal(str(contract_spec.contract_size))
         
-        return lots.quantize(Decimal("0.01"))  # Round to 2 decimal places
+        return lots.quantize(Decimal("0.01"))
     
     def record_outcome(self, pnl: float) -> None:
         """Record trade outcome for performance tracking"""

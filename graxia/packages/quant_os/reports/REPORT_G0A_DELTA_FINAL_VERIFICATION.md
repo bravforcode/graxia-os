@@ -1,5 +1,12 @@
 # REPORT_G0A_DELTA_FINAL_VERIFICATION.md
 
+## Provenance
+- **source_code_sha:** `5d16175ee853cf3315f08d315f697ddc7fdbf80a`
+- **report_generation_sha:** `5d16175ee853cf3315f08d315f697ddc7fdbf80a`
+- **report_commit_sha:** `<TBD — set after committing this doc>`
+- **verification_worktree_sha:** `N/A`
+- **contract_snapshot_hash:** `968E3EB2DFBB3E6B06B9DEF9AFDB8C1D142C22D837F178E4140F2B4DBB638CD7`
+
 ## G0A-DELTA — Final Evidence Closure
 
 **Verdict: PASS**

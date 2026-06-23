@@ -185,7 +185,7 @@ Accepts only `path` and `timeout`. No credential parameters.
 | New default | `units_per_lot = None` → resolves from config (100.0) |
 | XAUUSD impact | 1 lot = 100 troy oz (was incorrectly 100000) |
 | EURUSD impact | Forex requires explicit `units_per_lot=100000` override |
-| Before/after | XAUUSD 1 lot, 2000 price, 10 pip SL: old=$10,000 risk → new=$100 risk |
+| Before/after | XAUUSD 1 lot, 2000 price, 10 MT5 point SL ($0.10 delta): old=$10,000 risk → new=$10 risk |
 | Tests added | 8 tests in test_units_per_lot_config.py |
 | Historical invalidation | Shadow campaign P&L is 1000x inflated (used 100000) |
 | Rollback | `git revert <commit>` or restore 100000.0 defaults |

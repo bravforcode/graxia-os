@@ -112,7 +112,7 @@ config.units_per_lot = 100000.0  # per-strategy or per-symbol config
 
 ## 6. Before/After Numeric Example
 
-**Scenario:** XAUUSD, $10,000 account, 1% risk, entry 2000, SL 1990 (10 pip / $10 risk per oz).
+**Scenario:** XAUUSD, $10,000 account, 1% risk, entry 2000, SL 1990 (1000 MT5 point / $10 price delta).
 
 ### Before (units_per_lot = 100,000)
 

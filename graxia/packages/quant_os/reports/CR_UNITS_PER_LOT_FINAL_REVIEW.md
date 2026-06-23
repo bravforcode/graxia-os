@@ -1,5 +1,12 @@
 # CR_UNITS_PER_LOT_FINAL_REVIEW.md
 
+## Provenance
+- **source_code_sha:** `5d16175ee853cf3315f08d315f697ddc7fdbf80a`
+- **report_generation_sha:** `5d16175ee853cf3315f08d315f697ddc7fdbf80a`
+- **report_commit_sha:** `<TBD — set after committing this doc>`
+- **verification_worktree_sha:** `N/A`
+- **contract_snapshot_hash:** `968E3EB2DFBB3E6B06B9DEF9AFDB8C1D142C22D837F178E4140F2B4DBB638CD7`
+
 ## Change Request: units_per_lot → ContractSpec Resolution
 
 **Status: REVIEW_COMPLETE — APPROVED_WITH_CONDITIONS**
@@ -109,10 +116,10 @@ Key design decisions:
 
 ### XAUUSD — order_calc_profit results
 
-30-point BUY/SL at XAUUSD entry ~4110.50, 10 point risk/target distance:
+30-point BUY/SL at XAUUSD entry ~4110.50, 10 MT5 point risk/target distance (price delta = 10 × 0.01 = $0.10):
 
-| Volume | Direction | Profit (10 pt TP) | Loss (10 pt SL) | Entry | P&L per point |
-|--------|-----------|------------------|-----------------|-------|---------------|
+| Volume | Direction | Profit (10 pt TP) | Loss (10 pt SL) | Entry | P&L per MT5 point |
+|--------|-----------|------------------|-----------------|-------|-------------------|
 | 0.01 lot | BUY | $0.10 | -$0.10 | 4110.53 | $0.01 |
 | 0.01 lot | SELL | $0.10 | -$0.10 | 4110.40 | $0.01 |
 | 0.10 lot | BUY | $1.00 | -$1.00 | 4110.53 | $0.10 |
@@ -120,7 +127,7 @@ Key design decisions:
 | 1.00 lot | BUY | $10.00 | -$10.00 | 4110.53 | $1.00 |
 | 1.00 lot | SELL | $10.00 | -$10.00 | 4110.40 | $1.00 |
 
-**Validation:** Each P&L = volume × contract_size × point × 10 points.
+**Validation:** Each P&L = volume × contract_size × point × 10 MT5 points.
     - 0.01 lot: 0.01 × 100 × 0.01 × 10 = $0.10 ✅
     - 0.10 lot: 0.10 × 100 × 0.01 × 10 = $1.00 ✅
     - 1.00 lot: 1.00 × 100 × 0.01 × 10 = $10.00 ✅
@@ -129,10 +136,10 @@ Old formula (100000): 0.01 × 100000 × 0.01 × 10 = $100 ❌ (1000x over)
 
 ### EURUSD — order_calc_profit results
 
-Entry ~1.14081, 10 point risk/target distance:
+Entry ~1.14081, 10 MT5 point risk/target distance (1 pip = 10 pt, so 10 pt = 1 pip = 0.00010 delta):
 
-| Volume | Direction | Profit (10 pt TP) | Loss (10 pt SL) | Entry | P&L per point |
-|--------|-----------|------------------|-----------------|-------|---------------|
+| Volume | Direction | Profit (10 pt TP) | Loss (10 pt SL) | Entry | P&L per MT5 point |
+|--------|-----------|------------------|-----------------|-------|-------------------|
 | 0.01 lot | BUY | $0.10 | -$0.10 | 1.14081 | $0.01 |
 | 0.01 lot | SELL | $0.10 | -$0.10 | 1.14081 | $0.01 |
 | 0.10 lot | BUY | $1.00 | -$1.00 | 1.14081 | $0.10 |
@@ -140,7 +147,7 @@ Entry ~1.14081, 10 point risk/target distance:
 | 1.00 lot | BUY | $10.00 | -$10.00 | 1.14081 | $1.00 |
 | 1.00 lot | SELL | $10.00 | -$10.00 | 1.14081 | $1.00 |
 
-**Validation:** P&L = volume × contract_size × point × 10 points.
+**Validation:** P&L = volume × contract_size × point × 10 MT5 points.
     - 0.01 lot: 0.01 × 100000 × 0.00001 × 10 = $0.10 ✅
     - 1.00 lot: 1.00 × 100000 × 0.00001 × 10 = $10.00 ✅
 
@@ -184,8 +191,8 @@ Margin scales linearly with volume. Contract notional = volume × contract_size 
 | Evidence | Old (100000) | Runtime (100) | Verdict |
 |----------|-------------|---------------|---------|
 | symbol_info().trade_contract_size | N/A | **100.0** | Runtime wins |
-| 0.01 lot 10pt profit (calc_profit) | $100.00 | **$0.10** | Broker calculator wins |
-| 1.00 lot 10pt profit (calc_profit) | $10,000.00 | **$10.00** | Broker calculator wins |
+| 0.01 lot 10 MT5 pt profit (calc_profit) | $100.00 | **$0.10** | Broker calculator wins |
+| 1.00 lot 10 MT5 pt profit (calc_profit) | $10,000.00 | **$10.00** | Broker calculator wins |
 | Notional for 1 lot at 4110 | $411,000,000 | **$411,000** | Runtime wins |
 
 The broker's own `order_calc_profit` returns values matching `contract_size=100`, not `100000`. Any system using the old default for XAUUSD would size positions 1000x too large and produce fantasy P&L numbers.
@@ -205,31 +212,37 @@ The broker's own `order_calc_profit` returns values matching `contract_size=100`
 
 ## 9. Before/After Numeric Examples
 
-### XAUUSD: 1 lot, price=2000, SL=1990 (10 point risk)
+### XAUUSD: 1 lot, price=2000, SL=1990
+
+**price_delta = $10.00 = 1000 MT5 points** (at point=0.01)
 
 | Metric | Old (100000) | New (100) | Correct? |
 |--------|-------------|-----------|----------|
 | Position units | 100000 | 100 | ✅ New |
 | Notional value | $200,000,000 | $200,000 | ✅ New |
-| Risk per trade (10 pt) | $10,000 | $10 | ✅ New (matches broker calculator) |
-| Risk on $10k account | 100% (blown) | 0.1% | ✅ New |
+| Risk per trade (1000 pt / $10 delta) | $1,000,000 | $1,000 | ✅ New (matches broker calc) |
+| Risk on $10k account | 10000% (blown) | 10% | ✅ New |
 
-### EURUSD: 1 lot, price=1.1000, SL=1.0990 (10 pip risk)
+0.01 lot: 0.01 × 100 × $10 = **$10 risk** (matches user expectation)
+
+### EURUSD: 1 lot, price=1.1000, SL=1.0990 (10 pip / 100 pt)
+
+**price_delta = 0.0010 = 10 pip = 100 MT5 points** (at point=1e-5, 1 pip=10 pt)
 
 | Metric | Old (100000) | New (runtime 100000) | Correct? |
 |--------|-------------|---------------------|----------|
 | Position units | 100000 | 100000 | ✅ Same |
 | Notional value | $110,000 | $110,000 | ✅ Same |
-| Risk per trade (10 pt) | $100 | $100 | ✅ Same (matches broker calculator) |
+| Risk per trade (10 pip / 100 pt) | $100 | $100 | ✅ Same (matches broker calculator) |
 
 ## 10. Tests Added
 
-### `tests/test_contract_spec.py` — 12 tests, all passing
+### `tests/test_contract_spec.py` — 23 tests, all passing
 
 | Test | Symbol | What it proves |
 |------|--------|----------------|
 | test_xauusd_contract_size | XAUUSD | `contract_size=100` |
-| test_xauusd_pnl_calculation | XAUUSD | Risk = 10 pip × 100 × 0.01 = $10.00 |
+| test_xauusd_pnl_calculation | XAUUSD | Risk = 10 pts × 100 × 0.01 = $10.00 |
 | test_eurusd_contract_size | EURUSD | `contract_size=100000` |
 | test_missing_symbol_raises_error | INVALID | `ContractSpecError` |
 | test_no_connection_raises_error | None | `ContractSpecError` for missing mt5 |
@@ -240,15 +253,22 @@ The broker's own `order_calc_profit` returns values matching `contract_size=100`
 | test_volume_step_stored_correctly | XAUUSD | `volume_step=0.01` |
 | test_volume_min_stored_correctly | XAUUSD | `volume_min=0.01` |
 | test_volume_max_stored_correctly | XAUUSD | `volume_max=50.0` |
+| test_xauusd_1_lot_1000_point_sl | XAUUSD | 1 lot, 1000 pt ($10 delta) = $1,000 risk |
+| test_xauusd_0_01_lot_1000_point_sl | XAUUSD | 0.01 lot, 1000 pt ($10 delta) = $10 risk |
+| test_xauusd_0_01_lot_10_point_sl | XAUUSD | 0.01 lot, 10 pt ($0.10 delta) = $0.10 risk |
+| test_eurusd_1_lot_10_pip_sl | EURUSD | 1 lot, 10 pip (100 pt, $0.0010 delta) = $100 |
+| test_eurusd_0_01_lot_10_pip_sl | EURUSD | 0.01 lot, 10 pip (100 pt) = $1 risk |
+| test_unit_labels_unambiguous | XAUUSD | mt5_points(1000) ≠ price_delta(10.0) — distinct units |
+| test_xauusd_buy_sell_symmetric_risk | XAUUSD | BUY/SELL same distance = same risk |
 
 ### Broker Cross-Check — `artifacts/contract_spec/XAUUSD_contract_snapshot.json` (130 lines)
 
-**Order_calc_profit cross-check — all PASS**
+**Order_calc_profit cross-check — all PASS** (all distances = 10 MT5 points)
 
 | Check | XAUUSD 0.01 BUY | EURUSD 0.01 BUY | Formula Matches |
 |-------|----------------|-----------------|-----------------|
-| Profit 10pt TP | $0.10 | $0.10 | ✅ |
-| Loss 10pt SL | -$0.10 | -$0.10 | ✅ |
+| Profit 10 MT5 pt TP | $0.10 | $0.10 | ✅ |
+| Loss 10 MT5 pt SL | -$0.10 | -$0.10 | ✅ |
 | P&L symmetry | ✅ | ✅ | ✅ |
 | Linear scaling (0.01→0.10→1.0) | ✅ 0.10→1.00→10.00 | ✅ 0.10→1.00→10.00 | ✅ |
 

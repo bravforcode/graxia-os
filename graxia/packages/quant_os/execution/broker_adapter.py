@@ -11,6 +11,7 @@ import random
 from ..core.enums import OrderSide, OrderType, OrderStatus, PositionType, CloseReason
 from ..core.config import get_config
 from ..core.exceptions import BrokerError
+from ..risk.contract_spec import ContractSpec, ContractSpecError
 from .order import Order
 
 
@@ -119,8 +120,9 @@ class PaperBroker(BrokerAdapter):
     - Order delays
     """
     
-    def __init__(self):
+    def __init__(self, contract_spec_resolver=None):
         super().__init__("PAPER")
+        self.contract_spec_resolver = contract_spec_resolver
         self.prices: Dict[str, Dict[str, Decimal]] = {}
         self.orders: Dict[str, Dict] = {}
         self.positions: Dict[str, BrokerPosition] = {}
@@ -173,9 +175,13 @@ class PaperBroker(BrokerAdapter):
             else:
                 fill_price = market_price - slippage
             
-            # Simulate commission
-            lot_size = Decimal(str(getattr(self.config, 'units_per_lot', 100)))
-            lots = order.quantity / lot_size
+            # Simulate commission using ContractSpec
+            if self.contract_spec_resolver:
+                spec = self.contract_spec_resolver.resolve(order.symbol)
+                contract_size = Decimal(str(spec.contract_size))
+            else:
+                contract_size = Decimal("100")
+            lots = order.quantity / contract_size
             commission = lots * Decimal(str(self.config.paper_commission_per_lot))
             
             # Record the order

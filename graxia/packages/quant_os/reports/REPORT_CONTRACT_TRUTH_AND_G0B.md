@@ -1,5 +1,12 @@
 # REPORT_CONTRACT_TRUTH_AND_G0B.md
 
+## Provenance
+- **source_code_sha:** `5d16175ee853cf3315f08d315f697ddc7fdbf80a`
+- **report_generation_sha:** `5d16175ee853cf3315f08d315f697ddc7fdbf80a`
+- **report_commit_sha:** `<TBD — set after committing this doc>`
+- **verification_worktree_sha:** `N/A`
+- **contract_snapshot_hash:** `968E3EB2DFBB3E6B06B9DEF9AFDB8C1D142C22D837F178E4140F2B4DBB638CD7`
+
 ## Combined Report: ContractSpec Correctness + Legacy Campaign Forensics
 
 **Date:** 2026-06-23
@@ -58,20 +65,20 @@ EURUSD correctly resolves to standard forex contract (100000). No override neede
 
 ## Cross-Check Against MT5 Broker Calculators
 
-### order_calc_profit() - XAUUSD
+### order_calc_profit() - XAUUSD (distance = 10 MT5 points = $0.10 price delta)
 
-| Volume | Direction | 10pt TP | 10pt SL | Formula Check |
-|--------|-----------|---------|---------|---------------|
+| Volume | Direction | 10 MT5 pt TP | 10 MT5 pt SL | Formula Check |
+|--------|-----------|-------------|-------------|---------------|
 | 0.01 lot | BUY | +$0.10 | -$0.10 | 0.01 × 100 × 0.01 × 10 = $0.10 ✅ |
 | 0.01 lot | SELL | +$0.10 | -$0.10 | ✅ |
 | 0.10 lot | BUY | +$1.00 | -$1.00 | 0.10 × 100 × 0.01 × 10 = $1.00 ✅ |
 | 0.10 lot | SELL | +$1.00 | -$1.00 | ✅ |
 | 1.00 lot | BUY | +$10.00 | -$10.00 | 1.00 × 100 × 0.01 × 10 = $10.00 ✅ |
 
-### order_calc_profit() - EURUSD
+### order_calc_profit() - EURUSD (distance = 10 MT5 points = 1 pip = 0.00010 delta)
 
-| Volume | Direction | 10pt TP | 10pt SL | Formula Check |
-|--------|-----------|---------|---------|---------------|
+| Volume | Direction | 10 MT5 pt TP | 10 MT5 pt SL | Formula Check |
+|--------|-----------|-------------|-------------|---------------|
 | 0.01 lot | BUY | +$0.10 | -$0.10 | 0.01 × 100000 × 1e-5 × 10 = $0.10 ✅ |
 | 0.10 lot | BUY | +$1.00 | -$1.00 | ✅ |
 | 1.00 lot | BUY | +$10.00 | -$10.00 | ✅ |
@@ -94,13 +101,14 @@ All margin estimates **confirmed** by broker calculator.
 - Correct for XAUUSD: `trade_contract_size = 100`
 - **Sizing error: 1000× for XAUUSD**
 
-### Before/After: 1 lot XAUUSD, 10pt SL, $10k account
+### Before/After: 1 lot XAUUSD, 10 MT5 point SL ($0.10 price delta), $10k account
 
 | Metric | Old (100000) | After (runtime 100) |
 |--------|-------------|-------------------|
 | Risk amount | $10,000 | $10 |
 | % of $10k account | 100% (blown) | 0.1% |
 | Was sizing safe? | **NO** | **YES** |
+| Disambiguation | 10 MT5 pt = $0.10 delta | 10 pt × 100 × 1 lot = $10 ✅ |
 
 ### ContractSpec Resolution Rule
 ```

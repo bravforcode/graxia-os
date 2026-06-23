@@ -15,6 +15,7 @@ from typing import Optional
 
 from ..core.config import get_config
 from ..core.golden_rules import GOLDEN_RULES
+from .contract_spec import ContractSpec, ContractSpecError
 
 
 @dataclass
@@ -32,13 +33,9 @@ class PositionSizeResult:
 class PositionSizer(ABC):
     """Abstract base class for position sizing"""
     
-    def __init__(self, name: str, units_per_lot: float = None):
+    def __init__(self, name: str):
         self.name = name
         self.config = get_config()
-        if units_per_lot is None:
-            self.units_per_lot = getattr(self.config, 'units_per_lot', 100.0)
-        else:
-            self.units_per_lot = units_per_lot
     
     @abstractmethod
     def calculate(
@@ -47,6 +44,7 @@ class PositionSizer(ABC):
         entry_price: Decimal,
         stop_loss: Decimal,
         symbol: str = "",
+        contract_spec: ContractSpec = None,
         **kwargs
     ) -> PositionSizeResult:
         """
@@ -57,12 +55,21 @@ class PositionSizer(ABC):
             entry_price: Planned entry price
             stop_loss: Stop loss price
             symbol: Trading symbol
+            contract_spec: ContractSpec for the symbol (mandatory, fail closed if None)
             **kwargs: Additional parameters specific to sizer
         
         Returns:
             PositionSizeResult with calculated size
         """
         pass
+    
+    def _require_contract_spec(
+        self, contract_spec: ContractSpec = None, symbol: str = ""
+    ) -> int:
+        """Get contract_size from spec or fail closed."""
+        if contract_spec is None:
+            raise ContractSpecError("ContractSpec required for position sizing", symbol or "unknown")
+        return contract_spec.contract_size
     
     def _apply_limits(
         self,
@@ -109,8 +116,8 @@ class FixedFractionalSizer(PositionSizer):
     Default: 1% as per golden rules.
     """
     
-    def __init__(self, risk_pct: Optional[float] = None, units_per_lot: float = None):
-        super().__init__("FixedFractional", units_per_lot)
+    def __init__(self, risk_pct: Optional[float] = None):
+        super().__init__("FixedFractional")
         self.risk_pct = risk_pct or GOLDEN_RULES.MAX_RISK_PER_TRADE_PCT
     
     def calculate(
@@ -119,13 +126,13 @@ class FixedFractionalSizer(PositionSizer):
         entry_price: Decimal,
         stop_loss: Decimal,
         symbol: str = "",
+        contract_spec: ContractSpec = None,
         **kwargs
     ) -> PositionSizeResult:
         """Calculate position size based on fixed risk percentage"""
-        # Calculate risk amount
-        risk_amount = account_balance * Decimal(str(self.risk_pct)) / 100
+        contract_size = self._require_contract_spec(contract_spec, symbol)
         
-        # Calculate price risk per unit
+        risk_amount = account_balance * Decimal(str(self.risk_pct)) / 100
         price_risk = abs(entry_price - stop_loss)
         
         if price_risk == 0:
@@ -139,21 +146,14 @@ class FixedFractionalSizer(PositionSizer):
                 notes="Stop loss at entry price - cannot calculate size"
             )
         
-        # Calculate units
         units = risk_amount / price_risk
-        
-        # Standard forex lot = 100,000 units
-        lots = units / Decimal(str(self.units_per_lot))
-        lots = lots.quantize(Decimal("0.01"), rounding=ROUND_DOWN)  # Round to 2 decimals
-        units = lots * Decimal(str(self.units_per_lot))
-        
-        # Calculate notional value
+        lots = units / Decimal(str(contract_size))
+        lots = lots.quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+        units = lots * Decimal(str(contract_size))
         notional = units * entry_price
         
-        # Apply limits
         lots, units, notional = self._apply_limits(lots, units, notional, account_balance)
         
-        # Recalculate actual risk
         actual_risk = units * price_risk
         actual_risk_pct = float(actual_risk / account_balance * 100)
         
@@ -182,8 +182,8 @@ class KellySizer(PositionSizer):
     Uses half-Kelly for safety (conservative Kelly).
     """
     
-    def __init__(self, win_rate: float = 0.55, avg_win: float = 1.5, avg_loss: float = 1.0, units_per_lot: float = None):
-        super().__init__("Kelly", units_per_lot)
+    def __init__(self, win_rate: float = 0.55, avg_win: float = 1.5, avg_loss: float = 1.0):
+        super().__init__("Kelly")
         self.win_rate = win_rate
         self.avg_win = avg_win
         self.avg_loss = avg_loss
@@ -195,20 +195,19 @@ class KellySizer(PositionSizer):
         entry_price: Decimal,
         stop_loss: Decimal,
         symbol: str = "",
+        contract_spec: ContractSpec = None,
         **kwargs
     ) -> PositionSizeResult:
         """Calculate position size using Kelly Criterion"""
-        # Kelly formula: f = (bp - q) / b
+        contract_size = self._require_contract_spec(contract_spec, symbol)
+        
         p = self.win_rate
         q = 1 - p
-        b = self.avg_win / self.avg_loss  # Payoff ratio
+        b = self.avg_win / self.avg_loss
         
         kelly_pct = (b * p - q) / b
-        
-        # Apply Kelly fraction (half-Kelly for safety)
         adjusted_kelly = kelly_pct * self.kelly_fraction
         
-        # Cap at golden rule max
         max_risk = GOLDEN_RULES.MAX_RISK_PER_TRADE_PCT / 100
         if adjusted_kelly > max_risk:
             adjusted_kelly = max_risk
@@ -216,10 +215,8 @@ class KellySizer(PositionSizer):
         else:
             capped = False
         
-        # Use fixed fractional with Kelly percentage
         risk_pct = adjusted_kelly * 100
         risk_amount = account_balance * Decimal(str(risk_pct)) / 100
-        
         price_risk = abs(entry_price - stop_loss)
         
         if price_risk == 0:
@@ -234,9 +231,9 @@ class KellySizer(PositionSizer):
             )
         
         units = risk_amount / price_risk
-        lots = units / Decimal(str(self.units_per_lot))
+        lots = units / Decimal(str(contract_size))
         lots = lots.quantize(Decimal("0.01"), rounding=ROUND_DOWN)
-        units = lots * Decimal(str(self.units_per_lot))
+        units = lots * Decimal(str(contract_size))
         notional = units * entry_price
         
         lots, units, notional = self._apply_limits(lots, units, notional, account_balance)
@@ -273,8 +270,8 @@ class ATRSizer(PositionSizer):
     Higher volatility = smaller position.
     """
     
-    def __init__(self, atr_multiple: float = 1.5, base_risk_pct: float = 1.0, units_per_lot: float = None):
-        super().__init__("ATR", units_per_lot)
+    def __init__(self, atr_multiple: float = 1.5, base_risk_pct: float = 1.0):
+        super().__init__("ATR")
         self.atr_multiple = atr_multiple
         self.base_risk_pct = base_risk_pct
     
@@ -284,28 +281,30 @@ class ATRSizer(PositionSizer):
         entry_price: Decimal,
         stop_loss: Decimal,
         symbol: str = "",
+        contract_spec: ContractSpec = None,
         atr: Optional[Decimal] = None,
         **kwargs
     ) -> PositionSizeResult:
         """Calculate position size based on ATR volatility"""
+        # NOTE: contract_spec required even for fallback path
+        contract_size = self._require_contract_spec(contract_spec, symbol)
+        
         if atr is None or atr == 0:
-            # Fall back to fixed fractional
             fallback = FixedFractionalSizer(self.base_risk_pct)
-            result = fallback.calculate(account_balance, entry_price, stop_loss, symbol)
+            result = fallback.calculate(
+                account_balance, entry_price, stop_loss, symbol,
+                contract_spec=contract_spec,
+            )
             result.method = f"{self.name} (fallback to FixedFractional)"
             return result
         
-        # Calculate stop distance based on ATR
         atr_stop_distance = atr * Decimal(str(self.atr_multiple))
-        
-        # Risk amount
         risk_amount = account_balance * Decimal(str(self.base_risk_pct)) / 100
         
-        # Calculate units based on ATR stop
         units = risk_amount / atr_stop_distance
-        lots = units / Decimal(str(self.units_per_lot))
+        lots = units / Decimal(str(contract_size))
         lots = lots.quantize(Decimal("0.01"), rounding=ROUND_DOWN)
-        units = lots * Decimal(str(self.units_per_lot))
+        units = lots * Decimal(str(contract_size))
         notional = units * entry_price
         
         lots, units, notional = self._apply_limits(lots, units, notional, account_balance)
@@ -337,9 +336,8 @@ class AntiMartingaleSizer(PositionSizer):
         base_risk_pct: float = 1.0,
         consecutive_losses: int = 0,
         consecutive_wins: int = 0,
-        units_per_lot: float = None
     ):
-        super().__init__("AntiMartingale", units_per_lot)
+        super().__init__("AntiMartingale")
         self.base_risk_pct = base_risk_pct
         self.consecutive_losses = consecutive_losses
         self.consecutive_wins = consecutive_wins
@@ -350,32 +348,28 @@ class AntiMartingaleSizer(PositionSizer):
         entry_price: Decimal,
         stop_loss: Decimal,
         symbol: str = "",
+        contract_spec: ContractSpec = None,
         **kwargs
     ) -> PositionSizeResult:
         """Calculate position size with anti-martingale adjustment"""
-        # Adjust risk based on streak
+        contract_size = self._require_contract_spec(contract_spec, symbol)
+        
         adjustment = 1.0
         
-        # Reduce size after losses (check higher streaks first)
         if self.consecutive_losses >= 3:
-            adjustment = 0.25  # Quarter size after 3+ losses
+            adjustment = 0.25
         elif self.consecutive_losses >= 2:
-            adjustment = 0.5  # Half size after 2 losses
+            adjustment = 0.5
         
-        # Increase size after wins (capped, check higher streaks first)
         if self.consecutive_wins >= 3:
-            adjustment = min(adjustment * 1.5, 2.0)  # Max 2x
+            adjustment = min(adjustment * 1.5, 2.0)
         elif self.consecutive_wins >= 2:
-            adjustment = min(adjustment * 1.25, 1.5)  # Max 1.5x
+            adjustment = min(adjustment * 1.25, 1.5)
         
         adjusted_risk = self.base_risk_pct * adjustment
-        
-        # Cap at golden rule
         adjusted_risk = min(adjusted_risk, GOLDEN_RULES.MAX_RISK_PER_TRADE_PCT)
         
-        # Use fixed fractional with adjusted percentage
         risk_amount = account_balance * Decimal(str(adjusted_risk)) / 100
-        
         price_risk = abs(entry_price - stop_loss)
         
         if price_risk == 0:
@@ -390,9 +384,9 @@ class AntiMartingaleSizer(PositionSizer):
             )
         
         units = risk_amount / price_risk
-        lots = units / Decimal(str(self.units_per_lot))
+        lots = units / Decimal(str(contract_size))
         lots = lots.quantize(Decimal("0.01"), rounding=ROUND_DOWN)
-        units = lots * Decimal(str(self.units_per_lot))
+        units = lots * Decimal(str(contract_size))
         notional = units * entry_price
         
         lots, units, notional = self._apply_limits(lots, units, notional, account_balance)
@@ -400,7 +394,6 @@ class AntiMartingaleSizer(PositionSizer):
         actual_risk = units * price_risk
         actual_risk_pct = float(actual_risk / account_balance * 100)
         
-        # Build notes
         notes_parts = [f"Base: {self.base_risk_pct}%, Adj: {adjusted_risk:.2f}%"]
         if self.consecutive_losses > 0:
             notes_parts.append(f"({self.consecutive_losses} losses)")
@@ -434,6 +427,4 @@ class AntiMartingaleSizer(PositionSizer):
 def get_default_sizer() -> PositionSizer:
     """Get default position sizer based on configuration"""
     config = get_config()
-    
-    # Default to fixed fractional with configured risk
     return FixedFractionalSizer(config.max_risk_per_trade_pct)

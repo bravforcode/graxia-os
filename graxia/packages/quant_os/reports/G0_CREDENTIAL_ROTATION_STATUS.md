@@ -16,4 +16,10 @@
 ## Required Next Action
 1. Operator confirms rotation/revocation outside source control.
 2. A redacted confirmation artifact is added without copying any secret value.
-3. History cleanup, if needed, is executed only via the separate runbook flow in `12_GIT_CREDENTIAL_INCIDENT_RUNBOOK.md`.
+3. Use `reports/G0_CREDENTIAL_ROTATION_ATTESTATION_TEMPLATE.md` and record only:
+   - `rotated_at_utc`
+   - `account_mode=DEMO`
+   - `credential_source=TERMINAL_SESSION_ONLY`
+   - `terminal_session_fingerprint_hash`
+   - `old_credential_revoked_or_replaced=true`
+4. History cleanup, if needed, is executed only via the separate runbook flow in `12_GIT_CREDENTIAL_INCIDENT_RUNBOOK.md`.

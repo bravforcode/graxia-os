@@ -1,0 +1,8 @@
+repos:
+  - repo: local
+    hooks:
+      - id: security-check
+        name: Security check
+        entry: python graxia/packages/quant_os/repo_intelligence/hooks/pre_commit_security_check.py
+        language: system
+        pass_filenames: false
