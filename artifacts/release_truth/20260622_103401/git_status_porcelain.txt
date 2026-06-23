@@ -1,0 +1,13 @@
+M CLAUDE.md
+ M graxia/__init__.py
+ M graxia/packages/__init__.py
+ M pytest.ini
+ M repos/hftbacktest
+?? artifacts/
+?? graxia/packages/quant_os/quarantine_manager.py
+?? graxia/packages/quant_os/scripts/hash_data_manifests.py
+?? graxia/packages/quant_os/scripts/run_release_truth.py
+?? graxia/packages/quant_os/scripts/verify_reproducibility.py
+?? graxia/packages/quant_os/shadow_results/session_20260622_102513.json
+?? graxia/packages/quant_os/shadow_results/telemetry_20260622_102513.json
+?? graxia/packages/quant_os/tests/test_quarantine_manager.py

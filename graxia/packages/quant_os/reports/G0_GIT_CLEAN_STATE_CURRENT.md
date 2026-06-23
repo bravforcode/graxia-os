@@ -2,41 +2,33 @@
 
 ## Branch / Commit
 - Branch: `phase0-baseline-safety-freeze-20260623`
-- HEAD: `1b84e97054daabd6918dba2acb54311ee02fd8b6`
+- HEAD: `6f5500d103462944b7f857c93c3c6ed6de4e97ee`
 
 ## Command
 
 ```powershell
-git status --short --branch
+git status --short --branch -- graxia/packages/quant_os
 ```
 
 ## Observed State
 
 ```text
 ## phase0-baseline-safety-freeze-20260623
- M ../../../CLAUDE.md
- M ../../__init__.py
- M ../__init__.py
- M scripts/secret_scan.py
- M tests/.test_tmp/list.json
- M ../../../pytest.ini
- m ../../../repos/hftbacktest
-?? ../../../artifacts/
-?? reports/G0_CREDENTIAL_ROTATION_STATUS.md
-?? reports/G0_GIT_CLEAN_STATE_CURRENT.md
-?? reports/G0_LEGACY_CAMPAIGN_CLASSIFICATION.md
-?? reports/G0_SECRET_SCAN_CURRENT.md
-?? reports/G0_TEST_MIGRATION_LEDGER_BASELINE.md
-?? reports/REPORT_PHASE_0_BASELINE_AND_SAFETY_FREEZE.md
-?? tests/test_secret_scan_script.py
-?? ../../../shadow_results/
+ M graxia/packages/quant_os/repo_intelligence/hooks/pre_commit_check.py
+ M graxia/packages/quant_os/repo_intelligence/hooks/registry_check.py
+ M graxia/packages/quant_os/tests/.test_tmp/list.json
+ M graxia/packages/quant_os/tests/test_repo_hooks.py
+ M graxia/packages/quant_os/tests/test_secret_scan_script.py
+?? graxia/packages/quant_os/04-Archive/
+?? graxia/packages/quant_os/docs/archive/
+?? graxia/packages/quant_os/scripts/check_env.py
 ```
 
 ## Interpretation
-- The monorepo worktree is not clean.
-- Pre-existing dirty paths exist outside `graxia/packages/quant_os`.
-- This Phase 0 lane added branch-local report/test updates inside `graxia/packages/quant_os`.
-- `tests/.test_tmp/list.json` was touched by verification tooling and now differs only by file-ending normalization.
+- The isolated `graxia/packages/quant_os` worktree is not clean.
+- The current package-scope dirty state is not limited to Phase 0A evidence files.
+- `tests/.test_tmp/list.json` still differs inside the package workspace.
+- Additional in-package tracked and untracked paths exist outside the allowed Phase 0A ownership surface.
 
 ## Gate Impact
 - Gate G0 clean-state cannot be marked `PASS` on this branch snapshot.

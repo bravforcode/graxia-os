@@ -1,0 +1,16 @@
+{
+  "run_id": "20260622_201422",
+  "artifacts": {
+    "git_commit": "1b84e97054daabd6918dba2acb54311ee02fd8b6",
+    "git_status": "M CLAUDE.md\n M graxia/__init__.py\n M graxia/packages/__init__.py\n M graxia/packages/quant_os/scripts/secret_scan.py\n M pytest.ini\n M repos/hftbacktest\n?? artifacts/\n?? graxia/packages/quant_os/reports/G0_CREDENTIAL_ROTATION_STATUS.md\n?? graxia/packages/quant_os/reports/G0_LEGACY_CAMPAIGN_CLASSIFICATION.md\n?? graxia/packages/quant_os/reports/G0_SECRET_SCAN_CURRENT.md\n?? graxia/packages/quant_os/reports/G0_TEST_MIGRATION_LEDGER_BASELINE.md\n?? graxia/packages/quant_os/tests/test_secret_scan_script.py\n?? shadow_results/",
+    "python_version": "Python 3.12.10",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "dependency_lock_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test_collection": "C:\\Users\\menum\\graxia os\\artifacts\\release_truth\\20260622_201422\\test_collection.json",
+    "test_summary": "C:\\Users\\menum\\graxia os\\artifacts\\release_truth\\20260622_201422\\test_summary.json",
+    "pytest_output": "C:\\Users\\menum\\graxia os\\artifacts\\release_truth\\20260622_201422\\pytest_output.txt",
+    "quarantine_manifest_hash": "20ef4d85436e1b9696f00bc069e4f49e5c0ccd6cb33d5d9c1dba08634e18cf7e",
+    "data_manifest_hashes": "96f926a56bc05595578feab5ad91b130be20b01a274009ac1c8ef49daef8e823",
+    "full_bundle_hash": "478cf054f4b489332a9f0140b389f63d4a65a662a7eb85585817f7a2dc84641b"
+  }
+}

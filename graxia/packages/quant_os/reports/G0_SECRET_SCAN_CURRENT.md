@@ -2,7 +2,7 @@
 
 ## Scope
 - Branch: `phase0-baseline-safety-freeze-20260623`
-- HEAD: `1b84e97054daabd6918dba2acb54311ee02fd8b6`
+- HEAD: `6f5500d103462944b7f857c93c3c6ed6de4e97ee`
 - Scanner: `scripts/secret_scan.py`
 - Coverage:
   - git-tracked files under `graxia/packages/quant_os`

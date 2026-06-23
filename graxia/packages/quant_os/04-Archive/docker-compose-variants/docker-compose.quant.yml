@@ -1,0 +1,17 @@
+version: "3.9"
+
+# DEPRECATED ARCHIVE ONLY
+# Do not add MT5_LOGIN, MT5_PASSWORD, or MT5_SERVER to repo-owned compose files.
+# Phase 0A policy: operator signs into MT5 interactively on the host terminal.
+# Repo-owned configuration is limited to MT5_PATH, MT5_TIMEOUT_MS, and non-secret broker profile identity.
+
+services:
+  quant-os:
+    image: quant-os:archive
+    environment:
+      MT5_PATH: "C:/Program Files/MetaTrader 5/terminal64.exe"
+      MT5_TIMEOUT_MS: "10000"
+    volumes:
+      - ./config/broker_profile.yaml:/app/config/broker_profile.yaml:ro
+    command: >
+      python -c "print('Archive example only. Authenticate via terminal session, not env secrets.')"

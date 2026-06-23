@@ -1,0 +1,15 @@
+{
+  "profile_fingerprint": "sha256:9f275d701af67a03",
+  "server": "Pepperstone-Demo",
+  "account_mode": "DEMO",
+  "terminal_path_hash": "sha256:ade8f62fe5607126",
+  "contract_snapshot_hash": "sha256:198a19d2e748cc12",
+  "credential_source": "TERMINAL_SESSION_ONLY",
+  "password_present_in_runtime_config": false,
+  "execution_enabled": false,
+  "verified_at_utc": "2026-06-22T18:24:18.105693+00:00",
+  "terminal_build": 5836,
+  "terminal_connected": true,
+  "currency": "USD",
+  "leverage": 200
+}

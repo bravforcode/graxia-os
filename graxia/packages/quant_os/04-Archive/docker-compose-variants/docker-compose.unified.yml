@@ -1,0 +1,17 @@
+version: "3.9"
+
+# DEPRECATED ARCHIVE ONLY
+# Historical compose variants must not carry MT5 credentials in repo-owned env blocks.
+# Keep MT5 auth in the interactive terminal session on the host.
+# Keep broker identity in non-secret profile metadata such as profile_id and expected_server.
+
+services:
+  quant-os-unified:
+    image: quant-os:archive
+    environment:
+      MT5_PATH: "C:/Program Files/MetaTrader 5/terminal64.exe"
+      MT5_TIMEOUT_MS: "10000"
+    volumes:
+      - ./config/broker_profile.yaml:/app/config/broker_profile.yaml:ro
+    command: >
+      python -c "print('Archive example only. Use MT5_PATH + timeout + broker profile metadata.')"

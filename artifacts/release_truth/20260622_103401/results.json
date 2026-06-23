@@ -1,0 +1,16 @@
+{
+  "run_id": "20260622_103401",
+  "artifacts": {
+    "git_commit": "4c6e599cf8e66580c0d1df64bd5e65c5022a8087",
+    "git_status": "M CLAUDE.md\n M graxia/__init__.py\n M graxia/packages/__init__.py\n M pytest.ini\n M repos/hftbacktest\n?? artifacts/\n?? graxia/packages/quant_os/quarantine_manager.py\n?? graxia/packages/quant_os/scripts/hash_data_manifests.py\n?? graxia/packages/quant_os/scripts/run_release_truth.py\n?? graxia/packages/quant_os/scripts/verify_reproducibility.py\n?? graxia/packages/quant_os/shadow_results/session_20260622_102513.json\n?? graxia/packages/quant_os/shadow_results/telemetry_20260622_102513.json\n?? graxia/packages/quant_os/tests/test_quarantine_manager.py",
+    "python_version": "Python 3.12.10",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "dependency_lock_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test_collection": "artifacts\\release_truth\\20260622_103401\\test_collection.json",
+    "test_summary": "artifacts\\release_truth\\20260622_103401\\test_summary.json",
+    "pytest_output": "artifacts\\release_truth\\20260622_103401\\pytest_output.txt",
+    "quarantine_manifest_hash": "20ef4d85436e1b9696f00bc069e4f49e5c0ccd6cb33d5d9c1dba08634e18cf7e",
+    "data_manifest_hashes": "96f926a56bc05595578feab5ad91b130be20b01a274009ac1c8ef49daef8e823",
+    "full_bundle_hash": "8a9df234b33865b797390cf638d41aca828112279a9f49b7449a6db35a057d94"
+  }
+}

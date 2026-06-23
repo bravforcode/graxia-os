@@ -1,0 +1,35 @@
+........................................................................ [  9%]
+........................................................................ [ 18%]
+........................................................................ [ 28%]
+........................................................................ [ 37%]
+........................................................................ [ 47%]
+........................................................................ [ 56%]
+........................................................................ [ 65%]
+........................................................................ [ 75%]
+........................................................................ [ 84%]
+.............................................FF..............EEEEE...... [ 94%]
+............................................s                            [100%]
+=================================== ERRORS ====================================
+_________________ ERROR at setup of test_quarantine_add_entry _________________
+E   PermissionError: [WinError 5] Access is denied: 'C:\\Users\\menum\\AppData\\Local\\Temp\\pytest-of-menum'
+_______________ ERROR at setup of test_quarantine_remove_entry ________________
+E   PermissionError: [WinError 5] Access is denied: 'C:\\Users\\menum\\AppData\\Local\\Temp\\pytest-of-menum'
+______________ ERROR at setup of test_quarantine_is_quarantined _______________
+E   PermissionError: [WinError 5] Access is denied: 'C:\\Users\\menum\\AppData\\Local\\Temp\\pytest-of-menum'
+_________________ ERROR at setup of test_quarantine_integrity _________________
+E   PermissionError: [WinError 5] Access is denied: 'C:\\Users\\menum\\AppData\\Local\\Temp\\pytest-of-menum'
+_______________ ERROR at setup of test_quarantine_list_entries ________________
+E   PermissionError: [WinError 5] Access is denied: 'C:\\Users\\menum\\AppData\\Local\\Temp\\pytest-of-menum'
+================================== FAILURES ===================================
+C:\Users\menum\AppData\Local\Programs\Python\Python312\Lib\json\decoder.py:356: json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+C:\Users\menum\AppData\Local\Programs\Python\Python312\Lib\json\decoder.py:356: json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+=========================== short test summary info ===========================
+SKIPPED [1] graxia\packages\quant_os\tests\test_vwap.py: DEPRECATED: data format mismatch, covered by test_timing.py
+ERROR graxia/packages/quant_os/tests/test_quarantine_manager.py::test_quarantine_add_entry
+ERROR graxia/packages/quant_os/tests/test_quarantine_manager.py::test_quarantine_remove_entry
+ERROR graxia/packages/quant_os/tests/test_quarantine_manager.py::test_quarantine_is_quarantined
+ERROR graxia/packages/quant_os/tests/test_quarantine_manager.py::test_quarantine_integrity
+ERROR graxia/packages/quant_os/tests/test_quarantine_manager.py::test_quarantine_list_entries
+FAILED graxia/packages/quant_os/tests/test_phase_be_p1.py::test_quarantine_manager_exists
+FAILED graxia/packages/quant_os/tests/test_phase_be_p1.py::test_quarantine_add_and_verify
+2 failed, 757 passed, 1 skipped, 2 warnings, 5 errors in 48.17s

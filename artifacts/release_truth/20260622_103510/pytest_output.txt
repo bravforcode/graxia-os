@@ -1,0 +1,30 @@
+........................................................................ [  9%]
+........................................................................ [ 18%]
+........................................................................ [ 28%]
+........................................................................ [ 37%]
+........................................................................ [ 47%]
+........................................................................ [ 56%]
+........................................................................ [ 65%]
+........................................................................ [ 75%]
+........................................................................ [ 84%]
+.............................................................EEEEE...... [ 94%]
+............................................s                            [100%]
+=================================== ERRORS ====================================
+_________________ ERROR at setup of test_quarantine_add_entry _________________
+E   PermissionError: [WinError 5] Access is denied: 'C:\\Users\\menum\\AppData\\Local\\Temp\\pytest-of-menum'
+_______________ ERROR at setup of test_quarantine_remove_entry ________________
+E   PermissionError: [WinError 5] Access is denied: 'C:\\Users\\menum\\AppData\\Local\\Temp\\pytest-of-menum'
+______________ ERROR at setup of test_quarantine_is_quarantined _______________
+E   PermissionError: [WinError 5] Access is denied: 'C:\\Users\\menum\\AppData\\Local\\Temp\\pytest-of-menum'
+_________________ ERROR at setup of test_quarantine_integrity _________________
+E   PermissionError: [WinError 5] Access is denied: 'C:\\Users\\menum\\AppData\\Local\\Temp\\pytest-of-menum'
+_______________ ERROR at setup of test_quarantine_list_entries ________________
+E   PermissionError: [WinError 5] Access is denied: 'C:\\Users\\menum\\AppData\\Local\\Temp\\pytest-of-menum'
+=========================== short test summary info ===========================
+SKIPPED [1] graxia\packages\quant_os\tests\test_vwap.py: DEPRECATED: data format mismatch, covered by test_timing.py
+ERROR graxia/packages/quant_os/tests/test_quarantine_manager.py::test_quarantine_add_entry
+ERROR graxia/packages/quant_os/tests/test_quarantine_manager.py::test_quarantine_remove_entry
+ERROR graxia/packages/quant_os/tests/test_quarantine_manager.py::test_quarantine_is_quarantined
+ERROR graxia/packages/quant_os/tests/test_quarantine_manager.py::test_quarantine_integrity
+ERROR graxia/packages/quant_os/tests/test_quarantine_manager.py::test_quarantine_list_entries
+759 passed, 1 skipped, 2 warnings, 5 errors in 31.20s
