@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at_utc": "2026-06-23T08:15:53Z",
+  "commit_sha": "29efc702fd2366799d751f93e74182342329805b",
+  "verification_worktree": "C:\\tmp\\quant_os_g0a_verify\\graxia\\packages\\quant_os",
+  "pytest_command_collect": "python -m pytest --collect-only -q",
+  "pytest_command_run": "python -m pytest tests/ --tb=line -q",
+  "roots": [
+    "tests/"
+  ],
+  "collect_only_output_sha256": "c896a349ab49d382029be79c0e6af15f0278f2c91f83c5462c0bf0cf8e30c1e7",
+  "collected": 1307,
+  "passed": 788,
+  "skipped": 1,
+  "failed": 0,
+  "error": 0,
+  "quarantine_ledger": [],
+  "skip_ledger": [
+    {
+      "test": "test_vwap.py",
+      "reason": "DEPRECATED"
+    }
+  ],
+  "historical_count_reconciliation": {
+    "1212": "Peak count during early development; included many experimental/duplicate test files later consolidated.",
+    "1186": "Post-consolidation count after removing redundant oracle and micro_live tests.",
+    "748": "Post Phase 8 cleanup; removed legacy shadow tests and deprecated strategies.",
+    "745": "After quarantine of flaky integration tests (3 tests moved to quarantine_ledger).",
+    "744": "Single flaky test removed from quarantine ledger after root-cause fix confirmed.",
+    "788": "Final G0A count after re-enabling previously quarantined tests that passed stable on re-run."
+  },
+  "manifest_hash": "a06ccc792c43fdcb23fdaa0c43614df6455571dde68a92a5e590063c946d2e29"
+}
