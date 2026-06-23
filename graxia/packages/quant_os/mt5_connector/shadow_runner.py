@@ -26,10 +26,7 @@ from enum import Enum
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from mt5_connector.connection import MT5Connection
-from mt5_connector.terminal_session_policy import (
-    load_terminal_session_config,
-    redact_account_identity,
-)
+from mt5_connector.terminal_session_policy import load_terminal_session_config
 from shadow.pipeline import ShadowPipeline, ShadowSignal, ShadowSignalOutcome
 from shadow.failure_rules import FailureRuleChecker
 from shadow.telemetry import ShadowTelemetry
@@ -209,8 +206,7 @@ class ShadowRunnerV2:
         ok = self._mt5.connect(path=cfg.get('path'), timeout=cfg.get('timeout', 10000))
         if ok:
             info = self._mt5.get_account_info()
-            identity = redact_account_identity(info.login, info.server)
-            logger.info(f"Connected: {identity} Balance={info.balance}")
+            logger.info(f"Connected: terminal-session-authenticated Balance={info.balance}")
         else:
             logger.error("MT5 connection failed")
         return ok

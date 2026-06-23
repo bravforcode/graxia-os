@@ -1,4 +1,5 @@
 import asyncio
+import subprocess
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -69,6 +70,22 @@ def test_quant_config_rejects_nested_broker_credential_config_without_echoing_va
     assert "12345678" not in str(exc_info.value)
 
 
+@pytest.mark.parametrize(
+    "payload, expected_key",
+    [
+        ({"mt5": {"Login": "12345678"}}, "mt5.Login"),
+        ({"profiles": [{"login": "12345678"}]}, "profiles[0].login"),
+    ],
+)
+def test_quant_config_rejects_mixed_case_and_list_nested_broker_credential_keys(
+    payload: dict,
+    expected_key: str,
+) -> None:
+    with pytest.raises(ValueError) as exc_info:
+        reject_broker_credential_config(payload, context="test config")
+    assert expected_key in str(exc_info.value)
+
+
 def test_terminal_session_config_loader_rejects_credential_keys_without_echoing_value(tmp_path: Path) -> None:
     config_path = tmp_path / "config.yaml"
     config_path.write_text(
@@ -83,6 +100,24 @@ def test_terminal_session_config_loader_rejects_credential_keys_without_echoing_
         load_terminal_session_config(str(config_path))
 
     assert "12345678" not in str(exc_info.value)
+
+
+def test_terminal_session_config_loader_rejects_broker_credential_env(monkeypatch, tmp_path: Path) -> None:
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text("mt5:\n  timeout: 10000\n", encoding="utf-8")
+    monkeypatch.setenv("MT5_LOGIN", "12345678")
+
+    with pytest.raises(ValueError, match="MT5_LOGIN"):
+        load_terminal_session_config(str(config_path))
+
+
+def test_shadow_runner_rejects_broker_credential_env(monkeypatch, tmp_path: Path) -> None:
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text("mt5:\n  timeout: 10000\n", encoding="utf-8")
+    monkeypatch.setenv("MT5_PASSWORD", "secret123")
+
+    with pytest.raises(ValueError, match="MT5_PASSWORD"):
+        ShadowRunnerV2(config_path=str(config_path))
 
 
 def test_shadow_runner_connect_logs_redacted_identity(tmp_path: Path, caplog) -> None:
@@ -107,10 +142,21 @@ def test_shadow_runner_connect_logs_redacted_identity(tmp_path: Path, caplog) ->
     with caplog.at_level("INFO"):
         assert runner.connect() is True
 
-    assert "login_sha256=" in caplog.text
-    assert "server_sha256=" in caplog.text
+    assert "terminal-session-authenticated" in caplog.text
     assert "12345678" not in caplog.text
     assert "Pepperstone-Demo" not in caplog.text
+
+
+def test_script_mode_imports_terminal_session_policy_and_entrypoints() -> None:
+    package_root = Path(__file__).resolve().parents[1]
+    command = [
+        sys.executable,
+        "-c",
+        "import mt5_connector.terminal_session_policy, mt5_connector.shadow_runner, demo_campaign.campaign",
+    ]
+    result = subprocess.run(command, cwd=package_root, capture_output=True, text=True, check=False)
+
+    assert result.returncode == 0, result.stderr
 
 
 def test_mt5_config_template_has_no_credential_keys() -> None:

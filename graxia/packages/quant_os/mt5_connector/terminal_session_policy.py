@@ -6,14 +6,18 @@ from typing import Any
 
 import yaml
 
-from graxia.packages.quant_os.core.config import (
-    hash_terminal_session_value,
-    reject_broker_credential_config,
-)
+try:
+    from graxia.packages.quant_os.core.config import (
+        reject_broker_credential_config,
+        reject_broker_credential_env,
+    )
+except ModuleNotFoundError:
+    from core.config import reject_broker_credential_config, reject_broker_credential_env
 
 
 def load_terminal_session_config(config_path: str) -> dict[str, Any]:
     """Load repo-owned MT5 YAML and fail closed on credential injection."""
+    reject_broker_credential_env()
     with open(config_path, encoding="utf-8") as handle:
         config = yaml.safe_load(handle)
     if not isinstance(config, dict):
@@ -23,10 +27,3 @@ def load_terminal_session_config(config_path: str) -> dict[str, Any]:
     if not isinstance(mt5_cfg, dict):
         raise ValueError(f"MT5 config missing 'mt5' mapping: {config_path}")
     return config
-
-
-def redact_account_identity(login: Any, server: Any) -> str:
-    """Return log-safe MT5 identity hashes without exposing raw values."""
-    login_hash = hash_terminal_session_value(login)
-    server_hash = hash_terminal_session_value(server)
-    return f"login_sha256={login_hash} server_sha256={server_hash}"
