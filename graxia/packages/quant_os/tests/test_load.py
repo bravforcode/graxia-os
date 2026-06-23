@@ -3,7 +3,7 @@ from pathlib import Path
 sys.path.insert(0, os.getcwd())
 from graxia.packages.quant_os.backtest.data_loader import load_csv_data
 
-data_dir = str(Path(__file__).parent.parent / "data")
+data_dir = str((Path(__file__).resolve().parent.parent / "data").resolve())
 fmt = "%Y-%m-%d %H:%M:%S"
 
 t0 = time.time()

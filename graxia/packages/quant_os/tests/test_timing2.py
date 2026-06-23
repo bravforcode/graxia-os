@@ -21,7 +21,7 @@ from graxia.packages.quant_os.gold_bot.strategies.liquidity_sweep import Liquidi
 from graxia.packages.quant_os.gold_bot.strategies.fair_value_gap import FairValueGapStrategy
 from graxia.packages.quant_os.gold_bot.strategies.opening_range import OpeningRangeStrategy
 
-data_dir = str(Path(__file__).parent.parent / "data")
+data_dir = str((Path(__file__).resolve().parent.parent / "data").resolve())
 fmt = "%Y-%m-%d %H:%M:%S"
 
 d1, ts1 = load_csv_data(os.path.join(data_dir, "XAUUSD_D1.csv"), date_column="time", date_format=fmt)

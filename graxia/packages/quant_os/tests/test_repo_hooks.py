@@ -16,41 +16,40 @@ def write_file(path: Path, content: str) -> Path:
 
 
 class TestPreCommitHook:
-    def test_fails_closed_on_missing_manifest(self, tmp_path):
-        manifest_path = tmp_path / "missing_manifest.yml"
-        assert pre_commit_check(str(manifest_path)) == 1
+    def test_fails_closed_on_missing_canonical_registry(self, tmp_path):
+        registry_path = tmp_path / "missing_repositories_canonical.yml"
+        assert pre_commit_check(str(registry_path)) == 1
 
-    def test_fails_closed_on_invalid_manifest_yaml(self, tmp_path):
-        manifest_path = write_file(tmp_path / "manifest.yml", "not: [valid")
-        assert pre_commit_check(str(manifest_path)) == 1
+    def test_fails_closed_on_invalid_canonical_registry_yaml(self, tmp_path):
+        registry_path = write_file(tmp_path / "repositories_canonical.yml", "repositories: [\n")
+        assert pre_commit_check(str(registry_path)) == 1
 
-    def test_fails_closed_on_empty_manifest(self, tmp_path):
-        manifest_path = write_file(tmp_path / "manifest.yml", "[]\n")
-        assert pre_commit_check(str(manifest_path)) == 1
+    def test_fails_closed_on_empty_canonical_registry(self, tmp_path):
+        registry_path = write_file(tmp_path / "repositories_canonical.yml", "repositories: []\n")
+        assert pre_commit_check(str(registry_path)) == 1
 
-    def test_returns_zero_for_valid_manifest(self, tmp_path):
-        manifest_path = write_file(
-            tmp_path / "manifest.yml",
+    def test_returns_zero_for_valid_canonical_registry(self, tmp_path):
+        registry_path = write_file(
+            tmp_path / "repositories_canonical.yml",
             """\
-- name: approved_repo
-  tier: A
-  role: APPROVED_DIFFERENTIAL_ORACLE
-  asset_class: FOREX
-  runtime_boundary: READ_ONLY
-  permissions:
-    execution: true
-    network: false
-    secrets: false
-    production_import: false
-  canonical_url: https://example.com/approved_repo.git
-  pinned_commit: abc123
-  license: MIT
-  review_verdict: APPROVED
-  sbom_status: COMPLETE
-  security_scan: CLEAN
+repositories:
+  - repo_id: approved_repo
+    canonical_url: https://example.com/approved_repo.git
+    owner: example
+    name: approved_repo
+    asset_scope: Forex research
+    language: Python
+    license_spdx: MIT
+    pinned_commit: abc123
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_DIFFERENTIAL_ORACLE
+    execution_permission: true
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
 """,
         )
-        assert pre_commit_check(str(manifest_path)) == 0
+        assert pre_commit_check(str(registry_path)) == 0
 
 class TestRegistryCheck:
     def test_fails_closed_on_missing_registry(self, tmp_path):
