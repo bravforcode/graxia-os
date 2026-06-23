@@ -1,0 +1,96 @@
+{
+  "buy_results": [
+    {
+      "candidate": 1,
+      "distance": 0.5,
+      "sl": 4129.06,
+      "tp": 4130.32,
+      "retcode": 0,
+      "comment": "Done",
+      "passed": true
+    },
+    {
+      "candidate": 2,
+      "distance": 1.0,
+      "sl": 4128.56,
+      "tp": 4130.82,
+      "retcode": 0,
+      "comment": "Done",
+      "passed": true
+    },
+    {
+      "candidate": 3,
+      "distance": 1.5,
+      "sl": 4128.06,
+      "tp": 4131.32,
+      "retcode": 0,
+      "comment": "Done",
+      "passed": true
+    },
+    {
+      "candidate": 4,
+      "distance": 2.0,
+      "sl": 4127.56,
+      "tp": 4131.82,
+      "retcode": 0,
+      "comment": "Done",
+      "passed": true
+    },
+    {
+      "candidate": 5,
+      "distance": 2.5,
+      "sl": 4127.06,
+      "tp": 4132.32,
+      "retcode": 0,
+      "comment": "Done",
+      "passed": true
+    }
+  ],
+  "sell_results": [
+    {
+      "candidate": 1,
+      "distance": 0.5,
+      "sl": 4130.19,
+      "tp": 4128.93,
+      "retcode": 0,
+      "comment": "Done",
+      "passed": true
+    },
+    {
+      "candidate": 2,
+      "distance": 1.0,
+      "sl": 4130.69,
+      "tp": 4128.43,
+      "retcode": 0,
+      "comment": "Done",
+      "passed": true
+    },
+    {
+      "candidate": 3,
+      "distance": 1.5,
+      "sl": 4131.19,
+      "tp": 4127.93,
+      "retcode": 0,
+      "comment": "Done",
+      "passed": true
+    },
+    {
+      "candidate": 4,
+      "distance": 2.0,
+      "sl": 4131.69,
+      "tp": 4127.43,
+      "retcode": 0,
+      "comment": "Done",
+      "passed": true
+    },
+    {
+      "candidate": 5,
+      "distance": 2.5,
+      "sl": 4132.19,
+      "tp": 4126.93,
+      "retcode": 0,
+      "comment": "Done",
+      "passed": true
+    }
+  ]
+}

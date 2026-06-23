@@ -52,20 +52,28 @@ def calibrate_side(mt5, side: str, tick, sym) -> dict:
         
         if side == "BUY":
             sl = normalize_price(tick.bid - distance, sym.trade_tick_size)
-            tp = normalize_price(tick.ask + distance, sym.trade_tick_size)
+            gross_loss_delta = normalize_price(tick.ask - sl, sym.trade_tick_size)
+            tp = normalize_price(tick.ask + gross_loss_delta, sym.trade_tick_size)
+            tp_delta = tp - tick.ask
             sl_valid = sl < tick.bid
             tp_valid = tp > tick.ask
         else:  # SELL
             sl = normalize_price(tick.ask + distance, sym.trade_tick_size)
-            tp = normalize_price(tick.bid - distance, sym.trade_tick_size)
+            gross_loss_delta = normalize_price(sl - tick.bid, sym.trade_tick_size)
+            tp = normalize_price(tick.bid - gross_loss_delta, sym.trade_tick_size)
+            tp_delta = tick.bid - tp
             sl_valid = sl > tick.ask
             tp_valid = tp < tick.bid
+        gross_rr = round(tp_delta / gross_loss_delta, 6) if gross_loss_delta > 0 else 0
         valid = sl_valid and tp_valid
         
         candidates.append({
             "candidate": i,
             "distance_mt5_points": round(distance / sym.point) if sym.point > 0 else 0,
             "distance_price": distance,
+            "gross_loss_delta": gross_loss_delta,
+            "gross_reward_delta": tp_delta,
+            "planned_gross_rr": gross_rr,
             "sl": sl,
             "tp": tp,
             "sl_below_bid": sl < tick.bid if side == "BUY" else "N/A",
@@ -124,11 +132,15 @@ def calibrate_side(mt5, side: str, tick, sym) -> dict:
     if passing:
         evidence["required_stop_distance_price"] = required_stop_distance_price
         evidence["required_tp_distance_price"] = required_tp_distance_price
-        if passing:
-            sl_dist = abs(passing["sl"] - (tick.bid if side == "BUY" else tick.ask))
-            tp_dist = abs(passing["tp"] - (tick.ask if side == "BUY" else tick.bid))
-            evidence["sl_distance_from_quote"] = sl_dist
-            evidence["tp_distance_from_quote"] = tp_dist
+        sl_dist = abs(passing["sl"] - (tick.bid if side == "BUY" else tick.ask))
+        tp_dist = abs(passing["tp"] - (tick.ask if side == "BUY" else tick.bid))
+        evidence["sl_distance_from_quote"] = sl_dist
+        evidence["tp_distance_from_quote"] = tp_dist
+        evidence["spread_price"] = tick.ask - tick.bid
+        evidence["gross_loss_delta"] = passing["gross_loss_delta"]
+        evidence["gross_reward_delta"] = passing["gross_reward_delta"]
+        evidence["planned_gross_rr"] = passing["planned_gross_rr"]
+        evidence["protective_buffer_price"] = required_stop_distance_price
     
     return {
         "side": side,
