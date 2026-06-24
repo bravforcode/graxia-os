@@ -22,12 +22,6 @@ from uuid import uuid4
 import MetaTrader5 as mt5
 import numpy as np
 
-try:
-    from tqdm import tqdm
-    HAS_TQDM = True
-except ImportError:
-    HAS_TQDM = False
-
 # ── Log helpers (Priority 11-12: progress bar + log file) ──
 _LOG_FILE = None
 
@@ -73,7 +67,7 @@ def download_ticks_bulk(symbols, months_back=3):
     start_date = end_date - timedelta(days=months_back * 30)
 
     print(f"\n{'='*60}")
-    print(f"PHASE 1: BULK TICK DOWNLOAD")
+    print("PHASE 1: BULK TICK DOWNLOAD")
     print(f"  Range: {start_date.date()} -> {end_date.date()} ({months_back} months)")
     print(f"  Symbols: {symbols}")
     print(f"{'='*60}")
@@ -221,7 +215,7 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
         deviation_map = {"XAUUSD": 50, "EURUSD": 20, "GBPUSD": 20}
 
     print(f"\n{'='*60}")
-    print(f"PHASE 2: BATCH DEMO ORDERS")
+    print("PHASE 2: BATCH DEMO ORDERS")
     print(f"  Count: {count} | Interval: {interval}s | Volume: {volume}")
     print(f"  Mode: {mode} | Deviation: {deviation_map}")
     if schedule_start is not None and schedule_end is not None:
@@ -461,7 +455,7 @@ def build_dataset(tick_data, order_records):
     os.makedirs(DATASET_DIR, exist_ok=True)
 
     print(f"\n{'='*60}")
-    print(f"PHASE 3: BUILD TRAINING DATASET")
+    print("PHASE 3: BUILD TRAINING DATASET")
     print(f"{'='*60}")
 
     # Compute historical tick stats per symbol
@@ -595,7 +589,7 @@ def main():
         mt5.symbol_select(sym, True)
 
     print(f"{'='*60}")
-    print(f"MEGA DATA COLLECTOR")
+    print("MEGA DATA COLLECTOR")
     print(f"  Time: {datetime.now(timezone.utc).isoformat()}")
     print(f"  Account: {mt5.account_info().login}")
     print(f"  Balance: ${mt5.account_info().balance:,.2f}")
@@ -671,7 +665,7 @@ def main():
     # Final summary
     acct = mt5.account_info()
     print(f"\n{'='*60}")
-    print(f"MEGA COLLECT COMPLETE")
+    print("MEGA COLLECT COMPLETE")
     print(f"  Balance: ${acct.balance:,.2f}")
     print(f"  Ticks: {sum(len(v) for v in tick_data.values())} total")
     print(f"  Orders: {len(order_records)} total")

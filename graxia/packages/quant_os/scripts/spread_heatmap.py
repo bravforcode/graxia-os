@@ -13,7 +13,7 @@ import os
 import sys
 import time
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 import MetaTrader5 as mt5
 
