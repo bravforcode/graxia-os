@@ -55,17 +55,17 @@ def test_quarantine_add_and_verify():
 
 def test_data_manifest_hashes_exist():
     """Data manifest hashes script must exist."""
-    script = Path("graxia/packages/quant_os/scripts/hash_data_manifests.py")
+    script = Path("scripts/hash_data_manifests.py")
     assert script.exists()
 
 
 def test_release_truth_script_exists():
     """Release truth runner script must exist."""
-    script = Path("graxia/packages/quant_os/scripts/run_release_truth.py")
+    script = Path("scripts/run_release_truth.py")
     assert script.exists()
 
 
 def test_verify_reproducibility_exists():
     """Verify reproducibility script must exist."""
-    script = Path("graxia/packages/quant_os/scripts/verify_reproducibility.py")
+    script = Path("scripts/verify_reproducibility.py")
     assert script.exists()

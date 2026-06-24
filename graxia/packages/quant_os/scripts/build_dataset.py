@@ -1,10 +1,11 @@
 """
-DATA PIPELINE — Merge tick data + order execution records for training.
+DATA PIPELINE - Merge tick data + order execution records for training.
 
 Reads tick CSVs and batch order CSVs, computes features, outputs training dataset.
+Supports CSV and Parquet output via --format.
 
 Usage:
-    python scripts/build_dataset.py [--tick-dir artifacts/tick_data] [--batch-dir artifacts/batch_orders]
+    python scripts/build_dataset.py [--tick-dir artifacts/tick_data] [--batch-dir artifacts/batch_orders] [--format csv|parquet]
 """
 import argparse
 import csv
@@ -13,6 +14,15 @@ import os
 import sys
 from datetime import datetime, timezone
 from glob import glob
+
+try:
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    PYARROW_OK = True
+except ImportError:
+    pa = pq = None
+    PYARROW_OK = False
 
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "artifacts", "training_dataset")
 
@@ -123,11 +133,27 @@ def compute_features(ticks, orders):
     return features
 
 
+def _check_pyarrow(required: bool = False):
+    if not PYARROW_OK:
+        msg = "pyarrow is not installed. Install with: pip install pyarrow"
+        if required:
+            print(msg, file=sys.stderr)
+            sys.exit(1)
+        print(msg)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Build training dataset")
     parser.add_argument("--tick-dir", type=str, default=os.path.join("artifacts", "tick_data"))
     parser.add_argument("--batch-dir", type=str, default=os.path.join("artifacts", "batch_orders"))
+    parser.add_argument(
+        "--format", type=str, default="csv", choices=["csv", "parquet"],
+        help="Output format (csv or parquet, default: csv). Requires pyarrow for parquet.",
+    )
     args = parser.parse_args()
+
+    if args.format == "parquet":
+        _check_pyarrow(required=True)
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -143,14 +169,21 @@ def main():
     features = compute_features(ticks, orders)
     print(f"  Generated {len(features)} feature rows")
 
-    # Write training CSV
+    # Write training dataset
     if features:
-        csv_path = os.path.join(OUTPUT_DIR, f"training_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.csv")
-        with open(csv_path, "w", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=features[0].keys())
-            writer.writeheader()
-            writer.writerows(features)
-        print(f"  CSV: {csv_path}")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        if args.format == "parquet":
+            table = pa.Table.from_pylist(features)
+            out_path = os.path.join(OUTPUT_DIR, f"training_{timestamp}.parquet")
+            pq.write_table(table, out_path)
+            print(f"  Parquet: {out_path}")
+        else:
+            out_path = os.path.join(OUTPUT_DIR, f"training_{timestamp}.csv")
+            with open(out_path, "w", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=features[0].keys())
+                writer.writeheader()
+                writer.writerows(features)
+            print(f"  CSV: {out_path}")
 
     # Write summary
     symbols = set(f["symbol"] for f in features)
