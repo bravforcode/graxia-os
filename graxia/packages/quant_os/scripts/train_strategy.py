@@ -30,16 +30,27 @@ OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "artifacts
 FEATURES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "artifacts", "features")
 
 
-def load_features(symbol: str, freq: str) -> pd.DataFrame:
+def load_features(symbol: str, freq: str, feat_dir: str = None) -> pd.DataFrame:
     """Load feature parquet for given symbol/freq."""
-    path = os.path.join(FEATURES_DIR, f"features_{symbol}_{freq}.parquet")
-    if not os.path.exists(path):
-        # try glob
-        paths = glob(os.path.join(FEATURES_DIR, f"features_{symbol}*{freq}*.parquet"))
-        if not paths:
-            print(f"  [ERROR] No features found for {symbol} @ {freq}")
-            return pd.DataFrame()
-        path = paths[0]
+    if feat_dir is None:
+        feat_dir = FEATURES_DIR
+    # Try v2 first, then v1
+    candidates = [
+        os.path.join(feat_dir, f"features_v2_{symbol}_{freq}.parquet"),
+        os.path.join(feat_dir, f"features_{symbol}_{freq}.parquet"),
+    ]
+    path = None
+    for c in candidates:
+        if os.path.exists(c):
+            path = c
+            break
+    if path is None:
+        paths = glob(os.path.join(feat_dir, f"*{symbol}*{freq}*.parquet"))
+        if paths:
+            path = paths[0]
+    if path is None:
+        print(f"  [ERROR] No features found for {symbol} @ {freq}")
+        return pd.DataFrame()
     df = pd.read_parquet(path)
     print(f"  [OK] Loaded {len(df)} rows from {path}")
     return df
@@ -47,7 +58,9 @@ def load_features(symbol: str, freq: str) -> pd.DataFrame:
 
 def get_feature_cols(df: pd.DataFrame) -> list[str]:
     """Get feature columns (exclude target, metadata)."""
-    exclude = {'target', 'target_return', 'symbol', 'freq', 'timestamp'}
+    exclude = {'target', 'target_return', 'symbol', 'freq', 'timestamp',
+               'tb_label', 'tb_bar_hit', 'tb_side', 'tb_ret',
+               'tb_k_upper', 'tb_k_lower'}
     return [c for c in df.columns if c not in exclude and df[c].dtype in (np.float64, np.int64)]
 
 
@@ -76,7 +89,7 @@ def train_model(X_train, y_train, model_type: str):
     return model
 
 
-def backtest(model, X_test, y_test, feature_names: list[str]) -> dict:
+def backtest(model, X_test, y_test, feature_names: list[str], y_test_orig=None) -> dict:
     """Run backtest and return metrics."""
     y_pred = model.predict(X_test)
     
@@ -87,12 +100,18 @@ def backtest(model, X_test, y_test, feature_names: list[str]) -> dict:
     f1 = f1_score(y_test, y_pred, zero_division=0)
     cm = confusion_matrix(y_test, y_pred)
 
-    # Simulate trading: predict UP=1 -> long, DOWN=0 -> stay out
-    # Map target: 1=UP (+1), 0=DOWN (-1)
-    actual_returns = np.where(y_test == 1, 1, -1)
-    
-    # Trade returns: when predict 1, get actual return; when predict 0, get 0
-    trade_returns = y_pred * actual_returns
+    # Simulate trading
+    # Map back to original labels for correct return calculation
+    if y_test_orig is not None:
+        # Triple-barrier: orig has {-1, 1}, y_test has {0, 1}
+        y_test_labels = y_test_orig
+        pred_labels = np.where(y_pred == 1, 1, -1)
+        # Correct trade: predict == actual label
+        trade_returns = np.where(pred_labels == y_test_labels, 1, -1)
+    else:
+        # Binary: 1=UP (+1), 0=DOWN (-1)
+        actual_returns = np.where(y_test == 1, 1, -1)
+        trade_returns = y_pred * actual_returns
     
     # Apply 0.1% slippage per trade
     trades = np.abs(np.diff(y_pred, prepend=y_pred[0]))  # 1 when position changes
@@ -144,6 +163,11 @@ def main():
     parser.add_argument("--model", choices=["xgboost", "lightgbm", "randomforest"],
                         default="xgboost", help="Model type")
     parser.add_argument("--test-size", type=float, default=0.3, help="Fraction for testing")
+    parser.add_argument("--feat-dir", type=str, default=None,
+                        help="Feature directory (default: artifacts/features)")
+    parser.add_argument("--label-type", choices=["binary", "triple-barrier"],
+                        default="binary",
+                        help="Label type: binary (next-bar direction) or triple-barrier (vol-adjusted)")
     args = parser.parse_args()
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -157,7 +181,7 @@ def main():
 
     # Load features
     print("\n--- Loading features ---")
-    df = load_features(args.symbol, args.freq)
+    df = load_features(args.symbol, args.freq, args.feat_dir)
     if df.empty:
         print("Run build_features.py first!")
         return
@@ -166,20 +190,46 @@ def main():
     print(f"  Features: {len(feature_cols)}")
     print(f"  Samples: {len(df)}")
 
+    # Determine target column
+    if args.label_type == "triple-barrier":
+        if 'tb_label' not in df.columns:
+            print("  [ERROR] tb_label not found. Run label_triple_barrier.py first.")
+            return
+        # Filter neutral bars (tb_label==0) — no barrier hit
+        df = df[df['tb_label'] != 0].copy()
+        target_col = 'tb_label'
+        print(f"  Triple-barrier: filtered neutrals -> {len(df)} samples")
+        print(f"  Label distribution: +1={int((df['tb_label']==1).sum())} "
+              f"-1={int((df['tb_label']==-1).sum())}")
+    else:
+        target_col = 'target'
+
     # Train/test split (time-based)
     split_idx = int(len(df) * (1 - args.test_size))
     train_df = df.iloc[:split_idx]
     test_df = df.iloc[split_idx:]
 
     X_train = train_df[feature_cols].values
-    y_train = train_df['target'].values
+    y_train = train_df[target_col].values
     X_test = test_df[feature_cols].values
-    y_test = test_df['target'].values
+    y_test = test_df[target_col].values
+
+    # XGBoost requires labels {0, 1}, map {-1, 1} -> {0, 1}
+    if args.label_type == "triple-barrier":
+        y_train = np.where(y_train == 1, 1, 0).astype(int)
+        y_test_orig = y_test.copy()
+        y_test = np.where(y_test == 1, 1, 0).astype(int)
+    else:
+        y_test_orig = y_test.copy()
 
     print(f"\n  Train: {len(X_train)} samples")
     print(f"  Test:  {len(X_test)} samples")
-    print(f"  Target distribution (train): UP={y_train.sum()}/{len(y_train)} "
-          f"DOWN={len(y_train)-y_train.sum()}/{len(y_train)}")
+    if args.label_type == "binary":
+        print(f"  Target distribution (train): UP={y_train.sum()}/{len(y_train)} "
+              f"DOWN={len(y_train)-y_train.sum()}/{len(y_train)}")
+    else:
+        print(f"  Target distribution (train): +1={int((y_train==1).sum())} "
+              f"-1={int((y_train==0).sum())}")
 
     # Train
     print(f"\n--- Training {args.model} ---")
@@ -188,7 +238,8 @@ def main():
 
     # Backtest
     print(f"\n--- Backtest ---")
-    metrics = backtest(model, X_test, y_test, feature_cols)
+    y_test_orig_for_bt = y_test_orig if args.label_type == "triple-barrier" else None
+    metrics = backtest(model, X_test, y_test, feature_cols, y_test_orig=y_test_orig_for_bt)
     
     print(f"  Accuracy:    {metrics['accuracy']}")
     print(f"  Precision:   {metrics['precision']}")
