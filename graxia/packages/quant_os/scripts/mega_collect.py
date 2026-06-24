@@ -160,8 +160,16 @@ def send_close_order(symbol, side, volume, ticket, filling_mode, magic, comment)
     return {"retcode": result.retcode, "deal": result.deal, "comment": result.comment}
 
 
-def run_batch_orders(symbols, count=50, interval=10, volume=0.01):
-    """Run batch orders. Returns list of order records."""
+def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
+                     deviation_map=None, mode="market",
+                     schedule_start=None, schedule_end=None):
+    """Run batch orders with configurable execution mode.
+
+    Args:
+        mode: "market" (fill now, any price) or "limit" (set price, wait for fill)
+        deviation_map: dict of {symbol: max_deviation_points}
+        schedule_start/schedule_end: UTC hour (e.g., 13, 17) for London/NY overlap
+    """
     os.makedirs(ORDER_DIR, exist_ok=True)
     csv_path = os.path.join(ORDER_DIR, f"batch_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.csv")
 
@@ -169,12 +177,18 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01):
         "order_id", "symbol", "side", "volume", "entry", "sl", "tp",
         "send_retcode", "send_deal", "send_price", "send_time",
         "close_retcode", "close_deal", "close_time",
-        "slippage_points", "latency_ms", "status"
+        "slippage_points", "latency_ms", "status", "exec_mode"
     ]
+
+    if deviation_map is None:
+        deviation_map = {"XAUUSD": 50, "EURUSD": 20, "GBPUSD": 20}
 
     print(f"\n{'='*60}")
     print(f"PHASE 2: BATCH DEMO ORDERS")
     print(f"  Count: {count} | Interval: {interval}s | Volume: {volume}")
+    print(f"  Mode: {mode} | Deviation: {deviation_map}")
+    if schedule_start is not None and schedule_end is not None:
+        print(f"  Schedule: {schedule_start}:00-{schedule_end}:00 UTC (London/NY overlap)")
     print(f"  Symbols: {symbols}")
     print(f"{'='*60}")
 
@@ -184,64 +198,125 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01):
         writer.writeheader()
 
         for i in range(count):
+            # ── Schedule gate ──
+            now_hour = datetime.now(timezone.utc).hour
+            if schedule_start is not None and schedule_end is not None:
+                if not (schedule_start <= now_hour < schedule_end):
+                    wait_h = schedule_end - now_hour
+                    if wait_h > 0:
+                        print(f"  [{i+1}/{count}] Waiting {wait_h}h for schedule {schedule_start}:00-{schedule_end}:00 UTC")
+                        time.sleep(3600)  # check again in 1 hour
+                        continue
+                    else:
+                        print(f"  [{i+1}/{count}] SKIP — outside schedule window")
+                        continue
+
             sym = symbols[i % len(symbols)]
             side = "BUY" if i % 2 == 0 else "SELL"
             filling = get_filling_mode(sym)
             order_id = uuid4().hex
             magic = int(hashlib.sha256(f"batch-{order_id}".encode()).hexdigest()[:8], 16)
+            deviation = deviation_map.get(sym, 30)
 
             entry, sl, tp = calc_sl_tp(sym, side)
             if entry is None:
                 print(f"  [{i+1}/{count}] {sym} {side} SKIP (no tick)")
                 continue
 
-            # Send order
             tick = mt5.symbol_info_tick(sym)
-            order_type = mt5.ORDER_TYPE_BUY if side == "BUY" else mt5.ORDER_TYPE_SELL
-            request = {
-                "action": mt5.TRADE_ACTION_DEAL,
-                "symbol": sym,
-                "volume": volume,
-                "type": order_type,
-                "price": tick.ask if side == "BUY" else tick.bid,
-                "sl": sl,
-                "tp": tp,
-                "deviation": 30,
-                "magic": magic,
-                "comment": f"BATCH_{order_id[:8]}",
-                "type_time": mt5.ORDER_TIME_GTC,
-                "type_filling": filling,
-            }
-
-            send_start = time.time()
-            result = mt5.order_send(request)
-            send_time = datetime.now(timezone.utc).isoformat()
-            latency_ms = round((time.time() - send_start) * 1000)
-
-            if result is None or result.retcode != 10009:
-                retcode = result.retcode if result else -1
-                record = {
-                    "order_id": order_id, "symbol": sym, "side": side, "volume": volume,
-                    "entry": entry, "sl": sl, "tp": tp,
-                    "send_retcode": retcode, "send_deal": 0, "send_price": 0,
-                    "send_time": send_time, "close_retcode": 0, "close_deal": 0,
-                    "close_time": "", "slippage_points": 0, "latency_ms": latency_ms,
-                    "status": "REJECTED"
-                }
-                writer.writerow(record)
-                f.flush()
-                results.append(record)
-                print(f"  [{i+1}/{count}] {sym} {side} REJECTED retcode={retcode}")
-                time.sleep(interval)
+            if not tick:
                 continue
 
-            exec_price = result.price
-            deal = result.deal
+            send_start = time.time()
+            result = None
 
-            # Wait for position
+            if mode == "limit":
+                # LIMIT order: set price at bid (BUY) or ask (SELL), wait for fill
+                limit_price = tick.bid if side == "BUY" else tick.ask
+                order_type = mt5.ORDER_TYPE_BUY_LIMIT if side == "BUY" else mt5.ORDER_TYPE_SELL_LIMIT
+                request = {
+                    "action": mt5.TRADE_ACTION_PENDING,
+                    "symbol": sym,
+                    "volume": volume,
+                    "type": order_type,
+                    "price": limit_price,
+                    "sl": sl,
+                    "tp": tp,
+                    "deviation": deviation,
+                    "magic": magic,
+                    "comment": f"BATCH_{order_id[:8]}",
+                    "type_time": mt5.ORDER_TIME_GTC,
+                    "type_filling": filling,
+                }
+                result = mt5.order_send(request)
+                send_time = datetime.now(timezone.utc).isoformat()
+                latency_ms = round((time.time() - send_start) * 1000)
+
+                if result and result.retcode == 10009:
+                    exec_price = limit_price
+                    deal = result.deal
+                    # Wait for limit to trigger (might take time)
+                    time.sleep(5)
+                else:
+                    retcode = result.retcode if result else -1
+                    record = {
+                        "order_id": order_id, "symbol": sym, "side": side, "volume": volume,
+                        "entry": entry, "sl": sl, "tp": tp,
+                        "send_retcode": retcode, "send_deal": 0, "send_price": 0,
+                        "send_time": send_time, "close_retcode": 0, "close_deal": 0,
+                        "close_time": "", "slippage_points": 0, "latency_ms": latency_ms,
+                        "status": "REJECTED", "exec_mode": mode,
+                    }
+                    writer.writerow(record)
+                    f.flush()
+                    results.append(record)
+                    print(f"  [{i+1}/{count}] {sym} {side} LIMIT REJECTED retcode={retcode}")
+                    time.sleep(interval)
+                    continue
+
+            else:
+                # MARKET order: fill at current price
+                order_type = mt5.ORDER_TYPE_BUY if side == "BUY" else mt5.ORDER_TYPE_SELL
+                request = {
+                    "action": mt5.TRADE_ACTION_DEAL,
+                    "symbol": sym,
+                    "volume": volume,
+                    "type": order_type,
+                    "price": tick.ask if side == "BUY" else tick.bid,
+                    "sl": sl,
+                    "tp": tp,
+                    "deviation": deviation,
+                    "magic": magic,
+                    "comment": f"BATCH_{order_id[:8]}",
+                    "type_time": mt5.ORDER_TIME_GTC,
+                    "type_filling": filling,
+                }
+                result = mt5.order_send(request)
+                send_time = datetime.now(timezone.utc).isoformat()
+                latency_ms = round((time.time() - send_start) * 1000)
+
+                if result is None or result.retcode != 10009:
+                    retcode = result.retcode if result else -1
+                    record = {
+                        "order_id": order_id, "symbol": sym, "side": side, "volume": volume,
+                        "entry": entry, "sl": sl, "tp": tp,
+                        "send_retcode": retcode, "send_deal": 0, "send_price": 0,
+                        "send_time": send_time, "close_retcode": 0, "close_deal": 0,
+                        "close_time": "", "slippage_points": 0, "latency_ms": latency_ms,
+                        "status": "REJECTED", "exec_mode": mode,
+                    }
+                    writer.writerow(record)
+                    f.flush()
+                    results.append(record)
+                    print(f"  [{i+1}/{count}] {sym} {side} REJECTED retcode={retcode}")
+                    time.sleep(interval)
+                    continue
+
+                exec_price = result.price
+                deal = result.deal
+
+            # ── Close position ──
             time.sleep(0.5)
-
-            # Find and close position
             positions = mt5.positions_get(symbol=sym)
             close_result = {"retcode": -1, "error": "NO_POSITION"}
             close_time = ""
@@ -254,24 +329,36 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01):
                     close_time = datetime.now(timezone.utc).isoformat()
                     break
 
+            # Also check for pending orders (limit mode)
+            if mode == "limit":
+                pending_orders = mt5.orders_get(symbol=sym)
+                for o in pending_orders or []:
+                    if f"BATCH_{order_id[:8]}" in (o.comment or ""):
+                        # Cancel pending limit order
+                        cancel_req = {
+                            "action": mt5.TRADE_ACTION_REMOVE,
+                            "order": o.ticket,
+                        }
+                        mt5.order_send(cancel_req)
+
             slippage = round((exec_price - entry) / mt5.symbol_info(sym).point, 1) if mt5.symbol_info(sym) else 0
 
             record = {
                 "order_id": order_id, "symbol": sym, "side": side, "volume": volume,
-                "entry": entry, "sl": sl, "tp": tp,
+                "entry": exec_price if mode == "limit" else entry, "sl": sl, "tp": tp,
                 "send_retcode": 10009, "send_deal": deal, "send_price": exec_price,
                 "send_time": send_time,
                 "close_retcode": close_result.get("retcode", 0),
                 "close_deal": close_result.get("deal", 0),
                 "close_time": close_time,
                 "slippage_points": slippage, "latency_ms": latency_ms,
-                "status": "EXECUTED"
+                "status": "EXECUTED", "exec_mode": mode,
             }
             writer.writerow(record)
             f.flush()
             results.append(record)
 
-            print(f"  [{i+1}/{count}] {sym} {side} OK deal={deal} price={exec_price} slip={slippage}pt latency={latency_ms}ms")
+            print(f"  [{i+1}/{count}] {sym} {side} {mode} OK deal={deal} price={exec_price} slip={slippage}pt lat={latency_ms}ms")
 
             if i < count - 1:
                 time.sleep(interval)
@@ -396,6 +483,12 @@ def main():
     parser.add_argument("--volume", type=float, default=0.01, help="Volume per order")
     parser.add_argument("--skip-ticks", action="store_true", help="Skip tick download")
     parser.add_argument("--skip-orders", action="store_true", help="Skip order execution")
+    parser.add_argument("--mode", choices=["market", "limit"], default="market",
+                        help="market=fill now (fast), limit=set price (lower slippage, may not fill)")
+    parser.add_argument("--schedule", action="store_true",
+                        help="Run only during London/NY overlap (13:00-17:00 UTC)")
+    parser.add_argument("--deviation", type=int, default=0,
+                        help="Max deviation in points (0=auto: 50 XAUUSD, 20 forex)")
     args = parser.parse_args()
 
     os.makedirs(OUTPUT_BASE, exist_ok=True)
@@ -439,8 +532,20 @@ def main():
 
     # Phase 2: Batch orders
     if not args.skip_orders:
+        # Build deviation map
+        if args.deviation > 0:
+            deviation_map = {s: args.deviation for s in SYMBOLS}
+        else:
+            deviation_map = {"XAUUSD": 50, "EURUSD": 20, "GBPUSD": 20}
+
+        # Schedule: London/NY overlap = 13:00-17:00 UTC
+        schedule_start = 13 if args.schedule else None
+        schedule_end = 17 if args.schedule else None
+
         order_records, order_csv = run_batch_orders(
-            SYMBOLS, args.order_count, args.order_interval, args.volume
+            SYMBOLS, args.order_count, args.order_interval, args.volume,
+            deviation_map=deviation_map, mode=args.mode,
+            schedule_start=schedule_start, schedule_end=schedule_end,
         )
     else:
         print("\nSkipping orders (--skip-orders)")
