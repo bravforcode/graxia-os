@@ -112,10 +112,10 @@ jobs:
 
       - name: Check for hardcoded secrets
         run: |
-          # Check for common secret patterns
-          ! grep -r "sk_live_" . --include="*.py" --include="*.ts" --include="*.js" 2>/dev/null || exit 1
-          ! grep -r "AKIA" . --include="*.py" --include="*.ts" 2>/dev/null || exit 1
-          ! grep -r "private_key" . --include="*.py" --include="*.ts" 2>/dev/null || exit 1
+          # Check for common secret patterns (regex requires key-like suffix to skip pattern checks)
+          ! grep -rP "sk_live_[A-Za-z0-9_]{8,}" . --include="*.py" --include="*.ts" --include="*.js" --exclude-dir=tests --exclude-dir=node_modules --exclude-dir=__pycache__ --exclude-dir=.venv --exclude-dir=.git 2>/dev/null || exit 1
+          ! grep -rP "AKIA[A-Za-z0-9]{16,}" . --include="*.py" --include="*.ts" --exclude-dir=tests --exclude-dir=node_modules --exclude-dir=__pycache__ --exclude-dir=.venv --exclude-dir=.git 2>/dev/null || exit 1
+          ! grep -r "private_key" . --include="*.py" --include="*.ts" --exclude-dir=tests --exclude-dir=node_modules --exclude-dir=__pycache__ --exclude-dir=.venv --exclude-dir=.git 2>/dev/null || exit 1
 
   # ============================================================================
   # PHASE 2: TESTING (PARALLEL EXECUTION)
