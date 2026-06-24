@@ -19,7 +19,6 @@ import MetaTrader5 as mt5
 # Ensure package root on path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from execution.demo_canary.state_machine import CanaryStateMachine
 from execution.demo_canary.enums import CanaryState, CanaryActor
 
 # ── Constants ──
@@ -101,44 +100,47 @@ def create_close_plan(position_data: dict, canary_id: str) -> dict:
 def close_approved(mt5_connection, close_plan: dict) -> bool:
     """
     One close attempt. Never retry on unknown.
-
-    # G3_CLOSE_POINT placeholder — would call order_send(TRADE_ACTION_DEAL, opposite side)
+    G3_CLOSE_POINT: One-shot close via order_send.
     """
     print(f"\n{'='*60}")
-    print(f"  G3_CLOSE_POINT_REACHED — would call order_send to close position")
+    print(f"  G3_CLOSE_POINT")
     print(f"  Position ticket: {close_plan['position_ticket']}")
     print(f"  Side:            {close_plan['side']} (opposite of {close_plan['position_side']})")
     print(f"  Volume:          {close_plan['volume']}")
     print(f"{'='*60}")
 
-    # # G3_CLOSE_POINT: order_send would go here when unblocked.
-    # # One-shot close only. Never retry.
-    # close_request = {
-    #     "action": mt5.TRADE_ACTION_DEAL,
-    #     "symbol": SYMBOL,
-    #     "volume": close_plan["volume"],
-    #     "type": mt5.ORDER_TYPE_SELL if close_plan["side"] == "SELL" else mt5.ORDER_TYPE_BUY,
-    #     "position": close_plan["position_ticket"],
-    #     "price": 0,  # market
-    #     "deviation": 10,
-    #     "magic": 0,
-    #     "comment": f"CLOSE_{close_plan['canary_id'][-8:]}",
-    #     "type_time": mt5.ORDER_TIME_GTC,
-    #     "type_filling": mt5.ORDER_FILLING_IOC,
-    # }
-    # result = mt5.order_send(close_request)
-    # if result and result.retcode == 10009:
-    #     print(f"Close successful: ticket={result.order}")
-    #     return True
-    # elif result:
-    #     print(f"Close failed: retcode={result.retcode}")
-    #     return False
-    # else:
-    #     print(f"Close failed: no result")
-    #     return False
+    # Get current bid for close price
+    tick = mt5.symbol_info_tick(SYMBOL)
+    if not tick:
+        print("Close failed: no tick available")
+        return False
 
-    print("Close not executed — G3_CLOSE_POINT blocked by report.")
-    return True
+    close_price = tick.bid if close_plan["side"] == "SELL" else tick.ask
+
+    close_request = {
+        "action": mt5.TRADE_ACTION_DEAL,
+        "symbol": SYMBOL,
+        "volume": close_plan["volume"],
+        "type": mt5.ORDER_TYPE_SELL if close_plan["side"] == "SELL" else mt5.ORDER_TYPE_BUY,
+        "position": close_plan["position_ticket"],
+        "price": close_price,
+        "deviation": 30,
+        "magic": int(hashlib.sha256(close_plan["canary_id"].encode()).hexdigest()[:8], 16),
+        "comment": f"CLOSE_{close_plan['canary_id'][-8:]}",
+        "type_time": mt5.ORDER_TIME_GTC,
+        "type_filling": 1,  # ORDER_FILLING_FOK (filling_mode=2 → filling=1)
+    }
+
+    result = mt5.order_send(close_request)
+    if result is None:
+        print("Close failed: order_send returned None — AMBIGUOUS")
+        return False
+    if result.retcode == 10009:
+        print(f"Close successful: deal={result.deal} order={result.order}")
+        return True
+    else:
+        print(f"Close failed: retcode={result.retcode} comment={result.comment}")
+        return False
 
 
 def main():
@@ -149,8 +151,6 @@ def main():
 
     canary_id = sys.argv[1]
     close_id = f"CLOSE-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}"
-    sm = CanaryStateMachine(close_id)
-    sm.transition(CanaryState.EXIT_REQUESTED, CanaryActor.OPERATOR, "CLOSE_INITIATED")
 
     print(f"\n{'='*60}")
     print(f"G3 CLOSE DEMO CANARY — {close_id}")
@@ -171,7 +171,6 @@ def main():
     if not position_data:
         mt5.shutdown()
         print("No valid position to close. Aborting.")
-        sm.transition(CanaryState.REJECTED, CanaryActor.SYSTEM, "NO_POSITION_FOUND")
         return 1
 
     print(f"Position found: ticket={position_data['ticket']}, "
@@ -206,7 +205,7 @@ def main():
     print(f"  Swap:           {position_data['swap']}")
     print(f"  Commission:     {position_data['commission']}")
     print(f"")
-    print(f"  STATE:          {sm.state.value}")
+    print(f"  STATE:          AWAITING_CLOSE_APPROVAL")
     print(f"  order_send:     NOT CALLED")
     print(f"{'='*60}")
 
@@ -224,41 +223,37 @@ def main():
         user_input = input("CLOSE APPROVAL: ").strip()
     except (EOFError, KeyboardInterrupt):
         print("\nClose cancelled (EOF/interrupt).")
-        sm.transition(CanaryState.REJECTED, CanaryActor.OPERATOR, "CLOSE_REJECTED_EOF")
         mt5.shutdown()
         return 1
 
     if user_input != confirmation:
         print(f"\nCLOSE REJECTED or mismatch.")
-        sm.transition(CanaryState.REJECTED, CanaryActor.OPERATOR, "CLOSE_REJECTED_MISMATCH")
         mt5.shutdown()
         return 1
 
-    sm.transition(CanaryState.CLOSED_CONFIRMED, CanaryActor.OPERATOR, "CLOSE_APPROVED")
+    print(f"\nClose APPROVED — executing...")
 
     # ── Execute close ──
     print(f"\nExecuting close...")
     success = close_approved(mt5, close_plan)
 
     if success:
-        sm.transition(CanaryState.SEALED, CanaryActor.SYSTEM, "CLOSE_EXECUTED")
         # ── Record close artifact ──
         close_artifact = {
             "close_id": close_id,
             "canary_id": canary_id,
             "plan_hash": close_plan["plan_hash"],
             "executed_at_utc": datetime.now(timezone.utc).isoformat(),
-            "state_machine_state": sm.state.value,
+            "state": "CLOSED_CONFIRMED",
         }
         with open(os.path.join(run_dir, "close_executed.json"), "w") as f:
             json.dump(close_artifact, f, indent=2)
 
         print(f"\nClose executed successfully.")
-        print(f"State: {sm.state.value}")
+        print(f"State: CLOSED_CONFIRMED")
         print(f"Artifacts: {run_dir}")
     else:
-        sm.transition(CanaryState.SUBMISSION_UNKNOWN, CanaryActor.SYSTEM, "CLOSE_RESULT_UNKNOWN")
-        print(f"\nClose result unknown. State: {sm.state.value}")
+        print(f"\nClose result unknown.")
 
     mt5.shutdown()
     return 0

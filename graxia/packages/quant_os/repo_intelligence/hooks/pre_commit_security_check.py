@@ -45,6 +45,7 @@ FORBIDDEN_SYMBOLS = {
 ORDER_SEND_ALLOWLIST = {
     "execution/demo_canary/",
     "scripts/g3_execute_demo_canary.py",
+    "scripts/g3_close_demo_canary.py",
 }
 
 

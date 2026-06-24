@@ -794,6 +794,12 @@ def main():
     print(f"{'='*60}")
 
     if not DRY_RUN_MODE:
+        # ── Ensure fresh MT5 connection before order_send ──
+        pre_send_res = mt5.initialize(path=TERMINAL_PATH, timeout=15000)
+        if pre_send_res:
+            mt5.symbol_select(SYMBOL, True)
+        print(f"  Pre-send reconnect: {'OK' if pre_send_res else 'FAILED'}")
+
         # ── Enable submission for one shot only ──
         enable_submission()
         order_send_result = submit_order_once(order_check_request)
