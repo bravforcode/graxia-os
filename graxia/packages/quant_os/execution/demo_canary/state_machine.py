@@ -46,8 +46,13 @@ ALLOWED_TRANSITIONS = {
         (CanaryState.SUBMITTING, CanaryActor.SYSTEM, "FINAL_FRESHNESS_CHECK_PASSED"),
         (CanaryState.DRY_RUN_SEND_BLOCKED, CanaryActor.SYSTEM, "DRY_RUN_MODE_SEND_BLOCKED"),
     ],
-    # Post-submit states (not active in G1.1 — reserved for G3)
-    CanaryState.SUBMITTING: [(CanaryState.SUBMISSION_RECEIPT_RECORDED, CanaryActor.BROKER, "ORDER_SUBMITTED")],
+    # Post-submit states
+    CanaryState.SUBMITTING: [
+        (CanaryState.SUBMISSION_RECEIPT_RECORDED, CanaryActor.BROKER, "ORDER_SUBMITTED"),
+        (CanaryState.SUBMISSION_UNKNOWN, CanaryActor.SYSTEM, "ORDER_SEND_RETURNED_NONE"),
+        (CanaryState.SUBMITTED, CanaryActor.SYSTEM, "ORDER_SEND_SUCCESS"),
+        (CanaryState.REJECTED, CanaryActor.BROKER, "ORDER_SEND_REJECTED"),
+    ],
     CanaryState.SUBMISSION_RECEIPT_RECORDED: [(CanaryState.POSITION_RECONCILING, CanaryActor.SYSTEM, "RECONCILING")],
     # Terminal/blocked states — no outgoing transitions
 }
@@ -106,6 +111,7 @@ class CanaryStateMachine:
         return self._state in {
             CanaryState.REJECTED, CanaryState.EXPIRED, CanaryState.KILLED,
             CanaryState.SEALED, CanaryState.RECOVERY_REQUIRED,
+            CanaryState.SUBMISSION_UNKNOWN,
         }
 
     def is_pre_submit(self) -> bool:
