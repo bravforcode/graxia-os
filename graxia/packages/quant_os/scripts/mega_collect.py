@@ -22,6 +22,35 @@ from uuid import uuid4
 import MetaTrader5 as mt5
 import numpy as np
 
+try:
+    from tqdm import tqdm
+    HAS_TQDM = True
+except ImportError:
+    HAS_TQDM = False
+
+# ── Log helpers (Priority 11-12: progress bar + log file) ──
+_LOG_FILE = None
+
+
+def open_log(path):
+    global _LOG_FILE
+    _LOG_FILE = open(path, 'a', buffering=1)
+
+
+def log(msg, end="\n"):
+    print(msg, end=end)
+    if _LOG_FILE:
+        _LOG_FILE.write(msg + end)
+        _LOG_FILE.flush()
+
+
+def close_log():
+    global _LOG_FILE
+    if _LOG_FILE:
+        _LOG_FILE.close()
+        _LOG_FILE = None
+
+
 # ── Constants ──
 SYMBOLS = ["XAUUSD", "EURUSD", "GBPUSD"]
 TERMINAL_PATH = r"C:\Program Files\Pepperstone MetaTrader 5\terminal64.exe"
@@ -164,7 +193,7 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
                      deviation_map=None, mode="market",
                      schedule_start=None, schedule_end=None,
                      max_spread=0, record_tick_context=False,
-                     checkpoint_path=None):
+                     checkpoint_path=None, log_file=None):
     """Run batch orders with configurable execution mode.
 
     Args:
@@ -176,6 +205,8 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
         checkpoint_path: save progress every 10 orders for resume
     """
     os.makedirs(ORDER_DIR, exist_ok=True)
+    if log_file:
+        open_log(log_file)
     csv_path = os.path.join(ORDER_DIR, f"batch_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.csv")
 
     fieldnames = [
@@ -210,11 +241,11 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
                 if not (schedule_start <= now_hour < schedule_end):
                     wait_h = schedule_end - now_hour
                     if wait_h > 0:
-                        print(f"  [{i+1}/{count}] Waiting {wait_h}h for schedule {schedule_start}:00-{schedule_end}:00 UTC")
+                        log(f"  [{i+1}/{count}] Waiting {wait_h}h for schedule {schedule_start}:00-{schedule_end}:00 UTC")
                         time.sleep(3600)  # check again in 1 hour
                         continue
                     else:
-                        print(f"  [{i+1}/{count}] SKIP — outside schedule window")
+                        log(f"  [{i+1}/{count}] SKIP — outside schedule window")
                         continue
 
             sym = symbols[i % len(symbols)]
@@ -226,7 +257,7 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
 
             entry, sl, tp = calc_sl_tp(sym, side)
             if entry is None:
-                print(f"  [{i+1}/{count}] {sym} {side} SKIP (no tick)")
+                log(f"  [{i+1}/{count}] {sym} {side} SKIP (no tick)")
                 continue
 
             tick = mt5.symbol_info_tick(sym)
@@ -238,7 +269,7 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
             info = mt5.symbol_info(sym)
             spread_pts = round(spread_price / info.point) if info and info.point else 0
             if max_spread > 0 and spread_price > max_spread:
-                print(f"  [{i+1}/{count}] {sym} {side} SKIP spread={spread_price:.5f} > max={max_spread:.5f} ({spread_pts}pt)")
+                log(f"  [{i+1}/{count}] {sym} {side} SKIP spread={spread_price:.5f} > max={max_spread:.5f} ({spread_pts}pt)")
                 time.sleep(interval)
                 continue
 
@@ -304,7 +335,7 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
                     writer.writerow(record)
                     f.flush()
                     results.append(record)
-                    print(f"  [{i+1}/{count}] {sym} {side} LIMIT REJECTED retcode={retcode}")
+                    log(f"  [{i+1}/{count}] {sym} {side} LIMIT REJECTED retcode={retcode}")
                     time.sleep(interval)
                     continue
 
@@ -329,6 +360,18 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
                 send_time = datetime.now(timezone.utc).isoformat()
                 latency_ms = round((time.time() - send_start) * 1000)
 
+                # ── Auto-retry requote (Priority 10) ──
+                if result and result.retcode in (10015, 10016):
+                    log(f"  [{i+1}/{count}] {sym} {side} REQUOTE retcode={result.retcode} — retrying once...")
+                    time.sleep(1)
+                    fresh_tick = mt5.symbol_info_tick(sym)
+                    if fresh_tick:
+                        request["price"] = fresh_tick.ask if side == "BUY" else fresh_tick.bid
+                    send_start = time.time()
+                    result = mt5.order_send(request)
+                    send_time = datetime.now(timezone.utc).isoformat()
+                    latency_ms = round((time.time() - send_start) * 1000)
+
                 if result is None or result.retcode != 10009:
                     retcode = result.retcode if result else -1
                     record = {
@@ -343,7 +386,7 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
                     writer.writerow(record)
                     f.flush()
                     results.append(record)
-                    print(f"  [{i+1}/{count}] {sym} {side} REJECTED retcode={retcode}")
+                    log(f"  [{i+1}/{count}] {sym} {side} REJECTED retcode={retcode}")
                     time.sleep(interval)
                     continue
 
@@ -394,7 +437,7 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
             f.flush()
             results.append(record)
 
-            print(f"  [{i+1}/{count}] {sym} {side} {mode} OK deal={deal} price={exec_price} slip={slippage}pt lat={latency_ms}ms")
+            log(f"  [{i+1}/{count}] {sym} {side} {mode} OK deal={deal} price={exec_price} slip={slippage}pt lat={latency_ms}ms")
 
             if i < count - 1:
                 time.sleep(interval)
@@ -404,6 +447,8 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
                 with open(checkpoint_path, 'w') as f:
                     json.dump({"completed": i + 1, "total": count}, f)
 
+    if log_file:
+        close_log()
     return results, csv_path
 
 
@@ -605,6 +650,7 @@ def main():
             max_spread=args.max_spread,
             record_tick_context=args.tick_context,
             checkpoint_path=checkpoint_path if args.resume else None,
+            log_file=os.path.join(OUTPUT_BASE, "mega_collect.log"),
         )
     else:
         print("\nSkipping orders (--skip-orders)")
