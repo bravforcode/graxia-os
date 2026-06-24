@@ -878,7 +878,8 @@ if __name__ == "__main__":
         disable_execution()
         activate_kill_switch()
         release_mutex()
-        print("feature_gate=OFF, kill_switch=ON, mutex=RELEASED")
+        disable_submission()
+        print("feature_gate=OFF, kill_switch=ON, mutex=RELEASED, submission=DISABLED")
         print(f"Exit code: {exit_code}")
 
     sys.exit(exit_code)
