@@ -345,7 +345,7 @@ class MT5ReadOnly:
             240: self._mt5.TIMEFRAME_H4, 1440: self._mt5.TIMEFRAME_D1,
         }
         mt5_tf = tf_map.get(timeframe, timeframe)
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         fr = now - timedelta(seconds=count * 60 * 60)
         rates = self._mt5.copy_rates_range(symbol, mt5_tf, fr, now)
         if rates is None:

@@ -3,7 +3,7 @@
 BE-P8.1: Geometry validation, spread shock, dedup, full position lifecycle.
 """
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from enum import Enum
 from typing import Optional
 import hashlib
@@ -343,7 +343,7 @@ class ShadowPipeline:
     def start_session(self, session_id: str) -> ShadowSession:
         session = ShadowSession(
             session_id=session_id,
-            started_at=datetime.utcnow(),
+            started_at=datetime.now(timezone.utc),
         )
         self._sessions[session_id] = session
         self._current_session = session
@@ -352,7 +352,7 @@ class ShadowPipeline:
 
     def end_session(self) -> None:
         if self._current_session:
-            self._current_session.ended_at = datetime.utcnow()
+            self._current_session.ended_at = datetime.now(timezone.utc)
             self._current_session = None
 
     def _next_id(self) -> str:

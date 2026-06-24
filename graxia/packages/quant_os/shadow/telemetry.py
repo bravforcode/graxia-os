@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 import hashlib
 import json
@@ -50,7 +50,7 @@ class ShadowTelemetry:
         self._session_start: Optional[datetime] = None
 
     def start(self, session_id: str) -> None:
-        self._session_start = datetime.utcnow()
+        self._session_start = datetime.now(timezone.utc)
         self._events.append(TelemetryEvent(
             event_type="session_started",
             timestamp=self._session_start,
@@ -60,7 +60,7 @@ class ShadowTelemetry:
     def record_signal_created(self, session_id: str, signal_id: str, details: dict = None) -> None:
         self._events.append(TelemetryEvent(
             event_type="signal_created",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             session_id=session_id,
             signal_id=signal_id,
             details=details or {},
@@ -69,7 +69,7 @@ class ShadowTelemetry:
     def record_signal_accepted(self, session_id: str, signal_id: str, details: dict = None) -> None:
         self._events.append(TelemetryEvent(
             event_type="signal_accepted",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             session_id=session_id,
             signal_id=signal_id,
             details=details or {},
@@ -80,7 +80,7 @@ class ShadowTelemetry:
         d["rejection_reason"] = reason
         self._events.append(TelemetryEvent(
             event_type="signal_rejected",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             session_id=session_id,
             signal_id=signal_id,
             details=d,
@@ -91,7 +91,7 @@ class ShadowTelemetry:
         d["error"] = error
         self._events.append(TelemetryEvent(
             event_type="pipeline_error",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             session_id=session_id,
             details=d,
         ))
@@ -100,7 +100,7 @@ class ShadowTelemetry:
         session_events = [e for e in self._events if e.session_id == session_id]
         uptime = 0.0
         if self._session_start:
-            uptime = (datetime.utcnow() - self._session_start).total_seconds()
+            uptime = (datetime.now(timezone.utc) - self._session_start).total_seconds()
 
         return TelemetrySummary(
             session_id=session_id,

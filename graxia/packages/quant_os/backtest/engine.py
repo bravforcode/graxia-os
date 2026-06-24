@@ -9,7 +9,7 @@ Simulates strategy execution on historical data with:
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import datetime, timezone, date
 from decimal import Decimal, ROUND_DOWN
 from typing import Optional, Dict, Any, List, Callable
 from uuid import uuid4
@@ -278,7 +278,7 @@ class BacktestEngine:
         for i in range(1, total_bars):
             self.current_index = i
             guard.advance()
-            current_time = self.timestamps[i] if i < len(self.timestamps) else datetime.utcnow()
+            current_time = self.timestamps[i] if i < len(self.timestamps) else datetime.now(timezone.utc)
             
             # Current bar OHLCV
             bar_open = Decimal(str(open_price[i]))
@@ -316,7 +316,7 @@ class BacktestEngine:
             self._update_equity(float(bar_close), current_time)
         
         # Close any remaining positions at last price
-        self._close_all_positions(close[-1], self.timestamps[-1] if self.timestamps else datetime.utcnow())
+        self._close_all_positions(close[-1], self.timestamps[-1] if self.timestamps else datetime.now(timezone.utc))
         
         return self._build_results()
     
@@ -591,7 +591,7 @@ class BacktestEngine:
             entry_price=pos.entry_price,
             exit_price=exit_price,
             quantity=pos.quantity,
-            entry_time=pos.entry_time or datetime.utcnow(),
+            entry_time=pos.entry_time or datetime.now(timezone.utc),
             exit_time=exit_time,
             pnl=pnl,
             return_pct=return_pct,

@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Optional, Dict, Any, List
 from uuid import uuid4
@@ -55,7 +55,7 @@ class Signal:
             strategy_id=strategy_id,
             symbol=symbol,
             signal_type=signal_type,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             confidence=confidence,
             **kwargs
         )

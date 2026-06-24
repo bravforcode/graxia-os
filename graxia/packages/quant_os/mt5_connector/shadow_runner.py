@@ -18,7 +18,7 @@ import time
 import yaml
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any
 from dataclasses import dataclass, field
 from enum import Enum
@@ -197,7 +197,7 @@ class ShadowRunnerV2:
 
         self._running = False
         self._signal_count = 0
-        self._session_id = f"shadow_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
+        self._session_id = f"shadow_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
         self._records: list[SignalRecord] = []
         self._max_spread = 0.25
 
@@ -220,7 +220,7 @@ class ShadowRunnerV2:
         if tick is None:
             return None
         return TickEvidence(
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             bid=tick['bid'],
             ask=tick['ask'],
             spread=tick['ask'] - tick['bid'],
@@ -233,7 +233,7 @@ class ShadowRunnerV2:
         # Bars check
         if len(bars) < 2:
             return SignalRecord(
-                signal_id=signal_id, timestamp=datetime.utcnow(),
+                signal_id=signal_id, timestamp=datetime.now(timezone.utc),
                 symbol=symbol, direction="BUY", entry_price=tick.ask,
                 stop_loss=0, take_profit=None,
                 outcome=SignalOutcome.REJECTED_INSUFFICIENT_BARS,
@@ -257,7 +257,7 @@ class ShadowRunnerV2:
             tp = entry - tick.spread * 20
         else:
             return SignalRecord(
-                signal_id=signal_id, timestamp=datetime.utcnow(),
+                signal_id=signal_id, timestamp=datetime.now(timezone.utc),
                 symbol=symbol, direction="BUY", entry_price=tick.ask,
                 stop_loss=0, take_profit=None,
                 outcome=SignalOutcome.REJECTED_NO_DIRECTION,
@@ -269,7 +269,7 @@ class ShadowRunnerV2:
         outcome, reason = validate_signal_geometry(direction, entry, sl, tp, tick.spread, self._max_spread)
         
         record = SignalRecord(
-            signal_id=signal_id, timestamp=datetime.utcnow(),
+            signal_id=signal_id, timestamp=datetime.now(timezone.utc),
             symbol=symbol, direction=direction,
             entry_price=entry, stop_loss=sl, take_profit=tp,
             outcome=outcome, rejection_reason=reason,
@@ -420,7 +420,7 @@ class ShadowRunnerV2:
 
     def _export_results(self):
         os.makedirs('shadow_results', exist_ok=True)
-        ts = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+        ts = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
 
         # Telemetry
         telemetry_path = f'shadow_results/telemetry_{ts}.json'

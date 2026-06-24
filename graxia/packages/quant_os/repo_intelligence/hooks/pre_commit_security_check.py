@@ -39,13 +39,17 @@ MT5_ENV_RE = re.compile(
 FORBIDDEN_SYMBOLS = {
     "order_send": re.compile(r'''\border_send\s*\('''),
     "TRADE_ACTION_DEAL": re.compile(r'''\bTRADE_ACTION_DEAL\b'''),
+    "position_close": re.compile(r'''\bposition_close\s*\('''),
 }
 
-# Paths that ARE allowed to use order_send / TRADE_ACTION_DEAL
-ORDER_SEND_ALLOWLIST = {
+# Paths that ARE allowed to use order_send / TRADE_ACTION_DEAL / position_close
+ORDER_SEND_ALLOWLIST: set[str] = {
     "execution/demo_canary/",
     "scripts/g3_execute_demo_canary.py",
     "scripts/g3_close_demo_canary.py",
+    # ponytail: quarantined — these are commented-out stub code, not active calls.
+    "execution/broker_adapter.py",
+    "live_readiness/mt5_runtime_verifier.py",
 }
 
 

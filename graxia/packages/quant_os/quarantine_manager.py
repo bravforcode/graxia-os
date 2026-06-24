@@ -1,7 +1,7 @@
 """Phase BE-P1 — Quarantine manifest management."""
 import hashlib
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from dataclasses import dataclass, asdict
 
@@ -34,7 +34,7 @@ class QuarantineManager:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         manifest = {
             "version": "1.0",
-            "updated_at": datetime.utcnow().isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
             "entries": self._entries,
             "manifest_hash": self._compute_hash(),
         }

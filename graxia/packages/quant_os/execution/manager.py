@@ -1,6 +1,6 @@
 """Order Manager - orchestrates order lifecycle"""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Optional, Dict, Any, Callable
 import asyncio
@@ -349,7 +349,7 @@ class OrderManager:
             to_status=order.status,
             actor="system",
             reason="Order submitted",
-            occurred_at=datetime.utcnow()
+            occurred_at=datetime.now(timezone.utc)
         )
         self.db.add(history)
         
@@ -364,7 +364,7 @@ class OrderManager:
         db_order.broker_order_id = order.broker_order_id
         db_order.rejection_reason = order.rejection_reason
         db_order.raw_broker_response = order.raw_broker_response
-        db_order.updated_at = datetime.utcnow()
+        db_order.updated_at = datetime.now(timezone.utc)
         
         self.db.commit()
     

@@ -14,7 +14,7 @@ import sys
 import os
 import asyncio
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
 # Add graxia os root to path
@@ -81,7 +81,7 @@ class PaperTrader:
             return
         
         self.is_running = True
-        self.start_time = datetime.utcnow()
+        self.start_time = datetime.now(timezone.utc)
         end_time = self.start_time + timedelta(minutes=duration_minutes)
         
         print(f"\nStarting paper trading for {duration_minutes} minutes...")
@@ -91,7 +91,7 @@ class PaperTrader:
         print(f"Press Ctrl+C to stop\n")
         
         try:
-            while self.is_running and datetime.utcnow() < end_time:
+            while self.is_running and datetime.now(timezone.utc) < end_time:
                 await self._trading_cycle()
                 await asyncio.sleep(60)  # Check every minute
         except KeyboardInterrupt:
@@ -125,7 +125,7 @@ class PaperTrader:
             
             # Check cooldown
             if self.last_signal_time:
-                elapsed = datetime.utcnow() - self.last_signal_time
+                elapsed = datetime.now(timezone.utc) - self.last_signal_time
                 if elapsed < self.signal_cooldown:
                     return
             
@@ -176,7 +176,7 @@ class PaperTrader:
             
             if signal and signal.signal_type in [SignalType.BUY, SignalType.SELL]:
                 self.total_signals += 1
-                self.last_signal_time = datetime.utcnow()
+                self.last_signal_time = datetime.now(timezone.utc)
                 
                 # Create order
                 from graxia.packages.quant_os.execution.order import Order, OrderSide, OrderType
@@ -224,7 +224,7 @@ class PaperTrader:
         print("=" * 60)
         
         account = await self.broker.get_account()
-        duration = datetime.utcnow() - self.start_time if self.start_time else timedelta(0)
+        duration = datetime.now(timezone.utc) - self.start_time if self.start_time else timedelta(0)
         
         print(f"Duration: {duration}")
         print(f"Total Signals: {self.total_signals}")

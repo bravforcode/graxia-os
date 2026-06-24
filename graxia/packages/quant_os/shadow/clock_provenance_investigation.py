@@ -133,7 +133,7 @@ try:
         tick_data = {"error": str(mt5.last_error())}
 
     # 6. copy_ticks_range() — get last 5 ticks
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     fr = now - timedelta(minutes=5)
     ticks_range = mt5.copy_ticks_range(SYMBOL, fr, now, mt5.COPY_TICKS_ALL)
     ticks_range_data = []

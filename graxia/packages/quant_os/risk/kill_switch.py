@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class KillSwitch:
@@ -20,7 +20,7 @@ class KillSwitch:
         """Activate kill switch. Records who/what activated it."""
         self._state = {
             "active": True,
-            "activated_at_utc": datetime.utcnow().isoformat(),
+            "activated_at_utc": datetime.now(timezone.utc).isoformat(),
             "reason": reason,
             "source": source,
         }
@@ -30,7 +30,7 @@ class KillSwitch:
         """Deactivate kill switch. Requires authorization."""
         self._state = {
             "active": False,
-            "deactivated_at_utc": datetime.utcnow().isoformat(),
+            "deactivated_at_utc": datetime.now(timezone.utc).isoformat(),
             "deactivation_reason": reason,
             "authorized_by": authorized_by,
         }

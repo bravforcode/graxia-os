@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Optional
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from .planner import ExpansionPlanner, ExpansionStep, ExpansionPhase, ExpansionStatus
 
 
@@ -58,8 +58,8 @@ class ExpansionTracker:
             })
         
         return ExpansionReport(
-            report_id=f"exp_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}",
-            created_at=datetime.utcnow().isoformat(),
+            report_id=f"exp_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
+            created_at=datetime.now(timezone.utc).isoformat(),
             current_phase=current.phase.value if current else "completed",
             steps_completed=completed,
             steps_total=len(steps),
@@ -90,7 +90,7 @@ class ExpansionTracker:
             return False
         
         step.status = ExpansionStatus.IN_PROGRESS
-        step.started_at = datetime.utcnow().isoformat()
+        step.started_at = datetime.now(timezone.utc).isoformat()
         return True
     
     def complete_phase(self, phase: ExpansionPhase) -> bool:
@@ -102,7 +102,7 @@ class ExpansionTracker:
             return False
         
         step.status = ExpansionStatus.COMPLETED
-        step.completed_at = datetime.utcnow().isoformat()
+        step.completed_at = datetime.now(timezone.utc).isoformat()
         return True
     
     def export_report(self, path: str) -> None:

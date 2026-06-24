@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Optional, Dict, Any, List
 from uuid import uuid4
@@ -193,7 +193,7 @@ class PaperBroker(BrokerAdapter):
                 "filled_quantity": order.quantity,
                 "avg_fill_price": fill_price,
                 "commission": commission,
-                "filled_at": datetime.utcnow()
+                "filled_at": datetime.now(timezone.utc)
             }
             
             # Update account

@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Any, Optional
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 @dataclass
 class MLDataPoint:
@@ -47,7 +47,7 @@ class MLPipeline:
     def gather_start(self):
         """Start gathering ML data"""
         self._current_point = MLDataPoint(
-            timestamp=datetime.utcnow().timestamp(),
+            timestamp=datetime.now(timezone.utc).timestamp(),
             features={}
         )
     

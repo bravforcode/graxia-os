@@ -1,6 +1,6 @@
 """Phase 10 — Emergency kill switch for micro-live canary."""
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 import json
 
@@ -40,7 +40,7 @@ class EmergencyKillSwitch:
     def activate(self, reason: str, activated_by: str = "manual") -> None:
         self._state = KillSwitchState(
             active=True,
-            activated_at=datetime.utcnow().isoformat(),
+            activated_at=datetime.now(timezone.utc).isoformat(),
             reason=reason,
             activated_by=activated_by,
         )

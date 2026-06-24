@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 
 
 class RiskLedger:
@@ -32,7 +32,7 @@ class RiskLedger:
             "rejection_reasons": [],
             "kill_switch_state": "inactive",
             "last_reset_date": date.today().isoformat(),
-            "last_reset_week": datetime.utcnow().isocalendar()[1],
+            "last_reset_week": datetime.now(timezone.utc).isocalendar()[1],
         }
 
     def _save(self):
@@ -48,7 +48,7 @@ class RiskLedger:
             self._state["rejection_reasons"] = []
             self._state["last_reset_date"] = today
 
-        current_week = datetime.utcnow().isocalendar()[1]
+        current_week = datetime.now(timezone.utc).isocalendar()[1]
         if self._state.get("last_reset_week") != current_week:
             self._state["weekly_realized_loss"] = 0.0
             self._state["last_reset_week"] = current_week

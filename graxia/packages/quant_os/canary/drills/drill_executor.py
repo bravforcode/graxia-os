@@ -1,6 +1,6 @@
 """Phase 8 — Drill executor."""
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Callable, Optional
 from .drill_definitions import DrillType, DrillResult, DRILL_CATALOG
 
@@ -27,7 +27,7 @@ class DrillExecutor:
                 duration_seconds=0,
             )
         
-        start = datetime.utcnow()
+        start = datetime.now(timezone.utc)
         try:
             self._drill_fn[drill_type]()
             passed = True
@@ -36,7 +36,7 @@ class DrillExecutor:
             passed = False
             observed = f"Drill failed: {e}"
         
-        duration = (datetime.utcnow() - start).total_seconds()
+        duration = (datetime.now(timezone.utc) - start).total_seconds()
         
         result = DrillResult(
             drill_type=drill_type,

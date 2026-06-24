@@ -4,7 +4,7 @@ Breakout from the first hour of trading
 """
 
 from typing import Dict, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from .base import GoldStrategy
 from ..core.engine import StrategySignal, SignalDirection
 
@@ -54,7 +54,7 @@ class OpeningRangeStrategy(GoldStrategy):
             score += 10
         
         # Time filter (only trade in first 4 hours)
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         if now.hour >= 12:
             score -= 20
         

@@ -27,7 +27,7 @@ Expected Performance (EURUSD ranging periods 2020-2026):
 
 from typing import Optional, Dict, Any, List
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, timezone
 
 from .base import Strategy, Signal, StrategyConfig
 from ..core.enums import SignalType, RegimeType
@@ -210,7 +210,7 @@ class MeanReversionBollinger(Strategy):
     
     def _is_low_liquidity_time(self) -> bool:
         """Check if current time is low liquidity period"""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         return now.hour in self.avoid_hours
     
     def _calculate_indicators(self, ohlcv_data: Dict[str, List]) -> Dict[str, Any]:

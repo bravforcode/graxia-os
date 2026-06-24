@@ -15,7 +15,7 @@ States: CLOSED (normal) → OPEN (blocked) → HALF_OPEN (testing)
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any, List
 from enum import Enum
 
@@ -137,7 +137,7 @@ class CircuitBreaker:
     
     def _track_error(self, is_error: bool) -> None:
         """Track error rate"""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         
         # Reset window if needed
         if self.error_window_start is None or \
@@ -179,7 +179,7 @@ class CircuitBreaker:
     def _open_circuit(self, reason: str) -> CircuitBreakerState:
         """Open the circuit"""
         self.state = CircuitBreakerState.OPEN
-        self.opened_at = datetime.utcnow()
+        self.opened_at = datetime.now(timezone.utc)
         self.opened_reason = reason
         return self.state
     
@@ -204,7 +204,7 @@ class CircuitBreaker:
         if self.opened_at is None:
             return None
         
-        elapsed = datetime.utcnow() - self.opened_at
+        elapsed = datetime.now(timezone.utc) - self.opened_at
         cooldown = timedelta(minutes=self.config.cooldown_minutes)
         
         if elapsed >= cooldown:
@@ -227,7 +227,7 @@ class CircuitBreaker:
         """Get current circuit breaker status"""
         elapsed = None
         if self.opened_at and self.state == CircuitBreakerState.OPEN:
-            elapsed = (datetime.utcnow() - self.opened_at).total_seconds() / 60
+            elapsed = (datetime.now(timezone.utc) - self.opened_at).total_seconds() / 60
         
         error_rate = 0.0
         if self.total_count > 0:

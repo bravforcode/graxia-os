@@ -1,6 +1,6 @@
 """Phase 5 — Experiment registry. Every experiment must be registered before running."""
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 import json
 import hashlib
@@ -20,7 +20,7 @@ class ExperimentRecord:
     trial_number: int = 1
     trial_budget: int = 12
     random_seed: int = 42
-    created_at_utc: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    created_at_utc: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
     def fingerprint(self) -> str:
         data = json.dumps({

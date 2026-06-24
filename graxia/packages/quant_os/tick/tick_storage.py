@@ -1,7 +1,7 @@
 """Phase BE-P2 — Tick storage with parquet + DuckDB."""
 import hashlib
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -37,7 +37,7 @@ class TickStorage:
             "symbol": symbol,
             "date": date,
             "tick_count": tick_count,
-            "created_at": datetime.utcnow().isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
         }
         manifest_path = part_dir / "manifest.json"
         manifest_path.write_text(json.dumps(manifest, indent=2))

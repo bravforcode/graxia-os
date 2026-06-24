@@ -14,7 +14,7 @@ import os
 import json
 import hashlib
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import datetime, timezone, date
 from typing import Dict, List, Optional, Tuple, Any
 from decimal import Decimal
 import pickle
@@ -42,7 +42,7 @@ class ModelResult:
     f1_score: float
     oos_accuracy: float = 0.0
     feature_importance: Dict[str, float] = field(default_factory=dict)
-    trained_at: datetime = field(default_factory=datetime.utcnow)
+    trained_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     model_path: str = ""
     feature_list: List[str] = field(default_factory=list)
     training_samples: int = 0
@@ -195,7 +195,7 @@ class FeatureEngineer:
         
         feature_list = features.iloc[valid_start:valid_end].to_dict("records")
         label_list = labels[valid_start:valid_end].tolist()
-        ts_list = timestamps[valid_start:valid_end] if timestamps else [datetime.utcnow()] * len(label_list)
+        ts_list = timestamps[valid_start:valid_end] if timestamps else [datetime.now(timezone.utc)] * len(label_list)
         
         return FeatureSet(
             features=feature_list,
@@ -280,7 +280,7 @@ class MLTrainer:
                 feature_importance[name] = float(imp)
         
         # Save model
-        version = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        version = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         model_path = os.path.join(self.model_dir, f"{model_type}_{version}.pkl")
         
         with open(model_path, "wb") as f:

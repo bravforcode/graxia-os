@@ -7,7 +7,7 @@ provider timestamp and local receipt time.
 """
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import List, Optional
 
@@ -69,7 +69,11 @@ class TickRecorder:
         - Gap: timestamp_utc - last_timestamp > GAP_THRESHOLD_SECONDS
         - Stale: received_at_utc - timestamp_utc > STALE_THRESHOLD_SECONDS
         """
-        received_at = datetime.utcnow()
+        received_at = datetime.now(timezone.utc)
+        # ponytail: normalize naive → aware so callers passing utcnow()-style
+        # timestamps don't break. Remove when all callers pass aware datetimes.
+        if timestamp_utc.tzinfo is None:
+            timestamp_utc = timestamp_utc.replace(tzinfo=timezone.utc)
         self._sequence += 1
 
         # Determine quality

@@ -5,7 +5,7 @@ No global default for units_per_lot. Every symbol must resolve its
 ContractSpec from the runtime broker symbol snapshot.
 """
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 import hashlib
 import logging
@@ -35,7 +35,11 @@ class ContractSpec:
 
     @property
     def is_stale(self) -> bool:
-        age = (datetime.utcnow() - self.snapshot_timestamp).total_seconds()
+        ts = self.snapshot_timestamp
+        # ponytail: tolerance for naive stamps from callers still on utcnow()
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        age = (datetime.now(timezone.utc) - ts).total_seconds()
         return age > CONTRACT_SPEC_TTL_SECONDS
 
     @property
@@ -150,7 +154,7 @@ class ContractSpecResolver:
             stops_level=sym_info.trade_stops_level,
             freeze_level=sym_info.trade_freeze_level,
             profile_hash=profile_hash,
-            snapshot_timestamp=datetime.utcnow(),
+            snapshot_timestamp=datetime.now(timezone.utc),
         )
 
         self._cache[symbol] = spec

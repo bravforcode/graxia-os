@@ -174,7 +174,8 @@ class TestTickRecorder:
         )
         last = rec.get_latest_tick()
         assert last is not None
-        assert last.timestamp_utc == t2
+        # ponytail: normalise for comparison — record_tick promotes naive→aware
+        assert last.timestamp_utc == t2.replace(tzinfo=timezone.utc)
 
     def test_get_latest_tick_empty(self):
         rec = TickRecorder("XAUUSD", "session-008")
@@ -189,7 +190,7 @@ class TestTickRecorder:
                 timestamp_utc=base + timedelta(seconds=i),
             )
         # Filter to last 3 seconds
-        cutoff = base + timedelta(seconds=7)
+        cutoff = base.replace(tzinfo=timezone.utc) + timedelta(seconds=7)
         recent = rec.get_ticks(since=cutoff)
         assert len(recent) == 3
 

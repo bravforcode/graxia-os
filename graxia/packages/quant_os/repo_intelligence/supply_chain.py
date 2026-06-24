@@ -3,7 +3,7 @@ import json
 import os
 from pathlib import Path
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 
 @dataclass
 class SBOMEntry:
@@ -58,7 +58,7 @@ class SupplyChainScanner:
         entries = self.scan_requirements()
         unpinned = [e.package_name for e in entries if e.version == "UNPINNED"]
         return SupplyChainReport(
-            generated_at=datetime.utcnow().isoformat(),
+            generated_at=datetime.now(timezone.utc).isoformat(),
             total_packages=len(entries),
             pinned_count=len(entries) - len(unpinned),
             unpinned_packages=unpinned

@@ -13,7 +13,7 @@ Priority chain with fallback:
 
 import asyncio
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Tuple
 import json
 import os
@@ -325,7 +325,7 @@ class DataPipeline:
         """Get cached data if valid"""
         if key in self._cache:
             entry = self._cache[key]
-            if datetime.utcnow() - entry["time"] < self._cache_ttl:
+            if datetime.now(timezone.utc) - entry["time"] < self._cache_ttl:
                 return entry["data"]
         return None
     
@@ -333,7 +333,7 @@ class DataPipeline:
         """Set cache"""
         self._cache[key] = {
             "data": data,
-            "time": datetime.utcnow(),
+            "time": datetime.now(timezone.utc),
         }
 
 

@@ -22,7 +22,7 @@ Performs 17 pre-trade checks before order submission:
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import List, Optional, Dict, Any
 from uuid import uuid4
@@ -269,14 +269,14 @@ class RiskEngine:
         
         if last_trade:
             cooldown = timedelta(minutes=15)  # 15 minute cooldown
-            if datetime.utcnow() - last_trade < cooldown:
+            if datetime.now(timezone.utc) - last_trade < cooldown:
                 return RiskCheckResult.fail_check(
                     "COOLDOWN",
                     "Strategy cooldown period active"
                 )
         
         # Record this trade time
-        self._last_trade_times[key] = datetime.utcnow()
+        self._last_trade_times[key] = datetime.now(timezone.utc)
         
         return RiskCheckResult.pass_check("COOLDOWN")
     

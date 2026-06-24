@@ -2,7 +2,7 @@
 
 from typing import List, Optional
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel, Field
@@ -111,7 +111,7 @@ async def cancel_order(order_id: str, db: Session = Depends(get_db)):
 
     # Would integrate with OrderManager to cancel
     order.status = OrderStatus.CANCEL_REQUESTED.value
-    order.updated_at = datetime.utcnow()
+    order.updated_at = datetime.now(timezone.utc)
     db.commit()
 
     return {"success": True, "order_id": order_id, "status": "cancel_requested"}

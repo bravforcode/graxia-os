@@ -168,8 +168,8 @@ class MT5Connection:
         }
         mt5_tf = tf_map.get(timeframe, timeframe)
         
-        from datetime import timedelta, datetime as dt
-        now = dt.utcnow()
+        from datetime import timedelta, datetime as dt, timezone
+        now = dt.now(timezone.utc)
         to = now
         # Estimate time range: count bars * timeframe in seconds
         fr = now - timedelta(seconds=count * 60 * 60)  # conservative estimate

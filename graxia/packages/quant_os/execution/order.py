@@ -1,7 +1,7 @@
 """Order entity and state machine for Quant OS"""
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Optional, Dict, Any, Callable
 from uuid import uuid4
@@ -41,8 +41,8 @@ class Order:
     fee: Optional[Decimal] = None
 
     # Timestamps
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    updated_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     expires_at: Optional[datetime] = None
     sent_at: Optional[datetime] = None
     filled_at: Optional[datetime] = None
@@ -146,13 +146,13 @@ class OrderStateMachine:
 
         old_status = self.order.status
         self.order.status = new_status
-        self.order.updated_at = datetime.utcnow()
+        self.order.updated_at = datetime.now(timezone.utc)
 
         # Update timestamp for specific states
         if new_status == OrderStatus.SENT_TO_BROKER:
-            self.order.sent_at = datetime.utcnow()
+            self.order.sent_at = datetime.now(timezone.utc)
         elif new_status == OrderStatus.FILLED:
-            self.order.filled_at = datetime.utcnow()
+            self.order.filled_at = datetime.now(timezone.utc)
 
         # Call transition handlers
         self._call_handlers(new_status, old_status, reason, actor)

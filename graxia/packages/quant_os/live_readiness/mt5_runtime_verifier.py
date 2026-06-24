@@ -234,7 +234,7 @@ def verify_mt5_runtime(
 
     # ── Step 15: history_orders_get ─────────────────────────────────────
     try:
-        now = _dt.datetime.utcnow()
+        now = _dt.datetime.now(_dt.timezone.utc)
         week_ago = now - _dt.timedelta(days=7)
         history = mt5.history_orders_get(week_ago, now)
         caps.history_visible = history is not None
@@ -245,7 +245,7 @@ def verify_mt5_runtime(
 
     # ── Step 16: history_deals_get ──────────────────────────────────────
     try:
-        now = _dt.datetime.utcnow()
+        now = _dt.datetime.now(_dt.timezone.utc)
         week_ago = now - _dt.timedelta(days=7)
         deals = mt5.history_deals_get(week_ago, now)
         if deals is None:
@@ -257,8 +257,8 @@ def verify_mt5_runtime(
     try:
         server_time = mt5.symbol_info_tick(probe_symbol or "EURUSD")
         if server_time is not None:
-            server_ts = _dt.datetime.utcfromtimestamp(server_time.time)
-            local_ts = _dt.datetime.utcnow()
+            server_ts = _dt.datetime.fromtimestamp(server_time.time, tz=_dt.timezone.utc)
+            local_ts = _dt.datetime.now(_dt.timezone.utc)
             diff_ms = int(abs((server_ts - local_ts).total_seconds() * 1000))
             caps.utc_offset_ms = diff_ms
             if diff_ms > 5000:

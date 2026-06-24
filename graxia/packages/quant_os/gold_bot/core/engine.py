@@ -13,7 +13,7 @@ Every 30 seconds:
 import asyncio
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from decimal import Decimal
 from typing import Dict, List, Optional, Tuple
 from enum import Enum
@@ -40,7 +40,7 @@ class StrategySignal:
     stop_loss: Optional[float] = None
     take_profit: Optional[float] = None
     reasoning: str = ""
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     timeframe: str = "M15"
     metadata: Dict = field(default_factory=dict)
 
@@ -57,7 +57,7 @@ class AggregatedSignal:
     consensus_entry: Optional[float] = None
     consensus_sl: Optional[float] = None
     consensus_tp: Optional[float] = None
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     ai_validated: bool = False
     ai_reasoning: str = ""
 
@@ -160,7 +160,7 @@ class GoldBotEngine:
         self._register_strategies()
         
         self.is_running = True
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         
         print(f"\n  Started at: {start_time.strftime('%Y-%m-%d %H:%M:%S UTC')}")
         print(f"  Symbol: {self.config.symbol}")
@@ -292,7 +292,7 @@ class GoldBotEngine:
             
             # Log cycle
             elapsed = time.time() - cycle_start
-            self.last_cycle_time = datetime.utcnow()
+            self.last_cycle_time = datetime.now(timezone.utc)
             
             if self.cycle_count % 10 == 0:
                 active = len([s for s in self.strategy_stats.values() if s['active']])
@@ -343,7 +343,7 @@ class GoldBotEngine:
                     "timestamp": tick.timestamp,
                 }
             
-            self.last_data_fetch = datetime.utcnow()
+            self.last_data_fetch = datetime.now(timezone.utc)
             return data
             
         except Exception as e:
@@ -399,7 +399,7 @@ class GoldBotEngine:
             "ask": base_price + 0.15,
             "mid": base_price,
             "spread": 0.30,
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(timezone.utc),
         }
         
         return data
@@ -542,7 +542,7 @@ class GoldBotEngine:
                     quantity=quantity,
                     stop_loss=signal.consensus_sl or 0,
                     take_profit=signal.consensus_tp or 0,
-                    entry_time=datetime.utcnow(),
+                    entry_time=datetime.now(timezone.utc),
                     strategy_scores={s.strategy_name: s.score for s in signal.signals},
                     ai_validated=signal.ai_validated,
                 )

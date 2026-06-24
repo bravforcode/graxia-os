@@ -24,7 +24,7 @@ import hashlib
 import json
 import time
 from typing import Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 
 from fastapi import APIRouter, HTTPException, Header, Request, Depends
@@ -162,7 +162,7 @@ async def tradingview_webhook(
             "source": "tradingview"
         },
         raw_payload=data,
-        received_at=datetime.utcnow()
+        received_at=datetime.now(timezone.utc)
     )
     db.add(signal)
     db.commit()
@@ -200,7 +200,7 @@ async def tradingview_webhook(
             if result.get("success"):
                 signal.processed = True
                 signal.order_id = result.get("order_id")
-                signal.processed_at = datetime.utcnow()
+                signal.processed_at = datetime.now(timezone.utc)
                 db.commit()
 
                 return WebhookResponse(
@@ -274,7 +274,7 @@ async def manual_signal(
             "source": "manual"
         },
         raw_payload=payload.dict(),
-        received_at=datetime.utcnow()
+        received_at=datetime.now(timezone.utc)
     )
     db.add(signal)
     db.commit()

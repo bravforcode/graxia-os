@@ -5,7 +5,7 @@ Validates data before it's used in trading decisions.
 """
 
 from typing import Dict, List, Optional, Any
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import dataclass
 
 from ..core.enums import DataQualityCheck
@@ -21,7 +21,7 @@ class QualityCheckResult:
     
     def __post_init__(self):
         if self.timestamp is None:
-            self.timestamp = datetime.utcnow()
+            self.timestamp = datetime.now(timezone.utc)
 
 
 class DataQualityGate:
@@ -128,7 +128,7 @@ class DataQualityGate:
         latest_ts = latest.get("timestamp")
         
         if isinstance(latest_ts, datetime):
-            age_seconds = (datetime.utcnow() - latest_ts).total_seconds()
+            age_seconds = (datetime.now(timezone.utc) - latest_ts).total_seconds()
             return QualityCheckResult(
                 check_name=DataQualityCheck.STALE_QUOTE,
                 passed=age_seconds < self.thresholds["max_staleness_seconds"],
