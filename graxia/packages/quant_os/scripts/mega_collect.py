@@ -22,6 +22,28 @@ from uuid import uuid4
 import MetaTrader5 as mt5
 import numpy as np
 
+def ensure_connected():
+    """Reconnect MT5 if connection lost. Returns True if connected."""
+    try:
+        info = mt5.terminal_info()
+        if info and info.connected:
+            return True
+    except Exception:
+        pass
+    log("  [RECONNECT] MT5 disconnected — reconnecting...")
+    for attempt in range(3):
+        res = mt5.initialize(path=TERMINAL_PATH, timeout=15000)
+        if res:
+            for sym in SYMBOLS:
+                mt5.symbol_select(sym, True)
+            log("  [RECONNECT] OK")
+            return True
+        log(f"  [RECONNECT] attempt {attempt+1}/3 failed: {mt5.last_error()}")
+        time.sleep(2 ** attempt)
+    log("  [RECONNECT] FAILED — giving up")
+    return False
+
+
 # ── Log helpers (Priority 11-12: progress bar + log file) ──
 _LOG_FILE = None
 
@@ -350,7 +372,20 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
                     "type_time": mt5.ORDER_TIME_GTC,
                     "type_filling": filling,
                 }
-                result = mt5.order_send(request)
+                try:
+                    send_start = time.time()
+                    result = mt5.order_send(request)
+                except Exception as e:
+                    log(f"  [{i+1}/{count}] {sym} {side} EXCEPTION: {e} — reconnecting...")
+                    if ensure_connected():
+                        try:
+                            send_start = time.time()
+                            result = mt5.order_send(request)
+                        except Exception as e2:
+                            log(f"  [{i+1}/{count}] {sym} {side} RETRY FAILED: {e2}")
+                            result = None
+                    else:
+                        result = None
                 send_time = datetime.now(timezone.utc).isoformat()
                 latency_ms = round((time.time() - send_start) * 1000)
 
@@ -438,8 +473,8 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
 
             # ── Checkpoint save every 10 orders (Priority 2) ──
             if checkpoint_path and (i + 1) % 10 == 0:
-                with open(checkpoint_path, 'w') as f:
-                    json.dump({"completed": i + 1, "total": count}, f)
+                with open(checkpoint_path, 'w') as ck:
+                    json.dump({"completed": i + 1, "total": count}, ck)
 
     if log_file:
         close_log()
@@ -689,4 +724,24 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        log("\nInterrupted by user")
+    except Exception as e:
+        log(f"\nFATAL: {e}")
+        import traceback
+        traceback.print_exc()
+        # Try graceful shutdown
+        try:
+            from execution.demo_canary.kill_switch import activate_kill_switch
+            activate_kill_switch()
+            log("Kill switch activated")
+        except Exception:
+            pass
+        try:
+            mt5.shutdown()
+        except Exception:
+            pass
+    finally:
+        close_log()
