@@ -433,7 +433,8 @@ def main():
         return 1
 
     # ── Disconnect terminal after preflight ──
-    mt5.shutdown()
+    # NOTE: NOT shutting down here — recheck will reconnect and submission needs it alive.
+    # mt5.shutdown()  # Deferred: connection stays open for plan display + recheck + submission
 
     # ── Build immutable plan ──
     expiry_utc = (now_utc + timedelta(seconds=PLAN_TTL_SECONDS))
@@ -742,7 +743,8 @@ def main():
                 recheck_passed = False
                 recheck_reasons.append(f"FINAL_ORDER_CHECK_FAILED: retcode={re_check.retcode if re_check else -999}")
 
-        mt5.shutdown()
+        # NOTE: NOT shutting down here — connection must stay alive for submission
+        # mt5.shutdown()  # Deferred: recheck passed, submission needs connection
 
     if not recheck_passed:
         print(f"FINAL RECHECK FAILED: {'; '.join(recheck_reasons)}")

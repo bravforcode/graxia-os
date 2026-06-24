@@ -52,8 +52,6 @@ def submit_order_once(request: dict) -> dict:
         "order": result.order,
         "volume": result.volume,
         "price": result.price,
-        "sl": result.sl,
-        "tp": result.tp,
         "comment": result.comment,
         "request_id": result.request_id,
         "retcode_external": result.retcode_external,
