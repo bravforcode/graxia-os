@@ -18,6 +18,7 @@ import json
 import os
 import sys
 import warnings
+from glob import glob
 
 import numpy as np
 import pandas as pd
@@ -31,13 +32,29 @@ FEATURES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "artifac
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "artifacts", "diagnostics")
 
 
-def load_data(symbol: str, freq: str) -> pd.DataFrame:
-    path = os.path.join(FEATURES_DIR, f"features_{symbol}_{freq}.parquet")
-    if not os.path.exists(path):
-        print(f"ERROR: {path} not found. Run build_features.py first.")
+def load_data(symbol: str, freq: str, feat_dir: str = None) -> pd.DataFrame:
+    if feat_dir is None:
+        feat_dir = FEATURES_DIR
+    # Try v2 naming first, then v1
+    candidates = [
+        os.path.join(feat_dir, f"features_v2_{symbol}_{freq}.parquet"),
+        os.path.join(feat_dir, f"features_{symbol}_{freq}.parquet"),
+    ]
+    path = None
+    for c in candidates:
+        if os.path.exists(c):
+            path = c
+            break
+    if path is None:
+        # Wildcard search
+        paths = glob(os.path.join(feat_dir, f"*{symbol}*{freq}*.parquet"))
+        if paths:
+            path = paths[0]
+    if path is None:
+        print(f"ERROR: no features for {symbol} @ {freq} in {feat_dir}")
         sys.exit(1)
     df = pd.read_parquet(path)
-    print(f"  Loaded: {len(df)} rows, {len(df.columns)} columns")
+    print(f"  Loaded: {os.path.basename(path)} — {len(df)} rows, {len(df.columns)} columns")
     return df
 
 
@@ -56,7 +73,9 @@ def diagnose(df: pd.DataFrame, horizon: int = 1, noise_floor: float = 0.02,
     """
     exclude = {'target', 'target_return', 'symbol', 'freq', 'timestamp',
                'open', 'high', 'low', 'close', 'volume', 'tick_count',
-               'tr', 'bb_upper', 'bb_lower', 'bb_mid', 'macd_signal'}
+               'tr', 'bb_upper', 'bb_lower', 'bb_mid', 'macd_signal',
+               'tb_label', 'tb_bar_hit', 'tb_side', 'tb_ret',
+               'tb_k_upper', 'tb_k_lower'}
 
     feature_cols = [c for c in df.columns if c not in exclude
                     and df[c].dtype in (np.float64, np.int64, np.float32, np.int32)]
@@ -137,6 +156,8 @@ def main():
                         help="Forward return horizon (bars)")
     parser.add_argument("--noise-floor", type=float, default=0.02,
                         help="Minimum |corr| for linear signal")
+    parser.add_argument("--feat-dir", type=str, default=None,
+                        help="Feature directory (default: artifacts/features)")
     args = parser.parse_args()
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -146,9 +167,11 @@ def main():
     print(f"  Symbol: {args.symbol} @ {args.freq}")
     print(f"  Horizon: {args.horizon} bars")
     print(f"  Noise floor: |corr| > {args.noise_floor}")
+    if args.feat_dir:
+        print(f"  Feature dir: {args.feat_dir}")
     print(f"{'='*60}")
 
-    df = load_data(args.symbol, args.freq)
+    df = load_data(args.symbol, args.freq, args.feat_dir)
     results = diagnose(df, args.horizon, args.noise_floor)
 
     # Summary
