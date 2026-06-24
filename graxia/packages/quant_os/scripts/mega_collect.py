@@ -162,13 +162,18 @@ def send_close_order(symbol, side, volume, ticket, filling_mode, magic, comment)
 
 def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
                      deviation_map=None, mode="market",
-                     schedule_start=None, schedule_end=None):
+                     schedule_start=None, schedule_end=None,
+                     max_spread=0, record_tick_context=False,
+                     checkpoint_path=None):
     """Run batch orders with configurable execution mode.
 
     Args:
         mode: "market" (fill now, any price) or "limit" (set price, wait for fill)
         deviation_map: dict of {symbol: max_deviation_points}
         schedule_start/schedule_end: UTC hour (e.g., 13, 17) for London/NY overlap
+        max_spread: skip order if spread > threshold (0=disabled)
+        record_tick_context: capture ±5 ticks around order_send
+        checkpoint_path: save progress every 10 orders for resume
     """
     os.makedirs(ORDER_DIR, exist_ok=True)
     csv_path = os.path.join(ORDER_DIR, f"batch_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.csv")
@@ -177,7 +182,8 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
         "order_id", "symbol", "side", "volume", "entry", "sl", "tp",
         "send_retcode", "send_deal", "send_price", "send_time",
         "close_retcode", "close_deal", "close_time",
-        "slippage_points", "latency_ms", "status", "exec_mode"
+        "slippage_points", "latency_ms", "status", "exec_mode",
+        "spread_price", "spread_points", "deviation_used",
     ]
 
     if deviation_map is None:
@@ -227,6 +233,33 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
             if not tick:
                 continue
 
+            # ── Spread gate (Priority 1) ──
+            spread_price = tick.ask - tick.bid
+            info = mt5.symbol_info(sym)
+            spread_pts = round(spread_price / info.point) if info and info.point else 0
+            if max_spread > 0 and spread_price > max_spread:
+                print(f"  [{i+1}/{count}] {sym} {side} SKIP spread={spread_price:.5f} > max={max_spread:.5f} ({spread_pts}pt)")
+                time.sleep(interval)
+                continue
+
+            # ── Dynamic deviation (Priority 1) ──
+            # Use spread×3 as deviation floor, min 10pt
+            dynamic_dev = max(int(spread_pts * 3), 10)
+            if deviation == 0:
+                deviation = dynamic_dev
+
+            # ── Tick context window (Priority 4) ──
+            tick_context = []
+            if record_tick_context:
+                for _ in range(5):
+                    ctx_tick = mt5.symbol_info_tick(sym)
+                    if ctx_tick:
+                        tick_context.append({
+                            "t": ctx_tick.time_msc,
+                            "b": ctx_tick.bid,
+                            "a": ctx_tick.ask,
+                        })
+                    time.sleep(0.002)  # 2ms between samples
             send_start = time.time()
             result = None
 
@@ -266,6 +299,7 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
                         "send_time": send_time, "close_retcode": 0, "close_deal": 0,
                         "close_time": "", "slippage_points": 0, "latency_ms": latency_ms,
                         "status": "REJECTED", "exec_mode": mode,
+                        "spread_price": spread_price, "spread_points": spread_pts, "deviation_used": deviation,
                     }
                     writer.writerow(record)
                     f.flush()
@@ -304,6 +338,7 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
                         "send_time": send_time, "close_retcode": 0, "close_deal": 0,
                         "close_time": "", "slippage_points": 0, "latency_ms": latency_ms,
                         "status": "REJECTED", "exec_mode": mode,
+                        "spread_price": spread_price, "spread_points": spread_pts, "deviation_used": deviation,
                     }
                     writer.writerow(record)
                     f.flush()
@@ -353,6 +388,7 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
                 "close_time": close_time,
                 "slippage_points": slippage, "latency_ms": latency_ms,
                 "status": "EXECUTED", "exec_mode": mode,
+                "spread_price": spread_price, "spread_points": spread_pts, "deviation_used": deviation,
             }
             writer.writerow(record)
             f.flush()
@@ -362,6 +398,11 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
 
             if i < count - 1:
                 time.sleep(interval)
+
+            # ── Checkpoint save every 10 orders (Priority 2) ──
+            if checkpoint_path and (i + 1) % 10 == 0:
+                with open(checkpoint_path, 'w') as f:
+                    json.dump({"completed": i + 1, "total": count}, f)
 
     return results, csv_path
 
@@ -488,7 +529,13 @@ def main():
     parser.add_argument("--schedule", action="store_true",
                         help="Run only during London/NY overlap (13:00-17:00 UTC)")
     parser.add_argument("--deviation", type=int, default=0,
-                        help="Max deviation in points (0=auto: 50 XAUUSD, 20 forex)")
+                        help="Max deviation in points (0=auto: XAUUSD=50, forex=20)")
+    parser.add_argument("--max-spread", type=float, default=0,
+                        help="Skip order if spread > threshold (0=no gate). XAUUSD: ~0.50, EURUSD: ~0.02")
+    parser.add_argument("--resume", action="store_true",
+                        help="Resume from last checkpoint (saves every 10 orders)")
+    parser.add_argument("--tick-context", action="store_true",
+                        help="Record ±5 ticks around each order_send for slippage model training")
     args = parser.parse_args()
 
     os.makedirs(OUTPUT_BASE, exist_ok=True)
@@ -542,10 +589,22 @@ def main():
         schedule_start = 13 if args.schedule else None
         schedule_end = 17 if args.schedule else None
 
+        # Checkpoint resume (Priority 2)
+        resume_from = 0
+        checkpoint_path = os.path.join(OUTPUT_BASE, "checkpoint.json")
+        if args.resume and os.path.exists(checkpoint_path):
+            with open(checkpoint_path, 'r') as f:
+                ckpt = json.load(f)
+            resume_from = ckpt.get("completed", 0)
+            print(f"  Resuming from order {resume_from}/{args.order_count}")
+
         order_records, order_csv = run_batch_orders(
             SYMBOLS, args.order_count, args.order_interval, args.volume,
             deviation_map=deviation_map, mode=args.mode,
             schedule_start=schedule_start, schedule_end=schedule_end,
+            max_spread=args.max_spread,
+            record_tick_context=args.tick_context,
+            checkpoint_path=checkpoint_path if args.resume else None,
         )
     else:
         print("\nSkipping orders (--skip-orders)")
