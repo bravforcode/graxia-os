@@ -108,17 +108,9 @@ BEAT_SCHEDULE = {
         "schedule": crontab(minute="*/30"),
         "options": {"queue": BACKGROUND_QUEUE},
     },
-    # --- Content Engine ---
-    "content-seed-site-a": {
-        "task": "tasks.content_engine.seed_keywords",
-        "schedule": crontab(day_of_week="monday", hour=4, minute=0),
-        "kwargs": {"site": "site_a"},
-        "options": {"queue": BACKGROUND_QUEUE},
-    },
-    "content-seed-site-b": {
-        "task": "tasks.content_engine.seed_keywords",
-        "schedule": crontab(day_of_week="monday", hour=4, minute=30),
-        "kwargs": {"site": "site_b"},
+    "win-back-emails": {
+        "task": "tasks.funnel_automation.send_win_back_emails",
+        "schedule": crontab(hour=10, minute=0),
         "options": {"queue": BACKGROUND_QUEUE},
     },
 }

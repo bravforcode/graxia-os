@@ -6,7 +6,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://graxia-backend.up.railway.app/api/$1"
+      "destination": "https://graxia-backend.onrender.com/api/$1"
     },
     {
       "source": "/((?!api/).*)",

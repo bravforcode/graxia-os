@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 
-from app.database import AsyncSessionLocal
+from app.database import AsyncSessionLocal, get_db
 from app.middleware.auth import get_current_user
 from app.middleware.tenant import get_org
 from app.models.organization import Organization
@@ -37,4 +37,4 @@ async def require_admin(
         )
     return current_user
 
-__all__ = ["get_tenant_db", "get_org", "get_current_user", "require_admin"]
+__all__ = ["get_tenant_db", "get_org", "get_current_user", "require_admin", "get_db"]

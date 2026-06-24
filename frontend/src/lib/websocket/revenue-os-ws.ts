@@ -314,7 +314,7 @@ class RevenueOSWebSocket {
 let wsInstance: RevenueOSWebSocket | null = null;
 
 export function initializeRevenueOSWebSocket(
-  url?: string
+  url?: string,
 ): RevenueOSWebSocket {
   const wsUrl =
     url || import.meta.env.VITE_WS_URL || "ws://localhost:8000/ws/revenue-os";
