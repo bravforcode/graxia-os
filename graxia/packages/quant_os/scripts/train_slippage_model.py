@@ -4,9 +4,6 @@ Handles both plain-English and α-encoded column headers.
 Falls back to synthetic data if no real files are found.
 """
 
-import os
-import sys
-import glob
 import pickle
 import json
 import warnings
@@ -184,7 +181,7 @@ def train():
     print(f"MAE:             {mae:.4f}")
     print(f"RMSE:            {rmse:.4f}")
     print(f"R²:              {r2:.4f}")
-    print(f"\nFeature importance:")
+    print("\nFeature importance:")
     for name, imp in feat_imp:
         print(f"  {name}: {imp:.4f}")
 
