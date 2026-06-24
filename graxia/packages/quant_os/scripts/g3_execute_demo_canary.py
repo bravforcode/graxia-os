@@ -67,6 +67,7 @@ QUOTE_DRIFT_TOLERANCE_PCT = 0.001
 # Pass --execute-once to enable the single order_send attempt.
 DRY_RUN_MODE = True
 _EXECUTE_ONCE = "--execute-once" in sys.argv
+_AUTO_APPROVE = "--auto-approve" in sys.argv
 if _EXECUTE_ONCE:
     DRY_RUN_MODE = False
     print("EXECUTE-ONCE MODE: one order_send will be attempted")
@@ -263,6 +264,17 @@ def main():
         mt5.shutdown()
         return 1
 
+    # ── AutoTrading check (MT5 terminal must allow automated trading) ──
+    term_info = mt5.terminal_info()
+    if term_info and not term_info.trade_allowed:
+        print("BLOCKED: AutoTrading is DISABLED in Pepperstone MT5 terminal.")
+        print("  Open MT5 → Tools → Options → Expert Advisors")
+        print("  Check 'Allow Automated Trading' → OK")
+        print("  Verify green smiley icon appears in toolbar.")
+        print("  Then run this script again with --execute-once.")
+        mt5.shutdown()
+        return 1
+
     now_utc = datetime.now(timezone.utc)
 
     # ── Guard: Account mode ──
@@ -287,15 +299,18 @@ def main():
         mt5.shutdown()
         return 1
 
-    # ── Canonical UTC Tick Authority ──
-    # Run BEFORE market snapshot so plan geometry uses canonical bid/ask (coherent with timestamp).
-    # symbol_info_tick() bid/ask are used only for divergence comparison.
+    # ── Canonical UTC Tick Authority (timestamp only — NOT price discovery) ──
+    # Live tick.bid/ask are used for geometry (always current).
+    # Canonical tick prices can be stale in fast markets (scans backward for valid bid/ask).
+    # symbol_info_tick() bid/ask are the source of truth for plan geometry.
     canonical = query_canonical_utc_tick(SYMBOL, mt5)
+    canonical_bid = canonical.get("canonical_bid")
+    canonical_ask = canonical.get("canonical_ask")
     
-    # ── Market snapshot ──
-    # Plan geometry uses CANONICAL bid/ask from copy_ticks_range.
-    bid = canonical.get("canonical_bid") or tick.bid
-    ask = canonical.get("canonical_ask") or tick.ask
+    # ── Market snapshot — use LIVE tick prices, NOT canonical tick prices ──
+    # Canonical tick is timestamp authority only; its prices can be seconds stale.
+    bid = tick.bid
+    ask = tick.ask
     spread_price = round(ask - bid, 8)
     tick_size = sym.trade_tick_size
     point = sym.point
@@ -549,6 +564,9 @@ def main():
 
     if DRY_RUN_MODE:
         print(f"  DRY-RUN: auto-approving with {confirmation}")
+        user_input = confirmation
+    elif _AUTO_APPROVE:
+        print(f"  AUTO-APPROVE: approving with {confirmation}")
         user_input = confirmation
     else:
         try:
