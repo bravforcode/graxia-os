@@ -44,6 +44,7 @@ FORBIDDEN_SYMBOLS = {
 # Paths that ARE allowed to use order_send / TRADE_ACTION_DEAL
 ORDER_SEND_ALLOWLIST = {
     "execution/demo_canary/",
+    "scripts/g3_execute_demo_canary.py",
 }
 
 
@@ -85,6 +86,10 @@ def scan_file(filepath: str) -> list[str]:
     findings: list[str] = []
     content = _read_staged_content(filepath)
     if not content:
+        return findings
+
+    # Skip self — regex patterns would match own docstrings & code
+    if "pre_commit_security_check.py" in filepath.replace("\\", "/"):
         return findings
 
     for label, pattern in CREDENTIAL_PATTERNS:

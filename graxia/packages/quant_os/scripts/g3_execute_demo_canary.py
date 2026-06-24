@@ -45,6 +45,9 @@ from execution.demo_canary.enums import CanaryState, CanaryActor
 from execution.demo_canary.feature_gate import is_execution_enabled, enable_execution, disable_execution
 from execution.demo_canary.kill_switch import is_kill_switch_active, activate_kill_switch, release_kill_switch
 from execution.demo_canary.execution_mutex import acquire_mutex, release_mutex, is_mutex_held
+from execution.demo_canary.order_submission import (
+    is_submission_enabled, enable_submission, disable_submission, submit_order_once,
+)
 
 # ── Constants ──
 SYMBOL = "XAUUSD"
@@ -59,7 +62,17 @@ PLAN_TTL_SECONDS = 120
 PROJECTED_LOSS_CAP_USD = 1.00
 TERMINAL_PATH = r"C:\Program Files\Pepperstone MetaTrader 5\terminal64.exe"
 QUOTE_DRIFT_TOLERANCE_PCT = 0.001
-DRY_RUN_MODE = True  # Pre-send: blocks submission_intent creation + mutex + real order_send
+# ── One-shot execution mode ──
+# Default: DRY_RUN_MODE = True (no order_send).
+# Pass --execute-once to enable the single order_send attempt.
+DRY_RUN_MODE = True
+_EXECUTE_ONCE = "--execute-once" in sys.argv
+if _EXECUTE_ONCE:
+    DRY_RUN_MODE = False
+    print("EXECUTE-ONCE MODE: one order_send will be attempted")
+else:
+    print("DRY-RUN MODE: no order_send will be called")
+print(f"{'='*60}")
 
 OUTPUT_BASE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "artifacts", "g3_execute")
 
@@ -213,7 +226,8 @@ def main():
     print(f"{'='*60}")
     print(f"Correlation ID: {correlation_id}")
     print(f"Environment:    {ENVIRONMENT}")
-    print(f"Mode:           PRE-SEND (order_send BLOCKED by report)")
+    mode_label = "DRY-RUN (order_send NOT called)" if DRY_RUN_MODE else "EXECUTE-ONCE (one order_send will be attempted)"
+    print(f"Mode:           {mode_label}")
     print(f"{'='*60}")
 
     sm = CanaryStateMachine(canary_id)
@@ -748,24 +762,47 @@ def main():
             json.dump(intent, f, indent=2)
         intent_recorded = True
 
-    # ── G3 SEND POINT — order_send blocked by report ──
+    # ── G3 SEND POINT — one-shot order_send via allowlisted order_submission ──
+    order_send_result = None
+    order_send_called = False
     print(f"\n{'='*60}")
-    print(f"  G3_SEND_POINT_REACHED — would call order_send here after local review")
-    print(f"  order_send is BLOCKED until report is complete.")
+    print(f"  G3_SEND_POINT")
     print(f"  State: {sm.state.value}")
     print(f"  Approval consumed: {run_dir}/approval.redacted.json")
     if not DRY_RUN_MODE:
         print(f"  Intent recorded: {run_dir}/submission_intent.created.json")
-    else:
-        print(f"  Intent: SKIPPED (dry-run)")
     print(f"{'='*60}")
 
-    # # G3_SEND_POINT: order_send would go here when unblocked.
-    # # One-shot only. Never retry.
-    # order_send_result = mt5.order_send(order_check_request)
-    # # ... reconciliation follows ...
+    if not DRY_RUN_MODE:
+        # ── Enable submission for one shot only ──
+        enable_submission()
+        order_send_result = submit_order_once(order_check_request)
+        disable_submission()
+        order_send_called = True
 
-    # ── Reconcile (post-send simulation ──
+        retcode = order_send_result.get("retcode", -999)
+        print(f"\n  order_send retcode: {retcode}")
+
+        if retcode == -1:
+            # Ambiguous: None result from broker
+            sm.transition(CanaryState.SUBMISSION_UNKNOWN, CanaryActor.SYSTEM, "ORDER_SEND_RETURNED_NONE")
+            print(f"  SUBMISSION_UNKNOWN: order_send returned None. No retry.")
+        elif retcode == 10009:
+            # TRADE_RETCODE_DONE — order placed successfully
+            sm.transition(CanaryState.SUBMITTED, CanaryActor.SYSTEM, "ORDER_SEND_SUCCESS")
+            print(f"  ORDER SENT: deal={order_send_result.get('deal')} order={order_send_result.get('order')}")
+        else:
+            # Broker rejection — no retry
+            comment = order_send_result.get("comment", "")
+            sm.transition(CanaryState.REJECTED, CanaryActor.BROKER, f"ORDER_SEND_REJECTED retcode={retcode} {comment}")
+            print(f"  BROKER REJECTED: retcode={retcode} {comment}")
+
+        # Never retry — print final state regardless
+        print(f"  State after order_send: {sm.state.value}")
+    else:
+        print(f"  DRY-RUN: order_send NOT called (G3_SEND_POINT reached)")
+
+    # ── Reconcile (post-send) ──
     print(f"\n--- RECONCILE ---")
     mt5.initialize(path=TERMINAL_PATH, timeout=15000)
     mt5.symbol_select(SYMBOL, True)
@@ -783,14 +820,15 @@ def main():
         "orders_pending": len(reconcile_orders) if reconcile_orders else 0,
         "history_orders_count": len(reconcile_history_orders) if reconcile_history_orders else 0,
         "history_deals_count": len(reconcile_history_deals) if reconcile_history_deals else 0,
-        "order_send_not_called": True,
+        "order_send_called": order_send_called,
+        "order_send_result": order_send_result,
         "dry_run_mode": DRY_RUN_MODE,
         "mutex_acquired": mutex_acquired,
         "intent_recorded": intent_recorded if "intent_recorded" in dir() else False,
         "canonical_tick_time_utc": canonical_tick_time_utc,
         "time_authority_status": time_authority_status,
         "quote_divergence_verdict": quote_div.get("quote_divergence_verdict"),
-        "note": "G3_SEND_POINT — order_send blocked by report",
+        "note": "order_send was called" if order_send_called else "DRY_RUN — no order_send",
     }
 
     if reconcile_positions:
@@ -819,7 +857,13 @@ def main():
     print(f"  Quote Divergence:   {quote_div.get('max_divergence_ticks')} ticks [{quote_div.get('quote_divergence_verdict')}]")
     print(f"  Mutex Acquired:     {mutex_acquired}")
     print(f"  Intent Persisted:   {intent_recorded}")
-    print(f"  Result:             {'DRY_RUN_SEND_BLOCKED' if DRY_RUN_MODE else 'PRE-SEND'}")
+    result_label = (
+        "DRY_RUN_SEND_BLOCKED" if DRY_RUN_MODE
+        else f"order_send retcode={order_send_result.get('retcode')} deal={order_send_result.get('deal')}"
+        if order_send_result
+        else "UNKNOWN"
+    )
+    print(f"  Result:             {result_label}")
     print(f"  Artifacts:          {run_dir}")
 
     return 0
