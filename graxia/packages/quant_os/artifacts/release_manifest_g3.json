@@ -1,0 +1,44 @@
+{
+  "release_sha": "e83403141a190ae0c5a6bd9c128d24ee398baa3d",
+  "release_branch": "g0a-security-truth-closure-20260623",
+  "release_timestamp_utc": "2026-06-24T12:45:00Z",
+  "source_integrity": {
+    "status": "PASS",
+    "required_execution_files_tracked": 12,
+    "required_execution_files_missing": 0,
+    "files_only_in_other_branch": 0,
+    "source_closure_verification": "All required G3 execution sources TRACKED_IN_HEAD. No execution source MISSING. No execution source only in other branch. Detached worktree from HEAD is clean."
+  },
+  "source_fingerprints": {
+    "execution/demo_canary/__init__.py": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+    "execution/demo_canary/margin_guard.py": "0b4db4924f96a505213a6275a1c2fbc1e9b18cc5",
+    "execution/demo_canary/market_data_guard.py": "6201662c8191a47b3eb52f43ba497d7d7c934c0e",
+    "execution/demo_canary/order_geometry_guard.py": "e7727f198e4678e0e44f542ad5742b18653a8e33",
+    "execution/demo_canary/order_submission.py": "4326e380581d0d167639497d314b98fe0123f2dc",
+    "execution/demo_canary/preflight.py": "49cd6c511db4a8b89dbbefd8e3ce78d8c761ca6b",
+    "execution/demo_canary/preflight_guards.py": "1d9a7a63bb276a665b43885db02e0bece3a8e854",
+    "execution/demo_canary/state_machine.py": "0b4e31ec42a473a5c5775a21126001fcb93074c6",
+    "scripts/g3_execute_demo_canary.py": "9fcf107588eb2f82d06e92a8fe9adc88357a2031",
+    "scripts/g3_close_demo_canary.py": "5e85bdd565a4d734f3746c4062a0235666cd1b9b",
+    "scripts/__init__.py": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+    "shadow/canonical_tick_authority.py": "8ce9fdd73c466b7c1bd355dc3b835aa127262659"
+  },
+  "hook_verification": {
+    "pre_commit_passed": true,
+    "security_check_passed": true,
+    "no_verify_usage_in_last_2_commits": false,
+    "verification_date": "2026-06-24"
+  },
+  "test_results": {
+    "a1_verification_suite": 159,
+    "full_suite": 1273
+  },
+  "runtime_fingerprint": {
+    "python_version": "3.12.10",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "mt5_build": "5836",
+    "broker_server": "Pepperstone-Demo",
+    "mt5_terminal_path": "C:\\Program Files\\Pepperstone MetaTrader 5\\terminal64.exe"
+  },
+  "verdict": "SEALED"
+}
