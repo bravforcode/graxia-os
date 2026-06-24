@@ -41,14 +41,16 @@ def load_data(symbol: str, freq: str) -> pd.DataFrame:
     return df
 
 
-def diagnose(df: pd.DataFrame, horizon: int = 1, noise_floor: float = 0.02) -> dict:
+def diagnose(df: pd.DataFrame, horizon: int = 1, noise_floor: float = 0.02,
+             walk_forward: bool = True) -> pd.DataFrame:
     """
     Check every feature for predictive power against forward return.
     
     Tests:
-    1. Pearson correlation (linear)
+    1. Pearson correlation (linear) with Bonferroni correction
     2. Spearman correlation (monotonic)
     3. Mutual information (non-linear)
+    4. Walk-forward stability: compute corr on train half, verify it holds on test half
     
     Returns diagnostic report.
     """
@@ -69,10 +71,13 @@ def diagnose(df: pd.DataFrame, horizon: int = 1, noise_floor: float = 0.02) -> d
     forward = forward.dropna()
     
     results = []
+    n_features_tested = 0
+    
     for col in feature_cols:
         valid = pd.DataFrame({'x': df[col], 'y': forward}).dropna()
         if len(valid) < 30:
             continue
+        n_features_tested += 1
 
         x, y = valid['x'].values, valid['y'].values
 
@@ -84,22 +89,43 @@ def diagnose(df: pd.DataFrame, horizon: int = 1, noise_floor: float = 0.02) -> d
         mi = mutual_info_regression(x.reshape(-1, 1), y)
         mi_norm = mi[0] / abs(y.std()) if y.std() > 0 else 0
 
-        # Signal quality
-        has_signal = abs(r_p) > noise_floor
-        has_nonlinear = mi_norm > noise_floor * 2
+        # ── Bonferroni correction ──
+        # Threshold: α / n_features_tested (apply after we know n)
+        bonf_alpha = 0.05 / max(n_features_tested, 1)
+        bonf_pass = p_p < bonf_alpha
 
+        # ── Walk-forward stability ──
+        wf_stable = None
+        if walk_forward and len(valid) > 60:
+            split = len(valid) // 2
+            # Train half correlation
+            r_train, _ = pearsonr(x[:split], y[:split])
+            # Test half correlation  
+            r_test, _ = pearsonr(x[split:], y[split:])
+            # Stable if same sign and both above noise_floor/2
+            wf_stable = (r_train * r_test > 0) and \
+                        (abs(r_test) > noise_floor / 2)
+
+        # Signal quality (after Bonferroni)
+        has_signal = abs(r_p) > noise_floor and bonf_pass and (wf_stable if walk_forward else True)
+        has_nonlinear = mi_norm > noise_floor * 2
+        
         results.append({
             "feature": col,
             "pearson_r": round(r_p, 6),
             "pearson_p": round(p_p, 6),
+            "bonferroni_pass": bonf_pass,
+            "walk_forward_stable": wf_stable,
             "spearman_r": round(r_s, 6),
             "mutual_info_norm": round(mi_norm, 6),
-            "has_linear_signal": has_signal,
+            "has_verified_signal": has_signal,
             "has_nonlinear_signal": has_nonlinear,
             "n_samples": len(valid),
         })
 
     results_df = pd.DataFrame(results).sort_values('pearson_r', key=abs, ascending=False)
+    results_df.attrs['bonferroni_alpha'] = 0.05 / max(n_features_tested, 1)
+    results_df.attrs['n_features_tested'] = n_features_tested
     return results_df
 
 
@@ -126,27 +152,38 @@ def main():
     results = diagnose(df, args.horizon, args.noise_floor)
 
     # Summary
-    n_linear = results['has_linear_signal'].sum()
+    n_linear = results['has_verified_signal'].sum()
     n_nonlinear = results['has_nonlinear_signal'].sum()
     n_total = len(results)
+    bonf_alpha = results.attrs.get('bonferroni_alpha', args.noise_floor)
 
     print(f"\n--- Results ---")
     print(f"  Features tested: {n_total}")
-    print(f"  Linear signal (|r|>{args.noise_floor}): {n_linear}/{n_total}")
-    print(f"  Non-linear signal (MI>{args.noise_floor*2}): {n_nonlinear}/{n_total}")
+    print(f"  Bonferroni threshold: p < {bonf_alpha:.6f}")
+    print(f"  Verified signal (|r|>{args.noise_floor} + Bonferroni + walk-forward): {n_linear}/{n_total}")
+    print(f"  Non-linear signal (MI>{args.noise_floor*2:.4f}): {n_nonlinear}/{n_total}")
 
     print(f"\n  Top correlations:")
     for _, row in results.head(10).iterrows():
-        flag = "!" if row['has_linear_signal'] else " "
+        flag = "!" if row['has_verified_signal'] else " "
+        wf = "WF-OK" if row['walk_forward_stable'] else "WF-?" if row['walk_forward_stable'] is None else "WF-FAIL"
         print(f"    {flag} {row['feature']:<20s} r={row['pearson_r']:+7.4f}  "
-              f"MI={row['mutual_info_norm']:6.4f}  n={row['n_samples']}")
+              f"p={row['pearson_p']:.4e}  bonf={row['bonferroni_pass']}  {wf}  n={row['n_samples']}")
 
-    verdict = "PASS" if n_linear > 0 else "FAIL"
-    reason = (f"{n_linear} features found with |corr| > {args.noise_floor}"
-              if n_linear > 0 else
-              f"No feature passes noise floor |r| > {args.noise_floor}. "
-              f"XGBoost will fail regardless of data volume. "
-              f"Need better features (add order book, sentiment, or change target framing).")
+    if n_linear == 0:
+        verdict = "FAIL — HIGH BIAS"
+        reason = ("No feature survives Bonferroni + walk-forward validation. "
+                  "Feature set has no information. Need NEW features "
+                  "(order-flow proxy, multi-TF confluence, volume profile), "
+                  "NOT more data at same sample size. Adding samples won't turn r=0.06 into r=0.3.")
+    elif n_linear <= 2:
+        verdict = "MARGINAL — WEAK SIGNAL"
+        reason = (f"Only {n_linear} features survive rigorous tests. "
+                  "Signal exists but very weak. Proceed with regime filter + "
+                  "threshold approach. Don't trade every bar.")
+    else:
+        verdict = "PASS"
+        reason = f"{n_linear} verified features found. Proceed with strategy modeling."
 
     print(f"\n--- Verdict: {verdict} ---")
     print(f"  {reason}")
@@ -160,8 +197,9 @@ def main():
         "freq": args.freq,
         "horizon": args.horizon,
         "noise_floor": args.noise_floor,
+        "bonferroni_alpha": round(bonf_alpha, 8),
         "n_features": n_total,
-        "n_linear_signal": int(n_linear),
+        "n_verified_signal": int(n_linear),
         "n_nonlinear_signal": int(n_nonlinear),
         "verdict": verdict,
         "reason": reason,
