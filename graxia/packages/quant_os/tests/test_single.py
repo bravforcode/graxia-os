@@ -6,10 +6,14 @@ from graxia.packages.quant_os.backtest.engine import BacktestEngine, BacktestCon
 from graxia.packages.quant_os.gold_bot.strategy_adapter import GoldStrategyAdapter
 from graxia.packages.quant_os.gold_bot.strategies.order_block import OrderBlockStrategy
 
-data_dir = os.path.join("graxia", "packages", "quant_os", "data")
+data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 fmt = "%Y-%m-%d %H:%M:%S"
 
-d1, ts1 = load_csv_data(os.path.join(data_dir, "XAUUSD_D1.csv"), date_column="time", date_format=fmt)
+xau_d1 = os.path.join(data_dir, "XAUUSD_D1.csv")
+if not os.path.exists(xau_d1):
+    raise ImportError(f"Data file not found: {xau_d1}")
+
+d1, ts1 = load_csv_data(xau_d1, date_column="time", date_format=fmt)
 h1, tsh1 = load_csv_data(os.path.join(data_dir, "XAUUSD_H1.csv"), date_column="time", date_format=fmt)
 m15, tsm15 = load_csv_data(os.path.join(data_dir, "XAUUSD_M15.csv"), date_column="time", date_format=fmt)
 

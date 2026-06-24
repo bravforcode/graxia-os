@@ -20,10 +20,14 @@ from graxia.packages.quant_os.gold_bot.strategies.liquidity_sweep import Liquidi
 from graxia.packages.quant_os.gold_bot.strategies.fair_value_gap import FairValueGapStrategy
 from graxia.packages.quant_os.gold_bot.strategies.opening_range import OpeningRangeStrategy
 
-data_dir = os.path.join("graxia", "packages", "quant_os", "data")
+data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 fmt = "%Y-%m-%d %H:%M:%S"
 
-d1, ts1 = load_csv_data(os.path.join(data_dir, "XAUUSD_D1.csv"), date_column="time", date_format=fmt)
+xau_d1 = os.path.join(data_dir, "XAUUSD_D1.csv")
+if not os.path.exists(xau_d1):
+    raise ImportError(f"Data file not found: {xau_d1}")
+
+d1, ts1 = load_csv_data(xau_d1, date_column="time", date_format=fmt)
 
 N = 100
 data_base = {k: v[-N:] for k, v in d1.items()}
