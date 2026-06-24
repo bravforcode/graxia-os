@@ -35,6 +35,10 @@ LIVE_PRICE_INPUT_WITH_UNTRUSTED_NATIVE_TIMESTAMP = "LIVE_PRICE_INPUT_WITH_UNTRUS
 QUOTE_SOURCE_COHERENT = "QUOTE_SOURCE_COHERENT"
 QUOTE_SOURCE_DIVERGENT = "QUOTE_SOURCE_DIVERGENT"
 COHERENT_CANONICAL_EXECUTION_SNAPSHOT = "COHERENT_CANONICAL_EXECUTION_SNAPSHOT"
+EXECUTION_QUOTE_AVAILABLE = "EXECUTION_QUOTE_AVAILABLE"
+EXECUTION_QUOTE_UNAVAILABLE = "EXECUTION_QUOTE_UNAVAILABLE"
+CANONICAL_TICK_AUDIT_PASS = "CANONICAL_TICK_AUDIT_PASS"
+CANONICAL_TICK_AUDIT_FAIL = "CANONICAL_TICK_AUDIT_FAIL"
 
 
 @dataclass
@@ -82,6 +86,24 @@ class CanonicalTickEvidence:
 
     # Local receipt
     local_received_at_utc: Optional[str] = None
+
+    # Execution quote availability (G3.2.4)
+    execution_quote_status: str = EXECUTION_QUOTE_UNAVAILABLE
+    native_bid_valid: bool = False
+    native_ask_valid: bool = False
+    canonical_tick_fresh: bool = False
+    terminal_connected: bool = False
+    position_count: int = -1
+    order_count: int = -1
+    feature_gate_off: bool = False
+    kill_switch_on: bool = False
+
+    # Canonical tick audit (G3.2.4)
+    canonical_audit_status: str = CANONICAL_TICK_AUDIT_FAIL
+    audit_tick_valid: bool = False
+    audit_timestamp_inside_window: bool = False
+    audit_age_within_bounds: bool = False
+    audit_no_future_tick: bool = False
 
 
 def query_canonical_utc_tick(mt5_module, symbol: str) -> CanonicalTickEvidence:
@@ -254,3 +276,107 @@ def is_time_authority_consistent(status: str) -> bool:
 def is_time_authority_blocking(status: str) -> bool:
     """Check if time authority status blocks execution."""
     return status != TIME_SOURCE_CONSISTENT
+
+
+def check_execution_quote_available(
+    evidence: CanonicalTickEvidence,
+    native_bid: Optional[float],
+    native_ask: Optional[float],
+    terminal_connected: bool = True,
+    position_count: int = 0,
+    order_count: int = 0,
+    feature_gate_off: bool = True,
+    kill_switch_on: bool = True,
+) -> CanonicalTickEvidence:
+    """G3.2.4: Check execution quote availability.
+
+    All conditions must be true for EXECUTION_QUOTE_AVAILABLE:
+      - symbol_info_tick() returns valid bid>0, ask>0, ask>=bid
+      - canonical UTC tick fresh independently (age >= 0, age <= max_age)
+      - terminal connected
+      - 0 positions, 0 orders
+      - feature gate OFF, kill switch ON
+
+    Does NOT require canonical/native price equality.
+    """
+    now_utc = datetime.now(timezone.utc)
+
+    # Native bid/ask validity
+    evidence.native_quote_bid = native_bid
+    evidence.native_quote_ask = native_ask
+    native_bid_valid = (native_bid is not None and native_bid > 0)
+    native_ask_valid = (native_ask is not None and native_ask > 0)
+    spread_valid = native_bid_valid and native_ask_valid and (native_ask >= native_bid)
+
+    # Canonical tick freshness (independent of native)
+    canonical_tick_fresh = False
+    if evidence.canonical_tick_age_ms is not None:
+        age_ms = evidence.canonical_tick_age_ms
+        canonical_tick_fresh = (age_ms >= 0 and age_ms <= CANONICAL_TICK_MAX_AGE_MS)
+
+    evidence.native_bid_valid = spread_valid and native_bid_valid
+    evidence.native_ask_valid = spread_valid and native_ask_valid
+    evidence.canonical_tick_fresh = canonical_tick_fresh
+    evidence.terminal_connected = terminal_connected
+    evidence.position_count = position_count
+    evidence.order_count = order_count
+    evidence.feature_gate_off = feature_gate_off
+    evidence.kill_switch_on = kill_switch_on
+
+    all_pass = (
+        evidence.native_bid_valid
+        and evidence.native_ask_valid
+        and spread_valid
+        and canonical_tick_fresh
+        and terminal_connected
+        and position_count == 0
+        and order_count == 0
+        and feature_gate_off
+        and kill_switch_on
+    )
+
+    evidence.execution_quote_status = EXECUTION_QUOTE_AVAILABLE if all_pass else EXECUTION_QUOTE_UNAVAILABLE
+    return evidence
+
+
+def check_canonical_tick_audit(
+    evidence: CanonicalTickEvidence,
+) -> CanonicalTickEvidence:
+    """G3.2.4: Audit canonical tick for time authority.
+
+    All conditions must be true for CANONICAL_TICK_AUDIT_PASS:
+      - copy_ticks_range returned valid tick (bid>0, ask>0, ask>=bid)
+      - timestamp inside UTC window
+      - age within bounds (age >= 0, age <= max_age)
+      - no future tick (age >= 0)
+
+    Does NOT use abs(age_ms). Does NOT require canonical/native price equality.
+    """
+    # Tick validity already checked in query_canonical_utc_tick
+    tick_valid = (
+        evidence.canonical_bid is not None
+        and evidence.canonical_ask is not None
+        and evidence.canonical_bid > 0
+        and evidence.canonical_ask > 0
+        and evidence.canonical_ask >= evidence.canonical_bid
+    )
+
+    # Timestamp inside window
+    timestamp_inside = evidence.time_authority_status != CANONICAL_TICK_OUTSIDE_WINDOW
+
+    # Age within bounds (no abs(age_ms))
+    age_within = False
+    no_future = False
+    if evidence.canonical_tick_age_ms is not None:
+        age_ms = evidence.canonical_tick_age_ms
+        no_future = age_ms >= 0
+        age_within = no_future and age_ms <= CANONICAL_TICK_MAX_AGE_MS
+
+    evidence.audit_tick_valid = tick_valid
+    evidence.audit_timestamp_inside_window = timestamp_inside
+    evidence.audit_age_within_bounds = age_within
+    evidence.audit_no_future_tick = no_future
+
+    all_pass = tick_valid and timestamp_inside and age_within and no_future
+    evidence.canonical_audit_status = CANONICAL_TICK_AUDIT_PASS if all_pass else CANONICAL_TICK_AUDIT_FAIL
+    return evidence
