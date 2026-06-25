@@ -214,21 +214,34 @@ class PaperBroker(BrokerAdapter):
             )
     
     async def _update_position(self, order: Order, fill_price: Decimal) -> None:
-        """Update position after fill"""
+        """Update position after fill. Handles both open and close orders."""
         existing = self.positions.get(order.symbol)
-        
+
         if existing:
-            # Calculate new average price
-            total_qty = existing.quantity + order.quantity
-            avg_price = (
-                (existing.avg_price * existing.quantity) + 
-                (fill_price * order.quantity)
-            ) / total_qty
-            
-            existing.quantity = total_qty
-            existing.avg_price = avg_price
-            # Update unrealized P&L
-            await self._update_unrealized_pnl(existing)
+            # Determine if this is a close (opposite side) or add (same side)
+            is_close = (
+                (existing.position_type == PositionType.LONG and order.side == OrderSide.SELL) or
+                (existing.position_type == PositionType.SHORT and order.side == OrderSide.BUY)
+            )
+
+            if is_close:
+                # Reduce or close existing position
+                if order.quantity >= existing.quantity:
+                    del self.positions[order.symbol]
+                else:
+                    existing.quantity -= order.quantity
+                    # ponytail: avg_price unchanged for partial close
+                    await self._update_unrealized_pnl(existing)
+            else:
+                # Add to same-side position
+                total_qty = existing.quantity + order.quantity
+                avg_price = (
+                    (existing.avg_price * existing.quantity) +
+                    (fill_price * order.quantity)
+                ) / total_qty
+                existing.quantity = total_qty
+                existing.avg_price = avg_price
+                await self._update_unrealized_pnl(existing)
         else:
             # New position
             pos_type = PositionType.LONG if order.side == OrderSide.BUY else PositionType.SHORT
@@ -257,6 +270,20 @@ class PaperBroker(BrokerAdapter):
         
         position.unrealized_pnl = price_diff * position.quantity * pip_value
     
+    async def refresh_pnl(self, symbol: str = None):
+        """Refresh unrealized PnL for positions using current prices.
+        
+        Args:
+            symbol: Refresh specific symbol, or all if None.
+        """
+        if symbol:
+            pos = self.positions.get(symbol)
+            if pos:
+                await self._update_unrealized_pnl(pos)
+        else:
+            for pos in self.positions.values():
+                await self._update_unrealized_pnl(pos)
+
     async def cancel_order(self, broker_order_id: str) -> bool:
         if broker_order_id in self.orders:
             self.orders[broker_order_id]["status"] = OrderStatus.CANCELLED
@@ -330,15 +357,11 @@ class MT5BrokerAdapter(BrokerAdapter):
             import MetaTrader5 as mt5
             self.mt5 = mt5
             
-            # Initialize MT5
-            if not self.mt5.initialize(
-                path=self.config.mt5_path,
-                login=self.config.mt5_login,
-                password=self.config.mt5_password,
-                server=self.config.mt5_server,
-                timeout=self.config.mt5_timeout_ms
-            ):
-                raise BrokerError("MT5 initialization failed", broker="MT5")
+            # Try connecting to running terminal first
+            if not self.mt5.initialize():
+                # Fallback: try with explicit path
+                if not self.mt5.initialize(path=self.config.mt5_path):
+                    raise BrokerError("MT5 initialization failed", broker="MT5")
             
             # Verify connection
             account_info = self.mt5.account_info()

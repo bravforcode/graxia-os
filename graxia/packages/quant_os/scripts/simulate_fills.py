@@ -122,7 +122,7 @@ def simulate_fills(
         for side in sides:
             decision_price_fast = decision_tick['ask'] if side == 'buy' else decision_tick['bid']
             for lat_ms in latencies_ms:
-                target_time = decision_time + int(lat_ms * 1e6)  # ns
+                target_time = decision_time + lat_ms  # both in ms
                 # Binary search through remaining ticks
                 remaining = tick_times[idx:]
                 # Find first tick where time >= target_time

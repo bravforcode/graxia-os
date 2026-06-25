@@ -356,3 +356,62 @@ celery_app.conf.beat_schedule["backup-database"] = {
     "task": "graxia.packages.quant_os.tasks.backup_database",
     "schedule": crontab(hour="3", minute="0"),  # Daily 3 AM
 }
+
+# Add live logs collection task
+celery_app.conf.beat_schedule["quantos-live-logs"] = {
+    "task": "graxia.packages.quant_os.tasks.collect_live_logs",
+    "schedule": crontab(minute="0"),  # Every hour at :00
+}
+
+# Add spread heatmap task
+celery_app.conf.beat_schedule["quantos-spread-heatmap"] = {
+    "task": "graxia.packages.quant_os.tasks.collect_spread_heatmap",
+    "schedule": crontab(hour="*/4", minute="5"),  # Every 4 hours at :05
+}
+
+
+@celery_app.task(bind=True, max_retries=2)
+def collect_live_logs(self):
+    """Run MT5 execution log snapshot (every hour)."""
+    try:
+        import subprocess
+        scripts_dir = os.path.join(os.path.dirname(__file__), "scripts")
+        cmd = [
+            "python",
+            os.path.join(scripts_dir, "collect_logs.py"),
+            "--mode", "snapshot",
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+        if result.returncode != 0:
+            raise RuntimeError(f"collect_logs failed: {result.stderr[:200]}")
+        return {
+            "status": "success",
+            "stdout": result.stdout[-200:],
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+    except Exception as exc:
+        raise self.retry(exc=exc, countdown=120)
+
+
+@celery_app.task(bind=True, max_retries=2)
+def collect_spread_heatmap(self):
+    """Run spread heatmap collection (every 4 hours)."""
+    try:
+        import subprocess
+        scripts_dir = os.path.join(os.path.dirname(__file__), "scripts")
+        cmd = [
+            "python",
+            os.path.join(scripts_dir, "spread_heatmap.py"),
+            "--interval", "300",
+            "--duration", "14400",
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=18000)
+        if result.returncode != 0:
+            raise RuntimeError(f"spread_heatmap failed: {result.stderr[:200]}")
+        return {
+            "status": "success",
+            "stdout": result.stdout[-200:],
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+    except Exception as exc:
+        raise self.retry(exc=exc, countdown=300)
