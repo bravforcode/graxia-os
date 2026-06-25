@@ -292,6 +292,59 @@ class RegimeFilter:
         # Ranging
         return MarketRegime.RANGING, max(0.3, 1 - adx / 50)
     
+    def get_position_multiplier(self, regime: MarketRegime, confidence: float = 1.0) -> float:
+        """Return position size multiplier based on regime + confidence.
+
+        Used by risk engine to reduce exposure during dangerous regimes.
+        CRISIS → 0.0 (no trading)
+        HIGH_VOLATILITY → 0.25 (cut 75%)
+        LOW_VOLATILITY → 0.75
+        Others → 1.0 scaled by confidence
+        """
+        base = {
+            MarketRegime.CRISIS: 0.0,
+            MarketRegime.HIGH_VOLATILITY: 0.25,
+            MarketRegime.LOW_VOLATILITY: 0.75,
+            MarketRegime.TRENDING_UP: 1.0,
+            MarketRegime.TRENDING_DOWN: 1.0,
+            MarketRegime.RANGING: 0.8,
+        }.get(regime, 0.5)
+        # Scale by confidence: low confidence → reduce position further
+        return base * (0.5 + 0.5 * confidence)
+
+    def detect_regime_shift_risk(self, close: List[float], lookback: int = 50) -> Dict:
+        """Detect accelerating volatility shift — early warning for regime change.
+
+        The stress test shows regime_shift scenario causes -155% PnL and 631% DD.
+        This method detects the precursor: volatility accelerating faster than normal.
+
+        Returns dict with risk_score (0-1), warning, and metrics.
+        """
+        if len(close) < lookback * 2:
+            return {"risk_score": 0.0, "warning": False, "reason": "insufficient_data"}
+
+        recent = close[-lookback:]
+        older = close[-lookback * 2:-lookback]
+
+        recent_vol = self._calc_volatility(recent, min(10, len(recent) // 5))
+        older_vol = self._calc_volatility(older, min(10, len(older) // 5))
+
+        if older_vol == 0:
+            return {"risk_score": 0.0, "warning": False}
+
+        vol_ratio = recent_vol / older_vol
+        # If volatility doubles → high risk
+        risk_score = min(1.0, max(0.0, (vol_ratio - 1.0) / 3.0))
+        warning = risk_score > 0.5  # >2x vol increase
+
+        return {
+            "risk_score": risk_score,
+            "warning": warning,
+            "vol_ratio": vol_ratio,
+            "recent_vol": recent_vol,
+            "older_vol": older_vol,
+        }
+
     def get_allowed_strategies(self, regime: MarketRegime) -> List[str]:
         """Get strategies allowed for current regime"""
         regime_strategies = {

@@ -376,11 +376,15 @@ class MLTrainer:
         if model_type == "xgboost":
             from xgboost import XGBClassifier
             return XGBClassifier(
-                n_estimators=100,
-                max_depth=6,
-                learning_rate=0.1,
-                use_label_encoder=False,
-                eval_metric="mlogloss",
+                n_estimators=200,
+                max_depth=3,
+                learning_rate=0.01,
+                subsample=0.7,
+                colsample_bytree=0.7,
+                reg_lambda=5.0,
+                reg_alpha=2.0,
+                early_stopping_rounds=20,
+                eval_metric="logloss",
                 random_state=42,
             )
         elif model_type == "lightgbm":
