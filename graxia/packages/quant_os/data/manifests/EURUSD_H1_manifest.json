@@ -1,11 +1,7 @@
 {
-  "symbol": "EURUSD",
-  "timeframe": "H1",
-  "source": "MT5",
+  "sha256": "1afe495dd115d0040fa8e08a965f2fec41e9dcec932c6ff83974196926f49847",
+  "file_path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\EURUSD_H1.csv",
   "rows": 50000,
-  "start_date": "2018-06-01 21:00:00",
-  "end_date": "2026-06-19 23:00:00",
-  "sha256": "0eb9dd7d9b3efb461523884002a890a0a297e29c8a5a651f89f612ffc47bab7a",
   "columns": [
     "time",
     "open",
@@ -14,5 +10,13 @@
     "close",
     "volume"
   ],
-  "created_at": "2026-06-22"
+  "symbol": "EURUSD",
+  "schema_hash": "872e68211d660c8c51aaf7378d925cd3a086287c242b621044312a87523e7bf9",
+  "generated_at": "2026-06-24T21:40:28Z",
+  "date_range": {
+    "start": "2018-06-01 21:00:00",
+    "end": "2026-06-19 23:00:00"
+  },
+  "timeframe": "H1",
+  "dataset_id": "EURUSD_H1_unknown_50000"
 }
