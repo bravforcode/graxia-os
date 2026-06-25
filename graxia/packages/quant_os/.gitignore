@@ -16,3 +16,7 @@ logs/
 coverage.xml
 .coverage
 htmlcov/
+
+# Generated / temp files.contextignore.ipynb_checkpoints/
+data/warehouse/
+dashboard.ipynb
