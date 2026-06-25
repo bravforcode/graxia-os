@@ -1,4 +1,5 @@
 """Phase 5 integration tests — statistical validation."""
+import pytest
 from graxia.packages.quant_os.validation.experiment_registry import ExperimentRegistry, ExperimentRecord
 from graxia.packages.quant_os.validation.walk_forward import walk_forward_split
 from graxia.packages.quant_os.validation.deflated_sharpe import deflated_sharpe_ratio
@@ -75,5 +76,5 @@ def test_bootstrap_works():
         values=[0.01, 0.02, 0.03, 0.04, 0.05],
         n_resamples=100,
     )
-    assert result.observed_value == 0.03
+    assert result.observed_value == pytest.approx(0.03, abs=1e-9)
     assert result.confidence_interval_95[0] < result.confidence_interval_95[1]
