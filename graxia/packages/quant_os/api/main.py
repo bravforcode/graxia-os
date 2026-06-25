@@ -71,8 +71,15 @@ def create_app() -> FastAPI:
     """Create and configure FastAPI application"""
     config = get_config()
     
+    try:
+        from pathlib import Path
+        _ver = Path(__file__).parent.parent.joinpath("VERSION").read_text().strip()
+    except Exception:
+        _ver = "0.0.0"
+
     app = FastAPI(
-        title="Quant OS - Forex Quantitative Trading System",
+        title="Quant OS — Forex Quantitative Trading System",
+        summary="Risk-first algorithmic trading platform",
         description="""
         Risk-first automated trading system with:
         - Multi-strategy ensemble (MTM, MRB, MLB)
@@ -81,8 +88,10 @@ def create_app() -> FastAPI:
         - MT5 broker integration
         - TradingView webhook support
         """,
-        version="1.0.0",
-        lifespan=lifespan
+        version=_ver,
+        contact={"name": "Quant OS Team", "url": "https://graxia.dev"},
+        license_info={"name": "Proprietary — Graxia OS"},
+        lifespan=lifespan,
     )
     
     # CORS
