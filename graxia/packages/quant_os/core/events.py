@@ -7,7 +7,7 @@ Used by the event bus (A4) to decouple components.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
@@ -19,7 +19,7 @@ class Event:
     """Base event — all events inherit from this"""
 
     event_id: str = field(default_factory=lambda: str(uuid4()))
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     source: str = ""
 
     def to_dict(self) -> dict[str, Any]:

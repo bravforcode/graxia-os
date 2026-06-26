@@ -266,6 +266,36 @@ class TestRiskAuditor:
         assert result.passed is False
         assert "duplicate" in result.reason
 
+    def test_multiple_signals_all_processed(self, risk_auditor):
+        """All pending signals are audited, not just the last one."""
+        risk_auditor.observe(
+            SignalEvent(
+                symbol="XAUUSD",
+                signal_type=SignalType.BUY,
+                confidence=0.1,  # low confidence, will fail
+            )
+        )
+        risk_auditor.observe(
+            SignalEvent(
+                symbol="XAUUSD",
+                signal_type=SignalType.BUY,
+                confidence=0.8,
+                entry_price=2000.0,
+                stop_loss=1990.0,
+                take_profit=2020.0,
+            )
+        )
+        result = risk_auditor.act()
+        # Returns the last audit result (approved)
+        assert result is not None
+        assert result.passed is True
+        # But both signals were processed — the first one updated duplicate count
+        audit = risk_auditor.get_last_audit()
+        assert audit is not None
+        assert audit.signal.confidence == 0.8
+        # Duplicate count should be 2 for BUY:XAUUSD (one from each signal)
+        assert risk_auditor._recent_signals.get("XAUUSD:BUY", 0) == 2
+
     def test_get_last_audit(self, risk_auditor):
         risk_auditor.observe(
             SignalEvent(
@@ -296,6 +326,22 @@ class TestPortfolioManager:
             source="bull_bear_researcher",
         )
         assert pm.act() is None
+
+    def test_risk_event_sets_pending_pass(self, pm):
+        risk_event = RiskEvent(check_name="audit", passed=True, source="risk_auditor")
+        pm.observe(risk_event)
+        assert pm._pending_risk_pass is True
+
+    def test_risk_event_sets_pending_reject(self, pm):
+        risk_event = RiskEvent(check_name="audit", passed=False, source="risk_auditor")
+        pm.observe(risk_event)
+        assert pm._pending_risk_pass is False
+
+    def test_dead_signal_event_from_risk_auditor_ignored(self, pm):
+        from graxia.packages.quant_os.core.enums import SignalType as ST
+        sig = SignalEvent(symbol="X", signal_type=ST.BUY, source="risk_auditor")
+        pm.observe(sig)
+        assert pm._pending_risk_pass is False
 
     def test_emits_final_signal_on_consensus_and_risk_pass(self, pm):
         pm.observe(

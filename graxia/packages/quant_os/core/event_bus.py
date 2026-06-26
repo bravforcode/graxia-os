@@ -59,7 +59,8 @@ class EventBus:
         handlers = list(self._subscribers.get(event_type, []))
         for base_type in event_type.__mro__:
             if base_type is Event:
-                handlers.extend(self._subscribers.get(Event, []))
+                if event_type is not Event:
+                    handlers.extend(self._subscribers.get(Event, []))
                 break
             if base_type is not event_type:
                 handlers.extend(self._subscribers.get(base_type, []))

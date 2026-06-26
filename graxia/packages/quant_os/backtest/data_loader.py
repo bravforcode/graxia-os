@@ -103,7 +103,7 @@ def load_mt5_data(
     try:
         import MetaTrader5 as mt5
     except ImportError:
-        raise ImportError("MetaTrader5 package not installed. Run: pip install MetaTrader5")
+        raise ImportError("MetaTrader5 package not installed. Run: pip install MetaTrader5") from None
 
     if not mt5.initialize():
         raise ConnectionError("Failed to initialize MT5 terminal")
@@ -224,7 +224,7 @@ def download_and_save_yahoo(
     try:
         import yfinance as yf
     except ImportError:
-        raise ImportError("yfinance package not installed. Run: pip install yfinance")
+        raise ImportError("yfinance package not installed. Run: pip install yfinance") from None
 
     ticker = yf.Ticker(symbol)
     df = ticker.history(start=start_date, end=end_date)
@@ -253,7 +253,9 @@ def _require_pyarrow():
 
         return pyarrow
     except ImportError:
-        raise ImportError("pyarrow is required for Arrow/Feather support. " "Install it with: pip install pyarrow")
+        raise ImportError(
+            "pyarrow is required for Arrow/Feather support. " "Install it with: pip install pyarrow"
+        ) from None
 
 
 def _validate_ohlcv_schema(df: pd.DataFrame) -> None:

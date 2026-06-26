@@ -331,7 +331,7 @@ class RiskEngine:
 
             result = (
                 self.db.query(func.sum(Position.quantity * Position.current_price))
-                .filter(Position.is_open == True)
+                .filter(Position.is_open.is_(True))
                 .scalar()
             )
 
@@ -347,7 +347,7 @@ class RiskEngine:
         try:
             from ..data.models import Position
 
-            count = self.db.query(Position).filter(Position.is_open == True).count()
+            count = self.db.query(Position).filter(Position.is_open.is_(True)).count()
 
             return count
         except Exception:

@@ -59,16 +59,7 @@ class RiskAuditorAgent(Agent):
         if isinstance(event, SignalEvent):
             self._observations.append(event)
 
-    def act(self) -> Event | None:
-        if not self._observations:
-            return None
-
-        event = self._observations[-1]
-        if not isinstance(event, SignalEvent):
-            return None
-
-        self._observations.clear()
-
+    def _audit_signal(self, event: SignalEvent) -> RiskEvent:
         checks: list[RiskCheck] = []
 
         # Check 1: confidence
@@ -123,7 +114,6 @@ class RiskAuditorAgent(Agent):
         approved = all(c.passed for c in checks)
         rejection = "; ".join(c.reason for c in checks if not c.passed)
 
-        # Emit risk audit event
         risk_event = RiskEvent(
             check_name="agent_risk_audit",
             passed=approved,
@@ -140,6 +130,24 @@ class RiskAuditorAgent(Agent):
         )
 
         return risk_event
+
+    def act(self) -> Event | None:
+        if not self._observations:
+            return None
+
+        signals = [
+            obs for obs in self._observations if isinstance(obs, SignalEvent)
+        ]
+        self._observations.clear()
+
+        if not signals:
+            return None
+
+        result: Event | None = None
+        for event in signals:
+            result = self._audit_signal(event)
+
+        return result
 
     def get_last_audit(self) -> RiskAudit | None:
         return self._last_audit
