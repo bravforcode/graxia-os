@@ -225,8 +225,8 @@ class FeatureEngineer:
 
     def _classify_returns(
         self, forward_returns, buy_threshold: float = 0.002, sell_threshold: float = -0.002
-    ) -> "pd.Series":
-        """Classify forward returns into signals"""
+    ):
+        """Classify forward returns into signals (returns pd.Series)."""
         import pandas as pd
 
         labels = pd.Series(0, index=forward_returns.index)  # 0 = hold
@@ -383,7 +383,8 @@ class MLTrainer:
                 import numpy as np
                 from sklearn.metrics import accuracy_score
 
-                model_data = pickle.load(open(result.model_path, "rb"))
+                with open(result.model_path, "rb") as f:
+                    model_data = pickle.load(f)
                 model = model_data["model"]
 
                 X_oos = np.array([list(f.values()) for f in oos_features])
