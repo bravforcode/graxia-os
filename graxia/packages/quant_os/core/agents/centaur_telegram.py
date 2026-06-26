@@ -1,21 +1,34 @@
 """
 Centaur Telegram Agent — async signal-notifier for human-in-the-loop trading.
 
-Subscribes to ensemble signals on EventBus, formats a centaur message,
-and fires it to Telegram via httpx.AsyncClient (non-blocking).
+Subscribes to ensemble signals on EventBus, buffers them into an internal
+asyncio.Queue, and drains the queue one-by-one with rate-limit backoff.
+Telegram downtime or 429 blocks ONLY the queue, never the EventBus.
 
 This agent does NOT execute trades.  It only notifies the human operator
 who presses Buy/Sell on their phone.  Once trust is established after ~6
 months, the human can switch to full-auto mode.
 
-Sanity checks applied:
+Architecture:
+    EventBus ──observe()──▶ _pending list ──act()──▶ asyncio.Queue
+                                                          │
+                                                    _drain_queue()
+                                                          │
+                                                    httpx POST
+                                                    (with 429 backoff)
+                                                          │
+                                                    Telegram API
+
+Sanity checks:
 - httpx.AsyncClient (NOT requests) — never blocks the Event Loop
-- Fire-and-forget pattern — Telegram downtime cannot stall the trading engine
-- Env-var config: TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID
+- Queue isolation — rate-limit sleep only blocks the drain task
+- Fire-and-forget — Telegram failure never propagates to EventBus
+- shutdown() hook — closes TCP connection on SIGTERM / Ctrl+C
 """
 
 from __future__ import annotations
 
+import asyncio
 import os
 from dataclasses import dataclass
 from typing import Any
@@ -90,16 +103,20 @@ class CentaurTelegramAgent(Agent):
     Async Telegram notifier for centaur (human-in-the-loop) trading.
 
     Lifecycle:
-        1. observe(SignalEvent) — stores latest signal per symbol
-        2. act() — formats + fires HTTP POST to Telegram (fire-and-forget)
-        3. Returns None (does not produce a trading signal)
+        1. observe(SignalEvent) — stores signal in _pending list
+        2. act() — moves _pending into asyncio.Queue, starts drain
+        3. _drain_queue() — sends one-by-one with 429 backoff
+        4. shutdown() — closes TCP connection cleanly
 
     Usage with EventBus:
         agent = CentaurTelegramAgent()
         bus.subscribe("signal.new", agent.observe)
+        # on shutdown:
+        await agent.shutdown()
     """
 
-    SEND_TIMEOUT = 5.0  # seconds — max wait for Telegram API
+    SEND_TIMEOUT = 5.0  # seconds — max wait per HTTP request
+    QUEUE_MAXSIZE = 100  # max buffered signals before dropping
 
     def __init__(
         self,
@@ -112,6 +129,10 @@ class CentaurTelegramAgent(Agent):
         self._chat_id = chat_id or _get_chat_id()
         self._pending: list[SignalEvent] = []
         self._client: httpx.AsyncClient | None = None
+        self._queue: asyncio.Queue[SignalEvent] = asyncio.Queue(
+            maxsize=self.QUEUE_MAXSIZE
+        )
+        self._drain_task: asyncio.Task[None] | None = None
 
     # ── Lifecycle ──────────────────────────────────────────────────
 
@@ -121,10 +142,21 @@ class CentaurTelegramAgent(Agent):
             self._client = httpx.AsyncClient(timeout=self.SEND_TIMEOUT)
         return self._client
 
-    async def close(self) -> None:
-        """Shut down the HTTP client gracefully."""
+    async def shutdown(self) -> None:
+        """Close TCP connection and cancel drain task. Call on SIGTERM."""
+        if self._drain_task and not self._drain_task.done():
+            self._drain_task.cancel()
+            try:
+                await self._drain_task
+            except asyncio.CancelledError:
+                pass
         if self._client and not self._client.is_closed:
             await self._client.aclose()
+        logger.info("centaur_telegram.shutdown_complete")
+
+    # Backward-compat alias
+    async def close(self) -> None:
+        await self.shutdown()
 
     # ── Agent interface ────────────────────────────────────────────
 
@@ -138,27 +170,63 @@ class CentaurTelegramAgent(Agent):
 
     async def act(self) -> None:
         """
-        Fire-and-forget Telegram messages for all pending signals.
+        Move pending signals into the async queue and start drain.
 
-        Returns None — this agent never produces a trading signal.
-        Errors are logged but never raised (Telegram failure ≠ trading failure).
+        The drain runs as a background task so the EventBus is never
+        blocked by Telegram latency or 429 backoff sleeps.
         """
         if not self._pending:
             return
         if not self._token or not self._chat_id:
-            logger.warning("centaur_telegram.skip_no_config", pending=len(self._pending))
+            logger.warning(
+                "centaur_telegram.skip_no_config", pending=len(self._pending)
+            )
             self._pending.clear()
             return
 
-        events = list(self._pending)
+        # Transfer pending → queue (drop if full — never block EventBus)
+        dropped = 0
+        for sig in self._pending:
+            try:
+                self._queue.put_nowait(sig)
+            except asyncio.QueueFull:
+                dropped += 1
         self._pending.clear()
+
+        if dropped:
+            logger.warning("centaur_telegram.queue_overflow", dropped=dropped)
+
+        # Start drain if not already running
+        if self._drain_task is None or self._drain_task.done():
+            self._drain_task = asyncio.create_task(
+                self._drain_queue(), name="telegram_drain"
+            )
+
+    async def _drain_queue(self) -> None:
+        """
+        Send signals one-by-one from the queue.
+
+        Rate-limit isolation: 429 backoff sleep happens HERE only,
+        never touching the EventBus loop.
+        """
+        if not self._token or not self._chat_id:
+            return
 
         client = await self._ensure_client()
 
-        for sig in events:
+        while not self._queue.empty():
+            try:
+                sig = self._queue.get_nowait()
+            except asyncio.QueueEmpty:
+                break
+
             payload = CentaurPayload(
                 asset=sig.symbol,
-                direction=sig.signal_type.value if isinstance(sig.signal_type, SignalType) else str(sig.signal_type),
+                direction=(
+                    sig.signal_type.value
+                    if isinstance(sig.signal_type, SignalType)
+                    else str(sig.signal_type)
+                ),
                 confidence=sig.confidence,
                 entry=sig.entry_price,
                 stop_loss=sig.stop_loss,
@@ -180,13 +248,16 @@ class CentaurTelegramAgent(Agent):
                     },
                 )
                 if resp.status_code == 429:
-                    # Rate limited — Telegram says retry after N seconds
-                    retry_after = resp.json().get("parameters", {}).get("retry_after", 30)
+                    retry_after = resp.json().get("parameters", {}).get(
+                        "retry_after", 30
+                    )
                     logger.warning(
                         "centaur_telegram.rate_limited",
                         retry_after=retry_after,
                         asset=payload.asset,
                     )
+                    # Backoff — blocks ONLY this drain task, EventBus is safe
+                    await asyncio.sleep(min(retry_after, 30))
                 elif resp.status_code != 200:
                     logger.warning(
                         "centaur_telegram.send_failed",
@@ -196,11 +267,17 @@ class CentaurTelegramAgent(Agent):
             except httpx.ConnectTimeout:
                 logger.warning("centaur_telegram.timeout", asset=payload.asset)
             except httpx.HTTPError as exc:
-                # Any HTTP-level error (DNS, connection refused, etc.)
-                logger.warning("centaur_telegram.http_error", error=str(exc), asset=payload.asset)
+                logger.warning(
+                    "centaur_telegram.http_error",
+                    error=str(exc),
+                    asset=payload.asset,
+                )
             except Exception as exc:
-                # Catch-all — Telegram failure must NEVER block the trading engine
-                logger.warning("centaur_telegram.send_error", error=str(exc), asset=payload.asset)
+                logger.warning(
+                    "centaur_telegram.send_error",
+                    error=str(exc),
+                    asset=payload.asset,
+                )
 
     def reset(self) -> None:
         super().reset()

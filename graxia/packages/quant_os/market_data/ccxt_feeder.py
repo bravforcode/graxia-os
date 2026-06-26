@@ -27,18 +27,6 @@ import structlog
 
 logger = structlog.get_logger(__name__)
 
-# Lazy import — ccxt.async_support only
-_ccxt_async = None
-
-
-def _get_ccxt():
-    global _ccxt_async
-    if _ccxt_async is None:
-        import ccxt.async_support as ccxt
-
-        _ccxt_async = ccxt
-    return _ccxt_async
-
 
 # ── Data Classes ───────────────────────────────────────────────────
 
@@ -101,12 +89,23 @@ class BinanceFeeder:
             bars = await feeder.fetch_ohlcv("ETH/USDT", "1h", limit=500)
     """
 
+    _ccxt = None  # class-level lazy import — shared across instances
+
     def __init__(self, config: ExchangeConfig | None = None):
         self._config = config or ExchangeConfig()
         self._exchange = None
 
+    @classmethod
+    def _get_ccxt(cls):
+        """Lazy-import ccxt.async_support (class-level, thread-safe in asyncio)."""
+        if cls._ccxt is None:
+            import ccxt.async_support as ccxt
+
+            cls._ccxt = ccxt
+        return cls._ccxt
+
     async def __aenter__(self):
-        ccxt = _get_ccxt()
+        ccxt = self._get_ccxt()
         exchange_class = getattr(ccxt, self._config.exchange_id)
         self._exchange = exchange_class(
             {
