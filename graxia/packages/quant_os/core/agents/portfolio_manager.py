@@ -8,7 +8,7 @@ from auditor, then emits the final SignalEvent for execution.
 from dataclasses import dataclass
 
 from ..enums import SignalType
-from ..events import Event, SignalEvent
+from ..events import Event, RiskEvent, SignalEvent
 from .base import Agent
 
 
@@ -44,11 +44,7 @@ class PortfolioManagerAgent(Agent):
     def observe(self, event: Event) -> None:
         if isinstance(event, SignalEvent) and event.source == "bull_bear_researcher":
             self._pending_consensus = event
-        elif isinstance(event, SignalEvent) and event.source == "risk_auditor":
-            # Risk auditor emits RiskEvent, but we also accept direct signals
-            self._pending_risk_pass = event.metadata.get("passed", False) if event.metadata else False
-        elif hasattr(event, "passed"):
-            # It's a RiskEvent
+        elif isinstance(event, RiskEvent):
             self._pending_risk_pass = event.passed
 
     def act(self) -> Event | None:

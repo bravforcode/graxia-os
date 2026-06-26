@@ -845,7 +845,6 @@ class TestEndToEndPipeline:
     def test_full_bar_signal_order_fill_pipeline(self):
         bus = EventBus()
         strategy = MomentumStrategy()
-        orders = []
         fills = []
 
         def on_bar(bar: BarEvent):

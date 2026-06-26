@@ -152,3 +152,11 @@ class TestEventBus:
         bus.publish(BarEvent())
         bus.publish(SignalEvent())
         assert len(received) == 2
+
+    def test_publish_event_directly_no_double_call(self):
+        """Publishing an Event directly must invoke Event subscribers exactly once"""
+        bus = EventBus()
+        received = []
+        bus.subscribe(Event, lambda e: received.append(e))
+        bus.publish(Event())
+        assert len(received) == 1
