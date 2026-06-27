@@ -6,16 +6,19 @@ Pillar 2: Canonical Payloads (Pydantic v2 frozen, validation)
 Pillar 3: Hierarchical Veto (PortfolioManager + RiskAuditor)
 Pillar 4: CascadeRouter (3-tier, failover)
 """
+
 import asyncio
 import threading
-import time
-from datetime import datetime, UTC
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from graxia.packages.quant_os.core.agents.analyst import TechnicalAnalystAgent
+from graxia.packages.quant_os.core.agents.llm_router import CascadeResult, CascadeRouter, ImpactLevel
+from graxia.packages.quant_os.core.agents.portfolio_manager import PortfolioManagerAgent
+from graxia.packages.quant_os.core.agents.risk_auditor import RiskAuditorAgent
+from graxia.packages.quant_os.core.agents.sentiment_agent import SentimentAgent, _cascade_to_regime
 from graxia.packages.quant_os.core.canonical.macro_regime import (
-    MacroRegime,
     MacroRegimeCache,
     RegimeBias,
     get_macro_regime,
@@ -23,28 +26,22 @@ from graxia.packages.quant_os.core.canonical.macro_regime import (
 )
 from graxia.packages.quant_os.core.canonical.payloads import (
     FinalTradePayload,
-    MLSignalPayload,
     MacroRegimePayload,
+    MLSignalPayload,
     RiskVerdictPayload,
     SignalDirection,
     TechnicalSignalPayload,
     VetoReason,
 )
-from graxia.packages.quant_os.core.agents.sentiment_agent import SentimentAgent, _cascade_to_regime
-from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter, CascadeResult, ImpactLevel
-from graxia.packages.quant_os.core.agents.analyst import TechnicalAnalystAgent
-from graxia.packages.quant_os.core.agents.risk_auditor import RiskAuditorAgent
-from graxia.packages.quant_os.core.agents.portfolio_manager import PortfolioManagerAgent
-from graxia.packages.quant_os.core.events import BarEvent, RiskEvent, SignalEvent
 from graxia.packages.quant_os.core.enums import SignalType
-
+from graxia.packages.quant_os.core.events import BarEvent, RiskEvent, SignalEvent
 
 # ═══════════════════════════════════════════════════════════════════
 # Pillar 1: MacroRegimeCache
 # ═══════════════════════════════════════════════════════════════════
 
-class TestMacroRegimeCache:
 
+class TestMacroRegimeCache:
     def test_singleton_identity(self):
         a = MacroRegimeCache()
         b = MacroRegimeCache()
@@ -60,9 +57,7 @@ class TestMacroRegimeCache:
 
     def test_update_from_sentiment(self):
         cache = MacroRegimeCache()
-        cache.update_from_sentiment(
-            RegimeBias.BEARISH, 0.9, 0.2, "CRISIS", "cascade_t2", "Fed emergency"
-        )
+        cache.update_from_sentiment(RegimeBias.BEARISH, 0.9, 0.2, "CRISIS", "cascade_t2", "Fed emergency")
         r = cache.get()
         assert r.bias == RegimeBias.BEARISH
         assert r.confidence == 0.9
@@ -121,8 +116,8 @@ class TestMacroRegimeCache:
 # Pillar 2: Canonical Payloads
 # ═══════════════════════════════════════════════════════════════════
 
-class TestMLSignalPayload:
 
+class TestMLSignalPayload:
     def test_create_valid(self):
         p = MLSignalPayload(
             symbol="XAUUSD",
@@ -178,7 +173,6 @@ class TestMLSignalPayload:
 
 
 class TestTechnicalSignalPayload:
-
     def test_create_valid(self):
         p = TechnicalSignalPayload(
             symbol="XAUUSD",
@@ -198,7 +192,6 @@ class TestTechnicalSignalPayload:
 
 
 class TestMacroRegimePayload:
-
     def test_create_valid(self):
         p = MacroRegimePayload(
             bias=RegimeBias.BEARISH,
@@ -218,7 +211,6 @@ class TestMacroRegimePayload:
 
 
 class TestRiskVerdictPayload:
-
     def test_approved(self):
         p = RiskVerdictPayload(
             is_approved=True,
@@ -239,7 +231,6 @@ class TestRiskVerdictPayload:
 
 
 class TestFinalTradePayload:
-
     def test_create_valid(self):
         p = FinalTradePayload(
             symbol="XAUUSD",
@@ -263,8 +254,8 @@ class TestFinalTradePayload:
 # Pillar 3: Hierarchical Veto
 # ═══════════════════════════════════════════════════════════════════
 
-class TestPortfolioManager:
 
+class TestPortfolioManager:
     def _make_risk_approved(self):
         return RiskEvent(
             check_name="agent_risk_audit",
@@ -364,7 +355,6 @@ class TestPortfolioManager:
 
 
 class TestRiskAuditor:
-
     def test_approve_valid_signal(self):
         ra = RiskAuditorAgent()
         sig = SignalEvent(
@@ -488,23 +478,19 @@ class TestRiskAuditor:
 # Pillar 4: CascadeRouter
 # ═══════════════════════════════════════════════════════════════════
 
-class TestCascadeRouter:
 
+class TestCascadeRouter:
     def test_tier1_low_impact_returns_immediately(self):
         router = CascadeRouter()
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "choices": [{"message": {"content": '{"impact": "LOW", "dir": 1}'}}]
-        }
+        mock_response.json.return_value = {"choices": [{"message": {"content": '{"impact": "LOW", "dir": 1}'}}]}
         with patch.object(router, "_get_client", new_callable=AsyncMock) as mock_get:
             mock_client = AsyncMock()
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_get.return_value = mock_client
             with patch("os.getenv", return_value="fake_key"):
-                result = asyncio.get_event_loop().run_until_complete(
-                    router.route("Routine earnings report")
-                )
+                result = asyncio.get_event_loop().run_until_complete(router.route("Routine earnings report"))
         assert result.impact == ImpactLevel.LOW
         assert result.tier_used == 1
 
@@ -512,19 +498,11 @@ class TestCascadeRouter:
         router = CascadeRouter()
         tier1_resp = MagicMock()
         tier1_resp.status_code = 200
-        tier1_resp.json.return_value = {
-            "choices": [{"message": {"content": '{"impact": "HIGH", "dir": -1}'}}]
-        }
+        tier1_resp.json.return_value = {"choices": [{"message": {"content": '{"impact": "HIGH", "dir": -1}'}}]}
         tier2_resp = MagicMock()
         tier2_resp.status_code = 200
         tier2_resp.json.return_value = {
-            "choices": [
-                {
-                    "message": {
-                        "content": '{"confirmed": false, "confidence": 0.3, "reasoning": "false alarm"}'
-                    }
-                }
-            ]
+            "choices": [{"message": {"content": '{"confirmed": false, "confidence": 0.3, "reasoning": "false alarm"}'}}]
         }
         call_count = [0]
 
@@ -537,9 +515,7 @@ class TestCascadeRouter:
             mock_client.post = mock_post
             mock_get.return_value = mock_client
             with patch("os.getenv", return_value="fake_key"):
-                result = asyncio.get_event_loop().run_until_complete(
-                    router.route("Breaking: Fed rate decision")
-                )
+                result = asyncio.get_event_loop().run_until_complete(router.route("Breaking: Fed rate decision"))
         assert result.impact == ImpactLevel.LOW
         assert result.tier_used == 2
 
@@ -550,18 +526,14 @@ class TestCascadeRouter:
             mock_client.post = AsyncMock(return_value=MagicMock(status_code=500))
             mock_get.return_value = mock_client
             with patch("os.getenv", return_value="fake_key"):
-                result = asyncio.get_event_loop().run_until_complete(
-                    router.route("Some headline")
-                )
+                result = asyncio.get_event_loop().run_until_complete(router.route("Some headline"))
         assert result.impact == ImpactLevel.LOW
         assert result.reasoning == "Tier 1 failed"
 
     def test_no_api_key_returns_low(self):
         router = CascadeRouter()
         with patch("os.getenv", return_value=""):
-            result = asyncio.get_event_loop().run_until_complete(
-                router.route("Some headline")
-            )
+            result = asyncio.get_event_loop().run_until_complete(router.route("Some headline"))
         assert result.impact == ImpactLevel.LOW
 
     def test_cascade_to_regime_mapping(self):
@@ -583,8 +555,8 @@ class TestCascadeRouter:
 # TechnicalAnalystAgent
 # ═══════════════════════════════════════════════════════════════════
 
-class TestTechnicalAnalystAgent:
 
+class TestTechnicalAnalystAgent:
     def _make_bars(self, closes, symbol="XAUUSD"):
         bars = []
         for i, c in enumerate(closes):
@@ -632,8 +604,8 @@ class TestTechnicalAnalystAgent:
 # SentimentAgent
 # ═══════════════════════════════════════════════════════════════════
 
-class TestSentimentAgent:
 
+class TestSentimentAgent:
     def test_act_returns_none_when_no_pending(self):
         agent = SentimentAgent()
         result = asyncio.get_event_loop().run_until_complete(agent.act())
@@ -662,8 +634,8 @@ class TestSentimentAgent:
 # E2E: Full Signal Flow
 # ═══════════════════════════════════════════════════════════════════
 
-class TestE2ESignalFlow:
 
+class TestE2ESignalFlow:
     def test_full_flow_approve(self):
         cache = MacroRegimeCache()
         cache.update_from_sentiment(RegimeBias.NEUTRAL, 0.5, 1.0, "NORMAL")

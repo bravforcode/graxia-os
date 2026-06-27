@@ -172,3 +172,12 @@ class RegimeChangeEvent(Event):
     old_regime: str = ""
     new_regime: str = ""
     confidence: float = 0.0
+
+
+@dataclass(frozen=True)
+class NewsEvent(Event):
+    """News headline impact on market"""
+
+    headline: str = ""
+    impact: str = "LOW"
+    source: str = "news"
