@@ -14,11 +14,11 @@ Usage:
   pr.add_position("XAUUSD", risk_dollars=50)
   allowed = pr.can_add("USDJPY", risk_dollars=100)
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Optional
 
 import structlog
 
@@ -47,16 +47,16 @@ class PortfolioRisk:
       - Max drawdown: 10% of capital
     """
 
-    MAX_TOTAL_RISK_PCT = 0.05      # 5% total
-    MAX_PER_SYMBOL_PCT = 0.02      # 2% per symbol
-    MAX_CORRELATED_PCT = 0.03      # 3% for correlated pairs
-    MAX_DAILY_LOSS_PCT = 0.02      # 2% daily loss
-    MAX_DRAWDOWN_PCT = 0.10        # 10% max drawdown
+    MAX_TOTAL_RISK_PCT = 0.05  # 5% total
+    MAX_PER_SYMBOL_PCT = 0.02  # 2% per symbol
+    MAX_CORRELATED_PCT = 0.03  # 3% for correlated pairs
+    MAX_DAILY_LOSS_PCT = 0.02  # 2% daily loss
+    MAX_DRAWDOWN_PCT = 0.10  # 10% max drawdown
 
     CORRELATED_PAIRS = {
-        frozenset({"EURUSD", "GBPUSD"}),     # EUR/GBP correlated
-        frozenset({"AUDUSD", "NZDUSD"}),     # AUD/NZD correlated
-        frozenset({"XAUUSD", "XAGUSD"}),     # Gold/Silver correlated
+        frozenset({"EURUSD", "GBPUSD"}),  # EUR/GBP correlated
+        frozenset({"AUDUSD", "NZDUSD"}),  # AUD/NZD correlated
+        frozenset({"XAUUSD", "XAGUSD"}),  # Gold/Silver correlated
     }
 
     def __init__(self, capital: float = 10000.0):
@@ -99,7 +99,9 @@ class PortfolioRisk:
         self._daily_pnl = 0.0
 
     def _symbol_risk(self, symbol: str) -> float:
-        return self._positions.get(symbol, Position(symbol="", direction="", entry_price=0, risk_dollars=0, size_lots=0)).risk_dollars
+        return self._positions.get(
+            symbol, Position(symbol="", direction="", entry_price=0, risk_dollars=0, size_lots=0)
+        ).risk_dollars
 
     def _correlated_risk(self, symbol: str) -> float:
         risk = self._symbol_risk(symbol)
@@ -156,8 +158,5 @@ class PortfolioRisk:
             "open_positions": len(self._positions),
             "daily_pnl": round(self._daily_pnl, 2),
             "drawdown": f"{self.drawdown:.1%}",
-            "positions": {
-                s: {"risk": p.risk_dollars, "direction": p.direction}
-                for s, p in self._positions.items()
-            },
+            "positions": {s: {"risk": p.risk_dollars, "direction": p.direction} for s, p in self._positions.items()},
         }

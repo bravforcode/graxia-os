@@ -21,19 +21,15 @@ Usage:
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
-from datetime import datetime, UTC
-from typing import Optional
 
 import structlog
 
-from ..events import Event
 from ..canonical.macro_regime import (
-    MacroRegime,
     MacroRegimeCache,
     RegimeBias,
 )
 from ..canonical.payloads import MacroRegimePayload
+from ..events import Event
 from .base import Agent
 from .llm_router import CascadeRouter, ImpactLevel, get_router
 
@@ -102,7 +98,7 @@ class SentimentAgent(Agent):
     def __init__(self, name: str = "sentiment_agent") -> None:
         super().__init__(name)
         self._pending_headlines: list[dict] = []
-        self._router: Optional[CascadeRouter] = None
+        self._router: CascadeRouter | None = None
         self._cache = MacroRegimeCache()
 
     @property
@@ -123,11 +119,13 @@ class SentimentAgent(Agent):
         headline = data.get("headline", "")
         source = data.get("source", "unknown")
         if headline:
-            self._pending_headlines.append({
-                "headline": headline,
-                "source": source,
-                "timestamp": event.timestamp.isoformat(),
-            })
+            self._pending_headlines.append(
+                {
+                    "headline": headline,
+                    "source": source,
+                    "timestamp": event.timestamp.isoformat(),
+                }
+            )
 
     async def act(self) -> MacroRegimePayload | None:
         if not self._pending_headlines:

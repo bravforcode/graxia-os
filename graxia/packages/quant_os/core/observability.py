@@ -10,11 +10,11 @@ Usage:
   from core.observability import setup_logging
   setup_logging()  # call once at startup
 """
+
 from __future__ import annotations
 
 import json
 import os
-import sys
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -37,6 +37,7 @@ class LokiSink:
     async def _ensure_client(self):
         if self._client is None:
             import httpx
+
             self._client = httpx.AsyncClient(timeout=5.0)
         return self._client
 
@@ -67,6 +68,7 @@ class LokiSink:
         if not self._buffer:
             return
         import asyncio
+
         try:
             loop = asyncio.get_event_loop()
             if loop.is_running():

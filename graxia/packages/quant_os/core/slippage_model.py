@@ -17,11 +17,11 @@ Usage:
       session="london",
   )
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
 import structlog
 
@@ -29,30 +29,30 @@ logger = structlog.get_logger(__name__)
 
 
 class OrderSize(str, Enum):
-    MICRO = "micro"      # < 0.1 lots
-    SMALL = "small"      # 0.1 - 0.5 lots
-    MEDIUM = "medium"    # 0.5 - 2.0 lots
-    LARGE = "large"      # 2.0 - 5.0 lots
+    MICRO = "micro"  # < 0.1 lots
+    SMALL = "small"  # 0.1 - 0.5 lots
+    MEDIUM = "medium"  # 0.5 - 2.0 lots
+    LARGE = "large"  # 2.0 - 5.0 lots
     INSTITUTIONAL = "inst"  # > 5.0 lots
 
 
 # Base slippage in pips per symbol
 BASE_SLIPPAGE = {
-    "XAUUSD": 0.3,   # Gold: 0.3 pips base
-    "EURUSD": 0.1,   # EUR/USD: 0.1 pips base
+    "XAUUSD": 0.3,  # Gold: 0.3 pips base
+    "EURUSD": 0.1,  # EUR/USD: 0.1 pips base
     "GBPUSD": 0.15,  # GBP/USD: 0.15 pips base
     "USDJPY": 0.15,  # USD/JPY: 0.15 pips base
-    "BTCUSD": 5.0,   # Bitcoin: 5.0 pips base
-    "US30": 1.0,     # Dow: 1.0 pip base
+    "BTCUSD": 5.0,  # Bitcoin: 5.0 pips base
+    "US30": 1.0,  # Dow: 1.0 pip base
 }
 
 # Session multipliers (how much worse than baseline)
 SESSION_MULTIPLIER = {
-    "asian": 1.5,       # Low liquidity = more slippage
-    "london": 0.8,      # High liquidity = less slippage
-    "new_york": 0.9,    # Good liquidity
-    "overlap": 0.7,     # Best liquidity = least slippage
-    "closed": 3.0,      # No liquidity = max slippage
+    "asian": 1.5,  # Low liquidity = more slippage
+    "london": 0.8,  # High liquidity = less slippage
+    "new_york": 0.9,  # Good liquidity
+    "overlap": 0.7,  # Best liquidity = least slippage
+    "closed": 3.0,  # No liquidity = max slippage
 }
 
 # Order size multipliers

@@ -13,20 +13,19 @@ Usage:
   python scripts/dashboard.py --json       # JSON output (for API)
   python scripts/dashboard.py --port 8080  # HTTP server mode
 """
+
 from __future__ import annotations
 
 import asyncio
 import json
 import os
 import sys
-import time
 from datetime import UTC, datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from core.canonical.macro_regime import MacroRegimeCache, get_macro_regime, get_position_multiplier
-from core.canonical.payloads import SignalDirection
+from core.canonical.macro_regime import MacroRegimeCache, get_position_multiplier
 
 # Load .env
 ENV_PATH = Path(__file__).parent.parent / ".env"
@@ -112,10 +111,10 @@ def render_terminal(state: dict) -> None:
     print(f"  {BOLD}PERFORMANCE{RESET}")
     print(f"  {'─'*40}")
     print(f"  Hot Path Budget:   {s['hot_path_budget_ms']}ms")
-    print(f"  Actual (p99):      ~0.1ms")
+    print("  Actual (p99):      ~0.1ms")
     print()
     print(f"{'='*60}")
-    print(f"  Press Ctrl+C to exit")
+    print("  Press Ctrl+C to exit")
     print(f"{'='*60}")
 
 

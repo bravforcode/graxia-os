@@ -13,9 +13,10 @@ Usage:
   viz.add_window(accuracy=0.59, oos_accuracy=0.55, window=1)
   viz.render()
 """
+
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import structlog
 
@@ -41,15 +42,23 @@ class WalkForwardViz:
     def __init__(self):
         self._windows: list[WindowResult] = []
 
-    def add_window(self, accuracy: float, oos_accuracy: float = 0.0,
-                   window: int = 0, retrained: bool = False, drifted: bool = False):
-        self._windows.append(WindowResult(
-            window=window or len(self._windows) + 1,
-            accuracy=accuracy,
-            oos_accuracy=oos_accuracy,
-            retrained=retrained,
-            drifted=drifted,
-        ))
+    def add_window(
+        self,
+        accuracy: float,
+        oos_accuracy: float = 0.0,
+        window: int = 0,
+        retrained: bool = False,
+        drifted: bool = False,
+    ):
+        self._windows.append(
+            WindowResult(
+                window=window or len(self._windows) + 1,
+                accuracy=accuracy,
+                oos_accuracy=oos_accuracy,
+                retrained=retrained,
+                drifted=drifted,
+            )
+        )
 
     def _bar(self, value: float, label: str = "") -> str:
         normalized = (value - self.MIN_ACC) / (self.MAX_ACC - self.MIN_ACC)
@@ -76,7 +85,7 @@ class WalkForwardViz:
             marker = " [DRIFT]" if w.drifted else " [RETRAIN]" if w.retrained else ""
             lines.append(self._bar(w.accuracy, f"W{w.window}"))
             if w.oos_accuracy > 0:
-                lines.append(self._bar(w.oos_accuracy, f" OOS"))
+                lines.append(self._bar(w.oos_accuracy, " OOS"))
             if marker:
                 lines[-1] += marker
 
@@ -85,15 +94,17 @@ class WalkForwardViz:
         oos = [w.oos_accuracy for w in self._windows if w.oos_accuracy > 0]
         drifts = sum(1 for w in self._windows if w.drifted)
 
-        lines.extend([
-            "",
-            "  " + "-" * 60,
-            f"  Windows: {len(self._windows)} | "
-            f"Avg Acc: {sum(accs)/len(accs):.1%} | "
-            f"Avg OOS: {sum(oos)/len(oos):.1% if oos else 'N/A'} | "
-            f"Drifts: {drifts}",
-            "",
-        ])
+        lines.extend(
+            [
+                "",
+                "  " + "-" * 60,
+                f"  Windows: {len(self._windows)} | "
+                f"Avg Acc: {sum(accs)/len(accs):.1%} | "
+                f"Avg OOS: {sum(oos)/len(oos):.1% if oos else 'N/A'} | "
+                f"Drifts: {drifts}",
+                "",
+            ]
+        )
 
         text = "\n".join(lines)
         print(text)

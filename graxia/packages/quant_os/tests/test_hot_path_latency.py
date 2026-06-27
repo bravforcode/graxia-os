@@ -9,23 +9,22 @@ Tests the critical trading loop components under concurrent load:
 
 RULE: No HTTP calls in hot path. All LLM calls are WARM PATH only.
 """
+
 import statistics
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-import pytest
-
+from graxia.packages.quant_os.core.agents.portfolio_manager import PortfolioManagerAgent
+from graxia.packages.quant_os.core.agents.risk_auditor import RiskAuditorAgent
 from graxia.packages.quant_os.core.canonical.macro_regime import (
     MacroRegimeCache,
     RegimeBias,
     get_macro_regime,
     get_position_multiplier,
 )
-from graxia.packages.quant_os.core.agents.risk_auditor import RiskAuditorAgent
-from graxia.packages.quant_os.core.agents.portfolio_manager import PortfolioManagerAgent
-from graxia.packages.quant_os.core.events import SignalEvent, RiskEvent
 from graxia.packages.quant_os.core.enums import SignalType
+from graxia.packages.quant_os.core.events import SignalEvent
 
 # Target: 10ms = 0.01s
 HOT_PATH_BUDGET_MS = 10.0
