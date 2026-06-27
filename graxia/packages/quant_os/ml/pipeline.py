@@ -223,9 +223,7 @@ class FeatureEngineer:
             feature_names=self.feature_names,
         )
 
-    def _classify_returns(
-        self, forward_returns, buy_threshold: float = 0.002, sell_threshold: float = -0.002
-    ):
+    def _classify_returns(self, forward_returns, buy_threshold: float = 0.002, sell_threshold: float = -0.002):
         """Classify forward returns into signals (returns pd.Series)."""
         import pandas as pd
 
@@ -466,13 +464,19 @@ class MLTrainer:
         return int(prediction), confidence
 
     def predict_payload(
-        self, model_path: str, features: dict[str, float], symbol: str,
-        entry_price: float, stop_loss: float, take_profit: float,
+        self,
+        model_path: str,
+        features: dict[str, float],
+        symbol: str,
+        entry_price: float,
+        stop_loss: float,
+        take_profit: float,
     ):
         """Predict and return canonical MLSignalPayload (Pydantic v2)."""
-        from datetime import datetime, UTC
-        from uuid import uuid4
-        from ..core.canonical.payloads import MLSignalPayload, SignalDirection
+        try:
+            from core.canonical.payloads import MLSignalPayload, SignalDirection
+        except ImportError:
+            from graxia.packages.quant_os.core.canonical.payloads import MLSignalPayload, SignalDirection
 
         prediction, confidence = self.predict(model_path, features)
         direction_map = {0: SignalDirection.HOLD, 1: SignalDirection.BUY, 2: SignalDirection.SELL}
@@ -480,8 +484,13 @@ class MLTrainer:
         model_version = model_path.split("/")[-1].replace(".pkl", "")
 
         return MLSignalPayload(
-            symbol=symbol, xgb_probability=confidence, xgb_model_version=model_version,
-            direction=direction, entry_price=entry_price, stop_loss=stop_loss, take_profit=take_profit,
+            symbol=symbol,
+            xgb_probability=confidence,
+            xgb_model_version=model_version,
+            direction=direction,
+            entry_price=entry_price,
+            stop_loss=stop_loss,
+            take_profit=take_profit,
         )
 
 
