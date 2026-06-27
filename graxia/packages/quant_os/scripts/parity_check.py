@@ -12,6 +12,7 @@ Checks:
 Usage:
   python scripts/parity_check.py    # run all checks
 """
+
 from __future__ import annotations
 
 import sys
@@ -28,15 +29,18 @@ CHECKS = []
 
 def check(name: str):
     """Decorator to register a parity check."""
+
     def wrapper(fn):
         CHECKS.append((name, fn))
         return fn
+
     return wrapper
 
 
 @check("Strategy class identity")
 def parity_strategy_class():
     from pathlib import Path
+
     mlb_path = Path(__file__).parent.parent / "strategies" / "mlb.py"
     content = mlb_path.read_text()
     assert "class MLBreakout" in content, "MLBreakout class not found"
@@ -46,6 +50,7 @@ def parity_strategy_class():
 @check("MLPipeline predict method exists")
 def parity_pipeline_predict():
     from ml.pipeline import MLTrainer
+
     assert hasattr(MLTrainer, "predict"), "MLTrainer.predict missing"
     assert hasattr(MLTrainer, "predict_payload"), "MLTrainer.predict_payload missing"
     return {"methods": ["predict", "predict_payload"]}
@@ -54,6 +59,7 @@ def parity_pipeline_predict():
 @check("RiskAuditor has macro lockdown check")
 def parity_risk_auditor():
     from core.agents.risk_auditor import RiskAuditorAgent
+
     ra = RiskAuditorAgent()
     assert hasattr(ra, "_check_macro_lockdown"), "macro_lockdown check missing"
     return {"checks": ["min_confidence", "risk_reward", "duplicates", "whitelist", "macro_lockdown"]}
@@ -62,6 +68,7 @@ def parity_risk_auditor():
 @check("PortfolioManager uses Hierarchical Veto")
 def parity_portfolio_manager():
     from core.agents.portfolio_manager import PortfolioManagerAgent
+
     pm = PortfolioManagerAgent()
     assert hasattr(pm, "_pending_risk_pass"), "risk gate missing"
     assert hasattr(pm, "_sentiment_modifier"), "sentiment_modifier missing"
@@ -72,6 +79,7 @@ def parity_portfolio_manager():
 @check("MacroRegimeCache singleton")
 def parity_macro_cache():
     from core.canonical.macro_regime import MacroRegimeCache
+
     a = MacroRegimeCache()
     b = MacroRegimeCache()
     assert a is b, "MacroRegimeCache not singleton"
@@ -81,9 +89,15 @@ def parity_macro_cache():
 @check("Canonical payloads frozen")
 def parity_payloads_frozen():
     from core.canonical.payloads import MLSignalPayload, RiskVerdictPayload
+
     ml = MLSignalPayload(
-        symbol="X", xgb_probability=0.5, xgb_model_version="v1",
-        direction="HOLD", entry_price=100, stop_loss=99, take_profit=101,
+        symbol="X",
+        xgb_probability=0.5,
+        xgb_model_version="v1",
+        direction="HOLD",
+        entry_price=100,
+        stop_loss=99,
+        take_profit=101,
     )
     try:
         ml.symbol = "Y"
@@ -103,6 +117,7 @@ def parity_payloads_frozen():
 @check("SentimentAgent uses CascadeRouter")
 def parity_sentiment_router():
     from core.agents.sentiment_agent import SentimentAgent
+
     agent = SentimentAgent()
     assert hasattr(agent, "router"), "CascadeRouter not wired"
     return {"router": "CascadeRouter (Cerebras->Groq->Gemini)"}
@@ -112,6 +127,7 @@ def parity_sentiment_router():
 def parity_no_raw_dicts():
     import ast
     from pathlib import Path
+
     issues = []
     core_dir = Path(__file__).parent.parent / "core"
     for py_file in core_dir.rglob("*.py"):

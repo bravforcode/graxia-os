@@ -23,11 +23,8 @@ Usage:
 from __future__ import annotations
 
 import asyncio
-import hashlib
-import json
 import os
 import sys
-import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -49,6 +46,7 @@ logger = structlog.get_logger(__name__)
 
 # ─── Load .env ─────────────────────────────────────────────────────────────
 
+
 def load_env():
     """Load .env file into os.environ."""
     env_path = Path(__file__).parent.parent / ".env"
@@ -59,15 +57,18 @@ def load_env():
                 k, v = line.split("=", 1)
                 os.environ.setdefault(k.strip(), v.strip())
 
+
 # Load env on import
 load_env()
 
 # ─── Configuration ─────────────────────────────────────────────────────────
 
-VAULT_PATH = Path(os.environ.get(
-    "OBSIDIAN_VAULT_PATH",
-    r"C:\Users\menum\quant\quant bot",
-))
+VAULT_PATH = Path(
+    os.environ.get(
+        "OBSIDIAN_VAULT_PATH",
+        r"C:\Users\menum\quant\quant bot",
+    )
+)
 
 NEWS_DIR = VAULT_PATH / "quant_os" / "news"
 NEWS_DIR.mkdir(parents=True, exist_ok=True)
@@ -93,21 +94,48 @@ RSS_FEEDS = {
 
 # High-impact keywords (triggers CRISIS/HIGH_UNCERTAINTY)
 CRISIS_KEYWORDS = [
-    "war", "invasion", "attack", "nuclear", "crash", "collapse",
-    "default", "bankrupt", "crisis", "emergency", "sanctions",
-    "blockade", "escalation", "tensions", "conflict",
+    "war",
+    "invasion",
+    "attack",
+    "nuclear",
+    "crash",
+    "collapse",
+    "default",
+    "bankrupt",
+    "crisis",
+    "emergency",
+    "sanctions",
+    "blockade",
+    "escalation",
+    "tensions",
+    "conflict",
 ]
 
 HIGH_IMPACT_KEYWORDS = [
-    "fed", "fomc", "interest rate", "inflation", "gdp", "unemployment",
-    "non-farm", "nfp", "cpi", "ppi", "retail sales", "earnings",
-    "dividend", "split", "merger", "acquisition", "ipo",
+    "fed",
+    "fomc",
+    "interest rate",
+    "inflation",
+    "gdp",
+    "unemployment",
+    "non-farm",
+    "nfp",
+    "cpi",
+    "ppi",
+    "retail sales",
+    "earnings",
+    "dividend",
+    "split",
+    "merger",
+    "acquisition",
+    "ipo",
 ]
 
 
 @dataclass
 class NewsItem:
     """Single news item from RSS or API."""
+
     title: str
     link: str
     published: str
@@ -119,6 +147,7 @@ class NewsItem:
 @dataclass
 class DailyDigest:
     """Aggregated daily news digest for Obsidian."""
+
     date: str
     items: list[NewsItem] = field(default_factory=list)
     avg_sentiment: float = 0.0
@@ -129,9 +158,8 @@ class DailyDigest:
 
 # ─── RSS Fetcher ───────────────────────────────────────────────────────────
 
-async def fetch_rss_feed(
-    client: httpx.AsyncClient, name: str, url: str
-) -> list[NewsItem]:
+
+async def fetch_rss_feed(client: httpx.AsyncClient, name: str, url: str) -> list[NewsItem]:
     """Fetch and parse an RSS feed."""
     items = []
     try:
@@ -148,13 +176,15 @@ async def fetch_rss_feed(
             description = item.findtext("description", "").strip()
 
             if title:
-                items.append(NewsItem(
-                    title=title,
-                    link=link,
-                    published=pub_date,
-                    source=name,
-                    summary=description[:200],
-                ))
+                items.append(
+                    NewsItem(
+                        title=title,
+                        link=link,
+                        published=pub_date,
+                        source=name,
+                        summary=description[:200],
+                    )
+                )
 
         logger.info("rss_fetch.success", source=name, count=len(items))
     except Exception as exc:
@@ -165,10 +195,7 @@ async def fetch_rss_feed(
 
 async def fetch_all_feeds(client: httpx.AsyncClient) -> list[NewsItem]:
     """Fetch all RSS feeds in parallel."""
-    tasks = [
-        fetch_rss_feed(client, name, url)
-        for name, url in RSS_FEEDS.items()
-    ]
+    tasks = [fetch_rss_feed(client, name, url) for name, url in RSS_FEEDS.items()]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     all_items = []
@@ -180,6 +207,7 @@ async def fetch_all_feeds(client: httpx.AsyncClient) -> list[NewsItem]:
 
 
 # ─── Impact Classification ────────────────────────────────────────────────
+
 
 def classify_impact(title: str, summary: str = "") -> str:
     """Classify news impact level based on keywords."""
@@ -198,6 +226,7 @@ def classify_impact(title: str, summary: str = "") -> str:
 
 # ─── Obsidian Writer ──────────────────────────────────────────────────────
 
+
 def write_to_obsidian(digest: DailyDigest) -> Path:
     """Write daily digest to Obsidian vault."""
     date_str = datetime.now(UTC).strftime("%Y-%m-%d")
@@ -214,8 +243,8 @@ def write_to_obsidian(digest: DailyDigest) -> Path:
         "",
         "## Sentiment Summary",
         "",
-        f"| Metric | Value |",
-        f"|--------|-------|",
+        "| Metric | Value |",
+        "|--------|-------|",
         f"| Headlines Analyzed | {len(digest.items)} |",
         f"| Average Sentiment | {digest.avg_sentiment:.4f} |",
         f"| Regime | {digest.regime} |",
@@ -228,34 +257,40 @@ def write_to_obsidian(digest: DailyDigest) -> Path:
     for provider, count in digest.provider_stats.items():
         lines.append(f"- **{provider}:** {count} headlines")
 
-    lines.extend([
-        "",
-        "## Headlines",
-        "",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Headlines",
+            "",
+        ]
+    )
 
     for item in digest.items:
         sentiment = item.sentiment
         if sentiment:
             emoji = "🟢" if sentiment.sentiment_score > 0.3 else "🔴" if sentiment.sentiment_score < -0.3 else "🟡"
-            lines.extend([
-                f"### {emoji} {item.title[:80]}",
-                f"- **Source:** {item.source}",
-                f"- **Sentiment:** {sentiment.sentiment_score:.2f} (conf: {sentiment.confidence:.2f})",
-                f"- **Regime:** {sentiment.regime_override}",
-                f"- **Position Mult:** {sentiment.position_multiplier:.2f}",
-                f"- **Reasoning:** {sentiment.reasoning[:100]}",
-                f"- **Link:** [{item.link[:50]}...]({item.link})",
-                "",
-            ])
+            lines.extend(
+                [
+                    f"### {emoji} {item.title[:80]}",
+                    f"- **Source:** {item.source}",
+                    f"- **Sentiment:** {sentiment.sentiment_score:.2f} (conf: {sentiment.confidence:.2f})",
+                    f"- **Regime:** {sentiment.regime_override}",
+                    f"- **Position Mult:** {sentiment.position_multiplier:.2f}",
+                    f"- **Reasoning:** {sentiment.reasoning[:100]}",
+                    f"- **Link:** [{item.link[:50]}...]({item.link})",
+                    "",
+                ]
+            )
         else:
-            lines.extend([
-                f"### ⚪ {item.title[:80]}",
-                f"- **Source:** {item.source}",
-                f"- **Status:** Not analyzed",
-                f"- **Link:** [{item.link[:50]}...]({item.link})",
-                "",
-            ])
+            lines.extend(
+                [
+                    f"### ⚪ {item.title[:80]}",
+                    f"- **Source:** {item.source}",
+                    "- **Status:** Not analyzed",
+                    f"- **Link:** [{item.link[:50]}...]({item.link})",
+                    "",
+                ]
+            )
 
     # Write file
     file_path.write_text("\n".join(lines), encoding="utf-8")
@@ -265,6 +300,7 @@ def write_to_obsidian(digest: DailyDigest) -> Path:
 
 
 # ─── Main Pipeline ─────────────────────────────────────────────────────────
+
 
 async def run_pipeline(
     sentiment_agent: SentimentAgent,
@@ -296,10 +332,7 @@ async def run_pipeline(
             return DailyDigest(date=datetime.now(UTC).strftime("%Y-%m-%d"))
 
         # 2. Classify and filter
-        high_impact = [
-            item for item in items
-            if classify_impact(item.title, item.summary) in ("HIGH", "CRISIS")
-        ]
+        high_impact = [item for item in items if classify_impact(item.title, item.summary) in ("HIGH", "CRISIS")]
         logger.info("pipeline.impact_classified", high=len(high_impact), total=len(items))
 
         # 3. Send to SentimentAgent (top 10 headlines)
@@ -355,11 +388,14 @@ async def run_pipeline(
                 if tg_client and token and chat_id:
                     try:
                         url = f"https://api.telegram.org/bot{token}/sendMessage"
-                        resp = await tg_client.post(url, json={
-                            "chat_id": chat_id,
-                            "text": msg,
-                            "parse_mode": "Markdown",
-                        })
+                        resp = await tg_client.post(
+                            url,
+                            json={
+                                "chat_id": chat_id,
+                                "text": msg,
+                                "parse_mode": "Markdown",
+                            },
+                        )
                         if resp.status_code == 200:
                             logger.info("pipeline.telegram_sent", regime=payload.regime_label)
                         else:
@@ -373,6 +409,7 @@ async def run_pipeline(
 
 
 # ─── CLI ───────────────────────────────────────────────────────────────────
+
 
 async def main():
     """CLI entry point."""
@@ -410,7 +447,7 @@ async def main():
         else:
             digest = await run_pipeline(sentiment, centaur=centaur, vault_path=vault)
             print(f"\n{'='*60}")
-            print(f"  Pipeline Complete")
+            print("  Pipeline Complete")
             print(f"  Headlines: {len(digest.items)}")
             print(f"  Sentiment: {digest.avg_sentiment:.4f}")
             print(f"  Regime: {digest.regime}")

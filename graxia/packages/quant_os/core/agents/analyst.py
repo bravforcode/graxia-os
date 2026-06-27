@@ -4,13 +4,14 @@ TechnicalAnalystAgent (C1)
 Reads BarEvents and emits a technical opinion as a SignalEvent.
 Output: SignalEvent with TechnicalSignalPayload in metadata["technical_signal"].
 """
+
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from uuid import uuid4
 
+from ..canonical.payloads import SignalDirection, TechnicalSignalPayload
 from ..enums import SignalType
 from ..events import BarEvent, Event, SignalEvent
-from ..canonical.payloads import TechnicalSignalPayload, SignalDirection
 from .base import Agent
 
 
@@ -81,8 +82,8 @@ class TechnicalAnalystAgent(Agent):
             symbol=best.symbol,
             timestamp=datetime.now(UTC),
             technical_action=direction_map.get(best.direction, SignalDirection.HOLD),
-            sma_short=sum(self._closes[best.symbol][-self.SHORT_WINDOW:]) / self.SHORT_WINDOW,
-            sma_long=sum(self._closes[best.symbol][-self.LONG_WINDOW:]) / self.LONG_WINDOW,
+            sma_short=sum(self._closes[best.symbol][-self.SHORT_WINDOW :]) / self.SHORT_WINDOW,
+            sma_long=sum(self._closes[best.symbol][-self.LONG_WINDOW :]) / self.LONG_WINDOW,
             confidence=best.confidence,
             reasons=best.reasons,
         )
@@ -100,8 +101,8 @@ class TechnicalAnalystAgent(Agent):
 
     def _evaluate(self, sym, closes, highs, lows):
         reasons = []
-        short_sma = sum(closes[-self.SHORT_WINDOW:]) / self.SHORT_WINDOW
-        long_sma = sum(closes[-self.LONG_WINDOW:]) / self.LONG_WINDOW
+        short_sma = sum(closes[-self.SHORT_WINDOW :]) / self.SHORT_WINDOW
+        long_sma = sum(closes[-self.LONG_WINDOW :]) / self.LONG_WINDOW
         last_close = closes[-1]
         prev_close = closes[-2]
         bullish_cross = short_sma > long_sma
@@ -135,8 +136,15 @@ class TechnicalAnalystAgent(Agent):
         else:
             sl = 0.0
             tp = 0.0
-        return TechnicalOpinion(symbol=sym, direction=direction, confidence=round(confidence, 4),
-                                entry_price=entry, stop_loss=round(sl, 5), take_profit=round(tp, 5), reasons=reasons)
+        return TechnicalOpinion(
+            symbol=sym,
+            direction=direction,
+            confidence=round(confidence, 4),
+            entry_price=entry,
+            stop_loss=round(sl, 5),
+            take_profit=round(tp, 5),
+            reasons=reasons,
+        )
 
     def reset(self) -> None:
         super().reset()

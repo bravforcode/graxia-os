@@ -14,44 +14,39 @@ Each component is tested in isolation (like k8s pods):
   - Hot Path Latency (all components < 10ms)
   - Cross-component Integration (signal flow)
 """
+
 import asyncio
 import os
 import pickle
-import statistics
 import tempfile
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, UTC
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import numpy as np
 import pytest
 
+from graxia.packages.quant_os.core.agents.analyst import TechnicalAnalystAgent
+from graxia.packages.quant_os.core.agents.llm_router import CascadeResult, CascadeRouter, ImpactLevel
+from graxia.packages.quant_os.core.agents.portfolio_manager import PortfolioManagerAgent
+from graxia.packages.quant_os.core.agents.risk_auditor import RiskAuditorAgent
+from graxia.packages.quant_os.core.agents.sentiment_agent import SentimentAgent, _cascade_to_regime
 from graxia.packages.quant_os.core.canonical.macro_regime import (
-    MacroRegime,
     MacroRegimeCache,
     RegimeBias,
-    get_macro_regime,
-    get_position_multiplier,
 )
 from graxia.packages.quant_os.core.canonical.payloads import (
     FinalTradePayload,
-    MLSignalPayload,
     MacroRegimePayload,
+    MLSignalPayload,
     RiskVerdictPayload,
     SignalDirection,
     TechnicalSignalPayload,
     VetoReason,
 )
-from graxia.packages.quant_os.core.agents.sentiment_agent import SentimentAgent, _cascade_to_regime
-from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter, CascadeResult, ImpactLevel
-from graxia.packages.quant_os.core.agents.analyst import TechnicalAnalystAgent
-from graxia.packages.quant_os.core.agents.risk_auditor import RiskAuditorAgent
-from graxia.packages.quant_os.core.agents.portfolio_manager import PortfolioManagerAgent
-from graxia.packages.quant_os.core.events import BarEvent, RiskEvent, SignalEvent
 from graxia.packages.quant_os.core.enums import SignalType
+from graxia.packages.quant_os.core.events import BarEvent, RiskEvent, SignalEvent
 from graxia.packages.quant_os.ml.pipeline import MLTrainer as MLPipeline
 
 HOT_PATH_BUDGET_MS = 10.0
@@ -59,11 +54,14 @@ HOT_PATH_BUDGET_MS = 10.0
 
 class _SimpleModel:
     """Picklable model for tests."""
+
     def __init__(self, prediction=1, probabilities=None):
         self._prediction = prediction
         self._probabilities = probabilities or [0.2, 0.8]
+
     def predict(self, X):
         return np.array([self._prediction])
+
     def predict_proba(self, X):
         return np.array([self._probabilities])
 
@@ -72,8 +70,8 @@ class _SimpleModel:
 # Isolation Test: MacroRegimeCache (Pillar 1)
 # ═══════════════════════════════════════════════════════════════════
 
-class TestIsolation_MacroRegimeCache:
 
+class TestIsolation_MacroRegimeCache:
     def setup_method(self):
         MacroRegimeCache().reset()
 
@@ -160,22 +158,30 @@ class TestIsolation_MacroRegimeCache:
 # Isolation Test: Canonical Payloads (Pillar 2)
 # ═══════════════════════════════════════════════════════════════════
 
-class TestIsolation_Payloads:
 
+class TestIsolation_Payloads:
     def test_ml_signal_payload_valid(self):
         p = MLSignalPayload(
-            symbol="XAUUSD", xgb_probability=0.85, xgb_model_version="v1",
-            direction=SignalDirection.BUY, entry_price=2400.0,
-            stop_loss=2390.0, take_profit=2420.0,
+            symbol="XAUUSD",
+            xgb_probability=0.85,
+            xgb_model_version="v1",
+            direction=SignalDirection.BUY,
+            entry_price=2400.0,
+            stop_loss=2390.0,
+            take_profit=2420.0,
         )
         assert p.symbol == "XAUUSD"
         assert p.direction == SignalDirection.BUY
 
     def test_ml_signal_payload_frozen(self):
         p = MLSignalPayload(
-            symbol="XAUUSD", xgb_probability=0.85, xgb_model_version="v1",
-            direction=SignalDirection.BUY, entry_price=2400.0,
-            stop_loss=2390.0, take_profit=2420.0,
+            symbol="XAUUSD",
+            xgb_probability=0.85,
+            xgb_model_version="v1",
+            direction=SignalDirection.BUY,
+            entry_price=2400.0,
+            stop_loss=2390.0,
+            take_profit=2420.0,
         )
         with pytest.raises(Exception):
             p.symbol = "EURUSD"
@@ -183,16 +189,24 @@ class TestIsolation_Payloads:
     def test_ml_signal_payload_bounds(self):
         with pytest.raises(Exception):
             MLSignalPayload(
-                symbol="XAUUSD", xgb_probability=1.5, xgb_model_version="v1",
-                direction=SignalDirection.BUY, entry_price=2400.0,
-                stop_loss=2390.0, take_profit=2420.0,
+                symbol="XAUUSD",
+                xgb_probability=1.5,
+                xgb_model_version="v1",
+                direction=SignalDirection.BUY,
+                entry_price=2400.0,
+                stop_loss=2390.0,
+                take_profit=2420.0,
             )
 
     def test_ml_signal_payload_round_trip(self):
         p = MLSignalPayload(
-            symbol="XAUUSD", xgb_probability=0.85, xgb_model_version="v1",
-            direction=SignalDirection.SELL, entry_price=2400.0,
-            stop_loss=2410.0, take_profit=2380.0,
+            symbol="XAUUSD",
+            xgb_probability=0.85,
+            xgb_model_version="v1",
+            direction=SignalDirection.SELL,
+            entry_price=2400.0,
+            stop_loss=2410.0,
+            take_profit=2380.0,
         )
         d = p.model_dump()
         assert d["direction"] == "SELL"
@@ -201,8 +215,11 @@ class TestIsolation_Payloads:
 
     def test_technical_signal_payload(self):
         p = TechnicalSignalPayload(
-            symbol="XAUUSD", technical_action=SignalDirection.BUY,
-            sma_short=2405.0, sma_long=2395.0, confidence=0.7,
+            symbol="XAUUSD",
+            technical_action=SignalDirection.BUY,
+            sma_short=2405.0,
+            sma_long=2395.0,
+            confidence=0.7,
             reasons=["bullish_sma_cross"],
         )
         assert p.technical_action == SignalDirection.BUY
@@ -215,19 +232,27 @@ class TestIsolation_Payloads:
 
     def test_risk_verdict_payload_vetoed(self):
         p = RiskVerdictPayload(
-            is_approved=False, veto_reason=VetoReason.MACRO_LOCKDOWN,
-            veto_detail="CRISIS regime", checks_failed=["macro_lockdown"],
+            is_approved=False,
+            veto_reason=VetoReason.MACRO_LOCKDOWN,
+            veto_detail="CRISIS regime",
+            checks_failed=["macro_lockdown"],
         )
         assert p.is_approved is False
         assert p.veto_reason == VetoReason.MACRO_LOCKDOWN
 
     def test_final_trade_payload(self):
         p = FinalTradePayload(
-            symbol="XAUUSD", direction=SignalDirection.BUY,
-            entry_price=2400.0, stop_loss=2390.0, take_profit=2420.0,
-            raw_confidence=0.85, sentiment_modifier=0.75,
-            final_confidence=0.6375, risk_dollars=50.0,
-            regime_bias=RegimeBias.BEARISH, regime_label="HIGH_UNCERTAINTY",
+            symbol="XAUUSD",
+            direction=SignalDirection.BUY,
+            entry_price=2400.0,
+            stop_loss=2390.0,
+            take_profit=2420.0,
+            raw_confidence=0.85,
+            sentiment_modifier=0.75,
+            final_confidence=0.6375,
+            risk_dollars=50.0,
+            regime_bias=RegimeBias.BEARISH,
+            regime_label="HIGH_UNCERTAINTY",
             risk_approved=True,
         )
         assert p.final_confidence == 0.6375
@@ -242,16 +267,20 @@ class TestIsolation_Payloads:
 # Isolation Test: PortfolioManager (Pillar 3)
 # ═══════════════════════════════════════════════════════════════════
 
-class TestIsolation_PortfolioManager:
 
+class TestIsolation_PortfolioManager:
     def setup_method(self):
         MacroRegimeCache().reset()
 
     def test_initiator_only(self):
         pm = PortfolioManagerAgent()
         sig = SignalEvent(
-            symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.8,
-            entry_price=2400.0, stop_loss=2390.0, take_profit=2420.0,
+            symbol="XAUUSD",
+            signal_type=SignalType.BUY,
+            confidence=0.8,
+            entry_price=2400.0,
+            stop_loss=2390.0,
+            take_profit=2420.0,
             source="technical_analyst",
         )
         risk = RiskEvent(check_name="audit", passed=True, source="risk_auditor")
@@ -264,12 +293,18 @@ class TestIsolation_PortfolioManager:
     def test_veto_kills_trade(self):
         pm = PortfolioManagerAgent()
         sig = SignalEvent(
-            symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.8,
-            entry_price=2400.0, stop_loss=2390.0, take_profit=2420.0,
+            symbol="XAUUSD",
+            signal_type=SignalType.BUY,
+            confidence=0.8,
+            entry_price=2400.0,
+            stop_loss=2390.0,
+            take_profit=2420.0,
             source="technical_analyst",
         )
         risk = RiskEvent(
-            check_name="macro_lockdown", passed=False, reason="CRISIS",
+            check_name="macro_lockdown",
+            passed=False,
+            reason="CRISIS",
             source="risk_auditor",
         )
         pm.observe(sig)
@@ -280,12 +315,18 @@ class TestIsolation_PortfolioManager:
     def test_sentiment_modifier(self):
         pm = PortfolioManagerAgent()
         sig = SignalEvent(
-            symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.8,
-            entry_price=2400.0, stop_loss=2390.0, take_profit=2420.0,
+            symbol="XAUUSD",
+            signal_type=SignalType.BUY,
+            confidence=0.8,
+            entry_price=2400.0,
+            stop_loss=2390.0,
+            take_profit=2420.0,
             source="technical_analyst",
         )
         sent = SignalEvent(
-            symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.5,
+            symbol="XAUUSD",
+            signal_type=SignalType.BUY,
+            confidence=0.5,
             source="sentiment_agent",
             metadata={"position_multiplier": 0.5},
         )
@@ -307,8 +348,12 @@ class TestIsolation_PortfolioManager:
         results = []
         for i in range(3):
             sig = SignalEvent(
-                symbol=f"SYM{i}", signal_type=SignalType.BUY, confidence=0.8,
-                entry_price=100.0, stop_loss=99.0, take_profit=102.0,
+                symbol=f"SYM{i}",
+                signal_type=SignalType.BUY,
+                confidence=0.8,
+                entry_price=100.0,
+                stop_loss=99.0,
+                take_profit=102.0,
                 source="technical_analyst",
             )
             risk = RiskEvent(check_name="audit", passed=True, source="risk_auditor")
@@ -321,17 +366,25 @@ class TestIsolation_PortfolioManager:
     def test_hierarchical_formula(self):
         pm = PortfolioManagerAgent()
         sig = SignalEvent(
-            symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.8,
-            entry_price=2400.0, stop_loss=2390.0, take_profit=2420.0,
+            symbol="XAUUSD",
+            signal_type=SignalType.BUY,
+            confidence=0.8,
+            entry_price=2400.0,
+            stop_loss=2390.0,
+            take_profit=2420.0,
             source="technical_analyst",
         )
         sent = SignalEvent(
-            symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.5,
+            symbol="XAUUSD",
+            signal_type=SignalType.BUY,
+            confidence=0.5,
             source="sentiment_agent",
             metadata={"position_multiplier": 0.75},
         )
         risk = RiskEvent(
-            check_name="audit", passed=True, source="risk_auditor",
+            check_name="audit",
+            passed=True,
+            source="risk_auditor",
         )
         pm.observe(sig)
         pm.observe(sent)
@@ -346,16 +399,20 @@ class TestIsolation_PortfolioManager:
 # Isolation Test: RiskAuditor (Pillar 3)
 # ═══════════════════════════════════════════════════════════════════
 
-class TestIsolation_RiskAuditor:
 
+class TestIsolation_RiskAuditor:
     def setup_method(self):
         MacroRegimeCache().reset()
 
     def test_approve_valid(self):
         ra = RiskAuditorAgent()
         sig = SignalEvent(
-            symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.8,
-            entry_price=2400.0, stop_loss=2390.0, take_profit=2430.0,
+            symbol="XAUUSD",
+            signal_type=SignalType.BUY,
+            confidence=0.8,
+            entry_price=2400.0,
+            stop_loss=2390.0,
+            take_profit=2430.0,
             source="technical_analyst",
         )
         ra.observe(sig)
@@ -365,8 +422,12 @@ class TestIsolation_RiskAuditor:
     def test_reject_low_confidence(self):
         ra = RiskAuditorAgent()
         sig = SignalEvent(
-            symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.1,
-            entry_price=2400.0, stop_loss=2390.0, take_profit=2430.0,
+            symbol="XAUUSD",
+            signal_type=SignalType.BUY,
+            confidence=0.1,
+            entry_price=2400.0,
+            stop_loss=2390.0,
+            take_profit=2430.0,
             source="technical_analyst",
         )
         ra.observe(sig)
@@ -376,8 +437,12 @@ class TestIsolation_RiskAuditor:
     def test_reject_poor_rr(self):
         ra = RiskAuditorAgent()
         sig = SignalEvent(
-            symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.8,
-            entry_price=2400.0, stop_loss=2390.0, take_profit=2405.0,
+            symbol="XAUUSD",
+            signal_type=SignalType.BUY,
+            confidence=0.8,
+            entry_price=2400.0,
+            stop_loss=2390.0,
+            take_profit=2405.0,
             source="technical_analyst",
         )
         ra.observe(sig)
@@ -387,8 +452,12 @@ class TestIsolation_RiskAuditor:
     def test_reject_whitelist(self):
         ra = RiskAuditorAgent(allowed_symbols=["EURUSD"])
         sig = SignalEvent(
-            symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.8,
-            entry_price=2400.0, stop_loss=2390.0, take_profit=2430.0,
+            symbol="XAUUSD",
+            signal_type=SignalType.BUY,
+            confidence=0.8,
+            entry_price=2400.0,
+            stop_loss=2390.0,
+            take_profit=2430.0,
             source="technical_analyst",
         )
         ra.observe(sig)
@@ -399,8 +468,12 @@ class TestIsolation_RiskAuditor:
         ra = RiskAuditorAgent()
         for _ in range(4):
             sig = SignalEvent(
-                symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.8,
-                entry_price=2400.0, stop_loss=2390.0, take_profit=2430.0,
+                symbol="XAUUSD",
+                signal_type=SignalType.BUY,
+                confidence=0.8,
+                entry_price=2400.0,
+                stop_loss=2390.0,
+                take_profit=2430.0,
                 source="technical_analyst",
             )
             ra.observe(sig)
@@ -412,8 +485,12 @@ class TestIsolation_RiskAuditor:
         cache.update_from_sentiment(RegimeBias.PANIC, 1.0, 0.0, "CRISIS")
         ra = RiskAuditorAgent()
         sig = SignalEvent(
-            symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.9,
-            entry_price=2400.0, stop_loss=2390.0, take_profit=2430.0,
+            symbol="XAUUSD",
+            signal_type=SignalType.BUY,
+            confidence=0.9,
+            entry_price=2400.0,
+            stop_loss=2390.0,
+            take_profit=2430.0,
             source="technical_analyst",
         )
         ra.observe(sig)
@@ -424,8 +501,12 @@ class TestIsolation_RiskAuditor:
     def test_verdict_payload_in_details(self):
         ra = RiskAuditorAgent()
         sig = SignalEvent(
-            symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.8,
-            entry_price=2400.0, stop_loss=2390.0, take_profit=2430.0,
+            symbol="XAUUSD",
+            signal_type=SignalType.BUY,
+            confidence=0.8,
+            entry_price=2400.0,
+            stop_loss=2390.0,
+            take_profit=2430.0,
             source="technical_analyst",
         )
         ra.observe(sig)
@@ -440,8 +521,12 @@ class TestIsolation_RiskAuditor:
         cache.update_from_sentiment(RegimeBias.PANIC, 1.0, 0.0, "CRISIS")
         ra = RiskAuditorAgent()
         sig = SignalEvent(
-            symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.9,
-            entry_price=2400.0, stop_loss=2390.0, take_profit=2430.0,
+            symbol="XAUUSD",
+            signal_type=SignalType.BUY,
+            confidence=0.9,
+            entry_price=2400.0,
+            stop_loss=2390.0,
+            take_profit=2430.0,
             source="technical_analyst",
         )
         ra.observe(sig)
@@ -455,36 +540,28 @@ class TestIsolation_RiskAuditor:
 # Isolation Test: CascadeRouter (Pillar 4)
 # ═══════════════════════════════════════════════════════════════════
 
-class TestIsolation_CascadeRouter:
 
+class TestIsolation_CascadeRouter:
     def test_tier1_low_impact(self):
         router = CascadeRouter()
         mock_resp = MagicMock()
         mock_resp.status_code = 200
-        mock_resp.json.return_value = {
-            "choices": [{"message": {"content": '{"impact": "LOW", "dir": 1}'}}]
-        }
+        mock_resp.json.return_value = {"choices": [{"message": {"content": '{"impact": "LOW", "dir": 1}'}}]}
         with patch.object(router, "_get_client", new_callable=AsyncMock) as m:
             client = AsyncMock()
             client.post = AsyncMock(return_value=mock_resp)
             m.return_value = client
             with patch("os.getenv", return_value="key"):
-                result = asyncio.get_event_loop().run_until_complete(
-                    router.route("Routine earnings")
-                )
+                result = asyncio.get_event_loop().run_until_complete(router.route("Routine earnings"))
         assert result.impact == ImpactLevel.LOW
         assert result.tier_used == 1
 
     def test_tier2_rejection(self):
         router = CascadeRouter()
         tier1 = MagicMock(status_code=200)
-        tier1.json.return_value = {
-            "choices": [{"message": {"content": '{"impact": "HIGH", "dir": -1}'}}]
-        }
+        tier1.json.return_value = {"choices": [{"message": {"content": '{"impact": "HIGH", "dir": -1}'}}]}
         tier2 = MagicMock(status_code=200)
-        tier2.json.return_value = {
-            "choices": [{"message": {"content": '{"confirmed": false, "confidence": 0.3}'}}]
-        }
+        tier2.json.return_value = {"choices": [{"message": {"content": '{"confirmed": false, "confidence": 0.3}'}}]}
         call_count = [0]
 
         async def mock_post(url, **kwargs):
@@ -496,17 +573,13 @@ class TestIsolation_CascadeRouter:
             client.post = mock_post
             m.return_value = client
             with patch("os.getenv", return_value="key"):
-                result = asyncio.get_event_loop().run_until_complete(
-                    router.route("Breaking news")
-                )
+                result = asyncio.get_event_loop().run_until_complete(router.route("Breaking news"))
         assert result.impact == ImpactLevel.LOW
 
     def test_no_api_key(self):
         router = CascadeRouter()
         with patch("os.getenv", return_value=""):
-            result = asyncio.get_event_loop().run_until_complete(
-                router.route("Some headline")
-            )
+            result = asyncio.get_event_loop().run_until_complete(router.route("Some headline"))
         assert result.impact == ImpactLevel.LOW
 
     def test_tier1_failure(self):
@@ -516,16 +589,17 @@ class TestIsolation_CascadeRouter:
             client.post = AsyncMock(return_value=MagicMock(status_code=500))
             m.return_value = client
             with patch("os.getenv", return_value="key"):
-                result = asyncio.get_event_loop().run_until_complete(
-                    router.route("Headline")
-                )
+                result = asyncio.get_event_loop().run_until_complete(router.route("Headline"))
         assert result.impact == ImpactLevel.LOW
         assert result.reasoning == "Tier 1 failed"
 
     def test_cascade_to_regime_crisis(self):
         result = CascadeResult(
-            headline="Fed emergency", impact=ImpactLevel.HIGH,
-            direction=-1, tier_used=2, confidence=0.95,
+            headline="Fed emergency",
+            impact=ImpactLevel.HIGH,
+            direction=-1,
+            tier_used=2,
+            confidence=0.95,
         )
         payload = _cascade_to_regime(result, "Fed emergency")
         assert payload.bias == RegimeBias.PANIC
@@ -539,9 +613,7 @@ class TestIsolation_CascadeRouter:
             client.post = AsyncMock(return_value=MagicMock(status_code=500))
             m.return_value = client
             with patch("os.getenv", return_value="key"):
-                result = asyncio.get_event_loop().run_until_complete(
-                    router.route('Test with "quotes" and {braces}')
-                )
+                result = asyncio.get_event_loop().run_until_complete(router.route('Test with "quotes" and {braces}'))
         assert result is not None
 
 
@@ -549,8 +621,8 @@ class TestIsolation_CascadeRouter:
 # Isolation Test: SentimentAgent
 # ═══════════════════════════════════════════════════════════════════
 
-class TestIsolation_SentimentAgent:
 
+class TestIsolation_SentimentAgent:
     def test_act_none_when_empty(self):
         agent = SentimentAgent()
         result = asyncio.get_event_loop().run_until_complete(agent.act())
@@ -559,12 +631,16 @@ class TestIsolation_SentimentAgent:
     def test_aggregate_most_conservative(self):
         agent = SentimentAgent()
         p1 = MacroRegimePayload(
-            bias=RegimeBias.BULLISH, confidence=0.8,
-            position_multiplier=0.9, regime_label="NORMAL",
+            bias=RegimeBias.BULLISH,
+            confidence=0.8,
+            position_multiplier=0.9,
+            regime_label="NORMAL",
         )
         p2 = MacroRegimePayload(
-            bias=RegimeBias.BEARISH, confidence=0.7,
-            position_multiplier=0.3, regime_label="HIGH_UNCERTAINTY",
+            bias=RegimeBias.BEARISH,
+            confidence=0.7,
+            position_multiplier=0.3,
+            regime_label="HIGH_UNCERTAINTY",
         )
         result = agent._aggregate([p1, p2])
         assert result.regime_label == "HIGH_UNCERTAINTY"
@@ -575,20 +651,20 @@ class TestIsolation_SentimentAgent:
 # Isolation Test: TechnicalAnalystAgent
 # ═══════════════════════════════════════════════════════════════════
 
-class TestIsolation_TechnicalAnalyst:
 
+class TestIsolation_TechnicalAnalyst:
     def _bars(self, closes, sym="XAUUSD"):
-        return [BarEvent(symbol=sym, high=c+5, low=c-5, open=c-1, close=c, volume=1000) for c in closes]
+        return [BarEvent(symbol=sym, high=c + 5, low=c - 5, open=c - 1, close=c, volume=1000) for c in closes]
 
     def test_no_signal_insufficient_data(self):
         ta = TechnicalAnalystAgent()
-        for bar in self._bars([2400+i for i in range(10)]):
+        for bar in self._bars([2400 + i for i in range(10)]):
             ta.observe(bar)
         assert ta.act() is None
 
     def test_signal_has_tech_payload(self):
         ta = TechnicalAnalystAgent()
-        closes = [2400 - i*0.5 for i in range(20)] + [2400, 2401, 2402, 2403, 2404]
+        closes = [2400 - i * 0.5 for i in range(20)] + [2400, 2401, 2402, 2403, 2404]
         for bar in self._bars(closes):
             ta.observe(bar)
         result = ta.act()
@@ -599,7 +675,7 @@ class TestIsolation_TechnicalAnalyst:
 
     def test_reset(self):
         ta = TechnicalAnalystAgent()
-        for bar in self._bars([2400+i for i in range(25)]):
+        for bar in self._bars([2400 + i for i in range(25)]):
             ta.observe(bar)
         ta.reset()
         assert len(ta._closes) == 0
@@ -609,17 +685,20 @@ class TestIsolation_TechnicalAnalyst:
 # Isolation Test: MLPipeline
 # ═══════════════════════════════════════════════════════════════════
 
-class TestIsolation_MLPipeline:
 
+class TestIsolation_MLPipeline:
     def test_predict_payload_returns_model(self):
         pipeline = MLPipeline()
         with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as f:
-            pickle.dump({
-                "model": _SimpleModel(prediction=1, probabilities=[0.2, 0.8]),
-                "feature_names": ["f1", "f2"],
-                "model_type": "xgboost",
-                "version": "test",
-            }, f)
+            pickle.dump(
+                {
+                    "model": _SimpleModel(prediction=1, probabilities=[0.2, 0.8]),
+                    "feature_names": ["f1", "f2"],
+                    "model_type": "xgboost",
+                    "version": "test",
+                },
+                f,
+            )
             model_path = f.name
 
         try:
@@ -640,12 +719,15 @@ class TestIsolation_MLPipeline:
     def test_predict_returns_tuple(self):
         pipeline = MLPipeline()
         with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as f:
-            pickle.dump({
-                "model": _SimpleModel(prediction=0, probabilities=[0.6, 0.4]),
-                "feature_names": ["f1"],
-                "model_type": "xgboost",
-                "version": "test",
-            }, f)
+            pickle.dump(
+                {
+                    "model": _SimpleModel(prediction=0, probabilities=[0.6, 0.4]),
+                    "feature_names": ["f1"],
+                    "model_type": "xgboost",
+                    "version": "test",
+                },
+                f,
+            )
             model_path = f.name
 
         try:
@@ -660,8 +742,8 @@ class TestIsolation_MLPipeline:
 # Hot Path Latency (all components)
 # ═══════════════════════════════════════════════════════════════════
 
-class TestHotPath_Latency:
 
+class TestHotPath_Latency:
     def test_cache_get_latency(self):
         cache = MacroRegimeCache()
         cache.update_from_sentiment(RegimeBias.NEUTRAL, 0.5, 1.0, "NORMAL")
@@ -681,8 +763,12 @@ class TestHotPath_Latency:
         latencies = []
         for _ in range(1000):
             sig = SignalEvent(
-                symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.8,
-                entry_price=2400.0, stop_loss=2390.0, take_profit=2430.0,
+                symbol="XAUUSD",
+                signal_type=SignalType.BUY,
+                confidence=0.8,
+                entry_price=2400.0,
+                stop_loss=2390.0,
+                take_profit=2430.0,
                 source="technical_analyst",
             )
             ra.observe(sig)
@@ -701,8 +787,12 @@ class TestHotPath_Latency:
         latencies = []
         for _ in range(1000):
             sig = SignalEvent(
-                symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.8,
-                entry_price=2400.0, stop_loss=2390.0, take_profit=2430.0,
+                symbol="XAUUSD",
+                signal_type=SignalType.BUY,
+                confidence=0.8,
+                entry_price=2400.0,
+                stop_loss=2390.0,
+                take_profit=2430.0,
                 source="technical_analyst",
             )
             start = time.perf_counter_ns()
@@ -727,8 +817,12 @@ class TestHotPath_Latency:
             pm = PortfolioManagerAgent()
             for _ in range(100):
                 sig = SignalEvent(
-                    symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.8,
-                    entry_price=2400.0, stop_loss=2390.0, take_profit=2430.0,
+                    symbol="XAUUSD",
+                    signal_type=SignalType.BUY,
+                    confidence=0.8,
+                    entry_price=2400.0,
+                    stop_loss=2390.0,
+                    take_profit=2430.0,
                     source="technical_analyst",
                 )
                 start = time.perf_counter_ns()
@@ -756,8 +850,12 @@ class TestHotPath_Latency:
             pm = PortfolioManagerAgent()
             for _ in range(100):
                 sig = SignalEvent(
-                    symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.8,
-                    entry_price=2400.0, stop_loss=2390.0, take_profit=2430.0,
+                    symbol="XAUUSD",
+                    signal_type=SignalType.BUY,
+                    confidence=0.8,
+                    entry_price=2400.0,
+                    stop_loss=2390.0,
+                    take_profit=2430.0,
                     source="technical_analyst",
                 )
                 ra.observe(sig)
@@ -771,8 +869,8 @@ class TestHotPath_Latency:
 # Cross-Component Integration
 # ═══════════════════════════════════════════════════════════════════
 
-class TestIntegration_FullFlow:
 
+class TestIntegration_FullFlow:
     def setup_method(self):
         MacroRegimeCache().reset()
 
@@ -783,9 +881,9 @@ class TestIntegration_FullFlow:
         ra = RiskAuditorAgent()
         pm = PortfolioManagerAgent()
 
-        closes = [2400 - i*0.5 for i in range(20)] + [2400, 2401, 2402, 2403, 2404]
+        closes = [2400 - i * 0.5 for i in range(20)] + [2400, 2401, 2402, 2403, 2404]
         for c in closes:
-            ta.observe(BarEvent(symbol="XAUUSD", high=c+5, low=c-5, open=c-1, close=c, volume=1000))
+            ta.observe(BarEvent(symbol="XAUUSD", high=c + 5, low=c - 5, open=c - 1, close=c, volume=1000))
 
         signal = ta.act()
         if signal is None:
@@ -811,8 +909,12 @@ class TestIntegration_FullFlow:
         pm = PortfolioManagerAgent()
 
         sig = SignalEvent(
-            symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.9,
-            entry_price=2400.0, stop_loss=2390.0, take_profit=2430.0,
+            symbol="XAUUSD",
+            signal_type=SignalType.BUY,
+            confidence=0.9,
+            entry_price=2400.0,
+            stop_loss=2390.0,
+            take_profit=2430.0,
             source="technical_analyst",
         )
         ra.observe(sig)
@@ -831,12 +933,18 @@ class TestIntegration_FullFlow:
         pm = PortfolioManagerAgent()
 
         sig = SignalEvent(
-            symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.8,
-            entry_price=2400.0, stop_loss=2390.0, take_profit=2430.0,
+            symbol="XAUUSD",
+            signal_type=SignalType.BUY,
+            confidence=0.8,
+            entry_price=2400.0,
+            stop_loss=2390.0,
+            take_profit=2430.0,
             source="technical_analyst",
         )
         sent = SignalEvent(
-            symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.5,
+            symbol="XAUUSD",
+            signal_type=SignalType.BUY,
+            confidence=0.5,
             source="sentiment_agent",
             metadata={"position_multiplier": 0.5},
         )

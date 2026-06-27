@@ -12,15 +12,16 @@ Usage:
   handler = TelegramCallbackHandler()
   await handler.handle_callback(callback_query)
 """
+
 from __future__ import annotations
 
 import asyncio
-import json
 import os
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Callable, Optional
+from typing import Any
 
 import httpx
 import structlog
@@ -38,6 +39,7 @@ class CallbackAction(str, Enum):
 @dataclass(frozen=True)
 class CallbackResult:
     """Result of processing a callback query."""
+
     action: CallbackAction
     asset: str
     direction: str
@@ -48,6 +50,7 @@ class CallbackResult:
 @dataclass
 class PendingSignal:
     """Signal waiting for human approval."""
+
     message_id: int
     asset: str
     direction: str

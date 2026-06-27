@@ -28,10 +28,11 @@ class EventBus:
         bus.publish(BarEvent(symbol="XAUUSD"))
     """
 
-    def __init__(self):
+    def __init__(self, max_queue_size: int = 0):
         self._subscribers: dict[type[Event], list[Handler]] = defaultdict(list)
         self._published_count: int = 0
         self._handler_errors: int = 0
+        self._max_queue_size = max_queue_size
 
     def subscribe(self, event_type: type[Event], handler: Handler) -> None:
         """Subscribe a handler to an event type"""
@@ -95,3 +96,11 @@ class EventBus:
         if event_type is not None:
             return len(self._subscribers.get(event_type, []))
         return sum(len(h) for h in self._subscribers.values())
+
+    def start(self) -> None:
+        """Start the event bus (no-op for synchronous bus)."""
+        pass
+
+    def stop(self) -> None:
+        """Stop the event bus (no-op for synchronous bus)."""
+        pass

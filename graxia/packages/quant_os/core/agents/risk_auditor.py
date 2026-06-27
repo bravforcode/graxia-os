@@ -4,16 +4,17 @@ RiskAuditorAgent (C1)
 Checks incoming SignalEvents against risk rules.
 Emits a RiskEvent (pass/fail) with RiskVerdictPayload in details.
 """
+
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from uuid import uuid4
 
-from ..events import Event, RiskEvent, SignalEvent
 from ..canonical.payloads import RiskVerdictPayload, VetoReason
+from ..events import Event, RiskEvent, SignalEvent
 from .base import Agent
 
 try:
-    from ..canonical.macro_regime import get_macro_regime, RegimeBias
+    from ..canonical.macro_regime import RegimeBias, get_macro_regime
 except ImportError:
     get_macro_regime = None
     RegimeBias = None
@@ -64,8 +65,13 @@ class RiskAuditorAgent(Agent):
         checks: list[RiskCheck] = []
 
         conf_ok = event.confidence >= self.MIN_CONFIDENCE
-        checks.append(RiskCheck(name="min_confidence", passed=conf_ok,
-                                reason="" if conf_ok else f"confidence {event.confidence:.2f} < {self.MIN_CONFIDENCE}"))
+        checks.append(
+            RiskCheck(
+                name="min_confidence",
+                passed=conf_ok,
+                reason="" if conf_ok else f"confidence {event.confidence:.2f} < {self.MIN_CONFIDENCE}",
+            )
+        )
 
         rr_ok = True
         if event.stop_loss and event.take_profit and event.entry_price:
@@ -73,20 +79,33 @@ class RiskAuditorAgent(Agent):
             reward = abs(event.take_profit - event.entry_price)
             rr_ratio = reward / risk if risk > 0 else 0
             rr_ok = rr_ratio >= self.MIN_RR_RATIO
-            checks.append(RiskCheck(name="risk_reward_ratio", passed=rr_ok,
-                                    reason="" if rr_ok else f"R:R {rr_ratio:.2f} < {self.MIN_RR_RATIO}"))
+            checks.append(
+                RiskCheck(
+                    name="risk_reward_ratio",
+                    passed=rr_ok,
+                    reason="" if rr_ok else f"R:R {rr_ratio:.2f} < {self.MIN_RR_RATIO}",
+                )
+            )
 
         key = f"{event.symbol}:{event.signal_type.value}"
         count = self._recent_signals.get(key, 0)
         dup_ok = count < self.MAX_DUPLICATE_SIGNALS
         self._recent_signals[key] = count + 1
-        checks.append(RiskCheck(name="duplicate_signal_limit", passed=dup_ok,
-                                reason="" if dup_ok else f"duplicate count {count+1} >= {self.MAX_DUPLICATE_SIGNALS}"))
+        checks.append(
+            RiskCheck(
+                name="duplicate_signal_limit",
+                passed=dup_ok,
+                reason="" if dup_ok else f"duplicate count {count+1} >= {self.MAX_DUPLICATE_SIGNALS}",
+            )
+        )
 
         if self.allowed_symbols is not None:
             sym_ok = event.symbol in self.allowed_symbols
-            checks.append(RiskCheck(name="symbol_whitelist", passed=sym_ok,
-                                    reason="" if sym_ok else f"{event.symbol} not in whitelist"))
+            checks.append(
+                RiskCheck(
+                    name="symbol_whitelist", passed=sym_ok, reason="" if sym_ok else f"{event.symbol} not in whitelist"
+                )
+            )
 
         macro_check = self._check_macro_lockdown()
         checks.append(macro_check)

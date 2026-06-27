@@ -18,11 +18,11 @@ Usage:
   if sf.is_active():
       multiplier = sf.get_edge_multiplier("XAUUSD")
 """
+
 from __future__ import annotations
 
 from datetime import UTC, datetime, time
 from enum import Enum
-from typing import Optional
 
 import structlog
 
@@ -48,20 +48,20 @@ SESSION_TIMES = {
 # Edge multipliers per session for XAUUSD
 # Higher = more confident in edge
 EDGE_MULTIPLIERS = {
-    Session.ASIAN: 0.3,       # Low edge — avoid or reduce size
-    Session.LONDON: 1.0,      # Full edge — London open breakout
-    Session.NEW_YORK: 0.9,    # Good edge — NY continuation
-    Session.OVERLAP: 1.2,     # Best edge — double volume
-    Session.CLOSED: 0.0,      # No edge — market closed
+    Session.ASIAN: 0.3,  # Low edge — avoid or reduce size
+    Session.LONDON: 1.0,  # Full edge — London open breakout
+    Session.NEW_YORK: 0.9,  # Good edge — NY continuation
+    Session.OVERLAP: 1.2,  # Best edge — double volume
+    Session.CLOSED: 0.0,  # No edge — market closed
 }
 
 # Symbol-specific adjustments
 SYMBOL_SESSION_BIAS = {
     "XAUUSD": {
-        Session.ASIAN: 0.2,   # Gold is quiet in Asian session
+        Session.ASIAN: 0.2,  # Gold is quiet in Asian session
         Session.LONDON: 1.0,
         Session.NEW_YORK: 0.9,
-        Session.OVERLAP: 1.3, # Gold moves most during overlap
+        Session.OVERLAP: 1.3,  # Gold moves most during overlap
     },
     "EURUSD": {
         Session.ASIAN: 0.3,
@@ -76,7 +76,7 @@ SYMBOL_SESSION_BIAS = {
         Session.OVERLAP: 1.0,
     },
     "USDJPY": {
-        Session.ASIAN: 0.8,   # JPY active in Asian session
+        Session.ASIAN: 0.8,  # JPY active in Asian session
         Session.LONDON: 0.7,
         Session.NEW_YORK: 0.9,
         Session.OVERLAP: 0.8,
@@ -157,10 +157,10 @@ class SessionFilter:
 
         sessions = [
             (Session.ASIAN, 0),
-            (Session.LONDON, 480),    # 8:00
-            (Session.OVERLAP, 780),   # 13:00
+            (Session.LONDON, 480),  # 8:00
+            (Session.OVERLAP, 780),  # 13:00
             (Session.NEW_YORK, 780),  # 13:00
-            (Session.CLOSED, 1260),   # 21:00
+            (Session.CLOSED, 1260),  # 21:00
         ]
 
         for session, start_min in sessions:

@@ -14,6 +14,7 @@ Usage:
   frac = kelly_fraction(win_rate=0.59, avg_rr=1.88)
   size = kelly_size(capital=10000, win_rate=0.59, avg_rr=1.88, sl_pips=100)
 """
+
 from __future__ import annotations
 
 import structlog
@@ -23,7 +24,7 @@ logger = structlog.get_logger(__name__)
 # Hard limits (never exceed these regardless of Kelly output)
 MAX_FRACTION = 0.05  # 5% max risk per trade
 MIN_FRACTION = 0.01  # 1% min risk per trade
-KELLY_HALF = 0.5     # Use half-Kelly for safety
+KELLY_HALF = 0.5  # Use half-Kelly for safety
 
 
 def kelly_fraction(

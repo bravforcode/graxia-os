@@ -5,12 +5,13 @@ HOT PATH reads: O(1) atomic load (no lock in steady state)
 WARM PATH writes: Async LLM results update this cache
 Thread-safe via threading.Lock
 """
+
 from __future__ import annotations
-from dataclasses import dataclass, field
-from datetime import datetime, UTC
-from enum import Enum
+
 import threading
-from typing import Optional
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from enum import Enum
 
 
 class RegimeBias(str, Enum):
@@ -23,6 +24,7 @@ class RegimeBias(str, Enum):
 @dataclass(frozen=True)
 class MacroRegime:
     """Immutable macro regime snapshot. Read by hot path."""
+
     bias: RegimeBias = RegimeBias.NEUTRAL
     confidence: float = 0.5
     position_multiplier: float = 1.0
@@ -34,7 +36,8 @@ class MacroRegime:
 
 class MacroRegimeCache:
     """Thread-safe singleton cache for MacroRegime."""
-    _instance: Optional[MacroRegimeCache] = None
+
+    _instance: MacroRegimeCache | None = None
     _lock: threading.Lock = threading.Lock()
 
     def __new__(cls) -> MacroRegimeCache:
@@ -51,12 +54,23 @@ class MacroRegimeCache:
     def update(self, regime: MacroRegime) -> None:
         self._regime = regime
 
-    def update_from_sentiment(self, bias: RegimeBias, confidence: float,
-                               position_multiplier: float, regime_label: str,
-                               source: str = "sentiment_agent", headline: str = "") -> MacroRegime:
-        regime = MacroRegime(bias=bias, confidence=confidence,
-                             position_multiplier=position_multiplier,
-                             regime_label=regime_label, source=source, headline=headline)
+    def update_from_sentiment(
+        self,
+        bias: RegimeBias,
+        confidence: float,
+        position_multiplier: float,
+        regime_label: str,
+        source: str = "sentiment_agent",
+        headline: str = "",
+    ) -> MacroRegime:
+        regime = MacroRegime(
+            bias=bias,
+            confidence=confidence,
+            position_multiplier=position_multiplier,
+            regime_label=regime_label,
+            source=source,
+            headline=headline,
+        )
         self.update(regime)
         return regime
 
@@ -66,8 +80,10 @@ class MacroRegimeCache:
 
 _cache = MacroRegimeCache
 
+
 def get_macro_regime() -> MacroRegime:
     return _cache().get()
+
 
 def get_position_multiplier() -> float:
     return _cache().get().position_multiplier

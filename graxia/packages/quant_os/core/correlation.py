@@ -11,10 +11,10 @@ Usage:
   cf.update("USDJPY", price_series)
   multiplier = cf.get_multiplier("XAUUSD", "USDJPY")
 """
+
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Optional
 
 import numpy as np
 import structlog
@@ -22,9 +22,9 @@ import structlog
 logger = structlog.get_logger(__name__)
 
 # Correlation thresholds
-HIGH_CORRELATION = 0.7   # Reduce size by 50%
+HIGH_CORRELATION = 0.7  # Reduce size by 50%
 VERY_HIGH_CORRELATION = 0.9  # Block trade entirely
-LOOKBACK = 100           # Bars to calculate correlation
+LOOKBACK = 100  # Bars to calculate correlation
 
 
 class CorrelationFilter:
@@ -43,7 +43,7 @@ class CorrelationFilter:
         self._prices[symbol].append(close_price)
         # Keep bounded
         if len(self._prices[symbol]) > self._lookback * 2:
-            self._prices[symbol] = self._prices[symbol][-self._lookback:]
+            self._prices[symbol] = self._prices[symbol][-self._lookback :]
 
     def set_open(self, symbols: list[str]) -> None:
         """Set which symbols currently have open positions."""
@@ -119,7 +119,7 @@ class CorrelationFilter:
         symbols = list(self._prices.keys())
         result = {}
         for i, a in enumerate(symbols):
-            for b in symbols[i + 1:]:
+            for b in symbols[i + 1 :]:
                 corr = self._correlation(a, b)
                 result[(a, b)] = round(corr, 4)
         return result

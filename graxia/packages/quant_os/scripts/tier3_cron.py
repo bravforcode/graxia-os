@@ -9,20 +9,21 @@ Usage:
   python scripts/tier3_cron.py --force            # force run (ignore 4h timer)
   python scripts/tier3_cron.py --report PATH      # custom research report
 """
+
 from __future__ import annotations
 
 import asyncio
 import os
 import sys
 import time
-from pathlib import Path
 from datetime import UTC, datetime
+from pathlib import Path
 
 import structlog
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from core.agents.llm_router import CascadeRouter, get_router
+from core.agents.llm_router import get_router
 from core.canonical.macro_regime import MacroRegimeCache, RegimeBias
 
 logger = structlog.get_logger(__name__)
@@ -141,7 +142,7 @@ async def main():
 
     if result.get("success"):
         print(f"\n{'='*60}")
-        print(f"  Tier 3 Deep Strategist — Complete")
+        print("  Tier 3 Deep Strategist — Complete")
         print(f"  Bias: {result['bias']}")
         print(f"  Confidence: {result['confidence']:.2f}")
         print(f"  Position Mult: {result['position_multiplier']:.2f}")

@@ -11,11 +11,11 @@ Usage:
   if nb.is_blocked():
       print(f"Blocked for {nb.remaining_seconds()}s")
 """
+
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
 from dataclasses import dataclass, field
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
 import structlog
 
@@ -25,6 +25,7 @@ logger = structlog.get_logger(__name__)
 @dataclass(frozen=True)
 class BlackoutEvent:
     """Record of a blackout trigger."""
+
     severity: str
     headline: str
     triggered_at: datetime = field(default_factory=lambda: datetime.now(UTC))

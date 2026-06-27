@@ -9,6 +9,7 @@ Usage:
   python scripts/auto_retrain.py --loop             # continuous (every 1h)
   python scripts/auto_retrain.py --force            # force retrain
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -16,15 +17,14 @@ import os
 import pickle
 import sys
 import time
-from datetime import UTC, datetime
 from pathlib import Path
 
 import structlog
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from ml.pipeline import MLTrainer, FeatureEngineer, FeatureSet, DriftDetector
 from ml.labeling import label_from_source
+from ml.pipeline import FeatureEngineer, FeatureSet, MLTrainer
 
 logger = structlog.get_logger(__name__)
 
@@ -38,7 +38,7 @@ if ENV_PATH.exists():
             os.environ.setdefault(k.strip(), v.strip())
 
 DRIFT_THRESHOLD = 0.10  # 10% accuracy drop triggers retrain
-MIN_SAMPLES = 500       # Minimum samples for retrain
+MIN_SAMPLES = 500  # Minimum samples for retrain
 MODEL_DIR = Path(__file__).parent.parent / "ml" / "models"
 
 
@@ -89,6 +89,7 @@ def check_drift() -> dict:
     # Evaluate both
     model = model_data["model"]
     import numpy as np
+
     X_recent = np.array([list(f.values()) for f in recent.features])
     y_recent = np.array(recent.labels)
     X_hist = np.array([list(f.values()) for f in historical.features])

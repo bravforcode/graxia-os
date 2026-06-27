@@ -10,10 +10,12 @@ Architecture:
     Vetoer (RiskAuditor) → produces RiskVerdictPayload
     PortfolioManager → assembles FinalTradePayload
 """
+
 from __future__ import annotations
-from datetime import datetime, UTC
+
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Optional, Literal
+from typing import Literal
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -44,6 +46,7 @@ class VetoReason(str, Enum):
 
 class MLSignalPayload(BaseModel):
     """Output from XGBoost models."""
+
     model_config = {"frozen": True}
     trace_id: str = Field(default_factory=lambda: str(uuid4()))
     symbol: str
@@ -58,6 +61,7 @@ class MLSignalPayload(BaseModel):
 
 class TechnicalSignalPayload(BaseModel):
     """Output from TechnicalAnalystAgent."""
+
     model_config = {"frozen": True}
     trace_id: str = Field(default_factory=lambda: str(uuid4()))
     symbol: str
@@ -71,6 +75,7 @@ class TechnicalSignalPayload(BaseModel):
 
 class MacroRegimePayload(BaseModel):
     """Output from SentimentAgent. Modifier only."""
+
     model_config = {"frozen": True}
     trace_id: str = Field(default_factory=lambda: str(uuid4()))
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
@@ -93,6 +98,7 @@ class RiskVerdictPayload(BaseModel):
         max_loss: dollar risk from entry to stop (0.0 if no SL)
         warnings: soft warnings (non-blocking)
     """
+
     model_config = {"frozen": True}
     trace_id: str = Field(default_factory=lambda: str(uuid4()))
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
@@ -110,6 +116,7 @@ class RiskVerdictPayload(BaseModel):
 
 class FinalTradePayload(BaseModel):
     """Assembled by PortfolioManager. Goes to execution."""
+
     model_config = {"frozen": True}
     trace_id: str = Field(default_factory=lambda: str(uuid4()))
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
@@ -134,6 +141,7 @@ class FinalTradePayload(BaseModel):
 
 class SignalNewPayload(BaseModel):
     """Canonical payload for signal.new events on the EventBus."""
+
     model_config = {"frozen": True}
     trace_id: str = Field(default_factory=lambda: str(uuid4()))
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))

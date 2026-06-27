@@ -14,7 +14,8 @@ Risk_gate in {0, 1}:
 
 FAIL-CLOSED: _risk_gate defaults to False. No trade until explicitly approved.
 """
-from dataclasses import dataclass, field
+
+from dataclasses import dataclass
 
 from ..enums import SignalType
 from ..events import Event, RiskEvent, SignalEvent
@@ -75,7 +76,9 @@ class PortfolioManagerAgent(Agent):
                 if verdict is not None:
                     self._pending_risk_pass = verdict.is_approved
                     if not verdict.is_approved:
-                        self._veto_reason = getattr(verdict, 'veto_detail', '') or getattr(verdict.veto_reason, 'value', str(verdict.veto_reason))
+                        self._veto_reason = getattr(verdict, "veto_detail", "") or getattr(
+                            verdict.veto_reason, "value", str(verdict.veto_reason)
+                        )
             return
 
         # GROUP 1 - INITIATOR
@@ -84,7 +87,7 @@ class PortfolioManagerAgent(Agent):
 
         # GROUP 2 - MODIFIER
         if event.source in MODIFIER_SOURCES:
-            if hasattr(event, 'metadata') and event.metadata:
+            if hasattr(event, "metadata") and event.metadata:
                 self._sentiment_modifier = event.metadata.get("position_multiplier", 1.0)
             else:
                 self._sentiment_modifier = min(event.confidence, 1.0)
