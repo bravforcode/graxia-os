@@ -2,20 +2,20 @@
 TechnicalAnalystAgent (C1)
 
 Reads BarEvents and emits a technical opinion as a SignalEvent.
-Rules: simple moving average crossover + RSI-like momentum check.
+Output: SignalEvent with TechnicalSignalPayload in metadata["technical_signal"].
 """
-
 from dataclasses import dataclass, field
+from datetime import datetime, UTC
+from uuid import uuid4
 
 from ..enums import SignalType
 from ..events import BarEvent, Event, SignalEvent
+from ..canonical.payloads import TechnicalSignalPayload, SignalDirection
 from .base import Agent
 
 
 @dataclass
 class TechnicalOpinion:
-    """Internal opinion produced by TechnicalAnalystAgent."""
-
     symbol: str = ""
     direction: SignalType = SignalType.NO_TRADE
     confidence: float = 0.0
@@ -26,17 +26,6 @@ class TechnicalOpinion:
 
 
 class TechnicalAnalystAgent(Agent):
-    """
-    Rule-based technical analyst.
-
-    Strategy:
-        - Track closing prices per symbol
-        - Compute short SMA (5 bars) vs long SMA (20 bars)
-        - Short > Long + last bar bullish → BUY
-        - Short < Long + last bar bearish → SELL
-        - Otherwise → NO_TRADE
-    """
-
     SHORT_WINDOW = 5
     LONG_WINDOW = 20
     SL_ATR_MULT = 1.5
@@ -60,7 +49,6 @@ class TechnicalAnalystAgent(Agent):
         self._closes[sym].append(event.close)
         self._highs[sym].append(event.high)
         self._lows[sym].append(event.low)
-        # Keep bounded
         max_len = self.LONG_WINDOW + 10
         if len(self._closes[sym]) > max_len:
             self._closes[sym] = self._closes[sym][-max_len:]
@@ -80,9 +68,25 @@ class TechnicalAnalystAgent(Agent):
                 opinions.append(opinion)
         if not opinions:
             return None
-        # Return highest confidence opinion
         best = max(opinions, key=lambda o: o.confidence)
         self._last_opinion = best
+
+        direction_map = {
+            SignalType.BUY: SignalDirection.BUY,
+            SignalType.SELL: SignalDirection.SELL,
+            SignalType.NO_TRADE: SignalDirection.HOLD,
+        }
+        tech_payload = TechnicalSignalPayload(
+            trace_id=str(uuid4()),
+            symbol=best.symbol,
+            timestamp=datetime.now(UTC),
+            technical_action=direction_map.get(best.direction, SignalDirection.HOLD),
+            sma_short=sum(self._closes[best.symbol][-self.SHORT_WINDOW:]) / self.SHORT_WINDOW,
+            sma_long=sum(self._closes[best.symbol][-self.LONG_WINDOW:]) / self.LONG_WINDOW,
+            confidence=best.confidence,
+            reasons=best.reasons,
+        )
+
         return SignalEvent(
             symbol=best.symbol,
             signal_type=best.direction,
@@ -91,37 +95,26 @@ class TechnicalAnalystAgent(Agent):
             stop_loss=best.stop_loss,
             take_profit=best.take_profit,
             source=self.name,
-            metadata={"reasons": best.reasons},
+            metadata={"reasons": best.reasons, "technical_signal": tech_payload},
         )
 
-    def _evaluate(self, sym: str, closes: list[float], highs: list[float], lows: list[float]) -> TechnicalOpinion:
-        reasons: list[str] = []
-
-        # SMA crossover
-        short_sma = sum(closes[-self.SHORT_WINDOW :]) / self.SHORT_WINDOW
-        long_sma = sum(closes[-self.LONG_WINDOW :]) / self.LONG_WINDOW
+    def _evaluate(self, sym, closes, highs, lows):
+        reasons = []
+        short_sma = sum(closes[-self.SHORT_WINDOW:]) / self.SHORT_WINDOW
+        long_sma = sum(closes[-self.LONG_WINDOW:]) / self.LONG_WINDOW
         last_close = closes[-1]
         prev_close = closes[-2]
-
         bullish_cross = short_sma > long_sma
         bearish_cross = short_sma < long_sma
         last_bar_bullish = last_close > prev_close
         last_bar_bearish = last_close < prev_close
-
-        # Simple ATR estimate (average true range)
         trs = []
         for i in range(-self.SHORT_WINDOW, 0):
-            tr = max(
-                highs[i] - lows[i],
-                abs(highs[i] - closes[i - 1]),
-                abs(lows[i] - closes[i - 1]),
-            )
+            tr = max(highs[i] - lows[i], abs(highs[i] - closes[i - 1]), abs(lows[i] - closes[i - 1]))
             trs.append(tr)
         atr = sum(trs) / len(trs) if trs else 1.0
-
         direction = SignalType.NO_TRADE
         confidence = 0.0
-
         if bullish_cross and last_bar_bullish:
             direction = SignalType.BUY
             confidence = min(0.9, 0.5 + (short_sma - long_sma) / last_close * 100)
@@ -132,7 +125,6 @@ class TechnicalAnalystAgent(Agent):
             confidence = min(0.9, 0.5 + (long_sma - short_sma) / last_close * 100)
             reasons.append(f"bearish_sma_cross({self.SHORT_WINDOW}<{self.LONG_WINDOW})")
             reasons.append("last_bar_bearish")
-
         entry = last_close
         if direction == SignalType.BUY:
             sl = entry - atr * self.SL_ATR_MULT
@@ -143,16 +135,8 @@ class TechnicalAnalystAgent(Agent):
         else:
             sl = 0.0
             tp = 0.0
-
-        return TechnicalOpinion(
-            symbol=sym,
-            direction=direction,
-            confidence=round(confidence, 4),
-            entry_price=entry,
-            stop_loss=round(sl, 5),
-            take_profit=round(tp, 5),
-            reasons=reasons,
-        )
+        return TechnicalOpinion(symbol=sym, direction=direction, confidence=round(confidence, 4),
+                                entry_price=entry, stop_loss=round(sl, 5), take_profit=round(tp, 5), reasons=reasons)
 
     def reset(self) -> None:
         super().reset()
