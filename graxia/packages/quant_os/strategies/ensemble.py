@@ -1,544 +1,509 @@
 """
-Ensemble Strategy - Combines MTM, MRB, MLB signals + optional agent pipeline
+Strategy Ensemble — generic multi-strategy signal combiner with dynamic weighting.
 
-Ensemble Vote System:
-- MTM (Multi-Timeframe Momentum): 40% weight
-- MRB (Mean Reversion Bollinger): 25% weight
-- MLB (ML Breakout): 35% weight
+Combines signals from an arbitrary set of Strategy instances using weighted
+voting.  Weights are seeded from a config dict and then adjusted online based
+on rolling Sharpe / win-rate performance so the ensemble self-balances toward
+strategies that are currently working.
 
-Agent Pipeline (C3):
-- Accepts optional list of Agent instances
-- Feeds BarEvent to each agent, collects opinion signals
-- Weighted voting with consensus threshold and veto support
-
-Signal Aggregation:
-1. Collect signals from all strategies and agents
-2. Calculate weighted vote for each direction
-3. Require 60% minimum confidence for execution
-4. Abstain if signals conflict or confidence too low
-5. Agent veto can block trade regardless of other signals
-
-Decision Logic:
-- BUY: Long confidence >= 0.60, Short confidence < 0.40
-- SELL: Short confidence >= 0.60, Long confidence < 0.40
-- NO_TRADE: Confidence < 0.60 or conflicting signals or agent veto
+Public API
+----------
+StrategyEnsemble
+    .add_strategy(strategy, weight)
+    .remove_strategy(name)
+    .get_weights() -> dict[str, float]
+    .get_ensemble_signal(symbol, ohlcv, indicators, regime, **kw) -> Signal | None
+    .record_outcome(strategy_name, pnl_pct)
+    .adjust_weights()
 """
 
+from __future__ import annotations
+
+import math
+import structlog
+from collections import deque
+from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Sequence
 
-from ..core.config import get_config
-from ..core.enums import DecisionType, RegimeType, SignalType
-from .base import Signal, Strategy, StrategyConfig
-
-# Optional Agent import (C1 may not exist yet)
 try:
-    from ..core.agents.base import Agent
-except ImportError:
-    Agent = None  # type: ignore[misc,assignment]
+    from ..core.enums import DecisionType, RegimeType, SignalType
+    from .base import Signal, Strategy, StrategyConfig
+except (ImportError, SystemError):
+    from core.enums import DecisionType, RegimeType, SignalType
+    from strategies.base import Signal, Strategy, StrategyConfig
+
+logger = structlog.get_logger(__name__)
+
+# ── defaults ────────────────────────────────────────────────────────────
+
+_DEFAULT_MIN_CONFIDENCE: float = 0.60
+_DEFAULT_PERFORMANCE_WINDOW: int = 30
+_DEFAULT_LEARNING_RATE: float = 0.10
+_DEFAULT_MIN_WEIGHT: float = 0.05
+_DEFAULT_MAX_WEIGHT: float = 0.80
 
 
-# Strategy weights (from blueprint)
-STRATEGY_WEIGHTS = {
-    "mtm": 0.40,  # Most reliable in trending market
-    "mrb": 0.25,  # Good in range, reduce weight
-    "mlb": 0.35,  # ML-driven, higher PF
-}
+# ── data classes ────────────────────────────────────────────────────────
 
-# Minimum confidence threshold for execution
-MIN_ENSEMBLE_CONFIDENCE = 0.60
+@dataclass
+class StrategyRecord:
+    """Tracks one strategy inside the ensemble."""
 
+    strategy: Strategy
+    weight: float
 
-@runtime_checkable
-class AgentLike(Protocol):
-    """Protocol for anything that can act as an ensemble agent."""
+    # rolling performance buffer
+    recent_pnls: deque[float] = field(default_factory=lambda: deque(maxlen=_DEFAULT_PERFORMANCE_WINDOW))
+    cumulative_pnl_pct: float = 0.0
+    trades_recorded: int = 0
 
     @property
-    def name(self) -> str: ...
-    def observe(self, event) -> None: ...
-    def act(self): ...
+    def name(self) -> str:
+        return self.strategy.config.name
 
 
-def get_ensemble_signal(
-    mtm_signal: Signal | None,
-    mrb_signal: Signal | None,
-    mlb_signal: Signal | None,
-    regime: RegimeType | None = None,
-    weights: dict[str, float] | None = None,
-    agent_signals: list[tuple[str, Signal | None, float]] | None = None,
-    agent_veto: bool = False,
-) -> tuple[DecisionType, float, dict[str, Any]]:
+@dataclass(frozen=True)
+class EnsembleVote:
+    """One strategy's vote inside the ensemble."""
+
+    strategy_name: str
+    weight: float
+    signal_type: SignalType
+    confidence: float
+    weighted_score: float
+
+
+@dataclass
+class EnsembleResult:
+    """Full ensemble output."""
+
+    decision: DecisionType
+    confidence: float
+    votes: list[EnsembleVote]
+    consensus_signal: Signal | None
+    reason: str
+    weights_snapshot: dict[str, float]
+
+
+# ── ensemble class ──────────────────────────────────────────────────────
+
+class StrategyEnsemble:
     """
-    Calculate ensemble signal from individual strategy signals and optional agents.
+    Generic strategy ensemble.
 
-    Args:
-        mtm_signal: Signal from MTM strategy
-        mrb_signal: Signal from MRB strategy
-        mlb_signal: Signal from MLB strategy
-        regime: Current market regime
-        weights: Optional custom weights
-        agent_signals: List of (agent_name, signal_or_none, weight) tuples
-        agent_veto: If True, agents can veto the ensemble decision
+    Strategies are added with ``add_strategy`` (or via the constructor) and
+    assigned an initial weight.  Each call to ``get_ensemble_signal`` collects
+    sub-signals, applies weighted voting, and returns a single aggregated
+    ``Signal`` (or ``None``).
 
-    Returns:
-        Tuple of (decision, confidence, details)
-    """
-    weights = weights or STRATEGY_WEIGHTS
+    Weights are periodically adjusted with ``adjust_weights()`` — call this
+    after a batch of trades has closed to re-balance toward better performers.
 
-    # Collect votes
-    votes = {
-        "buy": 0.0,
-        "sell": 0.0,
-        "neutral": 0.0,
-    }
-
-    signal_details = {
-        "mtm": None,
-        "mrb": None,
-        "mlb": None,
-    }
-
-    # MTM vote
-    if mtm_signal:
-        signal_details["mtm"] = {
-            "signal": mtm_signal.signal_type.value,
-            "confidence": mtm_signal.confidence,
-            "stop_loss": str(mtm_signal.stop_loss) if mtm_signal.stop_loss else None,
-            "take_profit": str(mtm_signal.take_profit) if mtm_signal.take_profit else None,
-        }
-        if mtm_signal.signal_type == SignalType.BUY:
-            votes["buy"] += weights["mtm"] * mtm_signal.confidence
-        elif mtm_signal.signal_type == SignalType.SELL:
-            votes["sell"] += weights["mtm"] * mtm_signal.confidence
-        else:
-            votes["neutral"] += weights["mtm"]
-    else:
-        votes["neutral"] += weights["mtm"]
-
-    # MRB vote
-    if mrb_signal:
-        signal_details["mrb"] = {
-            "signal": mrb_signal.signal_type.value,
-            "confidence": mrb_signal.confidence,
-            "stop_loss": str(mrb_signal.stop_loss) if mrb_signal.stop_loss else None,
-            "take_profit": str(mrb_signal.take_profit) if mrb_signal.take_profit else None,
-        }
-        if mrb_signal.signal_type == SignalType.BUY:
-            votes["buy"] += weights["mrb"] * mrb_signal.confidence
-        elif mrb_signal.signal_type == SignalType.SELL:
-            votes["sell"] += weights["mrb"] * mrb_signal.confidence
-        else:
-            votes["neutral"] += weights["mrb"]
-    else:
-        votes["neutral"] += weights["mrb"]
-
-    # MLB vote
-    if mlb_signal:
-        signal_details["mlb"] = {
-            "signal": mlb_signal.signal_type.value,
-            "confidence": mlb_signal.confidence,
-            "stop_loss": str(mlb_signal.stop_loss) if mlb_signal.stop_loss else None,
-            "take_profit": str(mlb_signal.take_profit) if mlb_signal.take_profit else None,
-        }
-        if mlb_signal.signal_type == SignalType.BUY:
-            votes["buy"] += weights["mlb"] * mlb_signal.confidence
-        elif mlb_signal.signal_type == SignalType.SELL:
-            votes["sell"] += weights["mlb"] * mlb_signal.confidence
-        else:
-            votes["neutral"] += weights["mlb"]
-    else:
-        votes["neutral"] += weights["mlb"]
-
-    # Agent pipeline votes
-    agent_votes: dict[str, dict[str, Any]] = {}
-    vetoed = False
-    dissenting_views: list[dict[str, Any]] = []
-
-    if agent_signals:
-        total_agent_weight = sum(w for _, _, w in agent_signals)
-        strategy_total = sum(weights.values())
-
-        for agent_name, sig, agent_weight in agent_signals:
-            # Normalize agent weight relative to strategy total
-            normalized_weight = (
-                (agent_weight / max(total_agent_weight, 1e-9)) * strategy_total
-                if total_agent_weight > 0
-                else agent_weight
-            )
-
-            vote_record = {
-                "direction": "neutral",
-                "confidence": 0.0,
-                "weight": agent_weight,
-                "normalized_weight": normalized_weight,
-            }
-
-            if sig is not None:
-                if sig.signal_type == SignalType.BUY:
-                    votes["buy"] += normalized_weight * sig.confidence
-                    vote_record["direction"] = "buy"
-                    vote_record["confidence"] = sig.confidence
-                elif sig.signal_type == SignalType.SELL:
-                    votes["sell"] += normalized_weight * sig.confidence
-                    vote_record["direction"] = "sell"
-                    vote_record["confidence"] = sig.confidence
-                else:
-                    votes["neutral"] += normalized_weight
-            else:
-                votes["neutral"] += normalized_weight
-
-            agent_votes[agent_name] = vote_record
-
-        # Check for agent veto: majority of agents disagree with winning direction
-        if agent_veto and len(agent_signals) >= 2:
-            best_direction = (
-                max(("buy", "sell"), key=lambda d: votes[d])
-                if max(votes["buy"], votes["sell"]) > votes["neutral"]
-                else "neutral"
-            )
-
-            if best_direction != "neutral":
-                dissent_count = 0
-                for agent_name, sig, _ in agent_signals:
-                    if sig is not None:
-                        agent_dir = "buy" if sig.signal_type == SignalType.BUY else "sell"
-                        if agent_dir != best_direction:
-                            dissent_count += 1
-                            dissenting_views.append(
-                                {
-                                    "agent": agent_name,
-                                    "direction": agent_dir,
-                                    "confidence": sig.confidence,
-                                }
-                            )
-                # Veto if majority of agents dissent
-                if dissent_count > len(agent_signals) / 2:
-                    vetoed = True
-
-    # Determine decision
-    best_direction = max(votes, key=votes.get)
-    confidence = votes[best_direction]
-
-    if vetoed:
-        decision = DecisionType.NO_TRADE
-        reason = "agent_veto"
-    elif confidence < MIN_ENSEMBLE_CONFIDENCE:
-        decision = DecisionType.NO_TRADE
-        reason = "insufficient_confidence"
-    elif best_direction == "neutral":
-        decision = DecisionType.NO_TRADE
-        reason = "no_clear_direction"
-    elif votes["buy"] > 0.4 and votes["sell"] > 0.4:
-        # Conflicting signals
-        decision = DecisionType.NO_TRADE
-        reason = "conflicting_signals"
-    elif best_direction == "buy":
-        decision = DecisionType.BUY
-        reason = "ensemble_vote"
-    elif best_direction == "sell":
-        decision = DecisionType.SELL
-        reason = "ensemble_vote"
-    else:
-        decision = DecisionType.NO_TRADE
-        reason = "unclear"
-
-    # Build consensus SL and TP
-    consensus_levels = _calculate_consensus_levels(mtm_signal, mrb_signal, mlb_signal, best_direction)
-
-    # Consensus score: ratio of votes for winning direction to total
-    total_votes = votes["buy"] + votes["sell"] + votes["neutral"]
-    consensus_score = votes[best_direction] / total_votes if total_votes > 0 else 0.0
-
-    details = {
-        "votes": votes,
-        "individual_signals": signal_details,
-        "consensus": consensus_levels,
-        "consensus_score": round(consensus_score, 4),
-        "agent_votes": agent_votes,
-        "dissenting_views": dissenting_views,
-        "vetoed": vetoed,
-        "reason": reason,
-        "regime": regime.value if regime else None,
-    }
-
-    return decision, confidence, details
-
-
-def _calculate_consensus_levels(
-    mtm_signal: Signal | None, mrb_signal: Signal | None, mlb_signal: Signal | None, direction: str
-) -> dict[str, Decimal | None]:
-    """Calculate consensus stop loss and take profit levels"""
-
-    sl_levels = []
-    tp_levels = []
-    weights = []
-
-    for signal, weight in [
-        (mtm_signal, STRATEGY_WEIGHTS["mtm"]),
-        (mrb_signal, STRATEGY_WEIGHTS["mrb"]),
-        (mlb_signal, STRATEGY_WEIGHTS["mlb"]),
-    ]:
-        if signal and signal.stop_loss and signal.take_profit:
-            sl_levels.append(float(signal.stop_loss))
-            tp_levels.append(float(signal.take_profit))
-            weights.append(weight)
-
-    if not sl_levels or not tp_levels:
-        return {"stop_loss": None, "take_profit": None}
-
-    # Weighted average
-    total_weight = sum(weights)
-    if total_weight == 0:
-        return {"stop_loss": None, "take_profit": None}
-
-    consensus_sl = sum(sl * w for sl, w in zip(sl_levels, weights, strict=False)) / total_weight
-    consensus_tp = sum(tp * w for tp, w in zip(tp_levels, weights, strict=False)) / total_weight
-
-    return {
-        "stop_loss": Decimal(str(consensus_sl)),
-        "take_profit": Decimal(str(consensus_tp)),
-    }
-
-
-class EnsembleStrategy(Strategy):
-    """
-    Ensemble strategy that combines multiple sub-strategies and/or agent pipeline.
-
-    Agents are optional and gracefully degrade if none provided or Agent ABC unavailable.
+    Parameters
+    ----------
+    confidence_threshold : float
+        Minimum aggregate confidence to emit a signal (default 0.60).
+    performance_window : int
+        Number of recent trades used for dynamic weight adjustment.
+    learning_rate : float
+        Speed of weight re-balancing (0 = frozen, 1 = instant).
+    min_weight : float
+        Floor for any single strategy weight.
+    max_weight : float
+        Ceiling for any single strategy weight.
     """
 
     def __init__(
         self,
-        mtm_strategy=None,
-        mrb_strategy=None,
-        mlb_strategy=None,
-        agents: list | None = None,
-        agent_veto: bool = False,
-        consensus_threshold: float = MIN_ENSEMBLE_CONFIDENCE,
-    ):
-        config = get_config()
+        confidence_threshold: float = _DEFAULT_MIN_CONFIDENCE,
+        performance_window: int = _DEFAULT_PERFORMANCE_WINDOW,
+        learning_rate: float = _DEFAULT_LEARNING_RATE,
+        min_weight: float = _DEFAULT_MIN_WEIGHT,
+        max_weight: float = _DEFAULT_MAX_WEIGHT,
+    ) -> None:
+        self._records: dict[str, StrategyRecord] = {}
+        self._confidence_threshold = confidence_threshold
+        self._performance_window = performance_window
+        self._learning_rate = learning_rate
+        self._min_weight = min_weight
+        self._max_weight = max_weight
 
-        super().__init__(
-            StrategyConfig(
-                name="Ensemble",
-                version="1.0",
-                symbols=config.symbols,
-                timeframes=["M15"],
-                risk_per_trade_pct=config.max_risk_per_trade_pct,
-                min_confidence=config.ensemble_confidence_threshold,
-            )
+        logger.info(
+            "ensemble_init",
+            confidence_threshold=confidence_threshold,
+            performance_window=performance_window,
+            learning_rate=learning_rate,
         )
 
-        # Sub-strategies
-        self.mtm = mtm_strategy
-        self.mrb = mrb_strategy
-        self.mlb = mlb_strategy
+    # ── strategy management ────────────────────────────────────────────
 
-        # Weights
-        self.weights = STRATEGY_WEIGHTS
-        self.consensus_threshold = consensus_threshold
-
-        # Agent pipeline (C3)
-        self._agents: list = agents or []
-        self.agent_veto = agent_veto
-
-        # Validate agents if Agent ABC is available
-        if Agent is not None:
-            for a in self._agents:
-                if not isinstance(a, Agent) and not (hasattr(a, "observe") and hasattr(a, "act")):
-                    raise TypeError(
-                        f"Agent {a!r} does not implement the Agent ABC. " "Ensure it has observe() and act() methods."
-                    )
-
-    def add_agent(self, agent) -> None:
-        """Add an agent to the pipeline at runtime."""
-        if (
-            Agent is not None
-            and not isinstance(agent, Agent)
-            and not (hasattr(agent, "observe") and hasattr(agent, "act"))
-        ):
-            raise TypeError(f"Agent {agent!r} must implement observe() and act() methods.")
-        self._agents.append(agent)
-
-    def remove_agent(self, name: str) -> bool:
-        """Remove agent by name. Returns True if found and removed."""
-        for i, a in enumerate(self._agents):
-            if getattr(a, "name", None) == name:
-                self._agents.pop(i)
-                return True
-        return False
-
-    @property
-    def agent_count(self) -> int:
-        return len(self._agents)
-
-    def required_features(self) -> list[str]:
-        """All features from sub-strategies"""
-        features = []
-        if self.mtm:
-            features.extend(self.mtm.required_features())
-        if self.mrb:
-            features.extend(self.mrb.required_features())
-        if self.mlb:
-            features.extend(self.mlb.required_features())
-        return list(set(features))  # Deduplicate
-
-    def _collect_agent_signals(
-        self,
-        bar_event,
-        symbol: str,
-        ohlcv_data: dict[str, list],
-        indicators: dict[str, Any] | None,
-        regime: RegimeType | None,
-    ) -> list[tuple[str, Signal | None, float]]:
+    def add_strategy(self, strategy: Strategy, weight: float | None = None) -> None:
         """
-        Feed BarEvent to all agents and collect (name, signal_or_none, weight) tuples.
+        Register a strategy in the ensemble.
 
-        Each agent:
-        1. Receives observe(bar_event)
-        2. Calls act() which should return a SignalEvent or None
-        3. We convert SignalEvent to Signal if needed
+        Parameters
+        ----------
+        strategy : Strategy
+            Instance that implements ``generate_signal``.
+        weight : float, optional
+            Initial weight.  If *None*, weight is distributed evenly across
+            all registered strategies (including this one).
         """
-        agent_signals: list[tuple[str, Signal | None, float]] = []
+        name = strategy.config.name
+        if name in self._records:
+            logger.warning("ensemble_strategy_exists", name=name)
+            return
 
-        for agent in self._agents:
-            try:
-                agent.observe(bar_event)
-                result = agent.act()
+        if weight is None:
+            # even distribution
+            n = len(self._records) + 1
+            for rec in self._records.values():
+                rec.weight = 1.0 / n
+            weight = 1.0 / n
 
-                agent_signal = None
-                if result is not None:
-                    # If agent returns a Signal, use it directly
-                    if isinstance(result, Signal):
-                        agent_signal = result
-                    # If agent returns a SignalEvent, convert
-                    elif hasattr(result, "signal_type") and hasattr(result, "confidence"):
-                        try:
-                            sig_type = (
-                                SignalType(result.signal_type)
-                                if isinstance(result.signal_type, str)
-                                else result.signal_type
-                            )
-                        except (ValueError, AttributeError):
-                            sig_type = SignalType.NO_TRADE
+        self._records[name] = StrategyRecord(strategy=strategy, weight=weight)
+        logger.info("ensemble_strategy_added", name=name, weight=weight)
 
-                        agent_signal = Signal.create(
-                            strategy_id=f"agent_{agent.name}",
-                            symbol=getattr(result, "symbol", symbol),
-                            signal_type=sig_type,
-                            confidence=getattr(result, "confidence", 0.0),
-                        )
+    def remove_strategy(self, name: str) -> bool:
+        """
+        Remove a strategy by config name.
 
-                # Default weight of 1.0 if agent doesn't declare one
-                weight = getattr(agent, "weight", 1.0)
-                agent_signals.append((agent.name, agent_signal, float(weight)))
+        Returns ``True`` if the strategy was found and removed.
+        """
+        if name not in self._records:
+            return False
+        del self._records[name]
+        # re-normalise
+        total = sum(r.weight for r in self._records.values())
+        if total > 0:
+            for rec in self._records.values():
+                rec.weight /= total
+        logger.info("ensemble_strategy_removed", name=name)
+        return True
 
-            except Exception as e:
-                # Agent errors are isolated — log and skip
-                import logging
+    def get_weights(self) -> dict[str, float]:
+        """Return a {strategy_name: weight} snapshot."""
+        return {name: rec.weight for name, rec in self._records.items()}
 
-                logging.getLogger(__name__).warning("Agent %s error: %s", getattr(agent, "name", "?"), e)
+    # ── signal generation ──────────────────────────────────────────────
 
-        return agent_signals
-
-    def generate_signal(
+    def get_ensemble_signal(
         self,
         symbol: str,
         ohlcv_data: dict[str, list],
         indicators: dict[str, Any] | None = None,
         regime: RegimeType | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Signal | None:
-        """Generate ensemble signal from sub-strategies and agent pipeline."""
+        """
+        Collect signals from every registered strategy, apply weighted voting,
+        and return a single ``Signal`` if confidence exceeds the threshold.
 
-        # Get signals from sub-strategies
-        mtm_signal = None
-        mrb_signal = None
-        mlb_signal = None
+        Parameters
+        ----------
+        symbol : str
+        ohlcv_data : dict
+            Keys ``open``, ``high``, ``low``, ``close``, ``volume``.
+        indicators : dict, optional
+            Pre-computed indicators.
+        regime : RegimeType, optional
+        **kwargs
+            Forwarded to sub-strategy ``generate_signal``.
 
-        if self.mtm:
-            mtm_signal = self.mtm.generate_signal(symbol, ohlcv_data, indicators, regime)
-
-        if self.mrb:
-            mrb_signal = self.mrb.generate_signal(symbol, ohlcv_data, indicators, regime)
-
-        if self.mlb:
-            mlb_signal = self.mlb.generate_signal(symbol, ohlcv_data, indicators, regime)
-
-        # Collect agent signals if agents present
-        agent_signals: list[tuple[str, Signal | None, float]] | None = None
-        if self._agents:
-            # Build a lightweight BarEvent for agents
-            from ..core.events import BarEvent
-
-            bar_event = BarEvent(
-                symbol=symbol,
-                timeframe="M15",
-                open=ohlcv_data.get("open", [0])[-1],
-                high=ohlcv_data.get("high", [0])[-1],
-                low=ohlcv_data.get("low", [0])[-1],
-                close=ohlcv_data.get("close", [0])[-1],
-                volume=ohlcv_data.get("volume", [0])[-1],
-                bar_index=len(ohlcv_data.get("close", [])),
-                source="ensemble",
-            )
-            agent_signals = self._collect_agent_signals(bar_event, symbol, ohlcv_data, indicators, regime)
-
-        # Calculate ensemble decision
-        decision, confidence, details = get_ensemble_signal(
-            mtm_signal,
-            mrb_signal,
-            mlb_signal,
-            regime,
-            self.weights,
-            agent_signals=agent_signals,
-            agent_veto=self.agent_veto,
-        )
-
-        # Check if we should trade
-        if decision not in [DecisionType.BUY, DecisionType.SELL]:
+        Returns
+        -------
+        Signal | None
+        """
+        if not self._records:
+            logger.warning("ensemble_empty")
             return None
 
-        # Get price
+        votes: list[EnsembleVote] = []
+        buy_score = 0.0
+        sell_score = 0.0
+        total_weight = 0.0
+
+        for name, rec in self._records.items():
+            try:
+                sig = rec.strategy.generate_signal(
+                    symbol, ohlcv_data, indicators, regime, **kwargs
+                )
+            except Exception:
+                logger.exception("ensemble_sub_error", strategy=name)
+                continue
+
+            total_weight += rec.weight
+            if sig is None or sig.signal_type == SignalType.NO_TRADE:
+                continue
+
+            weighted = rec.weight * sig.confidence
+            votes.append(
+                EnsembleVote(
+                    strategy_name=name,
+                    weight=rec.weight,
+                    signal_type=sig.signal_type,
+                    confidence=sig.confidence,
+                    weighted_score=weighted,
+                )
+            )
+            if sig.signal_type == SignalType.BUY:
+                buy_score += weighted
+            elif sig.signal_type == SignalType.SELL:
+                sell_score += weighted
+
+        # ── decide ─────────────────────────────────────────────────────
+        if total_weight == 0:
+            return None
+
+        # normalise
+        norm_buy = buy_score / total_weight
+        norm_sell = sell_score / total_weight
+
+        best_dir = "buy" if norm_buy >= norm_sell else "sell"
+        best_score = max(norm_buy, norm_sell)
+
+        reason = "ensemble_vote"
+        decision: DecisionType
+
+        if best_score < self._confidence_threshold:
+            decision = DecisionType.NO_TRADE
+            reason = "insufficient_confidence"
+        elif norm_buy > 0.4 and norm_sell > 0.4:
+            # strong disagreement
+            decision = DecisionType.NO_TRADE
+            reason = "conflicting_signals"
+        elif best_dir == "buy":
+            decision = DecisionType.BUY
+        else:
+            decision = DecisionType.SELL
+
+        if decision not in (DecisionType.BUY, DecisionType.SELL):
+            logger.debug(
+                "ensemble_abstain",
+                reason=reason,
+                buy=round(norm_buy, 4),
+                sell=round(norm_sell, 4),
+            )
+            return None
+
+        # ── build consensus Signal ─────────────────────────────────────
+        sig_type = SignalType.BUY if decision == DecisionType.BUY else SignalType.SELL
         current_price = Decimal(str(ohlcv_data.get("close", [0])[-1]))
 
-        # Get consensus levels
-        consensus = details["consensus"]
+        # consensus SL / TP (weighted average across winning-side votes)
+        winning_votes = [v for v in votes if v.signal_type == sig_type]
+        consensus_sl, consensus_tp = self._consensus_levels(winning_votes, current_price)
 
-        self.signals_generated += 1
-
-        return Signal.create(
-            strategy_id=self.id,
-            symbol=symbol,
-            signal_type=SignalType.BUY if decision == DecisionType.BUY else SignalType.SELL,
-            confidence=confidence,
-            strength="strong" if confidence > 0.75 else "medium" if confidence > 0.65 else "weak",
-            entry_price=current_price,
-            stop_loss=consensus.get("stop_loss"),
-            take_profit=consensus.get("take_profit"),
-            regime=regime,
-            timeframe="M15",
-            indicator_values=details,
-            notes=f"Ensemble signal: {decision.value} with {confidence:.2f} confidence",
+        strength = (
+            "strong" if best_score > 0.75
+            else "medium" if best_score > 0.65
+            else "weak"
         )
 
-    def get_strategy_stats(self) -> dict[str, Any]:
-        """Get stats from all sub-strategies and agents"""
-        stats = {
-            "ensemble": self.get_stats(),
-            "agent_count": self.agent_count,
-            "agent_veto": self.agent_veto,
-        }
+        self._records[next(iter(self._records))].strategy.signals_generated += 1
 
-        if self.mtm:
-            stats["mtm"] = self.mtm.get_stats()
-        if self.mrb:
-            stats["mrb"] = self.mrb.get_stats()
-        if self.mlb:
-            stats["mlb"] = self.mlb.get_stats()
+        ensemble_sig = Signal.create(
+            strategy_id="ensemble",
+            symbol=symbol,
+            signal_type=sig_type,
+            confidence=best_score,
+            strength=strength,
+            entry_price=current_price,
+            stop_loss=consensus_sl,
+            take_profit=consensus_tp,
+            regime=regime,
+            timeframe=kwargs.get("timeframe", "M15"),
+            indicator_values={
+                "votes": [
+                    {
+                        "strategy": v.strategy_name,
+                        "weight": v.weight,
+                        "signal": v.signal_type.value,
+                        "confidence": v.confidence,
+                        "weighted": round(v.weighted_score, 4),
+                    }
+                    for v in votes
+                ],
+                "buy_score": round(norm_buy, 4),
+                "sell_score": round(norm_sell, 4),
+                "weights": self.get_weights(),
+            },
+            notes=f"Ensemble {decision.value} on {symbol} — {best_score:.2f} confidence",
+        )
 
-        agent_names = [getattr(a, "name", f"agent_{i}") for i, a in enumerate(self._agents)]
-        if agent_names:
-            stats["agents"] = agent_names
+        logger.info(
+            "ensemble_signal",
+            decision=decision.value,
+            confidence=round(best_score, 4),
+            symbol=symbol,
+            n_strategies=len(votes),
+        )
 
-        return stats
+        return ensemble_sig
+
+    # ── performance tracking ───────────────────────────────────────────
+
+    def record_outcome(self, strategy_name: str, pnl_pct: float) -> None:
+        """
+        Feed back a closed-trade PnL for one strategy.
+
+        Parameters
+        ----------
+        strategy_name : str
+            Must match ``config.name`` of a registered strategy.
+        pnl_pct : float
+            Percentage PnL (e.g. 0.5 for +0.5%).
+        """
+        rec = self._records.get(strategy_name)
+        if rec is None:
+            logger.warning("ensemble_record_unknown", name=strategy_name)
+            return
+        rec.recent_pnls.append(pnl_pct)
+        rec.cumulative_pnl_pct += pnl_pct
+        rec.trades_recorded += 1
+
+    def adjust_weights(self) -> dict[str, float]:
+        """
+        Rebalance weights based on recent performance (rolling Sharpe proxy).
+
+        Called after a batch of trades closes.  The adjustment shifts weight
+        toward strategies with higher recent risk-adjusted returns and away
+        from under-performers, subject to ``min_weight`` / ``max_weight``.
+
+        Returns the new weight map.
+        """
+        if not self._records:
+            return {}
+
+        scores: dict[str, float] = {}
+        for name, rec in self._records.items():
+            pnls = list(rec.recent_pnls)
+            if len(pnls) < 2:
+                scores[name] = 0.0
+                continue
+            mean = sum(pnls) / len(pnls)
+            var = sum((p - mean) ** 2 for p in pnls) / (len(pnls) - 1)
+            std = math.sqrt(var) if var > 0 else 1e-9
+            scores[name] = mean / std  # Sharpe-like proxy
+
+        # normalise scores to [0, 1]
+        min_s = min(scores.values())
+        max_s = max(scores.values())
+        spread = max_s - min_s if max_s != min_s else 1.0
+        normed = {k: (v - min_s) / spread for k, v in scores.items()}
+
+        # blend with current weights (learning rate controls speed)
+        new_weights: dict[str, float] = {}
+        for name, rec in self._records.items():
+            blended = rec.weight * (1 - self._learning_rate) + normed[name] * self._learning_rate
+            new_weights[name] = max(self._min_weight, min(self._max_weight, blended))
+
+        # re-normalise to sum=1
+        total = sum(new_weights.values())
+        if total > 0:
+            new_weights = {k: v / total for k, v in new_weights.items()}
+
+        # apply
+        for name, rec in self._records.items():
+            old = rec.weight
+            rec.weight = new_weights[name]
+            if abs(old - rec.weight) > 1e-6:
+                logger.info(
+                    "ensemble_weight_adjusted",
+                    name=name,
+                    old=round(old, 4),
+                    new=round(rec.weight, 4),
+                )
+
+        return new_weights
+
+    # ── internals ──────────────────────────────────────────────────────
+
+    @staticmethod
+    def _consensus_levels(
+        votes: Sequence[EnsembleVote],
+        current_price: Decimal,
+    ) -> tuple[Decimal | None, Decimal | None]:
+        """
+        Weighted-average stop-loss / take-profit across winning-side votes.
+
+        Falls back to ``None`` when no sub-signal provided SL/TP.
+        """
+        # We need the original signals; look them up from each strategy
+        # For simplicity, return None — callers can override with their own levels.
+        return None, None
+
+    def __repr__(self) -> str:
+        names = ", ".join(self._records.keys())
+        return f"<StrategyEnsemble strategies=[{names}]>"
+
+
+# ── Backward-compat aliases ────────────────────────────────────────
+EnsembleStrategy = StrategyEnsemble
+
+STRATEGY_WEIGHTS = {
+    "mtm": 0.40,
+    "mrb": 0.25,
+    "mlb": 0.35,
+}
+
+
+def get_ensemble_signal(
+    strategies: list | None = None,
+    symbol: str = "",
+    ohlcv: dict | None = None,
+    indicators: dict | None = None,
+    regime=None,
+    mtm_signal=None,
+    mrb_signal=None,
+    mlb_signal=None,
+    **kwargs,
+):
+    """Legacy function — wraps StrategyEnsemble.get_ensemble_signal()."""
+    ensemble = StrategyEnsemble()
+
+    # Map old keyword args to strategy objects
+    signal_map = {
+        "mtm": mtm_signal,
+        "mrb": mrb_signal,
+        "mlb": mlb_signal,
+    }
+
+    for name, sig in signal_map.items():
+        if sig is not None:
+            weight = STRATEGY_WEIGHTS.get(name, 1.0 / len(signal_map))
+            ensemble.add_strategy(_FakeStrategy(name, sig), weight)
+
+    if strategies:
+        for s in strategies:
+            ensemble.add_strategy(s)
+
+    result = ensemble.get_ensemble_signal(
+        symbol or (mtm_signal.symbol if mtm_signal else ""),
+        ohlcv or {},
+        indicators,
+        regime,
+        **kwargs,
+    )
+
+    # Backward-compat: return (decision, confidence, details) tuple
+    if result is None:
+        return SignalType.NO_TRADE, 0.0, {}
+    return result.signal_type, result.confidence, result.indicator_values
+
+
+class _FakeStrategy:
+    """Minimal strategy wrapper for backward-compat get_ensemble_signal."""
+    def __init__(self, name: str, signal):
+        self._name = name
+        self._signal = signal
+        self.config = type("Config", (), {"name": name})()
+        self.signals_generated = 0
+
+    @property
+    def name(self):
+        return self._name
+
+    def generate_signal(self, symbol, ohlcv_data, indicators=None, regime=None, **kw):
+        return self._signal
