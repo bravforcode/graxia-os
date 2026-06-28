@@ -502,7 +502,7 @@ class TestCascadeRouter:
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_get.return_value = mock_client
             with patch("os.getenv", return_value="fake_key"):
-                result = asyncio.get_event_loop().run_until_complete(
+                result = asyncio.run(
                     router.route("Routine earnings report")
                 )
         assert result.impact == ImpactLevel.LOW
@@ -537,7 +537,7 @@ class TestCascadeRouter:
             mock_client.post = mock_post
             mock_get.return_value = mock_client
             with patch("os.getenv", return_value="fake_key"):
-                result = asyncio.get_event_loop().run_until_complete(
+                result = asyncio.run(
                     router.route("Breaking: Fed rate decision")
                 )
         assert result.impact == ImpactLevel.LOW
@@ -550,7 +550,7 @@ class TestCascadeRouter:
             mock_client.post = AsyncMock(return_value=MagicMock(status_code=500))
             mock_get.return_value = mock_client
             with patch("os.getenv", return_value="fake_key"):
-                result = asyncio.get_event_loop().run_until_complete(
+                result = asyncio.run(
                     router.route("Some headline")
                 )
         assert result.impact == ImpactLevel.LOW
@@ -559,7 +559,7 @@ class TestCascadeRouter:
     def test_no_api_key_returns_low(self):
         router = CascadeRouter()
         with patch("os.getenv", return_value=""):
-            result = asyncio.get_event_loop().run_until_complete(
+            result = asyncio.run(
                 router.route("Some headline")
             )
         assert result.impact == ImpactLevel.LOW
@@ -636,7 +636,7 @@ class TestSentimentAgent:
 
     def test_act_returns_none_when_no_pending(self):
         agent = SentimentAgent()
-        result = asyncio.get_event_loop().run_until_complete(agent.act())
+        result = asyncio.run(agent.act())
         assert result is None
 
     def test_aggregate_most_conservative_wins(self):

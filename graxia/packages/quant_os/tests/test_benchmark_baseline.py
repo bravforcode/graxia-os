@@ -102,8 +102,13 @@ class TestBenchmarkBaseline:
         with open(models[-1], "rb") as f:
             model_data = pickle.load(f)
 
-        model = model_data["model"]
-        feature_names = model_data["feature_names"]
+        # Handle both formats: dict with "model" key or raw XGBClassifier
+        if isinstance(model_data, dict):
+            model = model_data["model"]
+            feature_names = model_data.get("feature_names", [])
+        else:
+            model = model_data
+            feature_names = getattr(model, "feature_names_in_", [])
 
         # Generate synthetic test data matching expected feature count
         np.random.seed(42)

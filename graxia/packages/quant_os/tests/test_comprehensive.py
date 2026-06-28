@@ -552,7 +552,7 @@ class TestIsolation_CascadeRouter:
             client.post = AsyncMock(return_value=mock_resp)
             m.return_value = client
             with patch("os.getenv", return_value="key"):
-                result = asyncio.get_event_loop().run_until_complete(router.route("Routine earnings"))
+                result = asyncio.run(router.route("Routine earnings"))
         assert result.impact == ImpactLevel.LOW
         assert result.tier_used == 1
 
@@ -573,13 +573,13 @@ class TestIsolation_CascadeRouter:
             client.post = mock_post
             m.return_value = client
             with patch("os.getenv", return_value="key"):
-                result = asyncio.get_event_loop().run_until_complete(router.route("Breaking news"))
+                result = asyncio.run(router.route("Breaking news"))
         assert result.impact == ImpactLevel.LOW
 
     def test_no_api_key(self):
         router = CascadeRouter()
         with patch("os.getenv", return_value=""):
-            result = asyncio.get_event_loop().run_until_complete(router.route("Some headline"))
+            result = asyncio.run(router.route("Some headline"))
         assert result.impact == ImpactLevel.LOW
 
     def test_tier1_failure(self):
@@ -589,7 +589,7 @@ class TestIsolation_CascadeRouter:
             client.post = AsyncMock(return_value=MagicMock(status_code=500))
             m.return_value = client
             with patch("os.getenv", return_value="key"):
-                result = asyncio.get_event_loop().run_until_complete(router.route("Headline"))
+                result = asyncio.run(router.route("Headline"))
         assert result.impact == ImpactLevel.LOW
         assert result.reasoning == "Tier 1 failed"
 
@@ -613,7 +613,7 @@ class TestIsolation_CascadeRouter:
             client.post = AsyncMock(return_value=MagicMock(status_code=500))
             m.return_value = client
             with patch("os.getenv", return_value="key"):
-                result = asyncio.get_event_loop().run_until_complete(router.route('Test with "quotes" and {braces}'))
+                result = asyncio.run(router.route('Test with "quotes" and {braces}'))
         assert result is not None
 
 
@@ -625,7 +625,7 @@ class TestIsolation_CascadeRouter:
 class TestIsolation_SentimentAgent:
     def test_act_none_when_empty(self):
         agent = SentimentAgent()
-        result = asyncio.get_event_loop().run_until_complete(agent.act())
+        result = asyncio.run(agent.act())
         assert result is None
 
     def test_aggregate_most_conservative(self):

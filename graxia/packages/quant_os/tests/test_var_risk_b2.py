@@ -77,7 +77,7 @@ def test_var_95_negative_returns_high_var():
 
 
 def _run(coro):
-    return asyncio.get_event_loop().run_until_complete(coro)
+    return asyncio.run(coro)
 
 
 def test_var_check_passes_within_limit():
