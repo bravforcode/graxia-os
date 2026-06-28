@@ -32,7 +32,7 @@ class OrderSize(str, Enum):
 
 
 BASE_SLIPPAGE = {"XAUUSD": 0.3, "EURUSD": 0.1, "GBPUSD": 0.15, "USDJPY": 0.15, "BTCUSD": 5.0, "US30": 1.0}
-SESSION_MULTIPLIER = {"asian": 1.5, "london": 0.8, "new_york": 0.9, "overlap": 0.7, "closed": 3.0}
+SESSION_MULTIPLIER = {"asian": 1.5, "london": 0.8, "new_york": 0.9, "overlap": 0.7, "closed": 3.0, "rollover": 5.0}
 ORDER_SIZE_MULTIPLIER = {OrderSize.MICRO: 0.5, OrderSize.SMALL: 1.0, OrderSize.MEDIUM: 1.5, OrderSize.LARGE: 2.5, OrderSize.INSTITUTIONAL: 4.0}
 VOLATILITY_BASE = 0.15
 
@@ -119,8 +119,8 @@ class SlippageModel:
         vol_mult = self._volatility_multiplier(volatility)
         return base * session_mult * vol_mult
 
-    def apply_slippage(self, price: float, direction: str, symbol: str | float, session: str | TradingSession = "london", volatility: float | VolatilityRegime | str = 0.15) -> float:
-        if not isinstance(symbol, str) or not symbol:
+    def apply_slippage(self, price: float, direction: str, lots: float = 0.01, symbol: str = "XAUUSD", session: str | TradingSession = "london", volatility: float | VolatilityRegime | str = 0.15) -> float:
+        if lots <= 0:
             return price
         slip = self.get_slippage(symbol, session, volatility)
         pip_value = self._pip_values.get(symbol, 0.01)

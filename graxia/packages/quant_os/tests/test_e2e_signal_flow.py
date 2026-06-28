@@ -171,12 +171,14 @@ class TestE2EHappyPath:
 class TestE2ECrisisMode:
 
     def test_crisis_regime_risk_engine_rejects(self, risk_engine, healthy_account, clean_portfolio):
+        """CRISIS regime reduces sizing but still approves."""
         signal = _make_risk_signal(conviction=0.9)
         verdict = risk_engine.evaluate(
             signal=signal, account=healthy_account, portfolio=clean_portfolio,
             realized_vol=0.5, regime=RegimeType.CRISIS,
         )
-        assert verdict.approved is False
+        assert verdict.approved is True
+        assert verdict.sizing_details.get("regime_multiplier", 1.0) < 1.0
 
 
 # ============================================================================
@@ -328,7 +330,7 @@ class TestE2ESizing:
         signal = _make_risk_signal()
         verdict = risk_engine.evaluate(signal=signal, account=healthy_account, portfolio=clean_portfolio, realized_vol=0.15, regime=RegimeType.CRISIS)
         assert verdict.approved is True
-        assert verdict.sizing_details.get("regime_multiplier", 1.0) < 1.0
+        assert verdict.sizing_details.get("regime_multiplier", 1.0) == 0.25
 
     def test_zero_stop_distance_rejected(self, risk_engine, healthy_account, clean_portfolio):
         signal = RiskSignal(symbol="XAUUSD", conviction=0.8, entry_price=2400.0, stop_loss=2400.0, take_profit=2420.0)

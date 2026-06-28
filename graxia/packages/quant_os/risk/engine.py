@@ -15,8 +15,9 @@ Signal -> APPROVE (with approved_quantity) or REJECT (with reason)
 from __future__ import annotations
 
 import logging
+import time
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Protocol
 
@@ -228,11 +229,17 @@ class RiskEngine:
         return self._layer4(signal, account, portfolio, realized_vol, regime)
 
     def _layer1(self, signal: Signal) -> RiskVerdict | None:
-        age = (datetime.now() - signal.timestamp).total_seconds()
+        if signal.timestamp_epoch > 0:
+            age = time.time() - signal.timestamp_epoch
+        else:
+            now = datetime.now(timezone.utc) if signal.timestamp.tzinfo else datetime.now()
+            age = (now - signal.timestamp).total_seconds()
         if age > _Layer1.MAX_SIGNAL_AGE_S:
             return self._reject(
                 RejectReason.STALE_SIGNAL, f"Signal age {age:.1f}s > {_Layer1.MAX_SIGNAL_AGE_S}s", layer=1
             )
+        if self._session_checker is not None and not self._session_checker.is_session_open(signal.symbol):
+            return self._reject(RejectReason.SESSION_CLOSED, f"Session closed for {signal.symbol}", layer=1)
         if signal.conviction < _Layer1.MIN_CONVICTION:
             return self._reject(
                 RejectReason.LOW_CONVICTION, f"Conviction {signal.conviction:.2f} < {_Layer1.MIN_CONVICTION}", layer=1
@@ -313,7 +320,7 @@ class RiskEngine:
                     layer=3,
                 )
 
-        if account.margin_level_pct < _Layer3.MIN_MARGIN_LEVEL_PCT:
+        if account.margin_level_pct > 0 and account.margin_level_pct < _Layer3.MIN_MARGIN_LEVEL_PCT:
             return self._reject(
                 RejectReason.INSUFFICIENT_MARGIN,
                 f"Margin level {account.margin_level_pct:.0f}% < {_Layer3.MIN_MARGIN_LEVEL_PCT:.0f}%",
@@ -330,6 +337,7 @@ class RiskEngine:
         regime: Any,
     ) -> RiskVerdict:
         vol_scalar = _Layer4.VOL_TARGET / max(realized_vol, 0.01)
+        vol_scalar = max(vol_scalar, 0.1)
         vol_scalar = min(vol_scalar, 2.0)
 
         regime_mult = 1.0
