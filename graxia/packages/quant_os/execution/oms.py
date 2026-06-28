@@ -65,30 +65,47 @@ class OMS:
     # ------------------------------------------------------------------
 
     def _load_ledger(self) -> None:
-        """Replay the ledger file into memory on startup."""
+        """Replay ALL events from the ledger to reconstruct full status history per order."""
         if not self._ledger_path.exists():
             return
+        events_by_order: dict[str, list[dict]] = {}
         with open(self._ledger_path, "r", encoding="utf-8") as fh:
             for line in fh:
                 line = line.strip()
                 if not line:
                     continue
                 record = json.loads(line)
-                order = Order(
-                    order_id=record["order_id"],
-                    signal_id=record["signal_id"],
-                    symbol=record["symbol"],
-                    asset_class=record["asset_class"],
-                    side=record["side"],
-                    quantity=record["quantity"],
-                    stop_loss=record.get("stop_loss"),
-                    take_profit=record.get("take_profit"),
-                    status=OrderStatus(record["status"]),
-                    broker_order_id=record.get("broker_order_id"),
-                    created_at=datetime.fromisoformat(record["created_at"]),
-                )
-                self._orders[order.order_id] = order
-        logger.info("Ledger loaded: %d orders", len(self._orders))
+                oid = record["order_id"]
+                events_by_order.setdefault(oid, []).append(record)
+        for oid, events in events_by_order.items():
+            first = events[0]
+            order = Order(
+                order_id=oid,
+                signal_id=first["signal_id"],
+                symbol=first["symbol"],
+                asset_class=first["asset_class"],
+                side=first["side"],
+                quantity=first["quantity"],
+                stop_loss=first.get("stop_loss"),
+                take_profit=first.get("take_profit"),
+                status=OrderStatus(first["status"]),
+                broker_order_id=first.get("broker_order_id"),
+                created_at=datetime.fromisoformat(first["created_at"]),
+            )
+            sm = OrderStateMachine(order_id=oid, initial=OrderStatus.SIGNAL_CREATED)
+            for evt in events[1:]:
+                target = OrderStatus(evt["status"])
+                try:
+                    sm.advance(target, f"replay: {target.value}")
+                except Exception:
+                    pass
+                order.status = target
+                if evt.get("broker_order_id"):
+                    order.broker_order_id = evt["broker_order_id"]
+            self._orders[oid] = order
+            self._state_machines[oid] = sm
+        logger.info("Ledger loaded: %d orders replayed across %d events",
+                     len(self._orders), sum(len(v) for v in events_by_order.values()))
 
     def _persist(self, order: Order) -> None:
         """Append a single order record to the JSONL ledger."""
@@ -338,7 +355,8 @@ class OMS:
                 order.status = OrderStatus.FAILED
 
         if cancelled:
-            self._update_ledger(cancelled[0])  # rewrite once
+            for order in cancelled:
+                self._update_ledger(order)
             logger.info("Kill switch: cancelled %d orders", len(cancelled))
 
         return cancelled

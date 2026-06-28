@@ -1,6 +1,7 @@
 """Idempotency checker for duplicate order prevention"""
 
 import hashlib
+import logging
 import time
 from datetime import datetime
 from typing import Optional, Dict, Any
@@ -12,6 +13,8 @@ from sqlalchemy.orm import Session
 from ..core.config import get_config
 from ..core.exceptions import DuplicateOrderError
 from ..data.models import Order as OrderModel
+
+logger = logging.getLogger(__name__)
 
 
 class IdempotencyChecker:
@@ -90,7 +93,7 @@ class IdempotencyChecker:
                 if self.redis.exists(f"idempotency:{idempotency_key}"):
                     return True
             except Exception:
-                pass  # Redis failure shouldn't block
+                logger.warning("idempotency.redis_check_failed", exc_info=True)
         
         # Check database (authoritative)
         if check_db and self.db:
@@ -124,7 +127,7 @@ class IdempotencyChecker:
                     order_id
                 )
             except Exception:
-                pass  # Redis failure shouldn't block
+                logger.warning("idempotency.redis_record_failed order_id=%s", order_id, exc_info=True)
     
     def check_and_record(
         self,
@@ -160,7 +163,7 @@ class IdempotencyChecker:
                 if order_id:
                     return {"order_id": order_id, "source": "redis"}
             except Exception:
-                pass
+                logger.warning("idempotency.redis_get_failed", exc_info=True)
         
         # Check database
         if self.db:
@@ -183,7 +186,7 @@ class IdempotencyChecker:
             try:
                 self.redis.delete(f"idempotency:{idempotency_key}")
             except Exception:
-                pass
+                logger.warning("idempotency.redis_delete_failed", exc_info=True)
     
     def get_stats(self) -> Dict[str, Any]:
         """Get idempotency checker statistics"""

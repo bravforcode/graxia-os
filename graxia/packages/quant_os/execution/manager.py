@@ -411,4 +411,7 @@ class OrderManager:
                 state_machine.expire("Human approval timeout")
                 await self._update_order_in_db(db_order, order)
             except Exception:
-                pass
+                import logging as _log
+                _log.getLogger(__name__).warning(
+                    "order_expiry_error", order_id=order_id, exc_info=True
+                )

@@ -175,11 +175,11 @@ class MT5Adapter(BrokerAdapter):
                 status=OrderStatus.FAILED,
                 error=str(mt5.last_error()),  # type: ignore[union-attr]
             )
-        if result.ret_code == 10009:
+        if result.retcode == 10009:
             return OrderResult(status=OrderStatus.CANCELLED, broker_id=broker_order_id)
         return OrderResult(
             status=OrderStatus.FAILED,
-            error=f"cancel retcode={result.ret_code}: {result.comment}",
+            error=f"cancel retcode={result.retcode}: {result.comment}",
         )
 
     def get_positions(self) -> list[dict]:

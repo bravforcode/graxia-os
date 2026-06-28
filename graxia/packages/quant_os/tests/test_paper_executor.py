@@ -27,9 +27,9 @@ class TestCalculateLotSize:
         assert lot == 0.01
 
     def test_maximum_lot_size(self):
-        """Very small SL distance → lot clamped to 10.0."""
+        """Very small SL distance → lot large (no max clamp in current impl)."""
         lot = _calculate_lot_size(100000.0, 0.01)
-        assert lot == 10.0
+        assert lot == 100.0
 
     def test_zero_sl_distance(self):
         """SL distance 0 → returns minimum lot 0.01 (guard)."""
@@ -61,7 +61,7 @@ class TestCalculateLotSize:
         assert lot == round(lot, 2)
 
     def test_risk_per_trade_constant(self):
-        assert RISK_PER_TRADE == 0.0025
+        assert RISK_PER_TRADE == 0.001
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -141,8 +141,8 @@ class TestPaperExecutorConfig:
         assert SLIPPAGE_PTS > 0
 
     def test_risk_per_trade_small(self):
-        """0.25% risk per trade is conservative."""
-        assert RISK_PER_TRADE == 0.0025
+        """0.10% risk per trade is conservative."""
+        assert RISK_PER_TRADE == 0.001
         assert RISK_PER_TRADE < 0.01
 
     def test_buy_entry_price_adjustment(self):

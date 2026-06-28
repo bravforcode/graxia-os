@@ -21,6 +21,8 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Protocol
 
+from .risk_policy import RiskPolicy
+
 logger = logging.getLogger(__name__)
 
 
@@ -76,7 +78,6 @@ class RejectReason(str, Enum):
     EXCEEDS_VENUE_EXPOSURE = "EXCEEDS_VENUE_EXPOSURE"
     DRAWDOWN_LIMIT = "DRAWDOWN_LIMIT"
     SIZING_REJECTED = "SIZING_REJECTED"
-    UNKNOWN = "UNKNOWN"
 
 
 @dataclass
@@ -190,6 +191,8 @@ class RiskEngine:
         correlation_provider: CorrelationProvider | None = None,
         schema_validator: SchemaValidator | None = None,
         regime_multiplier_map: dict[str, float] | None = None,
+        risk_policy: RiskPolicy | None = None,
+        news_blackout: Any | None = None,
     ):
         self._kill_switch = kill_switch
         self._circuit_breaker = circuit_breaker
@@ -197,6 +200,8 @@ class RiskEngine:
         self._correlation_provider = correlation_provider
         self._schema_validator = schema_validator
         self._regime_multiplier_map = regime_multiplier_map or {}
+        self._risk_policy = risk_policy
+        self._news_blackout = news_blackout
 
     def _pre_checks(self, signal: Signal) -> RiskVerdict | None:
         if self._kill_switch is not None and self._kill_switch.is_active():
@@ -205,6 +210,8 @@ class RiskEngine:
             return self._reject(RejectReason.CIRCUIT_BREAKER_OPEN, f"Circuit breaker open for {signal.asset_class}", layer=0)
         if self._schema_validator is not None and not self._schema_validator.validate_signal(signal):
             return self._reject(RejectReason.INVALID_SCHEMA, "Schema validation failed", layer=0)
+        if self._news_blackout is not None and self._news_blackout.is_blocked():
+            return self._reject(RejectReason.NEWS_BLACKOUT, "News blackout active", layer=0)
         return None
 
     def evaluate(
@@ -226,7 +233,7 @@ class RiskEngine:
             return layer1
 
         # Layer 2
-        layer2 = self._layer2(signal, portfolio)
+        layer2 = self._layer2(signal, portfolio, account)
         if layer2:
             return layer2
 
@@ -256,7 +263,7 @@ class RiskEngine:
             )
         return None
 
-    def _layer2(self, signal: Signal, portfolio: PortfolioState) -> RiskVerdict | None:
+    def _layer2(self, signal: Signal, portfolio: PortfolioState, account: AccountState | None = None) -> RiskVerdict | None:
         if portfolio.total_exposure_pct > _Layer2.MAX_TOTAL_EXPOSURE_PCT:
             return self._reject(
                 RejectReason.EXCEEDS_TOTAL_EXPOSURE,
@@ -290,50 +297,65 @@ class RiskEngine:
                 layer=2,
             )
 
-        if len(portfolio.position_symbols) >= _Layer2.MAX_POSITIONS:
+        max_positions = _Layer2.MAX_POSITIONS
+        if account is not None and account.equity > 0:
+            max_positions = max(5, min(20, int(account.equity / 10000)))
+
+        if len(portfolio.position_symbols) >= max_positions:
             return self._reject(
                 RejectReason.MAX_POSITIONS_REACHED,
-                f"Open positions {portfolio.open_positions_count} >= {_Layer2.MAX_POSITIONS}",
+                f"Open positions {portfolio.open_positions_count} >= {max_positions}",
                 layer=2,
             )
         return None
 
     def _layer3(self, account: AccountState) -> RiskVerdict | None:
+        if self._risk_policy is not None:
+            max_daily = float(self._risk_policy.max_daily_loss_fraction)
+            max_weekly = float(self._risk_policy.max_weekly_loss_fraction)
+            max_dd = float(self._risk_policy.max_total_drawdown_fraction)
+            min_margin = float(self._risk_policy.min_margin_level_pct)
+        else:
+            max_daily = _Layer3.MAX_DAILY_LOSS_PCT
+            max_weekly = _Layer3.MAX_WEEKLY_LOSS_PCT
+            max_dd = _Layer3.MAX_DRAWDOWN_PCT
+            min_margin = _Layer3.MIN_MARGIN_LEVEL_PCT
+
         if account.equity > 0:
             daily_loss_pct = abs(account.daily_pnl) / account.equity if account.daily_pnl < 0 else 0.0
-            if daily_loss_pct >= _Layer3.MAX_DAILY_LOSS_PCT:
+            if daily_loss_pct >= max_daily:
                 return self._reject(
                     RejectReason.DAILY_LOSS_LIMIT,
-                    f"Daily loss {daily_loss_pct:.2%} >= {_Layer3.MAX_DAILY_LOSS_PCT:.0%}",
+                    f"Daily loss {daily_loss_pct:.2%} >= {max_daily:.0%}",
                     layer=3,
                 )
 
             weekly_loss_pct = abs(account.weekly_pnl) / account.equity if account.weekly_pnl < 0 else 0.0
-            if weekly_loss_pct >= _Layer3.MAX_WEEKLY_LOSS_PCT:
+            if weekly_loss_pct >= max_weekly:
                 return self._reject(
                     RejectReason.WEEKLY_LOSS_LIMIT,
-                    f"Weekly loss {weekly_loss_pct:.2%} >= {_Layer3.MAX_WEEKLY_LOSS_PCT:.0%}",
+                    f"Weekly loss {weekly_loss_pct:.2%} >= {max_weekly:.0%}",
                     layer=3,
                 )
 
-            if account.max_drawdown_pct >= _Layer3.MAX_DRAWDOWN_PCT:
+            if account.max_drawdown_pct >= max_dd:
                 return self._reject(
                     RejectReason.MAX_DRAWDOWN,
-                    f"Drawdown {account.max_drawdown_pct:.2%} >= {_Layer3.MAX_DRAWDOWN_PCT:.0%}",
+                    f"Drawdown {account.max_drawdown_pct:.2%} >= {max_dd:.0%}",
                     layer=3,
                 )
 
-            if account.current_drawdown_pct >= _Layer3.MAX_DRAWDOWN_PCT:
+            if account.current_drawdown_pct >= max_dd:
                 return self._reject(
                     RejectReason.DRAWDOWN_LIMIT,
-                    f"Current drawdown {account.current_drawdown_pct:.2%} >= {_Layer3.MAX_DRAWDOWN_PCT:.0%}",
+                    f"Current drawdown {account.current_drawdown_pct:.2%} >= {max_dd:.0%}",
                     layer=3,
                 )
 
-        if account.margin_level_pct > 0 and account.margin_level_pct < _Layer3.MIN_MARGIN_LEVEL_PCT:
+        if account.margin_level_pct > 0 and account.margin_level_pct < min_margin:
             return self._reject(
                 RejectReason.INSUFFICIENT_MARGIN,
-                f"Margin level {account.margin_level_pct:.0f}% < {_Layer3.MIN_MARGIN_LEVEL_PCT:.0f}%",
+                f"Margin level {account.margin_level_pct:.0f}% < {min_margin:.0f}%",
                 layer=3,
             )
         return None

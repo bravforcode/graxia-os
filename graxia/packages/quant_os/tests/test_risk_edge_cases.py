@@ -253,7 +253,7 @@ class TestRiskEngineLayer2:
         symbols = [f"SYM{i}" for i in range(20)]
         portfolio = _make_portfolio(position_symbols=symbols)
         verdict = engine.evaluate(
-            _make_signal(), _make_account(), portfolio,
+            _make_signal(), _make_account(equity=150000.0), portfolio,
             realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
         )
         assert not verdict.approved
@@ -263,7 +263,7 @@ class TestRiskEngineLayer2:
         engine = RiskEngine()
         symbols = [f"SYM{i}" for i in range(19)]
         verdict = engine.evaluate(
-            _make_signal(), _make_account(),
+            _make_signal(), _make_account(equity=200000.0),
             _make_portfolio(position_symbols=symbols),
             realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
         )

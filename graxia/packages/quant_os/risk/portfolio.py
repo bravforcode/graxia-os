@@ -9,6 +9,8 @@ from decimal import Decimal
 from dataclasses import dataclass, field
 import math
 
+from .engine import PortfolioState
+
 
 @dataclass
 class PositionExposure:
@@ -107,6 +109,32 @@ class PortfolioRisk:
         
         exposure_pct = float(metrics.total_exposure / self.account_balance * 100)
         return exposure_pct <= self.max_exposure_pct
+
+    def to_portfolio_state(self) -> PortfolioState:
+        """Convert PortfolioRisk metrics to engine PortfolioState format."""
+        metrics = self.calculate_metrics()
+        balance = float(self.account_balance) if self.account_balance else 1.0
+
+        total_exposure_pct = float(metrics.total_exposure) / balance if balance else 0.0
+
+        class_exposure_pct: Dict[str, float] = {}
+        venue_exposure_pct: Dict[str, float] = {}
+        for pos in self.positions.values():
+            pos_pct = float(pos.market_value) / balance if balance else 0.0
+            class_exposure_pct[pos.symbol] = class_exposure_pct.get(pos.symbol, 0.0) + pos_pct
+            venue_exposure_pct[pos.symbol] = venue_exposure_pct.get(pos.symbol, 0.0) + pos_pct
+
+        position_symbols = list(self.positions.keys())
+
+        correlation_matrix = self.get_correlation_matrix(position_symbols) if len(position_symbols) > 1 else None
+
+        return PortfolioState(
+            total_exposure_pct=total_exposure_pct,
+            class_exposure_pct=class_exposure_pct,
+            venue_exposure_pct=venue_exposure_pct,
+            position_symbols=position_symbols,
+            correlation_matrix=correlation_matrix,
+        )
     
     def get_correlation_matrix(self, symbols: List[str]) -> Dict[str, Dict[str, float]]:
         """Compute correlation matrix from position returns."""

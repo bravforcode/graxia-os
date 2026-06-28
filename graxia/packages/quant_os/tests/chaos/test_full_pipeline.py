@@ -85,7 +85,7 @@ class TestCascadeRouter:
 
     @pytest.mark.asyncio
     async def test_parse_json_valid(self, mock_env):
-        from quant_os.core.agents.llm_router import CascadeRouter
+        from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter
 
         router = CascadeRouter()
         result = router._parse_json('{"impact": "HIGH", "dir": 1}')
@@ -93,7 +93,7 @@ class TestCascadeRouter:
 
     @pytest.mark.asyncio
     async def test_parse_json_markdown_block(self, mock_env):
-        from quant_os.core.agents.llm_router import CascadeRouter
+        from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter
 
         router = CascadeRouter()
         text = '```json\n{"impact": "LOW", "dir": 0}\n```'
@@ -102,7 +102,7 @@ class TestCascadeRouter:
 
     @pytest.mark.asyncio
     async def test_parse_json_with_text(self, mock_env):
-        from quant_os.core.agents.llm_router import CascadeRouter
+        from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter
 
         router = CascadeRouter()
         text = 'Here is the analysis: {"impact": "HIGH", "dir": -1} done.'
@@ -112,7 +112,7 @@ class TestCascadeRouter:
 
     @pytest.mark.asyncio
     async def test_parse_json_empty(self, mock_env):
-        from quant_os.core.agents.llm_router import CascadeRouter
+        from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter
 
         router = CascadeRouter()
         assert router._parse_json("") == {}
@@ -120,7 +120,7 @@ class TestCascadeRouter:
 
     @pytest.mark.asyncio
     async def test_parse_json_nested(self, mock_env):
-        from quant_os.core.agents.llm_router import CascadeRouter
+        from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter
 
         router = CascadeRouter()
         text = 'Analysis result: {"impact": "HIGH", "dir": 1, "meta": {"confidence": 0.9}}'
@@ -129,7 +129,7 @@ class TestCascadeRouter:
 
     @pytest.mark.asyncio
     async def test_route_tier1_low_returns_immediately(self, mock_env):
-        from quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
+        from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
 
         router = CascadeRouter()
 
@@ -146,7 +146,7 @@ class TestCascadeRouter:
 
     @pytest.mark.asyncio
     async def test_route_tier1_high_calls_tier2(self, mock_env):
-        from quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
+        from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
 
         router = CascadeRouter()
         call_count = {"t1": 0, "t2": 0}
@@ -170,7 +170,7 @@ class TestCascadeRouter:
 
     @pytest.mark.asyncio
     async def test_route_tier2_rejects_downgrades(self, mock_env):
-        from quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
+        from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
 
         router = CascadeRouter()
 
@@ -188,7 +188,7 @@ class TestCascadeRouter:
 
     @pytest.mark.asyncio
     async def test_route_tier1_failure_returns_low(self, mock_env):
-        from quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
+        from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
 
         router = CascadeRouter()
 
@@ -204,7 +204,7 @@ class TestCascadeRouter:
 
     @pytest.mark.asyncio
     async def test_route_tier2_failure_trusts_tier1(self, mock_env):
-        from quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
+        from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
 
         router = CascadeRouter()
 
@@ -223,7 +223,7 @@ class TestCascadeRouter:
 
     @pytest.mark.asyncio
     async def test_route_invalid_json_treated_as_low(self, mock_env):
-        from quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
+        from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
 
         router = CascadeRouter()
 
@@ -237,7 +237,7 @@ class TestCascadeRouter:
 
     @pytest.mark.asyncio
     async def test_route_invalid_impact_value_treated_as_low(self, mock_env):
-        from quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
+        from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
 
         router = CascadeRouter()
 
@@ -251,7 +251,7 @@ class TestCascadeRouter:
 
     @pytest.mark.asyncio
     async def test_route_invalid_direction_treated_as_neutral(self, mock_env):
-        from quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
+        from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
 
         router = CascadeRouter()
 
@@ -277,8 +277,8 @@ class TestSentimentAgent:
 
     @pytest.mark.asyncio
     async def test_observe_stores_headline(self, mock_env):
-        from quant_os.core.agents.sentiment_agent import SentimentAgent
-        from quant_os.core.events import NewsEvent
+        from graxia.packages.quant_os.core.agents.sentiment_agent import SentimentAgent
+        from graxia.packages.quant_os.core.events import NewsEvent
 
         agent = SentimentAgent()
         event = NewsEvent(source="test", headline="Fed raises rates")
@@ -289,7 +289,7 @@ class TestSentimentAgent:
 
     @pytest.mark.asyncio
     async def test_observe_ignores_non_event(self, mock_env):
-        from quant_os.core.agents.sentiment_agent import SentimentAgent
+        from graxia.packages.quant_os.core.agents.sentiment_agent import SentimentAgent
 
         agent = SentimentAgent()
         agent.observe("not an event")
@@ -298,8 +298,8 @@ class TestSentimentAgent:
 
     @pytest.mark.asyncio
     async def test_observe_ignores_empty_headline(self, mock_env):
-        from quant_os.core.agents.sentiment_agent import SentimentAgent
-        from quant_os.core.events import NewsEvent
+        from graxia.packages.quant_os.core.agents.sentiment_agent import SentimentAgent
+        from graxia.packages.quant_os.core.events import NewsEvent
 
         agent = SentimentAgent()
         event = NewsEvent(source="test", headline="")
@@ -309,14 +309,14 @@ class TestSentimentAgent:
 
     @pytest.mark.asyncio
     async def test_act_processes_headlines(self, mock_env):
-        from quant_os.core.agents.sentiment_agent import SentimentAgent
-        from quant_os.core.events import NewsEvent
+        from graxia.packages.quant_os.core.agents.sentiment_agent import SentimentAgent
+        from graxia.packages.quant_os.core.events import NewsEvent
 
         agent = SentimentAgent()
 
         # Mock the router
         async def mock_route(headline):
-            from quant_os.core.agents.llm_router import CascadeResult, ImpactLevel
+            from graxia.packages.quant_os.core.agents.llm_router import CascadeResult, ImpactLevel
             return CascadeResult(
                 headline=headline,
                 impact=ImpactLevel.HIGH,
@@ -337,7 +337,7 @@ class TestSentimentAgent:
 
     @pytest.mark.asyncio
     async def test_act_returns_none_when_empty(self, mock_env):
-        from quant_os.core.agents.sentiment_agent import SentimentAgent
+        from graxia.packages.quant_os.core.agents.sentiment_agent import SentimentAgent
 
         agent = SentimentAgent()
         result = await agent.act()
@@ -345,15 +345,15 @@ class TestSentimentAgent:
 
     @pytest.mark.asyncio
     async def test_act_aggregates_multiple_headlines(self, mock_env):
-        from quant_os.core.agents.sentiment_agent import SentimentAgent
-        from quant_os.core.events import NewsEvent
+        from graxia.packages.quant_os.core.agents.sentiment_agent import SentimentAgent
+        from graxia.packages.quant_os.core.events import NewsEvent
 
         agent = SentimentAgent()
 
         call_count = {"n": 0}
 
         async def mock_route(headline):
-            from quant_os.core.agents.llm_router import CascadeResult, ImpactLevel
+            from graxia.packages.quant_os.core.agents.llm_router import CascadeResult, ImpactLevel
             call_count["n"] += 1
             if call_count["n"] == 1:
                 return CascadeResult(
@@ -378,8 +378,8 @@ class TestSentimentAgent:
 
     @pytest.mark.asyncio
     async def test_reset_clears_headlines(self, mock_env):
-        from quant_os.core.agents.sentiment_agent import SentimentAgent
-        from quant_os.core.events import NewsEvent
+        from graxia.packages.quant_os.core.agents.sentiment_agent import SentimentAgent
+        from graxia.packages.quant_os.core.events import NewsEvent
 
         agent = SentimentAgent()
         agent.observe(NewsEvent(source="test", headline="Test"))
@@ -398,28 +398,28 @@ class TestNewsPipeline:
     """Tests for the news pipeline components."""
 
     def test_classify_impact_crisis(self):
-        from quant_os.scripts.news_pipeline import classify_impact
+        from graxia.packages.quant_os.scripts.news_pipeline import classify_impact
 
         assert classify_impact("Russia launches military operation") == "CRISIS"
         assert classify_impact("Major cyberattack disables SWIFT") == "CRISIS"
         assert classify_impact("War breaks out in Middle East") == "CRISIS"
 
     def test_classify_impact_high(self):
-        from quant_os.scripts.news_pipeline import classify_impact
+        from graxia.packages.quant_os.scripts.news_pipeline import classify_impact
 
         assert classify_impact("Fed raises interest rates") == "HIGH"
         assert classify_impact("NFP report shows strong growth") == "HIGH"
         assert classify_impact("FOMC meeting today") == "HIGH"
 
     def test_classify_impact_medium(self):
-        from quant_os.scripts.news_pipeline import classify_impact
+        from graxia.packages.quant_os.scripts.news_pipeline import classify_impact
 
         assert classify_impact("Apple releases new iPhone") == "MEDIUM"
         assert classify_impact("Tesla stock upgraded") == "MEDIUM"
 
     @pytest.mark.asyncio
     async def test_fetch_rss_feed_success(self):
-        from quant_os.scripts.news_pipeline import fetch_rss_feed
+        from graxia.packages.quant_os.scripts.news_pipeline import fetch_rss_feed
         import httpx
 
         async with httpx.AsyncClient(timeout=10.0) as client:
@@ -431,7 +431,7 @@ class TestNewsPipeline:
 
     @pytest.mark.asyncio
     async def test_fetch_rss_feed_failure(self):
-        from quant_os.scripts.news_pipeline import fetch_rss_feed
+        from graxia.packages.quant_os.scripts.news_pipeline import fetch_rss_feed
         import httpx
 
         async with httpx.AsyncClient(timeout=5.0) as client:
@@ -441,7 +441,7 @@ class TestNewsPipeline:
             assert len(items) == 0
 
     def test_write_to_obsidian(self, mock_env):
-        from quant_os.scripts.news_pipeline import DailyDigest, write_to_obsidian
+        from graxia.packages.quant_os.scripts.news_pipeline import DailyDigest, write_to_obsidian
         from datetime import datetime, UTC
 
         digest = DailyDigest(
@@ -469,7 +469,7 @@ class TestLLMChaos:
 
     @pytest.mark.asyncio
     async def test_all_providers_fail(self, mock_env):
-        from quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
+        from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
 
         router = CascadeRouter()
 
@@ -484,7 +484,7 @@ class TestLLMChaos:
 
     @pytest.mark.asyncio
     async def test_provider_returns_garbage(self, mock_env):
-        from quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
+        from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
 
         router = CascadeRouter()
 
@@ -498,7 +498,7 @@ class TestLLMChaos:
 
     @pytest.mark.asyncio
     async def test_provider_returns_wrong_json_format(self, mock_env):
-        from quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
+        from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
 
         router = CascadeRouter()
 
@@ -513,7 +513,7 @@ class TestLLMChaos:
 
     @pytest.mark.asyncio
     async def test_tier1_works_tier2_fails(self, mock_env):
-        from quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
+        from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
 
         router = CascadeRouter()
 
@@ -531,7 +531,7 @@ class TestLLMChaos:
 
     @pytest.mark.asyncio
     async def test_concurrent_routes(self, mock_env):
-        from quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
+        from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
 
         router = CascadeRouter()
 
@@ -558,7 +558,7 @@ class TestEdgeCases:
 
     @pytest.mark.asyncio
     async def test_very_long_headline(self, mock_env):
-        from quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
+        from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
 
         router = CascadeRouter()
 
@@ -573,7 +573,7 @@ class TestEdgeCases:
 
     @pytest.mark.asyncio
     async def test_unicode_headline(self, mock_env):
-        from quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
+        from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
 
         router = CascadeRouter()
 
@@ -587,7 +587,7 @@ class TestEdgeCases:
 
     @pytest.mark.asyncio
     async def test_empty_headline(self, mock_env):
-        from quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
+        from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
 
         router = CascadeRouter()
 
@@ -601,7 +601,7 @@ class TestEdgeCases:
 
     @pytest.mark.asyncio
     async def test_special_characters(self, mock_env):
-        from quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
+        from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
 
         router = CascadeRouter()
 

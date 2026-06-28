@@ -27,13 +27,14 @@ def pre_trade_check(
     risk_ledger: RiskLedger,
     account_equity: Decimal,
     kill_switch: KillSwitch = None,
+    margin_level_pct: Decimal | None = None,
 ) -> RiskCheckResult:
     """
     Final risk gate before order submission.
     Checks: kill switch, daily/weekly/drawdown limits, position count, order rate, margin.
     """
     reasons = []
-    risk_budget = account_equity * risk_policy.max_risk_per_trade_pct / Decimal("100")
+    risk_budget = account_equity * risk_policy.risk_per_trade_fraction
     daily_loss = Decimal(str(risk_ledger.daily_realized_loss))
     weekly_loss = Decimal(str(risk_ledger.weekly_realized_loss))
     total_drawdown = Decimal(str(risk_ledger.total_drawdown))
@@ -47,17 +48,17 @@ def pre_trade_check(
         reasons.extend(sizing_result.rejection_reasons)
 
     # Daily loss limit
-    max_daily = account_equity * risk_policy.max_daily_loss_pct / Decimal("100")
+    max_daily = account_equity * risk_policy.max_daily_loss_fraction
     if daily_loss >= max_daily:
         reasons.append(f"Daily loss limit reached: {daily_loss:.2f} >= {max_daily:.2f}")
 
     # Weekly loss limit
-    max_weekly = account_equity * risk_policy.max_weekly_loss_pct / Decimal("100")
+    max_weekly = account_equity * risk_policy.max_weekly_loss_fraction
     if weekly_loss >= max_weekly:
         reasons.append(f"Weekly loss limit reached: {weekly_loss:.2f} >= {max_weekly:.2f}")
 
     # Drawdown limit
-    max_dd = account_equity * risk_policy.max_drawdown_pct / Decimal("100")
+    max_dd = account_equity * risk_policy.max_total_drawdown_fraction
     if total_drawdown >= max_dd:
         reasons.append(f"Drawdown limit reached: {total_dd:.2f} >= {max_dd:.2f}")
 
@@ -68,6 +69,13 @@ def pre_trade_check(
     # Order rate
     if risk_ledger.orders_today >= risk_policy.max_orders_per_day:
         reasons.append(f"Max orders/day reached: {risk_ledger.orders_today} >= {risk_policy.max_orders_per_day}")
+
+    # Margin level check
+    if margin_level_pct is not None and margin_level_pct > 0:
+        if margin_level_pct < risk_policy.min_margin_level_pct:
+            reasons.append(
+                f"Margin level too low: {margin_level_pct:.0f}% < {risk_policy.min_margin_level_pct:.0f}%"
+            )
 
     return RiskCheckResult(
         approved=len(reasons) == 0,
