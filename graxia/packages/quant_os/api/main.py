@@ -41,6 +41,14 @@ async def lifespan(app: FastAPI):
     else:
         print("✓ Golden rules validated")
     
+    # Initialize orchestrator (wires EventBus → Agents → TradingLoop → PositionManager)
+    from ..core.orchestrator import TradingOrchestrator
+    config = get_config()
+    orchestrator = TradingOrchestrator(config=config)
+    orchestrator.start()
+    app.state.orchestrator = orchestrator
+    print(f"✓ Orchestrator started (mode={config.trading_mode.value})")
+    
     # Initialize broker connection
     broker_manager = BrokerManager()
     app.state.broker_manager = broker_manager
@@ -59,6 +67,9 @@ async def lifespan(app: FastAPI):
     
     # Shutdown
     print("🛑 Quant OS shutting down...")
+    if hasattr(app.state, 'orchestrator'):
+        app.state.orchestrator.stop()
+        print("✓ Orchestrator stopped")
     if hasattr(app.state, 'broker_manager'):
         try:
             await app.state.broker_manager.active.disconnect()
@@ -136,11 +147,16 @@ def create_app() -> FastAPI:
             except Exception:
                 pass
         
+        orch_status = {}
+        if hasattr(app.state, 'orchestrator'):
+            orch_status = app.state.orchestrator.get_status()
+        
         return {
             "status": "healthy" if broker_healthy else "degraded",
             "broker_connected": broker_healthy,
             "trading_mode": config.trading_mode.value,
-            "live_trading_enabled": config.live_trading_enabled
+            "live_trading_enabled": config.live_trading_enabled,
+            "orchestrator": orch_status,
         }
     
     # Status endpoint
