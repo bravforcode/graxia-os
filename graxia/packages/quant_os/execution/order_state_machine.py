@@ -1,30 +1,62 @@
 """Order state machine — 16 states, enforced transitions, no MT5 dependency."""
 
-from enum import Enum
-
+from ..core.enums import OrderStatus
 from ..core.exceptions import OrderStateError
 
-
-class OrderState(Enum):
-    SIGNAL_CREATED = "signal_created"
-    RISK_CHECKED = "risk_checked"
-    ORDER_PRECHECKED = "order_prechecked"
-    ORDER_SUBMITTED = "order_submitted"
-    ORDER_ACKNOWLEDGED = "order_acknowledged"
-    PARTIAL_FILL = "partial_fill"
-    FILLED = "filled"
-    PROTECTIVE_STOPS_PENDING = "protective_stops_pending"
-    PROTECTIVE_STOPS_VERIFIED = "protective_stops_verified"
-    POSITION_RECONCILED = "position_reconciled"
-    CLOSED = "closed"
-    DEAL_RECONCILED = "deal_reconciled"
-    REJECTED = "rejected"
-    EXPIRED = "expired"
-    AUDITED = "audited"
-    CRITICAL_INCIDENT = "critical_incident"
+OrderState = OrderStatus
 
 
 TRANSITIONS: dict[OrderState, set[OrderState]] = {
+    # --- Core lifecycle ---
+    OrderState.CREATED: {
+        OrderState.VALIDATED, OrderState.REJECTED, OrderState.ERROR,
+    },
+    OrderState.VALIDATED: {
+        OrderState.RISK_APPROVED, OrderState.REJECTED, OrderState.ERROR,
+    },
+    OrderState.RISK_APPROVED: {
+        OrderState.COMPLIANCE_APPROVED, OrderState.REJECTED, OrderState.ERROR,
+    },
+    OrderState.COMPLIANCE_APPROVED: {
+        OrderState.PENDING_HUMAN, OrderState.SENT_TO_BROKER, OrderState.REJECTED, OrderState.ERROR,
+    },
+    OrderState.PENDING_HUMAN: {
+        OrderState.SENT_TO_BROKER, OrderState.CANCELLED, OrderState.ERROR,
+    },
+    OrderState.SENT_TO_BROKER: {
+        OrderState.ACKNOWLEDGED, OrderState.PARTIAL_FILL, OrderState.FILLED,
+        OrderState.REJECTED, OrderState.CANCELLED, OrderState.ERROR,
+    },
+    OrderState.ACKNOWLEDGED: {
+        OrderState.PARTIAL_FILL, OrderState.FILLED, OrderState.REJECTED,
+        OrderState.CANCELLED, OrderState.ERROR,
+    },
+    OrderState.PARTIAL_FILL: {
+        OrderState.FILLED, OrderState.CANCELLED, OrderState.ERROR, OrderState.CRITICAL_INCIDENT,
+    },
+    OrderState.CANCEL_REQUESTED: {
+        OrderState.CANCELLED, OrderState.ERROR,
+    },
+    OrderState.CANCELLED: set(),
+    OrderState.ERROR: set(),
+    # --- Broker adapter states ---
+    OrderState.PENDING: {
+        OrderState.SUBMITTED, OrderState.FAILED,
+    },
+    OrderState.SUBMITTED: {
+        OrderState.PARTIALLY_FILLED, OrderState.FILLED,
+        OrderState.CANCELLED, OrderState.FAILED, OrderState.TIMEOUT,
+    },
+    OrderState.PARTIALLY_FILLED: {
+        OrderState.FILLED, OrderState.CANCELLED, OrderState.FAILED,
+    },
+    OrderState.FAILED: set(),
+    OrderState.TIMEOUT: set(),
+    OrderState.FILLED: {
+        OrderState.PROTECTIVE_STOPS_PENDING, OrderState.PROTECTIVE_STOPS_VERIFIED,
+        OrderState.CRITICAL_INCIDENT,
+    },
+    # --- Execution state machine states ---
     OrderState.SIGNAL_CREATED: {
         OrderState.RISK_CHECKED, OrderState.REJECTED, OrderState.CRITICAL_INCIDENT,
     },
@@ -41,13 +73,6 @@ TRANSITIONS: dict[OrderState, set[OrderState]] = {
     OrderState.ORDER_ACKNOWLEDGED: {
         OrderState.FILLED, OrderState.PARTIAL_FILL,
         OrderState.REJECTED, OrderState.EXPIRED, OrderState.CRITICAL_INCIDENT,
-    },
-    OrderState.PARTIAL_FILL: {
-        OrderState.FILLED, OrderState.CRITICAL_INCIDENT,
-    },
-    OrderState.FILLED: {
-        OrderState.PROTECTIVE_STOPS_PENDING, OrderState.PROTECTIVE_STOPS_VERIFIED,
-        OrderState.CRITICAL_INCIDENT,
     },
     OrderState.PROTECTIVE_STOPS_PENDING: {
         OrderState.PROTECTIVE_STOPS_VERIFIED, OrderState.CRITICAL_INCIDENT,

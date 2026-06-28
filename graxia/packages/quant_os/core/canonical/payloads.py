@@ -20,12 +20,7 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
-
-class RegimeBias(str, Enum):
-    BULLISH = "BULLISH"
-    BEARISH = "BEARISH"
-    NEUTRAL = "NEUTRAL"
-    PANIC = "PANIC"
+from .macro_regime import RegimeBias
 
 
 class SignalDirection(str, Enum):

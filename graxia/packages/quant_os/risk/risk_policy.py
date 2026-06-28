@@ -42,6 +42,38 @@ class RiskPolicy:
     def max_total_drawdown_fraction(self) -> Decimal:
         return Decimal(self.max_total_drawdown_bps) / Decimal(10000)
 
+    # --- Backward-compatible pct-based aliases (for callers that still use old names) ---
+
+    @property
+    def max_risk_per_trade_pct(self) -> Decimal:
+        """Pct alias: risk_per_trade_bps / 100."""
+        return Decimal(self.risk_per_trade_bps) / Decimal(100)
+
+    @property
+    def max_daily_loss_pct(self) -> Decimal:
+        """Pct alias: max_daily_loss_bps / 100."""
+        return Decimal(self.max_daily_loss_bps) / Decimal(100)
+
+    @property
+    def max_weekly_loss_pct(self) -> Decimal:
+        """Pct alias: max_weekly_loss_bps / 100."""
+        return Decimal(self.max_weekly_loss_bps) / Decimal(100)
+
+    @property
+    def max_drawdown_pct(self) -> Decimal:
+        """Pct alias: max_total_drawdown_bps / 100."""
+        return Decimal(self.max_total_drawdown_bps) / Decimal(100)
+
+    @property
+    def max_positions(self) -> int:
+        """Alias for max_open_positions."""
+        return self.max_open_positions
+
+    @property
+    def min_margin_level_pct(self) -> Decimal:
+        """Alias for reject_if_margin_level_below_pct."""
+        return Decimal(self.reject_if_margin_level_below_pct)
+
 
 def validate_no_pct_in_production() -> list[str]:
     """

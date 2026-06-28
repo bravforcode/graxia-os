@@ -155,15 +155,13 @@ class SchemaValidator(Protocol):
 
 
 class KillSwitchLike(Protocol):
-    @property
-    def is_triggered(self) -> bool: ...
+    def is_active(self) -> bool: ...
     @property
     def trigger_type(self) -> str: ...
 
 
 class CircuitBreakerLike(Protocol):
-    @property
-    def is_triggered(self) -> bool: ...
+    def is_open(self, asset_class: str) -> bool: ...
     @property
     def reason(self) -> str: ...
 
@@ -385,3 +383,66 @@ class RiskEngine:
     @staticmethod
     def _reject(reason: RejectReason, msg: str, layer: int) -> RiskVerdict:
         return RiskVerdict(approved=False, approved_quantity=0, reason=msg, reason_code=reason, layer_failed=layer)
+
+    # ── VaR / Correlation helpers ──────────────────────────────────────────
+
+    @staticmethod
+    def var_95(returns) -> float:
+        """Compute 95% historical VaR from an array of returns."""
+        import numpy as np
+        arr = np.asarray(returns, dtype=float)
+        if arr.size == 0:
+            return 0.0
+        return float(-np.percentile(arr, 5))
+
+    async def check_var_exposure(self, order, returns, max_var_pct: float = 0.02):
+        """Check if order's VaR exposure is within limits."""
+        import numpy as np
+        from dataclasses import dataclass
+
+        @dataclass
+        class CheckResult:
+            passed: bool
+            check_type: str
+            reason: str = ""
+
+        if returns is None or len(returns) == 0:
+            return CheckResult(passed=True, check_type="VAR_EXPOSURE")
+
+        var = self.var_95(returns)
+        order_value = getattr(order, "quantity", 0) * getattr(order, "price", 0)
+        portfolio_var_pct = var  # simplified: use return-based VaR directly
+
+        if portfolio_var_pct > max_var_pct:
+            return CheckResult(
+                passed=False,
+                check_type="VAR_EXPOSURE",
+                reason=f"VaR {portfolio_var_pct:.4f} exceeds {max_var_pct:.4f}",
+            )
+        return CheckResult(passed=True, check_type="VAR_EXPOSURE")
+
+    async def check_correlation_exposure(self, order, positions: dict, corr_matrix: dict, threshold: float = 0.8):
+        """Check if new position's correlation with existing positions exceeds threshold."""
+        from dataclasses import dataclass
+
+        @dataclass
+        class CheckResult:
+            passed: bool
+            check_type: str
+            reason: str = ""
+
+        symbol = getattr(order, "symbol", "")
+        if not positions or symbol not in corr_matrix:
+            return CheckResult(passed=True, check_type="CORRELATION_EXPOSURE")
+
+        for pos_symbol, weight in positions.items():
+            if weight == 0:
+                continue
+            corr = corr_matrix.get(symbol, {}).get(pos_symbol, 0.0)
+            if corr > threshold:
+                return CheckResult(
+                    passed=False,
+                    check_type="CORRELATION_EXPOSURE",
+                    reason=f"Correlation {corr:.2f} with {pos_symbol} exceeds {threshold}",
+                )
+        return CheckResult(passed=True, check_type="CORRELATION_EXPOSURE")

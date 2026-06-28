@@ -19,7 +19,8 @@ if str(_PACKAGES) not in sys.path:
 from quant_os.broker.contract_spec import ContractSpec, compute_snapshot_hash
 from quant_os.broker.contract_snapshot_store import ContractSnapshotStore
 from quant_os.broker.mt5_gateway import Mt5UnavailableError
-from quant_os.risk.position_sizer_v2 import SizingResult, size_position, RiskPolicy
+from quant_os.risk.position_sizer_v2 import SizingResult, size_position
+from quant_os.risk.risk_policy import RiskPolicy
 from quant_os.risk.pre_trade_risk import pre_trade_check
 from quant_os.risk.kill_switch import KillSwitch
 from quant_os.risk.risk_ledger import RiskLedger
@@ -94,7 +95,14 @@ def _eurusd_spec() -> ContractSpec:
 
 
 def _risk_policy() -> RiskPolicy:
-    return RiskPolicy()
+    return RiskPolicy(
+        risk_per_trade_bps=100,       # 1.00%
+        max_daily_loss_bps=200,       # 2.00%
+        max_weekly_loss_bps=500,      # 5.00%
+        max_total_drawdown_bps=1000,  # 10.00%
+        max_open_positions=5,
+        max_orders_per_day=20,
+    )
 
 
 # ============================================================
@@ -269,7 +277,7 @@ class TestPreTradeRisk:
         ledger._state["daily_realized_loss"] = 500.0  # Hit daily limit
         ledger._state_file = Path(tempfile.mktemp(suffix=".json"))
 
-        policy = RiskPolicy(max_daily_loss_pct=Decimal("2.0"))
+        policy = RiskPolicy(max_daily_loss_bps=200)
         result = pre_trade_check(
             self._ok_sizer_result(), policy, ledger,
             account_equity=Decimal("10000"),
@@ -283,7 +291,7 @@ class TestPreTradeRisk:
         ledger._state["weekly_realized_loss"] = 600.0  # Hit weekly limit
         ledger._state_file = Path(tempfile.mktemp(suffix=".json"))
 
-        policy = RiskPolicy(max_weekly_loss_pct=Decimal("5.0"))
+        policy = RiskPolicy(max_weekly_loss_bps=500)
         result = pre_trade_check(
             self._ok_sizer_result(), policy, ledger,
             account_equity=Decimal("10000"),
@@ -297,7 +305,7 @@ class TestPreTradeRisk:
         ledger._state["open_positions"] = 5  # At limit
         ledger._state_file = Path(tempfile.mktemp(suffix=".json"))
 
-        policy = RiskPolicy(max_positions=5)
+        policy = RiskPolicy(max_open_positions=5)
         result = pre_trade_check(
             self._ok_sizer_result(), policy, ledger,
             account_equity=Decimal("10000"),

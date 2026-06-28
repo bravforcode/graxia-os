@@ -23,12 +23,13 @@ class TradingMode(str, Enum):
 
 
 class OrderStatus(str, Enum):
-    """Order state machine states"""
+    """Order state machine states — single source of truth."""
+    # --- Core lifecycle ---
     CREATED = "CREATED"
     VALIDATED = "VALIDATED"
     RISK_APPROVED = "RISK_APPROVED"
     COMPLIANCE_APPROVED = "COMPLIANCE_APPROVED"
-    PENDING_HUMAN = "PENDING_HUMAN"          # MICRO: waiting for human confirm
+    PENDING_HUMAN = "PENDING_HUMAN"
     SENT_TO_BROKER = "SENT_TO_BROKER"
     ACKNOWLEDGED = "ACKNOWLEDGED"
     PARTIAL_FILL = "PARTIAL_FILL"
@@ -38,6 +39,25 @@ class OrderStatus(str, Enum):
     CANCELLED = "CANCELLED"
     EXPIRED = "EXPIRED"
     ERROR = "ERROR"
+    # --- Broker adapter states ---
+    PENDING = "PENDING"
+    SUBMITTED = "SUBMITTED"
+    PARTIALLY_FILLED = "PARTIALLY_FILLED"
+    FAILED = "FAILED"
+    TIMEOUT = "TIMEOUT"
+    # --- Execution state machine states ---
+    SIGNAL_CREATED = "SIGNAL_CREATED"
+    RISK_CHECKED = "RISK_CHECKED"
+    ORDER_PRECHECKED = "ORDER_PRECHECKED"
+    ORDER_SUBMITTED = "ORDER_SUBMITTED"
+    ORDER_ACKNOWLEDGED = "ORDER_ACKNOWLEDGED"
+    PROTECTIVE_STOPS_PENDING = "PROTECTIVE_STOPS_PENDING"
+    PROTECTIVE_STOPS_VERIFIED = "PROTECTIVE_STOPS_VERIFIED"
+    POSITION_RECONCILED = "POSITION_RECONCILED"
+    CLOSED = "CLOSED"
+    DEAL_RECONCILED = "DEAL_RECONCILED"
+    AUDITED = "AUDITED"
+    CRITICAL_INCIDENT = "CRITICAL_INCIDENT"
 
 
 class OrderSide(str, Enum):

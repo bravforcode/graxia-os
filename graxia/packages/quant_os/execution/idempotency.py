@@ -194,9 +194,11 @@ class IdempotencyChecker:
         
         if self.redis:
             try:
-                # Count keys matching pattern
-                keys = self.redis.keys("idempotency:*")
-                stats["cached_keys_count"] = len(keys)
+                # Count keys matching pattern (SCAN instead of KEYS for production safety)
+                count = 0
+                for _ in self.redis.scan_iter("idempotency:*", count=100):
+                    count += 1
+                stats["cached_keys_count"] = count
             except Exception as e:
                 stats["redis_error"] = str(e)
         

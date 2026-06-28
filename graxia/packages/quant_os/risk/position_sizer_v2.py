@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from decimal import Decimal, ROUND_DOWN
 from typing import Callable, Optional
 
+from .risk_policy import RiskPolicy
+
 
 @dataclass
 class SizingResult:
@@ -16,18 +18,6 @@ class SizingResult:
     rejected: bool
     rejection_reasons: list[str] = field(default_factory=list)
     contract_snapshot_id: str = ""
-
-
-@dataclass
-class RiskPolicy:
-    """Configurable risk limits."""
-    max_risk_per_trade_pct: Decimal = Decimal("1.0")
-    max_daily_loss_pct: Decimal = Decimal("2.0")
-    max_weekly_loss_pct: Decimal = Decimal("5.0")
-    max_drawdown_pct: Decimal = Decimal("10.0")
-    max_positions: int = 5
-    max_orders_per_day: int = 20
-    min_margin_level_pct: Decimal = Decimal("200.0")
 
 
 def size_position(

@@ -4,20 +4,9 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 
 from .position_sizer_v2 import SizingResult
+from .risk_policy import RiskPolicy
 from .risk_ledger import RiskLedger
 from .kill_switch import KillSwitch
-
-
-@dataclass
-class RiskPolicy:
-    """Configurable risk limits."""
-    max_risk_per_trade_pct: Decimal = Decimal("1.0")
-    max_daily_loss_pct: Decimal = Decimal("2.0")
-    max_weekly_loss_pct: Decimal = Decimal("5.0")
-    max_drawdown_pct: Decimal = Decimal("10.0")
-    max_positions: int = 5
-    max_orders_per_day: int = 20
-    min_margin_level_pct: Decimal = Decimal("200.0")
 
 
 @dataclass
