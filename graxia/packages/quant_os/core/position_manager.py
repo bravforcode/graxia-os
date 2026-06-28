@@ -107,6 +107,7 @@ class PositionManager:
         self._data_dir.mkdir(parents=True, exist_ok=True)
         self._positions: dict[str, Position] = {}
         self._closed_trades: list[ClosedTrade] = []
+        self._last_save_time: float = 0.0
         self._load_positions()
 
     # ── EventBus handlers ─────────────────────────────────────────────
@@ -239,6 +240,27 @@ class PositionManager:
             if price is not None:
                 pos.update_pnl(price)
 
+    def sync_account_state(self, equity: float, balance: float = 0.0, margin_level: float = 0.0) -> None:
+        """Sync account state from broker. Called by orchestrator periodically."""
+        self._equity = equity
+        self._balance = balance
+        self._margin_level = margin_level
+
+    def get_equity(self) -> float:
+        return getattr(self, '_equity', 10000.0)
+
+    def get_drawdown_pct(self) -> float:
+        """Calculate current drawdown from peak equity."""
+        equity = self.get_equity()
+        peak = getattr(self, '_peak_equity', equity)
+        if equity > peak:
+            self._peak_equity = equity
+            peak = equity
+        if peak <= 0:
+            return 0.0
+        drawdown = (peak - equity) / peak * 100
+        return drawdown
+
     def get_closed_trades(self) -> list[ClosedTrade]:
         return list(self._closed_trades)
 
@@ -248,7 +270,13 @@ class PositionManager:
     # ── Persistence ───────────────────────────────────────────────────
 
     def _save_positions(self) -> None:
-        """Save open positions to Parquet."""
+        """Save open positions to Parquet (debounced: max once per second)."""
+        import time
+        now = time.monotonic()
+        if now - self._last_save_time < 1.0:
+            return
+        self._last_save_time = now
+
         path = self._data_dir / "positions.parquet"
         if not self._positions:
             if path.exists():

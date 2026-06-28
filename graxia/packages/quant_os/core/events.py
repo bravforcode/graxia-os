@@ -21,6 +21,7 @@ class Event:
     event_id: str = field(default_factory=lambda: str(uuid4()))
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     source: str = ""
+    trace_id: str = field(default_factory=lambda: str(uuid4()))
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to dict (JSON-safe with datetime isoformat)"""

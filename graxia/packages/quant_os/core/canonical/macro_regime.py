@@ -49,10 +49,12 @@ class MacroRegimeCache:
         return cls._instance
 
     def get(self) -> MacroRegime:
-        return self._regime
+        with self._lock:
+            return self._regime
 
     def update(self, regime: MacroRegime) -> None:
-        self._regime = regime
+        with self._lock:
+            self._regime = regime
 
     def update_from_sentiment(
         self,
@@ -71,11 +73,13 @@ class MacroRegimeCache:
             source=source,
             headline=headline,
         )
-        self.update(regime)
+        with self._lock:
+            self._regime = regime
         return regime
 
     def reset(self) -> None:
-        self._regime = MacroRegime()
+        with self._lock:
+            self._regime = MacroRegime()
 
 
 _cache = MacroRegimeCache

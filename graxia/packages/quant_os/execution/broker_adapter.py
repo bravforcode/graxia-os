@@ -1,5 +1,10 @@
 """Broker adapter layer for Quant OS"""
 
+# NOTE: This module contains the async BrokerAdapter (used by BrokerManager and api/).
+# The sync BrokerAdapter lives in execution/adapters/base.py (used by OMS).
+# These are intentionally separate: OMS needs sync for hot-path execution,
+# api/ needs async for FastAPI integration.
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -319,7 +324,7 @@ class PaperBroker(BrokerAdapter):
             "USDCAD": Decimal("1.3550"),
             "USDCHF": Decimal("0.8850"),
             "NZDUSD": Decimal("0.6050"),
-            "XAUUSD": Decimal("2025.00"),
+            "XAUUSD": Decimal("3300.00"),  # ponytail: fallback price; real price from MT5 tick
         }
         
         base = base_prices.get(symbol, Decimal("1.0000"))
@@ -444,7 +449,7 @@ class MT5BrokerAdapter(BrokerAdapter):
                 "type": mt5_type,
                 "price": float(order.price) if order.price else None,
                 "sl": float(order.stop_price) if order.stop_price else None,
-                "tp": None,  # TODO: Add take profit
+                "tp": float(order.take_profit) if hasattr(order, 'take_profit') and order.take_profit else None,
                 "deviation": 10,  # Slippage in points
                 "magic": 234000,  # Expert ID
                 "comment": f"QuantOS:{order.strategy_id}",

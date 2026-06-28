@@ -274,6 +274,23 @@ class TradingLoop:
                 self._total_rejected += 1
                 return
 
+        # Sanity check: entry, SL, TP must be valid
+        if signal.entry_price <= 0 or signal.stop_loss <= 0 or signal.take_profit <= 0:
+            logger.warning("trading_loop.rejected_invalid_levels symbol=%s entry=%.2f sl=%.2f tp=%.2f",
+                            signal.symbol, signal.entry_price, signal.stop_loss, signal.take_profit)
+            self._total_rejected += 1
+            return
+
+        # Sanity check: SL must be on correct side of entry
+        if signal.signal_type == SignalType.BUY and signal.stop_loss >= signal.entry_price:
+            logger.warning("trading_loop.rejected_sl_on_wrong_side symbol=%s", signal.symbol)
+            self._total_rejected += 1
+            return
+        if signal.signal_type == SignalType.SELL and signal.stop_loss <= signal.entry_price:
+            logger.warning("trading_loop.rejected_sl_on_wrong_side symbol=%s", signal.symbol)
+            self._total_rejected += 1
+            return
+
         # Convert signal to order
         side = "BUY" if signal.signal_type == SignalType.BUY else "SELL"
         quantity = signal.metadata.get("approved_quantity", 0.0)
@@ -409,7 +426,7 @@ class TradingLoop:
 
         if order.status == OrderStatus.FILLED:
             tracked.status = "filled"
-            tracked.fill_price = order.quantity  # approximate
+            tracked.fill_price = tracked.entry_price  # broker fills near entry for market orders
             tracked.fill_quantity = order.quantity
             tracked.broker_order_id = order.broker_order_id or ""
             tracked.filled_at = datetime.now(UTC)

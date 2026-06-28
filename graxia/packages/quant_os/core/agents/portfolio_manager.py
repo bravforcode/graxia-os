@@ -105,6 +105,14 @@ class PortfolioManagerAgent(Agent):
         raw_confidence = consensus.confidence
         final_confidence = raw_confidence * sentiment_mod
 
+        # Position sizing: risk_budget / risk_per_unit
+        # Assume 1% equity risk, $10000 default equity
+        equity = 10000.0  # default; will be overridden by orchestrator in metadata
+        risk_pct = 0.01
+        risk_budget = equity * risk_pct
+        risk_per_unit = abs(consensus.entry_price - consensus.stop_loss) if consensus.stop_loss else 0
+        approved_quantity = round(risk_budget / risk_per_unit, 6) if risk_per_unit > 0 else 0.0
+
         self._pending_consensus = None
         self._pending_risk_pass = False
         self._sentiment_modifier = 1.0
@@ -131,6 +139,7 @@ class PortfolioManagerAgent(Agent):
                 "sentiment_modifier": sentiment_mod,
                 "risk_gate": 1.0,
                 "final_confidence": final_confidence,
+                "approved_quantity": approved_quantity,
             },
         )
         self._final_signals.append(final)

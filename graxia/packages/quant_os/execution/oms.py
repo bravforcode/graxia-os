@@ -4,7 +4,7 @@ import json
 import logging
 import time
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Optional
 
@@ -109,23 +109,23 @@ class OMS:
             fh.write(json.dumps(record) + "\n")
 
     def _update_ledger(self, order: Order) -> None:
-        """Rewrite the full ledger (used after status changes)."""
-        with open(self._ledger_path, "w", encoding="utf-8") as fh:
-            for o in self._orders.values():
-                record = {
-                    "order_id": o.order_id,
-                    "signal_id": o.signal_id,
-                    "symbol": o.symbol,
-                    "asset_class": o.asset_class,
-                    "side": o.side,
-                    "quantity": o.quantity,
-                    "stop_loss": o.stop_loss,
-                    "take_profit": o.take_profit,
-                    "status": o.status.value,
-                    "broker_order_id": o.broker_order_id,
-                    "created_at": o.created_at.isoformat(),
-                }
-                fh.write(json.dumps(record) + "\n")
+        """Append status update to the JSONL ledger (event sourcing)."""
+        record = {
+            "order_id": order.order_id,
+            "signal_id": order.signal_id,
+            "symbol": order.symbol,
+            "asset_class": order.asset_class,
+            "side": order.side,
+            "quantity": order.quantity,
+            "stop_loss": order.stop_loss,
+            "take_profit": order.take_profit,
+            "status": order.status.value,
+            "broker_order_id": order.broker_order_id,
+            "created_at": order.created_at.isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
+        }
+        with open(self._ledger_path, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(record) + "\n")
 
     # ------------------------------------------------------------------
     # Idempotency check
@@ -215,12 +215,18 @@ class OMS:
         self._persist(order)
 
         # --- State machine: SIGNAL_CREATED → RISK_CHECKED → ORDER_PRECHECKED ---
-        sm.advance(OrderStatus.RISK_CHECKED, "pre-trade risk passed")
-        sm.advance(OrderStatus.ORDER_PRECHECKED, "pre-checks passed")
+        try:
+            sm.advance(OrderStatus.RISK_CHECKED, "pre-trade risk passed")
+            sm.advance(OrderStatus.ORDER_PRECHECKED, "pre-checks passed")
+        except Exception as exc:
+            logger.error("oms.state_machine_error order_id=%s error=%s", order.order_id, exc)
 
         # --- Route & submit ---
         adapter = self._get_adapter(asset_class)
-        sm.advance(OrderStatus.ORDER_SUBMITTED, "sent to adapter")
+        try:
+            sm.advance(OrderStatus.ORDER_SUBMITTED, "sent to adapter")
+        except Exception as exc:
+            logger.error("oms.state_machine_error order_id=%s error=%s", order.order_id, exc)
         order.status = OrderStatus.SUBMITTED
         self._update_ledger(order)
 
@@ -228,8 +234,11 @@ class OMS:
 
         # --- Handle result with state machine ---
         if result.status == OrderStatus.FILLED:
-            sm.advance(OrderStatus.ORDER_ACKNOWLEDGED, "broker acknowledged")
-            sm.advance(OrderStatus.FILLED, "fully filled")
+            try:
+                sm.advance(OrderStatus.ORDER_ACKNOWLEDGED, "broker acknowledged")
+                sm.advance(OrderStatus.FILLED, "fully filled")
+            except Exception as exc:
+                logger.error("oms.state_machine_error order_id=%s error=%s", order.order_id, exc)
             order.status = OrderStatus.FILLED
             order.quantity = result.filled_quantity  # type: ignore[assignment]
             logger.info(
@@ -239,7 +248,10 @@ class OMS:
                 result.avg_price,
             )
         elif result.status == OrderStatus.PARTIALLY_FILLED:
-            sm.advance(OrderStatus.ORDER_ACKNOWLEDGED, "broker acknowledged")
+            try:
+                sm.advance(OrderStatus.ORDER_ACKNOWLEDGED, "broker acknowledged")
+            except Exception as exc:
+                logger.error("oms.state_machine_error order_id=%s error=%s", order.order_id, exc)
             order.status = OrderStatus.PARTIALLY_FILLED
             order.quantity = result.filled_quantity  # type: ignore[assignment]
             logger.warning(
@@ -251,11 +263,17 @@ class OMS:
             )
             order = self._poll_fill(order, adapter, sm)
         elif result.status == OrderStatus.FAILED:
-            sm.advance(OrderStatus.REJECTED, f"broker rejected: {result.error}")
+            try:
+                sm.advance(OrderStatus.REJECTED, f"broker rejected: {result.error}")
+            except Exception as exc:
+                logger.error("oms.state_machine_error order_id=%s error=%s", order.order_id, exc)
             order.status = OrderStatus.FAILED
             logger.error("Order %s failed: %s", order.order_id, result.error)
         elif result.status == OrderStatus.TIMEOUT:
-            sm.advance(OrderStatus.REJECTED, f"broker timeout: {result.error}")
+            try:
+                sm.advance(OrderStatus.REJECTED, f"broker timeout: {result.error}")
+            except Exception as exc:
+                logger.error("oms.state_machine_error order_id=%s error=%s", order.order_id, exc)
             order.status = OrderStatus.TIMEOUT
             logger.error("Order %s timed out: %s", order.order_id, result.error)
 

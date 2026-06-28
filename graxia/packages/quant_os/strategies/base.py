@@ -128,6 +128,31 @@ class Signal:
 
         return reward / risk
 
+    def to_signal_event(self) -> "SignalEvent":
+        """Convert strategy Signal to EventBus SignalEvent."""
+        from ..core.enums import SignalType as ST
+        from ..core.events import SignalEvent as SE
+
+        type_map = {
+            "BUY": ST.BUY,
+            "SELL": ST.SELL,
+            "NO_TRADE": ST.NO_TRADE,
+            "EXIT": ST.EXIT,
+        }
+        sig_type = type_map.get(self.signal_type.value, ST.NO_TRADE)
+
+        return SE(
+            symbol=self.symbol,
+            signal_type=sig_type,
+            confidence=self.confidence,
+            entry_price=float(self.entry_price) if self.entry_price else 0.0,
+            stop_loss=float(self.stop_loss) if self.stop_loss else 0.0,
+            take_profit=float(self.take_profit) if self.take_profit else 0.0,
+            timeframe=self.timeframe,
+            source=self.strategy_id,
+            metadata={"strategy_signal_id": self.id},
+        )
+
 
 @dataclass
 class StrategyConfig:

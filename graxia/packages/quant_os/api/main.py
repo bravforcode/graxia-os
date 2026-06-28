@@ -94,10 +94,16 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
     
-    # CORS
+    # CORS — restrict origins in live mode
+    config = get_config()
+    if config.live_trading_enabled:
+        allowed_origins = ["https://graxia.dev"]  # production domain
+    else:
+        allowed_origins = ["*"]  # open for development
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # Configure for production
+        allow_origins=allowed_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

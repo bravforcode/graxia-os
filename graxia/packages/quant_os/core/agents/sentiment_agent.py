@@ -115,9 +115,8 @@ class SentimentAgent(Agent):
     def observe(self, event: Event) -> None:
         if not isinstance(event, Event):
             return
-        data = event.to_dict()
-        headline = data.get("headline", "")
-        source = data.get("source", "unknown")
+        headline = getattr(event, "headline", "")
+        source = getattr(event, "source", "unknown")
         if headline:
             self._pending_headlines.append(
                 {

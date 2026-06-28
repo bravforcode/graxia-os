@@ -185,6 +185,18 @@ class QuantConfig:
         ]:
             raise ValueError("Live trading only allowed in LIVE_MICRO, LIVE_LIMITED, or LIVE_CONTROLLED mode")
 
+        # Validate secrets when live trading is enabled
+        if self.live_trading_enabled:
+            missing = []
+            if not self.jwt_secret_key:
+                missing.append("JWT_SECRET_KEY")
+            if not self.webhook_hmac_secret:
+                missing.append("WEBHOOK_HMAC_SECRET")
+            if not self.admin_api_key:
+                missing.append("ADMIN_API_KEY")
+            if missing:
+                raise ValueError(f"Live trading requires secrets: {', '.join(missing)}")
+
     def get_mode_risk_limits(self) -> dict:
         """Get risk limits for current trading mode"""
         limits = {
