@@ -178,8 +178,12 @@ class SentimentAgent(Agent):
         regime_order = {"CRISIS": 3, "HIGH_UNCERTAINTY": 2, "NORMAL": 1}
         worst_regime = max(payloads, key=lambda p: regime_order.get(p.regime_label, 0))
 
-        # Min position multiplier
-        min_pos = min(p.position_multiplier for p in payloads)
+        # Weighted average position multiplier (weighted by confidence)
+        total_conf = sum(p.confidence for p in payloads)
+        if total_conf > 0:
+            avg_pos = sum(p.position_multiplier * p.confidence for p in payloads) / total_conf
+        else:
+            avg_pos = min(p.position_multiplier for p in payloads)
 
         # Average confidence
         avg_conf = sum(p.confidence for p in payloads) / len(payloads)
@@ -187,7 +191,7 @@ class SentimentAgent(Agent):
         return MacroRegimePayload(
             bias=worst_regime.bias,
             confidence=avg_conf,
-            position_multiplier=min_pos,
+            position_multiplier=avg_pos,
             regime_label=worst_regime.regime_label,
             source_provider=worst_regime.source_provider,
             headline=worst_regime.headline,

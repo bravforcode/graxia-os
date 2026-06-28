@@ -644,7 +644,8 @@ class TestIsolation_SentimentAgent:
         )
         result = agent._aggregate([p1, p2])
         assert result.regime_label == "HIGH_UNCERTAINTY"
-        assert result.position_multiplier == 0.3
+        # Weighted average: (0.9*0.8 + 0.3*0.7) / (0.8+0.7) = 0.62
+        assert result.position_multiplier == 0.62
 
 
 # ═══════════════════════════════════════════════════════════════════
