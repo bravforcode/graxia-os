@@ -108,6 +108,8 @@ class AccountState:
     margin_level_pct: float = 999.0
     free_margin: float = 100000.0
     peak_equity: float = 100000.0
+    current_drawdown_pct: float = 0.0
+    open_positions: int = 0
 
 
 @dataclass
@@ -186,16 +188,12 @@ class RiskEngine:
         self._regime_multiplier_map = regime_multiplier_map or {}
 
     def _pre_checks(self, signal: Signal) -> RiskVerdict | None:
-        if self._kill_switch is not None and self._kill_switch.is_triggered:
-            return self._reject(
-                RejectReason.KILL_SWITCH, f"Kill switch active: {self._kill_switch.trigger_type}", layer=0
-            )
-        if self._circuit_breaker is not None and self._circuit_breaker.is_triggered:
-            return self._reject(
-                RejectReason.CIRCUIT_BREAKER, f"Circuit breaker: {self._circuit_breaker.reason}", layer=0
-            )
+        if self._kill_switch is not None and self._kill_switch.is_active():
+            return self._reject(RejectReason.KILL_SWITCH_ACTIVE, "Kill switch active", layer=0)
+        if self._circuit_breaker is not None and self._circuit_breaker.is_open(signal.asset_class):
+            return self._reject(RejectReason.CIRCUIT_BREAKER_OPEN, f"Circuit breaker open for {signal.asset_class}", layer=0)
         if self._schema_validator is not None and not self._schema_validator.validate_signal(signal):
-            return self._reject(RejectReason.UNKNOWN, "Schema validation failed", layer=0)
+            return self._reject(RejectReason.INVALID_SCHEMA, "Schema validation failed", layer=0)
         return None
 
     def evaluate(
@@ -244,7 +242,7 @@ class RiskEngine:
     def _layer2(self, signal: Signal, portfolio: PortfolioState) -> RiskVerdict | None:
         if portfolio.total_exposure_pct > _Layer2.MAX_TOTAL_EXPOSURE_PCT:
             return self._reject(
-                RejectReason.MAX_POSITIONS_REACHED,
+                RejectReason.EXCEEDS_TOTAL_EXPOSURE,
                 f"Exposure {portfolio.total_exposure_pct:.0%} > {_Layer2.MAX_TOTAL_EXPOSURE_PCT:.0%}",
                 layer=2,
             )
@@ -252,7 +250,7 @@ class RiskEngine:
         cls = signal.asset_class
         if cls in portfolio.class_exposure_pct and portfolio.class_exposure_pct[cls] > _Layer2.MAX_PER_CLASS_PCT:
             return self._reject(
-                RejectReason.MAX_POSITIONS_REACHED,
+                RejectReason.EXCEEDS_CLASS_EXPOSURE,
                 f"Class {cls} exposure {portfolio.class_exposure_pct[cls]:.0%} > {_Layer2.MAX_PER_CLASS_PCT:.0%}",
                 layer=2,
             )
@@ -317,7 +315,7 @@ class RiskEngine:
 
         if account.margin_level_pct < _Layer3.MIN_MARGIN_LEVEL_PCT:
             return self._reject(
-                RejectReason.MARGIN_INSUFFICIENT,
+                RejectReason.INSUFFICIENT_MARGIN,
                 f"Margin level {account.margin_level_pct:.0f}% < {_Layer3.MIN_MARGIN_LEVEL_PCT:.0f}%",
                 layer=3,
             )

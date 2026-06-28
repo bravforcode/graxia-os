@@ -51,7 +51,7 @@ class EventBus:
         except ValueError:
             return False
 
-    async def publish(self, event_or_key: Event | str, event: Event | None = None) -> None:
+    def publish(self, event_or_key: Event | str, event: Event | None = None) -> None:
         """
         Publish an event to all subscribers.
 
