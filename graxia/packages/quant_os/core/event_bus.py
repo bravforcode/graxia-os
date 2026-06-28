@@ -32,11 +32,12 @@ class EventBus:
         bus.publish("signal.new", SignalEvent(symbol="XAUUSD"))
     """
 
-    def __init__(self, max_queue_size: int = 0):
+    def __init__(self, max_queue_size: int = 0, event_log_path: str | None = None):
         self._subscribers: dict[type[Event] | str, list[Handler]] = defaultdict(list)
         self._published_count: int = 0
         self._handler_errors: int = 0
         self._max_queue_size = max_queue_size
+        self._event_log_path = event_log_path
 
     def subscribe(self, event_type: type[Event] | str, handler: Handler) -> None:
         """Subscribe a handler to an event type (class or string key)."""
@@ -63,6 +64,24 @@ class EventBus:
         Subscribers to base types (Event) receive all events.
         """
         self._published_count += 1
+
+        # Optional event persistence
+        if self._event_log_path is not None:
+            try:
+                import json
+                from pathlib import Path
+                record = {
+                    "event_type": type(event).__name__ if isinstance(event_or_key, Event) else str(event_or_key),
+                    "event_id": getattr(event, 'event_id', ''),
+                    "trace_id": getattr(event, 'trace_id', ''),
+                    "timestamp": getattr(event, 'timestamp', '').isoformat() if hasattr(getattr(event, 'timestamp', ''), 'isoformat') else '',
+                    "source": getattr(event, 'source', ''),
+                }
+                Path(self._event_log_path).parent.mkdir(parents=True, exist_ok=True)
+                with open(self._event_log_path, "a", encoding="utf-8") as fh:
+                    fh.write(json.dumps(record) + "\n")
+            except Exception:
+                pass  # ponytail: never crash on logging
 
         if isinstance(event_or_key, str):
             key = event_or_key

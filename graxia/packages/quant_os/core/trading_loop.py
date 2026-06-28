@@ -94,6 +94,7 @@ class TrackedOrder:
     stop_loss: float
     take_profit: float
     strategy_id: str
+    trace_id: str = ""
     submitted_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     filled_at: datetime | None = None
     fill_price: float = 0.0
@@ -314,6 +315,7 @@ class TradingLoop:
             stop_loss=signal.stop_loss,
             take_profit=signal.take_profit,
             strategy_id=signal.source,
+            trace_id=signal.trace_id,
         )
         self._tracked[order_id] = tracked
 
@@ -330,6 +332,7 @@ class TradingLoop:
             strategy_id=signal.source,
             signal_id=signal.event_id,
             source="trading_loop",
+            trace_id=signal.trace_id,
             metadata={
                 "asset_class": asset_class,
                 "confidence": signal.confidence,
@@ -388,6 +391,7 @@ class TradingLoop:
             slippage=fill["slippage"],
             strategy_id=tracked.strategy_id,
             source="paper_executor",
+            trace_id=tracked.trace_id if tracked.trace_id else str(uuid.uuid4()),
         )
         self._bus.publish(fill_event)
 
@@ -443,6 +447,7 @@ class TradingLoop:
                 slippage=0.0,
                 strategy_id=tracked.strategy_id,
                 source="mt5_adapter",
+                trace_id=tracked.trace_id if tracked.trace_id else str(uuid.uuid4()),
             )
             self._bus.publish(fill_event)
 
@@ -488,6 +493,7 @@ class TradingLoop:
             close_reason=reason,
             strategy_id=tracked.strategy_id,
             source="trading_loop",
+            trace_id=tracked.trace_id if tracked.trace_id else str(uuid.uuid4()),
         )
         self._bus.publish(closed_event)
 

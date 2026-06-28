@@ -18,7 +18,7 @@ FAIL-CLOSED: _risk_gate defaults to False. No trade until explicitly approved.
 from dataclasses import dataclass
 
 from ..enums import SignalType
-from ..events import Event, RiskEvent, SignalEvent
+from ..events import Event, FillEvent, RiskEvent, SignalEvent, TradeClosedEvent
 from .base import Agent
 
 
@@ -57,6 +57,21 @@ class PortfolioManagerAgent(Agent):
         self._veto_reason: str = ""
 
     def observe(self, event: Event) -> None:
+        if isinstance(event, FillEvent):
+            sym = event.symbol
+            if sym not in self._positions:
+                self._positions[sym] = PositionState(symbol=sym, side=SignalType.BUY if event.side == "BUY" else SignalType.SELL, quantity=event.fill_quantity)
+            else:
+                self._positions[sym].quantity += event.fill_quantity
+            return
+
+        if hasattr(event, 'trade_id') and hasattr(event, 'pnl'):
+            # TradeClosedEvent
+            sym = getattr(event, 'symbol', '')
+            if sym in self._positions:
+                self._positions[sym].quantity = 0
+            return
+
         if not isinstance(event, (SignalEvent, RiskEvent)):
             return
 
@@ -106,9 +121,8 @@ class PortfolioManagerAgent(Agent):
         final_confidence = raw_confidence * sentiment_mod
 
         # Position sizing: risk_budget / risk_per_unit
-        # Assume 1% equity risk, $10000 default equity
-        equity = 10000.0  # default; will be overridden by orchestrator in metadata
-        risk_pct = 0.01
+        equity = consensus.metadata.get("equity", 10000.0)
+        risk_pct = consensus.metadata.get("risk_pct", 0.01)
         risk_budget = equity * risk_pct
         risk_per_unit = abs(consensus.entry_price - consensus.stop_loss) if consensus.stop_loss else 0
         approved_quantity = round(risk_budget / risk_per_unit, 6) if risk_per_unit > 0 else 0.0

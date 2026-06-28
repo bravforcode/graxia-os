@@ -27,6 +27,7 @@ class _ClassState:
     open: bool = False
     reason: str = ""
     trip_count: int = 0
+    opened_at: float = 0.0  # timestamp when opened
 
 
 class CircuitBreaker:
@@ -47,7 +48,20 @@ class CircuitBreaker:
         return self._configs.get(cls, self._default_config)
 
     def is_open(self, cls: str) -> bool:
-        return self._classes.get(cls, _ClassState()).open
+        import time
+        s = self._classes.get(cls, _ClassState())
+        if not s.opened_at:
+            return s.open
+        # Auto-recover after cooldown
+        cfg = self._cfg(cls)
+        elapsed = time.time() - s.opened_at
+        if s.open and elapsed > cfg.cooldown_minutes * 60:
+            s.open = False
+            s.consecutive_losses = 0
+            s.reason = ""
+            self._save()
+            return False
+        return s.open
 
     @property
     def is_blocked(self) -> bool:
@@ -63,6 +77,7 @@ class CircuitBreaker:
         return "; ".join(reasons) if reasons else ""
 
     def trip(self, cls: str, reason: str = "manual") -> None:
+        import time
         s = self._classes.setdefault(cls, _ClassState())
         cfg = self._cfg(cls)
         s.trip_count += 1
@@ -70,9 +85,11 @@ class CircuitBreaker:
             s.open = False
             s.reason = ""
             s.consecutive_losses = 0
+            s.opened_at = 0.0
         else:
             s.open = True
             s.reason = reason
+            s.opened_at = time.time()
         self._save()
 
     def reset(self, cls: str) -> None:
@@ -83,6 +100,7 @@ class CircuitBreaker:
         self._save()
 
     def record_trade(self, cls: str, pnl: float) -> bool:
+        import time
         s = self._classes.setdefault(cls, _ClassState())
         if pnl < 0:
             s.consecutive_losses += 1
@@ -91,6 +109,7 @@ class CircuitBreaker:
                 s.open = True
                 s.reason = f"{s.consecutive_losses} consecutive losses"
                 s.trip_count += 1
+                s.opened_at = time.time()
                 self._save()
                 return True
         else:

@@ -212,7 +212,7 @@ class OMS:
 
         # --- Crash safety: persist BEFORE sending ---
         self._orders[order.order_id] = order
-        self._persist(order)
+        # ponytail: _update_ledger handles persistence; _persist creates duplicates
 
         # --- State machine: SIGNAL_CREATED → RISK_CHECKED → ORDER_PRECHECKED ---
         try:

@@ -108,6 +108,10 @@ class PositionManager:
         self._positions: dict[str, Position] = {}
         self._closed_trades: list[ClosedTrade] = []
         self._last_save_time: float = 0.0
+        self._equity: float = 10000.0
+        self._balance: float = 10000.0
+        self._margin_level: float = 0.0
+        self._peak_equity: float = 10000.0
         self._load_positions()
 
     # ── EventBus handlers ─────────────────────────────────────────────
@@ -247,18 +251,16 @@ class PositionManager:
         self._margin_level = margin_level
 
     def get_equity(self) -> float:
-        return getattr(self, '_equity', 10000.0)
+        return self._equity
 
     def get_drawdown_pct(self) -> float:
         """Calculate current drawdown from peak equity."""
-        equity = self.get_equity()
-        peak = getattr(self, '_peak_equity', equity)
-        if equity > peak:
+        equity = self._equity
+        if equity > self._peak_equity:
             self._peak_equity = equity
-            peak = equity
-        if peak <= 0:
+        if self._peak_equity <= 0:
             return 0.0
-        drawdown = (peak - equity) / peak * 100
+        drawdown = (self._peak_equity - equity) / self._peak_equity * 100
         return drawdown
 
     def get_closed_trades(self) -> list[ClosedTrade]:
