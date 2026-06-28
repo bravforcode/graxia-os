@@ -16,18 +16,24 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from typing import Any
 
 from .event_bus import EventBus
 from .events import (
     FillEvent,
     KillSwitchEvent,
+    RiskEvent,
     SignalEvent,
     TradeClosedEvent,
 )
 from .trading_loop import TradingLoop, PaperExecutor
 from .position_manager import PositionManager
 from .config import QuantConfig
+from .agents.risk_auditor import RiskAuditorAgent
+from .agents.portfolio_manager import PortfolioManagerAgent
+from ..execution.oms import OMS
+from ..execution.adapters.mt5 import MT5Adapter
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +51,20 @@ class TradingOrchestrator:
         self._config = config or QuantConfig()
         self._bus = EventBus()
         self._oms = oms
+        if self._oms is None and self._config.live_trading_enabled:
+            # Create OMS with MT5 adapter for live trading
+            mt5_adapter = MT5Adapter(
+                login=self._config.mt5_login,
+                password=self._config.mt5_password,
+                server=self._config.mt5_server,
+            )
+            self._oms = OMS(adapters={"mt5": mt5_adapter})
+        elif self._oms is None:
+            # Paper mode: OMS not needed (PaperExecutor handles it)
+            pass
         self._paper = PaperExecutor()
+        self._risk_auditor = RiskAuditorAgent()
+        self._portfolio_manager = PortfolioManagerAgent()
         self._position_manager = PositionManager(bus=self._bus)
         self._trading_loop = TradingLoop(
             bus=self._bus,
@@ -55,6 +74,7 @@ class TradingOrchestrator:
         )
         self._running = False
         self._sync_task: asyncio.Task | None = None
+        self._last_heartbeat: float = 0.0
 
     @property
     def bus(self) -> EventBus:
@@ -68,9 +88,20 @@ class TradingOrchestrator:
     def position_manager(self) -> PositionManager:
         return self._position_manager
 
+    @property
+    def risk_auditor(self) -> RiskAuditorAgent:
+        return self._risk_auditor
+
+    @property
+    def portfolio_manager(self) -> PortfolioManagerAgent:
+        return self._portfolio_manager
+
     def wire(self) -> None:
         """Wire all EventBus subscriptions. Call once after creating agents."""
-        # Signal flow: PortfolioManager → TradingLoop
+        # Agent chain: SignalEvent → RiskAuditor → PortfolioManager → TradingLoop
+        self._bus.subscribe(SignalEvent, self._risk_auditor.observe)
+        self._bus.subscribe(SignalEvent, self._portfolio_manager.observe)
+        self._bus.subscribe(RiskEvent, self._portfolio_manager.observe)
         self._bus.subscribe(SignalEvent, self._trading_loop.observe)
         # Execution flow: TradingLoop → PositionManager
         self._bus.subscribe(FillEvent, self._position_manager.on_fill)
@@ -100,13 +131,22 @@ class TradingOrchestrator:
             self._sync_task.cancel()
         logger.info("orchestrator.stopped")
 
+    def _beat(self) -> None:
+        """Write heartbeat timestamp (called in sync loop)."""
+        self._last_heartbeat = time.time()
+
     async def _sync_loop(self) -> None:
         """Background loop: sync prices and account equity every 5 seconds."""
         while self._running:
             try:
                 await asyncio.sleep(5.0)
-                # Price sync would go here (needs broker tick feed)
-                # Account equity sync would go here (needs MT5 account_info)
+                # Price sync: update position unrealized PnL
+                # This would connect to MT5 tick feed in production
+                # For now, positions track their own entry prices
+                pass
+                
+                # Account equity sync: would call MT5 account_info() in production
+                # self._position_manager.sync_account_state(equity, balance, margin_level)
             except asyncio.CancelledError:
                 break
             except Exception as exc:
@@ -121,4 +161,7 @@ class TradingOrchestrator:
             "trading_loop": self._trading_loop.get_stats(),
             "open_positions": self._position_manager.get_open_positions_count(),
             "total_exposure": self._position_manager.get_total_exposure(),
+            "risk_auditor": self._risk_auditor.name,
+            "portfolio_manager": self._portfolio_manager.name,
+            "portfolio_positions": len(self._portfolio_manager.get_positions()),
         }
