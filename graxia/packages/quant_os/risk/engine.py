@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 class _Layer1:
     MAX_SIGNAL_AGE_S: float = 5.0
     MIN_CONVICTION: float = 0.6
-    MAX_RISK_PCT_EQUITY: float = 0.01
+    MAX_RISK_PCT_EQUITY: float = 0.001  # 0.10% (was 1.0%)
 
 
 class _Layer2:
@@ -42,10 +42,10 @@ class _Layer2:
 
 
 class _Layer3:
-    MAX_DAILY_LOSS_PCT: float = 0.02
-    MAX_WEEKLY_LOSS_PCT: float = 0.05
-    MAX_DRAWDOWN_PCT: float = 0.15
-    MIN_MARGIN_LEVEL_PCT: float = 200.0
+    MAX_DAILY_LOSS_PCT: float = 0.005   # 0.50% (was 2.0%)
+    MAX_WEEKLY_LOSS_PCT: float = 0.015  # 1.50% (was 5.0%)
+    MAX_DRAWDOWN_PCT: float = 0.03      # 3.00% (was 15.0%)
+    MIN_MARGIN_LEVEL_PCT: float = 500.0  # 500% (was 200%)
 
 
 class _Layer4:
@@ -66,11 +66,8 @@ class RejectReason(str, Enum):
     DAILY_LOSS_LIMIT = "DAILY_LOSS_LIMIT"
     WEEKLY_LOSS_LIMIT = "WEEKLY_LOSS_LIMIT"
     MAX_DRAWDOWN = "MAX_DRAWDOWN"
-    MARGIN_INSUFFICIENT = "MARGIN_INSUFFICIENT"
     INSUFFICIENT_MARGIN = "INSUFFICIENT_MARGIN"
-    KILL_SWITCH = "KILL_SWITCH"
     KILL_SWITCH_ACTIVE = "KILL_SWITCH_ACTIVE"
-    CIRCUIT_BREAKER = "CIRCUIT_BREAKER"
     CIRCUIT_BREAKER_OPEN = "CIRCUIT_BREAKER_OPEN"
     SESSION_CLOSED = "SESSION_CLOSED"
     INVALID_SCHEMA = "INVALID_SCHEMA"
@@ -395,7 +392,7 @@ class RiskEngine:
             return 0.0
         return float(-np.percentile(arr, 5))
 
-    async def check_var_exposure(self, order, returns, max_var_pct: float = 0.02):
+    def check_var_exposure(self, order, returns, max_var_pct: float = 0.02):
         """Check if order's VaR exposure is within limits."""
         import numpy as np
         from dataclasses import dataclass
@@ -421,7 +418,7 @@ class RiskEngine:
             )
         return CheckResult(passed=True, check_type="VAR_EXPOSURE")
 
-    async def check_correlation_exposure(self, order, positions: dict, corr_matrix: dict, threshold: float = 0.8):
+    def check_correlation_exposure(self, order, positions: dict, corr_matrix: dict, threshold: float = 0.8):
         """Check if new position's correlation with existing positions exceeds threshold."""
         from dataclasses import dataclass
 

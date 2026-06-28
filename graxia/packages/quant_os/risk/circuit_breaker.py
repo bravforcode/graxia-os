@@ -47,7 +47,7 @@ class CircuitBreaker:
         return self._configs.get(cls, self._default_config)
 
     def is_open(self, cls: str) -> bool:
-        return self._classes.setdefault(cls, _ClassState()).open
+        return self._classes.get(cls, _ClassState()).open
 
     @property
     def is_blocked(self) -> bool:

@@ -157,7 +157,10 @@ class RiskAuditorAgent(Agent):
         self._observations.clear()
         if not signals:
             return None
-        # Process all signals, return last result (original behavior)
+        # Process all signals, return last result.
+        # This is by design: the event bus delivers each signal individually,
+        # so PortfolioManager sees each RiskEvent as it's published.
+        # The return value is for synchronous callers only.
         result: Event | None = None
         for event in signals:
             result = self._audit_signal(event)
