@@ -66,9 +66,18 @@ class RejectReason(str, Enum):
     WEEKLY_LOSS_LIMIT = "WEEKLY_LOSS_LIMIT"
     MAX_DRAWDOWN = "MAX_DRAWDOWN"
     MARGIN_INSUFFICIENT = "MARGIN_INSUFFICIENT"
+    INSUFFICIENT_MARGIN = "INSUFFICIENT_MARGIN"
     KILL_SWITCH = "KILL_SWITCH"
+    KILL_SWITCH_ACTIVE = "KILL_SWITCH_ACTIVE"
     CIRCUIT_BREAKER = "CIRCUIT_BREAKER"
+    CIRCUIT_BREAKER_OPEN = "CIRCUIT_BREAKER_OPEN"
     SESSION_CLOSED = "SESSION_CLOSED"
+    INVALID_SCHEMA = "INVALID_SCHEMA"
+    EXCEEDS_TOTAL_EXPOSURE = "EXCEEDS_TOTAL_EXPOSURE"
+    EXCEEDS_CLASS_EXPOSURE = "EXCEEDS_CLASS_EXPOSURE"
+    EXCEEDS_VENUE_EXPOSURE = "EXCEEDS_VENUE_EXPOSURE"
+    DRAWDOWN_LIMIT = "DRAWDOWN_LIMIT"
+    SIZING_REJECTED = "SIZING_REJECTED"
     UNKNOWN = "UNKNOWN"
 
 
@@ -258,6 +267,14 @@ class RiskEngine:
                         layer=2,
                     )
 
+        venue = signal.venue
+        if venue in portfolio.venue_exposure_pct and portfolio.venue_exposure_pct[venue] > _Layer2.MAX_PER_VENUE_PCT:
+            return self._reject(
+                RejectReason.EXCEEDS_VENUE_EXPOSURE,
+                f"Venue {venue} exposure {portfolio.venue_exposure_pct[venue]:.0%} > {_Layer2.MAX_PER_VENUE_PCT:.0%}",
+                layer=2,
+            )
+
         if len(portfolio.position_symbols) >= _Layer2.MAX_POSITIONS:
             return self._reject(
                 RejectReason.MAX_POSITIONS_REACHED,
@@ -288,6 +305,13 @@ class RiskEngine:
                 return self._reject(
                     RejectReason.MAX_DRAWDOWN,
                     f"Drawdown {account.max_drawdown_pct:.2%} >= {_Layer3.MAX_DRAWDOWN_PCT:.0%}",
+                    layer=3,
+                )
+
+            if account.current_drawdown_pct >= _Layer3.MAX_DRAWDOWN_PCT:
+                return self._reject(
+                    RejectReason.DRAWDOWN_LIMIT,
+                    f"Current drawdown {account.current_drawdown_pct:.2%} >= {_Layer3.MAX_DRAWDOWN_PCT:.0%}",
                     layer=3,
                 )
 
@@ -324,10 +348,12 @@ class RiskEngine:
 
         risk_per_unit = abs(signal.entry_price - signal.stop_loss) if signal.stop_loss else 0
         if risk_per_unit <= 0:
-            approved_qty = 0.0
-        else:
-            risk_budget = account.equity * _Layer1.MAX_RISK_PCT_EQUITY
-            approved_qty = round(risk_budget / risk_per_unit, 2)
+            return self._reject(
+                RejectReason.SIZING_REJECTED, "Zero or negative stop distance", layer=4
+            )
+
+        risk_budget = account.equity * _Layer1.MAX_RISK_PCT_EQUITY
+        approved_qty = round(risk_budget / risk_per_unit, 2)
 
         approved_qty = max(approved_qty * kelly_fraction, 0)
         dollar_value = approved_qty * signal.entry_price if signal.entry_price else 0

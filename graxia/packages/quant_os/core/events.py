@@ -181,3 +181,15 @@ class NewsEvent(Event):
     headline: str = ""
     impact: str = "LOW"
     source: str = "news"
+
+
+@dataclass(frozen=True)
+class NewsAnalyzedEvent(Event):
+    """Sentiment analysis complete — regime updated"""
+
+    headline: str = ""
+    regime_label: str = "NORMAL"
+    bias: str = "NEUTRAL"
+    confidence: float = 0.5
+    position_multiplier: float = 1.0
+    source_provider: str = ""
