@@ -97,12 +97,20 @@ class TradingOrchestrator:
         return self._portfolio_manager
 
     def wire(self) -> None:
-        """Wire all EventBus subscriptions. Call once after creating agents."""
-        # Agent chain: SignalEvent → RiskAuditor → PortfolioManager → TradingLoop
-        self._bus.subscribe(SignalEvent, self._risk_auditor.observe)
-        self._bus.subscribe(SignalEvent, self._portfolio_manager.observe)
-        self._bus.subscribe(RiskEvent, self._portfolio_manager.observe)
+        """Wire all EventBus subscriptions and register the two-phase signal processor.
+
+        The agent chain uses a two-phase protocol:
+          Phase 1 (observe): Agents receive raw events
+          Phase 2 (act):     Agents produce output events
+
+        EventBus only handles Phase 1. The manual processor handles Phase 2.
+        """
+        # Register the two-phase processor for SignalEvent
+        self._bus.subscribe(SignalEvent, self._on_signal_event)
+
+        # TradingLoop subscribes to final signals (published by _on_signal_event)
         self._bus.subscribe(SignalEvent, self._trading_loop.observe)
+
         # Execution flow: TradingLoop → PositionManager
         self._bus.subscribe(FillEvent, self._position_manager.on_fill)
         self._bus.subscribe(TradeClosedEvent, self._position_manager.on_close)
@@ -112,6 +120,35 @@ class TradingOrchestrator:
             "orchestrator.wired bus_subscribers=%d",
             self._bus.subscriber_count(),
         )
+
+    def _on_signal_event(self, event: Event) -> None:
+        """Two-phase signal processor: observe → act → produce final signal.
+
+        This replaces the pure EventBus approach which couldn't handle the
+        observe→act lifecycle that RiskAuditor and PortfolioManager require.
+
+        Guard: skip signals that already have final=True (they come from act()).
+        """
+        if not isinstance(event, SignalEvent):
+            return
+        # Prevent recursion: skip signals that are already final
+        if event.metadata.get("final"):
+            return
+
+        # Phase 1: Agents observe the raw signal
+        self._risk_auditor.observe(event)
+        self._portfolio_manager.observe(event)
+
+        # Phase 2: RiskAuditor produces a verdict
+        risk_event = self._risk_auditor.act()
+        if risk_event is not None:
+            self._portfolio_manager.observe(risk_event)
+
+        # Phase 3: PortfolioManager produces the final signal (with approved_quantity)
+        final_signal = self._portfolio_manager.act()
+        if final_signal is not None:
+            # Publish final signal to EventBus (TradingLoop subscribes)
+            self._bus.publish(final_signal)
 
     def start(self) -> None:
         """Start the orchestrator."""
@@ -140,10 +177,10 @@ class TradingOrchestrator:
         while self._running:
             try:
                 await asyncio.sleep(5.0)
+                self._beat()
                 # Price sync: update position unrealized PnL
                 # This would connect to MT5 tick feed in production
                 # For now, positions track their own entry prices
-                pass
                 
                 # Account equity sync: would call MT5 account_info() in production
                 # self._position_manager.sync_account_state(equity, balance, margin_level)
