@@ -95,6 +95,21 @@ class Signal:
     strategy_id: str = ""
     metadata: dict[str, Any] = field(default_factory=dict)
 
+    def to_signal_event(self):
+        """Convert RiskEngine Signal to EventBus SignalEvent."""
+        from ..core.enums import SignalType as ST
+        from ..core.events import SignalEvent as SE
+        type_map = {"BUY": ST.BUY, "SELL": ST.SELL}
+        return SE(
+            symbol=self.symbol,
+            signal_type=type_map.get(self.direction, ST.NO_TRADE),
+            confidence=self.conviction,
+            entry_price=self.entry_price,
+            stop_loss=self.stop_loss,
+            take_profit=self.take_profit,
+            source=f"risk_engine:{self.strategy_id}",
+        )
+
 
 @dataclass
 class AccountState:
