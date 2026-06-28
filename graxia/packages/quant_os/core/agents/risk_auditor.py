@@ -90,7 +90,6 @@ class RiskAuditorAgent(Agent):
         key = f"{event.symbol}:{event.signal_type.value}"
         count = self._recent_signals.get(key, 0)
         dup_ok = count < self.MAX_DUPLICATE_SIGNALS
-        self._recent_signals[key] = count + 1
         checks.append(
             RiskCheck(
                 name="duplicate_signal_limit",
@@ -112,6 +111,10 @@ class RiskAuditorAgent(Agent):
 
         approved = all(c.passed for c in checks)
         rejection = "; ".join(c.reason for c in checks if not c.passed)
+
+        # Only count approved signals toward duplicate limit
+        if approved:
+            self._recent_signals[key] = count + 1
 
         veto_reason = VetoReason.NONE
         if not approved:
@@ -154,6 +157,7 @@ class RiskAuditorAgent(Agent):
         self._observations.clear()
         if not signals:
             return None
+        # Process all signals, return last result (original behavior)
         result: Event | None = None
         for event in signals:
             result = self._audit_signal(event)

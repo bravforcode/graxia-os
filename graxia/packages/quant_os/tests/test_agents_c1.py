@@ -293,8 +293,9 @@ class TestRiskAuditor:
         audit = risk_auditor.get_last_audit()
         assert audit is not None
         assert audit.signal.confidence == 0.8
-        # Duplicate count should be 2 for BUY:XAUUSD (one from each signal)
-        assert risk_auditor._recent_signals.get("XAUUSD:BUY", 0) == 2
+        # Duplicate count should be 1 — only approved signals count
+        # (rejected signals don't count toward duplicate limit)
+        assert risk_auditor._recent_signals.get("XAUUSD:BUY", 0) == 1
 
     def test_get_last_audit(self, risk_auditor):
         risk_auditor.observe(

@@ -101,7 +101,6 @@ class PortfolioManagerAgent(Agent):
         if not self._pending_risk_pass:
             return None
 
-        risk_ok = self._pending_risk_pass
         sentiment_mod = self._sentiment_modifier
         raw_confidence = consensus.confidence
         final_confidence = raw_confidence * sentiment_mod
