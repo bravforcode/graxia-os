@@ -33,6 +33,7 @@ check_untyped_defs = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--tb=short -q"
+asyncio_mode = "auto"
 markers = [
     "asyncio: mark test as async",
     "chaos: chaos engineering test",
