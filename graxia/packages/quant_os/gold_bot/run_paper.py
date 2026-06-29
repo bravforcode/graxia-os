@@ -163,7 +163,7 @@ class PaperTrader:
             self._save_summary()
     
     async def _init_mt5(self):
-        """Connect to MT5 for live price feeds."""
+        """Connect to MT5 for live price feeds with retry logic."""
         try:
             import MetaTrader5 as mt5
             
@@ -173,23 +173,31 @@ class PaperTrader:
             server = os.getenv("MT5_SERVER", "Pepperstone-Demo")
             timeout = int(os.getenv("MT5_TIMEOUT_MS", "60000"))
             
-            # Must pass credentials to initialize for fresh terminals
-            if login > 0 and password:
-                ok = mt5.initialize(path=path, login=login, password=password,
-                                    server=server, timeout=timeout)
-            else:
-                ok = mt5.initialize(path=path, timeout=timeout)
+            # Retry up to 3 times with 10s delay
+            for attempt in range(1, 4):
+                if login > 0 and password:
+                    ok = mt5.initialize(path=path, login=login, password=password,
+                                        server=server, timeout=timeout)
+                else:
+                    ok = mt5.initialize(path=path, timeout=timeout)
+                
+                if ok:
+                    info = mt5.account_info()
+                    if info:
+                        _log(f"  MT5 Connected: {info.server} | Balance: ${info.balance:,.2f}")
+                        self.mt5_connected = True
+                        return
+                    else:
+                        _log(f"  MT5 init OK but no account info (attempt {attempt})")
+                else:
+                    err = mt5.last_error()
+                    _log(f"  MT5 init failed (attempt {attempt}): {err}")
+                
+                if attempt < 3:
+                    _log(f"  Retrying in 10s...")
+                    await asyncio.sleep(10)
             
-            if not ok:
-                _log(f"  MT5 init failed: {mt5.last_error()}")
-                return
-            
-            info = mt5.account_info()
-            if info:
-                _log(f"  MT5 Connected: {info.server} | Balance: ${info.balance:,.2f}")
-                self.mt5_connected = True
-            else:
-                _log("  MT5: No account info")
+            _log("  MT5: All connection attempts failed — running without MT5")
         
         except ImportError:
             _log("  MT5 Python package not installed")
@@ -317,6 +325,13 @@ class PaperTrader:
                     await self.engine._execute_signal(aggregated)
                     self._last_trade_cycle = self.cycle_count
                     self._log_last_trade(aggregated)
+            
+            # Heartbeat every 10 cycles (5 min) — shows bot is alive
+            if self.cycle_count % 10 == 0:
+                _log(f"  [Heartbeat] Cycle {self.cycle_count} | "
+                     f"MT5: {'ON' if self.mt5_connected else 'OFF'} | "
+                     f"Open: {len(self.engine.open_trades)} | "
+                     f"Closed: {len(self.engine.closed_trades)}")
             
             # Periodic report
             if self.cycle_count % self.config.report_interval_cycles == 0:
