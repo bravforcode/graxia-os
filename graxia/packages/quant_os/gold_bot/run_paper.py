@@ -108,6 +108,18 @@ class PaperTrader:
         self._last_trade_cycle: int = 0  # Cycle when last trade was executed
         self._cooldown_cycles: int = config.cooldown_cycles  # Default 10 cycles (5 min)
         
+        # Telegram
+        self.telegram = None
+        
+        # Auto-adjust threshold
+        self._cycles_without_trade: int = 0
+        self._adjust_threshold_after: int = 360  # 3 hours at 30s/cycle
+        self._min_score_floor: int = 280  # Never go below this
+        
+        # Daily report
+        self._last_daily_report_cycle: int = 0
+        self._daily_report_interval: int = 2880  # 24 hours at 30s/cycle
+        
         # Logging
         self.log_dir = Path(config.log_dir)
         self.log_dir.mkdir(exist_ok=True)
@@ -129,6 +141,9 @@ class PaperTrader:
         
         # Initialize gold_bot engine
         await self._init_engine()
+        
+        # Initialize Telegram
+        await self._init_telegram()
         
         # Setup CSV logging
         self._setup_logging()
@@ -254,6 +269,25 @@ class PaperTrader:
         
         _log(f"  Engine: {len(self.engine.strategies)} strategies loaded")
     
+    async def _init_telegram(self):
+        """Initialize Telegram notifications."""
+        try:
+            from ..monitoring.telegram_bot import GoldBotTelegram
+            self.telegram = GoldBotTelegram(self.bot_config)
+            await self.telegram.initialize()
+            self.engine.notifier = self.telegram
+            _log("  Telegram: Connected")
+            await self.telegram.send_message(
+                "🤖 <b>Gold Bot Started</b>\n"
+                f"Capital: ${self.config.initial_capital:,.2f}\n"
+                f"Settings: Score≥{self.config.min_score_to_trade}, "
+                f"{self.config.max_risk_per_trade_pct}% risk, "
+                f"1:{self.config.risk_reward_ratio} RR"
+            )
+        except Exception as e:
+            _log(f"  Telegram: Not available ({e})")
+            self.telegram = None
+    
     def _setup_logging(self):
         """Setup CSV and JSON logging."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -295,6 +329,9 @@ class PaperTrader:
             # Check open trades using MT5 tick directly (PaperBroker has no get_tick)
             self._check_open_trades_mt5()
             
+            # Trailing stop check
+            self._check_trailing_stop()
+            
             # Fetch data directly from MT5 (PaperBroker has no get_bars)
             data = self._fetch_mt5_data()
             if not data:
@@ -324,7 +361,28 @@ class PaperTrader:
                 if risk_result.approved:
                     await self.engine._execute_signal(aggregated)
                     self._last_trade_cycle = self.cycle_count
+                    self._cycles_without_trade = 0
                     self._log_last_trade(aggregated)
+                else:
+                    self._cycles_without_trade += 1
+            else:
+                self._cycles_without_trade += 1
+            
+            # Auto-adjust threshold: lower min_score if no trades for 3 hours
+            if (self._cycles_without_trade >= self._adjust_threshold_after
+                    and self.config.min_score_to_trade > self._min_score_floor):
+                old_score = self.config.min_score_to_trade
+                self.config.min_score_to_trade = max(
+                    self.config.min_score_to_trade - 10,
+                    self._min_score_floor
+                )
+                self._cycles_without_trade = 0
+                _log(f"  [AUTO-ADJUST] min_score: {old_score} → {self.config.min_score_to_trade}")
+                if self.telegram:
+                    await self.telegram.send_message(
+                        f"⚙️ <b>Auto-Adjust</b>\n"
+                        f"No trades for 3h. Lowered min_score: {old_score} → {self.config.min_score_to_trade}"
+                    )
             
             # Heartbeat every 10 cycles (5 min) — shows bot is alive
             if self.cycle_count % 10 == 0:
@@ -333,12 +391,24 @@ class PaperTrader:
                      f"Open: {len(self.engine.open_trades)} | "
                      f"Closed: {len(self.engine.closed_trades)}")
             
+            # Daily report every 24 hours
+            if (self.cycle_count - self._last_daily_report_cycle) >= self._daily_report_interval:
+                self._last_daily_report_cycle = self.cycle_count
+                await self._send_daily_report_telegram()
+            
             # Periodic report
             if self.cycle_count % self.config.report_interval_cycles == 0:
                 self._print_status()
         
         except Exception as e:
             _log(f"  [Cycle {self.cycle_count}] Error: {e}")
+            if self.telegram and self.cycle_count % 100 == 0:
+                try:
+                    asyncio.ensure_future(self.telegram.send_message(
+                        f"⚠️ <b>Bot Error</b>\nCycle {self.cycle_count}: {e}"
+                    ))
+                except Exception:
+                    pass
     
     async def _sync_prices(self):
         """Sync live MT5 prices to PaperBroker."""
@@ -479,10 +549,110 @@ class PaperTrader:
                         reason
                     ])
                     self.csv_file.flush()
+                    
+                    # Telegram notify on close
+                    if self.telegram:
+                        try:
+                            emoji = "🟢" if pnl_dollars > 0 else "🔴"
+                            msg = (f"{emoji} <b>Trade Closed ({reason})</b>\n"
+                                   f"Direction: {trade.direction.value}\n"
+                                   f"Entry: {trade.entry_price:.2f} → Exit: {exit_price:.2f}\n"
+                                   f"P&L: ${pnl_dollars:+.2f}\n"
+                                   f"Score: {trade.strategy_scores.get('total', '?')}")
+                            asyncio.ensure_future(self.telegram.send_message(msg))
+                        except Exception:
+                            pass
                 except Exception as e:
                     _log(f"  [CLOSE] Error closing trade: {e}")
         except Exception as e:
             _log(f"  [CHECK] Error checking trades: {e}")
+    
+    def _check_trailing_stop(self):
+        """Move SL to breakeven or trail it as profit increases."""
+        if not self.engine.open_trades:
+            return
+        
+        try:
+            import MetaTrader5 as mt5
+            from ..gold_bot.core.engine import SignalDirection
+            
+            tick = mt5.symbol_info_tick(self.config.symbol)
+            if not tick:
+                return
+            
+            current_price = float((tick.bid + tick.ask) / 2)
+            breakeven_pips = self.config.breakeven_trigger_pips
+            trailing_pips = getattr(self.config, 'trailing_stop_pips', 50.0)
+            
+            for trade in self.engine.open_trades:
+                if trade.direction == SignalDirection.BUY:
+                    profit_pips = (current_price - trade.entry_price) / 0.01
+                else:
+                    profit_pips = (trade.entry_price - current_price) / 0.01
+                
+                if profit_pips <= 0:
+                    continue
+                
+                # Move SL to breakeven
+                if profit_pips >= breakeven_pips:
+                    if trade.direction == SignalDirection.BUY:
+                        new_sl = trade.entry_price + 0.01  # 1 pip above entry
+                        if trade.stop_loss < new_sl:
+                            trade.stop_loss = new_sl
+                            _log(f"  [BE] {trade.direction.value} SL→{new_sl:.2f} (profit={profit_pips:.0f}p)")
+                    else:
+                        new_sl = trade.entry_price - 0.01
+                        if trade.stop_loss > new_sl:
+                            trade.stop_loss = new_sl
+                            _log(f"  [BE] {trade.direction.value} SL→{new_sl:.2f} (profit={profit_pips:.0f}p)")
+                
+                # Trail stop
+                if profit_pips >= trailing_pips:
+                    if trade.direction == SignalDirection.BUY:
+                        new_sl = current_price - (trailing_pips * 0.01)
+                        if trade.stop_loss < new_sl:
+                            trade.stop_loss = new_sl
+                            _log(f"  [TRAIL] BUY SL→{new_sl:.2f} (profit={profit_pips:.0f}p)")
+                    else:
+                        new_sl = current_price + (trailing_pips * 0.01)
+                        if trade.stop_loss > new_sl:
+                            trade.stop_loss = new_sl
+                            _log(f"  [TRAIL] SELL SL→{new_sl:.2f} (profit={profit_pips:.0f}p)")
+        
+        except Exception:
+            pass
+    
+    async def _send_daily_report_telegram(self):
+        """Send daily report via Telegram."""
+        if not self.telegram:
+            return
+        
+        try:
+            elapsed = (datetime.now(timezone.utc) - self.start_time).total_seconds() / 3600
+            wins = sum(1 for t in self.engine.closed_trades if t.pnl > 0)
+            total = len(self.engine.closed_trades)
+            win_rate = (wins / total * 100) if total > 0 else 0
+            total_pnl = sum(t.pnl for t in self.engine.closed_trades)
+            
+            active = [n for n, s in self.engine.strategy_stats.items() if s['active']]
+            benched = [n for n, s in self.engine.strategy_stats.items() if s.get('league_tier') == 'BENCH']
+            
+            stats = {
+                'total_trades': total,
+                'win_rate': win_rate,
+                'daily_pnl': self.daily_pnl,
+                'total_pnl': total_pnl,
+                'drawdown': ((self.peak_equity - (self.config.initial_capital + self.daily_pnl)) / self.peak_equity * 100) if self.peak_equity > 0 else 0,
+                'open_positions': len(self.engine.open_trades),
+                'tier_s': [n for n, s in self.engine.strategy_stats.items() if s.get('league_tier') == 'S'],
+                'tier_a': [n for n, s in self.engine.strategy_stats.items() if s.get('league_tier') == 'A'],
+                'bench': benched,
+            }
+            
+            await self.telegram.notify_daily_report(stats)
+            _log(f"  [DAILY REPORT] Sent via Telegram")
+        except Exception as e:
+            _log(f"  [DAILY REPORT] Error: {e}")
     
     def _update_pnl_tracking(self):
         """Update daily P&L and peak equity."""
