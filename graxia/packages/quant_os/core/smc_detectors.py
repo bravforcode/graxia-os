@@ -262,6 +262,7 @@ def detect_order_blocks(
     fractals: pd.DataFrame,
     impulse_min_atr: float = 1.0,
     max_lookback_bars: int = 5,
+    max_age_bars: int = 200,
     atr_period: int = 14,
 ) -> pd.DataFrame:
     """Detect unmitigated order blocks.
@@ -269,6 +270,9 @@ def detect_order_blocks(
     For each structure-breaking impulsive move, the last opposing-color candle
     before the move becomes an order block. We use the full candle range
     [low, high] for the zone and document that choice explicitly.
+
+    ``max_age_bars`` limits how far back we search for active OBs when
+    computing feature columns, keeping runtime linear in practice.
 
     Returns DataFrame with columns:
         ob_distance_atr, ob_age_bars, ob_strength
@@ -287,7 +291,6 @@ def detect_order_blocks(
     swing_highs = fractals[fractals["swing_high"]].index.to_numpy()
     swing_lows = fractals[fractals["swing_low"]].index.to_numpy()
 
-    # Helper: find the last opposing candle before a break
     def candle_color(idx: int) -> str:
         return "green" if close[idx] >= open_[idx] else "red"
 
@@ -297,7 +300,6 @@ def detect_order_blocks(
         level = low[low_idx]
         for i in range(low_idx + 1, min(low_idx + max_lookback_bars + 1, n)):
             if close[i] < level - impulse_min_atr * atr[i]:
-                # Last green candle before the break
                 for j in range(i - 1, max(i - max_lookback_bars, -1), -1):
                     if candle_color(j) == "green":
                         obs.append(
@@ -318,7 +320,6 @@ def detect_order_blocks(
         level = high[high_idx]
         for i in range(high_idx + 1, min(high_idx + max_lookback_bars + 1, n)):
             if close[i] > level + impulse_min_atr * atr[i]:
-                # Last red candle before the break
                 for j in range(i - 1, max(i - max_lookback_bars, -1), -1):
                     if candle_color(j) == "red":
                         obs.append(
@@ -333,34 +334,36 @@ def detect_order_blocks(
                         break
                 break
 
-    # Mitigation tracking: price closes back inside the zone
+    # Mitigation tracking limited to max_age_bars for efficiency
     for ob in obs:
-        for i in range(ob.bar_idx + 1, n):
+        end = min(ob.bar_idx + max_age_bars + 1, n)
+        for i in range(ob.bar_idx + 1, end):
             if ob.bottom <= close[i] <= ob.top:
                 ob.mitigated = True
                 ob.mitigation_bar_idx = i
                 break
 
-    # Feature columns: distance from current close to nearest unmitigated OB
     ob_distance = np.full(n, np.nan, dtype=float)
     ob_age = np.full(n, np.nan, dtype=float)
     ob_strength = np.full(n, np.nan, dtype=float)
 
     for i in range(n):
-        active = [ob for ob in obs if ob.bar_idx < i and not ob.mitigated_at(i)]
-        if active:
-            nearest = min(
-                active,
-                key=lambda ob: min(
-                    abs(close[i] - ob.top), abs(close[i] - ob.bottom)
-                ),
-            )
-            dist = min(abs(close[i] - nearest.top), abs(close[i] - nearest.bottom))
+        min_bar = max(0, i - max_age_bars)
+        chosen = None
+        for ob in reversed(obs):
+            if ob.bar_idx >= i:
+                continue
+            if ob.bar_idx < min_bar:
+                break
+            if not ob.mitigated_at(i):
+                chosen = ob
+                break
+        if chosen is not None:
+            dist = min(abs(close[i] - chosen.top), abs(close[i] - chosen.bottom))
             ob_distance[i] = dist / atr[i] if atr[i] > 0 else dist
-            ob_age[i] = i - nearest.bar_idx
-            # Strength: inverse normalized distance to zone center
-            center = (nearest.top + nearest.bottom) / 2.0
-            half_width = abs(nearest.top - nearest.bottom) / 2.0 + 1e-9
+            ob_age[i] = i - chosen.bar_idx
+            center = (chosen.top + chosen.bottom) / 2.0
+            half_width = abs(chosen.top - chosen.bottom) / 2.0 + 1e-9
             ob_strength[i] = max(0.0, 1.0 - abs(close[i] - center) / half_width)
 
     out = pd.DataFrame(
@@ -385,13 +388,17 @@ OrderBlock.mitigated_at = _mitigated_at  # type: ignore[method-assign]
 
 # ── Foundational detector: fair value gap ────────────────────────────────────
 
-def detect_fvg(df: pd.DataFrame) -> pd.DataFrame:
+def detect_fvg(
+    df: pd.DataFrame,
+    max_age_bars: int = 200,
+) -> pd.DataFrame:
     """Detect bullish and bearish fair value gaps.
 
     Bullish FVG: high[i-1] < low[i+1]  -> gap = [high[i-1], low[i+1]]
     Bearish FVG: low[i-1] > high[i+1]  -> gap = [high[i+1], low[i-1]]
 
     A gap is filled the first time price trades through the full range.
+    ``max_age_bars`` limits fill search and feature lookback.
 
     Returns DataFrame with columns:
         fvg_nearest_distance_atr, fvg_nearest_size_atr, fvg_inside_flag
@@ -430,9 +437,9 @@ def detect_fvg(df: pd.DataFrame) -> pd.DataFrame:
                 )
             )
 
-    # Fill detection
     for fvg in fvgs:
-        for j in range(fvg.end_bar_idx + 1, n):
+        end = min(fvg.end_bar_idx + max_age_bars + 1, n)
+        for j in range(fvg.end_bar_idx + 1, end):
             if (
                 (fvg.direction == "bullish" and low[j] <= fvg.bottom and high[j] >= fvg.top)
                 or (fvg.direction == "bearish" and high[j] >= fvg.top and low[j] <= fvg.bottom)
@@ -441,23 +448,28 @@ def detect_fvg(df: pd.DataFrame) -> pd.DataFrame:
                 fvg.fill_bar_idx = j
                 break
 
-    # Feature columns
     dist = np.full(n, np.nan, dtype=float)
     size = np.full(n, np.nan, dtype=float)
     inside = np.zeros(n, dtype=bool)
 
+    # Use the most recent active FVG to keep this O(n * max_age_bars)
     for i in range(n):
-        active = [f for f in fvgs if f.end_bar_idx < i and not f.filled_at(i)]
-        if active:
-            nearest = min(
-                active,
-                key=lambda f: min(abs(close[i] - f.top), abs(close[i] - f.bottom)),
-            )
-            d = min(abs(close[i] - nearest.top), abs(close[i] - nearest.bottom))
+        min_bar = max(0, i - max_age_bars)
+        chosen = None
+        for f in reversed(fvgs):
+            if f.end_bar_idx >= i:
+                continue
+            if f.end_bar_idx < min_bar:
+                break
+            if not f.filled_at(i):
+                chosen = f
+                break
+        if chosen is not None:
+            d = min(abs(close[i] - chosen.top), abs(close[i] - chosen.bottom))
             dist[i] = d / atr[i] if atr[i] > 0 else d
-            sz = abs(nearest.top - nearest.bottom)
+            sz = abs(chosen.top - chosen.bottom)
             size[i] = sz / atr[i] if atr[i] > 0 else sz
-            inside[i] = nearest.bottom <= close[i] <= nearest.top
+            inside[i] = chosen.bottom <= close[i] <= chosen.top
 
     out = pd.DataFrame(
         {
@@ -616,6 +628,7 @@ def detect_liquidity_pools(
     fractals: pd.DataFrame,
     tolerance_atr: float = 0.3,
     lookback_bars: int = 50,
+    max_age_bars: int = 200,
     min_cluster_size: int = 2,
     atr_period: int = 14,
 ) -> pd.DataFrame:
@@ -633,7 +646,6 @@ def detect_liquidity_pools(
     close = df["close"].to_numpy()
     high = df["high"].to_numpy()
     low = df["low"].to_numpy()
-    time_col = _get_time_column(df)
 
     pools: List[LiquidityPool] = []
 
@@ -641,21 +653,22 @@ def detect_liquidity_pools(
     lows = fractals[fractals["swing_low"]].index.to_numpy()
 
     def build_pools(idxs: np.ndarray, direction: str) -> List[LiquidityPool]:
+        if len(idxs) == 0:
+            return []
         prices = np.array([high[i] if direction == "high" else low[i] for i in idxs])
         used = np.zeros(len(idxs), dtype=bool)
         result: List[LiquidityPool] = []
         for i, idx in enumerate(idxs):
             if used[i]:
                 continue
-            # Only look back within lookback_bars
             candidates = [
-                (j, idxs[j])
+                j
                 for j in range(i)
-                if not used[j] and idx - idxs[j] <= lookback_bars
+                if not used[j]
+                and idx - idxs[j] <= lookback_bars
+                and abs(prices[j] - prices[i]) <= tolerance_atr * atr[int(idx)]
             ]
-            cluster = [i] + [
-                j for j, _ in candidates if abs(prices[j] - prices[i]) <= tolerance_atr * atr[idx]
-            ]
+            cluster = [i] + candidates
             if len(cluster) >= min_cluster_size:
                 for j in cluster:
                     used[j] = True
@@ -680,13 +693,20 @@ def detect_liquidity_pools(
     strength = np.full(n, np.nan, dtype=float)
 
     for i in range(n):
-        relevant = [p for p in pools if p.newest_bar_idx < i]
-        if relevant:
-            nearest = min(relevant, key=lambda p: abs(close[i] - p.level))
-            d = abs(close[i] - nearest.level)
+        min_bar = max(0, i - max_age_bars)
+        chosen = None
+        for p in reversed(pools):
+            if p.newest_bar_idx >= i:
+                continue
+            if p.newest_bar_idx < min_bar:
+                break
+            chosen = p
+            break
+        if chosen is not None:
+            d = abs(close[i] - chosen.level)
             dist[i] = d / atr[i] if atr[i] > 0 else d
-            age[i] = i - nearest.newest_bar_idx
-            strength[i] = nearest.strength
+            age[i] = i - chosen.newest_bar_idx
+            strength[i] = chosen.strength
 
     out = pd.DataFrame(
         {
@@ -913,6 +933,7 @@ def detect_mitigation_and_inversion(
     df: pd.DataFrame,
     obs: List[OrderBlock],
     fvgs: List[FairValueGap],
+    max_age_bars: int = 200,
     atr_period: int = 14,
 ) -> pd.DataFrame:
     """Compute mitigation depth for OBs and flag inversion FVGs.
@@ -932,13 +953,13 @@ def detect_mitigation_and_inversion(
 
     mitigation_depth = np.full(n, np.nan, dtype=float)
     for ob in obs:
-        # Find the extreme of the move that created the OB (swing before OB)
         if ob.bar_idx <= 0:
             continue
         if ob.direction == "bullish":
             move_low = float(df["low"].iloc[max(0, ob.bar_idx - 5) : ob.bar_idx + 1].min())
             move_high = ob.top
-            for i in range(ob.bar_idx + 1, n):
+            end = min(ob.bar_idx + max_age_bars + 1, n)
+            for i in range(ob.bar_idx + 1, end):
                 if ob.mitigated_at(i):
                     depth = (move_high - close[i]) / (move_high - move_low) if move_high != move_low else 0.0
                     mitigation_depth[i] = depth
@@ -946,7 +967,8 @@ def detect_mitigation_and_inversion(
         else:
             move_high = float(df["high"].iloc[max(0, ob.bar_idx - 5) : ob.bar_idx + 1].max())
             move_low = ob.bottom
-            for i in range(ob.bar_idx + 1, n):
+            end = min(ob.bar_idx + max_age_bars + 1, n)
+            for i in range(ob.bar_idx + 1, end):
                 if ob.mitigated_at(i):
                     depth = (close[i] - move_low) / (move_high - move_low) if move_high != move_low else 0.0
                     mitigation_depth[i] = depth
@@ -959,10 +981,9 @@ def detect_mitigation_and_inversion(
         fill_idx = fvg.fill_bar_idx
         if fill_idx is None:
             continue
-        # After fill, if price returns to the zone from the opposite side
-        for i in range(fill_idx + 1, n):
+        end = min(fill_idx + max_age_bars + 1, n)
+        for i in range(fill_idx + 1, end):
             if fvg.direction == "bullish":
-                # Was support; now resistance if price approaches from below and fails
                 if high[i] >= fvg.bottom and close[i] < fvg.bottom:
                     inversion_flag[i] = True
                     break
@@ -1093,14 +1114,14 @@ def detect_wyckoff_events(
 
 def volume_profile_features(
     df: pd.DataFrame,
-    lookback: int = 50,
+    lookback: int = 20,
     value_area_pct: float = 0.70,
 ) -> pd.DataFrame:
     """Rolling volume profile features.
 
     POC = price level with highest volume in the lookback window.
     Value Area = price range containing ``value_area_pct`` of total volume.
-    HVN/LVN are approximated by distance to POC relative to value area width.
+    Implemented with per-window argsort for speed (O(n * lookback log lookback)).
 
     Returns columns:
         vp_poc_distance_atr, vp_inside_value_area, vp_hvn_proximity
@@ -1114,20 +1135,29 @@ def volume_profile_features(
     inside_va = np.zeros(n, dtype=bool)
     hvn_prox = np.zeros(n, dtype=float)
 
-    for i in range(lookback, n):
-        sub = df.iloc[i - lookback : i + 1]
-        vol_by_price = sub.groupby(np.round(sub["close"], 6))["volume"].sum()
-        if vol_by_price.empty:
+    for i in range(lookback - 1, n):
+        prices = close[i - lookback + 1 : i + 1]
+        vols = volume[i - lookback + 1 : i + 1]
+        if vols.sum() <= 0:
             continue
-        poc = vol_by_price.idxmax()
-        total_vol = vol_by_price.sum()
-        sorted_prices = vol_by_price.sort_values(ascending=False)
-        cum_pct = sorted_prices.cumsum() / total_vol
-        va_prices = sorted_prices[cum_pct <= value_area_pct].index
-        if len(va_prices) == 0:
-            continue
-        vah = float(va_prices.max())
-        val = float(va_prices.min())
+        order = np.argsort(prices)
+        sorted_prices = prices[order]
+        sorted_vols = vols[order]
+        cum_vol = np.cumsum(sorted_vols)
+        total_vol = cum_vol[-1]
+
+        # POC = price with max single-bar volume in window
+        poc = prices[np.argmax(vols)]
+
+        # Value area: central X% of volume by price
+        lower_pct = (1.0 - value_area_pct) / 2.0
+        upper_pct = 1.0 - lower_pct
+        lower_idx = int(np.searchsorted(cum_vol / total_vol, lower_pct))
+        upper_idx = int(np.searchsorted(cum_vol / total_vol, upper_pct))
+        lower_idx = np.clip(lower_idx, 0, len(sorted_prices) - 1)
+        upper_idx = np.clip(upper_idx, 0, len(sorted_prices) - 1)
+        val = float(sorted_prices[lower_idx])
+        vah = float(sorted_prices[upper_idx])
 
         poc_dist[i] = abs(close[i] - poc) / atr[i] if atr[i] > 0 else abs(close[i] - poc)
         inside_va[i] = val <= close[i] <= vah
