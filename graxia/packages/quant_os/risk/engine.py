@@ -221,6 +221,7 @@ class RiskEngine:
         portfolio: PortfolioState,
         realized_vol: float = 0.15,
         regime: Any = None,
+        sentiment_multiplier: float = 1.0,
     ) -> RiskVerdict:
         # Pre-checks: kill switch, circuit breaker, schema
         pre = self._pre_checks(signal)
@@ -228,7 +229,7 @@ class RiskEngine:
             return pre
 
         # Layer 1
-        layer1 = self._layer1(signal)
+        layer1 = self._layer1(signal, account)
         if layer1:
             return layer1
 
@@ -243,9 +244,9 @@ class RiskEngine:
             return layer3
 
         # Layer 4
-        return self._layer4(signal, account, portfolio, realized_vol, regime)
+        return self._layer4(signal, account, portfolio, realized_vol, regime, sentiment_multiplier)
 
-    def _layer1(self, signal: Signal) -> RiskVerdict | None:
+    def _layer1(self, signal: Signal, account: AccountState | None = None) -> RiskVerdict | None:
         if signal.timestamp_epoch > 0:
             age = time.time() - signal.timestamp_epoch
         else:
@@ -261,6 +262,17 @@ class RiskEngine:
             return self._reject(
                 RejectReason.LOW_CONVICTION, f"Conviction {signal.conviction:.2f} < {_Layer1.MIN_CONVICTION}", layer=1
             )
+        max_risk_pct = float(self._risk_policy.risk_per_trade_fraction) if self._risk_policy is not None else _Layer1.MAX_RISK_PCT_EQUITY
+        if account is not None and account.equity > 0:
+            risk_per_unit = abs(signal.entry_price - signal.stop_loss) if signal.stop_loss else 0
+            if risk_per_unit > 0:
+                max_risk_amount = account.equity * max_risk_pct
+                if risk_per_unit > max_risk_amount:
+                    return self._reject(
+                        RejectReason.HIGH_RISK,
+                        f"Per-unit risk ${risk_per_unit:.2f} > max ${max_risk_amount:.2f} ({max_risk_pct:.2%} of equity)",
+                        layer=1,
+                    )
         return None
 
     def _layer2(self, signal: Signal, portfolio: PortfolioState, account: AccountState | None = None) -> RiskVerdict | None:
@@ -297,9 +309,12 @@ class RiskEngine:
                 layer=2,
             )
 
-        max_positions = _Layer2.MAX_POSITIONS
-        if account is not None and account.equity > 0:
-            max_positions = max(5, min(20, int(account.equity / 10000)))
+        if self._risk_policy is not None:
+            max_positions = self._risk_policy.max_open_positions
+        else:
+            max_positions = _Layer2.MAX_POSITIONS
+            if account is not None and account.equity > 0:
+                max_positions = max(5, min(20, int(account.equity / 10000)))
 
         if len(portfolio.position_symbols) >= max_positions:
             return self._reject(
@@ -367,6 +382,7 @@ class RiskEngine:
         portfolio: PortfolioState,
         realized_vol: float,
         regime: Any,
+        sentiment_multiplier: float = 1.0,
     ) -> RiskVerdict:
         vol_scalar = _Layer4.VOL_TARGET / max(realized_vol, 0.01)
         vol_scalar = max(vol_scalar, 0.1)
@@ -381,7 +397,7 @@ class RiskEngine:
             elif "TREND" in regime_name.upper():
                 regime_mult = 1.1
 
-        kelly_fraction = signal.conviction * vol_scalar * regime_mult
+        kelly_fraction = signal.conviction * vol_scalar * regime_mult * sentiment_multiplier
         kelly_fraction = min(kelly_fraction, _Layer4.KELLY_CAP)
 
         risk_per_unit = abs(signal.entry_price - signal.stop_loss) if signal.stop_loss else 0
@@ -390,7 +406,8 @@ class RiskEngine:
                 RejectReason.SIZING_REJECTED, "Zero or negative stop distance", layer=4
             )
 
-        risk_budget = account.equity * _Layer1.MAX_RISK_PCT_EQUITY
+        max_risk_pct = float(self._risk_policy.risk_per_trade_fraction) if self._risk_policy is not None else _Layer1.MAX_RISK_PCT_EQUITY
+        risk_budget = account.equity * max_risk_pct
         approved_qty = round(risk_budget / risk_per_unit, 2)
 
         approved_qty = max(approved_qty * kelly_fraction, 0)
