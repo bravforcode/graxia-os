@@ -64,11 +64,11 @@ def check_bot_process() -> tuple[bool, int]:
         except (ValueError, OSError):
             pass
 
-    # Fallback: find python process running run_paper.py via PowerShell
+    # Fallback: find python or cmd process running run_paper.py via PowerShell
     try:
         result = subprocess.run(
             ["powershell", "-NoProfile", "-Command",
-             "Get-CimInstance Win32_Process -Filter \"Name='python.exe'\" "
+             "Get-CimInstance Win32_Process -Filter \"Name='python.exe' or Name='cmd.exe'\" "
              "| Where-Object { $_.CommandLine -like '*run_paper.py*' } "
              "| Select-Object -ExpandProperty ProcessId"],
             capture_output=True, text=True, timeout=15
@@ -126,7 +126,11 @@ def check_error_log() -> list[str]:
 def check_csv_activity() -> dict:
     """Check trade CSV activity."""
     import glob
+    # Check both possible locations for CSV
     csv_files = sorted(glob.glob(str(LOG_DIR / "paper_trades_*.csv")))
+    if not csv_files:
+        alt_dir = WORKSPACE / "logs"
+        csv_files = sorted(glob.glob(str(alt_dir / "paper_trades_*.csv")))
     if not csv_files:
         return {"exists": False, "trades": 0, "latest_file": None}
 
@@ -138,47 +142,44 @@ def check_csv_activity() -> dict:
     except Exception:
         trade_count = 0
 
+    mtime = datetime.fromtimestamp(Path(latest).stat().st_mtime).strftime("%H:%M:%S")
     return {
         "exists": True,
         "trades": trade_count,
         "latest_file": Path(latest).name,
+        "last_modified": mtime,
     }
 
 
 def restart_bot():
-    """Restart the paper trading bot."""
+    """Restart the paper trading bot via PowerShell script."""
     log("RESTARTING bot...")
 
-    # Kill existing python processes running run_paper.py
+    # Kill existing processes
     try:
         subprocess.run(
-            ["taskkill", "/F", "/IM", "python.exe", "/FI",
-             "WINDOWTITLE eq *run_paper*"],
-            capture_output=True, timeout=10
+            ["powershell", "-NoProfile", "-Command",
+             "Get-Process python,cmd -ErrorAction SilentlyContinue | "
+             "Where-Object { $_.CommandLine -like '*run_paper*' } | Stop-Process -Force"],
+            capture_output=True, timeout=15
         )
     except Exception:
         pass
 
     import time
-    time.sleep(3)
+    time.sleep(5)
 
-    # Start new process
+    # Start via PS1 script
+    ps1_script = WORKSPACE / "graxia" / "packages" / "quant_os" / "start_bot.ps1"
     try:
-        proc = subprocess.Popen(
-            [sys.executable, "-u", str(BOT_SCRIPT),
-             "--duration", "168", "--capital", "49911.92", "--risk", "0.25"],
+        subprocess.Popen(
+            ["powershell", "-ExecutionPolicy", "Bypass", "-File", str(ps1_script)],
             cwd=str(WORKSPACE),
-            stdout=open(LOG_DIR / "paper_7day.log", "w"),
-            stderr=open(LOG_DIR / "paper_7day_err.log", "w"),
             creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
             close_fds=True,
         )
-
-        # Save PID
-        PID_FILE.write_text(str(proc.pid))
-        log(f"Bot restarted with PID {proc.pid}")
+        log("Bot restart initiated via start_bot.ps1")
         return True
-
     except Exception as e:
         log(f"RESTART FAILED: {e}")
         return False
