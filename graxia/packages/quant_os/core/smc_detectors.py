@@ -905,3 +905,241 @@ def detect_liquidity_voids(
         },
         index=df.index,
     )
+
+
+# ── Composite: Mitigation block + Inversion FVG ──────────────────────────────
+
+def detect_mitigation_and_inversion(
+    df: pd.DataFrame,
+    obs: List[OrderBlock],
+    fvgs: List[FairValueGap],
+    atr_period: int = 14,
+) -> pd.DataFrame:
+    """Compute mitigation depth for OBs and flag inversion FVGs.
+
+    Mitigation depth = how far price retraced into the impulsive leg
+    before touching the OB zone. Inversion FVG = a previously filled FVG
+    that is now being re-tested from the opposite side.
+
+    Returns columns:
+        ob_mitigation_depth, inversion_fvg_flag
+    """
+    n = len(df)
+    atr = _atr(df, atr_period)
+    close = df["close"].to_numpy()
+    high = df["high"].to_numpy()
+    low = df["low"].to_numpy()
+
+    mitigation_depth = np.full(n, np.nan, dtype=float)
+    for ob in obs:
+        # Find the extreme of the move that created the OB (swing before OB)
+        if ob.bar_idx <= 0:
+            continue
+        if ob.direction == "bullish":
+            move_low = float(df["low"].iloc[max(0, ob.bar_idx - 5) : ob.bar_idx + 1].min())
+            move_high = ob.top
+            for i in range(ob.bar_idx + 1, n):
+                if ob.mitigated_at(i):
+                    depth = (move_high - close[i]) / (move_high - move_low) if move_high != move_low else 0.0
+                    mitigation_depth[i] = depth
+                    break
+        else:
+            move_high = float(df["high"].iloc[max(0, ob.bar_idx - 5) : ob.bar_idx + 1].max())
+            move_low = ob.bottom
+            for i in range(ob.bar_idx + 1, n):
+                if ob.mitigated_at(i):
+                    depth = (close[i] - move_low) / (move_high - move_low) if move_high != move_low else 0.0
+                    mitigation_depth[i] = depth
+                    break
+
+    inversion_flag = np.zeros(n, dtype=bool)
+    for fvg in fvgs:
+        if not fvg.filled:
+            continue
+        fill_idx = fvg.fill_bar_idx
+        if fill_idx is None:
+            continue
+        # After fill, if price returns to the zone from the opposite side
+        for i in range(fill_idx + 1, n):
+            if fvg.direction == "bullish":
+                # Was support; now resistance if price approaches from below and fails
+                if high[i] >= fvg.bottom and close[i] < fvg.bottom:
+                    inversion_flag[i] = True
+                    break
+            else:
+                if low[i] <= fvg.top and close[i] > fvg.top:
+                    inversion_flag[i] = True
+                    break
+
+    return pd.DataFrame(
+        {
+            "ob_mitigation_depth": mitigation_depth,
+            "inversion_fvg_flag": inversion_flag,
+        },
+        index=df.index,
+    )
+
+
+# ── Composite: Judas Swing (Power-of-Three manipulation leg) ─────────────────
+
+def detect_judas_swings(
+    df: pd.DataFrame,
+    sweeps: pd.DataFrame,
+    killzones: pd.DataFrame,
+    max_minutes_from_open: int = 60,
+) -> pd.DataFrame:
+    """Flag sweeps that occur within the opening window of London or NY killzones.
+
+    A Judas Swing is a liquidity sweep near a major session open that quickly
+    reverses — the "manipulation" leg of Power of Three. Returns columns:
+        judas_swing_flag, judas_direction
+    """
+    n = len(df)
+    time_col = _get_time_column(df)
+    flag = np.zeros(n, dtype=bool)
+    direction = np.full(n, "", dtype=object)
+
+    # Determine open-boundary minutes for each bar (minutes since session start)
+    minutes = time_col.dt.hour * 60 + time_col.dt.minute
+
+    in_open_window = (
+        (killzones["is_london_open"] & (minutes >= 7 * 60) & (minutes < 7 * 60 + max_minutes_from_open))
+        | (killzones["is_ny_open"] & (minutes >= 12 * 60) & (minutes < 12 * 60 + max_minutes_from_open))
+    )
+
+    for i in range(n):
+        if not in_open_window.iloc[i]:
+            continue
+        if sweeps.loc[i, "sweep_bearish_flag"]:
+            flag[i] = True
+            direction[i] = "bearish"
+        elif sweeps.loc[i, "sweep_bullish_flag"]:
+            flag[i] = True
+            direction[i] = "bullish"
+
+    return pd.DataFrame(
+        {
+            "judas_swing_flag": flag,
+            "judas_direction": direction,
+        },
+        index=df.index,
+    )
+
+
+# ── Composite: Wyckoff accumulation / distribution schematic ─────────────────
+
+def detect_wyckoff_events(
+    df: pd.DataFrame,
+    lookback: int = 20,
+    spring_threshold_atr: float = 0.5,
+    atr_period: int = 14,
+) -> pd.DataFrame:
+    """Slower-timeframe Wyckoff-style spring/upthrust detection.
+
+    Identifies range-bound regimes and false breakdowns/breakouts. Designed
+    as an HTF bias filter, not a standalone trigger.
+
+    Returns columns:
+        wyckoff_range_bound, wyckoff_spring_flag, wyckoff_upthrust_flag
+    """
+    n = len(df)
+    atr = _atr(df, atr_period)
+    close = df["close"].to_numpy()
+    high = df["high"].to_numpy()
+    low = df["low"].to_numpy()
+
+    range_bound = np.zeros(n, dtype=bool)
+    spring = np.zeros(n, dtype=bool)
+    upthrust = np.zeros(n, dtype=bool)
+
+    for i in range(lookback, n):
+        window_high = high[i - lookback : i + 1].max()
+        window_low = low[i - lookback : i + 1].min()
+        # Support/resistance for spring/upthrust is defined by prior bars only
+        prior_low = low[i - lookback : i].min() if i - lookback < i else window_low
+        prior_high = high[i - lookback : i].max() if i - lookback < i else window_high
+        range_size = window_high - window_low
+        if range_size <= 0:
+            continue
+        # Range-bound if recent ATR is a small fraction of the total range
+        avg_atr = atr[i - lookback : i + 1].mean()
+        if avg_atr > 0 and range_size / avg_atr < lookback * 0.4:
+            range_bound[i] = True
+
+        # Spring: close back above prior support after piercing below it
+        if (
+            low[i] < prior_low - spring_threshold_atr * atr[i]
+            and close[i] > prior_low - spring_threshold_atr * atr[i]
+        ):
+            spring[i] = True
+        # Upthrust: close back below prior resistance after piercing above it
+        if (
+            high[i] > prior_high + spring_threshold_atr * atr[i]
+            and close[i] < prior_high + spring_threshold_atr * atr[i]
+        ):
+            upthrust[i] = True
+
+    return pd.DataFrame(
+        {
+            "wyckoff_range_bound": range_bound,
+            "wyckoff_spring_flag": spring,
+            "wyckoff_upthrust_flag": upthrust,
+        },
+        index=df.index,
+    )
+
+
+# ── Composite: Volume Profile (POC / VAH / VAL / HVN / LVN) ──────────────────
+
+def volume_profile_features(
+    df: pd.DataFrame,
+    lookback: int = 50,
+    value_area_pct: float = 0.70,
+) -> pd.DataFrame:
+    """Rolling volume profile features.
+
+    POC = price level with highest volume in the lookback window.
+    Value Area = price range containing ``value_area_pct`` of total volume.
+    HVN/LVN are approximated by distance to POC relative to value area width.
+
+    Returns columns:
+        vp_poc_distance_atr, vp_inside_value_area, vp_hvn_proximity
+    """
+    n = len(df)
+    close = df["close"].to_numpy()
+    volume = df["volume"].to_numpy()
+    atr = _atr(df, 14)
+
+    poc_dist = np.full(n, np.nan, dtype=float)
+    inside_va = np.zeros(n, dtype=bool)
+    hvn_prox = np.zeros(n, dtype=float)
+
+    for i in range(lookback, n):
+        sub = df.iloc[i - lookback : i + 1]
+        vol_by_price = sub.groupby(np.round(sub["close"], 6))["volume"].sum()
+        if vol_by_price.empty:
+            continue
+        poc = vol_by_price.idxmax()
+        total_vol = vol_by_price.sum()
+        sorted_prices = vol_by_price.sort_values(ascending=False)
+        cum_pct = sorted_prices.cumsum() / total_vol
+        va_prices = sorted_prices[cum_pct <= value_area_pct].index
+        if len(va_prices) == 0:
+            continue
+        vah = float(va_prices.max())
+        val = float(va_prices.min())
+
+        poc_dist[i] = abs(close[i] - poc) / atr[i] if atr[i] > 0 else abs(close[i] - poc)
+        inside_va[i] = val <= close[i] <= vah
+        center = (vah + val) / 2.0
+        half_width = (vah - val) / 2.0 + 1e-9
+        hvn_prox[i] = max(0.0, 1.0 - abs(close[i] - center) / half_width)
+
+    return pd.DataFrame(
+        {
+            "vp_poc_distance_atr": poc_dist,
+            "vp_inside_value_area": inside_va,
+            "vp_hvn_proximity": hvn_prox,
+        },
+        index=df.index,
+    )

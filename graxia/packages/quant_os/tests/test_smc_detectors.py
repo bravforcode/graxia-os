@@ -16,12 +16,16 @@ from graxia.packages.quant_os.core.smc_detectors import (
     classify_killzone,
     detect_fvg,
     detect_fractals,
+    detect_judas_swings,
     detect_liquidity_pools,
     detect_liquidity_voids,
+    detect_mitigation_and_inversion,
     detect_order_blocks,
     detect_structure,
     detect_sweeps,
+    detect_wyckoff_events,
     detect_ote,
+    volume_profile_features,
 )
 
 
@@ -219,6 +223,64 @@ class TestKillzones:
 
 
 # ── Composite: OTE and liquidity voids ───────────────────────────────────────
+
+class TestMitigationAndInversion:
+    def test_mitigation_depth(self):
+        # bar1 swing low; bar2 green (bullish OB [99,101]); bar3 breaks below; bar4 closes back inside OB
+        o = [100, 99, 100, 96, 100]
+        h = [101, 100, 101, 98, 101]
+        l = [99, 98, 99, 95, 99]
+        c = [100, 99, 100, 96, 100]
+        df = _make_bars(o, h, l, c)
+        fractals = detect_fractals(df, k=1)
+        ob_df = detect_order_blocks(df, fractals, impulse_min_atr=0.1, max_lookback_bars=5)
+        obs = ob_df.attrs["events"]
+        mit = detect_mitigation_and_inversion(df, obs, [])
+        # Mitigation should be recorded on the bar that closes back inside the OB
+        assert mit["ob_mitigation_depth"].notna().any()
+
+
+class TestJudasSwing:
+    def test_judas_in_london_open(self):
+        # Sweep at 07:30 UTC inside London open window
+        o = [100, 101, 100, 103.5, 101]
+        h = [101, 102, 101, 104, 102]
+        l = [99, 100, 99, 102.5, 100]
+        c = [100, 101, 100, 101.5, 101]
+        base = datetime(2024, 1, 1, 7, 0, 0)
+        df = _make_bars(o, h, l, c, start=base)
+        fractals = detect_fractals(df, k=1)
+        sweeps = detect_sweeps(df, fractals, sweep_max_atr=10.0, max_reclaim_bars=2)
+        killzones = classify_killzone(pd.to_datetime(df["time"]))
+        judas = detect_judas_swings(df, sweeps, killzones)
+        assert judas.loc[3, "judas_swing_flag"]
+        assert judas.loc[3, "judas_direction"] == "bearish"
+
+
+class TestWyckoff:
+    def test_spring(self):
+        # Range-bound then false breakdown and reclaim
+        o = [100, 100, 100, 100, 99, 100]
+        h = [101, 101, 101, 101, 100, 101]
+        l = [99, 99, 99, 99, 97, 99]
+        c = [100, 100, 100, 100, 100, 100]
+        df = _make_bars(o, h, l, c)
+        # threshold 0 means close must be back above the exact window low
+        res = detect_wyckoff_events(df, lookback=4, spring_threshold_atr=0.0)
+        assert res.loc[4, "wyckoff_spring_flag"]
+
+
+class TestVolumeProfile:
+    def test_poc_distance(self):
+        prices = [100, 100.5, 101, 100.5, 100]
+        o = prices
+        h = [p + 0.1 for p in prices]
+        l = [p - 0.1 for p in prices]
+        c = prices
+        df = _make_bars(o, h, l, c)
+        res = volume_profile_features(df, lookback=4)
+        assert res["vp_poc_distance_atr"].notna().any()
+
 
 class TestOTE:
     def test_retracement_in_band(self):
