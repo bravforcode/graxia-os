@@ -272,8 +272,13 @@ class PaperTrader:
     async def _init_telegram(self):
         """Initialize Telegram notifications."""
         try:
-            from ..monitoring.telegram_bot import GoldBotTelegram
-            self.telegram = GoldBotTelegram(self.bot_config)
+            from graxia.packages.quant_os.gold_bot.monitoring.telegram_bot import GoldBotTelegram
+            from graxia.packages.quant_os.gold_bot.core.config import BotConfig
+            tg_config = BotConfig(
+                telegram_bot_token=os.getenv("TELEGRAM_BOT_TOKEN", ""),
+                telegram_chat_id=os.getenv("TELEGRAM_CHAT_ID", ""),
+            )
+            self.telegram = GoldBotTelegram(tg_config)
             await self.telegram.initialize()
             self.engine.notifier = self.telegram
             _log("  Telegram: Connected")
@@ -574,7 +579,7 @@ class PaperTrader:
         
         try:
             import MetaTrader5 as mt5
-            from ..gold_bot.core.engine import SignalDirection
+            from graxia.packages.quant_os.gold_bot.core.engine import SignalDirection
             
             tick = mt5.symbol_info_tick(self.config.symbol)
             if not tick:
