@@ -41,6 +41,11 @@ class BinanceAdapter(BrokerAdapter):
         if ccxt is None:
             raise RuntimeError("ccxt package is not installed")
 
+        super().__init__("BINANCE")
+        self._api_key = api_key
+        self._api_secret = api_secret
+        self._testnet = testnet
+        self._default_type = default_type
         self._exchange = ccxt.binance(
             {
                 "apiKey": api_key,
@@ -56,6 +61,29 @@ class BinanceAdapter(BrokerAdapter):
             self._exchange.set_sandbox_mode(True)
         self._last_call: float = 0.0
         self._order_symbols: dict[str, str] = {}  # broker_order_id -> symbol
+
+    # ------------------------------------------------------------------
+    # Connection lifecycle
+    # ------------------------------------------------------------------
+
+    def connect(self) -> bool:
+        """Load markets and confirm the exchange is reachable."""
+        try:
+            self._throttle()
+            self._exchange.load_markets()
+            self._connected = True
+            return True
+        except ccxt.AuthenticationError as exc:
+            raise RuntimeError(f"Binance authentication failed: {exc}") from exc
+        except ccxt.NetworkError as exc:
+            raise ConnectionError(f"Binance connection failed: {exc}") from exc
+        except ccxt.ExchangeError as exc:
+            raise RuntimeError(f"Binance connect failed: {exc}") from exc
+
+    def disconnect(self) -> None:
+        """Release the exchange reference."""
+        self._exchange = None  # type: ignore[assignment]
+        self._connected = False
 
     # ------------------------------------------------------------------
     # Rate-limit guard (applied on top of ccxt built-in limiter)

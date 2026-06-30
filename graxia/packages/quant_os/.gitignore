@@ -19,4 +19,5 @@ htmlcov/
 
 # Generated / temp files.contextignore.ipynb_checkpoints/
 data/warehouse/
+data/ticks/
 dashboard.ipynb

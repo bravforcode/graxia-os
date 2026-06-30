@@ -1,26 +1,31 @@
-.PHONY: test lint format clean coverage install-precommit install
+.PHONY: test test-chaos lint format typecheck coverage api release migrate migrate-down
 
 test:
-	python -m pytest graxia/packages/quant_os/tests/ --tb=short -q
+	python -m pytest graxia/packages/quant_os/tests/ -q --tb=short
 
-test-one:
-	python -m pytest $(file) --tb=short -q
+test-chaos:
+	python -m pytest graxia/packages/quant_os/tests/chaos/ -q --tb=short
 
 lint:
-	ruff check graxia/packages/quant_os/
+	python -m ruff check graxia/packages/quant_os
 
 format:
-	ruff format graxia/packages/quant_os/
+	python -m ruff format graxia/packages/quant_os
+
+typecheck:
+	python -m mypy graxia/packages/quant_os
 
 coverage:
-	python -m pytest graxia/packages/quant_os/tests/ --cov=graxia/packages/quant_os --cov-report=term --cov-report=html -q
+	python -m pytest graxia/packages/quant_os/tests/ --cov=graxia/packages/quant_os -q
 
-clean:
-	find graxia/packages/quant_os -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
-	find graxia/packages/quant_os -type f -name '*.pyc' -delete
+api:
+	python graxia/packages/quant_os/api/main.py
 
-install-precommit:
-	pip install pre-commit && pre-commit install
+release:
+	python scripts/run_release_gate.py
 
-install:
-	pip install -e graxia/packages/quant_os/
+migrate:
+	python -m alembic upgrade head
+
+migrate-down:
+	python -m alembic downgrade base

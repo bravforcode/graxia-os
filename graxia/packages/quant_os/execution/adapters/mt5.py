@@ -56,11 +56,11 @@ class MT5Adapter(BrokerAdapter):
         server: str = "Pepperstone-Live",
         timeout: int = 10_000,
     ) -> None:
+        super().__init__("MT5")
         self._login = login
         self._password = password
         self._server = server
         self._timeout = timeout
-        self._connected = False
 
     # ------------------------------------------------------------------
     # Connection helpers
@@ -99,11 +99,15 @@ class MT5Adapter(BrokerAdapter):
 
         raise ConnectionError("MT5 reconnect failed after 3 attempts")
 
-    def shutdown(self) -> None:
-        """Shut down the MT5 terminal connection."""
+    def disconnect(self) -> None:
+        """Tear down the MT5 terminal connection."""
         if mt5 is not None:
             mt5.shutdown()
         self._connected = False
+
+    def shutdown(self) -> None:
+        """Alias for :meth:`disconnect` for backward compatibility."""
+        self.disconnect()
 
     # ------------------------------------------------------------------
     # BrokerAdapter implementation

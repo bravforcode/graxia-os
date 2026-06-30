@@ -33,6 +33,7 @@ from .config import QuantConfig
 from .agents.risk_auditor import RiskAuditorAgent
 from .agents.portfolio_manager import PortfolioManagerAgent
 from ..execution.oms import OMS
+from ..execution.adapters.base import BrokerAdapter
 from ..execution.adapters.mt5 import MT5Adapter
 
 logger = logging.getLogger(__name__)
@@ -51,14 +52,15 @@ class TradingOrchestrator:
         self._config = config or QuantConfig()
         self._bus = EventBus()
         self._oms = oms
+        self._broker_adapter: BrokerAdapter | None = None
         if self._oms is None and self._config.live_trading_enabled:
             # Create OMS with MT5 adapter for live trading
-            mt5_adapter = MT5Adapter(
+            self._broker_adapter = MT5Adapter(
                 login=self._config.mt5_login,
                 password=self._config.mt5_password,
                 server=self._config.mt5_server,
             )
-            self._oms = OMS(adapters={"mt5": mt5_adapter})
+            self._oms = OMS(adapters={"mt5": self._broker_adapter})
         elif self._oms is None:
             # Paper mode: OMS not needed (PaperExecutor handles it)
             pass
@@ -166,6 +168,11 @@ class TradingOrchestrator:
         self._running = False
         if self._sync_task is not None:
             self._sync_task.cancel()
+        if self._broker_adapter is not None and self._broker_adapter.is_connected:
+            try:
+                self._broker_adapter.disconnect()
+            except Exception as exc:
+                logger.warning("orchestrator.disconnect_error error=%s", exc)
         logger.info("orchestrator.stopped")
 
     def _beat(self) -> None:
@@ -181,7 +188,7 @@ class TradingOrchestrator:
                 # Price sync: update position unrealized PnL
                 # This would connect to MT5 tick feed in production
                 # For now, positions track their own entry prices
-                
+
                 # Account equity sync: would call MT5 account_info() in production
                 # self._position_manager.sync_account_state(equity, balance, margin_level)
             except asyncio.CancelledError:

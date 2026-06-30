@@ -12,12 +12,13 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from ..core.config import get_config
 from ..core.golden_rules import validate_golden_rules
-from ..execution.broker_adapter import BrokerManager
+from ..execution.adapters.manager import BrokerManager
 from .webhook import webhook_router
 from .orders import orders_router
 from .positions import positions_router
 from .risk import risk_router
 from .admin import admin_router
+from .health import health_router
 
 
 # Security
@@ -29,7 +30,7 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     # Startup
     print("🚀 Quant OS starting up...")
-    
+
     # Validate golden rules
     rules_check = validate_golden_rules()
     if not rules_check["all_checks_passed"]:
@@ -40,7 +41,7 @@ async def lifespan(app: FastAPI):
                 print(f"  {status} {check}")
     else:
         print("✓ Golden rules validated")
-    
+
     # Initialize orchestrator (wires EventBus → Agents → TradingLoop → PositionManager)
     from ..core.orchestrator import TradingOrchestrator
     config = get_config()
@@ -48,11 +49,11 @@ async def lifespan(app: FastAPI):
     orchestrator.start()
     app.state.orchestrator = orchestrator
     print(f"✓ Orchestrator started (mode={config.trading_mode.value})")
-    
+
     # Initialize broker connection
-    broker_manager = BrokerManager()
+    broker_manager = BrokerManager.from_config()
     app.state.broker_manager = broker_manager
-    
+
     try:
         connected = await broker_manager.initialize()
         if connected:
@@ -61,10 +62,10 @@ async def lifespan(app: FastAPI):
             print("⚠️  No broker connection available")
     except Exception as e:
         print(f"⚠️  Broker initialization error: {e}")
-    
+
     # Yield control
     yield
-    
+
     # Shutdown
     print("🛑 Quant OS shutting down...")
     if hasattr(app.state, 'orchestrator'):
@@ -72,7 +73,7 @@ async def lifespan(app: FastAPI):
         print("✓ Orchestrator stopped")
     if hasattr(app.state, 'broker_manager'):
         try:
-            await app.state.broker_manager.active.disconnect()
+            app.state.broker_manager.active.disconnect()
             print("✓ Broker disconnected")
         except Exception:
             pass
@@ -81,7 +82,7 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     """Create and configure FastAPI application"""
     config = get_config()
-    
+
     try:
         from pathlib import Path
         _ver = Path(__file__).parent.parent.joinpath("VERSION").read_text().strip()
@@ -104,7 +105,7 @@ def create_app() -> FastAPI:
         license_info={"name": "Proprietary — Graxia OS"},
         lifespan=lifespan,
     )
-    
+
     # CORS — restrict origins in live mode
     config = get_config()
     if config.live_trading_enabled:
@@ -119,14 +120,24 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    
+
+    @app.middleware("http")
+    async def count_requests(request, call_next):
+        if not hasattr(app.state, "signal_requests"):
+            app.state.signal_requests = 0
+        if request.url.path == "/api/signal" and request.method == "POST":
+            app.state.signal_requests += 1
+        response = await call_next(request)
+        return response
+
     # Include routers
     app.include_router(webhook_router, prefix="/api/v1")
     app.include_router(orders_router, prefix="/api/v1")
     app.include_router(positions_router, prefix="/api/v1")
     app.include_router(risk_router, prefix="/api/v1")
     app.include_router(admin_router, prefix="/api/v1/admin")
-    
+    app.include_router(health_router, prefix="/api")
+
     # Root endpoint
     @app.get("/")
     async def root():
@@ -136,7 +147,7 @@ def create_app() -> FastAPI:
             "mode": config.trading_mode.value,
             "status": "operational"
         }
-    
+
     # Health check
     @app.get("/health")
     async def health_check():
@@ -146,11 +157,11 @@ def create_app() -> FastAPI:
                 broker_healthy = await app.state.broker_manager.health_check()
             except Exception:
                 pass
-        
+
         orch_status = {}
         if hasattr(app.state, 'orchestrator'):
             orch_status = app.state.orchestrator.get_status()
-        
+
         return {
             "status": "healthy" if broker_healthy else "degraded",
             "broker_connected": broker_healthy,
@@ -158,7 +169,7 @@ def create_app() -> FastAPI:
             "live_trading_enabled": config.live_trading_enabled,
             "orchestrator": orch_status,
         }
-    
+
     # Status endpoint
     @app.get("/status")
     async def system_status():
@@ -181,7 +192,28 @@ def create_app() -> FastAPI:
                 "min_confidence": config.ensemble_confidence_threshold
             }
         }
-    
+
+    @app.get("/api/metrics")
+    async def metrics():
+        """Basic Prometheus-style metrics endpoint."""
+        from datetime import datetime, timezone
+
+        # Import actual model state from signal_service
+        try:
+            from . import signal_service
+            model_loaded = signal_service._model_loaded
+            feature_count = len(signal_service._feature_names)
+        except Exception:
+            model_loaded = False
+            feature_count = 0
+
+        return {
+            "signal_requests_total": getattr(app.state, "signal_requests", 0),
+            "model_loaded": model_loaded,
+            "features": feature_count,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
     return app
 
 
@@ -192,7 +224,7 @@ app = create_app()
 if __name__ == "__main__":
     import uvicorn
     config = get_config()
-    
+
     uvicorn.run(
         "main:app",
         host=config.webhook_host,

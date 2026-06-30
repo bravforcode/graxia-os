@@ -35,7 +35,7 @@ from ..core.config import get_config
 from ..core.enums import SignalType, TradingMode
 from ..core.exceptions import ValidationError, KillSwitchTriggeredError
 from ..execution.manager import OrderManager
-from ..execution.broker_adapter import BrokerManager
+from ..execution.adapters.manager import BrokerManager
 from ..risk.engine import RiskEngine
 from ..risk.kill_switch import KillSwitch
 from ..data.models import Signal as SignalModel
@@ -169,7 +169,7 @@ async def tradingview_webhook(
     db.refresh(signal)
 
     # Initialize components
-    broker_manager = BrokerManager()
+    broker_manager = BrokerManager.from_config()
     await broker_manager.initialize()
 
     risk_engine = RiskEngine(db_session=db)

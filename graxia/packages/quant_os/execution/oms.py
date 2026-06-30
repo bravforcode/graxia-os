@@ -172,6 +172,11 @@ class OMS:
             raise RuntimeError(f"Adapter {venue!r} not registered")
         return adapter
 
+    def _ensure_connected(self, adapter: BrokerAdapter) -> None:
+        """Use the unified connection lifecycle before any broker call."""
+        if not adapter.is_connected:
+            adapter.connect()
+
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
@@ -240,6 +245,7 @@ class OMS:
 
         # --- Route & submit ---
         adapter = self._get_adapter(asset_class)
+        self._ensure_connected(adapter)
         try:
             sm.advance(OrderStatus.ORDER_SUBMITTED, "sent to adapter")
         except Exception as exc:
@@ -304,6 +310,7 @@ class OMS:
             time.sleep(2.0)
             if order.broker_order_id is None:
                 break
+            self._ensure_connected(adapter)
             status = adapter.get_order_status(order.broker_order_id)
             if status.status == OrderStatus.FILLED:
                 if sm is not None:
@@ -344,6 +351,7 @@ class OMS:
 
             try:
                 adapter = self._get_adapter(order.asset_class)
+                self._ensure_connected(adapter)
                 if order.broker_order_id:
                     result = adapter.cancel_order(order.broker_order_id)
                     order.status = result.status
@@ -370,6 +378,7 @@ class OMS:
         adapter = self._adapters.get(venue)
         if adapter is None:
             raise RuntimeError(f"Adapter {venue!r} not registered")
+        self._ensure_connected(adapter)
         return adapter.get_account_info()
 
     def get_positions(self, venue: str) -> list[dict]:
@@ -377,6 +386,7 @@ class OMS:
         adapter = self._adapters.get(venue)
         if adapter is None:
             raise RuntimeError(f"Adapter {venue!r} not registered")
+        self._ensure_connected(adapter)
         return adapter.get_positions()
 
     def order_by_id(self, order_id: str) -> Optional[Order]:

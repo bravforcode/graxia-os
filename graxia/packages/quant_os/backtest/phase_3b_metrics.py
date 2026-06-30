@@ -1,5 +1,7 @@
 """Phase 3B — Metrics calculation and cost attribution."""
+import math
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 
 
@@ -24,6 +26,153 @@ class Phase3BMetrics:
     ambiguous_bar_count: int
     rejected_signal_count: int
     execution_quality: str
+
+
+def _max_drawdown(equity_curve: list[dict], initial_capital: float | None = None) -> float:
+    """Maximum peak-to-trough equity decline (absolute)."""
+    if not equity_curve:
+        return 0.0
+
+    peak = initial_capital
+    if peak is None:
+        peak = float(equity_curve[0].get("equity", 0))
+
+    max_dd = 0.0
+    for point in equity_curve:
+        equity = float(point.get("equity", 0))
+        if equity > peak:
+            peak = equity
+        dd = peak - equity
+        if dd > max_dd:
+            max_dd = dd
+    return max_dd
+
+
+def _extract_returns(equity_curve: list[dict]) -> list[float]:
+    """Period returns from adjacent equity-curve points."""
+    returns: list[float] = []
+    for i in range(1, len(equity_curve)):
+        prev = float(equity_curve[i - 1].get("equity", 0))
+        curr = float(equity_curve[i].get("equity", 0))
+        if prev > 0:
+            returns.append((curr - prev) / prev)
+    return returns
+
+
+def _std_dev(values: list[float]) -> float:
+    """Population standard deviation."""
+    if len(values) < 2:
+        return 0.0
+    mean = sum(values) / len(values)
+    variance = sum((v - mean) ** 2 for v in values) / len(values)
+    return math.sqrt(variance)
+
+
+def calculate_max_drawdown(equity_curve: list[float]) -> float:
+    """Maximum peak-to-trough equity decline as a positive percentage.
+
+    Example: a 15% decline returns ``0.15``.
+
+    Edge cases: empty series, non-positive starting equity, or any NaN value
+    returns ``0.0``.
+    """
+    if not equity_curve:
+        return 0.0
+
+    peak = float(equity_curve[0])
+    if peak <= 0 or math.isnan(peak):
+        return 0.0
+
+    max_dd = 0.0
+    for point in equity_curve[1:]:
+        equity = float(point)
+        if math.isnan(equity) or equity <= 0:
+            return 0.0
+        if equity > peak:
+            peak = equity
+        dd = (peak - equity) / peak
+        if dd > max_dd:
+            max_dd = dd
+
+    return max_dd
+
+
+def calculate_sharpe_ratio(
+    returns: list[float],
+    risk_free_rate: float = 0.0,
+    periods_per_year: float = 252.0,
+) -> float:
+    """Annualized Sharpe ratio from a series of period returns.
+
+    ``risk_free_rate`` is treated as an annual rate and is de-annualized using
+    ``periods_per_year`` before the excess return is computed.
+
+    Edge cases: fewer than two returns, zero standard deviation, or any NaN
+    value returns ``0.0``.
+    """
+    if not returns or len(returns) < 2:
+        return 0.0
+
+    clean_returns: list[float] = []
+    for r in returns:
+        rv = float(r)
+        if math.isnan(rv):
+            return 0.0
+        clean_returns.append(rv)
+
+    if len(clean_returns) < 2:
+        return 0.0
+
+    mean_return = sum(clean_returns) / len(clean_returns)
+    per_period_rf = (
+        risk_free_rate / periods_per_year if periods_per_year > 0 else 0.0
+    )
+    std = _std_dev(clean_returns)
+    if std < 1e-12:
+        return 0.0
+
+    ratio = ((mean_return - per_period_rf) / std) * math.sqrt(periods_per_year)
+    if math.isnan(ratio):
+        return 0.0
+    return ratio
+
+
+def _periods_per_year(equity_curve: list[dict]) -> int:
+    """Infer the number of equity-curve periods per year from timestamps."""
+    if len(equity_curve) < 2:
+        return 252
+
+    seconds_per_year = 365.25 * 24 * 60 * 60
+    intervals: list[float] = []
+    for i in range(1, len(equity_curve)):
+        t1 = equity_curve[i - 1].get("timestamp")
+        t2 = equity_curve[i].get("timestamp")
+        if not t1 or not t2:
+            continue
+        try:
+            dt1 = datetime.fromisoformat(t1) if isinstance(t1, str) else t1
+            dt2 = datetime.fromisoformat(t2) if isinstance(t2, str) else t2
+            intervals.append((dt2 - dt1).total_seconds())
+        except Exception:
+            continue
+
+    if not intervals:
+        return 252
+
+    median_interval = sorted(intervals)[len(intervals) // 2]
+    if median_interval <= 0:
+        return 252
+
+    return max(1, int(round(seconds_per_year / median_interval)))
+
+
+def _sharpe_ratio(equity_curve: list[dict]) -> float:
+    """Annualized Sharpe ratio from equity-curve returns."""
+    returns = _extract_returns(equity_curve)
+    periods = _periods_per_year(equity_curve)
+    return calculate_sharpe_ratio(
+        returns, risk_free_rate=0.0, periods_per_year=periods
+    )
 
 
 def calculate_phase_3b_metrics(result: dict, scenario: str) -> Phase3BMetrics:
@@ -54,6 +203,11 @@ def calculate_phase_3b_metrics(result: dict, scenario: str) -> Phase3BMetrics:
 
     ambiguous = sum(1 for t in trades if t.get("ambiguous_bar", False))
 
+    equity_curve = result.get("equity_curve", [])
+    initial_capital = result.get("config", {}).get("initial_capital")
+    max_dd = _max_drawdown(equity_curve, initial_capital)
+    sharpe = _sharpe_ratio(equity_curve)
+
     return Phase3BMetrics(
         scenario=scenario,
         trade_count=trade_count,
@@ -64,8 +218,8 @@ def calculate_phase_3b_metrics(result: dict, scenario: str) -> Phase3BMetrics:
         avg_win=avg_win,
         avg_loss=avg_loss,
         profit_factor=profit_factor,
-        max_drawdown=0,  # TODO: calculate from equity curve
-        sharpe_ratio=0,  # TODO: calculate
+        max_drawdown=max_dd,
+        sharpe_ratio=sharpe,
         total_spread_cost=total_spread,
         total_slippage_cost=total_slippage,
         total_commission=total_commission,

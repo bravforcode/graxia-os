@@ -1,4 +1,9 @@
-"""Base broker adapter interface and shared data types."""
+"""Canonical broker adapter interface and shared data types.
+
+This module is the single source of truth for broker adapters in Quant OS.
+The legacy module ``execution/broker_adapter.py`` is deprecated and exists
+only for backward compatibility.
+"""
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -33,6 +38,7 @@ class OrderResult:
     broker_id: Optional[str] = None
     filled_quantity: float = 0.0
     avg_price: float = 0.0
+    fee: float = 0.0
     error: Optional[str] = None
 
 
@@ -48,6 +54,33 @@ class AccountInfo:
 
 class BrokerAdapter(ABC):
     """Abstract interface every venue adapter must implement."""
+
+    def __init__(self, name: str) -> None:
+        self.name = name
+        self._connected = False
+
+    # ------------------------------------------------------------------
+    # Connection lifecycle
+    # ------------------------------------------------------------------
+
+    @abstractmethod
+    def connect(self) -> bool:
+        """Establish a connection to the broker API."""
+        ...
+
+    @abstractmethod
+    def disconnect(self) -> None:
+        """Tear down the connection to the broker API."""
+        ...
+
+    @property
+    def is_connected(self) -> bool:
+        """Return True if the adapter believes it is connected."""
+        return self._connected
+
+    # ------------------------------------------------------------------
+    # Order and account operations
+    # ------------------------------------------------------------------
 
     @abstractmethod
     def submit_order(self, order: Order) -> OrderResult:
