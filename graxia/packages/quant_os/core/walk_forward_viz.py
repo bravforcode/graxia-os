@@ -93,14 +93,16 @@ class WalkForwardViz:
         accs = [w.accuracy for w in self._windows]
         oos = [w.oos_accuracy for w in self._windows if w.oos_accuracy > 0]
         drifts = sum(1 for w in self._windows if w.drifted)
+        avg_acc = sum(accs)/len(accs) if accs else 0.0
+        avg_oos = f"{sum(oos)/len(oos):.1%}" if oos else "N/A"
 
         lines.extend(
             [
                 "",
                 "  " + "-" * 60,
                 f"  Windows: {len(self._windows)} | "
-                f"Avg Acc: {sum(accs)/len(accs):.1%} | "
-                f"Avg OOS: {sum(oos)/len(oos):.1% if oos else 'N/A'} | "
+                f"Avg Acc: {avg_acc:.1%} | "
+                f"Avg OOS: {avg_oos} | "
                 f"Drifts: {drifts}",
                 "",
             ]
@@ -119,6 +121,6 @@ class WalkForwardViz:
         for w in self._windows:
             status = "DRIFT" if w.drifted else "RETRAIN" if w.retrained else "OK"
             lines.append(
-                f"| W{w.window} | {w.accuracy:.1%} | {w.oos_accuracy:.1% if w.oos_accuracy else '-'} | {status} |"
+                f"| W{w.window} | {w.accuracy:.1%} | {f'{w.oos_accuracy:.1%}' if w.oos_accuracy else '-'} | {status} |"
             )
         return "\n".join(lines)

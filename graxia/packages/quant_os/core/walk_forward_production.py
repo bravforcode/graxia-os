@@ -16,7 +16,7 @@ Usage:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from datetime import UTC, datetime
 from typing import Any
 
@@ -66,6 +66,8 @@ class WalkForwardDashboard:
         oos = [w.oos_accuracy for w in self._windows if w.oos_accuracy > 0]
         drifts = sum(1 for w in self._windows if w.drifted)
         retraining = sum(1 for w in self._windows if w.retrained)
+        avg_acc = sum(accs)/len(accs) if accs else 0.0
+        avg_oos = sum(oos)/len(oos) if oos else None
 
         html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -104,11 +106,11 @@ class WalkForwardDashboard:
                 <div class="stat-label">Total Windows</div>
             </div>
             <div class="stat">
-                <div class="stat-value {'stat-good' if sum(accs)/len(accs) > 0.55 else 'stat-warn' if sum(accs)/len(accs) > 0.50 else 'stat-bad'}">{sum(accs)/len(accs):.1%}</div>
+                <div class="stat-value {'stat-good' if avg_acc > 0.55 else 'stat-warn' if avg_acc > 0.50 else 'stat-bad'}">{avg_acc:.1%}</div>
                 <div class="stat-label">Avg Accuracy</div>
             </div>
             <div class="stat">
-                <div class="stat-value {'stat-good' if oos and sum(oos)/len(oos) > 0.50 else 'stat-warn' if oos and sum(oos)/len(oos) > 0.45 else 'stat-bad'}">{sum(oos)/len(oos):.1% if oos else 'N/A'}</div>
+                <div class="stat-value {'stat-good' if avg_oos and avg_oos > 0.50 else 'stat-warn' if avg_oos and avg_oos > 0.45 else 'stat-bad'}">{f"{avg_oos:.1%}" if avg_oos is not None else 'N/A'}</div>
                 <div class="stat-label">Avg OOS Accuracy</div>
             </div>
             <div class="stat">
@@ -137,7 +139,7 @@ class WalkForwardDashboard:
                     </tr>
                 </thead>
                 <tbody>
-                    {"".join(f'<tr class="{"drift" if w.drifted else "retrain" if w.retrained else ""}"><td>W{w.window}</td><td>{w.accuracy:.1%}</td><td>{w.oos_accuracy:.1% if w.oos_accuracy else "-"}</td><td>{"DRIFT" if w.drifted else "RETRAIN" if w.retrained else "OK"}</td><td>{w.timestamp[:19]}</td></tr>' for w in self._windows)}
+                    {"".join(f'<tr class="{"drift" if w.drifted else "retrain" if w.retrained else ""}"><td>W{w.window}</td><td>{w.accuracy:.1%}</td><td>{f"{w.oos_accuracy:.1%}" if w.oos_accuracy else "-"}</td><td>{"DRIFT" if w.drifted else "RETRAIN" if w.retrained else "OK"}</td><td>{w.timestamp[:19]}</td></tr>' for w in self._windows)}
                 </tbody>
             </table>
         </div>

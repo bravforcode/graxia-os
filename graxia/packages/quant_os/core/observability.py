@@ -14,6 +14,7 @@ Usage:
 from __future__ import annotations
 
 import json
+import logging
 import os
 import time
 from datetime import UTC, datetime
@@ -103,19 +104,34 @@ class LokiSink:
 
 
 class FileSink:
-    """Write structured logs to a JSON file."""
+    """Write structured logs to a JSON file with rotation."""
 
-    def __init__(self, path: str = ""):
+    def __init__(self, path: str = "", max_bytes: int = 10*1024*1024, backup_count: int = 5):
         self.path = Path(path or os.getenv("LOG_FILE", "logs/quant_os.jsonl"))
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        self._max_bytes = max_bytes
+        self._backup_count = backup_count
 
     def __call__(self, logger: Any, method_name: str, event_dict: dict[str, Any]) -> dict[str, Any]:
         try:
+            # Check if rotation needed
+            if self.path.exists() and self.path.stat().st_size > self._max_bytes:
+                self._rotate()
             with open(self.path, "a", encoding="utf-8") as f:
                 f.write(json.dumps(event_dict, default=str) + "\n")
         except Exception:
             pass
         return event_dict
+
+    def _rotate(self):
+        """Simple rotation: rename .jsonl.1 → .jsonl.2, etc."""
+        for i in range(self._backup_count - 1, 0, -1):
+            src = self.path.with_suffix(f".jsonl.{i}")
+            dst = self.path.with_suffix(f".jsonl.{i+1}")
+            if src.exists():
+                src.rename(dst)
+        if self.path.exists():
+            self.path.rename(self.path.with_suffix(".jsonl.1"))
 
 
 def setup_logging(
@@ -149,7 +165,7 @@ def setup_logging(
     structlog.configure(
         processors=processors,
         wrapper_class=structlog.make_filtering_bound_logger(
-            getattr(structlog.stdlib, level.upper(), structlog.stdlib.INFO)
+            getattr(logging, level.upper(), logging.INFO)
         ),
         context_class=dict,
         logger_factory=structlog.PrintLoggerFactory(),
