@@ -1116,18 +1116,21 @@ def volume_profile_features(
     df: pd.DataFrame,
     lookback: int = 20,
     value_area_pct: float = 0.70,
+    n_bins: int = 50,
 ) -> pd.DataFrame:
-    """Rolling volume profile features.
+    """Rolling volume profile features with proper price-bin histogram.
 
-    POC = price level with highest volume in the lookback window.
-    Value Area = price range containing ``value_area_pct`` of total volume.
-    Implemented with per-window argsort for speed (O(n * lookback log lookback)).
+    POC = price bin with highest accumulated volume in the lookback window.
+    Value Area = price range containing ``value_area_pct`` of total volume,
+    computed by expanding outward from the POC (standard VP convention).
 
     Returns columns:
         vp_poc_distance_atr, vp_inside_value_area, vp_hvn_proximity
     """
     n = len(df)
     close = df["close"].to_numpy()
+    high = df["high"].to_numpy()
+    low = df["low"].to_numpy()
     volume = df["volume"].to_numpy()
     atr = _atr(df, 14)
 
@@ -1136,34 +1139,68 @@ def volume_profile_features(
     hvn_prox = np.zeros(n, dtype=float)
 
     for i in range(lookback - 1, n):
-        prices = close[i - lookback + 1 : i + 1]
-        vols = volume[i - lookback + 1 : i + 1]
-        if vols.sum() <= 0:
+        sl = slice(i - lookback + 1, i + 1)
+        window_high = high[sl]
+        window_low = low[sl]
+        window_close = close[sl]
+        window_vol = volume[sl]
+
+        total_vol = window_vol.sum()
+        if total_vol <= 0:
             continue
-        order = np.argsort(prices)
-        sorted_prices = prices[order]
-        sorted_vols = vols[order]
-        cum_vol = np.cumsum(sorted_vols)
-        total_vol = cum_vol[-1]
 
-        # POC = price with max single-bar volume in window
-        poc = prices[np.argmax(vols)]
+        # Price range for binning
+        price_min = float(window_low.min())
+        price_max = float(window_high.max())
+        if price_max <= price_min:
+            poc_dist[i] = 0.0
+            inside_va[i] = True
+            hvn_prox[i] = 1.0
+            continue
 
-        # Value area: central X% of volume by price
-        lower_pct = (1.0 - value_area_pct) / 2.0
-        upper_pct = 1.0 - lower_pct
-        lower_idx = int(np.searchsorted(cum_vol / total_vol, lower_pct))
-        upper_idx = int(np.searchsorted(cum_vol / total_vol, upper_pct))
-        lower_idx = np.clip(lower_idx, 0, len(sorted_prices) - 1)
-        upper_idx = np.clip(upper_idx, 0, len(sorted_prices) - 1)
-        val = float(sorted_prices[lower_idx])
-        vah = float(sorted_prices[upper_idx])
+        bin_edges = np.linspace(price_min, price_max, n_bins + 1)
+        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2.0
 
-        poc_dist[i] = abs(close[i] - poc) / atr[i] if atr[i] > 0 else abs(close[i] - poc)
-        inside_va[i] = val <= close[i] <= vah
+        # Assign each bar's typical price to a bin and accumulate volume
+        typical = (window_high + window_low + window_close) / 3.0
+        bin_idx = np.clip(
+            np.searchsorted(bin_edges[1:], typical), 0, n_bins - 1
+        )
+        vol_histogram = np.zeros(n_bins, dtype=float)
+        np.add.at(vol_histogram, bin_idx, window_vol)
+
+        # POC = bin with highest volume
+        poc_bin = int(np.argmax(vol_histogram))
+        poc_price = float(bin_centers[poc_bin])
+
+        # Value area: expand outward from POC until value_area_pct captured
+        poc_vol = vol_histogram[poc_bin]
+        va_vol_target = total_vol * value_area_pct
+        va_vol = poc_vol
+        lo = poc_bin
+        hi = poc_bin
+        while va_vol < va_vol_target and (lo > 0 or hi < n_bins - 1):
+            vol_below = vol_histogram[lo - 1] if lo > 0 else 0.0
+            vol_above = vol_histogram[hi + 1] if hi < n_bins - 1 else 0.0
+            if vol_below >= vol_above and lo > 0:
+                lo -= 1
+                va_vol += vol_histogram[lo]
+            elif hi < n_bins - 1:
+                hi += 1
+                va_vol += vol_histogram[hi]
+            else:
+                lo -= 1
+                va_vol += vol_histogram[lo]
+
+        val = float(bin_centers[lo])
+        vah = float(bin_centers[hi])
+
+        cur_close = float(close[i])
+        poc_dist[i] = abs(cur_close - poc_price) / atr[i] if atr[i] > 0 else abs(cur_close - poc_price)
+        inside_va[i] = val <= cur_close <= vah
         center = (vah + val) / 2.0
         half_width = (vah - val) / 2.0 + 1e-9
-        hvn_prox[i] = max(0.0, 1.0 - abs(close[i] - center) / half_width)
+        hvn_prox[i] = max(0.0, 1.0 - abs(cur_close - center) / half_width)
 
     return pd.DataFrame(
         {
