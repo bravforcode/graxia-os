@@ -5,11 +5,21 @@ from decimal import Decimal
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Depends, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from ..data.models import Order as OrderModel, OrderStateHistory
 from ..core.enums import OrderStatus, OrderSide, OrderType
+
+# Database dependency - use shared session from Revenue OS
+from graxia.packages.revenue_os.db import get_db as _get_db
+
+
+async def get_db():
+    """Database session dependency"""
+    async for session in _get_db():
+        yield session
 
 
 orders_router = APIRouter(prefix="/orders", tags=["orders"])
@@ -17,13 +27,13 @@ orders_router = APIRouter(prefix="/orders", tags=["orders"])
 
 class OrderCreateRequest(BaseModel):
     """Create order request"""
-    symbol: str = Field(..., example="EURUSD")
+    symbol: str = Field(..., json_schema_extra={"example": "EURUSD"})
     side: OrderSide
     order_type: OrderType = OrderType.MARKET
-    quantity: Decimal = Field(..., gt=0, example=0.01)
-    price: Optional[Decimal] = Field(None, example=1.0850)
-    stop_price: Optional[Decimal] = Field(None, example=1.0820)
-    strategy_id: str = Field(default="manual", example="manual")
+    quantity: Decimal = Field(..., gt=0, json_schema_extra={"example": 0.01})
+    price: Optional[Decimal] = Field(None, json_schema_extra={"example": 1.0850})
+    stop_price: Optional[Decimal] = Field(None, json_schema_extra={"example": 1.0820})
+    strategy_id: str = Field(default="manual", json_schema_extra={"example": "manual"})
 
 
 class OrderResponse(BaseModel):
@@ -39,8 +49,7 @@ class OrderResponse(BaseModel):
     trading_mode: str
     created_at: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OrderListResponse(BaseModel):
@@ -153,11 +162,3 @@ def _order_to_response(order: OrderModel) -> OrderResponse:
         created_at=order.created_at.isoformat() if order.created_at else None
     )
 
-
-# Database dependency - use shared session from Revenue OS
-from graxia.packages.revenue_os.db import get_db as _get_db
-
-async def get_db():
-    """Database session dependency"""
-    async for session in _get_db():
-        yield session

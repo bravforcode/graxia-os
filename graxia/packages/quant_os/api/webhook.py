@@ -28,7 +28,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from fastapi import APIRouter, HTTPException, Header, Request, Depends
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..core.config import get_config
@@ -64,8 +64,8 @@ class TradingViewPayload(BaseModel):
     atr: float = Field(default=0.0, description="ATR value")
     timestamp: int = Field(default_factory=lambda: int(time.time()))
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "action": "buy",
                 "symbol": "EURUSD",
@@ -78,6 +78,7 @@ class TradingViewPayload(BaseModel):
                 "timestamp": 1704067200
             }
         }
+    )
 
 
 class WebhookResponse(BaseModel):

@@ -138,13 +138,24 @@ def setup_logging(
     loki_url: str = "",
     log_file: str = "",
     level: str = "INFO",
+    structured: bool = False,
 ) -> None:
     """
     Configure structlog with:
       - Console renderer (always)
       - Loki sink (if URL provided)
       - File sink (if path provided)
+      - Structured formatter (if structured=True)
     """
+    if structured:
+        try:
+            from monitoring.structured_formatter import setup_structured_logging
+
+            setup_structured_logging(level=level, fmt="console", log_file=log_file)
+            return
+        except ImportError:
+            pass  # fall through to default setup
+
     processors = [
         structlog.contextvars.merge_contextvars,
         structlog.processors.add_log_level,
@@ -161,6 +172,15 @@ def setup_logging(
     if log_file or os.getenv("LOG_FILE"):
         file_sink = FileSink(log_file)
         processors.insert(-1, file_sink)
+
+    # Run log rotation on startup
+    try:
+        from monitoring.log_rotation import rotate_all
+
+        log_path = os.path.dirname(log_file or os.getenv("LOG_FILE", ""))
+        rotate_all(log_path or "logs")
+    except (ImportError, OSError):
+        pass
 
     structlog.configure(
         processors=processors,

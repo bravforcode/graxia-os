@@ -19,6 +19,7 @@ from .positions import positions_router
 from .risk import risk_router
 from .admin import admin_router
 from .health import health_router
+from .rate_limit import RateLimitMiddleware
 
 
 # Security
@@ -120,6 +121,11 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Rate limiting — per-IP sliding window (middleware runs in reverse order,
+    # so this wraps *after* CORS, meaning rate-limited responses still carry
+    # CORS headers).
+    app.add_middleware(RateLimitMiddleware)
 
     @app.middleware("http")
     async def count_requests(request, call_next):

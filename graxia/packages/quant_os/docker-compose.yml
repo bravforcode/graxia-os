@@ -1,0 +1,339 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# docker-compose.yml — Graxia Trading System
+# Deploy: docker compose up -d
+# Network: graxia-trading-net (172.22.0.0/24) — zero overlap with VPS existing
+# ═══════════════════════════════════════════════════════════════════════════
+
+services:
+
+  # ── PostgreSQL — Trade Logging Database ─────────────────────────────────
+  graxia-db:
+    image: postgres:16-alpine
+    container_name: graxia-db
+    restart: unless-stopped
+    networks:
+      graxia-trading-net:
+        ipv4_address: 172.22.0.10
+    expose:
+      - "5432"
+    environment:
+      POSTGRES_USER: ${DB_USER:-graxia}
+      POSTGRES_PASSWORD: ${DB_PASSWORD?Set DB_PASSWORD in .env}
+      POSTGRES_DB: ${DB_NAME:-quant_os}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data:delegated
+      - ./docker/db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./docker/init_paper.sql:/docker-entrypoint-initdb.d/02-paper.sql:ro
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: "2G"
+        reservations:
+          cpus: "0.25"
+          memory: "512M"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-graxia} -d ${DB_NAME:-quant_os}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
+      - FOWNER
+      - SYS_CHROOT
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── FastAPI — Signal Server (AWS MT5 bot connects here) ────────────────
+  graxia-api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    image: graxia-api:${TAG:-latest}
+    container_name: graxia-api
+    restart: unless-stopped
+    networks:
+      graxia-trading-net:
+        ipv4_address: 172.22.0.20
+    ports:
+      - "8751:8000"   # verified free on VPS host
+    expose:
+      - "8000"
+    environment:
+      TRADING_MODE: ${TRADING_MODE:-PAPER}
+      LIVE_TRADING_ENABLED: ${LIVE_TRADING_ENABLED:-false}
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-graxia}:${DB_PASSWORD}@graxia-db:5432/${DB_NAME:-quant_os}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY?Set JWT_SECRET_KEY}
+      WEBHOOK_HMAC_SECRET: ${WEBHOOK_HMAC_SECRET}
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      RUNNING_IN_DOCKER: "true"
+    volumes:
+      - ./data/models:/models:ro
+      - ./data/logs:/logs
+      - ./docker/certs:/certs:ro
+    depends_on:
+      graxia-db:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: "1.5G"
+        reservations:
+          cpus: "0.5"
+          memory: "512M"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "--cacert", "/certs/ca.crt", "https://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:size=64M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Model Trainer — XGBoost Auto-Retrain (supercronic cron) ────────────
+  graxia-trainer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.trainer
+    image: graxia-trainer:${TAG:-latest}
+    container_name: graxia-trainer
+    restart: unless-stopped
+    networks:
+      graxia-trading-net:
+        ipv4_address: 172.22.0.30
+    environment:
+      TRADING_MODE: ${TRADING_MODE:-PAPER}
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-graxia}:${DB_PASSWORD}@graxia-db:5432/${DB_NAME:-quant_os}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      PYTHONIOENCODING: utf-8
+    volumes:
+      - ./data/models:/models
+      - ./data/features:/features
+      - ./data/logs:/logs
+    depends_on:
+      graxia-db:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"    # XGBoost parallel training
+          memory: "6G"
+        reservations:
+          cpus: "1.0"
+          memory: "2G"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - SYS_PTRACE
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # ── Signal Service — XGBoost prediction for MQL5 EA ──────────────────
+  graxia-signal:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.signal
+    image: graxia-signal:${TAG:-latest}
+    container_name: graxia-signal
+    restart: unless-stopped
+    networks:
+      graxia-trading-net:
+        ipv4_address: 172.22.0.50
+    ports:
+      - "8752:8752"   # EA calls this from MT5 on VPS host
+    expose:
+      - "8752"
+    environment:
+      TRADE_SYMBOL: ${TRADE_SYMBOL:-XAUUSD}
+      LOT_SIZE: ${LOT_SIZE:-0.01}
+      B2_STOP: ${B2_STOP:-3.00}
+      MIN_CONFIDENCE: ${MIN_CONFIDENCE:-0.50}
+      PYTHONIOENCODING: utf-8
+    volumes:
+      - ./quant_os/ml/models:/app/ml/models:ro
+      - ./quant_os/artifacts:/app/artifacts:ro
+      - ./data/ea_logs:/data
+      - ./docker/certs:/certs:ro
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: "1G"
+        reservations:
+          cpus: "0.25"
+          memory: "256M"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "--cacert", "/certs/ca.crt", "https://localhost:8752/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Paper Executor — Simulated Trading from Signals ──────────────────
+  graxia-executor:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.executor
+    image: graxia-executor:${TAG:-latest}
+    container_name: graxia-executor
+    restart: unless-stopped
+    networks:
+      graxia-trading-net:
+        ipv4_address: 172.22.0.60
+    ports:
+      - "8753:8753"
+    expose:
+      - "8753"
+    environment:
+      SIGNAL_SERVICE_URL: https://graxia-signal:8752
+      DATABASE_URL: postgresql://graxia:${DB_PASSWORD}@graxia-db:5432/${DB_NAME:-quant_os}
+      POLL_INTERVAL: "60"
+      RISK_PER_TRADE: "0.0025"
+      INITIAL_BALANCE: "100000"
+      MAX_POSITIONS: "1"
+      SPREAD_PTS: "3.0"
+      SLIPPAGE_PTS: "1.0"
+      SYMBOL: ${TRADE_SYMBOL:-XAUUSD}
+      AUTO_POLL: "true"
+    volumes:
+      - ./docker/certs:/certs:ro
+    depends_on:
+      graxia-db:
+        condition: service_healthy
+      graxia-signal:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: "512M"
+        reservations:
+          cpus: "0.25"
+          memory: "128M"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "--cacert", "/certs/ca.crt", "https://localhost:8753/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── MT5 Trading Bot — Wine + MetaTrader5 (headless) ──────────────────
+  # NOTE: MT5 currently runs on VPS host via Wine + VNC, NOT in this container.
+  # This service is kept for future containerized MT5 deployment.
+  graxia-mt5:
+    build:
+      context: .
+      dockerfile: docker/mt5/Dockerfile.mt5
+    image: graxia-mt5:${TAG:-latest}
+    container_name: graxia-mt5
+    restart: unless-stopped
+    networks:
+      graxia-trading-net:
+        ipv4_address: 172.22.0.40
+    environment:
+      TRADING_MODE: ${TRADING_MODE:-PAPER}
+      SIGNAL_SERVICE_URL: https://graxia-signal:8752
+      SYMBOL: XAUUSD
+      LOT_SIZE: "0.01"
+      B2_STOP_DOLLARS: "3.00"
+      MIN_CONFIDENCE: "0.50"
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./data/mt5:/root/.wine/drive_c/Program Files/MetaTrader 5
+      - ./data/models:/app/quant_os/ml/models:ro
+      - ./data/logs:/app/quant_os/logs
+      - ./docker/mt5/GRAXIA_EA.mq5:/root/.wine/drive_c/Program Files/MetaTrader 5/MQL5/Experts/GRAXIA_EA.mq5:ro
+    depends_on:
+      graxia-signal:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: "3G"
+        reservations:
+          cpus: "0.5"
+          memory: "1G"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SYS_PTRACE
+      - NET_BIND_SERVICE
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+# ── Networks ────────────────────────────────────────────────────────────
+networks:
+  graxia-trading-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "172.22.0.0/24"
+          gateway: "172.22.0.1"
+    driver_opts:
+      com.docker.network.bridge.name: "br-graxia"
+    labels:
+      app: "graxia-trading"
+      description: "Isolated trading network — no overlap with thaolai.com stacks"

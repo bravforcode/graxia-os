@@ -4,11 +4,21 @@ from typing import List, Optional
 from decimal import Decimal
 
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from ..data.models import Position
 from ..core.enums import PositionType, CloseReason
+
+# Database dependency - use shared session from Revenue OS
+from graxia.packages.revenue_os.db import get_db as _get_db
+
+
+async def get_db():
+    """Database session dependency"""
+    async for session in _get_db():
+        yield session
 
 
 positions_router = APIRouter(prefix="/positions", tags=["positions"])
@@ -29,8 +39,7 @@ class PositionResponse(BaseModel):
     is_open: bool
     opened_at: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PositionListResponse(BaseModel):
@@ -156,11 +165,3 @@ def _position_to_response(position: Position) -> PositionResponse:
         opened_at=position.opened_at.isoformat() if position.opened_at else None
     )
 
-
-# Database dependency - use shared session from Revenue OS
-from graxia.packages.revenue_os.db import get_db as _get_db
-
-async def get_db():
-    """Database session dependency"""
-    async for session in _get_db():
-        yield session

@@ -1,0 +1,62 @@
+# ═══════════════════════════════════════════════════════════════════════
+# Dockerfile.signal — GRAXIA Signal Service for MQL5 EA
+# Lightweight: loads XGBoost model, computes features, returns predictions
+# No MT5 dependency — EA sends bar data via POST
+# ═══════════════════════════════════════════════════════════════════════
+
+FROM python:3.11-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY docker/requirements.signal.txt /tmp/requirements.txt
+RUN pip install --upgrade pip && \
+    pip install -r /tmp/requirements.txt
+
+# ── Production ────────────────────────────────────────────────────────
+FROM python:3.11-slim AS production
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONFAULTHANDLER=1 \
+    PYTHONPATH="/app" \
+    PATH="/opt/venv/bin:$PATH"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /opt/venv /opt/venv
+
+WORKDIR /app
+
+# Copy only what's needed: signal service + feature pipeline
+RUN mkdir -p /app/graxia/packages
+
+COPY docker/signal_service.py /app/api/signal_service.py
+RUN touch /app/api/__init__.py
+
+# Copy model artifacts and features (read-only)
+RUN mkdir -p /app/artifacts /app/data /app/ml/models
+
+# Feature computation is self-contained in signal_service.py
+
+RUN mkdir -p /data && \
+    useradd -m -u 1003 graxia && \
+    chown -R graxia:graxia /app /data
+
+RUN mkdir -p /certs
+
+USER graxia
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f --cacert /certs/ca.crt https://localhost:8752/api/health || exit 1
+
+EXPOSE 8752
+
+CMD ["uvicorn", "api.signal_service:app", "--host", "0.0.0.0", "--port", "8752", "--workers", "1", "--ssl-keyfile=/certs/server.key", "--ssl-certfile=/certs/server.crt"]
