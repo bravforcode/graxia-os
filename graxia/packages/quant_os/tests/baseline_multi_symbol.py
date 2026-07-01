@@ -2,26 +2,25 @@
 Multi-symbol baseline: all 13 strategies on XAUUSD, EURUSD, GBPUSD.
 MT5 real data, multi-TF, 200 D1 bars each.
 """
-import sys, os, time
-sys.path.insert(0, os.getcwd())
+import os, time
 
-from graxia.packages.quant_os.backtest.data_loader import load_csv_data
-from graxia.packages.quant_os.backtest.engine import BacktestEngine, BacktestConfig
-from graxia.packages.quant_os.gold_bot.strategy_adapter import GoldStrategyAdapter
+from quant_os.backtest.data_loader import load_csv_data
+from quant_os.backtest.engine import BacktestEngine, BacktestConfig
+from quant_os.gold_bot.strategy_adapter import GoldStrategyAdapter
 
-from graxia.packages.quant_os.gold_bot.strategies.order_block import OrderBlockStrategy
-from graxia.packages.quant_os.gold_bot.strategies.supply_demand import SupplyDemandStrategy
-from graxia.packages.quant_os.gold_bot.strategies.ema_cross import EMACrossStrategy
-from graxia.packages.quant_os.gold_bot.strategies.rsi_divergence import RSIDivergenceStrategy
-from graxia.packages.quant_os.gold_bot.strategies.london_breakout import LondonBreakoutStrategy
-from graxia.packages.quant_os.gold_bot.strategies.fibonacci import FibonacciStrategy
-from graxia.packages.quant_os.gold_bot.strategies.vwap_rejection import VWAPRejectionStrategy
-from graxia.packages.quant_os.gold_bot.strategies.news_fade import NewsFadeStrategy
-from graxia.packages.quant_os.gold_bot.strategies.multi_tf_align import MultiTFAlignStrategy
-from graxia.packages.quant_os.gold_bot.strategies.bos_choch import BOSCHoCHStrategy
-from graxia.packages.quant_os.gold_bot.strategies.liquidity_sweep import LiquiditySweepStrategy
-from graxia.packages.quant_os.gold_bot.strategies.fair_value_gap import FairValueGapStrategy
-from graxia.packages.quant_os.gold_bot.strategies.opening_range import OpeningRangeStrategy
+from quant_os.gold_bot.strategies.order_block import OrderBlockStrategy
+from quant_os.gold_bot.strategies.supply_demand import SupplyDemandStrategy
+from quant_os.gold_bot.strategies.ema_cross import EMACrossStrategy
+from quant_os.gold_bot.strategies.rsi_divergence import RSIDivergenceStrategy
+from quant_os.gold_bot.strategies.london_breakout import LondonBreakoutStrategy
+from quant_os.gold_bot.strategies.fibonacci import FibonacciStrategy
+from quant_os.gold_bot.strategies.vwap_rejection import VWAPRejectionStrategy
+from quant_os.gold_bot.strategies.news_fade import NewsFadeStrategy
+from quant_os.gold_bot.strategies.multi_tf_align import MultiTFAlignStrategy
+from quant_os.gold_bot.strategies.bos_choch import BOSCHoCHStrategy
+from quant_os.gold_bot.strategies.liquidity_sweep import LiquiditySweepStrategy
+from quant_os.gold_bot.strategies.fair_value_gap import FairValueGapStrategy
+from quant_os.gold_bot.strategies.opening_range import OpeningRangeStrategy
 
 strategies = [
     ("order_block", OrderBlockStrategy),
@@ -53,16 +52,16 @@ for symbol in symbols:
     print(f"\n{'='*90}")
     print(f"  {symbol}")
     print(f"{'='*90}")
-    
+
     # Load data
     t0 = time.time()
     d1, ts1 = load_csv_data(os.path.join(data_dir, f"{symbol}_D1.csv"), date_column="time", date_format=DATE_FMT)
     h1, tsh1 = load_csv_data(os.path.join(data_dir, f"{symbol}_H1.csv"), date_column="time", date_format=DATE_FMT)
     m15, tsm15 = load_csv_data(os.path.join(data_dir, f"{symbol}_M15.csv"), date_column="time", date_format=DATE_FMT)
-    
+
     data_base = {k: v[-N:] for k, v in d1.items()}
     ts_base = ts1[-N:]
-    
+
     multi_tf = {
         "D1": data_base,
         "H1": {k: v[-500:] for k, v in h1.items()},
@@ -74,11 +73,11 @@ for symbol in symbols:
     m15_full = {k: v[-20000:] for k, v in m15.items()}
     ts_m15_full = tsm15[-20000:]
     print(f"  Data loaded in {time.time()-t0:.1f}s ({ts_base[0]} to {ts_base[-1]})")
-    
+
     # Run strategies
     print(f"\n  {'Strategy':<20} {'Trades':>7} {'WR':>7} {'PF':>7} {'Sharpe':>7} {'P&L':>12}")
     print(f"  {'-'*65}")
-    
+
     for name, cls in strategies:
         try:
             gold_strat = cls()
@@ -90,7 +89,7 @@ for symbol in symbols:
             engine.set_multi_timeframe(h1_full, ts_h1_full, m15_full, ts_m15_full)
             r = engine.run()
             m = r["metrics"]
-            
+
             print(f"  {name:<20} {m.total_trades:>7} {m.win_rate:>6.1%} {m.profit_factor:>7.2f} "
                   f"{m.sharpe_ratio:>7.2f} ${m.total_pnl:>+10,.2f}")
         except Exception as e:

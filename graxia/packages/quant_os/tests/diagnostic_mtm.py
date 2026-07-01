@@ -1,9 +1,8 @@
-import sys, os
-sys.path.insert(0, os.getcwd())
+import os
 
-from graxia.packages.quant_os.backtest.data_loader import load_csv_data
-from graxia.packages.quant_os.strategies.mtm import MultiTimeframeMomentum
-from graxia.packages.quant_os.gold_bot.core.engine import SignalDirection
+from quant_os.backtest.data_loader import load_csv_data
+from quant_os.strategies.mtm import MultiTimeframeMomentum
+from quant_os.gold_bot.core.engine import SignalDirection
 from decimal import Decimal
 
 data_dir = os.path.join("graxia", "packages", "quant_os", "data")

@@ -7,15 +7,15 @@ import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from core.risk.monte_carlo import bootstrap_equity_paths
-from core.risk.scaling_gate import (
+from quant_os.core.risk.monte_carlo import bootstrap_equity_paths
+from quant_os.core.risk.scaling_gate import (
     GateConfig,
     GateResult,
     check_gate_5,
     check_gate_6,
     evaluate_ladder,
 )
-from core.risk.scaling_ladder import (
+from quant_os.core.risk.scaling_ladder import (
     LADDER_A_GATES,
     LADDER_B_GATES,
     get_current_lot,
@@ -186,7 +186,7 @@ def test_next_gate_info():
 
 
 def test_plot_equity_paths_no_matplotlib():
-    from core.risk.monte_carlo import plot_equity_paths
+    from quant_os.core.risk.monte_carlo import plot_equity_paths
 
     pnls = _bullish_pnls()
     result = bootstrap_equity_paths(pnls, n_sims=100, n_trades_forward=100)

@@ -12,10 +12,10 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from core.data.cot_reports import _compute_features, _parse_numeric
-from core.data.fred_client import SERIES_CATALOG, FredClient
-from core.data.macro_features import _rolling_percentile, _rolling_zscore, _shift_series, build_macro_features
-from core.data.point_in_time_store import PointInTimeStore
+from quant_os.core.data.cot_reports import _compute_features, _parse_numeric
+from quant_os.core.data.fred_client import SERIES_CATALOG, FredClient
+from quant_os.core.data.macro_features import _rolling_percentile, _rolling_zscore, _shift_series, build_macro_features
+from quant_os.core.data.point_in_time_store import PointInTimeStore
 
 
 class TestFredClient:

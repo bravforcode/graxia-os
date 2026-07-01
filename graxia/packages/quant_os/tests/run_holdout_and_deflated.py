@@ -2,11 +2,8 @@
 Holdout Validation + Deflated Sharpe for MTM strategy.
 Uses 6 trades from real backtest, runs HoldoutValidator with deflated Sharpe.
 """
-import sys, os
-sys.path.insert(0, os.getcwd())
-
 import math
-from graxia.packages.quant_os.core.holdout_validation import HoldoutValidator
+from quant_os.core.holdout_validation import HoldoutValidator
 
 
 def simulate_mtm_trades():

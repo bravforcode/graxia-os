@@ -1,9 +1,7 @@
 """Diagnostic: Log indicator values for MRB/MLB to see why they don't trigger"""
-import sys, os
-sys.path.insert(0, os.getcwd())
-
+import os
 import math
-from graxia.packages.quant_os.backtest.data_loader import load_csv_data
+from quant_os.backtest.data_loader import load_csv_data
 
 data_dir = os.path.join("graxia", "packages", "quant_os", "data")
 csv_path = os.path.join(data_dir, "EURUSD_X.csv")
@@ -30,10 +28,10 @@ def rsi(prices, period=14):
     deltas = [prices[i] - prices[i-1] for i in range(1, len(prices))]
     gains = [max(d, 0) for d in deltas]
     losses = [max(-d, 0) for d in deltas]
-    
+
     avg_gain = sum(gains[:period]) / period
     avg_loss = sum(losses[:period]) / period
-    
+
     result = [None] * period
     for i in range(period, len(deltas)):
         avg_gain = (avg_gain * (period - 1) + gains[i]) / period
@@ -61,7 +59,7 @@ def bollinger(prices, period=20, std_mult=2):
 def adx_calc(high, low, close, period=14):
     if len(close) < period * 2 + 1:
         return [None] * len(close)
-    
+
     trs, pdm, mdm = [], [], []
     for i in range(1, len(close)):
         h_l = high[i] - low[i]
@@ -72,11 +70,11 @@ def adx_calc(high, low, close, period=14):
         down = low[i-1] - low[i]
         pdm.append(up if up > down and up > 0 else 0)
         mdm.append(down if down > up and down > 0 else 0)
-    
+
     atr_w = sum(trs[:period])
     pdm_w = sum(pdm[:period])
     mdm_w = sum(mdm[:period])
-    
+
     dx_values = []
     for i in range(period, len(trs)):
         atr_w = atr_w - atr_w / period + trs[i]
@@ -90,16 +88,16 @@ def adx_calc(high, low, close, period=14):
         di_sum = plus_di + minus_di
         dx = abs(plus_di - minus_di) / di_sum * 100 if di_sum > 0 else 0
         dx_values.append(dx)
-    
+
     if len(dx_values) < period:
         return [None] * len(close)
-    
+
     adx_val = sum(dx_values[:period]) / period
     result = [None] * (period * 2)
     for dx in dx_values[period:]:
         adx_val = (adx_val * (period - 1) + dx) / period
         result.append(adx_val)
-    
+
     return result
 
 # Calculate all indicators
@@ -122,7 +120,7 @@ for i in range(max(0, len(close)-50), len(close)):
     a = adx_vals[i] if i < len(adx_vals) and adx_vals[i] is not None else None
     bl = bb_lower[i - (len(close) - len(bb_lower))] if bb_lower and i >= (len(close) - len(bb_lower)) else None
     bu = bb_upper[i - (len(close) - len(bb_upper))] if bb_upper and i >= (len(close) - len(bb_upper)) else None
-    
+
     # Stochastic (simplified)
     if i >= 14:
         period_high = max(high[i-13:i+1])
@@ -133,7 +131,7 @@ for i in range(max(0, len(close)-50), len(close)):
             stoch_k = 50
     else:
         stoch_k = 50
-    
+
     print(f"  {i:<6} {close[i]:<10.5f} {r if r else 'N/A':<8} {a if a else 'N/A':<8} "
           f"{bl if bl else 'N/A':<10} {bu if bu else 'N/A':<10} {stoch_k:<8.1f}")
 
@@ -145,7 +143,7 @@ for i in range(len(close)):
     if i >= len(adx_vals) or adx_vals[i] is None: continue
     bl_idx = i - (len(close) - len(bb_lower))
     if bl_idx < 0 or bl_idx >= len(bb_lower): continue
-    
+
     if adx_vals[i] < 25 and close[i] < bb_lower[bl_idx] and rsi_vals[i] < 35:
         long_count += 1
 
@@ -158,7 +156,7 @@ for i in range(len(close)):
     if i >= len(adx_vals) or adx_vals[i] is None: continue
     bu_idx = i - (len(close) - len(bb_upper))
     if bu_idx < 0 or bu_idx >= len(bb_upper): continue
-    
+
     if adx_vals[i] < 25 and close[i] > bb_upper[bu_idx] and rsi_vals[i] > 65:
         short_count += 1
 

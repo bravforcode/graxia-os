@@ -467,7 +467,7 @@ def main_loop(model, feature_cols: list[str], template_df: pd.DataFrame,
             # Reset daily counters at UTC midnight
             if date_today != current_date:
                 if daily_trades > 0 or daily_pnl != 0:
-                    tg(f"📊 *Day End* {current_date}\nTrades: {daily_trades} | PnL: \${daily_pnl:.2f}")
+                    tg(rf"📊 *Day End* {current_date}\nTrades: {daily_trades} | PnL: \${daily_pnl:.2f}")
                 current_date = date_today; daily_trades = 0; daily_pnl = 0.0
 
             # Auto-retrain every day at 6:00 UTC
@@ -494,10 +494,10 @@ def main_loop(model, feature_cols: list[str], template_df: pd.DataFrame,
             # Startup msg once per session
             if not startup_msg_sent:
                 session_str = "EU" if 8 <= hour_utc < 17 else "OUT"
-                tg(f"🤖 *Bot Online* | {SYMBOL}\n"
-                   f"Bid: `{bid:.2f}` | Ask: `{ask:.2f}` | Spread: `\${spread:.2f}`\n"
-                   f"Session: `{session_str}` | Stop: `\${B2_STOP_DOLLARS}` | Conf\u2265`{MIN_CONFIDENCE}`\n"
-                   f"Lot: `{LOT_SIZE}` | Interval: `{interval_seconds}s` | EU only")
+                tg(rf"🤖 *Bot Online* | {SYMBOL}\n"
+                   rf"Bid: `{bid:.2f}` | Ask: `{ask:.2f}` | Spread: `\${spread:.2f}`\n"
+                   rf"Session: `{session_str}` | Stop: `\${B2_STOP_DOLLARS}` | Conf≥`{MIN_CONFIDENCE}`\n"
+                   rf"Lot: `{LOT_SIZE}` | Interval: `{interval_seconds}s` | EU only")
                 last_sent_bid = bid; last_sent_time = time.time()
                 startup_msg_sent = True
 
@@ -534,8 +534,8 @@ def main_loop(model, feature_cols: list[str], template_df: pd.DataFrame,
                     pos_str = f"\n📌 *{pos['direction'].upper()}* PnL: `${pnl:+.2f}`"
 
                 elapsed_str = f"{int(elapsed//60)}m" if elapsed >= 60 else f"{int(elapsed)}s"
-                tg(f"{arrow} XAUUSD `{bid:.2f}` Δ{delta_str} (spread \${spread:.2f}){conf_str}{pos_str}\n"
-                   f"Day: `${daily_pnl:+.2f}` | {elapsed_str} since last")
+                tg(rf"{arrow} XAUUSD `{bid:.2f}` Δ{delta_str} (spread \${spread:.2f}){conf_str}{pos_str}\n"
+                   rf"Day: `${daily_pnl:+.2f}` | {elapsed_str} since last")
 
                 last_sent_bid = bid; last_sent_time = time.time()
 
@@ -575,9 +575,9 @@ def main_loop(model, feature_cols: list[str], template_df: pd.DataFrame,
                 if result:
                     log_trade(mt5, entry=result)
                     dir_emoji = "🟢" if direction == 1 else "🔴"
-                    tg(f"{dir_emoji} *TRADE OPEN* {'LONG' if direction == 1 else 'SHORT'}\n"
-                       f"Entry: `{entry_price:.2f}` | SL: `{result['sl']:.2f}`\n"
-                       f"Conf: `{confidence:.3f}` | Risk: `\${B2_STOP_DOLLARS}`")
+                    tg(rf"{dir_emoji} *TRADE OPEN* {'LONG' if direction == 1 else 'SHORT'}\n"
+                       rf"Entry: `{entry_price:.2f}` | SL: `{result['sl']:.2f}`\n"
+                       rf"Conf: `{confidence:.3f}` | Risk: `\${B2_STOP_DOLLARS}`")
             else:
                 log(f"No signal: max conf={confidence:.3f} < {MIN_CONFIDENCE}")
 

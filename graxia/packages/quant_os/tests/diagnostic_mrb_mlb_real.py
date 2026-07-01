@@ -2,16 +2,13 @@
 Diagnostic: Run MRB and MLB through ACTUAL generate_signal() method.
 Logs partial condition hits and how close each sub-condition is to threshold.
 """
-import sys, os
-sys.path.insert(0, os.getcwd())
-
 import math
 from decimal import Decimal
 from datetime import datetime
 
-from graxia.packages.quant_os.strategies.mrb import MeanReversionBollinger
-from graxia.packages.quant_os.strategies.mlb import MLBreakout
-from graxia.packages.quant_os.core.enums import SignalType, RegimeType
+from quant_os.strategies.mrb import MeanReversionBollinger
+from quant_os.strategies.mlb import MLBreakout
+from quant_os.core.enums import SignalType, RegimeType
 
 
 def generate_trending_data(n=500, start=1.0850, drift=0.0003):

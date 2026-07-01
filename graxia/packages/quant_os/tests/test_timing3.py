@@ -1,23 +1,22 @@
-import sys, os, time
-sys.path.insert(0, os.getcwd())
+import os, time
 
-from graxia.packages.quant_os.backtest.data_loader import load_csv_data
-from graxia.packages.quant_os.backtest.engine import BacktestEngine, BacktestConfig
-from graxia.packages.quant_os.gold_bot.strategy_adapter import GoldStrategyAdapter
+from quant_os.backtest.data_loader import load_csv_data
+from quant_os.backtest.engine import BacktestEngine, BacktestConfig
+from quant_os.gold_bot.strategy_adapter import GoldStrategyAdapter
 
-from graxia.packages.quant_os.gold_bot.strategies.order_block import OrderBlockStrategy
-from graxia.packages.quant_os.gold_bot.strategies.supply_demand import SupplyDemandStrategy
-from graxia.packages.quant_os.gold_bot.strategies.ema_cross import EMACrossStrategy
-from graxia.packages.quant_os.gold_bot.strategies.rsi_divergence import RSIDivergenceStrategy
-from graxia.packages.quant_os.gold_bot.strategies.london_breakout import LondonBreakoutStrategy
-from graxia.packages.quant_os.gold_bot.strategies.fibonacci import FibonacciStrategy
-from graxia.packages.quant_os.gold_bot.strategies.vwap_rejection import VWAPRejectionStrategy
-from graxia.packages.quant_os.gold_bot.strategies.news_fade import NewsFadeStrategy
-from graxia.packages.quant_os.gold_bot.strategies.multi_tf_align import MultiTFAlignStrategy
-from graxia.packages.quant_os.gold_bot.strategies.bos_choch import BOSCHoCHStrategy
-from graxia.packages.quant_os.gold_bot.strategies.liquidity_sweep import LiquiditySweepStrategy
-from graxia.packages.quant_os.gold_bot.strategies.fair_value_gap import FairValueGapStrategy
-from graxia.packages.quant_os.gold_bot.strategies.opening_range import OpeningRangeStrategy
+from quant_os.gold_bot.strategies.order_block import OrderBlockStrategy
+from quant_os.gold_bot.strategies.supply_demand import SupplyDemandStrategy
+from quant_os.gold_bot.strategies.ema_cross import EMACrossStrategy
+from quant_os.gold_bot.strategies.rsi_divergence import RSIDivergenceStrategy
+from quant_os.gold_bot.strategies.london_breakout import LondonBreakoutStrategy
+from quant_os.gold_bot.strategies.fibonacci import FibonacciStrategy
+from quant_os.gold_bot.strategies.vwap_rejection import VWAPRejectionStrategy
+from quant_os.gold_bot.strategies.news_fade import NewsFadeStrategy
+from quant_os.gold_bot.strategies.multi_tf_align import MultiTFAlignStrategy
+from quant_os.gold_bot.strategies.bos_choch import BOSCHoCHStrategy
+from quant_os.gold_bot.strategies.liquidity_sweep import LiquiditySweepStrategy
+from quant_os.gold_bot.strategies.fair_value_gap import FairValueGapStrategy
+from quant_os.gold_bot.strategies.opening_range import OpeningRangeStrategy
 
 if __name__ == "__main__":
     data_dir = os.path.join("graxia", "packages", "quant_os", "data")

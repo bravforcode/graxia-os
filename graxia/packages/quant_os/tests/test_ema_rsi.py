@@ -1,9 +1,8 @@
-import sys, os
-sys.path.insert(0, os.getcwd())
+import os
 
-from graxia.packages.quant_os.backtest.data_loader import load_csv_data
-from graxia.packages.quant_os.gold_bot.strategies.ema_cross import EMACrossStrategy
-from graxia.packages.quant_os.gold_bot.strategies.rsi_divergence import RSIDivergenceStrategy
+from quant_os.backtest.data_loader import load_csv_data
+from quant_os.gold_bot.strategies.ema_cross import EMACrossStrategy
+from quant_os.gold_bot.strategies.rsi_divergence import RSIDivergenceStrategy
 
 data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 fmt = "%Y-%m-%d %H:%M:%S"

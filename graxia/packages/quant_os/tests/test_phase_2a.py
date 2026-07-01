@@ -170,6 +170,8 @@ class TestHardcodeAudit:
             ("strategies", "base.py"),
             ("risk", "engine.py"),
             ("execution", "broker_adapter.py"),
+            ("core", "trading_loop.py"),  # PaperExecutor needs units_per_lot for lot sizing
+            ("adapters", "paper.py"),  # PaperExecutor: units_per_lot for paper trading lot sizing
             ("quant_os", "run_backtest_real.py"),  # ponytail: runner script, documented in audit
         }
         py_files = [

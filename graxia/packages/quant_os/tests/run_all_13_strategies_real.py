@@ -2,17 +2,16 @@
 Run all 13 gold_bot strategies through BacktestEngine on real EURUSD data.
 Reports trades, win rate, P&L for each strategy.
 """
-import sys, os
-sys.path.insert(0, os.getcwd())
+import os
 
 from decimal import Decimal
 from datetime import datetime
 from typing import Optional, Dict, Any, List
 
-from graxia.packages.quant_os.backtest.engine import BacktestEngine, BacktestConfig
-from graxia.packages.quant_os.backtest.data_loader import load_csv_data
-from graxia.packages.quant_os.strategies.base import Strategy, Signal
-from graxia.packages.quant_os.core.enums import SignalType
+from quant_os.backtest.engine import BacktestEngine, BacktestConfig
+from quant_os.backtest.data_loader import load_csv_data
+from quant_os.strategies.base import Strategy, Signal
+from quant_os.core.enums import SignalType
 
 
 class GoldStrategyAdapter(Strategy):
@@ -64,19 +63,19 @@ class GoldStrategyAdapter(Strategy):
 
 
 STRATEGY_MAP = [
-    ("order_block", "graxia.packages.quant_os.gold_bot.strategies.order_block", "OrderBlockStrategy"),
-    ("supply_demand", "graxia.packages.quant_os.gold_bot.strategies.supply_demand", "SupplyDemandStrategy"),
-    ("ema_cross", "graxia.packages.quant_os.gold_bot.strategies.ema_cross", "EMACrossStrategy"),
-    ("rsi_divergence", "graxia.packages.quant_os.gold_bot.strategies.rsi_divergence", "RSIDivergenceStrategy"),
-    ("london_breakout", "graxia.packages.quant_os.gold_bot.strategies.london_breakout", "LondonBreakoutStrategy"),
-    ("fibonacci", "graxia.packages.quant_os.gold_bot.strategies.fibonacci", "FibonacciStrategy"),
-    ("vwap_rejection", "graxia.packages.quant_os.gold_bot.strategies.vwap_rejection", "VWAPRejectionStrategy"),
-    ("news_fade", "graxia.packages.quant_os.gold_bot.strategies.news_fade", "NewsFadeStrategy"),
-    ("multi_tf_align", "graxia.packages.quant_os.gold_bot.strategies.multi_tf_align", "MultiTFAlignStrategy"),
-    ("bos_choch", "graxia.packages.quant_os.gold_bot.strategies.bos_choch", "BOSCHoCHStrategy"),
-    ("liquidity_sweep", "graxia.packages.quant_os.gold_bot.strategies.liquidity_sweep", "LiquiditySweepStrategy"),
-    ("fair_value_gap", "graxia.packages.quant_os.gold_bot.strategies.fair_value_gap", "FairValueGapStrategy"),
-    ("opening_range", "graxia.packages.quant_os.gold_bot.strategies.opening_range", "OpeningRangeStrategy"),
+    ("order_block", "quant_os.gold_bot.strategies.order_block", "OrderBlockStrategy"),
+    ("supply_demand", "quant_os.gold_bot.strategies.supply_demand", "SupplyDemandStrategy"),
+    ("ema_cross", "quant_os.gold_bot.strategies.ema_cross", "EMACrossStrategy"),
+    ("rsi_divergence", "quant_os.gold_bot.strategies.rsi_divergence", "RSIDivergenceStrategy"),
+    ("london_breakout", "quant_os.gold_bot.strategies.london_breakout", "LondonBreakoutStrategy"),
+    ("fibonacci", "quant_os.gold_bot.strategies.fibonacci", "FibonacciStrategy"),
+    ("vwap_rejection", "quant_os.gold_bot.strategies.vwap_rejection", "VWAPRejectionStrategy"),
+    ("news_fade", "quant_os.gold_bot.strategies.news_fade", "NewsFadeStrategy"),
+    ("multi_tf_align", "quant_os.gold_bot.strategies.multi_tf_align", "MultiTFAlignStrategy"),
+    ("bos_choch", "quant_os.gold_bot.strategies.bos_choch", "BOSCHoCHStrategy"),
+    ("liquidity_sweep", "quant_os.gold_bot.strategies.liquidity_sweep", "LiquiditySweepStrategy"),
+    ("fair_value_gap", "quant_os.gold_bot.strategies.fair_value_gap", "FairValueGapStrategy"),
+    ("opening_range", "quant_os.gold_bot.strategies.opening_range", "OpeningRangeStrategy"),
 ]
 
 

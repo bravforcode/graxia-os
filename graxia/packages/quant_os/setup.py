@@ -4,7 +4,8 @@ from setuptools import setup, find_packages
 setup(
     name="quant_os",
     version="0.2.0-dev",
-    packages=find_packages(),
+    package_dir={"quant_os": "."},
+    packages=["quant_os"] + [f"quant_os.{p}" for p in find_packages(where=".")],
     install_requires=["MetaTrader5"],
     python_requires=">=3.11",
 )

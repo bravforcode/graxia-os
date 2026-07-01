@@ -6,15 +6,12 @@ Strategy 2: Detection — check_data_access() raises on future access.
 
 This test proves BOTH strategies work.
 """
-import sys
-import os
 import pytest
-sys.path.insert(0, os.getcwd())
 
-from graxia.packages.quant_os.core.lookahead_guard import LookaheadGuard, LookaheadViolation
-from graxia.packages.quant_os.backtest.engine import BacktestEngine, BacktestConfig
-from graxia.packages.quant_os.strategies.base import Strategy, StrategyConfig, Signal
-from graxia.packages.quant_os.core.enums import SignalType, RegimeType
+from quant_os.core.lookahead_guard import LookaheadGuard, LookaheadViolation
+from quant_os.backtest.engine import BacktestEngine, BacktestConfig
+from quant_os.strategies.base import Strategy, StrategyConfig, Signal
+from quant_os.core.enums import SignalType, RegimeType
 from typing import Dict, List, Optional
 from decimal import Decimal
 
