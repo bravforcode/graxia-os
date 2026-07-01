@@ -185,8 +185,8 @@ services:
       MIN_CONFIDENCE: ${MIN_CONFIDENCE:-0.50}
       PYTHONIOENCODING: utf-8
     volumes:
-      - ./quant_os/ml/models:/app/ml/models:ro
-      - ./quant_os/artifacts:/app/artifacts:ro
+      - ./data/models:/app/ml/models:ro
+      - ./artifacts:/app/artifacts:ro
       - ./data/ea_logs:/data
       - ./docker/certs:/certs:ro
     deploy:

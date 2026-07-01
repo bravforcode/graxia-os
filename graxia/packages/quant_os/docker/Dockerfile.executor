@@ -7,7 +7,11 @@ RUN pip install --no-cache-dir -r requirements.executor.txt
 
 COPY docker/paper_executor.py .
 
-RUN mkdir -p /certs
+RUN mkdir -p /certs && \
+    useradd -m -u 1004 graxia && \
+    chown -R graxia:graxia /app /certs
+
+USER graxia
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD curl -f --cacert /certs/ca.crt https://localhost:8753/health || exit 1

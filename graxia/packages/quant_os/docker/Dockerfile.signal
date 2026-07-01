@@ -38,7 +38,7 @@ WORKDIR /app
 # Copy only what's needed: signal service + feature pipeline
 RUN mkdir -p /app/graxia/packages
 
-COPY docker/signal_service.py /app/api/signal_service.py
+COPY api/signal_service.py /app/api/signal_service.py
 RUN touch /app/api/__init__.py
 
 # Copy model artifacts and features (read-only)
