@@ -55,7 +55,7 @@ docker/         Container definitions and deployment artifacts
 
 ## Status
 
-Build: passing · Tests: ~3078 (0 fail) · Version: 0.2.0-dev
+Build: passing · Tests: ~2920 (0 fail) · Version: 0.2.0-dev
 
 ## License
 

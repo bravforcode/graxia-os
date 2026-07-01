@@ -1,0 +1,14 @@
+# requirements.trainer.txt — Auto-Retrain dependencies
+# Pinned to match root requirements.txt
+pandas==2.3.3
+numpy>=1.26.4,<2.1
+xgboost==3.2.0
+scikit-learn==1.9.0
+optuna==4.9.0
+joblib==1.5.3
+asyncpg==0.30.0
+sqlalchemy[asyncio]==2.0.40
+python-dotenv==1.2.2
+PyYAML==6.0.3
+pyarrow==24.0.0
+duckdb==1.5.4

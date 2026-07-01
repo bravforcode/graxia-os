@@ -1,5 +1,8 @@
 """
-In-memory sliding-window rate limiter for FastAPI.
+Sliding-window rate limiter for FastAPI with Redis backing.
+
+Uses Redis for cross-worker/cross-container rate limiting when available,
+falls back to in-memory per-process buckets otherwise.
 
 Middleware extracts client IP (X-Forwarded-For if behind proxy),
 matches request path against configurable limits, and returns
@@ -8,41 +11,144 @@ matches request path against configurable limits, and returns
 
 from __future__ import annotations
 
+import asyncio
+import os
 import threading
 import time
 from dataclasses import dataclass, field
+from typing import Optional
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import JSONResponse
 
 
-# ── bucket ─────────────────────────────────────────────────────────────
-@dataclass
-class _Bucket:
-    max_requests: int
-    window_seconds: int
-    _timestamps: list[float] = field(default_factory=list, repr=False)
-    _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
+# ── Redis backend ──────────────────────────────────────────────────────
+class _RedisBackend:
+    """Async Redis sliding-window counter. Shared across workers/containers."""
 
-    def allow(self) -> bool:
+    def __init__(self, url: str):
+        import redis.asyncio as aioredis
+        self._pool = aioredis.ConnectionPool.from_url(url, decode_responses=True)
+        self._client = aioredis.Redis(connection_pool=self._pool)
+
+    async def allow(self, key: str, max_requests: int, window_seconds: int) -> bool:
+        """Sliding window using sorted sets. O(log N) per check."""
+        now = time.time()
+        pipe = self._client.pipeline()
+        # Remove expired entries
+        pipe.zremrangebyscore(key, 0, now - window_seconds)
+        # Count current window
+        pipe.zcard(key)
+        # Add current request if allowed
+        pipe.zadd(key, {str(now): now})
+        # Set TTL
+        pipe.expire(key, window_seconds + 1)
+        results = await pipe.execute()
+        count = results[1]  # zcard result
+        # If we were over limit, remove the optimistically added entry
+        if count >= max_requests:
+            await self._client.zrem(key, str(now))
+            return False
+        return True
+
+    async def retry_after(self, key: str, window_seconds: int) -> float:
+        """Return seconds until the oldest entry in the window expires."""
+        members = await self._client.zrange(key, 0, 0, withscores=True)
+        if not members:
+            return 0.0
+        oldest = members[0][1]
+        return max(0.0, oldest + window_seconds - time.time())
+
+    async def close(self):
+        await self._client.close()
+        await self._pool.aclose()
+
+
+# ── In-memory backend ──────────────────────────────────────────────────
+class _InMemoryBackend:
+    """Per-process sliding-window counter. No cross-worker sharing."""
+
+    def __init__(self):
+        self._buckets: dict[str, list[float]] = {}
+        self._lock = threading.Lock()
+
+    def allow_sync(self, key: str, max_requests: int, window_seconds: int) -> bool:
         with self._lock:
             now = time.time()
-            cutoff = now - self.window_seconds
-            self._timestamps = [t for t in self._timestamps if t > cutoff]
-            if len(self._timestamps) >= self.max_requests:
+            cutoff = now - window_seconds
+            ts = self._buckets.get(key, [])
+            ts = [t for t in ts if t > cutoff]
+            if len(ts) >= max_requests:
+                self._buckets[key] = ts
                 return False
-            self._timestamps.append(now)
+            ts.append(now)
+            self._buckets[key] = ts
             return True
 
-    def retry_after(self) -> float:
+    def retry_after_sync(self, key: str, window_seconds: int) -> float:
         with self._lock:
-            if not self._timestamps:
+            ts = self._buckets.get(key, [])
+            if not ts:
                 return 0.0
-            return max(0.0, self._timestamps[0] + self.window_seconds - time.time())
+            return max(0.0, ts[0] + window_seconds - time.time())
 
 
-# ── rule table ─────────────────────────────────────────────────────────
+# backward-compatible wrapper for tests (single-key bucket)
+class _Bucket:
+    """Single-key sliding window — wraps _InMemoryBackend for test compat."""
+
+    def __init__(self, max_requests: int, window_seconds: int):
+        self._be = _InMemoryBackend()
+        self._max = max_requests
+        self._win = window_seconds
+        self._key = "test"
+
+    def allow(self) -> bool:
+        return self._be.allow_sync(self._key, self._max, self._win)
+
+    def retry_after(self) -> float:
+        return self._be.retry_after_sync(self._key, self._win)
+
+    @property
+    def _timestamps(self):
+        return self._be._buckets.get(self._key, [])
+
+    @_timestamps.setter
+    def _timestamps(self, val):
+        self._be._buckets[self._key] = val
+
+
+# ── Factory ────────────────────────────────────────────────────────────
+_backend = None
+_backend_lock = threading.Lock()
+
+
+def _get_backend():
+    global _backend
+    if _backend is not None:
+        return _backend
+    with _backend_lock:
+        if _backend is not None:
+            return _backend
+        redis_url = os.getenv("REDIS_URL", "").strip()
+        if redis_url:
+            try:
+                _backend = _RedisBackend(redis_url)
+                return _backend
+            except Exception:
+                pass
+        _backend = _InMemoryBackend()
+        return _backend
+
+
+def _reset_backend():
+    """Reset backend singleton — use in tests only."""
+    global _backend
+    _backend = None
+
+
+# ── Rule table ─────────────────────────────────────────────────────────
 @dataclass(frozen=True)
 class RateLimitRule:
     path_prefix: str
@@ -60,22 +166,15 @@ DEFAULT_RULES: list[RateLimitRule] = [
 ]
 
 
-# ── middleware ──────────────────────────────────────────────────────────
+# ── Middleware ──────────────────────────────────────────────────────────
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    """Per-IP, per-path-prefix sliding-window rate limiter."""
+    """Per-IP, per-path-prefix sliding-window rate limiter.
+    Uses Redis when REDIS_URL is set, otherwise in-memory.
+    """
 
     def __init__(self, app, rules: list[RateLimitRule] | None = None):
         super().__init__(app)
         self.rules = rules or DEFAULT_RULES
-        self._buckets: dict[tuple[str, str, str], _Bucket] = {}
-        self._lock = threading.Lock()
-
-    def _get_bucket(self, key: tuple[str, str, str], max_req: int, window: int) -> _Bucket:
-        if key not in self._buckets:
-            with self._lock:
-                if key not in self._buckets:
-                    self._buckets[key] = _Bucket(max_requests=max_req, window_seconds=window)
-        return self._buckets[key]
 
     @staticmethod
     def _client_ip(request: Request) -> str:
@@ -95,26 +194,39 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         for rule in self.rules:
             if path.startswith(rule.path_prefix) and method in rule.methods:
-                key = (rule.path_prefix, method, ip)
-                bucket = self._get_bucket(key, rule.max_requests, rule.window_seconds)
-                if not bucket.allow():
-                    retry = int(bucket.retry_after()) + 1
-                    return JSONResponse(
-                        status_code=429,
-                        content={"detail": "Too Many Requests"},
-                        headers={"Retry-After": str(retry)},
-                    )
+                key = f"rl:{rule.path_prefix}:{method}:{ip}"
+                backend = _get_backend()
+
+                if isinstance(backend, _RedisBackend):
+                    allowed = await backend.allow(key, rule.max_requests, rule.window_seconds)
+                    if not allowed:
+                        retry = int(await backend.retry_after(key, rule.window_seconds)) + 1
+                        return JSONResponse(
+                            status_code=429,
+                            content={"detail": "Too Many Requests"},
+                            headers={"Retry-After": str(retry)},
+                        )
+                else:
+                    if not backend.allow_sync(key, rule.max_requests, rule.window_seconds):
+                        retry = int(backend.retry_after_sync(key, rule.window_seconds)) + 1
+                        return JSONResponse(
+                            status_code=429,
+                            content={"detail": "Too Many Requests"},
+                            headers={"Retry-After": str(retry)},
+                        )
                 break
 
         return await call_next(request)
 
 
-# ── public helper for standalone use (e.g. signal_service) ────────────
+# ── Standalone helper (e.g. signal_service) ────────────────────────────
 class InMemoryRateLimiter:
     """Drop-in replacement for _RateLimiter in signal_service."""
 
     def __init__(self, max_requests: int = 30, window_seconds: int = 60):
-        self._bucket = _Bucket(max_requests=max_requests, window_seconds=window_seconds)
+        self._backend = _InMemoryBackend()
+        self._max = max_requests
+        self._window = window_seconds
 
     def allow(self, client_id: str = "default") -> bool:
-        return self._bucket.allow()
+        return self._backend.allow_sync(client_id, self._max, self._window)

@@ -1,0 +1,9 @@
+# requirements.executor.txt — Paper Executor dependencies
+# Pinned to match root requirements.txt
+fastapi==0.133.1
+uvicorn[standard]==0.41.0
+httpx==0.28.1
+sqlalchemy==2.0.40
+psycopg2-binary>=2.9
+pydantic==2.11.1
+yfinance>=0.2.40

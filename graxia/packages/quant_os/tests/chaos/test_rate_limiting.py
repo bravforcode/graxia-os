@@ -22,7 +22,16 @@ from graxia.packages.quant_os.api.rate_limit import (
     RateLimitMiddleware,
     RateLimitRule,
     _Bucket,
+    _reset_backend,
 )
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limit_state():
+    """Reset global rate limiter backend between tests."""
+    _reset_backend()
+    yield
+    _reset_backend()
 
 
 # ── helpers ────────────────────────────────────────────────────────────
