@@ -48,8 +48,11 @@ class TickStore:
                 line = line.strip()
                 if not line:
                     continue
-                data = json.loads(line)
-                records.append(_dict_to_tick(data))
+                try:
+                    data = json.loads(line)
+                    records.append(_dict_to_tick(data))
+                except json.JSONDecodeError:
+                    continue  # skip corrupted lines from concurrent writes
 
         return records
 

@@ -8,7 +8,7 @@
   "first_timestamp_utc": "2007-01-23 07:00:00",
   "last_timestamp_utc": "2026-06-19 07:00:00",
   "bar_count": 5000,
-  "csv_sha256": "34abab03796cee6d03c0c21a471be6cf5496aafa4ed890b645a80221125dd746",
+  "csv_sha256": "313c2dc1b4a1e87fc3e830d1c8cc3e5ab5964e0743be53cae60789411a8ab584",
   "column_schema": ["time", "open", "high", "low", "close", "volume"],
   "ingested_at_utc": "2026-06-20T00:00:00Z",
   "data_quality_status": "VALIDATED",
