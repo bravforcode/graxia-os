@@ -186,6 +186,10 @@ def test_next_gate_info():
 
 
 def test_plot_equity_paths_no_matplotlib():
+    """Verify plot_equity_paths works without blocking on plt.show()."""
+    import matplotlib
+
+    matplotlib.use("Agg")
     from quant_os.core.risk.monte_carlo import plot_equity_paths
 
     pnls = _bullish_pnls()
