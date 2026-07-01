@@ -1,0 +1,114 @@
+{
+  "version": "1.0",
+  "created_at": "2026-07-01T12:12:07.579284+00:00",
+  "broker": "Pepperstone-Demo",
+  "trading_mode": "PAPER",
+  "symbols": [
+    {
+      "symbol": "XAUUSD",
+      "asset_class": "metals",
+      "lot_size": 0.01,
+      "stop_loss_pips": 30.0,
+      "take_profit_pips": 60.0,
+      "max_positions": 1,
+      "spread_buffer_pips": 5.0,
+      "min_confidence": 0.65,
+      "trading_hours_utc": {
+        "start": "01:00",
+        "end": "21:00"
+      },
+      "notes": "Gold: avoid 21:00-01:00 low liquidity window"
+    },
+    {
+      "symbol": "EURUSD",
+      "asset_class": "forex",
+      "lot_size": 0.01,
+      "stop_loss_pips": 20.0,
+      "take_profit_pips": 40.0,
+      "max_positions": 1,
+      "spread_buffer_pips": 1.0,
+      "min_confidence": 0.6,
+      "trading_hours_utc": {
+        "start": "01:00",
+        "end": "21:00"
+      },
+      "notes": "EURUSD: high liquidity during London/NY overlap"
+    },
+    {
+      "symbol": "BTCUSD",
+      "asset_class": "crypto",
+      "lot_size": 0.01,
+      "stop_loss_pips": 500.0,
+      "take_profit_pips": 1000.0,
+      "max_positions": 1,
+      "spread_buffer_pips": 50.0,
+      "min_confidence": 0.65,
+      "trading_hours_utc": {
+        "start": "00:00",
+        "end": "23:59"
+      },
+      "notes": "BTC: 24/7 market, wider stops for volatility"
+    },
+    {
+      "symbol": "ETHUSD",
+      "asset_class": "crypto",
+      "lot_size": 0.01,
+      "stop_loss_pips": 30.0,
+      "take_profit_pips": 60.0,
+      "max_positions": 1,
+      "spread_buffer_pips": 3.0,
+      "min_confidence": 0.65,
+      "trading_hours_utc": {
+        "start": "00:00",
+        "end": "23:59"
+      },
+      "notes": "ETH: 24/7, correlated with BTC — reduce position if BTC also open"
+    }
+  ],
+  "risk": {
+    "max_risk_per_trade_pct": 1.0,
+    "max_daily_loss_pct": 2.0,
+    "max_drawdown_pct": 10.0,
+    "max_portfolio_exposure_pct": 50.0,
+    "max_total_positions": 4,
+    "max_correlated_positions": 2,
+    "kill_switch_drawdown_pct": 15.0,
+    "initial_capital": 10000.0,
+    "currency": "USD"
+  },
+  "news_filter": {
+    "enabled": true,
+    "pre_block_minutes": 30,
+    "post_block_minutes": 15,
+    "blocked_event_types": [
+      "NFP",
+      "FOMC",
+      "ECB_RATE",
+      "BOJ_RATE",
+      "CPI_US",
+      "CPI_EU",
+      "GDP_US",
+      "UNEMPLOYMENT_US"
+    ],
+    "min_importance_for_block": "HIGH",
+    "notes": "30min pre-block, 15min post-block for HIGH importance events"
+  },
+  "schedule": {
+    "data_pull_utc": "00:30",
+    "feature_build_utc": "01:00",
+    "signal_generation_utc": "01:15",
+    "execution_start_utc": "01:30",
+    "daily_review_utc": "22:00",
+    "weekly_review_day": "friday",
+    "timezone": "UTC"
+  },
+  "alerts": {
+    "telegram_enabled": true,
+    "alert_on_trade": true,
+    "alert_on_daily_summary": true,
+    "alert_on_risk_breach": true,
+    "alert_on_kill_switch": true,
+    "alert_on_drawdown_warning": true,
+    "drawdown_warning_threshold_pct": 5.0
+  }
+}

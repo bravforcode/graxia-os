@@ -1,7 +1,7 @@
 # Phase 3.1A.2 — Test Disposition Report
 
-**Date:** 2026-06-22  
-**Author:** quant_os_team  
+**Date:** 2026-06-22
+**Author:** quant_os_team
 **Scope:** Test collection audit and quarantine decisions for Phase 3.1A.2
 
 ---

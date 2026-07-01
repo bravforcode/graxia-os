@@ -1,7 +1,7 @@
 # REPORT: Phase 3.2 — MT5 Runtime Verification, Tick Capture, and Market Health
 
-**Generated:** 2026-06-22  
-**Phase:** 3.2  
+**Generated:** 2026-06-22
+**Phase:** 3.2
 **Constraint:** READ-ONLY — No order submission. No account mutations.
 
 ---

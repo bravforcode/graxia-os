@@ -221,7 +221,7 @@ Not run in this session (not in the explicit file list, would require separate i
 **6/6 G0 tests PASS** → G0.1 closeout requirement MET
 
 - All clean-process import tests: PASS
-- Runtime startup test: PASS  
+- Runtime startup test: PASS
 - Legacy production path audit: PASS
 - HFT backtest isolation: PASS (both tests)
 - Clean subprocess import: PASS

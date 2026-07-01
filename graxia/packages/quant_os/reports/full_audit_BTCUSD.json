@@ -1,0 +1,176 @@
+{
+  "symbol": "BTCUSD",
+  "rows": 60000,
+  "columns": 52,
+  "feature_columns": [
+    "swing_high",
+    "swing_low",
+    "sweep_bearish_flag",
+    "sweep_bullish_flag",
+    "sweep_magnitude",
+    "bars_since_sweep",
+    "ob_distance_atr",
+    "ob_age_bars",
+    "ob_strength",
+    "fvg_nearest_distance_atr",
+    "fvg_nearest_size_atr",
+    "fvg_inside_flag",
+    "structure_state",
+    "bars_since_bos_choch",
+    "structure_event_flag",
+    "pool_nearest_distance_atr",
+    "pool_age_bars",
+    "pool_strength",
+    "is_london_open",
+    "is_ny_open",
+    "is_overlap",
+    "is_crypto_funding",
+    "ote_in_band",
+    "ote_retracement_pct",
+    "liquidity_void_flag",
+    "liquidity_void_size_atr",
+    "liquidity_void_age_bars",
+    "ob_mitigation_depth",
+    "inversion_fvg_flag",
+    "judas_swing_flag",
+    "judas_direction",
+    "wyckoff_range_bound",
+    "wyckoff_spring_flag",
+    "wyckoff_upthrust_flag",
+    "vp_poc_distance_atr",
+    "vp_inside_value_area",
+    "vp_hvn_proximity",
+    "fred_dfii10_daily",
+    "fred_dgs10_daily",
+    "fred_vixcls_daily",
+    "fred_gvzcls_daily",
+    "fred_dcoilwtico_daily",
+    "fred_dtwexbgs_daily",
+    "cot_gold_commercials_net_pct",
+    "cot_gold_managed_money_net_pct",
+    "cot_gold_open_interest"
+  ],
+  "audits": {
+    "lookahead": {
+      "passed": true,
+      "returncode": 0,
+      "stdout": "2026-07-01 19:21:56,869 [INFO] Auditing BTCUSD M15 for lookahead leaks\n2026-07-01 19:21:56,943 [INFO] Building features_v3 for BTCUSD M15\n2026-07-01 19:21:57,005 [INFO]   -> SMC detectors\n2026-07-01 19:22:16,635 [INFO]   -> FRED macro features\n2026-07-01 19:22:16,680 [INFO]   -> COT positioning features\n2026-07-01 19:22:16,976 [INFO]   -> SMC detectors\n2026-07-01 19:22:31,108 [INFO]   -> FRED macro features\n2026-07-01 19:22:31,142 [INFO]   -> COT positioning features\n\n======================================================================\nLOOKAHEAD AUDIT: BTCUSD M15\n======================================================================\nFull rows:    62881\nTrunc rows:   50304\nOverlap rows: 50284\nFeatures checked: 46\nRESULT: PASSED \u2014 no lookahead leak detected\n======================================================================\n",
+      "stderr": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\scripts\\build_features_v3_multi_asset.py:182: UserWarning: Converting to PeriodArray/Index representation will drop timezone information.\n  df_week = df[\"time\"].dt.to_period(\"W\").dt.to_timestamp().dt.tz_localize(\"UTC\").rename(\"week\")\nC:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\scripts\\build_features_v3_multi_asset.py:182: UserWarning: Converting to PeriodArray/Index representation will drop timezone information.\n  df_week = df[\"time\"].dt.to_period(\"W\").dt.to_timestamp().dt.tz_localize(\"UTC\").rename(\"week\")\n"
+    },
+    "data_integrity": {
+      "passed": false,
+      "issues": [
+        "Moderate missing data: 9.8% of all cells are null",
+        "99 timestamp gaps > 30 min (max=300.0 min)",
+        "2 features with zero variance (useless): ['bars_since_sweep', 'ob_strength']"
+      ],
+      "details": {
+        "missing_total": 305238,
+        "missing_by_column": {
+          "bars_since_sweep": 58890,
+          "ob_distance_atr": 53064,
+          "ob_age_bars": 53064,
+          "ob_strength": 53064,
+          "fvg_nearest_distance_atr": 1206,
+          "fvg_nearest_size_atr": 1206,
+          "bars_since_bos_choch": 50,
+          "pool_nearest_distance_atr": 652,
+          "pool_age_bars": 652,
+          "pool_strength": 652,
+          "ote_retracement_pct": 10864,
+          "liquidity_void_age_bars": 73,
+          "ob_mitigation_depth": 59406,
+          "vp_poc_distance_atr": 19,
+          "fred_dfii10_daily": 2184,
+          "fred_dgs10_daily": 2184,
+          "fred_vixcls_daily": 564,
+          "fred_gvzcls_daily": 2184,
+          "fred_dcoilwtico_daily": 2912,
+          "fred_dtwexbgs_daily": 2348
+        },
+        "missing_pct": 9.78,
+        "infinite_by_column": {},
+        "duplicate_rows": 0,
+        "timestamp_max_gap_minutes": 300.0,
+        "timestamp_n_gaps": 99,
+        "timestamp_gap_samples": [
+          75.0,
+          135.0,
+          75.0,
+          135.0,
+          75.0
+        ],
+        "zero_variance_features": [
+          "bars_since_sweep",
+          "ob_strength"
+        ]
+      }
+    },
+    "correlation": {
+      "passed": false,
+      "issues": [
+        "5 features with >50% missing values: ['bars_since_sweep', 'ob_distance_atr', 'ob_age_bars', 'ob_strength', 'ob_mitigation_depth']"
+      ],
+      "details": {
+        "n_features": 28,
+        "high_correlation_pairs": [],
+        "features_over_50pct_missing": {
+          "bars_since_sweep": 98.2,
+          "ob_distance_atr": 88.4,
+          "ob_age_bars": 88.4,
+          "ob_strength": 88.4,
+          "ob_mitigation_depth": 99.0
+        }
+      }
+    },
+    "risk": {
+      "passed": true,
+      "issues": [],
+      "details": {
+        "risk_policy_fields": {
+          "risk_per_trade_bps": true,
+          "max_daily_loss_bps": true,
+          "max_weekly_loss_bps": true,
+          "max_total_drawdown_bps": true,
+          "max_open_positions": true,
+          "require_stop_loss": true,
+          "fail_closed": true
+        },
+        "risk_policy_max_drawdown_bps": 300,
+        "risk_policy_require_stop_loss": true,
+        "risk_policy_fail_closed": true,
+        "position_sizer": {
+          "has_kelly": true,
+          "has_fraction_cap": true
+        },
+        "pre_trade_risk": "present",
+        "kill_switch": "present",
+        "circuit_breaker": "present",
+        "risk_engine_layers_present": {
+          "L1": true,
+          "L2": true,
+          "L3": true,
+          "L4": true
+        },
+        "kelly_cap_value": 0.25,
+        "engine_max_drawdown_pct": 0.15
+      }
+    },
+    "code_quality": {
+      "passed": true,
+      "issues": [],
+      "details": {
+        "tests": {
+          "file": "tests/test_smc_detectors.py",
+          "passed": true,
+          "returncode": 0,
+          "output": "..................                                                       [100%]\n"
+        },
+        "todo_fixme_hack": {},
+        "hardcoded_scan": "completed"
+      }
+    }
+  },
+  "health_score": 73,
+  "overall_passed": false
+}

@@ -1,0 +1,29 @@
+{
+  "XAUUSD": {
+    "wf_assumption_ret": 0.0003,
+    "p90_cost_ret": 0.000147,
+    "avg_cost_ret": 4.7e-05,
+    "cost_ratio_vs_wf": 0.49,
+    "spread_cost_recommended": 0.000050,
+    "slippage_p90_recommended": 0.000027,
+    "note": "Updated 2026-06-25: Pepperstone Razor demo spread $0.18 (18pts). Calibrated at price_mult 2350. Actual price ~4034. USD cost: spread $0.12 + slippage $0.06 = $0.18/trade. Previous calibration (0.000147 ret) reflected wider historical spreads."
+  },
+  "EURUSD": {
+    "wf_assumption_ret": 0.0003,
+    "p90_cost_ret": 2.6e-05,
+    "avg_cost_ret": 2.5e-05,
+    "cost_ratio_vs_wf": 0.087,
+    "spread_cost_recommended": 8e-06,
+    "slippage_p90_recommended": 1.8e-05,
+    "note": "P90 cost from fill_samples conversion"
+  },
+  "GBPUSD": {
+    "wf_assumption_ret": 0.0003,
+    "p90_cost_ret": 5.3e-05,
+    "avg_cost_ret": 4.4e-05,
+    "cost_ratio_vs_wf": 0.177,
+    "spread_cost_recommended": 1e-05,
+    "slippage_p90_recommended": 4.3e-05,
+    "note": "P90 cost from fill_samples conversion"
+  }
+}

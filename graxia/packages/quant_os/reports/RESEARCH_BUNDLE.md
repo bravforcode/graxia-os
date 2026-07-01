@@ -208,7 +208,7 @@ import MetaTrader5 as mt5
 def test_market_depth(terminal_path: str, symbol: str = "XAUUSD") -> dict:
     """
     Test market depth availability for a symbol.
-    
+
     Returns a dict with results.
     """
     result = {
@@ -219,17 +219,17 @@ def test_market_depth(terminal_path: str, symbol: str = "XAUUSD") -> dict:
         "book_entries": None,
         "error": None,
     }
-    
+
     init = mt5.initialize(path=terminal_path, timeout=10000)
     if not init:
         result["error"] = f"MT5 init failed: {mt5.last_error()}"
         return result
     result["init_ok"] = True
-    
+
     try:
         add_ok = mt5.market_book_add(symbol)
         result["book_add_ok"] = bool(add_ok)
-        
+
         if add_ok:
             time.sleep(2)  # wait for depth data
             book = mt5.market_book_get(symbol)
@@ -242,13 +242,13 @@ def test_market_depth(terminal_path: str, symbol: str = "XAUUSD") -> dict:
             else:
                 result["book_entries"] = []
                 result["error"] = f"Book empty (last_error: {mt5.last_error()})"
-            
+
             mt5.market_book_release(symbol)
     except Exception as e:
         result["error"] = str(e)
     finally:
         mt5.shutdown()
-    
+
     return result
 
 
