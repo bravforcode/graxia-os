@@ -19,30 +19,48 @@ Payload format:
 }
 """
 
-import hmac
 import hashlib
+import hmac
 import json
 import time
-from typing import Dict, Any, Optional
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 
-from fastapi import APIRouter, HTTPException, Header, Request, Depends
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..core.config import get_config
-from ..core.enums import SignalType, TradingMode
-from ..core.exceptions import ValidationError, KillSwitchTriggeredError
-from ..execution.manager import OrderManager
-from ..execution.adapters.manager import BrokerManager
-from ..risk.engine import RiskEngine
-from ..risk.kill_switch import KillSwitch
-from ..data.models import Signal as SignalModel
-
 from graxia.packages.revenue_os.db import get_db as _get_db
 
+from ..core.config import get_config
+from ..core.enums import SignalType, TradingMode
+from ..core.exceptions import KillSwitchTriggeredError, ValidationError
+from ..data.models import Signal as SignalModel
+from ..execution.adapters.manager import BrokerManager
+from ..execution.manager import OrderManager
+from ..risk.engine import RiskEngine
+
 webhook_router = APIRouter(prefix="/webhook", tags=["webhook"])
+
+# ---------------------------------------------------------------------------
+# In-memory event-ID deduplication (5-minute TTL)
+# ---------------------------------------------------------------------------
+_seen_events: dict[str, float] = {}
+_DEDUP_TTL_SECONDS = 300  # 5 minutes
+
+
+def _is_duplicate_event(event_id: str) -> bool:
+    """Return True if event_id was seen within the TTL window."""
+    now = time.time()
+    # Evict expired entries (lazy cleanup every call)
+    expired = [k for k, ts in _seen_events.items() if now - ts > _DEDUP_TTL_SECONDS]
+    for k in expired:
+        del _seen_events[k]
+    # Check
+    if event_id in _seen_events:
+        return True
+    _seen_events[event_id] = now
+    return False
 
 
 # Database dependency - use Revenue OS shared session
@@ -54,6 +72,7 @@ async def get_db():
 
 class TradingViewPayload(BaseModel):
     """TradingView webhook payload schema"""
+
     action: str = Field(..., description="buy or sell")
     symbol: str = Field(..., description="Trading symbol")
     price: float = Field(..., description="Entry price")
@@ -63,6 +82,7 @@ class TradingViewPayload(BaseModel):
     regime: str = Field(default="trend", description="Market regime")
     atr: float = Field(default=0.0, description="ATR value")
     timestamp: int = Field(default_factory=lambda: int(time.time()))
+    event_id: str | None = Field(None, description="Unique event ID for deduplication")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -75,7 +95,7 @@ class TradingViewPayload(BaseModel):
                 "strategy": "mtm",
                 "regime": "trend",
                 "atr": 0.0020,
-                "timestamp": 1704067200
+                "timestamp": 1704067200,
             }
         }
     )
@@ -83,28 +103,30 @@ class TradingViewPayload(BaseModel):
 
 class WebhookResponse(BaseModel):
     """Webhook response"""
+
     success: bool
-    signal_id: Optional[str] = None
-    order_id: Optional[str] = None
+    signal_id: str | None = None
+    order_id: str | None = None
     status: str
     message: str
-    error: Optional[str] = None
+    error: str | None = None
 
 
 def verify_webhook_signature(payload: bytes, signature: str, secret: str) -> bool:
-    """Verify HMAC-SHA256 signature"""
+    """Verify HMAC-SHA256 signature.
+
+    Security: Rejects when secret is empty (fail-closed) to prevent
+    bypass in misconfigured environments. Uses constant-time comparison
+    via hmac.compare_digest to prevent timing side-channel attacks.
+    """
     if not secret:
-        # No secret configured - allow (not recommended for production)
-        return True
+        # No secret configured — reject (fail-closed, never bypass auth)
+        return False
 
     if not signature:
         return False
 
-    expected = hmac.new(
-        secret.encode(),
-        payload,
-        hashlib.sha256
-    ).hexdigest()
+    expected = hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
 
     # Use constant-time comparison to prevent timing attacks
     return hmac.compare_digest(expected, signature)
@@ -112,9 +134,7 @@ def verify_webhook_signature(payload: bytes, signature: str, secret: str) -> boo
 
 @webhook_router.post("/tradingview", response_model=WebhookResponse)
 async def tradingview_webhook(
-    request: Request,
-    x_signature: Optional[str] = Header(None, alias="X-Signature"),
-    db: AsyncSession = Depends(get_db)
+    request: Request, x_signature: str | None = Header(None, alias="X-Signature"), db: AsyncSession = Depends(get_db)
 ):
     """
     Receive TradingView webhook signal.
@@ -136,6 +156,11 @@ async def tradingview_webhook(
         payload = TradingViewPayload(**data)
     except (json.JSONDecodeError, ValidationError) as e:
         raise HTTPException(status_code=400, detail=f"Invalid payload: {e}")
+
+    # Deduplicate by event_id (if provided) or by hash of payload
+    dedup_key = payload.event_id or hashlib.sha256(body).hexdigest()
+    if _is_duplicate_event(dedup_key):
+        raise HTTPException(status_code=409, detail="Duplicate event")
 
     # Validate timestamp (prevent replay attacks)
     current_time = int(time.time())
@@ -160,10 +185,10 @@ async def tradingview_webhook(
             "sl": payload.sl,
             "tp": payload.tp,
             "atr": payload.atr,
-            "source": "tradingview"
+            "source": "tradingview",
         },
         raw_payload=data,
-        received_at=datetime.utcnow()
+        received_at=datetime.now(UTC),
     )
     db.add(signal)
     db.commit()
@@ -179,15 +204,20 @@ async def tradingview_webhook(
         db_session=db,
         broker_manager=broker_manager,
         risk_engine=risk_engine,
-        kill_switch=None  # Would be injected
+        kill_switch=None,  # Would be injected
     )
 
     # Check if we should auto-trade
-    if config.trading_mode in [TradingMode.PAPER, TradingMode.LIVE_MICRO,
-                                TradingMode.LIVE_LIMITED, TradingMode.LIVE_CONTROLLED]:
+    if config.trading_mode in [
+        TradingMode.PAPER,
+        TradingMode.LIVE_MICRO,
+        TradingMode.LIVE_LIMITED,
+        TradingMode.LIVE_CONTROLLED,
+    ]:
         try:
             # Submit order
             from decimal import Decimal
+
             result = await order_manager.submit_order(
                 symbol=payload.symbol.upper(),
                 side=payload.action.upper(),
@@ -195,13 +225,13 @@ async def tradingview_webhook(
                 quantity=calculate_position_size(payload),  # Would calculate based on risk
                 stop_price=Decimal(str(payload.sl)),
                 strategy_id=payload.strategy,
-                signal_id=str(signal.id)
+                signal_id=str(signal.id),
             )
 
             if result.get("success"):
                 signal.processed = True
                 signal.order_id = result.get("order_id")
-                signal.processed_at = datetime.utcnow()
+                signal.processed_at = datetime.now(UTC)
                 db.commit()
 
                 return WebhookResponse(
@@ -209,7 +239,7 @@ async def tradingview_webhook(
                     signal_id=str(signal.id),
                     order_id=result.get("order_id"),
                     status="submitted",
-                    message="Signal received and order submitted"
+                    message="Signal received and order submitted",
                 )
             else:
                 signal.rejection_reason = result.get("error")
@@ -220,7 +250,7 @@ async def tradingview_webhook(
                     signal_id=str(signal.id),
                     status="rejected",
                     message="Signal processed but order rejected",
-                    error=result.get("error")
+                    error=result.get("error"),
                 )
 
         except KillSwitchTriggeredError as e:
@@ -232,23 +262,18 @@ async def tradingview_webhook(
                 signal_id=str(signal.id),
                 status="blocked",
                 message="Signal blocked by kill switch",
-                error=str(e)
+                error=str(e),
             )
 
     # Signal recorded but not auto-traded
     return WebhookResponse(
-        success=True,
-        signal_id=str(signal.id),
-        status="recorded",
-        message="Signal recorded for manual review"
+        success=True, signal_id=str(signal.id), status="recorded", message="Signal recorded for manual review"
     )
 
 
 @webhook_router.post("/manual", response_model=WebhookResponse)
 async def manual_signal(
-    payload: TradingViewPayload,
-    api_key: str = Header(..., alias="X-API-Key"),
-    db: AsyncSession = Depends(get_db)
+    payload: TradingViewPayload, api_key: str = Header(..., alias="X-API-Key"), db: AsyncSession = Depends(get_db)
 ):
     """
     Manual signal entry endpoint.
@@ -256,8 +281,8 @@ async def manual_signal(
     """
     config = get_config()
 
-    # Verify API key
-    if api_key != config.admin_api_key:
+    # Verify API key — constant-time comparison to prevent timing attacks
+    if not config.admin_api_key or not hmac.compare_digest(api_key, config.admin_api_key):
         raise HTTPException(status_code=401, detail="Invalid API key")
 
     # Record signal
@@ -268,24 +293,14 @@ async def manual_signal(
         symbol=payload.symbol.upper(),
         signal_type=signal_type,
         confidence=1.0,  # Manual signals have full confidence
-        indicator_values={
-            "price": payload.price,
-            "sl": payload.sl,
-            "tp": payload.tp,
-            "source": "manual"
-        },
+        indicator_values={"price": payload.price, "sl": payload.sl, "tp": payload.tp, "source": "manual"},
         raw_payload=payload.dict(),
-        received_at=datetime.utcnow()
+        received_at=datetime.now(UTC),
     )
     db.add(signal)
     db.commit()
 
-    return WebhookResponse(
-        success=True,
-        signal_id=str(signal.id),
-        status="recorded",
-        message="Manual signal recorded"
-    )
+    return WebhookResponse(success=True, signal_id=str(signal.id), status="recorded", message="Manual signal recorded")
 
 
 def calculate_position_size(payload: TradingViewPayload) -> Decimal:
