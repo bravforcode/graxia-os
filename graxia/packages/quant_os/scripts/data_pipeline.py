@@ -42,6 +42,13 @@ DATA_DIR = PROJECT_ROOT / "data"
 MACRO_DIR = DATA_DIR / "market_data" / "fred"
 COT_DIR = DATA_DIR / "market_data" / "cot"
 
+# Load .env if available
+try:
+    from dotenv import load_dotenv
+    load_dotenv(PROJECT_ROOT / ".env")
+except ImportError:
+    pass  # python-dotenv not installed; rely on OS env vars
+
 # ── Logging ───────────────────────────────────────────────────────────
 
 logging.basicConfig(
@@ -568,6 +575,38 @@ def cmd_fred(args) -> int:
     return 0 if any(v > 0 for v in results.values()) else 1
 
 
+def cmd_cot(args) -> int:
+    """Pull COT (Commitments of Traders) data from cftc.gov."""
+    try:
+        from cot_reports import cot_year
+    except ImportError:
+        logger.error("cot_reports not installed: pip install cot-reports")
+        return 1
+
+    COT_DIR.mkdir(parents=True, exist_ok=True)
+    out_path = COT_DIR / "cot_legacy.csv"
+
+    frames = []
+    for yr in range(args.start_year, args.end_year + 1):
+        try:
+            df = cot_year(yr, "legacy_fut", store_txt=True, verbose=False)
+            frames.append(df)
+            logger.info(f"  COT {yr}: {len(df)} rows")
+        except Exception as e:
+            logger.warning(f"  COT {yr}: failed ({e})")
+
+    if not frames:
+        logger.error("No COT data downloaded")
+        return 1
+
+    combined = pd.concat(frames, ignore_index=True)
+    combined.drop_duplicates(inplace=True)
+    combined.sort_values(combined.columns[0], inplace=True)
+    combined.to_csv(out_path, index=False)
+    logger.info(f"COT saved: {len(combined)} rows -> {out_path}")
+    return 0
+
+
 # ── CLI ───────────────────────────────────────────────────────────────
 
 def main() -> int:
@@ -601,6 +640,11 @@ def main() -> int:
     p_fred = sub.add_parser("fred", help="Pull FRED macro data")
     p_fred.add_argument("--start", default="2016-01-01", help="Start date")
 
+    # cot
+    p_cot = sub.add_parser("cot", help="Pull COT (Commitments of Traders) data")
+    p_cot.add_argument("--start-year", type=int, default=2020, help="Start year")
+    p_cot.add_argument("--end-year", type=int, default=2026, help="End year")
+
     args = parser.parse_args()
 
     if args.command == "pull":
@@ -614,6 +658,8 @@ def main() -> int:
         return cmd_ingest(args)
     elif args.command == "fred":
         return cmd_fred(args)
+    elif args.command == "cot":
+        return cmd_cot(args)
     else:
         parser.print_help()
         return 1
