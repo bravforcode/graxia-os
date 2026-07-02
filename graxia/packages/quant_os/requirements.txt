@@ -14,8 +14,8 @@ python-dotenv==1.2.2
 tomli==2.4.1
 PyYAML==6.0.3
 
-# ---- Broker / Live Execution ----
-MetaTrader5==5.0.5735
+# ---- Broker / Live Execution (Windows-only, optional) ----
+# MetaTrader5==5.0.5735  # Windows-only, install via: pip install quant_os[mt5]
 ccxt>=4.0.0
 
 # ---- Data Validation & Quality ----
