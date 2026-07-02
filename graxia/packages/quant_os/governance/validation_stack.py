@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 import math
-from typing import Optional
 
 
 @dataclass

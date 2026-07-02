@@ -17,7 +17,8 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, UTC
+from decimal import Decimal
 from enum import Enum
 from typing import Any, Protocol
 
@@ -250,7 +251,7 @@ class RiskEngine:
         if signal.timestamp_epoch > 0:
             age = time.time() - signal.timestamp_epoch
         else:
-            now = datetime.now(timezone.utc) if signal.timestamp.tzinfo else datetime.now()
+            now = datetime.now(UTC) if signal.timestamp.tzinfo else datetime.now()
             age = (now - signal.timestamp).total_seconds()
         if age > _Layer1.MAX_SIGNAL_AGE_S:
             return self._reject(
@@ -314,7 +315,10 @@ class RiskEngine:
         else:
             max_positions = _Layer2.MAX_POSITIONS
             if account is not None and account.equity > 0:
-                max_positions = max(5, min(20, int(account.equity / 10000)))
+                # Use Decimal for precise equity-based position scaling
+                equity_d = Decimal(str(account.equity))
+                step_d = Decimal("10000")
+                max_positions = max(5, min(20, int(equity_d / step_d)))
 
         if len(portfolio.position_symbols) >= max_positions:
             return self._reject(
@@ -448,7 +452,6 @@ class RiskEngine:
 
     async def check_var_exposure(self, order, returns, max_var_pct: float = 0.02):
         """Check if order's VaR exposure is within limits."""
-        import numpy as np
         from dataclasses import dataclass
 
         @dataclass

@@ -1,8 +1,6 @@
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from typing import Any, Dict, List
 from enum import Enum
-import hashlib
-import json
 
 class RegimeType(Enum):
     TRENDING_UP = "trending_up"

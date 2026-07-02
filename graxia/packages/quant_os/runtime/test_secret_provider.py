@@ -1,7 +1,6 @@
 """Tests for secret_provider."""
 import os
 import tempfile
-from pathlib import Path
 
 from .secret_provider import SecretProvider, SecretRef
 

@@ -18,13 +18,11 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import os
 import pickle
 import sys
 import warnings
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -37,7 +35,6 @@ from sklearn.metrics import (
     r2_score,
     recall_score,
 )
-from sklearn.model_selection import TimeSeriesSplit
 import xgboost as xgb
 
 warnings.filterwarnings("ignore")
@@ -434,7 +431,7 @@ def train_symbol(symbol: str, timeframe: str = "M15") -> dict:
             "model": final_dir_model,
             "feature_columns": feature_cols,
             "symbol": symbol,
-            "trained_at": datetime.now(timezone.utc).isoformat(),
+            "trained_at": datetime.now(UTC).isoformat(),
             "train_rows": len(X_trainval),
             "test_rows": len(X_test),
         }, f)
@@ -445,7 +442,7 @@ def train_symbol(symbol: str, timeframe: str = "M15") -> dict:
             "model": final_mag_model,
             "feature_columns": feature_cols,
             "symbol": symbol,
-            "trained_at": datetime.now(timezone.utc).isoformat(),
+            "trained_at": datetime.now(UTC).isoformat(),
             "train_rows": len(X_trainval),
             "test_rows": len(X_test),
         }, f)
@@ -455,7 +452,7 @@ def train_symbol(symbol: str, timeframe: str = "M15") -> dict:
     report = {
         "symbol": symbol,
         "timeframe": timeframe,
-        "trained_at": datetime.now(timezone.utc).isoformat(),
+        "trained_at": datetime.now(UTC).isoformat(),
         "n_features": len(feature_cols),
         "n_rows": len(df),
         "split": {

@@ -8,14 +8,11 @@ Pillar 4: CascadeRouter (3-tier, failover)
 """
 import asyncio
 import threading
-import time
-from datetime import datetime, UTC
 from unittest.mock import AsyncMock, patch, MagicMock
 
 import pytest
 
 from graxia.packages.quant_os.core.canonical.macro_regime import (
-    MacroRegime,
     MacroRegimeCache,
     RegimeBias,
     get_macro_regime,

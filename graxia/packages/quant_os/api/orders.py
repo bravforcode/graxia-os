@@ -1,6 +1,6 @@
 """Order management API endpoints"""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -123,7 +123,7 @@ async def cancel_order(order_id: str, db: Session = Depends(get_db)):
 
     # Would integrate with OrderManager to cancel
     order.status = OrderStatus.CANCEL_REQUESTED.value
-    order.updated_at = datetime.utcnow()
+    order.updated_at = datetime.now(UTC)
     db.commit()
 
     return {"success": True, "order_id": order_id, "status": "cancel_requested"}

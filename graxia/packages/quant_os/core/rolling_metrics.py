@@ -4,10 +4,10 @@ import math
 
 class RollingMetrics:
     """Compute rolling risk metrics for time series analysis"""
-    
+
     def __init__(self, returns: List[float]):
         self.returns = returns
-    
+
     def rolling_sharpe(self, window: int = 20, risk_free: float = 0.0) -> List[Optional[float]]:
         """Rolling Sharpe ratio"""
         result = []
@@ -23,7 +23,7 @@ class RollingMetrics:
             else:
                 result.append((avg - risk_free / 252) / std * math.sqrt(252))
         return result
-    
+
     def rolling_sortino(self, window: int = 20, risk_free: float = 0.0) -> List[Optional[float]]:
         """Rolling Sortino ratio (downside deviation only)"""
         result = []
@@ -43,7 +43,7 @@ class RollingMetrics:
             else:
                 result.append((avg - risk_free / 252) / downside_std * math.sqrt(252))
         return result
-    
+
     def rolling_max_drawdown(self, window: int = 20) -> List[Optional[float]]:
         """Rolling maximum drawdown"""
         result = []
@@ -65,7 +65,7 @@ class RollingMetrics:
                     max_dd = dd
             result.append(max_dd)
         return result
-    
+
     def rolling_volatility(self, window: int = 20) -> List[Optional[float]]:
         """Rolling annualized volatility"""
         result = []
@@ -76,7 +76,7 @@ class RollingMetrics:
             window_returns = self.returns[i - window + 1:i + 1]
             result.append(self._std(window_returns) * math.sqrt(252))
         return result
-    
+
     def rolling_win_rate(self, window: int = 20) -> List[Optional[float]]:
         """Rolling win rate"""
         result = []
@@ -88,7 +88,7 @@ class RollingMetrics:
             wins = sum(1 for r in window_returns if r > 0)
             result.append(wins / len(window_returns))
         return result
-    
+
     def rolling_profit_factor(self, window: int = 20) -> List[Optional[float]]:
         """Rolling profit factor"""
         result = []
@@ -104,7 +104,7 @@ class RollingMetrics:
             else:
                 result.append(gross_profit / gross_loss)
         return result
-    
+
     @staticmethod
     def _std(values: List[float]) -> float:
         if len(values) < 2:
@@ -112,7 +112,7 @@ class RollingMetrics:
         mean = sum(values) / len(values)
         variance = sum((x - mean) ** 2 for x in values) / (len(values) - 1)
         return math.sqrt(variance)
-    
+
     def to_dict(self, window: int = 20) -> Dict[str, List]:
         """Compute all rolling metrics and return as dict"""
         return {

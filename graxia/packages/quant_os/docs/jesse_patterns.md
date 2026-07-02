@@ -15,25 +15,25 @@ Jesse implements a mature quant framework with **zero look-ahead bias by design*
 for i in range(length):
     # 1. Update time FIRST
     store_app.time = first_candles_set[i, 0] + 60_000
-    
+
     # 2. Add candles, simulate price changes
     for candles_arr, candles_pipeline, exchange, symbol, arr_1m in candles_info:
         short_candle = candles_arr[i]
         _simulate_price_change_effect(short_candle, exchange, symbol)
-    
+
     # 3. Generate higher timeframes ONLY after 1m candle processed
     for timeframe, count in generating_timeframes:
         if i_next % count == 0:
             generated_candle = generate_candle_from_one_minutes(...)
             add_candle(generated_candle, ...)
-    
+
     # 4. Execute strategies AFTER all candles available
     for r, count, strategy, exchange, symbol in routes_info:
         if count == 1:
             strategy._execute()
         elif i_next % count == 0:
             strategy._execute()
-    
+
     # 5. Execute pending market orders AFTER strategy decision
     execute_simulated_market_orders()
 ```
@@ -96,14 +96,14 @@ class BaseCandlesPipeline:
         self._batch_size = batch_size
         self._output = np.zeros((batch_size, 6))
         self.last_price = 0.0
-    
+
     def get_candles(self, candles, index, candles_step=-1):
         index = index % self._batch_size
         if index == 0:
             # Regenerate batch
             self.process(candles, self._output[:len(candles)])
         return self._output[index]
-    
+
     def process(self, original_1m_candles, out) -> bool:
         """Override in subclass. Return True if out is modified."""
         return False
@@ -123,7 +123,7 @@ class MovingBlockBootstrapCandlesPipeline(BaseCandlesPipeline):
         return True
 ```
 
-**Adopt This**: 
+**Adopt This**:
 - Trade-shuffling is fast (no re-simulation) - good for quick confidence checks
 - Candle-based is slower but tests structural robustness
 - The `BaseCandlesPipeline` pattern is extensible - we can add our own shuffling strategies
@@ -147,7 +147,7 @@ class Strategy(ABC):
                 'label': None
             }
         self._current_ml_point['features'].update(features_dict)
-    
+
     def record_label(self, name: str, value):
         """Record dependent variable (outcome)."""
         if self._current_ml_point is not None:
@@ -166,11 +166,11 @@ def train_model(data, estimator, task="binary", test_ratio=0.2):
     split = int(len(X) * (1.0 - test_ratio))
     X_train, X_test = X[:split], X[split:]  # Chronological!
     y_train, y_test = y[:split], y[split:]
-    
+
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)  # Don't fit on test!
-    
+
     fitted = clone(estimator)
     fitted.fit(X_train_scaled, y_train)
 ```
@@ -212,10 +212,10 @@ class Strategy(ABC):
     # ── Required Overrides ──────────────────────────────────────────────
     @abstractmethod
     def go_long(self) -> None: pass
-    
+
     @abstractmethod
     def should_long(self) -> bool: pass
-    
+
     # ── Optional Overrides ──────────────────────────────────────────────
     def should_short(self) -> bool: return False
     def go_short(self) -> None: pass
@@ -225,7 +225,7 @@ class Strategy(ABC):
     def update_position(self) -> None: pass
     def on_open_position(self, order) -> None: pass
     def on_close_position(self, order, closed_trade) -> None: pass
-    
+
     # ── Lifecycle ───────────────────────────────────────────────────────
     def _execute(self) -> None:
         """Internal execution flow."""
@@ -267,7 +267,7 @@ data_routes = [
 def load_candles(start_date, finish_date):
     warmup_num = jh.get_config('env.data.warmup_candles_num', 210)
     max_timeframe = jh.max_timeframe(config['app']['considering_timeframes'])
-    
+
     for c in config['app']['considering_candles']:
         exchange, symbol = c[0], c[1]
         warmup_candles_arr, trading_candle_arr = candle_service.get_candles_from_db(
@@ -297,11 +297,11 @@ def get_fitness(config, routes, ..., training_candles, testing_candles, optimal_
     # Train on training period
     training_result = backtest(candles=training_candles, ...)
     training_metrics = training_result['metrics']
-    
+
     # Test on out-of-sample period
     testing_result = backtest(candles=testing_candles, ...)
     testing_metrics = testing_result['metrics']
-    
+
     # Combined fitness score
     score = calculate_fitness(training_metrics, testing_metrics, optimal_total)
     return score, training_metrics, testing_metrics
@@ -386,11 +386,11 @@ def _compute_feature_importance(X_train, y_train, feature_names, estimator, task
     rfe = RFE(estimator, n_features_to_select=min(10, len(feature_names)))
     rfe.fit(X_train, y_train)
     rfe_ranks = {name: int(rank) for name, rank in zip(feature_names, rfe.ranking_)}
-    
+
     # ANOVA F-values
     f_scores, p_values = f_classif(X_train, y_train)
     anova = {name: float(score) for name, score in zip(feature_names, f_scores)}
-    
+
     return {'rfe_ranks': rfe_ranks, 'anova_f': anova}
 ```
 

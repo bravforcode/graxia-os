@@ -3,8 +3,7 @@ import ast
 import os
 import sys
 import unittest
-from unittest.mock import MagicMock, patch
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 # Add package to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -21,18 +20,13 @@ class TestPepperstoneCampaignImports(unittest.TestCase):
         from graxia.packages.quant_os.shadow.pepperstone_campaign import (
             classify_session_type,
             simulate_lifecycle,
-            LifecycleResult,
-            CycleEvidence,
-            SealedLedger,
-            SpreadTracker,
-            MT5ReadOnly,
         )
         self.assertTrue(callable(classify_session_type))
         self.assertTrue(callable(simulate_lifecycle))
 
     def test_import_from_pipeline(self):
         from graxia.packages.quant_os.shadow.pepperstone_campaign import (
-            ShadowPipeline, validate_signal_geometry, SpreadShockGate, SignalDeduplicator,
+            ShadowPipeline, validate_signal_geometry,
         )
         self.assertTrue(callable(ShadowPipeline))
         self.assertTrue(callable(validate_signal_geometry))
@@ -204,7 +198,7 @@ class TestSealedLedger(unittest.TestCase):
     def test_verify_after_entries(self):
         from graxia.packages.quant_os.shadow.pepperstone_campaign import SealedLedger
         ledger = SealedLedger()
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         ledger.append("SIG-1", "accepted", 1.5, now)
         ledger.append("SIG-2", "rejected_geometry", 0.0, now)
         ledger.append("SIG-3", "accepted", -0.3, now)

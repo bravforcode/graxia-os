@@ -8,10 +8,9 @@ from broker timestamps until provenance is resolved.
 """
 import hashlib
 import json
-import os
 import time
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone, timedelta
+from dataclasses import dataclass, asdict
+from datetime import datetime, timedelta, UTC
 from typing import Optional
 
 
@@ -62,7 +61,7 @@ def check_rule_b(ticks: list[dict], request_from: datetime, request_to: datetime
         ts = t.get("time", 0)
         if ts <= 0:
             continue
-        tick_dt = datetime.fromtimestamp(ts, tz=timezone.utc)
+        tick_dt = datetime.fromtimestamp(ts, tz=UTC)
         if tick_dt < request_from or tick_dt > request_to:
             outside += 1
     return outside == 0, outside
@@ -77,7 +76,7 @@ def check_rule_c(bars: list[dict], system_utc: datetime) -> tuple[bool, int]:
         ts = b.get("time", 0)
         if ts <= 0:
             continue
-        bar_dt = datetime.fromtimestamp(ts, tz=timezone.utc)
+        bar_dt = datetime.fromtimestamp(ts, tz=UTC)
         if bar_dt > system_utc + timedelta(seconds=MAX_BAR_FUTURE_S):
             future_count += 1
     return future_count == 0, future_count
@@ -205,7 +204,7 @@ class TimeSourceReconciler:
     def collect_cycle(self) -> CycleEvidence:
         """Collect one cycle of immutable evidence."""
         self._cycle += 1
-        received_at = datetime.now(timezone.utc)
+        received_at = datetime.now(UTC)
         system_epoch_ms = int(time.time() * 1000)
 
         ev = CycleEvidence(
@@ -228,7 +227,7 @@ class TimeSourceReconciler:
             ev.tick_raw_time = tick["time"]
             ev.tick_raw_time_msc = tick.get("time_msc", tick["time"] * 1000)
             ev.tick_datetime_utc = datetime.fromtimestamp(
-                ev.tick_raw_time_msc / 1000, tz=timezone.utc
+                ev.tick_raw_time_msc / 1000, tz=UTC
             ).isoformat()
             ev.tick_bid = tick["bid"]
             ev.tick_ask = tick["ask"]
@@ -254,10 +253,10 @@ class TimeSourceReconciler:
                 ev.returned_first_epoch = int(ticks[0][0])
                 ev.returned_last_epoch = int(ticks[-1][0])
                 ev.returned_first_utc = datetime.fromtimestamp(
-                    ev.returned_first_epoch, tz=timezone.utc
+                    ev.returned_first_epoch, tz=UTC
                 ).isoformat()
                 ev.returned_last_utc = datetime.fromtimestamp(
-                    ev.returned_last_epoch, tz=timezone.utc
+                    ev.returned_last_epoch, tz=UTC
                 ).isoformat()
         except Exception as e:
             ev.mt5_last_error = f"copy_ticks_range: {e}"
@@ -268,7 +267,7 @@ class TimeSourceReconciler:
             if rates_h1 and len(rates_h1) > 0:
                 last = rates_h1[-1]
                 ev.h1_bar_time = last["time"]
-                ev.h1_bar_utc = datetime.fromtimestamp(last["time"], tz=timezone.utc).isoformat()
+                ev.h1_bar_utc = datetime.fromtimestamp(last["time"], tz=UTC).isoformat()
                 ev.h1_bar_close = last["close"]
         except Exception as e:
             ev.mt5_last_error = f"H1 rates: {e}"
@@ -279,7 +278,7 @@ class TimeSourceReconciler:
             if rates_m1 and len(rates_m1) > 0:
                 last = rates_m1[-1]
                 ev.m1_bar_time = last["time"]
-                ev.m1_bar_utc = datetime.fromtimestamp(last["time"], tz=timezone.utc).isoformat()
+                ev.m1_bar_utc = datetime.fromtimestamp(last["time"], tz=UTC).isoformat()
                 ev.m1_bar_close = last["close"]
         except Exception as e:
             ev.mt5_last_error = f"M1 rates: {e}"
@@ -296,7 +295,7 @@ class TimeSourceReconciler:
         # 6. Apply temporal-consistency rules
         tick_dt = None
         if not ev.tick_none and ev.tick_raw_time_msc > 0:
-            tick_dt = datetime.fromtimestamp(ev.tick_raw_time_msc / 1000, tz=timezone.utc)
+            tick_dt = datetime.fromtimestamp(ev.tick_raw_time_msc / 1000, tz=UTC)
 
         ev.rule_a_passed, ev.rule_a_diff_ms = check_rule_a(tick_dt, received_at)
 

@@ -69,10 +69,10 @@ def generate_daily_report(self):
     """Generate daily trading report"""
     try:
         from .monitoring.telegram import TelegramNotifier
-        
+
         # Calculate metrics
         today = datetime.utcnow().date()
-        
+
         # Placeholder - would query database
         report_data = {
             "date": today.isoformat(),
@@ -84,15 +84,15 @@ def generate_daily_report(self):
             "drawdown_pct": 0.0,
             "open_positions": 0,
         }
-        
+
         # Send Telegram notification if configured
         notifier = TelegramNotifier()
         if notifier.bot_token:
             asyncio = __import__("asyncio")
             asyncio.run(notifier.notify_daily_report(**report_data))
-        
+
         return {"status": "success", "date": report_data["date"]}
-    
+
     except Exception as exc:
         raise self.retry(exc=exc, countdown=60)
 
@@ -103,10 +103,10 @@ def check_risk_limits(self):
     try:
         from .risk.kill_switch import KillSwitch
         from .core.config import get_config
-        
+
         config = get_config()
         kill_switch = KillSwitch()
-        
+
         # Check various risk conditions
         checks = {
             "daily_loss": False,
@@ -114,17 +114,17 @@ def check_risk_limits(self):
             "exposure": False,
             "consecutive_losses": False,
         }
-        
+
         # Would query database for actual metrics
         # For now, placeholder
-        
+
         if any(checks.values()):
             # Trigger kill switch if any check failed
             # kill_switch.trigger_auto(checks)
             pass
-        
+
         return {"status": "success", "checks": checks}
-    
+
     except Exception as exc:
         raise self.retry(exc=exc, countdown=30)
 
@@ -133,12 +133,11 @@ def check_risk_limits(self):
 def take_portfolio_snapshot(self):
     """Take portfolio snapshot every 5 minutes"""
     try:
-        from .data.models import PortfolioSnapshot
         from .core.config import get_config
         from decimal import Decimal
-        
+
         config = get_config()
-        
+
         snapshot_data = {
             "snapshot_date": datetime.utcnow().date(),
             "balance": Decimal("10000.00"),
@@ -154,12 +153,12 @@ def take_portfolio_snapshot(self):
             "portfolio_exposure_pct": Decimal("0.00"),
             "trading_mode": config.trading_mode.value,
         }
-        
+
         # Would save to database
         # PortfolioSnapshot(**snapshot_data)
-        
+
         return {"status": "success", "timestamp": datetime.utcnow().isoformat()}
-    
+
     except Exception as exc:
         raise self.retry(exc=exc, countdown=60)
 
@@ -169,16 +168,16 @@ def monitor_kill_switch(self):
     """Monitor kill switch status every 30 seconds"""
     try:
         from .risk.kill_switch import KillSwitch
-        
+
         kill_switch = KillSwitch()
-        
+
         # Check auto-trigger conditions
         checks = kill_switch.check_auto_triggers()
-        
+
         if checks["should_trigger"]:
             # Trigger kill switch
             kill_switch.trigger_auto(checks["reasons"])
-            
+
             # Send alert
             from .monitoring.telegram import TelegramNotifier
             notifier = TelegramNotifier()
@@ -189,13 +188,13 @@ def monitor_kill_switch(self):
                     reason=", ".join(checks["reasons"]),
                     triggered_by="system"
                 ))
-        
+
         return {
             "status": "success",
             "armed": kill_switch.is_armed,
             "triggered": kill_switch.is_triggered,
         }
-    
+
     except Exception as exc:
         raise self.retry(exc=exc, countdown=30)
 
@@ -205,21 +204,21 @@ def check_data_quality(self):
     """Check data quality every 10 minutes"""
     try:
         from .data.quality_gate import DataQualityGate
-        
+
         gate = DataQualityGate()
-        
+
         # Run data quality checks
         # Would fetch actual data
         check_results = []
-        
+
         all_passed = gate.all_checks_passed(check_results)
-        
+
         return {
             "status": "success",
             "all_passed": all_passed,
             "checks_count": len(check_results),
         }
-    
+
     except Exception as exc:
         raise self.retry(exc=exc, countdown=300)
 
@@ -229,14 +228,14 @@ def send_telegram_daily_summary(self):
     """Send daily summary to Telegram"""
     try:
         from .monitoring.telegram import TelegramNotifier
-        
+
         notifier = TelegramNotifier()
-        
+
         if not notifier.bot_token or not notifier.chat_id:
             return {"status": "skipped", "reason": "Telegram not configured"}
-        
+
         today = datetime.utcnow().date()
-        
+
         # Generate summary message
         message = f"""
 📊 <b>Daily Trading Summary — {today}</b>
@@ -250,15 +249,15 @@ def send_telegram_daily_summary(self):
 
 <i>Report generated at {datetime.utcnow().strftime('%H:%M')} UTC</i>
 """
-        
+
         import asyncio
         asyncio.run(notifier.send_custom_message(
             title="Daily Summary",
             content=message,
         ))
-        
+
         return {"status": "sent", "date": today.isoformat()}
-    
+
     except Exception as exc:
         raise self.retry(exc=exc, countdown=60)
 
@@ -268,8 +267,7 @@ def process_trading_signal(self, signal_data: dict):
     """Process trading signal from webhook"""
     try:
         from .strategies.base import Signal
-        from .execution.manager import OrderManager
-        
+
         # Create signal from data
         signal = Signal.create(
             strategy_id=signal_data.get("strategy", "unknown"),
@@ -280,17 +278,17 @@ def process_trading_signal(self, signal_data: dict):
             stop_loss=signal_data.get("sl"),
             take_profit=signal_data.get("tp"),
         )
-        
+
         # Process through order manager
         # order_manager = OrderManager()
         # order = order_manager.process_signal(signal)
-        
+
         return {
             "status": "success",
             "signal_id": str(signal.id),
             "symbol": signal.symbol,
         }
-    
+
     except Exception as exc:
         # Don't retry - signal processing failures should be investigated
         return {"status": "error", "error": str(exc)}
@@ -301,18 +299,18 @@ def cleanup_old_data(self, days: int = 30):
     """Clean up old data (run weekly)"""
     try:
         cutoff_date = datetime.utcnow() - timedelta(days=days)
-        
+
         # Would clean up old:
         # - Order state history
         # - Data quality runs
         # - Audit logs older than retention period
-        
+
         return {
             "status": "success",
             "cutoff_date": cutoff_date.isoformat(),
             "deleted_records": 0,
         }
-    
+
     except Exception as exc:
         return {"status": "error", "error": str(exc)}
 
@@ -321,11 +319,10 @@ def cleanup_old_data(self, days: int = 30):
 def backup_database(self):
     """Backup database (run daily)"""
     try:
-        import subprocess
-        
+
         timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
         backup_file = f"/backups/quant_os_{timestamp}.sql"
-        
+
         # Would run: pg_dump command
         # subprocess.run([
         #     "pg_dump",
@@ -334,13 +331,13 @@ def backup_database(self):
         #     "-d", "quant_os",
         #     "-f", backup_file
         # ])
-        
+
         return {
             "status": "success",
             "backup_file": backup_file,
             "timestamp": timestamp,
         }
-    
+
     except Exception as exc:
         return {"status": "error", "error": str(exc)}
 

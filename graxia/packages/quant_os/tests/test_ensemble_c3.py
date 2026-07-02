@@ -1,13 +1,11 @@
 """Tests for Ensemble Strategy C3: signal combination with StrategyEnsemble"""
 
 from graxia.packages.quant_os.core.enums import DecisionType, RegimeType, SignalType
-from graxia.packages.quant_os.core.events import BarEvent
 from graxia.packages.quant_os.strategies.base import Signal
 from graxia.packages.quant_os.strategies.ensemble import (
     StrategyEnsemble,
     _FakeStrategy,
     get_ensemble_signal,
-    STRATEGY_WEIGHTS,
 )
 
 # ── Helper factories ─────────────────────────────────────────────

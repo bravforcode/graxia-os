@@ -10,6 +10,7 @@ Requirements:
     - MetaTrader5 package installed
 """
 
+import signal
 import sys
 import os
 import asyncio
@@ -33,6 +34,20 @@ from graxia.packages.quant_os.regime.sweep_classifier import SweepClassifier
 from graxia.packages.quant_os.regime.entry_executor import EntryExecutor
 from graxia.packages.quant_os.regime.risk_overlay import RiskOverlay
 from graxia.packages.quant_os.regime.monitor import Monitor, OrderReport as MonOrderReport, FillReport as MonFillReport
+
+# ── Graceful shutdown via SIGTERM/SIGINT ──────────────────────────────
+_shutdown_requested = False
+
+
+def _shutdown_handler(signum: int, frame) -> None:
+    """Set flag so the main loop exits cleanly on next iteration."""
+    global _shutdown_requested
+    _shutdown_requested = True
+    print(f"Received signal {signum}, shutting down gracefully...")
+
+
+signal.signal(signal.SIGTERM, _shutdown_handler)
+signal.signal(signal.SIGINT, _shutdown_handler)
 
 
 class PaperTrader:
@@ -63,6 +78,27 @@ class PaperTrader:
         # Per-symbol cooldown (prevents same-signal spam)
         self._entry_cooldowns: Dict[str, datetime] = {}
 
+        # P2-15: Alert engine
+        from monitoring.alerting import AlertEngine, TelegramConfig
+        self._alert_engine = AlertEngine(
+            telegram_config=TelegramConfig(
+                bot_token=telegram_token or os.getenv("TELEGRAM_BOT_TOKEN", ""),
+                chat_id=telegram_chat or os.getenv("TELEGRAM_CHAT_ID", ""),
+            ) if (telegram_token or telegram_chat or os.getenv("TELEGRAM_BOT_TOKEN")) else None,
+        )
+
+        # Heartbeat + Dead Man's Switch
+        self._heartbeat_state = {}
+        from monitoring.heartbeat import HeartbeatMonitor
+        from monitoring.dead_mans_switch import DeadMansSwitch, create_mt5_close_all_callback
+        self._heartbeat = HeartbeatMonitor(self._heartbeat_state)
+        self._dms = DeadMansSwitch(
+            state=self._heartbeat_state,
+            close_all_positions=create_mt5_close_all_callback(),
+            halt_system=self._emergency_halt,
+            send_alert=self._send_alert,
+        )
+
         # Stats
         self.total_signals = 0
         self.total_trades = 0
@@ -71,8 +107,33 @@ class PaperTrader:
         self._log_dir = Path("logs")
         self._log_dir.mkdir(exist_ok=True)
 
+    async def _emergency_halt(self):
+        self.is_running = False
+        print("EMERGENCY HALT triggered by Dead Man's Switch")
+
+    async def _send_alert(self, severity: str, message: str):
+        if self.telegram:
+            await self.telegram.notify_error(severity, message)
+        print(f"ALERT [{severity}]: {message}")
+
     async def start(self, duration_minutes: int = 60):
         """Start paper trading for specified duration"""
+        # P1-12: Init Sentry for crash reporting
+        try:
+            import sentry_sdk
+            sentry_dsn = os.getenv("SENTRY_DSN", "")
+            if sentry_dsn:
+                sentry_sdk.init(dsn=sentry_dsn, traces_sample_rate=0.1)
+        except ImportError:
+            pass
+
+        from core.observability import setup_logging
+        setup_logging(log_file="logs/paper_trading.jsonl", level="INFO")
+
+        # P2-14: Start Prometheus metrics
+        from monitoring.metrics_exporter import start_metrics_server
+        start_metrics_server()
+
         import MetaTrader5 as mt5
         if not mt5.initialize():
             mt5.initialize(path=r"C:\Program Files\Pepperstone MetaTrader 5\terminal64.exe")
@@ -90,36 +151,70 @@ class PaperTrader:
 
         print("\nConnecting to paper broker...")
         await self.broker.connect()
+
+        # P1-8: Run crash recovery on startup
+        try:
+            from execution.recovery import Recovery
+            from execution.reconcile import Reconciler
+            reconciler = Reconciler(None)  # ledger=None for paper mode
+            recovery = Recovery(
+                ledger=None,
+                reconciler=reconciler,
+                broker_adapters={},
+            )
+            result = await recovery.on_startup()
+            if not result.is_safe:
+                print(f"RECOVERY WARNING: {result.verdict}")
+                for f in result.critical_failures:
+                    print(f"  CRITICAL: {f.detail}")
+        except Exception as e:
+            print(f"Recovery check skipped: {e}")
+
         account = await self.broker.get_account()
         print(f"Account Balance: ${account.balance:,.2f}")
 
         self.is_running = True
         self.start_time = datetime.utcnow()
         end_time = self.start_time + timedelta(minutes=duration_minutes)
+        await self._heartbeat.start()
+        await self._dms.start()
 
         print(f"\nStarting paper trading for {duration_minutes} minutes...")
-        print(f"Pipeline: Regime -> Liquidity Map -> Sweep Classifier -> Entry Executor -> Risk Overlay -> Monitor")
+        print("Pipeline: Regime -> Liquidity Map -> Sweep Classifier -> Entry Executor -> Risk Overlay -> Monitor")
         print(f"Symbols: {self.config.symbols}")
         print(f"Risk/Trade: {self.config.max_risk_per_trade_pct}%")
         print(f"Daily Loss Limit: {self.config.max_daily_loss_pct}%")
-        print(f"Press Ctrl+C to stop\n")
+        print("Press Ctrl+C to stop\n")
 
         try:
-            while self.is_running and datetime.utcnow() < end_time:
+            while self.is_running and not _shutdown_requested and datetime.utcnow() < end_time:
                 await self._trading_cycle()
                 await asyncio.sleep(10)
         except KeyboardInterrupt:
             print("\n\nStopping paper trading...")
+        except Exception as e:
+            print(f"\nCRASH: {e}")
+            if self.telegram:
+                import asyncio
+                try:
+                    asyncio.get_event_loop().run_until_complete(
+                        self.telegram.notify_error("CRITICAL", f"Paper trader crashed: {e}")
+                    )
+                except Exception:
+                    pass
         finally:
             self.is_running = False
             await self._print_summary()
             if self.telegram:
                 await self.telegram.close()
+            await self._dms.stop()
+            await self._heartbeat.stop()
             mt5.shutdown()
 
     async def _trading_cycle(self):
         """Single trading cycle — refresh data, manage positions, check signals."""
         self._cycle_count += 1
+        self._heartbeat_state["last_heartbeat"] = datetime.utcnow().isoformat()
         try:
             import MetaTrader5 as mt5
             # Refresh market data (keep as numpy array)
@@ -140,6 +235,22 @@ class PaperTrader:
             # Manage open positions (SL/TP checks)
             await self._manage_positions()
 
+            # P2-14: Update metrics
+            from monitoring.metrics_exporter import update_positions, update_drawdown
+            positions = await self.broker.get_positions()
+            update_positions(len(positions) if positions else 0)
+            risk_status = self.risk_overlay.get_status()
+            update_drawdown(risk_status.get("daily_used_pct", 0.0))
+
+            # P2-15: Check alert rules
+            if self._alert_engine:
+                self._alert_engine.check_alerts({
+                    "daily_pnl": self.risk_overlay.daily_pnl if hasattr(self.risk_overlay, 'daily_pnl') else 0,
+                    "open_positions": len(self._open_trades),
+                    "drawdown_pct": risk_status.get("daily_used_pct", 0.0),
+                    "kill_switch_active": risk_status.get("kill_switch", False),
+                })
+
             # Signal cooldown
             if self.last_signal_time:
                 if datetime.utcnow() - self.last_signal_time < self.signal_cooldown:
@@ -147,6 +258,21 @@ class PaperTrader:
 
             for symbol in self.config.symbols:
                 await self._check_symbol(symbol)
+
+            # P1-9: Periodic reconciliation (every 100 cycles)
+            if self._cycle_count % 100 == 0:
+                try:
+                    from execution.reconcile import Reconciler
+                    reconciler = Reconciler(None)
+                    # Basic position count check
+                    import MetaTrader5 as _mt5
+                    positions = _mt5.positions_get()
+                    local_count = len(self._open_trades)
+                    broker_count = len(positions) if positions else 0
+                    if local_count != broker_count:
+                        print(f"RECONCILIATION MISMATCH: local={local_count} broker={broker_count}")
+                except Exception:
+                    pass
 
         except Exception as e:
             print(f"Error in cycle: {e}")
@@ -377,6 +503,10 @@ class PaperTrader:
                     self.last_signal_time = datetime.utcnow()
                     self._entry_cooldowns[symbol] = datetime.utcnow()
 
+                    # P2-14: Record trade in metrics
+                    from monitoring.metrics_exporter import record_trade
+                    record_trade(symbol, entry.side, 0.0)
+
                     trade = {
                         "time": order_ts.isoformat(),
                         "symbol": symbol,
@@ -449,7 +579,7 @@ class PaperTrader:
 
         # Risk status
         risk_status = self.risk_overlay.get_status()
-        print(f"\n--- Risk Status ---")
+        print("\n--- Risk Status ---")
         print(f"  Kill switch: {'[R] ACTIVE' if risk_status['kill_switch'] else '[G] Armed'}")
         print(f"  Daily loss used: {risk_status['daily_used_pct']:.1f}%")
         print(f"  Weekly loss used: {risk_status['weekly_used_pct']:.1f}%")

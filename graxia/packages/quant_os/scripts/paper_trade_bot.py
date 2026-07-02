@@ -20,12 +20,10 @@ except ImportError:
 
 import argparse
 import csv
-import json
-import os
 import pickle
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 
 import numpy as np
@@ -56,7 +54,7 @@ HEADERS = [
 
 
 def log(msg: str):
-    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
     safe = msg.encode('utf-8', errors='replace').decode('utf-8', errors='replace')
     try:
         print(f"[{ts}] {safe}")
@@ -144,7 +142,7 @@ def get_open_position(mt5) -> dict | None:
             "tp": pos.tp,
             "profit": pos.profit,
             "swap": pos.swap,
-            "open_time": datetime.fromtimestamp(pos.time, tz=timezone.utc),
+            "open_time": datetime.fromtimestamp(pos.time, tz=UTC),
         }
     return None
 
@@ -199,7 +197,6 @@ def compute_features_live(live_df: pd.DataFrame, template_df: pd.DataFrame,
     Compute ALL 40 features on live data matching training pipeline exactly.
     Uses only OHLCV data from MT5 bars.
     """
-    from datetime import timezone as tz
     df = live_df.copy()
 
     # --- Returns ---
@@ -327,7 +324,6 @@ def compute_features_live(live_df: pd.DataFrame, template_df: pd.DataFrame,
 def retrain_walk_forward():
     """Retrain XGBoost on latest features via walk-forward and save model."""
     import xgboost as xgb
-    import json
 
     df, feature_cols = load_feature_template()
     if df is None or len(feature_cols) == 0:
@@ -414,7 +410,7 @@ def log_trade(mt5, entry: dict | None = None, close_info: dict | None = None,
         with open(CSV_PATH, "w", newline="") as f:
             csv.writer(f).writerow(HEADERS)
 
-    now_ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+    now_ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M")
     if entry:
         row = {"timestamp": now_ts, "direction": entry["direction"],
                "entry_price": f"{entry['entry']:.2f}", "exit_price": "",
@@ -449,7 +445,7 @@ def main_loop(model, feature_cols: list[str], template_df: pd.DataFrame,
     mt5 = ensure_mt5()
     daily_trades = 0
     daily_pnl = 0.0
-    current_date = datetime.now(timezone.utc).date()
+    current_date = datetime.now(UTC).date()
     last_sent_bid = 0.0
     last_sent_time = 0.0
     startup_msg_sent = False
@@ -459,7 +455,7 @@ def main_loop(model, feature_cols: list[str], template_df: pd.DataFrame,
 
     while True:
         try:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             date_today = now.date()
             hour_utc = now.hour
             elapsed = time.time() - last_sent_time

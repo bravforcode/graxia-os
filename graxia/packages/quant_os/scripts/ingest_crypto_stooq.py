@@ -7,7 +7,7 @@ Usage:
 import argparse
 import csv
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 import pandas as pd
 
@@ -28,7 +28,7 @@ def parse_stooq(filepath):
             if len(row) < 8:
                 continue
             try:
-                dt = datetime.strptime(row[2], "%Y%m%d").replace(tzinfo=timezone.utc)
+                dt = datetime.strptime(row[2], "%Y%m%d").replace(tzinfo=UTC)
                 rows.append({
                     "time": dt.strftime("%Y-%m-%d %H:%M:%S"),
                     "open": float(row[4]),

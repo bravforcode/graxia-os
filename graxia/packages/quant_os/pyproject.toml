@@ -7,6 +7,38 @@ name = "quant_os"
 version = "0.2.0-dev"
 description = "Quantitative Trading Operating System"
 requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.0",
+    "structlog>=23.0",
+    "fastapi>=0.100",
+    "uvicorn>=0.23",
+    "pandas>=2.0",
+    "numpy>=1.24",
+    "duckdb>=0.10",
+    "sqlalchemy>=2.0",
+    "redis>=5.0",
+    "httpx>=0.25",
+    "websockets>=12.0",
+    "python-dateutil>=2.8",
+    "tenacity>=8.0",
+    "orjson>=3.9",
+]
+
+[project.optional-dependencies]
+mt5 = ["MetaTrader5>=5.0"]
+yfinance = ["yfinance>=0.2"]
+fred = ["fredapi>=0.5"]
+arrow = ["pyarrow>=14.0"]
+ml = ["scikit-learn>=1.3", "xgboost>=2.0"]
+charting = ["matplotlib>=3.7"]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+    "pytest-cov>=4.0",
+    "ruff>=0.1",
+    "mypy>=1.5",
+]
+all = ["quant_os[mt5,yfinance,fred,arrow,ml,charting,dev]"]
 
 [tool.setuptools]
 package-dir = {"quant_os" = "."}
@@ -43,6 +75,7 @@ markers = [
     "asyncio: mark test as async",
     "chaos: chaos engineering test",
     "slow: slow test (skip by default)",
+    "integration: integration test (requires external services)",
 ]
 
 [tool.coverage.run]

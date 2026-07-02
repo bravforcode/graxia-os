@@ -5,11 +5,10 @@ Tests MQL5 probe parsing, cross-check logic, and acceptance criteria.
 import json
 import os
 import tempfile
-from datetime import datetime, timezone, timedelta
 
 from graxia.packages.quant_os.shadow.terminal_time_reconciler import (
     read_mql5_probe, MQL5ProbeSample, AcceptanceResult,
-    CopyTicksDiagnostic, PythonAPICheck,
+    CopyTicksDiagnostic,
 )
 
 

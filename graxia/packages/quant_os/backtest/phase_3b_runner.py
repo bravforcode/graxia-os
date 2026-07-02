@@ -62,7 +62,7 @@ class SpreadPatchedEngine(BacktestEngine):
             risk_per_trade_bps=self.config.risk_per_trade_bps,
             entry_price=entry_price,
             stop_loss=signal.stop_loss,
-            contract=InlineContractSpec(symbol=signal.symbol),
+            contract=InlineContractSpec.for_symbol(signal.symbol),
         )
         if volume <= 0:
             return
@@ -75,7 +75,7 @@ class SpreadPatchedEngine(BacktestEngine):
             timestamp=current_time, symbol=signal.symbol,
         )
         contract_spec = ContractSpec(
-            contract_size=Decimal("100"),
+            contract_size=InlineContractSpec.for_symbol(signal.symbol).trade_contract_size,
             commission_per_lot=self.config.commission_per_lot,
             spread_points=spread,
         )
@@ -107,6 +107,7 @@ class SpreadPatchedEngine(BacktestEngine):
             entry_slippage_cost=result.slippage_cost,
             execution_quality=result.execution_quality.value,
             signal_bar_index=bar_index,
+            contract_size=InlineContractSpec.for_symbol(signal.symbol).trade_contract_size,
         )
         self.balance -= result.commission
 
@@ -158,9 +159,13 @@ class SpreadPatchedEngine(BacktestEngine):
             else:
                 continue
 
-            exit_slippage = Decimal(str(self.config.slippage_pips)) * Decimal("0.01")
-            exec_side = FillSide.BUY if pos.side == PositionType.LONG else FillSide.SELL
-            exit_price, exit_slip = fill_simulate_exit(exec_side, bid, ask, exit_slippage)
+            if event.exit_price and event.exit_price > 0:
+                exit_price = event.exit_price
+                exit_slip = Decimal("0")
+            else:
+                exit_slippage = Decimal(str(self.config.slippage_pips)) * Decimal("0.01")
+                exec_side = FillSide.BUY if pos.side == PositionType.LONG else FillSide.SELL
+                exit_price, exit_slip = fill_simulate_exit(exec_side, bid, ask, exit_slippage)
             self._close_position(event.trade_id, exit_price, current_time, reason, exit_slip)
 
 

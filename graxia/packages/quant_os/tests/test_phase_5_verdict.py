@@ -1,5 +1,5 @@
 """Phase 5 verdict tests."""
-from graxia.packages.quant_os.validation.phase_5_verdict import evaluate_phase5, Phase5Thresholds
+from graxia.packages.quant_os.validation.phase_5_verdict import evaluate_phase5
 
 
 def test_all_pass():

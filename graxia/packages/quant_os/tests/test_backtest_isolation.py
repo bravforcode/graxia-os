@@ -1,6 +1,5 @@
 """Phase 3.1: Verify backtest path has no MT5 dependency and no external repo imports."""
 import ast
-import re
 from pathlib import Path
 
 import pytest
@@ -28,7 +27,7 @@ def test_no_mt5_in_engine():
                 for pat in FORBIDDEN_MT5_PATTERNS:
                     if pat.lower() in node.module.lower():
                         violations.append(f"L{node.lineno}: from {node.module} (matches {pat})")
-    assert not violations, f"MT5 found in engine:\n" + "\n".join(violations)
+    assert not violations, "MT5 found in engine:\n" + "\n".join(violations)
 
 
 def test_no_external_repo_imports_in_engine():
@@ -47,7 +46,7 @@ def test_no_external_repo_imports_in_engine():
                 for repo in EXTERNAL_REPOS:
                     if repo.lower() in node.module.lower():
                         violations.append(f"L{node.lineno}: from {node.module}")
-    assert not violations, f"External repo imports in engine:\n" + "\n".join(violations)
+    assert not violations, "External repo imports in engine:\n" + "\n".join(violations)
 
 
 def test_no_mt5_in_sizing_provider():
@@ -73,4 +72,4 @@ def test_no_legacy_tokens_in_engine_executable():
         if isinstance(node, ast.Constant):
             if node.value == "100000":
                 violations.append(f"L{node.lineno}: literal 100000")
-    assert not violations, f"Legacy tokens:\n" + "\n".join(violations)
+    assert not violations, "Legacy tokens:\n" + "\n".join(violations)

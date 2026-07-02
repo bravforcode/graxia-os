@@ -6,7 +6,7 @@ No symbol_info_tick.time, no MT5 bar timestamps, no copy_ticks_from.
 import hashlib
 import json
 from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Optional
 
 from graxia.packages.quant_os.shadow.canonical_time_authority import CanonicalTimeAuthority
@@ -95,7 +95,7 @@ class CanonicalTickSource:
         """Execute one canonical tick fetch cycle."""
         self._cycle_count += 1
         system_utc = self._time_auth.trusted_system_utc()
-        received_at = datetime.now(timezone.utc)
+        received_at = datetime.now(UTC)
 
         batch = CanonicalTickBatch(
             trusted_system_utc=system_utc.isoformat(),
@@ -145,7 +145,7 @@ class CanonicalTickSource:
         # Validate no future timestamps
         if self._policy.reject_if_timestamp_in_future:
             for t in raw_ticks:
-                tick_dt = datetime.fromtimestamp(t["time"], tz=timezone.utc)
+                tick_dt = datetime.fromtimestamp(t["time"], tz=UTC)
                 if tick_dt > system_utc + timedelta(seconds=5):
                     batch.rejected_reason = f"FUTURE_TIMESTAMP: {tick_dt.isoformat()}"
                     batch.verdict = "REJECTED_FUTURE_TICK"
@@ -158,7 +158,7 @@ class CanonicalTickSource:
 
         # Update watermark
         for t in unique_ticks:
-            tick_dt = datetime.fromtimestamp(t["time"], tz=timezone.utc)
+            tick_dt = datetime.fromtimestamp(t["time"], tz=UTC)
             self._watermark.update(tick_dt)
 
         # Build bars
@@ -177,10 +177,10 @@ class CanonicalTickSource:
             first = unique_ticks[0]
             last = unique_ticks[-1]
             batch.first_tick_utc = datetime.fromtimestamp(
-                first["time"], tz=timezone.utc
+                first["time"], tz=UTC
             ).isoformat()
             batch.last_tick_utc = datetime.fromtimestamp(
-                last["time"], tz=timezone.utc
+                last["time"], tz=UTC
             ).isoformat()
 
         batch.canonical_data_age_ms = self._watermark.data_age_ms(system_utc)

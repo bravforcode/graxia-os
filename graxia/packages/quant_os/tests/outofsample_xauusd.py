@@ -4,7 +4,6 @@ Out-of-sample backtest on XAUUSD data (bars 200-400) for all 13 gold_bot strateg
 import os
 
 from decimal import Decimal
-from datetime import datetime
 from typing import Optional, Dict, Any, List
 import importlib
 
@@ -183,14 +182,14 @@ def main():
 
     # SL distance diagnostic
     if sl_distances:
-        print(f"\n\n  SL Distance Diagnostic (entry vs SL in price units):")
+        print("\n\n  SL Distance Diagnostic (entry vs SL in price units):")
         print(f"  {'Strategy':<20} {'Min':>10} {'Max':>10} {'Avg':>10}")
         print(f"  {'-'*52}")
         for name, mn, mx, avg in sl_distances:
             print(f"  {name:<20} {mn:>10.2f} {mx:>10.2f} {avg:>10.2f}")
 
     # Sorted summary
-    print(f"\n\n  SUMMARY (sorted by P&L):")
+    print("\n\n  SUMMARY (sorted by P&L):")
     print(f"  {'-'*52}")
     for r in sorted(results, key=lambda x: x.get("pnl", 0), reverse=True):
         if "error" not in r:

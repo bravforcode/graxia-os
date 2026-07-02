@@ -20,9 +20,7 @@ import asyncio
 import hashlib
 import hmac
 import json
-import sys
 import time
-from datetime import datetime, timezone
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -458,10 +456,8 @@ class TestRiskChaos:
     async def test_risk_status_returns_data(self):
         from graxia.packages.quant_os.api.risk import get_risk_status
         with patch("graxia.packages.quant_os.api.risk.get_config", return_value=_mock_config()):
-            with patch("graxia.packages.quant_os.api.risk.KillSwitch") as ks:
-                ks.return_value.is_triggered = False
-                result = await get_risk_status()
-                assert result is not None
+            result = await get_risk_status()
+            assert result is not None
 
     @pytest.mark.asyncio
     async def test_kill_switch_invalid_action(self):
@@ -499,11 +495,9 @@ class TestRiskChaos:
     async def test_kill_switch_empty_reason(self):
         from graxia.packages.quant_os.api.risk import kill_switch_action, KillSwitchActionRequest
         with patch("graxia.packages.quant_os.api.risk.get_config", return_value=_mock_config()):
-            with patch("graxia.packages.quant_os.api.risk.KillSwitch") as ks:
-                ks.return_value.activate = MagicMock()
-                req = KillSwitchActionRequest(action="trigger", reason="", user_id="test_user")
-                result = await kill_switch_action(request=req)
-                assert result is not None
+            req = KillSwitchActionRequest(action="trigger", reason="", user_id="test_user")
+            result = await kill_switch_action(request=req)
+            assert result is not None
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -548,9 +542,10 @@ class TestWebhookChaos:
         from graxia.packages.quant_os.api.webhook import verify_webhook_signature
         assert verify_webhook_signature(b"test", "", WEBHOOK_SECRET) is False
 
-    def test_verify_signature_no_secret_allows(self):
+    def test_verify_signature_no_secret_rejects(self):
+        """Empty secret must be rejected (fail-closed security policy)."""
         from graxia.packages.quant_os.api.webhook import verify_webhook_signature
-        assert verify_webhook_signature(b"test", "anything", "") is True
+        assert verify_webhook_signature(b"test", "anything", "") is False
 
     def test_verify_signature_timing_attack_resistant(self):
         from graxia.packages.quant_os.api.webhook import verify_webhook_signature
@@ -866,25 +861,23 @@ class TestWebhookReceiverChaos:
     async def test_tv_replay_attack_same_payload(self):
         from graxia.packages.quant_os.api.webhook_receiver import tradingview_webhook
         s = _mock_settings()
-        s.TV_WEBHOOK_SECRET = ""
         gw = self._gw_with_signal()
         with patch("graxia.packages.quant_os.api.webhook_receiver.get_settings", return_value=s):
             payload = self._tv_payload()
             req1 = _make_request(payload)
             req1.app.state.signal_gateway = gw
-            r1 = await tradingview_webhook(request=req1, x_webhook_secret=None)
+            r1 = await tradingview_webhook(request=req1, x_webhook_secret=WEBHOOK_SECRET)
             assert r1.success is True
             gw.ingest.return_value = None  # Reject duplicate
             req2 = _make_request(payload)
             req2.app.state.signal_gateway = gw
-            r2 = await tradingview_webhook(request=req2, x_webhook_secret=None)
+            r2 = await tradingview_webhook(request=req2, x_webhook_secret=WEBHOOK_SECRET)
             assert r2.success is False
 
     @pytest.mark.asyncio
     async def test_tv_oversized_metadata(self):
         import graxia.packages.quant_os.api.webhook_receiver as wr_mod
         s = _mock_settings()
-        s.TV_WEBHOOK_SECRET = ""
         old = wr_mod.get_settings
         wr_mod.get_settings = lambda: s
         try:
@@ -892,7 +885,7 @@ class TestWebhookReceiverChaos:
             payload = self._tv_payload(metadata={"big": "x" * 100_000})
             req = _make_request(payload)
             req.app.state.signal_gateway = gw
-            result = await wr_mod.tradingview_webhook(request=req, x_webhook_secret=None)
+            result = await wr_mod.tradingview_webhook(request=req, x_webhook_secret=WEBHOOK_SECRET)
             assert result.success is True
         finally:
             wr_mod.get_settings = old
@@ -901,7 +894,6 @@ class TestWebhookReceiverChaos:
     async def test_tv_sql_injection_in_symbol(self):
         import graxia.packages.quant_os.api.webhook_receiver as wr_mod
         s = _mock_settings()
-        s.TV_WEBHOOK_SECRET = ""
         old = wr_mod.get_settings
         wr_mod.get_settings = lambda: s
         try:
@@ -910,7 +902,7 @@ class TestWebhookReceiverChaos:
             payload = self._tv_payload(symbol="X'; DROP T")
             req = _make_request(payload)
             req.app.state.signal_gateway = gw
-            result = await wr_mod.tradingview_webhook(request=req, x_webhook_secret=None)
+            result = await wr_mod.tradingview_webhook(request=req, x_webhook_secret=WEBHOOK_SECRET)
             assert result.success is True
         finally:
             wr_mod.get_settings = old
@@ -934,20 +926,18 @@ class TestWebhookReceiverChaos:
     async def test_tv_xss_in_metadata(self):
         from graxia.packages.quant_os.api.webhook_receiver import tradingview_webhook
         s = _mock_settings()
-        s.TV_WEBHOOK_SECRET = ""
         gw = self._gw_with_signal()
         with patch("graxia.packages.quant_os.api.webhook_receiver.get_settings", return_value=s):
             payload = self._tv_payload(metadata={"user": "<script>alert(1)</script>"})
             req = _make_request(payload)
             req.app.state.signal_gateway = gw
-            result = await tradingview_webhook(request=req, x_webhook_secret=None)
+            result = await tradingview_webhook(request=req, x_webhook_secret=WEBHOOK_SECRET)
             assert result.success is True
 
     @pytest.mark.asyncio
     async def test_tv_concurrent_requests(self):
         from graxia.packages.quant_os.api.webhook_receiver import tradingview_webhook
         s = _mock_settings()
-        s.TV_WEBHOOK_SECRET = ""
         gw = self._gw_with_signal()
         with patch("graxia.packages.quant_os.api.webhook_receiver.get_settings", return_value=s):
             tasks = []
@@ -955,7 +945,7 @@ class TestWebhookReceiverChaos:
                 payload = self._tv_payload(price=2350.0 + i)
                 req = _make_request(payload)
                 req.app.state.signal_gateway = gw
-                tasks.append(tradingview_webhook(request=req, x_webhook_secret=None))
+                tasks.append(tradingview_webhook(request=req, x_webhook_secret=WEBHOOK_SECRET))
             results = await asyncio.gather(*tasks)
             assert len(results) == 10
 
@@ -1045,25 +1035,23 @@ class TestWebhookReceiverChaos:
     async def test_generic_replay_attack(self):
         from graxia.packages.quant_os.api.webhook_receiver import generic_webhook
         s = _mock_settings()
-        s.ADMIN_API_KEY = ""
         gw = self._gw_with_signal(symbol="EURUSD")
         with patch("graxia.packages.quant_os.api.webhook_receiver.get_settings", return_value=s):
             payload = self._generic_payload()
             req1 = _make_request(payload)
             req1.app.state.signal_gateway = gw
-            r1 = await generic_webhook(request=req1, x_api_key=None)
+            r1 = await generic_webhook(request=req1, x_api_key=ADMIN_KEY)
             assert r1.success is True
             gw.ingest.return_value = None
             req2 = _make_request(payload)
             req2.app.state.signal_gateway = gw
-            r2 = await generic_webhook(request=req2, x_api_key=None)
+            r2 = await generic_webhook(request=req2, x_api_key=ADMIN_KEY)
             assert r2.success is False
 
     @pytest.mark.asyncio
     async def test_generic_concurrent_requests(self):
         from graxia.packages.quant_os.api.webhook_receiver import generic_webhook
         s = _mock_settings()
-        s.ADMIN_API_KEY = ""
         gw = self._gw_with_signal(symbol="EURUSD")
         with patch("graxia.packages.quant_os.api.webhook_receiver.get_settings", return_value=s):
             tasks = []
@@ -1071,6 +1059,6 @@ class TestWebhookReceiverChaos:
                 payload = self._generic_payload(entry_price=1.085 + i * 0.001)
                 req = _make_request(payload)
                 req.app.state.signal_gateway = gw
-                tasks.append(generic_webhook(request=req, x_api_key=None))
+                tasks.append(generic_webhook(request=req, x_api_key=ADMIN_KEY))
             results = await asyncio.gather(*tasks)
             assert len(results) == 10

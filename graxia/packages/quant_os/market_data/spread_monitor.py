@@ -9,7 +9,7 @@ Tracks bid-ask spread per symbol:
 
 import statistics
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from decimal import Decimal
 from typing import Tuple
 
@@ -113,7 +113,7 @@ class SpreadMonitor:
             spread_multiplier=multiplier,
             is_wide=self.is_wide_spread(self._last_spread),
             sample_count=len(self._spreads),
-            last_update_utc=datetime.now(timezone.utc),
+            last_update_utc=datetime.now(UTC),
         )
 
     def reset(self) -> None:

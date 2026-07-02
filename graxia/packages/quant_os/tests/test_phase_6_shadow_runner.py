@@ -1,7 +1,5 @@
 """Tests for mt5_connector.shadow_runner.ShadowRunner — verifies shadow mode never sends orders."""
-import pytest
-from unittest.mock import MagicMock, patch, PropertyMock
-from datetime import datetime
+from unittest.mock import MagicMock, patch
 
 
 def _make_runner():

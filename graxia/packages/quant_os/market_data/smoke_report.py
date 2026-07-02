@@ -10,8 +10,8 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Any, Optional
+from datetime import datetime, UTC
+from typing import Any
 
 
 @dataclass
@@ -103,7 +103,7 @@ class SmokeReportGenerator:
 
         overall = "PASS" if all(e.status == "OK" for e in entries) else "FAIL"
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         report_id = f"smoke-{now.strftime('%Y%m%d%H%M%S')}-{self._symbol}"
 
         return SmokeReport(

@@ -1,8 +1,6 @@
 """Tests for paper trading executor — lot sizing, SL/TP, session filtering, edge cases."""
 
-import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
-from datetime import datetime, timezone
+from unittest.mock import MagicMock, patch
 
 from graxia.packages.quant_os.docker.paper_executor import (
     _calculate_lot_size, SignalPayload, RISK_PER_TRADE, SPREAD_PTS, SLIPPAGE_PTS,

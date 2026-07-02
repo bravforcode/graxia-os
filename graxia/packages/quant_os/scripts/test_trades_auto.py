@@ -8,7 +8,7 @@ Polls every 60s. When order succeeds, market is open.
 import MetaTrader5 as mt5
 import time
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 SYMBOL = "XAUUSD"
 LOT = 0.10
@@ -17,7 +17,7 @@ MAGIC = 123456
 
 
 def log(msg):
-    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
     print(f"[{ts}] {msg}", flush=True)
 
 

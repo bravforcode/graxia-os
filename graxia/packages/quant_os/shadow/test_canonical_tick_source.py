@@ -1,30 +1,24 @@
 """Tests for canonical tick source — 15 invariants for shadow tick integrity."""
 import ast
-import hashlib
-import json
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, UTC
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
 from graxia.packages.quant_os.shadow.canonical_tick_source import (
     CanonicalTickSource,
     CanonicalTickPolicy,
-    CanonicalTickBatch,
 )
 from graxia.packages.quant_os.shadow.canonical_bar_builder import (
     CanonicalBarBuilder,
-    CanonicalBar,
 )
 from graxia.packages.quant_os.shadow.canonical_time_authority import (
     CanonicalTimeAuthority,
 )
 from graxia.packages.quant_os.shadow.tick_window_fetcher import TickWindowFetcher
 from graxia.packages.quant_os.shadow.tick_deduplicator import TickDeduplicator
-from graxia.packages.quant_os.shadow.tick_watermark import TickWatermark
 from graxia.packages.quant_os.shadow.event_risk_gate import EventRiskGate
-from graxia.packages.quant_os.shadow.pipeline import ShadowPipeline
 
 
 # ── helpers ──────────────────────────────────────────────────────────
@@ -89,7 +83,7 @@ def test_reject_naive_datetime_in_config():
 def test_utc_aware_query_only():
     """Only UTC-aware datetimes accepted for copy_ticks_range."""
     fetcher = TickWindowFetcher(MagicMock())
-    aware = datetime(2025, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+    aware = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
     fetcher.validate_datetime_aware(aware, "request_from")
     # If it didn't raise, the assertion passes
 
@@ -98,7 +92,7 @@ def test_utc_aware_query_only():
 
 def test_all_returned_ticks_in_window():
     """Every returned tick must be within requested window."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     from_ts = int((now - timedelta(minutes=5)).timestamp())
     to_ts = int(now.timestamp())
 
@@ -109,8 +103,8 @@ def test_all_returned_ticks_in_window():
     fetcher = TickWindowFetcher(conn)
     result = fetcher.fetch_ticks(
         "XAUUSD",
-        datetime.fromtimestamp(from_ts, tz=timezone.utc),
-        datetime.fromtimestamp(to_ts, tz=timezone.utc),
+        datetime.fromtimestamp(from_ts, tz=UTC),
+        datetime.fromtimestamp(to_ts, tz=UTC),
     )
     assert result["error"] == ""
     assert result["outside_count"] == 0
@@ -146,7 +140,7 @@ def test_late_tick_does_not_modify_finalized_bar():
     # Add tick and finalize the bar
     tick1 = _tick_dict(1000, bid=1.1000, ask=1.1001)
     builder.add_tick(tick1)
-    system_time = datetime.fromtimestamp(1000 + 120, tz=timezone.utc)
+    system_time = datetime.fromtimestamp(1000 + 120, tz=UTC)
     builder.finalize_bars(system_time)
 
     finalized = builder.get_finalized_m1_bars(1)
@@ -195,7 +189,7 @@ def test_canonical_m1_bar_matches_tick_aggregation():
     """Canonical M1 bar matches manual tick aggregation."""
     builder = CanonicalBarBuilder("XAUUSD", bar_finalization_delay_seconds=60)
 
-    base = datetime(2025, 6, 20, 12, 0, 0, tzinfo=timezone.utc)
+    base = datetime(2025, 6, 20, 12, 0, 0, tzinfo=UTC)
     ticks = [
         _tick_dict(int(base.timestamp()), bid=1.1000, ask=1.1002),
         _tick_dict(int(base.timestamp()) + 10, bid=1.1005, ask=1.1007),
@@ -223,7 +217,7 @@ def test_strategy_uses_completed_bars_only():
     builder = CanonicalBarBuilder("XAUUSD", bar_finalization_delay_seconds=60)
 
     # Add ticks for two minutes
-    base = datetime(2025, 6, 20, 12, 0, 0, tzinfo=timezone.utc)
+    base = datetime(2025, 6, 20, 12, 0, 0, tzinfo=UTC)
     t1 = _tick_dict(int(base.timestamp()), bid=1.1000, ask=1.1001)
     t2 = _tick_dict(int(base.timestamp()) + 60, bid=1.1010, ask=1.1011)
 
@@ -250,7 +244,7 @@ def test_strategy_uses_completed_bars_only():
 def test_event_gate_uses_system_utc():
     """Event gate uses system UTC not MT5 current-bar time."""
     gate = EventRiskGate(blackout_minutes=30)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     # Event 20 minutes from now — should block
     event_time = now + timedelta(minutes=20)
@@ -273,10 +267,10 @@ def test_session_gate_uses_system_utc():
 
     # Must be UTC-aware
     assert system_utc.tzinfo is not None
-    assert system_utc.tzinfo == timezone.utc
+    assert system_utc.tzinfo == UTC
 
     # Must be close to real time (within 2 seconds)
-    real_now = datetime.now(timezone.utc)
+    real_now = datetime.now(UTC)
     diff = abs((system_utc - real_now).total_seconds())
     assert diff < 2.0
 
@@ -386,7 +380,7 @@ def test_no_execution_apis():
 
 def test_ledger_deterministic():
     """Full shadow rerun gives same ledger seal with same input ticks."""
-    now = int(datetime.now(timezone.utc).timestamp())
+    now = int(datetime.now(UTC).timestamp())
     ticks = [
         _tick(now - 300 + i, bid=1.1000 + i * 0.0001, ask=1.1001 + i * 0.0001)
         for i in range(5)

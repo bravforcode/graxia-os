@@ -24,7 +24,6 @@ Expected Performance (EURUSD 2020-2026):
 
 from typing import Optional, Dict, Any, List
 from decimal import Decimal
-import numpy as np
 
 from .base import Strategy, Signal, StrategyConfig
 from ..core.enums import SignalType, RegimeType
@@ -34,7 +33,7 @@ class MultiTimeframeMomentum(Strategy):
     """
     Multi-Timeframe Momentum Strategy
     """
-    
+
     def __init__(self):
         config = StrategyConfig(
             name="Multi-Timeframe Momentum",
@@ -53,7 +52,7 @@ class MultiTimeframeMomentum(Strategy):
             ]
         )
         super().__init__(config)
-        
+
         # Strategy parameters
         self.ema_fast_period = 9
         self.ema_mid_period = 20
@@ -67,14 +66,14 @@ class MultiTimeframeMomentum(Strategy):
         self.atr_tp_mult = 3.0
         self.volume_period = 20
         self.volume_mult = 1.2
-    
+
     def required_features(self) -> List[str]:
         return [
             "ema_9", "ema_20", "ema_50", "ema_200",
             "rsi_14", "atr_14",
             "volume_sma_20", "h1_ema_200", "h4_ema_200"
         ]
-    
+
     def generate_signal(
         self,
         symbol: str,
@@ -83,26 +82,26 @@ class MultiTimeframeMomentum(Strategy):
         regime: Optional[RegimeType] = None
     ) -> Optional[Signal]:
         """Generate momentum signal"""
-        
+
         # Check regime validity
         if regime and not self.is_valid_for_regime(regime):
             return None
-        
+
         # Use provided indicators or calculate from data
         if indicators is None:
             indicators = self._calculate_indicators(ohlcv_data)
-        
+
         if not indicators:
             return None
-        
+
         close = ohlcv_data.get("close", [])
         volume = ohlcv_data.get("volume", [])
-        
+
         if len(close) < self.ema_trend_period:
             return None
-        
+
         current_price = Decimal(str(close[-1]))
-        
+
         # Get indicator values
         ema_fast = indicators.get("ema_9", [])[-1] if indicators.get("ema_9") else None
         ema_mid = indicators.get("ema_20", [])[-1] if indicators.get("ema_20") else None
@@ -110,20 +109,20 @@ class MultiTimeframeMomentum(Strategy):
         ema_trend = indicators.get("ema_200", [])[-1] if indicators.get("ema_200") else None
         h4_ema_trend = indicators.get("h4_ema_200", ema_trend)  # Fallback
         h1_ema_trend = indicators.get("h1_ema_200", ema_trend)  # Fallback
-        
+
         rsi = indicators.get("rsi_14", [50])[-1] if indicators.get("rsi_14") else 50
         atr = indicators.get("atr_14", [0])[-1] if indicators.get("atr_14") else 0
-        
+
         vol_sma = indicators.get("volume_sma_20", [0])[-1] if indicators.get("volume_sma_20") else 0
         current_vol = volume[-1] if volume else 0
-        
+
         if not all([ema_fast, ema_mid, ema_slow, h4_ema_trend]):
             return None
-        
+
         # Calculate EMA cross conditions
         prev_ema_fast = indicators.get("ema_9", [])[-2] if len(indicators.get("ema_9", [])) > 1 else ema_fast
         prev_ema_mid = indicators.get("ema_20", [])[-2] if len(indicators.get("ema_20", [])) > 1 else ema_mid
-        
+
         # Long conditions
         long_conditions = {
             "h4_bullish": current_price > Decimal(str(h4_ema_trend)),
@@ -133,7 +132,7 @@ class MultiTimeframeMomentum(Strategy):
             "rsi_momentum": rsi > self.rsi_long_threshold,
             "volume_confirm": current_vol > vol_sma * self.volume_mult if vol_sma > 0 else True,
         }
-        
+
         # Short conditions
         short_conditions = {
             "h4_bearish": current_price < Decimal(str(h4_ema_trend)),
@@ -143,23 +142,23 @@ class MultiTimeframeMomentum(Strategy):
             "rsi_momentum": rsi < self.rsi_short_threshold,
             "volume_confirm": current_vol > vol_sma * self.volume_mult if vol_sma > 0 else True,
         }
-        
+
         # Check for signal
         long_signal = all(long_conditions.values())
         short_signal = all(short_conditions.values())
-        
+
         if long_signal and short_signal:
             # Conflicting signals - abstain
             return None
-        
+
         if not long_signal and not short_signal:
             return None
-        
+
         # Calculate entry, SL, TP
         atr_dec = Decimal(str(atr))
         sl_distance = atr_dec * Decimal(str(self.atr_sl_mult))
         tp_distance = atr_dec * Decimal(str(self.atr_tp_mult))
-        
+
         if long_signal:
             signal_type = SignalType.BUY
             stop_loss = current_price - sl_distance
@@ -170,15 +169,15 @@ class MultiTimeframeMomentum(Strategy):
             stop_loss = current_price + sl_distance
             take_profit = current_price - tp_distance
             confidence = self._calculate_confidence(short_conditions, rsi, "short")
-        
+
         # Risk/reward check
         risk = abs(current_price - stop_loss)
         reward = abs(take_profit - current_price)
         if risk > 0 and reward / risk < self.config.min_risk_reward:
             return None
-        
+
         self.signals_generated += 1
-        
+
         return Signal.create(
             strategy_id=self.id,
             symbol=symbol,
@@ -200,13 +199,13 @@ class MultiTimeframeMomentum(Strategy):
             },
             notes=f"MTM signal: {'Long' if long_signal else 'Short'} on {symbol}"
         )
-    
+
     def _calculate_indicators(self, ohlcv_data: Dict[str, List]) -> Dict[str, Any]:
         """Calculate required indicators from OHLCV data"""
         try:
             import pandas as pd
             import pandas_ta as ta
-            
+
             df = pd.DataFrame({
                 "open": ohlcv_data.get("open", []),
                 "high": ohlcv_data.get("high", []),
@@ -214,32 +213,32 @@ class MultiTimeframeMomentum(Strategy):
                 "close": ohlcv_data.get("close", []),
                 "volume": ohlcv_data.get("volume", [])
             })
-            
+
             if len(df) < self.ema_trend_period:
                 return {}
-            
+
             # Calculate EMAs
             df["ema_9"] = ta.ema(df["close"], length=self.ema_fast_period)
             df["ema_20"] = ta.ema(df["close"], length=self.ema_mid_period)
             df["ema_50"] = ta.ema(df["close"], length=self.ema_slow_period)
             df["ema_200"] = ta.ema(df["close"], length=self.ema_trend_period)
-            
+
             # RSI and ATR
             df["rsi_14"] = ta.rsi(df["close"], length=self.rsi_period)
             df["atr_14"] = ta.atr(df["high"], df["low"], df["close"], length=self.atr_period)
-            
+
             # Volume
             df["volume_sma_20"] = df["volume"].rolling(window=self.volume_period).mean()
-            
+
             return {col: df[col].tolist() for col in df.columns if col != "open"}
-            
+
         except ImportError:
             # Fallback: return empty dict, indicators should be pre-calculated
             return {}
         except Exception as e:
             print(f"Indicator calculation error: {e}")
             return {}
-    
+
     def _calculate_confidence(
         self,
         conditions: Dict[str, bool],
@@ -248,12 +247,12 @@ class MultiTimeframeMomentum(Strategy):
     ) -> float:
         """Calculate signal confidence score"""
         base_confidence = 0.60  # Base for all confirmed signals
-        
+
         # Add for each condition met
         for condition, met in conditions.items():
             if met:
                 base_confidence += 0.05
-        
+
         # RSI bonus
         if direction == "long":
             if rsi > 60:
@@ -265,5 +264,5 @@ class MultiTimeframeMomentum(Strategy):
                 base_confidence += 0.05
             if rsi < 30:
                 base_confidence += 0.05
-        
+
         return min(base_confidence, 0.95)

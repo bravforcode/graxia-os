@@ -2,7 +2,6 @@
 
 Two clean-process runs must produce identical test count, results, and ledger hash.
 """
-import pytest
 from graxia.packages.quant_os.backtest.engine_e2e_fixture import (
     get_all_scenarios, DeterministicStrategy,
 )

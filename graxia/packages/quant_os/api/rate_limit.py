@@ -11,12 +11,10 @@ matches request path against configurable limits, and returns
 
 from __future__ import annotations
 
-import asyncio
 import os
 import threading
 import time
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint

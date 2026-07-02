@@ -26,11 +26,9 @@ import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
 
-from .enums import SignalType
-from .events import Event, FillEvent, TradeClosedEvent
 from .event_bus import EventBus
+from .events import Event, FillEvent, TradeClosedEvent
 
 logger = logging.getLogger(__name__)
 
@@ -128,10 +126,7 @@ class PositionManager:
             pos = self._positions[key]
             total_qty = pos.quantity + fill.fill_quantity
             if total_qty > 0:
-                pos.entry_price = (
-                    (pos.entry_price * pos.quantity + fill.fill_price * fill.fill_quantity)
-                    / total_qty
-                )
+                pos.entry_price = (pos.entry_price * pos.quantity + fill.fill_price * fill.fill_quantity) / total_qty
             pos.quantity = total_qty
             pos.current_price = fill.fill_price
             logger.info(
@@ -220,19 +215,13 @@ class PositionManager:
 
     def get_symbol_exposure(self, symbol: str) -> float:
         """Notional exposure for a specific symbol."""
-        return sum(
-            p.notional for p in self._positions.values() if p.symbol == symbol
-        )
+        return sum(p.notional for p in self._positions.values() if p.symbol == symbol)
 
     def get_class_exposure(self, asset_class: str) -> float:
         """Notional exposure for an asset class (requires symbol mapping)."""
         from .trading_loop import _symbol_to_asset_class
 
-        return sum(
-            p.notional
-            for p in self._positions.values()
-            if _symbol_to_asset_class(p.symbol) == asset_class
-        )
+        return sum(p.notional for p in self._positions.values() if _symbol_to_asset_class(p.symbol) == asset_class)
 
     def get_open_positions_count(self) -> int:
         return len(self._positions)
@@ -274,6 +263,7 @@ class PositionManager:
     def _save_positions(self) -> None:
         """Save open positions to Parquet (debounced: max once per second)."""
         import time
+
         now = time.monotonic()
         if now - self._last_save_time < 1.0:
             return
@@ -290,20 +280,22 @@ class PositionManager:
 
             rows = []
             for key, pos in self._positions.items():
-                rows.append({
-                    "key": key,
-                    "symbol": pos.symbol,
-                    "side": pos.side,
-                    "quantity": pos.quantity,
-                    "entry_price": pos.entry_price,
-                    "current_price": pos.current_price,
-                    "stop_loss": pos.stop_loss,
-                    "take_profit": pos.take_profit,
-                    "strategy_id": pos.strategy_id,
-                    "opened_at": pos.opened_at.isoformat(),
-                    "order_id": pos.order_id,
-                    "broker_order_id": pos.broker_order_id,
-                })
+                rows.append(
+                    {
+                        "key": key,
+                        "symbol": pos.symbol,
+                        "side": pos.side,
+                        "quantity": pos.quantity,
+                        "entry_price": pos.entry_price,
+                        "current_price": pos.current_price,
+                        "stop_loss": pos.stop_loss,
+                        "take_profit": pos.take_profit,
+                        "strategy_id": pos.strategy_id,
+                        "opened_at": pos.opened_at.isoformat(),
+                        "order_id": pos.order_id,
+                        "broker_order_id": pos.broker_order_id,
+                    }
+                )
             df = pd.DataFrame(rows)
             df.to_parquet(path, index=False)
         except Exception as exc:
@@ -339,12 +331,12 @@ class PositionManager:
             logger.error("position_manager.load_failed error=%s", exc)
 
     def _log_trade(self, trade: ClosedTrade) -> None:
-        """Append a closed trade to the log."""
-        path = self._data_dir / "trade_log.parquet"
-        try:
-            import pandas as pd
+        """Append a closed trade to the JSONL log (atomic append, no read-modify-write)."""
+        import json
 
-            row = {
+        path = self._data_dir / "trade_log.jsonl"
+        try:
+            record = {
                 "trade_id": trade.trade_id,
                 "symbol": trade.symbol,
                 "side": trade.side,
@@ -359,14 +351,8 @@ class PositionManager:
                 "closed_at": trade.closed_at.isoformat(),
                 "fees": trade.fees,
             }
-
-            new_df = pd.DataFrame([row])
-            if path.exists():
-                existing = pd.read_parquet(path)
-                combined = pd.concat([existing, new_df], ignore_index=True)
-            else:
-                combined = new_df
-            combined.to_parquet(path, index=False)
+            with open(path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(record) + "\n")
         except Exception as exc:
             logger.error("position_manager.log_trade_failed error=%s", exc)
 

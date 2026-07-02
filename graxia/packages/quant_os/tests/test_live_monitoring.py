@@ -1,6 +1,5 @@
 """Tests for live monitoring modules: prometheus_metrics, alert_rules, live_dashboard."""
 
-import pytest
 import time
 
 from graxia.packages.quant_os.monitoring.prometheus_metrics import (

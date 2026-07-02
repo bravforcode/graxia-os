@@ -3,9 +3,7 @@
 Builds a standalone app to avoid importing the broken api/__init__.py chain
 (get_db used before definition in orders.py)."""
 
-import sys
 import pytest
-from unittest.mock import patch, MagicMock
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 

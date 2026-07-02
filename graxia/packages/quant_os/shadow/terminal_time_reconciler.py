@@ -5,10 +5,9 @@ runs copy_ticks_range diagnostic matrix, applies acceptance criteria.
 """
 import hashlib
 import json
-import os
 import time
 from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, UTC
 from typing import Optional
 
 
@@ -183,7 +182,7 @@ class TerminalTimeReconciler:
 
     def _check_python_api(self, mql5_sample: MQL5ProbeSample) -> PythonAPICheck:
         """Cross-check Python MT5 API against MQL5 probe."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         check = PythonAPICheck(
             system_epoch_ms=int(time.time() * 1000),
             system_utc_iso=now.isoformat(),
@@ -197,7 +196,7 @@ class TerminalTimeReconciler:
         check.py_tick_time = tick["time"]
         check.py_tick_time_msc = tick.get("time_msc", tick["time"] * 1000)
         check.py_tick_utc = datetime.fromtimestamp(
-            check.py_tick_time_msc / 1000, tz=timezone.utc
+            check.py_tick_time_msc / 1000, tz=UTC
         ).isoformat()
 
         # Compare with MQL5
@@ -211,7 +210,7 @@ class TerminalTimeReconciler:
     def _run_copy_ticks_diagnostics(self) -> list[CopyTicksDiagnostic]:
         """Run copy_ticks_range with 4 input variants."""
         results = []
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Variant A: timezone-aware UTC
         results.append(self._copy_ticks_variant(
@@ -253,8 +252,8 @@ class TerminalTimeReconciler:
             mt5 = self._mt5._mt5
             if not utc_aware:
                 # Convert naive to UTC-aware before passing to MT5
-                fr_aware = fr.replace(tzinfo=timezone.utc)
-                to_aware = to.replace(tzinfo=timezone.utc)
+                fr_aware = fr.replace(tzinfo=UTC)
+                to_aware = to.replace(tzinfo=UTC)
             else:
                 fr_aware = fr
                 to_aware = to
@@ -264,8 +263,8 @@ class TerminalTimeReconciler:
                 diag.returned_count = len(ticks)
                 diag.first_epoch = int(ticks[0][0])
                 diag.last_epoch = int(ticks[-1][0])
-                diag.first_utc = datetime.fromtimestamp(diag.first_epoch, tz=timezone.utc).isoformat()
-                diag.last_utc = datetime.fromtimestamp(diag.last_epoch, tz=timezone.utc).isoformat()
+                diag.first_utc = datetime.fromtimestamp(diag.first_epoch, tz=UTC).isoformat()
+                diag.last_utc = datetime.fromtimestamp(diag.last_epoch, tz=UTC).isoformat()
                 # Check if within window
                 fr_epoch = int(fr_aware.timestamp())
                 to_epoch = int(to_aware.timestamp())
@@ -291,9 +290,9 @@ class TerminalTimeReconciler:
                 diag.returned_count = len(ticks)
                 diag.first_epoch = int(ticks[0][0])
                 diag.last_epoch = int(ticks[-1][0])
-                diag.first_utc = datetime.fromtimestamp(diag.first_epoch, tz=timezone.utc).isoformat()
-                diag.last_utc = datetime.fromtimestamp(diag.last_epoch, tz=timezone.utc).isoformat()
-                now = datetime.now(timezone.utc)
+                diag.first_utc = datetime.fromtimestamp(diag.first_epoch, tz=UTC).isoformat()
+                diag.last_utc = datetime.fromtimestamp(diag.last_epoch, tz=UTC).isoformat()
+                now = datetime.now(UTC)
                 now_epoch = int(now.timestamp())
                 one_min_ago = int((now - timedelta(minutes=5)).timestamp())
                 outside = 0
@@ -352,7 +351,7 @@ class TerminalTimeReconciler:
             result.criterion_4_ticks_in_window = "FAIL"
 
         # Criterion 5: M1 not stale
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if mql5.m1_time_raw > 0:
             m1_age = int(now.timestamp()) - mql5.m1_time_raw
             result.criterion_5_m1_age_seconds = m1_age

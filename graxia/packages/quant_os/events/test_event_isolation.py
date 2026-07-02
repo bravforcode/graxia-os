@@ -13,7 +13,7 @@ def test_event_gate_no_execution_imports():
     """event_gate.py must not import execution modules."""
     path = Path(__file__).parent / "event_gate.py"
     tree = ast.parse(path.read_text())
-    
+
     for node in ast.walk(tree):
         if isinstance(node, (ast.Import, ast.ImportFrom)):
             if isinstance(node, ast.ImportFrom) and node.module:
@@ -31,7 +31,7 @@ def test_market_health_no_execution_imports():
     """market_health.py must not import execution modules."""
     path = Path(__file__).parent / "market_health.py"
     tree = ast.parse(path.read_text())
-    
+
     for node in ast.walk(tree):
         if isinstance(node, (ast.Import, ast.ImportFrom)):
             if isinstance(node, ast.ImportFrom) and node.module:
@@ -49,7 +49,7 @@ def test_event_risk_gate_no_execution_imports():
     """event_risk_gate.py must not import execution modules."""
     path = Path(__file__).parent / "event_risk_gate.py"
     tree = ast.parse(path.read_text())
-    
+
     for node in ast.walk(tree):
         if isinstance(node, (ast.Import, ast.ImportFrom)):
             if isinstance(node, ast.ImportFrom) and node.module:

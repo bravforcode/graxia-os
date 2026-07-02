@@ -15,7 +15,6 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-import pytest
 
 from graxia.packages.quant_os.core.canonical.macro_regime import (
     MacroRegimeCache,

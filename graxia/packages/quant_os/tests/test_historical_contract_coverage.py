@@ -1,11 +1,9 @@
 """Phase 3.1A — Historical contract and swap coverage tests."""
-import pytest
 from decimal import Decimal
 from datetime import datetime
 
 from graxia.packages.quant_os.execution.provenance import (
-    ContractProvenance, SwapProvenance, RunProvenance,
-    AssumptionQuality, create_default_provenance,
+    ContractProvenance, SwapProvenance, AssumptionQuality, create_default_provenance,
 )
 from graxia.packages.quant_os.execution.swap_model import (
     SwapRates, SwapMode, calculate_swap,

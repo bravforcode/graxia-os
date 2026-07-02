@@ -1,6 +1,6 @@
 """Phase BE-P13 integration tests — controlled expansion (FINAL PHASE)."""
 from graxia.packages.quant_os.expansion.expansion_planner import (
-    ExpansionPlanner, ExpansionRequest, ExpansionTier
+    ExpansionPlanner, ExpansionRequest
 )
 from graxia.packages.quant_os.expansion.expansion_tracker import ExpansionTracker, ExpansionRecord
 from graxia.packages.quant_os.expansion.forbidden_guard import ForbiddenExpansionGuard

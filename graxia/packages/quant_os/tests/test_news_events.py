@@ -1,8 +1,7 @@
 """Tests for news_events modules — event models, event store, event risk gate."""
 
 import pytest
-from datetime import datetime, timezone, timedelta
-from dataclasses import replace
+from datetime import datetime, timedelta, UTC
 
 from graxia.packages.quant_os.news_events.event_models import (
     EconomicEvent, EventImportance, EventStatus, GateState,
@@ -25,7 +24,7 @@ def _make_event(
     actual=None,
     **kwargs,
 ):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     sched = scheduled_at_utc or now
     avail = available_to_strategy_at_utc or now - timedelta(minutes=1)
     defaults = dict(
@@ -108,55 +107,55 @@ class TestEventStore:
         store = EventStore()
         ev = _make_event(currency="USD")
         store.add_event(ev)
-        results = store.query_at(as_of=datetime.now(timezone.utc), currency="USD")
+        results = store.query_at(as_of=datetime.now(UTC), currency="USD")
         assert len(results) == 1
 
     def test_query_filters_by_currency(self):
         store = EventStore()
         store.add_event(_make_event(event_id="E1", currency="USD"))
         store.add_event(_make_event(event_id="E2", currency="EUR"))
-        results = store.query_at(as_of=datetime.now(timezone.utc), currency="USD")
+        results = store.query_at(as_of=datetime.now(UTC), currency="USD")
         assert len(results) == 1
         assert results[0].currency == "USD"
 
     def test_query_filters_future_events(self):
         store = EventStore()
-        future = datetime.now(timezone.utc) + timedelta(hours=1)
+        future = datetime.now(UTC) + timedelta(hours=1)
         ev = _make_event(
             available_to_strategy_at_utc=future,
         )
         store.add_event(ev)
-        results = store.query_at(as_of=datetime.now(timezone.utc))
+        results = store.query_at(as_of=datetime.now(UTC))
         assert len(results) == 0
 
     def test_query_filters_by_importance(self):
         store = EventStore()
         store.add_event(_make_event(event_id="E1", importance=EventImportance.HIGH))
         store.add_event(_make_event(event_id="E2", importance=EventImportance.LOW))
-        results = store.query_at(as_of=datetime.now(timezone.utc), min_importance="HIGH")
+        results = store.query_at(as_of=datetime.now(UTC), min_importance="HIGH")
         assert len(results) == 1
 
     def test_add_event_replaces_older(self):
         store = EventStore()
-        old = _make_event(event_id="E1", received_at_utc=datetime(2024, 1, 1, tzinfo=timezone.utc))
+        old = _make_event(event_id="E1", received_at_utc=datetime(2024, 1, 1, tzinfo=UTC))
         store.add_event(old)
-        new = _make_event(event_id="E1", received_at_utc=datetime(2024, 6, 1, tzinfo=timezone.utc))
+        new = _make_event(event_id="E1", received_at_utc=datetime(2024, 6, 1, tzinfo=UTC))
         store.add_event(new)
-        results = store.query_at(as_of=datetime.now(timezone.utc))
+        results = store.query_at(as_of=datetime.now(UTC))
         assert len(results) == 1
-        assert results[0].received_at_utc == datetime(2024, 6, 1, tzinfo=timezone.utc)
+        assert results[0].received_at_utc == datetime(2024, 6, 1, tzinfo=UTC)
 
     def test_get_latest_status(self):
         store = EventStore()
         ev = _make_event(event_id="E1")
         store.add_event(ev)
-        result = store.get_latest_status("E1", as_of=datetime.now(timezone.utc))
+        result = store.get_latest_status("E1", as_of=datetime.now(UTC))
         assert result is not None
         assert result.event_id == "E1"
 
     def test_get_unknown_returns_none(self):
         store = EventStore()
-        assert store.get_latest_status("UNKNOWN", as_of=datetime.now(timezone.utc)) is None
+        assert store.get_latest_status("UNKNOWN", as_of=datetime.now(UTC)) is None
 
 
 # ---------------------------------------------------------------------------
@@ -167,14 +166,14 @@ class TestEventRiskGate:
     def test_clear_when_no_events(self):
         store = EventStore()
         gate = EventRiskGate(store)
-        result = gate.evaluate(at=datetime.now(timezone.utc))
+        result = gate.evaluate(at=datetime.now(UTC))
         assert result.state == GateState.CLEAR
         assert result.eligible_for_new_order_intent is True
         assert result.event_ids == []
 
     def test_blocks_during_high_impact_pre_event(self):
         store = EventStore()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         # High-impact event 10 minutes from now → inside 30-min pre-block window
         ev = _make_event(
             importance=EventImportance.HIGH,
@@ -189,7 +188,7 @@ class TestEventRiskGate:
 
     def test_allows_low_impact_event(self):
         store = EventStore()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         ev = _make_event(
             importance=EventImportance.LOW,
             scheduled_at_utc=now + timedelta(minutes=10),
@@ -203,7 +202,7 @@ class TestEventRiskGate:
 
     def test_blocks_when_actual_missing_after_release(self):
         store = EventStore()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         ev = _make_event(
             importance=EventImportance.HIGH,
             status=EventStatus.RELEASED,
@@ -217,7 +216,7 @@ class TestEventRiskGate:
 
     def test_clear_after_event_window(self):
         store = EventStore()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         # Event was 1 hour ago → outside 15-min post-block window
         ev = _make_event(
             importance=EventImportance.HIGH,
@@ -231,12 +230,12 @@ class TestEventRiskGate:
     def test_evidence_hash_is_sha256(self):
         store = EventStore()
         gate = EventRiskGate(store)
-        result = gate.evaluate(at=datetime.now(timezone.utc))
+        result = gate.evaluate(at=datetime.now(UTC))
         assert len(result.evidence_hash) == 64
 
     def test_delayed_event_blocks(self):
         store = EventStore()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         ev = _make_event(
             importance=EventImportance.HIGH,
             status=EventStatus.DELAYED,

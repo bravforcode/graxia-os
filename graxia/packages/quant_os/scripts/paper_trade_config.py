@@ -14,7 +14,7 @@ import argparse
 import json
 import sys
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 
 # ── Paths ─────────────────────────────────────────────────────────────
@@ -178,7 +178,7 @@ class PaperTradeConfig:
 def build_config() -> PaperTradeConfig:
     """Assemble the full paper trade configuration."""
     return PaperTradeConfig(
-        created_at=datetime.now(timezone.utc).isoformat(),
+        created_at=datetime.now(UTC).isoformat(),
         symbols=[asdict(s) for s in SYMBOL_CONFIGS],
         risk=asdict(RiskParams()),
         news_filter=asdict(NewsFilterConfig()),

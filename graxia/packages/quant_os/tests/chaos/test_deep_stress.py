@@ -16,10 +16,8 @@ import tempfile
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timedelta, timezone
-from decimal import Decimal
+from datetime import datetime
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 

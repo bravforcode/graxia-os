@@ -13,7 +13,6 @@ from __future__ import annotations
 import asyncio
 import json
 import sys
-from datetime import UTC, datetime, time
 from pathlib import Path
 from unittest.mock import patch
 
@@ -24,10 +23,8 @@ _PACKAGES = Path(__file__).resolve().parent.parent.parent.parent
 if str(_PACKAGES) not in sys.path:
     sys.path.insert(0, str(_PACKAGES))
 
-from graxia.packages.quant_os.core.session_filter import Session, SessionFilter
-from graxia.packages.quant_os.core.session_manager import AssetClass
+from graxia.packages.quant_os.core.session_filter import SessionFilter
 from graxia.packages.quant_os.core.signal_gateway import (
-    Side,
     Signal,
     SignalGateway,
     SignalSource,

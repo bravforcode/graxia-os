@@ -1,6 +1,6 @@
 """Phase BE-P3 — Event provider with versioning."""
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from .event_schema import PointInTimeEvent
 
 
@@ -13,7 +13,7 @@ class EventProvider:
     def create_event(self, event_name: str, importance: str,
                      scheduled_at: str, country: str = "", currency: str = "") -> PointInTimeEvent:
         """Create a point-in-time event record."""
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         event = PointInTimeEvent(
             event_id=f"{self.name}_{event_name}_{scheduled_at}",
             provider_event_id="",
@@ -33,7 +33,7 @@ class EventProvider:
                       published_at: str = "") -> PointInTimeEvent:
         """Update event with actual value."""
         event.actual = actual
-        event.published_at_utc = published_at or datetime.now(timezone.utc).isoformat()
+        event.published_at_utc = published_at or datetime.now(UTC).isoformat()
         event.official_confirmation = self.tier == 1
         event.compute_hash()
         return event

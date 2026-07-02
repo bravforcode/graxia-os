@@ -7,9 +7,8 @@ No sensitive data (login, password, server details) is stored in artifacts.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Optional
+from dataclasses import dataclass
+from datetime import datetime, UTC
 
 
 @dataclass(frozen=True)
@@ -75,7 +74,7 @@ def create_account_snapshot(
 
     Server and login are masked: only last 2 chars visible.
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     sid = snapshot_id or f"snap-{now.strftime('%Y%m%d%H%M%S')}"
 
     server_redacted = _redact(server) if server else "***"

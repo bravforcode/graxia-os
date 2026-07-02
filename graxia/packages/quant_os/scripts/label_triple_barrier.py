@@ -16,9 +16,8 @@ Usage:
 import argparse
 import json
 import os
-import sys
 import warnings
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from glob import glob
 
 import numpy as np
@@ -398,7 +397,7 @@ def main():
 
     # Run record
     record = {
-        "run_time_utc": datetime.now(timezone.utc).isoformat(),
+        "run_time_utc": datetime.now(UTC).isoformat(),
         "symbols": symbols,
         "freqs": freqs,
         "method": args.method,
@@ -418,7 +417,7 @@ def main():
     print(f"  Run record: {os.path.join(args.output, 'triple_barrier_run.json')}")
 
     if all_results:
-        print(f"\n  Summary:")
+        print("\n  Summary:")
         for d in all_results:
             print(f"    {d['symbol']} @ {d['freq']}: "
                   f"W={d['win']} L={d['loss']} N={d['neutral']} "

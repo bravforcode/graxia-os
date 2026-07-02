@@ -28,7 +28,7 @@ def test_recorder_records_tick():
         storage = TickStorage(tmp)
         recorder = MT5TickRecorder(storage, "XAUUSD")
         recorder.start()
-        
+
         mt5_tick = SimpleNamespace(
             time=1719052800,  # 2024-06-22
             time_msc=1719052800000,
@@ -39,7 +39,7 @@ def test_recorder_records_tick():
             volume=1.0,
             volume_real=1.0,
         )
-        
+
         tick = recorder.record_tick(mt5_tick)
         assert tick["bid"] == 2350.50
         assert tick["ask"] == 2350.80

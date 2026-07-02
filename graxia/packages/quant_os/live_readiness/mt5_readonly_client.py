@@ -7,7 +7,6 @@ Every method wraps MT5 calls in try/except.
 """
 
 from datetime import datetime
-from typing import Any
 
 # ponytail: lazy-import pattern from broker/mt5_gateway.py
 _mt5_imported = False

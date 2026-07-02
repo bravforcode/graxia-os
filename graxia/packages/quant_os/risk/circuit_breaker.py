@@ -2,13 +2,14 @@
 Circuit Breaker — per-asset-class persistent circuit breaker.
 
 Tracks consecutive losses per class, trips when threshold exceeded,
-auto-recovers after cooldown.
+auto-recovers after cooldown.  Optionally activates a KillSwitch on trip.
 """
 
 import json
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -36,11 +37,13 @@ class CircuitBreaker:
         state_file: str | None = None,
         configs: dict[str, CircuitBreakerConfig] | None = None,
         config: CircuitBreakerConfig | None = None,
+        kill_switch: Any | None = None,
     ):
         self._state_file = Path(state_file) if state_file else None
         self._configs = configs or {}
         self._default_config = config or CircuitBreakerConfig()
         self._classes: dict[str, _ClassState] = {c: _ClassState() for c in ASSET_CLASSES}
+        self._kill_switch = kill_switch
         if self._state_file and self._state_file.exists():
             self._load()
 
@@ -92,11 +95,34 @@ class CircuitBreaker:
             s.opened_at = time.time()
         self._save()
 
-    def reset(self, cls: str) -> None:
+        # Activate kill switch if wired
+        if self._kill_switch is not None:
+            try:
+                self._kill_switch.activate(
+                    reason=f"Circuit breaker tripped for {cls}: {reason}",
+                    source=f"circuit_breaker:{cls}",
+                )
+                logger.warning(
+                    "circuit_breaker.trip: kill_switch activated for %s: %s",
+                    cls, reason,
+                )
+            except Exception as exc:
+                logger.error(
+                    "circuit_breaker.trip: failed to activate kill_switch: %s", exc
+                )
+
+    def reset(self, cls: str, authorized_by: str, reason: str) -> None:
+        """Reset circuit breaker for a class. Requires authorization and reason for audit."""
+        if not authorized_by or not reason:
+            raise ValueError("reset() requires both authorized_by and reason parameters")
         s = self._classes.setdefault(cls, _ClassState())
         s.open = False
         s.reason = ""
         s.consecutive_losses = 0
+        logger.info(
+            "circuit_breaker.reset: class=%s authorized_by=%s reason=%s",
+            cls, authorized_by, reason,
+        )
         self._save()
 
     def record_trade(self, cls: str, pnl: float) -> bool:

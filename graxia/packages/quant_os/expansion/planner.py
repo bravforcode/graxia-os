@@ -13,9 +13,6 @@ Each step requires passing evidence gates before proceeding.
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict
 from enum import Enum
-import json
-import hashlib
-from datetime import datetime
 
 
 class ExpansionPhase(Enum):

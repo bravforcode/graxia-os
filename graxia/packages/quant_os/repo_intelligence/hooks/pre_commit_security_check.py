@@ -80,7 +80,8 @@ def _read_staged_content(filepath: str) -> str:
 
 
 def _in_gold_bot(filepath: str) -> bool:
-    return filepath.startswith("gold_bot/") or filepath.startswith("gold_bot\\") or "/gold_bot/" in filepath or "\\gold_bot\\" in filepath
+    """Legacy — gold_bot removed. Always returns False."""
+    return False
 
 
 def _in_allowlist(filepath: str) -> bool:

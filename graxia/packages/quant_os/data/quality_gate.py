@@ -13,7 +13,7 @@ import json
 import logging
 import math
 import os
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from typing import Any, Dict, List, Optional
 
 from ..core.enums import DataQualityCheck
@@ -193,7 +193,7 @@ def run_quality_gate(
         logger.error(f"File not found: {absolute_path}")
         return {
             "file": absolute_path,
-            "timestamp_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "timestamp_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "checks": {"file_exists": {"status": "FAIL", "details": {"reason": "File not found"}}},
             "overall": "FAIL",
             "recommendation": "File does not exist. Check the path and try again.",
@@ -277,7 +277,7 @@ def _finalize(filepath: str, results: Dict) -> Dict[str, Any]:
 
     report = {
         "file": filepath,
-        "timestamp_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "timestamp_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "checks": results,
         "overall": overall,
         "recommendation": recommendation,

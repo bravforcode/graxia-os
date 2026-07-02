@@ -11,6 +11,7 @@ from graxia.packages.quant_os.core.agents import (
     RiskAuditorAgent,
     TechnicalAnalystAgent,
 )
+from graxia.packages.quant_os.core.canonical.macro_regime import MacroRegimeCache
 from graxia.packages.quant_os.core.enums import SignalType
 from graxia.packages.quant_os.core.event_bus import EventBus
 from graxia.packages.quant_os.core.events import BarEvent, RiskEvent, SignalEvent
@@ -46,7 +47,10 @@ def researcher() -> BullBearResearcherAgent:
 
 
 @pytest.fixture
-def risk_auditor() -> RiskAuditorAgent:
+def risk_auditor():
+    """Reset MacroRegimeCache to avoid cross-test contamination."""
+    cache = MacroRegimeCache()
+    cache.reset()
     return RiskAuditorAgent()
 
 

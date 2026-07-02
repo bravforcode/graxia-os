@@ -1,7 +1,7 @@
 """
 LLM Cascade Router — Tiered waterfall for news → sentiment.
 
-Tier 1 (Cerebras ~200ms): Fast trigger
+Tier 1 (Groq → Cerebras → OpenRouter): Fast trigger with fallback chain
 Tier 2 (Groq ~700ms): Validator for HIGH impact only
 Tier 3 (Gemini, cron 4h): Deep strategist
 
@@ -50,9 +50,10 @@ class ProviderConfig:
     max_tokens: int = 100
     temperature: float = 0.1
     timeout_seconds: float = 5.0
+    is_openai_compatible: bool = True
 
 
-TIER1_CONFIG = ProviderConfig(
+TIER1_CEREBRAS = ProviderConfig(
     name="cerebras",
     tier=1,
     api_key_env="CEREBRAS_API_KEY",
@@ -61,6 +62,29 @@ TIER1_CONFIG = ProviderConfig(
     max_tokens=100,
     timeout_seconds=3.0,
 )
+
+TIER1_GROQ = ProviderConfig(
+    name="groq-t1",
+    tier=1,
+    api_key_env="GROQ_API_KEY",
+    base_url="https://api.groq.com/openai/v1/chat/completions",
+    model="llama-3.3-70b-versatile",
+    max_tokens=100,
+    timeout_seconds=5.0,
+)
+
+TIER1_OPENROUTER = ProviderConfig(
+    name="openrouter",
+    tier=1,
+    api_key_env="OPENROUTER_API_KEY",
+    base_url="https://openrouter.ai/api/v1/chat/completions",
+    model="meta-llama/llama-3.3-70b-instruct",
+    max_tokens=100,
+    timeout_seconds=5.0,
+    is_openai_compatible=True,
+)
+
+TIER1_PROVIDERS: list[ProviderConfig] = [TIER1_GROQ, TIER1_CEREBRAS, TIER1_OPENROUTER]
 
 TIER2_CONFIG = ProviderConfig(
     name="groq",
@@ -143,6 +167,14 @@ class CascadeRouter:
             logger.warning("llm_exception", provider=config.name, error=str(e))
             return "", latency_ms
 
+    async def _call_llm_chain(self, providers: list[ProviderConfig], prompt: str) -> tuple[str, float, ProviderConfig | None]:
+        for config in providers:
+            response, latency = await self._call_llm(config, prompt)
+            if response:
+                return response, latency, config
+            logger.warning("llm_fallback", failed=config.name, trying_next=len(providers) > 1)
+        return "", 0.0, None
+
     def _parse_json(self, text: str) -> dict:
         text = text.strip()
         if text.startswith("```"):
@@ -151,27 +183,36 @@ class CascadeRouter:
         try:
             return json.loads(text)
         except json.JSONDecodeError:
-            match = re.search(r"\{[^}]+\}", text, re.DOTALL)
-            if match:
+            pass
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+        if match:
+            try:
                 return json.loads(match.group())
-            return {}
+            except json.JSONDecodeError:
+                pass
+        return {}
 
     async def route(self, headline: str) -> CascadeResult:
         start = time.monotonic()
         tier1_prompt = TIER1_PROMPT.format(headline=headline)
-        tier1_response, _ = await self._call_llm(TIER1_CONFIG, tier1_prompt)
+        tier1_response, _, tier1_provider = await self._call_llm_chain(TIER1_PROVIDERS, tier1_prompt)
         if not tier1_response:
             return CascadeResult(
                 headline=headline,
                 impact=ImpactLevel.LOW,
                 direction=0,
-                tier_used=1,
+                tier_used=0,
                 latency_ms=(time.monotonic() - start) * 1000,
                 reasoning="Tier 1 failed",
             )
         tier1_data = self._parse_json(tier1_response)
-        impact = ImpactLevel(tier1_data.get("impact", "LOW"))
+        try:
+            impact = ImpactLevel(tier1_data.get("impact", "LOW"))
+        except ValueError:
+            impact = ImpactLevel.LOW
         direction = tier1_data.get("dir", 0)
+        if direction not in (-1, 0, 1):
+            direction = 0
         if impact == ImpactLevel.LOW:
             return CascadeResult(
                 headline=headline,
@@ -195,6 +236,9 @@ class CascadeRouter:
                 latency_ms=total,
             )
         tier2_data = self._parse_json(tier2_response)
+        tier2_direction = tier2_data.get("direction", direction)
+        if tier2_direction not in (-1, 0, 1):
+            tier2_direction = 0
         if not tier2_data.get("confirmed", True):
             return CascadeResult(
                 headline=headline,
@@ -209,7 +253,7 @@ class CascadeRouter:
         return CascadeResult(
             headline=headline,
             impact=impact,
-            direction=tier2_data.get("direction", direction),
+            direction=tier2_direction,
             tier_used=2,
             confidence=tier2_data.get("confidence", 0.7),
             reasoning=tier2_data.get("reasoning", ""),
@@ -235,13 +279,12 @@ Research Report:
 {report}
 
 Return ONLY valid JSON."""
-        for config in [TIER3_CONFIG]:
-            response, latency = await self._call_llm(config, prompt)
-            if response:
-                data = self._parse_json(response)
-                data["latency_ms"] = latency
-                data["provider"] = config.name
-                return data
+        response, latency, provider = await self._call_llm_chain([TIER3_CONFIG], prompt)
+        if response:
+            data = self._parse_json(response)
+            data["latency_ms"] = latency
+            data["provider"] = provider.name if provider else "unknown"
+            return data
         return {"error": "All Tier 3 providers failed"}
 
     async def close(self) -> None:

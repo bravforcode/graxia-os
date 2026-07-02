@@ -4,7 +4,7 @@ RESTORED from deleted test_phase_4_eurusd.py (BE-P7 commit 3ae373f).
 Original deleted because API changed; migrated to current API.
 """
 from graxia.packages.quant_os.markets.eurusd.contract_snapshot import EURUSDContractSnapshot, XAUUSDContractSnapshot
-from graxia.packages.quant_os.markets.eurusd.session_calendar import EURUSDSessionCalendar, TradingSession
+from graxia.packages.quant_os.markets.eurusd.session_calendar import EURUSDSessionCalendar
 from graxia.packages.quant_os.markets.eurusd.event_calendar import EURUSDEventCalendar
 from graxia.packages.quant_os.markets.eurusd.hypothesis import EURUSDHypothesis, HypothesisTracker
 

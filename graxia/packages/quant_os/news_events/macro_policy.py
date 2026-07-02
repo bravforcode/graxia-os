@@ -2,7 +2,6 @@ from enum import Enum
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
-import hashlib, json
 
 class MacroSourceRole(Enum):
     RESEARCH = "RESEARCH"                    # FRED/ALFRED, COT, LBMA, news headlines

@@ -14,8 +14,6 @@ Usage: python scripts/test_trades_week0.py [--auto]
 
 import sys
 import time
-from pathlib import Path
-from datetime import datetime, timezone
 
 try:
     import MetaTrader5 as mt5
@@ -279,7 +277,7 @@ def main():
     spread, ask, bid, sym = get_spread()
     if spread is not None:
         print(f"\nXAUUSD spread: ${spread:.2f} (ask={ask:.2f} bid={bid:.2f})")
-        print(f"Record this in execution_plan.md Week 0 item 3")
+        print("Record this in execution_plan.md Week 0 item 3")
     else:
         print("WARNING: Could not read XAUUSD spread")
 

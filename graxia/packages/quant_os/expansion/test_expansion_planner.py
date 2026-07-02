@@ -1,6 +1,6 @@
 """Tests for expansion planner."""
 from graxia.packages.quant_os.expansion.expansion_planner import (
-    ExpansionPlanner, ExpansionRequest, ExpansionTier
+    ExpansionPlanner, ExpansionRequest
 )
 
 

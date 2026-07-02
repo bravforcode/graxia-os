@@ -15,8 +15,8 @@ import json
 import logging
 import os
 import sys
-from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from dataclasses import asdict, dataclass
+from datetime import datetime, UTC
 from pathlib import Path
 
 # ── Paths ─────────────────────────────────────────────────────────────
@@ -208,7 +208,7 @@ def check_models_trained() -> CheckItem:
 
 def check_risk_limits_configured() -> CheckItem:
     """Verify risk limits are configured in config or .env."""
-    from core.golden_rules import GOLDEN_RULES, validate_golden_rules
+    from core.golden_rules import validate_golden_rules
 
     golden_checks = validate_golden_rules()
     if not golden_checks["all_checks_passed"]:
@@ -238,7 +238,7 @@ def check_risk_limits_configured() -> CheckItem:
     return CheckItem(
         name="Risk Limits",
         passed=False,
-        message=f"paper_trade_config.json not found. Run: python scripts/paper_trade_config.py",
+        message="paper_trade_config.json not found. Run: python scripts/paper_trade_config.py",
         category="risk",
     )
 
@@ -428,7 +428,7 @@ def run_checklist() -> ChecklistResult:
     }
 
     return ChecklistResult(
-        timestamp=datetime.now(timezone.utc).isoformat(),
+        timestamp=datetime.now(UTC).isoformat(),
         overall_pass=overall_pass,
         items=items,
         summary=summary,

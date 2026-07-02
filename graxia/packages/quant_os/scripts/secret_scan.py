@@ -1,8 +1,8 @@
-"""Secret scanner — scans tracked files, logs, and artifacts for credentials.
+"""Secret scanner v2 — scans tracked files, logs, and artifacts for credentials.
 
 Run before every commit to prevent credential leaks.
+v2: Expanded pattern coverage — JWT, PEM keys, AWS keys, Telegram tokens, DB conn strings.
 """
-import os
 import re
 import subprocess
 import sys
@@ -10,10 +10,25 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent.parent.parent
 
-# Patterns that indicate real secrets (not test fixtures)
-SECRET_PATTERNS = [
+# --- CRITICAL patterns (real secrets) ---
+SECRET_PATTERNS_CRITICAL = [
     (r'password\s*[=:]\s*["\'][^"\']*(?:muyrw|demo|pepper|mt5)[^"\']*["\']', "real password"),
     (r'password\s*[=:]\s*["\'][A-Za-z0-9!@#$%^&*]{8,}["\']', "long password string"),
+    (r'-----BEGIN (RSA |EC )?PRIVATE KEY-----', "PEM private key"),
+    (r'AKIA[0-9A-Z]{16}', "AWS access key"),
+]
+
+# --- HIGH patterns (likely secrets) ---
+SECRET_PATTERNS_HIGH = [
+    (r'eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}', "JWT token"),
+    (r'bot[0-9]+:[A-Za-z0-9_-]{35}', "Telegram bot token"),
+    (r'://[^:]+:[^@]+@', "DB connection string with password"),
+    (r'password=@password', "DB connection password placeholder"),
+]
+
+# --- MEDIUM patterns (potential secrets) ---
+SECRET_PATTERNS_MEDIUM = [
+    (r'secret_key\s*=\s*["\'][A-Za-z0-9+/=]{32,}["\']', "generic base64 secret"),
 ]
 
 # Patterns that need redaction (account identifiers)
@@ -56,9 +71,10 @@ def scan_file(filepath: Path) -> list[dict]:
         if stripped.startswith("#"):
             continue
 
-        # Check for real secrets
-        for pattern, description in SECRET_PATTERNS:
+        # Check CRITICAL patterns
+        for pattern, description in SECRET_PATTERNS_CRITICAL:
             if re.search(pattern, line, re.IGNORECASE):
+                # Redact the matched secret — do not print actual values
                 redacted = re.sub(
                     r'(["\'])[^"\']+(["\'])',
                     r'\1***REDACTED***\2',
@@ -70,6 +86,38 @@ def scan_file(filepath: Path) -> list[dict]:
                     "pattern": description,
                     "redacted": redacted[:120],
                     "severity": "CRITICAL",
+                })
+
+        # Check HIGH patterns
+        for pattern, description in SECRET_PATTERNS_HIGH:
+            if re.search(pattern, line, re.IGNORECASE):
+                redacted = re.sub(
+                    r'(["\'])[^"\']+(["\'])',
+                    r'\1***REDACTED***\2',
+                    line.strip()
+                )
+                findings.append({
+                    "file": str(filepath.relative_to(REPO_ROOT)),
+                    "line": line_num,
+                    "pattern": description,
+                    "redacted": redacted[:120],
+                    "severity": "HIGH",
+                })
+
+        # Check MEDIUM patterns
+        for pattern, description in SECRET_PATTERNS_MEDIUM:
+            if re.search(pattern, line, re.IGNORECASE):
+                redacted = re.sub(
+                    r'(["\'])[^"\']+(["\'])',
+                    r'\1***REDACTED***\2',
+                    line.strip()
+                )
+                findings.append({
+                    "file": str(filepath.relative_to(REPO_ROOT)),
+                    "line": line_num,
+                    "pattern": description,
+                    "redacted": redacted[:120],
+                    "severity": "MEDIUM",
                 })
 
         # Check for account identifiers needing redaction
@@ -136,9 +184,10 @@ def main():
     # Print findings
     if all_findings:
         critical = [f for f in all_findings if f["severity"] == "CRITICAL"]
+        high = [f for f in all_findings if f["severity"] == "HIGH"]
         medium = [f for f in all_findings if f["severity"] == "MEDIUM"]
         print(f"\n{'=' * 60}")
-        print(f"FINDINGS: {len(critical)} CRITICAL, {len(medium)} MEDIUM")
+        print(f"FINDINGS: {len(critical)} CRITICAL, {len(high)} HIGH, {len(medium)} MEDIUM")
         print(f"{'=' * 60}")
         for f in all_findings:
             print(f"  [{f['severity']}] {f['file']}:{f['line']} [{f['pattern']}]")

@@ -1,20 +1,19 @@
 """Phase 8 — Drill executor."""
-from dataclasses import dataclass
 from datetime import datetime
-from typing import Callable, Optional
+from typing import Callable
 from .drill_definitions import DrillType, DrillResult, DRILL_CATALOG
 
 
 class DrillExecutor:
     """Execute incident drills and record results."""
-    
+
     def __init__(self):
         self._results: list[DrillResult] = []
         self._drill_fn: dict[DrillType, Callable] = {}
-    
+
     def register_drill(self, drill_type: DrillType, fn: Callable) -> None:
         self._drill_fn[drill_type] = fn
-    
+
     def execute(self, drill_type: DrillType) -> DrillResult:
         """Execute a single drill."""
         if drill_type not in self._drill_fn:
@@ -26,7 +25,7 @@ class DrillExecutor:
                 observed_behavior="Drill not registered",
                 duration_seconds=0,
             )
-        
+
         start = datetime.utcnow()
         try:
             self._drill_fn[drill_type]()
@@ -35,9 +34,9 @@ class DrillExecutor:
         except Exception as e:
             passed = False
             observed = f"Drill failed: {e}"
-        
+
         duration = (datetime.utcnow() - start).total_seconds()
-        
+
         result = DrillResult(
             drill_type=drill_type,
             passed=passed,
@@ -48,14 +47,14 @@ class DrillExecutor:
         )
         self._results.append(result)
         return result
-    
+
     def execute_all(self) -> list[DrillResult]:
         """Execute all registered drills."""
         for drill_type in DRILL_CATALOG:
             if drill_type in self._drill_fn:
                 self.execute(drill_type)
         return list(self._results)
-    
+
     def get_summary(self) -> dict:
         total = len(self._results)
         passed = sum(1 for r in self._results if r.passed)

@@ -9,9 +9,7 @@ Supports tailing for real-time monitoring.
 from __future__ import annotations
 
 import json
-import os
 import time
-from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterator
 

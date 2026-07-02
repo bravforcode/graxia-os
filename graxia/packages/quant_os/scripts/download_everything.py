@@ -12,7 +12,7 @@ Usage:
 """
 
 import io, json, os, subprocess, sys, time
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
@@ -330,7 +330,7 @@ def main():
 
     # Save manifest
     manifest = {
-        "last_run": datetime.now(timezone.utc).isoformat(),
+        "last_run": datetime.now(UTC).isoformat(),
         "elapsed_seconds": elapsed(),
         "symbols": len(ALL_SYMBOLS),
         "timeframes": list(TIMEFRAMES.keys()),

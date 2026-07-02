@@ -1,6 +1,5 @@
 """Phase BE-P0 — Secret scan for tracked files."""
 import re
-import hashlib
 from pathlib import Path
 
 

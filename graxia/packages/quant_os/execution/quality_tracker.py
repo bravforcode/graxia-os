@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import statistics
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from dataclasses import dataclass
+from datetime import datetime, timedelta, UTC
 from decimal import Decimal, ROUND_HALF_UP
 from enum import Enum
 from typing import Optional
@@ -158,7 +157,7 @@ class ExecutionQualityTracker:
         lookback_hours: Optional[int] = None,
     ) -> QualityMetrics:
         """Aggregate quality metrics for a symbol over a time window."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if lookback_hours is not None:
             cutoff = now - timedelta(hours=lookback_hours)
             fills = [f for f in self._fills if f.symbol == symbol and f.timestamp >= cutoff]
@@ -260,7 +259,7 @@ class ExecutionQualityTracker:
         self, symbol: str, lookback_hours: Optional[int] = None
     ) -> list[SlippageReport]:
         """Return slippage reports for a symbol."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         fills = [f for f in self._fills if f.symbol == symbol]
         if lookback_hours is not None:
             cutoff = now - timedelta(hours=lookback_hours)

@@ -84,7 +84,7 @@ Then verify the CSV row was written correctly.
 - [x] Stop $6.30 final (from pre-register, not changed)
 - [x] All other params locked: `train_window=500, test_window=200, step=200, conf≥0.85, expected_profit>0.0005, cost=0.000147`
 - [x] **No further config changes will be made during the 28-day period**
-- [ ] Git tag: `git tag b2-paper-start-2026-06-28`
+- [x] Git tag: `git tag b2-paper-start-2026-06-28` ✅
 
 **VIOLATION WARNING**: Adjusting any config during the paper trade voids the entire test (per pre-register).
 

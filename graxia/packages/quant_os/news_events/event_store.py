@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from .event_models import EconomicEvent, EventStatus
+from .event_models import EconomicEvent
 
 class EventStore:
     """Point-in-time event store. Never returns events from after the query timestamp."""

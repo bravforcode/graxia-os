@@ -22,7 +22,6 @@ import os
 import sys
 import time
 import json
-from datetime import UTC, datetime
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -403,7 +402,7 @@ async def test_massive_sentiment_all_providers():
     # ═══════════════════════════════════════════════════════════════
 
     print(f"\n{'='*70}")
-    print(f"  AGGREGATION")
+    print("  AGGREGATION")
     print(f"{'='*70}")
 
     all_scores = []

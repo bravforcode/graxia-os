@@ -26,13 +26,12 @@ Usage:
 from __future__ import annotations
 
 import logging
-import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
-from .enums import OrderSide, SignalType, TradingMode
+from .enums import SignalType, TradingMode
 from .events import (
     Event,
     FillEvent,

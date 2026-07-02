@@ -14,16 +14,16 @@ def run_check():
     if not os.path.exists(manifest_path):
         print("WARN: manifest not found, skipping pre-commit check")
         return 0
-    
+
     manifest.load(manifest_path)
     issues = manifest.validate_all_entries()
-    
+
     if issues:
         print("MANIFEST VALIDATION ISSUES:")
         for issue in issues:
             print(f"  - {issue}")
         return 1
-    
+
     print("Manifest validation: OK")
     return 0
 

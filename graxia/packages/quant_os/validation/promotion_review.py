@@ -1,6 +1,6 @@
 """Phase BE-P11 — Promotion review decision engine."""
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 
 class PromotionDecision:
@@ -32,62 +32,62 @@ class ReviewResult:
     review_id: str = ""
     timestamp_utc: str = ""
     rationale: str = ""
-    
+
     def __post_init__(self):
         if not self.review_id:
-            self.review_id = f"REVIEW_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
+            self.review_id = f"REVIEW_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}"
         if not self.timestamp_utc:
-            self.timestamp_utc = datetime.now(timezone.utc).isoformat()
+            self.timestamp_utc = datetime.now(UTC).isoformat()
 
 
 class PromotionReviewer:
     """Evaluate promotion with automatic blockers."""
-    
+
     def __init__(self):
         self._reviews: list[ReviewResult] = []
-    
+
     def check_blockers(self, inputs: ReviewInput) -> list[str]:
         """Check all automatic blockers."""
         blockers = []
-        
+
         # Unresolved critical incidents
         if inputs.incident_register.get("critical_incidents", 0) > 0:
             blockers.append("unresolved_critical_incidents")
-        
+
         # Unprotected positions
         if inputs.demo_report.get("unprotected_positions", 0) > 0:
             blockers.append("unprotected_positions")
-        
+
         # Reconciliation mismatch
         if inputs.demo_report.get("reconciliation_pct", 100) < 100:
             blockers.append("reconciliation_mismatch")
-        
+
         # Cost-model gap beyond threshold
         if inputs.cost_calibration.get("gap_pct", 0) > 50:
             blockers.append("cost_model_gap")
-        
+
         # Strategy needs retuning
         if inputs.historical_validation.get("needs_retuning", False):
             blockers.append("needs_retuning")
-        
+
         # Broker identity not locked
         if not inputs.contract_evidence.get("broker_identity_locked", False):
             blockers.append("broker_identity_not_locked")
-        
+
         # Insufficient sample
         if inputs.historical_validation.get("trade_count", 0) < 100:
             blockers.append("insufficient_sample")
-        
+
         # Oracle divergence unresolved
         if inputs.oracle_comparison.get("divergence_unresolved", False):
             blockers.append("oracle_divergence_unresolved")
-        
+
         return blockers
-    
+
     def decide(self, inputs: ReviewInput) -> ReviewResult:
         """Make promotion decision."""
         blockers = self.check_blockers(inputs)
-        
+
         if blockers:
             # Check if extend is possible
             can_extend = (
@@ -98,7 +98,7 @@ class PromotionReviewer:
                     "broker_identity_not_locked",
                 ])
             )
-            
+
             decision = PromotionDecision.EXTEND_DEMO if can_extend else PromotionDecision.RETURN_TO_RESEARCH
             rationale = f"blockers: {', '.join(blockers)}"
         else:
@@ -109,7 +109,7 @@ class PromotionReviewer:
             else:
                 decision = PromotionDecision.EXTEND_DEMO
                 rationale = "insufficient sample, extend demo"
-        
+
         result = ReviewResult(
             decision=decision,
             strategy_id=inputs.strategy_id,
@@ -118,9 +118,9 @@ class PromotionReviewer:
         )
         self._reviews.append(result)
         return result
-    
+
     def get_reviews(self) -> list[ReviewResult]:
         return self._reviews.copy()
-    
+
     def get_latest(self) -> ReviewResult | None:
         return self._reviews[-1] if self._reviews else None

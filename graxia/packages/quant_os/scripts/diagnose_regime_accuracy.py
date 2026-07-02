@@ -19,7 +19,6 @@ import argparse
 import os
 import sys
 import warnings
-from datetime import time
 from glob import glob
 
 import numpy as np
@@ -268,7 +267,7 @@ def fix_unicode(s):
 def print_report(results: pd.DataFrame, baseline_acc: float):
     """Print formatted regime breakdown and decision."""
     print(f"\n{'='*70}")
-    print(f"REGIME ACCURACY BREAKDOWN")
+    print("REGIME ACCURACY BREAKDOWN")
     print(f"  Baseline: {baseline_acc:.4f}")
     print(f"  Regimes tested: {len(results)}")
     print(f"{'='*70}")
@@ -297,24 +296,24 @@ def print_report(results: pd.DataFrame, baseline_acc: float):
 
     if not candidates.empty:
         best = candidates.iloc[0]
-        print(f"\n  [OK] REGIME FILTER WORTH BUILDING")
+        print("\n  [OK] REGIME FILTER WORTH BUILDING")
         print(f"     Best regime:      {best['regime']}")
         print(f"     Accuracy:         {best['accuracy']:.4f} (+{best['vs_baseline']:+.4f} vs baseline)")
         print(f"     Bars in regime:   {int(best['n_bars'])} ({best['pct_bars']:.1%} of total)")
         print(f"     Expected net edge at {best['accuracy']:.1%}:")
         edge_pips = (best['accuracy'] - 0.5) * 2 * 4  # 4 pip avg 1min move
         print(f"       Gross: {edge_pips:.2f} pips")
-        print(f"       Spread: ~22 pips")
+        print("       Spread: ~22 pips")
         print(f"       Net: {edge_pips - 22:.2f} pips (vs -21.66 baseline)")
         if edge_pips > 22:
-            print(f"       [OK] POSITIVE EXPECTANCY in this regime")
+            print("       [OK] POSITIVE EXPECTANCY in this regime")
         else:
-            print(f"       [NO] Still negative — need thinner spread or higher accuracy")
-        print(f"\n     Top 5 regimes:")
+            print("       [NO] Still negative — need thinner spread or higher accuracy")
+        print("\n     Top 5 regimes:")
         for _, row in candidates.head(5).iterrows():
             print(f"       {row['regime']:<30s} acc={row['accuracy']:.4f}  bars={int(row['n_bars']):>5d} ({row['pct_bars']:.1%})")
     else:
-        print(f"\n  [WARN]  NO regime clears the threshold\n")
+        print("\n  [WARN]  NO regime clears the threshold\n")
 
         # Check if any regime > threshold but < 5% bars
         small = results[results['accuracy'] >= threshold_acc]
@@ -322,10 +321,10 @@ def print_report(results: pd.DataFrame, baseline_acc: float):
             print(f"     {len(small)} regimes have accuracy >= {threshold_acc:.4f} but < 5% of bars:")
             for _, row in small.head(5).iterrows():
                 print(f"       {row['regime']:<30s} acc={row['accuracy']:.4f}  bars={int(row['n_bars']):>5d} ({row['pct_bars']:.1%})")
-            print(f"\n     → Consider expanding dataset (more bars may reveal stable regimes)")
+            print("\n     → Consider expanding dataset (more bars may reveal stable regimes)")
         else:
             print(f"     No regime reaches accuracy >= {threshold_acc:.4f} at all.")
-            print(f"     RECOMMENDATION: Skip regime filter. Build meta-label model instead.")
+            print("     RECOMMENDATION: Skip regime filter. Build meta-label model instead.")
 
     return candidates
 
@@ -361,7 +360,7 @@ def main():
     model, test_mask, oos_acc = train_or_load_model(df, feature_cols, args.model_path)
 
     # Regime breakdown (OOS only)
-    print(f"\n--- Computing regime breakdown (OOS only) ---")
+    print("\n--- Computing regime breakdown (OOS only) ---")
     results, baseline = compute_regime_breakdown(
         df, model, feature_cols,
         test_mask=test_mask, baseline_oos=oos_acc

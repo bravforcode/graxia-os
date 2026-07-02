@@ -1,6 +1,6 @@
 """System enums for Quant OS"""
 
-from enum import Enum, IntEnum
+from enum import Enum
 
 
 class SystemState(str, Enum):

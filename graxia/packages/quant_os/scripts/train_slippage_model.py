@@ -9,7 +9,7 @@ import hashlib
 import json
 import pickle
 import warnings
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 
 import numpy as np
@@ -231,7 +231,7 @@ def train():
         "feature_count": len(feature_names),
         "metrics": metrics,
         "feature_importances": {k: round(v, 4) for k, v in feat_imp},
-        "trained_at": datetime.now(timezone.utc).isoformat(),
+        "trained_at": datetime.now(UTC).isoformat(),
     }
 
     if data_hash:

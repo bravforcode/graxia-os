@@ -18,7 +18,7 @@ FAIL-CLOSED: _risk_gate defaults to False. No trade until explicitly approved.
 from dataclasses import dataclass
 
 from ..enums import SignalType
-from ..events import Event, FillEvent, RiskEvent, SignalEvent, TradeClosedEvent
+from ..events import Event, FillEvent, RiskEvent, SignalEvent
 from .base import Agent
 
 

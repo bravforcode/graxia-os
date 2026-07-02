@@ -31,7 +31,7 @@ try:
     from .base import Signal, Strategy, StrategyConfig
 except (ImportError, SystemError):
     from core.enums import DecisionType, RegimeType, SignalType
-    from strategies.base import Signal, Strategy, StrategyConfig
+    from strategies.base import Signal, Strategy
 
 logger = structlog.get_logger(__name__)
 

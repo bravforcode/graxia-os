@@ -23,7 +23,6 @@ from .event_bus import EventBus
 from .events import (
     FillEvent,
     KillSwitchEvent,
-    RiskEvent,
     SignalEvent,
     TradeClosedEvent,
 )

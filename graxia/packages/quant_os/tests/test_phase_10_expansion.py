@@ -1,9 +1,8 @@
 """Phase 10 — Controlled Expansion tests."""
-import pytest
 from graxia.packages.quant_os.expansion.planner import (
-    ExpansionPlanner, ExpansionStep, ExpansionPhase, ExpansionStatus, EvidenceGate
+    ExpansionPlanner, ExpansionPhase
 )
-from graxia.packages.quant_os.expansion.tracker import ExpansionTracker, ExpansionReport
+from graxia.packages.quant_os.expansion.tracker import ExpansionTracker
 
 
 class TestExpansionPlanner:

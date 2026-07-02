@@ -1,10 +1,9 @@
 """Tests for Phase 2B: Safety-critical infrastructure."""
 
-import json
 import os
 import sys
 import tempfile
-from datetime import datetime, date
+from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 
@@ -18,7 +17,6 @@ if str(_PACKAGES) not in sys.path:
 
 from quant_os.broker.contract_spec import ContractSpec, compute_snapshot_hash
 from quant_os.broker.contract_snapshot_store import ContractSnapshotStore
-from quant_os.broker.mt5_gateway import Mt5UnavailableError
 from quant_os.risk.position_sizer_v2 import SizingResult, size_position
 from quant_os.risk.risk_policy import RiskPolicy
 from quant_os.risk.pre_trade_risk import pre_trade_check

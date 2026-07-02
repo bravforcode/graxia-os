@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from decimal import Decimal, ROUND_HALF_UP
+from datetime import datetime, UTC
+from decimal import Decimal
 from enum import Enum
 from typing import Optional
 
@@ -184,7 +184,7 @@ class PositionReconciler:
         manual_review = [d for d in discrepancies if not d.auto_fixable]
 
         result = ReconciliationResult(
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             total_internal=len(internal),
             total_broker=len(broker),
             matched=matched,
@@ -289,7 +289,7 @@ class PositionReconciler:
         If broker_update_fn is provided, sends corrections to broker instead.
         """
         fixes: list[AutoFixAction] = []
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         for disc in result.discrepancies:
             if not disc.auto_fixable:

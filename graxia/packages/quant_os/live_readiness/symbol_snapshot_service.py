@@ -10,7 +10,7 @@ import hashlib
 import json
 import os
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from decimal import Decimal
 
 
@@ -115,7 +115,7 @@ def take_symbol_snapshot(readonly_client, symbol: str) -> SymbolSnapshot:
     spread_points = spread / point if point > 0 else Decimal("0")
 
     snapshot = SymbolSnapshot(
-        timestamp_utc=datetime.now(timezone.utc),
+        timestamp_utc=datetime.now(UTC),
         symbol=symbol,
         bid=bid,
         ask=ask,

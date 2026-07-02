@@ -4,9 +4,8 @@ Monkeypatches mt5.order_send to raise AssertionError.
 Verifies shadow runner never calls any execution API.
 Also checks that no new orders/-deals appear in history.
 """
-import pytest
-from unittest.mock import patch, MagicMock
-from datetime import datetime, timezone
+from unittest.mock import MagicMock
+from datetime import datetime, UTC
 
 
 def _forbidden_order_send(*args, **kwargs):
@@ -46,7 +45,7 @@ def test_runtime_firewall_order_send():
         tick.ask = 4180.13
         tick.last = 4180.0
         tick.volume = 1
-        tick.time = int(datetime.now(timezone.utc).timestamp())
+        tick.time = int(datetime.now(UTC).timestamp())
         tick.time_msc = tick.time * 1000
         tick.flags = 0
         reader._mt5.symbol_info_tick.return_value = tick

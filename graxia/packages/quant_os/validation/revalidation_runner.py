@@ -1,7 +1,4 @@
 """Phase BE-P6 — Revalidation runner. Executes R0-R10 and evaluates gates."""
-import hashlib
-import json
-from datetime import datetime, timezone
 from pathlib import Path
 from dataclasses import dataclass, asdict
 

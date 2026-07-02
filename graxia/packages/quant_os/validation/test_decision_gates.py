@@ -1,5 +1,4 @@
 """Tests for decision gates and run matrix."""
-import yaml
 from pathlib import Path
 from graxia.packages.quant_os.validation.run_matrix import RunMatrix
 

@@ -1,4 +1,3 @@
-import pytest
 from graxia.packages.quant_os.validation.regime_analyzer import RegimeAnalyzer, RegimeType, TradeConcentration
 
 class TestRegimeAnalyzer:

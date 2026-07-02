@@ -1,5 +1,4 @@
 """Tests for broker identity guard."""
-import pytest
 from .broker_identity_guard import BrokerProfile, BrokerIdentityGuard
 
 

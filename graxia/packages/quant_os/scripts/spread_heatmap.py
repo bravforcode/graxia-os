@@ -13,7 +13,7 @@ import os
 import sys
 import time
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 import MetaTrader5 as mt5
 
@@ -40,7 +40,7 @@ def collect_spread(symbol: str) -> dict:
     spread_price = round(tick.ask - tick.bid, 5)
     spread_points = round(spread_price / info.point, 1) if info.point else 0
     return {
-        "timestamp_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "timestamp_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "symbol": symbol,
         "bid": tick.bid,
         "ask": tick.ask,
@@ -65,7 +65,7 @@ def generate_report(all_data: dict, symbols: list):
     lines = []
     lines.append("=" * 60)
     lines.append("SPREAD HEATMAP REPORT — Best Entry Hours by Symbol")
-    lines.append(f"Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}")
+    lines.append(f"Generated: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}")
     lines.append("=" * 60)
     lines.append("")
     lines.append(f"{'Symbol':<10} {'Best Hour (UTC)':<18} {'Avg Spread':<12} {'Worst Hour (UTC)':<18} {'Avg Spread':<12}")
@@ -127,7 +127,7 @@ def main():
     symbols = [s.strip() for s in args.symbols.split(",")]
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
+    date_str = datetime.now(UTC).strftime("%Y%m%d")
     csv_path = os.path.join(OUTPUT_DIR, f"spread_{date_str}.csv")
     is_new = not os.path.exists(csv_path)
     csv_file = open(csv_path, "a", newline="")
@@ -147,7 +147,7 @@ def main():
 
     try:
         while time.time() - start < args.duration:
-            now_utc = datetime.now(timezone.utc)
+            now_utc = datetime.now(UTC)
             current_hour = now_utc.strftime("%Y-%m-%d %H:00")
 
             for sym in symbols:
@@ -160,7 +160,7 @@ def main():
 
             if current_hour != last_hour:
                 if last_hour is not None:
-                    hour_start = datetime.strptime(last_hour, "%Y-%m-%d %H:00").replace(tzinfo=timezone.utc)
+                    hour_start = datetime.strptime(last_hour, "%Y-%m-%d %H:00").replace(tzinfo=UTC)
                     hour_data = defaultdict(list)
                     for sym in symbols:
                         if sym in all_data:

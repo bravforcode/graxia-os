@@ -2,8 +2,7 @@
 
 Rejects naive datetimes. Validates returned ticks within requested window.
 """
-from datetime import datetime, timezone, timedelta
-from typing import Optional
+from datetime import datetime, UTC
 import hashlib
 import json
 
@@ -120,10 +119,10 @@ class TickWindowFetcher:
             result["first_tick_epoch"] = first["time"]
             result["last_tick_epoch"] = last["time"]
             result["first_tick_utc"] = datetime.fromtimestamp(
-                first["time"], tz=timezone.utc
+                first["time"], tz=UTC
             ).isoformat()
             result["last_tick_utc"] = datetime.fromtimestamp(
-                last["time"], tz=timezone.utc
+                last["time"], tz=UTC
             ).isoformat()
 
         return result

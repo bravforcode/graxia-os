@@ -14,7 +14,7 @@ import json
 import os
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from uuid import uuid4
 
 import MetaTrader5 as mt5
@@ -158,7 +158,7 @@ def run_one_order(symbol, side, volume, order_id, filling_mode):
 
     # Send
     send_result = send_order(symbol, side, volume, sl, tp, filling_mode, order_id)
-    send_time = datetime.now(timezone.utc).isoformat()
+    send_time = datetime.now(UTC).isoformat()
 
     if send_result["retcode"] != 10009:
         return {
@@ -190,7 +190,7 @@ def run_one_order(symbol, side, volume, order_id, filling_mode):
     close_result = {}
     if pos_ticket:
         close_result = close_position(pos_ticket, symbol, side, volume, filling_mode, order_id)
-    close_time = datetime.now(timezone.utc).isoformat()
+    close_time = datetime.now(UTC).isoformat()
 
     # Record
     record = {
@@ -228,7 +228,7 @@ def main():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     # CSV output
-    csv_path = os.path.join(OUTPUT_DIR, f"batch_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.csv")
+    csv_path = os.path.join(OUTPUT_DIR, f"batch_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.csv")
     fieldnames = [
         "order_id", "symbol", "side", "volume", "entry_planned", "entry_actual",
         "sl", "tp", "buffer", "send_retcode", "send_deal", "send_time",
@@ -271,7 +271,7 @@ def main():
     skipped = sum(1 for r in results if r["status"] == "SKIP")
 
     print(f"\n{'='*60}")
-    print(f"BATCH COMPLETE")
+    print("BATCH COMPLETE")
     print(f"  Total: {args.count}")
     print(f"  Executed: {executed}")
     print(f"  Rejected: {rejected}")
@@ -281,7 +281,7 @@ def main():
 
     # Save summary
     summary = {
-        "batch_time_utc": datetime.now(timezone.utc).isoformat(),
+        "batch_time_utc": datetime.now(UTC).isoformat(),
         "total": args.count,
         "executed": executed,
         "rejected": rejected,

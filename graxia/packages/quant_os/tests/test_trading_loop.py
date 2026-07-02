@@ -29,7 +29,7 @@ from graxia.packages.quant_os.execution.order_state_machine import (
     OrderStateMachine,
     TRANSITIONS,
 )
-from graxia.packages.quant_os.execution.adapters.base import Order, OrderResult, OrderStatus
+from graxia.packages.quant_os.execution.adapters.base import OrderStatus
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────

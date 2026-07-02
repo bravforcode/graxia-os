@@ -1,9 +1,8 @@
 """Pure-Python Prometheus-style metrics exporter (no prometheus_client dependency)."""
 
-import time
 import threading
 from collections import defaultdict
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 
 class TradeCounter:

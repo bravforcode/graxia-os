@@ -1,7 +1,7 @@
 """Chaos-mode tests for ALL untested core/ modules."""
 from __future__ import annotations
-import asyncio, json, math, sys
-from datetime import datetime, time as dtime, timezone, timedelta
+import json, sys
+from datetime import datetime, time as dtime, timedelta, UTC
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -16,21 +16,21 @@ from graxia.packages.quant_os.core.correlation import CorrelationFilter
 from graxia.packages.quant_os.core.cost_model import get_session, get_backtest_cost, get_live_round_trip_cost, get_live_spread_as_return, COST_PER_TRADE_BY_SESSION
 from graxia.packages.quant_os.core.pair_filter import MinVolumeFilter, SpreadFilter, PairFilterPipeline, PairFilter, BacktestSupport
 from graxia.packages.quant_os.core.signal_filter import FakeSignalFilter, FilterResult
-from graxia.packages.quant_os.core.position_manager import Position, ClosedTrade, PositionManager
+from graxia.packages.quant_os.core.position_manager import Position, PositionManager
 from graxia.packages.quant_os.core.production_readiness import ProductionReadiness, CheckResult
 from graxia.packages.quant_os.core.reconciler import StateReconciler
 from graxia.packages.quant_os.core.regime_filter import RegimeFilter, MarketRegime, RegimeResult
-from graxia.packages.quant_os.core.rollover_filter import RolloverFilter, RolloverStatus, RolloverCheck
+from graxia.packages.quant_os.core.rollover_filter import RolloverFilter, RolloverStatus
 from graxia.packages.quant_os.core.structured_trades import TradeRecord, TradeRecords
 from graxia.packages.quant_os.core.observability import LokiSink, FileSink, setup_logging
 from graxia.packages.quant_os.core.telegram_notify import TelegramNotifier, _load_config
 from graxia.packages.quant_os.core.telegram_callback import TelegramCallbackHandler, CallbackAction, CallbackResult, PendingSignal
-from graxia.packages.quant_os.core.walk_forward_production import WalkForwardDashboard, WindowResult as WFWindowResult
+from graxia.packages.quant_os.core.walk_forward_production import WalkForwardDashboard
 from graxia.packages.quant_os.core.walk_forward_viz import WalkForwardViz
 from graxia.packages.quant_os.core.param_sweep import ParamSweep
 from graxia.packages.quant_os.core.portfolio_risk import PortfolioRisk, Position as PortfolioPosition
 from graxia.packages.quant_os.core.risk.swap_cost import get_live_swap_rates, estimate_overnight_cost, get_swap_cost_for_trade
-from graxia.packages.quant_os.core.agents.researcher import BullBearResearcherAgent, AgentVote
+from graxia.packages.quant_os.core.agents.researcher import BullBearResearcherAgent
 from graxia.packages.quant_os.core.enums import SignalType
 from graxia.packages.quant_os.core.events import Event, SignalEvent
 from graxia.packages.quant_os.core.monte_carlo import MonteCarloResult
@@ -107,7 +107,7 @@ class TestLifecycleChaos:
     def test_default_hooks(self):
         s = StrategyLifecycle()
         s.bot_start()
-        s.bot_loop_start(datetime.now(timezone.utc))
+        s.bot_loop_start(datetime.now(UTC))
         assert s.confirm_trade_entry("XAUUSD", "BUY", 0.01, 2000.0) is True
         assert s.confirm_trade_exit("XAUUSD", "t1", "TP") is True
         s.on_trade_open("XAUUSD", "o1")
@@ -124,7 +124,7 @@ class TestLifecycleChaos:
             def bot_loop_start(self, ct): calls.append(type(ct).__name__)
             def on_trade_close(self, s, o, p): calls.append(p)
         t = T()
-        t.bot_loop_start(datetime(2025, 1, 1, tzinfo=timezone.utc))
+        t.bot_loop_start(datetime(2025, 1, 1, tzinfo=UTC))
         t.on_trade_close("X", "o1", 42.5)
         assert calls[0] == "datetime"
         assert calls[1] == 42.5
@@ -259,7 +259,7 @@ class TestCostModelChaos:
             assert get_session(h) in COST_PER_TRADE_BY_SESSION
 
     def test_backtest_cost_positive(self):
-        ts = datetime(2025, 6, 1, 12, 0, tzinfo=timezone.utc)
+        ts = datetime(2025, 6, 1, 12, 0, tzinfo=UTC)
         assert get_backtest_cost(timestamp=ts) > 0
 
     def test_backtest_cost_no_timestamp(self):
@@ -498,50 +498,50 @@ class TestRegimeFilterChaos:
 # === 12. core/rollover_filter.py ===
 class TestRolloverFilterChaos:
     def test_clear(self):
-        assert RolloverFilter().get_status(datetime(2025, 6, 1, 10, 0, tzinfo=timezone.utc)) == RolloverStatus.CLEAR
+        assert RolloverFilter().get_status(datetime(2025, 6, 1, 10, 0, tzinfo=UTC)) == RolloverStatus.CLEAR
 
     def test_blocked(self):
-        assert RolloverFilter().get_status(datetime(2025, 6, 1, 22, 0, tzinfo=timezone.utc)) == RolloverStatus.BLOCKED
+        assert RolloverFilter().get_status(datetime(2025, 6, 1, 22, 0, tzinfo=UTC)) == RolloverStatus.BLOCKED
 
     def test_warning(self):
-        assert RolloverFilter().get_status(datetime(2025, 6, 1, 21, 47, tzinfo=timezone.utc)) == RolloverStatus.WARNING
+        assert RolloverFilter().get_status(datetime(2025, 6, 1, 21, 47, tzinfo=UTC)) == RolloverStatus.WARNING
 
     def test_is_blocked(self):
         rf = RolloverFilter()
-        assert rf.is_blocked(datetime(2025, 6, 1, 22, 5, tzinfo=timezone.utc))
-        assert not rf.is_blocked(datetime(2025, 6, 1, 23, 0, tzinfo=timezone.utc))
+        assert rf.is_blocked(datetime(2025, 6, 1, 22, 5, tzinfo=UTC))
+        assert not rf.is_blocked(datetime(2025, 6, 1, 23, 0, tzinfo=UTC))
 
     def test_is_warning_not_blocked(self):
         rf = RolloverFilter()
-        assert rf.is_warning(datetime(2025, 6, 1, 21, 47, tzinfo=timezone.utc))
-        assert not rf.is_warning(datetime(2025, 6, 1, 22, 5, tzinfo=timezone.utc))
+        assert rf.is_warning(datetime(2025, 6, 1, 21, 47, tzinfo=UTC))
+        assert not rf.is_warning(datetime(2025, 6, 1, 22, 5, tzinfo=UTC))
 
     def test_check_result(self):
-        c = RolloverFilter().check(datetime(2025, 6, 1, 22, 5, tzinfo=timezone.utc))
+        c = RolloverFilter().check(datetime(2025, 6, 1, 22, 5, tzinfo=UTC))
         assert c.is_blocked and c.reason != ""
 
     def test_minutes_until_clear(self):
-        m = RolloverFilter().minutes_until_clear(datetime(2025, 6, 1, 22, 0, tzinfo=timezone.utc))
+        m = RolloverFilter().minutes_until_clear(datetime(2025, 6, 1, 22, 0, tzinfo=UTC))
         assert m > 0
 
     def test_minutes_already_clear(self):
-        assert RolloverFilter().minutes_until_clear(datetime(2025, 6, 1, 10, 0, tzinfo=timezone.utc)) == 0.0
+        assert RolloverFilter().minutes_until_clear(datetime(2025, 6, 1, 10, 0, tzinfo=UTC)) == 0.0
 
     def test_boundary_times(self):
         rf = RolloverFilter()
-        assert rf.get_status(datetime(2025, 6, 1, 21, 50, tzinfo=timezone.utc)) == RolloverStatus.BLOCKED
-        assert rf.get_status(datetime(2025, 6, 1, 22, 15, tzinfo=timezone.utc)) == RolloverStatus.WARNING
-        assert rf.get_status(datetime(2025, 6, 1, 22, 20, tzinfo=timezone.utc)) == RolloverStatus.CLEAR
+        assert rf.get_status(datetime(2025, 6, 1, 21, 50, tzinfo=UTC)) == RolloverStatus.BLOCKED
+        assert rf.get_status(datetime(2025, 6, 1, 22, 15, tzinfo=UTC)) == RolloverStatus.WARNING
+        assert rf.get_status(datetime(2025, 6, 1, 22, 20, tzinfo=UTC)) == RolloverStatus.CLEAR
 
     def test_custom_window(self):
         rf = RolloverFilter(block_start=dtime(10, 0), block_end=dtime(10, 5), warn_start=dtime(9, 55), warn_end=dtime(10, 10))
-        assert rf.get_status(datetime(2025, 6, 1, 10, 2, tzinfo=timezone.utc)) == RolloverStatus.BLOCKED
+        assert rf.get_status(datetime(2025, 6, 1, 10, 2, tzinfo=UTC)) == RolloverStatus.BLOCKED
 
     def test_stress_all_hours(self):
         rf = RolloverFilter()
         for h in range(24):
             for m in range(0, 60, 15):
-                assert rf.get_status(datetime(2025, 6, 1, h, m, tzinfo=timezone.utc)) is not None
+                assert rf.get_status(datetime(2025, 6, 1, h, m, tzinfo=UTC)) is not None
 
 
 # === 13. core/structured_trades.py ===
@@ -686,7 +686,7 @@ class TestTelegramCallbackChaos:
     @pytest.mark.asyncio
     async def test_expired(self):
         h = TelegramCallbackHandler()
-        ps = PendingSignal(message_id=1, asset="X", direction="BUY", confidence=0.8, entry=2000, stop_loss=1990, take_profit=2020, regime="N", strategy_source="s", metadata={}, sent_at=datetime.now(timezone.utc) - timedelta(seconds=400))
+        ps = PendingSignal(message_id=1, asset="X", direction="BUY", confidence=0.8, entry=2000, stop_loss=1990, take_profit=2020, regime="N", strategy_source="s", metadata={}, sent_at=datetime.now(UTC) - timedelta(seconds=400))
         h.register_signal(ps)
         expired = await h.check_expired()
         assert len(expired) == 1
@@ -902,20 +902,20 @@ class TestSwapCostChaos:
 
     def test_get_swap_cost_for_trade(self):
         rates = {"swap_long": -5.0, "swap_short": 2.0, "swap_mode": 0, "point": 0.01, "contract_size": 100}
-        entry = datetime(2025, 6, 1, 10, 0, tzinfo=timezone.utc)
-        exit_ = datetime(2025, 6, 3, 10, 0, tzinfo=timezone.utc)
+        entry = datetime(2025, 6, 1, 10, 0, tzinfo=UTC)
+        exit_ = datetime(2025, 6, 3, 10, 0, tzinfo=UTC)
         assert isinstance(get_swap_cost_for_trade(entry, exit_, "BUY", 0.01, rates, 3), float)
 
     def test_get_swap_cost_zero_rate(self):
         rates = {"swap_long": 0, "swap_short": 0, "swap_mode": 0, "point": 0.01, "contract_size": 100}
-        entry = datetime(2025, 6, 1, 10, 0, tzinfo=timezone.utc)
-        exit_ = datetime(2025, 6, 3, 10, 0, tzinfo=timezone.utc)
+        entry = datetime(2025, 6, 1, 10, 0, tzinfo=UTC)
+        exit_ = datetime(2025, 6, 3, 10, 0, tzinfo=UTC)
         assert get_swap_cost_for_trade(entry, exit_, "BUY", 0.01, rates, 3) == 0.0
 
     def test_invalid_mode_trade(self):
         rates = {"swap_long": -5.0, "swap_short": 2.0, "swap_mode": 99, "point": 0.01, "contract_size": 100}
-        entry = datetime(2025, 6, 1, 10, 0, tzinfo=timezone.utc)
-        exit_ = datetime(2025, 6, 3, 10, 0, tzinfo=timezone.utc)
+        entry = datetime(2025, 6, 1, 10, 0, tzinfo=UTC)
+        exit_ = datetime(2025, 6, 3, 10, 0, tzinfo=UTC)
         assert get_swap_cost_for_trade(entry, exit_, "BUY", 0.01, rates, 3) == 0.0
 
     def test_stress(self):

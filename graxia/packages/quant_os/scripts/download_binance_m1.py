@@ -17,7 +17,6 @@ Rate limit: 1200 request weight / minute on /api/v3/klines (1 weight per call).
 from __future__ import annotations
 
 import argparse
-import csv
 import json
 import logging
 import sys

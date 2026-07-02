@@ -39,6 +39,11 @@ def calculate_trade_costs(
     commission_per_lot: Decimal | None = None,
 ) -> TradeCosts:
     comm = commission_per_lot or Decimal("0")
+    # Coerce any float inputs to Decimal for safe multiplication
+    comm = Decimal(str(comm)) if not isinstance(comm, Decimal) else comm
+    volume = Decimal(str(volume)) if not isinstance(volume, Decimal) else volume
+    contract_size = Decimal(str(contract_size)) if not isinstance(contract_size, Decimal) else contract_size
+    spread_points = Decimal(str(spread_points)) if not isinstance(spread_points, Decimal) else spread_points
     spread = spread_points * scenario.spread_mult * contract_size * volume
     slippage = spread_points * scenario.slippage_mult * contract_size * volume
     commission = comm * scenario.commission_mult * volume

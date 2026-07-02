@@ -16,11 +16,9 @@ from __future__ import annotations
 
 import argparse
 import csv
-import io
 import logging
-import os
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 
 import pandas as pd
@@ -91,7 +89,7 @@ def parse_stooq_file(filepath: str | Path) -> pd.DataFrame:
                 vol = float(row[8]) if len(row) > 8 and row[8] else 0.0
 
                 # Parse date
-                dt = datetime.strptime(date_str, "%Y%m%d").replace(tzinfo=timezone.utc)
+                dt = datetime.strptime(date_str, "%Y%m%d").replace(tzinfo=UTC)
                 if time_str and time_str != "000000":
                     dt = dt.replace(
                         hour=int(time_str[:2]),

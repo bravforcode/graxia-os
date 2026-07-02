@@ -22,8 +22,7 @@ import csv
 import json
 import os
 import sys
-from datetime import datetime, timedelta, timezone
-from typing import Any
+from datetime import datetime, UTC
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(PROJECT_ROOT, "data")
@@ -339,7 +338,7 @@ def run_validation(
     output_path: str,
 ) -> dict:
     """Run batch validation and return report."""
-    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    ts = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     report = {
         "report_type": "data_validation_multi_asset",
         "generated_at_utc": ts,

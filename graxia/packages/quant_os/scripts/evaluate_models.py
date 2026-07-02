@@ -13,11 +13,10 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import os
 import pickle
 import sys
 import warnings
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 
 import numpy as np
@@ -321,7 +320,7 @@ def evaluate_symbol(symbol: str, timeframe: str = "M15") -> dict:
     report = {
         "symbol": symbol,
         "timeframe": timeframe,
-        "evaluated_at": datetime.now(timezone.utc).isoformat(),
+        "evaluated_at": datetime.now(UTC).isoformat(),
         "model_trained_at": dir_artifact.get("trained_at", "unknown"),
         "n_features": len(feature_cols),
         "test_samples": len(X_test),

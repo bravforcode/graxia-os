@@ -18,6 +18,18 @@ logger = logging.getLogger(__name__)
 Handler = Callable[[Event], Any]
 
 
+class _PublishResult:
+    """Dual-mode return: works as sync None or async awaitable."""
+
+    def __bool__(self):
+        return False
+
+    def __await__(self):
+        async def _noop():
+            return None
+        return _noop().__await__()
+
+
 class EventBus:
     """
     In-process pub/sub event bus.
@@ -52,7 +64,7 @@ class EventBus:
         except ValueError:
             return False
 
-    def publish(self, event_or_key: Event | str, event: Event | None = None) -> None:
+    def publish(self, event_or_key: Event | str, event: Event | None = None) -> _PublishResult:
         """
         Publish an event to all subscribers.
 
@@ -86,7 +98,7 @@ class EventBus:
         if isinstance(event_or_key, str):
             key = event_or_key
             if event is None:
-                return
+                return _PublishResult()
             event_type = type(event)
         else:
             key = None
@@ -121,6 +133,8 @@ class EventBus:
                     e,
                     exc_info=True,
                 )
+
+        return _PublishResult()
 
     def clear(self) -> None:
         """Remove all subscribers"""

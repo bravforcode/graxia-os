@@ -22,14 +22,14 @@ class QuarantineManager:
         self.path = Path(manifest_path)
         self._entries: list[dict] = []
         self._load()
-    
+
     def _load(self) -> None:
         if self.path.exists():
             data = json.loads(self.path.read_text())
             self._entries = data.get("entries", [])
         else:
             self._entries = []
-    
+
     def _save(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         manifest = {
@@ -39,13 +39,13 @@ class QuarantineManager:
             "manifest_hash": self._compute_hash(),
         }
         self.path.write_text(json.dumps(manifest, indent=2))
-    
+
     def _compute_hash(self) -> str:
         h = hashlib.sha256()
         for entry in self._entries:
             h.update(json.dumps(entry, sort_keys=True).encode())
         return h.hexdigest()
-    
+
     def add(self, entry: QuarantineEntry) -> None:
         """Add quarantine entry."""
         entry_dict = asdict(entry)
@@ -53,10 +53,10 @@ class QuarantineManager:
         entry.signature = hashlib.sha256(
             json.dumps(entry_dict, sort_keys=True).encode()
         ).hexdigest()[:16]
-        
+
         self._entries.append(asdict(entry))
         self._save()
-    
+
     def remove(self, test_id: str) -> bool:
         """Remove quarantine entry."""
         before = len(self._entries)
@@ -65,22 +65,22 @@ class QuarantineManager:
             self._save()
             return True
         return False
-    
+
     def is_quarantined(self, test_id: str) -> bool:
         """Check if test is quarantined."""
         return any(e["test_id"] == test_id for e in self._entries)
-    
+
     def get_entry(self, test_id: str) -> dict | None:
         """Get quarantine entry."""
         for e in self._entries:
             if e["test_id"] == test_id:
                 return e
         return None
-    
+
     def list_entries(self) -> list[dict]:
         """List all entries."""
         return self._entries.copy()
-    
+
     def verify_integrity(self) -> tuple[bool, str]:
         """Verify manifest integrity."""
         if not self.path.exists():
@@ -95,6 +95,6 @@ class QuarantineManager:
         if stored_hash == computed_hash:
             return True, "OK"
         return False, f"hash_mismatch: stored={stored_hash}, computed={computed_hash}"
-    
+
     def count(self) -> int:
         return len(self._entries)

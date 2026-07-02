@@ -25,15 +25,15 @@ class AlertManager:
     Centralized alert manager
     Routes alerts to appropriate channels (Telegram, email, etc.)
     """
-    
+
     def __init__(self):
         self.telegram = None  # Would be TelegramNotifier instance
         self.alert_history: list = []
-    
+
     async def send_alert(self, alert: Alert) -> bool:
         """Send alert through all configured channels"""
         self.alert_history.append(alert)
-        
+
         # Route based on severity
         if alert.severity == IncidentSeverity.P0:
             # Critical - send to all channels immediately
@@ -41,9 +41,9 @@ class AlertManager:
         elif alert.severity == IncidentSeverity.P1:
             # High - send to primary channels
             pass
-        
+
         return True
-    
+
     async def notify_trade(
         self,
         symbol: str,
@@ -62,7 +62,7 @@ class AlertManager:
             context={"sl": sl, "tp": tp}
         )
         return await self.send_alert(alert)
-    
+
     async def notify_kill_switch(
         self,
         trigger_type: str,

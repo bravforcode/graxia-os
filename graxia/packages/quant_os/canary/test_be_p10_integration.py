@@ -2,7 +2,7 @@
 from graxia.packages.quant_os.canary.drills import (
     DrillType, DrillResult, DrillExecutor, DRILL_REQUIREMENTS,
 )
-from graxia.packages.quant_os.canary.daily_report import DailyReport, DailyReporter
+from graxia.packages.quant_os.canary.daily_report import DailyReport
 from graxia.packages.quant_os.canary.weekly_report import WeeklyReport
 from graxia.packages.quant_os.canary.demo_scorecard import DemoScorecard
 from graxia.packages.quant_os.canary.demo_campaign import DemoCampaign

@@ -3,7 +3,7 @@ import sys
 import json
 import time
 import hashlib
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 sys.path.insert(0, ".")
 
@@ -157,7 +157,7 @@ def main():
     rejected = total - accepted
 
     print(f"\n{'=' * 60}")
-    print(f"SUMMARY")
+    print("SUMMARY")
     print(f"{'=' * 60}")
     print(f"Broker: {acct.server}")
     print(f"Profile fingerprint: {profile.profile_fingerprint}")
@@ -166,17 +166,17 @@ def main():
     print(f"Rejected: {rejected}")
     print(f"Ledger valid: {ledger_valid}")
     print(f"Ledger seal: {seal[:16]}...")
-    print(f"Time authority: CANONICAL_TICK_UTC")
-    print(f"symbol_info_tick.time used: NO")
-    print(f"MT5 bar time used: NO")
-    print(f"copy_ticks_from used: NO")
-    print(f"order_send used: NO")
+    print("Time authority: CANONICAL_TICK_UTC")
+    print("symbol_info_tick.time used: NO")
+    print("MT5 bar time used: NO")
+    print("copy_ticks_from used: NO")
+    print("order_send used: NO")
     print(f"{'=' * 60}")
 
     # Save results
     import os
     os.makedirs("shadow_results", exist_ok=True)
-    ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     result = {
         "session_id": f"be_p84_{ts}",
         "broker": acct.server,
@@ -200,7 +200,7 @@ def main():
     print(f"Results saved: {path}")
 
     # Exit gate check
-    print(f"\n--- EXIT GATE CHECK ---")
+    print("\n--- EXIT GATE CHECK ---")
     checks = {
         "broker_profile_match": match,
         "canonical_tick_source_utc_aware": True,

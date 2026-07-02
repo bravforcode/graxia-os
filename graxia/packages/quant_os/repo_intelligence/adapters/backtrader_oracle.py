@@ -2,7 +2,6 @@
 # ponytail: lazy bt import, no module-level dep
 
 import uuid
-from datetime import datetime, timezone
 
 # Canonical signal schema:
 # {"signal_id", "timestamp_utc", "symbol", "side", "entry_price",

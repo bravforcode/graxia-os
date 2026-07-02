@@ -7,8 +7,7 @@ only for backward compatibility.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Optional
+from datetime import UTC, datetime
 
 from ...core.enums import OrderStatus
 
@@ -23,11 +22,12 @@ class Order:
     asset_class: str
     side: str  # "BUY" | "SELL"
     quantity: float
-    stop_loss: Optional[float] = None
-    take_profit: Optional[float] = None
+    stop_loss: float | None = None
+    take_profit: float | None = None
     status: OrderStatus = OrderStatus.PENDING
-    broker_order_id: Optional[str] = None
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    broker_order_id: str | None = None
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    trace_id: str = ""  # correlation ID for distributed tracing
 
 
 @dataclass
@@ -35,11 +35,11 @@ class OrderResult:
     """Outcome returned by a broker adapter after attempting an order."""
 
     status: OrderStatus
-    broker_id: Optional[str] = None
+    broker_id: str | None = None
     filled_quantity: float = 0.0
     avg_price: float = 0.0
     fee: float = 0.0
-    error: Optional[str] = None
+    error: str | None = None
 
 
 @dataclass

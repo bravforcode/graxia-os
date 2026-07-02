@@ -28,8 +28,8 @@ class QuantConfig:
     # ==================== MT5 BROKER ====================
     mt5_login: int = 0
     mt5_password: str = ""
-    mt5_server: str = "ICMarketsSC-Demo"
-    mt5_path: str = r"C:\Program Files\MetaTrader 5\terminal64.exe"
+    mt5_server: str = "Pepperstone-Demo"
+    mt5_path: str = r"C:\Program Files\Pepperstone MetaTrader 5\terminal64.exe"
     mt5_timeout_ms: int = 10000
 
     # ==================== BROKER FALLBACK ====================

@@ -11,7 +11,6 @@ import json
 import logging
 import os
 import sys
-import traceback
 from contextvars import ContextVar
 from datetime import UTC, datetime
 from typing import Any

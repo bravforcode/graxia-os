@@ -4,19 +4,19 @@
 mt5:
   # Path to MT5 terminal64.exe (leave empty for default)
   path: ""
-  
+
   # Login credentials
   login: 0  # Your MT5 account number
   password: ""  # Your MT5 password
   server: ""  # Your broker server (e.g., "Pepperstone-Demo")
-  
+
   # Connection timeout (milliseconds)
   timeout: 10000
-  
+
   # Allowed symbols
   symbols:
     - XAUUSD
-  
+
   # Timeframe for bar data (MT5 constant)
   # 1=M1, 5=M5, 15=M15, 30=M30, 60=H1, 240=H4, 1440=D1
   timeframe: 60  # H1

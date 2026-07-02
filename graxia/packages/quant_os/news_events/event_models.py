@@ -1,5 +1,5 @@
 from enum import Enum
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 import hashlib

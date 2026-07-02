@@ -1,7 +1,6 @@
 """Phase BE-P2 — Structured tick logger."""
 import json
-import time
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 
 
@@ -15,7 +14,7 @@ class TickLogger:
     def log_tick_received(self, symbol: str, bid: float, ask: float, 
                           source_time_ms: int) -> None:
         entry = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "event": "tick_received",
             "symbol": symbol,
             "bid": bid,
@@ -27,7 +26,7 @@ class TickLogger:
     
     def log_quality_incident(self, incident_type: str, tick_id: int, detail: str) -> None:
         entry = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "event": "quality_incident",
             "incident_type": incident_type,
             "tick_id": tick_id,
@@ -37,7 +36,7 @@ class TickLogger:
     
     def log_gate_transition(self, from_state: str, to_state: str, reason: str) -> None:
         entry = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "event": "gate_transition",
             "from_state": from_state,
             "to_state": to_state,

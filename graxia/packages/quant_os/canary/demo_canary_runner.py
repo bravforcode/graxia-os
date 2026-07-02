@@ -1,6 +1,6 @@
 """Phase BE-P9 — Demo canary runner. Orchestrates full canary flow."""
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 
 @dataclass
@@ -33,7 +33,7 @@ class DemoCanaryRunner:
             return None
 
         result = CanaryRunResult(
-            run_id=datetime.now(timezone.utc).isoformat(),
+            run_id=datetime.now(UTC).isoformat(),
             signals_generated=0,
             orders_submitted=0,
             orders_filled=0,

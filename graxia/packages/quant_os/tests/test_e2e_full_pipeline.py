@@ -4,7 +4,6 @@ Tests the full pipeline with ALL gates active.
 """
 import sys
 import os
-import pytest
 from datetime import datetime, timedelta
 from decimal import Decimal
 
@@ -12,7 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from graxia.packages.quant_os.backtest.engine import BacktestEngine, BacktestConfig
 from graxia.packages.quant_os.strategies.base import Strategy, StrategyConfig, Signal
-from graxia.packages.quant_os.core.enums import SignalType, RegimeType
+from graxia.packages.quant_os.core.enums import SignalType
 from graxia.packages.quant_os.backtest.metrics import BacktestMetrics
 
 

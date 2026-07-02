@@ -4,27 +4,23 @@ E2E Integration Tests — Signal flow: XGBoost → Technical → Sentiment → R
 Tests the complete signal pipeline with mocked external dependencies.
 """
 
-import asyncio
 import pytest
-from unittest.mock import MagicMock, AsyncMock
-from pathlib import Path
-from datetime import datetime, timezone
+from unittest.mock import MagicMock
+from datetime import datetime, UTC
 
 from graxia.packages.quant_os.core.events import (
-    BarEvent, Event, FillEvent, OrderEvent, RiskEvent, SignalEvent, TradeClosedEvent,
+    BarEvent, SignalEvent,
 )
 from graxia.packages.quant_os.core.enums import (
-    OrderSide, OrderStatus, OrderType, RegimeType, SignalType, TradingMode,
+    RegimeType, SignalType,
 )
 from graxia.packages.quant_os.core.event_bus import EventBus
 from graxia.packages.quant_os.core.agents.analyst import TechnicalAnalystAgent
 from graxia.packages.quant_os.core.agents.portfolio_manager import PortfolioManagerAgent
 from graxia.packages.quant_os.core.agents.risk_auditor import RiskAuditorAgent
-from graxia.packages.quant_os.execution.oms import OMS
 from graxia.packages.quant_os.risk.circuit_breaker import CircuitBreaker
 from graxia.packages.quant_os.risk.engine import AccountState, PortfolioState, RiskEngine, Signal as RiskSignal
 from graxia.packages.quant_os.risk.kill_switch import KillSwitch
-from graxia.packages.quant_os.core.canonical.macro_regime import MacroRegimeCache, RegimeBias
 
 
 def _make_bar_events(n=30, trend=0.001, bar_range_pct=0.0005):
@@ -308,7 +304,7 @@ class TestE2EStaleSignal:
 
     def test_stale_signal_rejected(self, risk_engine, healthy_account, clean_portfolio):
         signal = _make_risk_signal()
-        signal.timestamp = datetime(2020, 1, 1, tzinfo=timezone.utc)
+        signal.timestamp = datetime(2020, 1, 1, tzinfo=UTC)
         verdict = risk_engine.evaluate(signal=signal, account=healthy_account, portfolio=clean_portfolio, realized_vol=0.15, regime=RegimeType.RANGE_BOUND)
         assert verdict.approved is False
 

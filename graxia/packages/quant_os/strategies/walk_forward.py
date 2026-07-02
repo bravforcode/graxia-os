@@ -27,7 +27,7 @@ from __future__ import annotations
 import math
 import structlog
 from dataclasses import dataclass, field
-from typing import Any, Callable, Protocol, Sequence
+from typing import Any, Protocol, Sequence
 
 try:
     from ..core.enums import RegimeType

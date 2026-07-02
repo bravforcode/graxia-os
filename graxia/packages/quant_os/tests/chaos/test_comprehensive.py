@@ -16,12 +16,8 @@ from __future__ import annotations
 
 import asyncio
 import json
-import os
 import pickle
-import tempfile
-from dataclasses import dataclass
-from datetime import datetime, timezone, timedelta
-from pathlib import Path
+from datetime import datetime, timedelta, UTC
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -484,10 +480,10 @@ class TestCrossSectionalMomentumComprehensive:
     def test_state_survives_restart(self, strategy, tmp_path):
         """Save state, create new instance, load — should recover."""
         from graxia.packages.quant_os.scripts.cross_sectional_momentum import (
-            CrossSectionalMomentum, MomentumConfig, CoinMomentum,
+            CrossSectionalMomentum, MomentumConfig,
         )
         strategy._positions = {"ETH/USDT": {"entry_price": 3000, "return_pct": 10.0}}
-        strategy._last_rebalance = datetime.now(timezone.utc)
+        strategy._last_rebalance = datetime.now(UTC)
         strategy._save_state()
 
         new_strategy = CrossSectionalMomentum(MomentumConfig())
@@ -528,17 +524,17 @@ class TestCrossSectionalMomentumComprehensive:
 
     def test_rebalance_exact_boundary(self, strategy):
         """Exactly at interval boundary — should rebalance."""
-        strategy._last_rebalance = datetime.now(timezone.utc) - timedelta(days=7)
+        strategy._last_rebalance = datetime.now(UTC) - timedelta(days=7)
         assert strategy.should_rebalance() is True
 
     def test_rebalance_one_second_before(self, strategy):
         """One second before interval — should not rebalance."""
-        strategy._last_rebalance = datetime.now(timezone.utc) - timedelta(days=7, seconds=-1)
+        strategy._last_rebalance = datetime.now(UTC) - timedelta(days=7, seconds=-1)
         assert strategy.should_rebalance() is False
 
     def test_rebalance_far_future(self, strategy):
         """Last rebalance far in the past — should rebalance."""
-        strategy._last_rebalance = datetime.now(timezone.utc) - timedelta(days=365)
+        strategy._last_rebalance = datetime.now(UTC) - timedelta(days=365)
         assert strategy.should_rebalance() is True
 
 
@@ -565,7 +561,7 @@ class TestAutoRetrainComprehensive:
         challenger_metrics.oos_max_drawdown = 5.0
 
         with patch("graxia.packages.quant_os.scripts.auto_retrain.CHAMPION_PATH", champion_path):
-            from graxia.packages.quant_os.scripts.auto_retrain import hot_swap, evaluate_model
+            from graxia.packages.quant_os.scripts.auto_retrain import hot_swap
             with patch("graxia.packages.quant_os.scripts.auto_retrain.evaluate_model") as mock_eval:
                 mock_eval.return_value = MagicMock(deflated_sharpe=1.5, oos_max_drawdown=8.0)
                 result = hot_swap(challenger_data, challenger_metrics)
@@ -584,7 +580,7 @@ class TestAutoRetrainComprehensive:
         challenger_metrics.oos_max_drawdown = 20.0
 
         with patch("graxia.packages.quant_os.scripts.auto_retrain.CHAMPION_PATH", champion_path):
-            from graxia.packages.quant_os.scripts.auto_retrain import hot_swap, evaluate_model
+            from graxia.packages.quant_os.scripts.auto_retrain import hot_swap
             with patch("graxia.packages.quant_os.scripts.auto_retrain.evaluate_model") as mock_eval:
                 mock_eval.return_value = MagicMock(deflated_sharpe=1.5, oos_max_drawdown=5.0)
                 result = hot_swap(challenger_data, challenger_metrics)
@@ -603,7 +599,7 @@ class TestAutoRetrainComprehensive:
         challenger_metrics.oos_max_drawdown = 5.0
 
         with patch("graxia.packages.quant_os.scripts.auto_retrain.CHAMPION_PATH", champion_path):
-            from graxia.packages.quant_os.scripts.auto_retrain import hot_swap, evaluate_model
+            from graxia.packages.quant_os.scripts.auto_retrain import hot_swap
             with patch("graxia.packages.quant_os.scripts.auto_retrain.evaluate_model") as mock_eval:
                 mock_eval.return_value = MagicMock(deflated_sharpe=1.5, oos_max_drawdown=5.0)
                 result = hot_swap(challenger_data, challenger_metrics)

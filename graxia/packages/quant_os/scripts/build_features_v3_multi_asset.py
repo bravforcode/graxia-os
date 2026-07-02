@@ -19,10 +19,10 @@ daily/weekly and are forward-filled only up to the current bar.
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -47,6 +47,7 @@ from core.smc_detectors import (
     detect_ote,
     volume_profile_features,
 )
+from core.data.macro_features import _shift_series
 
 logging.basicConfig(
     level=logging.INFO,
@@ -56,6 +57,35 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 DATA_DIR = PROJECT_ROOT / "data"
+
+# ── Feature deletion/quarantine list ──
+DELETION_LIST_PATH = DATA_DIR / "feature_deletion_list.json"
+
+
+def _load_deletion_list() -> dict[str, str]:
+    """Load feature deletion list. Returns {feature_name: action}."""
+    if not DELETION_LIST_PATH.exists():
+        logger.warning("Feature deletion list not found: %s", DELETION_LIST_PATH)
+        return {}
+    with open(DELETION_LIST_PATH) as f:
+        data = json.load(f)
+    return {name: info["action"] for name, info in data.get("features", {}).items()}
+
+
+_DELETED_FEATURES: set[str] = set()
+_QUARANTINED_FEATURES: set[str] = set()
+
+
+def _init_feature_filters() -> None:
+    """Populate deleted/quarantined feature sets from the deletion list."""
+    global _DELETED_FEATURES, _QUARANTINED_FEATURES
+    actions = _load_deletion_list()
+    _DELETED_FEATURES = {k for k, v in actions.items() if v == "DELETE"}
+    _QUARANTINED_FEATURES = {k for k, v in actions.items() if v == "QUARANTINE"}
+    if _DELETED_FEATURES:
+        logger.info("  Deleted features (will be skipped): %s", sorted(_DELETED_FEATURES))
+    if _QUARANTINED_FEATURES:
+        logger.info("  Quarantined features (flagged): %s", sorted(_QUARANTINED_FEATURES))
 OUTPUT_DIR = PROJECT_ROOT / "artifacts" / "features_v3"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -120,17 +150,31 @@ def add_smc_features(df: pd.DataFrame) -> pd.DataFrame:
     ]
 
     for b in blocks:
-        df = pd.concat([df, b.reset_index(drop=True)], axis=1)
+        # Drop columns that are in the deletion list
+        cols_to_drop = [c for c in b.columns if c in _DELETED_FEATURES]
+        if cols_to_drop:
+            logger.info("    Skipping deleted features: %s", cols_to_drop)
+            b = b.drop(columns=cols_to_drop)
+        # Warn about quarantined features
+        quarantined_cols = [c for c in b.columns if c in _QUARANTINED_FEATURES]
+        if quarantined_cols:
+            logger.warning("    Quarantined features (kept but flagged): %s", quarantined_cols)
+        if not b.empty:
+            df = pd.concat([df, b.reset_index(drop=True)], axis=1)
     return df
 
 
 def add_fred_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Forward-fill daily FRED series onto the intraday index."""
+    """Point-in-time safe join of daily FRED series onto the intraday index.
+
+    Uses _shift_series with 1-day lag to prevent lookahead: a macro value
+    published on day T is only available on day T+1.
+    """
     if not FRED_DIR.exists():
         logger.warning("  FRED directory not found, skipping macro features")
         return df
 
-    logger.info("  -> FRED macro features")
+    logger.info("  -> FRED macro features (PIT-safe, 1-day lag)")
     macro_frames = []
     for sid in CORE_FRED_SERIES:
         fpath = FRED_DIR / f"{sid}.csv"
@@ -150,20 +194,32 @@ def add_fred_features(df: pd.DataFrame) -> pd.DataFrame:
     macro.index = pd.to_datetime(macro.index, utc=True)
     macro = macro.sort_index()
 
-    # Reindex to df dates using forward fill only (no future leak)
-    df_date = df["time"].dt.floor("D").rename("date")
-    macro_daily = macro.reindex(df_date, method="ffill")
-    macro_daily.index = df.index
-    return pd.concat([df, macro_daily.add_suffix("_daily")], axis=1)
+    # PIT-safe: map to daily dates, then shift by 1 day
+    df_date = df["time"].dt.floor("D")
+    result_frames = []
+    for col in macro.columns:
+        day_map = macro[col].dropna()
+        mapped = df_date.map(day_map)
+        mapped.index = df.index
+        # Apply 1-day lag: value published day T available day T+1
+        shifted = _shift_series(mapped, 1)
+        shifted.name = f"{col}_daily"
+        result_frames.append(shifted)
+
+    return pd.concat([df] + result_frames, axis=1)
 
 
 def add_cot_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Forward-fill weekly COT positioning onto the intraday index."""
+    """Point-in-time safe join of weekly COT positioning onto the intraday index.
+
+    Uses _shift_series with 2-day lag: COT report published Friday is only
+    available Monday (T+2 for weekend gap).
+    """
     if not COT_DIR.exists():
         logger.warning("  COT directory not found, skipping positioning features")
         return df
 
-    logger.info("  -> COT positioning features")
+    logger.info("  -> COT positioning features (PIT-safe, 2-day lag)")
     cot_path = COT_DIR / "gold_cot_weekly.parquet"
     if not cot_path.exists():
         logger.warning("    COT gold file missing")
@@ -179,11 +235,84 @@ def add_cot_features(df: pd.DataFrame) -> pd.DataFrame:
 
     cot = cot[cols]
     cot.index = cot.index.tz_localize("UTC") if cot.index.tz is None else cot.index.tz_convert("UTC")
-    df_week = df["time"].dt.to_period("W").dt.to_timestamp().dt.tz_localize("UTC").rename("week")
-    cot_weekly = cot.reindex(df_week, method="ffill")
-    cot_weekly.index = df.index
-    cot_weekly = cot_weekly.add_prefix("cot_gold_")
-    return pd.concat([df, cot_weekly], axis=1)
+    df_week = df["time"].dt.to_period("W").dt.to_timestamp().dt.tz_localize("UTC")
+
+    result_frames = []
+    for col in cols:
+        week_map = cot[col].dropna()
+        mapped = df_week.map(week_map)
+        mapped.index = df.index
+        # Apply 2-day lag: COT report Friday -> available Monday
+        shifted = _shift_series(mapped, 2)
+        shifted.name = f"cot_gold_{col}"
+        result_frames.append(shifted)
+
+    return pd.concat([df] + result_frames, axis=1)
+
+
+def add_technical_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Compute standard technical indicators for ML features.
+
+    Indicators (all lag-safe — use only past/current bar data):
+    - RSI 14
+    - MACD (12, 26, 9) with signal and histogram
+    - Bollinger Band width (20, 2σ)
+    - ATR ratio (ATR14 / close)
+    - ADX (14)
+    - Distance from MA 20, 50, 200
+    """
+    logger.info("  -> Technical features")
+
+    close = df["close"]
+    high = df["high"]
+    low = df["low"]
+
+    # --- RSI 14 ---
+    delta = close.diff()
+    gain = delta.clip(lower=0).rolling(14).mean()
+    loss = (-delta.clip(upper=0)).rolling(14).mean()
+    rs = gain / loss.replace(0, np.nan)
+    df["rsi_14"] = 100 - (100 / (1 + rs))
+
+    # --- MACD (12, 26, 9) ---
+    ema_12 = close.ewm(span=12, adjust=False).mean()
+    ema_26 = close.ewm(span=26, adjust=False).mean()
+    df["macd"] = ema_12 - ema_26
+    df["macd_signal"] = df["macd"].ewm(span=9, adjust=False).mean()
+    df["macd_hist"] = df["macd"] - df["macd_signal"]
+
+    # --- Bollinger Band width (20, 2σ) ---
+    bb_mid = close.rolling(20).mean()
+    bb_std = close.rolling(20).std()
+    bb_upper = bb_mid + 2 * bb_std
+    bb_lower = bb_mid - 2 * bb_std
+    df["bb_width"] = (bb_upper - bb_lower) / bb_mid.replace(0, np.nan)
+
+    # --- ATR ratio (ATR14 / close) ---
+    tr = pd.concat(
+        [high - low, (high - close.shift()).abs(), (low - close.shift()).abs()],
+        axis=1,
+    ).max(axis=1)
+    atr_14 = tr.rolling(14).mean()
+    df["atr_ratio"] = atr_14 / close.replace(0, np.nan)
+
+    # --- ADX (14) ---
+    plus_dm = high.diff()
+    minus_dm = -low.diff()
+    plus_dm = plus_dm.where((plus_dm > minus_dm) & (plus_dm > 0), 0.0)
+    minus_dm = minus_dm.where((minus_dm > plus_dm) & (minus_dm > 0), 0.0)
+    atr_smooth = tr.rolling(14).mean()
+    plus_di = 100 * (plus_dm.rolling(14).mean() / atr_smooth.replace(0, np.nan))
+    minus_di = 100 * (minus_dm.rolling(14).mean() / atr_smooth.replace(0, np.nan))
+    dx = 100 * (plus_di - minus_di).abs() / (plus_di + minus_di).replace(0, np.nan)
+    df["adx_14"] = dx.rolling(14).mean()
+
+    # --- Distance from MA 20, 50, 200 ---
+    for period in [20, 50, 200]:
+        ma = close.rolling(period).mean()
+        df[f"dist_ma_{period}"] = (close - ma) / ma.replace(0, np.nan)
+
+    return df
 
 
 def encode_categoricals(df: pd.DataFrame) -> pd.DataFrame:
@@ -197,8 +326,10 @@ def encode_categoricals(df: pd.DataFrame) -> pd.DataFrame:
 def build_features(symbol: str, timeframe: str = "M15") -> pd.DataFrame:
     """Build the full features_v3 DataFrame for one symbol."""
     logger.info("Building features_v3 for %s %s", symbol, timeframe)
+    _init_feature_filters()
     df = load_ohlcv(symbol, timeframe)
     df = add_smc_features(df)
+    df = add_technical_features(df)
     df = add_fred_features(df)
     df = add_cot_features(df)
     df = encode_categoricals(df)

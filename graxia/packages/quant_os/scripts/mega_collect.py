@@ -15,7 +15,7 @@ import json
 import os
 import sys
 import time
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, UTC
 from glob import glob
 from uuid import uuid4
 
@@ -85,7 +85,7 @@ def download_ticks_bulk(symbols, months_back=3):
     os.makedirs(TICK_DIR, exist_ok=True)
     results = {}
 
-    end_date = datetime.now(timezone.utc)
+    end_date = datetime.now(UTC)
     start_date = end_date - timedelta(days=months_back * 30)
 
     print(f"\n{'='*60}")
@@ -223,7 +223,7 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
     os.makedirs(ORDER_DIR, exist_ok=True)
     if log_file:
         open_log(log_file)
-    csv_path = os.path.join(ORDER_DIR, f"batch_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.csv")
+    csv_path = os.path.join(ORDER_DIR, f"batch_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.csv")
 
     fieldnames = [
         "order_id", "symbol", "side", "volume", "entry", "sl", "tp",
@@ -252,7 +252,7 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
 
         for i in range(count):
             # ── Schedule gate ──
-            now_hour = datetime.now(timezone.utc).hour
+            now_hour = datetime.now(UTC).hour
             if schedule_start is not None and schedule_end is not None:
                 if not (schedule_start <= now_hour < schedule_end):
                     wait_h = schedule_end - now_hour
@@ -329,7 +329,7 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
                     "type_filling": filling,
                 }
                 result = mt5.order_send(request)
-                send_time = datetime.now(timezone.utc).isoformat()
+                send_time = datetime.now(UTC).isoformat()
                 latency_ms = round((time.time() - send_start) * 1000)
 
                 if result and result.retcode == 10009:
@@ -386,7 +386,7 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
                             result = None
                     else:
                         result = None
-                send_time = datetime.now(timezone.utc).isoformat()
+                send_time = datetime.now(UTC).isoformat()
                 latency_ms = round((time.time() - send_start) * 1000)
 
                 # ── Auto-retry requote (Priority 10) ──
@@ -398,7 +398,7 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
                         request["price"] = fresh_tick.ask if side == "BUY" else fresh_tick.bid
                     send_start = time.time()
                     result = mt5.order_send(request)
-                    send_time = datetime.now(timezone.utc).isoformat()
+                    send_time = datetime.now(UTC).isoformat()
                     latency_ms = round((time.time() - send_start) * 1000)
 
                 if result is None or result.retcode != 10009:
@@ -433,7 +433,7 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
                     time.sleep(1)
                     cr = send_close_order(sym, side, volume, p.ticket, filling, magic, f"CLOSE_{order_id[:8]}")
                     close_result = cr
-                    close_time = datetime.now(timezone.utc).isoformat()
+                    close_time = datetime.now(UTC).isoformat()
                     break
 
             # Also check for pending orders (limit mode)
@@ -550,7 +550,7 @@ def build_dataset(tick_data, order_records):
         return None
 
     # Write CSV
-    csv_path = os.path.join(DATASET_DIR, f"training_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.csv")
+    csv_path = os.path.join(DATASET_DIR, f"training_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.csv")
     with open(csv_path, 'w', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=features[0].keys())
         writer.writeheader()
@@ -564,7 +564,7 @@ def build_dataset(tick_data, order_records):
     avg_latency = round(np.mean([float(f["latency_ms"]) for f in features]), 0)
 
     summary = {
-        "built_at_utc": datetime.now(timezone.utc).isoformat(),
+        "built_at_utc": datetime.now(UTC).isoformat(),
         "total_features": len(features),
         "symbols": list(symbols),
         "side_distribution": sides,
@@ -625,7 +625,7 @@ def main():
 
     print(f"{'='*60}")
     print("MEGA DATA COLLECTOR")
-    print(f"  Time: {datetime.now(timezone.utc).isoformat()}")
+    print(f"  Time: {datetime.now(UTC).isoformat()}")
     print(f"  Account: {mt5.account_info().login}")
     print(f"  Balance: ${mt5.account_info().balance:,.2f}")
     print(f"{'='*60}")
@@ -709,7 +709,7 @@ def main():
 
     # Save run summary
     run_summary = {
-        "completed_at_utc": datetime.now(timezone.utc).isoformat(),
+        "completed_at_utc": datetime.now(UTC).isoformat(),
         "balance": acct.balance,
         "total_ticks": sum(len(v) for v in tick_data.values()),
         "total_orders": len(order_records),

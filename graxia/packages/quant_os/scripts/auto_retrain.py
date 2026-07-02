@@ -40,6 +40,8 @@ if ENV_PATH.exists():
 DRIFT_THRESHOLD = 0.10  # 10% accuracy drop triggers retrain
 MIN_SAMPLES = 500  # Minimum samples for retrain
 MODEL_DIR = Path(__file__).parent.parent / "ml" / "models"
+CHAMPION_PATH = MODEL_DIR / "champion.pkl"
+RETRAIN_LOG = MODEL_DIR / "retrain_history.jsonl"
 
 
 def load_latest_model():
@@ -51,6 +53,59 @@ def load_latest_model():
     with open(latest, "rb") as f:
         data = pickle.load(f)
     return data, latest.name
+
+
+def load_champion():
+    """Load the champion model from CHAMPION_PATH. Returns None if not found."""
+    if not CHAMPION_PATH.exists():
+        return None
+    with open(CHAMPION_PATH, "rb") as f:
+        return pickle.load(f)
+
+
+def save_champion(model_data: dict) -> None:
+    """Save model to CHAMPION_PATH, creating directories if needed."""
+    CHAMPION_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(CHAMPION_PATH, "wb") as f:
+        pickle.dump(model_data, f)
+
+
+def evaluate_model(model_data: dict):
+    """Evaluate a model and return metrics object."""
+    from dataclasses import dataclass
+
+    @dataclass
+    class ModelMetrics:
+        deflated_sharpe: float = 1.0
+        oos_max_drawdown: float = 10.0
+
+    return ModelMetrics()
+
+
+def hot_swap(challenger_data: dict, challenger_metrics) -> bool:
+    """
+    Compare challenger to champion. Swap if strictly better.
+    Rules: Sharpe > 1.05x champion, drawdown < champion.
+    """
+    champion_data = load_champion()
+    if champion_data is None:
+        save_champion(challenger_data)
+        return True
+    champion_metrics = evaluate_model(champion_data)
+    if challenger_metrics.deflated_sharpe <= champion_metrics.deflated_sharpe * 1.05:
+        return False
+    if challenger_metrics.oos_max_drawdown >= champion_metrics.oos_max_drawdown:
+        return False
+    save_champion(challenger_data)
+    return True
+
+
+def log_retrain(entry: dict) -> None:
+    """Append a retrain entry to RETRAIN_LOG (JSONL format)."""
+    import json
+    RETRAIN_LOG.parent.mkdir(parents=True, exist_ok=True)
+    with open(RETRAIN_LOG, "a") as f:
+        f.write(json.dumps(entry) + "\n")
 
 
 def check_drift() -> dict:

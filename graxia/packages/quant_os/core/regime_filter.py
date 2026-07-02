@@ -15,7 +15,7 @@ Used to:
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 from enum import Enum
 import math
 
@@ -40,7 +40,7 @@ class RegimeResult:
     volatility: float = 0.0
     trend_strength: float = 0.0
     details: Dict = None
-    
+
     def __post_init__(self):
         if self.details is None:
             self.details = {}
@@ -49,14 +49,14 @@ class RegimeResult:
 class RegimeFilter:
     """
     Detects market regime using multiple indicators.
-    
+
     Logic:
     1. ADX for trend strength
     2. ATR for volatility
     3. EMA alignment for direction
     4. Bollinger Band width for volatility regime
     """
-    
+
     def __init__(
         self,
         adx_period: int = 14,
@@ -72,40 +72,40 @@ class RegimeFilter:
         self.vol_lookback = vol_lookback
         self.vol_high_mult = vol_high_mult
         self.vol_low_mult = vol_low_mult
-    
+
     def detect(self, data: Dict[str, List[float]]) -> RegimeResult:
         """
         Detect current market regime.
-        
+
         Args:
             data: Dict with 'open', 'high', 'low', 'close', 'volume'
-        
+
         Returns:
             RegimeResult with detected regime
         """
         close = data.get("close", [])
         high = data.get("high", [])
         low = data.get("low", [])
-        
+
         if len(close) < 50:
             return RegimeResult(
                 regime=MarketRegime.RANGING,
                 confidence=0.3,
                 details={"reason": "insufficient_data"},
             )
-        
+
         # Calculate indicators
         adx, plus_di, minus_di = self._calc_adx(high, low, close, self.adx_period)
         volatility = self._calc_volatility(close, self.vol_lookback)
         avg_volatility = self._calc_avg_volatility(close, self.vol_lookback)
         trend_direction = self._calc_trend_direction(close)
         bb_width = self._calc_bb_width(close, 20)
-        
+
         # Determine regime
         regime, confidence = self._classify_regime(
             adx, volatility, avg_volatility, trend_direction, bb_width
         )
-        
+
         return RegimeResult(
             regime=regime,
             confidence=confidence,
@@ -120,7 +120,7 @@ class RegimeFilter:
                 "bb_width": bb_width,
             },
         )
-    
+
     def _calc_adx(self, high: List[float], low: List[float], close: List[float], period: int) -> Tuple[float, float, float]:
         """Calculate Average Directional Index (Wilder's smoothed).
 
@@ -181,76 +181,76 @@ class RegimeFilter:
         final_mdi = (smooth_minus / atr) * 100
 
         return adx, final_pdi, final_mdi
-    
+
     def _calc_volatility(self, close: List[float], period: int) -> float:
         """Calculate current volatility (normalized ATR)"""
         if len(close) < period + 1:
             return 0.0
-        
+
         returns = [(close[i] - close[i-1]) / close[i-1] for i in range(1, len(close))]
         recent = returns[-period:]
-        
+
         if not recent:
             return 0.0
-        
+
         mean = sum(recent) / len(recent)
         variance = sum((r - mean) ** 2 for r in recent) / len(recent)
-        
+
         return math.sqrt(variance) * 100
-    
+
     def _calc_avg_volatility(self, close: List[float], period: int) -> float:
         """Calculate average volatility over longer period"""
         if len(close) < period * 3:
             return self._calc_volatility(close, period)
-        
+
         volatilities = []
         for i in range(period * 3, len(close), period):
             vol = self._calc_volatility(close[:i], period)
             volatilities.append(vol)
-        
+
         return sum(volatilities) / len(volatilities) if volatilities else 0.0
-    
+
     def _calc_trend_direction(self, close: List[float]) -> float:
         """Calculate trend direction using EMA alignment"""
         if len(close) < 50:
             return 0.0
-        
+
         ema20 = self._ema(close, 20)
         ema50 = self._ema(close, 50)
-        
+
         if not ema20 or not ema50:
             return 0.0
-        
+
         # Positive = bullish, negative = bearish
         diff = (ema20[-1] - ema50[-1]) / ema50[-1] * 100
-        
+
         return max(-1, min(1, diff))
-    
+
     def _calc_bb_width(self, close: List[float], period: int) -> float:
         """Calculate Bollinger Band width"""
         if len(close) < period:
             return 0.0
-        
+
         recent = close[-period:]
         mean = sum(recent) / len(recent)
         variance = sum((x - mean) ** 2 for x in recent) / len(recent)
         std = math.sqrt(variance)
-        
+
         return (std * 2 / mean) * 100 if mean > 0 else 0.0
-    
+
     def _ema(self, data: List[float], period: int) -> List[float]:
         """Calculate EMA"""
         if len(data) < period:
             return []
-        
+
         multiplier = 2 / (period + 1)
         ema = [sum(data[:period]) / period]
-        
+
         for price in data[period:]:
             ema.append((price - ema[-1]) * multiplier + ema[-1])
-        
+
         return ema
-    
+
     def _classify_regime(
         self,
         adx: float,
@@ -260,38 +260,38 @@ class RegimeFilter:
         bb_width: float,
     ) -> Tuple[MarketRegime, float]:
         """Classify market regime based on indicators"""
-        
+
         if avg_volatility == 0:
             return MarketRegime.RANGING, 0.3
-        
+
         # Crisis detection (extreme volatility)
         if volatility > avg_volatility * 3 and bb_width > 4.0:
             return MarketRegime.CRISIS, 0.9
-        
+
         # High volatility
         if volatility > avg_volatility * self.vol_high_mult:
             return MarketRegime.HIGH_VOLATILITY, min(0.9, volatility / (avg_volatility * 2))
-        
+
         # Low volatility
         if volatility < avg_volatility * self.vol_low_mult:
             return MarketRegime.LOW_VOLATILITY, min(0.9, 1 - volatility / avg_volatility)
-        
+
         # Trending
         if adx > self.adx_strong_threshold:
             if trend_direction > 0:
                 return MarketRegime.TRENDING_UP, min(0.95, 0.7 + adx / 200)
             else:
                 return MarketRegime.TRENDING_DOWN, min(0.95, 0.7 + adx / 200)
-        
+
         if adx > self.adx_trend_threshold:
             if trend_direction > 0.1:
                 return MarketRegime.TRENDING_UP, 0.6 + adx / 200
             elif trend_direction < -0.1:
                 return MarketRegime.TRENDING_DOWN, 0.6 + adx / 200
-        
+
         # Ranging
         return MarketRegime.RANGING, max(0.3, 1 - adx / 50)
-    
+
     def get_position_multiplier(self, regime: MarketRegime, confidence: float = 1.0) -> float:
         """Return position size multiplier based on regime + confidence.
 
@@ -368,5 +368,5 @@ class RegimeFilter:
             ],
             MarketRegime.CRISIS: [],  # No trading in crisis
         }
-        
+
         return regime_strategies.get(regime, [])

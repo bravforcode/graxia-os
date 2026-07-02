@@ -22,9 +22,8 @@ Usage:
 import argparse
 import json
 import os
-import sys
 import warnings
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from glob import glob
 
 import numpy as np
@@ -400,7 +399,7 @@ def main():
     # ── Mode: Multi-TF confluence ──
     confluence_features = None  # DataFrame with combined confluences for main_tf
     if mode in ("multitf", "all"):
-        print(f"\n=== Phase 2: Multi-TF confluence ===")
+        print("\n=== Phase 2: Multi-TF confluence ===")
         higher_tfs = [t.strip() for t in args.higher_tfs.split(",")]
         # Process all symbols, but for "all" mode use the first symbol
         target_symbol = args.symbol
@@ -411,7 +410,7 @@ def main():
         )
 
     # ── Merge and save ──
-        print(f"\n=== Phase 3: Merge + Save ===")
+        print("\n=== Phase 3: Merge + Save ===")
     v2_files = []
 
     for sym in symbols:
@@ -475,7 +474,7 @@ def main():
 
     # Run record
     record = {
-        "run_time_utc": datetime.now(timezone.utc).isoformat(),
+        "run_time_utc": datetime.now(UTC).isoformat(),
         "mode": mode,
         "symbols": symbols,
         "freqs": freqs if mode in ("orderflow", "all") else None,

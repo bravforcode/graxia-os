@@ -136,7 +136,7 @@ for i in range(max(0, len(close)-50), len(close)):
           f"{bl if bl else 'N/A':<10} {bu if bu else 'N/A':<10} {stoch_k:<8.1f}")
 
 # Check how often conditions are met
-print(f"\n  MRB LONG conditions (ADX<25 + Price<BB_Lower + Stoch<20 + RSI<35):")
+print("\n  MRB LONG conditions (ADX<25 + Price<BB_Lower + Stoch<20 + RSI<35):")
 long_count = 0
 for i in range(len(close)):
     if i >= len(rsi_vals) or rsi_vals[i] is None: continue
@@ -149,7 +149,7 @@ for i in range(len(close)):
 
 print(f"  Met {long_count} times out of {len(close)} bars ({long_count/len(close)*100:.1f}%)")
 
-print(f"\n  MRB SHORT conditions (ADX<25 + Price>BB_Upper + Stoch>80 + RSI>65):")
+print("\n  MRB SHORT conditions (ADX<25 + Price>BB_Upper + Stoch>80 + RSI>65):")
 short_count = 0
 for i in range(len(close)):
     if i >= len(rsi_vals) or rsi_vals[i] is None: continue
@@ -163,7 +163,7 @@ for i in range(len(close)):
 print(f"  Met {short_count} times out of {len(close)} bars ({short_count/len(close)*100:.1f}%)")
 
 # Individual condition frequency
-print(f"\n  Individual condition frequency:")
+print("\n  Individual condition frequency:")
 adx_low_count = sum(1 for a in adx_vals if a is not None and a < 25)
 rsi_low_count = sum(1 for r in rsi_vals if r is not None and r < 35)
 rsi_high_count = sum(1 for r in rsi_vals if r is not None and r > 65)

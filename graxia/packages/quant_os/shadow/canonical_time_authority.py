@@ -4,8 +4,7 @@ Uses trusted system UTC for event/session/health decisions.
 copy_ticks_range with UTC-aware input for market tick data.
 No symbol_info_tick.time, no MT5 bar timestamps, no copy_ticks_from.
 """
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import datetime, UTC
 
 
 class CanonicalTimeAuthority:
@@ -22,7 +21,7 @@ class CanonicalTimeAuthority:
 
     def trusted_system_utc(self) -> datetime:
         """System UTC — the only authority for event/session/health."""
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
 
     def tick_source(self) -> str:
         return self._tick_source_label

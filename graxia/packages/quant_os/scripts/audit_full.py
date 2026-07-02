@@ -16,7 +16,6 @@ import json
 import logging
 import subprocess
 import sys
-import textwrap
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +27,7 @@ PROJECT_ROOT = SCRIPT_DIR.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.build_features_v3_multi_asset import build_features
+from datetime import UTC
 
 logging.basicConfig(
     level=logging.INFO,
@@ -531,8 +531,8 @@ def run_symbol_audit(symbol: str) -> dict[str, Any]:
 
 def generate_summary(all_results: list[dict[str, Any]]) -> str:
     """Generate the summary markdown."""
-    from datetime import datetime, timezone
-    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    from datetime import datetime
+    ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
 
     lines = [
         "# Full Audit Summary",

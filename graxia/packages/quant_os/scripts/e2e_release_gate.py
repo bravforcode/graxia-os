@@ -4,7 +4,6 @@ import sys
 sys.path.insert(0, r"C:\Users\menum\graxia os")
 
 from graxia.packages.quant_os.backtest.engine_e2e_fixture import get_all_scenarios
-from graxia.packages.quant_os.backtest.engine import BacktestEngine, BacktestConfig
 from graxia.packages.quant_os.execution.ledger_integrity import IntegrityChain, LedgerRecord
 
 scenarios = get_all_scenarios()

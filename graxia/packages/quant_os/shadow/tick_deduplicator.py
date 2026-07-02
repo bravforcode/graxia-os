@@ -2,7 +2,6 @@
 
 Uses tick time_msc as unique key. Handles overlapping query windows.
 """
-from typing import Optional
 
 
 class TickDeduplicator:

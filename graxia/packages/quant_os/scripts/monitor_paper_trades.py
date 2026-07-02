@@ -17,10 +17,9 @@ import json
 import logging
 import sys
 import time
-from dataclasses import asdict, dataclass, field
-from datetime import datetime, timedelta, timezone
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta, UTC
 from pathlib import Path
-from typing import Any
 
 # ── Paths ─────────────────────────────────────────────────────────────
 
@@ -128,7 +127,7 @@ def load_mt5_deals() -> list[dict]:
             logger.warning("MT5 not initialized — skipping deal history")
             return []
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         from_date = now - timedelta(days=30)
         deals = mt5.history_deals_get(from_date, now)
         if deals is None:
@@ -138,7 +137,7 @@ def load_mt5_deals() -> list[dict]:
         for d in deals:
             result.append({
                 "ticket": d.ticket,
-                "time": datetime.fromtimestamp(d.time, tz=timezone.utc).isoformat(),
+                "time": datetime.fromtimestamp(d.time, tz=UTC).isoformat(),
                 "type": "BUY" if d.type == 0 else "SELL" if d.type == 1 else str(d.type),
                 "symbol": d.symbol,
                 "volume": d.volume,
@@ -177,7 +176,7 @@ def compute_daily_pnl(
     initial_capital: float = 10000.0,
 ) -> DailyPnL:
     """Compute daily P&L summary from trade records."""
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today = datetime.now(UTC).strftime("%Y-%m-%d")
     today_trades = [t for t in trades if t.get("time", "")[:10] == today]
 
     if not today_trades:
@@ -372,7 +371,7 @@ def run_check(send_alerts: bool = True) -> tuple[DailyPnL, RiskCheckResult]:
 
     # Update state
     state = load_state()
-    state["last_check"] = datetime.now(timezone.utc).isoformat()
+    state["last_check"] = datetime.now(UTC).isoformat()
     state["last_pnl"] = daily_pnl.total_pnl
     state["last_equity"] = daily_pnl.equity_current
     state["risk_ok"] = risk_check.daily_loss_ok and risk_check.drawdown_ok

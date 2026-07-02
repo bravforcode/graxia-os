@@ -13,16 +13,15 @@ import logging
 import os
 import sys
 import time
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone, timedelta
+from dataclasses import dataclass, asdict
+from datetime import datetime, timedelta, UTC
 from typing import Optional
 
 # AST isolation: no execution imports allowed
 # broker/execution/order/position/trade modules are FORBIDDEN here
 
 from graxia.packages.quant_os.shadow.pipeline import (
-    ShadowPipeline, ShadowSignal, ShadowSignalOutcome, PositionStatus,
-    validate_signal_geometry, SpreadShockGate, SignalDeduplicator,
+    ShadowPipeline, ShadowSignal, ShadowSignalOutcome, SpreadShockGate,
 )
 from graxia.packages.quant_os.markets.eurusd.session_calendar import EURUSDSessionCalendar
 from graxia.packages.quant_os.markets.eurusd.event_calendar import EURUSDEventCalendar
@@ -418,7 +417,7 @@ class BrokerObservedShadowRunner:
                     min_stop_level=0.0,
                     freeze_level=0.0,
                     spread_current=sym["spread"],
-                    snapshot_time=datetime.now(timezone.utc).isoformat(),
+                    snapshot_time=datetime.now(UTC).isoformat(),
                 )
                 self._broker_snapshot.snapshot_hash = self._broker_snapshot.compute_hash()
                 logger.info(
@@ -453,7 +452,7 @@ class BrokerObservedShadowRunner:
 
     def run_cycle(self) -> Optional[BrokerSignalEvidence]:
         """Run one shadow cycle with full evidence collection."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # 1. Check MT5 connectivity
         if not self._mt5.is_connected():
@@ -513,7 +512,7 @@ class BrokerObservedShadowRunner:
         raw_seconds = tick["time"]
         raw_msc = tick.get("time_msc", raw_seconds * 1000)
         # Convert to UTC-aware datetime using time_msc (milliseconds)
-        broker_tick_utc = datetime.fromtimestamp(raw_msc / 1000, tz=timezone.utc)
+        broker_tick_utc = datetime.fromtimestamp(raw_msc / 1000, tz=UTC)
         # Calculate transport delay
         delay_ms = (now - broker_tick_utc).total_seconds() * 1000
         # Check for clock anomaly (> 60s offset is suspicious)
@@ -569,7 +568,7 @@ class BrokerObservedShadowRunner:
 
         prev_close = bars[-2]["close"]
         curr_close = bars[-1]["close"]
-        candle_time = datetime.fromtimestamp(bars[-1]["time"], tz=timezone.utc).isoformat()
+        candle_time = datetime.fromtimestamp(bars[-1]["time"], tz=UTC).isoformat()
 
         # 7. Generate signal
         if curr_close > prev_close:
@@ -652,7 +651,7 @@ class BrokerObservedShadowRunner:
 
     def run(self, duration_seconds: int = 3600, interval_seconds: int = 60) -> dict:
         """Run shadow campaign for specified duration."""
-        self._session_id = f"shadow_obs_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
+        self._session_id = f"shadow_obs_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}"
         self._pipeline.start_session(self._session_id)
 
         logger.info(f"Broker-observed shadow started: {self._session_id}")
@@ -721,7 +720,7 @@ class BrokerObservedShadowRunner:
 
         # Save results
         os.makedirs("shadow_results", exist_ok=True)
-        ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         path = f"shadow_results/broker_observed_{ts}.json"
         with open(path, "w") as f:
             json.dump(summary, f, indent=2, default=str)

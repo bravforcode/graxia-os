@@ -18,7 +18,7 @@ def walk_forward_split(
     n_bars: int,
     n_folds: int = 5,
     train_ratio: float = 0.7,
-    embargo_bars: int = 0,
+    embargo_bars: int = 12,
 ) -> list[tuple[tuple[int, int], tuple[int, int]]]:
     """Generate walk-forward train/test splits.
 

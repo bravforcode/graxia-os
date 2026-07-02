@@ -10,7 +10,7 @@ import hashlib
 import json
 import os
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from decimal import Decimal
 
 
@@ -88,7 +88,7 @@ def take_account_snapshot(readonly_client) -> AccountSnapshot:
     orders = readonly_client.get_orders()
 
     snapshot = AccountSnapshot(
-        timestamp_utc=datetime.now(timezone.utc),
+        timestamp_utc=datetime.now(UTC),
         account_number_redacted=acct["login_redacted"],
         server=acct["server"],
         currency=acct["currency"],

@@ -1,11 +1,10 @@
-import pytest
 from governance.experiment_registry import ExperimentRecord, ExperimentRegistry
 from governance.trial_budget import TrialBudget
 from governance.validation_stack import (
     ValidationStack, DataLeakageTest, FeatureAvailabilityTest,
     WalkForwardValidation, DeflatedSharpeRatio, PBOCheck, ParameterStability
 )
-from governance.ml_policy import MLPolicyGuard, MLUsageType, MLPhase, MLModelRecord
+from governance.ml_policy import MLPolicyGuard, MLUsageType, MLPhase
 
 def _make_record(experiment_id="EXP-001", strategy_hash="s1", parameter_hash="p1", trial=1, budget=12):
     return ExperimentRecord(
@@ -29,27 +28,27 @@ class TestExperimentRegistry:
         r = _make_record()
         ok, msg = reg.register(r)
         assert ok is True
-    
+
     def test_duplicate_rejected(self):
         reg = ExperimentRegistry()
         reg.register(_make_record())
         ok, msg = reg.register(_make_record())
         assert ok is False
-    
+
     def test_budget_exceeded(self):
         reg = ExperimentRegistry()
         r = _make_record(trial=15, budget=12)
         ok, msg = reg.register(r)
         assert ok is False
         assert "BUDGET_EXCEEDED" in msg
-    
+
     def test_list_by_strategy(self):
         reg = ExperimentRegistry()
         reg.register(_make_record(experiment_id="E1", strategy_hash="s1"))
         reg.register(_make_record(experiment_id="E2", strategy_hash="s1"))
         reg.register(_make_record(experiment_id="E3", strategy_hash="s2"))
         assert len(reg.list_by_strategy("s1")) == 2
-    
+
     def test_export_json(self):
         reg = ExperimentRegistry()
         reg.register(_make_record())
@@ -62,27 +61,27 @@ class TestTrialBudget:
         ok, msg = budget.increment_parameter()
         assert ok is True
         assert budget.parameter_trials_used == 1
-    
+
     def test_parameter_exceeded(self):
         budget = TrialBudget(max_parameter_trials=2)
         budget.increment_parameter()
         budget.increment_parameter()
         ok, msg = budget.increment_parameter()
         assert ok is False
-    
+
     def test_is_exceeded(self):
         budget = TrialBudget(max_parameter_trials=1)
         budget.increment_parameter()
         assert budget.is_exceeded() is False
         budget.parameter_trials_used = 2
         assert budget.is_exceeded() is True
-    
+
     def test_remaining(self):
         budget = TrialBudget(max_parameter_trials=12)
         budget.increment_parameter()
         r = budget.remaining()
         assert r["parameter_trials"] == 11
-    
+
     def test_summary(self):
         budget = TrialBudget()
         s = budget.summary()
@@ -94,7 +93,7 @@ class TestDataLeakage:
         test = DataLeakageTest()
         check = test.run(100, 200, [50, 80, 99])
         assert check.passed is True
-    
+
     def test_leakage_detected(self):
         test = DataLeakageTest()
         check = test.run(100, 200, [50, 150])
@@ -105,7 +104,7 @@ class TestFeatureAvailability:
         test = FeatureAvailabilityTest()
         check = test.run(["f1", "f2"], {"f1": True, "f2": True})
         assert check.passed is True
-    
+
     def test_missing_feature(self):
         test = FeatureAvailabilityTest()
         check = test.run(["f1", "f2"], {"f1": True})
@@ -116,7 +115,7 @@ class TestWalkForward:
         test = WalkForwardValidation()
         check = test.run([{"oos_sharpe": 0.5}, {"oos_sharpe": 0.3}])
         assert check.passed is True
-    
+
     def test_no_folds(self):
         test = WalkForwardValidation()
         check = test.run([])
@@ -133,7 +132,7 @@ class TestPBO:
         test = PBOCheck()
         check = test.run(is_sharpe=1.0, oos_sharpe=0.8)
         assert check.passed is True
-    
+
     def test_high_degradation(self):
         test = PBOCheck()
         check = test.run(is_sharpe=1.0, oos_sharpe=0.2)
@@ -147,7 +146,7 @@ class TestParameterStability:
             [0.5, 0.3, 0.4],
         )
         assert check.passed is True
-    
+
     def test_insufficient(self):
         test = ParameterStability()
         check = test.run([{"p1": 1}], [0.5])
@@ -158,17 +157,17 @@ class TestMLPolicy:
         guard = MLPolicyGuard()
         ok, reason = guard.check_usage(MLUsageType.REGIME_CLASSIFICATION)
         assert ok is True
-    
+
     def test_forbidden_usage(self):
         guard = MLPolicyGuard()
         ok, reason = guard.check_usage(MLUsageType.PRICE_PREDICTION)
         assert ok is False
-    
+
     def test_online_training_forbidden(self):
         guard = MLPolicyGuard()
         ok, reason = guard.check_online_training(MLPhase.DEMO)
         assert ok is False
-    
+
     def test_self_promotion_forbidden(self):
         guard = MLPolicyGuard()
         ok, reason = guard.check_self_promotion("model_a", "model_a")

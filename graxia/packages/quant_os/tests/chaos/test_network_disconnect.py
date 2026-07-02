@@ -7,16 +7,13 @@ that the system reconnects, reconciles positions, and does NOT double-execute.
 from __future__ import annotations
 
 import json
-import os
 import time
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from unittest.mock import MagicMock, patch
 
-import pytest
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -40,7 +37,7 @@ class SimulatedPosition:
     volume: float
     entry_price: float
     opened_at: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+        default_factory=lambda: datetime.now(UTC).isoformat()
     )
     status: str = "OPEN"
 
@@ -54,7 +51,7 @@ class SimulatedOrder:
     volume: float
     price: float
     submitted_at: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+        default_factory=lambda: datetime.now(UTC).isoformat()
     )
     filled: bool = False
     fill_price: Optional[float] = None
@@ -74,7 +71,7 @@ class ChaosTestReport:
     passed: bool
     errors: List[str] = field(default_factory=list)
     timestamp: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+        default_factory=lambda: datetime.now(UTC).isoformat()
     )
 
 
@@ -456,7 +453,7 @@ class ChaosTest:
             Path to the written report file.
         """
         REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-        ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         filename = f"chaos_report_{report.test_name}_{ts}.json"
         path = REPORTS_DIR / filename
 

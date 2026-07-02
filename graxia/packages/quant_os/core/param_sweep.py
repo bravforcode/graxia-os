@@ -1,7 +1,6 @@
 """Parameter sweep from vectorbt pattern"""
-from typing import Dict, List, Any, Callable, Tuple
+from typing import Dict, List, Callable, Tuple
 from itertools import product
-import time
 
 class ParamSweep:
     """

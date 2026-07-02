@@ -1,10 +1,8 @@
 """Quick 5-cycle verify on Pepperstone."""
 import sys, json, time, hashlib
-from datetime import datetime, timezone
 sys.path.insert(0, ".")
 import MetaTrader5 as mt5
 from graxia.packages.quant_os.shadow.canonical_tick_source import CanonicalTickSource, CanonicalTickPolicy
-from graxia.packages.quant_os.shadow.canonical_time_authority import CanonicalTimeAuthority
 from graxia.packages.quant_os.shadow.broker_profile import BrokerProfile, validate_broker_match
 
 PEPPERSTONE = r"C:\Program Files\Pepperstone MetaTrader 5\terminal64.exe"

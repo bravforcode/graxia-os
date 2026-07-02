@@ -1,24 +1,29 @@
 """Order Manager - orchestrates order lifecycle"""
 
-from datetime import datetime
-from decimal import Decimal
-from typing import Optional, Dict, Any, Callable
 import asyncio
+from collections.abc import Callable
+from datetime import UTC, datetime
+from decimal import Decimal
+from typing import Any
 
 from sqlalchemy.orm import Session
 
-from ..core.enums import OrderStatus, TradingMode
 from ..core.config import get_config
+from ..core.enums import OrderStatus, TradingMode
 from ..core.exceptions import (
-    RiskViolationError, ComplianceError, DuplicateOrderError,
-    KillSwitchTriggeredError, BrokerError
+    BrokerError,
+    ComplianceError,
+    DuplicateOrderError,
+    KillSwitchTriggeredError,
+    RiskViolationError,
 )
 from ..core.golden_rules import GOLDEN_RULES
-from ..data.models import Order as OrderModel, OrderStateHistory
-from .order import Order, OrderStateMachine, create_order
-from .idempotency import IdempotencyChecker
+from ..data.models import Order as OrderModel
+from ..data.models import OrderStateHistory
 from .adapters.base import Order as AdapterOrder
 from .adapters.manager import BrokerManager
+from .idempotency import IdempotencyChecker
+from .order import Order, OrderStateMachine, create_order
 
 
 class OrderManager:
@@ -42,10 +47,10 @@ class OrderManager:
         self,
         db_session: Session,
         broker_manager: BrokerManager,
-        idempotency_checker: Optional[IdempotencyChecker] = None,
-        risk_engine: Optional[Any] = None,
-        compliance_gate: Optional[Any] = None,
-        kill_switch: Optional[Any] = None
+        idempotency_checker: IdempotencyChecker | None = None,
+        risk_engine: Any | None = None,
+        compliance_gate: Any | None = None,
+        kill_switch: Any | None = None,
     ):
         self.db = db_session
         self.broker_manager = broker_manager
@@ -56,7 +61,7 @@ class OrderManager:
         self.config = get_config()
 
         # Human approval callbacks for MICRO mode
-        self._approval_callbacks: Dict[str, Callable] = {}
+        self._approval_callbacks: dict[str, Callable] = {}
 
     async def submit_order(
         self,
@@ -64,13 +69,13 @@ class OrderManager:
         side: str,
         order_type: str,
         quantity: Decimal,
-        price: Optional[Decimal] = None,
-        stop_price: Optional[Decimal] = None,
+        price: Decimal | None = None,
+        stop_price: Decimal | None = None,
         strategy_id: str = "",
-        signal_id: Optional[str] = None,
-        take_profit: Optional[Decimal] = None,
-        **kwargs
-    ) -> Dict[str, Any]:
+        signal_id: str | None = None,
+        take_profit: Decimal | None = None,
+        **kwargs,
+    ) -> dict[str, Any]:
         """
         Submit an order through the full lifecycle.
 
@@ -89,12 +94,12 @@ class OrderManager:
             # 1. Check kill switch
             if self.kill_switch and self.kill_switch.is_triggered:
                 raise KillSwitchTriggeredError(
-                    "Kill switch is active - no new orders allowed",
-                    switch_type=self.kill_switch.trigger_type
+                    "Kill switch is active - no new orders allowed", switch_type=self.kill_switch.trigger_type
                 )
 
             # 2. Create order
             from ..core.enums import OrderSide, OrderType
+
             order = create_order(
                 symbol=symbol,
                 side=OrderSide(side),
@@ -104,7 +109,7 @@ class OrderManager:
                 stop_price=stop_price,
                 strategy_id=strategy_id,
                 signal_id=signal_id,
-                trading_mode=self.config.trading_mode.value
+                trading_mode=self.config.trading_mode.value,
             )
 
             # 3. Check idempotency
@@ -115,18 +120,20 @@ class OrderManager:
             state_machine.validate_order()
             state_machine.transition(OrderStatus.VALIDATED, "Order validated")
 
-            # 5. Risk check
-            if self.risk_engine:
-                risk_result = await self.risk_engine.check_order(order)
-                if not risk_result.passed:
-                    state_machine.reject(risk_result.reason, "risk_engine")
-                    await self._persist_order(order, state_machine)
-                    raise RiskViolationError(
-                        risk_result.reason,
-                        violation_type=risk_result.check_type
-                    )
-                order.risk_check_id = risk_result.check_id
-                state_machine.transition(OrderStatus.RISK_APPROVED, "Risk check passed")
+            # 5. Risk check (fail-closed: reject if risk_engine is None)
+            if self.risk_engine is None:
+                state_machine.reject("No risk engine configured (fail-closed)", "system")
+                await self._persist_order(order, state_machine)
+                raise RiskViolationError(
+                    "No risk engine configured — order rejected (fail-closed)", violation_type="MISSING_RISK_ENGINE"
+                )
+            risk_result = await self.risk_engine.check_order(order)
+            if not risk_result.passed:
+                state_machine.reject(risk_result.reason, "risk_engine")
+                await self._persist_order(order, state_machine)
+                raise RiskViolationError(risk_result.reason, violation_type=risk_result.check_type)
+            order.risk_check_id = risk_result.check_id
+            state_machine.transition(OrderStatus.RISK_APPROVED, "Risk check passed")
 
             # 6. Compliance check
             if self.compliance_gate:
@@ -134,10 +141,7 @@ class OrderManager:
                 if not compliance_result.passed:
                     state_machine.reject(compliance_result.reason, "compliance_gate")
                     await self._persist_order(order, state_machine)
-                    raise ComplianceError(
-                        compliance_result.reason,
-                        compliance_check=compliance_result.check_name
-                    )
+                    raise ComplianceError(compliance_result.reason, compliance_check=compliance_result.check_name)
                 order.compliance_check_id = compliance_result.check_id
                 state_machine.transition(OrderStatus.COMPLIANCE_APPROVED, "Compliance check passed")
 
@@ -147,15 +151,13 @@ class OrderManager:
                 await self._persist_order(order, state_machine)
 
                 # Set expiration timer
-                asyncio.create_task(
-                    self._expire_order_after_delay(order.id, GOLDEN_RULES.ORDER_EXPIRY_MICRO_SECONDS)
-                )
+                asyncio.create_task(self._expire_order_after_delay(order.id, GOLDEN_RULES.ORDER_EXPIRY_MICRO_SECONDS))
 
                 return {
                     "success": True,
                     "order_id": order.id,
                     "status": OrderStatus.PENDING_HUMAN.value,
-                    "message": "Order awaiting human approval (60 second timeout)"
+                    "message": "Order awaiting human approval (60 second timeout)",
                 }
 
             # 8. Submit to broker
@@ -172,29 +174,21 @@ class OrderManager:
                 "filled_quantity": str(result["filled_quantity"]) if result["filled_quantity"] else None,
                 "avg_fill_price": str(result["avg_fill_price"]) if result["avg_fill_price"] else None,
                 "fee": str(result["fee"]) if result["fee"] else None,
-                "error": result["error_message"]
+                "error": result["error_message"],
             }
 
         except DuplicateOrderError as e:
             return {
                 "success": False,
                 "error": f"Duplicate order detected: {e.idempotency_key[:16]}...",
-                "error_code": "DUPLICATE_ORDER"
+                "error_code": "DUPLICATE_ORDER",
             }
         except (RiskViolationError, ComplianceError, KillSwitchTriggeredError) as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "error_code": e.error_code
-            }
+            return {"success": False, "error": str(e), "error_code": e.error_code}
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "error_code": "ORDER_ERROR"
-            }
+            return {"success": False, "error": str(e), "error_code": "ORDER_ERROR"}
 
-    async def approve_order(self, order_id: str, approver: str) -> Dict[str, Any]:
+    async def approve_order(self, order_id: str, approver: str) -> dict[str, Any]:
         """
         Human approval for MICRO mode orders.
         """
@@ -222,13 +216,13 @@ class OrderManager:
                 "success": result["success"],
                 "order_id": order.id,
                 "broker_order_id": result["broker_order_id"],
-                "status": order.status.value
+                "status": order.status.value,
             }
 
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    async def cancel_order(self, order_id: str, reason: str = "", actor: str = "system") -> Dict[str, Any]:
+    async def cancel_order(self, order_id: str, reason: str = "", actor: str = "system") -> dict[str, Any]:
         """Cancel an order"""
         db_order = self.db.query(OrderModel).filter(OrderModel.id == order_id).first()
         if not db_order:
@@ -251,7 +245,7 @@ class OrderManager:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    async def get_order(self, order_id: str) -> Optional[Dict[str, Any]]:
+    async def get_order(self, order_id: str) -> dict[str, Any] | None:
         """Get order details"""
         db_order = self.db.query(OrderModel).filter(OrderModel.id == order_id).first()
         if not db_order:
@@ -295,11 +289,7 @@ class OrderManager:
             return "indices"
         return "forex"
 
-    async def _submit_to_broker(
-        self,
-        order: Order,
-        state_machine: OrderStateMachine
-    ) -> Dict[str, Any]:
+    async def _submit_to_broker(self, order: Order, state_machine: OrderStateMachine) -> dict[str, Any]:
         """Submit order to broker via the unified adapter interface."""
         # Health check
         if not await self.broker_manager.health_check():
@@ -386,7 +376,7 @@ class OrderManager:
                 sent_at=order.sent_at,
                 filled_at=order.filled_at,
                 rejection_reason=order.rejection_reason,
-                raw_broker_response=order.raw_broker_response
+                raw_broker_response=order.raw_broker_response,
             )
             self.db.add(db_order)
 
@@ -397,7 +387,7 @@ class OrderManager:
             to_status=order.status,
             actor="system",
             reason="Order submitted",
-            occurred_at=datetime.utcnow()
+            occurred_at=datetime.now(UTC),
         )
         self.db.add(history)
 
@@ -412,7 +402,7 @@ class OrderManager:
         db_order.broker_order_id = order.broker_order_id
         db_order.rejection_reason = order.rejection_reason
         db_order.raw_broker_response = order.raw_broker_response
-        db_order.updated_at = datetime.utcnow()
+        db_order.updated_at = datetime.now(UTC)
 
         self.db.commit()
 
@@ -444,7 +434,7 @@ class OrderManager:
             sent_at=db_order.sent_at,
             filled_at=db_order.filled_at,
             rejection_reason=db_order.rejection_reason,
-            raw_broker_response=db_order.raw_broker_response
+            raw_broker_response=db_order.raw_broker_response,
         )
 
     async def _expire_order_after_delay(self, order_id: str, delay_seconds: int) -> None:
@@ -460,6 +450,5 @@ class OrderManager:
                 await self._update_order_in_db(db_order, order)
             except Exception:
                 import logging as _log
-                _log.getLogger(__name__).warning(
-                    "order_expiry_error", order_id=order_id, exc_info=True
-                )
+
+                _log.getLogger(__name__).warning("order_expiry_error", order_id=order_id, exc_info=True)

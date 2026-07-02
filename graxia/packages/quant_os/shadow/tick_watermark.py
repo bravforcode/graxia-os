@@ -2,7 +2,7 @@
 
 Prevents re-processing of old ticks and ensures monotonic progress.
 """
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Optional
 
 

@@ -10,9 +10,8 @@ import math
 import os
 from collections import deque
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
-from typing import Any
 
 import structlog
 
@@ -47,7 +46,7 @@ class DriftAlert:
     current_value: float
     threshold: float
     timestamp: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+        default_factory=lambda: datetime.now(UTC).isoformat()
     )
 
 
@@ -63,7 +62,7 @@ class DriftReport:
     feature_drift_scores: dict[str, float]  # PSI per feature
     alerts: list[DriftAlert]
     report_time: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+        default_factory=lambda: datetime.now(UTC).isoformat()
     )
 
 
@@ -143,7 +142,7 @@ class DriftMonitor:
         """
         key = self._key(model_version, symbol)
         record = PredictionRecord(
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             model_version=model_version,
             symbol=symbol,
             predicted_label=predicted_label,
@@ -378,7 +377,7 @@ class DriftMonitor:
             return None
         try:
             last = datetime.fromisoformat(last_ts)
-            elapsed = datetime.now(timezone.utc) - last
+            elapsed = datetime.now(UTC) - last
             if elapsed.total_seconds() / 3600 > self._stale_hours:
                 return DriftAlert(
                     alert_type="stale_model",
@@ -566,10 +565,41 @@ class DriftMonitor:
 
     def _save_state(self) -> None:
         """Persist monitor state to disk."""
+        # Save predictions to DuckDB for persistence across restarts
+        try:
+            import duckdb
+            db_path = os.getenv("DUCKDB_PATH", "data/market_data.duckdb")
+            con = duckdb.connect(db_path, read_only=False)
+            con.execute("""
+                CREATE TABLE IF NOT EXISTS drift_predictions (
+                    key VARCHAR,
+                    timestamp VARCHAR,
+                    model_version VARCHAR,
+                    symbol VARCHAR,
+                    predicted_label INTEGER,
+                    actual_label INTEGER,
+                    confidence DOUBLE
+                )
+            """)
+            # Clear old predictions and insert current window
+            for key, window in self._predictions.items():
+                parts = key.split("|", 1)
+                mv, sym = parts[0], parts[1] if len(parts) > 1 else "unknown"
+                for r in window:
+                    con.execute(
+                        "INSERT INTO drift_predictions VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        [key, r.timestamp, r.model_version, r.symbol,
+                         r.predicted_label, r.actual_label, r.confidence],
+                    )
+            con.close()
+        except Exception as e:
+            logger.warning("drift_state_persist_failed", error=str(e))
+
+        # Also save lightweight JSON for quick reload
         state = {
             "last_prediction_time": self._last_prediction_time,
             "alerts_count": len(self._alerts),
-            "saved_at": datetime.now(timezone.utc).isoformat(),
+            "saved_at": datetime.now(UTC).isoformat(),
         }
         state_path = self._state_dir / "drift_monitor_state.json"
         with open(state_path, "w") as f:

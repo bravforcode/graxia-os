@@ -17,13 +17,8 @@ Run:
 from __future__ import annotations
 
 import asyncio
-import json
 import os
-import sys
-import tempfile
-import time
-from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -251,7 +246,7 @@ class TestCascadeRouter:
 
     @pytest.mark.asyncio
     async def test_route_invalid_direction_treated_as_neutral(self, mock_env):
-        from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter, ImpactLevel
+        from graxia.packages.quant_os.core.agents.llm_router import CascadeRouter
 
         router = CascadeRouter()
 

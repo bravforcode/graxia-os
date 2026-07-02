@@ -17,8 +17,7 @@ import argparse
 import json
 import os
 import sys
-from datetime import datetime, timezone
-from decimal import Decimal
+from datetime import datetime, UTC
 from typing import Any
 
 # ---------------------------------------------------------------------------
@@ -165,7 +164,7 @@ def validate_symbol(symbol: str, lot_size: float) -> dict:
     # --- Volume bounds ---
     result["checks"].append(_check(
         contract["volume_min"] > 0,
-        f"Volume min > 0",
+        "Volume min > 0",
         f"min={contract['volume_min']}, max={contract['volume_max']}, step={contract['volume_step']}",
     ))
 
@@ -187,7 +186,7 @@ def validate_symbol(symbol: str, lot_size: float) -> dict:
     trade_mode_ok = contract["trade_mode"] in ("FULL", "LONGONLY", "SHORTONLY")
     result["checks"].append(_check(
         trade_mode_ok,
-        f"Trading enabled",
+        "Trading enabled",
         f"mode={contract['trade_mode']}",
     ))
 
@@ -220,7 +219,7 @@ def validate_symbol(symbol: str, lot_size: float) -> dict:
         spread_ok = spread_points <= spread_threshold
         result["checks"].append(_check(
             spread_ok,
-            f"Spread within threshold",
+            "Spread within threshold",
             f"{spread_points} pts (${spread_abs:.4f}) threshold={spread_threshold}",
         ))
 
@@ -352,7 +351,7 @@ def validate_connection() -> dict:
 
 def build_report(symbols: list[str], lot_size: float) -> dict:
     """Build the full validation report."""
-    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    ts = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     report: dict[str, Any] = {
         "report_type": "mt5_crypto_validation",
         "generated_at_utc": ts,

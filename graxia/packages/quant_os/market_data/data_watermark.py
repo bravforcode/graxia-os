@@ -8,7 +8,7 @@ consumers can detect drift without re-reading the tick stream.
 
 import hashlib
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 

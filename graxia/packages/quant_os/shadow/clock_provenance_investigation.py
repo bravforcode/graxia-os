@@ -8,7 +8,7 @@ import os
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 MT5_PATH = r"C:\Program Files\MetaTrader 5\terminal64.exe"
 SYMBOL = "XAUUSD"
@@ -16,7 +16,7 @@ SYMBOL = "XAUUSD"
 
 def get_system_clock() -> dict:
     """Collect system clock evidence."""
-    now_utc = datetime.now(timezone.utc)
+    now_utc = datetime.now(UTC)
     now_epoch_s = time.time()
     now_epoch_ms = int(now_epoch_s * 1000)
 
@@ -55,7 +55,7 @@ def get_system_clock() -> dict:
         "system_utc_now_iso": now_utc.isoformat(),
         "system_epoch_s": now_epoch_s,
         "system_epoch_ms": now_epoch_ms,
-        "system_utc_from_epoch": datetime.fromtimestamp(now_epoch_s, tz=timezone.utc).isoformat(),
+        "system_utc_from_epoch": datetime.fromtimestamp(now_epoch_s, tz=UTC).isoformat(),
         "ntp_source": ntp_source,
         "time_service_status": time_service_status,
         "ntp_peers": ntp_peers,
@@ -296,7 +296,7 @@ def main():
         "mt5_data": mt5_data,
     }
     os.makedirs("shadow_results", exist_ok=True)
-    ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     path = f"shadow_results/clock_provenance_{ts}.json"
     with open(path, "w") as f:
         json.dump(evidence, f, indent=2, default=str)

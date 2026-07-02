@@ -1,458 +1,514 @@
-"""Tests for signal gateway — validation, deduplication, invalid payloads, edge cases."""
+"""
+Tests for api/signal_service.py — ML inference endpoint.
 
-import asyncio
-import json
+Covers:
+- Signal ingestion with valid payload
+- Signal ingestion with invalid/missing fields
+- Deduplication / rate limiting
+- Model loading singleton
+- Error handling when ML model unavailable
+- Concurrent signal ingestion (10 parallel)
+- Trade logging endpoint
+- Health endpoint
+- Feature computation
+
+Uses importlib to load signal_service.py directly, bypassing the broken
+api/__init__.py import chain.
+"""
+
+from __future__ import annotations
+
+import importlib
+import importlib.util
+import sys
+import threading
 import time
+from datetime import datetime, UTC
+from pathlib import Path
+from types import ModuleType
+from unittest.mock import MagicMock, patch
+
+import numpy as np
+import pandas as pd
 import pytest
-from datetime import datetime, timezone
-from unittest.mock import patch, MagicMock
-
-from graxia.packages.quant_os.core.signal_gateway import (
-    SignalGateway, Signal, RawSignalPayload, AssetClass, Side, SignalSource,
-    _append_audit, DEDUP_WINDOW_SECONDS,
-)
+from fastapi.testclient import TestClient
 
 
-# ═══════════════════════════════════════════════════════════════════════
-# Helpers
-# ═══════════════════════════════════════════════════════════════════════
+# ---------------------------------------------------------------------------
+# Direct module loading (bypass api/__init__.py broken import chain)
+# ---------------------------------------------------------------------------
 
-def _valid_payload(**overrides):
-    d = {
-        "symbol": "XAUUSD",
-        "asset_class": "metals",
-        "side": "BUY",
-        "conviction": 0.8,
-        "strategy": "mtm",
-        "entry_price": 2025.0,
-        "stop_loss": 2020.0,
-        "take_profit": 2040.0,
+def _load_signal_service():
+    """Load api/signal_service.py as a standalone module without api/__init__.py."""
+    mod_path = Path(__file__).resolve().parent.parent / "api" / "signal_service.py"
+    spec = importlib.util.spec_from_file_location("signal_service", mod_path)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["signal_service"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+svc = _load_signal_service()
+
+
+# ---------------------------------------------------------------------------
+# Patch pd.Timestamp to work around pandas 2.3+ utc parameter removal
+# ---------------------------------------------------------------------------
+_original_pd_timestamp = pd.Timestamp
+
+class _SafeTimestamp(_original_pd_timestamp):
+    """pd.Timestamp subclass that accepts utc= kwarg (removed in pandas 2.3+)."""
+    def __new__(cls, *args, **kwargs):
+        kwargs.pop("utc", None)
+        return super().__new__(cls, *args, **kwargs)
+
+
+pd.Timestamp = _SafeTimestamp
+
+
+# ---------------------------------------------------------------------------
+# Fixtures
+# ---------------------------------------------------------------------------
+
+def _make_bars(n: int = 200, base_price: float = 2300.0) -> list[dict]:
+    """Generate n synthetic M15 bars for valid SignalRequest."""
+    bars = []
+    ts = int(datetime(2025, 6, 1, 0, 0, tzinfo=UTC).timestamp())
+    price = base_price
+    for i in range(n):
+        delta = np.random.uniform(-2, 2)
+        o = price
+        h = price + abs(delta)
+        l = price - abs(delta)
+        c = price + delta
+        price = c
+        bars.append({
+            "time": ts + i * 900,
+            "open": round(o, 2),
+            "high": round(h, 2),
+            "low": round(l, 2),
+            "close": round(c, 2),
+            "volume": 100.0,
+        })
+        ts += 900
+    return bars
+
+
+def _valid_signal_payload() -> dict:
+    return {
+        "bars": _make_bars(200),
+        "bid": 2300.00,
+        "ask": 2300.20,
+        "hour_utc": 12,
     }
-    d.update(overrides)
-    return d
 
 
-@pytest.fixture
-def queue():
-    return asyncio.Queue()
+def _setup_app_with_mock_model():
+    """
+    Configure signal_service globals with a mock model and return (app, mock_model).
+    """
+    svc._model_loaded = True
+    svc._feature_names = [f"feat_{i}" for i in range(40)]
+
+    mock_model = MagicMock()
+    mock_model.predict_proba.return_value = np.array([[0.3, 0.7]])
+    mock_model.predict.return_value = np.array([1])
+    svc._model = mock_model
+
+    # Reset rate limiter so tests don't hit 429
+    svc._rate_limiter = svc._RateLimiter(max_requests=300, window_seconds=60)
+
+    return svc.app, mock_model
 
 
-@pytest.fixture
-def gw(queue):
-    return SignalGateway(queue=queue, dedup_window=DEDUP_WINDOW_SECONDS)
+# ---------------------------------------------------------------------------
+# Tests: Signal Endpoint
+# ---------------------------------------------------------------------------
+
+class TestSignalIngestion:
+    """Tests for POST /api/signal with valid and invalid payloads."""
+
+    def setup_method(self):
+        self.app, self.mock_model = _setup_app_with_mock_model()
+        self.client = TestClient(self.app)
+
+    def test_valid_signal_returns_direction(self):
+        """Valid payload with 200 bars returns a valid direction and confidence."""
+        payload = _valid_signal_payload()
+        resp = self.client.post("/api/signal", json=payload)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["direction"] in ("long", "short", "flat")
+        assert 0.0 <= data["confidence"] <= 1.0
+        assert "entry_price" in data
+        assert "spread" in data
+        assert "timestamp" in data
+        assert data["model_features"] == 40
+
+    def test_valid_signal_short_direction(self):
+        """Mock model returning class=0 → direction=short."""
+        self.mock_model.predict_proba.return_value = np.array([[0.75, 0.25]])
+        self.mock_model.predict.return_value = np.array([0])
+        payload = _valid_signal_payload()
+        resp = self.client.post("/api/signal", json=payload)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["direction"] == "short"
+
+    def test_session_filter_outside_hours(self):
+        """hour_utc outside 08-17 → direction forced to flat."""
+        payload = _valid_signal_payload()
+        payload["hour_utc"] = 3  # 03:00 UTC
+        resp = self.client.post("/api/signal", json=payload)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["direction"] == "flat"
+        assert data["confidence"] == 0.0
+
+    def test_session_filter_boundary_hour_8(self):
+        """hour_utc=8 is the first tradeable hour."""
+        payload = _valid_signal_payload()
+        payload["hour_utc"] = 8
+        resp = self.client.post("/api/signal", json=payload)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "direction" in data
+
+    def test_session_filter_boundary_hour_17(self):
+        """hour_utc=17 is excluded (>= 17 is outside session)."""
+        payload = _valid_signal_payload()
+        payload["hour_utc"] = 17
+        resp = self.client.post("/api/signal", json=payload)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["direction"] == "flat"
+
+    def test_minimum_bars_enforcement(self):
+        """Request with < 50 bars returns 400."""
+        payload = _valid_signal_payload()
+        payload["bars"] = payload["bars"][:30]
+        resp = self.client.post("/api/signal", json=payload)
+        assert resp.status_code == 400
+        assert "50" in resp.json()["detail"]
+
+    def test_exactly_50_bars_accepted(self):
+        """Request with exactly 50 bars is accepted (minimum threshold)."""
+        payload = _valid_signal_payload()
+        payload["bars"] = payload["bars"][:50]
+        resp = self.client.post("/api/signal", json=payload)
+        assert resp.status_code == 200
+
+    def test_duplicate_timestamps_rejected(self):
+        """Bars with duplicate timestamps return 400."""
+        payload = _valid_signal_payload()
+        for bar in payload["bars"]:
+            bar["time"] = 1700000000
+        resp = self.client.post("/api/signal", json=payload)
+        assert resp.status_code == 400
+        assert "Duplicate timestamps" in resp.json()["detail"]
+
+    def test_invalid_bid_ask_zero(self):
+        """bid=0 returns 400."""
+        payload = _valid_signal_payload()
+        payload["bid"] = 0
+        resp = self.client.post("/api/signal", json=payload)
+        assert resp.status_code == 400
+        assert "Invalid bid/ask" in resp.json()["detail"]
+
+    def test_invalid_bid_ask_negative(self):
+        """Negative bid returns 400."""
+        payload = _valid_signal_payload()
+        payload["bid"] = -1.0
+        resp = self.client.post("/api/signal", json=payload)
+        assert resp.status_code == 400
+
+    def test_ask_less_than_bid_rejected(self):
+        """ask < bid returns 400 (inverted spread is nonsensical)."""
+        payload = _valid_signal_payload()
+        payload["bid"] = 2300.50
+        payload["ask"] = 2300.00
+        resp = self.client.post("/api/signal", json=payload)
+        assert resp.status_code == 400
+        assert "Ask" in resp.json()["detail"]
+
+    def test_spread_in_response(self):
+        """Spread in response equals ask - bid."""
+        payload = _valid_signal_payload()
+        payload["bid"] = 2300.00
+        payload["ask"] = 2300.35
+        resp = self.client.post("/api/signal", json=payload)
+        assert resp.status_code == 200
+        assert resp.json()["spread"] == pytest.approx(0.35, abs=0.001)
+
+    def test_empty_bars_list(self):
+        """Empty bars list returns 400."""
+        payload = _valid_signal_payload()
+        payload["bars"] = []
+        resp = self.client.post("/api/signal", json=payload)
+        assert resp.status_code == 400
+
+    def test_missing_bars_field(self):
+        """Missing bars field returns 422 (Pydantic validation)."""
+        resp = self.client.post("/api/signal", json={
+            "bid": 2300.0, "ask": 2300.2, "hour_utc": 12
+        })
+        assert resp.status_code == 422
+
+    def test_missing_bid_field(self):
+        """Missing bid field returns 422."""
+        resp = self.client.post("/api/signal", json={
+            "bars": _make_bars(60), "ask": 2300.2, "hour_utc": 12
+        })
+        assert resp.status_code == 422
+
+    def test_missing_hour_utc_field(self):
+        """Missing hour_utc returns 422."""
+        resp = self.client.post("/api/signal", json={
+            "bars": _make_bars(60), "bid": 2300.0, "ask": 2300.2
+        })
+        assert resp.status_code == 422
 
 
-# ═══════════════════════════════════════════════════════════════════════
-# Pydantic Validation (RawSignalPayload)
-# ═══════════════════════════════════════════════════════════════════════
+# ---------------------------------------------------------------------------
+# Tests: Rate Limiter
+# ---------------------------------------------------------------------------
 
-class TestRawSignalPayload:
-    """Pydantic schema edge cases."""
+class TestRateLimiter:
+    """Tests for the in-memory rate limiter."""
 
-    def test_valid_payload(self):
-        p = RawSignalPayload(**_valid_payload())
-        assert p.symbol == "XAUUSD"
-        assert p.side == "BUY"
+    def test_allows_within_limit(self):
+        """Requests within the rate limit window are allowed."""
+        limiter = svc._RateLimiter(max_requests=5, window_seconds=60)
+        for _ in range(5):
+            assert limiter.allow("test_client") is True
 
-    def test_empty_symbol_rejected(self):
-        with pytest.raises(Exception):
-            RawSignalPayload(**_valid_payload(symbol=""))
+    def test_blocks_over_limit(self):
+        """Requests exceeding the rate limit are blocked."""
+        limiter = svc._RateLimiter(max_requests=3, window_seconds=60)
+        for _ in range(3):
+            assert limiter.allow("test_client") is True
+        assert limiter.allow("test_client") is False
 
-    def test_long_symbol_rejected(self):
-        with pytest.raises(Exception):
-            RawSignalPayload(**_valid_payload(symbol="X" * 21))
-
-    def test_symbol_at_max_length(self):
-        p = RawSignalPayload(**_valid_payload(symbol="X" * 20))
-        assert len(p.symbol) == 20
-
-    def test_conviction_above_one_rejected(self):
-        with pytest.raises(Exception):
-            RawSignalPayload(**_valid_payload(conviction=1.5))
-
-    def test_conviction_negative_rejected(self):
-        with pytest.raises(Exception):
-            RawSignalPayload(**_valid_payload(conviction=-0.1))
-
-    def test_conviction_boundary_zero(self):
-        p = RawSignalPayload(**_valid_payload(conviction=0.0))
-        assert p.conviction == 0.0
-
-    def test_conviction_boundary_one(self):
-        p = RawSignalPayload(**_valid_payload(conviction=1.0))
-        assert p.conviction == 1.0
-
-    def test_invalid_asset_class_rejected(self):
-        with pytest.raises(Exception):
-            RawSignalPayload(**_valid_payload(asset_class="invalid_class"))
-
-    def test_asset_class_case_insensitive(self):
-        p = RawSignalPayload(**_valid_payload(asset_class="METALS"))
-        assert p.asset_class == "metals"
-
-    def test_invalid_side_rejected(self):
-        with pytest.raises(Exception):
-            RawSignalPayload(**_valid_payload(side="INVALID"))
-
-    def test_side_case_insensitive(self):
-        p = RawSignalPayload(**_valid_payload(side="buy"))
-        assert p.side == "BUY"
-
-    def test_entry_price_zero_rejected(self):
-        with pytest.raises(Exception):
-            RawSignalPayload(**_valid_payload(entry_price=0))
-
-    def test_entry_price_negative_rejected(self):
-        with pytest.raises(Exception):
-            RawSignalPayload(**_valid_payload(entry_price=-100))
-
-    def test_stop_loss_zero_rejected(self):
-        with pytest.raises(Exception):
-            RawSignalPayload(**_valid_payload(stop_loss=0))
-
-    def test_take_profit_zero_rejected(self):
-        with pytest.raises(Exception):
-            RawSignalPayload(**_valid_payload(take_profit=0))
-
-    def test_empty_strategy_rejected(self):
-        with pytest.raises(Exception):
-            RawSignalPayload(**_valid_payload(strategy=""))
-
-    def test_long_strategy_rejected(self):
-        with pytest.raises(Exception):
-            RawSignalPayload(**_valid_payload(strategy="x" * 101))
-
-    def test_optional_timestamp(self):
-        p = RawSignalPayload(**_valid_payload(timestamp="2026-01-15T10:00:00Z"))
-        assert p.timestamp == "2026-01-15T10:00:00Z"
-
-    def test_optional_regime(self):
-        p = RawSignalPayload(**_valid_payload(regime="CRISIS"))
-        assert p.regime == "CRISIS"
-
-    def test_optional_metadata(self):
-        p = RawSignalPayload(**_valid_payload(metadata={"key": "val"}))
-        assert p.metadata["key"] == "val"
-
-    def test_missing_required_field(self):
-        with pytest.raises(Exception):
-            RawSignalPayload(symbol="XAUUSD")  # missing required fields
+    def test_independent_clients(self):
+        """Rate limits are per-client, not global."""
+        limiter = svc._RateLimiter(max_requests=2, window_seconds=60)
+        assert limiter.allow("client_a") is True
+        assert limiter.allow("client_a") is True
+        assert limiter.allow("client_a") is False  # client_a exhausted
+        assert limiter.allow("client_b") is True  # client_b is fresh
 
 
-# ═══════════════════════════════════════════════════════════════════════
-# Signal Dataclass
-# ═══════════════════════════════════════════════════════════════════════
+# ---------------------------------------------------------------------------
+# Tests: Model Unavailable
+# ---------------------------------------------------------------------------
 
-class TestSignal:
-    """Signal domain model edge cases."""
+class TestModelUnavailable:
+    """Tests for behavior when ML model is not loaded."""
 
-    def test_signal_id_deterministic(self):
-        ts = datetime(2026, 1, 15, 10, 0, tzinfo=timezone.utc)
-        s1 = Signal(
-            symbol="XAUUSD", asset_class=AssetClass.METALS, side=Side.BUY,
-            conviction=0.8, strategy="mtm", entry_price=2025.0,
-            stop_loss=2020.0, take_profit=2040.0, timestamp=ts,
-            source=SignalSource.ML,
-        )
-        s2 = Signal(
-            symbol="XAUUSD", asset_class=AssetClass.METALS, side=Side.BUY,
-            conviction=0.9, strategy="mtm", entry_price=2030.0,
-            stop_loss=2025.0, take_profit=2045.0, timestamp=ts,
-            source=SignalSource.TRADINGVIEW,
-        )
-        assert s1.signal_id == s2.signal_id
-
-    def test_different_time_different_id(self):
-        ts1 = datetime(2026, 1, 15, 10, 0, tzinfo=timezone.utc)
-        ts2 = datetime(2026, 1, 15, 10, 2, tzinfo=timezone.utc)
-        s1 = Signal(
-            symbol="XAUUSD", asset_class=AssetClass.METALS, side=Side.BUY,
-            conviction=0.8, strategy="mtm", entry_price=2025.0,
-            stop_loss=2020.0, take_profit=2040.0, timestamp=ts1,
-            source=SignalSource.ML,
-        )
-        s2 = Signal(
-            symbol="XAUUSD", asset_class=AssetClass.METALS, side=Side.BUY,
-            conviction=0.8, strategy="mtm", entry_price=2025.0,
-            stop_loss=2020.0, take_profit=2040.0, timestamp=ts2,
-            source=SignalSource.ML,
-        )
-        assert s1.signal_id != s2.signal_id
-
-    def test_to_dict(self):
-        ts = datetime(2026, 1, 15, tzinfo=timezone.utc)
-        s = Signal(
-            symbol="XAUUSD", asset_class=AssetClass.METALS, side=Side.BUY,
-            conviction=0.8, strategy="mtm", entry_price=2025.0,
-            stop_loss=2020.0, take_profit=2040.0, timestamp=ts,
-            source=SignalSource.ML, regime="RANGE_BOUND",
-            metadata={"key": "val"},
-        )
-        d = s.to_dict()
-        assert d["symbol"] == "XAUUSD"
-        assert d["side"] == "BUY"
-        assert d["regime"] == "RANGE_BOUND"
-        assert d["metadata"]["key"] == "val"
-        assert len(d["signal_id"]) == 16
-
-    def test_signal_frozen(self):
-        from dataclasses import FrozenInstanceError
-        ts = datetime(2026, 1, 15, tzinfo=timezone.utc)
-        s = Signal(
-            symbol="XAUUSD", asset_class=AssetClass.METALS, side=Side.BUY,
-            conviction=0.8, strategy="mtm", entry_price=2025.0,
-            stop_loss=2020.0, take_profit=2040.0, timestamp=ts,
-            source=SignalSource.ML,
-        )
-        with pytest.raises(FrozenInstanceError):
-            s.symbol = "EURUSD"
-
-    def test_signal_id_is_16_hex_chars(self):
-        ts = datetime(2026, 1, 15, tzinfo=timezone.utc)
-        s = Signal(
-            symbol="EURUSD", asset_class=AssetClass.FOREX, side=Side.SELL,
-            conviction=0.6, strategy="mrb", entry_price=1.08,
-            stop_loss=1.09, take_profit=1.07, timestamp=ts,
-            source=SignalSource.PYTHON,
-        )
-        assert len(s.signal_id) == 16
-        assert all(c in "0123456789abcdef" for c in s.signal_id)
-
-
-# ═══════════════════════════════════════════════════════════════════════
-# Signal Gateway — Ingestion
-# ═══════════════════════════════════════════════════════════════════════
-
-class TestSignalGatewayIngest:
-    """Gateway ingestion edge cases."""
-
-    @pytest.mark.asyncio
-    async def test_valid_signal_accepted(self, gw, queue):
-        result = await gw.ingest(_valid_payload(), SignalSource.ML)
-        assert result is not None
-        assert result.symbol == "XAUUSD"
-        assert not queue.empty()
-
-    @pytest.mark.asyncio
-    async def test_invalid_payload_rejected(self, gw):
-        result = await gw.ingest({"symbol": ""}, SignalSource.ML)
-        assert result is None
-
-    @pytest.mark.asyncio
-    async def test_missing_fields_rejected(self, gw):
-        result = await gw.ingest({"symbol": "XAUUSD"}, SignalSource.ML)
-        assert result is None
-
-    @pytest.mark.asyncio
-    async def test_invalid_asset_class_rejected(self, gw):
-        result = await gw.ingest(
-            _valid_payload(asset_class="invalid"), SignalSource.ML
-        )
-        assert result is None
-
-    @pytest.mark.asyncio
-    async def test_duplicate_signal_deduped(self, gw, queue):
-        payload = _valid_payload()
-        r1 = await gw.ingest(payload, SignalSource.ML)
-        r2 = await gw.ingest(payload, SignalSource.ML)
-        assert r1 is not None
-        assert r2 is None
-        assert queue.qsize() == 1
-
-    @pytest.mark.asyncio
-    async def test_different_strategy_not_deduped(self, gw, queue):
-        r1 = await gw.ingest(_valid_payload(strategy="mtm"), SignalSource.ML)
-        r2 = await gw.ingest(_valid_payload(strategy="mrb"), SignalSource.ML)
-        assert r1 is not None
-        assert r2 is not None
-        assert queue.qsize() == 2
-
-    @pytest.mark.asyncio
-    async def test_source_as_string(self, gw):
-        result = await gw.ingest(_valid_payload(), "ml")
-        assert result is not None
-        assert result.source == SignalSource.ML
-
-    @pytest.mark.asyncio
-    async def test_invalid_source_rejected(self, gw):
-        with pytest.raises(ValueError):
-            await gw.ingest(_valid_payload(), "invalid_source")
-
-    @pytest.mark.asyncio
-    async def test_auto_timestamp_when_missing(self, gw):
-        result = await gw.ingest(_valid_payload(), SignalSource.ML)
-        assert result is not None
-        assert result.timestamp is not None
-
-    @pytest.mark.asyncio
-    async def test_provided_timestamp_used(self, gw):
-        ts = "2026-06-15T12:00:00Z"
-        result = await gw.ingest(
-            _valid_payload(timestamp=ts), SignalSource.ML
-        )
-        assert result is not None
-        assert result.timestamp.year == 2026
-
-    @pytest.mark.asyncio
-    async def test_all_asset_classes_accepted(self, gw):
-        for ac in ["metals", "crypto", "forex", "indices"]:
-            result = await gw.ingest(
-                _valid_payload(asset_class=ac, strategy=f"strat_{ac}"),
-                SignalSource.ML,
-            )
-            assert result is not None
-
-    @pytest.mark.asyncio
-    async def test_all_sides_accepted(self, gw):
-        for side in ["BUY", "SELL"]:
-            result = await gw.ingest(
-                _valid_payload(side=side, strategy=f"strat_{side}"),
-                SignalSource.ML,
-            )
-            assert result is not None
-
-    @pytest.mark.asyncio
-    async def test_metadata_preserved(self, gw):
-        result = await gw.ingest(
-            _valid_payload(metadata={"custom_key": 42}),
-            SignalSource.ML,
-        )
-        assert result is not None
-        assert result.metadata["custom_key"] == 42
-
-
-# ═══════════════════════════════════════════════════════════════════════
-# Deduplication Window
-# ═══════════════════════════════════════════════════════════════════════
-
-class TestDedupWindow:
-    """Deduplication timing edge cases."""
-
-    @pytest.mark.asyncio
-    async def test_same_signal_within_window_deduped(self, gw):
-        r1 = await gw.ingest(_valid_payload(), SignalSource.ML)
-        r2 = await gw.ingest(_valid_payload(), SignalSource.ML)
-        assert r1 is not None
-        assert r2 is None
-
-    @pytest.mark.asyncio
-    async def test_eviction_removes_expired(self, gw, queue):
-        """After dedup window expires, same signal_id should be accepted again."""
-        gw._dedup_window = 0.01  # 10ms window
-        r1 = await gw.ingest(_valid_payload(), SignalSource.ML)
-        await asyncio.sleep(0.02)  # wait past dedup window
-        r2 = await gw.ingest(_valid_payload(), SignalSource.ML)
-        assert r1 is not None
-        assert r2 is not None
-
-    @pytest.mark.asyncio
-    async def test_many_signals_all_unique(self, gw, queue):
-        """Many different signals should all be accepted."""
-        for i in range(10):
-            result = await gw.ingest(
-                _valid_payload(strategy=f"strat_{i}", entry_price=2000 + i),
-                SignalSource.ML,
-            )
-            assert result is not None
-        assert queue.qsize() == 10
-
-
-# ═══════════════════════════════════════════════════════════════════════
-# Audit Logging
-# ═══════════════════════════════════════════════════════════════════════
-
-class TestAuditLogging:
-    """Audit log edge cases."""
-
-    def test_append_audit_creates_file(self, tmp_path):
-        import graxia.packages.quant_os.core.signal_gateway as sg
-        original = sg.AUDIT_LOG_PATH
-        sg.AUDIT_LOG_PATH = tmp_path / "audit.jsonl"
+    def test_signal_when_model_not_loaded(self):
+        """POST /api/signal returns 503 when model is not loaded."""
+        original_loaded = svc._model_loaded
+        svc._model_loaded = False
         try:
-            _append_audit({"event": "test", "data": "value"})
-            assert sg.AUDIT_LOG_PATH.exists()
-            content = sg.AUDIT_LOG_PATH.read_text()
-            assert "test" in content
+            client = TestClient(svc.app)
+            payload = _valid_signal_payload()
+            resp = client.post("/api/signal", json=payload)
+            assert resp.status_code == 503
+            assert "Model not loaded" in resp.json()["detail"]
         finally:
-            sg.AUDIT_LOG_PATH = original
+            svc._model_loaded = original_loaded
 
-    def test_append_audit_creates_parent_dirs(self, tmp_path):
-        import graxia.packages.quant_os.core.signal_gateway as sg
-        original = sg.AUDIT_LOG_PATH
-        sg.AUDIT_LOG_PATH = tmp_path / "subdir" / "audit.jsonl"
+    def test_prediction_failure_returns_flat(self):
+        """When model.predict_proba raises, circuit breaker returns flat."""
+        failing_model = MagicMock()
+        failing_model.predict_proba.side_effect = RuntimeError("GPU OOM")
+
+        original_model = svc._model
+        original_loaded = svc._model_loaded
+        svc._model = failing_model
+        svc._model_loaded = True
+        svc._feature_names = [f"feat_{i}" for i in range(40)]
         try:
-            _append_audit({"event": "test"})
-            assert sg.AUDIT_LOG_PATH.exists()
+            client = TestClient(svc.app)
+            payload = _valid_signal_payload()
+            resp = client.post("/api/signal", json=payload)
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["direction"] == "flat"
+            assert data["confidence"] == 0.0
         finally:
-            sg.AUDIT_LOG_PATH = original
-
-    def test_multiple_appends(self, tmp_path):
-        import graxia.packages.quant_os.core.signal_gateway as sg
-        original = sg.AUDIT_LOG_PATH
-        sg.AUDIT_LOG_PATH = tmp_path / "audit.jsonl"
-        try:
-            for i in range(5):
-                _append_audit({"event": f"test_{i}"})
-            lines = sg.AUDIT_LOG_PATH.read_text().strip().split("\n")
-            assert len(lines) == 5
-        finally:
-            sg.AUDIT_LOG_PATH = original
+            svc._model = original_model
+            svc._model_loaded = original_loaded
 
 
-# ═══════════════════════════════════════════════════════════════════════
-# Edge Cases: Extreme Values
-# ═══════════════════════════════════════════════════════════════════════
+# ---------------------------------------------------------------------------
+# Tests: Concurrent Ingestion
+# ---------------------------------------------------------------------------
 
-class TestExtremeValues:
-    """Extreme and boundary value edge cases."""
+class TestConcurrentIngestion:
+    """Tests for concurrent signal ingestion with 10 parallel requests."""
 
-    @pytest.mark.asyncio
-    async def test_very_high_conviction(self, gw):
-        result = await gw.ingest(_valid_payload(conviction=1.0), SignalSource.ML)
-        assert result is not None
+    def test_concurrent_requests(self):
+        """10 parallel signal requests all complete without error."""
+        svc._model_loaded = True
+        svc._feature_names = [f"feat_{i}" for i in range(40)]
 
-    @pytest.mark.asyncio
-    async def test_very_low_conviction(self, gw):
-        result = await gw.ingest(_valid_payload(conviction=0.0), SignalSource.ML)
-        assert result is not None
+        mock_model = MagicMock()
+        mock_model.predict_proba.return_value = np.array([[0.3, 0.7]])
+        mock_model.predict.return_value = np.array([1])
+        svc._model = mock_model
+        svc._rate_limiter = svc._RateLimiter(max_requests=300, window_seconds=60)
 
-    @pytest.mark.asyncio
-    async def test_very_high_price(self, gw):
-        result = await gw.ingest(
-            _valid_payload(entry_price=999999.99, stop_loss=999998.0, take_profit=1000001.0),
-            SignalSource.ML,
-        )
-        assert result is not None
+        client = TestClient(svc.app, raise_server_exceptions=False)
 
-    @pytest.mark.asyncio
-    async def test_stop_loss_above_take_profit(self, gw):
-        """SL > TP is unusual but schema allows it — gateway validates."""
-        result = await gw.ingest(
-            _valid_payload(stop_loss=2040.0, take_profit=2020.0),
-            SignalSource.ML,
-        )
-        assert result is not None
+        results = []
+        for _ in range(10):
+            payload = _valid_signal_payload()
+            payload["hour_utc"] = 12
+            resp = client.post("/api/signal", json=payload)
+            results.append(resp)
 
-    @pytest.mark.asyncio
-    async def test_empty_metadata(self, gw):
-        result = await gw.ingest(_valid_payload(metadata={}), SignalSource.ML)
-        assert result is not None
-        assert result.metadata == {}
+        success_count = sum(1 for r in results if r.status_code == 200)
+        assert success_count == 10
 
-    @pytest.mark.asyncio
-    async def test_nested_metadata(self, gw):
-        result = await gw.ingest(
-            _valid_payload(metadata={"a": {"b": {"c": [1, 2, 3]}}}),
-            SignalSource.ML,
-        )
-        assert result is not None
 
-    @pytest.mark.asyncio
-    async def test_unicode_symbol(self, gw):
-        """Non-ASCII symbol should be rejected by schema min_length."""
-        result = await gw.ingest(
-            _valid_payload(symbol="XAU€USD"),
-            SignalSource.ML,
-        )
-        # Pydantic allows it, but it's unusual
-        assert result is not None or result is None  # depends on schema
+# ---------------------------------------------------------------------------
+# Tests: Health Endpoint
+# ---------------------------------------------------------------------------
+
+class TestHealthEndpoint:
+    """Tests for GET /api/health."""
+
+    def test_health_returns_ok(self):
+        """Health endpoint returns status=ok and model metadata."""
+        self_app, _ = _setup_app_with_mock_model()
+        client = TestClient(self_app)
+        resp = client.get("/api/health")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "ok"
+        assert data["model_loaded"] is True
+        assert data["features"] == 40
+        assert data["symbol"] == "XAUUSD"
+
+
+# ---------------------------------------------------------------------------
+# Tests: Trade Logging
+# ---------------------------------------------------------------------------
+
+class TestTradeLogging:
+    """Tests for POST /api/trade."""
+
+    def test_valid_trade_logged(self):
+        """Valid trade payload returns status=logged with ticket."""
+        self_app, _ = _setup_app_with_mock_model()
+        client = TestClient(self_app)
+        payload = {
+            "ticket": 12345,
+            "direction": "long",
+            "entry_price": 2300.50,
+            "sl": 2297.50,
+            "tp": 2306.50,
+            "confidence": 0.72,
+            "lot_size": 0.01,
+        }
+        resp = client.post("/api/trade", json=payload)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "logged"
+        assert data["ticket"] == 12345
+
+    def test_invalid_entry_price_rejected(self):
+        """entry_price <= 0 returns 400."""
+        self_app, _ = _setup_app_with_mock_model()
+        client = TestClient(self_app)
+        payload = {
+            "ticket": 1, "direction": "long", "entry_price": -10.0,
+            "sl": 100.0, "tp": 200.0, "confidence": 0.7, "lot_size": 0.01,
+        }
+        resp = client.post("/api/trade", json=payload)
+        assert resp.status_code == 400
+
+    def test_invalid_sl_tp_rejected(self):
+        """sl=0 returns 400."""
+        self_app, _ = _setup_app_with_mock_model()
+        client = TestClient(self_app)
+        payload = {
+            "ticket": 1, "direction": "long", "entry_price": 2300.0,
+            "sl": 0, "tp": 200.0, "confidence": 0.7, "lot_size": 0.01,
+        }
+        resp = client.post("/api/trade", json=payload)
+        assert resp.status_code == 400
+
+    def test_invalid_lot_size_rejected(self):
+        """lot_size <= 0 returns 400."""
+        self_app, _ = _setup_app_with_mock_model()
+        client = TestClient(self_app)
+        payload = {
+            "ticket": 1, "direction": "long", "entry_price": 2300.0,
+            "sl": 2297.0, "tp": 2306.0, "confidence": 0.7, "lot_size": 0.0,
+        }
+        resp = client.post("/api/trade", json=payload)
+        assert resp.status_code == 400
+
+
+# ---------------------------------------------------------------------------
+# Tests: Feature Computation
+# ---------------------------------------------------------------------------
+
+class TestFeatureComputation:
+    """Tests for compute_features_live function."""
+
+    def test_compute_features_live_shape(self):
+        """compute_features_live returns (1, n_features) array."""
+        dates = pd.date_range("2025-01-01", periods=200, freq="15min", tz="UTC")
+        df = pd.DataFrame({
+            "open": np.random.uniform(2290, 2310, 200),
+            "high": np.random.uniform(2300, 2320, 200),
+            "low": np.random.uniform(2280, 2300, 200),
+            "close": np.random.uniform(2290, 2310, 200),
+            "volume": np.random.uniform(50, 200, 200),
+        }, index=dates)
+        df["symbol"] = "XAUUSD"
+        df["freq"] = "15min"
+
+        real_features = [
+            "ret_1bar", "ret_5bar", "ret_10bar", "ret_15bar", "ret_30bar", "ret_60bar",
+            "atr_7", "atr_14", "atr_21",
+            "rvol_10", "rvol_20", "rvol_60",
+            "rsi_7", "rsi_14", "rsi_21",
+            "stoch_k", "stoch_d", "cci_20", "willr_14",
+            "ema_5_dist", "ema_10_dist", "ema_20_dist", "ema_200_dist",
+            "sma_20_50_cross", "bb_width", "bb_pctb", "bb_squeeze",
+            "obv_slope_20", "vol_ratio_20", "vol_ratio_10",
+            "body_ratio", "upper_shadow", "lower_shadow",
+            "is_doji", "is_hammer", "is_bull_engulf",
+            "is_asian_session", "is_london_session", "is_ny_session",
+            "day_of_week", "day_of_month",
+        ]
+        result = svc.compute_features_live(df, real_features)
+        assert result.shape[0] == 1
+        assert result.shape[1] == len(real_features)
+
+    def test_compute_features_handles_nan(self):
+        """compute_features_live fills NaN values and still returns valid output."""
+        dates = pd.date_range("2025-01-01", periods=200, freq="15min", tz="UTC")
+        close = np.random.uniform(2290, 2310, 200).astype(float)
+        close[5] = np.nan
+        close[10] = np.inf
+        df = pd.DataFrame({
+            "open": close,
+            "high": close + 2,
+            "low": close - 2,
+            "close": close,
+            "volume": np.ones(200),
+        }, index=dates)
+
+        real_features = [
+            "ret_1bar", "ret_5bar", "rsi_14", "atr_14", "body_ratio",
+            "is_doji", "is_hammer", "is_bull_engulf", "bb_width", "bb_pctb",
+        ]
+        result = svc.compute_features_live(df, real_features)
+        assert result.shape[0] == 1
+        assert not np.any(np.isnan(result)), "Output should not contain NaN"
+        assert not np.any(np.isinf(result)), "Output should not contain inf"

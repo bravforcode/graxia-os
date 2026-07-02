@@ -50,7 +50,7 @@ def size_position(
     """
     reasons = []
     one_lot = float(contract_spec.trade_contract_size)
-    risk_budget = equity * risk_policy.max_risk_per_trade_pct / Decimal("100")
+    risk_budget = equity * risk_policy.risk_per_trade_fraction
 
     # --- Step 1: Validate stop loss ---
     if stop_loss == 0 or stop_loss is None:

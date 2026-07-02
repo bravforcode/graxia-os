@@ -15,7 +15,6 @@ Output: artifacts/mega_model/
 """
 
 import json
-import os
 import pickle
 import sys
 import time
@@ -36,8 +35,6 @@ from sklearn.metrics import (
     precision_score,
     recall_score,
     f1_score,
-    confusion_matrix,
-    classification_report,
 )
 
 warnings.filterwarnings("ignore")
@@ -192,7 +189,7 @@ def walk_forward_split(n: int, train_ratio: float = 0.8):
 
 def walk_forward_cv(n: int, n_folds: int = 5, embargo: int = 24):
     """Purged walk-forward CV for Optuna inner loop.
-    
+
     embargo=24 bars = 6 hours (prevents leakage from adjacent sessions)
     """
     fold_size = n // (n_folds + 1)
@@ -527,14 +524,14 @@ def main():
     # Check for overfitting
     avg_train_acc = np.mean([xgb_train_acc, lgb_train_acc, cb_train_acc])
     gap = avg_train_acc - ens_acc
-    log(f"\n  Overfitting check:")
+    log("\n  Overfitting check:")
     log(f"    Avg train accuracy: {avg_train_acc:.4f}")
     log(f"    Ensemble test accuracy: {ens_acc:.4f}")
     log(f"    Train-test gap: {gap:.4f}")
     if gap > 0.10:
         log(f"  [WARN] High overfitting gap ({gap:.4f}) — consider more regularization")
     else:
-        log(f"  [OK] Acceptable overfitting gap")
+        log("  [OK] Acceptable overfitting gap")
 
     # 7. Detailed metrics
     log(f"\n{'='*70}")
@@ -560,7 +557,7 @@ def main():
     ens_metrics = compute_trading_metrics(y_test, ens_preds, returns_test)
     ens_metrics["test_accuracy"] = ens_acc
     all_metrics["Ensemble"] = ens_metrics
-    log(f"\n  Ensemble:")
+    log("\n  Ensemble:")
     for k, v in ens_metrics.items():
         log(f"    {k:20s}: {v}")
 
@@ -653,7 +650,7 @@ def main():
         f.write(f"  Total features: {len(feature_names)}\n")
         f.write(f"  Selected features: {len(selected_features)}\n")
         f.write(f"  Train: {len(train_idx)} | Test: {len(test_idx)}\n")
-        f.write(f"  Label: triple_barrier (k_tp=2.0, k_sl=1.5)\n")
+        f.write("  Label: triple_barrier (k_tp=2.0, k_sl=1.5)\n")
         f.write(f"  target_win distribution: {df['target_win'].value_counts().to_dict()}\n\n")
 
         f.write("OPTUNA\n")
@@ -677,7 +674,7 @@ def main():
         for i, (name, score) in enumerate(importance[:30]):
             f.write(f"  {i+1:2d}. {name:40s} {score:.4f}\n")
 
-        f.write(f"\nOUTPUT FILES\n")
+        f.write("\nOUTPUT FILES\n")
         f.write(f"  {xgb_path.name}\n")
         f.write(f"  {lgb_path.name}\n")
         f.write(f"  {cb_path.name}\n")

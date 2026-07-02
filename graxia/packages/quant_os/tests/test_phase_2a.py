@@ -119,8 +119,7 @@ class TestStrictMTF:
     def test_strict_mtf_blocks_static_fallback(self):
         from graxia.packages.quant_os.backtest.engine import BacktestEngine, BacktestConfig
         from graxia.packages.quant_os.core.exceptions import StrictMTFViolation
-        from graxia.packages.quant_os.strategies.base import Strategy, StrategyConfig, Signal
-        from graxia.packages.quant_os.core.enums import SignalType
+        from graxia.packages.quant_os.strategies.base import Strategy, StrategyConfig
 
         class DummyStrategy(Strategy):
             def generate_signal(self, symbol, ohlcv_data, indicators=None, regime=None, **kwargs):
@@ -191,7 +190,7 @@ class TestHardcodeAudit:
             except Exception:
                 pass
         assert len(violations) == 0, (
-            f"units_per_lot found in unlisted production code:\n" +
+            "units_per_lot found in unlisted production code:\n" +
             "\n".join(violations[:10])
         )
 
@@ -215,5 +214,5 @@ class TestHardcodeAudit:
                 except Exception:
                     pass
         assert len(violations) == 0, (
-            f"order_send found in broker/risk:\n" + "\n".join(violations)
+            "order_send found in broker/risk:\n" + "\n".join(violations)
         )

@@ -38,14 +38,14 @@ VALID_TRANSITIONS = {
 
 class OrderLifecycle:
     """Order lifecycle state machine."""
-    
+
     def __init__(self):
         self._state = OrderState.SIGNAL_CREATED
         self._history: list[OrderState] = [OrderState.SIGNAL_CREATED]
-    
+
     def get_state(self) -> OrderState:
         return self._state
-    
+
     def transition(self, target: OrderState) -> bool:
         """Attempt transition. Returns True if valid."""
         valid = VALID_TRANSITIONS.get(self._state, [])
@@ -54,14 +54,14 @@ class OrderLifecycle:
             self._history.append(target)
             return True
         return False
-    
+
     def get_history(self) -> list[OrderState]:
         return self._history.copy()
-    
+
     def is_terminal(self) -> bool:
         return self._state in (OrderState.AUDITED, OrderState.REJECTED, OrderState.EXPIRED)
-    
+
     def is_filled(self) -> bool:
-        return self._state in (OrderState.FILLED, OrderState.PARTIALLY_FILLED, 
+        return self._state in (OrderState.FILLED, OrderState.PARTIALLY_FILLED,
                               OrderState.PROTECTIVE_STOPS_VERIFIED, OrderState.POSITION_RECONCILED,
                               OrderState.CLOSED, OrderState.DEAL_RECONCILED, OrderState.AUDITED)

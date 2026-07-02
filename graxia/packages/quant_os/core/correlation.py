@@ -33,8 +33,15 @@ class CorrelationFilter:
     Returns a position multiplier based on correlation with other open positions.
     """
 
-    def __init__(self, lookback: int = LOOKBACK):
+    def __init__(
+        self,
+        lookback: int = LOOKBACK,
+        high_correlation: float = HIGH_CORRELATION,
+        very_high_correlation: float = VERY_HIGH_CORRELATION,
+    ):
         self._lookback = lookback
+        self._high_correlation = high_correlation
+        self._very_high_correlation = very_high_correlation
         self._prices: dict[str, list[float]] = defaultdict(list)
         self._open_symbols: set[str] = set()
 
@@ -94,7 +101,7 @@ class CorrelationFilter:
             corr = abs(self._correlation(symbol, target))
             worst_corr = max(worst_corr, corr)
 
-        if worst_corr >= VERY_HIGH_CORRELATION:
+        if worst_corr >= self._very_high_correlation:
             logger.warning(
                 "correlation.block",
                 symbol=symbol,
@@ -103,7 +110,7 @@ class CorrelationFilter:
             )
             return 0.0
 
-        if worst_corr >= HIGH_CORRELATION:
+        if worst_corr >= self._high_correlation:
             logger.info(
                 "correlation.reduce",
                 symbol=symbol,

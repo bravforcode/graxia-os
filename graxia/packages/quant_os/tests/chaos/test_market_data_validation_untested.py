@@ -16,14 +16,13 @@ import tempfile
 import threading
 from datetime import datetime, timedelta
 from decimal import Decimal
-from pathlib import Path
 
 import pytest
 
 from quant_os.market_data.tick_store import TickStore
 from quant_os.market_data.tick_recorder import TickRecord
 from quant_os.validation.archive_reasons import ArchiveRecorder
-from quant_os.validation.run_matrix import RunConfig, RunMatrix
+from quant_os.validation.run_matrix import RunMatrix
 
 
 # ── Fixtures ─────────────────────────────────────────────────────────────────

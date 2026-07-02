@@ -8,10 +8,10 @@ NOTE: _apply_limits() caps position based on max_portfolio_exposure_pct (50%).
 For $10k account, max_exposure = $5000. Any notional > $5000 gets scaled down.
 """
 import pytest
-from decimal import Decimal, ROUND_DOWN
+from decimal import Decimal
 
 from quant_os.risk.position_sizer import (
-    FixedFractionalSizer, KellySizer, ATRSizer, AntiMartingaleSizer
+    FixedFractionalSizer
 )
 
 

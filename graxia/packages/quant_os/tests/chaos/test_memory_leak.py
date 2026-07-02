@@ -10,11 +10,10 @@ import json
 import os
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import pytest
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -85,7 +84,7 @@ class MemoryLeakReport:
     passed: bool
     errors: List[str] = field(default_factory=list)
     timestamp: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+        default_factory=lambda: datetime.now(UTC).isoformat()
     )
 
 
@@ -271,7 +270,7 @@ class MemoryLeakTest:
             Path to written report file.
         """
         REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-        ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         filename = f"memory_leak_report_{ts}.json"
         path = REPORTS_DIR / filename
 

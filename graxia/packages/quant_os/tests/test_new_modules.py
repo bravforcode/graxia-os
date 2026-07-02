@@ -2,7 +2,6 @@
 Tests for new modules: Regime Filter, Monte Carlo, Signal Filter, Stability
 """
 
-import pytest
 import random
 random.seed(42)
 

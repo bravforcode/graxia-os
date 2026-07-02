@@ -81,7 +81,6 @@ def validate_no_pct_in_production() -> list[str]:
     Returns list of violations (empty = clean).
     """
     import importlib
-    import sys
     violations = []
     production_modules = [
         "graxia.packages.quant_os.core.config",

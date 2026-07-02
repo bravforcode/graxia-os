@@ -10,9 +10,7 @@ Usage:
 import argparse
 import json
 import os
-import sys
 import warnings
-from datetime import datetime, timezone
 from glob import glob
 
 import numpy as np
@@ -23,7 +21,6 @@ warnings.filterwarnings('ignore')
 # ML
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
-from sklearn.model_selection import TimeSeriesSplit
 import xgboost as xgb
 
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "artifacts", "strategy_model")
@@ -234,10 +231,10 @@ def main():
     # Train
     print(f"\n--- Training {args.model} ---")
     model = train_model(X_train, y_train, args.model)
-    print(f"  [OK] Model trained")
+    print("  [OK] Model trained")
 
     # Backtest
-    print(f"\n--- Backtest ---")
+    print("\n--- Backtest ---")
     y_test_orig_for_bt = y_test_orig if args.label_type == "triple-barrier" else None
     metrics = backtest(model, X_test, y_test, feature_cols, y_test_orig=y_test_orig_for_bt)
     
@@ -256,7 +253,7 @@ def main():
         print(f"    {name}: {imp:.4f}")
 
     # Save model + metrics
-    print(f"\n--- Saving ---")
+    print("\n--- Saving ---")
     model_path = os.path.join(OUTPUT_DIR, f"{args.symbol}_{args.freq}_{args.model}.json")
     if args.model == 'xgboost':
         model.save_model(model_path)

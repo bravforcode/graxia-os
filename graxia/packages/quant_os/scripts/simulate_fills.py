@@ -12,11 +12,8 @@ Usage:
     python scripts/simulate_fills.py [--symbol XAUUSD] [--freq 1min] [--output artifacts/fill_samples]
 """
 import argparse
-import csv
 import json
 import os
-import sys
-from datetime import datetime, timezone
 from glob import glob
 
 import numpy as np
@@ -232,7 +229,7 @@ def main():
     print(f"\n  Saved: {csv_path}")
 
     # Distributional stats
-    print(f"\n--- Slippage distribution by latency ---")
+    print("\n--- Slippage distribution by latency ---")
     for lat in latencies_ms:
         subset = df[df['latency_ms'] == lat]
         if len(subset) > 0:
@@ -240,7 +237,7 @@ def main():
             print(f"  {lat}ms: n={len(sl)}, P50={sl.quantile(0.5):.2f}, P90={sl.quantile(0.9):.2f}, "
                   f"P99={sl.quantile(0.99):.2f}, mean={sl.mean():.2f}, std={sl.std():.2f}")
 
-    print(f"\n--- Slippage P90 by condition bucket ---")
+    print("\n--- Slippage P90 by condition bucket ---")
     for bucket_col in ['session', 'vol_regime', 'spread_bucket']:
         print(f"  {bucket_col}:")
         for bucket in sorted(df[bucket_col].unique()):

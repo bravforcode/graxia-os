@@ -12,10 +12,9 @@ import importlib.util
 import json
 import os
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 from pathlib import Path
 
-import pytest
 
 # ---------------------------------------------------------------------------
 # Direct file-level imports — no __init__.py triggered
@@ -154,7 +153,7 @@ class TestLogRotation:
     def test_rotate_by_time_old(self, tmp_path):
         d = tmp_path / "logs"; d.mkdir()
         f = d / "t.jsonl"; f.write_text("old")
-        old = (datetime.now(timezone.utc) - timedelta(days=2)).timestamp()
+        old = (datetime.now(UTC) - timedelta(days=2)).timestamp()
         os.utime(f, (old, old))
         assert rotate_by_time(f) is True
         assert not f.exists()
@@ -175,7 +174,7 @@ class TestLogRotation:
 
     def test_cleanup_old(self, tmp_path):
         d = tmp_path / "logs"; d.mkdir()
-        old = (datetime.now(timezone.utc) - timedelta(days=60)).strftime("%Y%m%d")
+        old = (datetime.now(UTC) - timedelta(days=60)).strftime("%Y%m%d")
         gz = d / f"t.{old}.jsonl.gz"
         with gzip.open(gz, "wb") as fp:
             fp.write(b"old")

@@ -2,8 +2,8 @@
 
 import asyncio
 import pytest
-from datetime import datetime, timezone, timedelta
-from unittest.mock import patch, MagicMock, AsyncMock
+from datetime import datetime, timedelta, UTC
+from unittest.mock import AsyncMock
 
 from graxia.packages.quant_os.monitoring.heartbeat import HeartbeatMonitor
 from graxia.packages.quant_os.monitoring.dead_mans_switch import DeadMansSwitch
@@ -68,7 +68,7 @@ class TestHeartbeatMonitor:
         ts = mon.last_beat
         assert ts is not None
         parsed = datetime.fromisoformat(ts)
-        assert parsed < datetime.now(timezone.utc) + timedelta(seconds=2)
+        assert parsed < datetime.now(UTC) + timedelta(seconds=2)
 
 
 # ---------------------------------------------------------------------------
@@ -87,7 +87,7 @@ class TestDeadMansSwitch:
     async def test_fires_when_heartbeat_stale(self, actions):
         close, halt, alert = actions
         # Heartbeat from 10 minutes ago (> 5 min default timeout)
-        stale_ts = (datetime.now(timezone.utc) - timedelta(minutes=10)).isoformat()
+        stale_ts = (datetime.now(UTC) - timedelta(minutes=10)).isoformat()
         state = {"last_heartbeat": stale_ts}
 
         dms = DeadMansSwitch(
@@ -111,7 +111,7 @@ class TestDeadMansSwitch:
     async def test_no_fire_when_heartbeat_fresh(self, actions):
         close, halt, alert = actions
         # Fresh heartbeat
-        state = {"last_heartbeat": datetime.now(timezone.utc).isoformat()}
+        state = {"last_heartbeat": datetime.now(UTC).isoformat()}
 
         dms = DeadMansSwitch(
             state,
@@ -153,7 +153,7 @@ class TestDeadMansSwitch:
     async def test_custom_timeout(self, actions):
         close, halt, alert = actions
         # Heartbeat 8 seconds ago
-        ts = (datetime.now(timezone.utc) - timedelta(seconds=8)).isoformat()
+        ts = (datetime.now(UTC) - timedelta(seconds=8)).isoformat()
         state = {"last_heartbeat": ts}
 
         # 10s timeout → should NOT fire
@@ -173,7 +173,7 @@ class TestDeadMansSwitch:
     @pytest.mark.asyncio
     async def test_reset_allows_reuse(self, actions):
         close, halt, alert = actions
-        stale = (datetime.now(timezone.utc) - timedelta(minutes=10)).isoformat()
+        stale = (datetime.now(UTC) - timedelta(minutes=10)).isoformat()
         state = {"last_heartbeat": stale}
 
         dms = DeadMansSwitch(
@@ -190,7 +190,7 @@ class TestDeadMansSwitch:
         await dms.stop()
 
         # Simulate reset: fresh heartbeat + new switch instance
-        state["last_heartbeat"] = datetime.now(timezone.utc).isoformat()
+        state["last_heartbeat"] = datetime.now(UTC).isoformat()
         dms2 = DeadMansSwitch(
             state,
             close_all_positions=close,

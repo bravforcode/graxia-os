@@ -5,7 +5,7 @@ Evidence: SIG-000005 (entry=SL=TP) and SIG-000045 (spread 2.4x baseline)
 were accepted in the original shadow session. These tests ensure that
 can NEVER happen again.
 """
-from datetime import datetime, timedelta
+from datetime import datetime
 from graxia.packages.quant_os.shadow.pipeline import (
     ShadowPipeline, ShadowSignal, ShadowSignalOutcome, PositionStatus,
     validate_signal_geometry, SpreadShockGate, SignalDeduplicator,

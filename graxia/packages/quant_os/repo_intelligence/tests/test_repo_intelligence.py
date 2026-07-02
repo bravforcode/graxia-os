@@ -15,13 +15,8 @@ And from Section 4.5:
 
 ponytail: tests are minimal — one assertion per rule, no fixtures.
 """
-import importlib
-import inspect
 import os
-import sys
-import textwrap
 
-import pytest
 
 # ---------------------------------------------------------------------------
 # Paths

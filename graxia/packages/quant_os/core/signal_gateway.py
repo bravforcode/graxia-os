@@ -12,16 +12,17 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
-import os
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import structlog
 from pydantic import BaseModel, Field, field_validator
 
+from .news_blackout import NewsBlackout
+from .session_filter import SessionFilter
 from .session_manager import AssetClass
 
 AUDIT_LOG_PATH = Path(__file__).resolve().parent.parent / "state" / "audit_log.jsonl"
@@ -170,11 +171,15 @@ class SignalGateway:
         self,
         queue: asyncio.Queue[Signal],
         dedup_window: float = DEDUP_WINDOW_SECONDS,
+        news_blackout: NewsBlackout | None = None,
+        session_filter: SessionFilter | None = None,
     ) -> None:
         self._queue = queue
         self._dedup_window = dedup_window
         self._seen: Dict[str, float] = {}  # signal_id → monotonic timestamp
         self._lock = asyncio.Lock()
+        self._news_blackout = news_blackout or NewsBlackout()
+        self._session_filter = session_filter
 
     # ------------------------------------------------------------------
     # Public API
@@ -202,7 +207,7 @@ class SignalGateway:
                     "event": "signal.rejected",
                     "reason": "validation_error",
                     "error": str(exc),
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
             )
             return None
@@ -211,7 +216,7 @@ class SignalGateway:
         ts = (
             datetime.fromisoformat(validated.timestamp)
             if validated.timestamp
-            else datetime.now(timezone.utc)
+            else datetime.now(UTC)
         )
         signal = Signal(
             symbol=validated.symbol,
@@ -228,6 +233,51 @@ class SignalGateway:
             metadata=validated.metadata,
         )
 
+        # 2b. News blackout gate
+        if self._news_blackout.is_blocked():
+            remaining = self._news_blackout.remaining_seconds()
+            logger.info(
+                "signal.blocked_by_news",
+                signal_id=signal.signal_id,
+                symbol=signal.symbol,
+                side=signal.side.value,
+                remaining_seconds=round(remaining),
+            )
+            _append_audit(
+                {
+                    "event": "signal.blocked_by_news",
+                    "signal_id": signal.signal_id,
+                    "symbol": signal.symbol,
+                    "side": signal.side.value,
+                    "remaining_seconds": round(remaining),
+                    "timestamp": datetime.now(UTC).isoformat(),
+                }
+            )
+            return None
+
+        # 2c. Session filter gate
+        if self._session_filter is not None:
+            sf = SessionFilter(now=ts)
+            if not sf.is_active():
+                logger.info(
+                    "signal.blocked_by_session",
+                    signal_id=signal.signal_id,
+                    symbol=signal.symbol,
+                    side=signal.side.value,
+                    session=sf.current_session.value,
+                )
+                _append_audit(
+                    {
+                        "event": "signal.blocked_by_session",
+                        "signal_id": signal.signal_id,
+                        "symbol": signal.symbol,
+                        "side": signal.side.value,
+                        "session": sf.current_session.value,
+                        "timestamp": datetime.now(UTC).isoformat(),
+                    }
+                )
+                return None
+
         # 3. Deduplication
         async with self._lock:
             now = asyncio.get_event_loop().time()
@@ -241,7 +291,7 @@ class SignalGateway:
                         "event": "signal.deduped",
                         "signal_id": sid,
                         "symbol": signal.symbol,
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "timestamp": datetime.now(UTC).isoformat(),
                     }
                 )
                 return None

@@ -17,7 +17,6 @@ import pytest
 
 from graxia.packages.quant_os.core.news_blackout import NewsBlackout
 from graxia.packages.quant_os.core.signal_gateway import SignalGateway, SignalSource
-from graxia.packages.quant_os.core.session_manager import AssetClass
 
 
 @pytest.fixture

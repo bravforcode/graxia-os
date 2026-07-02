@@ -3,7 +3,6 @@
 RESTORED from deleted test_phase_7_canary_policy.py (BE-P9 commit 3ca14eb).
 Original deleted because CanaryOrder API changed; migrated to OrderLifecycle.
 """
-import pytest
 
 
 def test_canary_config_exists():

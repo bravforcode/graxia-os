@@ -1,5 +1,4 @@
 """Tests for Backtrader oracle adapter."""
-import uuid
 
 from graxia.packages.quant_os.repo_intelligence.adapters.backtrader_oracle import (
     get_engine_name,

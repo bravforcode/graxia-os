@@ -16,7 +16,6 @@ import pytest
 
 from graxia.packages.quant_os.core.agents.risk_agent import RiskAgent
 from graxia.packages.quant_os.core.canonical.macro_regime import (
-    MacroRegime,
     MacroRegimeCache,
     RegimeBias,
 )

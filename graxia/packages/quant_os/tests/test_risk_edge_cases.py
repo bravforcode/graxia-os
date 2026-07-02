@@ -3,12 +3,11 @@
 import time
 import pytest
 from decimal import Decimal
-from unittest.mock import MagicMock, patch
-from datetime import datetime, timezone, timedelta
+from unittest.mock import MagicMock
+from datetime import datetime, UTC
 
 from graxia.packages.quant_os.risk.engine import (
-    RiskEngine, Signal, AccountState, PortfolioState, RiskVerdict,
-    RejectReason, _Layer1, _Layer2, _Layer3, _Layer4,
+    RiskEngine, Signal, AccountState, PortfolioState, RejectReason,
 )
 from graxia.packages.quant_os.risk.kill_switch import KillSwitch, KillSwitchState
 from graxia.packages.quant_os.risk.circuit_breaker import CircuitBreaker, CircuitBreakerConfig
@@ -659,7 +658,7 @@ class TestCircuitBreaker:
     def test_manual_reset(self):
         cb = CircuitBreaker()
         cb.trip("metals", "manual")
-        cb.reset("metals")
+        cb.reset("metals", authorized_by="test", reason="test reset")
         assert not cb.is_open("metals")
 
     def test_cooldown_auto_recovery(self):
@@ -692,7 +691,7 @@ class TestCircuitBreaker:
     def test_trip_count_increments(self):
         cb = CircuitBreaker()
         cb.trip("metals", "first")
-        cb.reset("metals")
+        cb.reset("metals", authorized_by="test", reason="test reset")
         cb.trip("metals", "second")
         status = cb.get_status()
         assert status["metals"]["trip_count"] == 2
@@ -883,12 +882,12 @@ class TestSlippageModel:
 
     def test_classify_session_rollover_boundary(self):
         """Rollover at 22:00 UTC — inside the 21:55-22:16 dead zone."""
-        ts = datetime(2026, 1, 15, 22, 0, tzinfo=timezone.utc)
+        ts = datetime(2026, 1, 15, 22, 0, tzinfo=UTC)
         assert classify_session(ts) == TradingSession.ROLLOVER
 
     def test_classify_session_returns_valid_enum(self):
         """classify_session always returns a valid TradingSession."""
         for hour in range(24):
-            ts = datetime(2026, 1, 15, hour, 0, tzinfo=timezone.utc)
+            ts = datetime(2026, 1, 15, hour, 0, tzinfo=UTC)
             result = classify_session(ts)
             assert isinstance(result, TradingSession)

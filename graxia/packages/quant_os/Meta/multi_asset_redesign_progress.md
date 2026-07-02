@@ -1,7 +1,7 @@
 # Multi-Asset Redesign Progress
 
-Plan: `MULTI_ASSET_REDESIGN_PLAN_v3.md`  
-Branch: `multi-asset-redesign-2026`  
+Plan: `MULTI_ASSET_REDESIGN_PLAN_v3.md`
+Branch: `multi-asset-redesign-2026`
 Updated: 2026-06-29
 
 ## Completed

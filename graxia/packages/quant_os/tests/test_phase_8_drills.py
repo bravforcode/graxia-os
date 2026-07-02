@@ -1,8 +1,6 @@
 """Phase 8 — Drill framework tests."""
-import pytest
 from graxia.packages.quant_os.canary.drills.drill_definitions import (
     DrillType,
-    DrillResult,
     DrillDefinition,
     DRILL_CATALOG,
 )

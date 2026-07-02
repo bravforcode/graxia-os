@@ -29,7 +29,7 @@ import argparse
 import json
 import os
 import sys
-from datetime import datetime, timezone, time as dtime
+from datetime import datetime, time as dtime, UTC
 from glob import glob
 from typing import Optional
 
@@ -1003,7 +1003,7 @@ def main() -> None:
 
     # Save run record
     record = {
-        "run_time_utc": datetime.now(timezone.utc).isoformat(),
+        "run_time_utc": datetime.now(UTC).isoformat(),
         "symbols": symbols,
         "frequencies": freqs,
         "feature_families": feature_families,

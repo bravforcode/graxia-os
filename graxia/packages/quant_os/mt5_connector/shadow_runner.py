@@ -18,15 +18,15 @@ import time
 import yaml
 import json
 import logging
-from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
-from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Optional
+from dataclasses import dataclass
 from enum import Enum
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from mt5_connector.connection import MT5Connection
-from shadow.pipeline import ShadowPipeline, ShadowSignal, ShadowSignalOutcome
+from shadow.pipeline import ShadowPipeline
 from shadow.failure_rules import FailureRuleChecker
 from shadow.telemetry import ShadowTelemetry
 
@@ -87,7 +87,7 @@ class SignalRecord:
     exit_reason: str = ""
     bars_held: int = 0
     volume: float = 0.01
-    
+
     def to_dict(self) -> dict:
         return {
             "signal_id": self.signal_id,
@@ -121,33 +121,33 @@ def validate_signal_geometry(
     max_spread: float = 0.25,
 ) -> tuple[SignalOutcome, str]:
     """Validate signal geometry. Returns (outcome, rejection_reason)."""
-    
+
     # Spread shock check
     if spread > max_spread:
         return SignalOutcome.REJECTED_SPREAD_SHOCK, RejectionReason.SPREAD_SHOCK.value
-    
+
     # SL distance check
     sl_distance = abs(sl - entry)
     if sl_distance < 0.01:
         return SignalOutcome.REJECTED_SL_ZERO_DISTANCE, RejectionReason.SL_ZERO_DISTANCE.value
-    
+
     # SL equals entry
     if abs(sl - entry) < 0.001:
         return SignalOutcome.REJECTED_SL_EQUAL_ENTRY, RejectionReason.SL_EQUAL_ENTRY.value
-    
+
     # SL wrong side
     if direction == "BUY" and sl >= entry:
         return SignalOutcome.REJECTED_SL_WRONG_SIDE, RejectionReason.SL_WRONG_SIDE.value
     if direction == "SELL" and sl <= entry:
         return SignalOutcome.REJECTED_SL_WRONG_SIDE, RejectionReason.SL_WRONG_SIDE.value
-    
+
     # TP wrong side
     if tp is not None:
         if direction == "BUY" and tp <= entry:
             return SignalOutcome.REJECTED_TP_WRONG_SIDE, RejectionReason.TP_WRONG_SIDE.value
         if direction == "SELL" and tp >= entry:
             return SignalOutcome.REJECTED_TP_WRONG_SIDE, RejectionReason.TP_WRONG_SIDE.value
-    
+
     return SignalOutcome.ACCEPTED, ""
 
 
@@ -158,11 +158,11 @@ def simulate_outcome(
     """Simulate SL/TP/time-stop outcome. Returns (outcome, exit_price, pnl, bars_held, reason)."""
     if not future_bars:
         return SignalOutcome.TIME_STOP, entry, 0.0, 0, "NO_DATA"
-    
+
     for i, bar in enumerate(future_bars[:max_bars]):
         high = bar['high']
         low = bar['low']
-        
+
         if direction == "BUY":
             if low <= sl:
                 return SignalOutcome.HIT_SL, sl, (sl - entry), i + 1, "SL"
@@ -173,7 +173,7 @@ def simulate_outcome(
                 return SignalOutcome.HIT_SL, sl, (entry - sl), i + 1, "SL"
             if tp and low <= tp:
                 return SignalOutcome.HIT_TP, tp, (entry - tp), i + 1, "TP"
-    
+
     # Time stop
     last_price = future_bars[min(max_bars - 1, len(future_bars) - 1)]['close']
     if direction == "BUY":
@@ -229,7 +229,7 @@ class ShadowRunnerV2:
     def _evaluate_signal(self, symbol: str, tick: TickEvidence, bars: list) -> tuple[SignalRecord, SignalOutcome, str]:
         self._signal_count += 1
         signal_id = f"SIG-{self._signal_count:06d}"
-        
+
         # Bars check
         if len(bars) < 2:
             return SignalRecord(
@@ -244,7 +244,7 @@ class ShadowRunnerV2:
         # Direction
         prev_close = bars[-2]['close']
         curr_close = bars[-1]['close']
-        
+
         if curr_close > prev_close:
             direction = "BUY"
             entry = tick.ask
@@ -267,7 +267,7 @@ class ShadowRunnerV2:
 
         # Validate geometry
         outcome, reason = validate_signal_geometry(direction, entry, sl, tp, tick.spread, self._max_spread)
-        
+
         record = SignalRecord(
             signal_id=signal_id, timestamp=datetime.utcnow(),
             symbol=symbol, direction=direction,
@@ -275,30 +275,30 @@ class ShadowRunnerV2:
             outcome=outcome, rejection_reason=reason,
             tick_evidence=tick, volume=0.01,
         )
-        
+
         return record, outcome, reason
 
     def _simulate_outcome(self, record: SignalRecord, future_bars: list) -> SignalRecord:
         """Simulate outcome for accepted signals."""
         if record.outcome != SignalOutcome.ACCEPTED:
             return record
-        
+
         outcome, exit_price, pnl, bars_held, reason = simulate_outcome(
             record.direction, record.entry_price, record.stop_loss, record.take_profit,
             future_bars,
         )
-        
+
         spread_cost = record.tick_evidence.spread if record.tick_evidence else 0
         slippage_cost = spread_cost * 0.5
         total_costs = spread_cost + slippage_cost
-        
+
         record.outcome = outcome
         record.exit_price = exit_price
         record.hypothetical_pnl = pnl
         record.hypothetical_costs = total_costs
         record.exit_reason = reason
         record.bars_held = bars_held
-        
+
         return record
 
     def run_cycle(self, symbol: str, bar_count: int = 100) -> dict:
@@ -307,7 +307,7 @@ class ShadowRunnerV2:
             return {"error": "NO_TICK"}
 
         bars = self._mt5.get_bars(symbol, 60, bar_count)
-        
+
         record, outcome, reason = self._evaluate_signal(symbol, tick, bars)
 
         # Simulate outcome for accepted signals
@@ -317,7 +317,7 @@ class ShadowRunnerV2:
             outcome = record.outcome
 
         self._records.append(record)
-        
+
         # Telemetry
         self._telemetry.record_signal_created(self._session_id, record.signal_id)
         if record.outcome == SignalOutcome.ACCEPTED:
@@ -377,21 +377,21 @@ class ShadowRunnerV2:
 
     def _print_summary(self):
         total = len(self._records)
-        
+
         # Rejected by geometry validator (never passed to simulation)
-        rejected = sum(1 for r in self._records 
+        rejected = sum(1 for r in self._records
                       if r.outcome.value.startswith("rejected_"))
-        
+
         # Accepted then simulated
         hit_sl = sum(1 for r in self._records if r.outcome == SignalOutcome.HIT_SL)
         hit_tp = sum(1 for r in self._records if r.outcome == SignalOutcome.HIT_TP)
         time_stop = sum(1 for r in self._records if r.outcome == SignalOutcome.TIME_STOP)
         accepted_simulated = hit_sl + hit_tp + time_stop
-        
+
         total_pnl = sum(r.hypothetical_pnl * r.volume * 100 for r in self._records)
         total_costs = sum(r.hypothetical_costs * r.volume * 100 for r in self._records)
         net_pnl = total_pnl - total_costs
-        
+
         rejected_by_reason = {}
         for r in self._records:
             if r.outcome.value.startswith("rejected_"):
@@ -399,7 +399,7 @@ class ShadowRunnerV2:
                 rejected_by_reason[reason] = rejected_by_reason.get(reason, 0) + 1
 
         logger.info(f"\n{'='*50}")
-        logger.info(f"SHADOW SESSION v2 SUMMARY")
+        logger.info("SHADOW SESSION v2 SUMMARY")
         logger.info(f"{'='*50}")
         logger.info(f"Total signals:    {total}")
         logger.info(f"Rejected:         {rejected}")

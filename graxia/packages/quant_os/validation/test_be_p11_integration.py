@@ -4,7 +4,7 @@ from graxia.packages.quant_os.validation.promotion_review import (
 )
 from graxia.packages.quant_os.validation.evidence_pack import EvidencePack
 from graxia.packages.quant_os.validation.auto_blockers import AutoBlockerChecker
-from graxia.packages.quant_os.validation.review_report import ReviewReport, ReviewReportGenerator
+from graxia.packages.quant_os.validation.review_report import ReviewReportGenerator
 
 
 def test_full_review_eligible():

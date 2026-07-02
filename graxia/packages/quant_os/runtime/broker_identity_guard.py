@@ -1,7 +1,7 @@
 """Phase BE-P0 — Broker identity guard. Refuse startup on profile mismatch."""
 from dataclasses import dataclass
 import hashlib
-import json
+from datetime import UTC
 
 
 @dataclass
@@ -72,13 +72,13 @@ class BrokerIdentityGuard:
     def compute_fingerprint(self, server: str, login: int,
                             mode: str = "", currency: str = "") -> ProfileFingerprint:
         """Compute fingerprint for the actual profile with timestamp."""
-        from datetime import datetime, timezone
+        from datetime import datetime
         return ProfileFingerprint(
             server_hash=hashlib.sha256(server.encode()).hexdigest(),
             login_hash=hashlib.sha256(str(login).encode()).hexdigest(),
             account_mode=mode,
             account_currency=currency,
-            captured_at=datetime.now(timezone.utc).isoformat()
+            captured_at=datetime.now(UTC).isoformat()
         )
     
     def is_violation(self) -> bool:

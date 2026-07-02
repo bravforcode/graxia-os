@@ -12,7 +12,7 @@ Simulates strategy execution on historical data with:
 """
 
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, UTC
 from decimal import ROUND_DOWN, Decimal
 from typing import Any
 from uuid import uuid4
@@ -71,6 +71,23 @@ class InlineContractSpec:
     stops_level_points: Decimal = Decimal("0")
     snapshot_hash: str = "inline"
 
+    @classmethod
+    def for_symbol(cls, symbol: str) -> "InlineContractSpec":
+        _FX = 100_000
+        _CRYPTO = 1
+        specs = {
+            "XAUUSD": cls(trade_contract_size=Decimal("100"), trade_tick_size=Decimal("0.01"), trade_tick_value=Decimal("1.0")),
+            "EURUSD": cls(trade_contract_size=Decimal(str(_FX)), trade_tick_size=Decimal("0.0001"), trade_tick_value=Decimal("10.0")),
+            "GBPUSD": cls(trade_contract_size=Decimal(str(_FX)), trade_tick_size=Decimal("0.0001"), trade_tick_value=Decimal("10.0")),
+            "USDJPY": cls(trade_contract_size=Decimal(str(_FX)), trade_tick_size=Decimal("0.01"), trade_tick_value=Decimal("6.67")),
+            "AUDUSD": cls(trade_contract_size=Decimal(str(_FX)), trade_tick_size=Decimal("0.0001"), trade_tick_value=Decimal("10.0")),
+            "USDCAD": cls(trade_contract_size=Decimal(str(_FX)), trade_tick_size=Decimal("0.0001"), trade_tick_value=Decimal("7.50")),
+            "USDCHF": cls(trade_contract_size=Decimal(str(_FX)), trade_tick_size=Decimal("0.0001"), trade_tick_value=Decimal("11.00")),
+            "NZDUSD": cls(trade_contract_size=Decimal(str(_FX)), trade_tick_size=Decimal("0.0001"), trade_tick_value=Decimal("10.0")),
+            "BTCUSDT": cls(trade_contract_size=Decimal(str(_CRYPTO)), trade_tick_size=Decimal("0.01"), trade_tick_value=Decimal("0.01")),
+        }
+        return specs.get(symbol, cls())
+
 
 def _historical_size(
     equity: Decimal,
@@ -110,7 +127,10 @@ def _exec_side(signal_type: SignalType) -> FillSide:
 
 @dataclass
 class BacktestConfig:
-    """Backtest configuration"""
+    """Backtest configuration
+
+    Cost parameters are sourced from core.cost_model for per-asset-class parity.
+    """
 
     initial_capital: Decimal = Decimal("10000")
     slippage_pips: float = 0.5
@@ -123,6 +143,7 @@ class BacktestConfig:
     strict_mtf: bool = True
     cost_scenario: str = "base"
     enable_swap: bool = True
+    cost_params: Any = None  # Optional[CostParams] from core.cost_model
 
 
 @dataclass
@@ -143,6 +164,7 @@ class BacktestPosition:
     entry_slippage_cost: Decimal = Decimal("0")
     execution_quality: str = ""
     signal_bar_index: int = -1
+    contract_size: Decimal = Decimal("100")
 
 
 @dataclass
@@ -281,14 +303,17 @@ def _indicators_numba_impl(close_arr, high_arr, low_arr, vol_arr):
     result["ema_200"] = _ema_numba(close_arr, 200)
     result["rsi_14"] = _rsi_numba(close_arr, 14)
     result["atr_14"] = _atr_numba(high_arr, low_arr, close_arr, 14)
-    # Volume SMA as plain Python (small perf impact, keeps numba fn simple)
+    # Volume SMA — P4 FIX: O(n) running sum instead of O(n × window) nested loop
     n = len(vol_arr)
     vol_sma = np.full(n, np.nan)
-    for i in range(19, n):
-        s = 0.0
-        for j in range(i - 19, i + 1):
-            s += vol_arr[j]
-        vol_sma[i] = s / 20.0
+    if n >= 20:
+        run_sum = 0.0
+        for j in range(20):
+            run_sum += vol_arr[j]
+        vol_sma[19] = run_sum / 20.0
+        for i in range(20, n):
+            run_sum += vol_arr[i] - vol_arr[i - 20]
+            vol_sma[i] = run_sum / 20.0
     result["volume_sma_20"] = vol_sma
     return result
 
@@ -422,11 +447,35 @@ class BacktestEngine:
         guard = LookaheadGuard(strict=True)
         guard.initialize(total_bars)
 
+        # --- P1 FIX: Pre-compute indicators once (was O(n²) per-bar rebuild) ---
+        if total_bars >= 200:
+            self._precomputed_indicators = self._calculate_indicators(total_bars - 1)
+        else:
+            self._precomputed_indicators = {}
+
+        # --- P3 FIX: Hoist RiskPolicy creation (was per-bar instantiation) ---
+        try:
+            from ..risk.risk_policy import RiskPolicy as _RP
+        except ImportError:
+            from risk.risk_policy import RiskPolicy as _RP
+        self._risk_policy = _RP()
+
+        # --- P2 FIX: Pre-compute bar dicts once (was O(n × Decimal) per signal) ---
+        self._cached_bar_dicts = [
+            {
+                "open": Decimal(str(self.ohlcv_data["open"][j])),
+                "high": Decimal(str(self.ohlcv_data["high"][j])),
+                "low": Decimal(str(self.ohlcv_data["low"][j])),
+                "close": Decimal(str(self.ohlcv_data["close"][j])),
+            }
+            for j in range(len(close))
+        ]
+
         # Main loop - iterate through each bar
         for i in range(1, total_bars):
             self.current_index = i
             guard.advance()
-            current_time = self.timestamps[i] if i < len(self.timestamps) else datetime.utcnow()
+            current_time = self.timestamps[i] if i < len(self.timestamps) else datetime.now(UTC)
 
             # Current bar OHLCV
             bar_open = Decimal(str(open_price[i]))
@@ -452,8 +501,19 @@ class BacktestEngine:
             # 1. Check stop loss / take profit on existing positions
             self._check_exits(bar_high, bar_low, bar_close, current_time, i)
 
-            # 2. Calculate indicators up to current bar
-            indicators = self._calculate_indicators(i)
+            # Risk halt checks (P0-5: enforce daily/weekly/drawdown limits in backtest)
+            if self._check_risk_halt():
+                break  # Stop trading, close remaining positions
+
+            # 2. Read pre-computed indicators (sliced to current bar)
+            if self._precomputed_indicators:
+                indicators = {
+                    k: v[: i + 1] if isinstance(v, list) else v
+                    for k, v in self._precomputed_indicators.items()
+                    if k not in ("open",)
+                }
+            else:
+                indicators = {}
 
             # 3. Generate signal from strategy
             bar_data = guard.get_slice(self.ohlcv_data)
@@ -479,7 +539,7 @@ class BacktestEngine:
             self._update_equity(float(bar_close), current_time)
 
         # Close any remaining positions at last price
-        self._close_all_positions(close[-1], self.timestamps[-1] if self.timestamps else datetime.utcnow())
+        self._close_all_positions(close[-1], self.timestamps[-1] if self.timestamps else datetime.now(UTC))
 
         return self._build_results()
 
@@ -544,6 +604,11 @@ class BacktestEngine:
         self._daily_pnl = 0.0
         self._current_drawdown_pct = 0.0
         self._shared_indicators = None
+        self._day_start_balance = Decimal(str(self.config.initial_capital))
+        # P1 perf: pre-computed caches cleared each run
+        self._precomputed_indicators: dict[str, Any] | None = None
+        self._cached_bar_dicts: list[dict] | None = None
+        self._risk_policy = None
 
     def _calculate_indicators(self, up_to_index: int) -> dict[str, Any]:
         """Calculate indicators using Numba JIT (B3) or pandas_ta fallback."""
@@ -690,13 +755,19 @@ class BacktestEngine:
             risk_per_trade_bps=self.config.risk_per_trade_bps,
             entry_price=entry_price,
             stop_loss=signal.stop_loss,
-            contract=InlineContractSpec(symbol=signal.symbol),
+            contract=InlineContractSpec.for_symbol(signal.symbol),
         )
         if volume <= 0:
             return
 
-        # Build snapshot from current bar
-        spread = Decimal("0.01") * Decimal(str(self.config.spread_pips))
+        # Build snapshot from current bar — dynamic spread based on time of day
+        try:
+            from backtest.dynamic_spread_model import SpreadConfig
+            _spread_config = SpreadConfig()
+            bar_hour = current_time.hour if hasattr(current_time, 'hour') else 12
+            spread = Decimal("0.01") * _spread_config.get_spread(bar_hour)
+        except Exception:
+            spread = Decimal("0.01") * Decimal(str(self.config.spread_pips))
         bid, ask = estimate_bid_ask_from_bar(bar_open, bar_high, bar_low, bar_close, spread)
         snapshot = MarketSnapshot(
             bid=bid,
@@ -710,7 +781,7 @@ class BacktestEngine:
         )
 
         contract_spec = ContractSpec(
-            contract_size=Decimal("100"),
+            contract_size=InlineContractSpec.for_symbol(signal.symbol).trade_contract_size,
             commission_per_lot=self.config.commission_per_lot,
             spread_points=spread,
         )
@@ -755,6 +826,7 @@ class BacktestEngine:
             entry_slippage_cost=result.slippage_cost,
             execution_quality=result.execution_quality.value,
             signal_bar_index=bar_index,
+            contract_size=InlineContractSpec.for_symbol(signal.symbol).trade_contract_size,
         )
         self.balance -= result.commission
 
@@ -770,7 +842,14 @@ class BacktestEngine:
         if not self.positions:
             return
 
-        spread = Decimal("0.01") * Decimal(str(self.config.spread_pips))
+        # Dynamic spread based on time of day
+        try:
+            from backtest.dynamic_spread_model import SpreadConfig
+            _spread_config = SpreadConfig()
+            bar_hour = current_time.hour if hasattr(current_time, 'hour') else 12
+            spread = Decimal("0.01") * _spread_config.get_spread(bar_hour)
+        except Exception:
+            spread = Decimal("0.01") * Decimal(str(self.config.spread_pips))
         bid, ask = estimate_bid_ask_from_bar(Decimal("0"), bar_high, bar_low, bar_close, spread)
         snapshot = MarketSnapshot(
             bid=bid,
@@ -824,9 +903,20 @@ class BacktestEngine:
             else:
                 continue
 
-            exit_slippage = Decimal(str(self.config.slippage_pips)) * Decimal("0.01")
-            exec_side = FillSide.BUY if pos.side == PositionType.LONG else FillSide.SELL
-            exit_price, exit_slip = fill_simulate_exit(exec_side, bid, ask, exit_slippage)
+            if event.exit_price and event.exit_price > 0:
+                exit_price = event.exit_price
+                exit_slip = Decimal("0")
+            else:
+                try:
+                    from backtest.dynamic_spread_model import SpreadConfig
+                    _spread_config = SpreadConfig()
+                    bar_hour = current_time.hour if hasattr(current_time, 'hour') else 12
+                    atr = float(bar_high - bar_low)
+                    exit_slippage = Decimal("0.01") * _spread_config.get_slippage(bar_hour, atr=atr)
+                except Exception:
+                    exit_slippage = Decimal(str(self.config.slippage_pips)) * Decimal("0.01")
+                exec_side = FillSide.BUY if pos.side == PositionType.LONG else FillSide.SELL
+                exit_price, exit_slip = fill_simulate_exit(exec_side, bid, ask, exit_slippage)
 
             self._close_position(pos_id, exit_price, current_time, reason, exit_slip)
 
@@ -850,7 +940,7 @@ class BacktestEngine:
             pnl = (pos.entry_price - exit_price) * pos.quantity
 
         # Commission on exit
-        lots = pos.quantity / Decimal("100")
+        lots = pos.quantity / getattr(pos, 'contract_size', Decimal("100"))
         exit_commission = lots * Decimal(str(self.config.commission_per_lot))
         total_fees = exit_commission
 
@@ -870,7 +960,7 @@ class BacktestEngine:
                 entry_price=pos.entry_price,
                 exit_price=exit_price,
                 quantity=pos.quantity,
-                entry_time=pos.entry_time or datetime.utcnow(),
+                entry_time=pos.entry_time or datetime.now(UTC),
                 exit_time=exit_time,
                 pnl=pnl,
                 return_pct=return_pct,
@@ -893,6 +983,30 @@ class BacktestEngine:
         for pos_id in list(self.positions.keys()):
             self._close_position(pos_id, last_dec, current_time, CloseReason.MANUAL)
 
+    def _check_risk_halt(self) -> bool:
+        """Check if any risk limit is breached. Returns True if trading should halt."""
+        # P3 FIX: reuse hoisted policy instead of creating a new one per bar
+        policy = self._risk_policy
+        if policy is None:
+            try:
+                from ..risk.risk_policy import RiskPolicy
+            except ImportError:
+                from risk.risk_policy import RiskPolicy
+            policy = RiskPolicy()
+
+        # Max drawdown check
+        if self.peak_equity > 0:
+            dd = (self.peak_equity - self.equity) / self.peak_equity
+            if dd >= policy.max_total_drawdown_fraction:
+                return True
+
+        # Daily loss check
+        daily_loss = self.balance - self._day_start_balance
+        if daily_loss < 0 and abs(daily_loss) / self._day_start_balance >= policy.max_daily_loss_fraction:
+            return True
+
+        return False
+
     def _log_critical_incident(self, incident_type: str, signal=None):
         """Log critical incident. No silent fallback."""
         import logging
@@ -900,7 +1014,15 @@ class BacktestEngine:
         logging.critical(f"CRITICAL_INCIDENT: {incident_type} signal={signal}")
 
     def _bar_dicts(self) -> list[dict]:
-        """Convert loaded OHLCV arrays to list-of-dicts for the simulator."""
+        """Convert loaded OHLCV arrays to list-of-dicts for the simulator.
+
+        P2 FIX: Cache the result so repeated calls (e.g. per-signal in the
+        main loop) don't re-convert all bars with expensive Decimal()
+        wrapping.  The cache is invalidated by _reset() each run.
+        """
+        cached = getattr(self, "_cached_bar_dicts", None)
+        if cached is not None:
+            return cached
         n = len(self.ohlcv_data["close"])
         bars = []
         for i in range(n):
@@ -912,18 +1034,23 @@ class BacktestEngine:
                     "close": Decimal(str(self.ohlcv_data["close"][i])),
                 }
             )
+        self._cached_bar_dicts = bars
         return bars
 
     def _update_equity(self, current_price: float, current_time: datetime) -> None:
         """Update equity curve point"""
-        # Calculate unrealized P&L
+        # Calculate unrealized P&L — P1 fix: subtract closing costs (spread+slippage)
         unrealized = Decimal("0")
+        closing_cost = Decimal(str(self.config.spread_pips)) * Decimal("0.01") * Decimal("0.5")  # half-spread to close
+        closing_slip = Decimal(str(self.config.slippage_pips)) * Decimal("0.01")
         for pos in self.positions.values():
             current = Decimal(str(current_price))
             if pos.side == PositionType.LONG:
-                unrealized += (current - pos.entry_price) * pos.quantity
+                # Close = sell at bid - slippage (worse than mid)
+                unrealized += (current - closing_cost - closing_slip - pos.entry_price) * pos.quantity
             else:
-                unrealized += (pos.entry_price - current) * pos.quantity
+                # Close = buy at ask + slippage (worse than mid)
+                unrealized += (pos.entry_price - current - closing_cost - closing_slip) * pos.quantity
 
         self.equity = self.balance + unrealized
 
@@ -1005,7 +1132,7 @@ class BacktestEngine:
                     "drawdown_pct": p.drawdown_pct,
                     "open_positions": p.open_positions,
                 }
-                for p in self.equity_curve[:: max(1, len(self.equity_curve) // 500)]  # Downsample
+                for p in (self.equity_curve if len(self.equity_curve) <= 500 else self.equity_curve[::max(1, len(self.equity_curve) // 500)])
             ],
             "execution": {
                 "total_spread_cost": float(total_spread_cost),

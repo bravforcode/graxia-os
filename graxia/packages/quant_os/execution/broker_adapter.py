@@ -20,14 +20,14 @@ warnings.warn(
 # api/ needs async for FastAPI integration.
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, List
 from uuid import uuid4
 import random
 
-from ..core.enums import OrderSide, OrderType, OrderStatus, PositionType, CloseReason
+from ..core.enums import OrderSide, OrderType, OrderStatus, PositionType
 from ..core.config import get_config
 from ..core.exceptions import BrokerError
 from .order import Order

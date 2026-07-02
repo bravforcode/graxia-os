@@ -4,23 +4,25 @@ Quant OS FastAPI Application
 Main FastAPI app that mounts all routers.
 """
 
+import uuid
 from contextlib import asynccontextmanager
+from datetime import UTC
 
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer
+from starlette.responses import Response
 
 from ..core.config import get_config
 from ..core.golden_rules import validate_golden_rules
 from ..execution.adapters.manager import BrokerManager
-from .webhook import webhook_router
-from .orders import orders_router
-from .positions import positions_router
-from .risk import risk_router
 from .admin import admin_router
 from .health import health_router
+from .orders import orders_router
+from .positions import positions_router
 from .rate_limit import RateLimitMiddleware
-
+from .risk import risk_router
+from .webhook import webhook_router
 
 # Security
 security = HTTPBearer(auto_error=False)
@@ -45,6 +47,7 @@ async def lifespan(app: FastAPI):
 
     # Initialize orchestrator (wires EventBus → Agents → TradingLoop → PositionManager)
     from ..core.orchestrator import TradingOrchestrator
+
     config = get_config()
     orchestrator = TradingOrchestrator(config=config)
     orchestrator.start()
@@ -69,10 +72,10 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     print("🛑 Quant OS shutting down...")
-    if hasattr(app.state, 'orchestrator'):
+    if hasattr(app.state, "orchestrator"):
         app.state.orchestrator.stop()
         print("✓ Orchestrator stopped")
-    if hasattr(app.state, 'broker_manager'):
+    if hasattr(app.state, "broker_manager"):
         try:
             app.state.broker_manager.active.disconnect()
             print("✓ Broker disconnected")
@@ -86,6 +89,7 @@ def create_app() -> FastAPI:
 
     try:
         from pathlib import Path
+
         _ver = Path(__file__).parent.parent.joinpath("VERSION").read_text().strip()
     except Exception:
         _ver = "0.0.0"
@@ -136,6 +140,33 @@ def create_app() -> FastAPI:
         response = await call_next(request)
         return response
 
+    # ── Correlation ID middleware ─────────────────────────────────────
+    # Reads X-Request-ID from incoming requests (or generates one),
+    # injects it into structlog's contextvars so every log line carries
+    # the request identity, and returns it in the response headers.
+    try:
+        from ..monitoring.structured_formatter import correlation_id_var
+    except ImportError:
+        correlation_id_var = None
+
+    @app.middleware("http")
+    async def correlation_id_middleware(request: Request, call_next):
+        # Read from header or generate
+        corr_id = request.headers.get("x-request-id", "")
+        if not corr_id:
+            corr_id = uuid.uuid4().hex
+
+        # Inject into structlog context so all loggers inherit it
+        if correlation_id_var is not None:
+            correlation_id_var.set(corr_id)
+
+        # Also store on request.state for handler access
+        request.state.correlation_id = corr_id
+
+        response: Response = await call_next(request)
+        response.headers["X-Request-ID"] = corr_id
+        return response
+
     # Include routers
     app.include_router(webhook_router, prefix="/api/v1")
     app.include_router(orders_router, prefix="/api/v1")
@@ -144,28 +175,32 @@ def create_app() -> FastAPI:
     app.include_router(admin_router, prefix="/api/v1/admin")
     app.include_router(health_router, prefix="/api")
 
+    # ── Prometheus /metrics endpoint ──────────────────────────────────
+    try:
+        from prometheus_client import make_asgi_app
+
+        metrics_app = make_asgi_app()
+        app.mount("/metrics", metrics_app)
+    except ImportError:
+        pass  # prometheus_client not installed; /api/metrics fallback remains
+
     # Root endpoint
     @app.get("/")
     async def root():
-        return {
-            "name": "Quant OS",
-            "version": "1.0.0",
-            "mode": config.trading_mode.value,
-            "status": "operational"
-        }
+        return {"name": "Quant OS", "version": "1.0.0", "mode": config.trading_mode.value, "status": "operational"}
 
     # Health check
     @app.get("/health")
     async def health_check():
         broker_healthy = False
-        if hasattr(app.state, 'broker_manager'):
+        if hasattr(app.state, "broker_manager"):
             try:
                 broker_healthy = await app.state.broker_manager.health_check()
             except Exception:
                 pass
 
         orch_status = {}
-        if hasattr(app.state, 'orchestrator'):
+        if hasattr(app.state, "orchestrator"):
             orch_status = app.state.orchestrator.get_status()
 
         return {
@@ -185,28 +220,26 @@ def create_app() -> FastAPI:
                 "name": "Quant OS",
                 "version": "1.0.0",
                 "trading_mode": config.trading_mode.value,
-                "live_trading": config.live_trading_enabled
+                "live_trading": config.live_trading_enabled,
             },
             "risk": {
                 "max_risk_per_trade_pct": config.max_risk_per_trade_pct,
                 "max_daily_loss_pct": config.max_daily_loss_pct,
                 "max_drawdown_pct": config.max_drawdown_pct,
-                "max_positions": config.max_positions
+                "max_positions": config.max_positions,
             },
-            "strategies": {
-                "weights": config.strategy_weights,
-                "min_confidence": config.ensemble_confidence_threshold
-            }
+            "strategies": {"weights": config.strategy_weights, "min_confidence": config.ensemble_confidence_threshold},
         }
 
     @app.get("/api/metrics")
     async def metrics():
         """Basic Prometheus-style metrics endpoint."""
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         # Import actual model state from signal_service
         try:
             from . import signal_service
+
             model_loaded = signal_service._model_loaded
             feature_count = len(signal_service._feature_names)
         except Exception:
@@ -217,7 +250,7 @@ def create_app() -> FastAPI:
             "signal_requests_total": getattr(app.state, "signal_requests", 0),
             "model_loaded": model_loaded,
             "features": feature_count,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
     return app
@@ -229,12 +262,9 @@ app = create_app()
 
 if __name__ == "__main__":
     import uvicorn
+
     config = get_config()
 
     uvicorn.run(
-        "main:app",
-        host=config.webhook_host,
-        port=config.webhook_port,
-        reload=False,
-        log_level=config.log_level.lower()
+        "main:app", host=config.webhook_host, port=config.webhook_port, reload=False, log_level=config.log_level.lower()
     )

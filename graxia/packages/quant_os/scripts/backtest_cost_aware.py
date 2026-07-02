@@ -23,11 +23,10 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import os
 import sys
 import warnings
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 
 import numpy as np
@@ -371,7 +370,7 @@ def generate_cost_analysis(results: dict[str, dict]) -> str:
     lines = [
         "# Cost Analysis -- Multi-Asset Backtest (Phase 6)",
         "",
-        f"**Generated:** {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}",
+        f"**Generated:** {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}",
         "",
         "## Strategy",
         "",

@@ -1,6 +1,6 @@
 """Phase BE-P8 — Shadow pipeline runner. No order submission."""
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from dataclasses import dataclass
+from datetime import datetime, UTC
 import hashlib
 import json
 
@@ -30,7 +30,7 @@ class ShadowLedgerEntry:
     fill_price: float = 0.0
     exit_price: float = 0.0
     pnl_after_costs: float = 0.0
-    
+
     def compute_hash(self) -> str:
         d = {
             "entry_index": self.entry_index,
@@ -47,7 +47,7 @@ class ShadowLedgerEntry:
 
 class ShadowPipeline:
     """Shadow pipeline: tick → signal → hypothetical fill → ledger. No broker submission."""
-    
+
     def __init__(self):
         self._signals: list[ShadowSignal] = []
         self._ledger: list[ShadowLedgerEntry] = []
@@ -55,24 +55,24 @@ class ShadowPipeline:
         self._session_start: str = ""
         self._incidents: list[dict] = []
         self._heartbeat_count: int = 0
-    
+
     def start_session(self, session_id: str) -> None:
-        self._session_start = datetime.now(timezone.utc).isoformat()
+        self._session_start = datetime.now(UTC).isoformat()
         self._sequence = 0
         self._signals = []
         self._ledger = []
         self._incidents = []
         self._heartbeat_count = 0
-    
+
     def process_tick(self, tick: dict) -> ShadowSignal | None:
         """Process tick through shadow pipeline. Returns signal if eligible."""
         self._heartbeat_count += 1
-        
+
         # Check health (simplified)
         if tick.get("bid", 0) <= 0 or tick.get("ask", 0) <= 0:
             self._record_incident("invalid_tick", "bid/ask <= 0")
             return None
-        
+
         # Generate hypothetical signal (simplified strategy)
         signal = ShadowSignal(
             signal_id=f"SHADOW_{self._sequence:06d}",
@@ -81,12 +81,12 @@ class ShadowPipeline:
             entry_price=tick.get("bid", 0),
             stop_loss=tick.get("bid", 0) - 2.0,
             take_profit=tick.get("bid", 0) + 4.0,
-            timestamp_utc=datetime.now(timezone.utc).isoformat(),
+            timestamp_utc=datetime.now(UTC).isoformat(),
         )
-        
+
         self._signals.append(signal)
         self._sequence += 1
-        
+
         # Add to ledger (hypothetical fill at bid)
         entry = ShadowLedgerEntry(
             entry_index=self._sequence,
@@ -96,34 +96,34 @@ class ShadowPipeline:
         )
         entry.record_hash = entry.compute_hash()
         self._ledger.append(entry)
-        
+
         return signal
-    
+
     def _record_incident(self, incident_type: str, detail: str) -> None:
         self._incidents.append({
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "type": incident_type,
             "detail": detail,
         })
-    
+
     def get_signals(self) -> list[ShadowSignal]:
         return self._signals.copy()
-    
+
     def get_ledger(self) -> list[ShadowLedgerEntry]:
         return self._ledger.copy()
-    
+
     def get_incidents(self) -> list[dict]:
         return self._incidents.copy()
-    
+
     def get_heartbeat_count(self) -> int:
         return self._heartbeat_count
-    
+
     def seal_ledger(self) -> str:
         """Compute ledger seal hash."""
         if not self._ledger:
             return ""
         return self._ledger[-1].record_hash
-    
+
     def verify_ledger_integrity(self) -> bool:
         """Verify append-only hash chain."""
         for i, entry in enumerate(self._ledger):
@@ -132,7 +132,7 @@ class ShadowPipeline:
             if entry.record_hash != entry.compute_hash():
                 return False
         return True
-    
+
     def get_summary(self) -> dict:
         return {
             "session_start": self._session_start,

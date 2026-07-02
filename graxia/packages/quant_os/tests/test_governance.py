@@ -1,6 +1,5 @@
 """Tests for governance modules — experiment registry and ML policy."""
 
-import pytest
 from graxia.packages.quant_os.governance.experiment_registry import (
     ExperimentRecord, ExperimentRegistry,
 )

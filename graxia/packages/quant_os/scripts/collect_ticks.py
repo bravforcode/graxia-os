@@ -12,7 +12,7 @@ import csv
 import os
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 import MetaTrader5 as mt5
 
@@ -37,7 +37,7 @@ def collect_tick(symbol: str) -> dict:
         return None
     spread = round((tick.ask - tick.bid) / info.point, 1) if info.point else 0
     return {
-        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "timestamp_utc": datetime.now(UTC).isoformat(),
         "time_msc": tick.time_msc,
         "symbol": symbol,
         "bid": tick.bid,
@@ -64,7 +64,7 @@ def main():
     writers = {}
     files = {}
     for sym in symbols:
-        filepath = os.path.join(OUTPUT_DIR, f"{sym}_ticks_{datetime.now(timezone.utc).strftime('%Y%m%d')}.csv")
+        filepath = os.path.join(OUTPUT_DIR, f"{sym}_ticks_{datetime.now(UTC).strftime('%Y%m%d')}.csv")
         is_new = not os.path.exists(filepath)
         f = open(filepath, "a", newline="")
         writer = csv.DictWriter(f, fieldnames=[

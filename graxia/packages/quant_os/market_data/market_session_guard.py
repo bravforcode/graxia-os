@@ -8,7 +8,7 @@ Accounts for weekend closures and configurable session windows.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone, time
+from datetime import datetime, time, UTC
 from enum import Enum
 from typing import Optional
 
@@ -92,9 +92,9 @@ class MarketSessionGuard:
             SessionResult with open/closed state and reason.
         """
         try:
-            check_time = now_utc or datetime.now(timezone.utc)
+            check_time = now_utc or datetime.now(UTC)
             if check_time.tzinfo is None:
-                check_time = check_time.replace(tzinfo=timezone.utc)
+                check_time = check_time.replace(tzinfo=UTC)
 
             # 1. Check weekend
             if check_time.weekday() in self._config.weekend_days:
@@ -140,7 +140,7 @@ class MarketSessionGuard:
             return SessionResult(
                 state=SessionState.CLOSED_SESSION,
                 symbol=self._symbol,
-                check_time_utc=datetime.now(timezone.utc),
+                check_time_utc=datetime.now(UTC),
                 reason=f"Session check failed: {e} (fails closed)",
             )
 

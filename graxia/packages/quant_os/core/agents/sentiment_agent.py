@@ -95,11 +95,12 @@ class SentimentAgent(Agent):
 
     MAX_CONCURRENT = 3  # parallel headline processing
 
-    def __init__(self, name: str = "sentiment_agent") -> None:
+    def __init__(self, name: str = "sentiment_agent", bus=None) -> None:
         super().__init__(name)
         self._pending_headlines: list[dict] = []
         self._router: CascadeRouter | None = None
         self._cache = MacroRegimeCache()
+        self._bus = bus
 
     @property
     def router(self) -> CascadeRouter:
@@ -153,6 +154,18 @@ class SentimentAgent(Agent):
             source=aggregated.source_provider,
             headline=aggregated.headline,
         )
+
+        # Publish news.analyzed for downstream consumers (RiskEngine, etc.)
+        if self._bus is not None:
+            from ..events import NewsAnalyzedEvent
+            self._bus.publish("news.analyzed", NewsAnalyzedEvent(
+                headline=aggregated.headline,
+                regime_label=aggregated.regime_label,
+                bias=aggregated.bias.value,
+                confidence=aggregated.confidence,
+                position_multiplier=aggregated.position_multiplier,
+                source_provider=aggregated.source_provider,
+            ))
 
         logger.info(
             "sentiment_agent.result",

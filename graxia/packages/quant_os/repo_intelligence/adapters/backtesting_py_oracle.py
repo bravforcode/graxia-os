@@ -1,9 +1,8 @@
 """Backtesting.py differential oracle adapter."""
 # ponytail: lazy-imports backtesting only inside run_oracle; no module-level dep
 
-import hashlib
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 
 def validate_input(data_manifest: dict, strategy_params: dict) -> bool:
@@ -36,7 +35,7 @@ def normalize_output(raw_result: dict, symbol: str = "UNKNOWN") -> list[dict]:
 
     for _, row in trades.iterrows():
         signal_id = f"bt-{uuid.uuid4().hex[:12]}"
-        entry_time = row.get("EntryTime", datetime.now(timezone.utc))
+        entry_time = row.get("EntryTime", datetime.now(UTC))
         if hasattr(entry_time, "isoformat"):
             entry_time = entry_time.isoformat()
 

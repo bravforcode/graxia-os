@@ -6,7 +6,7 @@ Excessive drift can cause stale data, misaligned candles, and incorrect signals.
 """
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from typing import Optional
 
 
@@ -64,9 +64,9 @@ class ClockGuard:
             ClockState snapshot with drift measurement
         """
         if mt5_time_utc.tzinfo is None:
-            mt5_time_utc = mt5_time_utc.replace(tzinfo=timezone.utc)
+            mt5_time_utc = mt5_time_utc.replace(tzinfo=UTC)
 
-        local_time_utc = datetime.now(timezone.utc)
+        local_time_utc = datetime.now(UTC)
 
         drift_ms = (mt5_time_utc - local_time_utc).total_seconds() * 1000.0
 

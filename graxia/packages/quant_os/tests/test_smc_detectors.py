@@ -10,7 +10,6 @@ from datetime import datetime, timedelta
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from graxia.packages.quant_os.core.smc_detectors import (
     classify_killzone,

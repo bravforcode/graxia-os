@@ -22,9 +22,9 @@ for tf_name, tf_const in TF_MAP.items():
     if rates is None:
         print(f"  ERROR: {mt5.last_error()}")
         continue
-    
+
     print(f"  Got {len(rates)} bars")
-    
+
     # Convert to CSV
     out_path = os.path.join(DATA_DIR, f"XAUUSD_{tf_name}.csv")
     with open(out_path, "w", newline="") as f:
@@ -33,7 +33,7 @@ for tf_name, tf_const in TF_MAP.items():
         for r in rates:
             ts = datetime.fromtimestamp(r["time"]).strftime("%Y-%m-%d %H:%M:%S")
             writer.writerow([ts, r["open"], r["high"], r["low"], r["close"], r["tick_volume"]])
-    
+
     # Show date range
     first = datetime.fromtimestamp(rates[0]["time"])
     last = datetime.fromtimestamp(rates[-1]["time"])

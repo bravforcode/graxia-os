@@ -1,5 +1,5 @@
 """Phase BE-P8 — Shadow telemetry for campaign metrics."""
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import time
 
 

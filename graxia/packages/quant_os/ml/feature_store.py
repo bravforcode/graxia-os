@@ -7,10 +7,8 @@ with TTL-based cache invalidation and summary statistics.
 
 import hashlib
 import json
-import os
-import time
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 from pathlib import Path
 from typing import Any
 
@@ -129,7 +127,7 @@ class FeatureStore:
         df.to_parquet(file_path, index=False, engine="pyarrow")
         file_size = file_path.stat().st_size
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         ttl = timedelta(hours=ttl_hours) if ttl_hours else self._default_ttl
         expires_at = now + ttl
 
@@ -396,7 +394,7 @@ class FeatureStore:
         """Check if a cache entry has passed its TTL."""
         try:
             expires = datetime.fromisoformat(entry.expires_at)
-            return datetime.now(timezone.utc) > expires
+            return datetime.now(UTC) > expires
         except (ValueError, TypeError):
             return True
 
@@ -404,7 +402,7 @@ class FeatureStore:
         """Return age of entry in hours."""
         try:
             created = datetime.fromisoformat(entry.created_at)
-            delta = datetime.now(timezone.utc) - created
+            delta = datetime.now(UTC) - created
             return delta.total_seconds() / 3600.0
         except (ValueError, TypeError):
             return 0.0

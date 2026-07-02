@@ -1,7 +1,7 @@
 """Phase BE-P3 — Event gate state machine."""
 from enum import Enum
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 
 
 class GateState(Enum):

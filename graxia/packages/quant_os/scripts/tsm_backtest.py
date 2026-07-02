@@ -9,11 +9,19 @@ Usage:
     python scripts/tsm_backtest.py
 """
 
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+# Allow running from repo root
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from core.returns import compute_returns
 
 BASE = Path(__file__).resolve().parent.parent
 ARTIFACTS = BASE / "artifacts"
@@ -48,15 +56,15 @@ def load_data() -> pd.DataFrame:
 
 
 def compute_tsm_signal(close: pd.Series, lookback: int) -> pd.Series:
-    """TSM signal: sign of lookback-period return."""
-    ret = close.pct_change(lookback)
+    """TSM signal: sign of lookback-period return (honest missing-bar handling)."""
+    ret = compute_returns(close, lookback)
     return np.sign(ret)
 
 
 def compute_vol_target_weight(close: pd.Series, lookback: int, target_vol: float, rvol_window: int = 20) -> pd.Series:
     """Vol-targeted position weight: signal * target_vol / realized_vol."""
     signal = compute_tsm_signal(close, lookback)
-    daily_ret = close.pct_change(1)
+    daily_ret = compute_returns(close, 1)
     rvol = daily_ret.rolling(rvol_window).std() * np.sqrt(252)
     # Avoid division by zero
     rvol = rvol.replace(0, np.nan)
@@ -68,7 +76,7 @@ def compute_vol_target_weight(close: pd.Series, lookback: int, target_vol: float
 def backtest_tsm_single_asset(close: pd.Series, lookback: int, target_vol: float, cost_bps: float) -> pd.DataFrame:
     """Backtest TSM on a single asset."""
     df = pd.DataFrame({"close": close})
-    df["ret"] = df["close"].pct_change(1)
+    df["ret"] = compute_returns(df["close"], lookback=1)
     df["weight"] = compute_vol_target_weight(close, lookback, target_vol)
 
     # Rebalance weekly: forward-fill weight to weekly

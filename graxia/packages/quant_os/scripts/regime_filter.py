@@ -403,7 +403,7 @@ def main():
         scored = compute_regime_scores(df.loc[test_mask])
         cols = ['_regime_score', '_conf_score', '_vol_score',
                 '_spread_score', '_spread_vol_score', '_rsi_div_score']
-        print(f"\n--- Regime Score Distribution (OOS) ---")
+        print("\n--- Regime Score Distribution (OOS) ---")
         print(scored[cols].describe().to_string())
         print(f"\n  Bars with regime_score >= {args.regime_threshold}: "
               f"{(scored['_regime_score'] >= args.regime_threshold).sum()}"
@@ -411,7 +411,7 @@ def main():
 
     elif args.mode in ("filter", "eval"):
         # Evaluate filter
-        print(f"\n--- Evaluating Filter ---")
+        print("\n--- Evaluating Filter ---")
         result = evaluate_filter(
             df, model, feature_cols,
             regime_threshold=args.regime_threshold,
@@ -438,7 +438,7 @@ def main():
         print_blk("FILTERED (regime + confidence)", result['filtered'])
         print(f"{'-'*70}")
 
-        print(f"\n--- Confidence Threshold Sweep ---")
+        print("\n--- Confidence Threshold Sweep ---")
         print(f"  {'Conf':>6s} | {'Trades':>7s} | {'%Bars':>6s} | {'Acc':>7s} | {'Edge':>6s} | {'Net':>8s} | {'OK?':>4s}")
         print(f"  {'-'*6}-|-{'-'*7}-|-{'-'*6}-|-{'-'*7}-|-{'-'*6}-|-{'-'*8}-|-{'-'*4}")
         for s in result['confidence_sweep']:
@@ -446,12 +446,12 @@ def main():
             print(f"  {s['min_confidence']:>6.2f} | {s['n_trades']:>7d} | {s['pct_bars']:>5.1f}% | {s['accuracy']:>.4f} | {s['edge_pips']:>+5.1f} | {s['net_pips']:>+7.1f} | {ok}")
 
         if result['positive_at_any_threshold']:
-            print(f"\n  [OK] POSITIVE EXPECTANCY achievable at some confidence threshold")
+            print("\n  [OK] POSITIVE EXPECTANCY achievable at some confidence threshold")
             best = result['best_threshold']
             print(f"       Best: conf>={best['min_confidence']} = {best['accuracy']:.4f} acc, {best['net_pips']:.1f} net pips")
         else:
-            print(f"\n  [WARN] No confidence threshold achieves positive net pips")
-            print(f"         Either spread cost is too high or accuracy ceiling is too low")
+            print("\n  [WARN] No confidence threshold achieves positive net pips")
+            print("         Either spread cost is too high or accuracy ceiling is too low")
 
         # Save (handle numpy types)
         def convert_numpy(obj):

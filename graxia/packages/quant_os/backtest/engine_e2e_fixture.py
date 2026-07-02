@@ -7,7 +7,7 @@ No MT5, no external deps, no CSV files.
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import List, Optional, Tuple
+from typing import List
 
 from .engine import BacktestConfig
 from ..core.enums import SignalType

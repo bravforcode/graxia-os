@@ -2,16 +2,16 @@
 
 Usage: python scripts/run_release_gate.py
 """
+
 import hashlib
 import json
-import os
 import re
 import subprocess
 import sys
 import time
 from pathlib import Path
 
-REPO_ROOT = Path(r"C:\Users\menum\graxia os")
+REPO_ROOT = Path(__file__).resolve().parents[2]  # graxia os root
 ARTIFACT_DIR = REPO_ROOT / "graxia/packages/quant_os/artifacts/release_gate"
 QUARANTINE_PATH = REPO_ROOT / "graxia/packages/quant_os/quarantine_manifest.json"
 
@@ -29,9 +29,12 @@ RELEASE_GATE_CONFIG = {
 }
 
 SUITE_CMD = [
-    sys.executable, "-m", "pytest",
+    sys.executable,
+    "-m",
+    "pytest",
     "graxia/packages/quant_os/tests/",
-    "--tb=short", "-q",
+    "--tb=short",
+    "-q",
     "--ignore=graxia/packages/quant_os/tests/test_vwap.py",
 ]
 E2E_SCRIPT = str(Path(__file__).parent / "e2e_release_gate.py")
@@ -138,13 +141,9 @@ def check_quarantine_consistency(pytest_stats, quarantine_data):
             f"but quarantine manifest has 0 entries"
         )
     elif effective_quarantined > quarantine_count:
-        errors.append(
-            f"More quarantined tests ({effective_quarantined}) than manifest entries ({quarantine_count})"
-        )
+        errors.append(f"More quarantined tests ({effective_quarantined}) than manifest entries ({quarantine_count})")
     elif effective_quarantined < quarantine_count:
-        errors.append(
-            f"Fewer quarantined tests ({effective_quarantined}) than manifest entries ({quarantine_count})"
-        )
+        errors.append(f"Fewer quarantined tests ({effective_quarantined}) than manifest entries ({quarantine_count})")
 
     return errors
 
@@ -195,9 +194,7 @@ def check_fail_closed(stats):
 
     total = stats["passed"] + stats["failed"] + stats["errors"] + stats["skipped"]
     if total < cfg["required_collected_tests"]:
-        errors.append(
-            f"Collection count {total} < required {cfg['required_collected_tests']}"
-        )
+        errors.append(f"Collection count {total} < required {cfg['required_collected_tests']}")
 
     if stats["failed"] > cfg["allowed_failed_tests"]:
         errors.append(f"Failed tests {stats['failed']} > allowed {cfg['allowed_failed_tests']}")
@@ -208,14 +205,10 @@ def check_fail_closed(stats):
     if stats["xpassed"] > cfg["allowed_xpassed"]:
         errors.append(f"Xpassed tests {stats['xpassed']} > allowed {cfg['allowed_xpassed']}")
     if stats["skipped"] > cfg["allowed_unapproved_skips"]:
-        errors.append(
-            f"Skipped tests {stats['skipped']} > allowed unapproved {cfg['allowed_unapproved_skips']}"
-        )
+        errors.append(f"Skipped tests {stats['skipped']} > allowed unapproved {cfg['allowed_unapproved_skips']}")
 
     if stats["passed"] < cfg["required_passed_tests"]:
-        errors.append(
-            f"Passed count {stats['passed']} < required {cfg['required_passed_tests']}"
-        )
+        errors.append(f"Passed count {stats['passed']} < required {cfg['required_passed_tests']}")
 
     return errors
 
@@ -315,13 +308,16 @@ def main():
     # --- Fail-closed checks (Run A) ---
     print("\n--- Fail-Closed Checks (Run A) ---")
     fc_errors_a = check_fail_closed(a_result["stats"])
-    checks["collection_clean"] = (a_result["stats"]["passed"] + a_result["stats"]["failed"]
-                                  + a_result["stats"]["errors"] + a_result["stats"]["skipped"]
-                                  ) >= RELEASE_GATE_CONFIG["required_collected_tests"]
-    checks["all_passed"] = (a_result["stats"]["failed"] == 0 and a_result["stats"]["errors"] == 0)
+    checks["collection_clean"] = (
+        a_result["stats"]["passed"]
+        + a_result["stats"]["failed"]
+        + a_result["stats"]["errors"]
+        + a_result["stats"]["skipped"]
+    ) >= RELEASE_GATE_CONFIG["required_collected_tests"]
+    checks["all_passed"] = a_result["stats"]["failed"] == 0 and a_result["stats"]["errors"] == 0
     checks["no_failures"] = a_result["stats"]["failed"] == 0
     checks["no_errors"] = a_result["stats"]["errors"] == 0
-    checks["no_flaky"] = (a_result["stats"]["xfailed"] == 0 and a_result["stats"]["xpassed"] == 0)
+    checks["no_flaky"] = a_result["stats"]["xfailed"] == 0 and a_result["stats"]["xpassed"] == 0
     all_failures.extend(fc_errors_a)
     for k, v in checks.items():
         print(f"  {k}: {v}")

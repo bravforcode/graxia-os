@@ -1,5 +1,4 @@
 """Phase BE-P13 — Forbidden expansion guard."""
-from dataclasses import dataclass
 
 
 FORBIDDEN = [
@@ -14,7 +13,7 @@ FORBIDDEN = [
 
 class ForbiddenExpansionGuard:
     """Guard against forbidden expansion patterns."""
-    
+
     def check(self, description: str) -> tuple[bool, list[str]]:
         violations = []
         desc_lower = description.lower()
@@ -23,7 +22,7 @@ class ForbiddenExpansionGuard:
             if all(p in desc_lower for p in parts):
                 violations.append(f"{forbidden_id}: {reason}")
         return len(violations) == 0, violations
-    
+
     def is_clean(self, description: str) -> bool:
         ok, _ = self.check(description)
         return ok

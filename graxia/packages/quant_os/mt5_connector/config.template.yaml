@@ -6,7 +6,7 @@ mt5:
   # Path to MT5 terminal64.exe (leave empty for default)
   # Use the terminal you are logged into — no password needed in code
   path: ""
-  
+
   # Connection timeout (milliseconds)
   timeout: 30000
 

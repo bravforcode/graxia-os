@@ -2,7 +2,7 @@
 
 import time
 import os
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from typing import Any, Dict, List, Optional
 
 
@@ -105,7 +105,7 @@ def render_dashboard(
     alerts: Optional[List[str]] = None,
 ) -> str:
     """Render complete dashboard as string."""
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    now = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
     parts = [
         HEADER,
         f"  QUANT OS LIVE DASHBOARD  |  {now}",

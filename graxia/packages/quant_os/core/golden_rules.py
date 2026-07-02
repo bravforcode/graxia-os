@@ -19,48 +19,48 @@ from typing import Dict, Any
 @dataclass(frozen=True)
 class GoldenRules:
     """Immutable golden rules - cannot be changed at runtime"""
-    
+
     # Trading Mode Safety
     LIVE_TRADING_DEFAULT: bool = False  # Must explicitly set True
     PAPER_MIN_TRADING_DAYS: int = 60    # Non-negotiable minimum
     PAPER_MIN_TRADES: int = 100          # Non-negotiable minimum
-    
+
     # AI Permission Boundaries
     AI_CANNOT_SUBMIT_ORDER: bool = True  # AI suggests only, never executes
     AI_CANNOT_OVERRIDE_KILL_SWITCH: bool = True
     AI_CANNOT_MODIFY_RISK_LIMITS: bool = True
-    
+
     # Risk Limits (percentage-based)
     MAX_RISK_PER_TRADE_PCT: float = 1.0      # Max 1% equity risk per trade
     HARD_STOP_DRAWDOWN_PCT: float = 15.0     # Kill switch at 15% drawdown
     MAX_DAILY_LOSS_PCT: float = 2.0          # Daily circuit breaker
     MAX_WEEKLY_LOSS_PCT: float = 5.0         # Weekly circuit breaker
     MAX_PORTFOLIO_EXPOSURE_PCT: float = 80.0 # Max 80% in positions
-    
+
     # Micro Stage Controls
     ORDER_EXPIRY_MICRO_SECONDS: int = 60   # Orders expire after 60s in MICRO mode
     MICRO_MAX_POSITION_SIZE_USD: float = 1000.0  # Max $1000 per position in MICRO
     MICRO_DAILY_ORDER_LIMIT: int = 5         # Max 5 orders per day in MICRO
-    
-    # Live Limited Controls  
+
+    # Live Limited Controls
     LIMITED_MAX_POSITION_SIZE_USD: float = 5000.0  # Max $5000 per position
     LIMITED_MAX_DAILY_TRADES: int = 10       # Max 10 trades per day
-    
+
     # Data Quality
     MAX_DATA_STALE_SECONDS: int = 10         # Quotes max 10s old
     MAX_OHLCV_STALE_SECONDS: int = 90        # OHLCV max 90s old
     MIN_LIQUIDITY_DAILY_VOLUME: float = 1000000.0  # Min $1M daily volume
-    
+
     # Anti-Overfitting
     MIN_BACKTEST_YEARS: float = 3.0          # Minimum 3 years backtest data
     MIN_WALK_FORWARD_WINDOWS: int = 3        # Minimum 3 walk-forward windows
     MAX_PARAMETERS_PER_STRATEGY: int = 5     # Max 5 tunable parameters
-    
+
     # Broker Safety
     MAX_ORDER_RETRIES: int = 3               # Max 3 retry attempts
     ORDER_TIMEOUT_SECONDS: int = 30          # Order timeout
     RECONCILIATION_INTERVAL_SECONDS: int = 60 # Reconcile every 60s
-    
+
     # Compliance
     REQUIRE_STOP_LOSS: bool = True           # Every trade must have SL
     REQUIRE_RISK_CHECK: bool = True          # Every order needs risk approval
@@ -86,7 +86,7 @@ def validate_golden_rules() -> Dict[str, Any]:
         "order_expiry_micro_sane": 10 <= GOLDEN_RULES.ORDER_EXPIRY_MICRO_SECONDS <= 300,
         "all_checks_passed": True,
     }
-    
+
     checks["all_checks_passed"] = all([
         checks["live_trading_default_disabled"],
         checks["ai_cannot_submit_order"],
@@ -96,7 +96,7 @@ def validate_golden_rules() -> Dict[str, Any]:
         checks["hard_stop_drawdown_sane"],
         checks["order_expiry_micro_sane"],
     ])
-    
+
     return checks
 
 

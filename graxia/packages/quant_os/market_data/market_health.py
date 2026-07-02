@@ -20,8 +20,8 @@ CRITICAL CONSTRAINT: This module is READ-ONLY. No order submission.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from dataclasses import dataclass
+from datetime import datetime, UTC
 from enum import Enum
 from typing import Any, Optional
 
@@ -194,7 +194,7 @@ class MarketHealthMachine:
             eligible_for_new_order=eligible,
             reason_codes=reason_codes,
             details=details,
-            timestamp_utc=datetime.now(timezone.utc),
+            timestamp_utc=datetime.now(UTC),
         )
 
         self._last_state = state

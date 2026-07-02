@@ -1,6 +1,6 @@
 """Phase BE-P11 — Review report generator."""
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 
 @dataclass
@@ -12,18 +12,18 @@ class ReviewReport:
     recommendation: str = ""
     operator_notes: str = ""
     timestamp_utc: str = ""
-    
+
     def __post_init__(self):
         if self.blockers is None:
             self.blockers = []
         if self.evidence_summary is None:
             self.evidence_summary = {}
         if not self.timestamp_utc:
-            self.timestamp_utc = datetime.now(timezone.utc).isoformat()
-    
+            self.timestamp_utc = datetime.now(UTC).isoformat()
+
     def to_markdown(self) -> str:
         lines = [
-            f"# Promotion Review Report",
+            "# Promotion Review Report",
             f"**Strategy:** {self.strategy_id}",
             f"**Decision:** {self.decision}",
             f"**Timestamp:** {self.timestamp_utc}",
@@ -35,19 +35,19 @@ class ReviewReport:
                 lines.append(f"- {b}")
         else:
             lines.append("- None")
-        
+
         lines.append("\n## Evidence Summary")
         for k, v in self.evidence_summary.items():
             lines.append(f"- **{k}:** {v}")
-        
+
         if self.recommendation:
             lines.append(f"\n## Recommendation\n{self.recommendation}")
-        
+
         if self.operator_notes:
             lines.append(f"\n## Operator Notes\n{self.operator_notes}")
-        
+
         return "\n".join(lines)
-    
+
     def to_dict(self) -> dict:
         return {
             "strategy_id": self.strategy_id,
@@ -62,7 +62,7 @@ class ReviewReport:
 
 class ReviewReportGenerator:
     """Generate review reports."""
-    
+
     def generate(self, strategy_id: str, decision: str, blockers: list,
                  evidence_summary: dict, recommendation: str = "",
                  operator_notes: str = "") -> ReviewReport:

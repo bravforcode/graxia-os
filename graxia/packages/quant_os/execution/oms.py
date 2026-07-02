@@ -6,16 +6,15 @@ import time
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Optional
+from typing import Any
 
 from .adapters.base import (
     AccountInfo,
     BrokerAdapter,
     Order,
-    OrderResult,
     OrderStatus,
 )
-from .order_state_machine import OrderStateMachine, TRANSITIONS
+from .order_state_machine import OrderStateMachine
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +25,7 @@ VENUE_MAP: dict[str, str] = {
     "metals": "mt5",
     "forex": "mt5",
     "indices": "mt5",
-    "crypto": "binance",
+    "crypto": "mt5",
 }
 
 # Partial-fill timeout (seconds)
@@ -52,12 +51,14 @@ class OMS:
         self,
         adapters: dict[str, BrokerAdapter],
         ledger_path: Path = _DEFAULT_LEDGER,
+        risk_engine: Any = None,
     ) -> None:
         self._adapters = adapters
         self._ledger_path = ledger_path
         self._ledger_path.parent.mkdir(parents=True, exist_ok=True)
         self._orders: dict[str, Order] = {}
         self._state_machines: dict[str, OrderStateMachine] = {}
+        self._risk_engine = risk_engine
         self._load_ledger()
 
     # ------------------------------------------------------------------
@@ -69,7 +70,7 @@ class OMS:
         if not self._ledger_path.exists():
             return
         events_by_order: dict[str, list[dict]] = {}
-        with open(self._ledger_path, "r", encoding="utf-8") as fh:
+        with open(self._ledger_path, encoding="utf-8") as fh:
             for line in fh:
                 line = line.strip()
                 if not line:
@@ -104,8 +105,11 @@ class OMS:
                     order.broker_order_id = evt["broker_order_id"]
             self._orders[oid] = order
             self._state_machines[oid] = sm
-        logger.info("Ledger loaded: %d orders replayed across %d events",
-                     len(self._orders), sum(len(v) for v in events_by_order.values()))
+        logger.info(
+            "Ledger loaded: %d orders replayed across %d events",
+            len(self._orders),
+            sum(len(v) for v in events_by_order.values()),
+        )
 
     def _persist(self, order: Order) -> None:
         """Append a single order record to the JSONL ledger."""
@@ -148,7 +152,7 @@ class OMS:
     # Idempotency check
     # ------------------------------------------------------------------
 
-    def _find_by_signal_id(self, signal_id: str) -> Optional[Order]:
+    def _find_by_signal_id(self, signal_id: str) -> Order | None:
         """Return the first order matching *signal_id*, if any."""
         for order in self._orders.values():
             if order.signal_id == signal_id:
@@ -163,10 +167,7 @@ class OMS:
         """Resolve the adapter for a given asset class."""
         venue = VENUE_MAP.get(asset_class.lower())
         if venue is None:
-            raise ValueError(
-                f"No venue mapped for asset_class={asset_class!r}. "
-                f"Known: {list(VENUE_MAP)}"
-            )
+            raise ValueError(f"No venue mapped for asset_class={asset_class!r}. " f"Known: {list(VENUE_MAP)}")
         adapter = self._adapters.get(venue)
         if adapter is None:
             raise RuntimeError(f"Adapter {venue!r} not registered")
@@ -188,8 +189,9 @@ class OMS:
         asset_class: str,
         side: str,
         quantity: float,
-        stop_loss: Optional[float] = None,
-        take_profit: Optional[float] = None,
+        stop_loss: float | None = None,
+        take_profit: float | None = None,
+        trace_id: str = "",
     ) -> Order:
         """Submit an order with full idempotency, crash safety, and state machine.
 
@@ -226,6 +228,7 @@ class OMS:
             stop_loss=stop_loss,
             take_profit=take_profit,
             status=OrderStatus.PENDING,
+            trace_id=trace_id,
         )
 
         # --- Initialize state machine ---
@@ -242,6 +245,33 @@ class OMS:
             sm.advance(OrderStatus.ORDER_PRECHECKED, "pre-checks passed")
         except Exception as exc:
             logger.error("oms.state_machine_error order_id=%s error=%s", order.order_id, exc)
+
+        # --- Pre-trade risk gate (fail-closed) ---
+        if self._risk_engine is not None:
+            try:
+                risk_result = self._risk_engine.check_order_sync(order)
+                if not risk_result.passed:
+                    order.status = OrderStatus.REJECTED
+                    try:
+                        sm.advance(OrderStatus.REJECTED, f"risk rejected: {risk_result.reason}")
+                    except Exception:
+                        pass
+                    self._update_ledger(order)
+                    logger.warning(
+                        "Order %s REJECTED by pre-trade risk: %s",
+                        order.order_id,
+                        risk_result.reason,
+                    )
+                    return order
+            except Exception as exc:
+                logger.error("oms.risk_check_error order_id=%s error=%s", order.order_id, exc)
+                order.status = OrderStatus.REJECTED
+                try:
+                    sm.advance(OrderStatus.REJECTED, f"risk check error: {exc}")
+                except Exception:
+                    pass
+                self._update_ledger(order)
+                return order
 
         # --- Route & submit ---
         adapter = self._get_adapter(asset_class)
@@ -330,7 +360,7 @@ class OMS:
         logger.warning("Order %s fill poll timed out", order.order_id)
         return order
 
-    def cancel_all(self, asset_class: Optional[str] = None) -> list[Order]:
+    def cancel_all(self, asset_class: str | None = None) -> list[Order]:
         """Cancel every open order, optionally filtered by asset class.
 
         This serves as the **kill switch**.  It iterates all orders that are
@@ -389,15 +419,15 @@ class OMS:
         self._ensure_connected(adapter)
         return adapter.get_positions()
 
-    def order_by_id(self, order_id: str) -> Optional[Order]:
+    def order_by_id(self, order_id: str) -> Order | None:
         """Look up an order by its internal order_id."""
         return self._orders.get(order_id)
 
-    def order_by_signal(self, signal_id: str) -> Optional[Order]:
+    def order_by_signal(self, signal_id: str) -> Order | None:
         """Look up an order by the originating signal_id."""
         return self._find_by_signal_id(signal_id)
 
-    def get_state_machine(self, order_id: str) -> Optional[OrderStateMachine]:
+    def get_state_machine(self, order_id: str) -> OrderStateMachine | None:
         """Return the state machine for a given order (for audit trail)."""
         return self._state_machines.get(order_id)
 

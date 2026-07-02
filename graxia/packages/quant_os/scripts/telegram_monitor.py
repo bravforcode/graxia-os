@@ -1,10 +1,9 @@
 import json
-import os
 import re
 import sys
 import time
 import tomllib
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 
 import requests
@@ -103,7 +102,7 @@ def check_balance(state: dict) -> list[str]:
         diff = cur_balance - prev
         if abs(diff) > 1:
             emoji = "\U0001f4c8" if diff > 0 else "\U0001f4c9"
-            ts = summary.get("completed_at_utc", datetime.now(timezone.utc).isoformat())
+            ts = summary.get("completed_at_utc", datetime.now(UTC).isoformat())
             msgs.append(f"{emoji} <b>Balance change</b>: ${prev:,.2f} \u2192 ${cur_balance:,.2f} ({diff:+.2f}) @ {ts}")
 
     if cur_balance is not None:

@@ -1,8 +1,6 @@
 """Tests for untested core/ modules: candle_pipeline, cross_validation,
 ml_pipeline, monte_carlo, rolling_metrics, stability, slippage_model, state_store.
 """
-import math
-import os
 import random
 
 import numpy as np

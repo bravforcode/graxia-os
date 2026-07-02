@@ -11,7 +11,6 @@ For $10k account, max_exposure = $5000. Gold at $2350/oz with 5-point stop:
 The important assertion is that the ADJUSTMENT factor is correct (from notes),
 not the final risk_pct (which is affected by exposure cap).
 """
-import pytest
 from decimal import Decimal
 from quant_os.risk.position_sizer import AntiMartingaleSizer
 
@@ -141,4 +140,3 @@ def test_no_streak_gets_base_adjustment():
     print(f"  No streak: adjustment=1.00, lots={result.lots}, risk_pct={result.risk_pct}%")
 
 
-import pytest

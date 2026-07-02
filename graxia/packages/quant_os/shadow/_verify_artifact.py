@@ -39,7 +39,7 @@ print(f"Reconnects: {data['reconnect_count']}")
 # Zero execution check
 print()
 print("=== ZERO EXECUTION CHECK ===")
-print(f"Any order_send in evidence? NO (AST verified)")
+print("Any order_send in evidence? NO (AST verified)")
 print(f"Total signals: {data['total_signals']}")
 print(f"Accepted: {data['accepted']}")
 print(f"Rejected: {data['rejected']}")

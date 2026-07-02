@@ -6,7 +6,7 @@ from decimal import Decimal
 from datetime import datetime
 
 from graxia.packages.quant_os.execution.order_state_machine import (
-    OrderState, OrderStateMachine, TRANSITIONS, TERMINAL_STATES,
+    OrderState, OrderStateMachine,
 )
 from graxia.packages.quant_os.execution.trade_ledger import TradeRecord, TradeLedger
 from graxia.packages.quant_os.core.exceptions import OrderStateError

@@ -45,19 +45,30 @@ def load_csv_data(
             # Parse timestamp
             try:
                 ts = datetime.strptime(row[date_column], date_format)
-                timestamps.append(ts)
             except (KeyError, ValueError):
                 continue
 
-            # Parse OHLCV
+            # Parse OHLCV — all-or-nothing: timestamp is only appended when
+            # all 5 price fields parse successfully, preventing length mismatch.
             try:
-                data["open"].append(float(row.get("Open", row.get("open", 0))))
-                data["high"].append(float(row.get("High", row.get("high", 0))))
-                data["low"].append(float(row.get("Low", row.get("low", 0))))
-                data["close"].append(float(row.get("Close", row.get("close", 0))))
-                data["volume"].append(float(row.get("Volume", row.get("volume", 0))))
+                o = float(row.get("Open", row.get("open", 0)))
+                h = float(row.get("High", row.get("high", 0)))
+                lo = float(row.get("Low", row.get("low", 0)))
+                c = float(row.get("Close", row.get("close", 0)))
+                v = float(row.get("Volume", row.get("volume", 0)))
             except (ValueError, KeyError):
                 continue
+
+            # Validate OHLCV consistency (high >= low, all positive)
+            if h < lo or o <= 0 or c <= 0:
+                continue
+
+            timestamps.append(ts)
+            data["open"].append(o)
+            data["high"].append(h)
+            data["low"].append(lo)
+            data["close"].append(c)
+            data["volume"].append(v)
 
     if not data["close"]:
         raise ValueError(f"No valid data found in {file_path}")

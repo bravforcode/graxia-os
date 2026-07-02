@@ -2,13 +2,12 @@
 
 import pytest
 from decimal import Decimal
-from datetime import datetime
 
-from graxia.packages.quant_os.execution.order import Order, OrderStateMachine, create_order
+from graxia.packages.quant_os.execution.order import OrderStateMachine, create_order
 from graxia.packages.quant_os.execution.idempotency import IdempotencyChecker
 from graxia.packages.quant_os.execution.broker_adapter import PaperBroker, BrokerOrderResponse
-from graxia.packages.quant_os.core.enums import OrderStatus, OrderSide, OrderType, TradingMode
-from graxia.packages.quant_os.core.exceptions import OrderStateError, DuplicateOrderError
+from graxia.packages.quant_os.core.enums import OrderStatus, OrderSide, OrderType
+from graxia.packages.quant_os.core.exceptions import OrderStateError
 
 
 class TestOrder:

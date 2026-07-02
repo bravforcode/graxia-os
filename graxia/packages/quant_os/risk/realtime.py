@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from decimal import Decimal
 from typing import Callable, Optional
 
 import numpy as np

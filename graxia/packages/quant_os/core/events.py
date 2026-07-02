@@ -182,6 +182,9 @@ class NewsEvent(Event):
     headline: str = ""
     impact: str = "LOW"
     source: str = "news"
+    link: str = ""
+    source_name: str = ""
+    summary: str = ""
 
 
 @dataclass(frozen=True)

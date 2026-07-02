@@ -11,7 +11,7 @@ import os
 import pickle
 import uuid
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any
 
@@ -40,6 +40,10 @@ class ModelMetadata:
     tags: list[str] = field(default_factory=list)
     parent_version: str = ""
     artifact_path: str = ""
+    random_seed: int = 42
+    feature_list_hash: str = ""
+    dataset_manifest_hash: str = ""
+    hyperparams: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -51,7 +55,7 @@ class ModelComparison:
     metric_delta: dict[str, float]
     winner: str  # version_id of the better model
     comparison_timestamp: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+        default_factory=lambda: datetime.now(UTC).isoformat()
     )
 
 
@@ -94,6 +98,10 @@ class ModelRegistry:
         description: str = "",
         tags: list[str] | None = None,
         parent_version: str = "",
+        random_seed: int = 42,
+        feature_list_hash: str = "",
+        dataset_manifest_hash: str = "",
+        hyperparams: dict[str, Any] | None = None,
     ) -> ModelMetadata:
         """
         Register a trained model artifact.
@@ -118,7 +126,7 @@ class ModelRegistry:
             ModelMetadata of the newly registered model.
         """
         version_id = self._generate_version_id(model_name)
-        timestamp = datetime.now(timezone.utc).isoformat()
+        timestamp = datetime.now(UTC).isoformat()
         artifact_filename = f"{version_id}.pkl"
         artifact_path = self._models_dir / artifact_filename
         metadata_path = self._models_dir / f"{version_id}.json"
@@ -142,6 +150,10 @@ class ModelRegistry:
             tags=tags or [],
             parent_version=parent_version,
             artifact_path=str(artifact_path),
+            random_seed=random_seed,
+            feature_list_hash=feature_list_hash,
+            dataset_manifest_hash=dataset_manifest_hash,
+            hyperparams=hyperparams or {},
         )
 
         # Save metadata sidecar
@@ -356,7 +368,7 @@ class ModelRegistry:
 
     def _generate_version_id(self, model_name: str) -> str:
         """Generate a unique version ID: {model_name}_{timestamp}_{short_uuid}."""
-        ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         short_uuid = uuid.uuid4().hex[:8]
         return f"{model_name}_{ts}_{short_uuid}"
 

@@ -111,9 +111,12 @@ class TestBenchmarkBaseline:
             feature_names = getattr(model, "feature_names_in_", [])
 
         # Generate synthetic test data matching expected feature count
+        n_features = len(feature_names) or getattr(model, "n_features_in_", 0)
+        assert n_features > 0, "Cannot determine feature count from model"
+
         np.random.seed(42)
         n = 500
-        X_test = np.random.normal(0, 1, (n, len(feature_names)))
+        X_test = np.random.normal(0, 1, (n, n_features))
         # Add some signal to first 3 features
         X_test[:n // 2, :3] += 0.3
         y_test = np.concatenate([np.ones(n // 2), np.zeros(n - n // 2)])

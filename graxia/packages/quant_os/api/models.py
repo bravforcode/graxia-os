@@ -12,7 +12,6 @@ from typing import List, Optional
 from sqlalchemy import (
     BigInteger,
     Boolean,
-    Column,
     Date,
     DateTime,
     Enum as SAEnum,

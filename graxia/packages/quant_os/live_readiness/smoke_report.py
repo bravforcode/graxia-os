@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone
+from dataclasses import dataclass, field
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -67,7 +67,7 @@ def generate_smoke_report(
 
     return SmokeReport(
         profile_id=profile.profile_id,
-        timestamp_utc=datetime.now(timezone.utc),
+        timestamp_utc=datetime.now(UTC),
         capabilities=capabilities,
         all_checks_passed=all_checks_passed,
         issues=issues,

@@ -12,7 +12,7 @@ import csv
 import json
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from glob import glob
 
 try:
@@ -171,7 +171,7 @@ def main():
 
     # Write training dataset
     if features:
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         if args.format == "parquet":
             table = pa.Table.from_pylist(features)
             out_path = os.path.join(OUTPUT_DIR, f"training_{timestamp}.parquet")
@@ -194,7 +194,7 @@ def main():
         statuses[f["status"]] = statuses.get(f["status"], 0) + 1
 
     summary = {
-        "built_at_utc": datetime.now(timezone.utc).isoformat(),
+        "built_at_utc": datetime.now(UTC).isoformat(),
         "total_ticks": len(ticks),
         "total_orders": len(orders),
         "total_features": len(features),

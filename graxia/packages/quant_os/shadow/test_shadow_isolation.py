@@ -10,18 +10,18 @@ def test_shadow_modules_no_order_send():
     """Shadow modules must not call order_send."""
     shadow_dir = Path(__file__).parent
     violations = []
-    
+
     for f in shadow_dir.glob("*.py"):
         if f.name.startswith("test_"):
             continue
         if f.name == "__init__.py":
             continue
-        
+
         try:
             tree = ast.parse(f.read_text(encoding="utf-8", errors="replace"))
         except SyntaxError:
             continue
-        
+
         for node in ast.walk(tree):
             if isinstance(node, ast.Call):
                 func_name = ""
@@ -29,10 +29,10 @@ def test_shadow_modules_no_order_send():
                     func_name = node.func.id
                 elif isinstance(node.func, ast.Attribute):
                     func_name = node.func.attr
-                
+
                 if func_name in FORBIDDEN_CALLS:
                     violations.append(f"{f.name}: calls {func_name}")
-    
+
     assert len(violations) == 0, f"Shadow calls order APIs: {violations}"
 
 

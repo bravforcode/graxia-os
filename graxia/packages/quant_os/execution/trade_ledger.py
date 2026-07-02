@@ -6,7 +6,7 @@ import hashlib
 import json
 import uuid
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
@@ -94,7 +94,7 @@ class TradeLedger:
         if not record.trade_id:
             object.__setattr__(record, "trade_id", f"t-{uuid.uuid4().hex[:8]}")
         if not record.entry_time:
-            object.__setattr__(record, "entry_time", datetime.now(timezone.utc))
+            object.__setattr__(record, "entry_time", datetime.now(UTC))
         self._records.append(record)
         if self._dir:
             path = self._dir / f"{record.trade_id}.json"

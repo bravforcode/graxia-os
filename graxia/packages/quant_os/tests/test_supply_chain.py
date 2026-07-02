@@ -2,7 +2,7 @@ import pytest
 import tempfile
 import os
 from pathlib import Path
-from graxia.packages.quant_os.repo_intelligence.supply_chain import SupplyChainScanner, SBOMEntry
+from graxia.packages.quant_os.repo_intelligence.supply_chain import SupplyChainScanner
 
 @pytest.fixture
 def project_root():

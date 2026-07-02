@@ -2,8 +2,6 @@ import os
 
 from quant_os.backtest.data_loader import load_csv_data
 from quant_os.strategies.mtm import MultiTimeframeMomentum
-from quant_os.gold_bot.core.engine import SignalDirection
-from decimal import Decimal
 
 data_dir = os.path.join("graxia", "packages", "quant_os", "data")
 csv_path = os.path.join(data_dir, "EURUSD_X.csv")

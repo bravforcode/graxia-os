@@ -9,13 +9,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from graxia.packages.quant_os.core.agents.llm_router import (
-    CascadeResult,
     CascadeRouter,
     ImpactLevel,
     ProviderConfig,
-    TIER1_CEREBRAS,
-    TIER1_GROQ,
-    TIER1_OPENROUTER,
     TIER1_PROVIDERS,
 )
 
@@ -98,7 +94,6 @@ class TestCallLlmChain:
 
     @pytest.mark.asyncio
     async def test_fallback_on_exception(self, router):
-        import httpx
 
         with patch.dict(os.environ, {"GROQ_API_KEY": "k1", "CEREBRAS_API_KEY": "k2", "OPENROUTER_API_KEY": "k3"}):
             router._client = _make_mock_client(

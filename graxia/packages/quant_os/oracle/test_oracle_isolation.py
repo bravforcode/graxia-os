@@ -12,7 +12,7 @@ def _scan_imports(file_path: Path) -> list[str]:
         tree = ast.parse(file_path.read_text(encoding="utf-8", errors="replace"))
     except SyntaxError:
         return []
-    
+
     imports = []
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
@@ -42,13 +42,13 @@ def test_canonical_no_oracle_imports():
     """Canonical runtime must not import oracle packages."""
     files = _find_canonical_files()
     violations = []
-    
+
     for f in files:
         imports = _scan_imports(f)
         for imp in imports:
             if imp in ORACLE_PACKAGES:
                 violations.append(f"{f.name}: imports {imp}")
-    
+
     assert len(violations) == 0, f"Canonical imports oracle packages: {violations}"
 
 

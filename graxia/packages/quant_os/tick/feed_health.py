@@ -1,6 +1,5 @@
 """Phase BE-P2 — Feed watermark and staleness monitor."""
 import time
-from datetime import datetime, timezone
 
 
 class FeedHealthMonitor:

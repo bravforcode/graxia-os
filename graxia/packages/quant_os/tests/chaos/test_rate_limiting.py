@@ -10,14 +10,12 @@ Covers:
 from __future__ import annotations
 
 import time
-from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from graxia.packages.quant_os.api.rate_limit import (
-    DEFAULT_RULES,
     InMemoryRateLimiter,
     RateLimitMiddleware,
     RateLimitRule,

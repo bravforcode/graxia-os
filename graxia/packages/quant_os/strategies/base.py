@@ -10,7 +10,7 @@ Enhanced with jesse-inspired ergonomics (A1):
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from decimal import Decimal
 from typing import Any
 from uuid import uuid4
@@ -101,7 +101,7 @@ class Signal:
             strategy_id=strategy_id,
             symbol=symbol,
             signal_type=signal_type,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             confidence=confidence,
             **kwargs,
         )

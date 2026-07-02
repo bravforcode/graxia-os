@@ -1,6 +1,5 @@
 """Integration test for previously skipped items now implemented."""
-import tempfile
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from graxia.packages.quant_os.tick.data_quality import DataQualityChecker
 from graxia.packages.quant_os.tick.tick_analytics import TickAnalytics
 from graxia.packages.quant_os.tick.tick_logger import TickLogger
@@ -47,7 +46,7 @@ def test_unknown_fail_closed():
 
 def test_medium_importance():
     gate = EventGate()
-    now = datetime(2026, 6, 22, 12, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 6, 22, 12, 0, tzinfo=UTC)
     event = EventRecord(
         event_id="EVT002", event_name="Retail Sales", importance="MEDIUM",
         scheduled_at_utc="2026-06-22T12:10:00+00:00",

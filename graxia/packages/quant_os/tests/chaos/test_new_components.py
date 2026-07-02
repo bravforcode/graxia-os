@@ -13,13 +13,8 @@ RULE: If a test fails, fix the CODE, never the test.
 from __future__ import annotations
 
 import asyncio
-import json
-import os
 import pickle
-import tempfile
-from dataclasses import dataclass
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import datetime, UTC
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -56,7 +51,6 @@ class TestCentaurTelegramChaos:
     @pytest.mark.asyncio
     async def test_queue_overflow_does_not_block_eventbus(self, agent, signal_event):
         """Chaos: fill queue beyond maxsize — should drop, not block."""
-        from graxia.packages.quant_os.core.enums import SignalType
 
         # Fill queue to max
         for _ in range(agent.QUEUE_MAXSIZE + 10):
@@ -173,8 +167,6 @@ class TestCentaurTelegramChaos:
     @pytest.mark.asyncio
     async def test_concurrent_act_calls(self, agent, signal_event):
         """Chaos: multiple act() calls concurrently — no race condition."""
-        from graxia.packages.quant_os.core.events import SignalEvent
-        from graxia.packages.quant_os.core.enums import SignalType
 
         for _ in range(5):
             agent._pending.append(signal_event)
@@ -260,19 +252,18 @@ class TestCrossSectionalMomentumChaos:
     def test_should_rebalance_not_yet(self, strategy):
         """Chaos: just rebalanced — should not rebalance again."""
         from datetime import timedelta
-        strategy._last_rebalance = datetime.now(timezone.utc) - timedelta(days=1)
+        strategy._last_rebalance = datetime.now(UTC) - timedelta(days=1)
         assert strategy.should_rebalance() is False
 
     def test_should_rebalance_after_interval(self, strategy):
         """Chaos: enough time passed — should rebalance."""
         from datetime import timedelta
-        strategy._last_rebalance = datetime.now(timezone.utc) - timedelta(days=8)
+        strategy._last_rebalance = datetime.now(UTC) - timedelta(days=8)
         assert strategy.should_rebalance() is True
 
     def test_calculate_rebalance_empty_selected(self, strategy):
         """Chaos: empty selection — should clear all positions."""
         strategy._positions = {"BTC/USDT": {"entry_price": 50000}}
-        from graxia.packages.quant_os.scripts.cross_sectional_momentum import CoinMomentum
         result = strategy.calculate_rebalance([])
         assert len(result.removed) == 1
         assert len(strategy._positions) == 0
@@ -300,9 +291,8 @@ class TestCrossSectionalMomentumChaos:
 
     def test_state_persistence(self, strategy, tmp_path):
         """Chaos: save and load state — should survive restart."""
-        from graxia.packages.quant_os.scripts.cross_sectional_momentum import CoinMomentum
         strategy._positions = {"ETH/USDT": {"entry_price": 3000}}
-        strategy._last_rebalance = datetime.now(timezone.utc)
+        strategy._last_rebalance = datetime.now(UTC)
         strategy._save_state()
 
         # Create new strategy instance
@@ -379,7 +369,7 @@ class TestAutoRetrainChaos:
         challenger_metrics.oos_max_drawdown = 15.0
 
         with patch("graxia.packages.quant_os.scripts.auto_retrain.CHAMPION_PATH", champion_path):
-            from graxia.packages.quant_os.scripts.auto_retrain import hot_swap, evaluate_model
+            from graxia.packages.quant_os.scripts.auto_retrain import hot_swap
             with patch("graxia.packages.quant_os.scripts.auto_retrain.evaluate_model") as mock_eval:
                 mock_eval.return_value = MagicMock(deflated_sharpe=2.0, oos_max_drawdown=5.0)
                 result = hot_swap(challenger_data, challenger_metrics)

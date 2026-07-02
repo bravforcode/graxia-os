@@ -1,6 +1,5 @@
 """JSON-file-based immutable store for ContractSpec snapshots."""
 
-import hashlib
 import json
 from pathlib import Path
 from datetime import datetime

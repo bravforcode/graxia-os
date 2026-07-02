@@ -18,7 +18,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .broker_profile import BrokerProfile
 
-from .broker_profile import BrokerProfile as _BrokerProfile
 from .runtime_capabilities import RuntimeCapabilities
 from broker.mt5_gateway import Mt5UnavailableError, _get_mt5
 

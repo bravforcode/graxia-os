@@ -3,7 +3,7 @@
 BE-P8.1: Geometry validation, spread shock, dedup, full position lifecycle.
 """
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
 from typing import Optional
 import hashlib

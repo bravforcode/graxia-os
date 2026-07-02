@@ -1,5 +1,5 @@
 """Phase BE-P3 — Unified event risk gate. Combines event + market health."""
-from datetime import datetime, timezone
+from datetime import datetime
 from .event_gate import EventGate, GateState, EventRecord
 from .market_health import MarketHealthGate, HealthCheck, HealthState
 

@@ -8,9 +8,8 @@ Compresses rotated files with gzip and retains for 30 days.
 from __future__ import annotations
 
 import gzip
-import os
 import shutil
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 from pathlib import Path
 
 
@@ -54,8 +53,8 @@ def rotate_by_time(
     if not path.exists():
         return False
 
-    mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
-    now = datetime.now(timezone.utc)
+    mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=UTC)
+    now = datetime.now(UTC)
 
     if mtime.date() >= now.date():
         return False
@@ -86,12 +85,12 @@ def _cleanup_old(
     retention_days: int,
 ) -> int:
     """Remove compressed logs older than retention_days. Returns count removed."""
-    cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
+    cutoff = datetime.now(UTC) - timedelta(days=retention_days)
     removed = 0
     for gz_file in directory.glob(f"{stem}.????????" + suffix + ".gz"):
         try:
             date_str = gz_file.stem.split(".")[-2]
-            file_date = datetime.strptime(date_str, "%Y%m%d").replace(tzinfo=timezone.utc)
+            file_date = datetime.strptime(date_str, "%Y%m%d").replace(tzinfo=UTC)
             if file_date < cutoff:
                 gz_file.unlink()
                 removed += 1

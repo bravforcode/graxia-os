@@ -14,7 +14,7 @@ class OracleEnvironment:
     has_broker_credentials: bool = False
     has_mt5_execution: bool = False
     has_shared_writable: bool = False
-    
+
     def validate(self) -> tuple[bool, list[str]]:
         issues = []
         if self.has_broker_credentials:
@@ -32,26 +32,26 @@ class OracleEnvironment:
 
 class OracleEnvironmentManager:
     """Manages isolated oracle environments."""
-    
+
     def __init__(self, envs_dir: str = ""):
         self._envs_dir = Path(envs_dir) if envs_dir else Path(".envs")
         self._environments: dict[str, OracleEnvironment] = {}
-    
+
     def register(self, env: OracleEnvironment) -> None:
         self._environments[env.name] = env
-    
+
     def get(self, name: str) -> OracleEnvironment | None:
         return self._environments.get(name)
-    
+
     def list_all(self) -> list[str]:
         return list(self._environments.keys())
-    
+
     def validate_all(self) -> dict[str, tuple[bool, list[str]]]:
         results = {}
         for name, env in self._environments.items():
             results[name] = env.validate()
         return results
-    
+
     def ensure_dirs(self) -> list[str]:
         """Create environment directories."""
         created = []

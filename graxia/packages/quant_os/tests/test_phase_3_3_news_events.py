@@ -3,10 +3,8 @@ Phase 3.3 — Structured News/Events as Risk Gate
 Tests for event models, point-in-time store, risk gate, stabilization, macro policy, and import isolation.
 """
 
-import hashlib
 import os
-import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, UTC
 from dataclasses import replace
 
 import pytest
@@ -15,7 +13,7 @@ from graxia.packages.quant_os.news_events.event_models import (
     EconomicEvent, EventStatus, EventImportance, GateState,
 )
 from graxia.packages.quant_os.news_events.event_store import EventStore
-from graxia.packages.quant_os.news_events.event_risk_gate import EventRiskGate, GateResult
+from graxia.packages.quant_os.news_events.event_risk_gate import EventRiskGate
 from graxia.packages.quant_os.news_events.stabilization_gate import StabilizationGate
 from graxia.packages.quant_os.news_events.macro_policy import (
     MacroSourceRole, MacroObservation, MacroPolicyGuard, LLMPolicyGuard,
@@ -28,7 +26,7 @@ from graxia.packages.quant_os.news_events.integration import NewsEventIntegratio
 # ---------------------------------------------------------------------------
 
 def _utc(year=2026, month=6, day=15, hour=10, minute=0):
-    return datetime(year, month, day, hour, minute, tzinfo=timezone.utc)
+    return datetime(year, month, day, hour, minute, tzinfo=UTC)
 
 
 def _time(hour, minute=0):
@@ -400,7 +398,6 @@ class TestFailClosedDefaults:
 class TestImportIsolation:
     def test_news_events_cannot_import_gold_bot_execution(self):
         """Verify news_events package does not import execution modules."""
-        import graxia.packages.quant_os.news_events
         source_files = [
             "event_models.py",
             "event_store.py",

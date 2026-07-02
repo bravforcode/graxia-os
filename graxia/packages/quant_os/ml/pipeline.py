@@ -223,8 +223,12 @@ class FeatureEngineer:
             feature_names=self.feature_names,
         )
 
-    def _classify_returns(self, forward_returns, buy_threshold: float = 0.002, sell_threshold: float = -0.002):
-        """Classify forward returns into signals (returns pd.Series)."""
+    def _classify_returns(self, forward_returns, buy_threshold: float = 0.005, sell_threshold: float = -0.005):
+        """Classify forward returns into signals (returns pd.Series).
+
+        ponytail: 0.5% threshold for XAUUSD — higher than default 0.2% to avoid
+        noise in high-volatility instruments. Upgrade path: per-symbol calibration.
+        """
         import pandas as pd
 
         labels = pd.Series(0, index=forward_returns.index)  # 0 = hold
@@ -282,7 +286,16 @@ class MLTrainer:
 
         # Train model
         model = self._create_model(model_type)
-        model.fit(X_train, y_train)
+
+        # Configure early stopping at fit-time (avoid constructor/eval_metric conflicts)
+        n_classes = len(set(y))
+        if hasattr(model, "set_params"):
+            if model_type == "xgboost":
+                model.set_params(
+                    early_stopping_rounds=10,
+                    eval_metric="mlogloss" if n_classes > 2 else "logloss",
+                )
+        model.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=False)
 
         # Evaluate
         y_pred = model.predict(X_test)
@@ -408,8 +421,6 @@ class MLTrainer:
                 colsample_bytree=0.7,
                 reg_lambda=5.0,
                 reg_alpha=2.0,
-                early_stopping_rounds=20,
-                eval_metric="logloss",
                 random_state=42,
             )
         elif model_type == "lightgbm":

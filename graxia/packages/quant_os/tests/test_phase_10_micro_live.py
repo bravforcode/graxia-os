@@ -1,5 +1,4 @@
 """Tests for Phase 10 — Micro-live canary policy and emergency kill switch."""
-import json
 import tempfile
 from pathlib import Path
 

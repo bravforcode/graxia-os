@@ -1,7 +1,6 @@
 """Phase BE-P2 — MT5 tick recorder. READ-ONLY observation."""
 import time
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import datetime, UTC
 
 
 class MT5TickRecorder:
@@ -33,10 +32,10 @@ class MT5TickRecorder:
             "tick_id": self._sequence,
             "ingest_sequence": self._sequence,
             "source_timestamp_utc": datetime.fromtimestamp(
-                mt5_tick.time, tz=timezone.utc
+                mt5_tick.time, tz=UTC
             ).isoformat(),
             "source_time_msc": mt5_tick.time_msc,
-            "received_at_utc": datetime.now(timezone.utc).isoformat(),
+            "received_at_utc": datetime.now(UTC).isoformat(),
             "received_monotonic_ns": time.monotonic_ns(),
             "broker": "mt5",
             "server_fingerprint": "",

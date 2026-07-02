@@ -1,5 +1,5 @@
 """Tests for oracle adapter base."""
-from graxia.packages.quant_os.oracle.oracle_adapter import OracleAdapter, OracleConfig, StubOracle
+from graxia.packages.quant_os.oracle.oracle_adapter import OracleConfig, StubOracle
 
 
 def test_oracle_config():

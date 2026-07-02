@@ -38,9 +38,13 @@ import structlog
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.agents.centaur_telegram import CentaurTelegramAgent
+from core.agents.health_monitor import HealthMonitor
+from core.agents.risk_agent import RiskAgent
 from core.agents.sentiment_agent import SentimentAgent
 from core.event_bus import EventBus
 from core.events import NewsEvent
+from core.news_blackout import NewsBlackout
+from core.metrics import PipelineMetrics
 
 logger = structlog.get_logger(__name__)
 
@@ -109,6 +113,9 @@ CRISIS_KEYWORDS = [
     "escalation",
     "tensions",
     "conflict",
+    "military",
+    "bombing",
+    "missile",
 ]
 
 HIGH_IMPACT_KEYWORDS = [
@@ -307,6 +314,7 @@ async def run_pipeline(
     event_bus: EventBus | None = None,
     centaur: CentaurTelegramAgent | None = None,
     vault_path: Path | None = None,
+    news_blackout: NewsBlackout | None = None,
 ) -> DailyDigest:
     """
     Run the full news pipeline:
@@ -317,6 +325,7 @@ async def run_pipeline(
     5. Publish to EventBus
     6. Notify via Telegram (if CentaurTelegramAgent provided)
     """
+    metrics = PipelineMetrics()
     vault = vault_path or VAULT_PATH
     news_dir = vault / "quant_os" / "news"
     news_dir.mkdir(parents=True, exist_ok=True)
@@ -329,7 +338,10 @@ async def run_pipeline(
 
         if not items:
             logger.warning("pipeline.no_items")
+            metrics.log_summary(logger)
             return DailyDigest(date=datetime.now(UTC).strftime("%Y-%m-%d"))
+
+        metrics.headlines_processed = len(items)
 
         # 2. Classify and filter
         high_impact = [item for item in items if classify_impact(item.title, item.summary) in ("HIGH", "CRISIS")]
@@ -337,6 +349,7 @@ async def run_pipeline(
 
         # 3. Send to SentimentAgent (top 10 headlines)
         headlines_to_analyze = high_impact[:10] if high_impact else items[:5]
+        metrics.signals_generated = len(headlines_to_analyze)
 
         for item in headlines_to_analyze:
             event = NewsEvent(
@@ -352,6 +365,18 @@ async def run_pipeline(
         # 4. Run sentiment analysis (writes to MacroRegimeCache internally)
         payload = await sentiment_agent.act()
 
+        # 4b. Trigger news blackout for high-impact regimes
+        if news_blackout and payload:
+            if payload.regime_label in ("HIGH_UNCERTAINTY", "CRISIS"):
+                severity = payload.regime_label
+                headline = payload.reasoning[:200] if payload.reasoning else "sentiment_analysis"
+                news_blackout.trigger(severity, headline)
+                logger.info(
+                    "pipeline.blackout_triggered",
+                    severity=severity,
+                    remaining_seconds=round(news_blackout.remaining_seconds()),
+                )
+
         # 5. Build digest from MacroRegimePayload
         digest = DailyDigest(
             date=datetime.now(UTC).strftime("%Y-%m-%d"),
@@ -361,6 +386,9 @@ async def run_pipeline(
             position_multiplier=payload.position_multiplier if payload else 1.0,
             provider_stats={"source": 1} if payload else {},
         )
+
+        metrics.current_regime = digest.regime
+        metrics.current_position_mult = digest.position_multiplier
 
         # 6. Write to Obsidian
         file_path = write_to_obsidian(digest)
@@ -405,6 +433,7 @@ async def run_pipeline(
                 else:
                     logger.warning("pipeline.telegram_no_config")
 
+        metrics.log_summary(logger)
         return digest
 
 
@@ -427,25 +456,71 @@ async def main():
     # Create sentiment agent (writes to MacroRegimeCache internally)
     sentiment = SentimentAgent()
 
+    # Create risk agent (logs regime-based position sizing)
+    risk = RiskAgent()
+
+    # Create news blackout gate
+    blackout = NewsBlackout()
+
+    # Create event bus and subscribe risk agent
+    bus = EventBus()
+    bus.subscribe("news.analyzed", risk.observe)
+
     # Optionally create CentaurTelegramAgent
     centaur = CentaurTelegramAgent() if args.telegram else None
+
+    # Health monitor tracks pipeline liveness
+    health = HealthMonitor(stale_threshold_seconds=args.interval * 3)
+    previous_regime = "NORMAL"
 
     try:
         if args.loop:
             logger.info("pipeline.loop_start", interval=args.interval)
             while True:
                 try:
-                    digest = await run_pipeline(sentiment, centaur=centaur, vault_path=vault)
+                    digest = await run_pipeline(sentiment, event_bus=bus, centaur=centaur, vault_path=vault, news_blackout=blackout)
+                    health.record_success()
                     logger.info(
                         "pipeline.cycle_complete",
                         sentiment=digest.avg_sentiment,
                         regime=digest.regime,
                     )
+
+                    # Send daily summary on regime change
+                    if centaur and digest.regime != previous_regime and previous_regime != "NORMAL":
+                        try:
+                            tg_client = await centaur._ensure_client()
+                            token = centaur._token
+                            chat_id = centaur._chat_id
+                            if tg_client and token and chat_id:
+                                summary_msg = (
+                                    f"📊 *PIPELINE SUMMARY*\n\n"
+                                    f"Regime: `{previous_regime}` → `{digest.regime}`\n"
+                                    f"Sentiment: `{digest.avg_sentiment:.4f}`\n"
+                                    f"Position Mult: `{digest.position_multiplier:.2f}`\n"
+                                    f"Headlines: `{len(digest.items)}`"
+                                )
+                                url = f"https://api.telegram.org/bot{token}/sendMessage"
+                                resp = await tg_client.post(url, json={"chat_id": chat_id, "text": summary_msg, "parse_mode": "Markdown"})
+                                if resp.status_code == 200:
+                                    logger.info("pipeline.daily_summary_sent", regime=digest.regime)
+                                else:
+                                    logger.warning("pipeline.daily_summary_failed", status=resp.status_code)
+                        except Exception as exc:
+                            logger.warning("pipeline.daily_summary_error", error=str(exc))
+                    previous_regime = digest.regime
+
                 except Exception as exc:
+                    health.record_failure()
                     logger.exception("pipeline.cycle_error", error=str(exc))
+
+                if health.is_stale():
+                    status = health.get_status()
+                    logger.warning("pipeline.stale", **status)
+
                 await asyncio.sleep(args.interval)
         else:
-            digest = await run_pipeline(sentiment, centaur=centaur, vault_path=vault)
+            digest = await run_pipeline(sentiment, event_bus=bus, centaur=centaur, vault_path=vault, news_blackout=blackout)
             print(f"\n{'='*60}")
             print("  Pipeline Complete")
             print(f"  Headlines: {len(digest.items)}")

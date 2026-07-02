@@ -1,6 +1,5 @@
 """Phase BE-P2 — Canonical tick schema."""
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone
+from dataclasses import dataclass, asdict
 import hashlib
 import json
 

@@ -1,5 +1,4 @@
 """Tests for evidence pack."""
-import json
 from graxia.packages.quant_os.validation.evidence_pack import EvidencePack
 
 

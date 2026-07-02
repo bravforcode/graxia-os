@@ -2,8 +2,8 @@
 
 No MT5 bar API dependency. Bars are built from tick stream.
 """
-from dataclasses import dataclass, field
-from datetime import datetime, timezone, timedelta
+from dataclasses import dataclass
+from datetime import datetime, timedelta, UTC
 from typing import Optional
 
 
@@ -65,7 +65,7 @@ class CanonicalBarBuilder:
 
     def add_tick(self, tick: dict) -> None:
         """Add a tick to the bar builder."""
-        tick_time = datetime.fromtimestamp(tick["time"], tz=timezone.utc)
+        tick_time = datetime.fromtimestamp(tick["time"], tz=UTC)
         bid = tick.get("bid", 0)
         ask = tick.get("ask", 0)
         mid = (bid + ask) / 2 if bid and ask else bid or ask

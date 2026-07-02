@@ -62,13 +62,13 @@ def diagnose(df: pd.DataFrame, horizon: int = 1, noise_floor: float = 0.02,
              walk_forward: bool = True) -> pd.DataFrame:
     """
     Check every feature for predictive power against forward return.
-    
+
     Tests:
     1. Pearson correlation (linear) with Bonferroni correction
     2. Spearman correlation (monotonic)
     3. Mutual information (non-linear)
     4. Walk-forward stability: compute corr on train half, verify it holds on test half
-    
+
     Returns diagnostic report.
     """
     exclude = {'target', 'target_return', 'symbol', 'freq', 'timestamp',
@@ -88,10 +88,10 @@ def diagnose(df: pd.DataFrame, horizon: int = 1, noise_floor: float = 0.02,
         forward = df['close'].pct_change(horizon).shift(-horizon)
 
     forward = forward.dropna()
-    
+
     results = []
     n_features_tested = 0
-    
+
     for col in feature_cols:
         valid = pd.DataFrame({'x': df[col], 'y': forward}).dropna()
         if len(valid) < 30:
@@ -119,7 +119,7 @@ def diagnose(df: pd.DataFrame, horizon: int = 1, noise_floor: float = 0.02,
             split = len(valid) // 2
             # Train half correlation
             r_train, _ = pearsonr(x[:split], y[:split])
-            # Test half correlation  
+            # Test half correlation
             r_test, _ = pearsonr(x[split:], y[split:])
             # Stable if same sign and both above noise_floor/2
             wf_stable = (r_train * r_test > 0) and \
@@ -128,7 +128,7 @@ def diagnose(df: pd.DataFrame, horizon: int = 1, noise_floor: float = 0.02,
         # Signal quality (after Bonferroni)
         has_signal = abs(r_p) > noise_floor and bonf_pass and (wf_stable if walk_forward else True)
         has_nonlinear = mi_norm > noise_floor * 2
-        
+
         results.append({
             "feature": col,
             "pearson_r": round(r_p, 6),
@@ -180,13 +180,13 @@ def main():
     n_total = len(results)
     bonf_alpha = results.attrs.get('bonferroni_alpha', args.noise_floor)
 
-    print(f"\n--- Results ---")
+    print("\n--- Results ---")
     print(f"  Features tested: {n_total}")
     print(f"  Bonferroni threshold: p < {bonf_alpha:.6f}")
     print(f"  Verified signal (|r|>{args.noise_floor} + Bonferroni + walk-forward): {n_linear}/{n_total}")
     print(f"  Non-linear signal (MI>{args.noise_floor*2:.4f}): {n_nonlinear}/{n_total}")
 
-    print(f"\n  Top correlations:")
+    print("\n  Top correlations:")
     for _, row in results.head(10).iterrows():
         flag = "!" if row['has_verified_signal'] else " "
         wf = "WF-OK" if row['walk_forward_stable'] else "WF-?" if row['walk_forward_stable'] is None else "WF-FAIL"

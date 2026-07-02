@@ -37,10 +37,10 @@ import tempfile
 import time
 import uuid
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -74,7 +74,7 @@ class ChaosTestResult:
     errors: List[str] = field(default_factory=list)
     details: Dict[str, Any] = field(default_factory=dict)
     timestamp: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+        default_factory=lambda: datetime.now(UTC).isoformat()
     )
 
 
@@ -86,7 +86,7 @@ class ChaosReport:
     passed: int = 0
     failed: int = 0
     timestamp: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+        default_factory=lambda: datetime.now(UTC).isoformat()
     )
 
     def add(self, result: ChaosTestResult) -> None:
@@ -142,7 +142,7 @@ class MockMT5Connector:
             "price": price,
             "filled": True,
             "fill_price": price,
-            "submitted_at": datetime.now(timezone.utc).isoformat(),
+            "submitted_at": datetime.now(UTC).isoformat(),
         }
         self.orders.append(order)
         return order_id
@@ -506,7 +506,7 @@ def _write_shadow_trade(
     entry_price: float = 2350.0,
 ) -> None:
     """Insert a trade record into shadow_trades."""
-    ts = datetime.now(timezone.utc).isoformat()
+    ts = datetime.now(UTC).isoformat()
     try:
         import duckdb
         con = duckdb.connect(db_path)
@@ -557,7 +557,7 @@ def test_process_kill(
         # Step 1: initial state
         initial_state = {
             "system_state": "RUNNING",
-            "last_heartbeat": datetime.now(timezone.utc).isoformat(),
+            "last_heartbeat": datetime.now(UTC).isoformat(),
             "kill_switch_active": False,
             "environment": "chaos_test",
             "positions": [
@@ -884,15 +884,15 @@ def test_rollover_window() -> ChaosTestResult:
     try:
         # Simulate signals at various times
         test_times = [
-            (datetime(2025, 7, 1, 21, 54, 0, tzinfo=timezone.utc), False, "21:54 UTC"),
-            (datetime(2025, 7, 1, 21, 55, 0, tzinfo=timezone.utc), True, "21:55 UTC"),
-            (datetime(2025, 7, 1, 21, 59, 0, tzinfo=timezone.utc), True, "21:59 UTC"),
-            (datetime(2025, 7, 1, 22, 0, 0, tzinfo=timezone.utc), True, "22:00 UTC"),
-            (datetime(2025, 7, 1, 22, 3, 0, tzinfo=timezone.utc), True, "22:03 UTC"),
-            (datetime(2025, 7, 1, 22, 5, 0, tzinfo=timezone.utc), True, "22:05 UTC"),
-            (datetime(2025, 7, 1, 22, 6, 0, tzinfo=timezone.utc), False, "22:06 UTC"),
-            (datetime(2025, 7, 1, 23, 0, 0, tzinfo=timezone.utc), False, "23:00 UTC"),
-            (datetime(2025, 7, 1, 0, 0, 0, tzinfo=timezone.utc), False, "00:00 UTC"),
+            (datetime(2025, 7, 1, 21, 54, 0, tzinfo=UTC), False, "21:54 UTC"),
+            (datetime(2025, 7, 1, 21, 55, 0, tzinfo=UTC), True, "21:55 UTC"),
+            (datetime(2025, 7, 1, 21, 59, 0, tzinfo=UTC), True, "21:59 UTC"),
+            (datetime(2025, 7, 1, 22, 0, 0, tzinfo=UTC), True, "22:00 UTC"),
+            (datetime(2025, 7, 1, 22, 3, 0, tzinfo=UTC), True, "22:03 UTC"),
+            (datetime(2025, 7, 1, 22, 5, 0, tzinfo=UTC), True, "22:05 UTC"),
+            (datetime(2025, 7, 1, 22, 6, 0, tzinfo=UTC), False, "22:06 UTC"),
+            (datetime(2025, 7, 1, 23, 0, 0, tzinfo=UTC), False, "23:00 UTC"),
+            (datetime(2025, 7, 1, 0, 0, 0, tzinfo=UTC), False, "00:00 UTC"),
         ]
 
         for test_dt, expect_blocked, label in test_times:
@@ -929,7 +929,7 @@ def test_rollover_window() -> ChaosTestResult:
 
         # Mock tick at 21:55 UTC
         with patch("shadow.shadow_pipeline.datetime") as mock_dt:
-            mock_now = datetime(2025, 7, 1, 21, 55, 30, tzinfo=timezone.utc)
+            mock_now = datetime(2025, 7, 1, 21, 55, 30, tzinfo=UTC)
             mock_dt.now.return_value = mock_now
             mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
 
@@ -945,7 +945,7 @@ def test_rollover_window() -> ChaosTestResult:
         # concern. What we verify is that the rollover detection logic
         # correctly identifies the window.
         rollover_at_2155 = _is_rollover_blocked(
-            datetime(2025, 7, 1, 21, 55, 30, tzinfo=timezone.utc)
+            datetime(2025, 7, 1, 21, 55, 30, tzinfo=UTC)
         )
         details["rollover_detected_at_2155"] = rollover_at_2155
 
@@ -1203,7 +1203,7 @@ class ChaosTestRunner:
             Path to the written JSON report file.
         """
         REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-        date_str = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        date_str = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         filename = f"chaos_report_{date_str}.json"
         path = REPORTS_DIR / filename
 

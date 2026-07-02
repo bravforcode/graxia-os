@@ -5,7 +5,6 @@ Reports trades, win rate, P&L for each strategy.
 import os
 
 from decimal import Decimal
-from datetime import datetime
 from typing import Optional, Dict, Any, List
 
 from quant_os.backtest.engine import BacktestEngine, BacktestConfig
@@ -129,7 +128,7 @@ def run_all():
             print(f"  Long/Short: {metrics.long_trades}/{metrics.short_trades}")
 
             if trades:
-                print(f"  Last 3 trades:")
+                print("  Last 3 trades:")
                 for t in trades[-3:]:
                     print(f"    {t['side']} entry={t['entry_price']:.5f} "
                           f"exit={t['exit_price']:.5f} pnl=${t['pnl']:+.2f}")

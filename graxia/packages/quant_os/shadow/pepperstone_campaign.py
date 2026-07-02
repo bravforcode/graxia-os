@@ -10,16 +10,15 @@ import logging
 import os
 import sys
 import time
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone, timedelta
+from dataclasses import dataclass, asdict
+from datetime import datetime, timedelta, UTC
 from typing import Optional
 
-from graxia.packages.quant_os.shadow.canonical_tick_source import CanonicalTickSource, CanonicalTickBatch
+from graxia.packages.quant_os.shadow.canonical_tick_source import CanonicalTickBatch
 from graxia.packages.quant_os.shadow.canonical_time_authority import CanonicalTimeAuthority
 from graxia.packages.quant_os.shadow.broker_profile import BrokerProfile, validate_broker_match
 from graxia.packages.quant_os.shadow.pipeline import (
-    ShadowPipeline, ShadowSignal, ShadowSignalOutcome, PositionStatus,
-    validate_signal_geometry, SpreadShockGate, SignalDeduplicator, Position,
+    ShadowPipeline, ShadowSignal, ShadowSignalOutcome, validate_signal_geometry, SpreadShockGate, SignalDeduplicator, Position,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -419,7 +418,7 @@ class PepperstoneCampaignRunner:
 
         # 2. Watermark
         if raw_ticks:
-            last_tick_dt = datetime.fromtimestamp(raw_ticks[-1]["time"], tz=timezone.utc)
+            last_tick_dt = datetime.fromtimestamp(raw_ticks[-1]["time"], tz=UTC)
             ev.canonical_watermark = last_tick_dt.isoformat()
             ev.data_age_ms = (now - last_tick_dt).total_seconds() * 1000
         else:
@@ -473,7 +472,7 @@ class PepperstoneCampaignRunner:
         # In production, check event calendar
 
         # 10. Dedup check
-        candle_time = datetime.fromtimestamp(raw_ticks[-1]["time"], tz=timezone.utc).isoformat() if raw_ticks else ""
+        candle_time = datetime.fromtimestamp(raw_ticks[-1]["time"], tz=UTC).isoformat() if raw_ticks else ""
         is_dup = self._dedup.is_duplicate(self.strategy_version, self.symbol, direction, candle_time, self.feature_hash, now)
         ev.dedup_duplicate = is_dup
 
@@ -545,7 +544,7 @@ class PepperstoneCampaignRunner:
 
         logger.info(f"Broker: {acct['server']} | Profile match: True")
 
-        self._session_id = f"pepperstone_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
+        self._session_id = f"pepperstone_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}"
         self._pipeline.start_session(self._session_id)
 
         logger.info(f"Pepperstone 24h campaign started: {self._session_id}")
@@ -617,7 +616,7 @@ class PepperstoneCampaignRunner:
         }
 
         os.makedirs("shadow_results", exist_ok=True)
-        ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         path = f"shadow_results/pepperstone_campaign_{ts}.json"
         with open(path, "w") as f:
             json.dump(summary, f, indent=2, default=str)

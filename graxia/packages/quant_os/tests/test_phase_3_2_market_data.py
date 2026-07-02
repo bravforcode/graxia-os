@@ -6,10 +6,8 @@ Self-contained. No MT5 dependency. Uses pytest.
 
 from __future__ import annotations
 
-import hashlib
-import threading
 from dataclasses import dataclass
-from datetime import datetime, timezone, timedelta, time
+from datetime import datetime, timedelta, time, UTC
 from decimal import Decimal
 from typing import Optional
 
@@ -22,28 +20,28 @@ from graxia.packages.quant_os.market_data.tick_recorder import (
     TickRecord, TickRecorder,
 )
 from graxia.packages.quant_os.market_data.spread_monitor import (
-    SpreadMonitor, SpreadState,
+    SpreadMonitor,
 )
 from graxia.packages.quant_os.market_data.feed_health import (
-    FeedHealthMonitor, FeedHealthState,
+    FeedHealthMonitor,
 )
 from graxia.packages.quant_os.market_data.clock_guard import (
-    ClockGuard, ClockState,
+    ClockGuard,
 )
 from graxia.packages.quant_os.market_data.market_session_guard import (
-    MarketSessionGuard, SessionResult, SessionState, MarketSessionConfig,
+    MarketSessionGuard, SessionState, MarketSessionConfig,
 )
 from graxia.packages.quant_os.market_data.data_watermark import (
-    DataWatermark, DataWatermarkTracker,
+    DataWatermarkTracker,
 )
 from graxia.packages.quant_os.market_data.account_snapshot import (
-    AccountSnapshot, create_account_snapshot, _redact,
+    create_account_snapshot, _redact,
 )
 from graxia.packages.quant_os.market_data.smoke_report import (
-    SmokeReport, SmokeReportGenerator, SmokeReportEntry,
+    SmokeReportGenerator,
 )
 from graxia.packages.quant_os.market_data.market_health import (
-    MarketHealthMachine, MarketHealthResult, MarketHealthState,
+    MarketHealthMachine, MarketHealthState,
 )
 
 
@@ -78,7 +76,7 @@ def _make_tick_record(
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 # ===========================================================================
@@ -347,7 +345,7 @@ class TestFeedHealthMonitor:
     def test_consecutive_stale_increments(self):
         mon = FeedHealthMonitor("XAUUSD", max_tick_age_seconds=1.0)
         # Record tick that's already old using the monitor's internal state
-        mon._last_tick_time = datetime.now(timezone.utc) - timedelta(seconds=5)
+        mon._last_tick_time = datetime.now(UTC) - timedelta(seconds=5)
         state = mon.check_health()
         assert state.consecutive_stale == 1
         # Check again without new tick
@@ -439,20 +437,20 @@ class TestClockGuard:
 
     def test_no_drift(self):
         guard = ClockGuard(max_drift_ms=500.0)
-        mt5_time = datetime.now(timezone.utc)
+        mt5_time = datetime.now(UTC)
         state = guard.check_clock(mt5_time)
         assert state.is_drifted is False
 
     def test_drift_ahead(self):
         guard = ClockGuard(max_drift_ms=100.0)
-        mt5_time = datetime.now(timezone.utc) + timedelta(seconds=1.0)
+        mt5_time = datetime.now(UTC) + timedelta(seconds=1.0)
         state = guard.check_clock(mt5_time)
         assert state.is_drifted is True
         assert state.drift_ms > 0
 
     def test_drift_behind(self):
         guard = ClockGuard(max_drift_ms=100.0)
-        mt5_time = datetime.now(timezone.utc) - timedelta(seconds=1.0)
+        mt5_time = datetime.now(UTC) - timedelta(seconds=1.0)
         state = guard.check_clock(mt5_time)
         assert state.is_drifted is True
         assert state.drift_ms < 0
@@ -460,14 +458,14 @@ class TestClockGuard:
     def test_is_drifted_method(self):
         guard = ClockGuard(max_drift_ms=100.0)
         assert guard.is_drifted() is False
-        mt5_time = datetime.now(timezone.utc) + timedelta(seconds=1.0)
+        mt5_time = datetime.now(UTC) + timedelta(seconds=1.0)
         guard.check_clock(mt5_time)
         assert guard.is_drifted() is True
 
     def test_get_drift_ms(self):
         guard = ClockGuard(max_drift_ms=100.0)
         assert guard.get_drift_ms() is None
-        mt5_time = datetime.now(timezone.utc) + timedelta(milliseconds=50)
+        mt5_time = datetime.now(UTC) + timedelta(milliseconds=50)
         guard.check_clock(mt5_time)
         drift = guard.get_drift_ms()
         assert drift is not None
@@ -475,19 +473,19 @@ class TestClockGuard:
 
     def test_get_state(self):
         guard = ClockGuard(max_drift_ms=500.0)
-        mt5_time = datetime.now(timezone.utc)
+        mt5_time = datetime.now(UTC)
         state = guard.check_clock(mt5_time)
         assert guard.get_state() is not None
 
     def test_drift_seconds_property(self):
         guard = ClockGuard(max_drift_ms=500.0)
-        mt5_time = datetime.now(timezone.utc) + timedelta(milliseconds=250)
+        mt5_time = datetime.now(UTC) + timedelta(milliseconds=250)
         state = guard.check_clock(mt5_time)
         assert state.drift_seconds == pytest.approx(0.25, abs=0.1)
 
     def test_summary(self):
         guard = ClockGuard(max_drift_ms=500.0)
-        mt5_time = datetime.now(timezone.utc)
+        mt5_time = datetime.now(UTC)
         state = guard.check_clock(mt5_time)
         summary = state.summary()
         assert "Clock" in summary
@@ -514,7 +512,7 @@ class TestMarketSessionGuard:
     def test_weekend_closed(self):
         guard = MarketSessionGuard("XAUUSD")
         # Saturday
-        saturday = datetime(2026, 6, 27, 12, 0, tzinfo=timezone.utc)
+        saturday = datetime(2026, 6, 27, 12, 0, tzinfo=UTC)
         result = guard.check(saturday)
         assert result.state == SessionState.CLOSED_WEEKEND
         assert result.is_open is False
@@ -522,7 +520,7 @@ class TestMarketSessionGuard:
     def test_weekday_open(self):
         guard = MarketSessionGuard("XAUUSD")
         # Wednesday noon UTC — should be within forex session
-        wednesday = datetime(2026, 6, 24, 12, 0, tzinfo=timezone.utc)
+        wednesday = datetime(2026, 6, 24, 12, 0, tzinfo=UTC)
         result = guard.check(wednesday)
         assert result.state == SessionState.OPEN
         assert result.is_open is True
@@ -530,7 +528,7 @@ class TestMarketSessionGuard:
     def test_holiday_closed(self):
         config = MarketSessionConfig(holidays=((1, 1),))
         guard = MarketSessionGuard("XAUUSD", config=config)
-        new_year = datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc)
+        new_year = datetime(2026, 1, 1, 12, 0, tzinfo=UTC)
         result = guard.check(new_year)
         assert result.state == SessionState.CLOSED_HOLIDAY
 
@@ -541,30 +539,30 @@ class TestMarketSessionGuard:
         )
         guard = MarketSessionGuard("XAUUSD", config=config)
         # 3 AM UTC — outside session
-        night = datetime(2026, 6, 24, 3, 0, tzinfo=timezone.utc)
+        night = datetime(2026, 6, 24, 3, 0, tzinfo=UTC)
         result = guard.check(night)
         assert result.state == SessionState.CLOSED_SESSION
 
     def test_is_open_method(self):
         guard = MarketSessionGuard("XAUUSD")
-        wednesday = datetime(2026, 6, 24, 12, 0, tzinfo=timezone.utc)
+        wednesday = datetime(2026, 6, 24, 12, 0, tzinfo=UTC)
         assert guard.is_open(wednesday) is True
 
     def test_is_eligible_for_order(self):
         guard = MarketSessionGuard("XAUUSD")
-        wednesday = datetime(2026, 6, 24, 12, 0, tzinfo=timezone.utc)
+        wednesday = datetime(2026, 6, 24, 12, 0, tzinfo=UTC)
         result = guard.check(wednesday)
         assert result.is_eligible_for_order is True
 
     def test_summary(self):
         guard = MarketSessionGuard("XAUUSD")
-        wednesday = datetime(2026, 6, 24, 12, 0, tzinfo=timezone.utc)
+        wednesday = datetime(2026, 6, 24, 12, 0, tzinfo=UTC)
         result = guard.check(wednesday)
         assert "Session" in result.summary()
 
     def test_sunday_closed(self):
         guard = MarketSessionGuard("XAUUSD")
-        sunday = datetime(2026, 6, 28, 12, 0, tzinfo=timezone.utc)
+        sunday = datetime(2026, 6, 28, 12, 0, tzinfo=UTC)
         result = guard.check(sunday)
         assert result.state == SessionState.CLOSED_WEEKEND
 
@@ -1130,10 +1128,10 @@ class TestMarketHealthIntegration:
         spread_state = spread.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.utcnow())
 
         # Clock OK
-        clock_state = clock.check_clock(datetime.now(timezone.utc))
+        clock_state = clock.check_clock(datetime.now(UTC))
 
         # Session open (Wednesday noon)
-        session_result = session.check(datetime(2026, 6, 24, 12, 0, tzinfo=timezone.utc))
+        session_result = session.check(datetime(2026, 6, 24, 12, 0, tzinfo=UTC))
 
         result = machine.evaluate(
             feed_health=feed.check_health(),
@@ -1158,10 +1156,10 @@ class TestMarketHealthIntegration:
         spread_state = spread.on_tick(Decimal("2330.0"), Decimal("2335.0"), datetime.utcnow())  # wide!
 
         clock = ClockGuard(max_drift_ms=500.0)
-        clock_state = clock.check_clock(datetime.now(timezone.utc))
+        clock_state = clock.check_clock(datetime.now(UTC))
 
         session = MarketSessionGuard("XAUUSD")
-        session_result = session.check(datetime(2026, 6, 24, 12, 0, tzinfo=timezone.utc))
+        session_result = session.check(datetime(2026, 6, 24, 12, 0, tzinfo=UTC))
 
         machine = MarketHealthMachine("XAUUSD")
         result = machine.evaluate(
@@ -1187,10 +1185,10 @@ class TestMarketHealthIntegration:
         spread_state = spread.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.utcnow())
 
         clock = ClockGuard(max_drift_ms=500.0)
-        clock_state = clock.check_clock(datetime.now(timezone.utc))
+        clock_state = clock.check_clock(datetime.now(UTC))
 
         session = MarketSessionGuard("XAUUSD")
-        session_result = session.check(datetime(2026, 6, 27, 12, 0, tzinfo=timezone.utc))
+        session_result = session.check(datetime(2026, 6, 27, 12, 0, tzinfo=UTC))
 
         machine = MarketHealthMachine("XAUUSD")
         result = machine.evaluate(

@@ -17,16 +17,11 @@ error handling, stress scenarios.
 
 from __future__ import annotations
 
-import asyncio
 import os
-import sqlite3
 import tempfile
-import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
-from decimal import Decimal, ROUND_HALF_UP
-from unittest.mock import MagicMock, patch, AsyncMock, PropertyMock
+from datetime import datetime, timedelta, UTC
+from decimal import Decimal
+from unittest.mock import MagicMock, patch, AsyncMock
 
 import pytest
 
@@ -35,16 +30,11 @@ import pytest
 # ---------------------------------------------------------------------------
 
 from quant_os.execution.ambiguous_bar_resolver import (
-    AmbiguousResult,
-    BarTrigger,
-    _sl_distance,
-    _tp_distance,
     resolve_ambiguous_bar,
     check_bar_triggers_with_ambiguous_resolution,
 )
-from quant_os.execution.fill_model import Side, ExecutionQuality, FillRequest, FillResult
+from quant_os.execution.fill_model import Side, FillRequest
 from quant_os.execution.conservative_bar_model import (
-    BarTick,
     estimate_bid_ask_from_bar,
     simulate_bar_execution,
     next_bar_fill,
@@ -53,8 +43,6 @@ from quant_os.execution.execution_simulator import (
     BacktestExecutionSimulator,
     ContractSpec,
     EventType,
-    ExecutionEvent,
-    ExecutionResult,
     MarketSnapshot,
     OrderIntent,
     Position,
@@ -62,33 +50,23 @@ from quant_os.execution.execution_simulator import (
 from quant_os.execution.order_state_machine import OrderState
 from quant_os.execution.ledger import (
     Ledger,
-    Portfolio,
     Position as LedgerPosition,
-    VenueBreakdown,
-    _dec,
-    _dec_str,
 )
 from quant_os.execution.quality_tracker import (
     ExecutionQualityTracker,
     FillOutcome,
     FillRecord,
-    QualityMetrics,
     SlippageReport,
 )
 from quant_os.execution.reconciler import (
-    AutoFixAction,
     BrokerPositionSnapshot,
-    Discrepancy,
     DiscrepancySeverity,
     DiscrepancyType,
     InternalPosition,
     PositionReconciler,
-    ReconciliationResult,
 )
 from quant_os.execution.adapters.base import (
-    AccountInfo,
     Order,
-    OrderResult,
     OrderStatus,
 )
 
@@ -127,7 +105,7 @@ def _make_position(
     current: Decimal = Decimal("2010.00"),
     signal_id: str = "",
 ) -> LedgerPosition:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     return LedgerPosition(
         position_id=position_id,
         symbol=symbol,
@@ -168,7 +146,7 @@ def _fill_record(
         quantity=qty,
         filled_quantity=filled_qty,
         outcome=outcome,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         latency_ms=latency_ms,
         spread_at_entry=spread,
     )
@@ -363,7 +341,7 @@ class TestConservativeBarModelChaos:
             slippage_entry=Decimal("0.01"), slippage_exit=Decimal("0.01"),
         )
         result = next_bar_fill(
-            0, sig, bars, [datetime.now(timezone.utc)],
+            0, sig, bars, [datetime.now(UTC)],
             Decimal("0.5"), Decimal("0.01"),
         )
         assert result is None
@@ -380,7 +358,7 @@ class TestConservativeBarModelChaos:
             slippage_entry=Decimal("-0.05"), slippage_exit=Decimal("0.01"),
         )
         result = next_bar_fill(
-            0, sig, bars, [datetime.now(timezone.utc), datetime.now(timezone.utc)],
+            0, sig, bars, [datetime.now(UTC), datetime.now(UTC)],
             Decimal("0.5"), Decimal("-0.05"),
         )
         assert result is not None
@@ -421,7 +399,7 @@ class TestExecutionSimulatorChaos:
         )
 
     def _market(self, bid=Decimal("100"), ask=Decimal("100.5"), spread=Decimal("0.5")):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         return MarketSnapshot(
             bid=bid, ask=ask, spread=spread,
             high=Decimal("110"), low=Decimal("90"),
@@ -741,7 +719,7 @@ class TestQualityTrackerChaos:
             expected_price=Decimal("2000"), actual_price=Decimal("2000"),
             quantity=Decimal("0.1"), filled_quantity=Decimal("0.1"),
             outcome=FillOutcome.FILLED,
-            timestamp=datetime.now(timezone.utc) - timedelta(hours=48),
+            timestamp=datetime.now(UTC) - timedelta(hours=48),
             latency_ms=10.0,
         )
         recent = tracker.get_slippage_history("XAUUSD", lookback_hours=24)
@@ -932,7 +910,7 @@ class TestRecoveryChaos:
         venue_result = ReconcileResult(
             venue="pepperstone",
             status=ReconciliationStatus.CLEAN if clean else ReconciliationStatus.MISMATCH,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             local_count=0,
             broker_count=0,
             matched=0,
@@ -943,23 +921,23 @@ class TestRecoveryChaos:
             status=ReconciliationStatus.CLEAN if clean else ReconciliationStatus.MISMATCH,
             venue_results={"pepperstone": venue_result},
             total_mismatches=0 if clean else 1,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
         return recon
 
     def test_startup_check_dataclass(self):
-        from quant_os.execution.recovery import StartupCheck, StartupVerdict
+        from quant_os.execution.recovery import StartupCheck
         check = StartupCheck(name="test", passed=True, detail="ok", severity="INFO")
         assert check.passed is True
 
     def test_recovery_result_properties(self):
-        from quant_os.execution.recovery import RecoveryResult, StartupCheck, StartupVerdict
+        from quant_os.execution.recovery import RecoveryResult, StartupVerdict
         result = RecoveryResult(
             verdict=StartupVerdict.RESUME,
             reconcile_result=None,
             orphaned_orders=[],
             checks=[],
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
         assert result.is_safe is True
         assert result.critical_failures == []
@@ -972,7 +950,7 @@ class TestRecoveryChaos:
             reconcile_result=None,
             orphaned_orders=[],
             checks=[check],
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
         assert result.is_safe is False
         assert len(result.critical_failures) == 1
@@ -1022,7 +1000,7 @@ class TestRecoveryChaos:
 
     @pytest.mark.asyncio
     async def test_startup_on_halt_callback(self):
-        from quant_os.execution.recovery import Recovery, StartupVerdict
+        from quant_os.execution.recovery import Recovery
         ledger = self._make_mock_ledger()
         ledger.calculate_portfolio.return_value = MagicMock(
             total_equity=Decimal("10000"),
@@ -1491,7 +1469,7 @@ class TestCrossModuleChaos:
             symbol="XAUUSD", side=Side.BUY, volume=Decimal("0.1"),
             stop_loss=Decimal("1950"), take_profit=Decimal("2050"),
         )
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         market = MarketSnapshot(
             bid=Decimal("1940"), ask=Decimal("2060"), spread=Decimal("120"),
             high=Decimal("2060"), low=Decimal("1940"),
@@ -1538,7 +1516,7 @@ class TestCrossModuleChaos:
     def test_stress_rapid_order_submit(self):
         """Simulate rapid order creation via simulator."""
         sim = BacktestExecutionSimulator()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         market = MarketSnapshot(
             bid=Decimal("100"), ask=Decimal("100.5"), spread=Decimal("0.5"),
             high=Decimal("110"), low=Decimal("90"),
@@ -1584,7 +1562,7 @@ class TestCrossModuleChaos:
     def test_mass_cancellation_stress(self):
         """Simulate cancelling 500 orders rapidly."""
         sim = BacktestExecutionSimulator()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         market = MarketSnapshot(
             bid=Decimal("100"), ask=Decimal("100.5"), spread=Decimal("0.5"),
             high=Decimal("110"), low=Decimal("90"),

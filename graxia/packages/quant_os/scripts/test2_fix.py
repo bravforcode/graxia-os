@@ -71,7 +71,7 @@ if cr and cr.retcode == mt5.TRADE_RETCODE_DONE:
 else:
     err = cr.comment if cr else "none"
     print("CLOSE FAIL: " + str(err))
-    
+
     close_req["type_filling"] = mt5.ORDER_FILLING_FOK
     cr2 = mt5.order_send(close_req)
     if cr2 and cr2.retcode == mt5.TRADE_RETCODE_DONE:

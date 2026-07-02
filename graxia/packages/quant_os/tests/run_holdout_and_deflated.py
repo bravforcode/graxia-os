@@ -82,7 +82,7 @@ def run():
 
     # Calculate holdout metrics
     holdout_metrics = calculate_metrics_from_trades(trades)
-    print(f"\n  Holdout Metrics:")
+    print("\n  Holdout Metrics:")
     print(f"    Sharpe Ratio:      {holdout_metrics['sharpe_ratio']:.2f}")
     print(f"    Win Rate:          {holdout_metrics['win_rate']*100:.1f}%")
     print(f"    Profit Factor:     {holdout_metrics['profit_factor']:.2f}")
@@ -96,7 +96,7 @@ def run():
         "profit_factor": 1.74,
     }
 
-    print(f"\n  Development (in-sample) Metrics:")
+    print("\n  Development (in-sample) Metrics:")
     print(f"    Sharpe Ratio:      {dev_metrics['sharpe_ratio']:.2f}")
     print(f"    Win Rate:          {dev_metrics['win_rate']*100:.1f}%")
     print(f"    Profit Factor:     {dev_metrics['profit_factor']:.2f}")
@@ -109,7 +109,7 @@ def run():
     )
 
     print(f"\n  {'='*60}")
-    print(f"  VALIDATION RESULT")
+    print("  VALIDATION RESULT")
     print(f"  {'='*60}")
     print(f"  Passed:                  {'YES' if result.passed else 'NO'}")
     print(f"  Deflated Sharpe:         {result.deflated_sharpe:.4f}")
@@ -119,7 +119,7 @@ def run():
     print(f"  Win Rate Degradation:    {result.win_rate_degradation:.1%}")
 
     if result.warnings:
-        print(f"\n  Warnings:")
+        print("\n  Warnings:")
         for w in result.warnings:
             print(f"    - {w}")
 
@@ -128,12 +128,12 @@ def run():
           f"{'(< 30, low statistical significance)' if holdout_metrics['total_trades'] < 30 else ''}")
 
     if not result.passed:
-        print(f"\n  VERDICT: Strategy NOT validated on holdout data.")
+        print("\n  VERDICT: Strategy NOT validated on holdout data.")
         print(f"  Deflated Sharpe {result.deflated_sharpe:.2f} < threshold {result.deflated_sharpe_threshold:.2f}")
-        print(f"  The 6-trade sample is too small for statistical significance.")
-        print(f"  Need 30+ holdout trades for reliable validation.")
+        print("  The 6-trade sample is too small for statistical significance.")
+        print("  Need 30+ holdout trades for reliable validation.")
     else:
-        print(f"\n  VERDICT: Strategy validated on holdout data.")
+        print("\n  VERDICT: Strategy validated on holdout data.")
 
 
 if __name__ == "__main__":

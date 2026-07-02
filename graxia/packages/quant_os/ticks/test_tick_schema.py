@@ -1,6 +1,5 @@
 """Tests for tick schema and storage."""
 import tempfile
-from pathlib import Path
 from graxia.packages.quant_os.tick.tick_schema import TickRecord
 from graxia.packages.quant_os.tick.tick_storage import TickStorage
 

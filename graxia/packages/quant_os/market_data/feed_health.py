@@ -8,8 +8,8 @@ Tracks real-time tick health per symbol:
 - State machine: HEALTHY -> STALE_FEED -> DISCONNECTED
 """
 
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from dataclasses import dataclass
+from datetime import datetime, timedelta, UTC
 from typing import Optional
 
 
@@ -69,8 +69,8 @@ class FeedHealthMonitor:
         Returns:
             Updated FeedHealthState.
         """
-        now = received_at if received_at.tzinfo else received_at.replace(tzinfo=timezone.utc)
-        tick_ts = tick_timestamp if tick_timestamp.tzinfo else tick_timestamp.replace(tzinfo=timezone.utc)
+        now = received_at if received_at.tzinfo else received_at.replace(tzinfo=UTC)
+        tick_ts = tick_timestamp if tick_timestamp.tzinfo else tick_timestamp.replace(tzinfo=UTC)
 
         # Track tick age (latency)
         tick_age = max(0.0, (now - tick_ts).total_seconds())
@@ -101,7 +101,7 @@ class FeedHealthMonitor:
 
         If the last tick is older than max_tick_age the state degrades.
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         last_age: Optional[float] = None
 
         if self._last_tick_time is not None:

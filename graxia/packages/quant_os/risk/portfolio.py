@@ -42,52 +42,52 @@ class PortfolioMetrics:
 class PortfolioRisk:
     """
     Portfolio Risk Manager
-    
+
     Monitors:
     - Total exposure
     - Correlation risk
     - Concentration limits
     - Beta-adjusted exposure
     """
-    
+
     def __init__(self, max_exposure_pct: float = 50.0):
         self.max_exposure_pct = max_exposure_pct
         self.positions: Dict[str, PositionExposure] = {}
         self.account_balance: Decimal = Decimal("10000")
-        
+
     def update_position(self, exposure: PositionExposure) -> None:
         """Update or add a position"""
         self.positions[exposure.symbol] = exposure
-    
+
     def remove_position(self, symbol: str) -> None:
         """Remove a position"""
         if symbol in self.positions:
             del self.positions[symbol]
-    
+
     def calculate_metrics(self) -> PortfolioMetrics:
         """Calculate portfolio risk metrics"""
         long_exposure = sum(
             p.market_value for p in self.positions.values()
             if p.direction == "LONG"
         )
-        
+
         short_exposure = sum(
             p.market_value for p in self.positions.values()
             if p.direction == "SHORT"
         )
-        
+
         gross = long_exposure + short_exposure
         net = long_exposure - short_exposure
-        
+
         total = abs(net)
         concentration = 0.0
         if total > 0 and self.positions:
             max_position = max(abs(p.market_value) for p in self.positions.values())
             concentration = float(max_position / total * 100)
-        
+
         corr_risk = self._compute_correlation_risk()
         var_95, cvar_95 = self._compute_var()
-        
+
         return PortfolioMetrics(
             total_exposure=total,
             net_exposure=net,
@@ -100,13 +100,13 @@ class PortfolioRisk:
             var_95=var_95,
             cvar_95=cvar_95,
         )
-    
+
     def check_exposure_limit(self) -> bool:
         """Check if exposure is within limits"""
         metrics = self.calculate_metrics()
         if self.account_balance == 0:
             return True
-        
+
         exposure_pct = float(metrics.total_exposure / self.account_balance * 100)
         return exposure_pct <= self.max_exposure_pct
 
@@ -135,7 +135,7 @@ class PortfolioRisk:
             position_symbols=position_symbols,
             correlation_matrix=correlation_matrix,
         )
-    
+
     def get_correlation_matrix(self, symbols: List[str]) -> Dict[str, Dict[str, float]]:
         """Compute correlation matrix from position returns."""
         n = len(symbols)
@@ -159,7 +159,7 @@ class PortfolioRisk:
                     rets2 = r2.returns if r2 and r2.returns else []
                     matrix[s1][s2] = self._pearson_correlation(rets1, rets2)
         return matrix
-    
+
     def estimate_var(self, confidence: float = 0.95) -> Optional[Decimal]:
         """Estimate Value at Risk using historical simulation."""
         all_returns = []
@@ -173,7 +173,7 @@ class PortfolioRisk:
         idx = int((1 - confidence) * len(all_returns))
         idx = max(0, min(idx, len(all_returns) - 1))
         return Decimal(str(-all_returns[idx]))
-    
+
     def _compute_var(self):
         """Compute VaR and CVaR from position returns."""
         all_returns = []
@@ -190,7 +190,7 @@ class PortfolioRisk:
         tail = all_returns[:idx_95 + 1]
         cvar_95 = Decimal(str(-sum(tail) / len(tail))) if tail else var_95
         return var_95, cvar_95
-    
+
     def _compute_correlation_risk(self) -> float:
         """Compute average pairwise correlation as a risk metric."""
         symbols = [s for s, p in self.positions.items() if p.returns]
@@ -204,7 +204,7 @@ class PortfolioRisk:
                 total_corr += abs(matrix.get(s1, {}).get(s2, 0.0))
                 count += 1
         return total_corr / count if count > 0 else 0.0
-    
+
     @staticmethod
     def _pearson_correlation(x: List[float], y: List[float]) -> float:
         """Compute Pearson correlation coefficient."""
