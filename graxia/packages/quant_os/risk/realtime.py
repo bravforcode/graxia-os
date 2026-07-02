@@ -7,8 +7,8 @@ when configurable risk thresholds are approached or breached.
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable, Optional
 
 import numpy as np
 import structlog
@@ -28,7 +28,7 @@ class PositionSnapshot:
     quantity: float
     entry_price: float
     current_price: float
-    stop_loss: Optional[float] = None
+    stop_loss: float | None = None
 
     @property
     def market_value(self) -> float:
@@ -154,9 +154,7 @@ class RealTimeRisk:
 
     # ── VaR calculations ────────────────────────────────────────────────
 
-    def calculate_portfolio_var(
-        self, confidence: float = 0.95, method: str = "historical"
-    ) -> float:
+    def calculate_portfolio_var(self, confidence: float = 0.95, method: str = "historical") -> float:
         """Calculate portfolio Value at Risk.
 
         Args:

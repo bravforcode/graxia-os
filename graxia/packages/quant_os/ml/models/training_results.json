@@ -1,0 +1,42 @@
+[
+  {
+    "symbol": "XAUUSD",
+    "train_acc": 0.8918,
+    "test_acc": 0.4767169296434944,
+    "features": 17,
+    "bars": 33583,
+    "model_file": "xgboost_XAUUSD_20260626_160329.pkl"
+  },
+  {
+    "symbol": "EURUSD",
+    "train_acc": 0.878,
+    "test_acc": 0.49222567747667706,
+    "features": 17,
+    "bars": 11753,
+    "model_file": "xgboost_EURUSD_20260626_160329.pkl"
+  },
+  {
+    "symbol": "US30",
+    "train_acc": 0.8806,
+    "test_acc": 0.49430668747471246,
+    "features": 17,
+    "bars": 22301,
+    "model_file": "xgboost_US30_20260626_160329.pkl"
+  },
+  {
+    "symbol": "NAS100",
+    "train_acc": 0.8964,
+    "test_acc": 0.4785192666252331,
+    "features": 17,
+    "bars": 30744,
+    "model_file": "xgboost_NAS100_20260626_160329.pkl"
+  },
+  {
+    "symbol": "BTCUSD",
+    "train_acc": 0.8906,
+    "test_acc": 0.5109313943710738,
+    "features": 17,
+    "bars": 45434,
+    "model_file": "xgboost_BTCUSD_20260626_160330.pkl"
+  }
+]

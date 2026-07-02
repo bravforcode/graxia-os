@@ -32,6 +32,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from .enums import SignalType, TradingMode
+from .event_bus import EventBus
 from .events import (
     Event,
     FillEvent,
@@ -41,7 +42,6 @@ from .events import (
     TradeClosedEvent,
 )
 from .golden_rules import GOLDEN_RULES
-from .event_bus import EventBus
 
 logger = logging.getLogger(__name__)
 
@@ -276,8 +276,13 @@ class TradingLoop:
 
         # Sanity check: entry, SL, TP must be valid
         if signal.entry_price <= 0 or signal.stop_loss <= 0 or signal.take_profit <= 0:
-            logger.warning("trading_loop.rejected_invalid_levels symbol=%s entry=%.2f sl=%.2f tp=%.2f",
-                            signal.symbol, signal.entry_price, signal.stop_loss, signal.take_profit)
+            logger.warning(
+                "trading_loop.rejected_invalid_levels symbol=%s entry=%.2f sl=%.2f tp=%.2f",
+                signal.symbol,
+                signal.entry_price,
+                signal.stop_loss,
+                signal.take_profit,
+            )
             self._total_rejected += 1
             return
 
@@ -295,9 +300,7 @@ class TradingLoop:
         side = "BUY" if signal.signal_type == SignalType.BUY else "SELL"
         quantity = signal.metadata.get("approved_quantity", 0.0)
         if quantity <= 0:
-            logger.warning(
-                "trading_loop.rejected_zero_qty symbol=%s", signal.symbol
-            )
+            logger.warning("trading_loop.rejected_zero_qty symbol=%s", signal.symbol)
             self._total_rejected += 1
             return
 
@@ -398,8 +401,7 @@ class TradingLoop:
         self._emit_trade_closed(tracked, fill["fill_price"], "PAPER_ENTRY")
 
         logger.info(
-            "trading_loop.paper_fill order_id=%s symbol=%s side=%s "
-            "qty=%.6f price=%.5f",
+            "trading_loop.paper_fill order_id=%s symbol=%s side=%s " "qty=%.6f price=%.5f",
             tracked.order_id,
             tracked.symbol,
             tracked.side,
@@ -451,8 +453,7 @@ class TradingLoop:
             self._bus.publish(fill_event)
 
             logger.info(
-                "trading_loop.live_fill order_id=%s broker_id=%s symbol=%s "
-                "side=%s qty=%.6f",
+                "trading_loop.live_fill order_id=%s broker_id=%s symbol=%s " "side=%s qty=%.6f",
                 tracked.order_id,
                 order.broker_order_id,
                 tracked.symbol,
@@ -468,9 +469,7 @@ class TradingLoop:
                 tracked.status,
             )
 
-    def _emit_trade_closed(
-        self, tracked: TrackedOrder, exit_price: float, reason: str
-    ) -> None:
+    def _emit_trade_closed(self, tracked: TrackedOrder, exit_price: float, reason: str) -> None:
         """Emit a TradeClosedEvent for tracking."""
         if tracked.side == "BUY":
             pnl = (exit_price - tracked.entry_price) * tracked.quantity

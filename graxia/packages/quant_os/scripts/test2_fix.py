@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 """Fix test 2: short + close"""
-import MetaTrader5 as mt5
+
 import time
+
+import MetaTrader5 as mt5
 
 mt5.initialize(timeout=15000)
 info = mt5.account_info()
-print("Connected: {} @ {} balance={}".format(info.login, info.server, info.balance))
+print(f"Connected: {info.login} @ {info.server} balance={info.balance}")
 
 symbol = "XAUUSD"
 mt5.symbol_select(symbol, True)
 tick = mt5.symbol_info_tick(symbol)
-print("ask={:.2f} bid={:.2f}".format(tick.ask, tick.bid))
+print(f"ask={tick.ask:.2f} bid={tick.bid:.2f}")
 
 price = tick.bid
 sl = price + 6.30
@@ -35,7 +37,7 @@ if not result or result.retcode != mt5.TRADE_RETCODE_DONE:
     mt5.shutdown()
     exit(1)
 
-print("OPENED: ticket={} price={:.2f} SL={:.2f}".format(result.order, price, sl))
+print(f"OPENED: ticket={result.order} price={price:.2f} SL={sl:.2f}")
 time.sleep(2)
 
 positions = mt5.positions_get(symbol=symbol)
@@ -45,11 +47,11 @@ if not positions:
     exit(1)
 
 pos = positions[0]
-print("Position: ticket={} type={} volume={} profit={}".format(pos.ticket, pos.type, pos.volume, pos.profit))
+print(f"Position: ticket={pos.ticket} type={pos.type} volume={pos.volume} profit={pos.profit}")
 
 tick2 = mt5.symbol_info_tick(symbol)
 close_price = tick2.ask
-print("Closing at ask={:.2f}".format(close_price))
+print(f"Closing at ask={close_price:.2f}")
 
 close_req = {
     "action": mt5.TRADE_ACTION_DEAL,
@@ -66,7 +68,7 @@ close_req = {
 }
 cr = mt5.order_send(close_req)
 if cr and cr.retcode == mt5.TRADE_RETCODE_DONE:
-    print("CLOSED: profit={:.2f}".format(pos.profit))
+    print(f"CLOSED: profit={pos.profit:.2f}")
     print("TEST 2 PASS")
 else:
     err = cr.comment if cr else "none"
@@ -75,7 +77,7 @@ else:
     close_req["type_filling"] = mt5.ORDER_FILLING_FOK
     cr2 = mt5.order_send(close_req)
     if cr2 and cr2.retcode == mt5.TRADE_RETCODE_DONE:
-        print("CLOSED (FOK): profit={:.2f}".format(pos.profit))
+        print(f"CLOSED (FOK): profit={pos.profit:.2f}")
         print("TEST 2 PASS")
     else:
         err2 = cr2.comment if cr2 else "none"

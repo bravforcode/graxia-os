@@ -402,13 +402,13 @@ def _parse_stooq_csv(text: str) -> list[dict]:
 
 def download_symbol_timeframe(symbol: str, timeframe: str,
                               start: datetime, end: datetime,
-                              dry_run: bool = False) -> pd.DataFrame:
+                              dry_run: bool = False, force: bool = False) -> pd.DataFrame:
     """Download data for one symbol+timeframe, handling merge and resume."""
     out = output_path(symbol, timeframe)
     out.parent.mkdir(parents=True, exist_ok=True)
 
-    # Check if we should skip
-    if should_skip(out, start, timeframe):
+    # Check if we should skip (unless --force)
+    if not force and should_skip(out, start, timeframe):
         return pd.DataFrame()
 
     stype = symbol_type(symbol)
@@ -527,7 +527,7 @@ def main() -> int:
             logger.info("  [%s/%s]", sym, tf)
             try:
                 df = download_symbol_timeframe(
-                    sym, tf, start, end, dry_run=args.dry_run
+                    sym, tf, start, end, dry_run=args.dry_run, force=args.force
                 )
                 if not df.empty:
                     total_rows += len(df)

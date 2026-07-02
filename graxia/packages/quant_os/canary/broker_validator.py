@@ -1,12 +1,14 @@
-from dataclasses import dataclass, field
 import hashlib
 import json
+from dataclasses import dataclass, field
+
 
 @dataclass
 class BrokerValidationCheck:
     name: str
     passed: bool
     evidence: str
+
 
 @dataclass
 class BrokerValidationReport:
@@ -22,6 +24,7 @@ class BrokerValidationReport:
     def fingerprint(self) -> str:
         data = json.dumps([{"name": c.name, "passed": c.passed} for c in self.checks], sort_keys=True)
         return hashlib.sha256(data.encode()).hexdigest()
+
 
 class BrokerValidator:
     """Validate broker behavior before canary execution."""
@@ -52,8 +55,15 @@ class BrokerValidator:
             return BrokerValidationCheck("DAILY_ORDER_LIMIT", False, f"today={orders_today}, max={max_orders}")
         return BrokerValidationCheck("DAILY_ORDER_LIMIT", True, f"today={orders_today}, max={max_orders}")
 
-    def validate_full(self, config, symbol: str, contract_specs: dict, order: dict = None,
-                      open_positions: int = 0, orders_today: int = 0) -> BrokerValidationReport:
+    def validate_full(
+        self,
+        config,
+        symbol: str,
+        contract_specs: dict,
+        order: dict = None,
+        open_positions: int = 0,
+        orders_today: int = 0,
+    ) -> BrokerValidationReport:
         report = BrokerValidationReport()
         report.add_check(*self.validate_account_mode(config.account_mode_required))
         report.add_check(*self.validate_symbol(symbol, contract_specs))

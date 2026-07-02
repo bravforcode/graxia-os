@@ -13,17 +13,17 @@ import pandas as pd
 
 from graxia.packages.quant_os.core.smc_detectors import (
     classify_killzone,
-    detect_fvg,
     detect_fractals,
+    detect_fvg,
     detect_judas_swings,
     detect_liquidity_pools,
     detect_liquidity_voids,
     detect_mitigation_and_inversion,
     detect_order_blocks,
+    detect_ote,
     detect_structure,
     detect_sweeps,
     detect_wyckoff_events,
-    detect_ote,
     volume_profile_features,
 )
 
@@ -47,6 +47,7 @@ def _make_bars(open_, high, low, close, volume=None, start=None):
 
 
 # ── Swing points ─────────────────────────────────────────────────────────────
+
 
 class TestFractals:
     def test_basic_high_low(self):
@@ -79,6 +80,7 @@ class TestFractals:
 
 # ── Liquidity sweep ──────────────────────────────────────────────────────────
 
+
 class TestSweeps:
     def test_bearish_sweep_of_high(self):
         # bar 1 is a fractal high (confirmed at bar 2 because bar 2 high is lower).
@@ -108,6 +110,7 @@ class TestSweeps:
 
 # ── Order block ──────────────────────────────────────────────────────────────
 
+
 class TestOrderBlocks:
     def test_bullish_ob_before_bearish_break(self):
         # bar 1 is a fractal low. bar 2 is a green (opposing-color) candle.
@@ -125,6 +128,7 @@ class TestOrderBlocks:
 
 
 # ── Fair value gap ───────────────────────────────────────────────────────────
+
 
 class TestFVG:
     def test_bullish_fvg(self):
@@ -153,6 +157,7 @@ class TestFVG:
 
 
 # ── Market structure ─────────────────────────────────────────────────────────
+
 
 class TestStructure:
     def test_bos_up(self):
@@ -184,6 +189,7 @@ class TestStructure:
 
 # ── Liquidity pools ──────────────────────────────────────────────────────────
 
+
 class TestLiquidityPools:
     def test_equal_highs(self):
         # bars 1 and 3 have equal highs -> liquidity pool
@@ -200,13 +206,10 @@ class TestLiquidityPools:
 
 # ── Killzones ────────────────────────────────────────────────────────────────
 
+
 class TestKillzones:
     def test_london_open_and_overlap(self):
-        times = pd.Series(
-            pd.to_datetime(
-                ["2024-01-01 07:00:00", "2024-01-01 09:00:00", "2024-01-01 15:00:00"]
-            )
-        )
+        times = pd.Series(pd.to_datetime(["2024-01-01 07:00:00", "2024-01-01 09:00:00", "2024-01-01 15:00:00"]))
         res = classify_killzone(times)
         assert res.loc[0, "killzone_primary"] == "london_open"
         # 09:00 UTC is still inside London open window (07:00-10:00)
@@ -222,6 +225,7 @@ class TestKillzones:
 
 
 # ── Composite: OTE and liquidity voids ───────────────────────────────────────
+
 
 class TestMitigationAndInversion:
     def test_mitigation_depth(self):

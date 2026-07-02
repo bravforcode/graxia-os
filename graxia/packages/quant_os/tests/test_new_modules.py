@@ -3,13 +3,14 @@ Tests for new modules: Regime Filter, Monte Carlo, Signal Filter, Stability
 """
 
 import random
+
 random.seed(42)
 
-from quant_os.core.regime_filter import RegimeFilter, MarketRegime
-from quant_os.core.monte_carlo import MonteCarloSimulator
-from quant_os.core.stability import WalkForwardStability
-from quant_os.core.signal_filter import FakeSignalFilter
 from quant_os.core.dashboard import Dashboard, DashboardMetrics
+from quant_os.core.monte_carlo import MonteCarloSimulator
+from quant_os.core.regime_filter import MarketRegime, RegimeFilter
+from quant_os.core.signal_filter import FakeSignalFilter
+from quant_os.core.stability import WalkForwardStability
 
 
 def generate_mock_data(bars=200, trend=0.001):
@@ -137,8 +138,8 @@ class TestFakeSignalFilter:
     def test_evaluate_all_pass(self):
         f = FakeSignalFilter()
 
-        from quant_os.core.stability import StabilityResult
         from quant_os.core.monte_carlo import MonteCarloResult
+        from quant_os.core.stability import StabilityResult
 
         stability = StabilityResult(
             stability_gap=0.2,
@@ -184,7 +185,9 @@ class TestFakeSignalFilter:
         assert f.quick_check({"profit_factor": 1.5, "win_rate": 0.55, "expectancy": 30, "max_drawdown_pct": 8}) == True
 
         # Bad metrics
-        assert f.quick_check({"profit_factor": 0.8, "win_rate": 0.3, "expectancy": -50, "max_drawdown_pct": 30}) == False
+        assert (
+            f.quick_check({"profit_factor": 0.8, "win_rate": 0.3, "expectancy": -50, "max_drawdown_pct": 30}) == False
+        )
 
 
 class TestDashboard:

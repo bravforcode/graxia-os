@@ -25,12 +25,12 @@ Expected Performance (EURUSD ranging periods 2020-2026):
 - Sharpe: 1.31
 """
 
-from typing import Optional, Dict, Any, List
-from decimal import Decimal
 from datetime import datetime
+from decimal import Decimal
+from typing import Any
 
-from .base import Strategy, Signal, StrategyConfig
-from ..core.enums import SignalType, RegimeType
+from ..core.enums import RegimeType, SignalType
+from .base import Signal, Strategy, StrategyConfig
 
 
 class MeanReversionBollinger(Strategy):
@@ -48,10 +48,7 @@ class MeanReversionBollinger(Strategy):
             max_trades_per_day=2,
             min_confidence=0.65,
             min_risk_reward=1.0,
-            regime_filter=[
-                RegimeType.RANGE_BOUND,
-                RegimeType.LOW_VOLATILITY
-            ]
+            regime_filter=[RegimeType.RANGE_BOUND, RegimeType.LOW_VOLATILITY],
         )
         super().__init__(config)
 
@@ -74,20 +71,16 @@ class MeanReversionBollinger(Strategy):
         # Time filter (avoid low liquidity hours)
         self.avoid_hours = range(0, 3)  # 00:00 - 03:00 GMT
 
-    def required_features(self) -> List[str]:
-        return [
-            "bb_upper", "bb_middle", "bb_lower",
-            "adx", "stoch_k", "stoch_d",
-            "rsi", "atr", "sma_20"
-        ]
+    def required_features(self) -> list[str]:
+        return ["bb_upper", "bb_middle", "bb_lower", "adx", "stoch_k", "stoch_d", "rsi", "atr", "sma_20"]
 
     def generate_signal(
         self,
         symbol: str,
-        ohlcv_data: Dict[str, List],
-        indicators: Optional[Dict[str, Any]] = None,
-        regime: Optional[RegimeType] = None
-    ) -> Optional[Signal]:
+        ohlcv_data: dict[str, list],
+        indicators: dict[str, Any] | None = None,
+        regime: RegimeType | None = None,
+    ) -> Signal | None:
         """Generate mean reversion signal"""
 
         # Check regime validity (MUST be ranging)
@@ -203,9 +196,9 @@ class MeanReversionBollinger(Strategy):
                 "stoch_k": stoch_k,
                 "rsi": rsi,
                 "atr": atr,
-                "conditions": conditions
+                "conditions": conditions,
             },
-            notes=f"MRB signal: {'Long' if long_signal else 'Short'} - Mean reversion in ranging market"
+            notes=f"MRB signal: {'Long' if long_signal else 'Short'} - Mean reversion in ranging market",
         )
 
     def _is_low_liquidity_time(self) -> bool:
@@ -213,19 +206,21 @@ class MeanReversionBollinger(Strategy):
         now = datetime.utcnow()
         return now.hour in self.avoid_hours
 
-    def _calculate_indicators(self, ohlcv_data: Dict[str, List]) -> Dict[str, Any]:
+    def _calculate_indicators(self, ohlcv_data: dict[str, list]) -> dict[str, Any]:
         """Calculate Bollinger Bands and related indicators"""
         try:
             import pandas as pd
             import pandas_ta as ta
 
-            df = pd.DataFrame({
-                "open": ohlcv_data.get("open", []),
-                "high": ohlcv_data.get("high", []),
-                "low": ohlcv_data.get("low", []),
-                "close": ohlcv_data.get("close", []),
-                "volume": ohlcv_data.get("volume", [])
-            })
+            df = pd.DataFrame(
+                {
+                    "open": ohlcv_data.get("open", []),
+                    "high": ohlcv_data.get("high", []),
+                    "low": ohlcv_data.get("low", []),
+                    "close": ohlcv_data.get("close", []),
+                    "volume": ohlcv_data.get("volume", []),
+                }
+            )
 
             if len(df) < self.bb_period:
                 return {}
@@ -243,8 +238,14 @@ class MeanReversionBollinger(Strategy):
                 df["adx"] = adx["ADX_14"]
 
             # Stochastic
-            stoch = ta.stoch(df["high"], df["low"], df["close"],
-                           k=self.stoch_k_period, d=self.stoch_d_period, smooth_k=self.stoch_smooth)
+            stoch = ta.stoch(
+                df["high"],
+                df["low"],
+                df["close"],
+                k=self.stoch_k_period,
+                d=self.stoch_d_period,
+                smooth_k=self.stoch_smooth,
+            )
             if stoch is not None:
                 df["stoch_k"] = stoch["STOCHk_14_3_3"]
                 df["stoch_d"] = stoch["STOCHd_14_3_3"]
@@ -258,7 +259,9 @@ class MeanReversionBollinger(Strategy):
             # SMA 20 (BB middle)
             df["sma_20"] = ta.sma(df["close"], length=self.bb_period)
 
-            return {col: df[col].tolist() for col in df.columns if col not in ["open", "high", "low", "close", "volume"]}
+            return {
+                col: df[col].tolist() for col in df.columns if col not in ["open", "high", "low", "close", "volume"]
+            }
 
         except ImportError:
             return {}
@@ -266,12 +269,7 @@ class MeanReversionBollinger(Strategy):
             print(f"MRB indicator calculation error: {e}")
             return {}
 
-    def _calculate_confidence(
-        self,
-        conditions: Dict[str, bool],
-        stoch_value: float,
-        direction: str
-    ) -> float:
+    def _calculate_confidence(self, conditions: dict[str, bool], stoch_value: float, direction: str) -> float:
         """Calculate signal confidence"""
         base_confidence = 0.65
 

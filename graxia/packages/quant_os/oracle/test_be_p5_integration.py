@@ -1,14 +1,18 @@
 """Phase BE-P5 integration tests — real independent oracle validation."""
-from graxia.packages.quant_os.oracle.strategy_ir import StrategyIR, OracleSignal, OracleTrade
+
 from graxia.packages.quant_os.oracle.differential_comparator import DifferentialComparator
 from graxia.packages.quant_os.oracle.oracle_adapter import StubOracle
 from graxia.packages.quant_os.oracle.oracle_environment import OracleEnvironment
+from graxia.packages.quant_os.oracle.strategy_ir import OracleSignal, OracleTrade, StrategyIR
 
 
 def test_strategy_ir_full_lifecycle():
     ir = StrategyIR(
-        symbol="XAUUSD", timeframe="M15", direction="BUY",
-        stop_rule="20 pips", take_profit_rule="40 pips",
+        symbol="XAUUSD",
+        timeframe="M15",
+        direction="BUY",
+        stop_rule="20 pips",
+        take_profit_rule="40 pips",
     )
     ok, issues = ir.validate()
     assert ok
@@ -21,8 +25,13 @@ def test_strategy_ir_full_lifecycle():
 def test_differential_comparison_identical():
     comp = DifferentialComparator()
     signals = [
-        {"direction": "BUY", "entry_price": 2350.50, "stop_loss": 2348.50,
-         "take_profit": 2354.50, "timestamp_utc": "2026-06-22T10:00:00"},
+        {
+            "direction": "BUY",
+            "entry_price": 2350.50,
+            "stop_loss": 2348.50,
+            "take_profit": 2354.50,
+            "timestamp_utc": "2026-06-22T10:00:00",
+        },
     ]
     result = comp.compare_signals(signals, signals)
     assert result.match
@@ -46,15 +55,21 @@ def test_stub_oracle_invalid():
 
 def test_environment_isolation():
     env = OracleEnvironment(
-        name="canonical", python_version="3.12", framework_version="1.0",
-        adapter_version="0.1", license_decision="MIT",
+        name="canonical",
+        python_version="3.12",
+        framework_version="1.0",
+        adapter_version="0.1",
+        license_decision="MIT",
     )
     ok, issues = env.validate()
     assert ok
 
     env_bad = OracleEnvironment(
-        name="bad", python_version="3.12", framework_version="1.0",
-        adapter_version="0.1", license_decision="MIT",
+        name="bad",
+        python_version="3.12",
+        framework_version="1.0",
+        adapter_version="0.1",
+        license_decision="MIT",
         has_broker_credentials=True,
     )
     ok2, issues2 = env_bad.validate()
@@ -63,13 +78,18 @@ def test_environment_isolation():
 
 def test_oracle_signal_and_trade():
     signal = OracleSignal(
-        signal_id="SIG001", direction="BUY",
-        entry_price=2350.50, stop_loss=2348.50,
+        signal_id="SIG001",
+        direction="BUY",
+        entry_price=2350.50,
+        stop_loss=2348.50,
     )
     trade = OracleTrade(
-        trade_id="T001", signal_id="SIG001",
-        direction="BUY", entry_price=2350.50,
-        exit_price=2355.00, pnl_points=4.50,
+        trade_id="T001",
+        signal_id="SIG001",
+        direction="BUY",
+        entry_price=2350.50,
+        exit_price=2355.00,
+        pnl_points=4.50,
     )
     assert signal.to_dict()["direction"] == "BUY"
     assert trade.to_dict()["pnl_points"] == 4.50

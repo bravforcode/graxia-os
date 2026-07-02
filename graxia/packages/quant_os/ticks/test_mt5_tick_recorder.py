@@ -1,8 +1,10 @@
 """Tests for MT5 tick recorder."""
+
 import tempfile
 from types import SimpleNamespace
-from graxia.packages.quant_os.tick.tick_storage import TickStorage
+
 from graxia.packages.quant_os.tick.mt5_tick_recorder import MT5TickRecorder
+from graxia.packages.quant_os.tick.tick_storage import TickStorage
 
 
 def test_recorder_creates():
@@ -52,8 +54,8 @@ def test_recorder_skips_when_not_recording():
         storage = TickStorage(tmp)
         recorder = MT5TickRecorder(storage, "XAUUSD")
         # Not started
-        tick = recorder.record_tick(SimpleNamespace(
-            time=0, time_msc=0, bid=100, ask=101, last=0, flags=0, volume=0, volume_real=0
-        ))
+        tick = recorder.record_tick(
+            SimpleNamespace(time=0, time_msc=0, bid=100, ask=101, last=0, flags=0, volume=0, volume_real=0)
+        )
         assert tick == {}
         assert recorder.get_sequence() == 0

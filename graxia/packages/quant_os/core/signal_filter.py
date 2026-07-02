@@ -11,7 +11,7 @@ Filters out overfitted/fake signals:
 """
 
 from dataclasses import dataclass
-from typing import Dict, Optional
+
 from .monte_carlo import MonteCarloResult
 from .stability import StabilityResult
 
@@ -19,10 +19,11 @@ from .stability import StabilityResult
 @dataclass
 class FilterResult:
     """Signal filter result"""
+
     passed: bool
     score: int  # 0-6 (how many criteria passed)
-    criteria: Dict[str, bool]
-    details: Dict[str, str]
+    criteria: dict[str, bool]
+    details: dict[str, str]
 
     @property
     def grade(self) -> str:
@@ -72,9 +73,9 @@ class FakeSignalFilter:
 
     def evaluate(
         self,
-        stability: Optional[StabilityResult] = None,
-        monte_carlo: Optional[MonteCarloResult] = None,
-        metrics: Optional[Dict] = None,
+        stability: StabilityResult | None = None,
+        monte_carlo: MonteCarloResult | None = None,
+        metrics: dict | None = None,
     ) -> FilterResult:
         """
         Evaluate signal against all 6 criteria.
@@ -175,7 +176,7 @@ class FakeSignalFilter:
             details=details,
         )
 
-    def quick_check(self, metrics: Dict) -> bool:
+    def quick_check(self, metrics: dict) -> bool:
         """
         Quick check using only basic metrics.
         Returns True if metrics look reasonable.
@@ -185,9 +186,4 @@ class FakeSignalFilter:
         exp = metrics.get("expectancy", 0)
         max_dd = metrics.get("max_drawdown_pct", 100)
 
-        return (
-            pf > 1.0 and
-            wr > 0.40 and
-            exp > 0 and
-            max_dd < 25
-        )
+        return pf > 1.0 and wr > 0.40 and exp > 0 and max_dd < 25

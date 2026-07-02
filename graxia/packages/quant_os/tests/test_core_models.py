@@ -1,33 +1,63 @@
 """Tests for core data models — edge cases, boundary conditions, serialization."""
 
-import pytest
-from decimal import Decimal
 from dataclasses import FrozenInstanceError
+from decimal import Decimal
+
+import pytest
 
 from graxia.packages.quant_os.core.enums import (
-    SystemState, TradingMode, OrderStatus, RegimeType, KillSwitchType, SignalType, DecisionType, CloseReason,
-    RiskCheckResult as RiskCheckResultEnum, DataQualityCheck,
+    CloseReason,
+    DataQualityCheck,
+    DecisionType,
+    KillSwitchType,
+    OrderStatus,
+    RegimeType,
+    SignalType,
     StrategyGroup,
+    SystemState,
+    TradingMode,
 )
-from graxia.packages.quant_os.core.exceptions import (
-    QuantException, RiskViolationError, ComplianceError,
-    KillSwitchTriggeredError, DataQualityError, BrokerError,
-    OverfittingError, InsufficientEvidenceError, OrderStateError,
-    DuplicateOrderError, PositionMismatchError, ValidationError,
-    StrategyError, MLModelError, DriftDetectedError,
-    CircuitBreakerError, StrictMTFViolation,
+from graxia.packages.quant_os.core.enums import (
+    RiskCheckResult as RiskCheckResultEnum,
 )
 from graxia.packages.quant_os.core.events import (
-    Event, BarEvent, TickEvent, SignalEvent, OrderEvent,
-    FillEvent, TradeClosedEvent, RiskEvent, KillSwitchEvent,
-    RegimeChangeEvent, NewsEvent,
+    BarEvent,
+    Event,
+    FillEvent,
+    KillSwitchEvent,
+    NewsEvent,
+    OrderEvent,
+    RegimeChangeEvent,
+    RiskEvent,
+    SignalEvent,
+    TickEvent,
+    TradeClosedEvent,
+)
+from graxia.packages.quant_os.core.exceptions import (
+    BrokerError,
+    CircuitBreakerError,
+    ComplianceError,
+    DataQualityError,
+    DriftDetectedError,
+    DuplicateOrderError,
+    InsufficientEvidenceError,
+    KillSwitchTriggeredError,
+    MLModelError,
+    OrderStateError,
+    OverfittingError,
+    PositionMismatchError,
+    QuantException,
+    RiskViolationError,
+    StrategyError,
+    StrictMTFViolation,
+    ValidationError,
 )
 from graxia.packages.quant_os.risk.risk_policy import RiskPolicy
-
 
 # ═══════════════════════════════════════════════════════════════════════
 # Enums
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class TestEnums:
     """Edge cases for all system enums."""
@@ -77,6 +107,7 @@ class TestEnums:
 # ═══════════════════════════════════════════════════════════════════════
 # Exceptions
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class TestExceptions:
     """Edge cases for exception hierarchy."""
@@ -129,11 +160,7 @@ class TestExceptions:
         assert exc.missing_evidence == ["sharpe", "sortino"]
 
     def test_order_state_error_states(self):
-        exc = OrderStateError(
-            "invalid transition",
-            from_state="CREATED",
-            to_state="FILLED"
-        )
+        exc = OrderStateError("invalid transition", from_state="CREATED", to_state="FILLED")
         assert exc.from_state == "CREATED"
         assert exc.to_state == "FILLED"
 
@@ -173,11 +200,21 @@ class TestExceptions:
     def test_exceptions_are_catchable_as_base(self):
         """All domain exceptions should be catchable as QuantException."""
         for exc_cls in [
-            RiskViolationError, ComplianceError, KillSwitchTriggeredError,
-            DataQualityError, BrokerError, OverfittingError,
-            InsufficientEvidenceError, OrderStateError, DuplicateOrderError,
-            PositionMismatchError, ValidationError, StrategyError,
-            MLModelError, DriftDetectedError, CircuitBreakerError,
+            RiskViolationError,
+            ComplianceError,
+            KillSwitchTriggeredError,
+            DataQualityError,
+            BrokerError,
+            OverfittingError,
+            InsufficientEvidenceError,
+            OrderStateError,
+            DuplicateOrderError,
+            PositionMismatchError,
+            ValidationError,
+            StrategyError,
+            MLModelError,
+            DriftDetectedError,
+            CircuitBreakerError,
             StrictMTFViolation,
         ]:
             exc = exc_cls("test")
@@ -188,6 +225,7 @@ class TestExceptions:
 # ═══════════════════════════════════════════════════════════════════════
 # Events (frozen dataclasses)
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class TestEvents:
     """Edge cases for event dataclasses."""
@@ -266,12 +304,7 @@ class TestEvents:
         assert k.severity == "P0"
 
     def test_regime_change_event(self):
-        r = RegimeChangeEvent(
-            symbol="XAUUSD",
-            old_regime="RANGE_BOUND",
-            new_regime="CRISIS",
-            confidence=0.95
-        )
+        r = RegimeChangeEvent(symbol="XAUUSD", old_regime="RANGE_BOUND", new_regime="CRISIS", confidence=0.95)
         assert r.new_regime == "CRISIS"
 
     def test_news_event_impact_values(self):
@@ -282,12 +315,8 @@ class TestEvents:
     def test_event_serialization_roundtrip(self):
         """Event to_dict should produce JSON-serializable output."""
         import json
-        e = SignalEvent(
-            symbol="EURUSD",
-            signal_type=SignalType.BUY,
-            confidence=0.75,
-            metadata={"key": "value"}
-        )
+
+        e = SignalEvent(symbol="EURUSD", signal_type=SignalType.BUY, confidence=0.75, metadata={"key": "value"})
         d = e.to_dict()
         serialized = json.dumps(d, default=str)
         assert "EURUSD" in serialized
@@ -296,6 +325,7 @@ class TestEvents:
 # ═══════════════════════════════════════════════════════════════════════
 # Risk Policy
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class TestRiskPolicy:
     """Edge cases for RiskPolicy (bps-based)."""
@@ -349,15 +379,18 @@ class TestRiskPolicy:
 # Schemas (pandera validation)
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class TestSchemas:
     """Edge cases for OHLCV schema validation."""
 
     def test_schema_exists(self):
         from graxia.packages.quant_os.core.schemas import XAUUSD_M15_SCHEMA
+
         assert XAUUSD_M15_SCHEMA is not None
 
     def test_validate_ohlcv_function_exists(self):
         from graxia.packages.quant_os.core.schemas import validate_ohlcv
+
         assert callable(validate_ohlcv)
 
 
@@ -365,11 +398,13 @@ class TestSchemas:
 # Config
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class TestConfig:
     """Edge cases for QuantConfig."""
 
     def test_config_enforces_hard_limits(self):
         from graxia.packages.quant_os.core.config import QuantConfig
+
         c = QuantConfig()
         assert c.max_risk_per_trade_pct <= 2.0
         assert c.max_drawdown_pct <= 25.0
@@ -377,12 +412,14 @@ class TestConfig:
 
     def test_config_paper_mode_no_live(self):
         from graxia.packages.quant_os.core.config import QuantConfig
+
         c = QuantConfig()
         assert c.trading_mode == TradingMode.PAPER
         assert c.live_trading_enabled is False
 
     def test_get_config_returns_singleton(self):
         from graxia.packages.quant_os.core.config import get_config, reset_config
+
         reset_config()
         c1 = get_config()
         c2 = get_config()
@@ -391,6 +428,7 @@ class TestConfig:
 
     def test_get_mode_risk_limits_paper(self):
         from graxia.packages.quant_os.core.config import QuantConfig
+
         c = QuantConfig()
         limits = c.get_mode_risk_limits()
         assert "max_risk_per_trade_pct" in limits
@@ -398,7 +436,9 @@ class TestConfig:
 
     def test_get_mode_risk_limits_micro(self):
         import os
+
         from graxia.packages.quant_os.core.config import QuantConfig
+
         os.environ["TRADING_MODE"] = "LIVE_MICRO"
         try:
             c = QuantConfig()

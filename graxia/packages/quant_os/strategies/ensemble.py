@@ -20,11 +20,13 @@ StrategyEnsemble
 from __future__ import annotations
 
 import math
-import structlog
 from collections import deque
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import Any, Sequence
+from typing import Any
+
+import structlog
 
 try:
     from ..core.enums import DecisionType, RegimeType, SignalType
@@ -45,6 +47,7 @@ _DEFAULT_MAX_WEIGHT: float = 0.80
 
 
 # ── data classes ────────────────────────────────────────────────────────
+
 
 @dataclass
 class StrategyRecord:
@@ -87,6 +90,7 @@ class EnsembleResult:
 
 
 # ── ensemble class ──────────────────────────────────────────────────────
+
 
 class StrategyEnsemble:
     """
@@ -226,9 +230,7 @@ class StrategyEnsemble:
 
         for name, rec in self._records.items():
             try:
-                sig = rec.strategy.generate_signal(
-                    symbol, ohlcv_data, indicators, regime, **kwargs
-                )
+                sig = rec.strategy.generate_signal(symbol, ohlcv_data, indicators, regime, **kwargs)
             except Exception:
                 logger.exception("ensemble_sub_error", strategy=name)
                 continue
@@ -295,11 +297,7 @@ class StrategyEnsemble:
         winning_votes = [v for v in votes if v.signal_type == sig_type]
         consensus_sl, consensus_tp = self._consensus_levels(winning_votes, current_price)
 
-        strength = (
-            "strong" if best_score > 0.75
-            else "medium" if best_score > 0.65
-            else "weak"
-        )
+        strength = "strong" if best_score > 0.75 else "medium" if best_score > 0.65 else "weak"
 
         self._records[next(iter(self._records))].strategy.signals_generated += 1
 
@@ -495,6 +493,7 @@ def get_ensemble_signal(
 
 class _FakeStrategy:
     """Minimal strategy wrapper for backward-compat get_ensemble_signal."""
+
     def __init__(self, name: str, signal):
         self._name = name
         self._signal = signal

@@ -1,7 +1,7 @@
 """Phase BE-P5 — Oracle isolation. Canonical must not import oracle packages."""
+
 import ast
 from pathlib import Path
-
 
 ORACLE_PACKAGES = ["vectorbt", "backtesting", "bt", "backtrader"]
 

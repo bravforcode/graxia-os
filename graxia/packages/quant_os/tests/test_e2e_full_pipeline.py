@@ -2,17 +2,18 @@
 End-to-end integration test: Signal → Risk → Execution → Ledger → Reconciliation
 Tests the full pipeline with ALL gates active.
 """
-import sys
+
 import os
+import sys
 from datetime import datetime, timedelta
 from decimal import Decimal
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from graxia.packages.quant_os.backtest.engine import BacktestEngine, BacktestConfig
-from graxia.packages.quant_os.strategies.base import Strategy, StrategyConfig, Signal
-from graxia.packages.quant_os.core.enums import SignalType
+from graxia.packages.quant_os.backtest.engine import BacktestConfig, BacktestEngine
 from graxia.packages.quant_os.backtest.metrics import BacktestMetrics
+from graxia.packages.quant_os.core.enums import SignalType
+from graxia.packages.quant_os.strategies.base import Signal, Strategy, StrategyConfig
 
 
 class FullPipelineStrategy(Strategy):
@@ -87,6 +88,7 @@ class NoStopLossStrategy(Strategy):
 
 def generate_data(n=500):
     import random
+
     random.seed(42)
     data = {"open": [], "high": [], "low": [], "close": [], "volume": []}
     price = 2350.0
@@ -169,8 +171,8 @@ class TestE2EFullPipeline:
 
         metrics = results.get("metrics")
         assert isinstance(metrics, BacktestMetrics)
-        assert hasattr(metrics, 'total_trades')
-        assert hasattr(metrics, 'win_rate')
+        assert hasattr(metrics, "total_trades")
+        assert hasattr(metrics, "win_rate")
 
     def test_same_inputs_same_results(self):
         config = BacktestConfig(
@@ -195,14 +197,14 @@ class TestE2EFullPipeline:
 
     def test_no_mt5_imports_in_engine(self):
         """Engine must not import MT5 modules."""
-        engine_path = os.path.join(os.path.dirname(__file__), '..', 'backtest', 'engine.py')
+        engine_path = os.path.join(os.path.dirname(__file__), "..", "backtest", "engine.py")
         source = open(engine_path).read()
         assert "import MetaTrader5" not in source
         assert "from MetaTrader5" not in source
 
     def test_no_external_repo_imports(self):
         """Engine must not import external backtesting repos."""
-        engine_path = os.path.join(os.path.dirname(__file__), '..', 'backtest', 'engine.py')
+        engine_path = os.path.join(os.path.dirname(__file__), "..", "backtest", "engine.py")
         source = open(engine_path).read()
         assert "import vectorbt" not in source
         assert "import backtrader" not in source

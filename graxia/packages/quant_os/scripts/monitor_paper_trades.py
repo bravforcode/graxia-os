@@ -18,7 +18,7 @@ import logging
 import sys
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 # ── Paths ─────────────────────────────────────────────────────────────
@@ -43,6 +43,7 @@ logger = logging.getLogger(__name__)
 # Load .env
 try:
     from dotenv import load_dotenv
+
     load_dotenv(PROJECT_ROOT / ".env")
 except ImportError:
     pass
@@ -50,10 +51,12 @@ except ImportError:
 
 # ── Telegram helper ───────────────────────────────────────────────────
 
+
 def send_telegram(text: str) -> bool:
     """Send message via Telegram if configured."""
     try:
         import tomllib
+
         import requests
     except ImportError:
         return False
@@ -78,6 +81,7 @@ def send_telegram(text: str) -> bool:
 
 # ── Data loading ──────────────────────────────────────────────────────
 
+
 def load_paper_trade_log() -> list[dict]:
     """Load paper trade log from CSV (paper_trade_bot.py format)."""
     if not TRADE_LOG_PATH.exists():
@@ -85,6 +89,7 @@ def load_paper_trade_log() -> list[dict]:
         return []
 
     import pandas as pd
+
     try:
         df = pd.read_csv(TRADE_LOG_PATH)
         return df.to_dict("records")
@@ -115,6 +120,7 @@ def load_config() -> dict:
 
 # ── MT5 deal history ─────────────────────────────────────────────────
 
+
 def load_mt5_deals() -> list[dict]:
     """Try to read deal history from MT5. Returns list of deal dicts."""
     try:
@@ -135,18 +141,20 @@ def load_mt5_deals() -> list[dict]:
 
         result = []
         for d in deals:
-            result.append({
-                "ticket": d.ticket,
-                "time": datetime.fromtimestamp(d.time, tz=UTC).isoformat(),
-                "type": "BUY" if d.type == 0 else "SELL" if d.type == 1 else str(d.type),
-                "symbol": d.symbol,
-                "volume": d.volume,
-                "price": d.price,
-                "profit": d.profit,
-                "swap": d.swap,
-                "commission": d.commission,
-                "magic": d.magic,
-            })
+            result.append(
+                {
+                    "ticket": d.ticket,
+                    "time": datetime.fromtimestamp(d.time, tz=UTC).isoformat(),
+                    "type": "BUY" if d.type == 0 else "SELL" if d.type == 1 else str(d.type),
+                    "symbol": d.symbol,
+                    "volume": d.volume,
+                    "price": d.price,
+                    "profit": d.profit,
+                    "swap": d.swap,
+                    "commission": d.commission,
+                    "magic": d.magic,
+                }
+            )
         return result
     except Exception as e:
         logger.warning("MT5 deal fetch failed: %s", e)
@@ -154,6 +162,7 @@ def load_mt5_deals() -> list[dict]:
 
 
 # ── P&L computation ──────────────────────────────────────────────────
+
 
 @dataclass
 class DailyPnL:
@@ -181,10 +190,17 @@ def compute_daily_pnl(
 
     if not today_trades:
         return DailyPnL(
-            date=today, trades=0, wins=0, losses=0,
-            total_pnl=0.0, realized_pnl=0.0, unrealized_pnl=0.0,
-            win_rate=0.0, max_drawdown_pct=0.0,
-            equity_high=initial_capital, equity_current=initial_capital,
+            date=today,
+            trades=0,
+            wins=0,
+            losses=0,
+            total_pnl=0.0,
+            realized_pnl=0.0,
+            unrealized_pnl=0.0,
+            win_rate=0.0,
+            max_drawdown_pct=0.0,
+            equity_high=initial_capital,
+            equity_current=initial_capital,
         )
 
     realized = sum(float(t.get("profit", 0)) for t in today_trades)
@@ -213,6 +229,7 @@ def compute_daily_pnl(
 
 # ── Risk limit checks ────────────────────────────────────────────────
 
+
 @dataclass
 class RiskCheckResult:
     daily_loss_ok: bool = True
@@ -239,23 +256,17 @@ def check_risk_limits(
         daily_loss_pct = abs(daily_pnl.total_pnl) / initial * 100
         if daily_pnl.total_pnl < 0 and daily_loss_pct >= max_daily_pct:
             result.daily_loss_ok = False
-            result.messages.append(
-                f"DAILY LOSS BREACH: {daily_loss_pct:.2f}% >= {max_daily_pct}% limit"
-            )
+            result.messages.append(f"DAILY LOSS BREACH: {daily_loss_pct:.2f}% >= {max_daily_pct}% limit")
 
     # Drawdown check
     if daily_pnl.max_drawdown_pct >= max_dd_pct:
         result.drawdown_ok = False
-        result.messages.append(
-            f"DRAWDOWN BREACH: {daily_pnl.max_drawdown_pct:.2f}% >= {max_dd_pct}% limit"
-        )
+        result.messages.append(f"DRAWDOWN BREACH: {daily_pnl.max_drawdown_pct:.2f}% >= {max_dd_pct}% limit")
 
     # Position count check
     if open_positions >= max_pos:
         result.max_positions_ok = False
-        result.messages.append(
-            f"MAX POSITIONS: {open_positions} >= {max_pos} limit"
-        )
+        result.messages.append(f"MAX POSITIONS: {open_positions} >= {max_pos} limit")
 
     if not result.messages:
         result.messages.append("All risk limits OK")
@@ -264,6 +275,7 @@ def check_risk_limits(
 
 
 # ── Report generation ─────────────────────────────────────────────────
+
 
 def generate_report(daily_pnl: DailyPnL, risk_check: RiskCheckResult) -> str:
     """Generate markdown daily report."""
@@ -322,6 +334,7 @@ def load_state() -> dict:
 
 # ── Alert formatting ──────────────────────────────────────────────────
 
+
 def format_alert(daily_pnl: DailyPnL, risk_check: RiskCheckResult) -> str:
     """Format Telegram alert message."""
     status = "OK" if risk_check.daily_loss_ok and risk_check.drawdown_ok else "BREACH"
@@ -341,6 +354,7 @@ def format_alert(daily_pnl: DailyPnL, risk_check: RiskCheckResult) -> str:
 
 
 # ── Main ──────────────────────────────────────────────────────────────
+
 
 def run_check(send_alerts: bool = True) -> tuple[DailyPnL, RiskCheckResult]:
     """Run one monitoring cycle: load data, compute, check, report, alert."""
@@ -386,9 +400,12 @@ def run_continuous(interval_seconds: int = 300) -> None:
     while True:
         try:
             daily_pnl, risk_check = run_check(send_alerts=True)
-            logger.info("Check: pnl=$%.2f equity=$%.2f risk=%s",
-                        daily_pnl.total_pnl, daily_pnl.equity_current,
-                        "OK" if risk_check.daily_loss_ok else "BREACH")
+            logger.info(
+                "Check: pnl=$%.2f equity=$%.2f risk=%s",
+                daily_pnl.total_pnl,
+                daily_pnl.equity_current,
+                "OK" if risk_check.daily_loss_ok else "BREACH",
+            )
         except Exception as e:
             logger.error("Monitor error: %s", e)
             send_telegram(f"Monitor error: {e}")

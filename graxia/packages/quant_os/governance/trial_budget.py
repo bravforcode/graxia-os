@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class TrialBudget:
     """Budget for hypothesis experimentation. Exceeded = freeze + selection-bias analysis."""
+
     max_parameter_trials: int = 12
     max_feature_trials: int = 6
     max_data_transformations: int = 3
@@ -25,10 +27,10 @@ class TrialBudget:
 
     def is_exceeded(self) -> bool:
         return (
-            self.parameter_trials_used > self.max_parameter_trials or
-            self.feature_trials_used > self.max_feature_trials or
-            self.data_transformations_used > self.max_data_transformations or
-            self.model_classes_used > self.max_model_classes
+            self.parameter_trials_used > self.max_parameter_trials
+            or self.feature_trials_used > self.max_feature_trials
+            or self.data_transformations_used > self.max_data_transformations
+            or self.model_classes_used > self.max_model_classes
         )
 
     def is_frozen(self) -> bool:
@@ -48,7 +50,10 @@ class TrialBudget:
 
     def increment_data_transform(self) -> tuple[bool, str]:
         if self.data_transformations_used >= self.max_data_transformations:
-            return False, f"BUDGET_EXCEEDED:data_transform {self.data_transformations_used}/{self.max_data_transformations}"
+            return (
+                False,
+                f"BUDGET_EXCEEDED:data_transform {self.data_transformations_used}/{self.max_data_transformations}",
+            )
         self.data_transformations_used += 1
         return True, f"data transform {self.data_transformations_used}/{self.max_data_transformations}"
 

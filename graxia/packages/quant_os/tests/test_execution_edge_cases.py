@@ -1,40 +1,55 @@
 """Tests for execution engine — state machine, order lifecycle, idempotency, broker failover."""
 
-import pytest
 from decimal import Decimal
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
-from graxia.packages.quant_os.execution.order import (
-    OrderStateMachine, create_order,
-)
-from graxia.packages.quant_os.execution.order_state_machine import (
-    OrderState, OrderStateMachine as OSM2, TRANSITIONS, TERMINAL_STATES,
-)
-from graxia.packages.quant_os.execution.idempotency import (
-    IdempotencyChecker, WindowedIdempotencyChecker,
-)
-from graxia.packages.quant_os.execution.broker_adapter import (
-    PaperBroker, BrokerManager,
-)
+import pytest
+
 from graxia.packages.quant_os.core.enums import (
-    OrderStatus, OrderSide, OrderType, TimeInForce,
+    OrderSide,
+    OrderStatus,
+    OrderType,
+    TimeInForce,
 )
 from graxia.packages.quant_os.core.exceptions import (
-    OrderStateError, ValidationError,
+    OrderStateError,
+    ValidationError,
 )
-
+from graxia.packages.quant_os.execution.broker_adapter import (
+    BrokerManager,
+    PaperBroker,
+)
+from graxia.packages.quant_os.execution.idempotency import (
+    IdempotencyChecker,
+    WindowedIdempotencyChecker,
+)
+from graxia.packages.quant_os.execution.order import (
+    OrderStateMachine,
+    create_order,
+)
+from graxia.packages.quant_os.execution.order_state_machine import (
+    TERMINAL_STATES,
+    TRANSITIONS,
+    OrderState,
+)
+from graxia.packages.quant_os.execution.order_state_machine import (
+    OrderStateMachine as OSM2,
+)
 
 # ═══════════════════════════════════════════════════════════════════════
 # Order Data Class
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class TestOrder:
     """Order entity edge cases."""
 
     def test_create_order_defaults(self):
         o = create_order(
-            symbol="EURUSD", side=OrderSide.BUY,
-            order_type=OrderType.MARKET, quantity=Decimal("0.01"),
+            symbol="EURUSD",
+            side=OrderSide.BUY,
+            order_type=OrderType.MARKET,
+            quantity=Decimal("0.01"),
         )
         assert o.symbol == "EURUSD"
         assert o.status == OrderStatus.CREATED
@@ -59,7 +74,10 @@ class TestOrder:
 
     def test_custom_idempotency_key(self):
         o = create_order(
-            "EURUSD", OrderSide.BUY, OrderType.MARKET, Decimal("0.01"),
+            "EURUSD",
+            OrderSide.BUY,
+            OrderType.MARKET,
+            Decimal("0.01"),
         )
         o.idempotency_key = "custom_key"
         assert o.idempotency_key == "custom_key"
@@ -73,13 +91,17 @@ class TestOrder:
     def test_is_open(self):
         o = create_order("EURUSD", OrderSide.BUY, OrderType.MARKET, Decimal("0.01"))
         assert o.is_open
-        for status in [OrderStatus.VALIDATED, OrderStatus.RISK_APPROVED,
-                       OrderStatus.COMPLIANCE_APPROVED, OrderStatus.SENT_TO_BROKER,
-                       OrderStatus.ACKNOWLEDGED, OrderStatus.PARTIAL_FILL]:
+        for status in [
+            OrderStatus.VALIDATED,
+            OrderStatus.RISK_APPROVED,
+            OrderStatus.COMPLIANCE_APPROVED,
+            OrderStatus.SENT_TO_BROKER,
+            OrderStatus.ACKNOWLEDGED,
+            OrderStatus.PARTIAL_FILL,
+        ]:
             o.status = status
             assert o.is_open
-        for status in [OrderStatus.FILLED, OrderStatus.REJECTED,
-                       OrderStatus.CANCELLED, OrderStatus.EXPIRED]:
+        for status in [OrderStatus.FILLED, OrderStatus.REJECTED, OrderStatus.CANCELLED, OrderStatus.EXPIRED]:
             o.status = status
             assert not o.is_open
 
@@ -91,14 +113,20 @@ class TestOrder:
 
     def test_limit_order_requires_price(self):
         o = create_order(
-            "EURUSD", OrderSide.BUY, OrderType.LIMIT, Decimal("0.01"),
+            "EURUSD",
+            OrderSide.BUY,
+            OrderType.LIMIT,
+            Decimal("0.01"),
             price=Decimal("1.0850"),
         )
         assert o.price == Decimal("1.0850")
 
     def test_stop_order_requires_stop_price(self):
         o = create_order(
-            "EURUSD", OrderSide.BUY, OrderType.STOP, Decimal("0.01"),
+            "EURUSD",
+            OrderSide.BUY,
+            OrderType.STOP,
+            Decimal("0.01"),
             stop_price=Decimal("1.0800"),
         )
         assert o.stop_price == Decimal("1.0800")
@@ -107,6 +135,7 @@ class TestOrder:
 # ═══════════════════════════════════════════════════════════════════════
 # Order State Machine (v1 — from order.py)
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class TestOrderStateMachineV1:
     """Order state machine from order.py — edge cases."""
@@ -259,8 +288,10 @@ class TestOrderStateMachineV1:
 
     def test_transition_handler_exception_does_not_fail(self):
         o, sm = self._make_order_and_sm()
+
         def bad_handler(*args):
             raise RuntimeError("handler crash")
+
         sm.on_transition(OrderStatus.VALIDATED, bad_handler)
         sm.transition(OrderStatus.VALIDATED, "ok")  # should not raise
         assert o.status == OrderStatus.VALIDATED
@@ -269,6 +300,7 @@ class TestOrderStateMachineV1:
 # ═══════════════════════════════════════════════════════════════════════
 # Order State Machine (v2 — from order_state_machine.py)
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class TestOrderStateMachineV2:
     """Order state machine from order_state_machine.py — 16-state machine edge cases."""
@@ -356,6 +388,7 @@ class TestOrderStateMachineV2:
 # Transition Table Completeness
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class TestTransitionTable:
     """Verify transition table correctness."""
 
@@ -382,6 +415,7 @@ class TestTransitionTable:
 # ═══════════════════════════════════════════════════════════════════════
 # Idempotency Checker
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class TestIdempotencyChecker:
     """Idempotency checker edge cases."""
@@ -494,7 +528,10 @@ class TestWindowedIdempotencyChecker:
     def test_custom_window(self):
         wic = WindowedIdempotencyChecker()
         key = wic.generate_key(
-            "EURUSD", "BUY", Decimal("0.01"), "mtm",
+            "EURUSD",
+            "BUY",
+            Decimal("0.01"),
+            "mtm",
             timestamp_bucket_seconds=120,
         )
         assert len(key) == 64
@@ -503,6 +540,7 @@ class TestWindowedIdempotencyChecker:
 # ═══════════════════════════════════════════════════════════════════════
 # Paper Broker
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class TestPaperBroker:
     """Paper broker adapter edge cases."""
@@ -528,7 +566,10 @@ class TestPaperBroker:
         broker = PaperBroker()
         await broker.connect()
         order = create_order(
-            "EURUSD", OrderSide.BUY, OrderType.MARKET, Decimal("0.01"),
+            "EURUSD",
+            OrderSide.BUY,
+            OrderType.MARKET,
+            Decimal("0.01"),
         )
         result = await broker.place_order(order)
         assert result.success
@@ -602,7 +643,10 @@ class TestPaperBroker:
         broker = PaperBroker()
         await broker.connect()
         order = create_order(
-            "EURUSD", OrderSide.BUY, OrderType.MARKET, Decimal("0.01"),
+            "EURUSD",
+            OrderSide.BUY,
+            OrderType.MARKET,
+            Decimal("0.01"),
         )
         await broker.place_order(order)
         pos = await broker.get_position("EURUSD")
@@ -615,12 +659,18 @@ class TestPaperBroker:
         await broker.connect()
         # Open
         order1 = create_order(
-            "EURUSD", OrderSide.BUY, OrderType.MARKET, Decimal("0.01"),
+            "EURUSD",
+            OrderSide.BUY,
+            OrderType.MARKET,
+            Decimal("0.01"),
         )
         await broker.place_order(order1)
         # Close
         order2 = create_order(
-            "EURUSD", OrderSide.SELL, OrderType.MARKET, Decimal("0.01"),
+            "EURUSD",
+            OrderSide.SELL,
+            OrderType.MARKET,
+            Decimal("0.01"),
         )
         await broker.place_order(order2)
         pos = await broker.get_position("EURUSD")
@@ -630,6 +680,7 @@ class TestPaperBroker:
 # ═══════════════════════════════════════════════════════════════════════
 # Broker Manager Failover
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class TestBrokerManager:
     """Broker manager failover edge cases."""
@@ -670,6 +721,7 @@ class TestBrokerManager:
 # Edge Cases: Boundary Values
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class TestBoundaryValues:
     """Boundary value edge cases for execution."""
 
@@ -683,7 +735,10 @@ class TestBoundaryValues:
 
     def test_price_very_precise(self):
         o = create_order(
-            "EURUSD", OrderSide.BUY, OrderType.LIMIT, Decimal("0.01"),
+            "EURUSD",
+            OrderSide.BUY,
+            OrderType.LIMIT,
+            Decimal("0.01"),
             price=Decimal("1.08543210"),
         )
         assert o.price == Decimal("1.08543210")
@@ -701,7 +756,10 @@ class TestBoundaryValues:
     def test_order_all_time_in_force(self):
         for tif in TimeInForce:
             o = create_order(
-                "EURUSD", OrderSide.BUY, OrderType.MARKET, Decimal("0.01"),
+                "EURUSD",
+                OrderSide.BUY,
+                OrderType.MARKET,
+                Decimal("0.01"),
                 time_in_force=tif,
             )
             assert o.time_in_force == tif

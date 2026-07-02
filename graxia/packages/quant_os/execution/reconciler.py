@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Optional
 
 import structlog
 
@@ -34,6 +33,7 @@ class DiscrepancySeverity(str, Enum):
 @dataclass(frozen=True)
 class InternalPosition:
     """Internal position representation."""
+
     symbol: str
     side: str  # "BUY" or "SELL"
     quantity: Decimal
@@ -44,6 +44,7 @@ class InternalPosition:
 @dataclass(frozen=True)
 class BrokerPositionSnapshot:
     """Broker position snapshot."""
+
     symbol: str
     side: str
     quantity: Decimal
@@ -54,17 +55,18 @@ class BrokerPositionSnapshot:
 @dataclass
 class Discrepancy:
     """A single position discrepancy."""
+
     symbol: str
     disc_type: DiscrepancyType
     severity: DiscrepancySeverity
-    internal_qty: Optional[Decimal] = None
-    broker_qty: Optional[Decimal] = None
-    internal_side: Optional[str] = None
-    broker_side: Optional[str] = None
-    internal_price: Optional[Decimal] = None
-    broker_price: Optional[Decimal] = None
-    qty_diff: Optional[Decimal] = None
-    price_diff: Optional[Decimal] = None
+    internal_qty: Decimal | None = None
+    broker_qty: Decimal | None = None
+    internal_side: str | None = None
+    broker_side: str | None = None
+    internal_price: Decimal | None = None
+    broker_price: Decimal | None = None
+    qty_diff: Decimal | None = None
+    price_diff: Decimal | None = None
     auto_fixable: bool = False
     message: str = ""
 
@@ -72,6 +74,7 @@ class Discrepancy:
 @dataclass
 class ReconciliationResult:
     """Result of a reconciliation run."""
+
     timestamp: datetime
     total_internal: int
     total_broker: int
@@ -88,12 +91,13 @@ class ReconciliationResult:
 @dataclass
 class AutoFixAction:
     """Record of an auto-fix applied."""
+
     symbol: str
     fix_type: str
     old_qty: Decimal
     new_qty: Decimal
-    old_price: Optional[Decimal]
-    new_price: Optional[Decimal]
+    old_price: Decimal | None
+    new_price: Decimal | None
     timestamp: datetime
     reason: str
 
@@ -149,27 +153,31 @@ class PositionReconciler:
             brk_pos = broker_map.get(symbol)
 
             if int_pos is not None and brk_pos is None:
-                discrepancies.append(Discrepancy(
-                    symbol=symbol,
-                    disc_type=DiscrepancyType.BROKER_MISSING,
-                    severity=DiscrepancySeverity.WARNING,
-                    internal_qty=int_pos.quantity,
-                    internal_side=int_pos.side,
-                    internal_price=int_pos.avg_price,
-                    message=f"Position {symbol} exists internally but not at broker",
-                ))
+                discrepancies.append(
+                    Discrepancy(
+                        symbol=symbol,
+                        disc_type=DiscrepancyType.BROKER_MISSING,
+                        severity=DiscrepancySeverity.WARNING,
+                        internal_qty=int_pos.quantity,
+                        internal_side=int_pos.side,
+                        internal_price=int_pos.avg_price,
+                        message=f"Position {symbol} exists internally but not at broker",
+                    )
+                )
                 continue
 
             if int_pos is None and brk_pos is not None:
-                discrepancies.append(Discrepancy(
-                    symbol=symbol,
-                    disc_type=DiscrepancyType.POSITION_MISSING,
-                    severity=DiscrepancySeverity.WARNING,
-                    broker_qty=brk_pos.quantity,
-                    broker_side=brk_pos.side,
-                    broker_price=brk_pos.avg_price,
-                    message=f"Position {symbol} exists at broker but not internally",
-                ))
+                discrepancies.append(
+                    Discrepancy(
+                        symbol=symbol,
+                        disc_type=DiscrepancyType.POSITION_MISSING,
+                        severity=DiscrepancySeverity.WARNING,
+                        broker_qty=brk_pos.quantity,
+                        broker_side=brk_pos.side,
+                        broker_price=brk_pos.avg_price,
+                        message=f"Position {symbol} exists at broker but not internally",
+                    )
+                )
                 continue
 
             assert int_pos is not None and brk_pos is not None
@@ -207,7 +215,7 @@ class PositionReconciler:
         self,
         internal: InternalPosition,
         broker: BrokerPositionSnapshot,
-    ) -> Optional[Discrepancy]:
+    ) -> Discrepancy | None:
         """Compare a single internal vs broker position pair."""
         qty_diff = abs(internal.quantity - broker.quantity)
         price_diff = abs(internal.avg_price - broker.avg_price)
@@ -226,9 +234,7 @@ class PositionReconciler:
                 qty_diff=qty_diff,
                 price_diff=price_diff,
                 auto_fixable=False,
-                message=(
-                    f"Side mismatch: internal={internal.side} vs broker={broker.side}"
-                ),
+                message=(f"Side mismatch: internal={internal.side} vs broker={broker.side}"),
             )
 
         if qty_diff > self._qty_tolerance:
@@ -236,20 +242,14 @@ class PositionReconciler:
             return Discrepancy(
                 symbol=internal.symbol,
                 disc_type=DiscrepancyType.QTY_MISMATCH,
-                severity=(
-                    DiscrepancySeverity.WARNING if auto_fixable
-                    else DiscrepancySeverity.CRITICAL
-                ),
+                severity=(DiscrepancySeverity.WARNING if auto_fixable else DiscrepancySeverity.CRITICAL),
                 internal_qty=internal.quantity,
                 broker_qty=broker.quantity,
                 internal_side=internal.side,
                 broker_side=broker.side,
                 qty_diff=qty_diff,
                 auto_fixable=auto_fixable,
-                message=(
-                    f"Qty diff: {qty_diff} (internal={internal.quantity} "
-                    f"broker={broker.quantity})"
-                ),
+                message=(f"Qty diff: {qty_diff} (internal={internal.quantity} " f"broker={broker.quantity})"),
             )
 
         if price_diff > self._price_tolerance:
@@ -261,10 +261,7 @@ class PositionReconciler:
                 broker_price=broker.avg_price,
                 price_diff=price_diff,
                 auto_fixable=False,
-                message=(
-                    f"Price diff: {price_diff} (internal={internal.avg_price} "
-                    f"broker={broker.avg_price})"
-                ),
+                message=(f"Price diff: {price_diff} (internal={internal.avg_price} " f"broker={broker.avg_price})"),
             )
 
         return None
@@ -281,7 +278,7 @@ class PositionReconciler:
     def auto_fix(
         self,
         result: ReconciliationResult,
-        broker_update_fn: Optional[callable] = None,
+        broker_update_fn: callable | None = None,
     ) -> list[AutoFixAction]:
         """Auto-fix small discrepancies (rounding differences).
 
@@ -333,9 +330,7 @@ class PositionReconciler:
         """Return all auto-fix actions taken."""
         return list(self._fix_history)
 
-    def generate_report(
-        self, result: ReconciliationResult
-    ) -> dict:
+    def generate_report(self, result: ReconciliationResult) -> dict:
         """Generate a summary report of reconciliation."""
         return {
             "timestamp": result.timestamp.isoformat(),
@@ -350,16 +345,10 @@ class PositionReconciler:
                 "auto_fixable": len(result.auto_fixed),
                 "manual_review": len(result.manual_review),
                 "by_type": {
-                    dt.value: sum(
-                        1 for d in result.discrepancies if d.disc_type == dt
-                    )
-                    for dt in DiscrepancyType
+                    dt.value: sum(1 for d in result.discrepancies if d.disc_type == dt) for dt in DiscrepancyType
                 },
                 "by_severity": {
-                    sev.value: sum(
-                        1 for d in result.discrepancies if d.severity == sev
-                    )
-                    for sev in DiscrepancySeverity
+                    sev.value: sum(1 for d in result.discrepancies if d.severity == sev) for sev in DiscrepancySeverity
                 },
             },
             "details": [

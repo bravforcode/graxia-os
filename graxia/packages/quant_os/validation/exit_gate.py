@@ -1,7 +1,6 @@
-from dataclasses import dataclass, field
-from typing import List
 import hashlib
 import json
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -14,7 +13,7 @@ class ExitGateCheck:
 
 @dataclass
 class ExitGateResult:
-    checks: List[ExitGateCheck] = field(default_factory=list)
+    checks: list[ExitGateCheck] = field(default_factory=list)
     verdict: str = "UNKNOWN"  # CONTINUE_RESEARCH, INSUFFICIENT_SAMPLE, ARCHIVE_NO_EDGE, UNKNOWN
 
     @property
@@ -59,7 +58,7 @@ class ExitGateEvaluator:
             "MIN_TRADES",
             passed,
             f"total_trades={total_trades}, required={min_required}",
-            "Need enough OOS trades to assess uncertainty"
+            "Need enough OOS trades to assess uncertainty",
         )
 
     def check_positive_stressed_expectancy(self, stress_results: list) -> None:
@@ -70,7 +69,7 @@ class ExitGateEvaluator:
             "POSITIVE_STRESSED_EXPECTANCY",
             positive,
             f"best_stress_expectancy={best:.4f}",
-            "Positive stressed-cost expectancy required"
+            "Positive stressed-cost expectancy required",
         )
 
     def check_no_engine_mismatch(self, native_hash: str, oracle_hashes: dict) -> None:
@@ -84,7 +83,7 @@ class ExitGateEvaluator:
             "NO_ENGINE_MISMATCH",
             passed,
             f"mismatched_engines={mismatches}" if mismatches else "all_engines_match",
-            "No engine mismatch allowed"
+            "No engine mismatch allowed",
         )
 
     def check_no_single_trade_dominates(self, concentration) -> None:
@@ -93,7 +92,7 @@ class ExitGateEvaluator:
             "NO_SINGLE_TRADE_DOMINATES",
             passed,
             f"max_trade_pct={concentration.max_single_trade_pct_of_total:.1%}, max_month_pct={concentration.max_month_pct_of_total:.1%}",
-            "; ".join(issues) if issues else "concentration within limits"
+            "; ".join(issues) if issues else "concentration within limits",
         )
 
     def check_regime_stability(self, slices: list) -> None:
@@ -109,7 +108,7 @@ class ExitGateEvaluator:
             "REGIME_STABILITY",
             passed,
             f"regimes_with_trades={len(regimes_with_trades)}, positive_pnl_ratio={stability_ratio:.1%}",
-            "Stable behavior across multiple regimes"
+            "Stable behavior across multiple regimes",
         )
 
     def check_no_parameter_change(self, locked_inputs_match: bool) -> None:
@@ -117,7 +116,7 @@ class ExitGateEvaluator:
             "NO_PARAMETER_CHANGE",
             locked_inputs_match,
             "locked_inputs_verified" if locked_inputs_match else "locked_inputs_mismatch",
-            "No parameter change during validation"
+            "No parameter change during validation",
         )
 
     def check_drawdown_within_limits(self, max_drawdown_pct: float, limit_pct: float = 25.0) -> None:
@@ -126,7 +125,7 @@ class ExitGateEvaluator:
             "DRAWDOWN_WITHIN_LIMITS",
             passed,
             f"max_drawdown={max_drawdown_pct:.1f}%, limit={limit_pct}%",
-            "Drawdown within locked risk framework"
+            "Drawdown within locked risk framework",
         )
 
     def check_ledger_integrity(self, ledger_valid: bool) -> None:
@@ -134,7 +133,7 @@ class ExitGateEvaluator:
             "LEDGER_INTEGRITY",
             ledger_valid,
             "ledger_hash_chain_valid" if ledger_valid else "ledger_hash_chain_broken",
-            "Ledger integrity complete"
+            "Ledger integrity complete",
         )
 
     def evaluate(self) -> ExitGateResult:

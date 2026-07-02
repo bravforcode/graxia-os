@@ -3,11 +3,11 @@
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-from .position_sizer_v2 import SizingResult
-from .risk_policy import RiskPolicy
-from .risk_ledger import RiskLedger
-from .kill_switch import KillSwitch
 from .circuit_breaker import CircuitBreaker
+from .kill_switch import KillSwitch
+from .position_sizer_v2 import SizingResult
+from .risk_ledger import RiskLedger
+from .risk_policy import RiskPolicy
 
 
 @dataclass
@@ -81,9 +81,7 @@ def pre_trade_check(
     # Margin level check
     if margin_level_pct is not None and margin_level_pct > 0:
         if margin_level_pct < risk_policy.min_margin_level_pct:
-            reasons.append(
-                f"Margin level too low: {margin_level_pct:.0f}% < {risk_policy.min_margin_level_pct:.0f}%"
-            )
+            reasons.append(f"Margin level too low: {margin_level_pct:.0f}% < {risk_policy.min_margin_level_pct:.0f}%")
 
     return RiskCheckResult(
         approved=len(reasons) == 0,

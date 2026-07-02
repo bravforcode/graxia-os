@@ -3,19 +3,20 @@
 Reads MQL5 JSONL output, cross-checks with Python API,
 runs copy_ticks_range diagnostic matrix, applies acceptance criteria.
 """
+
 import hashlib
 import json
 import time
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone, timedelta, UTC
-from typing import Optional
-
+from dataclasses import asdict, dataclass, field
+from datetime import UTC, datetime, timedelta, timezone
 
 # ── MQL5 probe reader ────────────────────────────────────────────────
+
 
 @dataclass
 class MQL5ProbeSample:
     """One sample from MQL5 terminal_time_probe.mq5."""
+
     sample: int = 0
     symbol: str = ""
     server: str = ""
@@ -48,17 +49,16 @@ class MQL5ProbeSample:
 def read_mql5_probe(path: str) -> list[MQL5ProbeSample]:
     """Read JSONL output from MQL5 terminal_time_probe.mq5."""
     samples = []
-    with open(path, "r") as f:
+    with open(path) as f:
         for line in f:
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
             try:
                 d = json.loads(line)
-                samples.append(MQL5ProbeSample(**{
-                    k: v for k, v in d.items()
-                    if k in MQL5ProbeSample.__dataclass_fields__
-                }))
+                samples.append(
+                    MQL5ProbeSample(**{k: v for k, v in d.items() if k in MQL5ProbeSample.__dataclass_fields__})
+                )
             except (json.JSONDecodeError, TypeError):
                 continue
     return samples
@@ -66,9 +66,11 @@ def read_mql5_probe(path: str) -> list[MQL5ProbeSample]:
 
 # ── Python API cross-check ──────────────────────────────────────────
 
+
 @dataclass
 class PythonAPICheck:
     """Python MT5 API timestamp for the same instant."""
+
     system_epoch_ms: int = 0
     system_utc_iso: str = ""
     py_tick_time: int = 0
@@ -84,9 +86,11 @@ class PythonAPICheck:
 
 # ── copy_ticks_range diagnostic matrix ──────────────────────────────
 
+
 @dataclass
 class CopyTicksDiagnostic:
     """Result of one copy_ticks_range variant."""
+
     variant: str = ""  # "utc_aware", "naive_utc", "local_aware", "copy_ticks_from"
     request_from: str = ""
     request_to: str = ""
@@ -106,9 +110,11 @@ class CopyTicksDiagnostic:
 
 # ── Acceptance criteria ─────────────────────────────────────────────
 
+
 @dataclass
 class AcceptanceResult:
     """Result of 7 acceptance criteria."""
+
     # 1. TimeCurrent() - TimeGMT() consistent and explainable
     criterion_1_server_gmt_offset: str = "PENDING"
     criterion_1_offset_seconds: int = 0
@@ -140,6 +146,7 @@ class AcceptanceResult:
 
 # ── Main reconciler ─────────────────────────────────────────────────
 
+
 class TerminalTimeReconciler:
     """Reads MQL5 probe + Python API, runs diagnostic matrix,
     applies acceptance criteria, labels all paths."""
@@ -151,7 +158,7 @@ class TerminalTimeReconciler:
     def run(
         self,
         mql5_probe_path: str,
-        py_api_samples: Optional[list[dict]] = None,
+        py_api_samples: list[dict] | None = None,
     ) -> dict:
         """Full reconciliation."""
         # 1. Read MQL5 probe
@@ -195,9 +202,7 @@ class TerminalTimeReconciler:
 
         check.py_tick_time = tick["time"]
         check.py_tick_time_msc = tick.get("time_msc", tick["time"] * 1000)
-        check.py_tick_utc = datetime.fromtimestamp(
-            check.py_tick_time_msc / 1000, tz=UTC
-        ).isoformat()
+        check.py_tick_utc = datetime.fromtimestamp(check.py_tick_time_msc / 1000, tz=UTC).isoformat()
 
         # Compare with MQL5
         mql5_tick = mql5_sample.tick_time_raw
@@ -213,9 +218,7 @@ class TerminalTimeReconciler:
         now = datetime.now(UTC)
 
         # Variant A: timezone-aware UTC
-        results.append(self._copy_ticks_variant(
-            "utc_aware", now - timedelta(minutes=5), now, utc_aware=True
-        ))
+        results.append(self._copy_ticks_variant("utc_aware", now - timedelta(minutes=5), now, utc_aware=True))
 
         # Variant B: naive UTC (strip tzinfo)
         naive_from = datetime(now.year, now.month, now.day, now.hour, now.minute - 5, now.second)
@@ -226,26 +229,20 @@ class TerminalTimeReconciler:
         local_tz = timezone(timedelta(hours=7))
         local_from = (now - timedelta(minutes=5)).astimezone(local_tz)
         local_to = now.astimezone(local_tz)
-        results.append(self._copy_ticks_variant(
-            "local_aware_7", local_from, local_to, utc_aware=True
-        ))
+        results.append(self._copy_ticks_variant("local_aware_7", local_from, local_to, utc_aware=True))
 
         # Variant D: copy_ticks_from (last N ticks)
         results.append(self._copy_ticks_from_variant(count=50))
 
         return results
 
-    def _copy_ticks_variant(
-        self, variant: str, fr, to, utc_aware: bool = True
-    ) -> CopyTicksDiagnostic:
+    def _copy_ticks_variant(self, variant: str, fr, to, utc_aware: bool = True) -> CopyTicksDiagnostic:
         """Run copy_ticks_range with specific input type."""
         diag = CopyTicksDiagnostic(variant=variant)
         diag.request_from = fr.isoformat()
         diag.request_to = to.isoformat()
         window_d = {"from": fr.isoformat(), "to": to.isoformat()}
-        diag.request_hash = hashlib.sha256(
-            json.dumps(window_d, sort_keys=True).encode()
-        ).hexdigest()[:16]
+        diag.request_hash = hashlib.sha256(json.dumps(window_d, sort_keys=True).encode()).hexdigest()[:16]
 
         try:
             # Get raw MT5 handle
@@ -391,14 +388,16 @@ class TerminalTimeReconciler:
         result.criterion_7_labels = labels
 
         # Overall
-        result.all_passed = all([
-            result.criterion_1_server_gmt_offset in ("UTC_VERIFIED", "VERIFIED_SERVER_OFFSET"),
-            result.criterion_2_tick_matches_server == "PASS",
-            result.criterion_3_python_matches_mql5 == "PASS",
-            result.criterion_4_ticks_in_window == "PASS",
-            result.criterion_5_m1_not_stale == "PASS",
-            result.criterion_6_h1_consistent == "PASS",
-        ])
+        result.all_passed = all(
+            [
+                result.criterion_1_server_gmt_offset in ("UTC_VERIFIED", "VERIFIED_SERVER_OFFSET"),
+                result.criterion_2_tick_matches_server == "PASS",
+                result.criterion_3_python_matches_mql5 == "PASS",
+                result.criterion_4_ticks_in_window == "PASS",
+                result.criterion_5_m1_not_stale == "PASS",
+                result.criterion_6_h1_consistent == "PASS",
+            ]
+        )
         result.verdict = "UTC_VERIFIED" if result.all_passed else "TIME_SOURCE_INCONSISTENT"
 
         return result

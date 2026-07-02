@@ -5,14 +5,21 @@ Evidence: SIG-000005 (entry=SL=TP) and SIG-000045 (spread 2.4x baseline)
 were accepted in the original shadow session. These tests ensure that
 can NEVER happen again.
 """
+
 from datetime import datetime
+
 from graxia.packages.quant_os.shadow.pipeline import (
-    ShadowPipeline, ShadowSignal, ShadowSignalOutcome, PositionStatus,
-    validate_signal_geometry, SpreadShockGate, SignalDeduplicator,
+    PositionStatus,
+    ShadowPipeline,
+    ShadowSignal,
+    ShadowSignalOutcome,
+    SignalDeduplicator,
+    SpreadShockGate,
+    validate_signal_geometry,
 )
 
-
 # ── Geometry validation tests ────────────────────────────────────────
+
 
 class TestGeometryValidation:
     """Every case from the user's audit must be rejected."""
@@ -93,6 +100,7 @@ class TestGeometryValidation:
 
 # ── Spread shock gate tests ──────────────────────────────────────────
 
+
 class TestSpreadShockGate:
     """SIG-000045: spread 0.31 from baseline ~0.13 must be blocked."""
 
@@ -129,6 +137,7 @@ class TestSpreadShockGate:
 
 
 # ── Deduplication tests ──────────────────────────────────────────────
+
 
 class TestDeduplication:
     """Same strategy + symbol + candle + direction + features must produce at most 1 intent."""
@@ -179,6 +188,7 @@ class TestDeduplication:
 
 
 # ── Pipeline integration tests ───────────────────────────────────────
+
 
 class TestShadowPipelineGates:
     """Prove the full pipeline rejects bad signals."""
@@ -281,6 +291,7 @@ class TestShadowPipelineGates:
 
 # ── Position lifecycle tests ─────────────────────────────────────────
 
+
 class TestPositionLifecycle:
     """Full lifecycle: signal → gate → open → SL/TP/time → P&L → ledger."""
 
@@ -332,7 +343,9 @@ class TestPositionLifecycle:
         pos = pipeline.open_position(sig)
         # Price drops to SL
         closed = pipeline.check_position_exit(
-            pos, current_bid=4189.0, current_ask=4189.5,
+            pos,
+            current_bid=4189.0,
+            current_ask=4189.5,
             timestamp=datetime(2026, 1, 1, 12, 5, 0),
         )
         assert closed is True
@@ -345,7 +358,9 @@ class TestPositionLifecycle:
         pos = pipeline.open_position(sig)
         # Price rises to TP
         closed = pipeline.check_position_exit(
-            pos, current_bid=4221.0, current_ask=4221.5,
+            pos,
+            current_bid=4221.0,
+            current_ask=4221.5,
             timestamp=datetime(2026, 1, 1, 12, 5, 0),
         )
         assert closed is True
@@ -357,7 +372,9 @@ class TestPositionLifecycle:
         pipeline, sig = self._make_pipeline_with_accepted()
         pos = pipeline.open_position(sig)
         pipeline.check_position_exit(
-            pos, current_bid=4220.0, current_ask=4220.5,
+            pos,
+            current_bid=4220.0,
+            current_ask=4220.5,
             timestamp=datetime(2026, 1, 1, 12, 5, 0),
         )
         # BUY 0.01 at 4200, exit at 4220: gross = (4220-4200)*0.01 = 0.20
@@ -386,7 +403,9 @@ class TestPositionLifecycle:
         pos = pipeline.open_position(sig)
         # Price drops (good for SELL)
         pipeline.check_position_exit(
-            pos, current_bid=4179.0, current_ask=4179.5,
+            pos,
+            current_bid=4179.0,
+            current_ask=4179.5,
             timestamp=datetime(2026, 1, 1, 12, 5, 0),
         )
         assert pos.status == PositionStatus.CLOSED_TP
@@ -396,7 +415,9 @@ class TestPositionLifecycle:
         pipeline, sig = self._make_pipeline_with_accepted()
         pos = pipeline.open_position(sig)
         pipeline.check_position_exit(
-            pos, current_bid=4220.0, current_ask=4220.5,
+            pos,
+            current_bid=4220.0,
+            current_ask=4220.5,
             timestamp=datetime(2026, 1, 1, 12, 5, 0),
         )
         session = pipeline.get_session("test")
@@ -407,6 +428,7 @@ class TestPositionLifecycle:
 
 
 # ── Reproduce the actual SIG-000005 failure ─────────────────────────
+
 
 class TestReproduceOriginalFailure:
     """Reproduce the exact failure from the shadow session data."""

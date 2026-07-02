@@ -1,8 +1,7 @@
 """Phase BE-P13 integration tests — controlled expansion (FINAL PHASE)."""
-from graxia.packages.quant_os.expansion.expansion_planner import (
-    ExpansionPlanner, ExpansionRequest
-)
-from graxia.packages.quant_os.expansion.expansion_tracker import ExpansionTracker, ExpansionRecord
+
+from graxia.packages.quant_os.expansion.expansion_planner import ExpansionPlanner, ExpansionRequest
+from graxia.packages.quant_os.expansion.expansion_tracker import ExpansionRecord, ExpansionTracker
 from graxia.packages.quant_os.expansion.forbidden_guard import ForbiddenExpansionGuard
 from graxia.packages.quant_os.expansion.readiness_check import ExpansionReadiness
 
@@ -26,9 +25,14 @@ def test_planner_forbidden_blocked():
 
 def test_tracker_records():
     tracker = ExpansionTracker()
-    tracker.record(ExpansionRecord(
-        tier="tier_1", strategy_id="XAU", justification="proven", approved=True,
-    ))
+    tracker.record(
+        ExpansionRecord(
+            tier="tier_1",
+            strategy_id="XAU",
+            justification="proven",
+            approved=True,
+        )
+    )
     assert tracker.summary()["approved"] == 1
 
 
@@ -40,8 +44,11 @@ def test_forbidden_guard_blocks():
 def test_readiness_all_pass():
     r = ExpansionReadiness()
     context = {
-        "current_tier_proven": True, "safety_incidents": 0,
-        "risk_breaches": 0, "broker_identity_locked": True, "cost_gap_pct": 20,
+        "current_tier_proven": True,
+        "safety_incidents": 0,
+        "risk_breaches": 0,
+        "broker_identity_locked": True,
+        "cost_gap_pct": 20,
     }
     assert r.all_passed(context)
 
@@ -54,10 +61,15 @@ def test_full_expansion_flow():
     readiness = ExpansionReadiness()
 
     # Check readiness
-    assert readiness.all_passed({
-        "current_tier_proven": True, "safety_incidents": 0,
-        "risk_breaches": 0, "broker_identity_locked": True, "cost_gap_pct": 20,
-    })
+    assert readiness.all_passed(
+        {
+            "current_tier_proven": True,
+            "safety_incidents": 0,
+            "risk_breaches": 0,
+            "broker_identity_locked": True,
+            "cost_gap_pct": 20,
+        }
+    )
 
     # Check forbidden
     assert guard.is_clean("add one more strategy")
@@ -68,8 +80,12 @@ def test_full_expansion_flow():
     assert decision.approved
 
     # Record
-    tracker.record(ExpansionRecord(
-        tier="tier_2", strategy_id="NEW_STRAT",
-        justification="add one more strategy", approved=True,
-    ))
+    tracker.record(
+        ExpansionRecord(
+            tier="tier_2",
+            strategy_id="NEW_STRAT",
+            justification="add one more strategy",
+            approved=True,
+        )
+    )
     assert tracker.summary()["approved"] == 1

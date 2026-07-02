@@ -16,7 +16,7 @@ import logging
 import os
 import sys
 from dataclasses import asdict, dataclass
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
 
 # ── Paths ─────────────────────────────────────────────────────────────
@@ -36,6 +36,7 @@ if str(PROJECT_ROOT) not in sys.path:
 # Load .env
 try:
     from dotenv import load_dotenv
+
     load_dotenv(PROJECT_ROOT / ".env")
 except ImportError:
     pass
@@ -45,6 +46,7 @@ logger = logging.getLogger(__name__)
 
 
 # ── Checklist item ────────────────────────────────────────────────────
+
 
 @dataclass
 class CheckItem:
@@ -64,6 +66,7 @@ class ChecklistResult:
 
 
 # ── Checks ────────────────────────────────────────────────────────────
+
 
 def check_mt5_connection() -> CheckItem:
     """Verify MT5 terminal is reachable and credentials are set."""
@@ -229,9 +232,9 @@ def check_risk_limits_configured() -> CheckItem:
             name="Risk Limits",
             passed=True,
             message=f"Configured: risk/trade={risk.get('max_risk_per_trade_pct', 1.0)}% "
-                    f"daily={risk.get('max_daily_loss_pct', 2.0)}% "
-                    f"dd={risk.get('max_drawdown_pct', 10.0)}% "
-                    f"capital=${risk.get('initial_capital', 10000):,.0f}",
+            f"daily={risk.get('max_daily_loss_pct', 2.0)}% "
+            f"dd={risk.get('max_drawdown_pct', 10.0)}% "
+            f"capital=${risk.get('initial_capital', 10000):,.0f}",
             category="risk",
         )
 
@@ -336,6 +339,7 @@ def check_trading_hours() -> CheckItem:
 def check_telegram_alerts() -> CheckItem:
     """Check Telegram bot configuration."""
     import tomllib as _tomllib
+
     telegram_config = PROJECT_ROOT / "scripts" / "telegram_config.toml"
     if not telegram_config.exists():
         return CheckItem(
@@ -401,6 +405,7 @@ def check_environment() -> CheckItem:
 
 
 # ── Run all checks ───────────────────────────────────────────────────
+
 
 def run_checklist() -> ChecklistResult:
     """Run all prerequisite checks and return structured result."""
@@ -469,6 +474,7 @@ def print_result(result: ChecklistResult, verbose: bool = False) -> None:
 
 
 # ── CLI ───────────────────────────────────────────────────────────────
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Paper trade readiness checklist")

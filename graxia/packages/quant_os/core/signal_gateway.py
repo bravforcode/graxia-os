@@ -13,10 +13,10 @@ import asyncio
 import hashlib
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 import structlog
 from pydantic import BaseModel, Field, field_validator
@@ -66,8 +66,8 @@ class Signal:
     take_profit: float
     timestamp: datetime
     source: SignalSource
-    regime: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    regime: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     @property
     def signal_id(self) -> str:
@@ -75,7 +75,7 @@ class Signal:
         raw = f"{self.symbol}:{self.side.value}:{self.strategy}:{self.timestamp.strftime('%Y%m%d%H%M')}"
         return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to JSON-compatible dict."""
         return {
             "signal_id": self.signal_id,
@@ -110,9 +110,9 @@ class RawSignalPayload(BaseModel):
     entry_price: float = Field(..., gt=0)
     stop_loss: float = Field(..., gt=0)
     take_profit: float = Field(..., gt=0)
-    timestamp: Optional[str] = None
-    regime: Optional[str] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    timestamp: str | None = None
+    regime: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("asset_class")
     @classmethod
@@ -143,7 +143,7 @@ class RawSignalPayload(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-def _append_audit(record: Dict[str, Any]) -> None:
+def _append_audit(record: dict[str, Any]) -> None:
     """Append a single JSON line to the immutable audit log."""
     AUDIT_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(AUDIT_LOG_PATH, "a", encoding="utf-8") as fh:
@@ -176,7 +176,7 @@ class SignalGateway:
     ) -> None:
         self._queue = queue
         self._dedup_window = dedup_window
-        self._seen: Dict[str, float] = {}  # signal_id → monotonic timestamp
+        self._seen: dict[str, float] = {}  # signal_id → monotonic timestamp
         self._lock = asyncio.Lock()
         self._news_blackout = news_blackout or NewsBlackout()
         self._session_filter = session_filter
@@ -185,9 +185,7 @@ class SignalGateway:
     # Public API
     # ------------------------------------------------------------------
 
-    async def ingest(
-        self, raw: Dict[str, Any], source: SignalSource | str
-    ) -> Optional[Signal]:
+    async def ingest(self, raw: dict[str, Any], source: SignalSource | str) -> Signal | None:
         """
         Ingest a raw signal dict.
 
@@ -213,11 +211,7 @@ class SignalGateway:
             return None
 
         # 2. Build domain signal
-        ts = (
-            datetime.fromisoformat(validated.timestamp)
-            if validated.timestamp
-            else datetime.now(UTC)
-        )
+        ts = datetime.fromisoformat(validated.timestamp) if validated.timestamp else datetime.now(UTC)
         signal = Signal(
             symbol=validated.symbol,
             asset_class=AssetClass(validated.asset_class),

@@ -4,8 +4,9 @@ Monkeypatches mt5.order_send to raise AssertionError.
 Verifies shadow runner never calls any execution API.
 Also checks that no new orders/-deals appear in history.
 """
+
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
-from datetime import datetime, UTC
 
 
 def _forbidden_order_send(*args, **kwargs):
@@ -26,12 +27,13 @@ def _forbidden_history_deals_get(*args, **kwargs):
 
 def test_runtime_firewall_order_send():
     """Shadow runner must never call order_send even if mt5 is available."""
-    from graxia.packages.quant_os.shadow.broker_observed_runner import MT5ReadOnly
-
     # Patch mt5 module-level to block order_send
     import MetaTrader5 as mt5
+
+    from graxia.packages.quant_os.shadow.broker_observed_runner import MT5ReadOnly
+
     original_send = getattr(mt5, "order_send", None)
-    setattr(mt5, "order_send", _forbidden_order_send)
+    mt5.order_send = _forbidden_order_send
 
     try:
         # Create a mock MT5ReadOnly that simulates connected state
@@ -56,10 +58,10 @@ def test_runtime_firewall_order_send():
         assert result["bid"] == 4180.0
 
         # Verify order_send was never called
-        mt5.order_send.assert_not_called() if hasattr(mt5.order_send, 'assert_not_called') else None
+        mt5.order_send.assert_not_called() if hasattr(mt5.order_send, "assert_not_called") else None
     finally:
         if original_send:
-            setattr(mt5, "order_send", original_send)
+            mt5.order_send = original_send
 
 
 def test_no_new_orders_during_session():
@@ -75,19 +77,20 @@ def test_no_new_orders_during_session():
 
     # Verify runner has no execution-related attributes
     runner = BrokerObservedShadowRunner.__new__(BrokerObservedShadowRunner)
-    assert not hasattr(runner, 'order_send')
-    assert not hasattr(runner, 'order_check')
-    assert not hasattr(runner, 'order_modify')
-    assert not hasattr(runner, 'positions_get')
+    assert not hasattr(runner, "order_send")
+    assert not hasattr(runner, "order_check")
+    assert not hasattr(runner, "order_modify")
+    assert not hasattr(runner, "positions_get")
 
 
 def test_mt5readonly_has_no_execution_methods():
     """MT5ReadOnly must not expose execution methods."""
     from graxia.packages.quant_os.shadow.broker_observed_runner import MT5ReadOnly
+
     reader = MT5ReadOnly.__new__(MT5ReadOnly)
     # These methods must NOT exist
-    assert not hasattr(reader, 'order_send')
-    assert not hasattr(reader, 'order_check')
-    assert not hasattr(reader, 'order_modify')
-    assert not hasattr(reader, 'positions_get')
-    assert not hasattr(reader, 'history_deals_get')
+    assert not hasattr(reader, "order_send")
+    assert not hasattr(reader, "order_check")
+    assert not hasattr(reader, "order_modify")
+    assert not hasattr(reader, "positions_get")
+    assert not hasattr(reader, "history_deals_get")

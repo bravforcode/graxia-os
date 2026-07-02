@@ -1,4 +1,5 @@
 """Tests for Backtesting.py oracle adapter."""
+
 import sys
 
 import pytest
@@ -6,8 +7,8 @@ import pytest
 from graxia.packages.quant_os.repo_intelligence.adapters.backtesting_py_oracle import (
     get_engine_name,
     normalize_output,
-    validate_input,
     run_oracle,
+    validate_input,
 )
 
 
@@ -41,14 +42,16 @@ def test_validate_input_bad_frequency():
 def test_normalize_output():
     import pandas as pd
 
-    trades = pd.DataFrame({
-        "EntryTime": [pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-05")],
-        "EntryPrice": [100.0, 200.0],
-        "ExitPrice": [110.0, 190.0],
-        "Size": [1.0, -1.0],
-        "PnL": [10.0, 10.0],
-        "ExitReason": ["Closed", "Stop"],
-    })
+    trades = pd.DataFrame(
+        {
+            "EntryTime": [pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-05")],
+            "EntryPrice": [100.0, 200.0],
+            "ExitPrice": [110.0, 190.0],
+            "Size": [1.0, -1.0],
+            "PnL": [10.0, 10.0],
+            "ExitReason": ["Closed", "Stop"],
+        }
+    )
     signals = normalize_output({"trades": trades}, symbol="BTC-USD")
 
     assert len(signals) == 2

@@ -4,21 +4,27 @@ CanonicalTickSource-only, read-only MT5, no order_send.
 Validates broker profile = Pepperstone-Demo before starting.
 Hypothetical lifecycle: signal → entry → SL/TP/time exit → P&L.
 """
+
 import hashlib
 import json
 import logging
 import os
 import sys
 import time
-from dataclasses import dataclass, asdict
-from datetime import datetime, timedelta, UTC
-from typing import Optional
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime, timedelta
 
+from graxia.packages.quant_os.shadow.broker_profile import BrokerProfile, validate_broker_match
 from graxia.packages.quant_os.shadow.canonical_tick_source import CanonicalTickBatch
 from graxia.packages.quant_os.shadow.canonical_time_authority import CanonicalTimeAuthority
-from graxia.packages.quant_os.shadow.broker_profile import BrokerProfile, validate_broker_match
 from graxia.packages.quant_os.shadow.pipeline import (
-    ShadowPipeline, ShadowSignal, ShadowSignalOutcome, validate_signal_geometry, SpreadShockGate, SignalDeduplicator, Position,
+    Position,
+    ShadowPipeline,
+    ShadowSignal,
+    ShadowSignalOutcome,
+    SignalDeduplicator,
+    SpreadShockGate,
+    validate_signal_geometry,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -27,10 +33,11 @@ logger = logging.getLogger(__name__)
 
 # ── MT5 read-only connector ──────────────────────────────────────────
 
+
 class MT5ReadOnly:
     """Read-only MT5 connector. No order_send, no execution API."""
 
-    def __init__(self, path: Optional[str] = None):
+    def __init__(self, path: str | None = None):
         self._path = path
         self._mt5 = None
         self._connected = False
@@ -38,6 +45,7 @@ class MT5ReadOnly:
     def connect(self, timeout: int = 10000) -> bool:
         try:
             import MetaTrader5 as mt5
+
             self._mt5 = mt5
             ok = mt5.initialize(path=self._path, timeout=timeout) if self._path else mt5.initialize(timeout=timeout)
             if not ok:
@@ -57,23 +65,29 @@ class MT5ReadOnly:
     def is_connected(self) -> bool:
         return self._connected
 
-    def get_account_info(self) -> Optional[dict]:
+    def get_account_info(self) -> dict | None:
         if not self._connected:
             return None
         info = self._mt5.account_info()
         return info and {
-            "login": info.login, "server": info.server,
-            "balance": info.balance, "equity": info.equity,
-            "leverage": info.leverage, "currency": info.currency,
+            "login": info.login,
+            "server": info.server,
+            "balance": info.balance,
+            "equity": info.equity,
+            "leverage": info.leverage,
+            "currency": info.currency,
         }
 
-    def get_symbol_info(self, symbol: str) -> Optional[dict]:
+    def get_symbol_info(self, symbol: str) -> dict | None:
         if not self._connected:
             return None
         info = self._mt5.symbol_info(symbol)
         return info and {
-            "name": info.name, "point": info.point, "digits": info.digits,
-            "contract_size": info.trade_contract_size, "spread": info.spread,
+            "name": info.name,
+            "point": info.point,
+            "digits": info.digits,
+            "contract_size": info.trade_contract_size,
+            "spread": info.spread,
             "visible": info.visible,
         }
 
@@ -84,13 +98,11 @@ class MT5ReadOnly:
         raw = self._mt5.copy_ticks_range(symbol, dt_from, dt_to, self._mt5.COPY_TICKS_ALL)
         if raw is None:
             return []
-        return [
-            {"time": int(t[0]), "bid": t[1], "ask": t[2], "last": t[3], "volume": t[4]}
-            for t in raw
-        ]
+        return [{"time": int(t[0]), "bid": t[1], "ask": t[2], "last": t[3], "volume": t[4]} for t in raw]
 
 
 # ── Spread tracker ───────────────────────────────────────────────────
+
 
 class SpreadTracker:
     """Track spread history for percentile calculation."""
@@ -102,16 +114,18 @@ class SpreadTracker:
     def record(self, spread: float) -> None:
         self._spreads.append(spread)
         if len(self._spreads) > self.window:
-            self._spreads = self._spreads[-self.window:]
+            self._spreads = self._spreads[-self.window :]
 
     def percentiles(self) -> dict:
         if not self._spreads:
             return {"p50": 0.0, "p95": 0.0, "p99": 0.0}
         s = sorted(self._spreads)
         n = len(s)
+
         def pct(p):
             idx = int(p / 100 * (n - 1))
             return s[idx]
+
         return {"p50": pct(50), "p95": pct(95), "p99": pct(99)}
 
     def baseline(self) -> float:
@@ -122,6 +136,7 @@ class SpreadTracker:
 
 
 # ── Session type classifier ─────────────────────────────────────────
+
 
 def classify_session_type(now: datetime) -> str:
     """Classify UTC hour into session type."""
@@ -138,6 +153,7 @@ def classify_session_type(now: datetime) -> str:
 
 
 # ── Ledger entry ─────────────────────────────────────────────────────
+
 
 @dataclass
 class LedgerEntry:
@@ -161,14 +177,21 @@ class SealedLedger:
         self._sequence += 1
         prev_hash = self._entries[-1].record_hash if self._entries else ""
         entry = LedgerEntry(
-            entry_index=self._sequence, signal_id=signal_id,
-            previous_hash=prev_hash, record_hash="",
-            outcome=outcome, pnl_net=pnl_net, timestamp=timestamp,
+            entry_index=self._sequence,
+            signal_id=signal_id,
+            previous_hash=prev_hash,
+            record_hash="",
+            outcome=outcome,
+            pnl_net=pnl_net,
+            timestamp=timestamp,
         )
         d = {
-            "entry_index": entry.entry_index, "signal_id": entry.signal_id,
-            "previous_hash": entry.previous_hash, "outcome": entry.outcome,
-            "pnl_net": entry.pnl_net, "timestamp": entry.timestamp,
+            "entry_index": entry.entry_index,
+            "signal_id": entry.signal_id,
+            "previous_hash": entry.previous_hash,
+            "outcome": entry.outcome,
+            "pnl_net": entry.pnl_net,
+            "timestamp": entry.timestamp,
         }
         entry.record_hash = hashlib.sha256(json.dumps(d, sort_keys=True, default=str).encode()).hexdigest()
         self._entries.append(entry)
@@ -179,9 +202,12 @@ class SealedLedger:
             if i > 0 and entry.previous_hash != self._entries[i - 1].record_hash:
                 return False
             d = {
-                "entry_index": entry.entry_index, "signal_id": entry.signal_id,
-                "previous_hash": entry.previous_hash, "outcome": entry.outcome,
-                "pnl_net": entry.pnl_net, "timestamp": entry.timestamp,
+                "entry_index": entry.entry_index,
+                "signal_id": entry.signal_id,
+                "previous_hash": entry.previous_hash,
+                "outcome": entry.outcome,
+                "pnl_net": entry.pnl_net,
+                "timestamp": entry.timestamp,
             }
             expected = hashlib.sha256(json.dumps(d, sort_keys=True, default=str).encode()).hexdigest()
             if entry.record_hash != expected:
@@ -197,6 +223,7 @@ class SealedLedger:
 
 # ── Lifecycle simulator ─────────────────────────────────────────────
 
+
 @dataclass
 class LifecycleResult:
     exit_price: float = 0.0
@@ -207,8 +234,12 @@ class LifecycleResult:
 
 
 def simulate_lifecycle(
-    direction: str, entry: float, sl: float, tp: Optional[float],
-    ticks: list[dict], max_hold_bars: int = 20,
+    direction: str,
+    entry: float,
+    sl: float,
+    tp: float | None,
+    ticks: list[dict],
+    max_hold_bars: int = 20,
 ) -> LifecycleResult:
     """Simulate position against subsequent canonical ticks.
 
@@ -223,17 +254,25 @@ def simulate_lifecycle(
         if direction == "BUY":
             if bid <= sl:
                 pnl = (sl - entry) - cost
-                return LifecycleResult(exit_price=sl, pnl_gross=sl - entry, cost_total=cost, pnl_net=pnl, exit_reason="SL_HIT")
+                return LifecycleResult(
+                    exit_price=sl, pnl_gross=sl - entry, cost_total=cost, pnl_net=pnl, exit_reason="SL_HIT"
+                )
             if tp and bid >= tp:
                 pnl = (tp - entry) - cost
-                return LifecycleResult(exit_price=tp, pnl_gross=tp - entry, cost_total=cost, pnl_net=pnl, exit_reason="TP_HIT")
+                return LifecycleResult(
+                    exit_price=tp, pnl_gross=tp - entry, cost_total=cost, pnl_net=pnl, exit_reason="TP_HIT"
+                )
         else:
             if ask >= sl:
                 pnl = (entry - sl) - cost
-                return LifecycleResult(exit_price=sl, pnl_gross=entry - sl, cost_total=cost, pnl_net=pnl, exit_reason="SL_HIT")
+                return LifecycleResult(
+                    exit_price=sl, pnl_gross=entry - sl, cost_total=cost, pnl_net=pnl, exit_reason="SL_HIT"
+                )
             if tp and ask <= tp:
                 pnl = (entry - tp) - cost
-                return LifecycleResult(exit_price=tp, pnl_gross=entry - tp, cost_total=cost, pnl_net=pnl, exit_reason="TP_HIT")
+                return LifecycleResult(
+                    exit_price=tp, pnl_gross=entry - tp, cost_total=cost, pnl_net=pnl, exit_reason="TP_HIT"
+                )
 
         if i >= max_hold_bars - 1:
             exit_p = bid if direction == "BUY" else ask
@@ -241,7 +280,13 @@ def simulate_lifecycle(
                 pnl = (exit_p - entry) - cost
             else:
                 pnl = (entry - exit_p) - cost
-            return LifecycleResult(exit_price=exit_p, pnl_gross=exit_p - entry if direction == "BUY" else entry - exit_p, cost_total=cost, pnl_net=pnl, exit_reason="TIME_STOP")
+            return LifecycleResult(
+                exit_price=exit_p,
+                pnl_gross=exit_p - entry if direction == "BUY" else entry - exit_p,
+                cost_total=cost,
+                pnl_net=pnl,
+                exit_reason="TIME_STOP",
+            )
 
     # Ticks exhausted — close at last
     last = ticks[-1] if ticks else {"bid": entry, "ask": entry}
@@ -250,10 +295,17 @@ def simulate_lifecycle(
         pnl = (exit_p - entry) - cost
     else:
         pnl = (entry - exit_p) - cost
-    return LifecycleResult(exit_price=exit_p, pnl_gross=exit_p - entry if direction == "BUY" else entry - exit_p, cost_total=cost, pnl_net=pnl, exit_reason="TICKS_EXHAUSTED")
+    return LifecycleResult(
+        exit_price=exit_p,
+        pnl_gross=exit_p - entry if direction == "BUY" else entry - exit_p,
+        cost_total=cost,
+        pnl_net=pnl,
+        exit_reason="TICKS_EXHAUSTED",
+    )
 
 
 # ── Campaign evidence ───────────────────────────────────────────────
+
 
 @dataclass
 class CycleEvidence:
@@ -289,7 +341,7 @@ class CycleEvidence:
     direction: str = ""
     entry_price: float = 0.0
     stop_loss: float = 0.0
-    take_profit: Optional[float] = None
+    take_profit: float | None = None
     outcome: str = ""
     rejection_reason: str = ""
     # Lifecycle
@@ -307,6 +359,7 @@ class CycleEvidence:
 
 
 # ── Pepperstone campaign runner ──────────────────────────────────────
+
 
 class PepperstoneCampaignRunner:
     """24h shadow campaign for Pepperstone-Demo.
@@ -329,7 +382,9 @@ class PepperstoneCampaignRunner:
         self._time_auth = CanonicalTimeAuthority()
         self._profile = BrokerProfile()
         self._pipeline = ShadowPipeline(
-            spread_min_samples=10, spread_shock_mult=2.0, dedup_candle_seconds=60,
+            spread_min_samples=10,
+            spread_shock_mult=2.0,
+            dedup_candle_seconds=60,
         )
         self._spread_tracker = SpreadTracker()
         self._spread_gate = SpreadShockGate(window_size=300, shock_multiplier=2.0, min_samples=10)
@@ -352,8 +407,11 @@ class PepperstoneCampaignRunner:
             return False
 
         ok, issues = validate_broker_match(
-            acct["server"], acct["login"],
-            sym["contract_size"], sym["digits"], sym["point"],
+            acct["server"],
+            acct["login"],
+            sym["contract_size"],
+            sym["digits"],
+            sym["point"],
             self._profile,
         )
         if not ok:
@@ -388,13 +446,15 @@ class PepperstoneCampaignRunner:
     def run_cycle(self, cycle_num: int) -> CycleEvidence:
         """Run one shadow cycle with full evidence collection."""
         now = self._time_auth.trusted_system_utc()
-        ev = CycleEvidence(cycle=cycle_num, timestamp_utc=now.isoformat(), profile_fingerprint=self._profile.profile_fingerprint)
+        ev = CycleEvidence(
+            cycle=cycle_num, timestamp_utc=now.isoformat(), profile_fingerprint=self._profile.profile_fingerprint
+        )
 
         # 1. Canonical tick fetch
         # Use a mock fetcher that calls copy_ticks_range via MT5ReadOnly
         # The CanonicalTickSource expects an mt5_connection with copy_ticks_range
         q_from = now - timedelta(seconds=62)  # trailing overlap
-        q_to = now - timedelta(seconds=2)     # safety lag
+        q_to = now - timedelta(seconds=2)  # safety lag
 
         raw_ticks = self._mt5.copy_ticks_range(self.symbol, q_from, q_to)
         ev.raw_tick_count = len(raw_ticks)
@@ -425,9 +485,7 @@ class PepperstoneCampaignRunner:
             ev.data_age_ms = 99999.0
 
         # 3. Spread
-        tick_metrics = self._cycle_canonical_ticks(
-            type("Batch", (), {"canonical_ticks": raw_ticks})()
-        )
+        tick_metrics = self._cycle_canonical_ticks(type("Batch", (), {"canonical_ticks": raw_ticks})())
         spread = tick_metrics["spread"]
         ev.spread = spread
         pcts = self._spread_tracker.percentiles()
@@ -473,7 +531,9 @@ class PepperstoneCampaignRunner:
 
         # 10. Dedup check
         candle_time = datetime.fromtimestamp(raw_ticks[-1]["time"], tz=UTC).isoformat() if raw_ticks else ""
-        is_dup = self._dedup.is_duplicate(self.strategy_version, self.symbol, direction, candle_time, self.feature_hash, now)
+        is_dup = self._dedup.is_duplicate(
+            self.strategy_version, self.symbol, direction, candle_time, self.feature_hash, now
+        )
         ev.dedup_duplicate = is_dup
 
         # 11. Determine outcome
@@ -482,7 +542,9 @@ class PepperstoneCampaignRunner:
             ev.rejection_reason = f"GEOMETRY:{geo_reason}"
         elif is_shock:
             ev.outcome = "rejected_spread_shock"
-            ev.rejection_reason = f"SPREAD_SHOCK: {spread:.4f} > {self._spread_gate.shock_multiplier}x baseline={baseline:.4f}"
+            ev.rejection_reason = (
+                f"SPREAD_SHOCK: {spread:.4f} > {self._spread_gate.shock_multiplier}x baseline={baseline:.4f}"
+            )
         elif is_dup:
             ev.outcome = "rejected_duplicate"
             ev.rejection_reason = "DUPLICATE_SAME_CANDLE"
@@ -498,12 +560,21 @@ class PepperstoneCampaignRunner:
 
             # 12. Hypothetical lifecycle
             lc = self._run_lifecycle(
-                ShadowSignal(signal_id=sig_id, timestamp=now, symbol=self.symbol,
-                              direction=direction, entry_price=mid, stop_loss=sl, take_profit=tp,
-                              outcome=ShadowSignalOutcome.ACCEPTED,
-                              hypothetical_fill_price=mid, hypothetical_spread_cost=spread,
-                              hypothetical_slippage_cost=spread * 0.5,
-                              strategy_version=self.strategy_version, feature_hash=self.feature_hash),
+                ShadowSignal(
+                    signal_id=sig_id,
+                    timestamp=now,
+                    symbol=self.symbol,
+                    direction=direction,
+                    entry_price=mid,
+                    stop_loss=sl,
+                    take_profit=tp,
+                    outcome=ShadowSignalOutcome.ACCEPTED,
+                    hypothetical_fill_price=mid,
+                    hypothetical_spread_cost=spread,
+                    hypothetical_slippage_cost=spread * 0.5,
+                    strategy_version=self.strategy_version,
+                    feature_hash=self.feature_hash,
+                ),
                 raw_ticks[1:21],  # subsequent ticks for simulation
             )
             ev.exit_price = lc.exit_price
@@ -535,8 +606,12 @@ class PepperstoneCampaignRunner:
             return {"error": "BROKER_INFO_FAILED"}
 
         match, issues = validate_broker_match(
-            acct["server"], acct["login"], sym_info["contract_size"],
-            sym_info["digits"], sym_info["point"], self._profile,
+            acct["server"],
+            acct["login"],
+            sym_info["contract_size"],
+            sym_info["digits"],
+            sym_info["point"],
+            self._profile,
         )
         if not match:
             logger.error(f"Broker profile mismatch: {issues}")
@@ -630,6 +705,7 @@ class PepperstoneCampaignRunner:
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="BE-P8.5 Pepperstone 24h Shadow Campaign")
     parser.add_argument("--symbol", default="XAUUSD")
     parser.add_argument("--duration", type=int, default=86400)
@@ -640,8 +716,10 @@ def main():
     args = parser.parse_args()
 
     runner = PepperstoneCampaignRunner(
-        symbol=args.symbol, mt5_path=args.mt5_path,
-        strategy_version=args.strategy_version, feature_hash=args.feature_hash,
+        symbol=args.symbol,
+        mt5_path=args.mt5_path,
+        strategy_version=args.strategy_version,
+        feature_hash=args.feature_hash,
     )
     if not runner.connect_and_validate():
         logger.error("Failed to connect or validate Pepperstone profile")

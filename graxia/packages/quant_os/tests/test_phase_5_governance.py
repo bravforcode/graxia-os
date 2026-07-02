@@ -1,10 +1,16 @@
 from governance.experiment_registry import ExperimentRecord, ExperimentRegistry
+from governance.ml_policy import MLPhase, MLPolicyGuard, MLUsageType
 from governance.trial_budget import TrialBudget
 from governance.validation_stack import (
-    ValidationStack, DataLeakageTest, FeatureAvailabilityTest,
-    WalkForwardValidation, DeflatedSharpeRatio, PBOCheck, ParameterStability
+    DataLeakageTest,
+    DeflatedSharpeRatio,
+    FeatureAvailabilityTest,
+    ParameterStability,
+    PBOCheck,
+    ValidationStack,
+    WalkForwardValidation,
 )
-from governance.ml_policy import MLPolicyGuard, MLUsageType, MLPhase
+
 
 def _make_record(experiment_id="EXP-001", strategy_hash="s1", parameter_hash="p1", trial=1, budget=12):
     return ExperimentRecord(
@@ -21,6 +27,7 @@ def _make_record(experiment_id="EXP-001", strategy_hash="s1", parameter_hash="p1
         trial_number=trial,
         trial_budget=budget,
     )
+
 
 class TestExperimentRegistry:
     def test_register(self):
@@ -55,6 +62,7 @@ class TestExperimentRegistry:
         j = reg.export_json()
         assert "EXP-001" in j
 
+
 class TestTrialBudget:
     def test_increment_parameter(self):
         budget = TrialBudget()
@@ -88,6 +96,7 @@ class TestTrialBudget:
         assert "remaining" in s
         assert "is_exceeded" in s
 
+
 class TestDataLeakage:
     def test_no_leakage(self):
         test = DataLeakageTest()
@@ -98,6 +107,7 @@ class TestDataLeakage:
         test = DataLeakageTest()
         check = test.run(100, 200, [50, 150])
         assert check.passed is False
+
 
 class TestFeatureAvailability:
     def test_all_available(self):
@@ -110,6 +120,7 @@ class TestFeatureAvailability:
         check = test.run(["f1", "f2"], {"f1": True})
         assert check.passed is False
 
+
 class TestWalkForward:
     def test_passing_folds(self):
         test = WalkForwardValidation()
@@ -121,11 +132,13 @@ class TestWalkForward:
         check = test.run([])
         assert check.passed is False
 
+
 class TestDeflatedSharpe:
     def test_passing_dsr(self):
         test = DeflatedSharpeRatio()
         check = test.run(sharpe=2.5, n_trials=10, n_bars=1000)
         assert check.passed is True
+
 
 class TestPBO:
     def test_low_degradation(self):
@@ -137,6 +150,7 @@ class TestPBO:
         test = PBOCheck()
         check = test.run(is_sharpe=1.0, oos_sharpe=0.2)
         assert check.passed is False
+
 
 class TestParameterStability:
     def test_stable(self):
@@ -151,6 +165,7 @@ class TestParameterStability:
         test = ParameterStability()
         check = test.run([{"p1": 1}], [0.5])
         assert check.passed is False
+
 
 class TestMLPolicy:
     def test_allowed_usage(self):
@@ -173,15 +188,22 @@ class TestMLPolicy:
         ok, reason = guard.check_self_promotion("model_a", "model_a")
         assert ok is False
 
+
 class TestValidationStack:
     def test_run_all(self):
         stack = ValidationStack()
         result = stack.run_all(
-            train_end_index=100, total_bars=200, feature_timestamps=[50, 80],
-            feature_names=["f1"], available_features={"f1": True},
+            train_end_index=100,
+            total_bars=200,
+            feature_timestamps=[50, 80],
+            feature_names=["f1"],
+            available_features={"f1": True},
             folds=[{"oos_sharpe": 0.5}],
-            sharpe=1.0, n_trials=5, n_bars=500,
-            is_sharpe=1.0, oos_sharpe=0.8,
+            sharpe=1.0,
+            n_trials=5,
+            n_bars=500,
+            is_sharpe=1.0,
+            oos_sharpe=0.8,
             param_sets=[{"p": 1}, {"p": 2}, {"p": 3}],
             performance=[0.5, 0.3, 0.4],
         )

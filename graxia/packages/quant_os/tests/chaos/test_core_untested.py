@@ -1,7 +1,11 @@
 """Chaos-mode tests for ALL untested core/ modules."""
+
 from __future__ import annotations
-import json, sys
-from datetime import datetime, time as dtime, timedelta, UTC
+
+import json
+import sys
+from datetime import UTC, datetime, timedelta
+from datetime import time as dtime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -9,33 +13,61 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[5]))
 
-from graxia.packages.quant_os.core.kelly import kelly_fraction, kelly_size, kelly_adjust_for_regime, MIN_FRACTION, MAX_FRACTION
-from graxia.packages.quant_os.core.lifecycle import StrategyLifecycle
-from graxia.packages.quant_os.core.lookahead_guard import LookaheadGuard, LookaheadViolation
-from graxia.packages.quant_os.core.correlation import CorrelationFilter
-from graxia.packages.quant_os.core.cost_model import get_session, get_backtest_cost, get_live_round_trip_cost, get_live_spread_as_return, COST_PER_TRADE_BY_SESSION
-from graxia.packages.quant_os.core.pair_filter import MinVolumeFilter, SpreadFilter, PairFilterPipeline, PairFilter, BacktestSupport
-from graxia.packages.quant_os.core.signal_filter import FakeSignalFilter, FilterResult
-from graxia.packages.quant_os.core.position_manager import Position, PositionManager
-from graxia.packages.quant_os.core.production_readiness import ProductionReadiness, CheckResult
-from graxia.packages.quant_os.core.reconciler import StateReconciler
-from graxia.packages.quant_os.core.regime_filter import RegimeFilter, MarketRegime, RegimeResult
-from graxia.packages.quant_os.core.rollover_filter import RolloverFilter, RolloverStatus
-from graxia.packages.quant_os.core.structured_trades import TradeRecord, TradeRecords
-from graxia.packages.quant_os.core.observability import LokiSink, FileSink, setup_logging
-from graxia.packages.quant_os.core.telegram_notify import TelegramNotifier, _load_config
-from graxia.packages.quant_os.core.telegram_callback import TelegramCallbackHandler, CallbackAction, CallbackResult, PendingSignal
-from graxia.packages.quant_os.core.walk_forward_production import WalkForwardDashboard
-from graxia.packages.quant_os.core.walk_forward_viz import WalkForwardViz
-from graxia.packages.quant_os.core.param_sweep import ParamSweep
-from graxia.packages.quant_os.core.portfolio_risk import PortfolioRisk, Position as PortfolioPosition
-from graxia.packages.quant_os.core.risk.swap_cost import get_live_swap_rates, estimate_overnight_cost, get_swap_cost_for_trade
 from graxia.packages.quant_os.core.agents.researcher import BullBearResearcherAgent
+from graxia.packages.quant_os.core.config import QuantConfig
+from graxia.packages.quant_os.core.correlation import CorrelationFilter
+from graxia.packages.quant_os.core.cost_model import (
+    COST_PER_TRADE_BY_SESSION,
+    get_backtest_cost,
+    get_live_round_trip_cost,
+    get_live_spread_as_return,
+    get_session,
+)
 from graxia.packages.quant_os.core.enums import SignalType
 from graxia.packages.quant_os.core.events import Event, SignalEvent
+from graxia.packages.quant_os.core.kelly import (
+    MAX_FRACTION,
+    MIN_FRACTION,
+    kelly_adjust_for_regime,
+    kelly_fraction,
+    kelly_size,
+)
+from graxia.packages.quant_os.core.lifecycle import StrategyLifecycle
+from graxia.packages.quant_os.core.lookahead_guard import LookaheadGuard, LookaheadViolation
 from graxia.packages.quant_os.core.monte_carlo import MonteCarloResult
+from graxia.packages.quant_os.core.observability import FileSink, LokiSink, setup_logging
+from graxia.packages.quant_os.core.pair_filter import (
+    BacktestSupport,
+    MinVolumeFilter,
+    PairFilter,
+    PairFilterPipeline,
+    SpreadFilter,
+)
+from graxia.packages.quant_os.core.param_sweep import ParamSweep
+from graxia.packages.quant_os.core.portfolio_risk import PortfolioRisk
+from graxia.packages.quant_os.core.portfolio_risk import Position as PortfolioPosition
+from graxia.packages.quant_os.core.position_manager import Position, PositionManager
+from graxia.packages.quant_os.core.production_readiness import CheckResult, ProductionReadiness
+from graxia.packages.quant_os.core.reconciler import StateReconciler
+from graxia.packages.quant_os.core.regime_filter import MarketRegime, RegimeFilter, RegimeResult
+from graxia.packages.quant_os.core.risk.swap_cost import (
+    estimate_overnight_cost,
+    get_live_swap_rates,
+    get_swap_cost_for_trade,
+)
+from graxia.packages.quant_os.core.rollover_filter import RolloverFilter, RolloverStatus
+from graxia.packages.quant_os.core.signal_filter import FakeSignalFilter, FilterResult
 from graxia.packages.quant_os.core.stability import StabilityResult
-from graxia.packages.quant_os.core.config import QuantConfig
+from graxia.packages.quant_os.core.structured_trades import TradeRecord, TradeRecords
+from graxia.packages.quant_os.core.telegram_callback import (
+    CallbackAction,
+    CallbackResult,
+    PendingSignal,
+    TelegramCallbackHandler,
+)
+from graxia.packages.quant_os.core.telegram_notify import TelegramNotifier, _load_config
+from graxia.packages.quant_os.core.walk_forward_production import WalkForwardDashboard
+from graxia.packages.quant_os.core.walk_forward_viz import WalkForwardViz
 
 
 # === 1. core/kelly.py ===
@@ -101,7 +133,9 @@ class TestKellyChaos:
 # === 2. core/lifecycle.py ===
 class TestLifecycleChaos:
     def test_subclass(self):
-        class S(StrategyLifecycle): pass
+        class S(StrategyLifecycle):
+            pass
+
         assert isinstance(S(), StrategyLifecycle)
 
     def test_default_hooks(self):
@@ -115,14 +149,21 @@ class TestLifecycleChaos:
 
     def test_override_reject(self):
         class R(StrategyLifecycle):
-            def confirm_trade_entry(self, *a): return False
+            def confirm_trade_entry(self, *a):
+                return False
+
         assert R().confirm_trade_entry("X", "B", 1, 1) is False
 
     def test_hooks_receive_correct_types(self):
         calls = []
+
         class T(StrategyLifecycle):
-            def bot_loop_start(self, ct): calls.append(type(ct).__name__)
-            def on_trade_close(self, s, o, p): calls.append(p)
+            def bot_loop_start(self, ct):
+                calls.append(type(ct).__name__)
+
+            def on_trade_close(self, s, o, p):
+                calls.append(p)
+
         t = T()
         t.bot_loop_start(datetime(2025, 1, 1, tzinfo=UTC))
         t.on_trade_close("X", "o1", 42.5)
@@ -138,13 +179,15 @@ class TestLookaheadGuardChaos:
     def test_advance(self):
         g = LookaheadGuard()
         g.initialize(10)
-        for _ in range(10): g.advance()
+        for _ in range(10):
+            g.advance()
         assert g._current_index == 10
 
     def test_advance_beyond(self):
         g = LookaheadGuard()
         g.initialize(5)
-        for _ in range(10): g.advance()
+        for _ in range(10):
+            g.advance()
         assert g._current_index == 5
 
     def test_violation(self):
@@ -181,7 +224,8 @@ class TestLookaheadGuardChaos:
     def test_get_slice(self):
         g = LookaheadGuard()
         g.initialize(10)
-        for _ in range(5): g.advance()
+        for _ in range(5):
+            g.advance()
         data = {"a": list(range(10))}
         assert len(g.get_slice(data)["a"]) == 6
 
@@ -202,7 +246,8 @@ class TestCorrelationChaos:
 
     def test_single_symbol(self):
         cf = CorrelationFilter()
-        for i in range(50): cf.update("X", 2000.0 + i)
+        for i in range(50):
+            cf.update("X", 2000.0 + i)
         assert cf.get_multiplier("X", ["X"]) == 1.0
 
     def test_perfectly_correlated(self):
@@ -217,7 +262,8 @@ class TestCorrelationChaos:
 
     def test_bounded(self):
         cf = CorrelationFilter(lookback=20)
-        for i in range(200): cf.update("X", 2000.0 + i)
+        for i in range(200):
+            cf.update("X", 2000.0 + i)
         assert len(cf._prices["X"]) <= 40
 
     def test_all_correlations(self):
@@ -246,11 +292,21 @@ class TestCorrelationChaos:
 
 # === 5. core/cost_model.py ===
 class TestCostModelChaos:
-    @pytest.mark.parametrize("hour,expected", [
-        (0, "asian"), (6, "asian"), (7, "london"), (11, "london"),
-        (12, "overlap"), (15, "overlap"), (16, "ny"), (20, "ny"),
-        (21, "asian"), (23, "asian"),
-    ])
+    @pytest.mark.parametrize(
+        "hour,expected",
+        [
+            (0, "asian"),
+            (6, "asian"),
+            (7, "london"),
+            (11, "london"),
+            (12, "overlap"),
+            (15, "overlap"),
+            (16, "ny"),
+            (20, "ny"),
+            (21, "asian"),
+            (23, "asian"),
+        ],
+    )
     def test_session(self, hour, expected):
         assert get_session(hour_utc=hour) == expected
 
@@ -300,10 +356,16 @@ class TestPairFilterChaos:
     def test_validate_backtest(self):
         class Biased(PairFilter):
             backtest_support = BacktestSupport.BIASED
-            def filter(self, pairs, context): return pairs
+
+            def filter(self, pairs, context):
+                return pairs
+
         class Unsupported(PairFilter):
             backtest_support = BacktestSupport.UNSUPPORTED
-            def filter(self, pairs, context): return pairs
+
+            def filter(self, pairs, context):
+                return pairs
+
         pipe = PairFilterPipeline([Biased(), Unsupported()])
         assert len(pipe.validate_for_backtest()) == 2
 
@@ -327,7 +389,9 @@ class TestSignalFilterChaos:
         assert r.score == 0 and r.grade == "F"
 
     def test_quick_check_good(self):
-        assert FakeSignalFilter().quick_check({"profit_factor": 2.0, "win_rate": 0.6, "expectancy": 100, "max_drawdown_pct": 10})
+        assert FakeSignalFilter().quick_check(
+            {"profit_factor": 2.0, "win_rate": 0.6, "expectancy": 100, "max_drawdown_pct": 10}
+        )
 
     def test_quick_check_bad(self):
         assert not FakeSignalFilter().quick_check({"profit_factor": 0.5})
@@ -337,17 +401,34 @@ class TestSignalFilterChaos:
 
     def test_evaluate_with_monte_carlo(self):
         mc = MonteCarloResult(
-            n_simulations=100, n_trades=50, prob_profit=0.8, p_value=0.01,
-            median_return=0.05, mean_return=0.04, std_return=0.02,
-            ci_5th=-0.01, ci_95th=0.1, median_max_dd=0.1, worst_max_dd=0.2,
-            ci_95_max_dd=0.15, survival_rate=0.95
+            n_simulations=100,
+            n_trades=50,
+            prob_profit=0.8,
+            p_value=0.01,
+            median_return=0.05,
+            mean_return=0.04,
+            std_return=0.02,
+            ci_5th=-0.01,
+            ci_95th=0.1,
+            median_max_dd=0.1,
+            worst_max_dd=0.2,
+            ci_95_max_dd=0.15,
+            survival_rate=0.95,
         )
         stab = StabilityResult(
-            stability_gap=0.15, is_performance=0.6, os_performance=0.55,
-            n_windows=5, os_consistency=0.8, is_sharpe=2.0, os_sharpe=1.8,
-            is_os_ratio=0.9, passed=True
+            stability_gap=0.15,
+            is_performance=0.6,
+            os_performance=0.55,
+            n_windows=5,
+            os_consistency=0.8,
+            is_sharpe=2.0,
+            os_sharpe=1.8,
+            is_os_ratio=0.9,
+            passed=True,
         )
-        r = FakeSignalFilter().evaluate(stability=stab, monte_carlo=mc, metrics={"profit_factor": 1.5, "expectancy": 50})
+        r = FakeSignalFilter().evaluate(
+            stability=stab, monte_carlo=mc, metrics={"profit_factor": 1.5, "expectancy": 50}
+        )
         assert r.score >= 4
 
 
@@ -404,7 +485,7 @@ class TestPositionManagerChaos:
     def test_stress(self, tmp_path):
         pm = PositionManager(data_dir=tmp_path)
         for i in range(200):
-            pm._positions[f"S{i}:BUY"] = Position(symbol=f"S{i}", side="BUY", quantity=0.01, entry_price=100.0+i)
+            pm._positions[f"S{i}:BUY"] = Position(symbol=f"S{i}", side="BUY", quantity=0.01, entry_price=100.0 + i)
         assert pm.get_open_positions_count() == 200
 
 
@@ -436,7 +517,9 @@ class TestReconcilerChaos:
     def test_orphan_detected(self):
         mock_con = MagicMock()
         mock_con.execute.return_value.fetchall.return_value = []
-        mt5 = [{"symbol": "X", "volume": 0.01, "ticket": 123, "profit": 0, "sl": 0, "tp": 0, "price_open": 2000, "time": 0}]
+        mt5 = [
+            {"symbol": "X", "volume": 0.01, "ticket": 123, "profit": 0, "sl": 0, "tp": 0, "price_open": 2000, "time": 0}
+        ]
         assert StateReconciler(mock_con).reconcile(mt5_positions=mt5)["orphans_found"] == 1
 
     def test_history(self):
@@ -458,7 +541,9 @@ class TestReconcilerChaos:
 # === 11. core/regime_filter.py ===
 class TestRegimeFilterChaos:
     def test_insufficient_data(self):
-        r = RegimeFilter().detect({"close": [100, 101], "high": [101, 102], "low": [99, 100], "open": [100, 101], "volume": [100, 100]})
+        r = RegimeFilter().detect(
+            {"close": [100, 101], "high": [101, 102], "low": [99, 100], "open": [100, 101], "volume": [100, 100]}
+        )
         assert r.regime == MarketRegime.RANGING and r.confidence == 0.3
 
     def test_empty_data(self):
@@ -467,7 +552,13 @@ class TestRegimeFilterChaos:
 
     def test_trending_up(self):
         prices = [100 + i * 0.5 for i in range(100)]
-        data = {"close": prices, "high": [p+0.5 for p in prices], "low": [p-0.5 for p in prices], "open": prices, "volume": [100]*100}
+        data = {
+            "close": prices,
+            "high": [p + 0.5 for p in prices],
+            "low": [p - 0.5 for p in prices],
+            "open": prices,
+            "volume": [100] * 100,
+        }
         r = RegimeFilter().detect(data)
         assert r.regime in (MarketRegime.TRENDING_UP, MarketRegime.HIGH_VOLATILITY)
 
@@ -485,10 +576,11 @@ class TestRegimeFilterChaos:
         for regime in MarketRegime:
             s = rf.get_allowed_strategies(regime)
             assert isinstance(s, list)
-            if regime == MarketRegime.CRISIS: assert s == []
+            if regime == MarketRegime.CRISIS:
+                assert s == []
 
     def test_shift_risk_insufficient(self):
-        assert RegimeFilter().detect_regime_shift_risk([100.0]*50)["risk_score"] == 0.0
+        assert RegimeFilter().detect_regime_shift_risk([100.0] * 50)["risk_score"] == 0.0
 
     def test_regime_result_details(self):
         r = RegimeResult(regime=MarketRegime.RANGING, confidence=0.5)
@@ -534,7 +626,9 @@ class TestRolloverFilterChaos:
         assert rf.get_status(datetime(2025, 6, 1, 22, 20, tzinfo=UTC)) == RolloverStatus.CLEAR
 
     def test_custom_window(self):
-        rf = RolloverFilter(block_start=dtime(10, 0), block_end=dtime(10, 5), warn_start=dtime(9, 55), warn_end=dtime(10, 10))
+        rf = RolloverFilter(
+            block_start=dtime(10, 0), block_end=dtime(10, 5), warn_start=dtime(9, 55), warn_end=dtime(10, 10)
+        )
         assert rf.get_status(datetime(2025, 6, 1, 10, 2, tzinfo=UTC)) == RolloverStatus.BLOCKED
 
     def test_stress_all_hours(self):
@@ -552,40 +646,136 @@ class TestStructuredTradesChaos:
 
     def test_add_and_stats(self):
         r = TradeRecords()
-        r.add(TradeRecord(id="1", symbol="A", side="BUY", entry_price=100, exit_price=110, quantity=1, entry_time=0, exit_time=1, pnl=10))
-        r.add(TradeRecord(id="2", symbol="A", side="BUY", entry_price=100, exit_price=95, quantity=1, entry_time=0, exit_time=1, pnl=-5))
+        r.add(
+            TradeRecord(
+                id="1",
+                symbol="A",
+                side="BUY",
+                entry_price=100,
+                exit_price=110,
+                quantity=1,
+                entry_time=0,
+                exit_time=1,
+                pnl=10,
+            )
+        )
+        r.add(
+            TradeRecord(
+                id="2",
+                symbol="A",
+                side="BUY",
+                entry_price=100,
+                exit_price=95,
+                quantity=1,
+                entry_time=0,
+                exit_time=1,
+                pnl=-5,
+            )
+        )
         assert r.count == 2 and r.total_pnl == 5
 
     def test_filter(self):
         r = TradeRecords()
-        r.add(TradeRecord(id="1", symbol="A", side="BUY", entry_price=100, exit_price=110, quantity=1, entry_time=0, exit_time=1))
-        r.add(TradeRecord(id="2", symbol="B", side="SELL", entry_price=100, exit_price=90, quantity=1, entry_time=0, exit_time=1))
+        r.add(
+            TradeRecord(
+                id="1", symbol="A", side="BUY", entry_price=100, exit_price=110, quantity=1, entry_time=0, exit_time=1
+            )
+        )
+        r.add(
+            TradeRecord(
+                id="2", symbol="B", side="SELL", entry_price=100, exit_price=90, quantity=1, entry_time=0, exit_time=1
+            )
+        )
         assert len(r.filter(symbol="A")) == 1
 
     def test_group_by(self):
         r = TradeRecords()
-        r.add(TradeRecord(id="1", symbol="A", side="BUY", entry_price=100, exit_price=110, quantity=1, entry_time=0, exit_time=1, strategy_id="s1"))
-        r.add(TradeRecord(id="2", symbol="B", side="SELL", entry_price=100, exit_price=90, quantity=1, entry_time=0, exit_time=1, strategy_id="s2"))
+        r.add(
+            TradeRecord(
+                id="1",
+                symbol="A",
+                side="BUY",
+                entry_price=100,
+                exit_price=110,
+                quantity=1,
+                entry_time=0,
+                exit_time=1,
+                strategy_id="s1",
+            )
+        )
+        r.add(
+            TradeRecord(
+                id="2",
+                symbol="B",
+                side="SELL",
+                entry_price=100,
+                exit_price=90,
+                quantity=1,
+                entry_time=0,
+                exit_time=1,
+                strategy_id="s2",
+            )
+        )
         g = r.group_by("strategy_id")
         assert len(g["s1"]) == 1 and len(g["s2"]) == 1
 
     def test_to_json(self, tmp_path):
         r = TradeRecords()
-        r.add(TradeRecord(id="1", symbol="A", side="BUY", entry_price=100, exit_price=110, quantity=1, entry_time=0, exit_time=1))
+        r.add(
+            TradeRecord(
+                id="1", symbol="A", side="BUY", entry_price=100, exit_price=110, quantity=1, entry_time=0, exit_time=1
+            )
+        )
         p = str(tmp_path / "t.json")
         r.to_json(p)
         assert len(json.load(open(p))) == 1
 
     def test_win_rate(self):
         r = TradeRecords()
-        r.add(TradeRecord(id="1", symbol="A", side="BUY", entry_price=100, exit_price=110, quantity=1, entry_time=0, exit_time=1, pnl=10))
-        r.add(TradeRecord(id="2", symbol="A", side="BUY", entry_price=100, exit_price=95, quantity=1, entry_time=0, exit_time=1, pnl=-5))
+        r.add(
+            TradeRecord(
+                id="1",
+                symbol="A",
+                side="BUY",
+                entry_price=100,
+                exit_price=110,
+                quantity=1,
+                entry_time=0,
+                exit_time=1,
+                pnl=10,
+            )
+        )
+        r.add(
+            TradeRecord(
+                id="2",
+                symbol="A",
+                side="BUY",
+                entry_price=100,
+                exit_price=95,
+                quantity=1,
+                entry_time=0,
+                exit_time=1,
+                pnl=-5,
+            )
+        )
         assert r.win_rate == 0.5
 
     def test_stress(self):
         r = TradeRecords()
         for i in range(5000):
-            r.add(TradeRecord(id=str(i), symbol=f"S{i%10}", side="BUY", entry_price=100, exit_price=100+i%10, quantity=0.01, entry_time=i, exit_time=i+1, pnl=i%10))
+            r.add(
+                TradeRecord(
+                    id=str(i),
+                    symbol=f"S{i%10}",
+                    side="BUY",
+                    entry_price=100,
+                    exit_price=100 + i % 10,
+                    quantity=0.01,
+                    entry_time=i,
+                    exit_time=i + 1,
+                    pnl=i % 10,
+                )
+            )
         assert r.count == 5000
 
 
@@ -597,7 +787,8 @@ class TestObservabilityChaos:
 
     def test_loki_buffer(self):
         sink = LokiSink(url="http://localhost:3100")
-        for _ in range(10): sink(None, "info", {"level": "info"})
+        for _ in range(10):
+            sink(None, "info", {"level": "info"})
         assert len(sink._buffer) == 10
 
     def test_file_writes(self, tmp_path):
@@ -607,7 +798,8 @@ class TestObservabilityChaos:
 
     def test_file_rotation(self, tmp_path):
         sink = FileSink(path=str(tmp_path / "t.jsonl"), max_bytes=100)
-        for _ in range(50): sink(None, "info", {"level": "info", "msg": "x" * 100})
+        for _ in range(50):
+            sink(None, "info", {"level": "info", "msg": "x" * 100})
         assert (tmp_path / "t.jsonl.1").exists()
 
     @patch("graxia.packages.quant_os.core.observability.structlog.configure")
@@ -661,7 +853,18 @@ class TestTelegramCallbackChaos:
 
     def test_register(self):
         h = TelegramCallbackHandler()
-        ps = PendingSignal(message_id=1, asset="X", direction="BUY", confidence=0.8, entry=2000, stop_loss=1990, take_profit=2020, regime="N", strategy_source="s", metadata={})
+        ps = PendingSignal(
+            message_id=1,
+            asset="X",
+            direction="BUY",
+            confidence=0.8,
+            entry=2000,
+            stop_loss=1990,
+            take_profit=2020,
+            regime="N",
+            strategy_source="s",
+            metadata={},
+        )
         h.register_signal(ps)
         assert "X:BUY" in h._pending
 
@@ -686,7 +889,19 @@ class TestTelegramCallbackChaos:
     @pytest.mark.asyncio
     async def test_expired(self):
         h = TelegramCallbackHandler()
-        ps = PendingSignal(message_id=1, asset="X", direction="BUY", confidence=0.8, entry=2000, stop_loss=1990, take_profit=2020, regime="N", strategy_source="s", metadata={}, sent_at=datetime.now(UTC) - timedelta(seconds=400))
+        ps = PendingSignal(
+            message_id=1,
+            asset="X",
+            direction="BUY",
+            confidence=0.8,
+            entry=2000,
+            stop_loss=1990,
+            take_profit=2020,
+            regime="N",
+            strategy_source="s",
+            metadata={},
+            sent_at=datetime.now(UTC) - timedelta(seconds=400),
+        )
         h.register_signal(ps)
         expired = await h.check_expired()
         assert len(expired) == 1
@@ -716,7 +931,8 @@ class TestWalkForwardProductionChaos:
 
     def test_stress(self):
         d = WalkForwardDashboard()
-        for i in range(100): d.add_window(accuracy=0.5 + (i % 20) / 100, window=i+1)
+        for i in range(100):
+            d.add_window(accuracy=0.5 + (i % 20) / 100, window=i + 1)
         assert "Walk-Forward" in d.render_html()
 
 
@@ -753,6 +969,7 @@ class TestOrchestratorChaos:
     @patch("graxia.packages.quant_os.core.orchestrator.RiskAuditorAgent")
     def test_init(self, *mocks):
         from graxia.packages.quant_os.core.orchestrator import TradingOrchestrator
+
         orch = TradingOrchestrator(config=QuantConfig())
         assert orch._running is False
 
@@ -764,6 +981,7 @@ class TestOrchestratorChaos:
     @patch("graxia.packages.quant_os.core.orchestrator.RiskAuditorAgent")
     def test_start_stop(self, *mocks):
         from graxia.packages.quant_os.core.orchestrator import TradingOrchestrator
+
         orch = TradingOrchestrator()
         orch.start()
         assert orch._running
@@ -778,6 +996,7 @@ class TestOrchestratorChaos:
     @patch("graxia.packages.quant_os.core.orchestrator.RiskAuditorAgent")
     def test_status(self, *mocks):
         from graxia.packages.quant_os.core.orchestrator import TradingOrchestrator
+
         s = TradingOrchestrator().get_status()
         assert "running" in s and "trading_mode" in s
 
@@ -799,15 +1018,15 @@ class TestParamSweepChaos:
         assert ParamSweep({"a": [1]}).get_best([]) == ({}, float("-inf"))
 
     def test_exception(self):
-        r = ParamSweep({"a": [1, 2]}).run(lambda p: 1/0, show_progress=False)
+        r = ParamSweep({"a": [1, 2]}).run(lambda p: 1 / 0, show_progress=False)
         assert all(s == float("-inf") for _, s in r)
 
     def test_summary(self):
-        r = ParamSweep({"a": [1, 2, 3]}).run(lambda p: p["a"]**2, show_progress=False)
+        r = ParamSweep({"a": [1, 2, 3]}).run(lambda p: p["a"] ** 2, show_progress=False)
         assert "Parameter Sweep" in ParamSweep({"a": [1]}).summary(r)
 
     def test_stress(self):
-        r = ParamSweep({"a": list(range(50)), "b": list(range(20))}).run(lambda p: p["a"]+p["b"], show_progress=False)
+        r = ParamSweep({"a": list(range(50)), "b": list(range(20))}).run(lambda p: p["a"] + p["b"], show_progress=False)
         assert len(r) == 1000
 
 
@@ -820,22 +1039,30 @@ class TestPortfolioRiskChaos:
 
     def test_add_position(self):
         pr = PortfolioRisk(capital=10000)
-        pr.add_position(PortfolioPosition(symbol="X", direction="BUY", entry_price=2000, risk_dollars=50, size_lots=0.01))
+        pr.add_position(
+            PortfolioPosition(symbol="X", direction="BUY", entry_price=2000, risk_dollars=50, size_lots=0.01)
+        )
         assert pr.total_risk == 50.0
 
     def test_total_risk_block(self):
         pr = PortfolioRisk(capital=10000)
-        pr.add_position(PortfolioPosition(symbol="X", direction="BUY", entry_price=2000, risk_dollars=450, size_lots=0.01))
+        pr.add_position(
+            PortfolioPosition(symbol="X", direction="BUY", entry_price=2000, risk_dollars=450, size_lots=0.01)
+        )
         assert not pr.can_add("Y", 100)["allowed"]
 
     def test_per_symbol_block(self):
         pr = PortfolioRisk(capital=10000)
-        pr.add_position(PortfolioPosition(symbol="X", direction="BUY", entry_price=2000, risk_dollars=190, size_lots=0.01))
+        pr.add_position(
+            PortfolioPosition(symbol="X", direction="BUY", entry_price=2000, risk_dollars=190, size_lots=0.01)
+        )
         assert not pr.can_add("X", 20)["allowed"]
 
     def test_correlated_block(self):
         pr = PortfolioRisk(capital=10000)
-        pr.add_position(PortfolioPosition(symbol="EURUSD", direction="BUY", entry_price=1.1, risk_dollars=250, size_lots=0.01))
+        pr.add_position(
+            PortfolioPosition(symbol="EURUSD", direction="BUY", entry_price=1.1, risk_dollars=250, size_lots=0.01)
+        )
         assert not pr.can_add("GBPUSD", 100)["allowed"]
 
     def test_daily_loss_block(self):
@@ -865,14 +1092,18 @@ class TestPortfolioRiskChaos:
 
     def test_remove_position(self):
         pr = PortfolioRisk()
-        pr.add_position(PortfolioPosition(symbol="X", direction="BUY", entry_price=100, risk_dollars=10, size_lots=0.01))
+        pr.add_position(
+            PortfolioPosition(symbol="X", direction="BUY", entry_price=100, risk_dollars=10, size_lots=0.01)
+        )
         pr.remove_position("X")
         assert pr.total_risk == 0.0
 
     def test_stress(self):
         pr = PortfolioRisk(capital=100000)
         for i in range(100):
-            pr.add_position(PortfolioPosition(symbol=f"S{i}", direction="BUY", entry_price=100, risk_dollars=10, size_lots=0.01))
+            pr.add_position(
+                PortfolioPosition(symbol=f"S{i}", direction="BUY", entry_price=100, risk_dollars=10, size_lots=0.01)
+            )
         assert pr.total_risk == 1000.0
 
 

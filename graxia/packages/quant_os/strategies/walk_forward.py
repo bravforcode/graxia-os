@@ -25,9 +25,11 @@ Usage
 from __future__ import annotations
 
 import math
-import structlog
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any, Protocol, Sequence
+from typing import Any, Protocol
+
+import structlog
 
 try:
     from ..core.enums import RegimeType
@@ -37,6 +39,7 @@ except ImportError:
 logger = structlog.get_logger(__name__)
 
 # ── protocols ───────────────────────────────────────────────────────────
+
 
 class StrategyLike(Protocol):
     """Minimal interface for strategies usable in walk-forward validation."""
@@ -57,6 +60,7 @@ class StrategyLike(Protocol):
 
 
 # ── data classes ────────────────────────────────────────────────────────
+
 
 @dataclass
 class FoldMetrics:
@@ -133,6 +137,7 @@ class StrategyComparison:
 
 # ── helpers ─────────────────────────────────────────────────────────────
 
+
 def _sharpe(returns: Sequence[float], risk_free: float = 0.0, annualise: bool = True) -> float:
     """Annualised Sharpe from a list of per-trade returns."""
     if len(returns) < 2:
@@ -179,9 +184,7 @@ def _deflated_sharpe(sharpe_obs: float, n_trials: int, var_sharpe: float = 1.0) 
     if n_trials <= 1:
         return sharpe_obs
     # Expected max Sharpe under null (Euler-Mascheroni corrected)
-    e_max = math.sqrt(2 * math.log(n_trials)) - (math.log(math.pi) + 0.5772) / (
-        2 * math.sqrt(2 * math.log(n_trials))
-    )
+    e_max = math.sqrt(2 * math.log(n_trials)) - (math.log(math.pi) + 0.5772) / (2 * math.sqrt(2 * math.log(n_trials)))
     # Deflated Sharpe
     deflated = (sharpe_obs - e_max * math.sqrt(var_sharpe)) / math.sqrt(var_sharpe)
     return deflated
@@ -200,6 +203,7 @@ def _pooma(is_sharpe: float, oos_sharpe: float, n_folds: int) -> float:
 
 
 # ── walk-forward split ──────────────────────────────────────────────────
+
 
 def _generate_splits(
     n_bars: int,
@@ -229,6 +233,7 @@ def _generate_splits(
 
 # ── metrics evaluation ──────────────────────────────────────────────────
 
+
 def _evaluate_strategy(
     strategy: StrategyLike,
     ohlcv_data: dict[str, list],
@@ -251,9 +256,7 @@ def _evaluate_strategy(
 
     for i in range(max(start, strategy.required_features().__len__()), n_bars):
         # build sub-slice visible to strategy
-        window = {
-            k: v[max(0, i - 200): i + 1] for k, v in ohlcv_data.items() if isinstance(v, list)
-        }
+        window = {k: v[max(0, i - 200) : i + 1] for k, v in ohlcv_data.items() if isinstance(v, list)}
 
         sig = strategy.generate_signal(symbol, window, regime=regime)
         if sig is None:
@@ -305,6 +308,7 @@ def _evaluate_strategy(
 
 
 # ── main validator ──────────────────────────────────────────────────────
+
 
 class WalkForwardValidator:
     """
@@ -382,10 +386,20 @@ class WalkForwardValidator:
             )
 
             is_metrics = _evaluate_strategy(
-                self._strategy, self._ohlcv, tr_s, tr_e, self._symbol, self._regime,
+                self._strategy,
+                self._ohlcv,
+                tr_s,
+                tr_e,
+                self._symbol,
+                self._regime,
             )
             oos_metrics = _evaluate_strategy(
-                self._strategy, self._ohlcv, te_s, te_e, self._symbol, self._regime,
+                self._strategy,
+                self._ohlcv,
+                te_s,
+                te_e,
+                self._symbol,
+                self._regime,
             )
 
             folds.append(

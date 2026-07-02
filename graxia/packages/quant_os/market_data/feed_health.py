@@ -9,16 +9,16 @@ Tracks real-time tick health per symbol:
 """
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta, UTC
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
 
 @dataclass(frozen=True)
 class FeedHealthState:
     """Immutable snapshot of feed health for a symbol."""
+
     symbol: str
     state: str  # "HEALTHY" | "STALE_FEED" | "DISCONNECTED" | "UNKNOWN"
-    last_tick_age_seconds: Optional[float]
+    last_tick_age_seconds: float | None
     tick_count_last_minute: int
     gap_count: int
     stale_count: int
@@ -44,7 +44,7 @@ class FeedHealthMonitor:
         self._symbol = symbol
         self._max_tick_age = max_tick_age_seconds
 
-        self._last_tick_time: Optional[datetime] = None
+        self._last_tick_time: datetime | None = None
         self._tick_times: list[datetime] = []
         self._gap_count: int = 0
         self._stale_count: int = 0
@@ -56,9 +56,7 @@ class FeedHealthMonitor:
     # Public API
     # ------------------------------------------------------------------
 
-    def on_tick_received(
-        self, tick_timestamp: datetime, received_at: datetime
-    ) -> FeedHealthState:
+    def on_tick_received(self, tick_timestamp: datetime, received_at: datetime) -> FeedHealthState:
         """
         Process an incoming tick.
 
@@ -102,7 +100,7 @@ class FeedHealthMonitor:
         If the last tick is older than max_tick_age the state degrades.
         """
         now = datetime.now(UTC)
-        last_age: Optional[float] = None
+        last_age: float | None = None
 
         if self._last_tick_time is not None:
             last_age = max(0.0, (now - self._last_tick_time).total_seconds())
@@ -158,8 +156,7 @@ class FeedHealthMonitor:
             return 1.0
 
         deltas = sorted(
-            (self._tick_times[i] - self._tick_times[i - 1]).total_seconds()
-            for i in range(1, len(self._tick_times))
+            (self._tick_times[i] - self._tick_times[i - 1]).total_seconds() for i in range(1, len(self._tick_times))
         )
         mid = len(deltas) // 2
         return max(0.001, deltas[mid])

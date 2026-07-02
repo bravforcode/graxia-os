@@ -3,6 +3,7 @@
 24 tests verifying engine uses HistoricalSizingProvider, ConservativeBarFillModel,
 CostModel, OrderStateMachine, TradeLedger, and enforces all rules.
 """
+
 import ast
 import tempfile
 from datetime import datetime, timedelta
@@ -11,23 +12,27 @@ from pathlib import Path
 
 import pytest
 
-from graxia.packages.quant_os.backtest.engine import BacktestEngine, BacktestConfig
+from graxia.packages.quant_os.backtest.engine import BacktestConfig, BacktestEngine
 from graxia.packages.quant_os.core.enums import (
     SignalType,
 )
-from graxia.packages.quant_os.execution.fill_model import (
-    Side as FillSide, simulate_entry,
-)
-from graxia.packages.quant_os.execution.trade_ledger import TradeRecord, TradeLedger
-from graxia.packages.quant_os.execution.order_state_machine import (
-    OrderState, OrderStateMachine,
-)
 from graxia.packages.quant_os.core.exceptions import StrictMTFViolation
-
+from graxia.packages.quant_os.execution.fill_model import (
+    Side as FillSide,
+)
+from graxia.packages.quant_os.execution.fill_model import (
+    simulate_entry,
+)
+from graxia.packages.quant_os.execution.order_state_machine import (
+    OrderState,
+    OrderStateMachine,
+)
+from graxia.packages.quant_os.execution.trade_ledger import TradeLedger, TradeRecord
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_bars(n=20, base_price=2000.0, step=1.0):
     """Generate synthetic OHLCV bars."""
@@ -52,6 +57,7 @@ def _make_timestamps(n=20):
 
 class MockStrategy:
     """Minimal Strategy implementation for engine tests."""
+
     def __init__(self, signals=None):
         self.id = "mock"
         self.config = type("C", (), {"name": "mock", "version": "1.0.0"})()
@@ -81,6 +87,7 @@ class MockStrategy:
 def _make_signal(signal_type, symbol="XAUUSD", entry=None, sl=None, tp=None, sig_id="mock_sig"):
     """Create a Signal object (not a dataclass — uses the real Signal)."""
     from graxia.packages.quant_os.strategies.base import Signal
+
     return Signal(
         id=sig_id,
         strategy_id="mock",
@@ -111,15 +118,14 @@ def _run_engine(signals, n_bars=50, capital=Decimal("10000"), strict_mtf=False):
 
 def _engine_src():
     """Read engine.py source for AST inspection tests."""
-    engine_path = (
-        Path(__file__).resolve().parent.parent / "backtest" / "engine.py"
-    )
+    engine_path = Path(__file__).resolve().parent.parent / "backtest" / "engine.py"
     return engine_path.read_text(encoding="utf-8", errors="ignore")
 
 
 # ===========================================================================
 # Test 1: Engine calls strategy exactly once per bar
 # ===========================================================================
+
 
 def test_engine_calls_strategy_per_bar():
     """generate_signal is called once per bar (bars 1..N-1)."""
@@ -138,6 +144,7 @@ def test_engine_calls_strategy_per_bar():
 # Test 2: Engine rejects signal without stop loss (no position opened)
 # ===========================================================================
 
+
 def test_engine_rejects_signal_without_stop_loss():
     """Signal without stop_loss — engine still attempts fill but no SL means
     default risk sizing. Verify no crash, trade may or may not open."""
@@ -150,6 +157,7 @@ def test_engine_rejects_signal_without_stop_loss():
 # ===========================================================================
 # Test 3: Engine rejects signal without valid stop loss (SL >= entry for LONG)
 # ===========================================================================
+
 
 def test_engine_rejects_invalid_sl_for_long():
     """LONG signal with SL above entry — engine opens but position is stopped out."""
@@ -164,6 +172,7 @@ def test_engine_rejects_invalid_sl_for_long():
 # ===========================================================================
 # Test 4: Engine source does not inline units_per_lot / 100000 / pip_value
 # ===========================================================================
+
 
 def test_no_legacy_tokens_in_engine():
     """Engine must not contain units_per_lot, 100000, pip_value in executable code."""
@@ -182,6 +191,7 @@ def test_no_legacy_tokens_in_engine():
 # Test 5: Signal at bar t never fills at bar t (fills at t+1)
 # ===========================================================================
 
+
 def test_signal_at_bar_t_fills_at_bar_t_plus_1():
     """Signal generated on bar t must fill on bar t+1, not bar t."""
     sig = _make_signal(SignalType.BUY, entry=2005, sl=2000, tp=2015)
@@ -193,14 +203,13 @@ def test_signal_at_bar_t_fills_at_bar_t_plus_1():
         t = results["trades"][0]
         entry_time = datetime.fromisoformat(t["entry_time"])
         expected_fill_time = _make_timestamps(20)[2]  # bar_index 1 + 1 = 2
-        assert entry_time == expected_fill_time, (
-            f"Fill at {entry_time}, expected bar 2 = {expected_fill_time}"
-        )
+        assert entry_time == expected_fill_time, f"Fill at {entry_time}, expected bar 2 = {expected_fill_time}"
 
 
 # ===========================================================================
 # Test 6: Entry at t+1 uses open/known spread only
 # ===========================================================================
+
 
 def test_entry_uses_open_price_of_next_bar():
     """Long entry price must reflect bar t+1 open, not bar t close."""
@@ -218,17 +227,21 @@ def test_entry_uses_open_price_of_next_bar():
 # Test 7: Long uses ask for entry and bid for exit
 # ===========================================================================
 
+
 def test_long_uses_ask_for_entry():
     """Long entry must use ask side (entry > mid)."""
     req = simulate_entry(
         _make_fill_request(FillSide.BUY, 2000),
-        bid=Decimal("2000"), ask=Decimal("2001"), spread=Decimal("1"),
+        bid=Decimal("2000"),
+        ask=Decimal("2001"),
+        spread=Decimal("1"),
     )
     assert req.entry_price >= Decimal("2001"), "Long entry must use ask"
 
 
 def _make_fill_request(side, entry_price, sl=None, tp=None):
     from graxia.packages.quant_os.execution.fill_model import FillRequest
+
     return FillRequest(
         side=side,
         entry_price=Decimal(str(entry_price)),
@@ -243,11 +256,14 @@ def _make_fill_request(side, entry_price, sl=None, tp=None):
 # Test 8: Short uses bid for entry and ask for exit
 # ===========================================================================
 
+
 def test_short_uses_bid_for_entry():
     """Short entry must use bid side (entry < mid)."""
     req = simulate_entry(
         _make_fill_request(FillSide.SELL, 2000),
-        bid=Decimal("2000"), ask=Decimal("2001"), spread=Decimal("1"),
+        bid=Decimal("2000"),
+        ask=Decimal("2001"),
+        spread=Decimal("1"),
     )
     assert req.entry_price <= Decimal("2000"), "Short entry must use bid"
 
@@ -256,21 +272,27 @@ def test_short_uses_bid_for_entry():
 # Test 9: Long SL/TP triggers on bid
 # ===========================================================================
 
+
 def test_long_sl_tp_triggers_on_bid():
     """Long SL/TP check must use bid price."""
     from graxia.packages.quant_os.execution.fill_model import check_sl_tp_trigger
+
     # Bid hits SL
     result = check_sl_tp_trigger(
         FillSide.BUY,
-        stop_loss=Decimal("2000"), take_profit=Decimal("2010"),
-        bid=Decimal("1999"), ask=Decimal("2005"),
+        stop_loss=Decimal("2000"),
+        take_profit=Decimal("2010"),
+        bid=Decimal("1999"),
+        ask=Decimal("2005"),
     )
     assert result == "SL"
     # Bid hits TP
     result = check_sl_tp_trigger(
         FillSide.BUY,
-        stop_loss=Decimal("1990"), take_profit=Decimal("2010"),
-        bid=Decimal("2011"), ask=Decimal("2012"),
+        stop_loss=Decimal("1990"),
+        take_profit=Decimal("2010"),
+        bid=Decimal("2011"),
+        ask=Decimal("2012"),
     )
     assert result == "TP"
 
@@ -279,21 +301,27 @@ def test_long_sl_tp_triggers_on_bid():
 # Test 10: Short SL/TP triggers on ask
 # ===========================================================================
 
+
 def test_short_sl_tp_triggers_on_ask():
     """Short SL/TP check must use ask price."""
     from graxia.packages.quant_os.execution.fill_model import check_sl_tp_trigger
+
     # Ask hits SL
     result = check_sl_tp_trigger(
         FillSide.SELL,
-        stop_loss=Decimal("2010"), take_profit=Decimal("1990"),
-        bid=Decimal("2005"), ask=Decimal("2011"),
+        stop_loss=Decimal("2010"),
+        take_profit=Decimal("1990"),
+        bid=Decimal("2005"),
+        ask=Decimal("2011"),
     )
     assert result == "SL"
     # Ask hits TP
     result = check_sl_tp_trigger(
         FillSide.SELL,
-        stop_loss=Decimal("2020"), take_profit=Decimal("1990"),
-        bid=Decimal("1988"), ask=Decimal("1989"),
+        stop_loss=Decimal("2020"),
+        take_profit=Decimal("1990"),
+        bid=Decimal("1988"),
+        ask=Decimal("1989"),
     )
     assert result == "TP"
 
@@ -302,21 +330,27 @@ def test_short_sl_tp_triggers_on_ask():
 # Test 11: Ambiguous SL/TP candle resolves adverse-first
 # ===========================================================================
 
+
 def test_ambiguous_candle_resolves_adverse_first():
     """When both SL and TP are hit on the same bar, SL must take priority."""
     from graxia.packages.quant_os.execution.fill_model import check_sl_tp_trigger
+
     # Long: bid breaches both SL and TP — SL wins
     result = check_sl_tp_trigger(
         FillSide.BUY,
-        stop_loss=Decimal("2000"), take_profit=Decimal("1995"),
-        bid=Decimal("1994"), ask=Decimal("1995"),
+        stop_loss=Decimal("2000"),
+        take_profit=Decimal("1995"),
+        bid=Decimal("1994"),
+        ask=Decimal("1995"),
     )
     assert result == "SL", "Adverse resolution must favour SL on ambiguous bar"
     # Short: ask breaches both — SL wins
     result = check_sl_tp_trigger(
         FillSide.SELL,
-        stop_loss=Decimal("2010"), take_profit=Decimal("2015"),
-        bid=Decimal("2014"), ask=Decimal("2016"),
+        stop_loss=Decimal("2010"),
+        take_profit=Decimal("2015"),
+        bid=Decimal("2014"),
+        ask=Decimal("2016"),
     )
     assert result == "SL", "Adverse resolution must favour SL on ambiguous bar"
 
@@ -325,9 +359,11 @@ def test_ambiguous_candle_resolves_adverse_first():
 # Test 12: Cost model runs once, never twice
 # ===========================================================================
 
+
 def test_cost_model_runs_once_per_trade():
     """Verify cost calculation produces consistent single result, not doubled."""
-    from graxia.packages.quant_os.execution.cost_model import calculate_trade_costs, BASE
+    from graxia.packages.quant_os.execution.cost_model import BASE, calculate_trade_costs
+
     costs = calculate_trade_costs(
         entry_price=Decimal("2000"),
         exit_price=Decimal("2010"),
@@ -345,19 +381,27 @@ def test_cost_model_runs_once_per_trade():
 # Test 13: Commission applies once per side
 # ===========================================================================
 
+
 def test_commission_applies_once_per_side():
     """Exit commission is charged once per side, not doubled."""
-    from graxia.packages.quant_os.execution.cost_model import calculate_trade_costs, BASE
+    from graxia.packages.quant_os.execution.cost_model import BASE, calculate_trade_costs
+
     c1 = calculate_trade_costs(
-        entry_price=Decimal("2000"), exit_price=Decimal("2010"),
-        volume=Decimal("0.1"), contract_size=Decimal("100"),
-        spread_points=Decimal("10"), scenario=BASE,
+        entry_price=Decimal("2000"),
+        exit_price=Decimal("2010"),
+        volume=Decimal("0.1"),
+        contract_size=Decimal("100"),
+        spread_points=Decimal("10"),
+        scenario=BASE,
         commission_per_lot=Decimal("7.00"),
     )
     c2 = calculate_trade_costs(
-        entry_price=Decimal("2000"), exit_price=Decimal("2010"),
-        volume=Decimal("0.1"), contract_size=Decimal("100"),
-        spread_points=Decimal("10"), scenario=BASE,
+        entry_price=Decimal("2000"),
+        exit_price=Decimal("2010"),
+        volume=Decimal("0.1"),
+        contract_size=Decimal("100"),
+        spread_points=Decimal("10"),
+        scenario=BASE,
         commission_per_lot=Decimal("3.50"),
     )
     # Double commission → double total cost (spread/slippage constant)
@@ -367,6 +411,7 @@ def test_commission_applies_once_per_side():
 # ===========================================================================
 # Test 14: Engine tracks open_positions count in equity curve
 # ===========================================================================
+
 
 def test_equity_curve_tracks_open_positions():
     """EquityPoint.open_positions must reflect actual open position count."""
@@ -382,6 +427,7 @@ def test_equity_curve_tracks_open_positions():
 # Test 15: Every closed trade writes immutable ledger record
 # ===========================================================================
 
+
 def test_every_closed_trade_writes_ledger():
     """When engine produces trades, TradeLedger can record each one."""
     sig = _make_signal(SignalType.BUY, entry=2005, sl=2000, tp=2015)
@@ -390,8 +436,11 @@ def test_every_closed_trade_writes_ledger():
         ledger = TradeLedger(ledger_dir=tmpdir)
         for t in results["trades"]:
             rec = TradeRecord(
-                trade_id=t["id"], order_id="o-001", symbol=t["symbol"],
-                side=t["side"], entry_price=Decimal(str(t["entry_price"])),
+                trade_id=t["id"],
+                order_id="o-001",
+                symbol=t["symbol"],
+                side=t["side"],
+                entry_price=Decimal(str(t["entry_price"])),
                 exit_price=Decimal(str(t["exit_price"])),
                 volume=Decimal(str(t["quantity"])),
                 entry_time=datetime.fromisoformat(t["entry_time"]),
@@ -405,7 +454,8 @@ def test_every_closed_trade_writes_ledger():
                 contract_snapshot_id="snap",
                 risk_policy_version="1.0",
                 dataset_manifest_id="manifest",
-                cost_scenario="base", git_commit="abc",
+                cost_scenario="base",
+                git_commit="abc",
             )
             ledger.record_trade(rec)
         assert len(ledger.get_trades()) == len(results["trades"])
@@ -415,19 +465,30 @@ def test_every_closed_trade_writes_ledger():
 # Test 16: Every ledger record carries provenance fields
 # ===========================================================================
 
+
 def test_ledger_record_has_provenance_fields():
     """TradeRecord must carry strategy_id, execution_quality, contract_snapshot_id."""
     rec = TradeRecord(
-        trade_id="t-001", order_id="o-001", symbol="XAUUSD", side="BUY",
-        entry_price=Decimal("2000"), exit_price=Decimal("2010"),
-        volume=Decimal("1"), entry_time=datetime.now(), exit_time=datetime.now(),
-        pnl=Decimal("10"), pnl_pct=Decimal("0.5"), fees=Decimal("3.5"),
-        close_reason="TAKE_PROFIT", execution_quality="BAR_ONLY",
+        trade_id="t-001",
+        order_id="o-001",
+        symbol="XAUUSD",
+        side="BUY",
+        entry_price=Decimal("2000"),
+        exit_price=Decimal("2010"),
+        volume=Decimal("1"),
+        entry_time=datetime.now(),
+        exit_time=datetime.now(),
+        pnl=Decimal("10"),
+        pnl_pct=Decimal("0.5"),
+        fees=Decimal("3.5"),
+        close_reason="TAKE_PROFIT",
+        execution_quality="BAR_ONLY",
         strategy_id="mtm_v2",
         contract_snapshot_id="snap-abc",
         risk_policy_version="2.0",
         dataset_manifest_id="manifest-xyz",
-        cost_scenario="base", git_commit="deadbeef",
+        cost_scenario="base",
+        git_commit="deadbeef",
     )
     assert rec.strategy_id == "mtm_v2"
     assert rec.execution_quality == "BAR_ONLY"
@@ -439,6 +500,7 @@ def test_ledger_record_has_provenance_fields():
 # ===========================================================================
 # Test 17: State machine reaches FILLED for valid closed trades
 # ===========================================================================
+
 
 def test_state_machine_reaches_filled():
     """OrderStateMachine reaches AUDITED through valid lifecycle transitions."""
@@ -461,6 +523,7 @@ def test_state_machine_reaches_filled():
 # Test 18: Missing SL creates no position (sizing cannot compute risk)
 # ===========================================================================
 
+
 def test_missing_sl_no_position_opened():
     """Signal with no SL: engine uses default sizing, but verify no crash."""
     sig = _make_signal(SignalType.BUY, entry=2005, sl=None, tp=None)
@@ -473,6 +536,7 @@ def test_missing_sl_no_position_opened():
 # ===========================================================================
 # Test 19: Engine uses strict_mtf=True by default when set
 # ===========================================================================
+
 
 def test_strict_mtf_true_blocks_without_cursor():
     """strict_mtf=True with no MTF cursor raises StrictMTFViolation."""
@@ -489,6 +553,7 @@ def test_strict_mtf_true_blocks_without_cursor():
 # Test 20: Static MTF fallback cannot activate in strict mode
 # ===========================================================================
 
+
 def test_strict_mtf_no_static_fallback():
     """strict_mtf=True blocks run() even when data is loaded — no fallback."""
     config = BacktestConfig(initial_capital=10000, strict_mtf=True)
@@ -504,6 +569,7 @@ def test_strict_mtf_no_static_fallback():
 # ===========================================================================
 # Test 21: Same seed + same data = identical results
 # ===========================================================================
+
 
 def test_same_inputs_same_results():
     """Two runs with same data must produce identical trade lists."""
@@ -525,6 +591,7 @@ def test_same_inputs_same_results():
 # Test 22: Full suite passes from clean process
 # ===========================================================================
 
+
 def test_engine_runs_clean_process():
     """Engine backtest completes cleanly with no open handles or leaks."""
     sig = _make_signal(SignalType.BUY, entry=2005, sl=2000, tp=2015)
@@ -544,6 +611,7 @@ def test_engine_runs_clean_process():
 # Test 23: No MT5 order_send import/call in backtest path
 # ===========================================================================
 
+
 def test_no_mt5_imports_in_engine():
     """Engine module must not import mt5 or MetaTrader5."""
     src = _engine_src()
@@ -561,6 +629,7 @@ def test_no_mt5_imports_in_engine():
 # Test 24: No external repo import in canonical backtest path
 # ===========================================================================
 
+
 def test_no_external_repo_imports():
     """Engine must not import from external repos (mt5, external_vendors, etc.)."""
     src = _engine_src()
@@ -569,12 +638,8 @@ def test_no_external_repo_imports():
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom) and node.module:
             for b in banned:
-                assert b not in node.module.lower(), (
-                    f"Forbidden import '{node.module}': L{node.lineno}"
-                )
+                assert b not in node.module.lower(), f"Forbidden import '{node.module}': L{node.lineno}"
         if isinstance(node, ast.Import):
             for alias in node.names:
                 for b in banned:
-                    assert b not in alias.name.lower(), (
-                        f"Forbidden import '{alias.name}': L{node.lineno}"
-                    )
+                    assert b not in alias.name.lower(), f"Forbidden import '{alias.name}': L{node.lineno}"

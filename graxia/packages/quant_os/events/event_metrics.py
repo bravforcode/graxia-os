@@ -1,6 +1,7 @@
 """Phase BE-P3 — Event metrics and logging hooks."""
+
 import json
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -19,12 +20,14 @@ class EventMetrics:
     def record_block(self, event_name: str, reason: str, duration_ms: float = 0) -> None:
         self._events_blocked += 1
         self._block_durations_ms.append(duration_ms)
-        self._gate_transitions.append({
-            "timestamp": datetime.now(UTC).isoformat(),
-            "event": event_name,
-            "reason": reason,
-            "duration_ms": duration_ms,
-        })
+        self._gate_transitions.append(
+            {
+                "timestamp": datetime.now(UTC).isoformat(),
+                "event": event_name,
+                "reason": reason,
+                "duration_ms": duration_ms,
+            }
+        )
 
     def get_summary(self) -> dict:
         durations = self._block_durations_ms

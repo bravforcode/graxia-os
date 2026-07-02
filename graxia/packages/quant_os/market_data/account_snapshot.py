@@ -8,7 +8,7 @@ No sensitive data (login, password, server details) is stored in artifacts.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 
 @dataclass(frozen=True)
@@ -19,6 +19,7 @@ class AccountSnapshot:
     Sensitive fields are masked before storage.
     Suitable for logging and audit trails.
     """
+
     snapshot_id: str
     captured_at_utc: datetime
     balance: float

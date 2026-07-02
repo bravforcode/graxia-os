@@ -10,13 +10,14 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Any
 
 
 @dataclass
 class SmokeReportEntry:
     """Single entry in the smoke report."""
+
     component: str
     status: str  # "OK" | "DEGRADED" | "FAILED"
     message: str
@@ -26,6 +27,7 @@ class SmokeReportEntry:
 @dataclass
 class SmokeReport:
     """Complete smoke test report."""
+
     report_id: str
     symbol: str
     generated_at_utc: datetime
@@ -173,7 +175,8 @@ class SmokeReportGenerator:
             total = getattr(state, "total_ticks_recorded", 0)
             if gaps > 0 or ooo > 0:
                 return SmokeReportEntry(
-                    "tick_recorder", "DEGRADED",
+                    "tick_recorder",
+                    "DEGRADED",
                     f"gaps={gaps}, out_of_order={ooo}, total={total}",
                 )
             return SmokeReportEntry("tick_recorder", "OK", f"ticks={total}, no issues")
@@ -198,7 +201,8 @@ class SmokeReportGenerator:
             balance = getattr(state, "balance", 0)
             equity = getattr(state, "equity", 0)
             return SmokeReportEntry(
-                "account", "OK",
+                "account",
+                "OK",
                 f"balance={balance:.2f}, equity={equity:.2f}",
             )
         except Exception as e:

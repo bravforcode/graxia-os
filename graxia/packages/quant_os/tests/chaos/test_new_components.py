@@ -14,11 +14,10 @@ from __future__ import annotations
 
 import asyncio
 import pickle
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 
 # ═══════════════════════════════════════════════════════════════════
 # CentaurTelegramAgent Chaos Tests
@@ -31,12 +30,14 @@ class TestCentaurTelegramChaos:
     @pytest.fixture
     def agent(self):
         from graxia.packages.quant_os.core.agents.centaur_telegram import CentaurTelegramAgent
+
         return CentaurTelegramAgent(token="test_token", chat_id="123")
 
     @pytest.fixture
     def signal_event(self):
-        from graxia.packages.quant_os.core.events import SignalEvent
         from graxia.packages.quant_os.core.enums import SignalType
+        from graxia.packages.quant_os.core.events import SignalEvent
+
         return SignalEvent(
             symbol="XAUUSD",
             signal_type=SignalType.BUY,
@@ -84,8 +85,8 @@ class TestCentaurTelegramChaos:
     @pytest.mark.asyncio
     async def test_observe_ignores_no_trade(self, agent):
         """Chaos: NO_TRADE signal should be silently dropped."""
-        from graxia.packages.quant_os.core.events import SignalEvent
         from graxia.packages.quant_os.core.enums import SignalType
+        from graxia.packages.quant_os.core.events import SignalEvent
 
         sig = SignalEvent(symbol="XAUUSD", signal_type=SignalType.NO_TRADE)
         agent.observe(sig)
@@ -104,8 +105,8 @@ class TestCentaurTelegramChaos:
     async def test_act_clears_pending_even_on_config_missing(self):
         """Chaos: no token/chat_id — should clear pending, not accumulate."""
         from graxia.packages.quant_os.core.agents.centaur_telegram import CentaurTelegramAgent
-        from graxia.packages.quant_os.core.events import SignalEvent
         from graxia.packages.quant_os.core.enums import SignalType
+        from graxia.packages.quant_os.core.events import SignalEvent
 
         agent = CentaurTelegramAgent(token="", chat_id="")
         sig = SignalEvent(symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.8)
@@ -196,6 +197,7 @@ class TestSentimentAgentChaos:
     @pytest.fixture
     def agent(self):
         from graxia.packages.quant_os.core.agents.sentiment_agent import SentimentAgent
+
         return SentimentAgent()
 
     @pytest.mark.asyncio
@@ -240,6 +242,7 @@ class TestCrossSectionalMomentumChaos:
     @pytest.fixture
     def strategy(self, tmp_path):
         from graxia.packages.quant_os.scripts.cross_sectional_momentum import CrossSectionalMomentum, MomentumConfig
+
         config = MomentumConfig(top_n=5, select_n=2, lookback_days=7)
         s = CrossSectionalMomentum(config)
         s._state_path = tmp_path / "state.json"
@@ -252,12 +255,14 @@ class TestCrossSectionalMomentumChaos:
     def test_should_rebalance_not_yet(self, strategy):
         """Chaos: just rebalanced — should not rebalance again."""
         from datetime import timedelta
+
         strategy._last_rebalance = datetime.now(UTC) - timedelta(days=1)
         assert strategy.should_rebalance() is False
 
     def test_should_rebalance_after_interval(self, strategy):
         """Chaos: enough time passed — should rebalance."""
         from datetime import timedelta
+
         strategy._last_rebalance = datetime.now(UTC) - timedelta(days=8)
         assert strategy.should_rebalance() is True
 
@@ -271,6 +276,7 @@ class TestCrossSectionalMomentumChaos:
     def test_calculate_rebalance_adds_new(self, strategy):
         """Chaos: new coins — should add positions."""
         from graxia.packages.quant_os.scripts.cross_sectional_momentum import CoinMomentum
+
         selected = [
             CoinMomentum(symbol="ETH/USDT", price_now=3000, price_lookback=2800, return_pct=7.1, volume_24h=5e6),
         ]
@@ -281,6 +287,7 @@ class TestCrossSectionalMomentumChaos:
     def test_calculate_rebalance_removes_old(self, strategy):
         """Chaos: old coins not in selection — should remove positions."""
         from graxia.packages.quant_os.scripts.cross_sectional_momentum import CoinMomentum
+
         strategy._positions = {"DOGE/USDT": {"entry_price": 0.1}}
         selected = [
             CoinMomentum(symbol="ETH/USDT", price_now=3000, price_lookback=2800, return_pct=7.1, volume_24h=5e6),
@@ -297,6 +304,7 @@ class TestCrossSectionalMomentumChaos:
 
         # Create new strategy instance
         from graxia.packages.quant_os.scripts.cross_sectional_momentum import CrossSectionalMomentum, MomentumConfig
+
         config = MomentumConfig()
         new_strategy = CrossSectionalMomentum(config)
         new_strategy._state_path = tmp_path / "state.json"
@@ -330,6 +338,7 @@ class TestAutoRetrainChaos:
         """Chaos: no champion file — should return None."""
         with patch("graxia.packages.quant_os.scripts.auto_retrain.CHAMPION_PATH", tmp_path / "nonexistent.pkl"):
             from graxia.packages.quant_os.scripts.auto_retrain import load_champion
+
             result = load_champion()
             assert result is None
 
@@ -340,6 +349,7 @@ class TestAutoRetrainChaos:
 
         with patch("graxia.packages.quant_os.scripts.auto_retrain.CHAMPION_PATH", corrupted):
             from graxia.packages.quant_os.scripts.auto_retrain import load_champion
+
             with pytest.raises(Exception):
                 load_champion()
 
@@ -352,6 +362,7 @@ class TestAutoRetrainChaos:
 
         with patch("graxia.packages.quant_os.scripts.auto_retrain.CHAMPION_PATH", tmp_path / "champion.pkl"):
             from graxia.packages.quant_os.scripts.auto_retrain import hot_swap
+
             result = hot_swap(challenger_data, challenger_metrics)
             assert result is True
 
@@ -370,6 +381,7 @@ class TestAutoRetrainChaos:
 
         with patch("graxia.packages.quant_os.scripts.auto_retrain.CHAMPION_PATH", champion_path):
             from graxia.packages.quant_os.scripts.auto_retrain import hot_swap
+
             with patch("graxia.packages.quant_os.scripts.auto_retrain.evaluate_model") as mock_eval:
                 mock_eval.return_value = MagicMock(deflated_sharpe=2.0, oos_max_drawdown=5.0)
                 result = hot_swap(challenger_data, challenger_metrics)
@@ -381,6 +393,7 @@ class TestAutoRetrainChaos:
 
         with patch("graxia.packages.quant_os.scripts.auto_retrain.RETRAIN_LOG", log_path):
             from graxia.packages.quant_os.scripts.auto_retrain import log_retrain
+
             log_retrain({"status": "test"})
             assert log_path.exists()
             content = log_path.read_text()
@@ -398,10 +411,10 @@ class TestEventBusChaos:
     @pytest.mark.asyncio
     async def test_centaur_agent_subscribes_to_signal_new(self):
         """Chaos: verify CentaurTelegramAgent can subscribe to EventBus."""
-        from graxia.packages.quant_os.core.event_bus import EventBus
         from graxia.packages.quant_os.core.agents.centaur_telegram import CentaurTelegramAgent
-        from graxia.packages.quant_os.core.events import SignalEvent
         from graxia.packages.quant_os.core.enums import SignalType
+        from graxia.packages.quant_os.core.event_bus import EventBus
+        from graxia.packages.quant_os.core.events import SignalEvent
 
         bus = EventBus()
         await bus.start()
@@ -423,8 +436,8 @@ class TestEventBusChaos:
     @pytest.mark.asyncio
     async def test_sentiment_agent_receives_news(self):
         """Chaos: verify SentimentAgent receives news events."""
-        from graxia.packages.quant_os.core.event_bus import EventBus
         from graxia.packages.quant_os.core.agents.sentiment_agent import SentimentAgent
+        from graxia.packages.quant_os.core.event_bus import EventBus
         from graxia.packages.quant_os.core.events import Event
 
         bus = EventBus()

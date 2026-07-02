@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Check that registry YAML is valid and entries have required fields."""
-import sys
+
 import os
+import sys
+
 import yaml
 
-REGISTRY_PATH = os.path.join(os.path.dirname(__file__), '..', 'registry', 'repositories_canonical.yml')
+REGISTRY_PATH = os.path.join(os.path.dirname(__file__), "..", "registry", "repositories_canonical.yml")
+
 
 def run_check():
     if not os.path.exists(REGISTRY_PATH):
@@ -18,7 +21,7 @@ def run_check():
         print("ERROR: registry must be a list")
         return 1
 
-    required_fields = ['name', 'tier', 'role', 'asset_class']
+    required_fields = ["name", "tier", "role", "asset_class"]
     issues = []
     for entry in data:
         for field in required_fields:
@@ -33,6 +36,7 @@ def run_check():
 
     print(f"Registry check: OK ({len(data)} entries)")
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(run_check())

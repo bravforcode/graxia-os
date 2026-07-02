@@ -12,8 +12,10 @@ Usage:  $env:PYTHONIOENCODING='utf-8'; python scripts/paper_trade_bot.py
 
 # Load .env before anything else
 try:
-    from dotenv import load_dotenv
     from pathlib import Path
+
+    from dotenv import load_dotenv
+
     load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 except ImportError:
     pass  # python-dotenv not installed; rely on shell env vars
@@ -23,7 +25,7 @@ import csv
 import pickle
 import sys
 import time
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -35,27 +37,36 @@ sys.path.insert(0, str(BASE))
 # --- GLOBALS ---
 SYMBOL = "XAUUSD"
 LOT_SIZE = 0.10
-B2_STOP_DOLLARS = 6.30        # B2 locked stop-loss (1× avg_win)
-MIN_CONFIDENCE = 0.85          # B2 locked confidence threshold
+B2_STOP_DOLLARS = 6.30  # B2 locked stop-loss (1× avg_win)
+MIN_CONFIDENCE = 0.85  # B2 locked confidence threshold
 CSV_PATH = BASE / "data" / "paper_trade_log.csv"
 SESSION_PATH = BASE / "data" / "paper_trade_session.json"
 HEARTBEAT_PATH = BASE / "data" / "heartbeat.txt"
 FEATURES_V2_DIR = BASE / "artifacts" / "features_v2"
 MODEL_DIRS = [
-    BASE / "artifacts" / "strategy_model", # strategy model
+    BASE / "artifacts" / "strategy_model",  # strategy model
     BASE / "ml" / "models",  # ML saved models
 ]
 
 HEADERS = [
-    "timestamp", "direction", "entry_price", "exit_price", "exit_reason",
-    "stop_filled_at", "intended_stop", "slippage", "pnl_gross", "pnl_net",
-    "event_flag", "notes",
+    "timestamp",
+    "direction",
+    "entry_price",
+    "exit_price",
+    "exit_reason",
+    "stop_filled_at",
+    "intended_stop",
+    "slippage",
+    "pnl_gross",
+    "pnl_net",
+    "event_flag",
+    "notes",
 ]
 
 
 def log(msg: str):
     ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
-    safe = msg.encode('utf-8', errors='replace').decode('utf-8', errors='replace')
+    safe = msg.encode("utf-8", errors="replace").decode("utf-8", errors="replace")
     try:
         print(f"[{ts}] {safe}")
     except UnicodeEncodeError:
@@ -67,6 +78,7 @@ def log(msg: str):
 # ============================================================
 def get_notifier():
     from core.telegram_notify import TelegramNotifier
+
     try:
         return TelegramNotifier()
     except RuntimeError as e:
@@ -92,6 +104,7 @@ _mt5_initialized = False
 def ensure_mt5():
     global _mt5_initialized
     import MetaTrader5 as mt5
+
     if not _mt5_initialized:
         initialized = mt5.initialize()
         if not initialized:
@@ -160,9 +173,9 @@ def load_best_model():
                 with open(path, "rb") as f:
                     raw = pickle.load(f)
                 # Models saved as {'model': XGBClassifier, 'feature_names': [...], ...}
-                if isinstance(raw, dict) and 'model' in raw:
-                    model = raw['model']
-                    feature_names = raw.get('feature_names', [])
+                if isinstance(raw, dict) and "model" in raw:
+                    model = raw["model"]
+                    feature_names = raw.get("feature_names", [])
                     log(f"Model loaded: {path.name} ({type(model).__name__}, {len(feature_names)} features)")
                     return model, feature_names
                 else:
@@ -180,19 +193,31 @@ def load_feature_template() -> tuple[pd.DataFrame | None, list[str]]:
         return None, []
     df = pd.read_parquet(path)
     exclude = {
-        "target", "target_return", "symbol", "freq",
-        "tb_label", "tb_bar_hit", "tb_side", "tb_ret",
-        "tb_k_upper", "tb_k_lower", "open", "high", "low", "close",
-        "volume", "tick_count",
+        "target",
+        "target_return",
+        "symbol",
+        "freq",
+        "tb_label",
+        "tb_bar_hit",
+        "tb_side",
+        "tb_ret",
+        "tb_k_upper",
+        "tb_k_lower",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "tick_count",
     }
-    feature_cols = [c for c in df.columns if c not in exclude
-                    and df[c].dtype in (np.float64, np.float32, np.int64, np.int32)]
+    feature_cols = [
+        c for c in df.columns if c not in exclude and df[c].dtype in (np.float64, np.float32, np.int64, np.int32)
+    ]
     log(f"Feature template: {len(df)} rows, {len(feature_cols)} features")
     return df, feature_cols
 
 
-def compute_features_live(live_df: pd.DataFrame, template_df: pd.DataFrame,
-                          feature_cols: list[str]) -> np.ndarray:
+def compute_features_live(live_df: pd.DataFrame, template_df: pd.DataFrame, feature_cols: list[str]) -> np.ndarray:
     """
     Compute ALL 40 features on live data matching training pipeline exactly.
     Uses only OHLCV data from MT5 bars.
@@ -204,11 +229,14 @@ def compute_features_live(live_df: pd.DataFrame, template_df: pd.DataFrame,
         df[f"ret_{p}bar"] = df["close"].pct_change(p)
 
     # --- ATR ---
-    tr = pd.concat([
-        df["high"] - df["low"],
-        (df["high"] - df["close"].shift()).abs(),
-        (df["low"] - df["close"].shift()).abs(),
-    ], axis=1).max(axis=1)
+    tr = pd.concat(
+        [
+            df["high"] - df["low"],
+            (df["high"] - df["close"].shift()).abs(),
+            (df["low"] - df["close"].shift()).abs(),
+        ],
+        axis=1,
+    ).max(axis=1)
     for w in [7, 14, 21]:
         df[f"atr_{w}"] = tr.rolling(w).mean()
 
@@ -283,11 +311,11 @@ def compute_features_live(live_df: pd.DataFrame, template_df: pd.DataFrame,
     # Hammer: small body at top, long lower shadow
     df["is_hammer"] = ((df["lower_shadow"] > 0.6) & (body / candle_range < 0.3)).astype(float)
     # Bullish engulfing
-    prev_bearish = (df["open"].shift(1) > df["close"].shift(1))
-    curr_bullish = (df["close"] > df["open"])
-    df["is_bull_engulf"] = (prev_bearish & curr_bullish &
-                            (df["close"] > df["open"].shift(1)) &
-                            (df["open"] < df["close"].shift(1))).astype(float)
+    prev_bearish = df["open"].shift(1) > df["close"].shift(1)
+    curr_bullish = df["close"] > df["open"]
+    df["is_bull_engulf"] = (
+        prev_bearish & curr_bullish & (df["close"] > df["open"].shift(1)) & (df["open"] < df["close"].shift(1))
+    ).astype(float)
 
     # --- Session flags (UTC) ---
     try:
@@ -342,9 +370,14 @@ def retrain_walk_forward():
     y_test = test_data["target"].values.astype(int)
 
     model = xgb.XGBClassifier(
-        n_estimators=100, max_depth=5, learning_rate=0.1,
-        subsample=0.8, colsample_bytree=0.8,
-        random_state=42, eval_metric="logloss", verbosity=0,
+        n_estimators=100,
+        max_depth=5,
+        learning_rate=0.1,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        random_state=42,
+        eval_metric="logloss",
+        verbosity=0,
     )
     model.fit(X_train, y_train)
     train_acc = (model.predict(X_train) == y_train).mean()
@@ -389,8 +422,13 @@ def place_trade(mt5, direction: int, confidence: float) -> dict | None:
     if result and result.retcode == mt5.TRADE_RETCODE_DONE:
         dir_label = "LONG" if direction == 1 else "SHORT"
         log(f"🟢 {dir_label} @ {price:.2f} SL={sl:.2f} conf={confidence:.3f} ticket={result.order}")
-        return {"ticket": result.order, "direction": "long" if direction == 1 else "short",
-                "entry": price, "sl": sl, "confidence": confidence}
+        return {
+            "ticket": result.order,
+            "direction": "long" if direction == 1 else "short",
+            "entry": price,
+            "sl": sl,
+            "confidence": confidence,
+        }
     else:
         err = result.comment if result else "no response"
         log(f"❌ TRADE FAILED: {err}")
@@ -402,8 +440,14 @@ def place_trade(mt5, direction: int, confidence: float) -> dict | None:
 # ============================================================
 # LOGGING
 # ============================================================
-def log_trade(mt5, entry: dict | None = None, close_info: dict | None = None,
-              pnl_gross: float = 0.0, reason: str = "natural", event: str = "none"):
+def log_trade(
+    mt5,
+    entry: dict | None = None,
+    close_info: dict | None = None,
+    pnl_gross: float = 0.0,
+    reason: str = "natural",
+    event: str = "none",
+):
     """Append trade record to paper_trade_log.csv."""
     CSV_PATH.parent.mkdir(parents=True, exist_ok=True)
     if not CSV_PATH.exists():
@@ -412,22 +456,35 @@ def log_trade(mt5, entry: dict | None = None, close_info: dict | None = None,
 
     now_ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M")
     if entry:
-        row = {"timestamp": now_ts, "direction": entry["direction"],
-               "entry_price": f"{entry['entry']:.2f}", "exit_price": "",
-               "exit_reason": "", "stop_filled_at": "",
-               "intended_stop": str(B2_STOP_DOLLARS), "slippage": "0.0",
-               "pnl_gross": "", "pnl_net": "", "event_flag": event,
-               "notes": f"Open conf={entry['confidence']:.2f} ticket={entry['ticket']}"}
+        row = {
+            "timestamp": now_ts,
+            "direction": entry["direction"],
+            "entry_price": f"{entry['entry']:.2f}",
+            "exit_price": "",
+            "exit_reason": "",
+            "stop_filled_at": "",
+            "intended_stop": str(B2_STOP_DOLLARS),
+            "slippage": "0.0",
+            "pnl_gross": "",
+            "pnl_net": "",
+            "event_flag": event,
+            "notes": f"Open conf={entry['confidence']:.2f} ticket={entry['ticket']}",
+        }
     elif close_info:
-        row = {"timestamp": now_ts, "direction": close_info.get("direction", ""),
-               "entry_price": f"{close_info.get('entry_price', 0):.2f}",
-               "exit_price": f"{close_info.get('exit_price', 0):.2f}",
-               "exit_reason": reason,
-               "stop_filled_at": f"{close_info.get('stop_filled_at', 0):.2f}",
-               "intended_stop": str(B2_STOP_DOLLARS),
-               "slippage": f"{close_info.get('slippage', 0.0):.1f}",
-               "pnl_gross": f"{pnl_gross:.2f}", "pnl_net": f"{pnl_gross:.2f}",
-               "event_flag": event, "notes": close_info.get("notes", "")}
+        row = {
+            "timestamp": now_ts,
+            "direction": close_info.get("direction", ""),
+            "entry_price": f"{close_info.get('entry_price', 0):.2f}",
+            "exit_price": f"{close_info.get('exit_price', 0):.2f}",
+            "exit_reason": reason,
+            "stop_filled_at": f"{close_info.get('stop_filled_at', 0):.2f}",
+            "intended_stop": str(B2_STOP_DOLLARS),
+            "slippage": f"{close_info.get('slippage', 0.0):.1f}",
+            "pnl_gross": f"{pnl_gross:.2f}",
+            "pnl_net": f"{pnl_gross:.2f}",
+            "event_flag": event,
+            "notes": close_info.get("notes", ""),
+        }
     else:
         return
 
@@ -439,8 +496,7 @@ def log_trade(mt5, entry: dict | None = None, close_info: dict | None = None,
 # ============================================================
 # MAIN LOOP
 # ============================================================
-def main_loop(model, feature_cols: list[str], template_df: pd.DataFrame,
-              interval_seconds: int = 60):
+def main_loop(model, feature_cols: list[str], template_df: pd.DataFrame, interval_seconds: int = 60):
     """Main trading loop with REAL-TIME price streaming via Telegram."""
     mt5 = ensure_mt5()
     daily_trades = 0
@@ -464,7 +520,9 @@ def main_loop(model, feature_cols: list[str], template_df: pd.DataFrame,
             if date_today != current_date:
                 if daily_trades > 0 or daily_pnl != 0:
                     tg(rf"📊 *Day End* {current_date}\nTrades: {daily_trades} | PnL: \${daily_pnl:.2f}")
-                current_date = date_today; daily_trades = 0; daily_pnl = 0.0
+                current_date = date_today
+                daily_trades = 0
+                daily_pnl = 0.0
 
             # Auto-retrain every day at 6:00 UTC
             if last_retrain_date != date_today and hour_utc == 6:
@@ -484,23 +542,28 @@ def main_loop(model, feature_cols: list[str], template_df: pd.DataFrame,
 
             # Get live data
             tick = mt5.symbol_info_tick(SYMBOL)
-            bid = tick.bid; ask = tick.ask
+            bid = tick.bid
+            ask = tick.ask
             spread = ask - bid
 
             # Startup msg once per session
             if not startup_msg_sent:
                 session_str = "EU" if 8 <= hour_utc < 17 else "OUT"
-                tg(rf"🤖 *Bot Online* | {SYMBOL}\n"
-                   rf"Bid: `{bid:.2f}` | Ask: `{ask:.2f}` | Spread: `\${spread:.2f}`\n"
-                   rf"Session: `{session_str}` | Stop: `\${B2_STOP_DOLLARS}` | Conf≥`{MIN_CONFIDENCE}`\n"
-                   rf"Lot: `{LOT_SIZE}` | Interval: `{interval_seconds}s` | EU only")
-                last_sent_bid = bid; last_sent_time = time.time()
+                tg(
+                    rf"🤖 *Bot Online* | {SYMBOL}\n"
+                    rf"Bid: `{bid:.2f}` | Ask: `{ask:.2f}` | Spread: `\${spread:.2f}`\n"
+                    rf"Session: `{session_str}` | Stop: `\${B2_STOP_DOLLARS}` | Conf≥`{MIN_CONFIDENCE}`\n"
+                    rf"Lot: `{LOT_SIZE}` | Interval: `{interval_seconds}s` | EU only"
+                )
+                last_sent_bid = bid
+                last_sent_time = time.time()
                 startup_msg_sent = True
 
             pos = get_open_position(mt5)
             live_df = get_live_data(mt5, 200)
             if live_df is None or len(live_df) < 50:
-                time.sleep(30); continue
+                time.sleep(30)
+                continue
 
             # === REAL-TIME PRICE UPDATE TO TELEGRAM ===
             bid_delta = bid - last_sent_bid
@@ -530,35 +593,52 @@ def main_loop(model, feature_cols: list[str], template_df: pd.DataFrame,
                     pos_str = f"\n📌 *{pos['direction'].upper()}* PnL: `${pnl:+.2f}`"
 
                 elapsed_str = f"{int(elapsed//60)}m" if elapsed >= 60 else f"{int(elapsed)}s"
-                tg(rf"{arrow} XAUUSD `{bid:.2f}` Δ{delta_str} (spread \${spread:.2f}){conf_str}{pos_str}\n"
-                   rf"Day: `${daily_pnl:+.2f}` | {elapsed_str} since last")
+                tg(
+                    rf"{arrow} XAUUSD `{bid:.2f}` Δ{delta_str} (spread \${spread:.2f}){conf_str}{pos_str}\n"
+                    rf"Day: `${daily_pnl:+.2f}` | {elapsed_str} since last"
+                )
 
-                last_sent_bid = bid; last_sent_time = time.time()
+                last_sent_bid = bid
+                last_sent_time = time.time()
 
             # If position open → monitor stop
             if pos:
                 current_price = tick.bid if pos["direction"] == "long" else tick.ask
                 pnl = pos.get("profit", 0)
                 if pos["sl"]:
-                    if (pos["direction"] == "long" and current_price <= pos["sl"]) or \
-                       (pos["direction"] == "short" and current_price >= pos["sl"]):
+                    if (pos["direction"] == "long" and current_price <= pos["sl"]) or (
+                        pos["direction"] == "short" and current_price >= pos["sl"]
+                    ):
                         log(f"STOP HIT: {pos['direction']} @ {current_price:.2f}")
-                        tg(f"❤️ *STOP HIT* | {pos['direction']}\n"
-                           f"Entry: `{pos['open_price']:.2f}` | Exit: `{current_price:.2f}`\n"
-                           f"PnL: `${pnl:+.2f}` | Day PnL: `${daily_pnl + pnl:+.2f}`")
-                        log_trade(mt5, close_info={
-                            "direction": pos["direction"], "entry_price": pos["open_price"],
-                            "exit_price": pos["sl"], "stop_filled_at": pos["sl"],
-                            "slippage": 0.0, "notes": f"B2 stop ticket={pos['ticket']}"
-                        }, pnl_gross=pnl, reason="stop_hit")
-                        daily_trades += 1; daily_pnl += pnl
-                time.sleep(60); continue
+                        tg(
+                            f"❤️ *STOP HIT* | {pos['direction']}\n"
+                            f"Entry: `{pos['open_price']:.2f}` | Exit: `{current_price:.2f}`\n"
+                            f"PnL: `${pnl:+.2f}` | Day PnL: `${daily_pnl + pnl:+.2f}`"
+                        )
+                        log_trade(
+                            mt5,
+                            close_info={
+                                "direction": pos["direction"],
+                                "entry_price": pos["open_price"],
+                                "exit_price": pos["sl"],
+                                "stop_filled_at": pos["sl"],
+                                "slippage": 0.0,
+                                "notes": f"B2 stop ticket={pos['ticket']}",
+                            },
+                            pnl_gross=pnl,
+                            reason="stop_hit",
+                        )
+                        daily_trades += 1
+                        daily_pnl += pnl
+                time.sleep(60)
+                continue
 
             # Generate signal
             features = compute_features_live(live_df, template_df, feature_cols)
             if features.shape[1] != len(feature_cols):
                 log(f"Feature shape mismatch: {features.shape[1]} vs {len(feature_cols)}")
-                time.sleep(60); continue
+                time.sleep(60)
+                continue
 
             proba = model.predict_proba(features)
             confidence = float(max(proba[0]))
@@ -571,15 +651,19 @@ def main_loop(model, feature_cols: list[str], template_df: pd.DataFrame,
                 if result:
                     log_trade(mt5, entry=result)
                     dir_emoji = "🟢" if direction == 1 else "🔴"
-                    tg(rf"{dir_emoji} *TRADE OPEN* {'LONG' if direction == 1 else 'SHORT'}\n"
-                       rf"Entry: `{entry_price:.2f}` | SL: `{result['sl']:.2f}`\n"
-                       rf"Conf: `{confidence:.3f}` | Risk: `\${B2_STOP_DOLLARS}`")
+                    tg(
+                        rf"{dir_emoji} *TRADE OPEN* {'LONG' if direction == 1 else 'SHORT'}\n"
+                        rf"Entry: `{entry_price:.2f}` | SL: `{result['sl']:.2f}`\n"
+                        rf"Conf: `{confidence:.3f}` | Risk: `\${B2_STOP_DOLLARS}`"
+                    )
             else:
                 log(f"No signal: max conf={confidence:.3f} < {MIN_CONFIDENCE}")
 
         except Exception as e:
             log(f"LOOP ERROR: {e}")
-            import traceback; traceback.print_exc()
+            import traceback
+
+            traceback.print_exc()
 
         time.sleep(interval_seconds)
 

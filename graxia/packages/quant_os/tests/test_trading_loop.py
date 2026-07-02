@@ -11,6 +11,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from graxia.packages.quant_os.core.enums import SignalType, TradingMode
+from graxia.packages.quant_os.core.event_bus import EventBus
 from graxia.packages.quant_os.core.events import (
     FillEvent,
     KillSwitchEvent,
@@ -18,21 +19,20 @@ from graxia.packages.quant_os.core.events import (
     SignalEvent,
     TradeClosedEvent,
 )
-from graxia.packages.quant_os.core.event_bus import EventBus
+from graxia.packages.quant_os.core.position_manager import Position, PositionManager
 from graxia.packages.quant_os.core.trading_loop import (
     PaperExecutor,
     TradingLoop,
     _symbol_to_asset_class,
 )
-from graxia.packages.quant_os.core.position_manager import Position, PositionManager
-from graxia.packages.quant_os.execution.order_state_machine import (
-    OrderStateMachine,
-    TRANSITIONS,
-)
 from graxia.packages.quant_os.execution.adapters.base import OrderStatus
-
+from graxia.packages.quant_os.execution.order_state_machine import (
+    TRANSITIONS,
+    OrderStateMachine,
+)
 
 # ── Helpers ───────────────────────────────────────────────────────────────
+
 
 def _make_signal(
     symbol: str = "XAUUSD",
@@ -59,6 +59,7 @@ def _make_signal(
 
 # ── Symbol → Asset Class ─────────────────────────────────────────────────
 
+
 class TestSymbolAssetClass:
     def test_xauusd_is_metals(self):
         assert _symbol_to_asset_class("XAUUSD") == "metals"
@@ -77,6 +78,7 @@ class TestSymbolAssetClass:
 
 
 # ── Paper Executor ────────────────────────────────────────────────────────
+
 
 class TestPaperExecutor:
     def test_buy_fills_above_entry(self):
@@ -99,6 +101,7 @@ class TestPaperExecutor:
 
 
 # ── Trading Loop ──────────────────────────────────────────────────────────
+
 
 class TestTradingLoop:
     def test_observes_final_signal(self):
@@ -249,6 +252,7 @@ class TestTradingLoop:
 
 # ── Position Manager ──────────────────────────────────────────────────────
 
+
 class TestPositionManager:
     def test_on_fill_opens_position(self):
         bus = EventBus()
@@ -275,12 +279,18 @@ class TestPositionManager:
         with tempfile.TemporaryDirectory() as tmp:
             pm = PositionManager(bus=bus, data_dir=Path(tmp))
             fill1 = FillEvent(
-                symbol="XAUUSD", side="BUY", fill_price=2400.0,
-                fill_quantity=0.1, strategy_id="test",
+                symbol="XAUUSD",
+                side="BUY",
+                fill_price=2400.0,
+                fill_quantity=0.1,
+                strategy_id="test",
             )
             fill2 = FillEvent(
-                symbol="XAUUSD", side="BUY", fill_price=2410.0,
-                fill_quantity=0.1, strategy_id="test",
+                symbol="XAUUSD",
+                side="BUY",
+                fill_price=2410.0,
+                fill_quantity=0.1,
+                strategy_id="test",
             )
             pm.on_fill(fill1)
             pm.on_fill(fill2)
@@ -294,16 +304,24 @@ class TestPositionManager:
         with tempfile.TemporaryDirectory() as tmp:
             pm = PositionManager(bus=bus, data_dir=Path(tmp))
             fill = FillEvent(
-                symbol="XAUUSD", side="BUY", fill_price=2400.0,
-                fill_quantity=0.1, strategy_id="test",
+                symbol="XAUUSD",
+                side="BUY",
+                fill_price=2400.0,
+                fill_quantity=0.1,
+                strategy_id="test",
             )
             pm.on_fill(fill)
             assert len(pm.get_positions()) == 1
 
             close = TradeClosedEvent(
-                symbol="XAUUSD", side="BUY", entry_price=2400.0,
-                exit_price=2430.0, quantity=0.1, pnl=30.0,
-                close_reason="TAKE_PROFIT", strategy_id="test",
+                symbol="XAUUSD",
+                side="BUY",
+                entry_price=2400.0,
+                exit_price=2430.0,
+                quantity=0.1,
+                pnl=30.0,
+                close_reason="TAKE_PROFIT",
+                strategy_id="test",
             )
             pm.on_close(close)
             assert len(pm.get_positions()) == 0
@@ -322,8 +340,11 @@ class TestPositionManager:
         with tempfile.TemporaryDirectory() as tmp:
             pm = PositionManager(data_dir=Path(tmp))
             fill = FillEvent(
-                symbol="XAUUSD", side="BUY", fill_price=2400.0,
-                fill_quantity=0.1, strategy_id="test",
+                symbol="XAUUSD",
+                side="BUY",
+                fill_price=2400.0,
+                fill_quantity=0.1,
+                strategy_id="test",
             )
             pm.on_fill(fill)
 
@@ -335,12 +356,18 @@ class TestPositionManager:
         with tempfile.TemporaryDirectory() as tmp:
             pm = PositionManager(data_dir=Path(tmp))
             fill1 = FillEvent(
-                symbol="XAUUSD", side="BUY", fill_price=2400.0,
-                fill_quantity=0.1, strategy_id="test",
+                symbol="XAUUSD",
+                side="BUY",
+                fill_price=2400.0,
+                fill_quantity=0.1,
+                strategy_id="test",
             )
             fill2 = FillEvent(
-                symbol="EURUSD", side="BUY", fill_price=1.1000,
-                fill_quantity=10000, strategy_id="test",
+                symbol="EURUSD",
+                side="BUY",
+                fill_price=1.1000,
+                fill_quantity=10000,
+                strategy_id="test",
             )
             pm.on_fill(fill1)
             pm.on_fill(fill2)
@@ -352,8 +379,11 @@ class TestPositionManager:
         with tempfile.TemporaryDirectory() as tmp:
             pm = PositionManager(data_dir=Path(tmp))
             fill = FillEvent(
-                symbol="XAUUSD", side="BUY", fill_price=2400.0,
-                fill_quantity=0.1, strategy_id="test",
+                symbol="XAUUSD",
+                side="BUY",
+                fill_price=2400.0,
+                fill_quantity=0.1,
+                strategy_id="test",
             )
             pm.on_fill(fill)
 
@@ -366,8 +396,11 @@ class TestPositionManager:
             tmp_path = Path(tmp)
             pm1 = PositionManager(data_dir=tmp_path)
             fill = FillEvent(
-                symbol="XAUUSD", side="BUY", fill_price=2400.0,
-                fill_quantity=0.1, strategy_id="test",
+                symbol="XAUUSD",
+                side="BUY",
+                fill_price=2400.0,
+                fill_quantity=0.1,
+                strategy_id="test",
             )
             pm1.on_fill(fill)
 
@@ -377,6 +410,7 @@ class TestPositionManager:
 
 
 # ── Order State Machine Integration ───────────────────────────────────────
+
 
 class TestOrderStateMachineIntegration:
     def test_valid_transitions(self):

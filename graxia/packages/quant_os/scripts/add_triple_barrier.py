@@ -146,7 +146,10 @@ def main():
     # Compute triple-barrier labels (using ATR in price units)
     log("Computing triple-barrier labels...")
     tb_labels = compute_triple_barrier(
-        close_arr, high_arr, low_arr, atr_price,
+        close_arr,
+        high_arr,
+        low_arr,
+        atr_price,
         tp_mult=args.tp_mult,
         sl_mult=args.sl_mult,
         max_bars=args.max_bars,
@@ -165,7 +168,7 @@ def main():
 
     # Drop last max_bars rows (incomplete labels)
     if args.max_bars > 0:
-        df = df.iloc[:-args.max_bars]
+        df = df.iloc[: -args.max_bars]
 
     # Save
     log(f"Saving to {args.output}...")

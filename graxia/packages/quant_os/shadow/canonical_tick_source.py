@@ -3,22 +3,23 @@
 Uses copy_ticks_range with UTC-aware input only.
 No symbol_info_tick.time, no MT5 bar timestamps, no copy_ticks_from.
 """
+
 import hashlib
 import json
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timedelta, UTC
-from typing import Optional
+from dataclasses import asdict, dataclass, field
+from datetime import UTC, datetime, timedelta
 
+from graxia.packages.quant_os.shadow.canonical_bar_builder import CanonicalBarBuilder
 from graxia.packages.quant_os.shadow.canonical_time_authority import CanonicalTimeAuthority
-from graxia.packages.quant_os.shadow.tick_window_fetcher import TickWindowFetcher
 from graxia.packages.quant_os.shadow.tick_deduplicator import TickDeduplicator
 from graxia.packages.quant_os.shadow.tick_watermark import TickWatermark
-from graxia.packages.quant_os.shadow.canonical_bar_builder import CanonicalBarBuilder
+from graxia.packages.quant_os.shadow.tick_window_fetcher import TickWindowFetcher
 
 
 @dataclass
 class CanonicalTickPolicy:
     """Configuration for canonical tick source."""
+
     query_interval_seconds: int = 60
     trailing_overlap_seconds: int = 300
     safety_lag_seconds: int = 2
@@ -33,6 +34,7 @@ class CanonicalTickPolicy:
 @dataclass
 class CanonicalTickBatch:
     """Result of one canonical tick fetch cycle."""
+
     trusted_system_utc: str = ""
     request_from_utc: str = ""
     request_to_utc: str = ""
@@ -75,16 +77,14 @@ class CanonicalTickSource:
         self,
         mt5_connection,
         symbol: str,
-        policy: Optional[CanonicalTickPolicy] = None,
+        policy: CanonicalTickPolicy | None = None,
     ):
         self._symbol = symbol
         self._policy = policy or CanonicalTickPolicy()
         self._time_auth = CanonicalTimeAuthority()
         self._fetcher = TickWindowFetcher(mt5_connection)
         self._dedup = TickDeduplicator()
-        self._watermark = TickWatermark(
-            overlap_seconds=self._policy.trailing_overlap_seconds
-        )
+        self._watermark = TickWatermark(overlap_seconds=self._policy.trailing_overlap_seconds)
         self._bar_builder = CanonicalBarBuilder(
             symbol=symbol,
             bar_finalization_delay_seconds=self._policy.bar_finalization_delay_seconds,
@@ -104,19 +104,13 @@ class CanonicalTickSource:
         )
 
         # Calculate query window
-        q_from = self._watermark.query_start(
-            system_utc, self._policy.safety_lag_seconds
-        )
-        q_to = self._watermark.query_end(
-            system_utc, self._policy.safety_lag_seconds
-        )
+        q_from = self._watermark.query_start(system_utc, self._policy.safety_lag_seconds)
+        q_to = self._watermark.query_end(system_utc, self._policy.safety_lag_seconds)
         batch.request_from_utc = q_from.isoformat()
         batch.request_to_utc = q_to.isoformat()
 
         # Fetch ticks (UTC-aware only)
-        fetch_result = self._fetcher.fetch_ticks(
-            self._symbol, q_from, q_to
-        )
+        fetch_result = self._fetcher.fetch_ticks(self._symbol, q_from, q_to)
         batch.request_window_hash = fetch_result["request_window_hash"]
 
         if fetch_result["error"]:
@@ -136,9 +130,7 @@ class CanonicalTickSource:
         if self._policy.reject_if_tick_outside_requested_window:
             if fetch_result["outside_count"] > 0:
                 batch.outside_window_tick_count = fetch_result["outside_count"]
-                batch.rejected_reason = (
-                    f"TICK_OUTSIDE_WINDOW: {fetch_result['outside_count']} ticks"
-                )
+                batch.rejected_reason = f"TICK_OUTSIDE_WINDOW: {fetch_result['outside_count']} ticks"
                 batch.verdict = "REJECTED_OUTSIDE_WINDOW"
                 return batch
 
@@ -168,20 +160,14 @@ class CanonicalTickSource:
 
         # Compute batch hash
         tick_times = [t["time"] for t in unique_ticks]
-        batch.batch_hash = hashlib.sha256(
-            json.dumps(tick_times, sort_keys=True).encode()
-        ).hexdigest()[:16]
+        batch.batch_hash = hashlib.sha256(json.dumps(tick_times, sort_keys=True).encode()).hexdigest()[:16]
 
         # Set metadata
         if unique_ticks:
             first = unique_ticks[0]
             last = unique_ticks[-1]
-            batch.first_tick_utc = datetime.fromtimestamp(
-                first["time"], tz=UTC
-            ).isoformat()
-            batch.last_tick_utc = datetime.fromtimestamp(
-                last["time"], tz=UTC
-            ).isoformat()
+            batch.first_tick_utc = datetime.fromtimestamp(first["time"], tz=UTC).isoformat()
+            batch.last_tick_utc = datetime.fromtimestamp(last["time"], tz=UTC).isoformat()
 
         batch.canonical_data_age_ms = self._watermark.data_age_ms(system_utc)
         batch.canonical_ticks = unique_ticks
@@ -198,7 +184,7 @@ class CanonicalTickSource:
         return [b.to_dict() for b in self._bar_builder.get_finalized_h1_bars(count)]
 
     @property
-    def watermark(self) -> Optional[datetime]:
+    def watermark(self) -> datetime | None:
         return self._watermark.watermark
 
     @property

@@ -1,10 +1,9 @@
 """Tests for Quant OS core module"""
 
-
-from graxia.packages.quant_os.core.golden_rules import GOLDEN_RULES, validate_golden_rules
-from graxia.packages.quant_os.core.enums import OrderStatus, TradingMode
 from graxia.packages.quant_os.core.config import QuantConfig
-from graxia.packages.quant_os.core.exceptions import RiskViolationError, DuplicateOrderError
+from graxia.packages.quant_os.core.enums import OrderStatus, TradingMode
+from graxia.packages.quant_os.core.exceptions import DuplicateOrderError, RiskViolationError
+from graxia.packages.quant_os.core.golden_rules import GOLDEN_RULES, validate_golden_rules
 
 
 class TestGoldenRules:

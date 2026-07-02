@@ -6,12 +6,12 @@ Stability gap < 0.3 = robust strategy.
 """
 
 from dataclasses import dataclass
-from typing import List, Dict
 
 
 @dataclass
 class StabilityResult:
     """Walk-forward stability result"""
+
     stability_gap: float  # IS/OS performance gap (0 = perfect, 1 = terrible)
     is_performance: float
     os_performance: float
@@ -38,8 +38,8 @@ class WalkForwardStability:
 
     def calculate(
         self,
-        is_results: List[Dict],
-        os_results: List[Dict],
+        is_results: list[dict],
+        os_results: list[dict],
     ) -> StabilityResult:
         """
         Calculate stability from walk-forward results.
@@ -96,7 +96,7 @@ class WalkForwardStability:
             passed=is_sharpe > 0 and stability_gap < self.max_gap and os_sharpe > self.min_os_sharpe,
         )
 
-    def _avg_metric(self, results: List[Dict], metric: str) -> float:
+    def _avg_metric(self, results: list[dict], metric: str) -> float:
         """Calculate average metric"""
         values = [r.get(metric, 0) for r in results if metric in r]
         return sum(values) / len(values) if values else 0

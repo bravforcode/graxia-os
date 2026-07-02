@@ -19,6 +19,12 @@ import logging
 import time
 from typing import Any
 
+from ..execution.adapters.base import BrokerAdapter
+from ..execution.adapters.mt5 import MT5Adapter
+from ..execution.oms import OMS
+from .agents.portfolio_manager import PortfolioManagerAgent
+from .agents.risk_auditor import RiskAuditorAgent
+from .config import QuantConfig
 from .event_bus import EventBus
 from .events import (
     FillEvent,
@@ -26,14 +32,8 @@ from .events import (
     SignalEvent,
     TradeClosedEvent,
 )
-from .trading_loop import TradingLoop, PaperExecutor
 from .position_manager import PositionManager
-from .config import QuantConfig
-from .agents.risk_auditor import RiskAuditorAgent
-from .agents.portfolio_manager import PortfolioManagerAgent
-from ..execution.oms import OMS
-from ..execution.adapters.base import BrokerAdapter
-from ..execution.adapters.mt5 import MT5Adapter
+from .trading_loop import PaperExecutor, TradingLoop
 
 logger = logging.getLogger(__name__)
 

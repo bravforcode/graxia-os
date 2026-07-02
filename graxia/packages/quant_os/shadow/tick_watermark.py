@@ -2,8 +2,8 @@
 
 Prevents re-processing of old ticks and ensures monotonic progress.
 """
+
 from datetime import datetime
-from typing import Optional
 
 
 class TickWatermark:
@@ -15,7 +15,7 @@ class TickWatermark:
 
     def __init__(self, overlap_seconds: int = 300):
         self._overlap_seconds = overlap_seconds
-        self._watermark: Optional[datetime] = None
+        self._watermark: datetime | None = None
         self._tick_count: int = 0
 
     def update(self, tick_time_utc: datetime) -> None:
@@ -31,15 +31,17 @@ class TickWatermark:
         else:
             base = system_utc
         from datetime import timedelta
+
         return base - timedelta(seconds=self._overlap_seconds)
 
     def query_end(self, system_utc: datetime, safety_lag_seconds: int = 2) -> datetime:
         """Calculate query end: system_utc - safety_lag."""
         from datetime import timedelta
+
         return system_utc - timedelta(seconds=safety_lag_seconds)
 
     @property
-    def watermark(self) -> Optional[datetime]:
+    def watermark(self) -> datetime | None:
         return self._watermark
 
     @property

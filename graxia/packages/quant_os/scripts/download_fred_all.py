@@ -8,13 +8,13 @@ Usage:
     python scripts/download_fred_all.py
 """
 
+import csv
+import json
 import os
 import sys
-import csv
-import urllib.request
-import urllib.error
-import json
 import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 # ── Configuration ──────────────────────────────────────────────────────────
@@ -28,20 +28,38 @@ FILE_TYPE = "json"  # json is more reliable than csv for FRED API
 # All series organized by category
 SERIES = {
     "interest_rates": [
-        "DFII10", "DGS10", "DGS2", "DGS30", "DGS5", "DGS7",
-        "DGS3MO", "DGS6MO", "T5YIE", "T5YIFR", "T10YIE", "T10Y2Y",
+        "DFII10",
+        "DGS10",
+        "DGS2",
+        "DGS30",
+        "DGS5",
+        "DGS7",
+        "DGS3MO",
+        "DGS6MO",
+        "T5YIE",
+        "T5YIFR",
+        "T10YIE",
+        "T10Y2Y",
     ],
     "gold_volatility": ["GVZCLS", "VIXCLS"],
     "oil": ["DCOILWTICO", "DCOILBRENTEU"],
     "dollar": ["DTWEXBGS"],
     "fx": ["DEXUSEU", "DEXJPUS"],
     "economic": [
-        "UNRATE", "CPIAUCSL", "CPILFESL", "FEDFUNDS",
-        "INDPRO", "UMCSENT", "A191RL1Q225SBEA",
+        "UNRATE",
+        "CPIAUCSL",
+        "CPILFESL",
+        "FEDFUNDS",
+        "INDPRO",
+        "UMCSENT",
+        "A191RL1Q225SBEA",
     ],
     "credit": [
-        "BAMLH0A0HYM2", "BAMLH0A0HYM2EY", "BAMLH0A1HYBB",
-        "TEDRATE", "BAA10Y",
+        "BAMLH0A0HYM2",
+        "BAMLH0A0HYM2EY",
+        "BAMLH0A1HYBB",
+        "TEDRATE",
+        "BAA10Y",
     ],
     "liquidity": ["WALCL", "BOGMBASE", "RRPONTSYD", "WTREGEN"],
 }
@@ -55,8 +73,16 @@ REQUEST_DELAY = 0.5  # seconds between requests
 
 # Series that are NOT daily frequency — don't pass frequency=d for these
 NON_DAILY_SERIES = {
-    "UNRATE", "CPIAUCSL", "CPILFESL", "FEDFUNDS", "INDPRO", "UMCSENT",
-    "A191RL1Q225SBEA", "WALCL", "BOGMBASE", "WTREGEN",
+    "UNRATE",
+    "CPIAUCSL",
+    "CPILFESL",
+    "FEDFUNDS",
+    "INDPRO",
+    "UMCSENT",
+    "A191RL1Q225SBEA",
+    "WALCL",
+    "BOGMBASE",
+    "WTREGEN",
 }
 
 
@@ -154,12 +180,17 @@ def main():
         if not observations:
             print("NO DATA")
             errors.append(sid)
-            summaries.append({
-                "series_id": sid, "rows": 0,
-                "date_min": "", "date_max": "",
-                "missing_count": 0, "missing_pct": 100.0,
-                "file": f"{sid}.csv",
-            })
+            summaries.append(
+                {
+                    "series_id": sid,
+                    "rows": 0,
+                    "date_min": "",
+                    "date_max": "",
+                    "missing_count": 0,
+                    "missing_pct": 100.0,
+                    "file": f"{sid}.csv",
+                }
+            )
         else:
             stats = save_csv(sid, observations)
             print(f"{stats['rows']} rows ({stats['date_min']} to {stats['date_max']})")
@@ -171,10 +202,18 @@ def main():
     # ── Write summary CSV ──────────────────────────────────────────────────
     summary_path = OUT_DIR / "_summary.csv"
     with open(summary_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=[
-            "series_id", "rows", "date_min", "date_max",
-            "missing_count", "missing_pct", "file",
-        ])
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "series_id",
+                "rows",
+                "date_min",
+                "date_max",
+                "missing_count",
+                "missing_pct",
+                "file",
+            ],
+        )
         writer.writeheader()
         writer.writerows(summaries)
 
@@ -185,7 +224,7 @@ def main():
     print(f"{'Series':<20} {'Rows':>8} {'Date Range':<26} {'Missing%':>8}")
     print("-" * 80)
     for s in summaries:
-        date_range = f"{s['date_min']} → {s['date_max']}" if s['date_min'] else "N/A"
+        date_range = f"{s['date_min']} → {s['date_max']}" if s["date_min"] else "N/A"
         print(f"{s['series_id']:<20} {s['rows']:>8} {date_range:<26} {s['missing_pct']:>7.1f}%")
 
     print("-" * 80)

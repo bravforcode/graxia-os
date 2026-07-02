@@ -1,20 +1,20 @@
 """Position sizer using broker-native MT5 calculations."""
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from decimal import Decimal, ROUND_DOWN
-from typing import Callable, Optional
+from decimal import ROUND_DOWN, Decimal
 
 from .risk_policy import RiskPolicy
 
 
 @dataclass
 class SizingResult:
-    volume: Decimal                    # Final volume (rounded to broker step)
-    volume_before_round: Decimal       # Raw volume before rounding
-    risk_amount: Decimal               # Actual risk in account currency
-    risk_budget: Decimal               # Maximum allowed risk
-    loss_at_stop: Decimal              # Estimated loss at stop (from MT5 calc)
-    margin_estimate: Decimal           # Estimated margin (from MT5 calc)
+    volume: Decimal  # Final volume (rounded to broker step)
+    volume_before_round: Decimal  # Raw volume before rounding
+    risk_amount: Decimal  # Actual risk in account currency
+    risk_budget: Decimal  # Maximum allowed risk
+    loss_at_stop: Decimal  # Estimated loss at stop (from MT5 calc)
+    margin_estimate: Decimal  # Estimated margin (from MT5 calc)
     rejected: bool
     rejection_reasons: list[str] = field(default_factory=list)
     contract_snapshot_id: str = ""
@@ -28,8 +28,8 @@ def size_position(
     equity: Decimal,
     contract_spec,  # ContractSpec — avoid import to keep module decoupled
     risk_policy: RiskPolicy,
-    calc_profit_fn: Optional[Callable] = None,
-    calc_margin_fn: Optional[Callable] = None,
+    calc_profit_fn: Callable | None = None,
+    calc_margin_fn: Callable | None = None,
     calc_profit_fn_kwargs: dict = None,
     calc_margin_fn_kwargs: dict = None,
 ) -> SizingResult:
@@ -110,16 +110,13 @@ def size_position(
     if contract_spec.stops_level_points > 0:
         stops_distance = Decimal(str(contract_spec.stops_level_points)) * contract_spec.point
         if stop_distance < stops_distance:
-            reasons.append(
-                f"Stop distance {stop_distance} < broker stops_level {stops_distance}"
-            )
+            reasons.append(f"Stop distance {stop_distance} < broker stops_level {stops_distance}")
 
     # --- Step 2: Calculate one-lot loss ---
     if calc_profit_fn is not None:
         try:
             one_lot_loss_raw = calc_profit_fn(
-                symbol, side, one_lot, float(entry_price), float(stop_loss),
-                **(calc_profit_fn_kwargs or {})
+                symbol, side, one_lot, float(entry_price), float(stop_loss), **(calc_profit_fn_kwargs or {})
             )
             one_lot_loss = abs(Decimal(str(one_lot_loss_raw))) if one_lot_loss_raw is not None else None
         except Exception:
@@ -148,12 +145,14 @@ def size_position(
         # Quantize with ROUND_DOWN to the volume_step precision
         step_str = str(contract_spec.volume_step)
         # Determine decimal places from step
-        if '.' in step_str:
-            places = len(step_str.rstrip('0').split('.')[-1])
+        if "." in step_str:
+            places = len(step_str.rstrip("0").split(".")[-1])
         else:
             places = 0
         fmt = Decimal(10) ** -places if places > 0 else Decimal("1")
-        rounded_volume = (raw_volume / contract_spec.volume_step).to_integral_value(rounding=ROUND_DOWN) * contract_spec.volume_step
+        rounded_volume = (raw_volume / contract_spec.volume_step).to_integral_value(
+            rounding=ROUND_DOWN
+        ) * contract_spec.volume_step
         rounded_volume = rounded_volume.quantize(fmt, rounding=ROUND_DOWN)
     else:
         volume_before_round = raw_volume
@@ -161,16 +160,18 @@ def size_position(
 
     # --- Step 5: Reject if below volume_min ---
     if rounded_volume < contract_spec.volume_min:
-        reasons.append(
-            f"Rounded volume {rounded_volume} < volume_min {contract_spec.volume_min}"
-        )
+        reasons.append(f"Rounded volume {rounded_volume} < volume_min {contract_spec.volume_min}")
 
     # --- Step 6: Recalculate loss after rounding ---
     if rounded_volume > 0 and calc_profit_fn is not None:
         try:
             post_round_raw = calc_profit_fn(
-                symbol, side, float(rounded_volume), float(entry_price), float(stop_loss),
-                **(calc_profit_fn_kwargs or {})
+                symbol,
+                side,
+                float(rounded_volume),
+                float(entry_price),
+                float(stop_loss),
+                **(calc_profit_fn_kwargs or {}),
             )
             post_round_loss = abs(Decimal(str(post_round_raw))) if post_round_raw is not None else None
         except Exception:
@@ -184,17 +185,14 @@ def size_position(
 
     # --- Step 7: Verify post-rounding loss <= budget ---
     if post_round_loss and post_round_loss > risk_budget:
-        reasons.append(
-            f"Post-rounding loss {post_round_loss:.2f} exceeds budget {risk_budget:.2f}"
-        )
+        reasons.append(f"Post-rounding loss {post_round_loss:.2f} exceeds budget {risk_budget:.2f}")
 
     # --- Step 8: Calculate margin ---
     margin = Decimal("0")
     if calc_margin_fn is not None and rounded_volume > 0:
         try:
             margin_raw = calc_margin_fn(
-                symbol, float(rounded_volume), float(entry_price),
-                **(calc_margin_fn_kwargs or {})
+                symbol, float(rounded_volume), float(entry_price), **(calc_margin_fn_kwargs or {})
             )
             margin = Decimal(str(margin_raw)) if margin_raw is not None else Decimal("0")
         except Exception:
@@ -205,7 +203,9 @@ def size_position(
     # ponytail: defer full margin check to pre_trade_risk — that's where equity lives.
 
     # --- Step 10: Return result ---
-    actual_risk = post_round_loss if post_round_loss else (one_lot_loss * rounded_volume if one_lot_loss else Decimal("0"))
+    actual_risk = (
+        post_round_loss if post_round_loss else (one_lot_loss * rounded_volume if one_lot_loss else Decimal("0"))
+    )
 
     return SizingResult(
         volume=rounded_volume,

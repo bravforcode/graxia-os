@@ -6,13 +6,13 @@ Excessive drift can cause stale data, misaligned candles, and incorrect signals.
 """
 
 from dataclasses import dataclass
-from datetime import datetime, UTC
-from typing import Optional
+from datetime import UTC, datetime
 
 
 @dataclass
 class ClockState:
     """Snapshot of clock synchronization state"""
+
     mt5_time_utc: datetime
     local_time_utc: datetime
     drift_ms: float  # positive = MT5 ahead, negative = MT5 behind
@@ -27,10 +27,7 @@ class ClockState:
     def summary(self) -> str:
         direction = "ahead" if self.drift_ms >= 0 else "behind"
         status = "DRIFTED" if self.is_drifted else "OK"
-        return (
-            f"Clock {status}: MT5 {abs(self.drift_ms):.1f}ms {direction} | "
-            f"threshold={self.max_drift_ms:.0f}ms"
-        )
+        return f"Clock {status}: MT5 {abs(self.drift_ms):.1f}ms {direction} | " f"threshold={self.max_drift_ms:.0f}ms"
 
 
 class ClockGuard:
@@ -51,7 +48,7 @@ class ClockGuard:
         if max_drift_ms <= 0:
             raise ValueError("max_drift_ms must be positive")
         self._max_drift_ms = max_drift_ms
-        self._last_state: Optional[ClockState] = None
+        self._last_state: ClockState | None = None
 
     def check_clock(self, mt5_time_utc: datetime) -> ClockState:
         """
@@ -88,11 +85,11 @@ class ClockGuard:
             return False
         return self._last_state.is_drifted
 
-    def get_state(self) -> Optional[ClockState]:
+    def get_state(self) -> ClockState | None:
         """Return the last measured clock state"""
         return self._last_state
 
-    def get_drift_ms(self) -> Optional[float]:
+    def get_drift_ms(self) -> float | None:
         """Return drift in milliseconds (positive = MT5 ahead), or None if never checked"""
         if self._last_state is None:
             return None

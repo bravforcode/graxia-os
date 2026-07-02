@@ -12,28 +12,30 @@ Usage:
     cd quant_os
     python mt5_connector/shadow_runner.py [--symbol XAUUSD] [--bars 100] [--interval 60]
 """
-import sys
-import os
-import time
-import yaml
+
 import json
 import logging
-from datetime import datetime
-from typing import Optional
+import os
+import sys
+import time
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
+
+import yaml
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from mt5_connector.connection import MT5Connection
-from shadow.pipeline import ShadowPipeline
 from shadow.failure_rules import FailureRuleChecker
+from shadow.pipeline import ShadowPipeline
 from shadow.telemetry import ShadowTelemetry
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
 # ─── Signal Geometry Validation ───
+
 
 class SignalOutcome(Enum):
     ACCEPTED = "accepted"
@@ -49,6 +51,7 @@ class SignalOutcome(Enum):
     HIT_TP = "hit_tp"
     TIME_STOP = "time_stop"
     CANCELLED = "cancelled"
+
 
 class RejectionReason(Enum):
     SL_EQUAL_ENTRY = "SL equals entry price"
@@ -77,10 +80,10 @@ class SignalRecord:
     direction: str
     entry_price: float
     stop_loss: float
-    take_profit: Optional[float]
+    take_profit: float | None
     outcome: SignalOutcome
     rejection_reason: str = ""
-    tick_evidence: Optional[TickEvidence] = None
+    tick_evidence: TickEvidence | None = None
     hypothetical_pnl: float = 0.0
     hypothetical_costs: float = 0.0
     exit_price: float = 0.0
@@ -104,7 +107,9 @@ class SignalRecord:
                 "ask": self.tick_evidence.ask,
                 "spread": self.tick_evidence.spread,
                 "timestamp": self.tick_evidence.timestamp.isoformat(),
-            } if self.tick_evidence else None,
+            }
+            if self.tick_evidence
+            else None,
             "hypothetical_pnl": self.hypothetical_pnl,
             "hypothetical_costs": self.hypothetical_costs,
             "net_pnl": self.hypothetical_pnl - self.hypothetical_costs,
@@ -116,7 +121,10 @@ class SignalRecord:
 
 
 def validate_signal_geometry(
-    direction: str, entry: float, sl: float, tp: Optional[float],
+    direction: str,
+    entry: float,
+    sl: float,
+    tp: float | None,
     spread: float,
     max_spread: float = 0.25,
 ) -> tuple[SignalOutcome, str]:
@@ -152,16 +160,20 @@ def validate_signal_geometry(
 
 
 def simulate_outcome(
-    direction: str, entry: float, sl: float, tp: Optional[float],
-    future_bars: list, max_bars: int = 20,
+    direction: str,
+    entry: float,
+    sl: float,
+    tp: float | None,
+    future_bars: list,
+    max_bars: int = 20,
 ) -> tuple[SignalOutcome, float, float, int, str]:
     """Simulate SL/TP/time-stop outcome. Returns (outcome, exit_price, pnl, bars_held, reason)."""
     if not future_bars:
         return SignalOutcome.TIME_STOP, entry, 0.0, 0, "NO_DATA"
 
     for i, bar in enumerate(future_bars[:max_bars]):
-        high = bar['high']
-        low = bar['low']
+        high = bar["high"]
+        low = bar["low"]
 
         if direction == "BUY":
             if low <= sl:
@@ -175,7 +187,7 @@ def simulate_outcome(
                 return SignalOutcome.HIT_TP, tp, (entry - tp), i + 1, "TP"
 
     # Time stop
-    last_price = future_bars[min(max_bars - 1, len(future_bars) - 1)]['close']
+    last_price = future_bars[min(max_bars - 1, len(future_bars) - 1)]["close"]
     if direction == "BUY":
         pnl = last_price - entry
     else:
@@ -186,7 +198,7 @@ def simulate_outcome(
 class ShadowRunnerV2:
     """Collect live MT5 data with integrity gates, never submit orders."""
 
-    def __init__(self, config_path: str = 'mt5_connector/config.yaml'):
+    def __init__(self, config_path: str = "mt5_connector/config.yaml"):
         with open(config_path) as f:
             self._config = yaml.safe_load(f)
 
@@ -202,8 +214,8 @@ class ShadowRunnerV2:
         self._max_spread = 0.25
 
     def connect(self) -> bool:
-        cfg = self._config['mt5']
-        ok = self._mt5.connect(path=cfg.get('path'), timeout=cfg.get('timeout', 10000))
+        cfg = self._config["mt5"]
+        ok = self._mt5.connect(path=cfg.get("path"), timeout=cfg.get("timeout", 10000))
         if ok:
             info = self._mt5.get_account_info()
             logger.info(f"Connected: {info.login}@{info.server} Balance={info.balance}")
@@ -215,15 +227,15 @@ class ShadowRunnerV2:
         self._mt5.disconnect()
         logger.info("Disconnected")
 
-    def _collect_tick(self, symbol: str) -> Optional[TickEvidence]:
+    def _collect_tick(self, symbol: str) -> TickEvidence | None:
         tick = self._mt5.get_tick(symbol)
         if tick is None:
             return None
         return TickEvidence(
             timestamp=datetime.utcnow(),
-            bid=tick['bid'],
-            ask=tick['ask'],
-            spread=tick['ask'] - tick['bid'],
+            bid=tick["bid"],
+            ask=tick["ask"],
+            spread=tick["ask"] - tick["bid"],
         )
 
     def _evaluate_signal(self, symbol: str, tick: TickEvidence, bars: list) -> tuple[SignalRecord, SignalOutcome, str]:
@@ -232,18 +244,26 @@ class ShadowRunnerV2:
 
         # Bars check
         if len(bars) < 2:
-            return SignalRecord(
-                signal_id=signal_id, timestamp=datetime.utcnow(),
-                symbol=symbol, direction="BUY", entry_price=tick.ask,
-                stop_loss=0, take_profit=None,
-                outcome=SignalOutcome.REJECTED_INSUFFICIENT_BARS,
-                rejection_reason=RejectionReason.INSUFFICIENT_BARS.value,
-                tick_evidence=tick,
-            ), SignalOutcome.REJECTED_INSUFFICIENT_BARS, RejectionReason.INSUFFICIENT_BARS.value
+            return (
+                SignalRecord(
+                    signal_id=signal_id,
+                    timestamp=datetime.utcnow(),
+                    symbol=symbol,
+                    direction="BUY",
+                    entry_price=tick.ask,
+                    stop_loss=0,
+                    take_profit=None,
+                    outcome=SignalOutcome.REJECTED_INSUFFICIENT_BARS,
+                    rejection_reason=RejectionReason.INSUFFICIENT_BARS.value,
+                    tick_evidence=tick,
+                ),
+                SignalOutcome.REJECTED_INSUFFICIENT_BARS,
+                RejectionReason.INSUFFICIENT_BARS.value,
+            )
 
         # Direction
-        prev_close = bars[-2]['close']
-        curr_close = bars[-1]['close']
+        prev_close = bars[-2]["close"]
+        curr_close = bars[-1]["close"]
 
         if curr_close > prev_close:
             direction = "BUY"
@@ -256,24 +276,38 @@ class ShadowRunnerV2:
             sl = entry + tick.spread * 10
             tp = entry - tick.spread * 20
         else:
-            return SignalRecord(
-                signal_id=signal_id, timestamp=datetime.utcnow(),
-                symbol=symbol, direction="BUY", entry_price=tick.ask,
-                stop_loss=0, take_profit=None,
-                outcome=SignalOutcome.REJECTED_NO_DIRECTION,
-                rejection_reason=RejectionReason.NO_DIRECTION.value,
-                tick_evidence=tick,
-            ), SignalOutcome.REJECTED_NO_DIRECTION, RejectionReason.NO_DIRECTION.value
+            return (
+                SignalRecord(
+                    signal_id=signal_id,
+                    timestamp=datetime.utcnow(),
+                    symbol=symbol,
+                    direction="BUY",
+                    entry_price=tick.ask,
+                    stop_loss=0,
+                    take_profit=None,
+                    outcome=SignalOutcome.REJECTED_NO_DIRECTION,
+                    rejection_reason=RejectionReason.NO_DIRECTION.value,
+                    tick_evidence=tick,
+                ),
+                SignalOutcome.REJECTED_NO_DIRECTION,
+                RejectionReason.NO_DIRECTION.value,
+            )
 
         # Validate geometry
         outcome, reason = validate_signal_geometry(direction, entry, sl, tp, tick.spread, self._max_spread)
 
         record = SignalRecord(
-            signal_id=signal_id, timestamp=datetime.utcnow(),
-            symbol=symbol, direction=direction,
-            entry_price=entry, stop_loss=sl, take_profit=tp,
-            outcome=outcome, rejection_reason=reason,
-            tick_evidence=tick, volume=0.01,
+            signal_id=signal_id,
+            timestamp=datetime.utcnow(),
+            symbol=symbol,
+            direction=direction,
+            entry_price=entry,
+            stop_loss=sl,
+            take_profit=tp,
+            outcome=outcome,
+            rejection_reason=reason,
+            tick_evidence=tick,
+            volume=0.01,
         )
 
         return record, outcome, reason
@@ -284,7 +318,10 @@ class ShadowRunnerV2:
             return record
 
         outcome, exit_price, pnl, bars_held, reason = simulate_outcome(
-            record.direction, record.entry_price, record.stop_loss, record.take_profit,
+            record.direction,
+            record.entry_price,
+            record.stop_loss,
+            record.take_profit,
             future_bars,
         )
 
@@ -323,13 +360,11 @@ class ShadowRunnerV2:
         if record.outcome == SignalOutcome.ACCEPTED:
             self._telemetry.record_signal_accepted(self._session_id, record.signal_id)
         else:
-            self._telemetry.record_signal_rejected(
-                self._session_id, record.signal_id, record.rejection_reason
-            )
+            self._telemetry.record_signal_rejected(self._session_id, record.signal_id, record.rejection_reason)
 
         return record.to_dict()
 
-    def run(self, symbol: str = 'XAUUSD', duration_seconds: int = 300, interval_seconds: int = 60):
+    def run(self, symbol: str = "XAUUSD", duration_seconds: int = 300, interval_seconds: int = 60):
         if not self.connect():
             return
 
@@ -354,10 +389,10 @@ class ShadowRunnerV2:
 
             try:
                 result = self.run_cycle(symbol)
-                outcome = result.get('outcome', 'ERROR')
-                direction = result.get('direction', '-')
-                entry = result.get('entry_price', result.get('entry', '-'))
-                spread = result.get('tick_evidence', {}).get('spread', '-') if result.get('tick_evidence') else '-'
+                outcome = result.get("outcome", "ERROR")
+                direction = result.get("direction", "-")
+                entry = result.get("entry_price", result.get("entry", "-"))
+                spread = result.get("tick_evidence", {}).get("spread", "-") if result.get("tick_evidence") else "-"
                 logger.info(f"  {outcome} | {direction} | entry={entry} | spread={spread}")
             except Exception as e:
                 logger.error(f"Cycle error: {e}")
@@ -379,8 +414,7 @@ class ShadowRunnerV2:
         total = len(self._records)
 
         # Rejected by geometry validator (never passed to simulation)
-        rejected = sum(1 for r in self._records
-                      if r.outcome.value.startswith("rejected_"))
+        rejected = sum(1 for r in self._records if r.outcome.value.startswith("rejected_"))
 
         # Accepted then simulated
         hit_sl = sum(1 for r in self._records if r.outcome == SignalOutcome.HIT_SL)
@@ -419,45 +453,50 @@ class ShadowRunnerV2:
         logger.info(f"{'='*50}")
 
     def _export_results(self):
-        os.makedirs('shadow_results', exist_ok=True)
-        ts = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+        os.makedirs("shadow_results", exist_ok=True)
+        ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
 
         # Telemetry
-        telemetry_path = f'shadow_results/telemetry_{ts}.json'
-        with open(telemetry_path, 'w') as f:
+        telemetry_path = f"shadow_results/telemetry_{ts}.json"
+        with open(telemetry_path, "w") as f:
             f.write(self._telemetry.export_json(self._session_id))
         logger.info(f"Telemetry saved: {telemetry_path}")
 
         # Session
         session = self._pipeline.get_session(self._session_id)
         if session:
-            session_path = f'shadow_results/session_{ts}.json'
-            with open(session_path, 'w') as f:
+            session_path = f"shadow_results/session_{ts}.json"
+            with open(session_path, "w") as f:
                 f.write(session.export())
             logger.info(f"Session saved: {session_path}")
 
         # Signal records (new in v2)
-        records_path = f'shadow_results/records_{ts}.json'
-        with open(records_path, 'w') as f:
+        records_path = f"shadow_results/records_{ts}.json"
+        with open(records_path, "w") as f:
             records = [r.to_dict() for r in self._records]
-            json.dump({
-                "session_id": self._session_id,
-                "total_signals": len(self._records),
-                "accepted": sum(1 for r in self._records if r.outcome == SignalOutcome.ACCEPTED),
-                "rejected": sum(1 for r in self._records if r.outcome != SignalOutcome.ACCEPTED),
-                "records": records,
-            }, f, indent=2)
+            json.dump(
+                {
+                    "session_id": self._session_id,
+                    "total_signals": len(self._records),
+                    "accepted": sum(1 for r in self._records if r.outcome == SignalOutcome.ACCEPTED),
+                    "rejected": sum(1 for r in self._records if r.outcome != SignalOutcome.ACCEPTED),
+                    "records": records,
+                },
+                f,
+                indent=2,
+            )
         logger.info(f"Records saved: {records_path}")
 
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description='Shadow Mode Runner v2')
-    parser.add_argument('--symbol', default='XAUUSD', help='Symbol to trade')
-    parser.add_argument('--bars', type=int, default=100, help='Bar count for analysis')
-    parser.add_argument('--interval', type=int, default=60, help='Seconds between cycles')
-    parser.add_argument('--duration', type=int, default=300, help='Total duration in seconds')
-    parser.add_argument('--max-spread', type=float, default=0.25, help='Max allowed spread')
+
+    parser = argparse.ArgumentParser(description="Shadow Mode Runner v2")
+    parser.add_argument("--symbol", default="XAUUSD", help="Symbol to trade")
+    parser.add_argument("--bars", type=int, default=100, help="Bar count for analysis")
+    parser.add_argument("--interval", type=int, default=60, help="Seconds between cycles")
+    parser.add_argument("--duration", type=int, default=300, help="Total duration in seconds")
+    parser.add_argument("--max-spread", type=float, default=0.25, help="Max allowed spread")
     args = parser.parse_args()
 
     runner = ShadowRunnerV2()
@@ -469,5 +508,5 @@ def main():
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

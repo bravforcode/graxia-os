@@ -167,7 +167,9 @@ class CascadeRouter:
             logger.warning("llm_exception", provider=config.name, error=str(e))
             return "", latency_ms
 
-    async def _call_llm_chain(self, providers: list[ProviderConfig], prompt: str) -> tuple[str, float, ProviderConfig | None]:
+    async def _call_llm_chain(
+        self, providers: list[ProviderConfig], prompt: str
+    ) -> tuple[str, float, ProviderConfig | None]:
         for config in providers:
             response, latency = await self._call_llm(config, prompt)
             if response:

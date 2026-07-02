@@ -1,32 +1,33 @@
 """Tests for untested core/ modules: candle_pipeline, cross_validation,
 ml_pipeline, monte_carlo, rolling_metrics, stability, slippage_model, state_store.
 """
+
 import random
 
 import numpy as np
 import pytest
 
 from graxia.packages.quant_os.core.candle_pipeline import (
-    MovingBlockBootstrapPipeline,
     GaussianNoisePipeline,
+    MovingBlockBootstrapPipeline,
 )
 from graxia.packages.quant_os.core.cross_validation import (
+    CPCVFoldResult,
+    CPCVResult,
     _embargoed_purged_train_test_split,
     combine_purged_k_fold_cv,
-    CPCVResult,
-    CPCVFoldResult,
 )
 from graxia.packages.quant_os.core.ml_pipeline import MLPipeline
 from graxia.packages.quant_os.core.monte_carlo import MonteCarloSimulator
 from graxia.packages.quant_os.core.rolling_metrics import RollingMetrics
-from graxia.packages.quant_os.core.stability import WalkForwardStability
 from graxia.packages.quant_os.core.slippage_model import SlippageModel
-from graxia.packages.quant_os.core.state_store import SystemState, save, load
-
+from graxia.packages.quant_os.core.stability import WalkForwardStability
+from graxia.packages.quant_os.core.state_store import SystemState, load, save
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(autouse=True)
 def _seed():
@@ -58,6 +59,7 @@ def sample_returns():
 # 1. candle_pipeline
 # ===================================================================
 
+
 class TestCandlePipeline:
     def test_bootstrap_regeneration(self, sample_candles):
         pipe = MovingBlockBootstrapPipeline(block_size=5)
@@ -82,7 +84,7 @@ class TestCandlePipeline:
         for key in sample_candles:
             assert key in output
             assert len(output[key]) == len(sample_candles[key])
-        for orig, noisy in zip(sample_candles["close"], output["close"]):
+        for orig, noisy in zip(sample_candles["close"], output["close"], strict=False):
             assert noisy != pytest.approx(orig, abs=1e-10)
             assert noisy == pytest.approx(orig, rel=0.01)
 
@@ -102,6 +104,7 @@ class TestCandlePipeline:
 # 2. cross_validation
 # ===================================================================
 
+
 class TestCrossValidation:
     def test_purged_cv_split(self):
         n_bars = 100
@@ -109,9 +112,7 @@ class TestCrossValidation:
         purged = 5
         embargo = 5
 
-        train_idx, test_out = _embargoed_purged_train_test_split(
-            np.zeros(n_bars), test_idx, n_bars, purged, embargo
-        )
+        train_idx, test_out = _embargoed_purged_train_test_split(np.zeros(n_bars), test_idx, n_bars, purged, embargo)
 
         for i in test_idx:
             assert i not in train_idx
@@ -126,9 +127,7 @@ class TestCrossValidation:
         purged = 12
         embargo = 12
 
-        train_idx, _ = _embargoed_purged_train_test_split(
-            np.zeros(n_bars), test_idx, n_bars, purged, embargo
-        )
+        train_idx, _ = _embargoed_purged_train_test_split(np.zeros(n_bars), test_idx, n_bars, purged, embargo)
 
         for i in range(103, 103 + embargo):
             assert i not in train_idx
@@ -137,37 +136,65 @@ class TestCrossValidation:
 
     def test_combine_purged_k_fold_cv(self):
         paths = combine_purged_k_fold_cv(
-            n_bars=500, n_splits=6, n_test_splits=2,
-            purged_size=12, embargo_size=12, random_state=42,
+            n_bars=500,
+            n_splits=6,
+            n_test_splits=2,
+            purged_size=12,
+            embargo_size=12,
+            random_state=42,
         )
         assert len(paths) == 15
         assert len(paths[0]) == 1
 
     def test_cpcv_result_distributions(self):
         folds = [
-            CPCVFoldResult(fold=0, n_train=100, n_test=20, train_acc=0.9,
-                           oos_acc=0.7, n_trades=10, accuracy=0.6, net_pnl=50.0,
-                           gross_pnl=80.0, total_cost=30.0, win_rate=0.6,
-                           sharpe_ratio=1.5, max_drawdown=-20.0,
-                           train_start="2024-01-01", train_end="2024-06-01",
-                           test_start="2024-06-01", test_end="2024-12-01"),
-            CPCVFoldResult(fold=1, n_train=100, n_test=20, train_acc=0.85,
-                           oos_acc=0.65, n_trades=8, accuracy=0.55, net_pnl=-10.0,
-                           gross_pnl=60.0, total_cost=70.0, win_rate=0.4,
-                           sharpe_ratio=-0.5, max_drawdown=-30.0,
-                           train_start="2024-01-01", train_end="2024-06-01",
-                           test_start="2024-06-01", test_end="2024-12-01"),
+            CPCVFoldResult(
+                fold=0,
+                n_train=100,
+                n_test=20,
+                train_acc=0.9,
+                oos_acc=0.7,
+                n_trades=10,
+                accuracy=0.6,
+                net_pnl=50.0,
+                gross_pnl=80.0,
+                total_cost=30.0,
+                win_rate=0.6,
+                sharpe_ratio=1.5,
+                max_drawdown=-20.0,
+                train_start="2024-01-01",
+                train_end="2024-06-01",
+                test_start="2024-06-01",
+                test_end="2024-12-01",
+            ),
+            CPCVFoldResult(
+                fold=1,
+                n_train=100,
+                n_test=20,
+                train_acc=0.85,
+                oos_acc=0.65,
+                n_trades=8,
+                accuracy=0.55,
+                net_pnl=-10.0,
+                gross_pnl=60.0,
+                total_cost=70.0,
+                win_rate=0.4,
+                sharpe_ratio=-0.5,
+                max_drawdown=-30.0,
+                train_start="2024-01-01",
+                train_end="2024-06-01",
+                test_start="2024-06-01",
+                test_end="2024-12-01",
+            ),
         ]
-        result = CPCVResult(n_paths=1, n_folds_per_path=1, purged_size=12,
-                            embargo_size=12, folds=folds)
+        result = CPCVResult(n_paths=1, n_folds_per_path=1, purged_size=12, embargo_size=12, folds=folds)
         sharpe_dist = result.sharpe_distribution
         assert sharpe_dist["mean"] == pytest.approx(0.5, abs=0.01)
         pnl_dist = result.net_pnl_distribution
         assert pnl_dist["mean"] == pytest.approx(20.0, abs=0.01)
 
     def test_cpcv_result_empty_folds(self):
-        result = CPCVResult(n_paths=0, n_folds_per_path=0, purged_size=12,
-                            embargo_size=12, folds=[])
+        result = CPCVResult(n_paths=0, n_folds_per_path=0, purged_size=12, embargo_size=12, folds=[])
         assert result.sharpe_distribution["mean"] == 0.0
         assert result.net_pnl_distribution["mean"] == 0.0
 
@@ -175,6 +202,7 @@ class TestCrossValidation:
 # ===================================================================
 # 3. ml_pipeline
 # ===================================================================
+
 
 class TestMLPipeline:
     def test_gather_data(self):
@@ -237,6 +265,7 @@ class TestMLPipeline:
 # 4. monte_carlo
 # ===================================================================
 
+
 class TestMonteCarlo:
     def test_shuffle_simulation(self):
         trades = [{"pnl": random.gauss(10, 50)} for _ in range(100)]
@@ -286,6 +315,7 @@ class TestMonteCarlo:
 # 5. rolling_metrics
 # ===================================================================
 
+
 class TestRollingMetrics:
     def test_rolling_sharpe(self, sample_returns):
         rm = RollingMetrics(sample_returns)
@@ -323,8 +353,7 @@ class TestRollingMetrics:
     def test_to_dict(self, sample_returns):
         rm = RollingMetrics(sample_returns)
         d = rm.to_dict(window=20)
-        assert set(d.keys()) == {"sharpe", "sortino", "max_drawdown",
-                                  "volatility", "win_rate", "profit_factor"}
+        assert set(d.keys()) == {"sharpe", "sortino", "max_drawdown", "volatility", "win_rate", "profit_factor"}
         assert len(d["sharpe"]) == len(sample_returns)
 
     def test_zero_std_returns(self):
@@ -337,6 +366,7 @@ class TestRollingMetrics:
 # ===================================================================
 # 6. stability
 # ===================================================================
+
 
 class TestStability:
     def test_is_os_gap(self):
@@ -384,6 +414,7 @@ class TestStability:
 # 7. slippage_model
 # ===================================================================
 
+
 class TestSlippageModel:
     def test_slippage_estimate(self):
         sm = SlippageModel()
@@ -423,9 +454,14 @@ class TestSlippageModel:
     def test_adjust_sl_tp(self):
         sm = SlippageModel()
         adj = sm.adjust_sl_tp(
-            entry_price=1800.0, sl_pips=5.0, tp_pips=10.0,
-            direction="BUY", symbol="XAUUSD", order_size_lots=0.1,
-            volatility=0.15, session="london",
+            entry_price=1800.0,
+            sl_pips=5.0,
+            tp_pips=10.0,
+            direction="BUY",
+            symbol="XAUUSD",
+            order_size_lots=0.1,
+            volatility=0.15,
+            session="london",
         )
         assert adj["adjusted_sl_pips"] > adj["original_sl_pips"]
         assert adj["adjusted_tp_pips"] < adj["original_tp_pips"]
@@ -435,6 +471,7 @@ class TestSlippageModel:
 # ===================================================================
 # 8. state_store
 # ===================================================================
+
 
 class TestStateStore:
     def test_save_load_state(self, tmp_path):

@@ -9,9 +9,8 @@ from __future__ import annotations
 
 import gzip
 import shutil
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-
 
 DEFAULT_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
 DEFAULT_RETENTION_DAYS = 30

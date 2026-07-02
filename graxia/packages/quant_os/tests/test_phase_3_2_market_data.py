@@ -7,51 +7,56 @@ Self-contained. No MT5 dependency. Uses pytest.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta, time, UTC
+from datetime import UTC, datetime, time, timedelta
 from decimal import Decimal
-from typing import Optional
 
 import pytest
+
+from graxia.packages.quant_os.market_data.account_snapshot import (
+    _redact,
+    create_account_snapshot,
+)
+from graxia.packages.quant_os.market_data.clock_guard import (
+    ClockGuard,
+)
+from graxia.packages.quant_os.market_data.data_watermark import (
+    DataWatermarkTracker,
+)
+from graxia.packages.quant_os.market_data.feed_health import (
+    FeedHealthMonitor,
+)
+from graxia.packages.quant_os.market_data.market_health import (
+    MarketHealthMachine,
+    MarketHealthState,
+)
+from graxia.packages.quant_os.market_data.market_session_guard import (
+    MarketSessionConfig,
+    MarketSessionGuard,
+    SessionState,
+)
+from graxia.packages.quant_os.market_data.smoke_report import (
+    SmokeReportGenerator,
+)
+from graxia.packages.quant_os.market_data.spread_monitor import (
+    SpreadMonitor,
+)
 
 # ---------------------------------------------------------------------------
 # Imports under test
 # ---------------------------------------------------------------------------
 from graxia.packages.quant_os.market_data.tick_recorder import (
-    TickRecord, TickRecorder,
+    TickRecord,
+    TickRecorder,
 )
-from graxia.packages.quant_os.market_data.spread_monitor import (
-    SpreadMonitor,
-)
-from graxia.packages.quant_os.market_data.feed_health import (
-    FeedHealthMonitor,
-)
-from graxia.packages.quant_os.market_data.clock_guard import (
-    ClockGuard,
-)
-from graxia.packages.quant_os.market_data.market_session_guard import (
-    MarketSessionGuard, SessionState, MarketSessionConfig,
-)
-from graxia.packages.quant_os.market_data.data_watermark import (
-    DataWatermarkTracker,
-)
-from graxia.packages.quant_os.market_data.account_snapshot import (
-    create_account_snapshot, _redact,
-)
-from graxia.packages.quant_os.market_data.smoke_report import (
-    SmokeReportGenerator,
-)
-from graxia.packages.quant_os.market_data.market_health import (
-    MarketHealthMachine, MarketHealthState,
-)
-
 
 # ===========================================================================
 # Helpers
 # ===========================================================================
 
+
 def _make_tick_record(
     ts: datetime,
-    received_at: Optional[datetime] = None,
+    received_at: datetime | None = None,
     bid: float = 1.1,
     ask: float = 1.2,
     symbol: str = "XAUUSD",
@@ -91,7 +96,9 @@ class TestTickRecorder:
         rec = TickRecorder("XAUUSD", "session-001")
         t1 = datetime.utcnow()
         rec.record_tick(
-            bid=Decimal("2330.0"), ask=Decimal("2331.0"), last=Decimal("2330.5"),
+            bid=Decimal("2330.0"),
+            ask=Decimal("2331.0"),
+            last=Decimal("2330.5"),
             timestamp_utc=t1,
         )
         assert rec.count() == 1
@@ -101,7 +108,9 @@ class TestTickRecorder:
         base = datetime.utcnow()
         for i in range(5):
             rec.record_tick(
-                bid=Decimal("2330.0"), ask=Decimal("2331.0"), last=Decimal("2330.5"),
+                bid=Decimal("2330.0"),
+                ask=Decimal("2331.0"),
+                last=Decimal("2330.5"),
                 timestamp_utc=base + timedelta(seconds=i),
             )
         assert rec.count() == 5
@@ -110,12 +119,16 @@ class TestTickRecorder:
         rec = TickRecorder("XAUUSD", "session-003")
         t1 = datetime.utcnow()
         rec.record_tick(
-            bid=Decimal("2330.0"), ask=Decimal("2331.0"), last=Decimal("2330.5"),
+            bid=Decimal("2330.0"),
+            ask=Decimal("2331.0"),
+            last=Decimal("2330.5"),
             timestamp_utc=t1,
         )
         # Gap of 10 seconds (threshold is 2.0)
         gap_tick = rec.record_tick(
-            bid=Decimal("2330.0"), ask=Decimal("2331.0"), last=Decimal("2330.5"),
+            bid=Decimal("2330.0"),
+            ask=Decimal("2331.0"),
+            last=Decimal("2330.5"),
             timestamp_utc=t1 + timedelta(seconds=10),
         )
         assert gap_tick.data_quality == "GAP"
@@ -124,11 +137,15 @@ class TestTickRecorder:
         rec = TickRecorder("XAUUSD", "session-004")
         t1 = datetime.utcnow()
         rec.record_tick(
-            bid=Decimal("2330.0"), ask=Decimal("2331.0"), last=Decimal("2330.5"),
+            bid=Decimal("2330.0"),
+            ask=Decimal("2331.0"),
+            last=Decimal("2330.5"),
             timestamp_utc=t1,
         )
         tick = rec.record_tick(
-            bid=Decimal("2330.0"), ask=Decimal("2331.0"), last=Decimal("2330.5"),
+            bid=Decimal("2330.0"),
+            ask=Decimal("2331.0"),
+            last=Decimal("2330.5"),
             timestamp_utc=t1 + timedelta(seconds=1),
         )
         assert tick.data_quality == "VALID"
@@ -138,12 +155,16 @@ class TestTickRecorder:
         t1 = datetime.utcnow()
         t2 = t1 + timedelta(seconds=5)
         rec.record_tick(
-            bid=Decimal("2330.0"), ask=Decimal("2331.0"), last=Decimal("2330.5"),
+            bid=Decimal("2330.0"),
+            ask=Decimal("2331.0"),
+            last=Decimal("2330.5"),
             timestamp_utc=t2,
         )
         # Earlier tick
         ooo_tick = rec.record_tick(
-            bid=Decimal("2330.0"), ask=Decimal("2331.0"), last=Decimal("2330.5"),
+            bid=Decimal("2330.0"),
+            ask=Decimal("2331.0"),
+            last=Decimal("2330.5"),
             timestamp_utc=t1,
         )
         assert ooo_tick.data_quality == "OUT_OF_ORDER"
@@ -153,7 +174,9 @@ class TestTickRecorder:
         rec = TickRecorder("XAUUSD", "session-006")
         # Just verify it works
         rec.record_tick(
-            bid=Decimal("2330.0"), ask=Decimal("2331.0"), last=Decimal("2330.5"),
+            bid=Decimal("2330.0"),
+            ask=Decimal("2331.0"),
+            last=Decimal("2330.5"),
             timestamp_utc=datetime.utcnow(),
         )
         assert rec.count() == 1
@@ -162,12 +185,16 @@ class TestTickRecorder:
         rec = TickRecorder("XAUUSD", "session-007")
         t1 = datetime.utcnow()
         rec.record_tick(
-            bid=Decimal("2330.0"), ask=Decimal("2331.0"), last=Decimal("2330.5"),
+            bid=Decimal("2330.0"),
+            ask=Decimal("2331.0"),
+            last=Decimal("2330.5"),
             timestamp_utc=t1,
         )
         t2 = t1 + timedelta(seconds=1)
         rec.record_tick(
-            bid=Decimal("2331.0"), ask=Decimal("2332.0"), last=Decimal("2331.5"),
+            bid=Decimal("2331.0"),
+            ask=Decimal("2332.0"),
+            last=Decimal("2331.5"),
             timestamp_utc=t2,
         )
         last = rec.get_latest_tick()
@@ -183,7 +210,9 @@ class TestTickRecorder:
         base = datetime.utcnow()
         for i in range(10):
             rec.record_tick(
-                bid=Decimal("2330.0"), ask=Decimal("2331.0"), last=Decimal("2330.5"),
+                bid=Decimal("2330.0"),
+                ask=Decimal("2331.0"),
+                last=Decimal("2330.5"),
                 timestamp_utc=base + timedelta(seconds=i),
             )
         # Filter to last 3 seconds
@@ -204,7 +233,9 @@ class TestTickRecorder:
         rec = TickRecorder("XAUUSD", "session-stale")
         old_time = datetime.utcnow() - timedelta(seconds=10)
         tick = rec.record_tick(
-            bid=Decimal("2330.0"), ask=Decimal("2331.0"), last=Decimal("2330.5"),
+            bid=Decimal("2330.0"),
+            ask=Decimal("2331.0"),
+            last=Decimal("2330.5"),
             timestamp_utc=old_time,
         )
         assert tick.data_quality == "STALE"
@@ -213,7 +244,9 @@ class TestTickRecorder:
         rec = TickRecorder("XAUUSD", "session-count")
         assert rec.count() == 0
         rec.record_tick(
-            bid=Decimal("2330.0"), ask=Decimal("2331.0"), last=Decimal("2330.5"),
+            bid=Decimal("2330.0"),
+            ask=Decimal("2331.0"),
+            last=Decimal("2330.5"),
             timestamp_utc=datetime.utcnow(),
         )
         assert rec.count() == 1
@@ -577,6 +610,7 @@ class TestMarketHealthMachine:
 
     def test_healthy_when_all_ok(self):
         machine = MarketHealthMachine("XAUUSD")
+
         # Minimal inputs that indicate healthy
         @dataclass
         class HealthyFeed:
@@ -948,15 +982,20 @@ class TestAccountSnapshot:
 
     def test_create_snapshot(self):
         snap = create_account_snapshot(
-            balance=10000.0, equity=10500.0, leverage=100, currency="USD",
+            balance=10000.0,
+            equity=10500.0,
+            leverage=100,
+            currency="USD",
         )
         assert snap.balance == 10000.0
         assert snap.equity == 10500.0
 
     def test_redaction_server(self):
         snap = create_account_snapshot(
-            balance=10000.0, equity=10000.0,
-            server="ICMarketsSC-Demo02", login="12345678",
+            balance=10000.0,
+            equity=10000.0,
+            server="ICMarketsSC-Demo02",
+            login="12345678",
         )
         assert snap.server_redacted.endswith("02")
         assert snap.login_redacted.endswith("78")
@@ -980,7 +1019,9 @@ class TestAccountSnapshot:
 
     def test_snapshot_id_custom(self):
         snap = create_account_snapshot(
-            balance=100.0, equity=100.0, snapshot_id="custom-001",
+            balance=100.0,
+            equity=100.0,
+            snapshot_id="custom-001",
         )
         assert snap.snapshot_id == "custom-001"
 
@@ -1009,8 +1050,13 @@ class TestSmokeReport:
         report = gen.generate()
         components = {e.component for e in report.entries}
         expected = {
-            "feed_health", "spread", "clock", "session",
-            "tick_recorder", "watermark", "account",
+            "feed_health",
+            "spread",
+            "clock",
+            "session",
+            "tick_recorder",
+            "watermark",
+            "account",
         }
         assert expected.issubset(components)
 
@@ -1025,6 +1071,7 @@ class TestSmokeReport:
         gen = SmokeReportGenerator("XAUUSD")
         report = gen.generate()
         import json
+
         j = report.to_json()
         parsed = json.loads(j)
         assert parsed["symbol"] == "XAUUSD"
@@ -1093,6 +1140,7 @@ class TestSmokeReport:
 
     def test_report_id_unique(self):
         import time
+
         gen = SmokeReportGenerator("XAUUSD")
         r1 = gen.generate()
         time.sleep(1.1)  # Ensure different second for unique ID

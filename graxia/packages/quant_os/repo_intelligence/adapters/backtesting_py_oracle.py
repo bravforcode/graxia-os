@@ -2,7 +2,7 @@
 # ponytail: lazy-imports backtesting only inside run_oracle; no module-level dep
 
 import uuid
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 
 def validate_input(data_manifest: dict, strategy_params: dict) -> bool:
@@ -47,20 +47,22 @@ def normalize_output(raw_result: dict, symbol: str = "UNKNOWN") -> list[dict]:
         side = "long" if size > 0 else "short"
 
         # ponytail: net = gross for now; add commission calc when needed
-        signals.append({
-            "signal_id": signal_id,
-            "timestamp_utc": str(entry_time),
-            "symbol": symbol,
-            "side": side,
-            "entry_price": entry_price,
-            "stop_loss": 0.0,
-            "take_profit": 0.0,
-            "exit_price": exit_price,
-            "exit_reason": exit_reason,
-            "pnl_gross": pnl_gross,
-            "pnl_net": pnl_gross,
-            "engine": "backtesting_py",
-        })
+        signals.append(
+            {
+                "signal_id": signal_id,
+                "timestamp_utc": str(entry_time),
+                "symbol": symbol,
+                "side": side,
+                "entry_price": entry_price,
+                "stop_loss": 0.0,
+                "take_profit": 0.0,
+                "exit_price": exit_price,
+                "exit_reason": exit_reason,
+                "pnl_gross": pnl_gross,
+                "pnl_net": pnl_gross,
+                "engine": "backtesting_py",
+            }
+        )
 
     return signals
 
@@ -74,8 +76,8 @@ def run_oracle(
 ) -> dict:
     """Run Backtesting.py backtest in isolated mode (lazy import)."""
     try:
-        from backtesting import Backtest, Strategy
         import pandas as pd
+        from backtesting import Backtest, Strategy
     except ImportError:
         return {"error": "backtesting not installed", "engine": "backtesting_py"}
 

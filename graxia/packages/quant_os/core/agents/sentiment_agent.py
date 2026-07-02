@@ -158,14 +158,18 @@ class SentimentAgent(Agent):
         # Publish news.analyzed for downstream consumers (RiskEngine, etc.)
         if self._bus is not None:
             from ..events import NewsAnalyzedEvent
-            self._bus.publish("news.analyzed", NewsAnalyzedEvent(
-                headline=aggregated.headline,
-                regime_label=aggregated.regime_label,
-                bias=aggregated.bias.value,
-                confidence=aggregated.confidence,
-                position_multiplier=aggregated.position_multiplier,
-                source_provider=aggregated.source_provider,
-            ))
+
+            self._bus.publish(
+                "news.analyzed",
+                NewsAnalyzedEvent(
+                    headline=aggregated.headline,
+                    regime_label=aggregated.regime_label,
+                    bias=aggregated.bias.value,
+                    confidence=aggregated.confidence,
+                    position_multiplier=aggregated.position_multiplier,
+                    source_provider=aggregated.source_provider,
+                ),
+            )
 
         logger.info(
             "sentiment_agent.result",

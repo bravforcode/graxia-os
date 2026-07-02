@@ -1,16 +1,20 @@
 """Tests for governance modules — experiment registry and ML policy."""
 
 from graxia.packages.quant_os.governance.experiment_registry import (
-    ExperimentRecord, ExperimentRegistry,
+    ExperimentRecord,
+    ExperimentRegistry,
 )
 from graxia.packages.quant_os.governance.ml_policy import (
-    MLUsageType, MLPhase, MLPolicyGuard, MLModelRecord,
+    MLModelRecord,
+    MLPhase,
+    MLPolicyGuard,
+    MLUsageType,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_experiment(exp_id="EXP-001", strategy_hash="abc123", trial=1, budget=10):
     return ExperimentRecord(
@@ -45,6 +49,7 @@ def _make_model(model_id="m1", usage=MLUsageType.REGIME_CLASSIFICATION):
 # ---------------------------------------------------------------------------
 # ExperimentRegistry
 # ---------------------------------------------------------------------------
+
 
 class TestExperimentRegistry:
     def test_register_succeeds(self):
@@ -110,6 +115,7 @@ class TestExperimentRegistry:
 
     def test_export_json_is_valid(self):
         import json
+
         reg = ExperimentRegistry()
         reg.register(_make_experiment(exp_id="E1"))
         exported = reg.export_json()
@@ -128,6 +134,7 @@ class TestExperimentRegistry:
 # ---------------------------------------------------------------------------
 # MLPolicyGuard
 # ---------------------------------------------------------------------------
+
 
 class TestMLPolicyGuard:
     def test_allowed_usage(self):

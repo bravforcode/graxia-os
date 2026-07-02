@@ -9,7 +9,7 @@ import hashlib
 import json
 import pickle
 import warnings
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -183,7 +183,9 @@ def train():
                 summary = json.loads(SUMMARY_PATH.read_text())
                 feat_imps = list(summary["feature_importances"].items())
                 print(f"Samples: {summary['training_samples']}  Features: {summary['feature_count']}")
-                print(f"MAE: {summary['metrics']['mae']}  RMSE: {summary['metrics']['rmse']}  R²: {summary['metrics']['r2']}")
+                print(
+                    f"MAE: {summary['metrics']['mae']}  RMSE: {summary['metrics']['rmse']}  R²: {summary['metrics']['r2']}"
+                )
                 print("\nTop 5 features:")
                 for name, imp in feat_imps[:5]:
                     print(f"  {name}: {imp}")
@@ -220,7 +222,7 @@ def train():
         pickle.dump({"model": model, "label_encoder": le, "feature_names": feature_names}, f)
 
     importances = model.feature_importances_
-    feat_imp = sorted(zip(feature_names, importances), key=lambda x: -x[1])
+    feat_imp = sorted(zip(feature_names, importances, strict=False), key=lambda x: -x[1])
     top5 = feat_imp[:5]
 
     metrics = {"mae": round(mae, 4), "rmse": round(rmse, 4), "r2": round(r2, 4)}

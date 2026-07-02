@@ -1,9 +1,9 @@
 """JSON-file-based immutable store for ContractSpec snapshots."""
 
 import json
-from pathlib import Path
 from datetime import datetime
 from decimal import Decimal
+from pathlib import Path
 
 from .contract_spec import ContractSpec, compute_snapshot_hash
 

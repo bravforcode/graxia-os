@@ -1,16 +1,21 @@
-import pytest
-import tempfile
 import os
+import tempfile
 from pathlib import Path
+
+import pytest
+
 from graxia.packages.quant_os.repo_intelligence.supply_chain import SupplyChainScanner
+
 
 @pytest.fixture
 def project_root():
     return str(Path(__file__).parent.parent)
 
+
 @pytest.fixture
 def scanner(project_root):
     return SupplyChainScanner(project_root)
+
 
 class TestSupplyChainScanner:
     def test_scan_requirements_finds_file(self, scanner):
@@ -29,7 +34,7 @@ class TestSupplyChainScanner:
         assert "MISSING" in msg
 
     def test_verify_empty_lockfile(self, scanner):
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
             f.write("")
             f.flush()
             valid, msg = scanner.verify_lockfile(f.name)
@@ -38,7 +43,7 @@ class TestSupplyChainScanner:
         os.unlink(f.name)
 
     def test_verify_valid_lockfile(self, scanner):
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
             f.write("package==1.0.0\n")
             f.flush()
             valid, msg = scanner.verify_lockfile(f.name)
@@ -47,7 +52,7 @@ class TestSupplyChainScanner:
         os.unlink(f.name)
 
     def test_import_allowlist_clean(self, scanner):
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write("import os\nimport json\n")
             f.flush()
             valid, msg = scanner.check_import_allowlist(f.name, ["os", "json"])
@@ -55,7 +60,7 @@ class TestSupplyChainScanner:
         os.unlink(f.name)
 
     def test_import_allowlist_violation(self, scanner):
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write("import subprocess\nimport os\n")
             f.flush()
             valid, msg = scanner.check_import_allowlist(f.name, ["os", "json"])

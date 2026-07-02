@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+
 from graxia.packages.quant_os.validation.exit_gate import ExitGateEvaluator
 from graxia.packages.quant_os.validation.regime_analyzer import RegimeSlice, RegimeType, TradeConcentration
 
@@ -10,12 +10,13 @@ class _RunConfig:
     run_id: str
     run_type: str
 
+
 @dataclass
 class _ValidationResult:
     run_config: _RunConfig
     total_trades: int = 0
     expectancy: float = 0.0
-    error: Optional[str] = None
+    error: str | None = None
 
 
 def _make_result(expectancy=0.01, trades=50, error=None):
@@ -34,10 +35,12 @@ class TestExitGate:
         evaluator.check_positive_stressed_expectancy([_make_result(0.01)])
         evaluator.check_no_engine_mismatch("h1", {"vectorbt": "h1", "backtesting_py": "h1"})
         evaluator.check_no_single_trade_dominates(TradeConcentration(100, 0.15, 500, 0.25, 0.3))
-        evaluator.check_regime_stability([
-            RegimeSlice(RegimeType.TRENDING_UP, 20, 0.6, 200, 10, 5),
-            RegimeSlice(RegimeType.RANGING, 15, 0.5, 50, 3.3, 3),
-        ])
+        evaluator.check_regime_stability(
+            [
+                RegimeSlice(RegimeType.TRENDING_UP, 20, 0.6, 200, 10, 5),
+                RegimeSlice(RegimeType.RANGING, 15, 0.5, 50, 3.3, 3),
+            ]
+        )
         evaluator.check_no_parameter_change(True)
         evaluator.check_drawdown_within_limits(12.0)
         evaluator.check_ledger_integrity(True)

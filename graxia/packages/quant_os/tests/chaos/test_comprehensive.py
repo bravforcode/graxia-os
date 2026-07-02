@@ -17,11 +17,10 @@ from __future__ import annotations
 import asyncio
 import json
 import pickle
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 
 # ═══════════════════════════════════════════════════════════════════
 # CentaurTelegramAgent — Comprehensive Chaos
@@ -34,12 +33,14 @@ class TestCentaurTelegramComprehensive:
     @pytest.fixture
     def agent(self):
         from graxia.packages.quant_os.core.agents.centaur_telegram import CentaurTelegramAgent
+
         return CentaurTelegramAgent(token="test_token", chat_id="123")
 
     @pytest.fixture
     def signal_event(self):
-        from graxia.packages.quant_os.core.events import SignalEvent
         from graxia.packages.quant_os.core.enums import SignalType
+        from graxia.packages.quant_os.core.events import SignalEvent
+
         return SignalEvent(
             symbol="XAUUSD",
             signal_type=SignalType.BUY,
@@ -132,6 +133,7 @@ class TestCentaurTelegramComprehensive:
     async def test_connect_timeout(self, agent, signal_event):
         """Connection timeout — should catch, not propagate."""
         import httpx
+
         agent._pending.append(signal_event)
 
         mock_http = AsyncMock()
@@ -146,6 +148,7 @@ class TestCentaurTelegramComprehensive:
     async def test_read_timeout(self, agent, signal_event):
         """Read timeout — should catch, not propagate."""
         import httpx
+
         agent._pending.append(signal_event)
 
         mock_http = AsyncMock()
@@ -160,6 +163,7 @@ class TestCentaurTelegramComprehensive:
     async def test_connection_refused(self, agent, signal_event):
         """Connection refused — should catch, not propagate."""
         import httpx
+
         agent._pending.append(signal_event)
 
         mock_http = AsyncMock()
@@ -174,6 +178,7 @@ class TestCentaurTelegramComprehensive:
     async def test_dns_failure(self, agent, signal_event):
         """DNS failure — should catch, not propagate."""
         import httpx
+
         agent._pending.append(signal_event)
 
         mock_http = AsyncMock()
@@ -315,6 +320,7 @@ class TestCentaurTelegramComprehensive:
     @pytest.mark.asyncio
     async def test_concurrent_observe_and_act(self, agent, signal_event):
         """Concurrent observe() and act() — no race condition."""
+
         async def observe_loop():
             for _ in range(10):
                 agent._pending.append(signal_event)
@@ -351,8 +357,9 @@ class TestCentaurTelegramComprehensive:
     @pytest.mark.asyncio
     async def test_observe_empty_signal(self, agent):
         """Signal with no symbol — should still add to pending."""
-        from graxia.packages.quant_os.core.events import SignalEvent
         from graxia.packages.quant_os.core.enums import SignalType
+        from graxia.packages.quant_os.core.events import SignalEvent
+
         sig = SignalEvent(symbol="", signal_type=SignalType.BUY, confidence=0.5)
         agent.observe(sig)
         assert len(agent._pending) == 1
@@ -360,8 +367,9 @@ class TestCentaurTelegramComprehensive:
     @pytest.mark.asyncio
     async def test_observe_very_long_symbol(self, agent):
         """Very long symbol name — should not crash."""
-        from graxia.packages.quant_os.core.events import SignalEvent
         from graxia.packages.quant_os.core.enums import SignalType
+        from graxia.packages.quant_os.core.events import SignalEvent
+
         sig = SignalEvent(symbol="A" * 1000, signal_type=SignalType.BUY, confidence=0.5)
         agent.observe(sig)
         assert len(agent._pending) == 1
@@ -369,8 +377,9 @@ class TestCentaurTelegramComprehensive:
     @pytest.mark.asyncio
     async def test_observe_negative_confidence(self, agent):
         """Negative confidence — should not crash."""
-        from graxia.packages.quant_os.core.events import SignalEvent
         from graxia.packages.quant_os.core.enums import SignalType
+        from graxia.packages.quant_os.core.events import SignalEvent
+
         sig = SignalEvent(symbol="XAUUSD", signal_type=SignalType.BUY, confidence=-1.0)
         agent.observe(sig)
         assert len(agent._pending) == 1
@@ -378,8 +387,9 @@ class TestCentaurTelegramComprehensive:
     @pytest.mark.asyncio
     async def test_observe_confidence_above_one(self, agent):
         """Confidence > 1.0 — should not crash."""
-        from graxia.packages.quant_os.core.events import SignalEvent
         from graxia.packages.quant_os.core.enums import SignalType
+        from graxia.packages.quant_os.core.events import SignalEvent
+
         sig = SignalEvent(symbol="XAUUSD", signal_type=SignalType.BUY, confidence=999.0)
         agent.observe(sig)
         assert len(agent._pending) == 1
@@ -394,13 +404,21 @@ class TestCentaurTelegramComprehensive:
     def test_format_centaur_message_zero_sl(self):
         """Zero stop loss — should not divide by zero."""
         from graxia.packages.quant_os.core.agents.centaur_telegram import (
-            CentaurPayload, format_centaur_message,
+            CentaurPayload,
+            format_centaur_message,
         )
+
         payload = CentaurPayload(
-            asset="XAUUSD", direction="BUY", confidence=0.8,
-            entry=2350.0, stop_loss=0.0, take_profit=2370.0,
-            regime="TREND_UP", risk_check="PASSED",
-            strategy_source="ensemble", metadata={},
+            asset="XAUUSD",
+            direction="BUY",
+            confidence=0.8,
+            entry=2350.0,
+            stop_loss=0.0,
+            take_profit=2370.0,
+            regime="TREND_UP",
+            risk_check="PASSED",
+            strategy_source="ensemble",
+            metadata={},
         )
         msg = format_centaur_message(payload)
         assert "—" in msg  # RR should be "—" when SL is 0
@@ -408,13 +426,21 @@ class TestCentaurTelegramComprehensive:
     def test_format_centaur_message_equal_entry_sl(self):
         """Entry == SL — should not divide by zero."""
         from graxia.packages.quant_os.core.agents.centaur_telegram import (
-            CentaurPayload, format_centaur_message,
+            CentaurPayload,
+            format_centaur_message,
         )
+
         payload = CentaurPayload(
-            asset="XAUUSD", direction="BUY", confidence=0.8,
-            entry=2350.0, stop_loss=2350.0, take_profit=2370.0,
-            regime="TREND_UP", risk_check="PASSED",
-            strategy_source="ensemble", metadata={},
+            asset="XAUUSD",
+            direction="BUY",
+            confidence=0.8,
+            entry=2350.0,
+            stop_loss=2350.0,
+            take_profit=2370.0,
+            regime="TREND_UP",
+            risk_check="PASSED",
+            strategy_source="ensemble",
+            metadata={},
         )
         msg = format_centaur_message(payload)
         assert "—" in msg
@@ -428,12 +454,14 @@ class TestCentaurTelegramComprehensive:
 class TestSentimentAgentComprehensive:
     pass  # Full coverage in test_multi_provider.py
 
+
 class TestCrossSectionalMomentumComprehensive:
     """Comprehensive chaos tests for CrossSectionalMomentum."""
 
     @pytest.fixture
     def strategy(self, tmp_path):
         from graxia.packages.quant_os.scripts.cross_sectional_momentum import CrossSectionalMomentum, MomentumConfig
+
         config = MomentumConfig(top_n=5, select_n=2, lookback_days=7)
         s = CrossSectionalMomentum(config)
         s._state_path = tmp_path / "state.json"
@@ -444,8 +472,11 @@ class TestCrossSectionalMomentumComprehensive:
     def test_calculate_rebalance_no_changes(self, strategy):
         """Same selection as current — should not add or remove."""
         from graxia.packages.quant_os.scripts.cross_sectional_momentum import CoinMomentum
+
         strategy._positions = {"ETH/USDT": {"entry_price": 3000}}
-        selected = [CoinMomentum(symbol="ETH/USDT", price_now=3100, price_lookback=2800, return_pct=10.7, volume_24h=5e6)]
+        selected = [
+            CoinMomentum(symbol="ETH/USDT", price_now=3100, price_lookback=2800, return_pct=10.7, volume_24h=5e6)
+        ]
         result = strategy.calculate_rebalance(selected)
         assert len(result.added) == 0
         assert len(result.removed) == 0
@@ -453,6 +484,7 @@ class TestCrossSectionalMomentumComprehensive:
     def test_calculate_rebalance_partial_overlap(self, strategy):
         """Some overlap — should add new, remove old."""
         from graxia.packages.quant_os.scripts.cross_sectional_momentum import CoinMomentum
+
         strategy._positions = {
             "ETH/USDT": {"entry_price": 3000},
             "DOGE/USDT": {"entry_price": 0.1},
@@ -470,8 +502,11 @@ class TestCrossSectionalMomentumComprehensive:
     def test_calculate_rebalance_preserves_entry_price(self, strategy):
         """Existing position — should keep original entry price."""
         from graxia.packages.quant_os.scripts.cross_sectional_momentum import CoinMomentum
+
         strategy._positions = {"ETH/USDT": {"entry_price": 2500}}
-        selected = [CoinMomentum(symbol="ETH/USDT", price_now=3100, price_lookback=2800, return_pct=10.7, volume_24h=5e6)]
+        selected = [
+            CoinMomentum(symbol="ETH/USDT", price_now=3100, price_lookback=2800, return_pct=10.7, volume_24h=5e6)
+        ]
         result = strategy.calculate_rebalance(selected)
         assert strategy._positions["ETH/USDT"]["entry_price"] == 2500
 
@@ -480,8 +515,10 @@ class TestCrossSectionalMomentumComprehensive:
     def test_state_survives_restart(self, strategy, tmp_path):
         """Save state, create new instance, load — should recover."""
         from graxia.packages.quant_os.scripts.cross_sectional_momentum import (
-            CrossSectionalMomentum, MomentumConfig,
+            CrossSectionalMomentum,
+            MomentumConfig,
         )
+
         strategy._positions = {"ETH/USDT": {"entry_price": 3000, "return_pct": 10.0}}
         strategy._last_rebalance = datetime.now(UTC)
         strategy._save_state()
@@ -496,8 +533,10 @@ class TestCrossSectionalMomentumComprehensive:
     def test_state_missing_file(self, tmp_path):
         """No state file — should start fresh."""
         from graxia.packages.quant_os.scripts.cross_sectional_momentum import (
-            CrossSectionalMomentum, MomentumConfig,
+            CrossSectionalMomentum,
+            MomentumConfig,
         )
+
         s = CrossSectionalMomentum(MomentumConfig())
         s._state_path = tmp_path / "nonexistent.json"
         s._load_state()
@@ -507,8 +546,10 @@ class TestCrossSectionalMomentumComprehensive:
     def test_state_corrupted_file(self, tmp_path):
         """Corrupted state file — should handle gracefully."""
         from graxia.packages.quant_os.scripts.cross_sectional_momentum import (
-            CrossSectionalMomentum, MomentumConfig,
+            CrossSectionalMomentum,
+            MomentumConfig,
         )
+
         corrupted = tmp_path / "state.json"
         corrupted.write_text("not valid json {{{")
 
@@ -562,6 +603,7 @@ class TestAutoRetrainComprehensive:
 
         with patch("graxia.packages.quant_os.scripts.auto_retrain.CHAMPION_PATH", champion_path):
             from graxia.packages.quant_os.scripts.auto_retrain import hot_swap
+
             with patch("graxia.packages.quant_os.scripts.auto_retrain.evaluate_model") as mock_eval:
                 mock_eval.return_value = MagicMock(deflated_sharpe=1.5, oos_max_drawdown=8.0)
                 result = hot_swap(challenger_data, challenger_metrics)
@@ -581,6 +623,7 @@ class TestAutoRetrainComprehensive:
 
         with patch("graxia.packages.quant_os.scripts.auto_retrain.CHAMPION_PATH", champion_path):
             from graxia.packages.quant_os.scripts.auto_retrain import hot_swap
+
             with patch("graxia.packages.quant_os.scripts.auto_retrain.evaluate_model") as mock_eval:
                 mock_eval.return_value = MagicMock(deflated_sharpe=1.5, oos_max_drawdown=5.0)
                 result = hot_swap(challenger_data, challenger_metrics)
@@ -600,6 +643,7 @@ class TestAutoRetrainComprehensive:
 
         with patch("graxia.packages.quant_os.scripts.auto_retrain.CHAMPION_PATH", champion_path):
             from graxia.packages.quant_os.scripts.auto_retrain import hot_swap
+
             with patch("graxia.packages.quant_os.scripts.auto_retrain.evaluate_model") as mock_eval:
                 mock_eval.return_value = MagicMock(deflated_sharpe=1.5, oos_max_drawdown=5.0)
                 result = hot_swap(challenger_data, challenger_metrics)
@@ -613,6 +657,7 @@ class TestAutoRetrainComprehensive:
 
         with patch("graxia.packages.quant_os.scripts.auto_retrain.RETRAIN_LOG", log_path):
             from graxia.packages.quant_os.scripts.auto_retrain import log_retrain
+
             log_retrain({"status": "run1"})
             log_retrain({"status": "run2"})
 
@@ -628,6 +673,7 @@ class TestAutoRetrainComprehensive:
 
         with patch("graxia.packages.quant_os.scripts.auto_retrain.CHAMPION_PATH", champion_path):
             from graxia.packages.quant_os.scripts.auto_retrain import save_champion
+
             save_champion(model_data)
             assert champion_path.exists()
 
@@ -639,6 +685,7 @@ class TestAutoRetrainComprehensive:
 
         with patch("graxia.packages.quant_os.scripts.auto_retrain.CHAMPION_PATH", champion_path):
             from graxia.packages.quant_os.scripts.auto_retrain import save_champion
+
             save_champion(old_data)
             save_champion(new_data)
 
@@ -658,10 +705,10 @@ class TestEventBusIntegrationComprehensive:
     @pytest.mark.asyncio
     async def test_centaur_receives_buy_signal(self):
         """Centaur agent receives BUY signal via EventBus."""
-        from graxia.packages.quant_os.core.event_bus import EventBus
         from graxia.packages.quant_os.core.agents.centaur_telegram import CentaurTelegramAgent
-        from graxia.packages.quant_os.core.events import SignalEvent
         from graxia.packages.quant_os.core.enums import SignalType
+        from graxia.packages.quant_os.core.event_bus import EventBus
+        from graxia.packages.quant_os.core.events import SignalEvent
 
         bus = EventBus()
         await bus.start()
@@ -679,10 +726,10 @@ class TestEventBusIntegrationComprehensive:
     @pytest.mark.asyncio
     async def test_centaur_receives_sell_signal(self):
         """Centaur agent receives SELL signal via EventBus."""
-        from graxia.packages.quant_os.core.event_bus import EventBus
         from graxia.packages.quant_os.core.agents.centaur_telegram import CentaurTelegramAgent
-        from graxia.packages.quant_os.core.events import SignalEvent
         from graxia.packages.quant_os.core.enums import SignalType
+        from graxia.packages.quant_os.core.event_bus import EventBus
+        from graxia.packages.quant_os.core.events import SignalEvent
 
         bus = EventBus()
         await bus.start()
@@ -700,10 +747,10 @@ class TestEventBusIntegrationComprehensive:
     @pytest.mark.asyncio
     async def test_centaur_ignores_no_trade_via_bus(self):
         """Centaur agent ignores NO_TRADE signal via EventBus."""
-        from graxia.packages.quant_os.core.event_bus import EventBus
         from graxia.packages.quant_os.core.agents.centaur_telegram import CentaurTelegramAgent
-        from graxia.packages.quant_os.core.events import SignalEvent
         from graxia.packages.quant_os.core.enums import SignalType
+        from graxia.packages.quant_os.core.event_bus import EventBus
+        from graxia.packages.quant_os.core.events import SignalEvent
 
         bus = EventBus()
         await bus.start()
@@ -720,8 +767,8 @@ class TestEventBusIntegrationComprehensive:
     @pytest.mark.asyncio
     async def test_sentiment_receives_news(self):
         """Sentiment agent receives news via EventBus."""
-        from graxia.packages.quant_os.core.event_bus import EventBus
         from graxia.packages.quant_os.core.agents.sentiment_agent import SentimentAgent
+        from graxia.packages.quant_os.core.event_bus import EventBus
         from graxia.packages.quant_os.core.events import Event
 
         bus = EventBus()
@@ -740,10 +787,10 @@ class TestEventBusIntegrationComprehensive:
     @pytest.mark.asyncio
     async def test_multiple_agents_same_bus(self):
         """Multiple agents subscribing to same bus — no interference."""
-        from graxia.packages.quant_os.core.event_bus import EventBus
         from graxia.packages.quant_os.core.agents.centaur_telegram import CentaurTelegramAgent
-        from graxia.packages.quant_os.core.events import SignalEvent
         from graxia.packages.quant_os.core.enums import SignalType
+        from graxia.packages.quant_os.core.event_bus import EventBus
+        from graxia.packages.quant_os.core.events import SignalEvent
 
         bus = EventBus()
         await bus.start()

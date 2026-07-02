@@ -1,6 +1,7 @@
 """Phase BE-P11 — Review report generator."""
+
 from dataclasses import dataclass
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 
 @dataclass
@@ -63,9 +64,15 @@ class ReviewReport:
 class ReviewReportGenerator:
     """Generate review reports."""
 
-    def generate(self, strategy_id: str, decision: str, blockers: list,
-                 evidence_summary: dict, recommendation: str = "",
-                 operator_notes: str = "") -> ReviewReport:
+    def generate(
+        self,
+        strategy_id: str,
+        decision: str,
+        blockers: list,
+        evidence_summary: dict,
+        recommendation: str = "",
+        operator_notes: str = "",
+    ) -> ReviewReport:
         return ReviewReport(
             strategy_id=strategy_id,
             decision=decision,

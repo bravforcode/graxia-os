@@ -3,8 +3,8 @@
 import hashlib
 import logging
 import time
-from typing import Optional, Dict, Any
 from decimal import Decimal
+from typing import Any
 
 import redis
 from sqlalchemy.orm import Session
@@ -23,7 +23,7 @@ class IdempotencyChecker:
     Strategy: symbol + side + quantity + timestamp_bucket (1 minute)
     """
 
-    def __init__(self, redis_client: Optional[redis.Redis] = None, db_session: Optional[Session] = None):
+    def __init__(self, redis_client: redis.Redis | None = None, db_session: Session | None = None):
         self.redis = redis_client
         self.db = db_session
         self.config = get_config()
@@ -41,8 +41,8 @@ class IdempotencyChecker:
         side: str,
         quantity: Decimal,
         strategy_id: str,
-        signal_id: Optional[str] = None,
-        timestamp_bucket_seconds: int = 60
+        signal_id: str | None = None,
+        timestamp_bucket_seconds: int = 60,
     ) -> str:
         """
         Generate idempotency key.
@@ -67,7 +67,7 @@ class IdempotencyChecker:
             str(qty_rounded),
             strategy_id,
             str(signal_id) if signal_id else "",
-            str(time_bucket)
+            str(time_bucket),
         ]
 
         key_string = ":".join(components)
@@ -75,12 +75,7 @@ class IdempotencyChecker:
         # Hash to fixed length
         return hashlib.sha256(key_string.encode()).hexdigest()
 
-    def is_duplicate(
-        self,
-        idempotency_key: str,
-        check_db: bool = True,
-        check_redis: bool = True
-    ) -> bool:
+    def is_duplicate(self, idempotency_key: str, check_db: bool = True, check_redis: bool = True) -> bool:
         """
         Check if this is a duplicate order.
 
@@ -96,20 +91,13 @@ class IdempotencyChecker:
 
         # Check database (authoritative)
         if check_db and self.db:
-            existing = self.db.query(OrderModel).filter(
-                OrderModel.idempotency_key == idempotency_key
-            ).first()
+            existing = self.db.query(OrderModel).filter(OrderModel.idempotency_key == idempotency_key).first()
             if existing:
                 return True
 
         return False
 
-    def record_key(
-        self,
-        idempotency_key: str,
-        order_id: str,
-        ttl_seconds: int = 3600
-    ) -> None:
+    def record_key(self, idempotency_key: str, order_id: str, ttl_seconds: int = 3600) -> None:
         """
         Record idempotency key to prevent future duplicates.
 
@@ -120,20 +108,11 @@ class IdempotencyChecker:
         """
         if self.redis:
             try:
-                self.redis.setex(
-                    f"idempotency:{idempotency_key}",
-                    time=ttl_seconds,
-                    value=order_id
-                )
+                self.redis.setex(f"idempotency:{idempotency_key}", time=ttl_seconds, value=order_id)
             except Exception:
                 logger.warning("idempotency.redis_record_failed order_id=%s", order_id, exc_info=True)
 
-    def check_and_record(
-        self,
-        idempotency_key: str,
-        order_id: str,
-        raise_on_duplicate: bool = True
-    ) -> bool:
+    def check_and_record(self, idempotency_key: str, order_id: str, raise_on_duplicate: bool = True) -> bool:
         """
         Check for duplicate and record key atomically.
 
@@ -145,15 +124,14 @@ class IdempotencyChecker:
         if is_dup:
             if raise_on_duplicate:
                 raise DuplicateOrderError(
-                    f"Duplicate order detected with key: {idempotency_key[:16]}...",
-                    idempotency_key=idempotency_key
+                    f"Duplicate order detected with key: {idempotency_key[:16]}...", idempotency_key=idempotency_key
                 )
             return False
 
         self.record_key(idempotency_key, order_id)
         return True
 
-    def get_order_by_key(self, idempotency_key: str) -> Optional[Dict[str, Any]]:
+    def get_order_by_key(self, idempotency_key: str) -> dict[str, Any] | None:
         """Get order details by idempotency key"""
         # Check Redis first
         if self.redis:
@@ -166,15 +144,13 @@ class IdempotencyChecker:
 
         # Check database
         if self.db:
-            order = self.db.query(OrderModel).filter(
-                OrderModel.idempotency_key == idempotency_key
-            ).first()
+            order = self.db.query(OrderModel).filter(OrderModel.idempotency_key == idempotency_key).first()
             if order:
                 return {
                     "order_id": str(order.id),
                     "status": order.status.value,
                     "symbol": order.symbol,
-                    "source": "database"
+                    "source": "database",
                 }
 
         return None
@@ -187,7 +163,7 @@ class IdempotencyChecker:
             except Exception:
                 logger.warning("idempotency.redis_delete_failed", exc_info=True)
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get idempotency checker statistics"""
         stats = {
             "redis_connected": self.redis is not None,
@@ -214,9 +190,9 @@ class WindowedIdempotencyChecker(IdempotencyChecker):
 
     DEFAULT_WINDOW_SECONDS = 60
     STRATEGY_WINDOWS = {
-        "mtm": 60,      # 1 minute for momentum
-        "mrb": 120,     # 2 minutes for mean reversion
-        "mlb": 60,      # 1 minute for ML breakout
+        "mtm": 60,  # 1 minute for momentum
+        "mrb": 120,  # 2 minutes for mean reversion
+        "mlb": 60,  # 1 minute for ML breakout
     }
 
     def get_window(self, strategy_id: str) -> int:
@@ -229,8 +205,8 @@ class WindowedIdempotencyChecker(IdempotencyChecker):
         side: str,
         quantity: Decimal,
         strategy_id: str,
-        signal_id: Optional[str] = None,
-        timestamp_bucket_seconds: Optional[int] = None
+        signal_id: str | None = None,
+        timestamp_bucket_seconds: int | None = None,
     ) -> str:
         """Generate key with strategy-specific window"""
         window = timestamp_bucket_seconds or self.get_window(strategy_id)

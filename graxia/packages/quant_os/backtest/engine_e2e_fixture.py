@@ -7,11 +7,10 @@ No MT5, no external deps, no CSV files.
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import List
 
-from .engine import BacktestConfig
 from ..core.enums import SignalType
 from ..strategies.base import Signal
+from .engine import BacktestConfig
 
 
 @dataclass
@@ -29,21 +28,23 @@ class ScenarioExpected:
     state_terminal: str  # "AUDITED" or "CRITICAL_INCIDENT"
 
 
-def _make_bars(prices: List[float], spread: float = 0.02):
+def _make_bars(prices: list[float], spread: float = 0.02):
     """Generate bars from a price list."""
     bars = []
     for p in prices:
-        bars.append({
-            "open": Decimal(str(p)),
-            "high": Decimal(str(p + spread * 2)),
-            "low": Decimal(str(p - spread * 2)),
-            "close": Decimal(str(p + spread * 0.3)),
-            "volume": [1000],
-        })
+        bars.append(
+            {
+                "open": Decimal(str(p)),
+                "high": Decimal(str(p + spread * 2)),
+                "low": Decimal(str(p - spread * 2)),
+                "close": Decimal(str(p + spread * 0.3)),
+                "volume": [1000],
+            }
+        )
     return bars
 
 
-def _make_timestamps(n: int, start: datetime = None) -> List[datetime]:
+def _make_timestamps(n: int, start: datetime = None) -> list[datetime]:
     """Generate hourly timestamps starting from 2025-01-06 00:00 UTC."""
     if start is None:
         start = datetime(2025, 1, 6, 0, 0, 0)
@@ -80,8 +81,7 @@ def _base_config(**overrides) -> BacktestConfig:
     return BacktestConfig(**defaults)
 
 
-def _sig(signal_type, stop_loss=None, take_profit=None, entry_price=None,
-         symbol="EURUSD", timestamp=None):
+def _sig(signal_type, stop_loss=None, take_profit=None, entry_price=None, symbol="EURUSD", timestamp=None):
     return Signal(
         id="test_signal",
         strategy_id="deterministic",
@@ -98,22 +98,37 @@ def _sig(signal_type, stop_loss=None, take_profit=None, entry_price=None,
 def scenario_long_entry_sl_only():
     """Signal at bar 5, long entry at bar 6 open, SL hit on bar 8."""
     # 12 bars: bars 0-4 = warmup, signal at bar 5, entry bar 6, SL bar 8
-    prices = [1.1000, 1.1010, 1.1020, 1.1030, 1.1040,
-              1.1050,  # bar 5: signal here
-              1.1060,  # bar 6: entry at open
-              1.1070,  # bar 7: hold
-              1.0980,  # bar 8: drops → SL hit
-              1.1000, 1.1010, 1.1020]
+    prices = [
+        1.1000,
+        1.1010,
+        1.1020,
+        1.1030,
+        1.1040,
+        1.1050,  # bar 5: signal here
+        1.1060,  # bar 6: entry at open
+        1.1070,  # bar 7: hold
+        1.0980,  # bar 8: drops → SL hit
+        1.1000,
+        1.1010,
+        1.1020,
+    ]
     bars = _make_bars(prices)
     ts = _make_timestamps(len(bars))
 
     signal = _sig(SignalType.BUY, stop_loss=1.0990, take_profit=1.1100, entry_price=1.1060, timestamp=ts[5])
     config = _base_config()
     expected = ScenarioExpected(
-        trade_count=1, entry_bar_index=6, side="LONG",
-        sl_triggered=True, tp_triggered=False, ambiguous=False,
-        overnight_hold=False, critical_incident=False, rejected=False,
-        cost_scenario="base", state_terminal="AUDITED",
+        trade_count=1,
+        entry_bar_index=6,
+        side="LONG",
+        sl_triggered=True,
+        tp_triggered=False,
+        ambiguous=False,
+        overnight_hold=False,
+        critical_incident=False,
+        rejected=False,
+        cost_scenario="base",
+        state_terminal="AUDITED",
     )
     return config, bars, ts, [signal], expected
 
@@ -121,22 +136,37 @@ def scenario_long_entry_sl_only():
 # ── Scenario 2 ────────────────────────────────────────────────────────
 def scenario_long_entry_tp_only():
     """Signal at bar 5, long entry at bar 6 open, TP hit on bar 10."""
-    prices = [1.1000, 1.1010, 1.1020, 1.1030, 1.1040,
-              1.1050,  # bar 5: signal
-              1.1060,  # bar 6: entry
-              1.1080, 1.1100, 1.1120,
-              1.1140,  # bar 10: TP hit (take_profit=1.1130)
-              1.1000]
+    prices = [
+        1.1000,
+        1.1010,
+        1.1020,
+        1.1030,
+        1.1040,
+        1.1050,  # bar 5: signal
+        1.1060,  # bar 6: entry
+        1.1080,
+        1.1100,
+        1.1120,
+        1.1140,  # bar 10: TP hit (take_profit=1.1130)
+        1.1000,
+    ]
     bars = _make_bars(prices)
     ts = _make_timestamps(len(bars))
 
     signal = _sig(SignalType.BUY, stop_loss=1.0990, take_profit=1.1130, entry_price=1.1060, timestamp=ts[5])
     config = _base_config()
     expected = ScenarioExpected(
-        trade_count=1, entry_bar_index=6, side="LONG",
-        sl_triggered=False, tp_triggered=True, ambiguous=False,
-        overnight_hold=False, critical_incident=False, rejected=False,
-        cost_scenario="base", state_terminal="AUDITED",
+        trade_count=1,
+        entry_bar_index=6,
+        side="LONG",
+        sl_triggered=False,
+        tp_triggered=True,
+        ambiguous=False,
+        overnight_hold=False,
+        critical_incident=False,
+        rejected=False,
+        cost_scenario="base",
+        state_terminal="AUDITED",
     )
     return config, bars, ts, [signal], expected
 
@@ -144,22 +174,37 @@ def scenario_long_entry_tp_only():
 # ── Scenario 3 ────────────────────────────────────────────────────────
 def scenario_short_entry_sl_only():
     """Signal at bar 5, short entry at bar 6 open, SL hit on bar 8."""
-    prices = [1.1050, 1.1040, 1.1030, 1.1020, 1.1010,
-              1.1000,  # bar 5: signal
-              1.0990,  # bar 6: entry
-              1.0980,  # bar 7: hold
-              1.1020,  # bar 8: rises → SL hit
-              1.1050, 1.1040, 1.1030]
+    prices = [
+        1.1050,
+        1.1040,
+        1.1030,
+        1.1020,
+        1.1010,
+        1.1000,  # bar 5: signal
+        1.0990,  # bar 6: entry
+        1.0980,  # bar 7: hold
+        1.1020,  # bar 8: rises → SL hit
+        1.1050,
+        1.1040,
+        1.1030,
+    ]
     bars = _make_bars(prices)
     ts = _make_timestamps(len(bars))
 
     signal = _sig(SignalType.SELL, stop_loss=1.1010, take_profit=1.0950, entry_price=1.0990, timestamp=ts[5])
     config = _base_config()
     expected = ScenarioExpected(
-        trade_count=1, entry_bar_index=6, side="SHORT",
-        sl_triggered=True, tp_triggered=False, ambiguous=False,
-        overnight_hold=False, critical_incident=False, rejected=False,
-        cost_scenario="base", state_terminal="AUDITED",
+        trade_count=1,
+        entry_bar_index=6,
+        side="SHORT",
+        sl_triggered=True,
+        tp_triggered=False,
+        ambiguous=False,
+        overnight_hold=False,
+        critical_incident=False,
+        rejected=False,
+        cost_scenario="base",
+        state_terminal="AUDITED",
     )
     return config, bars, ts, [signal], expected
 
@@ -167,22 +212,37 @@ def scenario_short_entry_sl_only():
 # ── Scenario 4 ────────────────────────────────────────────────────────
 def scenario_short_entry_tp_only():
     """Signal at bar 5, short entry at bar 6 open, TP hit on bar 10."""
-    prices = [1.1050, 1.1040, 1.1030, 1.1020, 1.1010,
-              1.1000,  # bar 5: signal
-              1.0990,  # bar 6: entry
-              1.0970, 1.0950, 1.0930,
-              1.0910,  # bar 10: TP hit (take_profit=1.0920)
-              1.1000]
+    prices = [
+        1.1050,
+        1.1040,
+        1.1030,
+        1.1020,
+        1.1010,
+        1.1000,  # bar 5: signal
+        1.0990,  # bar 6: entry
+        1.0970,
+        1.0950,
+        1.0930,
+        1.0910,  # bar 10: TP hit (take_profit=1.0920)
+        1.1000,
+    ]
     bars = _make_bars(prices)
     ts = _make_timestamps(len(bars))
 
     signal = _sig(SignalType.SELL, stop_loss=1.1010, take_profit=1.0920, entry_price=1.0990, timestamp=ts[5])
     config = _base_config()
     expected = ScenarioExpected(
-        trade_count=1, entry_bar_index=6, side="SHORT",
-        sl_triggered=False, tp_triggered=True, ambiguous=False,
-        overnight_hold=False, critical_incident=False, rejected=False,
-        cost_scenario="base", state_terminal="AUDITED",
+        trade_count=1,
+        entry_bar_index=6,
+        side="SHORT",
+        sl_triggered=False,
+        tp_triggered=True,
+        ambiguous=False,
+        overnight_hold=False,
+        critical_incident=False,
+        rejected=False,
+        cost_scenario="base",
+        state_terminal="AUDITED",
     )
     return config, bars, ts, [signal], expected
 
@@ -190,12 +250,20 @@ def scenario_short_entry_tp_only():
 # ── Scenario 5 ────────────────────────────────────────────────────────
 def scenario_ambiguous_bar():
     """Both SL and TP reachable on same bar → adverse-first (SL resolves first)."""
-    prices = [1.1000, 1.1010, 1.1020, 1.1030, 1.1040,
-              1.1050,  # bar 5: signal
-              1.1060,  # bar 6: entry
-              1.1070,  # bar 7: hold
-              1.1000,  # bar 8: bar covers both SL and TP range
-              1.1000, 1.1000, 1.1000]
+    prices = [
+        1.1000,
+        1.1010,
+        1.1020,
+        1.1030,
+        1.1040,
+        1.1050,  # bar 5: signal
+        1.1060,  # bar 6: entry
+        1.1070,  # bar 7: hold
+        1.1000,  # bar 8: bar covers both SL and TP range
+        1.1000,
+        1.1000,
+        1.1000,
+    ]
     bars = _make_bars(prices)
     ts = _make_timestamps(len(bars))
 
@@ -206,7 +274,7 @@ def scenario_ambiguous_bar():
     bars[8] = {
         "open": Decimal("1.1000"),
         "high": Decimal("1.1085"),  # above TP
-        "low": Decimal("1.0985"),   # below SL
+        "low": Decimal("1.0985"),  # below SL
         "close": Decimal("1.1000"),
         "volume": [1000],
     }
@@ -214,10 +282,17 @@ def scenario_ambiguous_bar():
     signal = _sig(SignalType.BUY, stop_loss=1.0990, take_profit=1.1080, entry_price=1.1060, timestamp=ts[5])
     config = _base_config()
     expected = ScenarioExpected(
-        trade_count=1, entry_bar_index=6, side="LONG",
-        sl_triggered=True, tp_triggered=False, ambiguous=True,
-        overnight_hold=False, critical_incident=False, rejected=False,
-        cost_scenario="base", state_terminal="AUDITED",
+        trade_count=1,
+        entry_bar_index=6,
+        side="LONG",
+        sl_triggered=True,
+        tp_triggered=False,
+        ambiguous=True,
+        overnight_hold=False,
+        critical_incident=False,
+        rejected=False,
+        cost_scenario="base",
+        state_terminal="AUDITED",
     )
     return config, bars, ts, [signal], expected
 
@@ -240,10 +315,17 @@ def scenario_overnight_hold():
     signal = _sig(SignalType.BUY, stop_loss=1.0990, take_profit=1.1150, entry_price=1.1060, timestamp=ts[5])
     config = _base_config(enable_swap=True)
     expected = ScenarioExpected(
-        trade_count=1, entry_bar_index=6, side="LONG",
-        sl_triggered=False, tp_triggered=False, ambiguous=False,
-        overnight_hold=True, critical_incident=False, rejected=False,
-        cost_scenario="base", state_terminal="AUDITED",
+        trade_count=1,
+        entry_bar_index=6,
+        side="LONG",
+        sl_triggered=False,
+        tp_triggered=False,
+        ambiguous=False,
+        overnight_hold=True,
+        critical_incident=False,
+        rejected=False,
+        cost_scenario="base",
+        state_terminal="AUDITED",
     )
     return config, bars, ts, [signal], expected
 
@@ -251,18 +333,24 @@ def scenario_overnight_hold():
 # ── Scenario 7 ────────────────────────────────────────────────────────
 def scenario_missing_sl_rejected():
     """Signal without stop_loss → CRITICAL_INCIDENT, no position opened."""
-    prices = [1.1000, 1.1010, 1.1020, 1.1030, 1.1040,
-              1.1050, 1.1060, 1.1070, 1.1080, 1.1090, 1.1100, 1.1110]
+    prices = [1.1000, 1.1010, 1.1020, 1.1030, 1.1040, 1.1050, 1.1060, 1.1070, 1.1080, 1.1090, 1.1100, 1.1110]
     bars = _make_bars(prices)
     ts = _make_timestamps(len(bars))
 
     signal = _sig(SignalType.BUY, stop_loss=None, take_profit=1.1150, entry_price=1.1060, timestamp=ts[5])
     config = _base_config()
     expected = ScenarioExpected(
-        trade_count=0, entry_bar_index=-1, side="LONG",
-        sl_triggered=False, tp_triggered=False, ambiguous=False,
-        overnight_hold=False, critical_incident=True, rejected=False,
-        cost_scenario="base", state_terminal="CRITICAL_INCIDENT",
+        trade_count=0,
+        entry_bar_index=-1,
+        side="LONG",
+        sl_triggered=False,
+        tp_triggered=False,
+        ambiguous=False,
+        overnight_hold=False,
+        critical_incident=True,
+        rejected=False,
+        cost_scenario="base",
+        state_terminal="CRITICAL_INCIDENT",
     )
     return config, bars, ts, [signal], expected
 
@@ -270,8 +358,7 @@ def scenario_missing_sl_rejected():
 # ── Scenario 8 ────────────────────────────────────────────────────────
 def scenario_invalid_sl_rejected():
     """Signal with SL above entry for LONG → rejected."""
-    prices = [1.1000, 1.1010, 1.1020, 1.1030, 1.1040,
-              1.1050, 1.1060, 1.1070, 1.1080, 1.1090, 1.1100, 1.1110]
+    prices = [1.1000, 1.1010, 1.1020, 1.1030, 1.1040, 1.1050, 1.1060, 1.1070, 1.1080, 1.1090, 1.1100, 1.1110]
     bars = _make_bars(prices)
     ts = _make_timestamps(len(bars))
 
@@ -279,10 +366,17 @@ def scenario_invalid_sl_rejected():
     signal = _sig(SignalType.BUY, stop_loss=1.1100, take_profit=1.1150, entry_price=1.1060, timestamp=ts[5])
     config = _base_config()
     expected = ScenarioExpected(
-        trade_count=0, entry_bar_index=-1, side="LONG",
-        sl_triggered=False, tp_triggered=False, ambiguous=False,
-        overnight_hold=False, critical_incident=False, rejected=True,
-        cost_scenario="base", state_terminal="AUDITED",
+        trade_count=0,
+        entry_bar_index=-1,
+        side="LONG",
+        sl_triggered=False,
+        tp_triggered=False,
+        ambiguous=False,
+        overnight_hold=False,
+        critical_incident=False,
+        rejected=True,
+        cost_scenario="base",
+        state_terminal="AUDITED",
     )
     return config, bars, ts, [signal], expected
 
@@ -290,8 +384,7 @@ def scenario_invalid_sl_rejected():
 # ── Scenario 9 ────────────────────────────────────────────────────────
 def scenario_max_risk_rejection():
     """Very tight SL with tiny equity → volume below minimum → rejected."""
-    prices = [1.1000, 1.1010, 1.1020, 1.1030, 1.1040,
-              1.1050, 1.1060, 1.1070, 1.1080, 1.1090, 1.1100, 1.1110]
+    prices = [1.1000, 1.1010, 1.1020, 1.1030, 1.1040, 1.1050, 1.1060, 1.1070, 1.1080, 1.1090, 1.1100, 1.1110]
     bars = _make_bars(prices)
     ts = _make_timestamps(len(bars))
 
@@ -299,10 +392,17 @@ def scenario_max_risk_rejection():
     signal = _sig(SignalType.BUY, stop_loss=1.1059, take_profit=1.1200, entry_price=1.1060, timestamp=ts[5])
     config = _base_config(initial_capital=Decimal("100"))  # tiny equity
     expected = ScenarioExpected(
-        trade_count=0, entry_bar_index=-1, side="LONG",
-        sl_triggered=False, tp_triggered=False, ambiguous=False,
-        overnight_hold=False, critical_incident=False, rejected=True,
-        cost_scenario="base", state_terminal="AUDITED",
+        trade_count=0,
+        entry_bar_index=-1,
+        side="LONG",
+        sl_triggered=False,
+        tp_triggered=False,
+        ambiguous=False,
+        overnight_hold=False,
+        critical_incident=False,
+        rejected=True,
+        cost_scenario="base",
+        state_terminal="AUDITED",
     )
     return config, bars, ts, [signal], expected
 
@@ -310,8 +410,7 @@ def scenario_max_risk_rejection():
 # ── Scenario 10 ───────────────────────────────────────────────────────
 def scenario_zero_volume_rejection():
     """Entry price = 0 → rejected."""
-    prices = [1.1000, 1.1010, 1.1020, 1.1030, 1.1040,
-              1.1050, 1.1060, 1.1070, 1.1080, 1.1090, 1.1100, 1.1110]
+    prices = [1.1000, 1.1010, 1.1020, 1.1030, 1.1040, 1.1050, 1.1060, 1.1070, 1.1080, 1.1090, 1.1100, 1.1110]
     bars = _make_bars(prices)
     ts = _make_timestamps(len(bars))
 
@@ -319,10 +418,17 @@ def scenario_zero_volume_rejection():
     signal = _sig(SignalType.BUY, stop_loss=1.0990, take_profit=1.1150, entry_price=0, timestamp=ts[5])
     config = _base_config()
     expected = ScenarioExpected(
-        trade_count=0, entry_bar_index=-1, side="LONG",
-        sl_triggered=False, tp_triggered=False, ambiguous=False,
-        overnight_hold=False, critical_incident=False, rejected=True,
-        cost_scenario="base", state_terminal="AUDITED",
+        trade_count=0,
+        entry_bar_index=-1,
+        side="LONG",
+        sl_triggered=False,
+        tp_triggered=False,
+        ambiguous=False,
+        overnight_hold=False,
+        critical_incident=False,
+        rejected=True,
+        cost_scenario="base",
+        state_terminal="AUDITED",
     )
     return config, bars, ts, [signal], expected
 
@@ -345,10 +451,17 @@ def scenario_multi_trade():
     ]
     config = _base_config()
     expected = ScenarioExpected(
-        trade_count=3, entry_bar_index=6, side="LONG",
-        sl_triggered=False, tp_triggered=True, ambiguous=False,
-        overnight_hold=False, critical_incident=False, rejected=False,
-        cost_scenario="base", state_terminal="AUDITED",
+        trade_count=3,
+        entry_bar_index=6,
+        side="LONG",
+        sl_triggered=False,
+        tp_triggered=True,
+        ambiguous=False,
+        overnight_hold=False,
+        critical_incident=False,
+        rejected=False,
+        cost_scenario="base",
+        state_terminal="AUDITED",
     )
     return config, bars, ts, signals, expected
 

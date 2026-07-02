@@ -24,7 +24,8 @@ from enum import Enum
 from typing import Protocol, runtime_checkable
 
 from .conservative_bar_model import estimate_bid_ask_from_bar
-from .cost_model import BASE as COST_BASE, calculate_trade_costs
+from .cost_model import BASE as COST_BASE
+from .cost_model import calculate_trade_costs
 from .fill_model import (
     ExecutionQuality,
     FillRequest,
@@ -36,10 +37,10 @@ from .fill_model import (
 from .order_state_machine import OrderState, OrderStateMachine
 from .trade_ledger import TradeLedger, TradeRecord
 
-
 # ---------------------------------------------------------------------------
 # Enums
 # ---------------------------------------------------------------------------
+
 
 class EventType(Enum):
     STOP_LOSS = "STOP_LOSS"
@@ -52,9 +53,11 @@ class EventType(Enum):
 # Data classes
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class OrderIntent:
     """Proposed trade to be simulated."""
+
     symbol: str
     side: Side
     volume: Decimal
@@ -68,6 +71,7 @@ class OrderIntent:
 @dataclass(frozen=True)
 class MarketSnapshot:
     """Current market state passed to the simulator."""
+
     bid: Decimal
     ask: Decimal
     spread: Decimal
@@ -81,6 +85,7 @@ class MarketSnapshot:
 @dataclass(frozen=True)
 class ContractSpec:
     """Contract parameters for cost calculation."""
+
     contract_size: Decimal = Decimal("1")
     commission_per_lot: Decimal = Decimal("0")
     spread_points: Decimal = Decimal("0")
@@ -89,6 +94,7 @@ class ContractSpec:
 @dataclass(frozen=True)
 class ExecutionResult:
     """Result of fill simulation from submit_intent."""
+
     entry_price: Decimal
     exit_price: Decimal
     sl_cost: Decimal
@@ -104,6 +110,7 @@ class ExecutionResult:
 @dataclass
 class ExecutionEvent:
     """Result of position evaluation from evaluate_open_positions."""
+
     trade_id: str
     event_type: EventType
     exit_price: Decimal
@@ -114,6 +121,7 @@ class ExecutionEvent:
 @dataclass
 class Position:
     """Open position tracked by the engine."""
+
     trade_id: str
     symbol: str
     side: Side
@@ -129,22 +137,20 @@ class Position:
 # Protocol
 # ---------------------------------------------------------------------------
 
+
 @runtime_checkable
 class ExecutionSimulator(Protocol):
     """Canonical execution interface — the engine depends on NOTHING else."""
 
-    def submit_intent(
-        self, intent: OrderIntent, market: MarketSnapshot
-    ) -> ExecutionResult: ...
+    def submit_intent(self, intent: OrderIntent, market: MarketSnapshot) -> ExecutionResult: ...
 
-    def evaluate_open_positions(
-        self, positions: list[Position], market: MarketSnapshot
-    ) -> list[ExecutionEvent]: ...
+    def evaluate_open_positions(self, positions: list[Position], market: MarketSnapshot) -> list[ExecutionEvent]: ...
 
 
 # ---------------------------------------------------------------------------
 # Backtest implementation
 # ---------------------------------------------------------------------------
+
 
 class BacktestExecutionSimulator:
     """Backtest-mode simulator using conservative bar-based fills.
@@ -279,14 +285,16 @@ class BacktestExecutionSimulator:
 
         for pos in positions:
             trigger = check_sl_tp_trigger(
-                pos.side, pos.stop_loss, pos.take_profit or Decimal("0"),
-                market.bid, market.ask,
+                pos.side,
+                pos.stop_loss,
+                pos.take_profit or Decimal("0"),
+                market.bid,
+                market.ask,
             )
 
             if trigger == "SL" and pos.take_profit is not None:
-                tp_hit = (
-                    (pos.side == Side.BUY and market.bid >= pos.take_profit)
-                    or (pos.side == Side.SELL and market.ask <= pos.take_profit)
+                tp_hit = (pos.side == Side.BUY and market.bid >= pos.take_profit) or (
+                    pos.side == Side.SELL and market.ask <= pos.take_profit
                 )
                 if tp_hit:
                     exit_price, pnl = self._resolve_adverse(pos, market)
@@ -350,13 +358,9 @@ class BacktestExecutionSimulator:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _resolve_adverse(
-        self, pos: Position, market: MarketSnapshot
-    ) -> tuple[Decimal, Decimal]:
+    def _resolve_adverse(self, pos: Position, market: MarketSnapshot) -> tuple[Decimal, Decimal]:
         """Resolve ambiguous bar — adverse (SL) outcome first."""
-        exit_price, slippage = simulate_exit(
-            pos.side, market.bid, market.ask, market.spread / Decimal("2")
-        )
+        exit_price, slippage = simulate_exit(pos.side, market.bid, market.ask, market.spread / Decimal("2"))
         if pos.side == Side.BUY:
             exit_price = pos.stop_loss
             pnl = (exit_price - pos.entry_price) * pos.volume
@@ -365,9 +369,7 @@ class BacktestExecutionSimulator:
             pnl = (pos.entry_price - exit_price) * pos.volume
         return exit_price, pnl
 
-    def _resolve_exit(
-        self, pos: Position, market: MarketSnapshot, trigger: str
-    ) -> tuple[Decimal, Decimal]:
+    def _resolve_exit(self, pos: Position, market: MarketSnapshot, trigger: str) -> tuple[Decimal, Decimal]:
         """Resolve a clean SL or TP exit."""
         if trigger == "SL":
             exit_price = pos.stop_loss

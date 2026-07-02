@@ -4,11 +4,13 @@ Usage:
     python scripts/ingest_crypto_stooq.py --dump-dir "C:/path/to/d_world_txt"
     python scripts/ingest_crypto_stooq.py --dump-dir "C:/path/to/d_world_txt" --symbols ETHUSD BTCUSD
 """
+
 import argparse
 import csv
 import sys
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
+
 import pandas as pd
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
@@ -21,7 +23,7 @@ CRYPTO_MAP = {
 
 def parse_stooq(filepath):
     rows = []
-    with open(filepath, "r", encoding="utf-8", errors="replace") as f:
+    with open(filepath, encoding="utf-8", errors="replace") as f:
         reader = csv.reader(f)
         next(reader)
         for row in reader:
@@ -29,14 +31,16 @@ def parse_stooq(filepath):
                 continue
             try:
                 dt = datetime.strptime(row[2], "%Y%m%d").replace(tzinfo=UTC)
-                rows.append({
-                    "time": dt.strftime("%Y-%m-%d %H:%M:%S"),
-                    "open": float(row[4]),
-                    "high": float(row[5]),
-                    "low": float(row[6]),
-                    "close": float(row[7]),
-                    "volume": float(row[8]) if len(row) > 8 and row[8] else 0.0,
-                })
+                rows.append(
+                    {
+                        "time": dt.strftime("%Y-%m-%d %H:%M:%S"),
+                        "open": float(row[4]),
+                        "high": float(row[5]),
+                        "low": float(row[6]),
+                        "close": float(row[7]),
+                        "volume": float(row[8]) if len(row) > 8 and row[8] else 0.0,
+                    }
+                )
             except Exception:
                 continue
     df = pd.DataFrame(rows)

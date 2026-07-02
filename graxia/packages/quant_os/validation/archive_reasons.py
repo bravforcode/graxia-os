@@ -1,4 +1,5 @@
 """Phase BE-P6 — Archive reason recorder."""
+
 from dataclasses import dataclass
 from datetime import UTC
 
@@ -23,9 +24,11 @@ class ArchiveRecorder:
     def __init__(self):
         self._records: list[ArchiveRecord] = []
 
-    def record(self, strategy_id: str, verdict: str, reason: str,
-               run_id: str = "", evidence: dict = None) -> ArchiveRecord:
+    def record(
+        self, strategy_id: str, verdict: str, reason: str, run_id: str = "", evidence: dict = None
+    ) -> ArchiveRecord:
         from datetime import datetime
+
         record = ArchiveRecord(
             strategy_id=strategy_id,
             verdict=verdict,

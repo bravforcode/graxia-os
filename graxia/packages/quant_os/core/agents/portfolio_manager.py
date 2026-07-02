@@ -60,14 +60,18 @@ class PortfolioManagerAgent(Agent):
         if isinstance(event, FillEvent):
             sym = event.symbol
             if sym not in self._positions:
-                self._positions[sym] = PositionState(symbol=sym, side=SignalType.BUY if event.side == "BUY" else SignalType.SELL, quantity=event.fill_quantity)
+                self._positions[sym] = PositionState(
+                    symbol=sym,
+                    side=SignalType.BUY if event.side == "BUY" else SignalType.SELL,
+                    quantity=event.fill_quantity,
+                )
             else:
                 self._positions[sym].quantity += event.fill_quantity
             return
 
-        if hasattr(event, 'trade_id') and hasattr(event, 'pnl'):
+        if hasattr(event, "trade_id") and hasattr(event, "pnl"):
             # TradeClosedEvent
-            sym = getattr(event, 'symbol', '')
+            sym = getattr(event, "symbol", "")
             if sym in self._positions:
                 self._positions[sym].quantity = 0
             return

@@ -7,11 +7,11 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-
 # ---------------------------------------------------------------------------
 # Build a minimal app that mirrors the real endpoints without importing
 # the quant_os.api package (which has a NameError in orders.py).
 # ---------------------------------------------------------------------------
+
 
 def _build_app():
     app = FastAPI()
@@ -22,7 +22,13 @@ def _build_app():
 
     @app.get("/health")
     async def health_check():
-        return {"status": "degraded", "broker_connected": False, "trading_mode": "PAPER", "live_trading_enabled": False, "orchestrator": {}}
+        return {
+            "status": "degraded",
+            "broker_connected": False,
+            "trading_mode": "PAPER",
+            "live_trading_enabled": False,
+            "orchestrator": {},
+        }
 
     @app.get("/status")
     async def system_status():
@@ -34,7 +40,16 @@ def _build_app():
 
     @app.get("/risk/status")
     async def risk_status():
-        return {"kill_switch": {"is_triggered": False}, "circuit_breaker": {"is_blocked": False}, "limits": {"max_risk_per_trade_pct": 1.0, "max_daily_loss_pct": 2.0, "max_drawdown_pct": 15.0, "max_positions": 5}}
+        return {
+            "kill_switch": {"is_triggered": False},
+            "circuit_breaker": {"is_blocked": False},
+            "limits": {
+                "max_risk_per_trade_pct": 1.0,
+                "max_daily_loss_pct": 2.0,
+                "max_drawdown_pct": 15.0,
+                "max_positions": 5,
+            },
+        }
 
     @app.get("/risk/limits")
     async def risk_limits():
@@ -56,6 +71,7 @@ def _build_app():
     async def kill_switch(request: dict):
         if request.get("action") not in ("trigger", "reset"):
             from fastapi import HTTPException
+
             raise HTTPException(status_code=400, detail="Action must be 'trigger' or 'reset'")
         return {"success": True, "action": request["action"]}
 
@@ -70,6 +86,7 @@ def client():
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 class TestHealthEndpoint:
     def test_health_returns_200(self, client):

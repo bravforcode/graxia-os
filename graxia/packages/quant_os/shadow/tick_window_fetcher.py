@@ -2,9 +2,10 @@
 
 Rejects naive datetimes. Validates returned ticks within requested window.
 """
-from datetime import datetime, UTC
+
 import hashlib
 import json
+from datetime import UTC, datetime
 
 
 class TickWindowFetcher:
@@ -18,7 +19,7 @@ class TickWindowFetcher:
 
     def __init__(self, mt5_connection):
         self._mt5 = mt5_connection
-        self._mt5_module = mt5_connection._mt5 if hasattr(mt5_connection, '_mt5') else None
+        self._mt5_module = mt5_connection._mt5 if hasattr(mt5_connection, "_mt5") else None
 
     def validate_datetime_aware(self, dt: datetime, name: str) -> None:
         """Reject naive datetime at config validation time."""
@@ -53,9 +54,7 @@ class TickWindowFetcher:
             "from": request_from.isoformat(),
             "to": request_to.isoformat(),
         }
-        window_hash = hashlib.sha256(
-            json.dumps(window_d, sort_keys=True).encode()
-        ).hexdigest()[:16]
+        window_hash = hashlib.sha256(json.dumps(window_d, sort_keys=True).encode()).hexdigest()[:16]
 
         result = {
             "ticks": [],
@@ -76,10 +75,7 @@ class TickWindowFetcher:
             return result
 
         try:
-            ticks = self._mt5_module.copy_ticks_range(
-                symbol, request_from, request_to,
-                self._mt5_module.COPY_TICKS_ALL
-            )
+            ticks = self._mt5_module.copy_ticks_range(symbol, request_from, request_to, self._mt5_module.COPY_TICKS_ALL)
         except Exception as e:
             result["error"] = f"copy_ticks_range failed: {e}"
             return result
@@ -118,11 +114,7 @@ class TickWindowFetcher:
             last = result["ticks"][-1]
             result["first_tick_epoch"] = first["time"]
             result["last_tick_epoch"] = last["time"]
-            result["first_tick_utc"] = datetime.fromtimestamp(
-                first["time"], tz=UTC
-            ).isoformat()
-            result["last_tick_utc"] = datetime.fromtimestamp(
-                last["time"], tz=UTC
-            ).isoformat()
+            result["first_tick_utc"] = datetime.fromtimestamp(first["time"], tz=UTC).isoformat()
+            result["last_tick_utc"] = datetime.fromtimestamp(last["time"], tz=UTC).isoformat()
 
         return result

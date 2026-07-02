@@ -18,14 +18,13 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 
 import pytest
-
-from quant_os.market_data.tick_store import TickStore
 from quant_os.market_data.tick_recorder import TickRecord
+from quant_os.market_data.tick_store import TickStore
 from quant_os.validation.archive_reasons import ArchiveRecorder
 from quant_os.validation.run_matrix import RunMatrix
 
-
 # ── Fixtures ─────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def tmp_tick_dir():
@@ -67,6 +66,7 @@ def _make_tick(
 # TICK STORE TESTS
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TestTickStoreChaos:
     """Chaos-mode tests for TickStore."""
 
@@ -105,9 +105,7 @@ class TestTickStoreChaos:
     def test_large_tick_batch(self, tick_store):
         base = datetime(2026, 6, 29, 10, 0, 0)
         for i in range(5000):
-            tick_store.store_tick(
-                _make_tick(ts=base + timedelta(seconds=i), seq=i, bid=2000 + i * 0.01)
-            )
+            tick_store.store_tick(_make_tick(ts=base + timedelta(seconds=i), seq=i, bid=2000 + i * 0.01))
         loaded = tick_store.load_ticks("XAUUSD", "2026-06-29")
         assert len(loaded) == 5000
 
@@ -130,9 +128,7 @@ class TestTickStoreChaos:
         def writer(n: int):
             try:
                 for i in range(100):
-                    tick_store.store_tick(
-                        _make_tick(ts=base + timedelta(seconds=n * 100 + i), seq=n * 100 + i)
-                    )
+                    tick_store.store_tick(_make_tick(ts=base + timedelta(seconds=n * 100 + i), seq=n * 100 + i))
             except Exception as e:
                 errors.append(e)
 
@@ -175,6 +171,7 @@ class TestTickStoreChaos:
 # ═══════════════════════════════════════════════════════════════════════════════
 # ARCHIVE REASONS TESTS
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class TestArchiveReasonsChaos:
     """Chaos-mode tests for ArchiveRecorder."""
@@ -244,6 +241,7 @@ class TestArchiveReasonsChaos:
 # ═══════════════════════════════════════════════════════════════════════════════
 # RUN MATRIX TESTS
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class TestRunMatrixChaos:
     """Chaos-mode tests for RunMatrix."""

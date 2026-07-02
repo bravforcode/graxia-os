@@ -1,15 +1,17 @@
 """Tests for Phase 3: Order State Machine and Trade Ledger"""
 
-import pytest
 import tempfile
-from decimal import Decimal
 from datetime import datetime
+from decimal import Decimal
 
-from graxia.packages.quant_os.execution.order_state_machine import (
-    OrderState, OrderStateMachine,
-)
-from graxia.packages.quant_os.execution.trade_ledger import TradeRecord, TradeLedger
+import pytest
+
 from graxia.packages.quant_os.core.exceptions import OrderStateError
+from graxia.packages.quant_os.execution.order_state_machine import (
+    OrderState,
+    OrderStateMachine,
+)
+from graxia.packages.quant_os.execution.trade_ledger import TradeLedger, TradeRecord
 
 
 def _make_lifecycle(order_id: str = "test-001") -> OrderStateMachine:
@@ -48,42 +50,87 @@ class TestFullLifecycle:
 
     def test_acknowledged_to_filled(self):
         lc = _make_lifecycle()
-        for s in (OrderState.RISK_CHECKED, OrderState.ORDER_PRECHECKED, OrderState.ORDER_SUBMITTED, OrderState.ORDER_ACKNOWLEDGED):
+        for s in (
+            OrderState.RISK_CHECKED,
+            OrderState.ORDER_PRECHECKED,
+            OrderState.ORDER_SUBMITTED,
+            OrderState.ORDER_ACKNOWLEDGED,
+        ):
             lc.transition(s)
         lc.transition(OrderState.FILLED, "Full fill")
         assert lc.state == OrderState.FILLED
 
     def test_filled_to_protective_stops_verified(self):
         lc = _make_lifecycle()
-        for s in (OrderState.RISK_CHECKED, OrderState.ORDER_PRECHECKED, OrderState.ORDER_SUBMITTED, OrderState.ORDER_ACKNOWLEDGED, OrderState.FILLED):
+        for s in (
+            OrderState.RISK_CHECKED,
+            OrderState.ORDER_PRECHECKED,
+            OrderState.ORDER_SUBMITTED,
+            OrderState.ORDER_ACKNOWLEDGED,
+            OrderState.FILLED,
+        ):
             lc.transition(s)
         lc.transition(OrderState.PROTECTIVE_STOPS_VERIFIED, "SL/TP placed")
         assert lc.state == OrderState.PROTECTIVE_STOPS_VERIFIED
 
     def test_protective_to_position_reconciled(self):
         lc = _make_lifecycle()
-        for s in (OrderState.RISK_CHECKED, OrderState.ORDER_PRECHECKED, OrderState.ORDER_SUBMITTED, OrderState.ORDER_ACKNOWLEDGED, OrderState.FILLED, OrderState.PROTECTIVE_STOPS_VERIFIED):
+        for s in (
+            OrderState.RISK_CHECKED,
+            OrderState.ORDER_PRECHECKED,
+            OrderState.ORDER_SUBMITTED,
+            OrderState.ORDER_ACKNOWLEDGED,
+            OrderState.FILLED,
+            OrderState.PROTECTIVE_STOPS_VERIFIED,
+        ):
             lc.transition(s)
         lc.transition(OrderState.POSITION_RECONCILED, "Positions match")
         assert lc.state == OrderState.POSITION_RECONCILED
 
     def test_position_reconciled_to_closed(self):
         lc = _make_lifecycle()
-        for s in (OrderState.RISK_CHECKED, OrderState.ORDER_PRECHECKED, OrderState.ORDER_SUBMITTED, OrderState.ORDER_ACKNOWLEDGED, OrderState.FILLED, OrderState.PROTECTIVE_STOPS_VERIFIED, OrderState.POSITION_RECONCILED):
+        for s in (
+            OrderState.RISK_CHECKED,
+            OrderState.ORDER_PRECHECKED,
+            OrderState.ORDER_SUBMITTED,
+            OrderState.ORDER_ACKNOWLEDGED,
+            OrderState.FILLED,
+            OrderState.PROTECTIVE_STOPS_VERIFIED,
+            OrderState.POSITION_RECONCILED,
+        ):
             lc.transition(s)
         lc.transition(OrderState.CLOSED, "Position closed")
         assert lc.state == OrderState.CLOSED
 
     def test_closed_to_deal_reconciled(self):
         lc = _make_lifecycle()
-        for s in (OrderState.RISK_CHECKED, OrderState.ORDER_PRECHECKED, OrderState.ORDER_SUBMITTED, OrderState.ORDER_ACKNOWLEDGED, OrderState.FILLED, OrderState.PROTECTIVE_STOPS_VERIFIED, OrderState.POSITION_RECONCILED, OrderState.CLOSED):
+        for s in (
+            OrderState.RISK_CHECKED,
+            OrderState.ORDER_PRECHECKED,
+            OrderState.ORDER_SUBMITTED,
+            OrderState.ORDER_ACKNOWLEDGED,
+            OrderState.FILLED,
+            OrderState.PROTECTIVE_STOPS_VERIFIED,
+            OrderState.POSITION_RECONCILED,
+            OrderState.CLOSED,
+        ):
             lc.transition(s)
         lc.transition(OrderState.DEAL_RECONCILED, "Deal reconciled")
         assert lc.state == OrderState.DEAL_RECONCILED
 
     def test_deal_reconciled_to_audited(self):
         lc = _make_lifecycle()
-        for s in (OrderState.RISK_CHECKED, OrderState.ORDER_PRECHECKED, OrderState.ORDER_SUBMITTED, OrderState.ORDER_ACKNOWLEDGED, OrderState.FILLED, OrderState.PROTECTIVE_STOPS_VERIFIED, OrderState.POSITION_RECONCILED, OrderState.CLOSED, OrderState.DEAL_RECONCILED):
+        for s in (
+            OrderState.RISK_CHECKED,
+            OrderState.ORDER_PRECHECKED,
+            OrderState.ORDER_SUBMITTED,
+            OrderState.ORDER_ACKNOWLEDGED,
+            OrderState.FILLED,
+            OrderState.PROTECTIVE_STOPS_VERIFIED,
+            OrderState.POSITION_RECONCILED,
+            OrderState.CLOSED,
+            OrderState.DEAL_RECONCILED,
+        ):
             lc.transition(s)
         lc.transition(OrderState.AUDITED, "Audit passed")
         assert lc.state == OrderState.AUDITED
@@ -112,11 +159,27 @@ class TestInvalidTransitions:
                 lc.transition(OrderState.ORDER_SUBMITTED)
                 lc.transition(terminal, "Expired")
             elif terminal == OrderState.AUDITED:
-                for s in (OrderState.RISK_CHECKED, OrderState.ORDER_PRECHECKED, OrderState.ORDER_SUBMITTED, OrderState.ORDER_ACKNOWLEDGED, OrderState.FILLED, OrderState.PROTECTIVE_STOPS_VERIFIED, OrderState.POSITION_RECONCILED, OrderState.CLOSED, OrderState.DEAL_RECONCILED):
+                for s in (
+                    OrderState.RISK_CHECKED,
+                    OrderState.ORDER_PRECHECKED,
+                    OrderState.ORDER_SUBMITTED,
+                    OrderState.ORDER_ACKNOWLEDGED,
+                    OrderState.FILLED,
+                    OrderState.PROTECTIVE_STOPS_VERIFIED,
+                    OrderState.POSITION_RECONCILED,
+                    OrderState.CLOSED,
+                    OrderState.DEAL_RECONCILED,
+                ):
                     lc.transition(s)
                 lc.transition(terminal, "Audited")
             elif terminal == OrderState.CRITICAL_INCIDENT:
-                for s in (OrderState.RISK_CHECKED, OrderState.ORDER_PRECHECKED, OrderState.ORDER_SUBMITTED, OrderState.ORDER_ACKNOWLEDGED, OrderState.FILLED):
+                for s in (
+                    OrderState.RISK_CHECKED,
+                    OrderState.ORDER_PRECHECKED,
+                    OrderState.ORDER_SUBMITTED,
+                    OrderState.ORDER_ACKNOWLEDGED,
+                    OrderState.FILLED,
+                ):
                     lc.transition(s)
                 lc.transition(terminal, "Critical")
 
@@ -131,7 +194,13 @@ class TestInvalidTransitions:
 class TestCriticalIncident:
     def test_critical_incident_is_terminal(self):
         lc = _make_lifecycle()
-        for s in (OrderState.RISK_CHECKED, OrderState.ORDER_PRECHECKED, OrderState.ORDER_SUBMITTED, OrderState.ORDER_ACKNOWLEDGED, OrderState.FILLED):
+        for s in (
+            OrderState.RISK_CHECKED,
+            OrderState.ORDER_PRECHECKED,
+            OrderState.ORDER_SUBMITTED,
+            OrderState.ORDER_ACKNOWLEDGED,
+            OrderState.FILLED,
+        ):
             lc.transition(s)
         lc.transition(OrderState.CRITICAL_INCIDENT, "Protective stops failed")
         assert lc.is_terminal()
@@ -241,6 +310,7 @@ class TestExecutionSafety:
     def test_no_order_send_in_execution(self):
         """execution/ module has no order_send in new files."""
         import importlib
+
         import graxia.packages.quant_os.execution.order_state_machine as osm
         import graxia.packages.quant_os.execution.trade_ledger as tl
 

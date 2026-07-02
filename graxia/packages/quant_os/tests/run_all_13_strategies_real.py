@@ -2,15 +2,15 @@
 Run all 13 gold_bot strategies through BacktestEngine on real EURUSD data.
 Reports trades, win rate, P&L for each strategy.
 """
+
 import os
-
 from decimal import Decimal
-from typing import Optional, Dict, Any, List
+from typing import Any
 
-from quant_os.backtest.engine import BacktestEngine, BacktestConfig
 from quant_os.backtest.data_loader import load_csv_data
-from quant_os.strategies.base import Strategy, Signal
+from quant_os.backtest.engine import BacktestConfig, BacktestEngine
 from quant_os.core.enums import SignalType
+from quant_os.strategies.base import Signal, Strategy
 
 
 class GoldStrategyAdapter(Strategy):
@@ -24,10 +24,10 @@ class GoldStrategyAdapter(Strategy):
     def generate_signal(
         self,
         symbol: str,
-        ohlcv_data: Dict[str, List],
-        indicators: Optional[Dict[str, Any]] = None,
+        ohlcv_data: dict[str, list],
+        indicators: dict[str, Any] | None = None,
         regime=None,
-    ) -> Optional[Signal]:
+    ) -> Signal | None:
         # Convert single-timeframe OHLCV to multi-timeframe format
         multi_data = {"M15": ohlcv_data, "H1": ohlcv_data, "H4": ohlcv_data}
         current_price = ohlcv_data["close"][-1] if ohlcv_data.get("close") else 0
@@ -57,7 +57,7 @@ class GoldStrategyAdapter(Strategy):
             notes=gs.reasoning,
         )
 
-    def required_features(self) -> List[str]:
+    def required_features(self) -> list[str]:
         return []
 
 
@@ -81,6 +81,7 @@ STRATEGY_MAP = [
 def load_strategy(name, module_path, class_name):
     """Dynamically import and instantiate a strategy"""
     import importlib
+
     mod = importlib.import_module(module_path)
     cls = getattr(mod, class_name)
     return cls()
@@ -130,18 +131,22 @@ def run_all():
             if trades:
                 print("  Last 3 trades:")
                 for t in trades[-3:]:
-                    print(f"    {t['side']} entry={t['entry_price']:.5f} "
-                          f"exit={t['exit_price']:.5f} pnl=${t['pnl']:+.2f}")
+                    print(
+                        f"    {t['side']} entry={t['entry_price']:.5f} "
+                        f"exit={t['exit_price']:.5f} pnl=${t['pnl']:+.2f}"
+                    )
 
-            results.append({
-                "name": name,
-                "trades": metrics.total_trades,
-                "win_rate": metrics.win_rate,
-                "profit_factor": metrics.profit_factor,
-                "pnl": metrics.total_pnl,
-                "max_dd": metrics.max_drawdown_pct,
-                "sharpe": metrics.sharpe_ratio,
-            })
+            results.append(
+                {
+                    "name": name,
+                    "trades": metrics.total_trades,
+                    "win_rate": metrics.win_rate,
+                    "profit_factor": metrics.profit_factor,
+                    "pnl": metrics.total_pnl,
+                    "max_dd": metrics.max_drawdown_pct,
+                    "sharpe": metrics.sharpe_ratio,
+                }
+            )
 
         except Exception as e:
             print(f"  ERROR: {e}")
@@ -158,8 +163,10 @@ def run_all():
         if "error" in r:
             print(f"  {r['name']:<20} ERROR: {r['error'][:40]}")
         else:
-            print(f"  {r['name']:<20} {r['trades']:<8} {r['win_rate']*100:<8.1f} "
-                  f"{r['profit_factor']:<8.2f} ${r['pnl']:+<10.2f} {r['max_dd']:<8.1f} {r['sharpe']:<8.2f}")
+            print(
+                f"  {r['name']:<20} {r['trades']:<8} {r['win_rate']*100:<8.1f} "
+                f"{r['profit_factor']:<8.2f} ${r['pnl']:+<10.2f} {r['max_dd']:<8.1f} {r['sharpe']:<8.2f}"
+            )
 
 
 if __name__ == "__main__":

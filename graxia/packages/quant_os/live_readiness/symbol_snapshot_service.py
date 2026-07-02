@@ -10,7 +10,7 @@ import hashlib
 import json
 import os
 from dataclasses import dataclass
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from decimal import Decimal
 
 
@@ -22,6 +22,7 @@ class SymbolSnapshot:
     All values read from MT5, never computed.
     snapshot_hash is SHA-256 for change detection.
     """
+
     timestamp_utc: datetime
     symbol: str
     bid: Decimal
@@ -100,12 +101,8 @@ def take_symbol_snapshot(readonly_client, symbol: str) -> SymbolSnapshot:
     tick_data = readonly_client.get_symbol_info_tick(symbol)
     sym_info = readonly_client.get_symbol_info(symbol)
 
-    filling_mode = _FILLING_MODE_MAP.get(
-        sym_info["filling_mode"], str(sym_info["filling_mode"])
-    )
-    execution_mode = _EXECUTION_MODE_MAP.get(
-        sym_info["execution_mode"], str(sym_info["execution_mode"])
-    )
+    filling_mode = _FILLING_MODE_MAP.get(sym_info["filling_mode"], str(sym_info["filling_mode"]))
+    execution_mode = _EXECUTION_MODE_MAP.get(sym_info["execution_mode"], str(sym_info["execution_mode"]))
 
     bid = Decimal(str(tick_data["bid"]))
     ask = Decimal(str(tick_data["ask"]))

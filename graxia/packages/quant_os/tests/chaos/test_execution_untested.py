@@ -19,25 +19,27 @@ from __future__ import annotations
 
 import os
 import tempfile
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from quant_os.execution.adapters.base import (
+    Order,
+    OrderStatus,
+)
 
 # ---------------------------------------------------------------------------
 # Import modules under test
 # ---------------------------------------------------------------------------
-
 from quant_os.execution.ambiguous_bar_resolver import (
-    resolve_ambiguous_bar,
     check_bar_triggers_with_ambiguous_resolution,
+    resolve_ambiguous_bar,
 )
-from quant_os.execution.fill_model import Side, FillRequest
 from quant_os.execution.conservative_bar_model import (
     estimate_bid_ask_from_bar,
-    simulate_bar_execution,
     next_bar_fill,
+    simulate_bar_execution,
 )
 from quant_os.execution.execution_simulator import (
     BacktestExecutionSimulator,
@@ -47,11 +49,14 @@ from quant_os.execution.execution_simulator import (
     OrderIntent,
     Position,
 )
-from quant_os.execution.order_state_machine import OrderState
+from quant_os.execution.fill_model import FillRequest, Side
 from quant_os.execution.ledger import (
     Ledger,
+)
+from quant_os.execution.ledger import (
     Position as LedgerPosition,
 )
+from quant_os.execution.order_state_machine import OrderState
 from quant_os.execution.quality_tracker import (
     ExecutionQualityTracker,
     FillOutcome,
@@ -65,15 +70,11 @@ from quant_os.execution.reconciler import (
     InternalPosition,
     PositionReconciler,
 )
-from quant_os.execution.adapters.base import (
-    Order,
-    OrderStatus,
-)
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def tmp_db():
@@ -164,14 +165,20 @@ def _broker_pos(symbol="XAUUSD", side="BUY", qty=Decimal("0.1"), price=Decimal("
 # 1. AMBIGUOUS BAR RESOLVER — chaos tests
 # ===================================================================
 
+
 class TestAmbiguousBarResolverChaos:
     """Edge-case and chaos tests for ambiguous_bar_resolver."""
 
     def test_zero_spread_bar(self):
         """All OHLC equal → no trigger."""
         r = resolve_ambiguous_bar(
-            Side.BUY, Decimal("100"), Decimal("110"),
-            Decimal("105"), Decimal("105"), Decimal("105"), Decimal("105"),
+            Side.BUY,
+            Decimal("100"),
+            Decimal("110"),
+            Decimal("105"),
+            Decimal("105"),
+            Decimal("105"),
+            Decimal("105"),
         )
         assert r.is_ambiguous is False
         assert r.resolved_reason == ""
@@ -180,8 +187,13 @@ class TestAmbiguousBarResolverChaos:
     def test_identical_sl_tp(self):
         """SL == TP → ambiguous (adverse wins)."""
         r = resolve_ambiguous_bar(
-            Side.BUY, Decimal("100"), Decimal("100"),
-            Decimal("110"), Decimal("90"), Decimal("100"), Decimal("100"),
+            Side.BUY,
+            Decimal("100"),
+            Decimal("100"),
+            Decimal("110"),
+            Decimal("90"),
+            Decimal("100"),
+            Decimal("100"),
         )
         assert r.is_ambiguous is True
         assert r.resolved_reason == "SL"
@@ -190,8 +202,13 @@ class TestAmbiguousBarResolverChaos:
         """Overflow-safe with very large decimals."""
         big = Decimal("999999999999999999.99")
         r = resolve_ambiguous_bar(
-            Side.SELL, big, Decimal("0.01"),
-            big, Decimal("0.01"), Decimal("500000000000"), Decimal("500000000000"),
+            Side.SELL,
+            big,
+            Decimal("0.01"),
+            big,
+            Decimal("0.01"),
+            Decimal("500000000000"),
+            Decimal("500000000000"),
         )
         assert r.sl_distance > 0
         assert r.tp_distance > 0
@@ -199,39 +216,64 @@ class TestAmbiguousBarResolverChaos:
     def test_negative_prices(self):
         """Negative prices (e.g. oil futures edge case)."""
         r = resolve_ambiguous_bar(
-            Side.BUY, Decimal("-10"), Decimal("10"),
-            Decimal("20"), Decimal("-20"), Decimal("0"), Decimal("0"),
+            Side.BUY,
+            Decimal("-10"),
+            Decimal("10"),
+            Decimal("20"),
+            Decimal("-20"),
+            Decimal("0"),
+            Decimal("0"),
         )
         assert r.is_ambiguous is True
 
     def test_sl_distance_calculation_buy(self):
         r = resolve_ambiguous_bar(
-            Side.BUY, Decimal("100"), Decimal("120"),
-            Decimal("130"), Decimal("90"), Decimal("100"), Decimal("105"),
+            Side.BUY,
+            Decimal("100"),
+            Decimal("120"),
+            Decimal("130"),
+            Decimal("90"),
+            Decimal("100"),
+            Decimal("105"),
         )
         assert r.sl_distance == Decimal("0")
         assert r.tp_distance == Decimal("20")
 
     def test_sl_distance_calculation_sell(self):
         r = resolve_ambiguous_bar(
-            Side.SELL, Decimal("120"), Decimal("100"),
-            Decimal("130"), Decimal("90"), Decimal("100"), Decimal("105"),
+            Side.SELL,
+            Decimal("120"),
+            Decimal("100"),
+            Decimal("130"),
+            Decimal("90"),
+            Decimal("100"),
+            Decimal("105"),
         )
         assert r.sl_distance == Decimal("20")
         assert r.tp_distance == Decimal("0")
 
     def test_tp_only_long(self):
         r = resolve_ambiguous_bar(
-            Side.BUY, Decimal("90"), Decimal("110"),
-            Decimal("115"), Decimal("100"), Decimal("100"), Decimal("105"),
+            Side.BUY,
+            Decimal("90"),
+            Decimal("110"),
+            Decimal("115"),
+            Decimal("100"),
+            Decimal("100"),
+            Decimal("105"),
         )
         assert r.resolved_reason == "TP"
         assert r.is_ambiguous is False
 
     def test_sl_only_short(self):
         r = resolve_ambiguous_bar(
-            Side.SELL, Decimal("110"), Decimal("90"),
-            Decimal("115"), Decimal("100"), Decimal("100"), Decimal("105"),
+            Side.SELL,
+            Decimal("110"),
+            Decimal("90"),
+            Decimal("115"),
+            Decimal("100"),
+            Decimal("100"),
+            Decimal("105"),
         )
         assert r.resolved_reason == "SL"
         assert r.is_ambiguous is False
@@ -239,7 +281,10 @@ class TestAmbiguousBarResolverChaos:
     def test_bar_triggers_ambiguous_long(self):
         bar = {"open": 100, "high": 120, "low": 80, "close": 105}
         triggers = check_bar_triggers_with_ambiguous_resolution(
-            Side.BUY, Decimal("90"), Decimal("110"), bar,
+            Side.BUY,
+            Decimal("90"),
+            Decimal("110"),
+            bar,
         )
         assert len(triggers) == 2
         assert triggers[0].trigger_type == "SL"
@@ -250,14 +295,20 @@ class TestAmbiguousBarResolverChaos:
     def test_bar_triggers_no_trigger(self):
         bar = {"open": 100, "high": 105, "low": 98, "close": 102}
         triggers = check_bar_triggers_with_ambiguous_resolution(
-            Side.BUY, Decimal("90"), Decimal("110"), bar,
+            Side.BUY,
+            Decimal("90"),
+            Decimal("110"),
+            bar,
         )
         assert len(triggers) == 0
 
     def test_bar_triggers_single_sl_short(self):
         bar = {"open": 100, "high": 115, "low": 95, "close": 98}
         triggers = check_bar_triggers_with_ambiguous_resolution(
-            Side.SELL, Decimal("110"), Decimal("80"), bar,
+            Side.SELL,
+            Decimal("110"),
+            Decimal("80"),
+            bar,
         )
         assert len(triggers) == 1
         assert triggers[0].trigger_type == "SL"
@@ -266,13 +317,21 @@ class TestAmbiguousBarResolverChaos:
         """Missing keys should raise KeyError."""
         with pytest.raises(KeyError):
             check_bar_triggers_with_ambiguous_resolution(
-                Side.BUY, Decimal("90"), Decimal("110"), {"open": 100},
+                Side.BUY,
+                Decimal("90"),
+                Decimal("110"),
+                {"open": 100},
             )
 
     def test_frozen_dataclass_immutability(self):
         r = resolve_ambiguous_bar(
-            Side.BUY, Decimal("100"), Decimal("110"),
-            Decimal("120"), Decimal("90"), Decimal("100"), Decimal("105"),
+            Side.BUY,
+            Decimal("100"),
+            Decimal("110"),
+            Decimal("120"),
+            Decimal("90"),
+            Decimal("100"),
+            Decimal("105"),
         )
         with pytest.raises(AttributeError):
             r.is_ambiguous = True
@@ -282,43 +341,70 @@ class TestAmbiguousBarResolverChaos:
 # 2. CONSERVATIVE BAR MODEL — chaos tests
 # ===================================================================
 
-class TestConservativeBarModelChaos:
 
+class TestConservativeBarModelChaos:
     def test_estimate_bid_ask_zero_spread(self):
         bid, ask = estimate_bid_ask_from_bar(
-            Decimal("100"), Decimal("110"), Decimal("90"),
-            Decimal("100"), Decimal("0"),
+            Decimal("100"),
+            Decimal("110"),
+            Decimal("90"),
+            Decimal("100"),
+            Decimal("0"),
         )
         assert bid == ask
         assert bid == Decimal("100")
 
     def test_estimate_bid_ask_symmetric(self):
         bid, ask = estimate_bid_ask_from_bar(
-            Decimal("100"), Decimal("110"), Decimal("90"),
-            Decimal("100"), Decimal("2"),
+            Decimal("100"),
+            Decimal("110"),
+            Decimal("90"),
+            Decimal("100"),
+            Decimal("2"),
         )
         assert ask - bid == Decimal("2")
 
     def test_estimate_bid_ask_extreme_spread(self):
         bid, ask = estimate_bid_ask_from_bar(
-            Decimal("100"), Decimal("1000"), Decimal("1"),
-            Decimal("100"), Decimal("500"),
+            Decimal("100"),
+            Decimal("1000"),
+            Decimal("1"),
+            Decimal("100"),
+            Decimal("500"),
         )
         assert bid < ask
         assert (bid + ask) / 2 == (Decimal("1000") + Decimal("1")) / Decimal("2")
 
     def test_simulate_bar_execution_empty_bars(self):
         results = simulate_bar_execution(
-            [], [{"bar_index": 0, "side": "BUY", "stop_loss": 90, "take_profit": 110,
-                  "slippage_entry": 0.01, "slippage_exit": 0.01}],
-            Decimal("0.5"), Decimal("0.01"),
+            [],
+            [
+                {
+                    "bar_index": 0,
+                    "side": "BUY",
+                    "stop_loss": 90,
+                    "take_profit": 110,
+                    "slippage_entry": 0.01,
+                    "slippage_exit": 0.01,
+                }
+            ],
+            Decimal("0.5"),
+            Decimal("0.01"),
         )
         assert results == []
 
     def test_simulate_bar_execution_out_of_bounds_signal(self):
         bars = [{"timestamp": 0, "open": 100, "high": 110, "low": 90, "close": 105, "volume": 1000}]
-        signals = [{"bar_index": 5, "side": "BUY", "stop_loss": 90, "take_profit": 110,
-                     "slippage_entry": 0.01, "slippage_exit": 0.01}]
+        signals = [
+            {
+                "bar_index": 5,
+                "side": "BUY",
+                "stop_loss": 90,
+                "take_profit": 110,
+                "slippage_entry": 0.01,
+                "slippage_exit": 0.01,
+            }
+        ]
         results = simulate_bar_execution(bars, signals, Decimal("0.5"), Decimal("0.01"))
         assert results == []
 
@@ -327,8 +413,16 @@ class TestConservativeBarModelChaos:
             {"timestamp": 0, "open": 100, "high": 110, "low": 90, "close": 105, "volume": 1000},
             {"timestamp": 1, "open": 106, "high": 115, "low": 95, "close": 110, "volume": 1000},
         ]
-        signals = [{"bar_index": 0, "side": "BUY", "stop_loss": 90, "take_profit": 200,
-                     "slippage_entry": 0.01, "slippage_exit": 0.01}]
+        signals = [
+            {
+                "bar_index": 0,
+                "side": "BUY",
+                "stop_loss": 90,
+                "take_profit": 200,
+                "slippage_entry": 0.01,
+                "slippage_exit": 0.01,
+            }
+        ]
         results = simulate_bar_execution(bars, signals, Decimal("0.5"), Decimal("0.01"))
         assert len(results) == 1
         assert results[0]["trigger"] is None
@@ -336,13 +430,20 @@ class TestConservativeBarModelChaos:
     def test_next_bar_fill_no_next_bar(self):
         bars = [{"open": 100, "high": 110, "low": 90, "close": 105}]
         sig = FillRequest(
-            side=Side.BUY, entry_price=Decimal("100"),
-            stop_loss=Decimal("90"), take_profit=Decimal("110"),
-            slippage_entry=Decimal("0.01"), slippage_exit=Decimal("0.01"),
+            side=Side.BUY,
+            entry_price=Decimal("100"),
+            stop_loss=Decimal("90"),
+            take_profit=Decimal("110"),
+            slippage_entry=Decimal("0.01"),
+            slippage_exit=Decimal("0.01"),
         )
         result = next_bar_fill(
-            0, sig, bars, [datetime.now(UTC)],
-            Decimal("0.5"), Decimal("0.01"),
+            0,
+            sig,
+            bars,
+            [datetime.now(UTC)],
+            Decimal("0.5"),
+            Decimal("0.01"),
         )
         assert result is None
 
@@ -353,13 +454,20 @@ class TestConservativeBarModelChaos:
             {"open": 100, "high": 110, "low": 90, "close": 105},
         ]
         sig = FillRequest(
-            side=Side.BUY, entry_price=Decimal("100"),
-            stop_loss=Decimal("90"), take_profit=Decimal("110"),
-            slippage_entry=Decimal("-0.05"), slippage_exit=Decimal("0.01"),
+            side=Side.BUY,
+            entry_price=Decimal("100"),
+            stop_loss=Decimal("90"),
+            take_profit=Decimal("110"),
+            slippage_entry=Decimal("-0.05"),
+            slippage_exit=Decimal("0.01"),
         )
         result = next_bar_fill(
-            0, sig, bars, [datetime.now(UTC), datetime.now(UTC)],
-            Decimal("0.5"), Decimal("-0.05"),
+            0,
+            sig,
+            bars,
+            [datetime.now(UTC), datetime.now(UTC)],
+            Decimal("0.5"),
+            Decimal("-0.05"),
         )
         assert result is not None
         # Negative slippage means entry is below the ask price
@@ -368,14 +476,18 @@ class TestConservativeBarModelChaos:
 
     def test_stress_many_signals(self):
         bars = [
-            {"timestamp": i, "open": 100 + i, "high": 110 + i, "low": 90 + i,
-             "close": 105 + i, "volume": 1000}
+            {"timestamp": i, "open": 100 + i, "high": 110 + i, "low": 90 + i, "close": 105 + i, "volume": 1000}
             for i in range(100)
         ]
         signals = [
-            {"bar_index": i, "side": "BUY" if i % 2 == 0 else "SELL",
-             "stop_loss": 80 + i, "take_profit": 120 + i,
-             "slippage_entry": 0.01, "slippage_exit": 0.01}
+            {
+                "bar_index": i,
+                "side": "BUY" if i % 2 == 0 else "SELL",
+                "stop_loss": 80 + i,
+                "take_profit": 120 + i,
+                "slippage_entry": 0.01,
+                "slippage_exit": 0.01,
+            }
             for i in range(99)
         ]
         results = simulate_bar_execution(bars, signals, Decimal("0.5"), Decimal("0.01"))
@@ -386,31 +498,36 @@ class TestConservativeBarModelChaos:
 # 3. EXECUTION SIMULATOR — chaos tests
 # ===================================================================
 
-class TestExecutionSimulatorChaos:
 
+class TestExecutionSimulatorChaos:
     @pytest.fixture
     def sim(self):
         return BacktestExecutionSimulator()
 
     def _intent(self, side=Side.BUY, sl=Decimal("90"), tp=Decimal("110")):
         return OrderIntent(
-            symbol="XAUUSD", side=side, volume=Decimal("0.1"),
-            stop_loss=sl, take_profit=tp,
+            symbol="XAUUSD",
+            side=side,
+            volume=Decimal("0.1"),
+            stop_loss=sl,
+            take_profit=tp,
         )
 
     def _market(self, bid=Decimal("100"), ask=Decimal("100.5"), spread=Decimal("0.5")):
         now = datetime.now(UTC)
         return MarketSnapshot(
-            bid=bid, ask=ask, spread=spread,
-            high=Decimal("110"), low=Decimal("90"),
-            close=Decimal("105"), timestamp=now, symbol="XAUUSD",
+            bid=bid,
+            ask=ask,
+            spread=spread,
+            high=Decimal("110"),
+            low=Decimal("90"),
+            close=Decimal("105"),
+            timestamp=now,
+            symbol="XAUUSD",
         )
 
     def _bars(self, n=3):
-        return [
-            {"open": 100 + i, "high": 110 + i, "low": 90 + i, "close": 105 + i}
-            for i in range(n)
-        ]
+        return [{"open": 100 + i, "high": 110 + i, "low": 90 + i, "close": 105 + i} for i in range(n)]
 
     def test_submit_no_next_bar(self, sim):
         """bar_index at end → empty result."""
@@ -425,9 +542,16 @@ class TestExecutionSimulatorChaos:
 
     def test_submit_short_entry_price(self, sim):
         result = sim.submit_intent(
-            OrderIntent(symbol="XAUUSD", side=Side.SELL, volume=Decimal("0.1"),
-                        stop_loss=Decimal("110"), take_profit=Decimal("90")),
-            self._market(), self._bars(), 0,
+            OrderIntent(
+                symbol="XAUUSD",
+                side=Side.SELL,
+                volume=Decimal("0.1"),
+                stop_loss=Decimal("110"),
+                take_profit=Decimal("90"),
+            ),
+            self._market(),
+            self._bars(),
+            0,
         )
         # Short entry = bid - slippage_entry from the fill bar's estimated bid/ask
         # Should be below the fill bar's mid price
@@ -441,16 +565,24 @@ class TestExecutionSimulatorChaos:
             spread_points=Decimal("0.2"),
         )
         result = sim.submit_intent(
-            self._intent(), self._market(), self._bars(), 0, contract_spec=spec,
+            self._intent(),
+            self._market(),
+            self._bars(),
+            0,
+            contract_spec=spec,
         )
         assert result.commission >= Decimal("0")
         assert result.spread_cost >= Decimal("0")
 
     def test_evaluate_sl_trigger_long(self, sim):
         pos = Position(
-            trade_id="t1", symbol="XAUUSD", side=Side.BUY,
-            entry_price=Decimal("100"), volume=Decimal("0.1"),
-            stop_loss=Decimal("95"), take_profit=Decimal("110"),
+            trade_id="t1",
+            symbol="XAUUSD",
+            side=Side.BUY,
+            entry_price=Decimal("100"),
+            volume=Decimal("0.1"),
+            stop_loss=Decimal("95"),
+            take_profit=Decimal("110"),
         )
         market = self._market(bid=Decimal("94"), ask=Decimal("94.5"))
         events = sim.evaluate_open_positions([pos], market, Decimal("94"), Decimal("93"))
@@ -459,9 +591,13 @@ class TestExecutionSimulatorChaos:
 
     def test_evaluate_tp_trigger_long(self, sim):
         pos = Position(
-            trade_id="t2", symbol="XAUUSD", side=Side.BUY,
-            entry_price=Decimal("100"), volume=Decimal("0.1"),
-            stop_loss=Decimal("90"), take_profit=Decimal("105"),
+            trade_id="t2",
+            symbol="XAUUSD",
+            side=Side.BUY,
+            entry_price=Decimal("100"),
+            volume=Decimal("0.1"),
+            stop_loss=Decimal("90"),
+            take_profit=Decimal("105"),
         )
         market = self._market(bid=Decimal("106"), ask=Decimal("106.5"))
         events = sim.evaluate_open_positions([pos], market, Decimal("107"), Decimal("100"))
@@ -473,9 +609,13 @@ class TestExecutionSimulatorChaos:
         For BUY: ambiguous when bid <= SL AND bid >= TP (needs SL > TP).
         """
         pos = Position(
-            trade_id="t3", symbol="XAUUSD", side=Side.BUY,
-            entry_price=Decimal("100"), volume=Decimal("0.1"),
-            stop_loss=Decimal("105"), take_profit=Decimal("95"),
+            trade_id="t3",
+            symbol="XAUUSD",
+            side=Side.BUY,
+            entry_price=Decimal("100"),
+            volume=Decimal("0.1"),
+            stop_loss=Decimal("105"),
+            take_profit=Decimal("95"),
         )
         # bid=100: 100 <= 105 (SL) and 100 >= 95 (TP) → ambiguous
         market = self._market(bid=Decimal("100"), ask=Decimal("100.5"))
@@ -485,9 +625,13 @@ class TestExecutionSimulatorChaos:
 
     def test_evaluate_no_trigger(self, sim):
         pos = Position(
-            trade_id="t4", symbol="XAUUSD", side=Side.BUY,
-            entry_price=Decimal("100"), volume=Decimal("0.1"),
-            stop_loss=Decimal("90"), take_profit=Decimal("110"),
+            trade_id="t4",
+            symbol="XAUUSD",
+            side=Side.BUY,
+            entry_price=Decimal("100"),
+            volume=Decimal("0.1"),
+            stop_loss=Decimal("90"),
+            take_profit=Decimal("110"),
         )
         market = self._market(bid=Decimal("100"), ask=Decimal("100.5"))
         events = sim.evaluate_open_positions([pos], market, Decimal("105"), Decimal("95"))
@@ -501,9 +645,13 @@ class TestExecutionSimulatorChaos:
     def test_stress_many_positions(self, sim):
         positions = [
             Position(
-                trade_id=f"t{i}", symbol="XAUUSD", side=Side.BUY if i % 2 == 0 else Side.SELL,
-                entry_price=Decimal("100"), volume=Decimal("0.1"),
-                stop_loss=Decimal("90"), take_profit=Decimal("110"),
+                trade_id=f"t{i}",
+                symbol="XAUUSD",
+                side=Side.BUY if i % 2 == 0 else Side.SELL,
+                entry_price=Decimal("100"),
+                volume=Decimal("0.1"),
+                stop_loss=Decimal("90"),
+                take_profit=Decimal("110"),
                 signal_bar_index=i,
             )
             for i in range(200)
@@ -517,8 +665,8 @@ class TestExecutionSimulatorChaos:
 # 4. LEDGER — chaos tests (SQLite-backed)
 # ===================================================================
 
-class TestLedgerChaos:
 
+class TestLedgerChaos:
     def test_empty_ledger_portfolio(self, ledger):
         pf = ledger.calculate_portfolio(initial_equity=Decimal("10000"))
         assert pf.total_equity == Decimal("10000")
@@ -576,7 +724,9 @@ class TestLedgerChaos:
 
     def test_record_daily_pnl(self, ledger):
         ledger.record_daily_pnl(
-            realized=Decimal("100"), unrealized=Decimal("50"), peak_equity=Decimal("10150"),
+            realized=Decimal("100"),
+            unrealized=Decimal("50"),
+            peak_equity=Decimal("10150"),
         )
         pnl = ledger.get_daily_pnl()
         assert pnl == Decimal("150")
@@ -608,9 +758,12 @@ class TestLedgerChaos:
 
     def test_stress_rapid_saves(self, ledger):
         for i in range(500):
-            ledger.save_position(_make_position(
-                position_id=f"pos-{i:04d}", symbol=f"SYM{i % 10}",
-            ))
+            ledger.save_position(
+                _make_position(
+                    position_id=f"pos-{i:04d}",
+                    symbol=f"SYM{i % 10}",
+                )
+            )
         assert len(ledger.get_all_open()) == 500
 
     def test_stress_concurrent_fills(self, ledger):
@@ -658,8 +811,8 @@ class TestLedgerChaos:
 # 5. QUALITY TRACKER — chaos tests
 # ===================================================================
 
-class TestQualityTrackerChaos:
 
+class TestQualityTrackerChaos:
     @pytest.fixture
     def tracker(self):
         return ExecutionQualityTracker(pip_size=Decimal("0.01"))
@@ -688,14 +841,20 @@ class TestQualityTrackerChaos:
 
     def test_compare_expected_vs_actual_favorable(self, tracker):
         result = tracker.compare_expected_vs_actual(
-            "ord-1", Decimal("2000"), Decimal("1999.95"), "BUY",
+            "ord-1",
+            Decimal("2000"),
+            Decimal("1999.95"),
+            "BUY",
         )
         assert result["is_favorable"] is True
         assert result["verdict"] == "FAVORABLE"
 
     def test_compare_expected_vs_actual_adverse(self, tracker):
         result = tracker.compare_expected_vs_actual(
-            "ord-1", Decimal("2000"), Decimal("2000.10"), "BUY",
+            "ord-1",
+            Decimal("2000"),
+            Decimal("2000.10"),
+            "BUY",
         )
         assert result["is_favorable"] is False
         assert result["verdict"] == "ADVERSE"
@@ -715,9 +874,13 @@ class TestQualityTrackerChaos:
         tracker.record_fill(_fill_record(order_id="old"))
         # Simulate old fill by modifying timestamp directly
         tracker._fills[0] = FillRecord(
-            order_id="old", symbol="XAUUSD", side="BUY",
-            expected_price=Decimal("2000"), actual_price=Decimal("2000"),
-            quantity=Decimal("0.1"), filled_quantity=Decimal("0.1"),
+            order_id="old",
+            symbol="XAUUSD",
+            side="BUY",
+            expected_price=Decimal("2000"),
+            actual_price=Decimal("2000"),
+            quantity=Decimal("0.1"),
+            filled_quantity=Decimal("0.1"),
             outcome=FillOutcome.FILLED,
             timestamp=datetime.now(UTC) - timedelta(hours=48),
             latency_ms=10.0,
@@ -733,7 +896,8 @@ class TestQualityTrackerChaos:
 
     def test_detect_adverse_fills_detected(self, tracker):
         fill = _fill_record(
-            expected=Decimal("2000"), actual=Decimal("2001"),
+            expected=Decimal("2000"),
+            actual=Decimal("2001"),
             spread=Decimal("0.01"),
         )
         tracker.record_fill(fill)
@@ -775,8 +939,8 @@ class TestQualityTrackerChaos:
 # 6. POSITION RECONCILER — chaos tests
 # ===================================================================
 
-class TestPositionReconcilerChaos:
 
+class TestPositionReconcilerChaos:
     @pytest.fixture
     def reconciler(self):
         return PositionReconciler()
@@ -879,10 +1043,7 @@ class TestPositionReconcilerChaos:
 
     def test_stress_mixed_discrepancies(self, reconciler):
         internal = [_internal_pos(symbol=f"SYM{i}", side="BUY") for i in range(100)]
-        broker = [
-            _broker_pos(symbol=f"SYM{i}", side="SELL" if i % 3 == 0 else "BUY")
-            for i in range(100)
-        ]
+        broker = [_broker_pos(symbol=f"SYM{i}", side="SELL" if i % 3 == 0 else "BUY") for i in range(100)]
         result = reconciler.reconcile_positions(internal, broker)
         assert len(result.discrepancies) > 0
 
@@ -891,8 +1052,8 @@ class TestPositionReconcilerChaos:
 # 7. RECOVERY — chaos tests (mocked broker/ledger)
 # ===================================================================
 
-class TestRecoveryChaos:
 
+class TestRecoveryChaos:
     def _make_mock_ledger(self):
         ledger = MagicMock()
         ledger.calculate_portfolio.return_value = MagicMock(
@@ -904,8 +1065,9 @@ class TestRecoveryChaos:
         return ledger
 
     def _make_mock_reconciler(self, clean=True):
-        from quant_os.execution.reconcile import ReconcileAllResult, ReconcileResult
         from quant_os.core.enums import ReconciliationStatus
+        from quant_os.execution.reconcile import ReconcileAllResult, ReconcileResult
+
         recon = AsyncMock()
         venue_result = ReconcileResult(
             venue="pepperstone",
@@ -927,11 +1089,13 @@ class TestRecoveryChaos:
 
     def test_startup_check_dataclass(self):
         from quant_os.execution.recovery import StartupCheck
+
         check = StartupCheck(name="test", passed=True, detail="ok", severity="INFO")
         assert check.passed is True
 
     def test_recovery_result_properties(self):
         from quant_os.execution.recovery import RecoveryResult, StartupVerdict
+
         result = RecoveryResult(
             verdict=StartupVerdict.RESUME,
             reconcile_result=None,
@@ -944,6 +1108,7 @@ class TestRecoveryChaos:
 
     def test_recovery_result_critical_failures(self):
         from quant_os.execution.recovery import RecoveryResult, StartupCheck, StartupVerdict
+
         check = StartupCheck(name="reconcile", passed=False, detail="mismatch", severity="CRITICAL")
         result = RecoveryResult(
             verdict=StartupVerdict.HALT,
@@ -957,15 +1122,21 @@ class TestRecoveryChaos:
 
     def test_orphaned_order_dataclass(self):
         from quant_os.execution.recovery import OrphanedOrder
+
         orphan = OrphanedOrder(
-            order_id="ord-1", symbol="XAUUSD", broker_order_id="bro-1",
-            local_status="OPEN", broker_status=None, resolution="MARKED_ERROR",
+            order_id="ord-1",
+            symbol="XAUUSD",
+            broker_order_id="bro-1",
+            local_status="OPEN",
+            broker_status=None,
+            resolution="MARKED_ERROR",
         )
         assert orphan.resolution == "MARKED_ERROR"
 
     @pytest.mark.asyncio
     async def test_startup_resume_all_clean(self):
         from quant_os.execution.recovery import Recovery, StartupVerdict
+
         ledger = self._make_mock_ledger()
         reconciler = self._make_mock_reconciler(clean=True)
         adapter = AsyncMock()
@@ -977,6 +1148,7 @@ class TestRecoveryChaos:
     @pytest.mark.asyncio
     async def test_startup_reconcile_exception(self):
         from quant_os.execution.recovery import Recovery, StartupVerdict
+
         ledger = self._make_mock_ledger()
         reconciler = AsyncMock()
         reconciler.reconcile_all_venues.side_effect = Exception("DB locked")
@@ -987,6 +1159,7 @@ class TestRecoveryChaos:
     @pytest.mark.asyncio
     async def test_startup_drawdown_exceeded(self):
         from quant_os.execution.recovery import Recovery, StartupVerdict
+
         ledger = self._make_mock_ledger()
         ledger.calculate_portfolio.return_value = MagicMock(
             total_equity=Decimal("10000"),
@@ -1001,6 +1174,7 @@ class TestRecoveryChaos:
     @pytest.mark.asyncio
     async def test_startup_on_halt_callback(self):
         from quant_os.execution.recovery import Recovery
+
         ledger = self._make_mock_ledger()
         ledger.calculate_portfolio.return_value = MagicMock(
             total_equity=Decimal("10000"),
@@ -1010,7 +1184,9 @@ class TestRecoveryChaos:
         reconciler = self._make_mock_reconciler(clean=True)
         halt_cb = AsyncMock()
         recovery = Recovery(
-            ledger, reconciler, {},
+            ledger,
+            reconciler,
+            {},
             max_drawdown_pct=Decimal("15"),
             on_halt=halt_cb,
         )
@@ -1022,8 +1198,10 @@ class TestRecoveryChaos:
 # 8. BINANCE ADAPTER — chaos tests (mocked ccxt)
 # ===================================================================
 
+
 class _BinanceCtx:
     """Container to share mock objects between fixture and tests."""
+
     def __init__(self):
         self.fake_ccxt = None
         self.mock_exchange = None
@@ -1031,7 +1209,6 @@ class _BinanceCtx:
 
 
 class TestBinanceAdapterChaos:
-
     @pytest.fixture(autouse=True)
     def setup_adapter(self, request):
         """Create BinanceAdapter with fully mocked ccxt."""
@@ -1039,10 +1216,12 @@ class TestBinanceAdapterChaos:
         mock_exchange = MagicMock()
 
         import types
+
         fake_ccxt = types.ModuleType("ccxt")
 
         class _BaseExc(Exception):
             pass
+
         fake_ccxt.InvalidOrder = type("InvalidOrder", (_BaseExc,), {})
         fake_ccxt.InsufficientFunds = type("InsufficientFunds", (_BaseExc,), {})
         fake_ccxt.RateLimitExceeded = type("RateLimitExceeded", (_BaseExc,), {})
@@ -1054,10 +1233,12 @@ class TestBinanceAdapterChaos:
         ctx.mock_exchange = mock_exchange
 
         import quant_os.execution.adapters.binance as binance_mod
+
         original = binance_mod.ccxt
         binance_mod.ccxt = fake_ccxt
         try:
             from quant_os.execution.adapters.binance import BinanceAdapter
+
             ctx.adapter = BinanceAdapter("key", "secret", testnet=True)
             request.instance.ctx = ctx
             yield ctx
@@ -1066,14 +1247,20 @@ class TestBinanceAdapterChaos:
 
     def _order(self, order_id="ord-1", symbol="XAUUSD/USDT", side="BUY", qty=0.1):
         return Order(
-            order_id=order_id, signal_id="sig-1", symbol=symbol,
-            asset_class="metals", side=side, quantity=qty,
+            order_id=order_id,
+            signal_id="sig-1",
+            symbol=symbol,
+            asset_class="metals",
+            side=side,
+            quantity=qty,
         )
 
     def test_submit_order_success(self):
         ctx = self.ctx
         ctx.mock_exchange.create_order.return_value = {
-            "id": "bro-123", "filled": 0.1, "average": 2000.0,
+            "id": "bro-123",
+            "filled": 0.1,
+            "average": 2000.0,
         }
         result = ctx.adapter.submit_order(self._order())
         assert result.status == OrderStatus.FILLED
@@ -1181,7 +1368,9 @@ class TestBinanceAdapterChaos:
         ctx = self.ctx
         ctx.adapter._order_symbols["bro-123"] = "XAUUSD/USDT"
         ctx.mock_exchange.fetch_order.return_value = {
-            "status": "closed", "filled": 0.1, "average": 2000.0,
+            "status": "closed",
+            "filled": 0.1,
+            "average": 2000.0,
         }
         result = ctx.adapter.get_order_status("bro-123")
         assert result.status == OrderStatus.FILLED
@@ -1190,7 +1379,9 @@ class TestBinanceAdapterChaos:
         ctx = self.ctx
         ctx.adapter._order_symbols["bro-123"] = "XAUUSD/USDT"
         ctx.mock_exchange.fetch_order.return_value = {
-            "status": "unknown_status", "filled": 0, "average": 0,
+            "status": "unknown_status",
+            "filled": 0,
+            "average": 0,
         }
         result = ctx.adapter.get_order_status("bro-123")
         assert result.status == OrderStatus.FAILED
@@ -1203,10 +1394,15 @@ class TestBinanceAdapterChaos:
     def test_get_positions_filters_zero(self):
         ctx = self.ctx
         ctx.mock_exchange.fetch_positions.return_value = [
-            {"symbol": "XAUUSD", "side": "long", "contracts": 0, "entryPrice": 0,
-             "unrealizedPnl": 0, "leverage": 1},
-            {"symbol": "BTCUSDT", "side": "long", "contracts": 1, "entryPrice": 50000,
-             "unrealizedPnl": 100, "leverage": 10},
+            {"symbol": "XAUUSD", "side": "long", "contracts": 0, "entryPrice": 0, "unrealizedPnl": 0, "leverage": 1},
+            {
+                "symbol": "BTCUSDT",
+                "side": "long",
+                "contracts": 1,
+                "entryPrice": 50000,
+                "unrealizedPnl": 100,
+                "leverage": 10,
+            },
         ]
         positions = ctx.adapter.get_positions()
         assert len(positions) == 1
@@ -1228,16 +1424,18 @@ class TestBinanceAdapterChaos:
 # 9. MT5 ADAPTER — chaos tests (mocked MetaTrader5)
 # ===================================================================
 
-class TestMT5AdapterChaos:
 
+class TestMT5AdapterChaos:
     @pytest.fixture(autouse=True)
     def setup_mt5(self, request):
         mock_mt5 = MagicMock()
         import quant_os.execution.adapters.mt5 as mt5_mod
+
         original = mt5_mod.mt5
         mt5_mod.mt5 = mock_mt5
         try:
             from quant_os.execution.adapters.mt5 import MT5Adapter
+
             adapter = MT5Adapter(login=12345, password="pass", server="test")
             request.instance.ctx = type("Ctx", (), {"adapter": adapter, "mt5": mock_mt5})()
             yield request.instance.ctx
@@ -1255,20 +1453,27 @@ class TestMT5AdapterChaos:
 
     def _order(self, order_id="ord-1", symbol="XAUUSD", side="BUY", qty=0.1):
         return Order(
-            order_id=order_id, signal_id="sig-1", symbol=symbol,
-            asset_class="metals", side=side, quantity=qty,
+            order_id=order_id,
+            signal_id="sig-1",
+            symbol=symbol,
+            asset_class="metals",
+            side=side,
+            quantity=qty,
         )
 
     def test_side_to_order_type_buy(self):
         from quant_os.execution.adapters.mt5 import _side_to_order_type
+
         assert _side_to_order_type("BUY") == 0
 
     def test_side_to_order_type_sell(self):
         from quant_os.execution.adapters.mt5 import _side_to_order_type
+
         assert _side_to_order_type("SELL") == 1
 
     def test_side_to_order_type_invalid(self):
         from quant_os.execution.adapters.mt5 import _side_to_order_type
+
         with pytest.raises(ValueError):
             _side_to_order_type("INVALID")
 
@@ -1440,10 +1645,12 @@ class TestMT5AdapterChaos:
 
     def test_no_mt5_import_raises(self):
         import quant_os.execution.adapters.mt5 as mt5_mod
+
         original = mt5_mod.mt5
         mt5_mod.mt5 = None
         try:
             from quant_os.execution.adapters.mt5 import MT5Adapter
+
             adapter = MT5Adapter(login=12345, password="pass")
             with pytest.raises(RuntimeError, match="not installed"):
                 adapter.connect()
@@ -1455,25 +1662,38 @@ class TestMT5AdapterChaos:
 # 10. CROSS-MODULE CHAOS — stress and concurrency
 # ===================================================================
 
-class TestCrossModuleChaos:
 
+class TestCrossModuleChaos:
     def test_ambiguous_to_simulator_pipeline(self):
         """Full pipeline: ambiguous bar resolution → simulator fill."""
         r = resolve_ambiguous_bar(
-            Side.BUY, Decimal("1950"), Decimal("2050"),
-            Decimal("2060"), Decimal("1940"), Decimal("2000"), Decimal("2010"),
+            Side.BUY,
+            Decimal("1950"),
+            Decimal("2050"),
+            Decimal("2060"),
+            Decimal("1940"),
+            Decimal("2000"),
+            Decimal("2010"),
         )
         assert r.is_ambiguous is True
         sim = BacktestExecutionSimulator()
         intent = OrderIntent(
-            symbol="XAUUSD", side=Side.BUY, volume=Decimal("0.1"),
-            stop_loss=Decimal("1950"), take_profit=Decimal("2050"),
+            symbol="XAUUSD",
+            side=Side.BUY,
+            volume=Decimal("0.1"),
+            stop_loss=Decimal("1950"),
+            take_profit=Decimal("2050"),
         )
         now = datetime.now(UTC)
         market = MarketSnapshot(
-            bid=Decimal("1940"), ask=Decimal("2060"), spread=Decimal("120"),
-            high=Decimal("2060"), low=Decimal("1940"),
-            close=Decimal("2010"), timestamp=now, symbol="XAUUSD",
+            bid=Decimal("1940"),
+            ask=Decimal("2060"),
+            spread=Decimal("120"),
+            high=Decimal("2060"),
+            low=Decimal("1940"),
+            close=Decimal("2010"),
+            timestamp=now,
+            symbol="XAUUSD",
         )
         bars = [
             {"open": 2000, "high": 2060, "low": 1940, "close": 2010},
@@ -1518,16 +1738,24 @@ class TestCrossModuleChaos:
         sim = BacktestExecutionSimulator()
         now = datetime.now(UTC)
         market = MarketSnapshot(
-            bid=Decimal("100"), ask=Decimal("100.5"), spread=Decimal("0.5"),
-            high=Decimal("110"), low=Decimal("90"),
-            close=Decimal("105"), timestamp=now, symbol="XAUUSD",
+            bid=Decimal("100"),
+            ask=Decimal("100.5"),
+            spread=Decimal("0.5"),
+            high=Decimal("110"),
+            low=Decimal("90"),
+            close=Decimal("105"),
+            timestamp=now,
+            symbol="XAUUSD",
         )
         bars = [{"open": 100, "high": 110, "low": 90, "close": 105} for _ in range(102)]
         results = []
         for i in range(100):
             intent = OrderIntent(
-                symbol="XAUUSD", side=Side.BUY, volume=Decimal("0.01"),
-                stop_loss=Decimal("90"), take_profit=Decimal("110"),
+                symbol="XAUUSD",
+                side=Side.BUY,
+                volume=Decimal("0.01"),
+                stop_loss=Decimal("90"),
+                take_profit=Decimal("110"),
             )
             result = sim.submit_intent(intent, market, bars, i)
             results.append(result)
@@ -1547,8 +1775,12 @@ class TestCrossModuleChaos:
             for i in range(50):
                 try:
                     ledger.apply_fill(
-                        pos.position_id, Decimal("0.01"), Decimal("2000"),
-                        Decimal("0.01"), Decimal("0"), f"fill-{i}",
+                        pos.position_id,
+                        Decimal("0.01"),
+                        Decimal("2000"),
+                        Decimal("0.01"),
+                        Decimal("0"),
+                        f"fill-{i}",
                     )
                 except Exception as e:
                     errors.append(e)
@@ -1564,16 +1796,25 @@ class TestCrossModuleChaos:
         sim = BacktestExecutionSimulator()
         now = datetime.now(UTC)
         market = MarketSnapshot(
-            bid=Decimal("100"), ask=Decimal("100.5"), spread=Decimal("0.5"),
-            high=Decimal("110"), low=Decimal("90"),
-            close=Decimal("105"), timestamp=now, symbol="XAUUSD",
+            bid=Decimal("100"),
+            ask=Decimal("100.5"),
+            spread=Decimal("0.5"),
+            high=Decimal("110"),
+            low=Decimal("90"),
+            close=Decimal("105"),
+            timestamp=now,
+            symbol="XAUUSD",
         )
         bars = [{"open": 100, "high": 110, "low": 90, "close": 105}]
         positions = [
             Position(
-                trade_id=f"t{i}", symbol="XAUUSD", side=Side.BUY,
-                entry_price=Decimal("100"), volume=Decimal("0.01"),
-                stop_loss=Decimal("90"), take_profit=Decimal("110"),
+                trade_id=f"t{i}",
+                symbol="XAUUSD",
+                side=Side.BUY,
+                entry_price=Decimal("100"),
+                volume=Decimal("0.01"),
+                stop_loss=Decimal("90"),
+                take_profit=Decimal("110"),
             )
             for i in range(500)
         ]

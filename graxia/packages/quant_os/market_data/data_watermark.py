@@ -10,7 +10,6 @@ import hashlib
 import json
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 
 from .tick_recorder import TickRecord
 
@@ -37,7 +36,7 @@ class DataWatermarkTracker:
         if not symbol:
             raise ValueError("symbol must not be empty")
         self.symbol = symbol
-        self._watermark: Optional[DataWatermark] = None
+        self._watermark: DataWatermark | None = None
         self._tick_count: int = 0
         self._gap_count: int = 0
         self._stale_count: int = 0
@@ -46,9 +45,7 @@ class DataWatermarkTracker:
     def update(self, tick: TickRecord) -> DataWatermark:
         """Ingest a tick and return the refreshed watermark."""
         if tick.symbol != self.symbol:
-            raise ValueError(
-                f"Tick symbol {tick.symbol} does not match tracker symbol {self.symbol}"
-            )
+            raise ValueError(f"Tick symbol {tick.symbol} does not match tracker symbol {self.symbol}")
 
         self._tick_count += 1
 
@@ -74,7 +71,7 @@ class DataWatermarkTracker:
         self._watermark.watermark_hash = _compute_hash(self._watermark)
         return self._watermark
 
-    def get_watermark(self) -> Optional[DataWatermark]:
+    def get_watermark(self) -> DataWatermark | None:
         return self._watermark
 
     def is_fresh(self, max_age_seconds: float = 3.0) -> bool:
@@ -91,6 +88,7 @@ class DataWatermarkTracker:
 # ---------------------------------------------------------------------------
 # Hashing
 # ---------------------------------------------------------------------------
+
 
 def _compute_hash(wm: DataWatermark) -> str:
     """SHA-256 of serialised watermark state (hash field excluded)."""

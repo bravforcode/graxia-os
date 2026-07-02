@@ -9,12 +9,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from graxia.packages.quant_os.core.agents.llm_router import (
-    CascadeRouter,
-    ImpactLevel,
     TIER1_CEREBRAS,
     TIER1_GROQ,
     TIER1_OPENROUTER,
     TIER1_PROVIDERS,
+    CascadeRouter,
+    ImpactLevel,
 )
 
 
@@ -72,9 +72,7 @@ class TestFallbackChain:
             router._client = _make_mock_client(
                 _mock_response('{"impact": "HIGH", "dir": 1}'),
             )
-            response, latency, provider = await router._call_llm_chain(
-                TIER1_PROVIDERS, "test prompt"
-            )
+            response, latency, provider = await router._call_llm_chain(TIER1_PROVIDERS, "test prompt")
             assert response == '{"impact": "HIGH", "dir": 1}'
             assert provider.name == "groq-t1"
             assert router._client.post.call_count == 1
@@ -86,9 +84,7 @@ class TestFallbackChain:
                 _empty_response(),
                 _mock_response('{"impact": "LOW", "dir": 0}'),
             )
-            response, latency, provider = await router._call_llm_chain(
-                TIER1_PROVIDERS, "test prompt"
-            )
+            response, latency, provider = await router._call_llm_chain(TIER1_PROVIDERS, "test prompt")
             assert response == '{"impact": "LOW", "dir": 0}'
             assert provider.name == "cerebras"
             assert router._client.post.call_count == 2
@@ -101,9 +97,7 @@ class TestFallbackChain:
                 _empty_response(),
                 _mock_response('{"impact": "HIGH", "dir": -1}'),
             )
-            response, latency, provider = await router._call_llm_chain(
-                TIER1_PROVIDERS, "test prompt"
-            )
+            response, latency, provider = await router._call_llm_chain(TIER1_PROVIDERS, "test prompt")
             assert response == '{"impact": "HIGH", "dir": -1}'
             assert provider.name == "openrouter"
             assert router._client.post.call_count == 3
@@ -116,9 +110,7 @@ class TestFallbackChain:
                 _empty_response(),
                 _empty_response(),
             )
-            response, latency, provider = await router._call_llm_chain(
-                TIER1_PROVIDERS, "test prompt"
-            )
+            response, latency, provider = await router._call_llm_chain(TIER1_PROVIDERS, "test prompt")
             assert response == ""
             assert provider is None
             assert router._client.post.call_count == 3
@@ -134,9 +126,7 @@ class TestFallbackChain:
                 resp_429,
                 _mock_response('{"impact": "LOW", "dir": 0}'),
             )
-            response, latency, provider = await router._call_llm_chain(
-                TIER1_PROVIDERS, "test prompt"
-            )
+            response, latency, provider = await router._call_llm_chain(TIER1_PROVIDERS, "test prompt")
             assert response == '{"impact": "LOW", "dir": 0}'
             assert provider.name == "openrouter"
             assert router._client.post.call_count == 3
@@ -160,9 +150,7 @@ class TestRouteE2E:
     async def test_openrouter_high_impact_triggers_tier2(self, router):
         with patch.dict(os.environ, {"GROQ_API_KEY": "k1", "CEREBRAS_API_KEY": "k2", "OPENROUTER_API_KEY": "k3"}):
             tier1_data = json.dumps({"impact": "HIGH", "dir": 1})
-            tier2_data = json.dumps(
-                {"confirmed": True, "direction": 1, "confidence": 0.85, "reasoning": "escalation"}
-            )
+            tier2_data = json.dumps({"confirmed": True, "direction": 1, "confidence": 0.85, "reasoning": "escalation"})
             router._client = _make_mock_client(
                 _empty_response(),
                 _empty_response(),

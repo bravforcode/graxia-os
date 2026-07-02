@@ -17,7 +17,7 @@ import argparse
 import json
 import os
 import sys
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Any
 
 # ---------------------------------------------------------------------------
@@ -106,11 +106,13 @@ def validate_symbol(symbol: str, lot_size: float) -> dict:
     symbol_names = [s.name for s in symbols_list] if symbols_list else []
     found = symbol in symbol_names
 
-    result["checks"].append(_check(
-        found,
-        f"{symbol} available in MT5 symbol list",
-        f"{len(symbol_names)} symbols total",
-    ))
+    result["checks"].append(
+        _check(
+            found,
+            f"{symbol} available in MT5 symbol list",
+            f"{len(symbol_names)} symbols total",
+        )
+    )
 
     if not found:
         # Search for partial matches
@@ -162,17 +164,21 @@ def validate_symbol(symbol: str, lot_size: float) -> dict:
     result["contract_spec"] = contract
 
     # --- Volume bounds ---
-    result["checks"].append(_check(
-        contract["volume_min"] > 0,
-        "Volume min > 0",
-        f"min={contract['volume_min']}, max={contract['volume_max']}, step={contract['volume_step']}",
-    ))
+    result["checks"].append(
+        _check(
+            contract["volume_min"] > 0,
+            "Volume min > 0",
+            f"min={contract['volume_min']}, max={contract['volume_max']}, step={contract['volume_step']}",
+        )
+    )
 
-    result["checks"].append(_check(
-        lot_size >= contract["volume_min"] and lot_size <= contract["volume_max"],
-        f"Lot size {lot_size} within bounds",
-        f"[{contract['volume_min']}, {contract['volume_max']}] step={contract['volume_step']}",
-    ))
+    result["checks"].append(
+        _check(
+            lot_size >= contract["volume_min"] and lot_size <= contract["volume_max"],
+            f"Lot size {lot_size} within bounds",
+            f"[{contract['volume_min']}, {contract['volume_max']}] step={contract['volume_step']}",
+        )
+    )
 
     # --- Stops level ---
     stops_pts = contract["stops_level"] or 0
@@ -184,11 +190,13 @@ def validate_symbol(symbol: str, lot_size: float) -> dict:
 
     # --- Trade mode ---
     trade_mode_ok = contract["trade_mode"] in ("FULL", "LONGONLY", "SHORTONLY")
-    result["checks"].append(_check(
-        trade_mode_ok,
-        "Trading enabled",
-        f"mode={contract['trade_mode']}",
-    ))
+    result["checks"].append(
+        _check(
+            trade_mode_ok,
+            "Trading enabled",
+            f"mode={contract['trade_mode']}",
+        )
+    )
 
     # --- Tick data ---
     tick = mt5.symbol_info_tick(symbol)
@@ -217,11 +225,13 @@ def validate_symbol(symbol: str, lot_size: float) -> dict:
         else:
             spread_threshold = 50
         spread_ok = spread_points <= spread_threshold
-        result["checks"].append(_check(
-            spread_ok,
-            "Spread within threshold",
-            f"{spread_points} pts (${spread_abs:.4f}) threshold={spread_threshold}",
-        ))
+        result["checks"].append(
+            _check(
+                spread_ok,
+                "Spread within threshold",
+                f"{spread_points} pts (${spread_abs:.4f}) threshold={spread_threshold}",
+            )
+        )
 
         result["info"].append(_info("Bid", tick.bid))
         result["info"].append(_info("Ask", tick.ask))
@@ -264,18 +274,22 @@ def validate_symbol(symbol: str, lot_size: float) -> dict:
             }
             check = mt5.order_check(request)
             if check is not None and check.retcode == 0:
-                result["checks"].append(_check(
-                    True,
-                    "Order check (dry run) passed",
-                    f"fill={fill_label}",
-                ))
+                result["checks"].append(
+                    _check(
+                        True,
+                        "Order check (dry run) passed",
+                        f"fill={fill_label}",
+                    )
+                )
                 break
         else:
-            result["checks"].append(_check(
-                False,
-                "Order check (dry run) failed",
-                f"retcode={check.retcode if check else 'None'}",
-            ))
+            result["checks"].append(
+                _check(
+                    False,
+                    "Order check (dry run) failed",
+                    f"retcode={check.retcode if check else 'None'}",
+                )
+            )
 
     # --- Trading hours ---
     # MT5 does not expose explicit trading hours via API for CFDs.
@@ -403,22 +417,23 @@ def build_report(symbols: list[str], lot_size: float) -> dict:
 # CLI
 # ---------------------------------------------------------------------------
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="MT5 Crypto CFD Validation — multi-asset preflight"
-    )
+    parser = argparse.ArgumentParser(description="MT5 Crypto CFD Validation — multi-asset preflight")
     parser.add_argument(
-        "--symbols", "-s",
+        "--symbols",
+        "-s",
         default="BTCUSD,ETHUSD,XAUUSD,EURUSD",
         help="Comma-separated symbols to validate (default: BTCUSD,ETHUSD,XAUUSD,EURUSD)",
     )
     parser.add_argument(
-        "--lot-size", "-l",
+        "--lot-size",
+        "-l",
         type=float,
         default=0.01,
         help="Lot size for order-check dry run (default: 0.01)",
     )
     parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         default=DEFAULT_OUTPUT,
         help=f"Output JSON path (default: {DEFAULT_OUTPUT})",
     )

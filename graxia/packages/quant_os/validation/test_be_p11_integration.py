@@ -1,9 +1,8 @@
 """Phase BE-P11 integration tests — promotion review."""
-from graxia.packages.quant_os.validation.promotion_review import (
-    PromotionReviewer, ReviewInput, PromotionDecision
-)
-from graxia.packages.quant_os.validation.evidence_pack import EvidencePack
+
 from graxia.packages.quant_os.validation.auto_blockers import AutoBlockerChecker
+from graxia.packages.quant_os.validation.evidence_pack import EvidencePack
+from graxia.packages.quant_os.validation.promotion_review import PromotionDecision, PromotionReviewer, ReviewInput
 from graxia.packages.quant_os.validation.review_report import ReviewReportGenerator
 
 
@@ -32,10 +31,14 @@ def test_evidence_pack_complete():
 def test_auto_blockers_all_clear():
     checker = AutoBlockerChecker()
     context = {
-        "critical_incidents": 0, "unprotected_positions": 0,
-        "reconciliation_pct": 100, "cost_gap_pct": 20,
-        "needs_retuning": False, "broker_identity_locked": True,
-        "trade_count": 150, "oracle_divergence": False,
+        "critical_incidents": 0,
+        "unprotected_positions": 0,
+        "reconciliation_pct": 100,
+        "cost_gap_pct": 20,
+        "needs_retuning": False,
+        "broker_identity_locked": True,
+        "trade_count": 150,
+        "oracle_divergence": False,
     }
     checker.check(context)
     assert checker.summary()["clear"]
@@ -44,7 +47,9 @@ def test_auto_blockers_all_clear():
 def test_review_report_generation():
     gen = ReviewReportGenerator()
     report = gen.generate(
-        "XAU_LIQSWEEP", "ELIGIBLE_FOR_MICRO_LIVE", [],
+        "XAU_LIQSWEEP",
+        "ELIGIBLE_FOR_MICRO_LIVE",
+        [],
         {"trades": 150, "reconciliation": "100%"},
     )
     md = report.to_markdown()

@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta, UTC
-from decimal import Decimal, ROUND_HALF_UP
+from datetime import UTC, datetime, timedelta
+from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
-from typing import Optional
 
 import structlog
 
@@ -24,6 +23,7 @@ class FillOutcome(str, Enum):
 @dataclass(frozen=True)
 class FillRecord:
     """Single fill event for quality tracking."""
+
     order_id: str
     symbol: str
     side: str
@@ -34,13 +34,14 @@ class FillRecord:
     outcome: FillOutcome
     timestamp: datetime
     latency_ms: float
-    spread_at_entry: Optional[Decimal] = None
-    raw_response: Optional[dict] = None
+    spread_at_entry: Decimal | None = None
+    raw_response: dict | None = None
 
 
 @dataclass(frozen=True)
 class SlippageReport:
     """Slippage analysis for a single fill."""
+
     symbol: str
     side: str
     expected_price: Decimal
@@ -55,6 +56,7 @@ class SlippageReport:
 @dataclass
 class QualityMetrics:
     """Aggregated execution quality metrics."""
+
     symbol: str
     period_start: datetime
     period_end: datetime
@@ -110,7 +112,7 @@ class ExecutionQualityTracker:
         report = self.calculate_slippage(fill)
         self._fills.append(fill)
         if len(self._fills) > self._max_history:
-            self._fills = self._fills[-self._max_history:]
+            self._fills = self._fills[-self._max_history :]
         logger.info(
             "fill.recorded",
             order_id=fill.order_id,
@@ -126,17 +128,13 @@ class ExecutionQualityTracker:
         price_diff = fill.actual_price - fill.expected_price
         if fill.side == "SELL":
             price_diff = -price_diff
-        slippage_pips = (price_diff / self._pip_size).quantize(
-            Decimal("0.001"), rounding=ROUND_HALF_UP
-        )
-        slippage_cost = (price_diff * fill.filled_quantity).quantize(
-            Decimal("0.01"), rounding=ROUND_HALF_UP
-        )
+        slippage_pips = (price_diff / self._pip_size).quantize(Decimal("0.001"), rounding=ROUND_HALF_UP)
+        slippage_cost = (price_diff * fill.filled_quantity).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         spread_component = Decimal("0")
         if fill.spread_at_entry is not None:
-            spread_component = (
-                fill.spread_at_entry / self._pip_size / 2
-            ).quantize(Decimal("0.001"), rounding=ROUND_HALF_UP)
+            spread_component = (fill.spread_at_entry / self._pip_size / 2).quantize(
+                Decimal("0.001"), rounding=ROUND_HALF_UP
+            )
         adverse_component = max(slippage_pips - spread_component, Decimal("0"))
         within_spread = adverse_component <= 0
         return SlippageReport(
@@ -154,7 +152,7 @@ class ExecutionQualityTracker:
     def get_quality_metrics(
         self,
         symbol: str,
-        lookback_hours: Optional[int] = None,
+        lookback_hours: int | None = None,
     ) -> QualityMetrics:
         """Aggregate quality metrics for a symbol over a time window."""
         now = datetime.now(UTC)
@@ -211,14 +209,9 @@ class ExecutionQualityTracker:
         med_lat = sorted(latencies)[len(latencies) // 2]
         max_lat = max(latencies)
 
-        total_cost = sum(
-            self.calculate_slippage(f).slippage_cost for f in fills
-        )
+        total_cost = sum(self.calculate_slippage(f).slippage_cost for f in fills)
 
-        adverse_count = sum(
-            1 for f in fills
-            if self.calculate_slippage(f).adverse_component > 0
-        )
+        adverse_count = sum(1 for f in fills if self.calculate_slippage(f).adverse_component > 0)
         adverse_pct = (Decimal(adverse_count) / Decimal(total)).quantize(Decimal("0.0001"))
 
         period_start = min(f.timestamp for f in fills)
@@ -255,9 +248,7 @@ class ExecutionQualityTracker:
         )
         return metrics
 
-    def get_slippage_history(
-        self, symbol: str, lookback_hours: Optional[int] = None
-    ) -> list[SlippageReport]:
+    def get_slippage_history(self, symbol: str, lookback_hours: int | None = None) -> list[SlippageReport]:
         """Return slippage reports for a symbol."""
         now = datetime.now(UTC)
         fills = [f for f in self._fills if f.symbol == symbol]
@@ -266,16 +257,15 @@ class ExecutionQualityTracker:
             fills = [f for f in fills if f.timestamp >= cutoff]
         return [self.calculate_slippage(f) for f in fills]
 
-    def detect_adverse_fills(
-        self, symbol: str, lookback_hours: Optional[int] = None
-    ) -> list[FillRecord]:
+    def detect_adverse_fills(self, symbol: str, lookback_hours: int | None = None) -> list[FillRecord]:
         """Return fills with adverse slippage beyond threshold."""
         reports = self.get_slippage_history(symbol, lookback_hours)
         adverse_fills = []
         for report in reports:
             if report.adverse_component > self._adverse_threshold:
                 fill = next(
-                    f for f in self._fills
+                    f
+                    for f in self._fills
                     if f.symbol == symbol
                     and f.expected_price == report.expected_price
                     and f.actual_price == report.actual_price

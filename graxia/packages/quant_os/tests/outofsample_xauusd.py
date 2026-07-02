@@ -1,33 +1,33 @@
 """
 Out-of-sample backtest on XAUUSD data (bars 200-400) for all 13 gold_bot strategies.
 """
-import os
 
-from decimal import Decimal
-from typing import Optional, Dict, Any, List
 import importlib
+import os
+from decimal import Decimal
+from typing import Any
 
-from quant_os.backtest.engine import BacktestEngine, BacktestConfig
 from quant_os.backtest.data_loader import load_csv_data
-from quant_os.strategies.base import Strategy, Signal
+from quant_os.backtest.engine import BacktestConfig, BacktestEngine
 from quant_os.core.enums import SignalType
+from quant_os.strategies.base import Signal, Strategy
 
 DATA_DIR = os.path.join("graxia", "packages", "quant_os", "data")
 
 STRATEGY_MAP = [
-    ("order_block",       "quant_os.gold_bot.strategies.order_block",       "OrderBlockStrategy"),
-    ("supply_demand",     "quant_os.gold_bot.strategies.supply_demand",     "SupplyDemandStrategy"),
-    ("ema_cross",         "quant_os.gold_bot.strategies.ema_cross",         "EMACrossStrategy"),
-    ("rsi_divergence",    "quant_os.gold_bot.strategies.rsi_divergence",    "RSIDivergenceStrategy"),
-    ("london_breakout",   "quant_os.gold_bot.strategies.london_breakout",   "LondonBreakoutStrategy"),
-    ("fibonacci",         "quant_os.gold_bot.strategies.fibonacci",         "FibonacciStrategy"),
-    ("vwap_rejection",    "quant_os.gold_bot.strategies.vwap_rejection",    "VWAPRejectionStrategy"),
-    ("news_fade",         "quant_os.gold_bot.strategies.news_fade",         "NewsFadeStrategy"),
-    ("multi_tf_align",    "quant_os.gold_bot.strategies.multi_tf_align",    "MultiTFAlignStrategy"),
-    ("bos_choch",         "quant_os.gold_bot.strategies.bos_choch",         "BOSCHoCHStrategy"),
-    ("liquidity_sweep",   "quant_os.gold_bot.strategies.liquidity_sweep",   "LiquiditySweepStrategy"),
-    ("fair_value_gap",    "quant_os.gold_bot.strategies.fair_value_gap",    "FairValueGapStrategy"),
-    ("opening_range",     "quant_os.gold_bot.strategies.opening_range",     "OpeningRangeStrategy"),
+    ("order_block", "quant_os.gold_bot.strategies.order_block", "OrderBlockStrategy"),
+    ("supply_demand", "quant_os.gold_bot.strategies.supply_demand", "SupplyDemandStrategy"),
+    ("ema_cross", "quant_os.gold_bot.strategies.ema_cross", "EMACrossStrategy"),
+    ("rsi_divergence", "quant_os.gold_bot.strategies.rsi_divergence", "RSIDivergenceStrategy"),
+    ("london_breakout", "quant_os.gold_bot.strategies.london_breakout", "LondonBreakoutStrategy"),
+    ("fibonacci", "quant_os.gold_bot.strategies.fibonacci", "FibonacciStrategy"),
+    ("vwap_rejection", "quant_os.gold_bot.strategies.vwap_rejection", "VWAPRejectionStrategy"),
+    ("news_fade", "quant_os.gold_bot.strategies.news_fade", "NewsFadeStrategy"),
+    ("multi_tf_align", "quant_os.gold_bot.strategies.multi_tf_align", "MultiTFAlignStrategy"),
+    ("bos_choch", "quant_os.gold_bot.strategies.bos_choch", "BOSCHoCHStrategy"),
+    ("liquidity_sweep", "quant_os.gold_bot.strategies.liquidity_sweep", "LiquiditySweepStrategy"),
+    ("fair_value_gap", "quant_os.gold_bot.strategies.fair_value_gap", "FairValueGapStrategy"),
+    ("opening_range", "quant_os.gold_bot.strategies.opening_range", "OpeningRangeStrategy"),
 ]
 
 
@@ -43,10 +43,10 @@ class MultiTFAdapter(Strategy):
     def generate_signal(
         self,
         symbol: str,
-        ohlcv_data: Dict[str, List],
-        indicators: Optional[Dict[str, Any]] = None,
+        ohlcv_data: dict[str, list],
+        indicators: dict[str, Any] | None = None,
         regime=None,
-    ) -> Optional[Signal]:
+    ) -> Signal | None:
         nested = {}
         for tf in ["M1", "M5", "M15", "H1", "H4", "D1"]:
             nested[tf] = self.multi_tf_data.get(tf, ohlcv_data)
@@ -74,7 +74,7 @@ class MultiTFAdapter(Strategy):
             take_profit=Decimal(str(gs.take_profit)) if gs.take_profit else None,
         )
 
-    def required_features(self) -> List[str]:
+    def required_features(self) -> list[str]:
         return []
 
 
@@ -88,15 +88,18 @@ def main():
     print("Loading XAUUSD data...")
     d1_data, d1_ts = load_csv_data(
         os.path.join(DATA_DIR, "XAUUSD_D1.csv"),
-        date_column="time", date_format="%Y-%m-%d %H:%M:%S",
+        date_column="time",
+        date_format="%Y-%m-%d %H:%M:%S",
     )
     h1_data, h1_ts = load_csv_data(
         os.path.join(DATA_DIR, "XAUUSD_H1.csv"),
-        date_column="time", date_format="%Y-%m-%d %H:%M:%S",
+        date_column="time",
+        date_format="%Y-%m-%d %H:%M:%S",
     )
     m15_data, m15_ts = load_csv_data(
         os.path.join(DATA_DIR, "XAUUSD_M15.csv"),
-        date_column="time", date_format="%Y-%m-%d %H:%M:%S",
+        date_column="time",
+        date_format="%Y-%m-%d %H:%M:%S",
     )
     print(f"  D1: {len(d1_data['close'])} bars | H1: {len(h1_data['close'])} bars | M15: {len(m15_data['close'])} bars")
 
@@ -107,8 +110,8 @@ def main():
 
     # Multi-TF reference data (use latest bars, strategies read from these)
     multi_tf_ref = {
-        "D1":  d1_data,
-        "H1":  {k: v[-500:] for k, v in h1_data.items()},
+        "D1": d1_data,
+        "H1": {k: v[-500:] for k, v in h1_data.items()},
         "M15": {k: v[-2000:] for k, v in m15_data.items()},
     }
 
@@ -146,23 +149,28 @@ def main():
                 if t.get("stop_loss"):
                     sl_dists.append(abs(t["entry_price"] - t["stop_loss"]))
             if sl_dists:
-                sl_distances.append((name, min(sl_dists), max(sl_dists), sum(sl_dists)/len(sl_dists)))
+                sl_distances.append((name, min(sl_dists), max(sl_dists), sum(sl_dists) / len(sl_dists)))
 
-            results.append({
-                "name": name,
-                "trades": m.total_trades,
-                "win_rate": m.win_rate,
-                "profit_factor": m.profit_factor,
-                "sharpe": m.sharpe_ratio,
-                "max_dd": m.max_drawdown_pct,
-                "pnl": m.total_pnl,
-            })
+            results.append(
+                {
+                    "name": name,
+                    "trades": m.total_trades,
+                    "win_rate": m.win_rate,
+                    "profit_factor": m.profit_factor,
+                    "sharpe": m.sharpe_ratio,
+                    "max_dd": m.max_drawdown_pct,
+                    "pnl": m.total_pnl,
+                }
+            )
 
-            print(f"  Trades: {m.total_trades}  WR: {m.win_rate*100:.1f}%  PF: {m.profit_factor:.2f}  "
-                  f"Sharpe: {m.sharpe_ratio:.2f}  MaxDD: {m.max_drawdown_pct:.1f}%  P&L: ${m.total_pnl:+,.2f}")
+            print(
+                f"  Trades: {m.total_trades}  WR: {m.win_rate*100:.1f}%  PF: {m.profit_factor:.2f}  "
+                f"Sharpe: {m.sharpe_ratio:.2f}  MaxDD: {m.max_drawdown_pct:.1f}%  P&L: ${m.total_pnl:+,.2f}"
+            )
 
         except Exception as e:
             import traceback
+
             traceback.print_exc()
             results.append({"name": name, "trades": 0, "error": str(e)})
 
@@ -177,8 +185,10 @@ def main():
         if "error" in r:
             print(f"  {r['name']:<20} ERROR: {r['error'][:50]}")
         else:
-            print(f"  {r['name']:<20} {r['trades']:>7} {r['win_rate']*100:>5.1f}% {r['profit_factor']:>7.2f} "
-                  f"{r['sharpe']:>7.2f} {r['max_dd']:>6.1f}% ${r['pnl']:>+10.2f}")
+            print(
+                f"  {r['name']:<20} {r['trades']:>7} {r['win_rate']*100:>5.1f}% {r['profit_factor']:>7.2f} "
+                f"{r['sharpe']:>7.2f} {r['max_dd']:>6.1f}% ${r['pnl']:>+10.2f}"
+            )
 
     # SL distance diagnostic
     if sl_distances:

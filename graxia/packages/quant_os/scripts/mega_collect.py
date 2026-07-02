@@ -8,6 +8,7 @@ Phase 3: Build training dataset from tick + order data
 Usage:
     python scripts/mega_collect.py [--ticks-months 3] [--order-count 50] [--order-interval 10]
 """
+
 import argparse
 import csv
 import hashlib
@@ -15,12 +16,13 @@ import json
 import os
 import sys
 import time
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 from glob import glob
 from uuid import uuid4
 
 import MetaTrader5 as mt5
 import numpy as np
+
 
 def ensure_connected():
     """Reconnect MT5 if connection lost. Returns True if connected."""
@@ -39,7 +41,7 @@ def ensure_connected():
             log("  [RECONNECT] OK")
             return True
         log(f"  [RECONNECT] attempt {attempt+1}/3 failed: {mt5.last_error()}")
-        time.sleep(2 ** attempt)
+        time.sleep(2**attempt)
     log("  [RECONNECT] FAILED — giving up")
     return False
 
@@ -50,7 +52,7 @@ _LOG_FILE = None
 
 def open_log(path):
     global _LOG_FILE
-    _LOG_FILE = open(path, 'a', buffering=1)
+    _LOG_FILE = open(path, "a", buffering=1)
 
 
 def log(msg, end="\n"):
@@ -79,6 +81,7 @@ DATASET_DIR = os.path.join(OUTPUT_BASE, "dataset")
 # ============================================================
 # PHASE 1: BULK HISTORICAL TICK DOWNLOAD
 # ============================================================
+
 
 def download_ticks_bulk(symbols, months_back=3):
     """Download historical ticks using copy_ticks_range. Returns dict of symbol -> numpy array."""
@@ -113,20 +116,17 @@ def download_ticks_bulk(symbols, months_back=3):
         if all_ticks:
             combined = np.concatenate(all_ticks)
             # Deduplicate by time
-            _, unique_idx = np.unique(combined['time'], return_index=True)
+            _, unique_idx = np.unique(combined["time"], return_index=True)
             combined = combined[unique_idx]
 
             # Save as CSV (numpy doesn't have native parquet without pandas)
             filepath = os.path.join(TICK_DIR, f"{sym}_bulk.csv")
-            with open(filepath, 'w', newline='') as f:
+            with open(filepath, "w", newline="") as f:
                 writer = csv.writer(f)
-                writer.writerow(['time', 'bid', 'ask', 'last', 'flags', 'volume_real'])
+                writer.writerow(["time", "bid", "ask", "last", "flags", "volume_real"])
                 for row in combined:
-                    vol = row['volume_real'] if 'volume_real' in combined.dtype.names else 0
-                    writer.writerow([
-                        int(row['time']), row['bid'], row['ask'], row['last'],
-                        int(row['flags']), vol
-                    ])
+                    vol = row["volume_real"] if "volume_real" in combined.dtype.names else 0
+                    writer.writerow([int(row["time"]), row["bid"], row["ask"], row["last"], int(row["flags"]), vol])
 
             results[sym] = combined
             print(f"  [OK] {sym}: {len(combined)} unique ticks -> {filepath}")
@@ -139,6 +139,7 @@ def download_ticks_bulk(symbols, months_back=3):
 # ============================================================
 # PHASE 2: BATCH DEMO ORDERS
 # ============================================================
+
 
 def get_filling_mode(symbol):
     info = mt5.symbol_info(symbol)
@@ -205,11 +206,20 @@ def send_close_order(symbol, side, volume, ticket, filling_mode, magic, comment)
     return {"retcode": result.retcode, "deal": result.deal, "comment": result.comment}
 
 
-def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
-                     deviation_map=None, mode="market",
-                     schedule_start=None, schedule_end=None,
-                     max_spread=0, record_tick_context=False,
-                     checkpoint_path=None, log_file=None):
+def run_batch_orders(
+    symbols,
+    count=50,
+    interval=10,
+    volume=0.01,
+    deviation_map=None,
+    mode="market",
+    schedule_start=None,
+    schedule_end=None,
+    max_spread=0,
+    record_tick_context=False,
+    checkpoint_path=None,
+    log_file=None,
+):
     """Run batch orders with configurable execution mode.
 
     Args:
@@ -226,11 +236,27 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
     csv_path = os.path.join(ORDER_DIR, f"batch_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.csv")
 
     fieldnames = [
-        "order_id", "symbol", "side", "volume", "entry", "sl", "tp",
-        "send_retcode", "send_deal", "send_price", "send_time",
-        "close_retcode", "close_deal", "close_time",
-        "slippage_points", "latency_ms", "status", "exec_mode",
-        "spread_price", "spread_points", "deviation_used",
+        "order_id",
+        "symbol",
+        "side",
+        "volume",
+        "entry",
+        "sl",
+        "tp",
+        "send_retcode",
+        "send_deal",
+        "send_price",
+        "send_time",
+        "close_retcode",
+        "close_deal",
+        "close_time",
+        "slippage_points",
+        "latency_ms",
+        "status",
+        "exec_mode",
+        "spread_price",
+        "spread_points",
+        "deviation_used",
     ]
 
     if deviation_map is None:
@@ -246,7 +272,7 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
     print(f"{'='*60}")
 
     results = []
-    with open(csv_path, 'w', newline='') as f:
+    with open(csv_path, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
 
@@ -257,7 +283,9 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
                 if not (schedule_start <= now_hour < schedule_end):
                     wait_h = schedule_end - now_hour
                     if wait_h > 0:
-                        log(f"  [{i+1}/{count}] Waiting {wait_h}h for schedule {schedule_start}:00-{schedule_end}:00 UTC")
+                        log(
+                            f"  [{i+1}/{count}] Waiting {wait_h}h for schedule {schedule_start}:00-{schedule_end}:00 UTC"
+                        )
                         time.sleep(3600)  # check again in 1 hour
                         continue
                     else:
@@ -285,7 +313,9 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
             info = mt5.symbol_info(sym)
             spread_pts = round(spread_price / info.point) if info and info.point else 0
             if max_spread > 0 and spread_price > max_spread:
-                log(f"  [{i+1}/{count}] {sym} {side} SKIP spread={spread_price:.5f} > max={max_spread:.5f} ({spread_pts}pt)")
+                log(
+                    f"  [{i+1}/{count}] {sym} {side} SKIP spread={spread_price:.5f} > max={max_spread:.5f} ({spread_pts}pt)"
+                )
                 time.sleep(interval)
                 continue
 
@@ -301,11 +331,13 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
                 for _ in range(5):
                     ctx_tick = mt5.symbol_info_tick(sym)
                     if ctx_tick:
-                        tick_context.append({
-                            "t": ctx_tick.time_msc,
-                            "b": ctx_tick.bid,
-                            "a": ctx_tick.ask,
-                        })
+                        tick_context.append(
+                            {
+                                "t": ctx_tick.time_msc,
+                                "b": ctx_tick.bid,
+                                "a": ctx_tick.ask,
+                            }
+                        )
                     time.sleep(0.002)  # 2ms between samples
             send_start = time.time()
             result = None
@@ -340,13 +372,27 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
                 else:
                     retcode = result.retcode if result else -1
                     record = {
-                        "order_id": order_id, "symbol": sym, "side": side, "volume": volume,
-                        "entry": entry, "sl": sl, "tp": tp,
-                        "send_retcode": retcode, "send_deal": 0, "send_price": 0,
-                        "send_time": send_time, "close_retcode": 0, "close_deal": 0,
-                        "close_time": "", "slippage_points": 0, "latency_ms": latency_ms,
-                        "status": "REJECTED", "exec_mode": mode,
-                        "spread_price": spread_price, "spread_points": spread_pts, "deviation_used": deviation,
+                        "order_id": order_id,
+                        "symbol": sym,
+                        "side": side,
+                        "volume": volume,
+                        "entry": entry,
+                        "sl": sl,
+                        "tp": tp,
+                        "send_retcode": retcode,
+                        "send_deal": 0,
+                        "send_price": 0,
+                        "send_time": send_time,
+                        "close_retcode": 0,
+                        "close_deal": 0,
+                        "close_time": "",
+                        "slippage_points": 0,
+                        "latency_ms": latency_ms,
+                        "status": "REJECTED",
+                        "exec_mode": mode,
+                        "spread_price": spread_price,
+                        "spread_points": spread_pts,
+                        "deviation_used": deviation,
                     }
                     writer.writerow(record)
                     f.flush()
@@ -404,13 +450,27 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
                 if result is None or result.retcode != 10009:
                     retcode = result.retcode if result else -1
                     record = {
-                        "order_id": order_id, "symbol": sym, "side": side, "volume": volume,
-                        "entry": entry, "sl": sl, "tp": tp,
-                        "send_retcode": retcode, "send_deal": 0, "send_price": 0,
-                        "send_time": send_time, "close_retcode": 0, "close_deal": 0,
-                        "close_time": "", "slippage_points": 0, "latency_ms": latency_ms,
-                        "status": "REJECTED", "exec_mode": mode,
-                        "spread_price": spread_price, "spread_points": spread_pts, "deviation_used": deviation,
+                        "order_id": order_id,
+                        "symbol": sym,
+                        "side": side,
+                        "volume": volume,
+                        "entry": entry,
+                        "sl": sl,
+                        "tp": tp,
+                        "send_retcode": retcode,
+                        "send_deal": 0,
+                        "send_price": 0,
+                        "send_time": send_time,
+                        "close_retcode": 0,
+                        "close_deal": 0,
+                        "close_time": "",
+                        "slippage_points": 0,
+                        "latency_ms": latency_ms,
+                        "status": "REJECTED",
+                        "exec_mode": mode,
+                        "spread_price": spread_price,
+                        "spread_points": spread_pts,
+                        "deviation_used": deviation,
                     }
                     writer.writerow(record)
                     f.flush()
@@ -451,29 +511,42 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
             slippage = round((exec_price - entry) / mt5.symbol_info(sym).point, 1) if mt5.symbol_info(sym) else 0
 
             record = {
-                "order_id": order_id, "symbol": sym, "side": side, "volume": volume,
-                "entry": exec_price if mode == "limit" else entry, "sl": sl, "tp": tp,
-                "send_retcode": 10009, "send_deal": deal, "send_price": exec_price,
+                "order_id": order_id,
+                "symbol": sym,
+                "side": side,
+                "volume": volume,
+                "entry": exec_price if mode == "limit" else entry,
+                "sl": sl,
+                "tp": tp,
+                "send_retcode": 10009,
+                "send_deal": deal,
+                "send_price": exec_price,
                 "send_time": send_time,
                 "close_retcode": close_result.get("retcode", 0),
                 "close_deal": close_result.get("deal", 0),
                 "close_time": close_time,
-                "slippage_points": slippage, "latency_ms": latency_ms,
-                "status": "EXECUTED", "exec_mode": mode,
-                "spread_price": spread_price, "spread_points": spread_pts, "deviation_used": deviation,
+                "slippage_points": slippage,
+                "latency_ms": latency_ms,
+                "status": "EXECUTED",
+                "exec_mode": mode,
+                "spread_price": spread_price,
+                "spread_points": spread_pts,
+                "deviation_used": deviation,
             }
             writer.writerow(record)
             f.flush()
             results.append(record)
 
-            log(f"  [{i+1}/{count}] {sym} {side} {mode} OK deal={deal} price={exec_price} slip={slippage}pt lat={latency_ms}ms")
+            log(
+                f"  [{i+1}/{count}] {sym} {side} {mode} OK deal={deal} price={exec_price} slip={slippage}pt lat={latency_ms}ms"
+            )
 
             if i < count - 1:
                 time.sleep(interval)
 
             # ── Checkpoint save every 10 orders (Priority 2) ──
             if checkpoint_path and (i + 1) % 10 == 0:
-                with open(checkpoint_path, 'w') as ck:
+                with open(checkpoint_path, "w") as ck:
                     json.dump({"completed": i + 1, "total": count}, ck)
 
     if log_file:
@@ -484,6 +557,7 @@ def run_batch_orders(symbols, count=50, interval=10, volume=0.01,
 # ============================================================
 # PHASE 3: BUILD TRAINING DATASET
 # ============================================================
+
 
 def build_dataset(tick_data, order_records):
     """Build training dataset from order records + historical tick statistics."""
@@ -498,9 +572,9 @@ def build_dataset(tick_data, order_records):
     for sym, ticks in tick_data.items():
         if len(ticks) == 0:
             continue
-        bids = [float(t['bid']) for t in ticks]
-        asks = [float(t['ask']) for t in ticks]
-        spreads = [float(t['ask']) - float(t['bid']) for t in ticks]
+        bids = [float(t["bid"]) for t in ticks]
+        asks = [float(t["ask"]) for t in ticks]
+        spreads = [float(t["ask"]) - float(t["bid"]) for t in ticks]
         tick_stats[sym] = {
             "bid_mean": round(np.mean(bids), 5),
             "bid_std": round(np.std(bids), 5),
@@ -551,15 +625,17 @@ def build_dataset(tick_data, order_records):
 
     # Write CSV
     csv_path = os.path.join(DATASET_DIR, f"training_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.csv")
-    with open(csv_path, 'w', newline='') as f:
+    with open(csv_path, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=features[0].keys())
         writer.writeheader()
         writer.writerows(features)
 
     # Summary
     symbols = set(f["symbol"] for f in features)
-    sides = {"BUY": sum(1 for f in features if f["side"] == "BUY"),
-             "SELL": sum(1 for f in features if f["side"] == "SELL")}
+    sides = {
+        "BUY": sum(1 for f in features if f["side"] == "BUY"),
+        "SELL": sum(1 for f in features if f["side"] == "SELL"),
+    }
     avg_slippage = round(np.mean([abs(float(f["slippage_points"])) for f in features]), 2)
     avg_latency = round(np.mean([float(f["latency_ms"]) for f in features]), 0)
 
@@ -573,7 +649,7 @@ def build_dataset(tick_data, order_records):
         "csv": csv_path,
     }
 
-    with open(os.path.join(DATASET_DIR, "dataset_summary.json"), 'w') as f:
+    with open(os.path.join(DATASET_DIR, "dataset_summary.json"), "w") as f:
         json.dump(summary, f, indent=2)
 
     print(f"  Features: {len(features)} rows")
@@ -590,6 +666,7 @@ def build_dataset(tick_data, order_records):
 # MAIN
 # ============================================================
 
+
 def main():
     parser = argparse.ArgumentParser(description="Mega data collector")
     parser.add_argument("--ticks-months", type=int, default=3, help="Months of historical ticks")
@@ -598,18 +675,26 @@ def main():
     parser.add_argument("--volume", type=float, default=0.01, help="Volume per order")
     parser.add_argument("--skip-ticks", action="store_true", help="Skip tick download")
     parser.add_argument("--skip-orders", action="store_true", help="Skip order execution")
-    parser.add_argument("--mode", choices=["market", "limit"], default="market",
-                        help="market=fill now (fast), limit=set price (lower slippage, may not fill)")
-    parser.add_argument("--schedule", action="store_true",
-                        help="Run only during London/NY overlap (13:00-17:00 UTC)")
-    parser.add_argument("--deviation", type=int, default=0,
-                        help="Max deviation in points (0=auto: XAUUSD=50, forex=20)")
-    parser.add_argument("--max-spread", type=float, default=0,
-                        help="Skip order if spread > threshold (0=no gate). XAUUSD: ~0.50, EURUSD: ~0.02")
-    parser.add_argument("--resume", action="store_true",
-                        help="Resume from last checkpoint (saves every 10 orders)")
-    parser.add_argument("--tick-context", action="store_true",
-                        help="Record ±5 ticks around each order_send for slippage model training")
+    parser.add_argument(
+        "--mode",
+        choices=["market", "limit"],
+        default="market",
+        help="market=fill now (fast), limit=set price (lower slippage, may not fill)",
+    )
+    parser.add_argument("--schedule", action="store_true", help="Run only during London/NY overlap (13:00-17:00 UTC)")
+    parser.add_argument(
+        "--deviation", type=int, default=0, help="Max deviation in points (0=auto: XAUUSD=50, forex=20)"
+    )
+    parser.add_argument(
+        "--max-spread",
+        type=float,
+        default=0,
+        help="Skip order if spread > threshold (0=no gate). XAUUSD: ~0.50, EURUSD: ~0.02",
+    )
+    parser.add_argument("--resume", action="store_true", help="Resume from last checkpoint (saves every 10 orders)")
+    parser.add_argument(
+        "--tick-context", action="store_true", help="Record ±5 ticks around each order_send for slippage model training"
+    )
     args = parser.parse_args()
 
     os.makedirs(OUTPUT_BASE, exist_ok=True)
@@ -644,7 +729,7 @@ def main():
             filepath = os.path.join(TICK_DIR, f"{sym}_bulk.csv")
             if os.path.exists(filepath):
                 ticks = []
-                with open(filepath, 'r') as f:
+                with open(filepath) as f:
                     reader = csv.DictReader(f)
                     for row in reader:
                         ticks.append(row)
@@ -667,15 +752,20 @@ def main():
         resume_from = 0
         checkpoint_path = os.path.join(OUTPUT_BASE, "checkpoint.json")
         if args.resume and os.path.exists(checkpoint_path):
-            with open(checkpoint_path, 'r') as f:
+            with open(checkpoint_path) as f:
                 ckpt = json.load(f)
             resume_from = ckpt.get("completed", 0)
             print(f"  Resuming from order {resume_from}/{args.order_count}")
 
         order_records, order_csv = run_batch_orders(
-            SYMBOLS, args.order_count, args.order_interval, args.volume,
-            deviation_map=deviation_map, mode=args.mode,
-            schedule_start=schedule_start, schedule_end=schedule_end,
+            SYMBOLS,
+            args.order_count,
+            args.order_interval,
+            args.volume,
+            deviation_map=deviation_map,
+            mode=args.mode,
+            schedule_start=schedule_start,
+            schedule_end=schedule_end,
             max_spread=args.max_spread,
             record_tick_context=args.tick_context,
             checkpoint_path=checkpoint_path if args.resume else None,
@@ -685,7 +775,7 @@ def main():
         print("\nSkipping orders (--skip-orders)")
         # Load existing order files
         for filepath in sorted(glob(os.path.join(ORDER_DIR, "batch_*.csv"))):
-            with open(filepath, 'r') as f:
+            with open(filepath) as f:
                 reader = csv.DictReader(f)
                 for row in reader:
                     order_records.append(row)
@@ -717,7 +807,7 @@ def main():
         "order_dir": ORDER_DIR,
         "dataset_dir": DATASET_DIR,
     }
-    with open(os.path.join(OUTPUT_BASE, "run_summary.json"), 'w') as f:
+    with open(os.path.join(OUTPUT_BASE, "run_summary.json"), "w") as f:
         json.dump(run_summary, f, indent=2)
 
     mt5.shutdown()
@@ -731,10 +821,12 @@ if __name__ == "__main__":
     except Exception as e:
         log(f"\nFATAL: {e}")
         import traceback
+
         traceback.print_exc()
         # Try graceful shutdown
         try:
             from execution.demo_canary.kill_switch import activate_kill_switch
+
             activate_kill_switch()
             log("Kill switch activated")
         except Exception:

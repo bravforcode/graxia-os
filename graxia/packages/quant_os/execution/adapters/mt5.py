@@ -23,10 +23,10 @@ except ImportError:  # pragma: no cover
     mt5 = None  # type: ignore[assignment]
 
 # Constants mapped from mt5 module (referenced by name so import is optional)
-_TRADE_ACTION_DEAL = 1       # mt5.TRADE_ACTION_DEAL
-_ORDER_FILLING_IOC = 2       # mt5.ORDER_FILLING_IOC (also FOK on some brokers)
-_ORDER_TYPE_BUY = 0          # mt5.ORDER_TYPE_BUY
-_ORDER_TYPE_SELL = 1         # mt5.ORDER_TYPE_SELL
+_TRADE_ACTION_DEAL = 1  # mt5.TRADE_ACTION_DEAL
+_ORDER_FILLING_IOC = 2  # mt5.ORDER_FILLING_IOC (also FOK on some brokers)
+_ORDER_TYPE_BUY = 0  # mt5.ORDER_TYPE_BUY
+_ORDER_TYPE_SELL = 1  # mt5.ORDER_TYPE_SELL
 _RETRIES = 3
 _RETRY_DELAY = 1.0  # seconds
 
@@ -94,7 +94,8 @@ class MT5Adapter(BrokerAdapter):
             except Exception as exc:
                 logger.error("MT5 reconnect attempt %d failed: %s", attempt, exc)
             import time
-            time.sleep(min(2 ** attempt, 10))  # backoff: 2s, 4s, 8s
+
+            time.sleep(min(2**attempt, 10))  # backoff: 2s, 4s, 8s
 
         raise ConnectionError("MT5 reconnect failed after 3 attempts")
 

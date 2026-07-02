@@ -1,4 +1,5 @@
 """Pepperstone connection test"""
+
 import MetaTrader5 as mt5
 
 res = mt5.initialize(

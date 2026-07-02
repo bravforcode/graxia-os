@@ -2,12 +2,12 @@
 
 BE-P8.1: Geometry validation, spread shock, dedup, full position lifecycle.
 """
+
+import hashlib
+import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Optional
-import hashlib
-import json
 
 
 class ShadowSignalOutcome(Enum):
@@ -39,7 +39,7 @@ class ShadowSignal:
     direction: str  # "BUY" or "SELL"
     entry_price: float
     stop_loss: float
-    take_profit: Optional[float]
+    take_profit: float | None
     outcome: ShadowSignalOutcome
     rejection_reason: str = ""
     event_risk_state: str = "CLEAR"
@@ -54,7 +54,7 @@ class ShadowSignal:
     # BE-P8.2: dedup metadata
     strategy_version: str = ""
     feature_hash: str = ""
-    closed_candle_time: Optional[str] = None
+    closed_candle_time: str | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -88,6 +88,7 @@ class ShadowSignal:
 @dataclass
 class Position:
     """Hypothetical position tracked through its full lifecycle."""
+
     position_id: str
     signal: ShadowSignal
     opened_at: datetime
@@ -95,17 +96,18 @@ class Position:
     volume: float
     direction: str
     stop_loss: float
-    take_profit: Optional[float]
+    take_profit: float | None
     status: PositionStatus = PositionStatus.OPEN
-    closed_at: Optional[datetime] = None
-    exit_price: Optional[float] = None
+    closed_at: datetime | None = None
+    exit_price: float | None = None
     pnl_gross: float = 0.0
     cost_total: float = 0.0
     pnl_net: float = 0.0
     close_reason: str = ""
 
-    def close(self, status: PositionStatus, exit_price: float,
-              cost_total: float, timestamp: datetime, reason: str = "") -> None:
+    def close(
+        self, status: PositionStatus, exit_price: float, cost_total: float, timestamp: datetime, reason: str = ""
+    ) -> None:
         self.status = status
         self.exit_price = exit_price
         self.closed_at = timestamp
@@ -141,7 +143,7 @@ class Position:
 class ShadowSession:
     session_id: str
     started_at: datetime
-    ended_at: Optional[datetime] = None
+    ended_at: datetime | None = None
     signals: list[ShadowSignal] = field(default_factory=list)
     positions: list[Position] = field(default_factory=list)
 
@@ -166,22 +168,26 @@ class ShadowSession:
         }
 
     def export(self) -> str:
-        return json.dumps({
-            "session_id": self.session_id,
-            "started_at": self.started_at.isoformat(),
-            "ended_at": self.ended_at.isoformat() if self.ended_at else None,
-            "signals": [s.to_dict() for s in self.signals],
-            "positions": [p.to_dict() for p in self.positions],
-        }, indent=2)
+        return json.dumps(
+            {
+                "session_id": self.session_id,
+                "started_at": self.started_at.isoformat(),
+                "ended_at": self.ended_at.isoformat() if self.ended_at else None,
+                "signals": [s.to_dict() for s in self.signals],
+                "positions": [p.to_dict() for p in self.positions],
+            },
+            indent=2,
+        )
 
 
 # ── Geometry validation ──────────────────────────────────────────────
+
 
 def validate_signal_geometry(
     direction: str,
     entry_price: float,
     stop_loss: float,
-    take_profit: Optional[float],
+    take_profit: float | None,
     min_stop_distance: float = 0.0,
 ) -> tuple[bool, str]:
     """Validate order geometry. Returns (ok, reason).
@@ -232,6 +238,7 @@ def validate_signal_geometry(
 
 # ── Spread shock gate ────────────────────────────────────────────────
 
+
 class SpreadShockGate:
     """Reject signals when spread exceeds rolling baseline threshold.
 
@@ -253,7 +260,7 @@ class SpreadShockGate:
     def record(self, spread: float) -> None:
         self._spreads.append(spread)
         if len(self._spreads) > self.window_size:
-            self._spreads = self._spreads[-self.window_size:]
+            self._spreads = self._spreads[-self.window_size :]
 
     def is_shock(self, spread: float) -> tuple[bool, float, float]:
         """Returns (is_shock, current_spread, baseline_p50)."""
@@ -273,6 +280,7 @@ class SpreadShockGate:
 
 # ── Deduplication ────────────────────────────────────────────────────
 
+
 class SignalDeduplicator:
     """Reject duplicate signals: same strategy + symbol + candle + direction + features.
 
@@ -285,15 +293,24 @@ class SignalDeduplicator:
         self._seen: dict[str, datetime] = {}  # key → last seen time
 
     def _make_key(
-        self, strategy_version: str, symbol: str, direction: str,
-        closed_candle_time: Optional[str], feature_hash: str,
+        self,
+        strategy_version: str,
+        symbol: str,
+        direction: str,
+        closed_candle_time: str | None,
+        feature_hash: str,
     ) -> str:
         candle = closed_candle_time or "none"
         return f"{strategy_version}:{symbol}:{candle}:{direction}:{feature_hash}"
 
     def is_duplicate(
-        self, strategy_version: str, symbol: str, direction: str,
-        closed_candle_time: Optional[str], feature_hash: str, timestamp: datetime,
+        self,
+        strategy_version: str,
+        symbol: str,
+        direction: str,
+        closed_candle_time: str | None,
+        feature_hash: str,
+        timestamp: datetime,
     ) -> bool:
         key = self._make_key(strategy_version, symbol, direction, closed_candle_time, feature_hash)
         last_seen = self._seen.get(key)
@@ -304,14 +321,20 @@ class SignalDeduplicator:
         return False
 
     def record(
-        self, strategy_version: str, symbol: str, direction: str,
-        closed_candle_time: Optional[str], feature_hash: str, timestamp: datetime,
+        self,
+        strategy_version: str,
+        symbol: str,
+        direction: str,
+        closed_candle_time: str | None,
+        feature_hash: str,
+        timestamp: datetime,
     ) -> None:
         key = self._make_key(strategy_version, symbol, direction, closed_candle_time, feature_hash)
         self._seen[key] = timestamp
 
 
 # ── Main pipeline ────────────────────────────────────────────────────
+
 
 class ShadowPipeline:
     """Shadow trading pipeline with real gates.
@@ -329,7 +352,7 @@ class ShadowPipeline:
         dedup_candle_seconds: int = 60,
     ):
         self._sessions: dict[str, ShadowSession] = {}
-        self._current_session: Optional[ShadowSession] = None
+        self._current_session: ShadowSession | None = None
         self._sequence: int = 0
         # Gates
         self._geometry_min_stop = min_stop_distance
@@ -402,8 +425,11 @@ class ShadowPipeline:
 
         # Gate 5: Geometry validation (BE-P8.1)
         geo_ok, geo_reason = validate_signal_geometry(
-            signal.direction, signal.entry_price, signal.stop_loss,
-            signal.take_profit, self._geometry_min_stop,
+            signal.direction,
+            signal.entry_price,
+            signal.stop_loss,
+            signal.take_profit,
+            self._geometry_min_stop,
         )
         signal.geometry_ok = geo_ok
         if not geo_ok:
@@ -428,8 +454,12 @@ class ShadowPipeline:
 
         # Gate 7: Deduplication (BE-P8.2)
         if self._dedup.is_duplicate(
-            signal.strategy_version, signal.symbol, signal.direction,
-            signal.closed_candle_time, signal.feature_hash, signal.timestamp,
+            signal.strategy_version,
+            signal.symbol,
+            signal.direction,
+            signal.closed_candle_time,
+            signal.feature_hash,
+            signal.timestamp,
         ):
             signal.outcome = ShadowSignalOutcome.REJECTED_DUPLICATE
             signal.rejection_reason = "DUPLICATE_SAME_CANDLE"
@@ -439,13 +469,17 @@ class ShadowPipeline:
         # Accept
         signal.outcome = ShadowSignalOutcome.ACCEPTED
         self._dedup.record(
-            signal.strategy_version, signal.symbol, signal.direction,
-            signal.closed_candle_time, signal.feature_hash, signal.timestamp,
+            signal.strategy_version,
+            signal.symbol,
+            signal.direction,
+            signal.closed_candle_time,
+            signal.feature_hash,
+            signal.timestamp,
         )
         self._current_session.add_signal(signal)
         return signal
 
-    def open_position(self, signal: ShadowSignal) -> Optional[Position]:
+    def open_position(self, signal: ShadowSignal) -> Position | None:
         """Open hypothetical position from accepted signal."""
         if self._current_session is None:
             raise ValueError("No active session")
@@ -466,8 +500,12 @@ class ShadowPipeline:
         return pos
 
     def check_position_exit(
-        self, position: Position, current_bid: float, current_ask: float,
-        timestamp: datetime, max_hold_bars: int = 0,
+        self,
+        position: Position,
+        current_bid: float,
+        current_ask: float,
+        timestamp: datetime,
+        max_hold_bars: int = 0,
     ) -> bool:
         """Check if position should be closed. Returns True if closed."""
         if position.status != PositionStatus.OPEN:
@@ -480,34 +518,42 @@ class ShadowPipeline:
             # Stop loss hit
             if current_bid <= sl:
                 position.close(
-                    PositionStatus.CLOSED_SL, sl,
+                    PositionStatus.CLOSED_SL,
+                    sl,
                     position.signal.hypothetical_spread_cost + position.signal.hypothetical_slippage_cost,
-                    timestamp, "SL_HIT"
+                    timestamp,
+                    "SL_HIT",
                 )
                 return True
             # Take profit hit
             if tp is not None and current_bid >= tp:
                 position.close(
-                    PositionStatus.CLOSED_TP, tp,
+                    PositionStatus.CLOSED_TP,
+                    tp,
                     position.signal.hypothetical_spread_cost + position.signal.hypothetical_slippage_cost,
-                    timestamp, "TP_HIT"
+                    timestamp,
+                    "TP_HIT",
                 )
                 return True
         else:  # SELL
             # Stop loss hit
             if current_ask >= sl:
                 position.close(
-                    PositionStatus.CLOSED_SL, sl,
+                    PositionStatus.CLOSED_SL,
+                    sl,
                     position.signal.hypothetical_spread_cost + position.signal.hypothetical_slippage_cost,
-                    timestamp, "SL_HIT"
+                    timestamp,
+                    "SL_HIT",
                 )
                 return True
             # Take profit hit
             if tp is not None and current_ask <= tp:
                 position.close(
-                    PositionStatus.CLOSED_TP, tp,
+                    PositionStatus.CLOSED_TP,
+                    tp,
                     position.signal.hypothetical_spread_cost + position.signal.hypothetical_slippage_cost,
-                    timestamp, "TP_HIT"
+                    timestamp,
+                    "TP_HIT",
                 )
                 return True
 
@@ -517,15 +563,17 @@ class ShadowPipeline:
             if elapsed >= max_hold_bars * 60:  # approximate
                 exit_price = current_bid if position.direction == "BUY" else current_ask
                 position.close(
-                    PositionStatus.CLOSED_TIME, exit_price,
+                    PositionStatus.CLOSED_TIME,
+                    exit_price,
                     position.signal.hypothetical_spread_cost + position.signal.hypothetical_slippage_cost,
-                    timestamp, "TIME_STOP"
+                    timestamp,
+                    "TIME_STOP",
                 )
                 return True
 
         return False
 
-    def get_session(self, session_id: str) -> Optional[ShadowSession]:
+    def get_session(self, session_id: str) -> ShadowSession | None:
         return self._sessions.get(session_id)
 
     def list_sessions(self) -> list[ShadowSession]:

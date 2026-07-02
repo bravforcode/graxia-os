@@ -17,8 +17,9 @@ from __future__ import annotations
 
 import enum
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 import structlog
 
@@ -27,12 +28,14 @@ logger = structlog.get_logger(__name__)
 
 class Environment(enum.Enum):
     """Deployment environment slot."""
+
     BLUE = "blue"
     GREEN = "green"
 
 
 class DeployState(enum.Enum):
     """Lifecycle states for a deployment."""
+
     IDLE = "idle"
     DEPLOYING = "deploying"
     VALIDATING = "validating"
@@ -44,6 +47,7 @@ class DeployState(enum.Enum):
 @dataclass
 class EnvironmentSnapshot:
     """Immutable snapshot of a single environment's state."""
+
     env: Environment
     version: str
     deployed_at: float
@@ -58,6 +62,7 @@ class EnvironmentSnapshot:
 @dataclass
 class DeployResult:
     """Result of a deploy or switch operation."""
+
     success: bool
     from_env: Environment | None
     to_env: Environment

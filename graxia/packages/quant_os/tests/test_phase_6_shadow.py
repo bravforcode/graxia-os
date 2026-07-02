@@ -1,10 +1,10 @@
-import pytest
 import json
 from datetime import datetime
-from graxia.packages.quant_os.shadow.pipeline import (
-    ShadowPipeline, ShadowSignal, ShadowSignalOutcome
-)
-from graxia.packages.quant_os.shadow.failure_rules import FailureRuleChecker, FAILURE_RULES
+
+import pytest
+
+from graxia.packages.quant_os.shadow.failure_rules import FAILURE_RULES, FailureRuleChecker
+from graxia.packages.quant_os.shadow.pipeline import ShadowPipeline, ShadowSignal, ShadowSignalOutcome
 from graxia.packages.quant_os.shadow.telemetry import ShadowTelemetry
 
 
@@ -252,9 +252,15 @@ class TestFailureRules:
 
     def test_failure_rule_names(self):
         expected_names = {
-            "STALE_DATA_ACCEPTED", "EVENT_BLOCK_BYPASS", "MISSING_CONTRACT",
-            "INVALID_SL_ACCEPTED", "RISK_BREACH", "DUPLICATE_IDEMPOTENCY",
-            "INVALID_TRANSITION", "UNCORRELATED_ALERT", "PIPELINE_EXCEPTION",
+            "STALE_DATA_ACCEPTED",
+            "EVENT_BLOCK_BYPASS",
+            "MISSING_CONTRACT",
+            "INVALID_SL_ACCEPTED",
+            "RISK_BREACH",
+            "DUPLICATE_IDEMPOTENCY",
+            "INVALID_TRANSITION",
+            "UNCORRELATED_ALERT",
+            "PIPELINE_EXCEPTION",
         }
         actual_names = {r.name for r in FAILURE_RULES}
         assert expected_names == actual_names

@@ -1,26 +1,34 @@
 """Tests for risk engine — CRISIS cascade, provider failover, max positions, boundary conditions."""
 
 import time
-import pytest
+from datetime import UTC, datetime
 from decimal import Decimal
 from unittest.mock import MagicMock
-from datetime import datetime, UTC
 
+import pytest
+
+from graxia.packages.quant_os.core.enums import RegimeType, SignalType
+from graxia.packages.quant_os.risk.circuit_breaker import CircuitBreaker, CircuitBreakerConfig
 from graxia.packages.quant_os.risk.engine import (
-    RiskEngine, Signal, AccountState, PortfolioState, RejectReason,
+    AccountState,
+    PortfolioState,
+    RejectReason,
+    RiskEngine,
+    Signal,
 )
 from graxia.packages.quant_os.risk.kill_switch import KillSwitch, KillSwitchState
-from graxia.packages.quant_os.risk.circuit_breaker import CircuitBreaker, CircuitBreakerConfig
 from graxia.packages.quant_os.risk.portfolio import PortfolioRisk, PositionExposure
 from graxia.packages.quant_os.risk.slippage_model import (
-    SlippageModel, VolatilityRegime, TradingSession, classify_session,
+    SlippageModel,
+    TradingSession,
+    VolatilityRegime,
+    classify_session,
 )
-from graxia.packages.quant_os.core.enums import RegimeType, SignalType
-
 
 # ═══════════════════════════════════════════════════════════════════════
 # Helpers
 # ═══════════════════════════════════════════════════════════════════════
+
 
 def _make_signal(**overrides):
     defaults = dict(
@@ -70,6 +78,7 @@ def _make_portfolio(**overrides):
 # RiskEngine — Layer-by-Layer Edge Cases
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class TestRiskEnginePreChecks:
     """Kill switch and circuit breaker pre-checks."""
 
@@ -78,8 +87,11 @@ class TestRiskEnginePreChecks:
         ks.is_active.return_value = True
         engine = RiskEngine(kill_switch=ks)
         verdict = engine.evaluate(
-            _make_signal(), _make_account(), _make_portfolio(),
-            realized_vol=0.15, regime=RegimeType.TREND_STRONG_UP,
+            _make_signal(),
+            _make_account(),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.TREND_STRONG_UP,
         )
         assert not verdict.approved
         assert verdict.reason_code == RejectReason.KILL_SWITCH_ACTIVE
@@ -90,8 +102,11 @@ class TestRiskEnginePreChecks:
         cb.is_open.return_value = True
         engine = RiskEngine(circuit_breaker=cb)
         verdict = engine.evaluate(
-            _make_signal(asset_class="metals"), _make_account(), _make_portfolio(),
-            realized_vol=0.15, regime=RegimeType.TREND_STRONG_UP,
+            _make_signal(asset_class="metals"),
+            _make_account(),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.TREND_STRONG_UP,
         )
         assert not verdict.approved
         assert verdict.reason_code == RejectReason.CIRCUIT_BREAKER_OPEN
@@ -110,8 +125,11 @@ class TestRiskEngineLayer1:
         engine = RiskEngine()
         sig = _make_signal(timestamp_epoch=time.time() - 10)
         verdict = engine.evaluate(
-            sig, _make_account(), _make_portfolio(),
-            realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            sig,
+            _make_account(),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert not verdict.approved
         assert verdict.reason_code == RejectReason.STALE_SIGNAL
@@ -121,8 +139,11 @@ class TestRiskEngineLayer1:
         engine = RiskEngine()
         sig = _make_signal(conviction=0.3)
         verdict = engine.evaluate(
-            sig, _make_account(), _make_portfolio(),
-            realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            sig,
+            _make_account(),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert not verdict.approved
         assert verdict.reason_code == RejectReason.LOW_CONVICTION
@@ -131,8 +152,11 @@ class TestRiskEngineLayer1:
         engine = RiskEngine()
         sig = _make_signal(conviction=0.6)
         verdict = engine.evaluate(
-            sig, _make_account(), _make_portfolio(),
-            realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            sig,
+            _make_account(),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         # Should pass layer 1 (may fail later layers)
         assert verdict.layer_failed != 1 or verdict.approved
@@ -142,8 +166,11 @@ class TestRiskEngineLayer1:
         validator.validate_signal.return_value = False
         engine = RiskEngine(schema_validator=validator)
         verdict = engine.evaluate(
-            _make_signal(), _make_account(), _make_portfolio(),
-            realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            _make_signal(),
+            _make_account(),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert not verdict.approved
         assert verdict.reason_code == RejectReason.INVALID_SCHEMA
@@ -153,8 +180,11 @@ class TestRiskEngineLayer1:
         checker.is_session_open.return_value = False
         engine = RiskEngine(session_checker=checker)
         verdict = engine.evaluate(
-            _make_signal(), _make_account(), _make_portfolio(),
-            realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            _make_signal(),
+            _make_account(),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert not verdict.approved
         assert verdict.reason_code == RejectReason.SESSION_CLOSED
@@ -163,8 +193,11 @@ class TestRiskEngineLayer1:
         engine = RiskEngine()
         sig = _make_signal(entry_price=2025.0, stop_loss=2020.0)
         verdict = engine.evaluate(
-            sig, _make_account(equity=0.0), _make_portfolio(),
-            realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            sig,
+            _make_account(equity=0.0),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         # Zero equity → max_risk_amount = 0, risk_per_lot > 0 → EXCEEDS_RISK_PER_TRADE
         assert not verdict.approved
@@ -172,8 +205,11 @@ class TestRiskEngineLayer1:
     def test_negative_equity_rejected(self):
         engine = RiskEngine()
         verdict = engine.evaluate(
-            _make_signal(), _make_account(equity=-5000.0),
-            _make_portfolio(), realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            _make_signal(),
+            _make_account(equity=-5000.0),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert not verdict.approved
 
@@ -184,9 +220,11 @@ class TestRiskEngineLayer2:
     def test_max_total_exposure_rejected(self):
         engine = RiskEngine()
         verdict = engine.evaluate(
-            _make_signal(), _make_account(),
+            _make_signal(),
+            _make_account(),
             _make_portfolio(total_exposure_pct=0.85),
-            realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert not verdict.approved
         assert verdict.reason_code == RejectReason.EXCEEDS_TOTAL_EXPOSURE
@@ -194,9 +232,11 @@ class TestRiskEngineLayer2:
     def test_total_exposure_at_boundary_passes(self):
         engine = RiskEngine()
         verdict = engine.evaluate(
-            _make_signal(), _make_account(),
+            _make_signal(),
+            _make_account(),
             _make_portfolio(total_exposure_pct=0.79),
-            realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         # Should pass layer 2 if not rejected
         assert verdict.layer_failed != 2
@@ -204,9 +244,11 @@ class TestRiskEngineLayer2:
     def test_max_class_exposure_rejected(self):
         engine = RiskEngine()
         verdict = engine.evaluate(
-            _make_signal(asset_class="metals"), _make_account(),
+            _make_signal(asset_class="metals"),
+            _make_account(),
             _make_portfolio(class_exposure_pct={"metals": 0.35}),
-            realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert not verdict.approved
         assert verdict.reason_code == RejectReason.EXCEEDS_CLASS_EXPOSURE
@@ -214,9 +256,11 @@ class TestRiskEngineLayer2:
     def test_max_venue_exposure_rejected(self):
         engine = RiskEngine()
         verdict = engine.evaluate(
-            _make_signal(venue="pepperstone"), _make_account(),
+            _make_signal(venue="pepperstone"),
+            _make_account(),
             _make_portfolio(venue_exposure_pct={"pepperstone": 0.55}),
-            realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert not verdict.approved
         assert verdict.reason_code == RejectReason.EXCEEDS_VENUE_EXPOSURE
@@ -230,8 +274,11 @@ class TestRiskEngineLayer2:
             correlation_matrix={"XAUUSD": {"XAGUSD": 0.90}},
         )
         verdict = engine.evaluate(
-            _make_signal(symbol="XAUUSD"), _make_account(),
-            portfolio, realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            _make_signal(symbol="XAUUSD"),
+            _make_account(),
+            portfolio,
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert not verdict.approved
         assert verdict.reason_code == RejectReason.HIGH_CORRELATION
@@ -241,8 +288,11 @@ class TestRiskEngineLayer2:
         engine = RiskEngine(correlation_provider=corr_provider)
         portfolio = _make_portfolio(position_symbols=["XAGUSD"], correlation_matrix=None)
         verdict = engine.evaluate(
-            _make_signal(), _make_account(), portfolio,
-            realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            _make_signal(),
+            _make_account(),
+            portfolio,
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         # Should not reject for correlation when matrix is None
         assert verdict.reason_code != RejectReason.HIGH_CORRELATION
@@ -252,8 +302,11 @@ class TestRiskEngineLayer2:
         symbols = [f"SYM{i}" for i in range(20)]
         portfolio = _make_portfolio(position_symbols=symbols)
         verdict = engine.evaluate(
-            _make_signal(), _make_account(equity=150000.0), portfolio,
-            realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            _make_signal(),
+            _make_account(equity=150000.0),
+            portfolio,
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert not verdict.approved
         assert verdict.reason_code == RejectReason.MAX_POSITIONS_REACHED
@@ -262,9 +315,11 @@ class TestRiskEngineLayer2:
         engine = RiskEngine()
         symbols = [f"SYM{i}" for i in range(19)]
         verdict = engine.evaluate(
-            _make_signal(), _make_account(equity=200000.0),
+            _make_signal(),
+            _make_account(equity=200000.0),
             _make_portfolio(position_symbols=symbols),
-            realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert verdict.layer_failed != 2
 
@@ -275,8 +330,11 @@ class TestRiskEngineLayer3:
     def test_daily_loss_limit_rejected(self):
         engine = RiskEngine()
         verdict = engine.evaluate(
-            _make_signal(), _make_account(daily_pnl=-250.0, equity=10000.0),
-            _make_portfolio(), realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            _make_signal(),
+            _make_account(daily_pnl=-250.0, equity=10000.0),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert not verdict.approved
         assert verdict.reason_code == RejectReason.DAILY_LOSS_LIMIT
@@ -284,8 +342,11 @@ class TestRiskEngineLayer3:
     def test_weekly_loss_limit_rejected(self):
         engine = RiskEngine()
         verdict = engine.evaluate(
-            _make_signal(), _make_account(weekly_pnl=-600.0, equity=10000.0),
-            _make_portfolio(), realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            _make_signal(),
+            _make_account(weekly_pnl=-600.0, equity=10000.0),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert not verdict.approved
         assert verdict.reason_code == RejectReason.WEEKLY_LOSS_LIMIT
@@ -293,8 +354,11 @@ class TestRiskEngineLayer3:
     def test_drawdown_limit_rejected(self):
         engine = RiskEngine()
         verdict = engine.evaluate(
-            _make_signal(), _make_account(current_drawdown_pct=0.18),
-            _make_portfolio(), realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            _make_signal(),
+            _make_account(current_drawdown_pct=0.18),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert not verdict.approved
         assert verdict.reason_code == RejectReason.DRAWDOWN_LIMIT
@@ -302,16 +366,22 @@ class TestRiskEngineLayer3:
     def test_drawdown_at_boundary_passes(self):
         engine = RiskEngine()
         verdict = engine.evaluate(
-            _make_signal(), _make_account(current_drawdown_pct=0.14),
-            _make_portfolio(), realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            _make_signal(),
+            _make_account(current_drawdown_pct=0.14),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert verdict.layer_failed != 3
 
     def test_insufficient_margin_rejected(self):
         engine = RiskEngine()
         verdict = engine.evaluate(
-            _make_signal(), _make_account(margin_level_pct=150.0),
-            _make_portfolio(), realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            _make_signal(),
+            _make_account(margin_level_pct=150.0),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert not verdict.approved
         assert verdict.reason_code == RejectReason.INSUFFICIENT_MARGIN
@@ -320,8 +390,11 @@ class TestRiskEngineLayer3:
         """margin_level_pct=0 means no margin data available — should skip check."""
         engine = RiskEngine()
         verdict = engine.evaluate(
-            _make_signal(), _make_account(margin_level_pct=0.0),
-            _make_portfolio(), realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            _make_signal(),
+            _make_account(margin_level_pct=0.0),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert verdict.reason_code != RejectReason.INSUFFICIENT_MARGIN
 
@@ -329,8 +402,11 @@ class TestRiskEngineLayer3:
         """Profitable day should not trigger daily loss."""
         engine = RiskEngine()
         verdict = engine.evaluate(
-            _make_signal(), _make_account(daily_pnl=500.0),
-            _make_portfolio(), realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            _make_signal(),
+            _make_account(daily_pnl=500.0),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert verdict.reason_code != RejectReason.DAILY_LOSS_LIMIT
 
@@ -342,8 +418,11 @@ class TestRiskEngineLayer4:
         engine = RiskEngine()
         sig = _make_signal(entry_price=2025.0, stop_loss=2025.0)
         verdict = engine.evaluate(
-            sig, _make_account(), _make_portfolio(),
-            realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            sig,
+            _make_account(),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert not verdict.approved
         assert verdict.reason_code == RejectReason.SIZING_REJECTED
@@ -351,8 +430,11 @@ class TestRiskEngineLayer4:
     def test_sizing_with_high_volatility(self):
         engine = RiskEngine()
         verdict = engine.evaluate(
-            _make_signal(), _make_account(), _make_portfolio(),
-            realized_vol=0.50, regime=RegimeType.HIGH_VOLATILITY,
+            _make_signal(),
+            _make_account(),
+            _make_portfolio(),
+            realized_vol=0.50,
+            regime=RegimeType.HIGH_VOLATILITY,
         )
         assert verdict.approved
         assert verdict.approved_quantity > 0
@@ -360,8 +442,11 @@ class TestRiskEngineLayer4:
     def test_sizing_with_zero_volatility(self):
         engine = RiskEngine()
         verdict = engine.evaluate(
-            _make_signal(), _make_account(), _make_portfolio(),
-            realized_vol=0.0, regime=RegimeType.RANGE_BOUND,
+            _make_signal(),
+            _make_account(),
+            _make_portfolio(),
+            realized_vol=0.0,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert verdict.approved
 
@@ -369,8 +454,11 @@ class TestRiskEngineLayer4:
         """Very low vol should clamp vol_scalar to 3.0 max."""
         engine = RiskEngine()
         verdict = engine.evaluate(
-            _make_signal(), _make_account(), _make_portfolio(),
-            realized_vol=0.001, regime=RegimeType.LOW_VOLATILITY,
+            _make_signal(),
+            _make_account(),
+            _make_portfolio(),
+            realized_vol=0.001,
+            regime=RegimeType.LOW_VOLATILITY,
         )
         assert verdict.approved
         assert verdict.sizing_details["vol_scalar"] <= 3.0
@@ -379,8 +467,11 @@ class TestRiskEngineLayer4:
         """Very high vol should clamp vol_scalar to 0.1 min."""
         engine = RiskEngine()
         verdict = engine.evaluate(
-            _make_signal(), _make_account(), _make_portfolio(),
-            realized_vol=99.0, regime=RegimeType.CRISIS,
+            _make_signal(),
+            _make_account(),
+            _make_portfolio(),
+            realized_vol=99.0,
+            regime=RegimeType.CRISIS,
         )
         assert verdict.approved
         assert verdict.sizing_details["vol_scalar"] >= 0.1
@@ -393,12 +484,18 @@ class TestRiskEngineLayer4:
         }
         engine = RiskEngine(regime_multiplier_map=multipliers)
         crisis = engine.evaluate(
-            _make_signal(), _make_account(), _make_portfolio(),
-            realized_vol=0.15, regime=RegimeType.CRISIS,
+            _make_signal(),
+            _make_account(),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.CRISIS,
         )
         normal = engine.evaluate(
-            _make_signal(), _make_account(), _make_portfolio(),
-            realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            _make_signal(),
+            _make_account(),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert crisis.approved
         assert normal.approved
@@ -407,8 +504,11 @@ class TestRiskEngineLayer4:
     def test_approved_quantity_positive(self):
         engine = RiskEngine()
         verdict = engine.evaluate(
-            _make_signal(), _make_account(equity=10000.0),
-            _make_portfolio(), realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            _make_signal(),
+            _make_account(equity=10000.0),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert verdict.approved
         assert verdict.approved_quantity > 0
@@ -416,8 +516,11 @@ class TestRiskEngineLayer4:
     def test_kelly_cap_enforced(self):
         engine = RiskEngine()
         verdict = engine.evaluate(
-            _make_signal(), _make_account(), _make_portfolio(),
-            realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            _make_signal(),
+            _make_account(),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert verdict.approved
         assert verdict.sizing_details["kelly_fraction"] <= 0.25
@@ -429,12 +532,18 @@ class TestRiskEngineCRISISCascade:
     def test_crisis_regime_reduces_sizing(self):
         engine = RiskEngine(regime_multiplier_map={RegimeType.CRISIS: 0.25})
         crisis = engine.evaluate(
-            _make_signal(), _make_account(), _make_portfolio(),
-            realized_vol=0.30, regime=RegimeType.CRISIS,
+            _make_signal(),
+            _make_account(),
+            _make_portfolio(),
+            realized_vol=0.30,
+            regime=RegimeType.CRISIS,
         )
         normal = engine.evaluate(
-            _make_signal(), _make_account(), _make_portfolio(),
-            realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            _make_signal(),
+            _make_account(),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert crisis.approved_quantity < normal.approved_quantity
 
@@ -442,8 +551,11 @@ class TestRiskEngineCRISISCascade:
         """CRISIS regime + high drawdown → double protection."""
         engine = RiskEngine()
         verdict = engine.evaluate(
-            _make_signal(), _make_account(current_drawdown_pct=0.16),
-            _make_portfolio(), realized_vol=0.50, regime=RegimeType.CRISIS,
+            _make_signal(),
+            _make_account(current_drawdown_pct=0.16),
+            _make_portfolio(),
+            realized_vol=0.50,
+            regime=RegimeType.CRISIS,
         )
         assert not verdict.approved
 
@@ -453,8 +565,11 @@ class TestRiskEngineCRISISCascade:
         ks.is_active.return_value = True
         engine = RiskEngine(kill_switch=ks)
         verdict = engine.evaluate(
-            _make_signal(), _make_account(), _make_portfolio(),
-            realized_vol=0.50, regime=RegimeType.CRISIS,
+            _make_signal(),
+            _make_account(),
+            _make_portfolio(),
+            realized_vol=0.50,
+            regime=RegimeType.CRISIS,
         )
         assert not verdict.approved
         assert verdict.layer_failed == 0
@@ -464,8 +579,11 @@ class TestRiskEngineCRISISCascade:
         cb.is_open.return_value = True
         engine = RiskEngine(circuit_breaker=cb)
         verdict = engine.evaluate(
-            _make_signal(), _make_account(), _make_portfolio(),
-            realized_vol=0.50, regime=RegimeType.CRISIS,
+            _make_signal(),
+            _make_account(),
+            _make_portfolio(),
+            realized_vol=0.50,
+            regime=RegimeType.CRISIS,
         )
         assert not verdict.approved
 
@@ -477,8 +595,11 @@ class TestRiskEngineFailover:
         """No session checker → skip session check, don't block."""
         engine = RiskEngine(session_checker=None)
         verdict = engine.evaluate(
-            _make_signal(), _make_account(), _make_portfolio(),
-            realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            _make_signal(),
+            _make_account(),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert verdict.reason_code != RejectReason.SESSION_CLOSED
 
@@ -486,8 +607,11 @@ class TestRiskEngineFailover:
         """No schema validator → skip validation, don't block."""
         engine = RiskEngine(schema_validator=None)
         verdict = engine.evaluate(
-            _make_signal(), _make_account(), _make_portfolio(),
-            realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            _make_signal(),
+            _make_account(),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert verdict.reason_code != RejectReason.INVALID_SCHEMA
 
@@ -496,8 +620,11 @@ class TestRiskEngineFailover:
         engine = RiskEngine(correlation_provider=None)
         portfolio = _make_portfolio(position_symbols=["XAGUSD"])
         verdict = engine.evaluate(
-            _make_signal(), _make_account(), portfolio,
-            realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            _make_signal(),
+            _make_account(),
+            portfolio,
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert verdict.reason_code != RejectReason.HIGH_CORRELATION
 
@@ -515,13 +642,18 @@ class TestRiskEngineFailover:
         corr.get_correlation.return_value = 0.3
 
         engine = RiskEngine(
-            kill_switch=ks, circuit_breaker=cb,
-            session_checker=checker, schema_validator=validator,
+            kill_switch=ks,
+            circuit_breaker=cb,
+            session_checker=checker,
+            schema_validator=validator,
             correlation_provider=corr,
         )
         verdict = engine.evaluate(
-            _make_signal(), _make_account(), _make_portfolio(),
-            realized_vol=0.15, regime=RegimeType.RANGE_BOUND,
+            _make_signal(),
+            _make_account(),
+            _make_portfolio(),
+            realized_vol=0.15,
+            regime=RegimeType.RANGE_BOUND,
         )
         assert verdict.approved
 
@@ -529,6 +661,7 @@ class TestRiskEngineFailover:
 # ═══════════════════════════════════════════════════════════════════════
 # Kill Switch
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class TestKillSwitch:
     """Kill switch edge cases."""
@@ -559,6 +692,7 @@ class TestKillSwitch:
 
     def test_class_killed_specific_class(self, tmp_path):
         import os
+
         os.environ["TELEGRAM_ALLOWED_USERS"] = "12345"
         try:
             ks = KillSwitch(state_file=str(tmp_path / "ks.json"))
@@ -573,6 +707,7 @@ class TestKillSwitch:
 
     def test_deactivate_clears_classes(self, tmp_path):
         import os
+
         os.environ["TELEGRAM_ALLOWED_USERS"] = "12345"
         try:
             ks = KillSwitch(state_file=str(tmp_path / "ks.json"))
@@ -616,6 +751,7 @@ class TestKillSwitch:
 # Circuit Breaker
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class TestCircuitBreaker:
     """Circuit breaker edge cases."""
 
@@ -642,9 +778,11 @@ class TestCircuitBreaker:
         assert not cb.is_open("metals")  # only 1 loss, not 3
 
     def test_custom_threshold(self):
-        cb = CircuitBreaker(configs={
-            "metals": CircuitBreakerConfig(threshold=2),
-        })
+        cb = CircuitBreaker(
+            configs={
+                "metals": CircuitBreakerConfig(threshold=2),
+            }
+        )
         cb.record_trade("metals", -100.0)
         assert not cb.is_open("metals")
         result = cb.record_trade("metals", -200.0)
@@ -662,9 +800,11 @@ class TestCircuitBreaker:
         assert not cb.is_open("metals")
 
     def test_cooldown_auto_recovery(self):
-        cb = CircuitBreaker(configs={
-            "metals": CircuitBreakerConfig(cooldown_minutes=0),
-        })
+        cb = CircuitBreaker(
+            configs={
+                "metals": CircuitBreakerConfig(cooldown_minutes=0),
+            }
+        )
         cb.trip("metals", "test")
         assert not cb.is_open("metals")  # cooldown=0 → immediately recovered
 
@@ -726,6 +866,7 @@ class TestCircuitBreaker:
 # Portfolio Risk
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class TestPortfolioRisk:
     """Portfolio risk edge cases."""
 
@@ -737,38 +878,58 @@ class TestPortfolioRisk:
 
     def test_single_long_position(self):
         pr = PortfolioRisk()
-        pr.update_position(PositionExposure(
-            symbol="EURUSD", direction="LONG",
-            quantity=Decimal("0.1"), market_value=Decimal("10850"),
-            unrealized_pnl=Decimal("50"), risk_pct=1.0,
-        ))
+        pr.update_position(
+            PositionExposure(
+                symbol="EURUSD",
+                direction="LONG",
+                quantity=Decimal("0.1"),
+                market_value=Decimal("10850"),
+                unrealized_pnl=Decimal("50"),
+                risk_pct=1.0,
+            )
+        )
         m = pr.calculate_metrics()
         assert m.long_exposure == Decimal("10850")
         assert m.short_exposure == Decimal("0")
 
     def test_mixed_long_short(self):
         pr = PortfolioRisk()
-        pr.update_position(PositionExposure(
-            symbol="EURUSD", direction="LONG",
-            quantity=Decimal("0.1"), market_value=Decimal("10850"),
-            unrealized_pnl=Decimal("0"), risk_pct=1.0,
-        ))
-        pr.update_position(PositionExposure(
-            symbol="GBPUSD", direction="SHORT",
-            quantity=Decimal("0.1"), market_value=Decimal("12650"),
-            unrealized_pnl=Decimal("0"), risk_pct=1.0,
-        ))
+        pr.update_position(
+            PositionExposure(
+                symbol="EURUSD",
+                direction="LONG",
+                quantity=Decimal("0.1"),
+                market_value=Decimal("10850"),
+                unrealized_pnl=Decimal("0"),
+                risk_pct=1.0,
+            )
+        )
+        pr.update_position(
+            PositionExposure(
+                symbol="GBPUSD",
+                direction="SHORT",
+                quantity=Decimal("0.1"),
+                market_value=Decimal("12650"),
+                unrealized_pnl=Decimal("0"),
+                risk_pct=1.0,
+            )
+        )
         m = pr.calculate_metrics()
         assert m.long_exposure == Decimal("10850")
         assert m.short_exposure == Decimal("12650")
 
     def test_remove_position(self):
         pr = PortfolioRisk()
-        pr.update_position(PositionExposure(
-            symbol="EURUSD", direction="LONG",
-            quantity=Decimal("0.1"), market_value=Decimal("10850"),
-            unrealized_pnl=Decimal("0"), risk_pct=1.0,
-        ))
+        pr.update_position(
+            PositionExposure(
+                symbol="EURUSD",
+                direction="LONG",
+                quantity=Decimal("0.1"),
+                market_value=Decimal("10850"),
+                unrealized_pnl=Decimal("0"),
+                risk_pct=1.0,
+            )
+        )
         pr.remove_position("EURUSD")
         m = pr.calculate_metrics()
         assert m.total_exposure == Decimal("0")
@@ -788,16 +949,26 @@ class TestPortfolioRisk:
 
     def test_concentration_calculation(self):
         pr = PortfolioRisk()
-        pr.update_position(PositionExposure(
-            symbol="EURUSD", direction="LONG",
-            quantity=Decimal("0.1"), market_value=Decimal("10000"),
-            unrealized_pnl=Decimal("0"), risk_pct=5.0,
-        ))
-        pr.update_position(PositionExposure(
-            symbol="GBPUSD", direction="LONG",
-            quantity=Decimal("0.1"), market_value=Decimal("5000"),
-            unrealized_pnl=Decimal("0"), risk_pct=2.0,
-        ))
+        pr.update_position(
+            PositionExposure(
+                symbol="EURUSD",
+                direction="LONG",
+                quantity=Decimal("0.1"),
+                market_value=Decimal("10000"),
+                unrealized_pnl=Decimal("0"),
+                risk_pct=5.0,
+            )
+        )
+        pr.update_position(
+            PositionExposure(
+                symbol="GBPUSD",
+                direction="LONG",
+                quantity=Decimal("0.1"),
+                market_value=Decimal("5000"),
+                unrealized_pnl=Decimal("0"),
+                risk_pct=2.0,
+            )
+        )
         m = pr.calculate_metrics()
         assert m.concentration_pct == pytest.approx(66.67, abs=0.01)
 
@@ -805,6 +976,7 @@ class TestPortfolioRisk:
 # ═══════════════════════════════════════════════════════════════════════
 # Slippage Model
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class TestSlippageModel:
     """Slippage model edge cases."""

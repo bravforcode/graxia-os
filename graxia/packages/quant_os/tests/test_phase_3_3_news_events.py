@@ -4,26 +4,32 @@ Tests for event models, point-in-time store, risk gate, stabilization, macro pol
 """
 
 import os
-from datetime import datetime, UTC
 from dataclasses import replace
+from datetime import UTC, datetime
 
 import pytest
 
 from graxia.packages.quant_os.news_events.event_models import (
-    EconomicEvent, EventStatus, EventImportance, GateState,
+    EconomicEvent,
+    EventImportance,
+    EventStatus,
+    GateState,
 )
-from graxia.packages.quant_os.news_events.event_store import EventStore
 from graxia.packages.quant_os.news_events.event_risk_gate import EventRiskGate
-from graxia.packages.quant_os.news_events.stabilization_gate import StabilizationGate
-from graxia.packages.quant_os.news_events.macro_policy import (
-    MacroSourceRole, MacroObservation, MacroPolicyGuard, LLMPolicyGuard,
-)
+from graxia.packages.quant_os.news_events.event_store import EventStore
 from graxia.packages.quant_os.news_events.integration import NewsEventIntegration
-
+from graxia.packages.quant_os.news_events.macro_policy import (
+    LLMPolicyGuard,
+    MacroObservation,
+    MacroPolicyGuard,
+    MacroSourceRole,
+)
+from graxia.packages.quant_os.news_events.stabilization_gate import StabilizationGate
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _utc(year=2026, month=6, day=15, hour=10, minute=0):
     return datetime(year, month, day, hour, minute, tzinfo=UTC)
@@ -75,6 +81,7 @@ def _make_event(
 # ===================================================================
 # 1. Event data is point-in-time and timestamped
 # ===================================================================
+
 
 class TestPointInTime:
     def test_event_has_required_timestamps(self):
@@ -175,6 +182,7 @@ class TestPointInTime:
 # 2. High-impact event block is deterministic and tested
 # ===================================================================
 
+
 class TestRiskGateDeterministic:
     def _gate_and_store(self, pre=30, post=15):
         store = EventStore()
@@ -207,8 +215,7 @@ class TestRiskGateDeterministic:
 
     def test_delayed_event_still_blocks(self):
         gate, store = self._gate_and_store()
-        evt = _make_event(status=EventStatus.DELAYED, scheduled_at=_time(10),
-                          available_at=_time(9, 0))
+        evt = _make_event(status=EventStatus.DELAYED, scheduled_at=_time(10), available_at=_time(9, 0))
         store.add_event(evt)
         result = gate.evaluate(at=_time(9, 45))
         assert result.state == GateState.EVENT_BLOCK
@@ -243,34 +250,29 @@ class TestRiskGateDeterministic:
 
     def test_evidence_hash_deterministic(self):
         gate, store = self._gate_and_store()
-        store.add_event(_make_event(event_id="X", scheduled_at=_time(10),
-                                   available_at=_time(9, 0)))
+        store.add_event(_make_event(event_id="X", scheduled_at=_time(10), available_at=_time(9, 0)))
         r1 = gate.evaluate(at=_time(9, 45))
         r2 = gate.evaluate(at=_time(9, 45))
         assert r1.evidence_hash == r2.evidence_hash
 
     def test_low_importance_events_ignored_by_risk_gate(self):
         gate, store = self._gate_and_store()
-        evt = _make_event(importance=EventImportance.LOW, scheduled_at=_time(10),
-                          available_at=_time(9, 0))
+        evt = _make_event(importance=EventImportance.LOW, scheduled_at=_time(10), available_at=_time(9, 0))
         store.add_event(evt)
         result = gate.evaluate(at=_time(9, 45))
         assert result.state == GateState.CLEAR
 
     def test_medium_importance_events_ignored_by_risk_gate(self):
         gate, store = self._gate_and_store()
-        evt = _make_event(importance=EventImportance.MEDIUM, scheduled_at=_time(10),
-                          available_at=_time(9, 0))
+        evt = _make_event(importance=EventImportance.MEDIUM, scheduled_at=_time(10), available_at=_time(9, 0))
         store.add_event(evt)
         result = gate.evaluate(at=_time(9, 45))
         assert result.state == GateState.CLEAR
 
     def test_multiple_high_importance_events_all_listed(self):
         gate, store = self._gate_and_store()
-        store.add_event(_make_event(event_id="A", scheduled_at=_time(10),
-                                    available_at=_time(9, 0)))
-        store.add_event(_make_event(event_id="B", scheduled_at=_time(10, 5),
-                                    available_at=_time(9, 0)))
+        store.add_event(_make_event(event_id="A", scheduled_at=_time(10), available_at=_time(9, 0)))
+        store.add_event(_make_event(event_id="B", scheduled_at=_time(10, 5), available_at=_time(9, 0)))
         result = gate.evaluate(at=_time(9, 45))
         assert result.state == GateState.EVENT_BLOCK
         assert "A" in result.event_ids
@@ -281,6 +283,7 @@ class TestRiskGateDeterministic:
 # 3. Missing/stale events default to no new order intent
 # ===================================================================
 
+
 class TestFailClosedDefaults:
     def test_empty_store_is_clear(self):
         gate = EventRiskGate(EventStore())
@@ -290,8 +293,7 @@ class TestFailClosedDefaults:
     def test_unknown_status_event_in_window_blocks(self):
         gate, store = EventRiskGate(EventStore()), EventStore()
         gate = EventRiskGate(store)
-        evt = _make_event(status=EventStatus.UNKNOWN, scheduled_at=_time(10),
-                          available_at=_time(9, 0))
+        evt = _make_event(status=EventStatus.UNKNOWN, scheduled_at=_time(10), available_at=_time(9, 0))
         store.add_event(evt)
         result = gate.evaluate(at=_time(9, 45))
         # UNKNOWN is not SCHEDULED/DELAYED/RELEASED so it is not active
@@ -395,6 +397,7 @@ class TestFailClosedDefaults:
 # 4. News/LLM modules cannot import execution submission modules
 # ===================================================================
 
+
 class TestImportIsolation:
     def test_news_events_cannot_import_gold_bot_execution(self):
         """Verify news_events package does not import execution modules."""
@@ -408,25 +411,29 @@ class TestImportIsolation:
         ]
         pkg_dir = os.path.join(os.path.dirname(__file__), "..", "news_events")
         for fname in source_files:
-            with open(os.path.join(pkg_dir, fname), "r") as f:
+            with open(os.path.join(pkg_dir, fname)) as f:
                 content = f.read()
-            assert "execution" not in content.lower().split("import")[0] if "import" in content.lower() else True, \
-                f"news_events/{fname} must not import execution modules"
+            assert (
+                "execution" not in content.lower().split("import")[0] if "import" in content.lower() else True
+            ), f"news_events/{fname} must not import execution modules"
 
     def test_news_events_no_order_submission_imports(self):
         """Explicit check: none of the news_events modules import order submission code."""
         forbidden_imports = ["order_submit", "broker_adapter", "order_manager", "execute_order"]
         source_files = [
-            "event_models.py", "event_store.py", "event_risk_gate.py",
-            "stabilization_gate.py", "macro_policy.py", "integration.py",
+            "event_models.py",
+            "event_store.py",
+            "event_risk_gate.py",
+            "stabilization_gate.py",
+            "macro_policy.py",
+            "integration.py",
         ]
         pkg_dir = os.path.join(os.path.dirname(__file__), "..", "news_events")
         for fname in source_files:
-            with open(os.path.join(pkg_dir, fname), "r") as f:
+            with open(os.path.join(pkg_dir, fname)) as f:
                 content = f.read()
             for forbidden in forbidden_imports:
-                assert forbidden not in content, \
-                    f"news_events/{fname} imports forbidden module: {forbidden}"
+                assert forbidden not in content, f"news_events/{fname} imports forbidden module: {forbidden}"
 
     def test_llm_guard_forbids_execution_action(self):
         """LLMPolicyGuard must forbid invoke_execution."""
@@ -451,6 +458,7 @@ class TestImportIsolation:
 # ===================================================================
 # 5. Macro feature availability tests prevent revision leakage
 # ===================================================================
+
 
 class TestMacroPolicyRevisionSafety:
     def test_research_role_observation_available(self):
@@ -565,12 +573,13 @@ class TestMacroPolicyRevisionSafety:
 # 6. Integration: NewsEventIntegration combines gates correctly
 # ===================================================================
 
+
 class TestIntegrationGate:
     def _integration(self, pre=30, post=15, stab=5):
         store = EventStore()
-        return NewsEventIntegration(store, pre_block_minutes=pre,
-                                    post_block_minutes=post,
-                                    stabilization_minutes=stab), store
+        return NewsEventIntegration(
+            store, pre_block_minutes=pre, post_block_minutes=post, stabilization_minutes=stab
+        ), store
 
     def test_no_events_allows_order(self):
         integ, _ = self._integration()
@@ -638,6 +647,7 @@ class TestIntegrationGate:
 # ===================================================================
 # 7. Event payload hash determinism
 # ===================================================================
+
 
 class TestPayloadHash:
     def test_same_event_same_hash(self):

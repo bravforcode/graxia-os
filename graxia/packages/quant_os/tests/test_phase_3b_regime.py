@@ -1,9 +1,11 @@
 from graxia.packages.quant_os.validation.regime_analyzer import RegimeAnalyzer, RegimeType, TradeConcentration
 
+
 class TestRegimeAnalyzer:
     def test_classify_trending_up(self):
         analyzer = RegimeAnalyzer()
         import random
+
         random.seed(7)
         prices = [100 + i * 2.0 + random.uniform(-1, 1) for i in range(30)]
         regime = analyzer.classify_bar(prices, 25)
@@ -12,6 +14,7 @@ class TestRegimeAnalyzer:
     def test_classify_trending_down(self):
         analyzer = RegimeAnalyzer()
         import random
+
         random.seed(7)
         prices = [200 - i * 2.0 + random.uniform(-1, 1) for i in range(30)]
         regime = analyzer.classify_bar(prices, 25)
@@ -20,6 +23,7 @@ class TestRegimeAnalyzer:
     def test_classify_ranging(self):
         analyzer = RegimeAnalyzer()
         import random
+
         random.seed(42)
         prices = [100 + random.uniform(-0.01, 0.01) for _ in range(30)]
         regime = analyzer.classify_bar(prices, 25)
@@ -38,6 +42,7 @@ class TestRegimeAnalyzer:
         result = analyzer.analyze_trades(trades, prices)
         assert result["total_trades"] == 2
         assert len(result["slices"]) > 0
+
 
 class TestTradeConcentration:
     def test_concentration_passes(self):

@@ -11,7 +11,7 @@ import os
 import pickle
 import uuid
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -54,9 +54,7 @@ class ModelComparison:
     model_b: ModelMetadata
     metric_delta: dict[str, float]
     winner: str  # version_id of the better model
-    comparison_timestamp: str = field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    comparison_timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 
 class ModelRegistry:
@@ -191,9 +189,7 @@ class ModelRegistry:
         Returns:
             Latest matching ModelMetadata, or None if no match.
         """
-        candidates = self.list_models(
-            model_name=model_name, symbol=symbol, tag=tag
-        )
+        candidates = self.list_models(model_name=model_name, symbol=symbol, tag=tag)
         if not candidates:
             logger.warning("no_models_found", model_name=model_name, symbol=symbol)
             return None
@@ -244,9 +240,7 @@ class ModelRegistry:
         logger.debug("model_loaded", version_id=version_id)
         return model
 
-    def compare_models(
-        self, version_a: str, version_b: str
-    ) -> ModelComparison:
+    def compare_models(self, version_a: str, version_b: str) -> ModelComparison:
         """
         Compare two registered models by their stored metrics.
 

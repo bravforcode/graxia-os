@@ -1,6 +1,7 @@
 """Phase BE-P6 — Revalidation runner. Executes R0-R10 and evaluates gates."""
+
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from dataclasses import dataclass, asdict
 
 
 @dataclass
@@ -31,6 +32,7 @@ class RevalidationRunner:
         """Load pre-committed gates from YAML."""
         try:
             import yaml
+
             p = Path(path) if path else Path(__file__).parent / "decision_gates.yaml"
             if p.exists():
                 return yaml.safe_load(p.read_text())

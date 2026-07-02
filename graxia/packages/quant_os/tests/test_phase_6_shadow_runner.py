@@ -1,4 +1,5 @@
 """Tests for mt5_connector.shadow_runner.ShadowRunner — verifies shadow mode never sends orders."""
+
 from unittest.mock import MagicMock, patch
 
 
@@ -8,6 +9,7 @@ def _make_runner():
     with patch("builtins.open", mock_open(read_data="")):
         with patch("yaml.safe_load", return_value=config):
             from graxia.packages.quant_os.mt5_connector.shadow_runner import ShadowRunnerV2 as ShadowRunner
+
             runner = ShadowRunner(config_path="dummy.yaml")
     return runner
 
@@ -73,7 +75,14 @@ class TestShadowRunnerRunCycle:
     def test_run_cycle_returns_signal_fields(self):
         runner = _make_runner()
         runner._mt5 = MagicMock()
-        runner._mt5.get_tick.return_value = {"bid": 2350.0, "ask": 2351.0, "last": 2350.5, "volume": 100, "time": 0, "flags": 0}
+        runner._mt5.get_tick.return_value = {
+            "bid": 2350.0,
+            "ask": 2351.0,
+            "last": 2350.5,
+            "volume": 100,
+            "time": 0,
+            "flags": 0,
+        }
         runner._mt5.get_bars.return_value = [
             {"time": 0, "open": 2350.0, "high": 2355.0, "low": 2345.0, "close": 2350.0, "volume": 100},
             {"time": 1, "open": 2350.0, "high": 2360.0, "low": 2348.0, "close": 2355.0, "volume": 100},
@@ -92,10 +101,16 @@ class TestShadowRunnerOrderSendGuarantee:
     def test_no_order_send_on_accepted_signal(self):
         runner = _make_runner()
         runner._mt5 = MagicMock()
-        runner._mt5.get_tick.return_value = {"bid": 100.0, "ask": 100.1, "last": 100.05, "volume": 50, "time": 0, "flags": 0}
+        runner._mt5.get_tick.return_value = {
+            "bid": 100.0,
+            "ask": 100.1,
+            "last": 100.05,
+            "volume": 50,
+            "time": 0,
+            "flags": 0,
+        }
         runner._mt5.get_bars.return_value = [
-            {"time": i, "open": 100, "high": 101, "low": 99, "close": 100 + i, "volume": 10}
-            for i in range(5)
+            {"time": i, "open": 100, "high": 101, "low": 99, "close": 100 + i, "volume": 10} for i in range(5)
         ]
         runner._mt5.order_send = MagicMock()
         runner._pipeline.start_session("test")

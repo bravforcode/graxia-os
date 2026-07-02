@@ -1,6 +1,8 @@
 """Debug tick fetching on Pepperstone."""
+
+from datetime import UTC, datetime, timedelta
+
 import MetaTrader5 as mt5
-from datetime import datetime, timedelta, UTC
 
 ok = mt5.initialize(path=r"C:\Program Files\Pepperstone MetaTrader 5\terminal64.exe", timeout=30000)
 if not ok:

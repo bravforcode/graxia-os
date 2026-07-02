@@ -344,6 +344,7 @@ class TestPortfolioManager:
 
     def test_dead_signal_event_from_risk_auditor_ignored(self, pm):
         from graxia.packages.quant_os.core.enums import SignalType as ST
+
         sig = SignalEvent(symbol="X", signal_type=ST.BUY, source="risk_auditor")
         pm.observe(sig)
         assert pm._pending_risk_pass is False

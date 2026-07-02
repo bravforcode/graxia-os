@@ -22,13 +22,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, time
 from enum import Enum
-from typing import List, Optional
 
 import numpy as np
 import pandas as pd
 
-
 # ── Result containers ────────────────────────────────────────────────────────
+
 
 @dataclass
 class SwingEvent:
@@ -45,7 +44,7 @@ class SweepEvent:
     trigger_bar_idx: int
     trigger_timestamp: datetime
     magnitude: float  # ATR-normalized excess beyond the level
-    reclaimed_bar_idx: Optional[int] = None
+    reclaimed_bar_idx: int | None = None
 
 
 @dataclass
@@ -56,7 +55,7 @@ class OrderBlock:
     top: float
     bottom: float
     mitigated: bool = False
-    mitigation_bar_idx: Optional[int] = None
+    mitigation_bar_idx: int | None = None
 
 
 @dataclass
@@ -68,7 +67,7 @@ class FairValueGap:
     top: float
     bottom: float
     filled: bool = False
-    fill_bar_idx: Optional[int] = None
+    fill_bar_idx: int | None = None
 
 
 @dataclass
@@ -90,6 +89,7 @@ class LiquidityPool:
 
 
 # ── Foundational detector: swing points ──────────────────────────────────────
+
 
 def detect_fractals(df: pd.DataFrame, k: int = 2) -> pd.DataFrame:
     """Mark fractal swing highs/lows with a k-bar lookforward lag.
@@ -124,7 +124,7 @@ def detect_fractals(df: pd.DataFrame, k: int = 2) -> pd.DataFrame:
     # Build events with lag-adjusted timestamp (confirmation bar i+k)
     idx = df.index
     time_col = _get_time_column(df)
-    events: List[SwingEvent] = []
+    events: list[SwingEvent] = []
     for i in np.where(swing_high)[0]:
         confirm = min(i + k, n - 1)
         events.append(
@@ -162,6 +162,7 @@ def detect_fractals(df: pd.DataFrame, k: int = 2) -> pd.DataFrame:
 
 # ── Foundational detector: liquidity sweep ───────────────────────────────────
 
+
 def detect_sweeps(
     df: pd.DataFrame,
     fractals: pd.DataFrame,
@@ -193,7 +194,7 @@ def detect_sweeps(
     magnitude = np.zeros(n, dtype=float)
     bars_since = np.full(n, np.nan, dtype=float)
 
-    events: List[SweepEvent] = []
+    events: list[SweepEvent] = []
 
     highs = fractals[fractals["swing_high"]].index.to_numpy()
     lows = fractals[fractals["swing_low"]].index.to_numpy()
@@ -257,6 +258,7 @@ def detect_sweeps(
 
 # ── Foundational detector: order block ───────────────────────────────────────
 
+
 def detect_order_blocks(
     df: pd.DataFrame,
     fractals: pd.DataFrame,
@@ -286,7 +288,7 @@ def detect_order_blocks(
     close = df["close"].to_numpy()
     time_col = _get_time_column(df)
 
-    obs: List[OrderBlock] = []
+    obs: list[OrderBlock] = []
 
     swing_highs = fractals[fractals["swing_high"]].index.to_numpy()
     swing_lows = fractals[fractals["swing_low"]].index.to_numpy()
@@ -388,6 +390,7 @@ OrderBlock.mitigated_at = _mitigated_at  # type: ignore[method-assign]
 
 # ── Foundational detector: fair value gap ────────────────────────────────────
 
+
 def detect_fvg(
     df: pd.DataFrame,
     max_age_bars: int = 200,
@@ -411,7 +414,7 @@ def detect_fvg(
     atr = _atr(df, 14)
     time_col = _get_time_column(df)
 
-    fvgs: List[FairValueGap] = []
+    fvgs: list[FairValueGap] = []
 
     for i in range(1, n - 1):
         if high[i - 1] < low[i + 1]:
@@ -440,9 +443,8 @@ def detect_fvg(
     for fvg in fvgs:
         end = min(fvg.end_bar_idx + max_age_bars + 1, n)
         for j in range(fvg.end_bar_idx + 1, end):
-            if (
-                (fvg.direction == "bullish" and low[j] <= fvg.bottom and high[j] >= fvg.top)
-                or (fvg.direction == "bearish" and high[j] >= fvg.top and low[j] <= fvg.bottom)
+            if (fvg.direction == "bullish" and low[j] <= fvg.bottom and high[j] >= fvg.top) or (
+                fvg.direction == "bearish" and high[j] >= fvg.top and low[j] <= fvg.bottom
             ):
                 fvg.filled = True
                 fvg.fill_bar_idx = j
@@ -492,6 +494,7 @@ FairValueGap.filled_at = _filled_at  # type: ignore[method-assign]
 
 # ── Foundational detector: market structure shift (BOS / CHoCH) ──────────────
 
+
 def detect_structure(
     df: pd.DataFrame,
     fractals: pd.DataFrame,
@@ -517,15 +520,12 @@ def detect_structure(
     bars_since = np.full(n, np.nan, dtype=float)
     event_flag = np.zeros(n, dtype=bool)
 
-    events: List[StructureEvent] = []
+    events: list[StructureEvent] = []
 
     # Build ordered list of swing points
     highs = fractals[fractals["swing_high"]].index.to_numpy()
     lows = fractals[fractals["swing_low"]].index.to_numpy()
-    points = sorted(
-        [(int(i), "high", high[int(i)]) for i in highs]
-        + [(int(i), "low", low[int(i)]) for i in lows]
-    )
+    points = sorted([(int(i), "high", high[int(i)]) for i in highs] + [(int(i), "low", low[int(i)]) for i in lows])
 
     if len(points) < 2:
         out = pd.DataFrame(
@@ -599,7 +599,7 @@ def detect_structure(
 
     # Forward-fill state and bars_since
     last_state = "undefined"
-    last_event_bar: Optional[int] = None
+    last_event_bar: int | None = None
     for i in range(n):
         if state[i] != "undefined":
             last_state = state[i]
@@ -622,6 +622,7 @@ def detect_structure(
 
 
 # ── Foundational detector: equal highs / lows (liquidity pools) ──────────────
+
 
 def detect_liquidity_pools(
     df: pd.DataFrame,
@@ -647,17 +648,17 @@ def detect_liquidity_pools(
     high = df["high"].to_numpy()
     low = df["low"].to_numpy()
 
-    pools: List[LiquidityPool] = []
+    pools: list[LiquidityPool] = []
 
     highs = fractals[fractals["swing_high"]].index.to_numpy()
     lows = fractals[fractals["swing_low"]].index.to_numpy()
 
-    def build_pools(idxs: np.ndarray, direction: str) -> List[LiquidityPool]:
+    def build_pools(idxs: np.ndarray, direction: str) -> list[LiquidityPool]:
         if len(idxs) == 0:
             return []
         prices = np.array([high[i] if direction == "high" else low[i] for i in idxs])
         used = np.zeros(len(idxs), dtype=bool)
-        result: List[LiquidityPool] = []
+        result: list[LiquidityPool] = []
         for i, idx in enumerate(idxs):
             if used[i]:
                 continue
@@ -722,6 +723,7 @@ def detect_liquidity_pools(
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
+
 def _atr(df: pd.DataFrame, period: int = 14) -> np.ndarray:
     """Return ATR series as numpy array."""
     high = df["high"].to_numpy()
@@ -750,6 +752,7 @@ def _get_time_column(df: pd.DataFrame) -> pd.Series:
 
 # ── Composite: Killzones / session schedule (§7) ─────────────────────────────
 
+
 class Killzone(str, Enum):
     ASIAN = "asian"
     LONDON_OPEN = "london_open"
@@ -761,7 +764,7 @@ class Killzone(str, Enum):
 
 
 # UTC boundaries from plan §7
-KILLZONE_SCHEDULE: List[tuple[str, time, time]] = [
+KILLZONE_SCHEDULE: list[tuple[str, time, time]] = [
     (Killzone.ASIAN, time(23, 0), time(8, 0)),
     (Killzone.LONDON_OPEN, time(7, 0), time(10, 0)),
     (Killzone.LONDON_NY_OVERLAP, time(12, 0), time(17, 0)),
@@ -822,6 +825,7 @@ def classify_killzone(timestamps: pd.Series) -> pd.DataFrame:
 
 # ── Composite: Optimal Trade Entry (OTE) ─────────────────────────────────────
 
+
 def detect_ote(
     df: pd.DataFrame,
     fractals: pd.DataFrame,
@@ -875,6 +879,7 @@ def detect_ote(
 
 # ── Composite: Liquidity Void ────────────────────────────────────────────────
 
+
 def detect_liquidity_voids(
     df: pd.DataFrame,
     lookback: int = 5,
@@ -910,7 +915,7 @@ def detect_liquidity_voids(
                 void_flag[i] = True
                 void_size[i] = size
 
-    last_void: Optional[int] = None
+    last_void: int | None = None
     for i in range(n):
         if void_flag[i]:
             last_void = i
@@ -929,10 +934,11 @@ def detect_liquidity_voids(
 
 # ── Composite: Mitigation block + Inversion FVG ──────────────────────────────
 
+
 def detect_mitigation_and_inversion(
     df: pd.DataFrame,
-    obs: List[OrderBlock],
-    fvgs: List[FairValueGap],
+    obs: list[OrderBlock],
+    fvgs: list[FairValueGap],
     max_age_bars: int = 200,
     atr_period: int = 14,
 ) -> pd.DataFrame:
@@ -1003,6 +1009,7 @@ def detect_mitigation_and_inversion(
 
 # ── Composite: Judas Swing (Power-of-Three manipulation leg) ─────────────────
 
+
 def detect_judas_swings(
     df: pd.DataFrame,
     sweeps: pd.DataFrame,
@@ -1024,9 +1031,8 @@ def detect_judas_swings(
     minutes = time_col.dt.hour * 60 + time_col.dt.minute
 
     in_open_window = (
-        (killzones["is_london_open"] & (minutes >= 7 * 60) & (minutes < 7 * 60 + max_minutes_from_open))
-        | (killzones["is_ny_open"] & (minutes >= 12 * 60) & (minutes < 12 * 60 + max_minutes_from_open))
-    )
+        killzones["is_london_open"] & (minutes >= 7 * 60) & (minutes < 7 * 60 + max_minutes_from_open)
+    ) | (killzones["is_ny_open"] & (minutes >= 12 * 60) & (minutes < 12 * 60 + max_minutes_from_open))
 
     for i in range(n):
         if not in_open_window.iloc[i]:
@@ -1048,6 +1054,7 @@ def detect_judas_swings(
 
 
 # ── Composite: Wyckoff accumulation / distribution schematic ─────────────────
+
 
 def detect_wyckoff_events(
     df: pd.DataFrame,
@@ -1088,10 +1095,7 @@ def detect_wyckoff_events(
             range_bound[i] = True
 
         # Spring: close back above prior support after piercing below it
-        if (
-            low[i] < prior_low - spring_threshold_atr * atr[i]
-            and close[i] > prior_low - spring_threshold_atr * atr[i]
-        ):
+        if low[i] < prior_low - spring_threshold_atr * atr[i] and close[i] > prior_low - spring_threshold_atr * atr[i]:
             spring[i] = True
         # Upthrust: close back below prior resistance after piercing above it
         if (
@@ -1111,6 +1115,7 @@ def detect_wyckoff_events(
 
 
 # ── Composite: Volume Profile (POC / VAH / VAL / HVN / LVN) ──────────────────
+
 
 def volume_profile_features(
     df: pd.DataFrame,
@@ -1163,9 +1168,7 @@ def volume_profile_features(
 
         # Assign each bar's typical price to a bin and accumulate volume
         typical = (window_high + window_low + window_close) / 3.0
-        bin_idx = np.clip(
-            np.searchsorted(bin_edges[1:], typical), 0, n_bins - 1
-        )
+        bin_idx = np.clip(np.searchsorted(bin_edges[1:], typical), 0, n_bins - 1)
         vol_histogram = np.zeros(n_bins, dtype=float)
         np.add.at(vol_histogram, bin_idx, window_vol)
 

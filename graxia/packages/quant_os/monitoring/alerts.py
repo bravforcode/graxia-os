@@ -3,9 +3,9 @@ Alert manager for Quant OS
 Centralized alert routing and management
 """
 
-from typing import Dict, Any, Optional
-from datetime import datetime
 from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
 
 from ..core.enums import IncidentSeverity
 
@@ -13,11 +13,12 @@ from ..core.enums import IncidentSeverity
 @dataclass
 class Alert:
     """Alert data structure"""
+
     severity: IncidentSeverity
     title: str
     message: str
     timestamp: datetime
-    context: Optional[Dict[str, Any]] = None
+    context: dict[str, Any] | None = None
 
 
 class AlertManager:
@@ -44,35 +45,23 @@ class AlertManager:
 
         return True
 
-    async def notify_trade(
-        self,
-        symbol: str,
-        action: str,
-        price: float,
-        sl: float,
-        tp: float,
-        lots: float
-    ) -> bool:
+    async def notify_trade(self, symbol: str, action: str, price: float, sl: float, tp: float, lots: float) -> bool:
         """Send trade notification"""
         alert = Alert(
             severity=IncidentSeverity.P2,
             title=f"Trade Executed: {symbol}",
             message=f"{action} {lots} lots @ {price}",
             timestamp=datetime.utcnow(),
-            context={"sl": sl, "tp": tp}
+            context={"sl": sl, "tp": tp},
         )
         return await self.send_alert(alert)
 
-    async def notify_kill_switch(
-        self,
-        trigger_type: str,
-        reason: str
-    ) -> bool:
+    async def notify_kill_switch(self, trigger_type: str, reason: str) -> bool:
         """Send kill switch alert"""
         alert = Alert(
             severity=IncidentSeverity.P0,
             title="KILL SWITCH TRIGGERED",
             message=f"{trigger_type}: {reason}",
-            timestamp=datetime.utcnow()
+            timestamp=datetime.utcnow(),
         )
         return await self.send_alert(alert)

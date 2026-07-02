@@ -2,14 +2,15 @@
 
 No MT5 bar API dependency. Bars are built from tick stream.
 """
+
 from dataclasses import dataclass
-from datetime import datetime, timedelta, UTC
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
 
 @dataclass
 class CanonicalBar:
     """Bar built from canonical ticks."""
+
     symbol: str
     timeframe: str  # "M1" or "H1"
     open_time: datetime
@@ -75,8 +76,13 @@ class CanonicalBarBuilder:
         m1_start = self._minute_start(tick_time)
         if m1_start not in self._m1_bars:
             self._m1_bars[m1_start] = CanonicalBar(
-                symbol=self._symbol, timeframe="M1", open_time=m1_start,
-                open=mid, high=mid, low=mid, close=mid,
+                symbol=self._symbol,
+                timeframe="M1",
+                open_time=m1_start,
+                open=mid,
+                high=mid,
+                low=mid,
+                close=mid,
             )
         bar = self._m1_bars[m1_start]
         bar.high = max(bar.high, mid)
@@ -89,8 +95,13 @@ class CanonicalBarBuilder:
         h1_start = self._hour_start(tick_time)
         if h1_start not in self._h1_bars:
             self._h1_bars[h1_start] = CanonicalBar(
-                symbol=self._symbol, timeframe="H1", open_time=h1_start,
-                open=mid, high=mid, low=mid, close=mid,
+                symbol=self._symbol,
+                timeframe="H1",
+                open_time=h1_start,
+                open=mid,
+                high=mid,
+                low=mid,
+                close=mid,
             )
         h1 = self._h1_bars[h1_start]
         h1.high = max(h1.high, mid)
@@ -121,7 +132,7 @@ class CanonicalBarBuilder:
         finalized.sort(key=lambda b: b.open_time)
         return finalized[-count:]
 
-    def get_current_m1_bar(self) -> Optional[CanonicalBar]:
+    def get_current_m1_bar(self) -> CanonicalBar | None:
         """Get the current (not yet finalized) M1 bar."""
         unfinalized = [b for b in self._m1_bars.values() if not b.is_finalized]
         if not unfinalized:

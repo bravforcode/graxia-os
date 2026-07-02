@@ -10,7 +10,7 @@ import hashlib
 import json
 import os
 from dataclasses import dataclass
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from decimal import Decimal
 
 
@@ -22,6 +22,7 @@ class AccountSnapshot:
     All values read from MT5, never computed.
     snapshot_hash is SHA-256 for change detection.
     """
+
     timestamp_utc: datetime
     account_number_redacted: str  # e.g. "****1234"
     server: str

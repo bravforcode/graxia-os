@@ -27,6 +27,7 @@ class _PublishResult:
     def __await__(self):
         async def _noop():
             return None
+
         return _noop().__await__()
 
 
@@ -82,12 +83,15 @@ class EventBus:
             try:
                 import json
                 from pathlib import Path
+
                 record = {
                     "event_type": type(event).__name__ if isinstance(event_or_key, Event) else str(event_or_key),
-                    "event_id": getattr(event, 'event_id', ''),
-                    "trace_id": getattr(event, 'trace_id', ''),
-                    "timestamp": getattr(event, 'timestamp', '').isoformat() if hasattr(getattr(event, 'timestamp', ''), 'isoformat') else '',
-                    "source": getattr(event, 'source', ''),
+                    "event_id": getattr(event, "event_id", ""),
+                    "trace_id": getattr(event, "trace_id", ""),
+                    "timestamp": getattr(event, "timestamp", "").isoformat()
+                    if hasattr(getattr(event, "timestamp", ""), "isoformat")
+                    else "",
+                    "source": getattr(event, "source", ""),
                 }
                 Path(self._event_log_path).parent.mkdir(parents=True, exist_ok=True)
                 with open(self._event_log_path, "a", encoding="utf-8") as fh:

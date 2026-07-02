@@ -1,15 +1,18 @@
 """ML Pipeline from Jesse pattern - gather, train, deploy"""
+
 from dataclasses import dataclass
-from typing import Dict, List, Optional
 from datetime import datetime
+
 
 @dataclass
 class MLDataPoint:
     """Single ML training data point"""
+
     timestamp: float
-    features: Dict[str, float]
-    label: Optional[float] = None
+    features: dict[str, float]
+    label: float | None = None
     label_name: str = ""
+
 
 class MLPipeline:
     """
@@ -36,20 +39,17 @@ class MLPipeline:
     """
 
     def __init__(self):
-        self._data_points: List[MLDataPoint] = []
-        self._current_point: Optional[MLDataPoint] = None
+        self._data_points: list[MLDataPoint] = []
+        self._current_point: MLDataPoint | None = None
         self._model = None
         self._scaler = None
-        self._feature_names: List[str] = []
+        self._feature_names: list[str] = []
 
     def gather_start(self):
         """Start gathering ML data"""
-        self._current_point = MLDataPoint(
-            timestamp=datetime.utcnow().timestamp(),
-            features={}
-        )
+        self._current_point = MLDataPoint(timestamp=datetime.utcnow().timestamp(), features={})
 
-    def record_features(self, features: Dict[str, float]):
+    def record_features(self, features: dict[str, float]):
         """Record features for current data point"""
         if self._current_point is None:
             self.gather_start()
@@ -97,7 +97,7 @@ class MLPipeline:
     def import_csv(self, filepath: str):
         """Import training data from CSV"""
         self._data_points = []
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             lines = f.readlines()
 
         if len(lines) < 2:
@@ -148,6 +148,7 @@ class MLPipeline:
         CRITICAL: Call ONLY on training data. Fitting on test data = data leakage.
         """
         from sklearn.preprocessing import StandardScaler
+
         self._scaler = StandardScaler()
         self._scaler.fit(X)
         return self._scaler
@@ -181,5 +182,5 @@ class MLPipeline:
         return len(self._data_points)
 
     @property
-    def feature_names(self) -> List[str]:
+    def feature_names(self) -> list[str]:
         return self._feature_names

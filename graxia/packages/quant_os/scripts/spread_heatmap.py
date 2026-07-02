@@ -7,13 +7,14 @@ the tightest entry windows. Saves raw CSV + hourly summary report.
 Usage:
     python scripts/spread_heatmap.py [--interval 300] [--duration 86400] [--symbols XAUUSD,EURUSD,GBPUSD]
 """
+
 import argparse
 import csv
 import os
 import sys
 import time
 from collections import defaultdict
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 import MetaTrader5 as mt5
 
@@ -68,7 +69,9 @@ def generate_report(all_data: dict, symbols: list):
     lines.append(f"Generated: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}")
     lines.append("=" * 60)
     lines.append("")
-    lines.append(f"{'Symbol':<10} {'Best Hour (UTC)':<18} {'Avg Spread':<12} {'Worst Hour (UTC)':<18} {'Avg Spread':<12}")
+    lines.append(
+        f"{'Symbol':<10} {'Best Hour (UTC)':<18} {'Avg Spread':<12} {'Worst Hour (UTC)':<18} {'Avg Spread':<12}"
+    )
     lines.append("-" * 70)
 
     for sym in symbols:
@@ -89,10 +92,17 @@ def generate_report(all_data: dict, symbols: list):
     lines.append("")
     lines.append("Hour-by-hour breakdown:")
     lines.append("-" * 70)
-    all_hours = sorted({k for sym in symbols if sym in all_data for k in {
-        datetime.fromisoformat(e["timestamp_utc"].replace("Z", "+00:00")).strftime("%Y-%m-%d %H:00")
-        for e in all_data[sym]
-    }})
+    all_hours = sorted(
+        {
+            k
+            for sym in symbols
+            if sym in all_data
+            for k in {
+                datetime.fromisoformat(e["timestamp_utc"].replace("Z", "+00:00")).strftime("%Y-%m-%d %H:00")
+                for e in all_data[sym]
+            }
+        }
+    )
 
     header = f"{'Hour (UTC)':<20}"
     for sym in symbols:
@@ -104,8 +114,12 @@ def generate_report(all_data: dict, symbols: list):
         row = f"{hour:<20}"
         for sym in symbols:
             if sym in all_data:
-                avgs = [e["spread_points"] for e in all_data[sym]
-                        if datetime.fromisoformat(e["timestamp_utc"].replace("Z", "+00:00")).strftime("%Y-%m-%d %H:00") == hour]
+                avgs = [
+                    e["spread_points"]
+                    for e in all_data[sym]
+                    if datetime.fromisoformat(e["timestamp_utc"].replace("Z", "+00:00")).strftime("%Y-%m-%d %H:00")
+                    == hour
+                ]
                 if avgs:
                     row += f" {sum(avgs)/len(avgs):>18.1f}"
                 else:

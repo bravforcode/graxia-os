@@ -1,12 +1,13 @@
 """
 Expansion Tracker — track expansion progress and generate reports.
 """
-from dataclasses import dataclass, field
-from typing import List, Dict
+
 import json
 import os
+from dataclasses import dataclass, field
 from datetime import datetime
-from .planner import ExpansionPlanner, ExpansionPhase, ExpansionStatus
+
+from .planner import ExpansionPhase, ExpansionPlanner, ExpansionStatus
 
 
 @dataclass
@@ -18,7 +19,7 @@ class ExpansionReport:
     steps_total: int
     overall_status: str
     next_action: str
-    details: List[Dict] = field(default_factory=list)
+    details: list[dict] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {
@@ -38,7 +39,7 @@ class ExpansionTracker:
 
     def __init__(self):
         self._planner = ExpansionPlanner()
-        self._history: List[Dict] = []
+        self._history: list[dict] = []
 
     def get_status(self) -> ExpansionReport:
         steps = self._planner.list_steps()
@@ -49,13 +50,15 @@ class ExpansionTracker:
 
         details = []
         for step in steps:
-            details.append({
-                "phase": step.phase.value,
-                "status": step.status.value,
-                "gates_passed": sum(1 for g in step.evidence_gates if g.passed),
-                "gates_total": len(step.evidence_gates),
-                "symbols": step.symbols,
-            })
+            details.append(
+                {
+                    "phase": step.phase.value,
+                    "status": step.status.value,
+                    "gates_passed": sum(1 for g in step.evidence_gates if g.passed),
+                    "gates_total": len(step.evidence_gates),
+                    "symbols": step.symbols,
+                }
+            )
 
         return ExpansionReport(
             report_id=f"exp_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}",
@@ -108,5 +111,5 @@ class ExpansionTracker:
     def export_report(self, path: str) -> None:
         report = self.get_status()
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             json.dump(report.to_dict(), f, indent=2)

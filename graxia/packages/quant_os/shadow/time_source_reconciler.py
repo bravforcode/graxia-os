@@ -6,18 +6,17 @@ Applies temporal-consistency rules. Fails closed on inconsistency.
 NO hardcode offsets. NO latency calculation. NO session/event decisions
 from broker timestamps until provenance is resolved.
 """
+
 import hashlib
 import json
 import time
-from dataclasses import dataclass, asdict
-from datetime import datetime, timedelta, UTC
-from typing import Optional
-
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime, timedelta
 
 # ── Temporal consistency rules ───────────────────────────────────────
 
 MAX_TICK_DELAY_MS = 60000  # Rule A: tick time within ±60s of received_at
-MAX_BAR_FUTURE_S = 0       # Rule C: bars must not be in the future
+MAX_BAR_FUTURE_S = 0  # Rule C: bars must not be in the future
 
 
 @dataclass
@@ -32,11 +31,7 @@ class TimeConsistencyResult:
     verdict: str = "PENDING"  # PASS, TIME_SOURCE_INCONSISTENT, PENDING
 
     def evaluate(self) -> str:
-        self.all_passed = (
-            self.rule_a_tick_within_60s
-            and self.rule_b_ticks_in_window
-            and self.rule_c_bars_not_future
-        )
+        self.all_passed = self.rule_a_tick_within_60s and self.rule_b_ticks_in_window and self.rule_c_bars_not_future
         if self.all_passed:
             self.verdict = "PASS"
         else:
@@ -44,7 +39,7 @@ class TimeConsistencyResult:
         return self.verdict
 
 
-def check_rule_a(tick_time_utc: Optional[datetime], received_at_utc: datetime) -> tuple[bool, float]:
+def check_rule_a(tick_time_utc: datetime | None, received_at_utc: datetime) -> tuple[bool, float]:
     """Rule A: symbol_info_tick time within ±60s of received_at."""
     if tick_time_utc is None:
         return False, 0.0
@@ -84,9 +79,11 @@ def check_rule_c(bars: list[dict], system_utc: datetime) -> tuple[bool, int]:
 
 # ── Per-cycle immutable evidence ─────────────────────────────────────
 
+
 @dataclass
 class CycleEvidence:
     """Immutable evidence collected per cycle. All fields must be set."""
+
     cycle_id: int
     # System clock
     system_epoch_ms: int = 0
@@ -144,6 +141,7 @@ class CycleEvidence:
 
 # ── Sealed ledger ────────────────────────────────────────────────────
 
+
 class SealedLedger:
     def __init__(self):
         self._entries: list[dict] = []
@@ -167,7 +165,7 @@ class SealedLedger:
 
     def verify(self) -> bool:
         for i, e in enumerate(self._entries):
-            if i > 0 and e["previous_hash"] != self._entries[i-1]["record_hash"]:
+            if i > 0 and e["previous_hash"] != self._entries[i - 1]["record_hash"]:
                 return False
             d = {k: v for k, v in e.items() if k != "record_hash"}
             expected = hashlib.sha256(json.dumps(d, sort_keys=True, default=str).encode()).hexdigest()
@@ -183,6 +181,7 @@ class SealedLedger:
 
 
 # ── Time source reconciler ───────────────────────────────────────────
+
 
 class TimeSourceReconciler:
     """Collects per-cycle evidence and applies temporal-consistency rules.
@@ -218,7 +217,7 @@ class TimeSourceReconciler:
         tick = self._mt5.get_tick(self._symbol)
         if tick is None:
             ev.tick_none = True
-            diag = self._mt5.get_tick_diagnostics(self._symbol) if hasattr(self._mt5, 'get_tick_diagnostics') else {}
+            diag = self._mt5.get_tick_diagnostics(self._symbol) if hasattr(self._mt5, "get_tick_diagnostics") else {}
             ev.tick_mt5_error = diag.get("mt5_last_error", "no_diagnostics")
             ev.account_server = diag.get("account_server", "")
             ev.symbol_visible = diag.get("symbol_visible", False)
@@ -226,9 +225,7 @@ class TimeSourceReconciler:
         else:
             ev.tick_raw_time = tick["time"]
             ev.tick_raw_time_msc = tick.get("time_msc", tick["time"] * 1000)
-            ev.tick_datetime_utc = datetime.fromtimestamp(
-                ev.tick_raw_time_msc / 1000, tz=UTC
-            ).isoformat()
+            ev.tick_datetime_utc = datetime.fromtimestamp(ev.tick_raw_time_msc / 1000, tz=UTC).isoformat()
             ev.tick_bid = tick["bid"]
             ev.tick_ask = tick["ask"]
 
@@ -239,31 +236,27 @@ class TimeSourceReconciler:
         ev.request_to_utc = request_to.isoformat()
         # Hash the request window
         window_d = {"from": request_from.isoformat(), "to": request_to.isoformat()}
-        ev.request_window_hash = hashlib.sha256(
-            json.dumps(window_d, sort_keys=True).encode()
-        ).hexdigest()[:16]
+        ev.request_window_hash = hashlib.sha256(json.dumps(window_d, sort_keys=True).encode()).hexdigest()[:16]
 
         try:
             ticks = self._mt5.copy_ticks_range(
-                self._symbol, request_from, request_to,
-                self._mt5._mt5.COPY_TICKS_ALL if hasattr(self._mt5, '_mt5') else 0
+                self._symbol,
+                request_from,
+                request_to,
+                self._mt5._mt5.COPY_TICKS_ALL if hasattr(self._mt5, "_mt5") else 0,
             )
             if ticks is not None and len(ticks) > 0:
                 ev.returned_tick_count = len(ticks)
                 ev.returned_first_epoch = int(ticks[0][0])
                 ev.returned_last_epoch = int(ticks[-1][0])
-                ev.returned_first_utc = datetime.fromtimestamp(
-                    ev.returned_first_epoch, tz=UTC
-                ).isoformat()
-                ev.returned_last_utc = datetime.fromtimestamp(
-                    ev.returned_last_epoch, tz=UTC
-                ).isoformat()
+                ev.returned_first_utc = datetime.fromtimestamp(ev.returned_first_epoch, tz=UTC).isoformat()
+                ev.returned_last_utc = datetime.fromtimestamp(ev.returned_last_epoch, tz=UTC).isoformat()
         except Exception as e:
             ev.mt5_last_error = f"copy_ticks_range: {e}"
 
         # 3. copy_rates_from_pos() H1
         try:
-            rates_h1 = self._mt5.get_bars(self._symbol, 60, 3) if hasattr(self._mt5, 'get_bars') else None
+            rates_h1 = self._mt5.get_bars(self._symbol, 60, 3) if hasattr(self._mt5, "get_bars") else None
             if rates_h1 and len(rates_h1) > 0:
                 last = rates_h1[-1]
                 ev.h1_bar_time = last["time"]
@@ -274,7 +267,7 @@ class TimeSourceReconciler:
 
         # 4. copy_rates_from_pos() M1
         try:
-            rates_m1 = self._mt5.get_bars(self._symbol, 1, 3) if hasattr(self._mt5, 'get_bars') else None
+            rates_m1 = self._mt5.get_bars(self._symbol, 1, 3) if hasattr(self._mt5, "get_bars") else None
             if rates_m1 and len(rates_m1) > 0:
                 last = rates_m1[-1]
                 ev.m1_bar_time = last["time"]
@@ -285,7 +278,7 @@ class TimeSourceReconciler:
 
         # 5. Terminal/account info
         try:
-            acct = self._mt5.get_account_info() if hasattr(self._mt5, 'get_account_info') else None
+            acct = self._mt5.get_account_info() if hasattr(self._mt5, "get_account_info") else None
             if acct:
                 ev.account_server = acct.get("server", "")
                 ev.account_login = acct.get("login", 0)
@@ -302,9 +295,7 @@ class TimeSourceReconciler:
         tick_dicts = []
         if ev.returned_last_epoch > 0:
             tick_dicts = [{"time": ev.returned_first_epoch}, {"time": ev.returned_last_epoch}]
-        ev.rule_b_passed, ev.rule_b_outside_count = check_rule_b(
-            tick_dicts, request_from, request_to
-        )
+        ev.rule_b_passed, ev.rule_b_outside_count = check_rule_b(tick_dicts, request_from, request_to)
 
         bar_dicts = []
         if ev.h1_bar_time > 0:

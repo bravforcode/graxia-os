@@ -1,10 +1,12 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class FailureRule:
     name: str
     description: str
     blocks_progression: bool = True
+
 
 FAILURE_RULES = [
     FailureRule("STALE_DATA_ACCEPTED", "Stale data accepted into pipeline", True),
@@ -18,6 +20,7 @@ FAILURE_RULES = [
     FailureRule("PIPELINE_EXCEPTION", "Unhandled exception in canonical pipeline", True),
 ]
 
+
 class FailureRuleChecker:
     def __init__(self):
         self._violations: list[dict] = []
@@ -28,11 +31,13 @@ class FailureRuleChecker:
             return False
 
         if rule.blocks_progression:
-            self._violations.append({
-                "rule": rule_name,
-                "description": rule.description,
-                "context": context or {},
-            })
+            self._violations.append(
+                {
+                    "rule": rule_name,
+                    "description": rule.description,
+                    "context": context or {},
+                }
+            )
             return True
         return False
 

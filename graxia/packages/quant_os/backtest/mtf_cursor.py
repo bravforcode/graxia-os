@@ -8,7 +8,6 @@ This is the ONLY safe way to provide multi-TF data to strategies.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional
 
 
 class MultiTimeframeCursor:
@@ -26,12 +25,12 @@ class MultiTimeframeCursor:
 
     def __init__(
         self,
-        d1_data: Dict[str, List],
-        d1_ts: List[datetime],
-        h1_data: Optional[Dict[str, List]] = None,
-        h1_ts: Optional[List[datetime]] = None,
-        m15_data: Optional[Dict[str, List]] = None,
-        m15_ts: Optional[List[datetime]] = None,
+        d1_data: dict[str, list],
+        d1_ts: list[datetime],
+        h1_data: dict[str, list] | None = None,
+        h1_ts: list[datetime] | None = None,
+        m15_data: dict[str, list] | None = None,
+        m15_ts: list[datetime] | None = None,
     ):
         self._data = {
             "D1": (d1_data, d1_ts),
@@ -46,7 +45,7 @@ class MultiTimeframeCursor:
         for tf, (_, ts_list) in self._data.items():
             self._sorted_indices[tf] = sorted(range(len(ts_list)), key=lambda i: ts_list[i])
 
-    def slice_as_of(self, as_of: datetime) -> Dict[str, Dict[str, List]]:
+    def slice_as_of(self, as_of: datetime) -> dict[str, dict[str, list]]:
         """
         Return multi-TF data sliced to timestamp <= as_of.
 
@@ -74,7 +73,7 @@ class MultiTimeframeCursor:
 
         return result
 
-    def slice_as_of_exclusive(self, as_of: datetime) -> Dict[str, Dict[str, List]]:
+    def slice_as_of_exclusive(self, as_of: datetime) -> dict[str, dict[str, list]]:
         """
         Return multi-TF data sliced to timestamp < as_of (exclusive).
         Used when the base bar itself should not be visible to lower TFs.

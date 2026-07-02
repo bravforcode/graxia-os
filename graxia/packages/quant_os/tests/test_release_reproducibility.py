@@ -2,10 +2,12 @@
 
 Two clean-process runs must produce identical test count, results, and ledger hash.
 """
-from graxia.packages.quant_os.backtest.engine_e2e_fixture import (
-    get_all_scenarios, DeterministicStrategy,
-)
+
 from graxia.packages.quant_os.backtest.engine import BacktestEngine
+from graxia.packages.quant_os.backtest.engine_e2e_fixture import (
+    DeterministicStrategy,
+    get_all_scenarios,
+)
 from graxia.packages.quant_os.execution.ledger_integrity import IntegrityChain, LedgerRecord
 from graxia.packages.quant_os.execution.provenance import create_default_provenance
 
@@ -29,10 +31,7 @@ def _run_scenario(scenario_idx):
     engine.load_data(ohlcv, ts)
     result = engine.run()
     trades = result.get("trades", [])
-    return len(trades), [
-        (t["entry_price"], t["exit_price"], round(t["pnl"], 6))
-        for t in trades
-    ]
+    return len(trades), [(t["entry_price"], t["exit_price"], round(t["pnl"], 6)) for t in trades]
 
 
 def test_engine_e2e_fixture_loads():
@@ -60,14 +59,26 @@ def test_ledger_integrity_on_fixture():
     chain = IntegrityChain()
     for i in range(5):
         rec = LedgerRecord(
-            trade_id=f"t-{i}", order_id=f"o-{i}", symbol="XAUUSD",
-            side="BUY", entry_price="2000.00", exit_price="2010.00",
-            volume="0.10", pnl="10.00", fees="3.50", spread_cost="2.00",
-            slippage_cost="1.00", entry_time="2025-01-01T00:00:00",
-            exit_time="2025-01-02T00:00:00", close_reason="TAKE_PROFIT",
-            strategy_id="test", contract_snapshot_id="v1",
-            risk_policy_version="DEFAULT", dataset_manifest_id="d1",
-            cost_scenario="BASE", git_commit="abc123",
+            trade_id=f"t-{i}",
+            order_id=f"o-{i}",
+            symbol="XAUUSD",
+            side="BUY",
+            entry_price="2000.00",
+            exit_price="2010.00",
+            volume="0.10",
+            pnl="10.00",
+            fees="3.50",
+            spread_cost="2.00",
+            slippage_cost="1.00",
+            entry_time="2025-01-01T00:00:00",
+            exit_time="2025-01-02T00:00:00",
+            close_reason="TAKE_PROFIT",
+            strategy_id="test",
+            contract_snapshot_id="v1",
+            risk_policy_version="DEFAULT",
+            dataset_manifest_id="d1",
+            cost_scenario="BASE",
+            git_commit="abc123",
         )
         chain.append(rec)
     valid, errors = chain.verify()

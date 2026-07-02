@@ -8,7 +8,7 @@ with TTL-based cache invalidation and summary statistics.
 import hashlib
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -325,16 +325,12 @@ class FeatureStore:
 
     # -- private helpers ------------------------------------------------------
 
-    def _build_cache_key(
-        self, symbol: str, timeframe: str, date_start: str, date_end: str
-    ) -> str:
+    def _build_cache_key(self, symbol: str, timeframe: str, date_start: str, date_end: str) -> str:
         """Build a deterministic cache key from inputs."""
         raw = f"{symbol}|{timeframe}|{date_start}|{date_end}"
         return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
-    def _find_entries(
-        self, symbol: str, timeframe: str
-    ) -> list[FeatureMetadata]:
+    def _find_entries(self, symbol: str, timeframe: str) -> list[FeatureMetadata]:
         """Find all cache entries for a symbol/timeframe."""
         partition_dir = self._cache_dir / symbol / timeframe
         if not partition_dir.exists():

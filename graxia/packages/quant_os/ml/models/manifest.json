@@ -1,0 +1,80 @@
+{
+  "version": "1.0",
+  "generated": "2026-07-02",
+  "models": [
+    {
+      "symbol": "XAUUSD",
+      "file": "xgboost_XAUUSD_20260626_160329.pkl",
+      "trained_at": "2026-06-26T16:03:29",
+      "features": 17,
+      "train_acc": 0.8918,
+      "test_acc": 0.4767,
+      "model_type": "XGBClassifier",
+      "random_state": 42,
+      "n_estimators": 100,
+      "max_depth": 5
+    },
+    {
+      "symbol": "EURUSD",
+      "file": "xgboost_EURUSD_20260626_160329.pkl",
+      "trained_at": "2026-06-26T16:03:29",
+      "features": 17,
+      "train_acc": 0.8780,
+      "test_acc": 0.4922,
+      "model_type": "XGBClassifier",
+      "random_state": 42,
+      "n_estimators": 100,
+      "max_depth": 5
+    },
+    {
+      "symbol": "BTCUSD",
+      "file": "xgboost_BTCUSD_20260626_160330.pkl",
+      "trained_at": "2026-06-26T16:03:30",
+      "features": 17,
+      "train_acc": 0.8906,
+      "test_acc": 0.5109,
+      "model_type": "XGBClassifier",
+      "random_state": 42,
+      "n_estimators": 100,
+      "max_depth": 5
+    },
+    {
+      "symbol": "US30",
+      "file": "xgboost_US30_20260626_160329.pkl",
+      "trained_at": "2026-06-26T16:03:29",
+      "features": 17,
+      "train_acc": 0.8806,
+      "test_acc": 0.4943,
+      "model_type": "XGBClassifier",
+      "random_state": 42,
+      "n_estimators": 100,
+      "max_depth": 5
+    },
+    {
+      "symbol": "NAS100",
+      "file": "xgboost_NAS100_20260626_160329.pkl",
+      "trained_at": "2026-06-26T16:03:29",
+      "features": 17,
+      "train_acc": 0.8964,
+      "test_acc": 0.4785,
+      "model_type": "XGBClassifier",
+      "random_state": 42,
+      "n_estimators": 100,
+      "max_depth": 5
+    }
+  ],
+  "latest_by_symbol": {
+    "XAUUSD": "xgboost_XAUUSD_20260626_160329.pkl",
+    "EURUSD": "xgboost_EURUSD_20260626_160329.pkl",
+    "BTCUSD": "xgboost_BTCUSD_20260626_160330.pkl",
+    "US30": "xgboost_US30_20260626_160329.pkl",
+    "NAS100": "xgboost_NAS100_20260626_160329.pkl"
+  },
+  "data_manifest_hash": "TBD",
+  "feature_set_hash": "TBD",
+  "warnings": [
+    "Test accuracy ~0.48-0.51 = coin-flip. Model adds no edge above random.",
+    "Train/test gap ~0.40 = severe overfit. CPCV now wired but models were trained before fix.",
+    "Models should be retrained with CPCV + early stopping before live use."
+  ]
+}

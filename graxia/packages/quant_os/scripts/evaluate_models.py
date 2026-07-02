@@ -16,7 +16,7 @@ import logging
 import pickle
 import sys
 import warnings
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -60,6 +60,7 @@ TARGET_SYMBOLS = ["XAUUSD", "EURUSD", "BTCUSD", "ETHUSD"]
 
 # ── Label creation (mirrors train script) ───────────────────────────────────
 
+
 def create_labels(df: pd.DataFrame) -> pd.DataFrame:
     """Add direction and magnitude labels."""
     df = df.copy()
@@ -76,11 +77,26 @@ def create_labels(df: pd.DataFrame) -> pd.DataFrame:
 # ── Feature columns ─────────────────────────────────────────────────────────
 
 EXCLUDE_COLS = {
-    "target", "target_return", "target_direction", "target_magnitude",
-    "symbol", "time", "freq", "timestamp", "tb_label", "tb_bar_hit",
-    "tb_side", "tb_ret", "tb_k_upper", "tb_k_lower",
+    "target",
+    "target_return",
+    "target_direction",
+    "target_magnitude",
+    "symbol",
+    "time",
+    "freq",
+    "timestamp",
+    "tb_label",
+    "tb_bar_hit",
+    "tb_side",
+    "tb_ret",
+    "tb_k_upper",
+    "tb_k_lower",
     # Raw OHLCV — not predictive features
-    "open", "high", "low", "close", "volume",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
 }
 
 
@@ -95,6 +111,7 @@ def get_feature_columns(df: pd.DataFrame) -> list[str]:
 
 
 # ── JSON-safe ───────────────────────────────────────────────────────────────
+
 
 def to_serializable(obj):
     if isinstance(obj, dict):
@@ -114,6 +131,7 @@ def to_serializable(obj):
 
 # ── Equity curve ────────────────────────────────────────────────────────────
 
+
 def generate_equity_curve(
     symbol: str,
     y_true_dir: np.ndarray,
@@ -125,9 +143,10 @@ def generate_equity_curve(
     """Generate equity curve plot. Returns path or None if matplotlib unavailable."""
     try:
         import matplotlib
+
         matplotlib.use("Agg")
-        import matplotlib.pyplot as plt
         import matplotlib.dates as mdates
+        import matplotlib.pyplot as plt
     except ImportError:
         logger.warning("  matplotlib not available, skipping plot generation")
         return None
@@ -179,7 +198,8 @@ def generate_equity_curve(
             axes[2].set_xticks(tick_positions)
             axes[2].set_xticklabels(
                 [dates.iloc[i].strftime("%Y-%m-%d") for i in tick_positions],
-                rotation=45, ha="right",
+                rotation=45,
+                ha="right",
             )
         except Exception:
             pass
@@ -195,6 +215,7 @@ def generate_equity_curve(
 
 
 # ── Main evaluation ─────────────────────────────────────────────────────────
+
 
 def evaluate_symbol(symbol: str, timeframe: str = "M15") -> dict:
     """Evaluate dual-head models for a single symbol."""
@@ -266,9 +287,13 @@ def evaluate_symbol(symbol: str, timeframe: str = "M15") -> dict:
         "n_up_pred": int(y_dir_pred.sum()),
         "n_down_pred": int(len(y_dir_pred) - y_dir_pred.sum()),
     }
-    logger.info("  Direction: acc=%.4f | prec=%.4f | rec=%.4f | f1=%.4f",
-                dir_metrics["accuracy"], dir_metrics["precision"],
-                dir_metrics["recall"], dir_metrics["f1"])
+    logger.info(
+        "  Direction: acc=%.4f | prec=%.4f | rec=%.4f | f1=%.4f",
+        dir_metrics["accuracy"],
+        dir_metrics["precision"],
+        dir_metrics["recall"],
+        dir_metrics["f1"],
+    )
 
     # 7. Magnitude metrics
     mag_metrics = {
@@ -281,16 +306,19 @@ def evaluate_symbol(symbol: str, timeframe: str = "M15") -> dict:
         "mean_pred": round(float(y_mag_pred.mean()), 6),
         "std_pred": round(float(y_mag_pred.std()), 6),
     }
-    logger.info("  Magnitude: rmse=%.6f | mae=%.6f | r2=%.4f",
-                mag_metrics["rmse"], mag_metrics["mae"], mag_metrics["r2"])
+    logger.info(
+        "  Magnitude: rmse=%.6f | mae=%.6f | r2=%.4f", mag_metrics["rmse"], mag_metrics["mae"], mag_metrics["r2"]
+    )
 
     # 8. Combined strategy metrics
     # Simulate: go long when direction=1, short when direction=0
     strategy_returns = np.where(y_dir_pred == 1, y_mag_test, -y_mag_test)
     cum_return = float(np.sum(strategy_returns))
-    sharpe = float(
-        np.mean(strategy_returns) / np.std(strategy_returns) * np.sqrt(252 * 96)
-    ) if np.std(strategy_returns) > 0 else 0.0
+    sharpe = (
+        float(np.mean(strategy_returns) / np.std(strategy_returns) * np.sqrt(252 * 96))
+        if np.std(strategy_returns) > 0
+        else 0.0
+    )
     win_rate = float(np.mean(strategy_returns > 0))
     cum_curve = np.cumsum(strategy_returns)
     max_dd = float(np.max(np.maximum.accumulate(cum_curve) - cum_curve))
@@ -307,13 +335,22 @@ def evaluate_symbol(symbol: str, timeframe: str = "M15") -> dict:
         "buy_hold_return": round(bh_cum * 100, 4),
         "n_trades": int(len(strategy_returns)),
     }
-    logger.info("  Strategy: return=%.2f%% | sharpe=%.2f | win_rate=%.2f%% | max_dd=%.2f%%",
-                strategy_metrics["cumulative_return"], strategy_metrics["sharpe_ratio"],
-                strategy_metrics["win_rate"] * 100, strategy_metrics["max_drawdown"])
+    logger.info(
+        "  Strategy: return=%.2f%% | sharpe=%.2f | win_rate=%.2f%% | max_dd=%.2f%%",
+        strategy_metrics["cumulative_return"],
+        strategy_metrics["sharpe_ratio"],
+        strategy_metrics["win_rate"] * 100,
+        strategy_metrics["max_drawdown"],
+    )
 
     # 9. Generate equity curve
     plot_path = generate_equity_curve(
-        symbol, y_dir_test, y_dir_pred, y_mag_test, y_mag_pred, timestamps,
+        symbol,
+        y_dir_test,
+        y_dir_pred,
+        y_mag_test,
+        y_mag_pred,
+        timestamps,
     )
 
     # 10. Save evaluation report
@@ -328,7 +365,10 @@ def evaluate_symbol(symbol: str, timeframe: str = "M15") -> dict:
         "magnitude_metrics": mag_metrics,
         "strategy_metrics": strategy_metrics,
         "classification_report": classification_report(
-            y_dir_test, y_dir_pred, output_dict=True, zero_division=0,
+            y_dir_test,
+            y_dir_pred,
+            output_dict=True,
+            zero_division=0,
         ),
     }
 
@@ -342,9 +382,12 @@ def evaluate_symbol(symbol: str, timeframe: str = "M15") -> dict:
     logger.info("EVALUATION SUMMARY: %s", symbol)
     logger.info("  Direction — Accuracy: %.4f | F1: %.4f", dir_metrics["accuracy"], dir_metrics["f1"])
     logger.info("  Magnitude — RMSE: %.6f | R²: %.4f", mag_metrics["rmse"], mag_metrics["r2"])
-    logger.info("  Strategy  — Return: %.2f%% | Sharpe: %.2f | MaxDD: %.2f%%",
-                strategy_metrics["cumulative_return"], strategy_metrics["sharpe_ratio"],
-                strategy_metrics["max_drawdown"])
+    logger.info(
+        "  Strategy  — Return: %.2f%% | Sharpe: %.2f | MaxDD: %.2f%%",
+        strategy_metrics["cumulative_return"],
+        strategy_metrics["sharpe_ratio"],
+        strategy_metrics["max_drawdown"],
+    )
     logger.info("  Buy&Hold  — Return: %.2f%%", strategy_metrics["buy_hold_return"])
     if plot_path:
         logger.info("  Plot: %s", plot_path)
@@ -355,12 +398,14 @@ def evaluate_symbol(symbol: str, timeframe: str = "M15") -> dict:
 
 # ── CLI ─────────────────────────────────────────────────────────────────────
 
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Evaluate trained dual-head models (out-of-sample)",
     )
     parser.add_argument(
-        "--symbol", required=True,
+        "--symbol",
+        required=True,
         help="Symbol to evaluate, or ALL for all 4 target symbols",
     )
     parser.add_argument("--timeframe", default="M15", help="Timeframe (default M15)")

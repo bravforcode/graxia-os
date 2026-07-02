@@ -10,8 +10,9 @@ from __future__ import annotations
 
 import json
 import time
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 
 def _parse_line(line: str) -> dict[str, Any] | None:
@@ -73,7 +74,7 @@ class LogAggregator:
     def _process_file(self, path: Path) -> None:
         """Read and classify all lines in a file."""
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 for line in f:
                     entry = _parse_line(line)
                     if entry is None:
@@ -111,7 +112,7 @@ class LogAggregator:
                         offset = 0
                     if size == offset:
                         continue
-                    with open(log_file, "r", encoding="utf-8") as f:
+                    with open(log_file, encoding="utf-8") as f:
                         f.seek(offset)
                         for line in f:
                             entry = _parse_line(line)

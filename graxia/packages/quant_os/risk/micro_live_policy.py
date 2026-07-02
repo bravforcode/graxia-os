@@ -3,13 +3,15 @@
 Canonical location.  Other packages (canary, micro_live) re-export from here.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+
 from .risk_policy import RiskPolicy
 
 
 @dataclass(frozen=True)
 class MicroLivePolicyConfig:
     """Standalone config (no RiskPolicy inheritance) for legacy callers."""
+
     max_symbols: int = 1
     max_open_positions: int = 1
     max_orders_per_day: int = 1
@@ -27,12 +29,13 @@ class MicroLivePolicyConfig:
 @dataclass(frozen=True)
 class MicroLivePolicy(RiskPolicy):
     """Tightened risk policy for micro-live. Inherits RiskPolicy, overrides defaults."""
-    risk_per_trade_bps: int = 5          # 0.05% (half of standard)
-    max_daily_loss_bps: int = 20         # 0.20% (half of standard)
-    max_weekly_loss_bps: int = 50        # 0.50% (third of standard)
-    max_total_drawdown_bps: int = 100    # 1.00% (third of standard)
-    max_open_positions: int = 1          # Single position only
-    max_orders_per_day: int = 1          # Conservative
+
+    risk_per_trade_bps: int = 5  # 0.05% (half of standard)
+    max_daily_loss_bps: int = 20  # 0.20% (half of standard)
+    max_weekly_loss_bps: int = 50  # 0.50% (third of standard)
+    max_total_drawdown_bps: int = 100  # 1.00% (third of standard)
+    max_open_positions: int = 1  # Single position only
+    max_orders_per_day: int = 1  # Conservative
     require_stop_loss: bool = True
     require_contract_snapshot: bool = True
     require_order_check: bool = True

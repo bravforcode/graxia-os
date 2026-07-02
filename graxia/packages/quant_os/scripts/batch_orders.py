@@ -7,6 +7,7 @@ Each order: preflight → approve → send → record → close → next.
 Usage:
     python scripts/batch_orders.py [--count 50] [--interval 30] [--symbols XAUUSD,EURUSD,GBPUSD]
 """
+
 import argparse
 import csv
 import hashlib
@@ -14,7 +15,7 @@ import json
 import os
 import sys
 import time
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import MetaTrader5 as mt5
@@ -209,7 +210,9 @@ def run_one_order(symbol, side, volume, order_id, filling_mode):
         "close_retcode": close_result.get("retcode"),
         "close_deal": close_result.get("deal"),
         "close_time": close_time,
-        "slippage_points": round((exec_price - entry) / mt5.symbol_info(symbol).point, 1) if mt5.symbol_info(symbol) else None,
+        "slippage_points": round((exec_price - entry) / mt5.symbol_info(symbol).point, 1)
+        if mt5.symbol_info(symbol)
+        else None,
         "status": "EXECUTED",
     }
 
@@ -230,9 +233,23 @@ def main():
     # CSV output
     csv_path = os.path.join(OUTPUT_DIR, f"batch_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.csv")
     fieldnames = [
-        "order_id", "symbol", "side", "volume", "entry_planned", "entry_actual",
-        "sl", "tp", "buffer", "send_retcode", "send_deal", "send_time",
-        "close_retcode", "close_deal", "close_time", "slippage_points", "status"
+        "order_id",
+        "symbol",
+        "side",
+        "volume",
+        "entry_planned",
+        "entry_actual",
+        "sl",
+        "tp",
+        "buffer",
+        "send_retcode",
+        "send_deal",
+        "send_time",
+        "close_retcode",
+        "close_deal",
+        "close_time",
+        "slippage_points",
+        "status",
     ]
 
     init_mt5()

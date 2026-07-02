@@ -1,17 +1,17 @@
 """Phase BE-P0 — Secret scan for tracked files."""
+
 import re
 from pathlib import Path
 
-
 SECRET_PATTERNS = [
-    (r'(?i)(password|passwd|pwd)\s*[=:]\s*["\']([^"\']+)["\']', 'plaintext_password'),
-    (r'(?i)(api_key|apikey|api[-_]?secret)\s*[=:]\s*["\']([^"\']+)["\']', 'api_key'),
-    (r'(?i)(token|bearer)\s*[=:]\s*["\']([^"\']+)["\']', 'token'),
-    (r'(?i)(login|account)\s*[=:]\s*["\'](\d+)["\']', 'account_number'),
-    (r'(?i)(server)\s*[=:]\s*["\']([^"\']+)["\']', 'server_name'),
-    (r'sha256:[a-f0-9]{64}', 'possible_hash'),
-    (r'MetaQuotes-Demo', 'broker_reference'),
-    (r'(?i)(secret|credential|private_key)\s*[=:]\s*["\']([^"\']+)["\']', 'credential'),
+    (r'(?i)(password|passwd|pwd)\s*[=:]\s*["\']([^"\']+)["\']', "plaintext_password"),
+    (r'(?i)(api_key|apikey|api[-_]?secret)\s*[=:]\s*["\']([^"\']+)["\']', "api_key"),
+    (r'(?i)(token|bearer)\s*[=:]\s*["\']([^"\']+)["\']', "token"),
+    (r'(?i)(login|account)\s*[=:]\s*["\'](\d+)["\']', "account_number"),
+    (r'(?i)(server)\s*[=:]\s*["\']([^"\']+)["\']', "server_name"),
+    (r"sha256:[a-f0-9]{64}", "possible_hash"),
+    (r"MetaQuotes-Demo", "broker_reference"),
+    (r'(?i)(secret|credential|private_key)\s*[=:]\s*["\']([^"\']+)["\']', "credential"),
 ]
 
 
@@ -26,7 +26,7 @@ class SecretScanner:
         self.findings = []
         for path in self._get_tracked_files():
             try:
-                content = path.read_text(encoding='utf-8', errors='ignore')
+                content = path.read_text(encoding="utf-8", errors="ignore")
                 for line_num, line in enumerate(content.splitlines(), 1):
                     self._check_line(path, line_num, line)
             except Exception:
@@ -36,8 +36,8 @@ class SecretScanner:
     def _get_tracked_files(self) -> list[Path]:
         """Get git tracked files (skip .git), respecting max_depth."""
         files = []
-        for p in self.root.rglob('*'):
-            if '.git' in p.parts or '__pycache__' in p.parts:
+        for p in self.root.rglob("*"):
+            if ".git" in p.parts or "__pycache__" in p.parts:
                 continue
             if self.max_depth > 0:
                 rel = p.relative_to(self.root)
@@ -51,12 +51,14 @@ class SecretScanner:
         """Check line for secret patterns."""
         for pattern, category in SECRET_PATTERNS:
             if re.search(pattern, line):
-                self.findings.append({
-                    'file': str(path.relative_to(self.root)),
-                    'line': line_num,
-                    'category': category,
-                    'content': line.strip()[:100],
-                })
+                self.findings.append(
+                    {
+                        "file": str(path.relative_to(self.root)),
+                        "line": line_num,
+                        "category": category,
+                        "content": line.strip()[:100],
+                    }
+                )
 
     def has_findings(self) -> bool:
         return len(self.findings) > 0
@@ -65,7 +67,7 @@ class SecretScanner:
         """Summarize findings by category."""
         summary = {}
         for f in self.findings:
-            cat = f['category']
+            cat = f["category"]
             summary[cat] = summary.get(cat, 0) + 1
         return summary
 
@@ -83,7 +85,7 @@ class SecretScanner:
 
         report.append("\n## Details")
         for f in self.findings:
-            redacted = f['content'][:20] + '...[REDACTED]'
+            redacted = f["content"][:20] + "...[REDACTED]"
             report.append(f"- {f['file']}:{f['line']} [{f['category']}] {redacted}")
 
-        return '\n'.join(report)
+        return "\n".join(report)

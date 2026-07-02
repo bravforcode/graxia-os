@@ -10,10 +10,9 @@ import json
 import os
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
-
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -34,6 +33,7 @@ def _get_rss_mb() -> float:
     """Return current process RSS in MB."""
     try:
         import psutil
+
         proc = psutil.Process()
         return proc.memory_info().rss / (1024 * 1024)
     except (ImportError, Exception):
@@ -41,6 +41,7 @@ def _get_rss_mb() -> float:
 
     try:
         import resource
+
         usage = resource.getrusage(resource.RUSAGE_SELF)
         return usage.ru_maxrss / 1024.0
     except (ImportError, AttributeError):
@@ -64,6 +65,7 @@ def _wal_size_mb(db_path: str) -> float:
 @dataclass
 class MemorySnapshot:
     """Point-in-time memory measurement."""
+
     rss_mb: float
     timestamp: float
     tick_count: int = 0
@@ -72,6 +74,7 @@ class MemorySnapshot:
 @dataclass
 class MemoryLeakReport:
     """Full memory leak test report."""
+
     baseline_rss_mb: float
     final_rss_mb: float
     peak_rss_mb: float
@@ -82,10 +85,8 @@ class MemoryLeakReport:
     duration_seconds: float
     ticks_processed: int
     passed: bool
-    errors: List[str] = field(default_factory=list)
-    timestamp: str = field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    errors: list[str] = field(default_factory=list)
+    timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 
 # ---------------------------------------------------------------------------
@@ -98,11 +99,12 @@ class TickProcessor:
 
     def __init__(self) -> None:
         self.tick_count: int = 0
-        self._data_store: List[Dict[str, Any]] = []
+        self._data_store: list[dict[str, Any]] = []
 
     def process_tick(self, symbol: str = "XAUUSD") -> None:
         """Process a single simulated tick."""
         import random
+
         self.tick_count += 1
         tick = {
             "symbol": symbol,
@@ -149,13 +151,13 @@ class MemoryLeakTest:
         *,
         alert_threshold_pct: float = RSS_ALERT_THRESHOLD_PCT,
         wal_alert_mb: float = WAL_GROWTH_ALERT_MB,
-        db_path: Optional[str] = None,
+        db_path: str | None = None,
     ) -> None:
         self.alert_threshold_pct = alert_threshold_pct
         self.wal_alert_mb = wal_alert_mb
         self.db_path = db_path or os.getenv("DUCKDB_PATH", "data/market_data.duckdb")
         self._baseline_rss: float = 0.0
-        self._snapshots: List[MemorySnapshot] = []
+        self._snapshots: list[MemorySnapshot] = []
         self._processor = TickProcessor()
         self._wal_initial: float = 0.0
         self._start_time: float = 0.0
@@ -167,9 +169,7 @@ class MemoryLeakTest:
             Baseline RSS in MB.
         """
         self._baseline_rss = _get_rss_mb()
-        self._snapshots.append(
-            MemorySnapshot(rss_mb=self._baseline_rss, timestamp=time.time())
-        )
+        self._snapshots.append(MemorySnapshot(rss_mb=self._baseline_rss, timestamp=time.time()))
         self._wal_initial = _wal_size_mb(self.db_path)
         self._start_time = time.time()
         return self._baseline_rss
@@ -208,17 +208,13 @@ class MemoryLeakTest:
         Returns:
             MemoryLeakReport with growth analysis.
         """
-        errors: List[str] = []
+        errors: list[str] = []
         final_rss = _get_rss_mb()
         peak_rss = max(s.rss_mb for s in self._snapshots) if self._snapshots else final_rss
         wal_final = _wal_size_mb(self.db_path)
         duration = time.time() - self._start_time if self._start_time else 0.0
 
-        growth_pct = (
-            ((final_rss - self._baseline_rss) / self._baseline_rss * 100)
-            if self._baseline_rss > 0
-            else 0.0
-        )
+        growth_pct = ((final_rss - self._baseline_rss) / self._baseline_rss * 100) if self._baseline_rss > 0 else 0.0
         wal_growth = wal_final - self._wal_initial
 
         alert = growth_pct > self.alert_threshold_pct
@@ -357,8 +353,5 @@ class TestMemoryLeak:
         ml.run_sustained_load(duration_minutes=0.02)
         report = ml.check_memory_growth()
         if report.baseline_rss_mb > 0:
-            expected = (
-                (report.final_rss_mb - report.baseline_rss_mb)
-                / report.baseline_rss_mb * 100
-            )
+            expected = (report.final_rss_mb - report.baseline_rss_mb) / report.baseline_rss_mb * 100
             assert abs(report.growth_pct - round(expected, 2)) < 0.1

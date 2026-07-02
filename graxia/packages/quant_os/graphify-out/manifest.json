@@ -1,0 +1,2712 @@
+{
+  ".ai/budget-config.json": {
+    "mtime": 1777118378.3150818,
+    "ast_hash": "d52964385d6d3a53c505d34d142db10b",
+    "semantic_hash": ""
+  },
+  ".ai/model-router.json": {
+    "mtime": 1780564809.2878056,
+    "ast_hash": "42ad5fa7e278996763a70010d6e48a69",
+    "semantic_hash": ""
+  },
+  ".ai/references/command-index.json": {
+    "mtime": 1777141089.6404674,
+    "ast_hash": "7a3536c8a5e72fabd63ee59ac1f7869d",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/Ensure-Docker.ps1": {
+    "mtime": 1776796479.9760706,
+    "ast_hash": "7326ba53db60be441cc21f9bfea2be9d",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/Generate-SkillIndex.ps1": {
+    "mtime": 1776508507.4496758,
+    "ast_hash": "86cf254c1f98082cb3ce3fba70bc1b86",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/Quality-Gate.ps1": {
+    "mtime": 1776595799.9113867,
+    "ast_hash": "8c5d5eccfbaf2c9c2840ba767acfe804",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/Sync-SkillsToObsidian.ps1": {
+    "mtime": 1776749704.9127955,
+    "ast_hash": "8302c8e7738c0e7852eca3eaf9b39011",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/auto-harvester.py": {
+    "mtime": 1780566450.3486092,
+    "ast_hash": "b7cda1a97671ada91549a9953a027273",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/autonomous-loop.py": {
+    "mtime": 1780566497.945232,
+    "ast_hash": "58e8724d7dd9a95687804f9ca899b2e9",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/backup-verify.py": {
+    "mtime": 1780566453.6082652,
+    "ast_hash": "87b88a5fdc37ba8c626273358b3dbf62",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/batch-rename.py": {
+    "mtime": 1780564554.6533647,
+    "ast_hash": "cc6cdb091d1ec28acd7db19fcd13bcf9",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/bridge-config.json": {
+    "mtime": 1777118597.772621,
+    "ast_hash": "da5388cb0385a50e62f374d092fd3c3c",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/bridge-sync.py": {
+    "mtime": 1777118603.4026651,
+    "ast_hash": "4dcc15e7649ecf74146bb7cf8a349aba",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/build-index.py": {
+    "mtime": 1780566497.956794,
+    "ast_hash": "571c0f22ef1012a4993386b5adbcacea",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/config-sync.py": {
+    "mtime": 1780564783.462882,
+    "ast_hash": "0c7ddb957d70584397b590c2373e8549",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/daily-pulse-auto.ps1": {
+    "mtime": 1781076419.4182155,
+    "ast_hash": "533147a47d69444ba94740179de0306a",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/daily-pulse.py": {
+    "mtime": 1780566497.96271,
+    "ast_hash": "3644719701dcb4524390bb19452fae5e",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/dead-link-check.py": {
+    "mtime": 1780566497.9667046,
+    "ast_hash": "b84fdaa1d6a625feff5ac1ff862aa082",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/deep-link-scan.py": {
+    "mtime": 1780564703.2439852,
+    "ast_hash": "d6bdbdc860dd3eb19576367fc68cd3ec",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/fix-broken-links.py": {
+    "mtime": 1780566191.5763798,
+    "ast_hash": "7954364a30e93995e14c8c0358b0f28d",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/generate-graph-html.py": {
+    "mtime": 1780579040.7098827,
+    "ast_hash": "8f6998befa1fab026a565633bd4ccb8d",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/ghostwriter-analyze.py": {
+    "mtime": 1780566497.9831505,
+    "ast_hash": "9d6e720e5d0bb97909540562b1741a21",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/graph-query.py": {
+    "mtime": 1780582194.4646976,
+    "ast_hash": "d283c651ec6eeca85067495f41939853",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/link-orphans.py": {
+    "mtime": 1781077275.5868905,
+    "ast_hash": "83a7224b940c6215620d1452b06545ea",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/llm_helper.py": {
+    "mtime": 1777147492.7422943,
+    "ast_hash": "2b7aed34db318c41b8e9b1a930144a18",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/optimize-obsidian.py": {
+    "mtime": 1780577008.6216922,
+    "ast_hash": "dd9dee0b4cf44578dc7525ad0df3237f",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/pii-filter.py": {
+    "mtime": 1777118657.2542636,
+    "ast_hash": "ab27c70c99df1ed4d27dba032494a391",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/register-tasks.ps1": {
+    "mtime": 1781078155.8030815,
+    "ast_hash": "51309af2c00828c4e2b5b53a8109c9f9",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/run-graphify-core.py": {
+    "mtime": 1780578839.3156655,
+    "ast_hash": "496538230ba4f252a417f13694746dd5",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/run-graphify.py": {
+    "mtime": 1780578535.1438582,
+    "ast_hash": "0bfc39547bbfad35403053fbc58bffa1",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/security-audit.py": {
+    "mtime": 1780566285.519846,
+    "ast_hash": "1af8f2d4cec2d617bcafdbc5303d0b9f",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/sentinel-service.py": {
+    "mtime": 1780566497.9949746,
+    "ast_hash": "b3484f6d2caf64ada7f3447e30aabc17",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/setup-automation.ps1": {
+    "mtime": 1781076389.1833642,
+    "ast_hash": "3ca1d43031775fd21ce4b027f40abbd4",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/setup-backup-task.ps1": {
+    "mtime": 1780564348.8117156,
+    "ast_hash": "c7b0bc60dbf7c0b21a326094ab8dcbb1",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/setup-elite-keys.ps1": {
+    "mtime": 1777146918.7002575,
+    "ast_hash": "669a7b9417d2a900f10cb425995f0430",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/setup-openrouter.ps1": {
+    "mtime": 1777145581.9543374,
+    "ast_hash": "d047a21654744d34553f4c861c12e1f3",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/test-bleeding-edge.py": {
+    "mtime": 1777147502.1583495,
+    "ast_hash": "e3fb39f5c330fd48d470d14049025b5c",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/vault-audit.py": {
+    "mtime": 1780566498.000924,
+    "ast_hash": "11e96b4572bd4abcfe7f0ce189e9774c",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/vault-audit.sh": {
+    "mtime": 1777118592.8779945,
+    "ast_hash": "bad81bf3f73777d8c13716e076f50011",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/vault-backup.py": {
+    "mtime": 1780561667.0173597,
+    "ast_hash": "8179dadff2ab6f32a37758addb9f106b",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/vault-dashboard-refresh.py": {
+    "mtime": 1780566498.0064425,
+    "ast_hash": "33558eb1e4f4e35a3965e3dca2d14068",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/vault-health-check.py": {
+    "mtime": 1780561887.023824,
+    "ast_hash": "5d7f250cbfc49a78d7729d12084a889b",
+    "semantic_hash": ""
+  },
+  ".ai/scripts/verify-backup.ps1": {
+    "mtime": 1781076406.222864,
+    "ast_hash": "4b513b2aa6363cf016fa811dcf6a1e9a",
+    "semantic_hash": ""
+  },
+  ".ai/vault-config.json": {
+    "mtime": 1781076469.5311477,
+    "ast_hash": "beef25fe4981704bc947cb8122610d2b",
+    "semantic_hash": ""
+  },
+  ".claude/hooks/notify.sh": {
+    "mtime": 1775458859.1391525,
+    "ast_hash": "ba51e6cb4df52fb00fbed32c4ed631ec",
+    "semantic_hash": ""
+  },
+  ".claude/hooks/protect-system-files.sh": {
+    "mtime": 1775458859.2128665,
+    "ast_hash": "e11069817f0d364d7a1b9b2b29802efa",
+    "semantic_hash": ""
+  },
+  ".claude/hooks/validate-frontmatter.sh": {
+    "mtime": 1775458859.2889974,
+    "ast_hash": "5a229bed0866421330ca2b38d9b9838f",
+    "semantic_hash": ""
+  },
+  ".claude/settings.json": {
+    "mtime": 1775458859.3857832,
+    "ast_hash": "4c294d998b826fbb87bff04ba7bbda12",
+    "semantic_hash": ""
+  },
+  ".claude/settings.local.json": {
+    "mtime": 1775458934.8673797,
+    "ast_hash": "b2e01de87d98065ccd2ba265b79c3dc6",
+    "semantic_hash": ""
+  },
+  ".github/scripts/check_links.py": {
+    "mtime": 1777808638.251185,
+    "ast_hash": "37616a4737ffb9e69238d69e80a47013",
+    "semantic_hash": ""
+  },
+  ".mcp.json": {
+    "mtime": 1775486139.5836313,
+    "ast_hash": "13ebfe54d05c62c67835416d71c2e6e1",
+    "semantic_hash": ""
+  },
+  ".obsidian/app.json": {
+    "mtime": 1780577036.6755123,
+    "ast_hash": "2c241abb37658b8fd2922fa02fea12b9",
+    "semantic_hash": ""
+  },
+  ".obsidian/appearance.json": {
+    "mtime": 1777295565.142636,
+    "ast_hash": "7a0147c2840cd533088c639727a52ed4",
+    "semantic_hash": ""
+  },
+  ".obsidian/backlink.json": {
+    "mtime": 1776231573.741,
+    "ast_hash": "d0ae81046be67c624aee7a07f072c6b0",
+    "semantic_hash": ""
+  },
+  ".obsidian/community-plugins.json": {
+    "mtime": 1781076430.600343,
+    "ast_hash": "07c5274fe36bbce0bf6e473dcfac77dd",
+    "semantic_hash": ""
+  },
+  ".obsidian/core-plugins.json": {
+    "mtime": 1780571975.775228,
+    "ast_hash": "ef85dced8e15744e6580a94b52d80d98",
+    "semantic_hash": ""
+  },
+  ".obsidian/graph.json": {
+    "mtime": 1780577036.6755123,
+    "ast_hash": "eefd2ac5e425b209ed0f408b1d826950",
+    "semantic_hash": ""
+  },
+  ".obsidian/hotkeys.json": {
+    "mtime": 1776325255.0017157,
+    "ast_hash": "99914b932bd37a50b983c5e7c90ae93b",
+    "semantic_hash": ""
+  },
+  ".obsidian/types.json": {
+    "mtime": 1777295565.084,
+    "ast_hash": "ff98967538a3ef0ba5b18d57dcb644c1",
+    "semantic_hash": ""
+  },
+  "01-projects/Graxia-OS/quant_os/risk/__init__.py": {
+    "mtime": 1777412650.271262,
+    "ast_hash": "61ada9ddf06c24578f51d4925bf66ef7",
+    "semantic_hash": ""
+  },
+  "01-projects/Graxia-OS/quant_os/risk/circuit_breaker.py": {
+    "mtime": 1782296377.1461735,
+    "ast_hash": "54c13689cf78e4029061e63e118da6df",
+    "semantic_hash": ""
+  },
+  "01-projects/Graxia-OS/quant_os/risk/engine.py": {
+    "mtime": 1782296377.1488905,
+    "ast_hash": "3ca9ea176fc85916a0ae3c4d410d2563",
+    "semantic_hash": ""
+  },
+  "01-projects/Graxia-OS/quant_os/risk/historical_sizing_provider.py": {
+    "mtime": 1782110432.9987524,
+    "ast_hash": "bceed641de04642cc2744a1547683b07",
+    "semantic_hash": ""
+  },
+  "01-projects/Graxia-OS/quant_os/risk/kill_switch.py": {
+    "mtime": 1782296377.150406,
+    "ast_hash": "b47355fd1568c4518cadb246c1c54ed9",
+    "semantic_hash": ""
+  },
+  "01-projects/Graxia-OS/quant_os/risk/micro_live_policy.py": {
+    "mtime": 1782133933.146443,
+    "ast_hash": "2d56ad9eed4f669ce3d3cb0d094a0445",
+    "semantic_hash": ""
+  },
+  "01-projects/Graxia-OS/quant_os/risk/portfolio.py": {
+    "mtime": 1777450099.1933026,
+    "ast_hash": "1145b4b4c3c6092735b86cfa12903792",
+    "semantic_hash": ""
+  },
+  "01-projects/Graxia-OS/quant_os/risk/position_sizer.py": {
+    "mtime": 1782296377.1524875,
+    "ast_hash": "5a9fccc39e233345b94339968a7c71a7",
+    "semantic_hash": ""
+  },
+  "01-projects/Graxia-OS/quant_os/risk/position_sizer_v2.py": {
+    "mtime": 1782083063.2440765,
+    "ast_hash": "29fd8787928c258abb5b521fec70ed51",
+    "semantic_hash": ""
+  },
+  "01-projects/Graxia-OS/quant_os/risk/pre_trade_risk.py": {
+    "mtime": 1782082971.5716543,
+    "ast_hash": "ddeef7e011cb48324dcee94578a7a29e",
+    "semantic_hash": ""
+  },
+  "01-projects/Graxia-OS/quant_os/risk/risk_ledger.py": {
+    "mtime": 1782296377.154514,
+    "ast_hash": "fa336259f28d64a395679079ca01013f",
+    "semantic_hash": ""
+  },
+  "01-projects/Graxia-OS/quant_os/risk/risk_policy.py": {
+    "mtime": 1782082762.3603325,
+    "ast_hash": "3e815dca61ebaef7c1ee378a211bf30a",
+    "semantic_hash": ""
+  },
+  "01-projects/Graxia-OS/quant_os/strategies/__init__.py": {
+    "mtime": 1777412733.887957,
+    "ast_hash": "8a5aee731f9cae9405f9fd084eb9a805",
+    "semantic_hash": ""
+  },
+  "01-projects/Graxia-OS/quant_os/strategies/base.py": {
+    "mtime": 1782296377.1813707,
+    "ast_hash": "a865194b7a1cea77f271ede4bb558502",
+    "semantic_hash": ""
+  },
+  "01-projects/Graxia-OS/quant_os/strategies/ensemble.py": {
+    "mtime": 1777412865.351498,
+    "ast_hash": "a3231c3514bbbeb3968170e5ec2a1490",
+    "semantic_hash": ""
+  },
+  "01-projects/Graxia-OS/quant_os/strategies/mlb.py": {
+    "mtime": 1782389249.200778,
+    "ast_hash": "a59eafc0fa141cc1d02b9440f9fea214",
+    "semantic_hash": ""
+  },
+  "01-projects/Graxia-OS/quant_os/strategies/mrb.py": {
+    "mtime": 1782296377.1823826,
+    "ast_hash": "7db6e20c7392b3547c1917bdd11289c8",
+    "semantic_hash": ""
+  },
+  "01-projects/Graxia-OS/quant_os/strategies/mtm.py": {
+    "mtime": 1777412780.7482128,
+    "ast_hash": "c137b3c606c115a5460905e56d15e70e",
+    "semantic_hash": ""
+  },
+  "meta/AI/knowledge-state.json": {
+    "mtime": 1779184045.173704,
+    "ast_hash": "d745f70916cc87f6f36ac1c6df915723",
+    "semantic_hash": ""
+  },
+  "meta/AI/project-registry.json": {
+    "mtime": 1781874268.9208567,
+    "ast_hash": "2aa14d4a704b898b158a723e0021a7ee",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/graph/codebase_graph.json": {
+    "mtime": 1782469078.6156125,
+    "ast_hash": "cae57e2c8ec4fccee022ef6ef3a1182a",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/graph/enrich_nodes.json": {
+    "mtime": 1782469078.6210063,
+    "ast_hash": "a5b615e32425ac70f0499014cadb456b",
+    "semantic_hash": ""
+  },
+  "system/scripts/daily_summary_agent.py": {
+    "mtime": 1781772448.6593273,
+    "ast_hash": "10549272e0e63be3a143e2294d634fe0",
+    "semantic_hash": ""
+  },
+  "system/scripts/set-api-keys.ps1": {
+    "mtime": 1781631955.2705448,
+    "ast_hash": "f26140b2793c20e6fc76a588c207da2c",
+    "semantic_hash": ""
+  },
+  "system/scripts/sync-all.py": {
+    "mtime": 1781625869.393141,
+    "ast_hash": "bc39f6f1c9d53d6269e89c1947baefe9",
+    "semantic_hash": ""
+  },
+  "system/scripts/sync-graphify-openhuman.py": {
+    "mtime": 1781625803.773236,
+    "ast_hash": "0733648cb9c4492beda6d5fc3055467c",
+    "semantic_hash": ""
+  },
+  "system/scripts/vault_health_check.py": {
+    "mtime": 1781695695.2744641,
+    "ast_hash": "37d6debb435d0b82dde48db762476c79",
+    "semantic_hash": ""
+  },
+  ".antigravity/config.yaml": {
+    "mtime": 1777319757.9084723,
+    "ast_hash": "7ef6dbf8a33fbe75e6aadbfd30b2cd34",
+    "semantic_hash": ""
+  },
+  ".claude/agents/Index.md": {
+    "mtime": 1781889793.9947622,
+    "ast_hash": "753c987d1a7a00bd55a0f65f27b6949f",
+    "semantic_hash": ""
+  },
+  ".claude/agents/architect.md": {
+    "mtime": 1781889792.586336,
+    "ast_hash": "0c308078c9d0267a7ba5a8536fbd302e",
+    "semantic_hash": ""
+  },
+  ".claude/agents/auditor.md": {
+    "mtime": 1781889793.0376995,
+    "ast_hash": "b818335fc7f53d7a7e1bf077d5602c7d",
+    "semantic_hash": ""
+  },
+  ".claude/agents/bridge.md": {
+    "mtime": 1781889793.1668396,
+    "ast_hash": "c10c8c749a033984665b8b8671a4b62a",
+    "semantic_hash": ""
+  },
+  ".claude/agents/connector.md": {
+    "mtime": 1781889793.3707685,
+    "ast_hash": "6057d1928bb2f170fe8f7957c314ce7a",
+    "semantic_hash": ""
+  },
+  ".claude/agents/ghost-strategist.md": {
+    "mtime": 1781889793.5667377,
+    "ast_hash": "98438368ffa76a497f962a5446415412",
+    "semantic_hash": ""
+  },
+  ".claude/agents/ghostwriter.md": {
+    "mtime": 1781889793.97928,
+    "ast_hash": "9bcfd0ec8e4921ad964878ede55c1a25",
+    "semantic_hash": ""
+  },
+  ".claude/agents/librarian.md": {
+    "mtime": 1781889794.0878286,
+    "ast_hash": "213f446e48561e880e109a93e74e91a4",
+    "semantic_hash": ""
+  },
+  ".claude/agents/postman.md": {
+    "mtime": 1781889794.103484,
+    "ast_hash": "d09a5fa6729fe3a6ed1187d6fcf2cc30",
+    "semantic_hash": ""
+  },
+  ".claude/agents/pulse.md": {
+    "mtime": 1781889794.3761506,
+    "ast_hash": "a27aae9828774bc5b99c3e9b94a36653",
+    "semantic_hash": ""
+  },
+  ".claude/agents/references/Index.md": {
+    "mtime": 1781889795.5113468,
+    "ast_hash": "500bd0dfe2a57e11b7155764fe938128",
+    "semantic_hash": ""
+  },
+  ".claude/agents/references/architect-procedures.md": {
+    "mtime": 1781889795.3531537,
+    "ast_hash": "d04197e54668e30a9adf81be18f65ee8",
+    "semantic_hash": ""
+  },
+  ".claude/agents/references/postman-cli.md": {
+    "mtime": 1781889795.5373516,
+    "ast_hash": "a612ad409999bb0cb408d6d5dea2b49f",
+    "semantic_hash": ""
+  },
+  ".claude/agents/references/postman-modes.md": {
+    "mtime": 1781889795.54627,
+    "ast_hash": "06f66d3594add3508f780018040cafbe",
+    "semantic_hash": ""
+  },
+  ".claude/agents/references/postman-templates.md": {
+    "mtime": 1781889795.663494,
+    "ast_hash": "8328efce7d46328479f77596628023c6",
+    "semantic_hash": ""
+  },
+  ".claude/agents/references/scribe-modes.md": {
+    "mtime": 1781889795.6888852,
+    "ast_hash": "b05c7bd6891f94fcd71a51511786e599",
+    "semantic_hash": ""
+  },
+  ".claude/agents/researcher.md": {
+    "mtime": 1781889794.6143458,
+    "ast_hash": "6ccc5e97ee69ee2b5dc4fe28566a201b",
+    "semantic_hash": ""
+  },
+  ".claude/agents/scribe.md": {
+    "mtime": 1781889794.62635,
+    "ast_hash": "b5190e579bda52cf60bcf561404289a4",
+    "semantic_hash": ""
+  },
+  ".claude/agents/seeker.md": {
+    "mtime": 1781889794.8311572,
+    "ast_hash": "22d2970eb404a40960b2471e47f8140b",
+    "semantic_hash": ""
+  },
+  ".claude/agents/sorter.md": {
+    "mtime": 1781889794.9708176,
+    "ast_hash": "8bd87e0287b2231c250e43c414d36b55",
+    "semantic_hash": ""
+  },
+  ".claude/agents/strategist.md": {
+    "mtime": 1781889795.199283,
+    "ast_hash": "ad104f82af46183a0bbae056b283416e",
+    "semantic_hash": ""
+  },
+  ".claude/agents/transcriber.md": {
+    "mtime": 1781889795.2749832,
+    "ast_hash": "8cb481c5614644f0b8bec88b12e8b66c",
+    "semantic_hash": ""
+  },
+  ".claude/references/Index.md": {
+    "mtime": 1781889796.3465817,
+    "ast_hash": "6175dd8b5f3cd4fc515f60e1bbb47199",
+    "semantic_hash": ""
+  },
+  ".claude/references/agent-orchestration.md": {
+    "mtime": 1781889795.939731,
+    "ast_hash": "dac92706499a548230a36f58633aa872",
+    "semantic_hash": ""
+  },
+  ".claude/references/agent-template.md": {
+    "mtime": 1781889796.0100496,
+    "ast_hash": "64dda71faaf4a61e26e85ca61ed1ad7e",
+    "semantic_hash": ""
+  },
+  ".claude/references/agents-registry.md": {
+    "mtime": 1781889796.0190408,
+    "ast_hash": "74f9e9507f4fee3157c8a24da6fba76f",
+    "semantic_hash": ""
+  },
+  ".claude/references/agents.md": {
+    "mtime": 1781889796.3354106,
+    "ast_hash": "0d32ff0ec3755ba49b4cdaf6201f727f",
+    "semantic_hash": ""
+  },
+  ".github/copilot-instructions.md": {
+    "mtime": 1781889803.9007833,
+    "ast_hash": "ef9f63ebbf74227652367d6ca3772f86",
+    "semantic_hash": ""
+  },
+  ".github/workflows/validate-graph.yml": {
+    "mtime": 1777808638.251185,
+    "ast_hash": "64235c0a590b035b617a7f814cf88e00",
+    "semantic_hash": ""
+  },
+  ".windsurf/workflows/Index.md": {
+    "mtime": 1781889804.272146,
+    "ast_hash": "72611bd0b2912b3c797034bd04ebfa66",
+    "semantic_hash": ""
+  },
+  ".windsurf/workflows/project-setup.md": {
+    "mtime": 1781889804.5031672,
+    "ast_hash": "eca43f88792a33e5a1e4d0f8230878be",
+    "semantic_hash": ""
+  },
+  ".windsurf/workflows/skill-assist.md": {
+    "mtime": 1781889804.6408193,
+    "ast_hash": "e41869d8a75be658876105a97920396c",
+    "semantic_hash": ""
+  },
+  ".windsurf/workflows/vault-maintenance.md": {
+    "mtime": 1781889804.8971806,
+    "ast_hash": "ff82378d69184a604adb8dac141325f3",
+    "semantic_hash": ""
+  },
+  "00-Inbox/Backtest_walk_forward_v5_1h.md": {
+    "mtime": 1782457314.7170343,
+    "ast_hash": "d44e6964cc29847c0c6fff8389f60c42",
+    "semantic_hash": ""
+  },
+  "00-Inbox/Backtest_walk_forward_v5_1h_data.md": {
+    "mtime": 1782457314.7170343,
+    "ast_hash": "eeac27cdcb72dcfcfb212ce233dfd3df",
+    "semantic_hash": ""
+  },
+  "00-Inbox/Backtest_walk_forward_v5_fixed.md": {
+    "mtime": 1782469078.2909074,
+    "ast_hash": "3a7cf39c23326eb0d0d386f63794b20d",
+    "semantic_hash": ""
+  },
+  "00-Inbox/Backtest_walk_forward_v5_fixed_data.md": {
+    "mtime": 1782469078.2929256,
+    "ast_hash": "63ef9eb95455d0efbc944e0e7002ce7e",
+    "semantic_hash": ""
+  },
+  "00-Inbox/Index.md": {
+    "mtime": 1781889804.9023616,
+    "ast_hash": "d11ad53de0f1ad40c1ed3a48f0f26fcd",
+    "semantic_hash": ""
+  },
+  "00-Inbox/pipeline-test.md": {
+    "mtime": 1782481415.5157044,
+    "ast_hash": "a26eefc7e647bdd59d3e3198f2496710",
+    "semantic_hash": ""
+  },
+  "00-Inbox/regime-alerts/20260626_234319.md": {
+    "mtime": 1782492199.991472,
+    "ast_hash": "38079108554437473cc1a7593acd4596",
+    "semantic_hash": ""
+  },
+  "00-Inbox/regime-alerts/20260626_234346.md": {
+    "mtime": 1782492226.9723735,
+    "ast_hash": "145e891cd4f1d6e50c368a958b20d394",
+    "semantic_hash": ""
+  },
+  "00-meta/Tools Setup MOC.md": {
+    "mtime": 1781889805.4896417,
+    "ast_hash": "f2e893aa1db4093ea23554f57ad5be0c",
+    "semantic_hash": ""
+  },
+  "00-meta/index.md": {
+    "mtime": 1781889804.9111624,
+    "ast_hash": "f49857b8fdc3c76165ee5ba24a70cfe0",
+    "semantic_hash": ""
+  },
+  "01-projects/CLAUDE.md": {
+    "mtime": 1781889805.4896417,
+    "ast_hash": "f570b3cb2dee293ec2b008fd27673ebc",
+    "semantic_hash": ""
+  },
+  "01-projects/GOAL_SETTING.md": {
+    "mtime": 1781889805.5627544,
+    "ast_hash": "444431c25c130812671d8aca2e1217f7",
+    "semantic_hash": ""
+  },
+  "01-projects/Graxia-OS/Index.md": {
+    "mtime": 1781889806.99289,
+    "ast_hash": "01c4fbccfba65d1ee42963d363c2942b",
+    "semantic_hash": ""
+  },
+  "01-projects/Graxia-OS/MAS-War-Room.md": {
+    "mtime": 1781889807.0067742,
+    "ast_hash": "faf3fb4ab11d495933afc62e6979b4e4",
+    "semantic_hash": ""
+  },
+  "01-projects/Graxia-OS/Overview.md": {
+    "mtime": 1781889807.0244262,
+    "ast_hash": "d74e4f1cd69941099a43704732e15e30",
+    "semantic_hash": ""
+  },
+  "01-projects/Graxia-OS/quant_os/bridge_config_overview.md": {
+    "mtime": 1782469078.3087504,
+    "ast_hash": "2f954c0cbc55ef10180aeed94b93a577",
+    "semantic_hash": ""
+  },
+  "01-projects/Index.md": {
+    "mtime": 1781889805.577081,
+    "ast_hash": "96e3314ce4a3c35889fc354b86708a1a",
+    "semantic_hash": ""
+  },
+  "01-projects/Menum/Context/Automation-Commands.md": {
+    "mtime": 1781889807.1425605,
+    "ast_hash": "9cca030f26bd317394a03a97da8518b6",
+    "semantic_hash": ""
+  },
+  "01-projects/Menum/Context/Index.md": {
+    "mtime": 1781889807.1425605,
+    "ast_hash": "4119e9eb46b96616aef17c863af6eba7",
+    "semantic_hash": ""
+  },
+  "01-projects/Menum/Context/Playbook-Suggestions.md": {
+    "mtime": 1781888526.0926514,
+    "ast_hash": "7ac38f4ce1301179cb553ecff3a161d8",
+    "semantic_hash": ""
+  },
+  "01-projects/Menum/Context/Session-Startup.md": {
+    "mtime": 1781889807.1588097,
+    "ast_hash": "960074b0ee88b09761076da463c0513f",
+    "semantic_hash": ""
+  },
+  "01-projects/Menum/Context/Skill-Sources.md": {
+    "mtime": 1781889807.1626666,
+    "ast_hash": "d95af8cb4742adcc735ac65bbb0943e7",
+    "semantic_hash": ""
+  },
+  "01-projects/Menum/Index.md": {
+    "mtime": 1781889807.0320275,
+    "ast_hash": "f348cf7ec95c221ebc7d1356afb8a8af",
+    "semantic_hash": ""
+  },
+  "01-projects/Menum/Overview.md": {
+    "mtime": 1781889807.0470808,
+    "ast_hash": "dc65b800de7eb5dfceb2833be6206cd3",
+    "semantic_hash": ""
+  },
+  "01-projects/Menum/_Menum Dashboard.md": {
+    "mtime": 1781889807.1425605,
+    "ast_hash": "8c5cb0b816c9d147f9d61b53fb3f4832",
+    "semantic_hash": ""
+  },
+  "01-projects/VibeCity/Context/Automation-Commands.md": {
+    "mtime": 1781889808.6435447,
+    "ast_hash": "53dd9d6fdaf2319356b5c18a6ed3c877",
+    "semantic_hash": ""
+  },
+  "01-projects/VibeCity/Context/Index.md": {
+    "mtime": 1781889808.6510265,
+    "ast_hash": "8b2b7fb1fecc1ff36f9a180645fab94a",
+    "semantic_hash": ""
+  },
+  "01-projects/VibeCity/Context/Playbook-Suggestions.md": {
+    "mtime": 1781889808.659669,
+    "ast_hash": "74bb66dcd1d288ba013d0c9d4e898a40",
+    "semantic_hash": ""
+  },
+  "01-projects/VibeCity/Context/Session-Startup.md": {
+    "mtime": 1781889808.7553682,
+    "ast_hash": "dcca62bef17e854539fb9940e79fc859",
+    "semantic_hash": ""
+  },
+  "01-projects/VibeCity/Context/Skill-Sources.md": {
+    "mtime": 1781889808.8483298,
+    "ast_hash": "27032e264f7fab2419ad7b42407e8a1d",
+    "semantic_hash": ""
+  },
+  "01-projects/VibeCity/Index.md": {
+    "mtime": 1781889808.1721928,
+    "ast_hash": "b1753662b700e61879ad2a4a2d347927",
+    "semantic_hash": ""
+  },
+  "01-projects/VibeCity/Overview.md": {
+    "mtime": 1781889808.1734872,
+    "ast_hash": "256261fab0287c8771094efdf16248bf",
+    "semantic_hash": ""
+  },
+  "01-projects/VibeCity/_VibeCity Dashboard.md": {
+    "mtime": 1781889808.5018668,
+    "ast_hash": "3b1a6078d249790987ef775d2b185216",
+    "semantic_hash": ""
+  },
+  "01-projects/backend/Index.md": {
+    "mtime": 1781889805.5927126,
+    "ast_hash": "590aa131d0459cd34d218010d932a1b2",
+    "semantic_hash": ""
+  },
+  "01-projects/backend/Overview.md": {
+    "mtime": 1781889805.6040776,
+    "ast_hash": "973aeee6a3aa7d391f73b86fc5685c58",
+    "semantic_hash": ""
+  },
+  "01-projects/backend/work-log.md": {
+    "mtime": 1781889805.7653592,
+    "ast_hash": "bf9038d35deab7da4383f0b8995dd559",
+    "semantic_hash": ""
+  },
+  "01-projects/brav-os/Index.md": {
+    "mtime": 1781889806.287657,
+    "ast_hash": "18b5dd13629941fd147599ad7face171",
+    "semantic_hash": ""
+  },
+  "01-projects/brav-os/Overview.md": {
+    "mtime": 1781889806.2946713,
+    "ast_hash": "f032f4b210fc02e488397142e5f255aa",
+    "semantic_hash": ""
+  },
+  "01-projects/brav-os/context.md": {
+    "mtime": 1781889806.280897,
+    "ast_hash": "d5ee8c65fcd503850679d6828dcd96a5",
+    "semantic_hash": ""
+  },
+  "01-projects/brav-os/work-log.md": {
+    "mtime": 1781889806.378928,
+    "ast_hash": "f8cc8e3608c37b858d9b11145f5e9718",
+    "semantic_hash": ""
+  },
+  "01-projects/thaolai-web/Index.md": {
+    "mtime": 1781889807.1626666,
+    "ast_hash": "683f1c1aa2efc8422084b4522341726f",
+    "semantic_hash": ""
+  },
+  "01-projects/thaolai-web/Overview.md": {
+    "mtime": 1781889807.1741028,
+    "ast_hash": "a4d3ba55f9f13dfb5f16026d0330e6d6",
+    "semantic_hash": ""
+  },
+  "01-projects/thaolai-web/work-log.md": {
+    "mtime": 1781889807.414778,
+    "ast_hash": "f262d13e4bf1ddff038b6554a9213a54",
+    "semantic_hash": ""
+  },
+  "02-areas/Dev-Practice/Index.md": {
+    "mtime": 1781889809.0197444,
+    "ast_hash": "0c3ffeb7482e12bcbf6490058a82a61f",
+    "semantic_hash": ""
+  },
+  "02-areas/Finance/Index.md": {
+    "mtime": 1781889809.2379415,
+    "ast_hash": "ee5fa6a93f8e1fe0683016d8fa3d5104",
+    "semantic_hash": ""
+  },
+  "02-areas/Index.md": {
+    "mtime": 1781889808.8666987,
+    "ast_hash": "b25c52aa4fafa9eddbeddf320e054756",
+    "semantic_hash": ""
+  },
+  "02-areas/Learning/Index.md": {
+    "mtime": 1781889809.4918494,
+    "ast_hash": "b0ff39730853adaa4f78873e818f988c",
+    "semantic_hash": ""
+  },
+  "02-areas/Personal/Index.md": {
+    "mtime": 1781889809.8715158,
+    "ast_hash": "4f0332ef553489188e7967941756fc98",
+    "semantic_hash": ""
+  },
+  "02-areas/Research/Index.md": {
+    "mtime": 1781889810.1884222,
+    "ast_hash": "fbfb88ce488214e951310c7cf289e5b6",
+    "semantic_hash": ""
+  },
+  "02-areas/Work/Index.md": {
+    "mtime": 1781889810.4549234,
+    "ast_hash": "dd8c35acb02cc0403210d929a7cb2e2c",
+    "semantic_hash": ""
+  },
+  "02-areas/trading/research/nb_analysis_summary.md": {
+    "mtime": 1782469330.836403,
+    "ast_hash": "23bc44ef7da2464bffe5089f1e759444",
+    "semantic_hash": ""
+  },
+  "02-areas/trading/research/nb_gaps_opportunities.md": {
+    "mtime": 1782469414.5514069,
+    "ast_hash": "5439df118da4628d6a73b1e2b04333d4",
+    "semantic_hash": ""
+  },
+  "02-areas/trading/research/nb_methodology_issues.md": {
+    "mtime": 1782469439.4423568,
+    "ast_hash": "b5e3f503c9c145e578fea05ad49beff5",
+    "semantic_hash": ""
+  },
+  "02-areas/trading/research/nb_research_brief.md": {
+    "mtime": 1782469439.4599526,
+    "ast_hash": "d3b7c7dacd26770aa9c36a548227b4aa",
+    "semantic_hash": ""
+  },
+  "02-areas/trading/research/nb_risk_factors.md": {
+    "mtime": 1782469362.475979,
+    "ast_hash": "1dde84869c0fcb54b05541608ec52464",
+    "semantic_hash": ""
+  },
+  "02-areas/trading/research/nb_strategy_performance.md": {
+    "mtime": 1782469390.4920127,
+    "ast_hash": "172bb2bef26e1f32b059b667356bc7dc",
+    "semantic_hash": ""
+  },
+  "02-areas/trading/research/upgrade_reports/2026-06-26.md": {
+    "mtime": 1782469078.1078143,
+    "ast_hash": "8c3a4d2d516096d026831fe8e938c1d2",
+    "semantic_hash": ""
+  },
+  "02-areas/trading/research/upgrade_risk_parameter_review.md": {
+    "mtime": 1782469078.0924475,
+    "ast_hash": "63ad3c568c4d036b0c65d982dc972d68",
+    "semantic_hash": ""
+  },
+  "02-areas/trading/research/upgrade_strategy_edge_analysis.md": {
+    "mtime": 1782469058.6667612,
+    "ast_hash": "1bd2a34b9d4fa98c759bb0d662f65989",
+    "semantic_hash": ""
+  },
+  "02-areas/trading/research/upgrade_upgrade_opportunities.md": {
+    "mtime": 1782469038.3718011,
+    "ast_hash": "5863a1f74cbcd32dbdb2efb8472eb7d4",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/AI-Master-MOC.md": {
+    "mtime": 1781889812.0629022,
+    "ast_hash": "243239dbdf049ecddfae712e53b3a24b",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Index.md": {
+    "mtime": 1781889812.0739915,
+    "ast_hash": "d6202eb43b9c664beddd79f4776593dd",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Maps/AI Knowledge Hub.md": {
+    "mtime": 1781889812.1529422,
+    "ast_hash": "cc364e513b9b5fbae4d0ca87b62f641e",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Maps/GitHub Repos Watchlist.md": {
+    "mtime": 1781889812.2739363,
+    "ast_hash": "d813632374a78bde2dd9bd9a873ba503",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Maps/Index.md": {
+    "mtime": 1781889812.2739363,
+    "ast_hash": "324ac8357fada4db4dc825e37a391116",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Maps/PubMed Research Watchlist.md": {
+    "mtime": 1781889812.353535,
+    "ast_hash": "0a8244fdb5143fab0f2573c57e6abbe2",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/Avaiga__taipy.md": {
+    "mtime": 1781889812.3664873,
+    "ast_hash": "3e89618688ccf507e4179dc7b6ecac4d",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/FoundationAgents__MetaGPT.md": {
+    "mtime": 1781889812.4010713,
+    "ast_hash": "88d1545400156faed4706d9d0f43b9e1",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/Index.md": {
+    "mtime": 1781889812.4495988,
+    "ast_hash": "14841d4de0ab03f6814ac3061d8276b2",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/JackChen-me__open-multi-agent.md": {
+    "mtime": 1781889812.476985,
+    "ast_hash": "7a6b08e5a29f0c75392f98c0b1428c33",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/Kohaku-Lab__KohakuTerrarium.md": {
+    "mtime": 1781889812.486612,
+    "ast_hash": "ff0a6dd4f1296e394cd0d86f85d6d3ea",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/ModelEngine-Group__nexent.md": {
+    "mtime": 1781889812.5699778,
+    "ast_hash": "3080ae53cb2a98bae962145c64fc6619",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/TauricResearch__TradingAgents.md": {
+    "mtime": 1781889812.606815,
+    "ast_hash": "eeab9d778d239e4617dd97e258e3039a",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/builderz-labs__mission-control.md": {
+    "mtime": 1781889812.3687456,
+    "ast_hash": "c34837ab75f2acd458f0fc5740dbddac",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/cft0808__edict.md": {
+    "mtime": 1781889812.379855,
+    "ast_hash": "2664fb024410f02dabd45d2effe1ae92",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/clearml__clearml-server.md": {
+    "mtime": 1781889812.3854623,
+    "ast_hash": "14a63c76376cb84fc70cd8593ff7652b",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/clearml__clearml.md": {
+    "mtime": 1781889812.391991,
+    "ast_hash": "258f1cecf3709492eeaa0d368fba850b",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/dataelement__bisheng.md": {
+    "mtime": 1781889812.4010713,
+    "ast_hash": "da7417f6261d3f30431e199560107ce0",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/gadievron__exploitation-validator.md": {
+    "mtime": 1781889812.4175217,
+    "ast_hash": "4fb863b6e5dc895f9d91a5e714649aa4",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/iflytek__astron-agent.md": {
+    "mtime": 1781889812.436236,
+    "ast_hash": "7ca438a173091a7a380ae8d46ab9e0ec",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/jina-ai__serve.md": {
+    "mtime": 1781889812.4810052,
+    "ast_hash": "694a7ab4b554dde55c07b41179b29934",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/langchain-ai__langchain.md": {
+    "mtime": 1781889812.493718,
+    "ast_hash": "fc6afbfabbecd3bcd41f7ee4868d2f7d",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/langfuse__langfuse.md": {
+    "mtime": 1781889812.4967647,
+    "ast_hash": "77475f977e576bff5d7a00fd71cb6ee7",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/libraryofcelsus__Aetherius_AI_Assistant.md": {
+    "mtime": 1781889812.5052178,
+    "ast_hash": "86462f00cee95ecd55fdf4cef45a4f8c",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/microsoft__mcp-for-beginners.md": {
+    "mtime": 1781889812.5121405,
+    "ast_hash": "90acff335a90981bc8f049b7529a3fe0",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/mlflow__mlflow.md": {
+    "mtime": 1781889812.5191166,
+    "ast_hash": "357987eec00d6332c4063609e9dc9cfb",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/modelcontextprotocol__python-sdk.md": {
+    "mtime": 1781889812.5243704,
+    "ast_hash": "1d1a2a0a571cee5eceaa3d14d1e2e805",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/modelcontextprotocol__servers.md": {
+    "mtime": 1781889812.5355847,
+    "ast_hash": "e69a9bd002a7a3eb47484597580661d1",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/modelcontextprotocol__typescript-sdk.md": {
+    "mtime": 1781889812.5416243,
+    "ast_hash": "cf4d7053370085553944ae8f709dc299",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/open-multi-agent__open-multi-agent.md": {
+    "mtime": 1781889812.575004,
+    "ast_hash": "3d72e3b92685cf5d1871db4e046b3c80",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/pacifio__cersei.md": {
+    "mtime": 1781889812.575004,
+    "ast_hash": "563c89e6089f33d7fd98f3097d4e4be1",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/raga-ai-hub__RagaAI-Catalyst.md": {
+    "mtime": 1781889812.5886612,
+    "ast_hash": "158f92b0cf3dc3fe0499ef5e9a30527c",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/run-llama__llama_index.md": {
+    "mtime": 1781889812.5951846,
+    "ast_hash": "a3374906ae855445ec4d56aba7bb9242",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/sagents-ai__sagents.md": {
+    "mtime": 1781889812.5951846,
+    "ast_hash": "c8fecc8ca559ed1e1ff3ec826f83e652",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/GitHub/tensorzero__tensorzero.md": {
+    "mtime": 1781889812.6142063,
+    "ast_hash": "d22510746875de5ea269e4830a008979",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/Index.md": {
+    "mtime": 1781889812.6225736,
+    "ast_hash": "b404b4df606881ecf83360cde34ea359",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-30317994-machine-learning-in-quantitative-protein-peptide-affinity-predic.md": {
+    "mtime": 1781889812.6225736,
+    "ast_hash": "229f780434fb22cd25770c4b0be4fb2e",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-30621954-new-concepts-in-sudden-cardiac-arrest-to-address-an-intractable.md": {
+    "mtime": 1781889812.6457548,
+    "ast_hash": "080e72b74b2b48d9eb0e107594ef6ec3",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-36560204-review-of-botnet-attack-detection-in-sdn-enabled-iot-using-machi.md": {
+    "mtime": 1781889812.7409935,
+    "ast_hash": "d6c6b719139134ad8660760eadb0ae11",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-36772680-at-the-confluence-of-artificial-intelligence-and-edge-computing.md": {
+    "mtime": 1781889812.8294697,
+    "ast_hash": "381a033b9e66a342e6053973b0542bd5",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-37266720-gpt-4-and-ophthalmology-operative-notes.md": {
+    "mtime": 1781889812.8514478,
+    "ast_hash": "ff6dfb35826a67ed65e3bdba75afcb7f",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-37328321-chatgpt-and-large-language-model-llm-chatbots-the-current-state.md": {
+    "mtime": 1781889812.9959385,
+    "ast_hash": "4b9600586eb6f222e9b726ed1c15c483",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-37508907-evaluation-of-mutual-information-and-feature-selection-for-sars.md": {
+    "mtime": 1781889813.082635,
+    "ast_hash": "e315db35cfd3cee4829df06ccd877ff3",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-38564555-ai-driven-service-and-slice-orchestration.md": {
+    "mtime": 1781889813.3376553,
+    "ast_hash": "6351f910ca77eaa53df1caedaef370ba",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-38993729-protagents-protein-discovery-via-large-language-model-multi-agen.md": {
+    "mtime": 1781889813.353466,
+    "ast_hash": "1f9e252a55a983490b73a47601ecb99a",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-39361263-an-ai-agent-for-fully-automated-multi-omic-analyses.md": {
+    "mtime": 1781889813.356853,
+    "ast_hash": "ee92b2be9cf8d5a9db6ac70acedbb797",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-39486399-empowering-biomedical-discovery-with-ai-agents.md": {
+    "mtime": 1781889813.356853,
+    "ast_hash": "17d6873333c38f7592f60d5b0e7c9fa3",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-39679213-a-survey-on-multimodal-large-language-models.md": {
+    "mtime": 1781889813.5600333,
+    "ast_hash": "997548bbd08de4b4eeb0daf5305c38f5",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-39812777-improving-large-language-model-applications-in-biomedicine-with.md": {
+    "mtime": 1781889813.5656369,
+    "ast_hash": "b1e0cf2ba198a51aa624f3fa0bad962e",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-40055694-a-systematic-review-of-large-language-model-llm-evaluations-in-c.md": {
+    "mtime": 1781889813.7628763,
+    "ast_hash": "3476a8563cd7aaa91abfdead97ee2e9b",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-40335969-impact-of-large-language-model-chatgpt-in-healthcare-an-umbrella.md": {
+    "mtime": 1781889814.0237632,
+    "ast_hash": "da06ebf4e7d0eca6f4c8a7f18fe07fb9",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-40813712-a-personal-health-large-language-model-for-sleep-and-fitness-coa.md": {
+    "mtime": 1781889814.0714939,
+    "ast_hash": "22d0bdc67727bf9fa4de69bc66a317d7",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-40849361-care-ad-a-multi-agent-large-language-model-framework-for-alzheim.md": {
+    "mtime": 1781889814.1684523,
+    "ast_hash": "dc55e62560adee20c0aaa169b7ab1892",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-40910958-effect-of-an-ai-agent-trained-on-a-large-language-model-llm-as-a.md": {
+    "mtime": 1781889814.5042572,
+    "ast_hash": "d359a0fa4015754cc094535aeb9e02bd",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-40921101-applications-of-federated-large-language-model-for-adverse-drug.md": {
+    "mtime": 1781889814.6148193,
+    "ast_hash": "a1002f88d321b68babd3fe5a67bf8c6a",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-41202290-standardizing-and-scaffolding-health-care-ai-chatbot-evaluation.md": {
+    "mtime": 1781889814.8770845,
+    "ast_hash": "79318a93eca4b2bfa1cb6d361a8c2a43",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-41708847-an-agentic-system-for-rare-disease-diagnosis-with-traceable-reas.md": {
+    "mtime": 1781889815.0500836,
+    "ast_hash": "56b198cf8abdf8eca05bb7343dd68adb",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-41776252-multi-agent-systems-and-credibility-based-advanced-scoring-mecha.md": {
+    "mtime": 1781889815.2536018,
+    "ast_hash": "79e8a50649d72a1d368a7247a7ae9f73",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/_archive-nonascii/Index.md": {
+    "mtime": 1781889816.3081853,
+    "ast_hash": "6ec4b94d1b041e6f01c2197911dedc85",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/_archive-nonascii/PMID-36560204-review-of-botnet-attack-detection-in-sdn-enabled-iot-using-mach\u2026.md": {
+    "mtime": 1781889816.3730586,
+    "ast_hash": "3c54b9d476bedeb369985740886c9eaa",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/_archive-nonascii/PMID-36772680-at-the-confluence-of-artificial-intelligence-and-edge-computing\u2026.md": {
+    "mtime": 1781889816.4235926,
+    "ast_hash": "715b5d0916118ce6dd0d448a1eae9d4d",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/_archive-nonascii/PMID-37328321-chatgpt-and-large-language-model-llm-chatbots-the-current-state\u2026.md": {
+    "mtime": 1781889816.550431,
+    "ast_hash": "5bf36ca360c6dba0a24c10143b8ab755",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/_archive-nonascii/PMID-37508907-evaluation-of-mutual-information-and-feature-selection-for-sars\u2026.md": {
+    "mtime": 1781889816.6136646,
+    "ast_hash": "76a381db55451293ea6445e6f690cd43",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/_archive-nonascii/PMID-40055694-a-systematic-review-of-large-language-model-llm-evaluations-in-\u2026.md": {
+    "mtime": 1781889816.8925266,
+    "ast_hash": "0bd770a3dc133ac1c1196f0148bdd767",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/_archive-nonascii/PMID-40335969-impact-of-large-language-model-chatgpt-in-healthcare-an-umbrell\u2026.md": {
+    "mtime": 1781889817.0201185,
+    "ast_hash": "aea15c97e0b79ee2b4c224f6972017fc",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/_archive-nonascii/PMID-40910958-effect-of-an-ai-agent-trained-on-a-large-language-model-llm-as-\u2026.md": {
+    "mtime": 1781889817.1473255,
+    "ast_hash": "b87963969379cccac258a44e472fda06",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/_archive-nonascii/PMID-41708847-an-agentic-system-for-rare-disease-diagnosis-with-traceable-rea\u2026.md": {
+    "mtime": 1781889817.3337066,
+    "ast_hash": "b4136cda09e2fb711fe43c47f51523a4",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/_archive-nonascii/PMID-41776252-multi-agent-systems-and-credibility-based-advanced-scoring-mech\u2026.md": {
+    "mtime": 1781889817.45392,
+    "ast_hash": "eda550ae2461254ce0cf79bc0a30a956",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Topics/Agent Engineering.md": {
+    "mtime": 1781889817.4858885,
+    "ast_hash": "eb7f207ea67506775cc8dd8e59313366",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Topics/Biomedical AI Research.md": {
+    "mtime": 1781889817.5049005,
+    "ast_hash": "12305c0b1e2742aae6fcb0303d78ae8a",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Topics/Evaluation & Observability.md": {
+    "mtime": 1781889817.5289118,
+    "ast_hash": "aa8e634739c00e2d578878ab7b8a62d4",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Topics/Index.md": {
+    "mtime": 1781889817.5405834,
+    "ast_hash": "e467c553d706cc95d8a6dc8cb1409b55",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Topics/ML Orchestration & Pipelines.md": {
+    "mtime": 1781889817.565657,
+    "ast_hash": "05b79f581c4ab12c3618f61c7e1cca7e",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Topics/Model Context Protocol.md": {
+    "mtime": 1781889817.6164153,
+    "ast_hash": "2c406cb6fcfe1ec0885160c5d84a2611",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Topics/Multi-Agent Orchestration.md": {
+    "mtime": 1781889817.6418116,
+    "ast_hash": "794717da325bdf398f73ea7eb8325830",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Topics/Sub-Agent Patterns.md": {
+    "mtime": 1781889817.6643536,
+    "ast_hash": "2bf4c0058cfe2ef338c7426afad31347",
+    "semantic_hash": ""
+  },
+  "03-resources/Codebase/Graxia-OS-Manifest.md": {
+    "mtime": 1781889817.704671,
+    "ast_hash": "22d323de49915945fb3a2131a93050a0",
+    "semantic_hash": ""
+  },
+  "03-resources/Codebase/Index.md": {
+    "mtime": 1781889817.7072496,
+    "ast_hash": "de16920a36c7450b7dce78b206ebe62d",
+    "semantic_hash": ""
+  },
+  "03-resources/Index.md": {
+    "mtime": 1781889810.5506887,
+    "ast_hash": "9e30185d1427abfab2d3f641f8907dfc",
+    "semantic_hash": ""
+  },
+  "03-resources/Tech/Index.md": {
+    "mtime": 1781889817.9211545,
+    "ast_hash": "ea147eb1fa42223f0257ab57e743ecd9",
+    "semantic_hash": ""
+  },
+  "03-resources/Welcome to Your Vault \u2014 2026-04-06.md": {
+    "mtime": 1781889811.7752206,
+    "ast_hash": "56975a8f1168090c44171909cf2f7aa6",
+    "semantic_hash": ""
+  },
+  "03-resources/style-guide.md": {
+    "mtime": 1781889810.556211,
+    "ast_hash": "9b0f6c7b6565ba06709f01e7b90f16c0",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/attribution/week-25.md": {
+    "mtime": 1782492208.4246435,
+    "ast_hash": "0f29cad4720ccb28735274336518f0a0",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/attribution/week-26.md": {
+    "mtime": 1782551957.1288314,
+    "ast_hash": "24c914400d99cab835ddf15cc4fb9ad4",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-20_MLB.md": {
+    "mtime": 1782551944.7706978,
+    "ast_hash": "020f72d53bac2b8d181b5ac844ea0de8",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-20_MRB.md": {
+    "mtime": 1782551944.7696912,
+    "ast_hash": "f0b53df801018c3eda9f46e43c26e841",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-20_MTM.md": {
+    "mtime": 1782551944.7696912,
+    "ast_hash": "fc5d2d4785b2d08244eff33ddd36e82f",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_BTCUSD_MeanReversion.md": {
+    "mtime": 1782551945.1226873,
+    "ast_hash": "29709e84ea6799fad81754db5af724f0",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_BTCUSD_Momentum.md": {
+    "mtime": 1782551945.1226873,
+    "ast_hash": "0943959e7bcb99d02bafe6d8200945f3",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_BTCUSD_RSI.md": {
+    "mtime": 1782551945.1226873,
+    "ast_hash": "fefc8a3b20c23b799b56e8c39f050d12",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_BTCUSD_TrendFollow.md": {
+    "mtime": 1782551945.1226873,
+    "ast_hash": "8d0bcc96e5e5ccd3827a319fc55efa0f",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_BTCUSD_VolBreakout.md": {
+    "mtime": 1782551945.1226873,
+    "ast_hash": "ece1a863eb8e02f0c66a15ff4fb381eb",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_EURUSD_MeanReversion.md": {
+    "mtime": 1782551945.1100492,
+    "ast_hash": "922ab80ac348cfe90248b20607c60f17",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_EURUSD_Momentum.md": {
+    "mtime": 1782551945.1085434,
+    "ast_hash": "08a4e0ca46b7ead97ae4642cc3300d3f",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_EURUSD_RSI.md": {
+    "mtime": 1782551945.112095,
+    "ast_hash": "5f58c9e98d72163585b13b072916103f",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_EURUSD_TrendFollow.md": {
+    "mtime": 1782551945.1100492,
+    "ast_hash": "f97b71a208aba5a5c0c45b696e612ea8",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_EURUSD_VolBreakout.md": {
+    "mtime": 1782551945.1100492,
+    "ast_hash": "9f2e0169a588a53c24ef43ed48330f15",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_GBPUSD_MeanReversion.md": {
+    "mtime": 1782551945.1130612,
+    "ast_hash": "91381aae8e540623aa78a95e4bdbde11",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_GBPUSD_Momentum.md": {
+    "mtime": 1782551945.112095,
+    "ast_hash": "2220431633c449743c0677ee0ec0b5ed",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_GBPUSD_RSI.md": {
+    "mtime": 1782551945.1151366,
+    "ast_hash": "bd0cb6156cc3d2817e85f3c97b9231d4",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_GBPUSD_TrendFollow.md": {
+    "mtime": 1782551945.114057,
+    "ast_hash": "96c2cba8efb8d5f5ddbe6267a7e9e46e",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_GBPUSD_VolBreakout.md": {
+    "mtime": 1782551945.114057,
+    "ast_hash": "18dab2f9793bb7d309954284bfaf43a4",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_NAS100_MeanReversion.md": {
+    "mtime": 1782551945.1201499,
+    "ast_hash": "5ea1b9136cd174eafb1f70758fef142b",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_NAS100_Momentum.md": {
+    "mtime": 1782551945.1191497,
+    "ast_hash": "aecb75d4665883cffb98799fb66e14bf",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_NAS100_RSI.md": {
+    "mtime": 1782551945.1221514,
+    "ast_hash": "d2094e2ef0dbaa5cad57cc36f4cef38c",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_NAS100_TrendFollow.md": {
+    "mtime": 1782551945.1201499,
+    "ast_hash": "ff8d045e3c1649f235fc0176f71730d5",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_NAS100_VolBreakout.md": {
+    "mtime": 1782551945.1211543,
+    "ast_hash": "d7f744a9d322a0b72c611b5480299f55",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_US30_MeanReversion.md": {
+    "mtime": 1782551945.1181498,
+    "ast_hash": "87c5a595904e7cbd17faf02a90e74065",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_US30_Momentum.md": {
+    "mtime": 1782551945.117144,
+    "ast_hash": "eb94a9970e881bb13ee53369a4c91e1b",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_US30_RSI.md": {
+    "mtime": 1782551945.1191497,
+    "ast_hash": "743b66351f14e56bd608eff90ac5d8ad",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_US30_TrendFollow.md": {
+    "mtime": 1782551945.1181498,
+    "ast_hash": "457baa8f87ba39f095a0571183afb015",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_US30_VolBreakout.md": {
+    "mtime": 1782551945.1191497,
+    "ast_hash": "87a122bc3aa3b9212735228512e28202",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_USDJPY_MeanReversion.md": {
+    "mtime": 1782551945.1161444,
+    "ast_hash": "2c0ddcb95cb4681e0249786a83f6d41b",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_USDJPY_Momentum.md": {
+    "mtime": 1782551945.1151366,
+    "ast_hash": "adfc92107c40bec9c29cc8fa10bfb2b1",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_USDJPY_RSI.md": {
+    "mtime": 1782551945.117144,
+    "ast_hash": "621e0bd10f67f2d0ef7296001721874e",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_USDJPY_TrendFollow.md": {
+    "mtime": 1782551945.1161444,
+    "ast_hash": "7414009711ee0721a1865a7ddee796f9",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_USDJPY_VolBreakout.md": {
+    "mtime": 1782551945.117144,
+    "ast_hash": "16c3f605932016de2283d20dd09ebc00",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_XAUUSD_MeanReversion.md": {
+    "mtime": 1782551945.1065764,
+    "ast_hash": "0ac93b02054399f2cc972d5114317fd7",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_XAUUSD_Momentum.md": {
+    "mtime": 1782551945.1055267,
+    "ast_hash": "e67032c71b17739bb366e706d1aba575",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_XAUUSD_RSI.md": {
+    "mtime": 1782551945.1085434,
+    "ast_hash": "da609a84411abf413fee161dc2a3c8a2",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_XAUUSD_TrendFollow.md": {
+    "mtime": 1782551945.1075418,
+    "ast_hash": "60d25141883fe31e3224e35a6c6420e4",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/backtest/2026-06-26_XAUUSD_VolBreakout.md": {
+    "mtime": 1782551945.1075418,
+    "ast_hash": "b7cfbf5f277731f70a6a3f37e3ae9715",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/ensemble/week-26.md": {
+    "mtime": 1782551957.4150183,
+    "ast_hash": "604cdfdb07aebc57bfaaf4b3fded6f4d",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/macro/2026-06-26.md": {
+    "mtime": 1782493086.8191605,
+    "ast_hash": "00208e1936beb692641c9a60bd82bfc4",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/macro/2026-06-27.md": {
+    "mtime": 1782551953.5766697,
+    "ast_hash": "1647bd5f647a24f0a79e10fbe20fd141",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/BTCUSD_20260626_160330.md": {
+    "mtime": 1782551950.64502,
+    "ast_hash": "3415558e9cd6f6a1cccf33d5ae19c5ae",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/EURUSD_20260626_160329.md": {
+    "mtime": 1782551950.6669753,
+    "ast_hash": "11f7c82ce29e82ba9058a8639c60cc4d",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/Index.md": {
+    "mtime": 1782551951.2752457,
+    "ast_hash": "e9cb0b375f52c6fc6b3e2fcdf0d5880b",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/NAS100_20260626_160329.md": {
+    "mtime": 1782551951.1988165,
+    "ast_hash": "55c4b9ce334b1537e02241401eaf9305",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/US30_20260626_160329.md": {
+    "mtime": 1782551951.218769,
+    "ast_hash": "8efb88ae036be04b62b5295c088b2b18",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/XAUUSD_20260626_160329.md": {
+    "mtime": 1782551951.2752457,
+    "ast_hash": "ece55da8d2a86469ac02823fe9178ccc",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/_20260619_201454.md": {
+    "mtime": 1782551949.9153712,
+    "ast_hash": "cb9d5057894fe761724e687cc0c1c91f",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/_20260619_201455.md": {
+    "mtime": 1782551950.4323108,
+    "ast_hash": "d7db05f5399fb93d8f138da4bb68c028",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/_20260619_201456.md": {
+    "mtime": 1782551950.4649384,
+    "ast_hash": "08c1c53063a0c8d79135ab199c659d45",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/_20260619_201457.md": {
+    "mtime": 1782551950.4943426,
+    "ast_hash": "cc524642fe170b2dfb7edef4d143481d",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/_20260619_203244.md": {
+    "mtime": 1782551950.5248752,
+    "ast_hash": "a734328076761ade6e0de67950b7d303",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/_20260619_203245.md": {
+    "mtime": 1782551950.5526197,
+    "ast_hash": "124c64967b7639e83d282c3db4e6d0d4",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/_20260619_203247.md": {
+    "mtime": 1782551950.589477,
+    "ast_hash": "d60860940ce7f29b11d19879af0c49f8",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/_20260619_203251.md": {
+    "mtime": 1782551950.6230807,
+    "ast_hash": "0bca40236b7058f1fce0d9222d4ee9da",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/_20260626.md": {
+    "mtime": 1782551951.2534552,
+    "ast_hash": "4c916be21c5b77122997fecd4071864d",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/live_20260626_143317.md": {
+    "mtime": 1782551951.0406418,
+    "ast_hash": "579f901d9b21d25faf8dfbac05e99ccf",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/live_20260626_160730.md": {
+    "mtime": 1782551951.0525708,
+    "ast_hash": "19f284abd6f7cadff8a004c7c61c4513",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/live_20260626_161034.md": {
+    "mtime": 1782551951.0648105,
+    "ast_hash": "c844395be2ff117bd52ba9944edfe374",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/live_20260626_173551.md": {
+    "mtime": 1782551951.075227,
+    "ast_hash": "3b25cf4e85fa90a93f8256f32fdd3f69",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/live_20260626_173759.md": {
+    "mtime": 1782551951.0874434,
+    "ast_hash": "cde04a09e432c12901f6a3a27b627b2a",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/live_20260626_174009.md": {
+    "mtime": 1782551951.1034503,
+    "ast_hash": "774e477c0c2290d87b8ad624b14dccdd",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/live_20260626_174445.md": {
+    "mtime": 1782551951.1149008,
+    "ast_hash": "289bd7705abe5804baf1894427c1e065",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/live_20260626_174624.md": {
+    "mtime": 1782551951.1283967,
+    "ast_hash": "c91af2f4503ac8664d282c2e13f8fe92",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/live_20260626_174837.md": {
+    "mtime": 1782551951.1398659,
+    "ast_hash": "bb7a572e3e8bcb595efbd6dd25f3a082",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/live_20260626_175431.md": {
+    "mtime": 1782551951.162604,
+    "ast_hash": "b58c9a099859be915316a907888f8937",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/regime/current.md": {
+    "mtime": 1782549233.955294,
+    "ast_hash": "2af0b64eedfe59893b7c2609aba42361",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/regime/history/2026-06-26.md": {
+    "mtime": 1782492575.2756526,
+    "ast_hash": "4d8ccfedc3c5d9f3cbee67086d420b17",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/regime/history/2026-06-27.md": {
+    "mtime": 1782549233.957298,
+    "ast_hash": "d4b538ffb72b2d97f2f3a2d776e32364",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/risk/dashboard.md": {
+    "mtime": 1782551954.127841,
+    "ast_hash": "59498ac21f354690a4cd13acf669c08e",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/signals/2026-06-26.md": {
+    "mtime": 1782493087.994318,
+    "ast_hash": "aa8454c8d484d919c60f641df4a40f8d",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/signals/2026-06-26_precision.md": {
+    "mtime": 1782492255.3820465,
+    "ast_hash": "7ee175b4045dd6ee67386f309865c70e",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/signals/2026-06-27.md": {
+    "mtime": 1782551957.3038745,
+    "ast_hash": "1ea237105ace22dd98c8e1a524bc8a14",
+    "semantic_hash": ""
+  },
+  "04-archive/Index.md": {
+    "mtime": 1781889817.9211545,
+    "ast_hash": "3114558254b32c9372433730560fc3d1",
+    "semantic_hash": ""
+  },
+  "05-People/Index.md": {
+    "mtime": 1781889818.3120449,
+    "ast_hash": "3ca50a09b88a0f0d8f9dddb338046435",
+    "semantic_hash": ""
+  },
+  "05-People/acme-cto.md": {
+    "mtime": 1781889818.0227895,
+    "ast_hash": "b2f6b716b5ca9f994e7dfc204bc45f84",
+    "semantic_hash": ""
+  },
+  "05-People/beta-recruiter.md": {
+    "mtime": 1781889818.233286,
+    "ast_hash": "955c12db695cc081ed4c4cf9d6f70791",
+    "semantic_hash": ""
+  },
+  "06-Meetings/2026-06-10 Kickoff Meeting.md": {
+    "mtime": 1781888526.3608062,
+    "ast_hash": "67e0c6798adabf1ffcd5bdca4e744bff",
+    "semantic_hash": ""
+  },
+  "06-Meetings/Index.md": {
+    "mtime": 1781889818.3180704,
+    "ast_hash": "d411fe7dec733b7acac8316b042e9b22",
+    "semantic_hash": ""
+  },
+  "07-Daily/2026-06-10.md": {
+    "mtime": 1781888526.361805,
+    "ast_hash": "98b2f6d300aa9d6aa3c6bc1c1d2968e1",
+    "semantic_hash": ""
+  },
+  "07-Daily/Index.md": {
+    "mtime": 1781889818.3899453,
+    "ast_hash": "af667ba0f0b3bf468392aaa42bb39aee",
+    "semantic_hash": ""
+  },
+  "07-Daily/Week-2026-W24.md": {
+    "mtime": 1781888526.3638208,
+    "ast_hash": "3f82f9e00b574f19a1a3fb071ae19254",
+    "semantic_hash": ""
+  },
+  "07-Daily/trades/2026-06-26.md": {
+    "mtime": 1782551953.9056299,
+    "ast_hash": "d4a2ad840755614f6f07f6d2416fea6b",
+    "semantic_hash": ""
+  },
+  "CLAUDE.md": {
+    "mtime": 1781885138.5298047,
+    "ast_hash": "bc325aaeefa771daa6406b17fdb26107",
+    "semantic_hash": ""
+  },
+  "MASTER_AI_RULES.md": {
+    "mtime": 1781889792.5242906,
+    "ast_hash": "cdf508c901200837a512b57a03b1e004",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1781885138.5458016,
+    "ast_hash": "c6e3185e061e6cd13ba997dd6b7720f4",
+    "semantic_hash": ""
+  },
+  "copilot/copilot-custom-prompts/Clip Web Page.md": {
+    "mtime": 1781888526.6650941,
+    "ast_hash": "cfe567ad1f58781c95dee72090929eb1",
+    "semantic_hash": ""
+  },
+  "copilot/copilot-custom-prompts/Clip YouTube Transcript.md": {
+    "mtime": 1781888526.6662319,
+    "ast_hash": "e88c2e63d3f2745c4b9e1e5c3d972d7b",
+    "semantic_hash": ""
+  },
+  "copilot/copilot-custom-prompts/Emojify.md": {
+    "mtime": 1781888526.6682494,
+    "ast_hash": "d4779570e17015bc7df868776d80705b",
+    "semantic_hash": ""
+  },
+  "copilot/copilot-custom-prompts/Explain like I am 5.md": {
+    "mtime": 1781888526.6692474,
+    "ast_hash": "3419101ca5b34338075fe5de6ecc6ec2",
+    "semantic_hash": ""
+  },
+  "copilot/copilot-custom-prompts/Fix grammar and spelling.md": {
+    "mtime": 1781888526.6702502,
+    "ast_hash": "28ae3b30c2547dfcf379f002b036180c",
+    "semantic_hash": ""
+  },
+  "copilot/copilot-custom-prompts/Generate glossary.md": {
+    "mtime": 1781888526.6712492,
+    "ast_hash": "dfdab0ecb9d976fe077e8268fb3db981",
+    "semantic_hash": ""
+  },
+  "copilot/copilot-custom-prompts/Generate table of contents.md": {
+    "mtime": 1781888526.6722314,
+    "ast_hash": "d535c62d886045d933bdb4b29d5f3582",
+    "semantic_hash": ""
+  },
+  "copilot/copilot-custom-prompts/Index.md": {
+    "mtime": 1781889836.0937583,
+    "ast_hash": "d47ff49a69456620c1fb882b4f64757e",
+    "semantic_hash": ""
+  },
+  "copilot/copilot-custom-prompts/Make longer.md": {
+    "mtime": 1781888526.6734061,
+    "ast_hash": "c928aeea6be9186f388200166545b6e4",
+    "semantic_hash": ""
+  },
+  "copilot/copilot-custom-prompts/Make shorter.md": {
+    "mtime": 1781888526.6754162,
+    "ast_hash": "5217119d748b1e9867a22ae49b6d1986",
+    "semantic_hash": ""
+  },
+  "copilot/copilot-custom-prompts/Remove URLs.md": {
+    "mtime": 1781888526.6774163,
+    "ast_hash": "7efacfb6c07fc4c1cb0c6b9c52e52e55",
+    "semantic_hash": ""
+  },
+  "copilot/copilot-custom-prompts/Rewrite as tweet thread.md": {
+    "mtime": 1781888526.6784334,
+    "ast_hash": "3c6051befd8e4febd55c03b3fb6684ff",
+    "semantic_hash": ""
+  },
+  "copilot/copilot-custom-prompts/Rewrite as tweet.md": {
+    "mtime": 1781888526.679417,
+    "ast_hash": "6e6e738904742b7c968f06052c259e6f",
+    "semantic_hash": ""
+  },
+  "copilot/copilot-custom-prompts/Simplify.md": {
+    "mtime": 1781888526.6815252,
+    "ast_hash": "d28db711977f4353737e6a30916a54a0",
+    "semantic_hash": ""
+  },
+  "copilot/copilot-custom-prompts/Summarize.md": {
+    "mtime": 1781888526.6825275,
+    "ast_hash": "2c7b0e41b12867e5325d3698c1a994ce",
+    "semantic_hash": ""
+  },
+  "copilot/copilot-custom-prompts/Translate to Chinese.md": {
+    "mtime": 1781888526.683529,
+    "ast_hash": "51d3506c880944faa8b8be13bb43caca",
+    "semantic_hash": ""
+  },
+  "dashboard.md": {
+    "mtime": 1782493100.9698913,
+    "ast_hash": "1f0a18b1eed6fbfa2ff47d3c38387893",
+    "semantic_hash": ""
+  },
+  "intelligence/Index.md": {
+    "mtime": 1781889846.1584585,
+    "ast_hash": "b07da570081cbeee070286e6c645605a",
+    "semantic_hash": ""
+  },
+  "intelligence/MCP_Tool_Tax_Strategy_Report_2026.md": {
+    "mtime": 1781889846.1656668,
+    "ast_hash": "51134a9637f43d7811d3c47b5d012ba2",
+    "semantic_hash": ""
+  },
+  "intelligence/Strategic_Engineering_Report_2026.md": {
+    "mtime": 1781889846.237513,
+    "ast_hash": "abf8089ee43f5a15d42c782455c51cff",
+    "semantic_hash": ""
+  },
+  "intelligence/audit-intelligence-2026-05-15.md": {
+    "mtime": 1781889846.063913,
+    "ast_hash": "36612cc085a2a54af44d3afebec0b1e4",
+    "semantic_hash": ""
+  },
+  "knowledge/Index.md": {
+    "mtime": 1781889846.3341448,
+    "ast_hash": "4b003232238f13b329df392a0e4837a7",
+    "semantic_hash": ""
+  },
+  "knowledge/Lessons/Index.md": {
+    "mtime": 1781889846.3341448,
+    "ast_hash": "77c22841bd91f5c9c0f0520a551d75d7",
+    "semantic_hash": ""
+  },
+  "knowledge/Lessons/windows-mcp-path-patch.md": {
+    "mtime": 1781889846.355317,
+    "ast_hash": "7136117ffa5276491cb05dd080b55462",
+    "semantic_hash": ""
+  },
+  "knowledge/Misc/Index.md": {
+    "mtime": 1781889846.355317,
+    "ast_hash": "018433df8d3aa0d2439415b88b6a5b3f",
+    "semantic_hash": ""
+  },
+  "knowledge/Playbooks/Index.md": {
+    "mtime": 1781889846.461947,
+    "ast_hash": "87f482e5a11e282c5dd914ac7fe3a288",
+    "semantic_hash": ""
+  },
+  "knowledge/Playbooks/debugging.md": {
+    "mtime": 1781889846.3640344,
+    "ast_hash": "ebc9573b9921e5dc122b5373c2356059",
+    "semantic_hash": ""
+  },
+  "knowledge/Playbooks/deployment.md": {
+    "mtime": 1781889846.4564016,
+    "ast_hash": "544fa7ac44ec768551d2caa6c70c38a2",
+    "semantic_hash": ""
+  },
+  "memory/openhuman/Index.md": {
+    "mtime": 1781889846.5392845,
+    "ast_hash": "6f6373058498eb51f470c878760ad069",
+    "semantic_hash": ""
+  },
+  "memory/openhuman/README.md": {
+    "mtime": 1781889846.6184735,
+    "ast_hash": "cf4584f16f0cd1d14fd5514d8e6764f3",
+    "semantic_hash": ""
+  },
+  "meta/AI/Agent-Adapters.md": {
+    "mtime": 1781889849.0276432,
+    "ast_hash": "a6c7e18b37921d88a69a4b786bcaf185",
+    "semantic_hash": ""
+  },
+  "meta/AI/Automation-Policy.md": {
+    "mtime": 1781889849.1527822,
+    "ast_hash": "21bd4731636f90244005dad1feef2094",
+    "semantic_hash": ""
+  },
+  "meta/AI/Discovery-Roots.md": {
+    "mtime": 1781889849.2120848,
+    "ast_hash": "e06ddd6dece62ad52dba8a222f8b6700",
+    "semantic_hash": ""
+  },
+  "meta/AI/Global-Rules.md": {
+    "mtime": 1781889849.4312017,
+    "ast_hash": "4b95a25aa04a7f27b07b2cfb2e333df6",
+    "semantic_hash": ""
+  },
+  "meta/AI/Global-Session-Playbooks.md": {
+    "mtime": 1781889849.5434136,
+    "ast_hash": "4e2ee2052591b07cd260c9cd1301ab07",
+    "semantic_hash": ""
+  },
+  "meta/AI/Global-Skills.md": {
+    "mtime": 1781889849.8158374,
+    "ast_hash": "84ca93617efea9494aa0d9d4f8a7d4a4",
+    "semantic_hash": ""
+  },
+  "meta/AI/Index.md": {
+    "mtime": 1781889849.833173,
+    "ast_hash": "8249ae8a0eae945f51be7a148613985b",
+    "semantic_hash": ""
+  },
+  "meta/AI/Knowledge-Index.md": {
+    "mtime": 1781889849.8844583,
+    "ast_hash": "ae94f5ddb2110d99396f6624d55bb343",
+    "semantic_hash": ""
+  },
+  "meta/AI/Knowledge-Sync-Status.md": {
+    "mtime": 1781889849.995622,
+    "ast_hash": "c02996abccca7367d5e29d2cef504f34",
+    "semantic_hash": ""
+  },
+  "meta/AI/Project-Autoload-Map.md": {
+    "mtime": 1781889850.194247,
+    "ast_hash": "d8636c31f0a83be783baa3639afc9ee2",
+    "semantic_hash": ""
+  },
+  "meta/AI/Project-Knowledge-Map.md": {
+    "mtime": 1781889850.2442286,
+    "ast_hash": "a59de554d843c7fef38b8a1fdacc2457",
+    "semantic_hash": ""
+  },
+  "meta/AI/Smart-Skill-System.md": {
+    "mtime": 1781889850.3568645,
+    "ast_hash": "738bb4f46375ad454d71eec3269f2f08",
+    "semantic_hash": ""
+  },
+  "meta/ARCHITECTURE.md": {
+    "mtime": 1781888526.704554,
+    "ast_hash": "50a46ac5cdfacac138e02b8cea10d525",
+    "semantic_hash": ""
+  },
+  "meta/BACKGROUND_AUTOMATION.md": {
+    "mtime": 1781889758.8735137,
+    "ast_hash": "4f84c9253bb795b7cc49f1d1168036a8",
+    "semantic_hash": ""
+  },
+  "meta/CHANGELOG.md": {
+    "mtime": 1781888526.7087493,
+    "ast_hash": "5f4584d2e22d9fea2423f247b32df6c7",
+    "semantic_hash": ""
+  },
+  "meta/Index.md": {
+    "mtime": 1781889847.2247603,
+    "ast_hash": "37b7fca6633c3fbbcd77f2fe43bd7e11",
+    "semantic_hash": ""
+  },
+  "meta/KNOWLEDGE_ARCHITECTURE.md": {
+    "mtime": 1781889758.8831878,
+    "ast_hash": "5d0816d1ffb96067c9cef22bcdbe2dd0",
+    "semantic_hash": ""
+  },
+  "meta/ONBOARDING.md": {
+    "mtime": 1781889847.304187,
+    "ast_hash": "ecde4a17b46b1b89aefa8eed2130c7cb",
+    "semantic_hash": ""
+  },
+  "meta/agent-log.md": {
+    "mtime": 1781888526.7035172,
+    "ast_hash": "00187d31f4623dd7d1ccb2f8367c3da3",
+    "semantic_hash": ""
+  },
+  "meta/atlas.md": {
+    "mtime": 1781889846.7602181,
+    "ast_hash": "dc86c7c9713af0229abd8d2801d1dc8c",
+    "semantic_hash": ""
+  },
+  "meta/connection-map.md": {
+    "mtime": 1781889847.050402,
+    "ast_hash": "6d4748199cada7c56d249dc2c295be79",
+    "semantic_hash": ""
+  },
+  "meta/connections.md": {
+    "mtime": 1781889847.1418757,
+    "ast_hash": "41ded449381879eee0f27ae5638ca232",
+    "semantic_hash": ""
+  },
+  "meta/custom-agents-requested.md": {
+    "mtime": 1781888526.7127566,
+    "ast_hash": "e5744948d3cbdd4d6e293918eb58934e",
+    "semantic_hash": ""
+  },
+  "meta/health/BROKEN-LINKS-FIX-2026-06-10.md": {
+    "mtime": 1781889851.5998106,
+    "ast_hash": "5a3f9dc9ef4eab37bbb4b381657e56fa",
+    "semantic_hash": ""
+  },
+  "meta/health/CLEANUP-EXECUTED-2026-06-10.md": {
+    "mtime": 1781889851.933722,
+    "ast_hash": "6ebdf65db6acbd4a9678307eda120ebb",
+    "semantic_hash": ""
+  },
+  "meta/health/Index.md": {
+    "mtime": 1781889852.0020063,
+    "ast_hash": "29cf2a960fd6cf3c8a3b9839afc3544d",
+    "semantic_hash": ""
+  },
+  "meta/health/SECURITY-ACTIONS-2026-06-10.md": {
+    "mtime": 1781889855.8787594,
+    "ast_hash": "9a7b4fa941b618099b9bcddc929f95f8",
+    "semantic_hash": ""
+  },
+  "meta/health/link-scan-report.md": {
+    "mtime": 1781889855.129991,
+    "ast_hash": "1d88b4add46ff29023810d49a72a2799",
+    "semantic_hash": ""
+  },
+  "meta/health/performance-fix.md": {
+    "mtime": 1781889855.4973316,
+    "ast_hash": "520cbf57b7a560cdf3feeeeb839b78f5",
+    "semantic_hash": ""
+  },
+  "meta/health/security-audit-report.md": {
+    "mtime": 1781889856.2028952,
+    "ast_hash": "da53ebc6e4f5c4304b50e17b3cd5db66",
+    "semantic_hash": ""
+  },
+  "meta/naming-conventions.md": {
+    "mtime": 1781888526.7159848,
+    "ast_hash": "538cca6906d25b05bb0a72976d6cd5a5",
+    "semantic_hash": ""
+  },
+  "meta/states/Index.md": {
+    "mtime": 1781889856.3303828,
+    "ast_hash": "cefb1ef0320fb1c54b07a52c9d2ad31e",
+    "semantic_hash": ""
+  },
+  "meta/states/RESTORATION-MASTER-PLAN.md": {
+    "mtime": 1781889856.4762082,
+    "ast_hash": "9f2e656002b174bffaab3996618f0c68",
+    "semantic_hash": ""
+  },
+  "meta/states/agent_cleanup_2026-06-26.md": {
+    "mtime": 1782455186.7021248,
+    "ast_hash": "4d0e224e84af76ea9b59a0f8837a3add",
+    "semantic_hash": ""
+  },
+  "meta/states/architect.md": {
+    "mtime": 1781888526.7499714,
+    "ast_hash": "8074389edf8abb93eda75292cf13da67",
+    "semantic_hash": ""
+  },
+  "meta/states/auditor.md": {
+    "mtime": 1782161330.7413385,
+    "ast_hash": "650ad59c36f0f849437dbf5bfabbf3dc",
+    "semantic_hash": ""
+  },
+  "meta/states/bridge.md": {
+    "mtime": 1781889758.9174907,
+    "ast_hash": "ed85ba72332f6e15fd32c7c9bcc26f90",
+    "semantic_hash": ""
+  },
+  "meta/states/librarian.md": {
+    "mtime": 1781889758.9212515,
+    "ast_hash": "323b915fc5a81daa63ab608cebccc0fe",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/archive/bridge_30day_roadmap_complete.md": {
+    "mtime": 1782371846.3650918,
+    "ast_hash": "5ae418b560f8046c9f2a61b60050b90b",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/archive/bridge_audit_cost_bug.md": {
+    "mtime": 1782381978.5400364,
+    "ast_hash": "bc5c2d480470aa47663aa91bf3220cf1",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/archive/bridge_cleanup.md": {
+    "mtime": 1782384033.2725306,
+    "ast_hash": "18550c927ee81e6a98da3b65ac394e3e",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/archive/bridge_data_factory_day1.md": {
+    "mtime": 1782337721.1991801,
+    "ast_hash": "eefcb1e21ee58524f6914875e9af19f1",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/archive/bridge_final_corrected.md": {
+    "mtime": 1782386469.2186668,
+    "ast_hash": "edef2a66f71923967ab75c096268cb90",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/archive/bridge_final_synthesis.md": {
+    "mtime": 1782378745.6362736,
+    "ast_hash": "6da03545b9f692bcee88fce15b0fd30d",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/archive/bridge_full_upgrade_2026-06-26.md": {
+    "mtime": 1782437352.042969,
+    "ast_hash": "e5bd29e681559a344da86ecfcb671f62",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/archive/bridge_post_audit.md": {
+    "mtime": 1782382881.685117,
+    "ast_hash": "0ea739e8de871642f7a412608df62f99",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/archive/bridge_summary.md": {
+    "mtime": 1782330902.7909763,
+    "ast_hash": "b2cd1904b4b03e625e92c3e67648f9b0",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/auditor_state.md": {
+    "mtime": 1782402326.8817172,
+    "ast_hash": "dab79b98175899d7e9f65debadd9d26c",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/backtest_cost_unit_bug.md": {
+    "mtime": 1782382867.2458348,
+    "ast_hash": "902db13ac55093656244411de1202c80",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/backtest_expansion_state.md": {
+    "mtime": 1782464931.6441174,
+    "ast_hash": "12b4bd91ab607af46bf5945b1e292dd3",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/bridge_audit_correction.md": {
+    "mtime": 1782468939.5493588,
+    "ast_hash": "9032aa90df5c2f83bcc2d049c540cbdc",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/bridge_handoff.md": {
+    "mtime": 1782391139.8393338,
+    "ast_hash": "d839e136d75cbabe66b3adc303a1f83a",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/bridge_state.md": {
+    "mtime": 1782469060.6656604,
+    "ast_hash": "68e713fd19723960a9b7813246985a7f",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/bridge_state_mega_data_2026-06-26.md": {
+    "mtime": 1782463849.3242397,
+    "ast_hash": "4824e74ed9f52d0b7102a6672f19b7b5",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/dashboard_state.md": {
+    "mtime": 1782464965.370283,
+    "ast_hash": "9c28320e69436b25dac14d735f9b75c5",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/data_expansion_state.md": {
+    "mtime": 1782466629.6595008,
+    "ast_hash": "436617430d000e1f2008bc78abf56d33",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/execution_plan.md": {
+    "mtime": 1782406454.0086255,
+    "ast_hash": "66af5588175d8f4b521ad3d5e32a9bcb",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/graph/codebase_graph.md": {
+    "mtime": 1782469078.6156125,
+    "ast_hash": "34554b739a10c6a87da6cadfc14b0e08",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/infrastructure_state.md": {
+    "mtime": 1782464606.875699,
+    "ast_hash": "5a187a5e1c8d0c4ca271567ae6bbdef8",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/ml_training_state.md": {
+    "mtime": 1782464665.187394,
+    "ast_hash": "73e4d65c96fcac9b87ee35efad4101a4",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/pre_register_b2.md": {
+    "mtime": 1782406324.2364545,
+    "ast_hash": "bf4bd81e8a73e0ed90d7ef3247a1ef0a",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/quant_os_ARCHITECTURE.md": {
+    "mtime": 1782469078.6156125,
+    "ast_hash": "5ef4cb98de281640c795387bf9075145",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/researcher.md": {
+    "mtime": 1782436713.0805285,
+    "ast_hash": "0798b4ffcac35e8c2d78e52291d7e183",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/researcher_chaos_complete.md": {
+    "mtime": 1782385169.8418524,
+    "ast_hash": "705b532132d042208dd4b7d4be4d102c",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/researcher_cross_asset_features.md": {
+    "mtime": 1782436284.8942692,
+    "ast_hash": "0bdaa69cf91b0a6e5f878e36cb9b60cc",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/researcher_gap_analysis.md": {
+    "mtime": 1782382105.1623795,
+    "ast_hash": "da5d0b702d3d3211ab3273d115d0144c",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/researcher_loss_drivers.md": {
+    "mtime": 1782388795.3756595,
+    "ast_hash": "58c614373cdbe8426d10ac7bd9345b83",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/stop_loss_audit.md": {
+    "mtime": 1782402311.5388482,
+    "ast_hash": "eeb177ea5724ac6492ed10bbaac5cc21",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/test_bots_dashboard.md": {
+    "mtime": 1782467549.4975798,
+    "ast_hash": "f99fca0d16e52b701f0dff3e3478836f",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/test_data_pipeline.md": {
+    "mtime": 1782467735.961356,
+    "ast_hash": "3fe13151da9382f8842508a0c6e879fc",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/test_integration.md": {
+    "mtime": 1782468107.1788852,
+    "ast_hash": "9e7c32af2054527d3c85aaaf4aee48fd",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/test_ml_backtest.md": {
+    "mtime": 1782467420.5711884,
+    "ast_hash": "fdae74b91fe31d4996234c54cece17ac",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/trading_bots_state.md": {
+    "mtime": 1782465829.316132,
+    "ast_hash": "7100ff2536748b6f21c5fd8778df334a",
+    "semantic_hash": ""
+  },
+  "meta/states/quant_os/worst_folds_analysis.md": {
+    "mtime": 1782384642.8441155,
+    "ast_hash": "eb278330ce8bbb0f7a0f4c9938ac5f6f",
+    "semantic_hash": ""
+  },
+  "meta/states/researcher.md": {
+    "mtime": 1781889758.9232621,
+    "ast_hash": "9f42d0890095e6c7a2146e7b1fa6f68e",
+    "semantic_hash": ""
+  },
+  "meta/states/session-handoff-2026-06-16.md": {
+    "mtime": 1781889758.9252715,
+    "ast_hash": "500631798c8d14928b10764e046d121f",
+    "semantic_hash": ""
+  },
+  "meta/states/tools-setup-2026-06-16.md": {
+    "mtime": 1781889758.9299386,
+    "ast_hash": "8cc7909371814515239f544b05937b5f",
+    "semantic_hash": ""
+  },
+  "meta/states/upgrade_pipeline_2026-06-26.md": {
+    "mtime": 1782458660.6465538,
+    "ast_hash": "e31d22be57255a4d9952360eefaa69a6",
+    "semantic_hash": ""
+  },
+  "meta/style-guide.md": {
+    "mtime": 1781889847.5383775,
+    "ast_hash": "4041f0d918a90a2eac519c6e9756709c",
+    "semantic_hash": ""
+  },
+  "meta/system-status.md": {
+    "mtime": 1781889848.5433836,
+    "ast_hash": "9fb76175c871d24f3270e290e56df9a3",
+    "semantic_hash": ""
+  },
+  "meta/tag-taxonomy.md": {
+    "mtime": 1781889762.6455927,
+    "ast_hash": "558912c71e295ca0a098dcfd09cf16f1",
+    "semantic_hash": ""
+  },
+  "meta/tag-usage-guide.md": {
+    "mtime": 1781889764.7113051,
+    "ast_hash": "fd762904bc0a9e975323d2ab283f4052",
+    "semantic_hash": ""
+  },
+  "meta/user-profile.md": {
+    "mtime": 1781889848.5508645,
+    "ast_hash": "b4934046d34efc1715721c7e74d0c9ff",
+    "semantic_hash": ""
+  },
+  "meta/vault-audit-2026-06-10.md": {
+    "mtime": 1781889758.8895824,
+    "ast_hash": "9c090f1127abbd6b732ff9a544b14059",
+    "semantic_hash": ""
+  },
+  "meta/vault-optimization-report.md": {
+    "mtime": 1781889848.6959236,
+    "ast_hash": "db7258634427b08540420542d7b4d40f",
+    "semantic_hash": ""
+  },
+  "meta/vault-structure.md": {
+    "mtime": 1781888526.7242062,
+    "ast_hash": "0178567f86a8a33dfc6645c78ac3c729",
+    "semantic_hash": ""
+  },
+  "meta/welcome.md": {
+    "mtime": 1781889849.0045927,
+    "ast_hash": "40a46503ce45829827819683c5847c5f",
+    "semantic_hash": ""
+  },
+  "moc/Finance.md": {
+    "mtime": 1781889856.4882452,
+    "ast_hash": "f845c3e83d249ebeb57a3525ee489b60",
+    "semantic_hash": ""
+  },
+  "moc/Index.md": {
+    "mtime": 1781889856.7537858,
+    "ast_hash": "9bbc33c669cb02a532c0bfc59e9fac8c",
+    "semantic_hash": ""
+  },
+  "moc/Learning.md": {
+    "mtime": 1781889856.7749684,
+    "ast_hash": "1c9c33533c421141d277fa9e1b88d321",
+    "semantic_hash": ""
+  },
+  "moc/MOC-backend-development.md": {
+    "mtime": 1781889857.3467276,
+    "ast_hash": "5af6ca712dab23f2d89d87d57c62c99d",
+    "semantic_hash": ""
+  },
+  "moc/MOC-root-projects.md": {
+    "mtime": 1781889857.4147322,
+    "ast_hash": "7df852af9b3970b2a9c7f6f689c52240",
+    "semantic_hash": ""
+  },
+  "moc/MOC-root-resources.md": {
+    "mtime": 1781889857.442311,
+    "ast_hash": "3d4d71434fb49c499d300bdad10eef26",
+    "semantic_hash": ""
+  },
+  "moc/MOC-root-skills.md": {
+    "mtime": 1781888526.7663407,
+    "ast_hash": "2591469ba585c0fa2ba6659fe96f8767",
+    "semantic_hash": ""
+  },
+  "moc/MOC-root.md": {
+    "mtime": 1781889857.5060816,
+    "ast_hash": "eb720dbef1ae04f4a29d14c55a9e886f",
+    "semantic_hash": ""
+  },
+  "moc/MOC-skills-agents.md": {
+    "mtime": 1781889857.603816,
+    "ast_hash": "375d8756212f6f3099cf237968b515d2",
+    "semantic_hash": ""
+  },
+  "moc/MOC-skills-dev.md": {
+    "mtime": 1781889857.7506466,
+    "ast_hash": "024c091995e1dfeca339e84fe07f26c9",
+    "semantic_hash": ""
+  },
+  "moc/MOC-skills-vault.md": {
+    "mtime": 1781889857.8227966,
+    "ast_hash": "6ecd79b61208abb641b6b244d997321d",
+    "semantic_hash": ""
+  },
+  "moc/Personal.md": {
+    "mtime": 1781889857.8460455,
+    "ast_hash": "4d688030a875bfca358254d114ec0596",
+    "semantic_hash": ""
+  },
+  "moc/Research.md": {
+    "mtime": 1781889857.8705735,
+    "ast_hash": "8ab792653c130c8c8f5b7888e6c2b568",
+    "semantic_hash": ""
+  },
+  "moc/Work.md": {
+    "mtime": 1781889857.8941145,
+    "ast_hash": "0c7fcd2b1d21b063268b43fd83a1a078",
+    "semantic_hash": ""
+  },
+  "second-brain/Journal/Index.md": {
+    "mtime": 1781889871.338435,
+    "ast_hash": "c3c3d711e4990308c77e26273edaef94",
+    "semantic_hash": ""
+  },
+  "second-brain/Journal/Weekly/Index.md": {
+    "mtime": 1781889871.4272823,
+    "ast_hash": "931f973d6ab6c1d303e57ace87a22aa7",
+    "semantic_hash": ""
+  },
+  "second-brain/Operations/Opportunities/Index.md": {
+    "mtime": 1781889871.4296594,
+    "ast_hash": "ef44dad764d223f78eaba834e10526f4",
+    "semantic_hash": ""
+  },
+  "second-brain/Operations/Opportunities/OPP-eb1b0120-eff3-4c40-b3f9-c117befb6b15.md": {
+    "mtime": 1781889871.657505,
+    "ast_hash": "a851f2dc6de3bb51622c71b82da4854e",
+    "semantic_hash": ""
+  },
+  "start-here.md": {
+    "mtime": 1781889792.540317,
+    "ast_hash": "d47778f99f0adb75aab4eae1ffe67c8f",
+    "semantic_hash": ""
+  },
+  "system/AI/AGENTS.md": {
+    "mtime": 1781888527.218538,
+    "ast_hash": "0ce41c6a7e6fa82c6568b1fff419c5a0",
+    "semantic_hash": ""
+  },
+  "system/AI/Index.md": {
+    "mtime": 1781889880.9117146,
+    "ast_hash": "4d453e8b909ab629496a034e5900847f",
+    "semantic_hash": ""
+  },
+  "system/AI/LEAN-ROUTER.md": {
+    "mtime": 1781889759.1834443,
+    "ast_hash": "c07c19fd2b313ffc1de619114f42d945",
+    "semantic_hash": ""
+  },
+  "system/AI/Optimization-Resources.md": {
+    "mtime": 1781889759.1834443,
+    "ast_hash": "a12404e2d526714f5d5b7a4a32b61dec",
+    "semantic_hash": ""
+  },
+  "system/Constraints.md": {
+    "mtime": 1781889880.537154,
+    "ast_hash": "bb0fc47e3bc74afc0edb8358fd54bb74",
+    "semantic_hash": ""
+  },
+  "system/Identity.md": {
+    "mtime": 1781888527.2143784,
+    "ast_hash": "810f624fde587c833318b2873d43f483",
+    "semantic_hash": ""
+  },
+  "system/Index.md": {
+    "mtime": 1781889880.6165519,
+    "ast_hash": "e91d63a3e2ca76342fc1e28ab66fbb62",
+    "semantic_hash": ""
+  },
+  "system/Voice.md": {
+    "mtime": 1781889880.9033523,
+    "ast_hash": "da657a6f2257f0326e849ebe755067cb",
+    "semantic_hash": ""
+  },
+  "templates/Book.md": {
+    "mtime": 1781889880.9865358,
+    "ast_hash": "1e176982f54d2f5c5246c1c79694528e",
+    "semantic_hash": ""
+  },
+  "templates/Budget Entry.md": {
+    "mtime": 1781889881.1048033,
+    "ast_hash": "201d6e656ad9152901f919bd98589d06",
+    "semantic_hash": ""
+  },
+  "templates/Course.md": {
+    "mtime": 1781889881.2361646,
+    "ast_hash": "df798c1df41fdfb8d399665ad241a64e",
+    "semantic_hash": ""
+  },
+  "templates/Daily Note.md": {
+    "mtime": 1781889881.3124416,
+    "ast_hash": "be27468514fa1c4bd3818f904f8b4b91",
+    "semantic_hash": ""
+  },
+  "templates/Goal.md": {
+    "mtime": 1781889881.402879,
+    "ast_hash": "a9cd912f3e2a8689a9ed058ae20b2051",
+    "semantic_hash": ""
+  },
+  "templates/Idea.md": {
+    "mtime": 1781885140.0282717,
+    "ast_hash": "5942b65941f93b3658b3aa8f744b36ea",
+    "semantic_hash": ""
+  },
+  "templates/Index.md": {
+    "mtime": 1781889881.483322,
+    "ast_hash": "9057290a6889f9631049c18e3d51f345",
+    "semantic_hash": ""
+  },
+  "templates/Investment.md": {
+    "mtime": 1781889881.6240358,
+    "ast_hash": "942ade85c761f2604098ecc93ae0a771",
+    "semantic_hash": ""
+  },
+  "templates/Journal Entry.md": {
+    "mtime": 1781889881.7780128,
+    "ast_hash": "bf6b158867218bfc72dbe68b3a1a379c",
+    "semantic_hash": ""
+  },
+  "templates/Meeting.md": {
+    "mtime": 1781885140.0292583,
+    "ast_hash": "077a46d1f8d3de87b4776900cf2055d8",
+    "semantic_hash": ""
+  },
+  "templates/Note.md": {
+    "mtime": 1781889881.8720145,
+    "ast_hash": "368f0aa5f6349f494d0b67e4a1aa7c3d",
+    "semantic_hash": ""
+  },
+  "templates/Project.md": {
+    "mtime": 1781885140.0292583,
+    "ast_hash": "b132f05b2f5444ff8d807c874ffbf4d5",
+    "semantic_hash": ""
+  },
+  "templates/Task.md": {
+    "mtime": 1781885140.0292583,
+    "ast_hash": "db9de95578300e1c115c500514ac216f",
+    "semantic_hash": ""
+  },
+  "templates/Thesis Note.md": {
+    "mtime": 1781889882.046247,
+    "ast_hash": "5ae0e1c492ac248f94d78ea0cc7accbc",
+    "semantic_hash": ""
+  },
+  "templates/Weekly Review.md": {
+    "mtime": 1781889882.1290517,
+    "ast_hash": "f7ea30f388d9960559082e293e4c3dd3",
+    "semantic_hash": ""
+  },
+  "templates/Work Log.md": {
+    "mtime": 1781885140.0450864,
+    "ast_hash": "9cc79a84107592204bc11e9a3888862b",
+    "semantic_hash": ""
+  },
+  "templates/contact-note-template.md": {
+    "mtime": 1781885140.0211763,
+    "ast_hash": "cffb456541b598da19bed7a0fa4161c3",
+    "semantic_hash": ""
+  },
+  "templates/daily-note-template.md": {
+    "mtime": 1781885140.0252433,
+    "ast_hash": "e293f0030bd29670d64195cc6793642a",
+    "semantic_hash": ""
+  },
+  "templates/daily-note.md": {
+    "mtime": 1781889768.3266068,
+    "ast_hash": "083c4aff8ded6bac924de04f82aa0c21",
+    "semantic_hash": ""
+  },
+  "templates/fleeting-note.md": {
+    "mtime": 1781889771.9146495,
+    "ast_hash": "6e50a77762c9c27507581e274b0cc5ff",
+    "semantic_hash": ""
+  },
+  "templates/literature-note.md": {
+    "mtime": 1781889773.0148053,
+    "ast_hash": "e330c9474c2fd46f647b0fb812f7939d",
+    "semantic_hash": ""
+  },
+  "templates/meeting-note.md": {
+    "mtime": 1781889769.5241234,
+    "ast_hash": "8661e4e53a43550a1ab2adc88bfe9e3f",
+    "semantic_hash": ""
+  },
+  "templates/opportunity-note-template.md": {
+    "mtime": 1781885140.0292583,
+    "ast_hash": "b2f47e6ba29257cee1c06aab2612a2e7",
+    "semantic_hash": ""
+  },
+  "templates/permanent-note.md": {
+    "mtime": 1781889773.8557663,
+    "ast_hash": "b9d9489f8b62f3aaac0c29f9ec1db0f0",
+    "semantic_hash": ""
+  },
+  "templates/project-note-template.md": {
+    "mtime": 1781885140.0292583,
+    "ast_hash": "955d1660b36b95367d22848420d2aa15",
+    "semantic_hash": ""
+  },
+  "templates/project-note.md": {
+    "mtime": 1781889771.0582078,
+    "ast_hash": "c920f3dad513caa06ba3dbe065b68c73",
+    "semantic_hash": ""
+  },
+  "templates/weekly-review-template.md": {
+    "mtime": 1781885140.0292583,
+    "ast_hash": "6ed3dc586f4727ca9a9c20f7a7f707c1",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-38462064-evaluation-of-chatgpt-generated-medical-responses-a-systematic-r.md": {
+    "mtime": 1781889813.2499886,
+    "ast_hash": "5b8462c942f1e2d6e200d905f1358f70",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-40443773-co-learning-code-learning-for-multi-agent-reinforcement-collabor.md": {
+    "mtime": 1781889814.0465775,
+    "ast_hash": "2aeb5ced6b80469a4860aed7af434e9d",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-40501924-biomni-a-general-purpose-biomedical-ai-agent.md": {
+    "mtime": 1781889814.0619357,
+    "ast_hash": "4fa95fcd88a520ffbba82c9293091778",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-40909853-ai-agents-in-clinical-medicine-a-systematic-review.md": {
+    "mtime": 1781889814.2755454,
+    "ast_hash": "9f0fd536bf4c8ae6a046b8e83bdc8cc8",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-40936657-large-language-models-in-equity-markets-applications-techniques.md": {
+    "mtime": 1781889814.6475112,
+    "ast_hash": "b6e118aa18d60b494bc33cc697c69bd2",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-41015033-a-foundational-architecture-for-ai-agents-in-healthcare.md": {
+    "mtime": 1781889814.6547687,
+    "ast_hash": "338952b9b28e68ad25e3a628eb8c6527",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-41018738-auto-scaling-llm-based-multi-agent-systems-through-dynamic-integ.md": {
+    "mtime": 1781889814.7609713,
+    "ast_hash": "4158cc4eb18cf136833d61418f828cf7",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-41175605-large-language-model-agents-as-experimental-orchestrators-in-dat.md": {
+    "mtime": 1781889814.7718854,
+    "ast_hash": "7e987ec012d95d18905e133795e4d94d",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/PMID-41292801-agentic-lab-an-agentic-physical-ai-system-for-cell-and-organoid.md": {
+    "mtime": 1781889814.898245,
+    "ast_hash": "7760e1f476a3fe91f07048a7aefd5ed7",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/_archive-nonascii/PMID-38462064-evaluation-of-chatgpt-generated-medical-responses-a-systematic-\u2026.md": {
+    "mtime": 1781889816.7601733,
+    "ast_hash": "0bd9a19e61d62fadd5a20518e16447c2",
+    "semantic_hash": ""
+  },
+  "03-resources/AI-Knowledge/Sources/PubMed/_archive-nonascii/PMID-41018738-auto-scaling-llm-based-multi-agent-systems-through-dynamic-inte\u2026.md": {
+    "mtime": 1781889817.2105272,
+    "ast_hash": "da9ff4703d103ae615746574d35506b2",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/macro/2026-06-27-credit.md": {
+    "mtime": 1782551953.5766697,
+    "ast_hash": "8316cbeb181cda1813c3c6dd6f88ca7b",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/macro/2026-06-27-cross-market.md": {
+    "mtime": 1782551953.5766697,
+    "ast_hash": "bba6e98c614ce11593cb5e496694153d",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/macro/2026-06-27-liquidity.md": {
+    "mtime": 1782551953.5766697,
+    "ast_hash": "63161ac68f1ce4862a42f0064e91abfc",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/macro/2026-06-27-weekly.md": {
+    "mtime": 1782551953.579203,
+    "ast_hash": "b40e4f38c1c7d484c9bdfbd6295b422d",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/macro/2026-06-27-yields.md": {
+    "mtime": 1782551953.5766697,
+    "ast_hash": "2aadc65a114c127d4b945a507102b5ba",
+    "semantic_hash": ""
+  },
+  "03-resources/trading/models/live_20260627_130006.md": {
+    "mtime": 1782551951.1759815,
+    "ast_hash": "f1e814a3c441ad9c4c5134e588d18a60",
+    "semantic_hash": ""
+  },
+  "07-Daily/trades/2026-06-25.md": {
+    "mtime": 1782549372.287126,
+    "ast_hash": "5b895d26ee4fada45fa321db06e4a2e7",
+    "semantic_hash": ""
+  },
+  "07-Daily/trades/2026-06-26_original_backup.md": {
+    "mtime": 1782549260.4929087,
+    "ast_hash": "8a873ecd35cb3d9862e44fc2329d9496",
+    "semantic_hash": ""
+  },
+  "07-Daily/trades/2026-06-27.md": {
+    "mtime": 1782549373.125594,
+    "ast_hash": "4c0b95f8b878f0ccfd462d982396e17b",
+    "semantic_hash": ""
+  },
+  "03-resources/notebooklm/Index.md": {
+    "mtime": 1782549909.8950496,
+    "ast_hash": "201d3ebf4ef7e73418cd8e822fa303e2",
+    "semantic_hash": ""
+  }
+}

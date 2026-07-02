@@ -12,22 +12,22 @@ Priority chain with fallback:
 """
 
 import asyncio
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional
 import os
 import time
 import warnings
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
 
 
 @dataclass
 class DataSource:
     """Data source configuration"""
+
     name: str
     priority: int
     enabled: bool = True
     rate_limit: int = 100  # requests per minute
-    _request_times: List[float] = field(default_factory=list, repr=False)
+    _request_times: list[float] = field(default_factory=list, repr=False)
 
     async def wait_if_needed(self):
         """Sliding-window rate limiter. Blocks until a slot opens."""
@@ -60,7 +60,7 @@ class DataPipeline:
             "fred": DataSource(name="FRED", priority=4, rate_limit=100),
         }
 
-        self._cache: Dict[str, Dict] = {}
+        self._cache: dict[str, dict] = {}
         self._cache_ttl = timedelta(minutes=5)
 
     async def fetch_ohlcv(
@@ -70,7 +70,7 @@ class DataPipeline:
         limit: int = 100,
         exchange: str = "binance",
         require_real_ohlcv: bool = False,
-    ) -> Optional[Dict[str, List]]:
+    ) -> dict[str, list] | None:
         """
         Fetch OHLCV data with fallback chain.
 
@@ -119,7 +119,7 @@ class DataPipeline:
 
         return None
 
-    async def fetch_macro(self, series_id: str, limit: int = 100) -> Optional[Dict]:
+    async def fetch_macro(self, series_id: str, limit: int = 100) -> dict | None:
         """
         Fetch macro economic data from FRED.
 
@@ -133,9 +133,7 @@ class DataPipeline:
         await self.sources["fred"].wait_if_needed()
         return await self._fetch_fred(series_id, limit)
 
-    async def _fetch_ccxt(
-        self, symbol: str, timeframe: str, limit: int, exchange: str
-    ) -> Optional[Dict]:
+    async def _fetch_ccxt(self, symbol: str, timeframe: str, limit: int, exchange: str) -> dict | None:
         """Fetch from CCXT"""
         try:
             import ccxt.async_support as ccxt
@@ -148,8 +146,13 @@ class DataPipeline:
 
             # Map timeframe
             tf_map = {
-                "1m": "1m", "5m": "5m", "15m": "15m", "30m": "30m",
-                "1h": "1h", "4h": "4h", "1d": "1d",
+                "1m": "1m",
+                "5m": "5m",
+                "15m": "15m",
+                "30m": "30m",
+                "1h": "1h",
+                "4h": "4h",
+                "1d": "1d",
             }
             ccxt_tf = tf_map.get(timeframe, "1h")
 
@@ -174,9 +177,7 @@ class DataPipeline:
             print(f"CCXT error: {e}")
             return None
 
-    async def _fetch_coingecko(
-        self, symbol: str, timeframe: str, limit: int
-    ) -> Optional[Dict]:
+    async def _fetch_coingecko(self, symbol: str, timeframe: str, limit: int) -> dict | None:
         """Fetch from CoinGecko"""
         try:
             import aiohttp
@@ -210,8 +211,8 @@ class DataPipeline:
                     )
                     closes = [p[1] for p in prices[-limit:]]
                     opens = closes[:-1] + [closes[-1]]
-                    highs = [max(o, c) * 1.001 for o, c in zip(opens, closes)]
-                    lows = [min(o, c) * 0.999 for o, c in zip(opens, closes)]
+                    highs = [max(o, c) * 1.001 for o, c in zip(opens, closes, strict=False)]
+                    lows = [min(o, c) * 0.999 for o, c in zip(opens, closes, strict=False)]
                     volumes = [0] * len(closes)  # CoinGecko doesn't provide volume in this endpoint
 
                     return {
@@ -229,9 +230,7 @@ class DataPipeline:
             print(f"CoinGecko error: {e}")
             return None
 
-    async def _fetch_yahoo(
-        self, symbol: str, timeframe: str, limit: int
-    ) -> Optional[Dict]:
+    async def _fetch_yahoo(self, symbol: str, timeframe: str, limit: int) -> dict | None:
         """Fetch from Yahoo Finance"""
         try:
             import yfinance as yf
@@ -247,8 +246,12 @@ class DataPipeline:
 
             # Map timeframe
             tf_map = {
-                "1m": "1m", "5m": "5m", "15m": "15m",
-                "1h": "1h", "4h": "1h", "1d": "1d",
+                "1m": "1m",
+                "5m": "5m",
+                "15m": "15m",
+                "1h": "1h",
+                "4h": "1h",
+                "1d": "1d",
             }
             yf_interval = tf_map.get(timeframe, "15m")
 
@@ -283,7 +286,7 @@ class DataPipeline:
             print(f"Yahoo error: {e}")
             return None
 
-    async def _fetch_fred(self, series_id: str, limit: int) -> Optional[Dict]:
+    async def _fetch_fred(self, series_id: str, limit: int) -> dict | None:
         """Fetch from FRED API"""
         try:
             import aiohttp
@@ -320,7 +323,7 @@ class DataPipeline:
             print(f"FRED error: {e}")
             return None
 
-    def _get_cached(self, key: str) -> Optional[Dict]:
+    def _get_cached(self, key: str) -> dict | None:
         """Get cached data if valid"""
         if key in self._cache:
             entry = self._cache[key]
@@ -328,7 +331,7 @@ class DataPipeline:
                 return entry["data"]
         return None
 
-    def _set_cache(self, key: str, data: Dict) -> None:
+    def _set_cache(self, key: str, data: dict) -> None:
         """Set cache"""
         self._cache[key] = {
             "data": data,
@@ -341,7 +344,7 @@ class SentimentPipeline:
     Sentiment data from multiple sources.
     """
 
-    async def fetch_google_trends(self, keywords: List[str]) -> Optional[Dict]:
+    async def fetch_google_trends(self, keywords: list[str]) -> dict | None:
         """Fetch Google Trends data"""
         try:
             from pytrends.request import TrendReq
@@ -363,7 +366,7 @@ class SentimentPipeline:
             print(f"Google Trends error: {e}")
             return None
 
-    async def fetch_fear_greed(self) -> Optional[Dict]:
+    async def fetch_fear_greed(self) -> dict | None:
         """Fetch Fear & Greed Index"""
         try:
             import aiohttp

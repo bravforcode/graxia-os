@@ -1,5 +1,7 @@
 """Tests for decision gates and run matrix."""
+
 from pathlib import Path
+
 from graxia.packages.quant_os.validation.run_matrix import RunMatrix
 
 
@@ -10,6 +12,7 @@ def test_gates_yaml_exists():
         path = Path("C:/Users/menum/graxia os/graxia/packages/quant_os/validation/decision_gates.yaml")
     # Just verify the module works
     from graxia.packages.quant_os.validation.run_matrix import RunMatrix
+
     assert RunMatrix.default()
 
 

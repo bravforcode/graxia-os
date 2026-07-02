@@ -1,7 +1,8 @@
 import hashlib
-from pathlib import Path
 from dataclasses import dataclass, field
 from datetime import datetime
+from pathlib import Path
+
 
 @dataclass
 class SBOMEntry:
@@ -13,6 +14,7 @@ class SBOMEntry:
     pinned_commit: str = ""
     vulnerability_status: str = "UNKNOWN"
 
+
 @dataclass
 class SupplyChainReport:
     generated_at: str
@@ -20,6 +22,7 @@ class SupplyChainReport:
     pinned_count: int
     unpinned_packages: list[str] = field(default_factory=list)
     vulnerability_scan_results: dict = field(default_factory=dict)
+
 
 class SupplyChainScanner:
     def __init__(self, project_root: str):
@@ -35,21 +38,25 @@ class SupplyChainScanner:
                     continue
                 if "==" in line:
                     name, version = line.split("==", 1)
-                    entries.append(SBOMEntry(
-                        package_name=name.strip(),
-                        version=version.strip(),
-                        license="UNKNOWN",
-                        hash_sha256=hashlib.sha256(line.encode()).hexdigest(),
-                        source="requirements.txt"
-                    ))
+                    entries.append(
+                        SBOMEntry(
+                            package_name=name.strip(),
+                            version=version.strip(),
+                            license="UNKNOWN",
+                            hash_sha256=hashlib.sha256(line.encode()).hexdigest(),
+                            source="requirements.txt",
+                        )
+                    )
                 else:
-                    entries.append(SBOMEntry(
-                        package_name=line.strip(),
-                        version="UNPINNED",
-                        license="UNKNOWN",
-                        hash_sha256="",
-                        source="requirements.txt"
-                    ))
+                    entries.append(
+                        SBOMEntry(
+                            package_name=line.strip(),
+                            version="UNPINNED",
+                            license="UNKNOWN",
+                            hash_sha256="",
+                            source="requirements.txt",
+                        )
+                    )
         return entries
 
     def generate_sbom(self) -> SupplyChainReport:
@@ -59,7 +66,7 @@ class SupplyChainScanner:
             generated_at=datetime.utcnow().isoformat(),
             total_packages=len(entries),
             pinned_count=len(entries) - len(unpinned),
-            unpinned_packages=unpinned
+            unpinned_packages=unpinned,
         )
 
     def verify_lockfile(self, lockfile_path: str) -> tuple[bool, str]:
@@ -78,6 +85,7 @@ class SupplyChainScanner:
             return False, f"MODULE_NOT_FOUND:{module_path}"
         content = path.read_text()
         import ast
+
         try:
             tree = ast.parse(content)
         except SyntaxError:

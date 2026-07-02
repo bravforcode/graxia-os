@@ -15,22 +15,22 @@ Required drills per master plan:
 11. Log/telemetry outage
 12. Telegram alert outage
 """
-import sys
-import os
+
 import logging
-from datetime import datetime, timedelta
+import os
+import sys
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import List
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from shadow.pipeline import ShadowPipeline, ShadowSignal, ShadowSignalOutcome
-from shadow.telemetry import ShadowTelemetry
 from canary.config import CanaryConfig
 from canary.order_lifecycle import CanaryOrder, OrderState, PostFillVerifier
+from shadow.pipeline import ShadowPipeline, ShadowSignal, ShadowSignalOutcome
+from shadow.telemetry import ShadowTelemetry
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -46,9 +46,9 @@ class IncidentDrills:
     """Run all mandatory incident drills."""
 
     def __init__(self):
-        self._results: List[DrillResult] = []
+        self._results: list[DrillResult] = []
 
-    def run_all(self) -> List[DrillResult]:
+    def run_all(self) -> list[DrillResult]:
         logger.info("Starting incident drills...")
         drills = [
             self.drill_kill_switch,
@@ -71,11 +71,13 @@ class IncidentDrills:
                 status = "PASS" if result.passed else "FAIL"
                 logger.info(f"  {result.drill_name}: {status}")
             except Exception as e:
-                self._results.append(DrillResult(
-                    drill_name=drill.__name__,
-                    passed=False,
-                    details=f"Exception: {e}",
-                ))
+                self._results.append(
+                    DrillResult(
+                        drill_name=drill.__name__,
+                        passed=False,
+                        details=f"Exception: {e}",
+                    )
+                )
                 logger.error(f"  {drill.__name__}: ERROR - {e}")
 
         self._print_report()
@@ -85,9 +87,14 @@ class IncidentDrills:
         """Test kill switch blocks new orders."""
         config = CanaryConfig()
         order = CanaryOrder(
-            order_id="DRILL-001", symbol="XAUUSD", direction="BUY",
-            volume=0.1, entry_price=2350.0, stop_loss=2340.0,
-            take_profit=2370.0, strategy_id="drill",
+            order_id="DRILL-001",
+            symbol="XAUUSD",
+            direction="BUY",
+            volume=0.1,
+            entry_price=2350.0,
+            stop_loss=2340.0,
+            take_profit=2370.0,
+            strategy_id="drill",
         )
 
         # Simulate kill switch
@@ -108,9 +115,13 @@ class IncidentDrills:
 
         # Simulate: process signal, then disconnect
         signal = ShadowSignal(
-            signal_id="DRILL-002", timestamp=datetime.utcnow(),
-            symbol="XAUUSD", direction="BUY", entry_price=2350.0,
-            stop_loss=2340.0, take_profit=2370.0,
+            signal_id="DRILL-002",
+            timestamp=datetime.utcnow(),
+            symbol="XAUUSD",
+            direction="BUY",
+            entry_price=2350.0,
+            stop_loss=2340.0,
+            take_profit=2370.0,
             outcome=ShadowSignalOutcome.ACCEPTED,
         )
         result = pipeline.process_signal(signal)
@@ -155,7 +166,11 @@ class IncidentDrills:
         # Check via state (uses internal baseline)
         state = monitor.get_state()
         passed = state.is_wide
-        return DrillResult("Wide Spread Detection", passed, f"Wide spread detected: {passed}, multiplier: {state.spread_multiplier:.1f}")
+        return DrillResult(
+            "Wide Spread Detection",
+            passed,
+            f"Wide spread detected: {passed}, multiplier: {state.spread_multiplier:.1f}",
+        )
 
     def drill_contract_change(self) -> DrillResult:
         """Test contract metadata change detection."""
@@ -170,9 +185,14 @@ class IncidentDrills:
     def drill_broker_rejection(self) -> DrillResult:
         """Test broker rejection handling."""
         order = CanaryOrder(
-            order_id="DRILL-006", symbol="XAUUSD", direction="BUY",
-            volume=0.1, entry_price=2350.0, stop_loss=2340.0,
-            take_profit=2370.0, strategy_id="drill",
+            order_id="DRILL-006",
+            symbol="XAUUSD",
+            direction="BUY",
+            volume=0.1,
+            entry_price=2350.0,
+            stop_loss=2340.0,
+            take_profit=2370.0,
+            strategy_id="drill",
         )
 
         # Simulate: submit -> rejected
@@ -188,9 +208,14 @@ class IncidentDrills:
     def drill_order_timeout(self) -> DrillResult:
         """Test order timeout handling."""
         order = CanaryOrder(
-            order_id="DRILL-007", symbol="XAUUSD", direction="BUY",
-            volume=0.1, entry_price=2350.0, stop_loss=2340.0,
-            take_profit=2370.0, strategy_id="drill",
+            order_id="DRILL-007",
+            symbol="XAUUSD",
+            direction="BUY",
+            volume=0.1,
+            entry_price=2350.0,
+            stop_loss=2340.0,
+            take_profit=2370.0,
+            strategy_id="drill",
         )
 
         # Simulate: submit -> expired
@@ -279,17 +304,25 @@ def main():
 
     # Export results
     import json
-    os.makedirs('shadow_results', exist_ok=True)
-    ts = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
-    path = f'shadow_results/drills_{ts}.json'
-    with open(path, 'w') as f:
-        json.dump([{
-            "drill": r.drill_name,
-            "passed": r.passed,
-            "details": r.details,
-        } for r in results], f, indent=2)
+
+    os.makedirs("shadow_results", exist_ok=True)
+    ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    path = f"shadow_results/drills_{ts}.json"
+    with open(path, "w") as f:
+        json.dump(
+            [
+                {
+                    "drill": r.drill_name,
+                    "passed": r.passed,
+                    "details": r.details,
+                }
+                for r in results
+            ],
+            f,
+            indent=2,
+        )
     print(f"Drill results saved: {path}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

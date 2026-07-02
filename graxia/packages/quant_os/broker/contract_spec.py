@@ -22,10 +22,11 @@ class ContractSpec:
     Immutable broker-specific contract specification.
     Source of truth: MT5 symbol_info(). Never hardcode.
     """
-    broker: str           # e.g. "ICMarketsSC"
-    server: str           # e.g. "ICMarketsSC-Demo"
-    symbol: str           # e.g. "XAUUSD"
-    account_currency: str # e.g. "USD"
+
+    broker: str  # e.g. "ICMarketsSC"
+    server: str  # e.g. "ICMarketsSC-Demo"
+    symbol: str  # e.g. "XAUUSD"
+    account_currency: str  # e.g. "USD"
 
     digits: int
     point: Decimal

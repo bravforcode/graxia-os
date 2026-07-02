@@ -27,6 +27,7 @@ class _RedisBackend:
 
     def __init__(self, url: str):
         import redis.asyncio as aioredis
+
         self._pool = aioredis.ConnectionPool.from_url(url, decode_responses=True)
         self._client = aioredis.Redis(connection_pool=self._pool)
 
@@ -156,11 +157,11 @@ class RateLimitRule:
 
 
 DEFAULT_RULES: list[RateLimitRule] = [
-    RateLimitRule("/api/signal",    max_requests=10, methods=("POST",)),
-    RateLimitRule("/api/webhook",   max_requests=20, methods=("POST",)),
-    RateLimitRule("/api/orders",    max_requests=30, methods=("GET", "POST")),
+    RateLimitRule("/api/signal", max_requests=10, methods=("POST",)),
+    RateLimitRule("/api/webhook", max_requests=20, methods=("POST",)),
+    RateLimitRule("/api/orders", max_requests=30, methods=("GET", "POST")),
     RateLimitRule("/api/positions", max_requests=30, methods=("GET",)),
-    RateLimitRule("/api/risk",      max_requests=30, methods=("GET",)),
+    RateLimitRule("/api/risk", max_requests=30, methods=("GET",)),
 ]
 
 
@@ -183,9 +184,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return request.client.host
         return "unknown"
 
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         path = request.url.path
         method = request.method.upper()
         ip = self._client_ip(request)

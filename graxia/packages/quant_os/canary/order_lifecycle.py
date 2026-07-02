@@ -1,4 +1,5 @@
 """Phase BE-P9 — Order lifecycle state machine."""
+
 from enum import Enum
 
 
@@ -26,7 +27,12 @@ VALID_TRANSITIONS = {
     OrderState.ORDER_INTENT_CREATED: [OrderState.ORDER_CHECKED],
     OrderState.ORDER_CHECKED: [OrderState.ORDER_SUBMITTED, OrderState.REJECTED],
     OrderState.ORDER_SUBMITTED: [OrderState.BROKER_ACKNOWLEDGED, OrderState.REJECTED],
-    OrderState.BROKER_ACKNOWLEDGED: [OrderState.FILLED, OrderState.PARTIALLY_FILLED, OrderState.REJECTED, OrderState.EXPIRED],
+    OrderState.BROKER_ACKNOWLEDGED: [
+        OrderState.FILLED,
+        OrderState.PARTIALLY_FILLED,
+        OrderState.REJECTED,
+        OrderState.EXPIRED,
+    ],
     OrderState.FILLED: [OrderState.PROTECTIVE_STOPS_VERIFIED],
     OrderState.PARTIALLY_FILLED: [OrderState.PROTECTIVE_STOPS_VERIFIED, OrderState.CLOSED],
     OrderState.PROTECTIVE_STOPS_VERIFIED: [OrderState.POSITION_RECONCILED],
@@ -62,6 +68,12 @@ class OrderLifecycle:
         return self._state in (OrderState.AUDITED, OrderState.REJECTED, OrderState.EXPIRED)
 
     def is_filled(self) -> bool:
-        return self._state in (OrderState.FILLED, OrderState.PARTIALLY_FILLED,
-                              OrderState.PROTECTIVE_STOPS_VERIFIED, OrderState.POSITION_RECONCILED,
-                              OrderState.CLOSED, OrderState.DEAL_RECONCILED, OrderState.AUDITED)
+        return self._state in (
+            OrderState.FILLED,
+            OrderState.PARTIALLY_FILLED,
+            OrderState.PROTECTIVE_STOPS_VERIFIED,
+            OrderState.POSITION_RECONCILED,
+            OrderState.CLOSED,
+            OrderState.DEAL_RECONCILED,
+            OrderState.AUDITED,
+        )

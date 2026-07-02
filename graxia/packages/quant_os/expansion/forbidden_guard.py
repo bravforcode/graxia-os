@@ -1,6 +1,5 @@
 """Phase BE-P13 — Forbidden expansion guard."""
 
-
 FORBIDDEN = [
     ("raising_risk_on_win_streak", "Never raise risk because of recent wins"),
     ("adding_symbols_to_recover_drawdown", "Never add symbols to recover drawdown"),

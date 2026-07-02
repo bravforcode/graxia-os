@@ -5,14 +5,14 @@ Ensures strategy performance is validated on data never seen during development.
 Includes multiple testing correction (deflated Sharpe) for 13 strategies.
 """
 
-from dataclasses import dataclass
-from typing import List, Dict
 import math
+from dataclasses import dataclass
 
 
 @dataclass
 class HoldoutResult:
     """Holdout validation result"""
+
     # Holdout performance
     holdout_sharpe: float
     holdout_win_rate: float
@@ -36,7 +36,7 @@ class HoldoutResult:
 
     # Overall
     passed: bool
-    warnings: List[str]
+    warnings: list[str]
 
 
 class HoldoutValidator:
@@ -67,8 +67,8 @@ class HoldoutValidator:
 
     def validate(
         self,
-        dev_results: Dict[str, float],
-        holdout_results: Dict[str, float],
+        dev_results: dict[str, float],
+        holdout_results: dict[str, float],
         max_acceptable_degradation: float = 0.5,
     ) -> HoldoutResult:
         """
@@ -98,9 +98,7 @@ class HoldoutValidator:
         wr_deg = (dev_win_rate - holdout_win_rate) / dev_win_rate if dev_win_rate > 0 else 1.0
 
         # Deflated Sharpe Ratio
-        deflated_sharpe, threshold = self._deflated_sharpe(
-            holdout_sharpe, holdout_trades
-        )
+        deflated_sharpe, threshold = self._deflated_sharpe(holdout_sharpe, holdout_trades)
 
         # Warnings
         if sharpe_deg > max_acceptable_degradation:
@@ -139,7 +137,9 @@ class HoldoutValidator:
         )
 
     def _deflated_sharpe(
-        self, observed_sharpe: float, n_trades: int,
+        self,
+        observed_sharpe: float,
+        n_trades: int,
         annualization: float = None,
     ) -> tuple:
         """

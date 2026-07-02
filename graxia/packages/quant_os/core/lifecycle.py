@@ -1,6 +1,8 @@
 """Strategy lifecycle hooks from Freqtrade pattern"""
+
 from abc import ABC
 from datetime import datetime
+
 
 class StrategyLifecycle(ABC):
     """Mixin that adds lifecycle hooks to strategies"""

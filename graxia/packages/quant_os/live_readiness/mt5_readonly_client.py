@@ -15,6 +15,7 @@ _mt5 = None
 
 class Mt5UnavailableError(Exception):
     """Raised when MT5 terminal is not available."""
+
     pass
 
 
@@ -28,14 +29,12 @@ def _get_mt5():
     _mt5_imported = True
     try:
         import MetaTrader5 as mt5
+
         _mt5 = mt5
         return mt5
     except ImportError:
         _mt5 = None
-        raise Mt5UnavailableError(
-            "MetaTrader5 package not installed. "
-            "Install with: pip install MetaTrader5"
-        )
+        raise Mt5UnavailableError("MetaTrader5 package not installed. " "Install with: pip install MetaTrader5")
 
 
 class Mt5ReadOnlyClient:
@@ -221,9 +220,7 @@ class Mt5ReadOnlyClient:
         except Exception as e:
             raise Mt5UnavailableError(f"Tick error for {symbol}: {e}") from e
 
-    def copy_ticks_range(
-        self, symbol: str, start: datetime, end: datetime, flags: int = 16
-    ) -> list[dict]:
+    def copy_ticks_range(self, symbol: str, start: datetime, end: datetime, flags: int = 16) -> list[dict]:
         """
         Copy a range of ticks for a symbol.
 
@@ -241,20 +238,20 @@ class Mt5ReadOnlyClient:
         try:
             ticks = mt5.copy_ticks_range(symbol, start, end, flags)
             if ticks is None:
-                raise Mt5UnavailableError(
-                    f"Could not copy ticks for {symbol} from {start} to {end}"
-                )
+                raise Mt5UnavailableError(f"Could not copy ticks for {symbol} from {start} to {end}")
             result = []
             for t in ticks:
-                result.append({
-                    "bid": float(t.bid),
-                    "ask": float(t.ask),
-                    "last": float(t.last),
-                    "volume": float(t.volume),
-                    "time": t.time,
-                    "time_msc": t.time_msc,
-                    "flags": t.flags,
-                })
+                result.append(
+                    {
+                        "bid": float(t.bid),
+                        "ask": float(t.ask),
+                        "last": float(t.last),
+                        "volume": float(t.volume),
+                        "time": t.time,
+                        "time_msc": t.time_msc,
+                        "flags": t.flags,
+                    }
+                )
             return result
         except Mt5UnavailableError:
             raise
@@ -278,21 +275,21 @@ class Mt5ReadOnlyClient:
         try:
             rates = mt5.copy_rates_from_pos(symbol, timeframe, 0, count)
             if rates is None:
-                raise Mt5UnavailableError(
-                    f"Could not get bars for {symbol} timeframe={timeframe}"
-                )
+                raise Mt5UnavailableError(f"Could not get bars for {symbol} timeframe={timeframe}")
             result = []
             for r in rates:
-                result.append({
-                    "time": r["time"],
-                    "open": float(r["open"]),
-                    "high": float(r["high"]),
-                    "low": float(r["low"]),
-                    "close": float(r["close"]),
-                    "tick_volume": int(r["tick_volume"]),
-                    "spread": int(r["spread"]),
-                    "real_volume": int(r["real_volume"]),
-                })
+                result.append(
+                    {
+                        "time": r["time"],
+                        "open": float(r["open"]),
+                        "high": float(r["high"]),
+                        "low": float(r["low"]),
+                        "close": float(r["close"]),
+                        "tick_volume": int(r["tick_volume"]),
+                        "spread": int(r["spread"]),
+                        "real_volume": int(r["real_volume"]),
+                    }
+                )
             return result
         except Mt5UnavailableError:
             raise
@@ -309,27 +306,29 @@ class Mt5ReadOnlyClient:
                 return []
             result = []
             for p in positions:
-                result.append({
-                    "ticket": p.ticket,
-                    "time": p.time,
-                    "time_msc": p.time_msc,
-                    "time_update": p.time_update,
-                    "time_update_msc": p.time_update_msc,
-                    "type": p.type,
-                    "magic": p.magic,
-                    "identifier": p.identifier,
-                    "reason": p.reason,
-                    "volume": float(p.volume),
-                    "price_open": float(p.price_open),
-                    "sl": float(p.sl),
-                    "tp": float(p.tp),
-                    "price_current": float(p.price_current),
-                    "swap": float(p.swap),
-                    "profit": float(p.profit),
-                    "commission": float(p.commission) if hasattr(p, "commission") else 0.0,
-                    "symbol": p.symbol,
-                    "comment": p.comment or "",
-                })
+                result.append(
+                    {
+                        "ticket": p.ticket,
+                        "time": p.time,
+                        "time_msc": p.time_msc,
+                        "time_update": p.time_update,
+                        "time_update_msc": p.time_update_msc,
+                        "type": p.type,
+                        "magic": p.magic,
+                        "identifier": p.identifier,
+                        "reason": p.reason,
+                        "volume": float(p.volume),
+                        "price_open": float(p.price_open),
+                        "sl": float(p.sl),
+                        "tp": float(p.tp),
+                        "price_current": float(p.price_current),
+                        "swap": float(p.swap),
+                        "profit": float(p.profit),
+                        "commission": float(p.commission) if hasattr(p, "commission") else 0.0,
+                        "symbol": p.symbol,
+                        "comment": p.comment or "",
+                    }
+                )
             return result
         except Mt5UnavailableError:
             raise
@@ -346,23 +345,25 @@ class Mt5ReadOnlyClient:
                 return []
             result = []
             for o in orders:
-                result.append({
-                    "ticket": o.ticket,
-                    "time_setup": o.time_setup,
-                    "time_expiration": o.time_expiration,
-                    "type": o.type,
-                    "type_filling": o.type_filling,
-                    "type_time": o.type_time,
-                    "magic": o.magic,
-                    "volume_current": float(o.volume_current),
-                    "volume_initial": float(o.volume_initial),
-                    "price_open": float(o.price_open),
-                    "sl": float(o.sl),
-                    "tp": float(o.tp),
-                    "price_current": float(o.price_current),
-                    "symbol": o.symbol,
-                    "comment": o.comment or "",
-                })
+                result.append(
+                    {
+                        "ticket": o.ticket,
+                        "time_setup": o.time_setup,
+                        "time_expiration": o.time_expiration,
+                        "type": o.type,
+                        "type_filling": o.type_filling,
+                        "type_time": o.type_time,
+                        "magic": o.magic,
+                        "volume_current": float(o.volume_current),
+                        "volume_initial": float(o.volume_initial),
+                        "price_open": float(o.price_open),
+                        "sl": float(o.sl),
+                        "tp": float(o.tp),
+                        "price_current": float(o.price_current),
+                        "symbol": o.symbol,
+                        "comment": o.comment or "",
+                    }
+                )
             return result
         except Mt5UnavailableError:
             raise
@@ -398,27 +399,29 @@ class Mt5ReadOnlyClient:
                 return []
             result = []
             for o in orders:
-                result.append({
-                    "ticket": o.ticket,
-                    "time_setup": o.time_setup,
-                    "time_setup_msc": o.time_setup_msc,
-                    "time_done": o.time_done,
-                    "time_done_msc": o.time_done_msc,
-                    "type": o.type,
-                    "type_filling": o.type_filling,
-                    "type_time": o.type_time,
-                    "magic": o.magic,
-                    "volume_current": float(o.volume_current),
-                    "volume_initial": float(o.volume_initial),
-                    "price_open": float(o.price_open),
-                    "sl": float(o.sl),
-                    "tp": float(o.tp),
-                    "price_current": float(o.price_current),
-                    "symbol": o.symbol,
-                    "comment": o.comment or "",
-                    "retcode": o.retcode,
-                    "status": o.status,
-                })
+                result.append(
+                    {
+                        "ticket": o.ticket,
+                        "time_setup": o.time_setup,
+                        "time_setup_msc": o.time_setup_msc,
+                        "time_done": o.time_done,
+                        "time_done_msc": o.time_done_msc,
+                        "type": o.type,
+                        "type_filling": o.type_filling,
+                        "type_time": o.type_time,
+                        "magic": o.magic,
+                        "volume_current": float(o.volume_current),
+                        "volume_initial": float(o.volume_initial),
+                        "price_open": float(o.price_open),
+                        "sl": float(o.sl),
+                        "tp": float(o.tp),
+                        "price_current": float(o.price_current),
+                        "symbol": o.symbol,
+                        "comment": o.comment or "",
+                        "retcode": o.retcode,
+                        "status": o.status,
+                    }
+                )
             return result
         except Mt5UnavailableError:
             raise
@@ -454,33 +457,33 @@ class Mt5ReadOnlyClient:
                 return []
             result = []
             for d in deals:
-                result.append({
-                    "ticket": d.ticket,
-                    "order": d.order,
-                    "time": d.time,
-                    "time_msc": d.time_msc,
-                    "type": d.type,
-                    "entry": d.entry,
-                    "magic": d.magic,
-                    "volume": float(d.volume),
-                    "price": float(d.price),
-                    "commission": float(d.commission),
-                    "swap": float(d.swap),
-                    "profit": float(d.profit),
-                    "symbol": d.symbol,
-                    "comment": d.comment or "",
-                    "position_id": d.position_id,
-                    "reason": d.reason,
-                })
+                result.append(
+                    {
+                        "ticket": d.ticket,
+                        "order": d.order,
+                        "time": d.time,
+                        "time_msc": d.time_msc,
+                        "type": d.type,
+                        "entry": d.entry,
+                        "magic": d.magic,
+                        "volume": float(d.volume),
+                        "price": float(d.price),
+                        "commission": float(d.commission),
+                        "swap": float(d.swap),
+                        "profit": float(d.profit),
+                        "symbol": d.symbol,
+                        "comment": d.comment or "",
+                        "position_id": d.position_id,
+                        "reason": d.reason,
+                    }
+                )
             return result
         except Mt5UnavailableError:
             raise
         except Exception as e:
             raise Mt5UnavailableError(f"Get history deals error: {e}") from e
 
-    def order_calc_profit(
-        self, symbol: str, volume: float, price: float
-    ) -> float:
+    def order_calc_profit(self, symbol: str, volume: float, price: float) -> float:
         """
         Calculate hypothetical profit for a buy order at given volume and price.
 
@@ -492,13 +495,9 @@ class Mt5ReadOnlyClient:
             result = mt5.order_calc_profit(mt5.ORDER_TYPE_BUY, symbol, volume, price)
             return float(result) if result is not None else 0.0
         except Exception as e:
-            raise Mt5UnavailableError(
-                f"Profit calc error for {symbol}: {e}"
-            ) from e
+            raise Mt5UnavailableError(f"Profit calc error for {symbol}: {e}") from e
 
-    def order_calc_margin(
-        self, symbol: str, volume: float, price: float
-    ) -> float:
+    def order_calc_margin(self, symbol: str, volume: float, price: float) -> float:
         """
         Calculate required margin for a buy order at given volume and price.
 
@@ -510,9 +509,7 @@ class Mt5ReadOnlyClient:
             result = mt5.order_calc_margin(mt5.ORDER_TYPE_BUY, symbol, volume, price)
             return float(result) if result is not None else 0.0
         except Exception as e:
-            raise Mt5UnavailableError(
-                f"Margin calc error for {symbol}: {e}"
-            ) from e
+            raise Mt5UnavailableError(f"Margin calc error for {symbol}: {e}") from e
 
     def order_check(self, request: dict) -> dict:
         """
@@ -563,6 +560,4 @@ class Mt5ReadOnlyClient:
 _BLOCKED = ["order_send", "order_modify", "order_close"]
 for _method in _BLOCKED:
     if hasattr(Mt5ReadOnlyClient, _method):
-        raise RuntimeError(
-            f"FORBIDDEN: {_method} must not exist in Mt5ReadOnlyClient"
-        )
+        raise RuntimeError(f"FORBIDDEN: {_method} must not exist in Mt5ReadOnlyClient")

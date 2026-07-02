@@ -8,13 +8,13 @@ Accounts for weekend closures and configurable session windows.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, time, UTC
+from datetime import UTC, datetime, time
 from enum import Enum
-from typing import Optional
 
 
 class SessionState(str, Enum):
     """Market session state."""
+
     OPEN = "OPEN"
     CLOSED_WEEKEND = "CLOSED_WEEKEND"
     CLOSED_HOLIDAY = "CLOSED_HOLIDAY"
@@ -25,11 +25,12 @@ class SessionState(str, Enum):
 @dataclass
 class SessionResult:
     """Result of a session check."""
+
     state: SessionState
     symbol: str
     check_time_utc: datetime
     reason: str
-    next_open_utc: Optional[datetime] = None
+    next_open_utc: datetime | None = None
 
     @property
     def is_open(self) -> bool:
@@ -46,8 +47,9 @@ class SessionResult:
 @dataclass
 class MarketSessionConfig:
     """Configuration for market session hours."""
+
     # Forex sessions (UTC times)
-    forex_open_utc: time = time(0, 0)   # Sunday 22:00 EST = 00:00 UTC Monday
+    forex_open_utc: time = time(0, 0)  # Sunday 22:00 EST = 00:00 UTC Monday
     forex_close_utc: time = time(22, 0)  # Friday 17:00 EST = 22:00 UTC
 
     # Weekend detection
@@ -55,9 +57,9 @@ class MarketSessionConfig:
 
     # Holiday dates (month, day) - simplified
     holidays: tuple[tuple[int, int], ...] = (
-        (1, 1),   # New Year's Day
-        (7, 4),   # Independence Day (US)
-        (12, 25), # Christmas
+        (1, 1),  # New Year's Day
+        (7, 4),  # Independence Day (US)
+        (12, 25),  # Christmas
     )
 
 
@@ -76,12 +78,12 @@ class MarketSessionGuard:
     def __init__(
         self,
         symbol: str,
-        config: Optional[MarketSessionConfig] = None,
+        config: MarketSessionConfig | None = None,
     ):
         self._symbol = symbol
         self._config = config or MarketSessionConfig()
 
-    def check(self, now_utc: Optional[datetime] = None) -> SessionResult:
+    def check(self, now_utc: datetime | None = None) -> SessionResult:
         """
         Check if the market is currently open.
 
@@ -144,6 +146,6 @@ class MarketSessionGuard:
                 reason=f"Session check failed: {e} (fails closed)",
             )
 
-    def is_open(self, now_utc: Optional[datetime] = None) -> bool:
+    def is_open(self, now_utc: datetime | None = None) -> bool:
         """Simple boolean check: is the market open?"""
         return self.check(now_utc).is_open

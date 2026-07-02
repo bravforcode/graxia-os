@@ -6,7 +6,7 @@ import hashlib
 import json
 import uuid
 from dataclasses import asdict, dataclass
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
@@ -60,8 +60,7 @@ def _to_serializable(record: TradeRecord) -> dict:
 
 
 def _from_serializable(data: dict) -> TradeRecord:
-    for k in ("entry_price", "exit_price", "volume", "pnl", "pnl_pct",
-              "fees", "spread_cost", "slippage_cost"):
+    for k in ("entry_price", "exit_price", "volume", "pnl", "pnl_pct", "fees", "spread_cost", "slippage_cost"):
         if data.get(k) is not None:
             data[k] = Decimal(str(data[k]))
     for k in ("entry_time", "exit_time"):

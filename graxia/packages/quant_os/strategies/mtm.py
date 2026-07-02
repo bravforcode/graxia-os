@@ -22,11 +22,11 @@ Expected Performance (EURUSD 2020-2026):
 - Sharpe: 1.42
 """
 
-from typing import Optional, Dict, Any, List
 from decimal import Decimal
+from typing import Any
 
-from .base import Strategy, Signal, StrategyConfig
-from ..core.enums import SignalType, RegimeType
+from ..core.enums import RegimeType, SignalType
+from .base import Signal, Strategy, StrategyConfig
 
 
 class MultiTimeframeMomentum(Strategy):
@@ -45,11 +45,7 @@ class MultiTimeframeMomentum(Strategy):
             min_confidence=0.65,
             min_risk_reward=2.0,
             require_trend_confirm=True,
-            regime_filter=[
-                RegimeType.TREND_STRONG_UP,
-                RegimeType.TREND_STRONG_DOWN,
-                RegimeType.TREND_WEAK
-            ]
+            regime_filter=[RegimeType.TREND_STRONG_UP, RegimeType.TREND_STRONG_DOWN, RegimeType.TREND_WEAK],
         )
         super().__init__(config)
 
@@ -67,20 +63,16 @@ class MultiTimeframeMomentum(Strategy):
         self.volume_period = 20
         self.volume_mult = 1.2
 
-    def required_features(self) -> List[str]:
-        return [
-            "ema_9", "ema_20", "ema_50", "ema_200",
-            "rsi_14", "atr_14",
-            "volume_sma_20", "h1_ema_200", "h4_ema_200"
-        ]
+    def required_features(self) -> list[str]:
+        return ["ema_9", "ema_20", "ema_50", "ema_200", "rsi_14", "atr_14", "volume_sma_20", "h1_ema_200", "h4_ema_200"]
 
     def generate_signal(
         self,
         symbol: str,
-        ohlcv_data: Dict[str, List],
-        indicators: Optional[Dict[str, Any]] = None,
-        regime: Optional[RegimeType] = None
-    ) -> Optional[Signal]:
+        ohlcv_data: dict[str, list],
+        indicators: dict[str, Any] | None = None,
+        regime: RegimeType | None = None,
+    ) -> Signal | None:
         """Generate momentum signal"""
 
         # Check regime validity
@@ -195,24 +187,26 @@ class MultiTimeframeMomentum(Strategy):
                 "ema_50": ema_slow,
                 "rsi": rsi,
                 "atr": atr,
-                "conditions": long_conditions if long_signal else short_conditions
+                "conditions": long_conditions if long_signal else short_conditions,
             },
-            notes=f"MTM signal: {'Long' if long_signal else 'Short'} on {symbol}"
+            notes=f"MTM signal: {'Long' if long_signal else 'Short'} on {symbol}",
         )
 
-    def _calculate_indicators(self, ohlcv_data: Dict[str, List]) -> Dict[str, Any]:
+    def _calculate_indicators(self, ohlcv_data: dict[str, list]) -> dict[str, Any]:
         """Calculate required indicators from OHLCV data"""
         try:
             import pandas as pd
             import pandas_ta as ta
 
-            df = pd.DataFrame({
-                "open": ohlcv_data.get("open", []),
-                "high": ohlcv_data.get("high", []),
-                "low": ohlcv_data.get("low", []),
-                "close": ohlcv_data.get("close", []),
-                "volume": ohlcv_data.get("volume", [])
-            })
+            df = pd.DataFrame(
+                {
+                    "open": ohlcv_data.get("open", []),
+                    "high": ohlcv_data.get("high", []),
+                    "low": ohlcv_data.get("low", []),
+                    "close": ohlcv_data.get("close", []),
+                    "volume": ohlcv_data.get("volume", []),
+                }
+            )
 
             if len(df) < self.ema_trend_period:
                 return {}
@@ -239,12 +233,7 @@ class MultiTimeframeMomentum(Strategy):
             print(f"Indicator calculation error: {e}")
             return {}
 
-    def _calculate_confidence(
-        self,
-        conditions: Dict[str, bool],
-        rsi: float,
-        direction: str
-    ) -> float:
+    def _calculate_confidence(self, conditions: dict[str, bool], rsi: float, direction: str) -> float:
         """Calculate signal confidence score"""
         base_confidence = 0.60  # Base for all confirmed signals
 

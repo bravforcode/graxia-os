@@ -1,4 +1,5 @@
 """Run release truth check — verify all artifacts are present."""
+
 import sys
 from pathlib import Path
 

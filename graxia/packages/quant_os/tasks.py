@@ -8,19 +8,15 @@ Background task processing:
 - Data quality validation
 """
 
+import os
+from datetime import datetime, timedelta
+
 from celery import Celery
 from celery.schedules import crontab
-from datetime import datetime, timedelta
-import os
 
 # Initialize Celery
 redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-celery_app = Celery(
-    "quant_os",
-    broker=redis_url,
-    backend=redis_url,
-    include=["graxia.packages.quant_os.tasks"]
-)
+celery_app = Celery("quant_os", broker=redis_url, backend=redis_url, include=["graxia.packages.quant_os.tasks"])
 
 # Celery configuration
 celery_app.conf.update(
@@ -101,8 +97,8 @@ def generate_daily_report(self):
 def check_risk_limits(self):
     """Check risk limits and trigger alerts if breached"""
     try:
-        from .risk.kill_switch import KillSwitch
         from .core.config import get_config
+        from .risk.kill_switch import KillSwitch
 
         config = get_config()
         kill_switch = KillSwitch()
@@ -133,8 +129,9 @@ def check_risk_limits(self):
 def take_portfolio_snapshot(self):
     """Take portfolio snapshot every 5 minutes"""
     try:
-        from .core.config import get_config
         from decimal import Decimal
+
+        from .core.config import get_config
 
         config = get_config()
 
@@ -180,14 +177,16 @@ def monitor_kill_switch(self):
 
             # Send alert
             from .monitoring.telegram import TelegramNotifier
+
             notifier = TelegramNotifier()
             if notifier.bot_token:
                 import asyncio
-                asyncio.run(notifier.notify_kill_switch(
-                    trigger_type="AUTO",
-                    reason=", ".join(checks["reasons"]),
-                    triggered_by="system"
-                ))
+
+                asyncio.run(
+                    notifier.notify_kill_switch(
+                        trigger_type="AUTO", reason=", ".join(checks["reasons"]), triggered_by="system"
+                    )
+                )
 
         return {
             "status": "success",
@@ -251,10 +250,13 @@ def send_telegram_daily_summary(self):
 """
 
         import asyncio
-        asyncio.run(notifier.send_custom_message(
-            title="Daily Summary",
-            content=message,
-        ))
+
+        asyncio.run(
+            notifier.send_custom_message(
+                title="Daily Summary",
+                content=message,
+            )
+        )
 
         return {"status": "sent", "date": today.isoformat()}
 
@@ -319,7 +321,6 @@ def cleanup_old_data(self, days: int = 30):
 def backup_database(self):
     """Backup database (run daily)"""
     try:
-
         timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
         backup_file = f"/backups/quant_os_{timestamp}.sql"
 
@@ -372,11 +373,13 @@ def collect_live_logs(self):
     """Run MT5 execution log snapshot (every hour)."""
     try:
         import subprocess
+
         scripts_dir = os.path.join(os.path.dirname(__file__), "scripts")
         cmd = [
             "python",
             os.path.join(scripts_dir, "collect_logs.py"),
-            "--mode", "snapshot",
+            "--mode",
+            "snapshot",
         ]
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
         if result.returncode != 0:
@@ -395,12 +398,15 @@ def collect_spread_heatmap(self):
     """Run spread heatmap collection (every 4 hours)."""
     try:
         import subprocess
+
         scripts_dir = os.path.join(os.path.dirname(__file__), "scripts")
         cmd = [
             "python",
             os.path.join(scripts_dir, "spread_heatmap.py"),
-            "--interval", "300",
-            "--duration", "14400",
+            "--interval",
+            "300",
+            "--duration",
+            "14400",
         ]
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=18000)
         if result.returncode != 0:

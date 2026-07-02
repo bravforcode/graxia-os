@@ -3,16 +3,15 @@ Strategy 11: Liquidity Sweep ✦
 Liquidity grab above/below key levels
 """
 
-from typing import Dict, Optional
+from ..core.engine import SignalDirection, StrategySignal
 from .base import GoldStrategy
-from ..core.engine import StrategySignal, SignalDirection
 
 
 class LiquiditySweepStrategy(GoldStrategy):
     name = "liquidity_sweep"
     description = "Liquidity sweep detection"
 
-    def analyze(self, data: Dict, current_price: float, symbol: str = "XAUUSD") -> Optional[StrategySignal]:
+    def analyze(self, data: dict, current_price: float, symbol: str = "XAUUSD") -> StrategySignal | None:
         high = self._get_high(data, "M15")
         low = self._get_low(data, "M15")
         close = self._get_close(data, "M15")
@@ -36,7 +35,7 @@ class LiquiditySweepStrategy(GoldStrategy):
                 # Equal highs (buy-side liquidity)
                 if abs(high[i] - high[j]) / high[i] < 0.0005:
                     # Price swept above and came back
-                    sweep_high = max(high[min(i,j):max(i,j)+1])
+                    sweep_high = max(high[min(i, j) : max(i, j) + 1])
                     if sweep_high > high[i] and close[-1] < high[i]:
                         score = 80
                         direction = SignalDirection.SELL
@@ -47,7 +46,7 @@ class LiquiditySweepStrategy(GoldStrategy):
 
                 # Equal lows (sell-side liquidity)
                 if abs(low[i] - low[j]) / low[i] < 0.0005:
-                    sweep_low = low[min(i,j):max(i,j)+1]
+                    sweep_low = low[min(i, j) : max(i, j) + 1]
                     if sweep_low and min(sweep_low) < low[i] and close[-1] > low[i]:
                         score = 80
                         direction = SignalDirection.BUY

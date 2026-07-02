@@ -16,7 +16,7 @@ Usage:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict, field
+from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 
 import structlog
@@ -65,8 +65,8 @@ class WalkForwardDashboard:
         oos = [w.oos_accuracy for w in self._windows if w.oos_accuracy > 0]
         drifts = sum(1 for w in self._windows if w.drifted)
         retraining = sum(1 for w in self._windows if w.retrained)
-        avg_acc = sum(accs)/len(accs) if accs else 0.0
-        avg_oos = sum(oos)/len(oos) if oos else None
+        avg_acc = sum(accs) / len(accs) if accs else 0.0
+        avg_oos = sum(oos) / len(oos) if oos else None
 
         html = f"""<!DOCTYPE html>
 <html lang="en">

@@ -37,9 +37,9 @@ import tempfile
 import time
 import uuid
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 from unittest.mock import patch
 
 # ---------------------------------------------------------------------------
@@ -68,26 +68,24 @@ logger = logging.getLogger("chaos.runner")
 @dataclass
 class ChaosTestResult:
     """Result of a single chaos test."""
+
     test_name: str
     passed: bool
     duration_seconds: float
-    errors: List[str] = field(default_factory=list)
-    details: Dict[str, Any] = field(default_factory=dict)
-    timestamp: str = field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    errors: list[str] = field(default_factory=list)
+    details: dict[str, Any] = field(default_factory=dict)
+    timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 
 @dataclass
 class ChaosReport:
     """Aggregated report of all chaos tests."""
-    results: List[ChaosTestResult] = field(default_factory=list)
+
+    results: list[ChaosTestResult] = field(default_factory=list)
     total: int = 0
     passed: int = 0
     failed: int = 0
-    timestamp: str = field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def add(self, result: ChaosTestResult) -> None:
         self.results.append(result)
@@ -112,9 +110,9 @@ class MockMT5Connector:
 
     def __init__(self) -> None:
         self.connected: bool = True
-        self.positions: List[Dict[str, Any]] = []
-        self.orders: List[Dict[str, Any]] = []
-        self.error_log: List[str] = []
+        self.positions: list[dict[str, Any]] = []
+        self.orders: list[dict[str, Any]] = []
+        self.error_log: list[str] = []
 
     def connect(self) -> bool:
         self.connected = True
@@ -147,7 +145,7 @@ class MockMT5Connector:
         self.orders.append(order)
         return order_id
 
-    def get_positions(self) -> List[Dict[str, Any]]:
+    def get_positions(self) -> list[dict[str, Any]]:
         if not self.connected:
             self.error_log.append("Position query failed: MT5 disconnected")
             raise ConnectionError("MT5 not connected")
@@ -163,14 +161,14 @@ class ChaosTradeLedger:
     """Tracks orders for duplicate detection during chaos tests."""
 
     def __init__(self) -> None:
-        self._orders: List[Dict[str, Any]] = []
+        self._orders: list[dict[str, Any]] = []
 
-    def record(self, order: Dict[str, Any]) -> None:
+    def record(self, order: dict[str, Any]) -> None:
         self._orders.append(order)
 
     def find_duplicates(self) -> int:
         """Count duplicate orders (same symbol+side+volume within 1s window)."""
-        seen: Dict[str, int] = {}
+        seen: dict[str, int] = {}
         for o in self._orders:
             key = f"{o.get('symbol')}:{o.get('side')}:{o.get('volume')}"
             seen[key] = seen.get(key, 0) + 1
@@ -192,11 +190,9 @@ class ChaosTradeLedger:
 class ChaosStateStore:
     """JSON-file backed state store for chaos tests."""
 
-    def __init__(self, path: Optional[str] = None) -> None:
-        self._path = Path(path) if path else Path(
-            tempfile.mktemp(suffix=".chaos_state.json")
-        )
-        self._data: Dict[str, Any] = {}
+    def __init__(self, path: str | None = None) -> None:
+        self._path = Path(path) if path else Path(tempfile.mktemp(suffix=".chaos_state.json"))
+        self._data: dict[str, Any] = {}
 
     def save(self, key: str, value: Any) -> None:
         self._data[key] = value
@@ -206,11 +202,11 @@ class ChaosStateStore:
         self._load_from_disk()
         return self._data.get(key)
 
-    def save_full(self, data: Dict[str, Any]) -> None:
+    def save_full(self, data: dict[str, Any]) -> None:
         self._data.update(data)
         self._flush()
 
-    def load_all(self) -> Dict[str, Any]:
+    def load_all(self) -> dict[str, Any]:
         self._load_from_disk()
         return self._data.copy()
 
@@ -244,11 +240,13 @@ def _get_rss_mb() -> float:
     """Return current process RSS in MB."""
     try:
         import psutil
+
         return psutil.Process().memory_info().rss / (1024 * 1024)
     except (ImportError, Exception):
         pass
     try:
         import resource
+
         usage = resource.getrusage(resource.RUSAGE_SELF)
         return usage.ru_maxrss / 1024.0
     except (ImportError, AttributeError):
@@ -262,7 +260,7 @@ def _get_rss_mb() -> float:
 
 def test_network_disconnect(
     disconnect_seconds: float = DEFAULT_DISCONNECT_SECONDS,
-    state_path: Optional[str] = None,
+    state_path: str | None = None,
 ) -> ChaosTestResult:
     """Kill MT5 connection mid-trade, wait, reconnect, verify no duplicates.
 
@@ -279,8 +277,8 @@ def test_network_disconnect(
         10. Verify state recovery.
     """
     start = time.monotonic()
-    errors: List[str] = []
-    details: Dict[str, Any] = {}
+    errors: list[str] = []
+    details: dict[str, Any] = {}
     connector = MockMT5Connector()
     ledger = ChaosTradeLedger()
     store = ChaosStateStore(state_path)
@@ -340,10 +338,7 @@ def test_network_disconnect(
         persisted_tickets = {p["ticket"] for p in persisted}
 
         if server_tickets != persisted_tickets:
-            errors.append(
-                f"Position mismatch: server={server_tickets} "
-                f"persisted={persisted_tickets}"
-            )
+            errors.append(f"Position mismatch: server={server_tickets} " f"persisted={persisted_tickets}")
 
         details["positions_before"] = position
         details["positions_after"] = server_positions
@@ -352,9 +347,7 @@ def test_network_disconnect(
         # Step 9: verify idempotency prevents duplicate on retry
         # The system should detect that the order was already filled
         # and NOT submit a second order.
-        existing_keys = {
-            o.get("idempotency_key") for o in ledger._orders if o.get("idempotency_key")
-        }
+        existing_keys = {o.get("idempotency_key") for o in ledger._orders if o.get("idempotency_key")}
         retry_key = "XAUUSD:BUY:0.01"
         retry_would_duplicate = retry_key in existing_keys
 
@@ -417,6 +410,7 @@ def _create_test_duckdb(db_path: str) -> None:
     """Create a DuckDB database with shadow_trades table for testing."""
     try:
         import duckdb
+
         con = duckdb.connect(db_path)
         con.execute("""
             CREATE TABLE IF NOT EXISTS shadow_trades (
@@ -462,6 +456,7 @@ def _count_trades(db_path: str) -> int:
     """Count rows in shadow_trades, works with both DuckDB and SQLite."""
     try:
         import duckdb
+
         con = duckdb.connect(db_path, read_only=True)
         result = con.execute("SELECT COUNT(*) FROM shadow_trades").fetchone()[0]
         con.close()
@@ -473,26 +468,22 @@ def _count_trades(db_path: str) -> int:
         return result
 
 
-def _get_open_trades(db_path: str) -> List[Dict[str, Any]]:
+def _get_open_trades(db_path: str) -> list[dict[str, Any]]:
     """Get all OPEN trades from shadow_trades."""
     try:
         import duckdb
+
         con = duckdb.connect(db_path, read_only=True)
         rows = con.execute(
-            "SELECT signal_id, symbol, direction, status "
-            "FROM shadow_trades WHERE status = 'OPEN'"
+            "SELECT signal_id, symbol, direction, status " "FROM shadow_trades WHERE status = 'OPEN'"
         ).fetchall()
         con.close()
-        return [
-            {"signal_id": r[0], "symbol": r[1], "direction": r[2], "status": r[3]}
-            for r in rows
-        ]
+        return [{"signal_id": r[0], "symbol": r[1], "direction": r[2], "status": r[3]} for r in rows]
     except ImportError:
         con = sqlite3.connect(db_path)
         con.row_factory = sqlite3.Row
         rows = con.execute(
-            "SELECT signal_id, symbol, direction, status "
-            "FROM shadow_trades WHERE status = 'OPEN'"
+            "SELECT signal_id, symbol, direction, status " "FROM shadow_trades WHERE status = 'OPEN'"
         ).fetchall()
         con.close()
         return [dict(r) for r in rows]
@@ -509,6 +500,7 @@ def _write_shadow_trade(
     ts = datetime.now(UTC).isoformat()
     try:
         import duckdb
+
         con = duckdb.connect(db_path)
         con.execute(
             "INSERT OR REPLACE INTO shadow_trades "
@@ -530,8 +522,8 @@ def _write_shadow_trade(
 
 
 def test_process_kill(
-    state_path: Optional[str] = None,
-    db_path: Optional[str] = None,
+    state_path: str | None = None,
+    db_path: str | None = None,
 ) -> ChaosTestResult:
     """Kill shadow process with SIGTERM, restart, verify resume.
 
@@ -546,8 +538,8 @@ def test_process_kill(
         8. Verify no orphaned positions in DuckDB.
     """
     start = time.monotonic()
-    errors: List[str] = []
-    details: Dict[str, Any] = {}
+    errors: list[str] = []
+    details: dict[str, Any] = {}
 
     tmp_dir = tempfile.mkdtemp(prefix="chaos_proc_")
     local_state_path = state_path or os.path.join(tmp_dir, "system_state.json")
@@ -560,9 +552,7 @@ def test_process_kill(
             "last_heartbeat": datetime.now(UTC).isoformat(),
             "kill_switch_active": False,
             "environment": "chaos_test",
-            "positions": [
-                {"ticket": "pos-001", "symbol": "XAUUSD", "side": "BUY", "volume": 0.01}
-            ],
+            "positions": [{"ticket": "pos-001", "symbol": "XAUUSD", "side": "BUY", "volume": 0.01}],
             "daily_pnl": -12.50,
             "pending_orders": [],
         }
@@ -577,7 +567,7 @@ def test_process_kill(
         details["trades_before_kill"] = trade_count_before
 
         # Step 3: write shim that simulates a long-running shadow process
-        shim_code = f'''
+        shim_code = f"""
 import json, signal, sys, time, os
 
 state_path = {local_state_path!r}
@@ -615,7 +605,7 @@ except Exception:
     pass
 
 sys.exit(0)
-'''
+"""
         shim_path = os.path.join(tmp_dir, "shadow_shim.py")
         Path(shim_path).write_text(shim_code)
 
@@ -678,15 +668,13 @@ sys.exit(0)
         details["trades_after_restart"] = trade_count_after
 
         if trade_count_after != trade_count_before:
-            errors.append(
-                f"Trade count mismatch: before={trade_count_before} "
-                f"after={trade_count_after}"
-            )
+            errors.append(f"Trade count mismatch: before={trade_count_before} " f"after={trade_count_after}")
 
     except Exception as exc:
         errors.append(f"Unexpected error: {exc}")
     finally:
         import shutil
+
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
     elapsed = time.monotonic() - start
@@ -705,7 +693,7 @@ sys.exit(0)
 
 
 def test_duckdb_corruption_recovery(
-    db_path: Optional[str] = None,
+    db_path: str | None = None,
 ) -> ChaosTestResult:
     """Simulate partial write (truncate WAL), restart, verify data integrity.
 
@@ -719,8 +707,8 @@ def test_duckdb_corruption_recovery(
         7. Verify no silent data corruption (check hashes/counts).
     """
     start = time.monotonic()
-    errors: List[str] = []
-    details: Dict[str, Any] = {}
+    errors: list[str] = []
+    details: dict[str, Any] = {}
 
     tmp_dir = tempfile.mkdtemp(prefix="chaos_duckdb_")
     local_db_path = db_path or os.path.join(tmp_dir, "chaos_corrupt.duckdb")
@@ -745,6 +733,7 @@ def test_duckdb_corruption_recovery(
         # Force a checkpoint so data is in the main file
         try:
             import duckdb
+
             con = duckdb.connect(local_db_path)
             con.execute("CHECKPOINT")
             con.close()
@@ -771,62 +760,48 @@ def test_duckdb_corruption_recovery(
             # Step 5: verify data
             try:
                 import duckdb
+
                 con = duckdb.connect(local_db_path, read_only=True)
-                count_after = con.execute(
-                    "SELECT COUNT(*) FROM shadow_trades"
-                ).fetchone()[0]
+                count_after = con.execute("SELECT COUNT(*) FROM shadow_trades").fetchone()[0]
                 con.close()
             except ImportError:
                 con = sqlite3.connect(local_db_path)
-                count_after = con.execute(
-                    "SELECT COUNT(*) FROM shadow_trades"
-                ).fetchone()[0]
+                count_after = con.execute("SELECT COUNT(*) FROM shadow_trades").fetchone()[0]
                 con.close()
 
             details["trades_after_recovery"] = count_after
 
             if count_after != count_before:
-                errors.append(
-                    f"Data loss after WAL corruption: before={count_before} "
-                    f"after={count_after}"
-                )
+                errors.append(f"Data loss after WAL corruption: before={count_before} " f"after={count_after}")
 
             # Step 6: verify system can write new data
-            _write_shadow_trade(
-                local_db_path, "POST-RECOVERY-001", "XAUUSD", "BUY", 2350.0
-            )
+            _write_shadow_trade(local_db_path, "POST-RECOVERY-001", "XAUUSD", "BUY", 2350.0)
             count_final = _count_trades(local_db_path)
             details["trades_after_new_write"] = count_final
 
             if count_final != count_before + 1:
-                errors.append(
-                    f"Write after recovery failed: expected {count_before + 1}, "
-                    f"got {count_final}"
-                )
+                errors.append(f"Write after recovery failed: expected {count_before + 1}, " f"got {count_final}")
 
             # Step 7: verify specific records (no silent corruption)
             try:
                 import duckdb
+
                 con = duckdb.connect(local_db_path, read_only=True)
                 row = con.execute(
-                    "SELECT signal_id, entry_price FROM shadow_trades "
-                    "WHERE signal_id = 'CORRUPT-000'"
+                    "SELECT signal_id, entry_price FROM shadow_trades " "WHERE signal_id = 'CORRUPT-000'"
                 ).fetchone()
                 con.close()
             except ImportError:
                 con = sqlite3.connect(local_db_path)
                 row = con.execute(
-                    "SELECT signal_id, entry_price FROM shadow_trades "
-                    "WHERE signal_id = 'CORRUPT-000'"
+                    "SELECT signal_id, entry_price FROM shadow_trades " "WHERE signal_id = 'CORRUPT-000'"
                 ).fetchone()
                 con.close()
 
             if row is None:
                 errors.append("First record (CORRUPT-000) not found after recovery")
             elif row[0] != "CORRUPT-000":
-                errors.append(
-                    f"Record corruption: expected CORRUPT-000, got {row[0]}"
-                )
+                errors.append(f"Record corruption: expected CORRUPT-000, got {row[0]}")
 
         except Exception as exc:
             errors.append(f"Recovery after WAL corruption failed: {exc}")
@@ -835,6 +810,7 @@ def test_duckdb_corruption_recovery(
         errors.append(f"Unexpected error: {exc}")
     finally:
         import shutil
+
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
     elapsed = time.monotonic() - start
@@ -876,8 +852,8 @@ def test_rollover_window() -> ChaosTestResult:
         5. Test boundary: 21:54 (should pass), 22:06 (should pass).
     """
     start = time.monotonic()
-    errors: List[str] = []
-    details: Dict[str, Any] = {}
+    errors: list[str] = []
+    details: dict[str, Any] = {}
     blocked_count = 0
     allowed_count = 0
 
@@ -898,14 +874,10 @@ def test_rollover_window() -> ChaosTestResult:
         for test_dt, expect_blocked, label in test_times:
             is_blocked = _is_rollover_blocked(test_dt)
             if expect_blocked and not is_blocked:
-                errors.append(
-                    f"Rollover not blocked at {label} (expected blocked)"
-                )
+                errors.append(f"Rollover not blocked at {label} (expected blocked)")
                 blocked_count += 0
             elif not expect_blocked and is_blocked:
-                errors.append(
-                    f"Rollover incorrectly blocked at {label} (expected allowed)"
-                )
+                errors.append(f"Rollover incorrectly blocked at {label} (expected allowed)")
             else:
                 if is_blocked:
                     blocked_count += 1
@@ -944,9 +916,7 @@ def test_rollover_window() -> ChaosTestResult:
         # The pipeline itself doesn't enforce rollover — that's a higher-level
         # concern. What we verify is that the rollover detection logic
         # correctly identifies the window.
-        rollover_at_2155 = _is_rollover_blocked(
-            datetime(2025, 7, 1, 21, 55, 30, tzinfo=UTC)
-        )
+        rollover_at_2155 = _is_rollover_blocked(datetime(2025, 7, 1, 21, 55, 30, tzinfo=UTC))
         details["rollover_detected_at_2155"] = rollover_at_2155
 
         if not rollover_at_2155:
@@ -988,9 +958,9 @@ def test_memory_pressure(
         4. Alert if growth exceeds *alert_threshold_pct*%.
     """
     start = time.monotonic()
-    errors: List[str] = []
-    details: Dict[str, Any] = {}
-    snapshots: List[Dict[str, Any]] = []
+    errors: list[str] = []
+    details: dict[str, Any] = {}
+    snapshots: list[dict[str, Any]] = []
 
     try:
         baseline_rss = _get_rss_mb()
@@ -1032,21 +1002,19 @@ def test_memory_pressure(
             if (now - last_sample) >= sample_interval:
                 rss = _get_rss_mb()
                 peak_rss = max(peak_rss, rss)
-                snapshots.append({
-                    "rss_mb": round(rss, 2),
-                    "elapsed_s": round(now - start, 2),
-                    "tick_count": tick_count,
-                })
+                snapshots.append(
+                    {
+                        "rss_mb": round(rss, 2),
+                        "elapsed_s": round(now - start, 2),
+                        "tick_count": tick_count,
+                    }
+                )
                 last_sample = now
 
         # Step 3: analyze
         final_rss = _get_rss_mb()
         peak_rss = max(peak_rss, final_rss)
-        growth_pct = (
-            ((final_rss - baseline_rss) / baseline_rss * 100)
-            if baseline_rss > 0
-            else 0.0
-        )
+        growth_pct = ((final_rss - baseline_rss) / baseline_rss * 100) if baseline_rss > 0 else 0.0
 
         details["final_rss_mb"] = round(final_rss, 2)
         details["peak_rss_mb"] = round(peak_rss, 2)
@@ -1098,8 +1066,8 @@ class ChaosTestRunner:
     def __init__(
         self,
         ci_mode: bool = False,
-        disconnect_seconds: Optional[float] = None,
-        memory_duration_minutes: Optional[float] = None,
+        disconnect_seconds: float | None = None,
+        memory_duration_minutes: float | None = None,
     ) -> None:
         """
         Args:

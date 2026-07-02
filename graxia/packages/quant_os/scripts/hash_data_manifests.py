@@ -1,4 +1,5 @@
 """Hash data manifest files for reproducibility."""
+
 import hashlib
 from pathlib import Path
 

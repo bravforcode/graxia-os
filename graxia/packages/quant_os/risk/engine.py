@@ -17,7 +17,7 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from decimal import Decimal
 from enum import Enum
 from typing import Any, Protocol
@@ -45,7 +45,7 @@ class _Layer2:
 
 
 class _Layer3:
-    MAX_DAILY_LOSS_PCT: float = 0.02   # 0.50% (was 2.0%)
+    MAX_DAILY_LOSS_PCT: float = 0.02  # 0.50% (was 2.0%)
     MAX_WEEKLY_LOSS_PCT: float = 0.05  # 1.50% (was 5.0%)
     MAX_DRAWDOWN_PCT: float = 0.15
     MIN_MARGIN_LEVEL_PCT: float = 200.0  # 500% (was 200%)
@@ -101,6 +101,7 @@ class Signal:
         """Convert RiskEngine Signal to EventBus SignalEvent."""
         from ..core.enums import SignalType as ST
         from ..core.events import SignalEvent as SE
+
         type_map = {"BUY": ST.BUY, "SELL": ST.SELL}
         return SE(
             symbol=self.symbol,
@@ -208,7 +209,9 @@ class RiskEngine:
         if self._kill_switch is not None and self._kill_switch.is_active():
             return self._reject(RejectReason.KILL_SWITCH_ACTIVE, "Kill switch active", layer=0)
         if self._circuit_breaker is not None and self._circuit_breaker.is_open(signal.asset_class):
-            return self._reject(RejectReason.CIRCUIT_BREAKER_OPEN, f"Circuit breaker open for {signal.asset_class}", layer=0)
+            return self._reject(
+                RejectReason.CIRCUIT_BREAKER_OPEN, f"Circuit breaker open for {signal.asset_class}", layer=0
+            )
         if self._schema_validator is not None and not self._schema_validator.validate_signal(signal):
             return self._reject(RejectReason.INVALID_SCHEMA, "Schema validation failed", layer=0)
         if self._news_blackout is not None and self._news_blackout.is_blocked():
@@ -263,7 +266,11 @@ class RiskEngine:
             return self._reject(
                 RejectReason.LOW_CONVICTION, f"Conviction {signal.conviction:.2f} < {_Layer1.MIN_CONVICTION}", layer=1
             )
-        max_risk_pct = float(self._risk_policy.risk_per_trade_fraction) if self._risk_policy is not None else _Layer1.MAX_RISK_PCT_EQUITY
+        max_risk_pct = (
+            float(self._risk_policy.risk_per_trade_fraction)
+            if self._risk_policy is not None
+            else _Layer1.MAX_RISK_PCT_EQUITY
+        )
         if account is not None and account.equity > 0:
             risk_per_unit = abs(signal.entry_price - signal.stop_loss) if signal.stop_loss else 0
             if risk_per_unit > 0:
@@ -276,7 +283,9 @@ class RiskEngine:
                     )
         return None
 
-    def _layer2(self, signal: Signal, portfolio: PortfolioState, account: AccountState | None = None) -> RiskVerdict | None:
+    def _layer2(
+        self, signal: Signal, portfolio: PortfolioState, account: AccountState | None = None
+    ) -> RiskVerdict | None:
         if portfolio.total_exposure_pct > _Layer2.MAX_TOTAL_EXPOSURE_PCT:
             return self._reject(
                 RejectReason.EXCEEDS_TOTAL_EXPOSURE,
@@ -406,11 +415,13 @@ class RiskEngine:
 
         risk_per_unit = abs(signal.entry_price - signal.stop_loss) if signal.stop_loss else 0
         if risk_per_unit <= 0:
-            return self._reject(
-                RejectReason.SIZING_REJECTED, "Zero or negative stop distance", layer=4
-            )
+            return self._reject(RejectReason.SIZING_REJECTED, "Zero or negative stop distance", layer=4)
 
-        max_risk_pct = float(self._risk_policy.risk_per_trade_fraction) if self._risk_policy is not None else _Layer1.MAX_RISK_PCT_EQUITY
+        max_risk_pct = (
+            float(self._risk_policy.risk_per_trade_fraction)
+            if self._risk_policy is not None
+            else _Layer1.MAX_RISK_PCT_EQUITY
+        )
         risk_budget = account.equity * max_risk_pct
         approved_qty = round(risk_budget / risk_per_unit, 2)
 
@@ -445,6 +456,7 @@ class RiskEngine:
     def var_95(returns) -> float:
         """Compute 95% historical VaR from an array of returns."""
         import numpy as np
+
         arr = np.asarray(returns, dtype=float)
         if arr.size == 0:
             return 0.0

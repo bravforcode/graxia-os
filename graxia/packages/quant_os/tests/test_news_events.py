@@ -1,18 +1,22 @@
 """Tests for news_events modules — event models, event store, event risk gate."""
 
+from datetime import UTC, datetime, timedelta
+
 import pytest
-from datetime import datetime, timedelta, UTC
 
 from graxia.packages.quant_os.news_events.event_models import (
-    EconomicEvent, EventImportance, EventStatus, GateState,
+    EconomicEvent,
+    EventImportance,
+    EventStatus,
+    GateState,
 )
-from graxia.packages.quant_os.news_events.event_store import EventStore
 from graxia.packages.quant_os.news_events.event_risk_gate import EventRiskGate
-
+from graxia.packages.quant_os.news_events.event_store import EventStore
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_event(
     event_id="EVT-001",
@@ -53,6 +57,7 @@ def _make_event(
 # ---------------------------------------------------------------------------
 # EventModels
 # ---------------------------------------------------------------------------
+
 
 class TestEconomicEvent:
     def test_creation(self):
@@ -101,6 +106,7 @@ class TestGateState:
 # ---------------------------------------------------------------------------
 # EventStore
 # ---------------------------------------------------------------------------
+
 
 class TestEventStore:
     def test_add_and_query(self):
@@ -161,6 +167,7 @@ class TestEventStore:
 # ---------------------------------------------------------------------------
 # EventRiskGate
 # ---------------------------------------------------------------------------
+
 
 class TestEventRiskGate:
     def test_clear_when_no_events(self):

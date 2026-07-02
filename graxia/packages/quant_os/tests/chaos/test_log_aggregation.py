@@ -12,9 +12,8 @@ import importlib.util
 import json
 import os
 import sys
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-
 
 # ---------------------------------------------------------------------------
 # Direct file-level imports — no __init__.py triggered
@@ -56,6 +55,7 @@ correlation_id_var = _mod_fmt.correlation_id_var
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _write_log(path: Path, lines: list[dict]) -> None:
     with open(path, "w", encoding="utf-8") as f:
         for line in lines:
@@ -79,43 +79,51 @@ def _sample_entries() -> list[dict]:
 # LogAggregator tests
 # ---------------------------------------------------------------------------
 
+
 class TestLogAggregator:
     def test_read_json_lines(self, tmp_path):
-        d = tmp_path / "logs"; d.mkdir()
+        d = tmp_path / "logs"
+        d.mkdir()
         _write_log(d / "t.jsonl", _sample_entries())
         assert LogAggregator(d).scan_files()["total_lines"] == 8
 
     def test_error_and_warning_counts(self, tmp_path):
-        d = tmp_path / "logs"; d.mkdir()
+        d = tmp_path / "logs"
+        d.mkdir()
         _write_log(d / "t.jsonl", _sample_entries())
         r = LogAggregator(d).scan_files()
         assert r["error_count"] == 3
         assert r["warning_count"] == 2
 
     def test_trade_events(self, tmp_path):
-        d = tmp_path / "logs"; d.mkdir()
+        d = tmp_path / "logs"
+        d.mkdir()
         _write_log(d / "t.jsonl", _sample_entries())
         assert LogAggregator(d).scan_files()["trade_events"] == 3  # trade_entry, trade_exit, order_rejected
 
     def test_risk_alerts(self, tmp_path):
-        d = tmp_path / "logs"; d.mkdir()
+        d = tmp_path / "logs"
+        d.mkdir()
         _write_log(d / "t.jsonl", _sample_entries())
         assert LogAggregator(d).scan_files()["risk_alerts"] == 2
 
     def test_empty_dir(self, tmp_path):
-        d = tmp_path / "logs"; d.mkdir()
+        d = tmp_path / "logs"
+        d.mkdir()
         r = LogAggregator(d).scan_files()
         assert r == {"total_lines": 0, "error_count": 0, "warning_count": 0, "trade_events": 0, "risk_alerts": 0}
 
     def test_malformed_skipped(self, tmp_path):
-        d = tmp_path / "logs"; d.mkdir()
+        d = tmp_path / "logs"
+        d.mkdir()
         f = d / "bad.jsonl"
         f.write_text("not json\n" + json.dumps({"level": "error", "event": "x"}) + "\n\n")
         r = LogAggregator(d).scan_files()
         assert r["total_lines"] == 1 and r["error_count"] == 1
 
     def test_convenience_fn(self, tmp_path):
-        d = tmp_path / "logs"; d.mkdir()
+        d = tmp_path / "logs"
+        d.mkdir()
         _write_log(d / "t.jsonl", _sample_entries())
         assert aggregate_logs(d)["total_lines"] == 8
 
@@ -136,23 +144,29 @@ class TestLogAggregator:
 # Log rotation tests
 # ---------------------------------------------------------------------------
 
+
 class TestLogRotation:
     def test_rotate_by_size(self, tmp_path):
-        d = tmp_path / "logs"; d.mkdir()
+        d = tmp_path / "logs"
+        d.mkdir()
         f = d / "t.jsonl"
         f.write_text("x" * 11 * 1024 * 1024)
         assert rotate_by_size(f, max_bytes=10 * 1024 * 1024) is True
         assert not f.exists() and (d / "t.jsonl.1").exists()
 
     def test_no_rotate_under_threshold(self, tmp_path):
-        d = tmp_path / "logs"; d.mkdir()
-        f = d / "t.jsonl"; f.write_text("small")
+        d = tmp_path / "logs"
+        d.mkdir()
+        f = d / "t.jsonl"
+        f.write_text("small")
         assert rotate_by_size(f, max_bytes=10 * 1024 * 1024) is False
         assert f.exists()
 
     def test_rotate_by_time_old(self, tmp_path):
-        d = tmp_path / "logs"; d.mkdir()
-        f = d / "t.jsonl"; f.write_text("old")
+        d = tmp_path / "logs"
+        d.mkdir()
+        f = d / "t.jsonl"
+        f.write_text("old")
         old = (datetime.now(UTC) - timedelta(days=2)).timestamp()
         os.utime(f, (old, old))
         assert rotate_by_time(f) is True
@@ -160,20 +174,24 @@ class TestLogRotation:
         assert len(list(d.glob("t.*.jsonl.gz"))) == 1
 
     def test_no_rotate_same_day(self, tmp_path):
-        d = tmp_path / "logs"; d.mkdir()
-        f = d / "t.jsonl"; f.write_text("today")
+        d = tmp_path / "logs"
+        d.mkdir()
+        f = d / "t.jsonl"
+        f.write_text("today")
         assert rotate_by_time(f) is False
         assert f.exists()
 
     def test_gzip_file(self, tmp_path):
-        src = tmp_path / "data.txt"; src.write_text("hello")
+        src = tmp_path / "data.txt"
+        src.write_text("hello")
         gz = _gzip_file(src)
         assert gz.exists() and not src.exists()
         with gzip.open(gz, "rt") as fp:
             assert fp.read() == "hello"
 
     def test_cleanup_old(self, tmp_path):
-        d = tmp_path / "logs"; d.mkdir()
+        d = tmp_path / "logs"
+        d.mkdir()
         old = (datetime.now(UTC) - timedelta(days=60)).strftime("%Y%m%d")
         gz = d / f"t.{old}.jsonl.gz"
         with gzip.open(gz, "wb") as fp:
@@ -182,7 +200,8 @@ class TestLogRotation:
         assert not gz.exists()
 
     def test_rotate_all(self, tmp_path):
-        d = tmp_path / "logs"; d.mkdir()
+        d = tmp_path / "logs"
+        d.mkdir()
         (d / "big.jsonl").write_text("x" * 11 * 1024 * 1024)
         (d / "small.jsonl").write_text("ok")
         r = rotate_all(d)
@@ -193,6 +212,7 @@ class TestLogRotation:
 # ---------------------------------------------------------------------------
 # Structured formatter tests
 # ---------------------------------------------------------------------------
+
 
 class TestStructuredFormatter:
     def test_add_fields(self):
@@ -206,19 +226,34 @@ class TestStructuredFormatter:
         assert json.loads(r)["level"] == "info"
 
     def test_console_format_with_cid(self):
-        e = {"level": "info", "event": "t", "timestamp": "2026-01-01T00:00:00",
-             "module": "m", "function": "f", "line": 1, "correlation_id": "abc"}
+        e = {
+            "level": "info",
+            "event": "t",
+            "timestamp": "2026-01-01T00:00:00",
+            "module": "m",
+            "function": "f",
+            "line": 1,
+            "correlation_id": "abc",
+        }
         assert "cid=abc" in console_formatter(None, "", e)
 
     def test_console_format_no_cid(self):
-        e = {"level": "error", "event": "f", "timestamp": "", "module": "",
-             "function": "", "line": 0, "correlation_id": ""}
+        e = {
+            "level": "error",
+            "event": "f",
+            "timestamp": "",
+            "module": "",
+            "function": "",
+            "line": 0,
+            "correlation_id": "",
+        }
         assert "cid=" not in console_formatter(None, "", e)
 
 
 # ---------------------------------------------------------------------------
 # Correlation ID propagation tests
 # ---------------------------------------------------------------------------
+
 
 class TestCorrelationId:
     def test_default_empty(self):

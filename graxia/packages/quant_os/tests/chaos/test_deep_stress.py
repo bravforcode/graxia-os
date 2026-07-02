@@ -20,7 +20,7 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
-
+from quant_os.core.enums import OrderStatus, SignalType
 from quant_os.core.event_bus import EventBus
 from quant_os.core.events import (
     Event,
@@ -29,9 +29,8 @@ from quant_os.core.events import (
     SignalEvent,
     TickEvent,
 )
-from quant_os.core.enums import OrderStatus, SignalType
-from quant_os.core.state_store import SystemState, load, save
 from quant_os.core.portfolio_risk import PortfolioRisk, Position
+from quant_os.core.state_store import SystemState, load, save
 from quant_os.execution.order_state_machine import OrderStateMachine
 from quant_os.risk.engine import (
     AccountState,
@@ -41,8 +40,8 @@ from quant_os.risk.engine import (
     Signal,
 )
 
-
 # ── Fixtures ─────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def tmp_state_dir():
@@ -96,6 +95,7 @@ def _fresh_portfolio(n_positions: int = 0) -> PortfolioState:
 # 1. Risk Engine Under Stress — 1000 rapid signals
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TestRiskEngineStress:
     def test_1000_rapid_signals(self, risk_engine):
         account = _fresh_account()
@@ -135,6 +135,7 @@ class TestRiskEngineStress:
 # ═══════════════════════════════════════════════════════════════════════════════
 # 2. Order State Machine Stress — 500 orders, all transitions
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class TestOrderStateMachineStress:
     # SIGNAL_CREATED is the default initial state; start transitions from RISK_CHECKED
@@ -177,6 +178,7 @@ class TestOrderStateMachineStress:
 
     def test_invalid_transition_raises(self):
         from quant_os.core.exceptions import OrderStateError
+
         sm = OrderStateMachine(order_id="BAD")
         with pytest.raises(OrderStateError):
             sm.transition(OrderStatus.AUDITED)
@@ -202,6 +204,7 @@ class TestOrderStateMachineStress:
 # ═══════════════════════════════════════════════════════════════════════════════
 # 3. Event Bus Stress — 1000 events concurrently
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class TestEventBusStress:
     def test_1000_events_fired(self):
@@ -285,6 +288,7 @@ class TestEventBusStress:
 # 4. Portfolio Risk Stress — 100 positions simultaneously
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TestPortfolioRiskStress:
     def test_100_positions_simultaneous(self, portfolio_risk):
         for i in range(100):
@@ -313,7 +317,9 @@ class TestPortfolioRiskStress:
     def test_can_add_blocks_at_limit(self):
         pr = PortfolioRisk(capital=10_000.0)
         for i in range(10):
-            pr.add_position(Position(symbol=f"S{i}", direction="LONG", entry_price=100.0, risk_dollars=60.0, size_lots=1.0))
+            pr.add_position(
+                Position(symbol=f"S{i}", direction="LONG", entry_price=100.0, risk_dollars=60.0, size_lots=1.0)
+            )
         result = pr.can_add("NEW", risk_dollars=100.0)
         assert result["allowed"] is False
 
@@ -323,7 +329,9 @@ class TestPortfolioRiskStress:
         def writer(sym: str):
             try:
                 for _ in range(50):
-                    portfolio_risk.add_position(Position(symbol=sym, direction="LONG", entry_price=2000.0, risk_dollars=10.0, size_lots=0.01))
+                    portfolio_risk.add_position(
+                        Position(symbol=sym, direction="LONG", entry_price=2000.0, risk_dollars=10.0, size_lots=0.01)
+                    )
             except Exception as e:
                 errors.append(e)
 
@@ -337,6 +345,7 @@ class TestPortfolioRiskStress:
 # ═══════════════════════════════════════════════════════════════════════════════
 # 5. Signal Pipeline Stress — 500 signals end-to-end
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class TestSignalPipelineStress:
     def test_500_signals_end_to_end(self):
@@ -366,20 +375,23 @@ class TestSignalPipelineStress:
 
         bus.subscribe(SignalEvent, risk_handler)
         for i in range(500):
-            bus.publish(SignalEvent(
-                symbol=f"SYM{i % 20}",
-                signal_type=SignalType.BUY,
-                confidence=0.8,
-                entry_price=2000.0 + i * 0.1,
-                stop_loss=1995.0,
-                take_profit=2010.0,
-            ))
+            bus.publish(
+                SignalEvent(
+                    symbol=f"SYM{i % 20}",
+                    signal_type=SignalType.BUY,
+                    confidence=0.8,
+                    entry_price=2000.0 + i * 0.1,
+                    stop_loss=1995.0,
+                    take_profit=2010.0,
+                )
+            )
         assert approved[0] + rejected[0] == 500
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 6. Memory Under Sustained Load — track RSS over 1000 iterations
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class TestMemoryStress:
     def test_sustained_load_no_growth(self):
@@ -396,12 +408,15 @@ class TestMemoryStress:
         gc.collect()
         final_objects = len(gc.get_objects())
         growth_pct = (final_objects - baseline_objects) / max(baseline_objects, 1)
-        assert growth_pct < 1.0, f"Object count grew {growth_pct:.0%} (baseline={baseline_objects}, final={final_objects})"
+        assert (
+            growth_pct < 1.0
+        ), f"Object count grew {growth_pct:.0%} (baseline={baseline_objects}, final={final_objects})"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 7. Concurrent State Store — 10 threads writing to same file
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class TestConcurrentStateStore:
     def test_10_threads_same_file(self, tmp_state_dir):
@@ -464,6 +479,7 @@ class TestConcurrentStateStore:
 # 8. Redis Failure Cascade — simulated Redis down mid-operation
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TestRedisFailureCascade:
     """Simulates Redis going down mid-operation by mocking failures."""
 
@@ -497,6 +513,7 @@ class TestRedisFailureCascade:
         path = os.path.join(tmp_state_dir, "state.json")
         save(SystemState(daily_pnl=100.0), path)
         from unittest.mock import patch as mock_patch
+
         original_replace = os.replace
 
         def fail_replace(src, dst):
@@ -514,6 +531,7 @@ class TestRedisFailureCascade:
         class FakeKillSwitch:
             def is_active(self):
                 return True
+
             @property
             def trigger_type(self):
                 return "MANUAL"

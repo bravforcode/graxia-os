@@ -4,7 +4,8 @@ Uses trusted system UTC for event/session/health decisions.
 copy_ticks_range with UTC-aware input for market tick data.
 No symbol_info_tick.time, no MT5 bar timestamps, no copy_ticks_from.
 """
-from datetime import datetime, UTC
+
+from datetime import UTC, datetime
 
 
 class CanonicalTimeAuthority:

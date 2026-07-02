@@ -3,10 +3,11 @@
 RESTORED from deleted test_phase_4_eurusd.py (BE-P7 commit 3ae373f).
 Original deleted because API changed; migrated to current API.
 """
+
 from graxia.packages.quant_os.markets.eurusd.contract_snapshot import EURUSDContractSnapshot, XAUUSDContractSnapshot
-from graxia.packages.quant_os.markets.eurusd.session_calendar import EURUSDSessionCalendar
 from graxia.packages.quant_os.markets.eurusd.event_calendar import EURUSDEventCalendar
 from graxia.packages.quant_os.markets.eurusd.hypothesis import EURUSDHypothesis, HypothesisTracker
+from graxia.packages.quant_os.markets.eurusd.session_calendar import EURUSDSessionCalendar
 
 
 class TestEURUSDContract:
@@ -21,6 +22,7 @@ class TestEURUSDContract:
 
     def test_validate_zero_tick(self):
         from decimal import Decimal
+
         c = EURUSDContractSnapshot(tick_size=Decimal("0"))
         valid, issues = c.validate()
         assert valid is False

@@ -22,7 +22,6 @@ from unittest.mock import patch
 
 import pytest
 
-
 # ═══════════════════════════════════════════════════════════════════
 # Fixtures
 # ═══════════════════════════════════════════════════════════════════
@@ -312,6 +311,7 @@ class TestSentimentAgent:
         # Mock the router
         async def mock_route(headline):
             from graxia.packages.quant_os.core.agents.llm_router import CascadeResult, ImpactLevel
+
             return CascadeResult(
                 headline=headline,
                 impact=ImpactLevel.HIGH,
@@ -349,15 +349,22 @@ class TestSentimentAgent:
 
         async def mock_route(headline):
             from graxia.packages.quant_os.core.agents.llm_router import CascadeResult, ImpactLevel
+
             call_count["n"] += 1
             if call_count["n"] == 1:
                 return CascadeResult(
-                    headline=headline, impact=ImpactLevel.HIGH,
-                    direction=-1, tier_used=1, confidence=0.9,
+                    headline=headline,
+                    impact=ImpactLevel.HIGH,
+                    direction=-1,
+                    tier_used=1,
+                    confidence=0.9,
                 )
             return CascadeResult(
-                headline=headline, impact=ImpactLevel.LOW,
-                direction=1, tier_used=1, confidence=0.6,
+                headline=headline,
+                impact=ImpactLevel.LOW,
+                direction=1,
+                tier_used=1,
+                confidence=0.6,
             )
 
         agent.router.route = mock_route
@@ -414,30 +421,29 @@ class TestNewsPipeline:
 
     @pytest.mark.asyncio
     async def test_fetch_rss_feed_success(self):
-        from graxia.packages.quant_os.scripts.news_pipeline import fetch_rss_feed
         import httpx
 
+        from graxia.packages.quant_os.scripts.news_pipeline import fetch_rss_feed
+
         async with httpx.AsyncClient(timeout=10.0) as client:
-            items = await fetch_rss_feed(
-                client, "test", "https://feeds.bloomberg.com/markets/news.rss"
-            )
+            items = await fetch_rss_feed(client, "test", "https://feeds.bloomberg.com/markets/news.rss")
             assert len(items) > 0
             assert items[0].title != ""
 
     @pytest.mark.asyncio
     async def test_fetch_rss_feed_failure(self):
-        from graxia.packages.quant_os.scripts.news_pipeline import fetch_rss_feed
         import httpx
 
+        from graxia.packages.quant_os.scripts.news_pipeline import fetch_rss_feed
+
         async with httpx.AsyncClient(timeout=5.0) as client:
-            items = await fetch_rss_feed(
-                client, "test", "https://invalid.example.com/rss"
-            )
+            items = await fetch_rss_feed(client, "test", "https://invalid.example.com/rss")
             assert len(items) == 0
 
     def test_write_to_obsidian(self, mock_env):
+        from datetime import UTC, datetime
+
         from graxia.packages.quant_os.scripts.news_pipeline import DailyDigest, write_to_obsidian
-        from datetime import datetime, UTC
 
         digest = DailyDigest(
             date="2026-01-01",

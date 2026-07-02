@@ -4,8 +4,8 @@ Phase 2A verification tests.
 Run: python -m pytest graxia/packages/quant_os/tests/test_phase_2a.py -v
 """
 
-import json
 import hashlib
+import json
 from pathlib import Path
 
 import pytest
@@ -22,6 +22,7 @@ PRODUCTION_ROOT = Path(__file__).resolve().parent.parent
 
 
 # === Manifest Tests ===
+
 
 class TestDatasetManifests:
     """Tests 1-6: manifest existence and content."""
@@ -46,9 +47,7 @@ class TestDatasetManifests:
         for tf, csv_path in CSV_FILES.items():
             actual_sha = hashlib.sha256(csv_path.read_bytes()).hexdigest()
             expected_sha = self.manifests[tf]["csv_sha256"]
-            assert actual_sha == expected_sha, (
-                f"{tf}: manifest sha256={expected_sha} actual={actual_sha}"
-            )
+            assert actual_sha == expected_sha, f"{tf}: manifest sha256={expected_sha} actual={actual_sha}"
 
     def test_manifest_timestamps_ordered(self):
         """Test 3: timestamps in manifest are monotonically increasing."""
@@ -75,12 +74,15 @@ class TestDatasetManifests:
 
 # === RiskPolicy Tests ===
 
+
 class TestRiskPolicy:
     """Tests 7-8: bps-based risk policy."""
 
     def test_risk_policy_basis_points(self):
         """Test 7: RiskPolicy converts bps correctly."""
-        import importlib.util, os
+        import importlib.util
+        import os
+
         spec = importlib.util.spec_from_file_location(
             "risk_policy",
             os.path.join(os.path.dirname(__file__), "..", "risk", "risk_policy.py"),
@@ -90,6 +92,7 @@ class TestRiskPolicy:
         RiskPolicy = mod.RiskPolicy
         p = RiskPolicy(risk_per_trade_bps=10)
         from decimal import Decimal
+
         assert p.risk_per_trade_fraction == Decimal("0.0010")  # 10 bps = 0.10%
         assert p.max_daily_loss_fraction == Decimal("0.0050")  # 50 bps = 0.50%
         assert p.max_weekly_loss_fraction == Decimal("0.0150")
@@ -97,7 +100,9 @@ class TestRiskPolicy:
 
     def test_risk_policy_no_pct_field(self):
         """Test 8: risk_per_trade_pct should not exist on RiskPolicy."""
-        import importlib.util, os
+        import importlib.util
+        import os
+
         spec = importlib.util.spec_from_file_location(
             "risk_policy",
             os.path.join(os.path.dirname(__file__), "..", "risk", "risk_policy.py"),
@@ -106,24 +111,24 @@ class TestRiskPolicy:
         spec.loader.exec_module(mod)
         RiskPolicy = mod.RiskPolicy
         p = RiskPolicy()
-        assert not hasattr(p, "risk_per_trade_pct"), (
-            "RiskPolicy must not have risk_per_trade_pct"
-        )
+        assert not hasattr(p, "risk_per_trade_pct"), "RiskPolicy must not have risk_per_trade_pct"
 
 
 # === Strict MTF Tests ===
+
 
 class TestStrictMTF:
     """Test 9: engine blocks static fallback when strict_mtf=True."""
 
     def test_strict_mtf_blocks_static_fallback(self):
-        from graxia.packages.quant_os.backtest.engine import BacktestEngine, BacktestConfig
+        from graxia.packages.quant_os.backtest.engine import BacktestConfig, BacktestEngine
         from graxia.packages.quant_os.core.exceptions import StrictMTFViolation
         from graxia.packages.quant_os.strategies.base import Strategy, StrategyConfig
 
         class DummyStrategy(Strategy):
             def generate_signal(self, symbol, ohlcv_data, indicators=None, regime=None, **kwargs):
                 return None
+
             def required_features(self):
                 return []
 
@@ -141,6 +146,7 @@ class TestStrictMTF:
             "volume": [100] * n,
         }
         from datetime import datetime, timedelta
+
         ts = [datetime(2020, 1, 1) + timedelta(hours=i) for i in range(n)]
         engine.load_data(data, timestamps=ts)
 
@@ -150,6 +156,7 @@ class TestStrictMTF:
 
 
 # === Hardcode Audit Tests ===
+
 
 class TestHardcodeAudit:
     """Tests 10-11: production code is clean of forbidden patterns."""
@@ -174,9 +181,9 @@ class TestHardcodeAudit:
             ("quant_os", "run_backtest_real.py"),  # ponytail: runner script, documented in audit
         }
         py_files = [
-            f for f in PRODUCTION_ROOT.rglob("*.py")
-            if not any(d in f.parts for d in exclude_dirs)
-            and "test" not in f.name
+            f
+            for f in PRODUCTION_ROOT.rglob("*.py")
+            if not any(d in f.parts for d in exclude_dirs) and "test" not in f.name
         ]
         for py_file in py_files:
             try:
@@ -189,10 +196,7 @@ class TestHardcodeAudit:
                             violations.append(f"{parent}/{py_file.name}:{i}: {line.strip()}")
             except Exception:
                 pass
-        assert len(violations) == 0, (
-            "units_per_lot found in unlisted production code:\n" +
-            "\n".join(violations[:10])
-        )
+        assert len(violations) == 0, "units_per_lot found in unlisted production code:\n" + "\n".join(violations[:10])
 
     def test_no_order_send_in_phase2(self):
         """Test 11: grep for order_send in broker/ and risk/ should find none (except mt5_gateway guard)."""
@@ -213,6 +217,4 @@ class TestHardcodeAudit:
                             violations.append(f"{py_file.name}:{i}: {stripped}")
                 except Exception:
                     pass
-        assert len(violations) == 0, (
-            "order_send found in broker/risk:\n" + "\n".join(violations)
-        )
+        assert len(violations) == 0, "order_send found in broker/risk:\n" + "\n".join(violations)

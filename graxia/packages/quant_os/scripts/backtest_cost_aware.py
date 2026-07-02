@@ -26,7 +26,7 @@ import math
 import sys
 import warnings
 from dataclasses import dataclass
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -49,36 +49,57 @@ REPORT_DIR.mkdir(parents=True, exist_ok=True)
 @dataclass
 class SymbolCosts:
     """Transaction cost profile for one symbol."""
+
     symbol: str
-    spread_pips: float        # one-way spread in pips
+    spread_pips: float  # one-way spread in pips
     commission_per_lot: float  # USD per round-trip lot
-    slippage_pips: float      # base one-way slippage in pips
-    swap_long_daily: float    # daily swap cost for long positions
-    swap_short_daily: float   # daily swap cost for short positions
-    pip_value: float          # USD value of 1 pip for 1 standard lot
-    point: float              # minimum price increment
+    slippage_pips: float  # base one-way slippage in pips
+    swap_long_daily: float  # daily swap cost for long positions
+    swap_short_daily: float  # daily swap cost for short positions
+    pip_value: float  # USD value of 1 pip for 1 standard lot
+    point: float  # minimum price increment
 
 
 SYMBOL_COSTS: dict[str, SymbolCosts] = {
     "XAUUSD": SymbolCosts(
-        symbol="XAUUSD", spread_pips=0.3, commission_per_lot=0.0,
-        slippage_pips=0.1, swap_long_daily=-2.50, swap_short_daily=0.80,
-        pip_value=1.0, point=0.01,
+        symbol="XAUUSD",
+        spread_pips=0.3,
+        commission_per_lot=0.0,
+        slippage_pips=0.1,
+        swap_long_daily=-2.50,
+        swap_short_daily=0.80,
+        pip_value=1.0,
+        point=0.01,
     ),
     "EURUSD": SymbolCosts(
-        symbol="EURUSD", spread_pips=0.1, commission_per_lot=0.0,
-        slippage_pips=0.05, swap_long_daily=-0.60, swap_short_daily=0.35,
-        pip_value=10.0, point=0.0001,
+        symbol="EURUSD",
+        spread_pips=0.1,
+        commission_per_lot=0.0,
+        slippage_pips=0.05,
+        swap_long_daily=-0.60,
+        swap_short_daily=0.35,
+        pip_value=10.0,
+        point=0.0001,
     ),
     "BTCUSD": SymbolCosts(
-        symbol="BTCUSD", spread_pips=50.0, commission_per_lot=0.0,
-        slippage_pips=10.0, swap_long_daily=-5.00, swap_short_daily=1.20,
-        pip_value=0.01, point=0.01,
+        symbol="BTCUSD",
+        spread_pips=50.0,
+        commission_per_lot=0.0,
+        slippage_pips=10.0,
+        swap_long_daily=-5.00,
+        swap_short_daily=1.20,
+        pip_value=0.01,
+        point=0.01,
     ),
     "ETHUSD": SymbolCosts(
-        symbol="ETHUSD", spread_pips=5.0, commission_per_lot=0.0,
-        slippage_pips=1.0, swap_long_daily=-1.50, swap_short_daily=0.40,
-        pip_value=0.01, point=0.01,
+        symbol="ETHUSD",
+        spread_pips=5.0,
+        commission_per_lot=0.0,
+        slippage_pips=1.0,
+        swap_long_daily=-1.50,
+        swap_short_daily=0.40,
+        pip_value=0.01,
+        point=0.01,
     ),
 }
 
@@ -89,11 +110,14 @@ SYMBOL_COSTS: dict[str, SymbolCosts] = {
 def compute_atr(df: pd.DataFrame, period: int = 14) -> pd.Series:
     """Compute ATR from OHLC columns."""
     high, low, close = df["high"], df["low"], df["close"]
-    tr = pd.concat([
-        high - low,
-        (high - close.shift(1)).abs(),
-        (low - close.shift(1)).abs(),
-    ], axis=1).max(axis=1)
+    tr = pd.concat(
+        [
+            high - low,
+            (high - close.shift(1)).abs(),
+            (low - close.shift(1)).abs(),
+        ],
+        axis=1,
+    ).max(axis=1)
     return tr.rolling(window=period, min_periods=1).mean()
 
 
@@ -120,10 +144,9 @@ def generate_smc_signals(df: pd.DataFrame) -> pd.Series:
     struct_flag = df.get("structure_event_flag", pd.Series(False, index=df.index)).fillna(False).astype(bool)
     struct_state = df.get("structure_state", pd.Series(0, index=df.index)).fillna(0)
     bars_since = df.get("bars_since_bos_choch", pd.Series(999.0, index=df.index)).fillna(999.0)
-    is_active = (
-        df.get("is_overlap", pd.Series(False, index=df.index)).fillna(False).astype(bool)
-        | df.get("is_london_open", pd.Series(False, index=df.index)).fillna(False).astype(bool)
-    )
+    is_active = df.get("is_overlap", pd.Series(False, index=df.index)).fillna(False).astype(bool) | df.get(
+        "is_london_open", pd.Series(False, index=df.index)
+    ).fillna(False).astype(bool)
 
     # Recent structure event (within last 10 bars)
     recent_struct = bars_since < 10
@@ -151,6 +174,7 @@ def generate_smc_signals(df: pd.DataFrame) -> pd.Series:
 @dataclass
 class TradeRecord:
     """Single trade record with full cost breakdown."""
+
     entry_bar: int
     exit_bar: int
     side: int
@@ -214,17 +238,32 @@ def run_cost_aware_backtest(
         commission_cost = costs.commission_per_lot * lot_size
         days_held = bars_held / 96.0
         swap_cost = (costs.swap_long_daily if trade_side > 0 else abs(costs.swap_short_daily)) * lot_size * days_held
-        gross_pnl = ((exit_price - trade_entry_price) if trade_side > 0 else (trade_entry_price - exit_price)) / costs.point * costs.pip_value * lot_size
+        gross_pnl = (
+            ((exit_price - trade_entry_price) if trade_side > 0 else (trade_entry_price - exit_price))
+            / costs.point
+            * costs.pip_value
+            * lot_size
+        )
         total_cost = spread_cost + slippage_cost + commission_cost + swap_cost
         net_pnl = gross_pnl - total_cost
         cost_pct = (total_cost / abs(gross_pnl) * 100) if abs(gross_pnl) > 0 else 0.0
-        trades.append(TradeRecord(
-            entry_bar=trade_entry_bar, exit_bar=i, side=trade_side,
-            entry_price=trade_entry_price, exit_price=exit_price, bars_held=bars_held,
-            gross_pnl=gross_pnl, spread_cost=spread_cost, slippage_cost=slippage_cost,
-            commission_cost=commission_cost, swap_cost=swap_cost, net_pnl=net_pnl,
-            cost_pct_of_gross=cost_pct,
-        ))
+        trades.append(
+            TradeRecord(
+                entry_bar=trade_entry_bar,
+                exit_bar=i,
+                side=trade_side,
+                entry_price=trade_entry_price,
+                exit_price=exit_price,
+                bars_held=bars_held,
+                gross_pnl=gross_pnl,
+                spread_cost=spread_cost,
+                slippage_cost=slippage_cost,
+                commission_cost=commission_cost,
+                swap_cost=swap_cost,
+                net_pnl=net_pnl,
+                cost_pct_of_gross=cost_pct,
+            )
+        )
         total_spread += spread_cost
         total_slippage += slippage_cost
         total_commission += commission_cost
@@ -267,7 +306,7 @@ def run_cost_aware_backtest(
         sharpe = (mean_ret / std_ret) * math.sqrt(bars_per_year)
         ds = returns[returns < 0]
         if len(ds) > 0:
-            ds_std = math.sqrt(np.mean(ds ** 2))
+            ds_std = math.sqrt(np.mean(ds**2))
             if ds_std > 0:
                 sortino = (mean_ret / ds_std) * math.sqrt(bars_per_year)
     peak = np.maximum.accumulate(equity_arr)
@@ -308,9 +347,7 @@ def run_cost_aware_backtest(
             "total_commission": round(total_commission, 2),
             "total_swap": round(total_swap, 2),
             "total_cost": round(total_cost, 2),
-            "cost_as_pct_of_gross": round(
-                (total_cost / abs(total_gross) * 100) if abs(total_gross) > 0 else 0.0, 2
-            ),
+            "cost_as_pct_of_gross": round((total_cost / abs(total_gross) * 100) if abs(total_gross) > 0 else 0.0, 2),
         },
         "cost_profile": {
             "spread_pips": costs.spread_pips,
@@ -321,7 +358,8 @@ def run_cost_aware_backtest(
         },
         "trades": [
             {
-                "entry_bar": t.entry_bar, "exit_bar": t.exit_bar,
+                "entry_bar": t.entry_bar,
+                "exit_bar": t.exit_bar,
                 "side": "LONG" if t.side > 0 else "SHORT",
                 "entry_price": round(t.entry_price, 5),
                 "exit_price": round(t.exit_price, 5),
@@ -488,11 +526,9 @@ def convert_numpy(obj):
 # ---------------------------------------------------------------------------
 def main():
     parser = argparse.ArgumentParser(description="Phase 6: Cost-aware backtest (multi-asset)")
-    parser.add_argument("--symbol", type=str, default=None,
-                        help="Single symbol to test (default: all four)")
+    parser.add_argument("--symbol", type=str, default=None, help="Single symbol to test (default: all four)")
     parser.add_argument("--capital", type=float, default=10000.0)
-    parser.add_argument("--max-bars", type=int, default=20,
-                        help="Max holding period in M15 bars")
+    parser.add_argument("--max-bars", type=int, default=20, help="Max holding period in M15 bars")
     args = parser.parse_args()
 
     symbols = [args.symbol] if args.symbol else ["XAUUSD", "EURUSD", "BTCUSD", "ETHUSD"]
@@ -511,7 +547,9 @@ def main():
         df = load_features(sym)
         costs = SYMBOL_COSTS[sym]
 
-        result = run_cost_aware_backtest(df, costs, initial_capital=args.capital, max_bars_in_trade=args.max_bars, lot_size=0.01)
+        result = run_cost_aware_backtest(
+            df, costs, initial_capital=args.capital, max_bars_in_trade=args.max_bars, lot_size=0.01
+        )
         all_results[sym] = result
 
         print(f"\n  --- {sym} Results ---")

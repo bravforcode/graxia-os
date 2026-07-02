@@ -1,18 +1,18 @@
 """Phase BE-P2 — Structured tick logger."""
+
 import json
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
 
 
 class TickLogger:
     """Structured logging for tick events."""
-    
+
     def __init__(self, log_dir: str = ""):
         self._log_dir = Path(log_dir) if log_dir else None
         self._entries: list[dict] = []
-    
-    def log_tick_received(self, symbol: str, bid: float, ask: float, 
-                          source_time_ms: int) -> None:
+
+    def log_tick_received(self, symbol: str, bid: float, ask: float, source_time_ms: int) -> None:
         entry = {
             "timestamp": datetime.now(UTC).isoformat(),
             "event": "tick_received",
@@ -23,7 +23,7 @@ class TickLogger:
             "source_time_ms": source_time_ms,
         }
         self._entries.append(entry)
-    
+
     def log_quality_incident(self, incident_type: str, tick_id: int, detail: str) -> None:
         entry = {
             "timestamp": datetime.now(UTC).isoformat(),
@@ -33,7 +33,7 @@ class TickLogger:
             "detail": detail,
         }
         self._entries.append(entry)
-    
+
     def log_gate_transition(self, from_state: str, to_state: str, reason: str) -> None:
         entry = {
             "timestamp": datetime.now(UTC).isoformat(),
@@ -43,12 +43,10 @@ class TickLogger:
             "reason": reason,
         }
         self._entries.append(entry)
-    
+
     def get_entries(self) -> list[dict]:
         return self._entries.copy()
-    
+
     def flush(self, path: str) -> None:
         if self._entries:
-            Path(path).write_text(
-                "\n".join(json.dumps(e, default=str) for e in self._entries)
-            )
+            Path(path).write_text("\n".join(json.dumps(e, default=str) for e in self._entries))

@@ -267,6 +267,7 @@ def test3_long_sl_fill():
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="B2 Week 0 Test Trades")
     parser.add_argument("--auto", action="store_true", help="Run all tests automatically")
     parser.add_argument("--test", type=int, choices=[1, 2, 3], help="Run specific test only")

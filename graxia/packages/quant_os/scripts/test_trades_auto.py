@@ -5,10 +5,11 @@ B2 Test Trades — Wait for market open then execute
 Polls every 60s. When order succeeds, market is open.
 """
 
-import MetaTrader5 as mt5
-import time
 import sys
-from datetime import datetime, UTC
+import time
+from datetime import UTC, datetime
+
+import MetaTrader5 as mt5
 
 SYMBOL = "XAUUSD"
 LOT = 0.10
@@ -108,10 +109,15 @@ def test1():
     price = tick.ask
     sl = price - STOP
     req = {
-        "action": mt5.TRADE_ACTION_DEAL, "symbol": SYMBOL,
-        "volume": LOT, "type": mt5.ORDER_TYPE_BUY,
-        "price": price, "sl": sl, "tp": 0.0,
-        "deviation": 10, "magic": MAGIC,
+        "action": mt5.TRADE_ACTION_DEAL,
+        "symbol": SYMBOL,
+        "volume": LOT,
+        "type": mt5.ORDER_TYPE_BUY,
+        "price": price,
+        "sl": sl,
+        "tp": 0.0,
+        "deviation": 10,
+        "magic": MAGIC,
         "comment": "B2-TEST1",
         "type_time": mt5.ORDER_TIME_GTC,
         "type_filling": mt5.ORDER_FILLING_IOC,
@@ -133,10 +139,14 @@ def test1():
     pos = positions[0]
     tick2 = mt5.symbol_info_tick(SYMBOL)
     close_req = {
-        "action": mt5.TRADE_ACTION_DEAL, "symbol": SYMBOL,
-        "volume": pos.volume, "type": mt5.ORDER_TYPE_SELL,
-        "position": pos.ticket, "price": tick2.bid,
-        "deviation": 10, "magic": MAGIC,
+        "action": mt5.TRADE_ACTION_DEAL,
+        "symbol": SYMBOL,
+        "volume": pos.volume,
+        "type": mt5.ORDER_TYPE_SELL,
+        "position": pos.ticket,
+        "price": tick2.bid,
+        "deviation": 10,
+        "magic": MAGIC,
         "comment": "B2-TEST1-CLOSE",
         "type_time": mt5.ORDER_TIME_GTC,
         "type_filling": mt5.ORDER_FILLING_IOC,
@@ -160,10 +170,15 @@ def test2():
     price = tick.bid
     sl = price + STOP
     req = {
-        "action": mt5.TRADE_ACTION_DEAL, "symbol": SYMBOL,
-        "volume": LOT, "type": mt5.ORDER_TYPE_SELL,
-        "price": price, "sl": sl, "tp": 0.0,
-        "deviation": 10, "magic": MAGIC,
+        "action": mt5.TRADE_ACTION_DEAL,
+        "symbol": SYMBOL,
+        "volume": LOT,
+        "type": mt5.ORDER_TYPE_SELL,
+        "price": price,
+        "sl": sl,
+        "tp": 0.0,
+        "deviation": 10,
+        "magic": MAGIC,
         "comment": "B2-TEST2",
         "type_time": mt5.ORDER_TIME_GTC,
         "type_filling": mt5.ORDER_FILLING_IOC,
@@ -185,10 +200,14 @@ def test2():
     pos = positions[0]
     tick2 = mt5.symbol_info_tick(SYMBOL)
     close_req = {
-        "action": mt5.TRADE_ACTION_DEAL, "symbol": SYMBOL,
-        "volume": pos.volume, "type": mt5.ORDER_TYPE_BUY,
-        "position": pos.ticket, "price": tick2.ask,
-        "deviation": 10, "magic": MAGIC,
+        "action": mt5.TRADE_ACTION_DEAL,
+        "symbol": SYMBOL,
+        "volume": pos.volume,
+        "type": mt5.ORDER_TYPE_BUY,
+        "position": pos.ticket,
+        "price": tick2.ask,
+        "deviation": 10,
+        "magic": MAGIC,
         "comment": "B2-TEST2-CLOSE",
         "type_time": mt5.ORDER_TIME_GTC,
         "type_filling": mt5.ORDER_FILLING_IOC,
@@ -212,10 +231,15 @@ def test3():
     price = tick.ask
     sl = price - STOP
     req = {
-        "action": mt5.TRADE_ACTION_DEAL, "symbol": SYMBOL,
-        "volume": LOT, "type": mt5.ORDER_TYPE_BUY,
-        "price": price, "sl": sl, "tp": 0.0,
-        "deviation": 10, "magic": MAGIC,
+        "action": mt5.TRADE_ACTION_DEAL,
+        "symbol": SYMBOL,
+        "volume": LOT,
+        "type": mt5.ORDER_TYPE_BUY,
+        "price": price,
+        "sl": sl,
+        "tp": 0.0,
+        "deviation": 10,
+        "magic": MAGIC,
         "comment": "B2-TEST3",
         "type_time": mt5.ORDER_TIME_GTC,
         "type_filling": mt5.ORDER_FILLING_IOC,
@@ -244,10 +268,14 @@ def test3():
         pos = positions[0]
         tick2 = mt5.symbol_info_tick(SYMBOL)
         close_req = {
-            "action": mt5.TRADE_ACTION_DEAL, "symbol": SYMBOL,
-            "volume": pos.volume, "type": mt5.ORDER_TYPE_SELL,
-            "position": pos.ticket, "price": tick2.bid,
-            "deviation": 10, "magic": MAGIC,
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": SYMBOL,
+            "volume": pos.volume,
+            "type": mt5.ORDER_TYPE_SELL,
+            "position": pos.ticket,
+            "price": tick2.bid,
+            "deviation": 10,
+            "magic": MAGIC,
             "comment": "B2-TEST3-CLOSE",
             "type_time": mt5.ORDER_TIME_GTC,
             "type_filling": mt5.ORDER_FILLING_IOC,

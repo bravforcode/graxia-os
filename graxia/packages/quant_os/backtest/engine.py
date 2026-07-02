@@ -12,7 +12,7 @@ Simulates strategy execution on historical data with:
 """
 
 from dataclasses import dataclass
-from datetime import date, datetime, UTC
+from datetime import UTC, date, datetime
 from decimal import ROUND_DOWN, Decimal
 from typing import Any
 from uuid import uuid4
@@ -76,15 +76,47 @@ class InlineContractSpec:
         _FX = 100_000
         _CRYPTO = 1
         specs = {
-            "XAUUSD": cls(trade_contract_size=Decimal("100"), trade_tick_size=Decimal("0.01"), trade_tick_value=Decimal("1.0")),
-            "EURUSD": cls(trade_contract_size=Decimal(str(_FX)), trade_tick_size=Decimal("0.0001"), trade_tick_value=Decimal("10.0")),
-            "GBPUSD": cls(trade_contract_size=Decimal(str(_FX)), trade_tick_size=Decimal("0.0001"), trade_tick_value=Decimal("10.0")),
-            "USDJPY": cls(trade_contract_size=Decimal(str(_FX)), trade_tick_size=Decimal("0.01"), trade_tick_value=Decimal("6.67")),
-            "AUDUSD": cls(trade_contract_size=Decimal(str(_FX)), trade_tick_size=Decimal("0.0001"), trade_tick_value=Decimal("10.0")),
-            "USDCAD": cls(trade_contract_size=Decimal(str(_FX)), trade_tick_size=Decimal("0.0001"), trade_tick_value=Decimal("7.50")),
-            "USDCHF": cls(trade_contract_size=Decimal(str(_FX)), trade_tick_size=Decimal("0.0001"), trade_tick_value=Decimal("11.00")),
-            "NZDUSD": cls(trade_contract_size=Decimal(str(_FX)), trade_tick_size=Decimal("0.0001"), trade_tick_value=Decimal("10.0")),
-            "BTCUSDT": cls(trade_contract_size=Decimal(str(_CRYPTO)), trade_tick_size=Decimal("0.01"), trade_tick_value=Decimal("0.01")),
+            "XAUUSD": cls(
+                trade_contract_size=Decimal("100"), trade_tick_size=Decimal("0.01"), trade_tick_value=Decimal("1.0")
+            ),
+            "EURUSD": cls(
+                trade_contract_size=Decimal(str(_FX)),
+                trade_tick_size=Decimal("0.0001"),
+                trade_tick_value=Decimal("10.0"),
+            ),
+            "GBPUSD": cls(
+                trade_contract_size=Decimal(str(_FX)),
+                trade_tick_size=Decimal("0.0001"),
+                trade_tick_value=Decimal("10.0"),
+            ),
+            "USDJPY": cls(
+                trade_contract_size=Decimal(str(_FX)), trade_tick_size=Decimal("0.01"), trade_tick_value=Decimal("6.67")
+            ),
+            "AUDUSD": cls(
+                trade_contract_size=Decimal(str(_FX)),
+                trade_tick_size=Decimal("0.0001"),
+                trade_tick_value=Decimal("10.0"),
+            ),
+            "USDCAD": cls(
+                trade_contract_size=Decimal(str(_FX)),
+                trade_tick_size=Decimal("0.0001"),
+                trade_tick_value=Decimal("7.50"),
+            ),
+            "USDCHF": cls(
+                trade_contract_size=Decimal(str(_FX)),
+                trade_tick_size=Decimal("0.0001"),
+                trade_tick_value=Decimal("11.00"),
+            ),
+            "NZDUSD": cls(
+                trade_contract_size=Decimal(str(_FX)),
+                trade_tick_size=Decimal("0.0001"),
+                trade_tick_value=Decimal("10.0"),
+            ),
+            "BTCUSDT": cls(
+                trade_contract_size=Decimal(str(_CRYPTO)),
+                trade_tick_size=Decimal("0.01"),
+                trade_tick_value=Decimal("0.01"),
+            ),
         }
         return specs.get(symbol, cls())
 
@@ -763,8 +795,9 @@ class BacktestEngine:
         # Build snapshot from current bar — dynamic spread based on time of day
         try:
             from backtest.dynamic_spread_model import SpreadConfig
+
             _spread_config = SpreadConfig()
-            bar_hour = current_time.hour if hasattr(current_time, 'hour') else 12
+            bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
             spread = Decimal("0.01") * _spread_config.get_spread(bar_hour)
         except Exception:
             spread = Decimal("0.01") * Decimal(str(self.config.spread_pips))
@@ -845,8 +878,9 @@ class BacktestEngine:
         # Dynamic spread based on time of day
         try:
             from backtest.dynamic_spread_model import SpreadConfig
+
             _spread_config = SpreadConfig()
-            bar_hour = current_time.hour if hasattr(current_time, 'hour') else 12
+            bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
             spread = Decimal("0.01") * _spread_config.get_spread(bar_hour)
         except Exception:
             spread = Decimal("0.01") * Decimal(str(self.config.spread_pips))
@@ -909,8 +943,9 @@ class BacktestEngine:
             else:
                 try:
                     from backtest.dynamic_spread_model import SpreadConfig
+
                     _spread_config = SpreadConfig()
-                    bar_hour = current_time.hour if hasattr(current_time, 'hour') else 12
+                    bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
                     atr = float(bar_high - bar_low)
                     exit_slippage = Decimal("0.01") * _spread_config.get_slippage(bar_hour, atr=atr)
                 except Exception:
@@ -940,7 +975,7 @@ class BacktestEngine:
             pnl = (pos.entry_price - exit_price) * pos.quantity
 
         # Commission on exit
-        lots = pos.quantity / getattr(pos, 'contract_size', Decimal("100"))
+        lots = pos.quantity / getattr(pos, "contract_size", Decimal("100"))
         exit_commission = lots * Decimal(str(self.config.commission_per_lot))
         total_fees = exit_commission
 
@@ -1132,7 +1167,11 @@ class BacktestEngine:
                     "drawdown_pct": p.drawdown_pct,
                     "open_positions": p.open_positions,
                 }
-                for p in (self.equity_curve if len(self.equity_curve) <= 500 else self.equity_curve[::max(1, len(self.equity_curve) // 500)])
+                for p in (
+                    self.equity_curve
+                    if len(self.equity_curve) <= 500
+                    else self.equity_curve[:: max(1, len(self.equity_curve) // 500)]
+                )
             ],
             "execution": {
                 "total_spread_cost": float(total_spread_cost),

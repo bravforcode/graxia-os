@@ -1,6 +1,7 @@
 """Phase BE-P9 — Demo canary runner. Orchestrates full canary flow."""
+
 from dataclasses import dataclass
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 
 @dataclass

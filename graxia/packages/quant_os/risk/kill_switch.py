@@ -11,7 +11,7 @@ Supports three close modes:
 import json
 import logging
 import os
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any, Protocol
@@ -34,6 +34,7 @@ class KillSwitchState(str, Enum):
 
 class CloseMode(str, Enum):
     """Defines what the kill switch does with open positions."""
+
     CLOSE_ALL = "CLOSE_ALL"
     CLOSE_RISK_INCREASING_ONLY = "CLOSE_RISK_INCREASING_ONLY"
     NO_NEW_ORDERS_ONLY = "NO_NEW_ORDERS_ONLY"
@@ -41,12 +42,14 @@ class CloseMode(str, Enum):
 
 class BrokerAdapterLike(Protocol):
     """Minimal broker adapter interface for kill-switch position closing."""
+
     def get_positions(self) -> list[dict]: ...
     def close_position(self, ticket: int) -> Any: ...
 
 
 class ReadonlyClientLike(Protocol):
     """Read-only broker client for state reconciliation after close attempts."""
+
     def get_positions(self) -> list[dict]: ...
 
 
@@ -115,7 +118,9 @@ class KillSwitch:
         self._save()
 
     def _cmd_kill_all(self) -> str:
-        self._set_state(KillSwitchState.ACTIVE, reason="Telegram /kill_all", authorized_by=f"telegram:{self._last_user_id}")
+        self._set_state(
+            KillSwitchState.ACTIVE, reason="Telegram /kill_all", authorized_by=f"telegram:{self._last_user_id}"
+        )
         return "KILL SWITCH ACTIVATED — all trading halted."
 
     def _cmd_kill_class(self, asset_class: str) -> str:
@@ -128,11 +133,15 @@ class KillSwitch:
         return f"KILLED: {asset_class} trading halted. Active kills: {killed}"
 
     def _cmd_pause(self) -> str:
-        self._set_state(KillSwitchState.PAUSED, reason="Telegram /pause", authorized_by=f"telegram:{self._last_user_id}")
+        self._set_state(
+            KillSwitchState.PAUSED, reason="Telegram /pause", authorized_by=f"telegram:{self._last_user_id}"
+        )
         return "PAUSED — no new entries. Closes still allowed."
 
     def _cmd_resume(self) -> str:
-        self._set_state(KillSwitchState.INACTIVE, reason="Telegram /resume", authorized_by=f"telegram:{self._last_user_id}")
+        self._set_state(
+            KillSwitchState.INACTIVE, reason="Telegram /resume", authorized_by=f"telegram:{self._last_user_id}"
+        )
         self._state["killed_classes"] = []
         self._save()
         return "RESUMED — normal operation."
@@ -192,7 +201,11 @@ class KillSwitch:
             if should_close and ticket is not None:
                 # Idempotent check: skip if already closed
                 if int(ticket) in self._closed_tickets:
-                    logger.info("kill_switch.enforce: ticket=%s already closed at %s — skipping", ticket, self._closed_tickets[int(ticket)])
+                    logger.info(
+                        "kill_switch.enforce: ticket=%s already closed at %s — skipping",
+                        ticket,
+                        self._closed_tickets[int(ticket)],
+                    )
                     result["closed"].append(ticket)
                     continue
                 try:
@@ -210,9 +223,7 @@ class KillSwitch:
                 result["remaining"].append(ticket)
 
         # Broker state reconciliation
-        result["reconciled"] = self._reconcile_broker_state(
-            readonly_client or broker_adapter, result
-        )
+        result["reconciled"] = self._reconcile_broker_state(readonly_client or broker_adapter, result)
 
         return result
 
@@ -300,7 +311,14 @@ class KillSwitch:
                 return json.loads(self._state_file.read_text())
             except (json.JSONDecodeError, ValueError):
                 pass
-        return {"state": KillSwitchState.INACTIVE.value, "killed_classes": [], "reason": "", "activated_at_utc": None, "authorized_by": "", "history": []}
+        return {
+            "state": KillSwitchState.INACTIVE.value,
+            "killed_classes": [],
+            "reason": "",
+            "activated_at_utc": None,
+            "authorized_by": "",
+            "history": [],
+        }
 
     def _save(self) -> None:
         self._state_file.parent.mkdir(parents=True, exist_ok=True)

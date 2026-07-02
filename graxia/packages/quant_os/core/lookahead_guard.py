@@ -1,12 +1,15 @@
 """Zero look-ahead guard from Jesse pattern"""
-from typing import Dict, List, Optional
+
 import logging
 
 logger = logging.getLogger(__name__)
 
+
 class LookaheadViolation(Exception):
     """Raised when lookahead bias is detected in strict mode"""
+
     pass
+
 
 class LookaheadGuard:
     """Enforces zero look-ahead bias in backtesting"""
@@ -14,7 +17,7 @@ class LookaheadGuard:
     def __init__(self, strict: bool = False):
         self._current_index: int = 0
         self._data_length: int = 0
-        self._violations: List[str] = []
+        self._violations: list[str] = []
         self._strict = strict
 
     def initialize(self, data_length: int):
@@ -39,13 +42,13 @@ class LookaheadGuard:
             return False
         return True
 
-    def get_slice(self, data: Dict[str, List], end_index: Optional[int] = None) -> Dict[str, List]:
+    def get_slice(self, data: dict[str, list], end_index: int | None = None) -> dict[str, list]:
         """Get data slice up to and including current index (no future data)"""
         idx = end_index if end_index is not None else self._current_index
-        return {k: v[:idx+1] for k, v in data.items()}
+        return {k: v[: idx + 1] for k, v in data.items()}
 
     @property
-    def violations(self) -> List[str]:
+    def violations(self) -> list[str]:
         return self._violations
 
     @property

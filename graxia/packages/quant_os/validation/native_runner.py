@@ -1,12 +1,12 @@
-from dataclasses import dataclass, field
-from decimal import Decimal
-from typing import Optional, Dict, List
 import hashlib
 import json
+from dataclasses import dataclass, field
+from decimal import Decimal
 
+from graxia.packages.quant_os.backtest.engine import BacktestConfig, BacktestEngine
 from graxia.packages.quant_os.validation.locked_inputs import LockedInputs
 from graxia.packages.quant_os.validation.run_config import RunConfig
-from graxia.packages.quant_os.backtest.engine import BacktestEngine, BacktestConfig
+
 
 @dataclass
 class ValidationResult:
@@ -18,27 +18,31 @@ class ValidationResult:
     max_drawdown_pct: float = 0.0
     sharpe_ratio: float = 0.0
     expectancy: float = 0.0
-    cost_attribution: Dict[str, float] = field(default_factory=dict)
+    cost_attribution: dict[str, float] = field(default_factory=dict)
     metrics_hash: str = ""
-    error: Optional[str] = None
+    error: str | None = None
 
     def compute_hash(self) -> str:
-        data = json.dumps({
-            "total_trades": self.total_trades,
-            "win_rate": self.win_rate,
-            "profit_factor": self.profit_factor,
-            "total_pnl": self.total_pnl,
-            "max_drawdown_pct": self.max_drawdown_pct,
-            "expectancy": self.expectancy,
-        }, sort_keys=True)
+        data = json.dumps(
+            {
+                "total_trades": self.total_trades,
+                "win_rate": self.win_rate,
+                "profit_factor": self.profit_factor,
+                "total_pnl": self.total_pnl,
+                "max_drawdown_pct": self.max_drawdown_pct,
+                "expectancy": self.expectancy,
+            },
+            sort_keys=True,
+        )
         self.metrics_hash = hashlib.sha256(data.encode()).hexdigest()
         return self.metrics_hash
 
+
 class NativeRunner:
     def __init__(self):
-        self._results: List[ValidationResult] = []
+        self._results: list[ValidationResult] = []
 
-    def run(self, config: RunConfig, strategy, data: Dict[str, List], timestamps: list) -> ValidationResult:
+    def run(self, config: RunConfig, strategy, data: dict[str, list], timestamps: list) -> ValidationResult:
         """Run native quant_os backtest with given config."""
         try:
             cost_scenario = config.cost_scenario
@@ -58,10 +62,7 @@ class NativeRunner:
             results = engine.run()
 
             if not results:
-                return ValidationResult(
-                    run_config=config,
-                    error="Engine returned empty results"
-                )
+                return ValidationResult(run_config=config, error="Engine returned empty results")
 
             metrics = results.get("metrics", {})
             trades = results.get("trades", [])
@@ -72,7 +73,7 @@ class NativeRunner:
 
             gross_profit = sum(t.get("pnl", 0) for t in trades if t.get("pnl", 0) > 0)
             gross_loss = abs(sum(t.get("pnl", 0) for t in trades if t.get("pnl", 0) < 0))
-            profit_factor = gross_profit / gross_loss if gross_loss > 0 else float('inf')
+            profit_factor = gross_profit / gross_loss if gross_loss > 0 else float("inf")
 
             max_dd = 0.0
             equity_curve = results.get("equity_curve", [])
@@ -107,8 +108,11 @@ class NativeRunner:
             self._results.append(result)
             return result
 
-    def run_all_cost_scenarios(self, strategy, data: Dict[str, List], timestamps: list, locked_inputs: LockedInputs) -> List[ValidationResult]:
+    def run_all_cost_scenarios(
+        self, strategy, data: dict[str, list], timestamps: list, locked_inputs: LockedInputs
+    ) -> list[ValidationResult]:
         from graxia.packages.quant_os.validation.cost_scenarios import ALL_SCENARIOS
+
         results = []
         for scenario in ALL_SCENARIOS:
             config = RunConfig(
@@ -121,5 +125,5 @@ class NativeRunner:
             results.append(result)
         return results
 
-    def get_results(self) -> List[ValidationResult]:
+    def get_results(self) -> list[ValidationResult]:
         return self._results

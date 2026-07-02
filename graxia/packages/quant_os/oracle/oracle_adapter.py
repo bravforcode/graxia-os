@@ -1,4 +1,5 @@
 """Phase BE-P5 — Oracle adapter base class."""
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
@@ -48,10 +49,14 @@ class StubOracle(OracleAdapter):
     """Stub oracle for testing. Returns no signals."""
 
     def __init__(self):
-        super().__init__(OracleConfig(
-            name="stub", version="0.0.1", framework="none",
-            has_real_strategy=False,
-        ))
+        super().__init__(
+            OracleConfig(
+                name="stub",
+                version="0.0.1",
+                framework="none",
+                has_real_strategy=False,
+            )
+        )
 
     def load_strategy(self, strategy_ir: dict) -> bool:
         return False

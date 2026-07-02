@@ -103,6 +103,7 @@ def hot_swap(challenger_data: dict, challenger_metrics) -> bool:
 def log_retrain(entry: dict) -> None:
     """Append a retrain entry to RETRAIN_LOG (JSONL format)."""
     import json
+
     RETRAIN_LOG.parent.mkdir(parents=True, exist_ok=True)
     with open(RETRAIN_LOG, "a") as f:
         f.write(json.dumps(entry) + "\n")

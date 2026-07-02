@@ -7,8 +7,9 @@ the ML approach needs fundamental change (features, architecture, or target).
 Usage:
     python -m pytest tests/test_benchmark_baseline.py -v --tb=short
 """
-import pytest
+
 import numpy as np
+import pytest
 
 
 def simple_sma_crossover(close: np.ndarray, fast: int = 5, slow: int = 20) -> np.ndarray:
@@ -68,9 +69,7 @@ class TestBenchmarkBaseline:
         random_signal = rng.choice([-1, 0, 1], size=n)
         random_acc = compute_accuracy(random_signal, direction)
 
-        assert sma_acc > random_acc, (
-            f"SMA ({sma_acc:.3f}) should beat random ({random_acc:.3f})"
-        )
+        assert sma_acc > random_acc, f"SMA ({sma_acc:.3f}) should beat random ({random_acc:.3f})"
         # SMA must be clearly above random
         assert sma_acc > 0.52, f"SMA accuracy too low: {sma_acc:.3f}"
         print(f"  SMA baseline accuracy: {sma_acc:.3f}")
@@ -83,14 +82,11 @@ class TestBenchmarkBaseline:
         WARNING: If this test fails, the ML model is degenerate (worse than guessing).
         Current model (before regularization fix): accuracy 0.454 vs random 0.500
         """
+        import glob
         import os
         import pickle
-        import glob
 
-        model_dir = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            "ml", "models"
-        )
+        model_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "ml", "models")
         if not os.path.isdir(model_dir):
             pytest.skip("No trained ML models found")
 
@@ -118,7 +114,7 @@ class TestBenchmarkBaseline:
         n = 500
         X_test = np.random.normal(0, 1, (n, n_features))
         # Add some signal to first 3 features
-        X_test[:n // 2, :3] += 0.3
+        X_test[: n // 2, :3] += 0.3
         y_test = np.concatenate([np.ones(n // 2), np.zeros(n - n // 2)])
 
         ml_acc = model.score(X_test, y_test)

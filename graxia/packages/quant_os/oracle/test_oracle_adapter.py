@@ -1,4 +1,5 @@
 """Tests for oracle adapter base."""
+
 from graxia.packages.quant_os.oracle.oracle_adapter import OracleConfig, StubOracle
 
 

@@ -18,10 +18,10 @@ Run:
 """
 
 import asyncio
+import json
 import os
 import sys
 import time
-import json
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -58,6 +58,7 @@ HEADLINES = [
 # ═══════════════════════════════════════════════════════════════════
 # PROVIDER CONFIGS
 # ═══════════════════════════════════════════════════════════════════
+
 
 @dataclass
 class ProviderCfg:
@@ -144,6 +145,7 @@ Return ONLY valid JSON, no other text."""
 # API CALLERS
 # ═══════════════════════════════════════════════════════════════════
 
+
 async def call_openai_compatible(
     client, cfg: ProviderCfg, api_key: str, headline: str, max_retries: int = 3
 ) -> dict | None:
@@ -168,7 +170,7 @@ async def call_openai_compatible(
             resp = await client.post(cfg.base_url, headers=headers, json=payload)
             if resp.status_code == 429:
                 # Rate limited - wait and retry
-                wait = 2 ** attempt  # 1s, 2s, 4s
+                wait = 2**attempt  # 1s, 2s, 4s
                 await asyncio.sleep(wait)
                 continue
             if resp.status_code != 200:
@@ -183,9 +185,7 @@ async def call_openai_compatible(
     return {"error": "Max retries exceeded"}
 
 
-async def call_google(
-    client, cfg: ProviderCfg, api_key: str, headline: str, max_retries: int = 3
-) -> dict | None:
+async def call_google(client, cfg: ProviderCfg, api_key: str, headline: str, max_retries: int = 3) -> dict | None:
     """Call Google AI Studio (Gemini) with retry."""
     url = f"{cfg.base_url}?key={api_key}"
     payload = {
@@ -197,7 +197,7 @@ async def call_google(
         try:
             resp = await client.post(url, json=payload)
             if resp.status_code == 429:
-                wait = 2 ** attempt
+                wait = 2**attempt
                 await asyncio.sleep(wait)
                 continue
             if resp.status_code != 200:
@@ -212,9 +212,7 @@ async def call_google(
     return {"error": "Max retries exceeded"}
 
 
-async def call_cohere(
-    client, cfg: ProviderCfg, api_key: str, headline: str, max_retries: int = 3
-) -> dict | None:
+async def call_cohere(client, cfg: ProviderCfg, api_key: str, headline: str, max_retries: int = 3) -> dict | None:
     """Call Cohere API with retry."""
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -231,7 +229,7 @@ async def call_cohere(
         try:
             resp = await client.post(cfg.base_url, headers=headers, json=payload)
             if resp.status_code == 429:
-                wait = 2 ** attempt
+                wait = 2**attempt
                 await asyncio.sleep(wait)
                 continue
             if resp.status_code != 200:
@@ -246,9 +244,7 @@ async def call_cohere(
     return {"error": "Max retries exceeded"}
 
 
-async def call_cloudflare(
-    client, cfg: ProviderCfg, api_key: str, headline: str
-) -> dict | None:
+async def call_cloudflare(client, cfg: ProviderCfg, api_key: str, headline: str) -> dict | None:
     """Call Cloudflare Workers AI."""
     account_id = os.getenv("CF_ACCOUNT_ID", "")
     if not account_id:
@@ -299,6 +295,7 @@ async def _delayed_call(delay: float, coro):
 # MAIN TEST
 # ═══════════════════════════════════════════════════════════════════
 
+
 @pytest.mark.asyncio
 async def test_massive_sentiment_all_providers():
     """
@@ -343,13 +340,25 @@ async def test_massive_sentiment_all_providers():
                 # Stagger requests: 0.5s between each for rate-limited providers
                 delay = idx * 0.5 if cfg.name in ("openrouter", "google", "cerebras") else 0
                 if cfg.api_type == "openai":
-                    tasks.append((cfg.name, headline, _delayed_call(delay, call_openai_compatible(client, cfg, api_key, headline))))
+                    tasks.append(
+                        (
+                            cfg.name,
+                            headline,
+                            _delayed_call(delay, call_openai_compatible(client, cfg, api_key, headline)),
+                        )
+                    )
                 elif cfg.api_type == "google":
-                    tasks.append((cfg.name, headline, _delayed_call(delay, call_google(client, cfg, api_key, headline))))
+                    tasks.append(
+                        (cfg.name, headline, _delayed_call(delay, call_google(client, cfg, api_key, headline)))
+                    )
                 elif cfg.api_type == "cohere":
-                    tasks.append((cfg.name, headline, _delayed_call(delay, call_cohere(client, cfg, api_key, headline))))
+                    tasks.append(
+                        (cfg.name, headline, _delayed_call(delay, call_cohere(client, cfg, api_key, headline)))
+                    )
                 elif cfg.api_type == "cloudflare":
-                    tasks.append((cfg.name, headline, _delayed_call(delay, call_cloudflare(client, cfg, api_key, headline))))
+                    tasks.append(
+                        (cfg.name, headline, _delayed_call(delay, call_cloudflare(client, cfg, api_key, headline)))
+                    )
 
         # Run ALL in parallel
         start = time.time()
@@ -357,13 +366,15 @@ async def test_massive_sentiment_all_providers():
         elapsed = time.time() - start
 
         # Collect results
-        for i, ((provider_name, headline, _), result) in enumerate(zip(tasks, results)):
+        for i, ((provider_name, headline, _), result) in enumerate(zip(tasks, results, strict=False)):
             if provider_name not in all_results:
                 all_results[provider_name] = []
-            all_results[provider_name].append({
-                "headline": headline[:60],
-                "result": result,
-            })
+            all_results[provider_name].append(
+                {
+                    "headline": headline[:60],
+                    "result": result,
+                }
+            )
 
     # ═══════════════════════════════════════════════════════════════
     # RESULTS

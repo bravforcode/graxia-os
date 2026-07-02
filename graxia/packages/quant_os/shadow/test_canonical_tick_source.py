@@ -1,25 +1,25 @@
 """Tests for canonical tick source — 15 invariants for shadow tick integrity."""
+
 import ast
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 
-from graxia.packages.quant_os.shadow.canonical_tick_source import (
-    CanonicalTickSource,
-    CanonicalTickPolicy,
-)
 from graxia.packages.quant_os.shadow.canonical_bar_builder import (
     CanonicalBarBuilder,
+)
+from graxia.packages.quant_os.shadow.canonical_tick_source import (
+    CanonicalTickPolicy,
+    CanonicalTickSource,
 )
 from graxia.packages.quant_os.shadow.canonical_time_authority import (
     CanonicalTimeAuthority,
 )
-from graxia.packages.quant_os.shadow.tick_window_fetcher import TickWindowFetcher
-from graxia.packages.quant_os.shadow.tick_deduplicator import TickDeduplicator
 from graxia.packages.quant_os.shadow.event_risk_gate import EventRiskGate
-
+from graxia.packages.quant_os.shadow.tick_deduplicator import TickDeduplicator
+from graxia.packages.quant_os.shadow.tick_window_fetcher import TickWindowFetcher
 
 # ── helpers ──────────────────────────────────────────────────────────
 
@@ -38,9 +38,7 @@ def _make_mt5_conn(ticks=None):
     def fake_copy_ticks_range(symbol, fr, to, flags):
         fr_epoch = int(fr.timestamp())
         to_epoch = int(to.timestamp())
-        filtered = [
-            t for t in ticks if fr_epoch <= int(t[0]) <= to_epoch
-        ]
+        filtered = [t for t in ticks if fr_epoch <= int(t[0]) <= to_epoch]
         return filtered if filtered else None
 
     mt5_module.copy_ticks_range = fake_copy_ticks_range
@@ -70,6 +68,7 @@ def _tick_dict(ts_epoch, bid=1.1000, ask=1.1001, volume=1, time_msc=None):
 
 # ── 1. test_reject_naive_datetime_in_config ──────────────────────────
 
+
 def test_reject_naive_datetime_in_config():
     """Naive datetime rejected at config validation time."""
     fetcher = TickWindowFetcher(MagicMock())
@@ -80,6 +79,7 @@ def test_reject_naive_datetime_in_config():
 
 # ── 2. test_utc_aware_query_only ─────────────────────────────────────
 
+
 def test_utc_aware_query_only():
     """Only UTC-aware datetimes accepted for copy_ticks_range."""
     fetcher = TickWindowFetcher(MagicMock())
@@ -89,6 +89,7 @@ def test_utc_aware_query_only():
 
 
 # ── 3. test_all_returned_ticks_in_window ─────────────────────────────
+
 
 def test_all_returned_ticks_in_window():
     """Every returned tick must be within requested window."""
@@ -113,6 +114,7 @@ def test_all_returned_ticks_in_window():
 
 # ── 4. test_overlapping_windows_no_duplicate_ticks ───────────────────
 
+
 def test_overlapping_windows_no_duplicate_ticks():
     """Overlapping windows don't create duplicate ticks."""
     dedup = TickDeduplicator()
@@ -132,6 +134,7 @@ def test_overlapping_windows_no_duplicate_ticks():
 
 
 # ── 5. test_late_tick_does_not_modify_finalized_bar ──────────────────
+
 
 def test_late_tick_does_not_modify_finalized_bar():
     """Late tick doesn't modify already-finalized bar."""
@@ -163,6 +166,7 @@ def test_late_tick_does_not_modify_finalized_bar():
 
 # ── 6. test_tick_out_of_order_detected ───────────────────────────────
 
+
 def test_tick_out_of_order_detected():
     """Tick out-of-order is detected via deduplication."""
     dedup = TickDeduplicator()
@@ -184,6 +188,7 @@ def test_tick_out_of_order_detected():
 
 
 # ── 7. test_canonical_m1_bar_matches_tick_aggregation ────────────────
+
 
 def test_canonical_m1_bar_matches_tick_aggregation():
     """Canonical M1 bar matches manual tick aggregation."""
@@ -211,6 +216,7 @@ def test_canonical_m1_bar_matches_tick_aggregation():
 
 
 # ── 8. test_strategy_uses_completed_bars_only ────────────────────────
+
 
 def test_strategy_uses_completed_bars_only():
     """Strategy only sees completed canonical bars."""
@@ -241,6 +247,7 @@ def test_strategy_uses_completed_bars_only():
 
 # ── 9. test_event_gate_uses_system_utc ───────────────────────────────
 
+
 def test_event_gate_uses_system_utc():
     """Event gate uses system UTC not MT5 current-bar time."""
     gate = EventRiskGate(blackout_minutes=30)
@@ -260,6 +267,7 @@ def test_event_gate_uses_system_utc():
 
 # ── 10. test_session_gate_uses_system_utc ────────────────────────────
 
+
 def test_session_gate_uses_system_utc():
     """Session gate uses system UTC not MT5 current-bar time."""
     auth = CanonicalTimeAuthority()
@@ -277,6 +285,7 @@ def test_session_gate_uses_system_utc():
 
 # ── 11. test_symbol_info_tick_time_blocked ───────────────────────────
 
+
 def test_symbol_info_tick_time_blocked():
     """symbol_info_tick.time must not flow into signal path."""
     auth = CanonicalTimeAuthority()
@@ -286,6 +295,7 @@ def test_symbol_info_tick_time_blocked():
 
 # ── 12. test_mt5_bar_time_blocked ────────────────────────────────────
 
+
 def test_mt5_bar_time_blocked():
     """MT5 bar timestamps must not flow into signal path."""
     auth = CanonicalTimeAuthority()
@@ -294,6 +304,7 @@ def test_mt5_bar_time_blocked():
 
 
 # ── 13. test_copy_ticks_from_not_imported ────────────────────────────
+
 
 def test_copy_ticks_from_not_imported():
     """copy_ticks_from not imported in canonical shadow runtime."""
@@ -329,12 +340,17 @@ def test_copy_ticks_from_not_imported():
 
 # ── 14. test_no_execution_apis ───────────────────────────────────────
 
+
 def test_no_execution_apis():
     """No order_send, order_modify, order_close, pending order APIs."""
     forbidden = {
-        "order_send", "order_modify", "order_close",
-        "order_check", "order_calc_margin",
-        "positions_get", "history_deals_get",
+        "order_send",
+        "order_modify",
+        "order_close",
+        "order_check",
+        "order_calc_margin",
+        "positions_get",
+        "history_deals_get",
     }
 
     source_files = [
@@ -378,13 +394,11 @@ def test_no_execution_apis():
 
 # ── 15. test_ledger_deterministic ────────────────────────────────────
 
+
 def test_ledger_deterministic():
     """Full shadow rerun gives same ledger seal with same input ticks."""
     now = int(datetime.now(UTC).timestamp())
-    ticks = [
-        _tick(now - 300 + i, bid=1.1000 + i * 0.0001, ask=1.1001 + i * 0.0001)
-        for i in range(5)
-    ]
+    ticks = [_tick(now - 300 + i, bid=1.1000 + i * 0.0001, ask=1.1001 + i * 0.0001) for i in range(5)]
 
     def run_shadow(tick_list):
         conn = _make_mt5_conn(tick_list)

@@ -18,8 +18,9 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .broker_profile import BrokerProfile
 
-from .runtime_capabilities import RuntimeCapabilities
 from broker.mt5_gateway import Mt5UnavailableError, _get_mt5
+
+from .runtime_capabilities import RuntimeCapabilities
 
 
 def _mask_account(login: int) -> str:
@@ -109,15 +110,9 @@ def verify_mt5_runtime(
 
     # ── Step 4: Expected server / profile check ─────────────────────────
     if caps.server_name and caps.server_name != profile.expected_server:
-        _record(
-            f"server mismatch: expected '{profile.expected_server}', "
-            f"got '{_mask_server(caps.server_name)}'"
-        )
+        _record(f"server mismatch: expected '{profile.expected_server}', " f"got '{_mask_server(caps.server_name)}'")
     if caps.account_currency and caps.account_currency != profile.account_currency:
-        _record(
-            f"currency mismatch: expected '{profile.account_currency}', "
-            f"got '{caps.account_currency}'"
-        )
+        _record(f"currency mismatch: expected '{profile.account_currency}', " f"got '{caps.account_currency}'")
 
     # ── Step 5: Terminal connected check ────────────────────────────────
     if not caps.terminal_connected:
@@ -163,9 +158,7 @@ def verify_mt5_runtime(
             now = mt5.symbol_info_tick(broker_symbol)
             if now is not None:
                 t = now.time
-                ticks = mt5.copy_ticks_range(
-                    t - 10, t, mt5.COPY_TICKS_ALL
-                )
+                ticks = mt5.copy_ticks_range(t - 10, t, mt5.COPY_TICKS_ALL)
                 if ticks is not None and len(ticks) > 0:
                     caps.bar_access = True
                 else:
@@ -175,18 +168,14 @@ def verify_mt5_runtime(
 
         # ── Step 10: order_calc_profit test ─────────────────────────────
         try:
-            result = mt5.order_calc_profit(
-                mt5.ORDER_TYPE_BUY, broker_symbol, 0.01, 1.0, 1.001
-            )
+            result = mt5.order_calc_profit(mt5.ORDER_TYPE_BUY, broker_symbol, 0.01, 1.0, 1.001)
             caps.order_calc_profit = result is not None
         except Exception as e:
             _record(f"order_calc_profit error: {e}")
 
         # ── Step 11: order_calc_margin test ─────────────────────────────
         try:
-            result = mt5.order_calc_margin(
-                mt5.ORDER_TYPE_BUY, broker_symbol, 0.01, 1.0
-            )
+            result = mt5.order_calc_margin(mt5.ORDER_TYPE_BUY, broker_symbol, 0.01, 1.0)
             caps.order_calc_margin = result is not None
         except Exception as e:
             _record(f"order_calc_margin error: {e}")

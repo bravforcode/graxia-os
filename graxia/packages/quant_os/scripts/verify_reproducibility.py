@@ -1,4 +1,5 @@
 """Verify reproducibility of backtest results."""
+
 import hashlib
 import sys
 from pathlib import Path

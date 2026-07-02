@@ -5,22 +5,24 @@ Usage:
     cd quant_os
     python demo_campaign/campaign.py --symbol XAUUSD --days 5
 """
-import sys
-import os
-import time
-import yaml
+
 import json
 import logging
-from datetime import datetime, timedelta
+import os
+import sys
+import time
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta
 from enum import Enum
+
+import yaml
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from mt5_connector.connection import MT5Connection
 from mt5_connector.shadow_runner import ShadowRunnerV2
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -97,7 +99,7 @@ class CampaignResult:
 class DemoCampaign:
     """Run a multi-day demo campaign with monitoring."""
 
-    def __init__(self, config_path: str = 'mt5_connector/config.yaml'):
+    def __init__(self, config_path: str = "mt5_connector/config.yaml"):
         with open(config_path) as f:
             self._config = yaml.safe_load(f)
 
@@ -110,7 +112,7 @@ class DemoCampaign:
         self._peak_equity = 100000.0
         self._running_pnl = 0.0
 
-    def run(self, symbol: str = 'XAUUSD', days: int = 5, session_minutes: int = 390):
+    def run(self, symbol: str = "XAUUSD", days: int = 5, session_minutes: int = 390):
         """Run campaign for N days, 6.5 hours per day (390 min = one trading session)."""
         self._status = CampaignStatus.RUNNING
         logger.info(f"{'='*60}")
@@ -125,11 +127,13 @@ class DemoCampaign:
             day_start = datetime.utcnow()
             logger.info(f"\n--- Day {day+1}/{days} ({day_start.strftime('%Y-%m-%d')}) ---")
 
-            daily = self._run_day(symbol, session_minutes, day+1)
+            daily = self._run_day(symbol, session_minutes, day + 1)
             self._daily_reports.append(daily)
 
             logger.info(f"Day {day+1} complete:")
-            logger.info(f"  Signals: {daily.signals_total} | Accepted: {daily.signals_accepted} | Rejected: {daily.signals_rejected}")
+            logger.info(
+                f"  Signals: {daily.signals_total} | Accepted: {daily.signals_accepted} | Rejected: {daily.signals_rejected}"
+            )
             logger.info(f"  SL: {daily.sl_hits} | TP: {daily.tp_hits} | Time: {daily.time_stops}")
             logger.info(f"  P&L: {daily.net_pnl:.2f}")
 
@@ -149,15 +153,17 @@ class DemoCampaign:
 
     def _run_day(self, symbol: str, session_minutes: int, day_num: int) -> DailyReport:
         """Run one day of the campaign."""
-        daily = DailyReport(date=datetime.utcnow().strftime('%Y-%m-%d'))
+        daily = DailyReport(date=datetime.utcnow().strftime("%Y-%m-%d"))
 
         if not self._runner.connect():
             daily.pipeline_errors += 1
-            self._incidents.append({
-                "type": "MT5_CONNECT_FAILED",
-                "date": daily.date,
-                "details": "Failed to connect to MT5",
-            })
+            self._incidents.append(
+                {
+                    "type": "MT5_CONNECT_FAILED",
+                    "date": daily.date,
+                    "details": "Failed to connect to MT5",
+                }
+            )
             return daily
 
         start_time = time.time()
@@ -171,24 +177,24 @@ class DemoCampaign:
 
                 daily.signals_total += 1
 
-                outcome = result.get('outcome', 'ERROR')
-                if outcome.startswith('rejected_'):
+                outcome = result.get("outcome", "ERROR")
+                if outcome.startswith("rejected_"):
                     daily.signals_rejected += 1
-                    if 'spread_shock' in outcome:
+                    if "spread_shock" in outcome:
                         daily.spread_shocks += 1
                 else:
                     daily.signals_accepted += 1
-                    if outcome == 'hit_sl':
+                    if outcome == "hit_sl":
                         daily.sl_hits += 1
-                    elif outcome == 'hit_tp':
+                    elif outcome == "hit_tp":
                         daily.tp_hits += 1
-                    elif outcome == 'time_stop':
+                    elif outcome == "time_stop":
                         daily.time_stops += 1
 
                 # Track P&L
-                net = result.get('net_pnl', 0)
-                daily.hypothetical_pnl += result.get('hypothetical_pnl', 0)
-                daily.hypothetical_costs += result.get('hypothetical_costs', 0)
+                net = result.get("net_pnl", 0)
+                daily.hypothetical_pnl += result.get("hypothetical_pnl", 0)
+                daily.hypothetical_costs += result.get("hypothetical_costs", 0)
                 self._running_pnl += net
 
                 # Track drawdown
@@ -204,12 +210,14 @@ class DemoCampaign:
 
             except Exception as e:
                 daily.pipeline_errors += 1
-                self._incidents.append({
-                    "type": "PIPELINE_ERROR",
-                    "date": daily.date,
-                    "cycle": cycle,
-                    "error": str(e),
-                })
+                self._incidents.append(
+                    {
+                        "type": "PIPELINE_ERROR",
+                        "date": daily.date,
+                        "cycle": cycle,
+                        "error": str(e),
+                    }
+                )
 
             time.sleep(interval)
 
@@ -258,42 +266,43 @@ class DemoCampaign:
         logger.info(f"{'='*60}")
 
     def _export_results(self):
-        os.makedirs('shadow_results', exist_ok=True)
-        ts = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+        os.makedirs("shadow_results", exist_ok=True)
+        ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
 
         # Campaign summary
-        path = f'shadow_results/campaign_{ts}.json'
+        path = f"shadow_results/campaign_{ts}.json"
         result = CampaignResult(
             campaign_id=self._campaign_id,
             status=self._status,
-            start_date=datetime.utcnow().strftime('%Y-%m-%d'),
-            end_date=datetime.utcnow().strftime('%Y-%m-%d'),
-            symbol='XAUUSD',
+            start_date=datetime.utcnow().strftime("%Y-%m-%d"),
+            end_date=datetime.utcnow().strftime("%Y-%m-%d"),
+            symbol="XAUUSD",
             daily_reports=self._daily_reports,
             incidents=self._incidents,
         )
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             json.dump(result.to_dict(), f, indent=2)
         logger.info(f"Campaign results saved: {path}")
 
         # Daily reports
         for i, daily in enumerate(self._daily_reports):
-            daily_path = f'shadow_results/daily_{ts}_{i+1}.json'
-            with open(daily_path, 'w') as f:
+            daily_path = f"shadow_results/daily_{ts}_{i+1}.json"
+            with open(daily_path, "w") as f:
                 json.dump(daily.to_dict(), f, indent=2)
 
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description='Demo Campaign Runner')
-    parser.add_argument('--symbol', default='XAUUSD', help='Symbol to trade')
-    parser.add_argument('--days', type=int, default=5, help='Campaign duration in days')
-    parser.add_argument('--session', type=int, default=390, help='Session duration in minutes')
+
+    parser = argparse.ArgumentParser(description="Demo Campaign Runner")
+    parser.add_argument("--symbol", default="XAUUSD", help="Symbol to trade")
+    parser.add_argument("--days", type=int, default=5, help="Campaign duration in days")
+    parser.add_argument("--session", type=int, default=390, help="Session duration in minutes")
     args = parser.parse_args()
 
     campaign = DemoCampaign()
     campaign.run(symbol=args.symbol, days=args.days, session_minutes=args.session)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

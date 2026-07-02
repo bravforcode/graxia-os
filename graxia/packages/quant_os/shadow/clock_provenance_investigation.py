@@ -3,12 +3,13 @@
 Cross-checks MT5 timestamps from 3 independent APIs against system clock.
 NO assumptions. NO conversions. Raw evidence only.
 """
+
 import json
 import os
 import subprocess
 import sys
 import time
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 MT5_PATH = r"C:\Program Files\MetaTrader 5\terminal64.exe"
 SYMBOL = "XAUUSD"
@@ -24,10 +25,7 @@ def get_system_clock() -> dict:
     ntp_source = "UNKNOWN"
     time_service_status = "UNKNOWN"
     try:
-        result = subprocess.run(
-            ["w32tm", "/query", "/status"],
-            capture_output=True, text=True, timeout=5
-        )
+        result = subprocess.run(["w32tm", "/query", "/status"], capture_output=True, text=True, timeout=5)
         if result.returncode == 0:
             time_service_status = "RUNNING"
             for line in result.stdout.splitlines():
@@ -40,10 +38,7 @@ def get_system_clock() -> dict:
     # Also try w32tm /peers
     ntp_peers = []
     try:
-        result = subprocess.run(
-            ["w32tm", "/query", "/peers"],
-            capture_output=True, text=True, timeout=5
-        )
+        result = subprocess.run(["w32tm", "/query", "/peers"], capture_output=True, text=True, timeout=5)
         if result.returncode == 0:
             for line in result.stdout.splitlines():
                 if "Peer:" in line or "Host:" in line:
@@ -64,12 +59,15 @@ def get_system_clock() -> dict:
 
 def run_mt5_investigation() -> dict:
     """Run MT5 timestamp investigation in a subprocess."""
-    script = '''
+    script = (
+        '''
 import json
 import MetaTrader5 as mt5
 from datetime import datetime, timezone, timedelta
 
-SYMBOL = "''' + SYMBOL + '''"
+SYMBOL = "'''
+        + SYMBOL
+        + '''"
 
 result = {
     "mt5_initialize": False,
@@ -81,7 +79,9 @@ result = {
 }
 
 # 1. Initialize
-ok = mt5.initialize(path=r"''' + MT5_PATH + '''", timeout=10000)
+ok = mt5.initialize(path=r"'''
+        + MT5_PATH
+        + """", timeout=10000)
 result["mt5_initialize"] = ok
 if not ok:
     result["mt5_last_error"] = str(mt5.last_error())
@@ -194,7 +194,8 @@ finally:
     mt5.shutdown()
 
 print(json.dumps(result, indent=2, default=str))
-'''
+"""
+    )
     return script
 
 
@@ -212,10 +213,7 @@ def main():
     # 2. MT5 investigation
     print("\n--- MT5 TIMESTAMP INVESTIGATION ---")
     script = run_mt5_investigation()
-    result = subprocess.run(
-        [sys.executable, "-c", script],
-        capture_output=True, text=True, timeout=30
-    )
+    result = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True, timeout=30)
     if result.returncode != 0:
         print(f"  ERROR: {result.stderr}")
         return

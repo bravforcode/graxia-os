@@ -7,14 +7,15 @@ from decimal import Decimal
 @dataclass(frozen=True)
 class RiskPolicy:
     """Immutable risk policy. All loss limits in basis points (1 bps = 0.01%)."""
-    risk_per_trade_bps: int = 10        # 0.10%
-    max_daily_loss_bps: int = 50        # 0.50%
-    max_weekly_loss_bps: int = 150      # 1.50%
-    max_total_drawdown_bps: int = 300   # 3.00%
+
+    risk_per_trade_bps: int = 10  # 0.10%
+    max_daily_loss_bps: int = 50  # 0.50%
+    max_weekly_loss_bps: int = 150  # 1.50%
+    max_total_drawdown_bps: int = 300  # 3.00%
     max_open_positions: int = 1
     max_orders_per_day: int = 3
     max_symbol_exposure_bps: int = 100  # 1.00%
-    max_gross_exposure_bps: int = 100   # 1.00%
+    max_gross_exposure_bps: int = 100  # 1.00%
     reject_if_margin_level_below_pct: int = 500
     reject_if_data_stale_seconds: int = 5
     reject_if_spread_multiplier_above: float = 2.0
@@ -81,6 +82,7 @@ def validate_no_pct_in_production() -> list[str]:
     Returns list of violations (empty = clean).
     """
     import importlib
+
     violations = []
     production_modules = [
         "graxia.packages.quant_os.core.config",

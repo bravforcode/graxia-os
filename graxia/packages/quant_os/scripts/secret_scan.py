@@ -3,6 +3,7 @@
 Run before every commit to prevent credential leaks.
 v2: Expanded pattern coverage — JWT, PEM keys, AWS keys, Telegram tokens, DB conn strings.
 """
+
 import re
 import subprocess
 import sys
@@ -14,16 +15,16 @@ REPO_ROOT = Path(__file__).parent.parent.parent.parent
 SECRET_PATTERNS_CRITICAL = [
     (r'password\s*[=:]\s*["\'][^"\']*(?:muyrw|demo|pepper|mt5)[^"\']*["\']', "real password"),
     (r'password\s*[=:]\s*["\'][A-Za-z0-9!@#$%^&*]{8,}["\']', "long password string"),
-    (r'-----BEGIN (RSA |EC )?PRIVATE KEY-----', "PEM private key"),
-    (r'AKIA[0-9A-Z]{16}', "AWS access key"),
+    (r"-----BEGIN (RSA |EC )?PRIVATE KEY-----", "PEM private key"),
+    (r"AKIA[0-9A-Z]{16}", "AWS access key"),
 ]
 
 # --- HIGH patterns (likely secrets) ---
 SECRET_PATTERNS_HIGH = [
-    (r'eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}', "JWT token"),
-    (r'bot[0-9]+:[A-Za-z0-9_-]{35}', "Telegram bot token"),
-    (r'://[^:]+:[^@]+@', "DB connection string with password"),
-    (r'password=@password', "DB connection password placeholder"),
+    (r"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}", "JWT token"),
+    (r"bot[0-9]+:[A-Za-z0-9_-]{35}", "Telegram bot token"),
+    (r"://[^:]+:[^@]+@", "DB connection string with password"),
+    (r"password=@password", "DB connection password placeholder"),
 ]
 
 # --- MEDIUM patterns (potential secrets) ---
@@ -33,9 +34,9 @@ SECRET_PATTERNS_MEDIUM = [
 
 # Patterns that need redaction (account identifiers)
 REDACT_PATTERNS = [
-    (r'login\s*[=:]\s*(\d{7,})', "MT5 login/account ID"),
-    (r'account_login\s*=\s*(\d{7,})', "MT5 account ID"),
-    (r'Account:\s*(\d{7,})', "MT5 account in log"),
+    (r"login\s*[=:]\s*(\d{7,})", "MT5 login/account ID"),
+    (r"account_login\s*=\s*(\d{7,})", "MT5 account ID"),
+    (r"Account:\s*(\d{7,})", "MT5 account in log"),
 ]
 
 # Files to always skip
@@ -75,62 +76,58 @@ def scan_file(filepath: Path) -> list[dict]:
         for pattern, description in SECRET_PATTERNS_CRITICAL:
             if re.search(pattern, line, re.IGNORECASE):
                 # Redact the matched secret — do not print actual values
-                redacted = re.sub(
-                    r'(["\'])[^"\']+(["\'])',
-                    r'\1***REDACTED***\2',
-                    line.strip()
+                redacted = re.sub(r'(["\'])[^"\']+(["\'])', r"\1***REDACTED***\2", line.strip())
+                findings.append(
+                    {
+                        "file": str(filepath.relative_to(REPO_ROOT)),
+                        "line": line_num,
+                        "pattern": description,
+                        "redacted": redacted[:120],
+                        "severity": "CRITICAL",
+                    }
                 )
-                findings.append({
-                    "file": str(filepath.relative_to(REPO_ROOT)),
-                    "line": line_num,
-                    "pattern": description,
-                    "redacted": redacted[:120],
-                    "severity": "CRITICAL",
-                })
 
         # Check HIGH patterns
         for pattern, description in SECRET_PATTERNS_HIGH:
             if re.search(pattern, line, re.IGNORECASE):
-                redacted = re.sub(
-                    r'(["\'])[^"\']+(["\'])',
-                    r'\1***REDACTED***\2',
-                    line.strip()
+                redacted = re.sub(r'(["\'])[^"\']+(["\'])', r"\1***REDACTED***\2", line.strip())
+                findings.append(
+                    {
+                        "file": str(filepath.relative_to(REPO_ROOT)),
+                        "line": line_num,
+                        "pattern": description,
+                        "redacted": redacted[:120],
+                        "severity": "HIGH",
+                    }
                 )
-                findings.append({
-                    "file": str(filepath.relative_to(REPO_ROOT)),
-                    "line": line_num,
-                    "pattern": description,
-                    "redacted": redacted[:120],
-                    "severity": "HIGH",
-                })
 
         # Check MEDIUM patterns
         for pattern, description in SECRET_PATTERNS_MEDIUM:
             if re.search(pattern, line, re.IGNORECASE):
-                redacted = re.sub(
-                    r'(["\'])[^"\']+(["\'])',
-                    r'\1***REDACTED***\2',
-                    line.strip()
+                redacted = re.sub(r'(["\'])[^"\']+(["\'])', r"\1***REDACTED***\2", line.strip())
+                findings.append(
+                    {
+                        "file": str(filepath.relative_to(REPO_ROOT)),
+                        "line": line_num,
+                        "pattern": description,
+                        "redacted": redacted[:120],
+                        "severity": "MEDIUM",
+                    }
                 )
-                findings.append({
-                    "file": str(filepath.relative_to(REPO_ROOT)),
-                    "line": line_num,
-                    "pattern": description,
-                    "redacted": redacted[:120],
-                    "severity": "MEDIUM",
-                })
 
         # Check for account identifiers needing redaction
         for pattern, description in REDACT_PATTERNS:
             match = re.search(pattern, line)
             if match:
-                findings.append({
-                    "file": str(filepath.relative_to(REPO_ROOT)),
-                    "line": line_num,
-                    "pattern": description,
-                    "redacted": f"Account ID found: {match.group(1)[:3]}***",
-                    "severity": "MEDIUM",
-                })
+                findings.append(
+                    {
+                        "file": str(filepath.relative_to(REPO_ROOT)),
+                        "line": line_num,
+                        "pattern": description,
+                        "redacted": f"Account ID found: {match.group(1)[:3]}***",
+                        "severity": "MEDIUM",
+                    }
+                )
     return findings
 
 
@@ -138,10 +135,7 @@ def scan_git_tracked() -> list[dict]:
     """Scan all git-tracked files."""
     findings = []
     try:
-        result = subprocess.run(
-            ["git", "ls-files"],
-            capture_output=True, text=True, cwd=str(REPO_ROOT)
-        )
+        result = subprocess.run(["git", "ls-files"], capture_output=True, text=True, cwd=str(REPO_ROOT))
         for line in result.stdout.splitlines():
             filepath = REPO_ROOT / line
             if filepath.exists():

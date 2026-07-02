@@ -1,4 +1,5 @@
 """Phase BE-P10 — Demo campaign manager."""
+
 from dataclasses import dataclass
 
 

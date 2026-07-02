@@ -1,8 +1,9 @@
 """Phase 8 — Drill framework tests."""
+
 from graxia.packages.quant_os.canary.drills.drill_definitions import (
-    DrillType,
-    DrillDefinition,
     DRILL_CATALOG,
+    DrillDefinition,
+    DrillType,
 )
 from graxia.packages.quant_os.canary.drills.drill_executor import DrillExecutor
 

@@ -1,9 +1,9 @@
-from enum import Enum
-from dataclasses import dataclass
-from datetime import datetime
-from typing import Optional
 import hashlib
 import json
+from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
+
 
 class EventStatus(Enum):
     SCHEDULED = "SCHEDULED"
@@ -13,10 +13,12 @@ class EventStatus(Enum):
     DELAYED = "DELAYED"
     UNKNOWN = "UNKNOWN"
 
+
 class EventImportance(Enum):
     HIGH = "HIGH"
     MEDIUM = "MEDIUM"
     LOW = "LOW"
+
 
 class GateState(Enum):
     CLEAR = "CLEAR"
@@ -24,6 +26,7 @@ class GateState(Enum):
     EVENT_BLOCK = "EVENT_BLOCK"
     POST_EVENT_STABILIZATION = "POST_EVENT_STABILIZATION"
     UNKNOWN = "UNKNOWN"
+
 
 @dataclass(frozen=True)
 class EconomicEvent:
@@ -34,10 +37,10 @@ class EconomicEvent:
     event_name: str
     importance: EventImportance
     scheduled_at_utc: datetime
-    actual: Optional[float]
-    forecast: Optional[float]
-    previous: Optional[float]
-    revised_previous: Optional[float]
+    actual: float | None
+    forecast: float | None
+    previous: float | None
+    revised_previous: float | None
     source: str
     official_url: str
     received_at_utc: datetime
@@ -47,18 +50,21 @@ class EconomicEvent:
 
     def payload_hash(self) -> str:
         """SHA-256 hash of deterministic event data."""
-        data = json.dumps({
-            "event_id": self.event_id,
-            "source_event_id": self.source_event_id,
-            "country": self.country,
-            "currency": self.currency,
-            "event_name": self.event_name,
-            "importance": self.importance.value,
-            "scheduled_at_utc": self.scheduled_at_utc.isoformat(),
-            "actual": self.actual,
-            "forecast": self.forecast,
-            "previous": self.previous,
-            "revised_previous": self.revised_previous,
-            "status": self.status.value,
-        }, sort_keys=True)
+        data = json.dumps(
+            {
+                "event_id": self.event_id,
+                "source_event_id": self.source_event_id,
+                "country": self.country,
+                "currency": self.currency,
+                "event_name": self.event_name,
+                "importance": self.importance.value,
+                "scheduled_at_utc": self.scheduled_at_utc.isoformat(),
+                "actual": self.actual,
+                "forecast": self.forecast,
+                "previous": self.previous,
+                "revised_previous": self.revised_previous,
+                "status": self.status.value,
+            },
+            sort_keys=True,
+        )
         return hashlib.sha256(data.encode()).hexdigest()

@@ -1,10 +1,9 @@
 """Simple text-based live dashboard for quant_os monitoring."""
 
-import time
 import os
-from datetime import datetime, UTC
-from typing import Any, Dict, List, Optional
-
+import time
+from datetime import UTC, datetime
+from typing import Any
 
 HEADER = "=" * 60
 DIVIDER = "-" * 60
@@ -15,13 +14,13 @@ def _fmt_pnl(val: float) -> str:
     return f"{sign}{val:.2f}"
 
 
-def _fmt_time(ts: Optional[float]) -> str:
+def _fmt_time(ts: float | None) -> str:
     if ts is None:
         return "N/A"
     return time.strftime("%H:%M:%S", time.localtime(ts))
 
 
-def render_positions(positions: List[Dict[str, Any]]) -> str:
+def render_positions(positions: list[dict[str, Any]]) -> str:
     """Render current positions table."""
     lines = ["  SYMBOL        SIDE    ENTRY      PNL", f"  {DIVIDER[:44]}"]
     if not positions:
@@ -37,24 +36,17 @@ def render_positions(positions: List[Dict[str, Any]]) -> str:
 
 def render_pnl(pnl: float, win_rate: float, trades_count: int) -> str:
     """Render PnL summary."""
-    return (
-        f"  Daily PnL:   {_fmt_pnl(pnl)}\n"
-        f"  Win Rate:    {win_rate:.1f}%\n"
-        f"  Total Trades: {trades_count}"
-    )
+    return f"  Daily PnL:   {_fmt_pnl(pnl)}\n" f"  Win Rate:    {win_rate:.1f}%\n" f"  Total Trades: {trades_count}"
 
 
 def render_risk(risk_level: float, exposure: float) -> str:
     """Render risk gauge as text bar."""
     bar_len = int(risk_level / 5)
     bar = "#" * bar_len + "." * (20 - bar_len)
-    return (
-        f"  Risk Level:  [{bar}] {risk_level:.0f}/100\n"
-        f"  Exposure:    {exposure:.2f}"
-    )
+    return f"  Risk Level:  [{bar}] {risk_level:.0f}/100\n" f"  Exposure:    {exposure:.2f}"
 
 
-def render_recent_trades(trades: List[Dict[str, Any]], limit: int = 10) -> str:
+def render_recent_trades(trades: list[dict[str, Any]], limit: int = 10) -> str:
     """Render recent trades table."""
     lines = [
         "  TIME     SYMBOL     SIDE  PNL",
@@ -76,7 +68,7 @@ def render_health(
     feed_status: str = "connected",
     latency_ms: float = 0.0,
     data_age_s: float = 0.0,
-    alerts: Optional[List[str]] = None,
+    alerts: list[str] | None = None,
 ) -> str:
     """Render system health section."""
     lines = [
@@ -92,17 +84,17 @@ def render_health(
 
 
 def render_dashboard(
-    positions: Optional[List[Dict[str, Any]]] = None,
+    positions: list[dict[str, Any]] | None = None,
     pnl: float = 0.0,
     win_rate: float = 0.0,
     trades_count: int = 0,
     risk_level: float = 0.0,
     exposure: float = 0.0,
-    recent_trades: Optional[List[Dict[str, Any]]] = None,
+    recent_trades: list[dict[str, Any]] | None = None,
     feed_status: str = "connected",
     latency_ms: float = 0.0,
     data_age_s: float = 0.0,
-    alerts: Optional[List[str]] = None,
+    alerts: list[str] | None = None,
 ) -> str:
     """Render complete dashboard as string."""
     now = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -147,6 +139,7 @@ def run_dashboard_loop(
 
 
 if __name__ == "__main__":
+
     def sample_state():
         return {
             "positions": [
@@ -166,4 +159,5 @@ if __name__ == "__main__":
             "data_age_s": 3.0,
             "alerts": [],
         }
+
     run_dashboard_loop(sample_state, interval=2.0)

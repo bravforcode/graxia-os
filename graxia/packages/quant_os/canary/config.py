@@ -1,11 +1,14 @@
-from dataclasses import dataclass, field
-import yaml
-import json
 import hashlib
+import json
+from dataclasses import dataclass, field
+
+import yaml
+
 
 @dataclass
 class CanaryConfig:
     """Canary configuration — one broker, one symbol, one strategy, demo only."""
+
     execution_enabled: bool = False
     account_mode_required: str = "DEMO"
     allowed_symbols: list[str] = field(default_factory=lambda: ["XAUUSD"])
@@ -49,33 +52,39 @@ class CanaryConfig:
         return True, "ALLOWED"
 
     def fingerprint(self) -> str:
-        data = json.dumps({
-            "execution_enabled": self.execution_enabled,
-            "max_open_positions": self.max_open_positions,
-            "risk_per_trade_bps": self.risk_per_trade_bps,
-            "max_daily_loss_bps": self.max_daily_loss_bps,
-        }, sort_keys=True)
+        data = json.dumps(
+            {
+                "execution_enabled": self.execution_enabled,
+                "max_open_positions": self.max_open_positions,
+                "risk_per_trade_bps": self.risk_per_trade_bps,
+                "max_daily_loss_bps": self.max_daily_loss_bps,
+            },
+            sort_keys=True,
+        )
         return hashlib.sha256(data.encode()).hexdigest()
 
     def to_yaml(self) -> str:
-        return yaml.dump({
-            "demo_canary": {
-                "execution_enabled": self.execution_enabled,
-                "account_mode_required": self.account_mode_required,
-                "allowed_symbols": self.allowed_symbols,
-                "allowed_strategies": self.allowed_strategies,
-                "max_open_positions": self.max_open_positions,
-                "max_orders_per_day": self.max_orders_per_day,
-                "risk_per_trade_bps": self.risk_per_trade_bps,
-                "max_daily_loss_bps": self.max_daily_loss_bps,
-                "max_weekly_loss_bps": self.max_weekly_loss_bps,
-                "max_total_drawdown_bps": self.max_total_drawdown_bps,
-                "require_stop_loss": self.require_stop_loss,
-                "require_take_profit_or_time_stop": self.require_take_profit_or_time_stop,
-                "require_pre_trade_order_check": self.require_pre_trade_order_check,
-                "require_post_fill_stop_verification": self.require_post_fill_stop_verification,
-                "require_reconciliation": self.require_reconciliation,
-                "require_manual_session_enable": self.require_manual_session_enable,
-                "auto_resume_after_kill_switch": self.auto_resume_after_kill_switch,
-            }
-        }, default_flow_style=False)
+        return yaml.dump(
+            {
+                "demo_canary": {
+                    "execution_enabled": self.execution_enabled,
+                    "account_mode_required": self.account_mode_required,
+                    "allowed_symbols": self.allowed_symbols,
+                    "allowed_strategies": self.allowed_strategies,
+                    "max_open_positions": self.max_open_positions,
+                    "max_orders_per_day": self.max_orders_per_day,
+                    "risk_per_trade_bps": self.risk_per_trade_bps,
+                    "max_daily_loss_bps": self.max_daily_loss_bps,
+                    "max_weekly_loss_bps": self.max_weekly_loss_bps,
+                    "max_total_drawdown_bps": self.max_total_drawdown_bps,
+                    "require_stop_loss": self.require_stop_loss,
+                    "require_take_profit_or_time_stop": self.require_take_profit_or_time_stop,
+                    "require_pre_trade_order_check": self.require_pre_trade_order_check,
+                    "require_post_fill_stop_verification": self.require_post_fill_stop_verification,
+                    "require_reconciliation": self.require_reconciliation,
+                    "require_manual_session_enable": self.require_manual_session_enable,
+                    "auto_resume_after_kill_switch": self.auto_resume_after_kill_switch,
+                }
+            },
+            default_flow_style=False,
+        )

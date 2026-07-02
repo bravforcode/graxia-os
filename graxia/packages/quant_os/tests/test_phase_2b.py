@@ -15,18 +15,18 @@ _QUANT_OS = _PACKAGES / "quant_os"
 if str(_PACKAGES) not in sys.path:
     sys.path.insert(0, str(_PACKAGES))
 
-from quant_os.broker.contract_spec import ContractSpec, compute_snapshot_hash
 from quant_os.broker.contract_snapshot_store import ContractSnapshotStore
-from quant_os.risk.position_sizer_v2 import SizingResult, size_position
-from quant_os.risk.risk_policy import RiskPolicy
-from quant_os.risk.pre_trade_risk import pre_trade_check
+from quant_os.broker.contract_spec import ContractSpec, compute_snapshot_hash
 from quant_os.risk.kill_switch import KillSwitch
+from quant_os.risk.position_sizer_v2 import SizingResult, size_position
+from quant_os.risk.pre_trade_risk import pre_trade_check
 from quant_os.risk.risk_ledger import RiskLedger
-
+from quant_os.risk.risk_policy import RiskPolicy
 
 # ============================================================
 # FIXTURES
 # ============================================================
+
 
 def _make_spec(**overrides) -> ContractSpec:
     """Build a valid ContractSpec with defaults."""
@@ -94,9 +94,9 @@ def _eurusd_spec() -> ContractSpec:
 
 def _risk_policy() -> RiskPolicy:
     return RiskPolicy(
-        risk_per_trade_bps=100,       # 1.00%
-        max_daily_loss_bps=200,       # 2.00%
-        max_weekly_loss_bps=500,      # 5.00%
+        risk_per_trade_bps=100,  # 1.00%
+        max_daily_loss_bps=200,  # 2.00%
+        max_weekly_loss_bps=500,  # 5.00%
         max_total_drawdown_bps=1000,  # 10.00%
         max_open_positions=5,
         max_orders_per_day=20,
@@ -106,6 +106,7 @@ def _risk_policy() -> RiskPolicy:
 # ============================================================
 # 1-4: ContractSpec tests
 # ============================================================
+
 
 class TestContractSpec:
     def test_contract_spec_validate_valid(self):
@@ -136,6 +137,7 @@ class TestContractSpec:
 # 5-6: ContractSnapshotStore tests
 # ============================================================
 
+
 class TestContractSnapshotStore:
     def test_contract_snapshot_store_save_load(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -158,6 +160,7 @@ class TestContractSnapshotStore:
 # ============================================================
 # 7-12: Position sizer tests
 # ============================================================
+
 
 class TestPositionSizer:
     def test_sizer_valid_input(self):
@@ -246,14 +249,15 @@ class TestPositionSizer:
             risk_policy=_risk_policy(),
         )
         assert not result.rejected
-        assert result.risk_amount <= result.risk_budget, (
-            f"risk_amount {result.risk_amount} exceeds budget {result.risk_budget}"
-        )
+        assert (
+            result.risk_amount <= result.risk_budget
+        ), f"risk_amount {result.risk_amount} exceeds budget {result.risk_budget}"
 
 
 # ============================================================
 # 13-16: Pre-trade risk check tests
 # ============================================================
+
 
 class TestPreTradeRisk:
     def _ok_sizer_result(self) -> SizingResult:
@@ -277,7 +281,9 @@ class TestPreTradeRisk:
 
         policy = RiskPolicy(max_daily_loss_bps=200)
         result = pre_trade_check(
-            self._ok_sizer_result(), policy, ledger,
+            self._ok_sizer_result(),
+            policy,
+            ledger,
             account_equity=Decimal("10000"),
         )
         assert not result.approved
@@ -291,7 +297,9 @@ class TestPreTradeRisk:
 
         policy = RiskPolicy(max_weekly_loss_bps=500)
         result = pre_trade_check(
-            self._ok_sizer_result(), policy, ledger,
+            self._ok_sizer_result(),
+            policy,
+            ledger,
             account_equity=Decimal("10000"),
         )
         assert not result.approved
@@ -305,7 +313,9 @@ class TestPreTradeRisk:
 
         policy = RiskPolicy(max_open_positions=5)
         result = pre_trade_check(
-            self._ok_sizer_result(), policy, ledger,
+            self._ok_sizer_result(),
+            policy,
+            ledger,
             account_equity=Decimal("10000"),
         )
         assert not result.approved
@@ -321,7 +331,9 @@ class TestPreTradeRisk:
             ledger._state_file = Path(tempfile.mktemp(suffix=".json"))
 
             result = pre_trade_check(
-                self._ok_sizer_result(), _risk_policy(), ledger,
+                self._ok_sizer_result(),
+                _risk_policy(),
+                ledger,
                 account_equity=Decimal("10000"),
                 kill_switch=ks,
             )
@@ -332,6 +344,7 @@ class TestPreTradeRisk:
 # ============================================================
 # 17-18: Kill switch tests
 # ============================================================
+
 
 class TestKillSwitch:
     def test_kill_switch_activate_deactivate(self):
@@ -357,6 +370,7 @@ class TestKillSwitch:
 # 19: Risk ledger test
 # ============================================================
 
+
 class TestRiskLedger:
     def test_risk_ledger_daily_tracking(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -372,6 +386,7 @@ class TestRiskLedger:
 # ============================================================
 # 20-21: Safety assertions — no order_send anywhere
 # ============================================================
+
 
 class TestNoOrderSend:
     def test_no_order_send_in_broker(self):
@@ -393,6 +408,7 @@ class TestNoOrderSend:
 # ============================================================
 # 22-23: Golden sizing tests
 # ============================================================
+
 
 class TestGoldenSizing:
     def test_golden_xauusd_sizing(self):

@@ -4,10 +4,9 @@ Portfolio Risk Management
 Tracks overall portfolio exposure and correlations.
 """
 
-from typing import Dict, List, Optional
-from decimal import Decimal
-from dataclasses import dataclass, field
 import math
+from dataclasses import dataclass, field
+from decimal import Decimal
 
 from .engine import PortfolioState
 
@@ -15,18 +14,20 @@ from .engine import PortfolioState
 @dataclass
 class PositionExposure:
     """Exposure for a single position"""
+
     symbol: str
     direction: str  # LONG or SHORT
     quantity: Decimal
     market_value: Decimal
     unrealized_pnl: Decimal
     risk_pct: float
-    returns: List[float] = field(default_factory=list)
+    returns: list[float] = field(default_factory=list)
 
 
 @dataclass
 class PortfolioMetrics:
     """Portfolio-level risk metrics"""
+
     total_exposure: Decimal
     net_exposure: Decimal
     gross_exposure: Decimal
@@ -35,8 +36,8 @@ class PortfolioMetrics:
     concentration_pct: float
     correlation_risk: float
     beta_adjusted_exposure: float
-    var_95: Optional[Decimal] = None
-    cvar_95: Optional[Decimal] = None
+    var_95: Decimal | None = None
+    cvar_95: Decimal | None = None
 
 
 class PortfolioRisk:
@@ -52,7 +53,7 @@ class PortfolioRisk:
 
     def __init__(self, max_exposure_pct: float = 50.0):
         self.max_exposure_pct = max_exposure_pct
-        self.positions: Dict[str, PositionExposure] = {}
+        self.positions: dict[str, PositionExposure] = {}
         self.account_balance: Decimal = Decimal("10000")
 
     def update_position(self, exposure: PositionExposure) -> None:
@@ -66,15 +67,9 @@ class PortfolioRisk:
 
     def calculate_metrics(self) -> PortfolioMetrics:
         """Calculate portfolio risk metrics"""
-        long_exposure = sum(
-            p.market_value for p in self.positions.values()
-            if p.direction == "LONG"
-        )
+        long_exposure = sum(p.market_value for p in self.positions.values() if p.direction == "LONG")
 
-        short_exposure = sum(
-            p.market_value for p in self.positions.values()
-            if p.direction == "SHORT"
-        )
+        short_exposure = sum(p.market_value for p in self.positions.values() if p.direction == "SHORT")
 
         gross = long_exposure + short_exposure
         net = long_exposure - short_exposure
@@ -117,8 +112,8 @@ class PortfolioRisk:
 
         total_exposure_pct = float(metrics.total_exposure) / balance if balance else 0.0
 
-        class_exposure_pct: Dict[str, float] = {}
-        venue_exposure_pct: Dict[str, float] = {}
+        class_exposure_pct: dict[str, float] = {}
+        venue_exposure_pct: dict[str, float] = {}
         for pos in self.positions.values():
             pos_pct = float(pos.market_value) / balance if balance else 0.0
             class_exposure_pct[pos.symbol] = class_exposure_pct.get(pos.symbol, 0.0) + pos_pct
@@ -136,7 +131,7 @@ class PortfolioRisk:
             correlation_matrix=correlation_matrix,
         )
 
-    def get_correlation_matrix(self, symbols: List[str]) -> Dict[str, Dict[str, float]]:
+    def get_correlation_matrix(self, symbols: list[str]) -> dict[str, dict[str, float]]:
         """Compute correlation matrix from position returns."""
         n = len(symbols)
         if n == 0:
@@ -144,7 +139,7 @@ class PortfolioRisk:
         if n == 1:
             return {symbols[0]: {symbols[0]: 1.0}}
 
-        matrix: Dict[str, Dict[str, float]] = {}
+        matrix: dict[str, dict[str, float]] = {}
         for s1 in symbols:
             matrix[s1] = {}
             for s2 in symbols:
@@ -160,7 +155,7 @@ class PortfolioRisk:
                     matrix[s1][s2] = self._pearson_correlation(rets1, rets2)
         return matrix
 
-    def estimate_var(self, confidence: float = 0.95) -> Optional[Decimal]:
+    def estimate_var(self, confidence: float = 0.95) -> Decimal | None:
         """Estimate Value at Risk using historical simulation."""
         all_returns = []
         for pos in self.positions.values():
@@ -187,7 +182,7 @@ class PortfolioRisk:
         n = len(all_returns)
         idx_95 = max(0, int(0.05 * n))
         var_95 = Decimal(str(-all_returns[idx_95]))
-        tail = all_returns[:idx_95 + 1]
+        tail = all_returns[: idx_95 + 1]
         cvar_95 = Decimal(str(-sum(tail) / len(tail))) if tail else var_95
         return var_95, cvar_95
 
@@ -200,13 +195,13 @@ class PortfolioRisk:
         total_corr = 0.0
         count = 0
         for i, s1 in enumerate(symbols):
-            for s2 in symbols[i + 1:]:
+            for s2 in symbols[i + 1 :]:
                 total_corr += abs(matrix.get(s1, {}).get(s2, 0.0))
                 count += 1
         return total_corr / count if count > 0 else 0.0
 
     @staticmethod
-    def _pearson_correlation(x: List[float], y: List[float]) -> float:
+    def _pearson_correlation(x: list[float], y: list[float]) -> float:
         """Compute Pearson correlation coefficient."""
         n = min(len(x), len(y))
         if n < 2:
@@ -214,7 +209,7 @@ class PortfolioRisk:
         x, y = x[:n], y[:n]
         mean_x = sum(x) / n
         mean_y = sum(y) / n
-        cov = sum((xi - mean_x) * (yi - mean_y) for xi, yi in zip(x, y))
+        cov = sum((xi - mean_x) * (yi - mean_y) for xi, yi in zip(x, y, strict=False))
         std_x = math.sqrt(sum((xi - mean_x) ** 2 for xi in x))
         std_y = math.sqrt(sum((yi - mean_y) ** 2 for yi in y))
         if std_x == 0 or std_y == 0:

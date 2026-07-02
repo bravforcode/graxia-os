@@ -21,13 +21,14 @@ CRITICAL CONSTRAINT: This module is READ-ONLY. No order submission.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 
 class MarketHealthState(str, Enum):
     """Market health states. Only HEALTHY allows new orders."""
+
     HEALTHY = "HEALTHY"
     STALE_FEED = "STALE_FEED"
     WIDE_SPREAD = "WIDE_SPREAD"
@@ -52,6 +53,7 @@ class MarketHealthResult:
         details: Additional context about the evaluation.
         timestamp_utc: When the evaluation was performed.
     """
+
     state: MarketHealthState
     eligible_for_new_order: bool
     reason_codes: list[str]
@@ -67,6 +69,7 @@ class MarketHealthResult:
 @dataclass
 class MarketHealthConfig:
     """Configuration thresholds for health evaluation."""
+
     max_tick_age_seconds: float = 3.0
     max_clock_drift_ms: float = 500.0
     spread_baseline_window: int = 500
@@ -94,11 +97,11 @@ class MarketHealthMachine:
             # proceed with order intent (READ-ONLY phase: log only)
     """
 
-    def __init__(self, symbol: str, config: Optional[dict] = None):
+    def __init__(self, symbol: str, config: dict | None = None):
         self._symbol = symbol
         self._config_dict = config or self._default_config()
         self._last_state = MarketHealthState.UNKNOWN
-        self._last_result: Optional[MarketHealthResult] = None
+        self._last_result: MarketHealthResult | None = None
 
     def _default_config(self) -> dict:
         return {
@@ -151,9 +154,7 @@ class MarketHealthMachine:
         # Priority 3: STALE_FEED
         if self._check_stale_feed(feed_health):
             reason_codes.append("STALE_FEED")
-            details["tick_age_seconds"] = self._extract_detail(
-                feed_health, "last_tick_age_seconds"
-            )
+            details["tick_age_seconds"] = self._extract_detail(feed_health, "last_tick_age_seconds")
 
         # Priority 4: WIDE_SPREAD
         if self._check_wide_spread(spread_state):
@@ -173,9 +174,7 @@ class MarketHealthMachine:
         # Priority 7: OUT_OF_ORDER_DATA
         if self._check_out_of_order(tick_gap_info):
             reason_codes.append("OUT_OF_ORDER_DATA")
-            details["out_of_order"] = self._extract_detail(
-                tick_gap_info, "out_of_order_count"
-            )
+            details["out_of_order"] = self._extract_detail(tick_gap_info, "out_of_order_count")
 
         # Priority 8: CONTRACT_CHANGED
         if contract_changed:
@@ -209,7 +208,7 @@ class MarketHealthMachine:
         """Return the last evaluated state."""
         return self._last_state
 
-    def get_last_result(self) -> Optional[MarketHealthResult]:
+    def get_last_result(self) -> MarketHealthResult | None:
         """Return the full last evaluation result."""
         return self._last_result
 

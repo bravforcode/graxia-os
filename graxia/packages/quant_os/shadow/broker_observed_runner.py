@@ -7,24 +7,27 @@ Usage:
     cd graxia/packages/quant_os
     python shadow/broker_observed_runner.py --symbol XAUUSD --duration 3600
 """
+
 import hashlib
 import json
 import logging
 import os
 import sys
 import time
-from dataclasses import dataclass, asdict
-from datetime import datetime, timedelta, UTC
-from typing import Optional
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime, timedelta
+
+from graxia.packages.quant_os.markets.eurusd.event_calendar import EURUSDEventCalendar
+from graxia.packages.quant_os.markets.eurusd.session_calendar import EURUSDSessionCalendar
 
 # AST isolation: no execution imports allowed
 # broker/execution/order/position/trade modules are FORBIDDEN here
-
 from graxia.packages.quant_os.shadow.pipeline import (
-    ShadowPipeline, ShadowSignal, ShadowSignalOutcome, SpreadShockGate,
+    ShadowPipeline,
+    ShadowSignal,
+    ShadowSignalOutcome,
+    SpreadShockGate,
 )
-from graxia.packages.quant_os.markets.eurusd.session_calendar import EURUSDSessionCalendar
-from graxia.packages.quant_os.markets.eurusd.event_calendar import EURUSDEventCalendar
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
@@ -32,9 +35,11 @@ logger = logging.getLogger(__name__)
 
 # ── Broker snapshot ──────────────────────────────────────────────────
 
+
 @dataclass
 class BrokerSnapshot:
     """Point-in-time broker state for evidence trail."""
+
     account_login: int = 0
     account_server: str = ""
     account_balance: float = 0.0
@@ -64,16 +69,18 @@ class BrokerSnapshot:
 
 # ── Enhanced signal evidence ─────────────────────────────────────────
 
+
 @dataclass
 class BrokerSignalEvidence:
     """Full evidence trail for every shadow signal."""
+
     signal_id: str
     # Raw MT5 tick timestamps (for debugging)
     raw_tick_time_seconds: int = 0
     raw_tick_time_msc: int = 0
     # UTC timestamps (both required for delay measurement)
     broker_tick_time_utc: str = ""  # from MT5 tick.time_msc, converted to UTC
-    received_at_utc: str = ""       # when we received/processed
+    received_at_utc: str = ""  # when we received/processed
     observed_transport_delay_ms: float = 0.0  # received - broker tick
     clock_anomaly: str = ""  # "BROKER_CLOCK_ANOMALY" if offset unresolved
     # Symbol / tick state
@@ -81,7 +88,7 @@ class BrokerSignalEvidence:
     direction: str = ""
     entry_price: float = 0.0
     stop_loss: float = 0.0
-    take_profit: Optional[float] = None
+    take_profit: float | None = None
     # Gate outcomes
     outcome: str = ""
     rejection_reason: str = ""
@@ -112,8 +119,8 @@ class BrokerSignalEvidence:
     record_hash: str = ""
     # Tick-None diagnostics
     mt5_last_error: str = ""
-    terminal_connected: Optional[bool] = None
-    symbol_visible: Optional[bool] = None
+    terminal_connected: bool | None = None
+    symbol_visible: bool | None = None
     symbol_trade_mode: str = ""
     symbol_select_result: str = ""
     market_session_state: str = ""
@@ -126,6 +133,7 @@ class BrokerSignalEvidence:
 
 # ── Spread percentile tracker ────────────────────────────────────────
 
+
 class SpreadTracker:
     """Track spread history for percentile calculation."""
 
@@ -136,7 +144,7 @@ class SpreadTracker:
     def record(self, spread: float) -> None:
         self._spreads.append(spread)
         if len(self._spreads) > self.window:
-            self._spreads = self._spreads[-self.window:]
+            self._spreads = self._spreads[-self.window :]
 
     def percentile(self, spread: float) -> float:
         if not self._spreads:
@@ -152,6 +160,7 @@ class SpreadTracker:
 
 
 # ── Ledger entry ─────────────────────────────────────────────────────
+
 
 @dataclass
 class LedgerEntry:
@@ -191,9 +200,7 @@ class SealedLedger:
             "pnl_net": entry.pnl_net,
             "timestamp": entry.timestamp,
         }
-        entry.record_hash = hashlib.sha256(
-            json.dumps(d, sort_keys=True, default=str).encode()
-        ).hexdigest()
+        entry.record_hash = hashlib.sha256(json.dumps(d, sort_keys=True, default=str).encode()).hexdigest()
         self._entries.append(entry)
         return entry
 
@@ -210,9 +217,7 @@ class SealedLedger:
                 "pnl_net": entry.pnl_net,
                 "timestamp": entry.timestamp,
             }
-            expected = hashlib.sha256(
-                json.dumps(d, sort_keys=True, default=str).encode()
-            ).hexdigest()
+            expected = hashlib.sha256(json.dumps(d, sort_keys=True, default=str).encode()).hexdigest()
             if entry.record_hash != expected:
                 return False
         return True
@@ -226,10 +231,11 @@ class SealedLedger:
 
 # ── MT5 read-only connector (lightweight, no execution) ──────────────
 
+
 class MT5ReadOnly:
     """Read-only MT5 connector. No order_send, no execution API."""
 
-    def __init__(self, path: Optional[str] = None):
+    def __init__(self, path: str | None = None):
         self._path = path
         self._mt5 = None
         self._connected = False
@@ -237,6 +243,7 @@ class MT5ReadOnly:
     def connect(self, timeout: int = 10000) -> bool:
         try:
             import MetaTrader5 as mt5
+
             self._mt5 = mt5
             if self._path:
                 ok = mt5.initialize(path=self._path, timeout=timeout)
@@ -259,44 +266,55 @@ class MT5ReadOnly:
     def is_connected(self) -> bool:
         return self._connected
 
-    def get_account_info(self) -> Optional[dict]:
+    def get_account_info(self) -> dict | None:
         if not self._connected:
             return None
         info = self._mt5.account_info()
         if info is None:
             return None
         return {
-            "login": info.login, "server": info.server,
-            "balance": info.balance, "equity": info.equity,
-            "leverage": info.leverage, "currency": info.currency,
+            "login": info.login,
+            "server": info.server,
+            "balance": info.balance,
+            "equity": info.equity,
+            "leverage": info.leverage,
+            "currency": info.currency,
             "trade_allowed": info.trade_allowed,
         }
 
-    def get_symbol_info(self, symbol: str) -> Optional[dict]:
+    def get_symbol_info(self, symbol: str) -> dict | None:
         if not self._connected:
             return None
         info = self._mt5.symbol_info(symbol)
         if info is None:
             return None
         return {
-            "name": info.name, "point": info.point, "digits": info.digits,
+            "name": info.name,
+            "point": info.point,
+            "digits": info.digits,
             "contract_size": info.trade_contract_size,
-            "min_volume": info.volume_min, "max_volume": info.volume_max,
-            "volume_step": info.volume_step, "spread": info.spread,
+            "min_volume": info.volume_min,
+            "max_volume": info.volume_max,
+            "volume_step": info.volume_step,
+            "spread": info.spread,
             "trade_contract_size": info.trade_contract_size,
             "visible": info.visible,
         }
 
-    def get_tick(self, symbol: str) -> Optional[dict]:
+    def get_tick(self, symbol: str) -> dict | None:
         if not self._connected:
             return None
         tick = self._mt5.symbol_info_tick(symbol)
         if tick is None:
             return None
         return {
-            "bid": tick.bid, "ask": tick.ask, "last": tick.last,
-            "volume": tick.volume, "time": tick.time,
-            "time_msc": tick.time_msc, "flags": tick.flags,
+            "bid": tick.bid,
+            "ask": tick.ask,
+            "last": tick.last,
+            "volume": tick.volume,
+            "time": tick.time,
+            "time_msc": tick.time_msc,
+            "flags": tick.flags,
         }
 
     def get_tick_diagnostics(self, symbol: str) -> dict:
@@ -335,13 +353,16 @@ class MT5ReadOnly:
             diag["symbol_select_result"] = "EXCEPTION"
         return diag
 
-    def get_bars(self, symbol: str, timeframe: int, count: int = 100) -> Optional[list]:
+    def get_bars(self, symbol: str, timeframe: int, count: int = 100) -> list | None:
         if not self._connected:
             return None
         tf_map = {
-            1: self._mt5.TIMEFRAME_M1, 5: self._mt5.TIMEFRAME_M5,
-            15: self._mt5.TIMEFRAME_M15, 60: self._mt5.TIMEFRAME_H1,
-            240: self._mt5.TIMEFRAME_H4, 1440: self._mt5.TIMEFRAME_D1,
+            1: self._mt5.TIMEFRAME_M1,
+            5: self._mt5.TIMEFRAME_M5,
+            15: self._mt5.TIMEFRAME_M15,
+            60: self._mt5.TIMEFRAME_H1,
+            240: self._mt5.TIMEFRAME_H4,
+            1440: self._mt5.TIMEFRAME_D1,
         }
         mt5_tf = tf_map.get(timeframe, timeframe)
         now = datetime.utcnow()
@@ -350,13 +371,13 @@ class MT5ReadOnly:
         if rates is None:
             return None
         return [
-            {"time": int(r[0]), "open": r[1], "high": r[2],
-             "low": r[3], "close": r[4], "volume": int(r[5])}
+            {"time": int(r[0]), "open": r[1], "high": r[2], "low": r[3], "close": r[4], "volume": int(r[5])}
             for r in rates
         ]
 
 
 # ── Broker-observed shadow runner ────────────────────────────────────
+
 
 class BrokerObservedShadowRunner:
     """Read-only shadow runner with full broker evidence.
@@ -376,7 +397,7 @@ class BrokerObservedShadowRunner:
         symbol: str = "XAUUSD",
         strategy_version: str = "locked_v1",
         feature_hash: str = "abc123",
-        mt5_path: Optional[str] = None,
+        mt5_path: str | None = None,
     ):
         self.symbol = symbol
         self.strategy_version = strategy_version
@@ -394,7 +415,7 @@ class BrokerObservedShadowRunner:
         self._event_cal = EURUSDEventCalendar()
         self._evidence: list[BrokerSignalEvidence] = []
         self._sequence: int = 0
-        self._broker_snapshot: Optional[BrokerSnapshot] = None
+        self._broker_snapshot: BrokerSnapshot | None = None
         self._session_id: str = ""
         self._reconnect_count: int = 0
         self._stale_count: int = 0
@@ -450,7 +471,7 @@ class BrokerObservedShadowRunner:
         self._sequence += 1
         return f"BSIG-{self._sequence:06d}"
 
-    def run_cycle(self) -> Optional[BrokerSignalEvidence]:
+    def run_cycle(self) -> BrokerSignalEvidence | None:
         """Run one shadow cycle with full evidence collection."""
         now = datetime.now(UTC)
 
@@ -532,9 +553,11 @@ class BrokerObservedShadowRunner:
 
         # 5. Contract snapshot
         sym_info = self._mt5.get_symbol_info(self.symbol)
-        contract_id = hashlib.sha256(
-            json.dumps(sym_info or {}, sort_keys=True).encode()
-        ).hexdigest()[:16] if sym_info else "NO_SYMBOL"
+        contract_id = (
+            hashlib.sha256(json.dumps(sym_info or {}, sort_keys=True).encode()).hexdigest()[:16]
+            if sym_info
+            else "NO_SYMBOL"
+        )
 
         # 6. Get bars for direction
         bars = self._mt5.get_bars(self.symbol, 60, 10)
@@ -548,11 +571,16 @@ class BrokerObservedShadowRunner:
                 received_at_utc=now.isoformat(),
                 observed_transport_delay_ms=delay_ms,
                 clock_anomaly=clock_anomaly,
-                symbol=self.symbol, direction="", entry_price=bid,
-                stop_loss=0, take_profit=None,
+                symbol=self.symbol,
+                direction="",
+                entry_price=bid,
+                stop_loss=0,
+                take_profit=None,
                 outcome="rejected_insufficient_bars",
                 rejection_reason="Need >= 2 bars",
-                bid=bid, ask=ask, spread_raw=spread,
+                bid=bid,
+                ask=ask,
+                spread_raw=spread,
                 spread_percentile=spread_pct,
                 contract_snapshot_id=contract_id,
                 event_risk_state=event_state,
@@ -733,6 +761,7 @@ class BrokerObservedShadowRunner:
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="BE-P8.2 Broker-Observed Shadow Runner")
     parser.add_argument("--symbol", default="XAUUSD")
     parser.add_argument("--duration", type=int, default=3600)

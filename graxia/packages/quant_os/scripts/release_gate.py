@@ -1,4 +1,5 @@
 """Phase BE-P1 — Release gate. Fail-closed checks for release readiness."""
+
 import json
 import subprocess
 import sys
@@ -14,18 +15,17 @@ class ReleaseGate:
         self.checks.append({"name": name, "passed": passed, "detail": detail})
 
     def check_clean_worktree(self) -> None:
-        result = subprocess.run(
-            ["git", "status", "--porcelain"],
-            capture_output=True, text=True, cwd=self.root
-        )
+        result = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, cwd=self.root)
         dirty = result.stdout.strip()
         self.check("clean_worktree", not dirty, dirty[:200] if dirty else "clean")
 
     def check_test_suite(self) -> None:
         result = subprocess.run(
-            [sys.executable, "-m", "pytest", "-q", "--tb=line",
-             "graxia/packages/quant_os/tests/"],
-            capture_output=True, text=True, timeout=600, cwd=self.root
+            [sys.executable, "-m", "pytest", "-q", "--tb=line", "graxia/packages/quant_os/tests/"],
+            capture_output=True,
+            text=True,
+            timeout=600,
+            cwd=self.root,
         )
         output = result.stdout + result.stderr
         has_failure = "failed" in output.lower() or result.returncode != 0
@@ -33,9 +33,11 @@ class ReleaseGate:
 
     def check_no_unapproved_skips(self) -> None:
         result = subprocess.run(
-            [sys.executable, "-m", "pytest", "--collect-only", "-q",
-             "graxia/packages/quant_os/tests/"],
-            capture_output=True, text=True, timeout=300, cwd=self.root
+            [sys.executable, "-m", "pytest", "--collect-only", "-q", "graxia/packages/quant_os/tests/"],
+            capture_output=True,
+            text=True,
+            timeout=300,
+            cwd=self.root,
         )
         self.check("test_collection_clean", result.returncode == 0, result.stdout[:200])
 
@@ -49,10 +51,7 @@ class ReleaseGate:
             self.check("quarantine_manifest", True, "no manifest (no skips)")
 
     def check_git_commit(self) -> None:
-        result = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            capture_output=True, text=True, cwd=self.root
-        )
+        result = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=self.root)
         commit = result.stdout.strip()
         self.check("git_commit", bool(commit), commit[:16])
 

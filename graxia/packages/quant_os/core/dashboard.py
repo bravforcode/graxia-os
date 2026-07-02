@@ -11,12 +11,12 @@ Displays:
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, List
 
 
 @dataclass
 class DashboardMetrics:
     """Dashboard metrics snapshot"""
+
     timestamp: datetime
 
     # Account
@@ -42,7 +42,7 @@ class DashboardMetrics:
     active_strategies: int
     total_strategies: int
     top_strategy: str
-    strategy_scores: Dict[str, int]
+    strategy_scores: dict[str, int]
 
     # Regime
     current_regime: str
@@ -60,8 +60,8 @@ class Dashboard:
     """
 
     def __init__(self):
-        self.history: List[DashboardMetrics] = []
-        self.alerts: List[str] = []
+        self.history: list[DashboardMetrics] = []
+        self.alerts: list[str] = []
 
     def update(self, metrics: DashboardMetrics):
         """Update dashboard with new metrics"""
@@ -111,11 +111,7 @@ class Dashboard:
         lines.append(f"  Top:        {metrics.top_strategy}")
 
         # Top 5 strategy scores
-        sorted_scores = sorted(
-            metrics.strategy_scores.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )[:5]
+        sorted_scores = sorted(metrics.strategy_scores.items(), key=lambda x: x[1], reverse=True)[:5]
 
         for name, score in sorted_scores:
             bar = "█" * (score // 10)
@@ -163,7 +159,7 @@ class Dashboard:
         if len(self.alerts) > 20:
             self.alerts = self.alerts[-20:]
 
-    def get_summary(self) -> Dict:
+    def get_summary(self) -> dict:
         """Get summary statistics"""
         if not self.history:
             return {}

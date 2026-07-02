@@ -1,8 +1,8 @@
-import pytest
-from dataclasses import dataclass
-from typing import List
 import hashlib
 import json
+from dataclasses import dataclass
+
+import pytest
 
 
 @dataclass(frozen=True)
@@ -21,7 +21,7 @@ class Signal:
 class SignalGateway:
     def __init__(self):
         self._seen: set[str] = set()
-        self._queue: List[Signal] = []
+        self._queue: list[Signal] = []
 
     def submit(self, signal: Signal) -> bool:
         if signal.strength <= 0 or signal.direction not in ("BUY", "SELL"):
@@ -34,7 +34,7 @@ class SignalGateway:
         return True
 
     @property
-    def queue(self) -> List[Signal]:
+    def queue(self) -> list[Signal]:
         return list(self._queue)
 
 

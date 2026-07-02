@@ -1,9 +1,10 @@
 """Phase BE-P1 — Quarantine manifest management."""
+
 import hashlib
 import json
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from dataclasses import dataclass, asdict
 
 
 @dataclass
@@ -50,9 +51,7 @@ class QuarantineManager:
         """Add quarantine entry."""
         entry_dict = asdict(entry)
         entry_dict.pop("signature", None)
-        entry.signature = hashlib.sha256(
-            json.dumps(entry_dict, sort_keys=True).encode()
-        ).hexdigest()[:16]
+        entry.signature = hashlib.sha256(json.dumps(entry_dict, sort_keys=True).encode()).hexdigest()[:16]
 
         self._entries.append(asdict(entry))
         self._save()

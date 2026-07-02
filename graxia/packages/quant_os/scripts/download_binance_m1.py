@@ -56,8 +56,7 @@ def from_ms(ms: int) -> datetime:
 def fetch_klines(symbol: str, interval: str, start_ms: int, end_ms: int) -> list[list]:
     """Fetch one page of klines from Binance spot API."""
     url = (
-        f"{BASE_URL}?symbol={symbol}&interval={interval}"
-        f"&startTime={start_ms}&endTime={end_ms}&limit={CANDLE_LIMIT}"
+        f"{BASE_URL}?symbol={symbol}&interval={interval}" f"&startTime={start_ms}&endTime={end_ms}&limit={CANDLE_LIMIT}"
     )
     req = urllib.request.Request(url, headers={"User-Agent": "quant_os-binance-m1/1.0"})
     for attempt in range(3):
@@ -76,7 +75,6 @@ def fetch_klines(symbol: str, interval: str, start_ms: int, end_ms: int) -> list
     return []
 
 
-
 def download_symbol(symbol: str, start: datetime, end: datetime, interval: str = "1m") -> pd.DataFrame:
     """Download all klines for a symbol between start and end (UTC)."""
     all_rows: list[list] = []
@@ -89,14 +87,16 @@ def download_symbol(symbol: str, start: datetime, end: datetime, interval: str =
         if not rows:
             break
         for row in rows:
-            all_rows.append([
-                from_ms(row[0]).strftime("%Y-%m-%d %H:%M:%S"),
-                float(row[1]),
-                float(row[2]),
-                float(row[3]),
-                float(row[4]),
-                float(row[5]),
-            ])
+            all_rows.append(
+                [
+                    from_ms(row[0]).strftime("%Y-%m-%d %H:%M:%S"),
+                    float(row[1]),
+                    float(row[2]),
+                    float(row[3]),
+                    float(row[4]),
+                    float(row[5]),
+                ]
+            )
         last_close_ms = rows[-1][6]
         next_start = from_ms(last_close_ms) + timedelta(milliseconds=1)
         if next_start <= current:

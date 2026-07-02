@@ -1,0 +1,820 @@
+{
+  "_comment": "TSM Portfolio Grafana Dashboard — Import via Dashboards > Import > Upload JSON",
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "TSM Multi-Asset Portfolio — NAV, P&L, risk, positions, correlations",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "Portfolio Overview",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisLabel": "NAV",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "gradientMode": "opacity",
+            "pointSize": 0,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 16, "x": 0, "y": 1 },
+      "id": 1,
+      "options": {
+        "legend": { "calcs": ["lastNotNull", "min", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "title": "Portfolio NAV Curve",
+      "description": "Net asset value of the TSM portfolio over time",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "quant_os_tsm_nav{portfolio=\"${PORTFOLIO}\"}",
+          "legendFormat": "NAV",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": -5 },
+              { "color": "yellow", "value": -2 },
+              { "color": "green", "value": 0 }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 4, "x": 16, "y": 1 },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "title": "Daily P&L",
+      "description": "Today's portfolio profit/loss",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "quant_os_tsm_daily_pnl{portfolio=\"${PORTFOLIO}\"}",
+          "legendFormat": "Daily P&L",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": -15 },
+              { "color": "yellow", "value": -10 },
+              { "color": "green", "value": 0 }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 4, "x": 20, "y": 1 },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "title": "Cumulative P&L",
+      "description": "Total realized + unrealized P&L since inception",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "quant_os_tsm_cumulative_pnl{portfolio=\"${PORTFOLIO}\"}",
+          "legendFormat": "Cumulative",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "id": 101,
+      "title": "Per-Asset P&L",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": true,
+            "axisLabel": "P&L (USD)",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "gradientMode": "opacity",
+            "pointSize": 0,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 10 },
+      "id": 4,
+      "options": {
+        "legend": { "calcs": ["lastNotNull", "sum"], "displayMode": "table", "placement": "right" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "title": "Per-Asset Cumulative P&L",
+      "description": "Breakdown of P&L contribution by each asset in the TSM portfolio",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "quant_os_tsm_asset_pnl{portfolio=\"${PORTFOLIO}\"}",
+          "legendFormat": "{{ asset }}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
+      "id": 102,
+      "title": "Risk Metrics",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisLabel": "Sharpe Ratio",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "gradientMode": "opacity",
+            "pointSize": 0,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 19 },
+      "id": 5,
+      "options": {
+        "legend": { "calcs": ["lastNotNull", "mean"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "title": "Rolling Sharpe (60d)",
+      "description": "60-day rolling annualized Sharpe ratio of the TSM portfolio",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "quant_os_tsm_sharpe_ratio{portfolio=\"${PORTFOLIO}\", window=\"60d\"}",
+          "legendFormat": "Sharpe 60d",
+          "refId": "A"
+        },
+        {
+          "expr": "quant_os_tsm_sharpe_ratio{portfolio=\"${PORTFOLIO}\", window=\"90d\"}",
+          "legendFormat": "Sharpe 90d",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 10 },
+              { "color": "orange", "value": 12 },
+              { "color": "red", "value": 15 }
+            ]
+          },
+          "max": 25,
+          "min": 0,
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 4, "x": 8, "y": 19 },
+      "id": 6,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true
+      },
+      "title": "Realized Vol (20d)",
+      "description": "20-day realized annualized volatility — target is 10%",
+      "type": "gauge",
+      "targets": [
+        {
+          "expr": "quant_os_tsm_realized_vol{portfolio=\"${PORTFOLIO}\", window=\"20d\"}",
+          "legendFormat": "Realized Vol",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 10 },
+              { "color": "orange", "value": 15 },
+              { "color": "red", "value": 20 }
+            ]
+          },
+          "max": 30,
+          "min": 0,
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 4, "x": 12, "y": 19 },
+      "id": 7,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true
+      },
+      "title": "Max Drawdown %",
+      "description": "Maximum drawdown from peak NAV — 15% is hard breach threshold",
+      "type": "gauge",
+      "targets": [
+        {
+          "expr": "quant_os_tsm_max_drawdown_pct{portfolio=\"${PORTFOLIO}\"}",
+          "legendFormat": "Drawdown",
+          "refId": "A"
+        }
+      ],
+      "alert": {
+        "name": "TSM Drawdown Breach",
+        "message": "TSM drawdown exceeds 15% threshold",
+        "conditions": [
+          {
+            "type": "query",
+            "query": { "params": ["A", "5m", "now"] },
+            "reducer": { "type": "avg", "params": [] },
+            "evaluator": { "type": "gt", "params": [15] },
+            "operator": { "type": "and" }
+          }
+        ],
+        "frequency": "1m",
+        "noDataState": "no_data",
+        "executionErrorState": "alerting",
+        "notifications": []
+      }
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisLabel": "Drawdown %",
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "opacity",
+            "pointSize": 0,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "unit": "percent"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Limit (15%)" },
+            "properties": [
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } },
+              { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [10, 10] } },
+              { "id": "custom.fillOpacity", "value": 0 }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 19 },
+      "id": 8,
+      "options": {
+        "legend": { "calcs": ["min", "lastNotNull"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "title": "Drawdown History",
+      "description": "Portfolio drawdown over time with 15% breach threshold",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "quant_os_tsm_drawdown_pct{portfolio=\"${PORTFOLIO}\"}",
+          "legendFormat": "Drawdown %",
+          "refId": "A"
+        },
+        {
+          "expr": "vector(15)",
+          "legendFormat": "Limit (15%)",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 },
+      "id": 103,
+      "title": "Positions & Weights",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": { "align": "auto", "filterable": true },
+          "thresholds": { "mode": "absolute", "steps": [] }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "weight" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "green", "value": null },
+                    { "color": "yellow", "value": 0.15 },
+                    { "color": "red", "value": 0.20 }
+                  ]
+                }
+              },
+              { "id": "custom.displayMode", "value": "color-background" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "unrealized_pnl" },
+            "properties": [
+              { "id": "unit", "value": "currencyUSD" },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "red", "value": null },
+                    { "color": "green", "value": 0 }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "id": 9,
+      "options": {
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "weight" }]
+      },
+      "title": "Current Positions & Weights",
+      "description": "Live position table with weights — red background if any > 20%",
+      "type": "table",
+      "targets": [
+        {
+          "expr": "quant_os_tsm_position{portfolio=\"${PORTFOLIO}\"}",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true, "__name__": true, "instance": true, "job": true },
+            "renameByName": {
+              "asset": "Asset",
+              "side": "Side",
+              "size": "Size",
+              "entry_price": "Entry",
+              "weight": "Weight",
+              "unrealized_pnl": "Unrealized P&L",
+              "lookback": "Lookback"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisLabel": "Weight",
+            "lineWidth": 1,
+            "fillOpacity": 30,
+            "gradientMode": "opacity",
+            "pointSize": 0,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": { "mode": "normal" }
+          },
+          "unit": "percentunit"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Limit (20%)" },
+            "properties": [
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } },
+              { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [10, 10] } },
+              { "id": "custom.fillOpacity", "value": 0 },
+              { "id": "custom.stacking", "value": { "mode": "none" } }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+      "id": 10,
+      "options": {
+        "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "right" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "title": "Asset Weights Over Time",
+      "description": "Evolution of portfolio weights — stacked area chart",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "quant_os_tsm_position_weight{portfolio=\"${PORTFOLIO}\"}",
+          "legendFormat": "{{ asset }}",
+          "refId": "A"
+        },
+        {
+          "expr": "vector(0.20)",
+          "legendFormat": "Limit (20%)",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 },
+      "id": 104,
+      "title": "Correlation & Regime",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "continuous-blues" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "lineWidth": 1,
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "pointSize": 5,
+            "showPoints": "always",
+            "spanNulls": false
+          },
+          "min": -1,
+          "max": 1,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 37 },
+      "id": 11,
+      "options": {
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "title": "Cross-Asset Correlation (60d)",
+      "description": "Rolling 60-day pairwise correlations — alert if max > 0.7",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "quant_os_tsm_pairwise_corr{portfolio=\"${PORTFOLIO}\", window=\"60d\"}",
+          "legendFormat": "{{ asset_a }} / {{ asset_b }}",
+          "refId": "A"
+        },
+        {
+          "expr": "vector(0.7)",
+          "legendFormat": "Alert Threshold (0.7)",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "orange", "value": 0.6 },
+              { "color": "red", "value": 0.7 }
+            ]
+          },
+          "min": 0,
+          "max": 1,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 6, "x": 12, "y": 37 },
+      "id": 12,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true
+      },
+      "title": "Max Pairwise Correlation",
+      "description": "Highest rolling 60d correlation among all asset pairs",
+      "type": "gauge",
+      "targets": [
+        {
+          "expr": "quant_os_tsm_max_pairwise_corr{portfolio=\"${PORTFOLIO}\", window=\"60d\"}",
+          "legendFormat": "Max Corr",
+          "refId": "A"
+        }
+      ],
+      "alert": {
+        "name": "Correlation Spike",
+        "message": "Max pairwise correlation exceeds 0.7 — diversification degraded",
+        "conditions": [
+          {
+            "type": "query",
+            "query": { "params": ["A", "5m", "now"] },
+            "reducer": { "type": "avg", "params": [] },
+            "evaluator": { "type": "gt", "params": [0.7] },
+            "operator": { "type": "and" }
+          }
+        ],
+        "frequency": "15m",
+        "noDataState": "no_data",
+        "executionErrorState": "alerting",
+        "notifications": []
+      }
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          },
+          "mappings": [
+            { "options": { "0": { "text": "OFF", "color": "green" }, "1": { "text": "ACTIVE", "color": "red" } }, "type": "value" }
+          ],
+          "max": 1,
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 37 },
+      "id": 13,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "vertical",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "title": "Kill Switch",
+      "description": "TSM portfolio kill switch status",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "quant_os_tsm_kill_switch_active{portfolio=\"${PORTFOLIO}\"}",
+          "legendFormat": "Kill Switch",
+          "refId": "A"
+        }
+      ],
+      "alert": {
+        "name": "TSM Kill Switch Active",
+        "message": "TSM kill switch has been triggered — all trading halted",
+        "conditions": [
+          {
+            "type": "query",
+            "query": { "params": ["A", "1m", "now"] },
+            "reducer": { "type": "avg", "params": [] },
+            "evaluator": { "type": "gt", "params": [0] },
+            "operator": { "type": "and" }
+          }
+        ],
+        "frequency": "30s",
+        "noDataState": "no_data",
+        "executionErrorState": "alerting",
+        "notifications": []
+      }
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 432000 },
+              { "color": "red", "value": 604800 }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 42 },
+      "id": 14,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "vertical",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "title": "Time Since Last Rebalance",
+      "description": "Seconds since last weekly Friday rebalance — yellow > 5d, red > 7d",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "(time() - quant_os_tsm_last_rebalance_timestamp{portfolio=\"${PORTFOLIO}\"})",
+          "legendFormat": "Since Rebalance",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 47 },
+      "id": 105,
+      "title": "Data Health",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 86400 },
+              { "color": "red", "value": 172800 }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 48 },
+      "id": 15,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "title": "Data Feed Freshness (seconds since last bar)",
+      "description": "Per-asset data age — yellow > 24h, red > 48h",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "(time() - quant_os_tsm_last_data_timestamp{portfolio=\"${PORTFOLIO}\"})",
+          "legendFormat": "{{ asset }}",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["tsm", "portfolio", "monitoring", "quant-os"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "default", "value": "default" },
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "current": { "selected": false, "text": "tsm", "value": "tsm" },
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "definition": "label_values(quant_os_tsm_nav, portfolio)",
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "PORTFOLIO",
+        "options": [],
+        "query": { "qryType": 1, "query": "label_values(quant_os_tsm_nav, portfolio)" },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-30d", "to": "now" },
+  "timepicker": {
+    "refresh_intervals": ["1m", "5m", "15m", "30m", "1h"],
+    "time_options": ["7d", "14d", "30d", "90d", "180d", "1y"]
+  },
+  "timezone": "browser",
+  "title": "TSM Portfolio Dashboard",
+  "uid": "tsm-portfolio",
+  "version": 1,
+  "weekStart": "monday"
+}

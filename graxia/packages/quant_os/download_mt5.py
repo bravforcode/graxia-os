@@ -1,8 +1,10 @@
 """Download XAUUSD multi-TF data from MT5 terminal."""
-import MetaTrader5 as mt5
+
 import csv
 import os
 from datetime import datetime
+
+import MetaTrader5 as mt5
 
 PATH = r"C:\Program Files\MetaTrader 5\terminal64.exe"
 DATA_DIR = os.path.join("graxia", "packages", "quant_os", "data")

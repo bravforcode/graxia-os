@@ -1,4 +1,5 @@
 """Tests for secret_provider."""
+
 import os
 import tempfile
 

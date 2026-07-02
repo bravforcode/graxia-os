@@ -3,9 +3,11 @@ import json
 from dataclasses import dataclass, field
 from datetime import datetime
 
+
 @dataclass(frozen=True)
 class LockedInputs:
     """Immutable locked inputs for strategy revalidation. Must never change during validation."""
+
     strategy_source_hash: str
     strategy_param_hash: str
     dataset_manifest_hash: str
@@ -19,20 +21,23 @@ class LockedInputs:
 
     def master_hash(self) -> str:
         """SHA-256 of all locked input hashes combined."""
-        data = json.dumps({
-            "strategy_source": self.strategy_source_hash,
-            "strategy_param": self.strategy_param_hash,
-            "dataset_manifest": self.dataset_manifest_hash,
-            "timeframe_alignment": self.timeframe_alignment_hash,
-            "execution_model": self.execution_model_version,
-            "contract_snapshot": self.contract_snapshot_version,
-            "risk_policy": self.risk_policy_version,
-            "event_filter": self.event_filter_version,
-            "random_seed": self.random_seed,
-        }, sort_keys=True)
+        data = json.dumps(
+            {
+                "strategy_source": self.strategy_source_hash,
+                "strategy_param": self.strategy_param_hash,
+                "dataset_manifest": self.dataset_manifest_hash,
+                "timeframe_alignment": self.timeframe_alignment_hash,
+                "execution_model": self.execution_model_version,
+                "contract_snapshot": self.contract_snapshot_version,
+                "risk_policy": self.risk_policy_version,
+                "event_filter": self.event_filter_version,
+                "random_seed": self.random_seed,
+            },
+            sort_keys=True,
+        )
         return hashlib.sha256(data.encode()).hexdigest()
 
-    def verify(self, other: 'LockedInputs') -> tuple[bool, list[str]]:
+    def verify(self, other: "LockedInputs") -> tuple[bool, list[str]]:
         """Verify all locked inputs match. Returns (match, list of mismatches)."""
         mismatches = []
         if self.strategy_source_hash != other.strategy_source_hash:

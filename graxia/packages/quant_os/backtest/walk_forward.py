@@ -9,18 +9,19 @@ Implements anchored and rolling walk-forward analysis:
 Golden rule requirement: minimum 3 walk-forward windows
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, date
-from typing import Dict, List, Optional, Callable
+from datetime import date, datetime
 
-from .engine import BacktestEngine, BacktestConfig
-from .metrics import BacktestMetrics
 from ..strategies.base import Strategy
+from .engine import BacktestConfig, BacktestEngine
+from .metrics import BacktestMetrics
 
 
 @dataclass
 class WalkForwardWindow:
     """A single walk-forward window"""
+
     window_id: int
     is_start: date
     is_end: date
@@ -28,11 +29,11 @@ class WalkForwardWindow:
     oos_end: date
 
     # IS results
-    is_metrics: Optional[BacktestMetrics] = None
-    is_params: Optional[Dict] = None
+    is_metrics: BacktestMetrics | None = None
+    is_params: dict | None = None
 
     # OOS results
-    oos_metrics: Optional[BacktestMetrics] = None
+    oos_metrics: BacktestMetrics | None = None
 
     # Validation
     is_oos_ratio: float = 0.0  # OOS/IS performance ratio
@@ -42,6 +43,7 @@ class WalkForwardWindow:
 @dataclass
 class WalkForwardResult:
     """Aggregated walk-forward results"""
+
     total_windows: int
     valid_windows: int
 
@@ -59,7 +61,7 @@ class WalkForwardResult:
     overfitting_score: float = 0.0  # 0 = no overfit, 1 = severe overfit
 
     # Per-window details
-    windows: List[WalkForwardWindow] = None
+    windows: list[WalkForwardWindow] = None
 
     def __post_init__(self):
         if self.windows is None:
@@ -78,7 +80,7 @@ class WalkForwardAnalyzer:
     def __init__(
         self,
         strategy_factory: Callable[[], Strategy],
-        config: Optional[BacktestConfig] = None,
+        config: BacktestConfig | None = None,
         is_ratio: float = 0.7,  # 70% in-sample, 30% out-of-sample
         min_windows: int = 3,
         mode: str = "rolling",  # "rolling" or "anchored"
@@ -91,10 +93,10 @@ class WalkForwardAnalyzer:
 
     def analyze(
         self,
-        data: Dict[str, List],
-        timestamps: List[datetime],
+        data: dict[str, list],
+        timestamps: list[datetime],
         n_windows: int = 5,
-        optimize_func: Optional[Callable] = None,
+        optimize_func: Callable | None = None,
     ) -> WalkForwardResult:
         """
         Run walk-forward analysis.
@@ -152,9 +154,9 @@ class WalkForwardAnalyzer:
             window = WalkForwardWindow(
                 window_id=w,
                 is_start=timestamps[is_start_idx].date() if is_start_idx < len(timestamps) else date.min,
-                is_end=timestamps[min(is_end_idx-1, len(timestamps)-1)].date(),
+                is_end=timestamps[min(is_end_idx - 1, len(timestamps) - 1)].date(),
                 oos_start=timestamps[oos_start_idx].date(),
-                oos_end=timestamps[min(oos_end_idx-1, len(timestamps)-1)].date(),
+                oos_end=timestamps[min(oos_end_idx - 1, len(timestamps) - 1)].date(),
             )
 
             # Run IS backtest
@@ -163,7 +165,11 @@ class WalkForwardAnalyzer:
             is_engine.set_strategy(strategy)
             is_engine.load_data(is_data, is_timestamps)
             is_results = is_engine.run()
-            window.is_metrics = BacktestMetrics(**is_results["metrics"].__dict__) if hasattr(is_results["metrics"], '__dict__') else is_results["metrics"]
+            window.is_metrics = (
+                BacktestMetrics(**is_results["metrics"].__dict__)
+                if hasattr(is_results["metrics"], "__dict__")
+                else is_results["metrics"]
+            )
 
             # Optimize if function provided
             if optimize_func:
@@ -176,12 +182,16 @@ class WalkForwardAnalyzer:
             oos_engine.set_strategy(oos_strategy)
             oos_engine.load_data(oos_data, oos_timestamps)
             oos_results = oos_engine.run()
-            window.oos_metrics = BacktestMetrics(**oos_results["metrics"].__dict__) if hasattr(oos_results["metrics"], '__dict__') else oos_results["metrics"]
+            window.oos_metrics = (
+                BacktestMetrics(**oos_results["metrics"].__dict__)
+                if hasattr(oos_results["metrics"], "__dict__")
+                else oos_results["metrics"]
+            )
 
             # Calculate IS/OOS ratio
             if window.is_metrics and window.oos_metrics:
-                is_pf = window.is_metrics.profit_factor if window.is_metrics.profit_factor != float('inf') else 10
-                oos_pf = window.oos_metrics.profit_factor if window.oos_metrics.profit_factor != float('inf') else 10
+                is_pf = window.is_metrics.profit_factor if window.is_metrics.profit_factor != float("inf") else 10
+                oos_pf = window.oos_metrics.profit_factor if window.oos_metrics.profit_factor != float("inf") else 10
                 window.is_oos_ratio = oos_pf / is_pf if is_pf > 0 else 0
                 window.is_degradation = (1 - window.is_oos_ratio) * 100
 
@@ -190,7 +200,7 @@ class WalkForwardAnalyzer:
         # Aggregate results
         return self._aggregate_results(windows)
 
-    def _aggregate_results(self, windows: List[WalkForwardWindow]) -> WalkForwardResult:
+    def _aggregate_results(self, windows: list[WalkForwardWindow]) -> WalkForwardResult:
         """Aggregate walk-forward window results"""
         result = WalkForwardResult(
             total_windows=len(windows),
@@ -214,7 +224,7 @@ class WalkForwardAnalyzer:
         result.oos_total_pnl = sum(m.total_pnl for m in oos_metrics)
 
         # Profit factor (average)
-        valid_pfs = [m.profit_factor for m in oos_metrics if m.profit_factor != float('inf')]
+        valid_pfs = [m.profit_factor for m in oos_metrics if m.profit_factor != float("inf")]
         result.oos_profit_factor = sum(valid_pfs) / len(valid_pfs) if valid_pfs else 0
 
         # IS/OOS ratios
@@ -236,7 +246,7 @@ class WalkForwardAnalyzer:
         return result
 
 
-def validate_walk_forward_requirements(result: WalkForwardResult) -> Dict[str, any]:
+def validate_walk_forward_requirements(result: WalkForwardResult) -> dict[str, any]:
     """
     Validate against golden rule requirements.
 

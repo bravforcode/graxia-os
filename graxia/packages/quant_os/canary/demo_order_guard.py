@@ -1,6 +1,7 @@
 """Phase BE-P9 — Demo order guard. Idempotency + SL/TP verification."""
-from dataclasses import dataclass
+
 import hashlib
+from dataclasses import dataclass
 
 
 @dataclass
@@ -17,9 +18,9 @@ class OrderIntent:
 
     def __post_init__(self):
         if not self.idempotency_key:
-            self.idempotency_key = hashlib.sha256(
-                f"{self.signal_id}:{self.symbol}:{self.side}".encode()
-            ).hexdigest()[:16]
+            self.idempotency_key = hashlib.sha256(f"{self.signal_id}:{self.symbol}:{self.side}".encode()).hexdigest()[
+                :16
+            ]
 
 
 class DemoOrderGuard:

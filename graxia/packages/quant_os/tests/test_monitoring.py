@@ -1,17 +1,18 @@
 """Tests for monitoring modules — heartbeat, dead man's switch, health_check."""
 
 import asyncio
-import pytest
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock
 
-from graxia.packages.quant_os.monitoring.heartbeat import HeartbeatMonitor
-from graxia.packages.quant_os.monitoring.dead_mans_switch import DeadMansSwitch
+import pytest
 
+from graxia.packages.quant_os.monitoring.dead_mans_switch import DeadMansSwitch
+from graxia.packages.quant_os.monitoring.heartbeat import HeartbeatMonitor
 
 # ---------------------------------------------------------------------------
 # HeartbeatMonitor
 # ---------------------------------------------------------------------------
+
 
 class TestHeartbeatMonitor:
     def test_beat_writes_timestamp(self):
@@ -74,6 +75,7 @@ class TestHeartbeatMonitor:
 # ---------------------------------------------------------------------------
 # DeadMansSwitch
 # ---------------------------------------------------------------------------
+
 
 class TestDeadMansSwitch:
     @pytest.fixture

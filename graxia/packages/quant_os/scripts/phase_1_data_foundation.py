@@ -189,6 +189,7 @@ def audit_macro_artifacts() -> dict[str, Any]:
 
 # ── Cross-check sample ───────────────────────────────────────────────────────
 
+
 def cross_check_sample() -> dict[str, Any]:
     """Quick sanity cross-check: compare BTCUSD M1 close vs BTCUSD M15 close at overlap."""
     out: dict[str, Any] = {"performed": False, "checks": []}
@@ -202,15 +203,17 @@ def cross_check_sample() -> dict[str, Any]:
         if overlap_start <= overlap_end:
             m1_sample = m1[(m1["time"] >= overlap_start) & (m1["time"] <= overlap_end)]
             m15_sample = m15[(m15["time"] >= overlap_start) & (m15["time"] <= overlap_end)]
-            out["checks"].append({
-                "type": "BTCUSD M1 vs M15 overlap",
-                "overlap_start": overlap_start.isoformat(),
-                "overlap_end": overlap_end.isoformat(),
-                "m1_rows": len(m1_sample),
-                "m15_rows": len(m15_sample),
-                "m1_close_mean": round(m1_sample["close"].mean(), 2) if len(m1_sample) else None,
-                "m15_close_mean": round(m15_sample["close"].mean(), 2) if len(m15_sample) else None,
-            })
+            out["checks"].append(
+                {
+                    "type": "BTCUSD M1 vs M15 overlap",
+                    "overlap_start": overlap_start.isoformat(),
+                    "overlap_end": overlap_end.isoformat(),
+                    "m1_rows": len(m1_sample),
+                    "m15_rows": len(m15_sample),
+                    "m1_close_mean": round(m1_sample["close"].mean(), 2) if len(m1_sample) else None,
+                    "m15_close_mean": round(m15_sample["close"].mean(), 2) if len(m15_sample) else None,
+                }
+            )
             out["performed"] = True
     except Exception as e:
         out["checks"].append({"type": "BTCUSD M1 vs M15 overlap", "error": str(e)})
@@ -218,6 +221,7 @@ def cross_check_sample() -> dict[str, Any]:
 
 
 # ── CLI / main ───────────────────────────────────────────────────────────────
+
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Phase 1 data foundation evidence collection")

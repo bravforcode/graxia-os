@@ -1,9 +1,10 @@
 """Tests for Phase 10 — Micro-live canary policy and emergency kill switch."""
+
 import tempfile
 from pathlib import Path
 
-from graxia.packages.quant_os.canary.micro_live_policy import MicroLivePolicy
 from graxia.packages.quant_os.canary.emergency_kill_switch import EmergencyKillSwitch
+from graxia.packages.quant_os.canary.micro_live_policy import MicroLivePolicy
 
 
 def test_micro_live_policy_default():

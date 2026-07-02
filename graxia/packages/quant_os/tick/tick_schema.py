@@ -1,12 +1,14 @@
 """Phase BE-P2 — Canonical tick schema."""
-from dataclasses import dataclass, asdict
+
 import hashlib
 import json
+from dataclasses import asdict, dataclass
 
 
 @dataclass
 class TickRecord:
     """Canonical tick schema per BE-P2 spec."""
+
     tick_id: int = 0
     ingest_sequence: int = 0
     source_timestamp_utc: str = ""
@@ -35,16 +37,18 @@ class TickRecord:
         d = asdict(self)
         d.pop("raw_payload_hash", None)
         d.pop("partition_hash", None)
-        self.raw_payload_hash = hashlib.sha256(
-            json.dumps(d, sort_keys=True, default=str).encode()
-        ).hexdigest()
+        self.raw_payload_hash = hashlib.sha256(json.dumps(d, sort_keys=True, default=str).encode()).hexdigest()
 
     def compute_spread(self) -> None:
         """Compute spread from bid/ask."""
         if self.bid > 0 and self.ask > 0:
             self.spread_price = round(self.ask - self.bid, 10)
             # Points spread = spread_price / point (approximate)
-            self.spread_points = round(self.spread_price / 0.01, 10) if self.symbol == "XAUUSD" else round(self.spread_price / 0.00001, 10)
+            self.spread_points = (
+                round(self.spread_price / 0.01, 10)
+                if self.symbol == "XAUUSD"
+                else round(self.spread_price / 0.00001, 10)
+            )
 
     def validate(self) -> tuple[bool, list[str]]:
         """Validate tick against data quality rules."""

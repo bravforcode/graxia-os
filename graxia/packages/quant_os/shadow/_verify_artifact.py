@@ -1,4 +1,5 @@
 """Verify the shadow artifact."""
+
 import json
 
 with open("shadow_results/broker_observed_20260622_161214.json") as f:

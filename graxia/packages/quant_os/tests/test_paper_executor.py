@@ -3,13 +3,17 @@
 from unittest.mock import MagicMock, patch
 
 from graxia.packages.quant_os.docker.paper_executor import (
-    _calculate_lot_size, SignalPayload, RISK_PER_TRADE, SPREAD_PTS, SLIPPAGE_PTS,
+    RISK_PER_TRADE,
+    SLIPPAGE_PTS,
+    SPREAD_PTS,
+    SignalPayload,
+    _calculate_lot_size,
 )
-
 
 # ═══════════════════════════════════════════════════════════════════════
 # Lot Sizing Edge Cases
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class TestCalculateLotSize:
     """Edge cases for _calculate_lot_size function."""
@@ -66,6 +70,7 @@ class TestCalculateLotSize:
 # Signal Payload Validation
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class TestSignalPayload:
     """SignalPayload pydantic model edge cases."""
 
@@ -84,41 +89,61 @@ class TestSignalPayload:
 
     def test_sell_direction(self):
         p = SignalPayload(
-            symbol="XAUUSD", direction="SELL", confidence=0.7,
-            sl_distance=5.0, current_price=2025.0,
-            timestamp="2026-01-15T10:00:00Z", features_used=8,
+            symbol="XAUUSD",
+            direction="SELL",
+            confidence=0.7,
+            sl_distance=5.0,
+            current_price=2025.0,
+            timestamp="2026-01-15T10:00:00Z",
+            features_used=8,
         )
         assert p.direction == "SELL"
 
     def test_zero_confidence(self):
         p = SignalPayload(
-            symbol="XAUUSD", direction="BUY", confidence=0.0,
-            sl_distance=5.0, current_price=2025.0,
-            timestamp="2026-01-15T10:00:00Z", features_used=0,
+            symbol="XAUUSD",
+            direction="BUY",
+            confidence=0.0,
+            sl_distance=5.0,
+            current_price=2025.0,
+            timestamp="2026-01-15T10:00:00Z",
+            features_used=0,
         )
         assert p.confidence == 0.0
 
     def test_zero_sl_distance(self):
         p = SignalPayload(
-            symbol="XAUUSD", direction="BUY", confidence=0.8,
-            sl_distance=0.0, current_price=2025.0,
-            timestamp="2026-01-15T10:00:00Z", features_used=5,
+            symbol="XAUUSD",
+            direction="BUY",
+            confidence=0.8,
+            sl_distance=0.0,
+            current_price=2025.0,
+            timestamp="2026-01-15T10:00:00Z",
+            features_used=5,
         )
         assert p.sl_distance == 0.0
 
     def test_zero_features_used(self):
         p = SignalPayload(
-            symbol="XAUUSD", direction="BUY", confidence=0.8,
-            sl_distance=5.0, current_price=2025.0,
-            timestamp="2026-01-15T10:00:00Z", features_used=0,
+            symbol="XAUUSD",
+            direction="BUY",
+            confidence=0.8,
+            sl_distance=5.0,
+            current_price=2025.0,
+            timestamp="2026-01-15T10:00:00Z",
+            features_used=0,
         )
         assert p.features_used == 0
 
     def test_model_dump(self):
         p = SignalPayload(
-            symbol="XAUUSD", direction="BUY", confidence=0.85,
-            sl_distance=5.0, current_price=2025.0,
-            timestamp="2026-01-15T10:00:00Z", features_used=12,
+            symbol="XAUUSD",
+            direction="BUY",
+            confidence=0.85,
+            sl_distance=5.0,
+            current_price=2025.0,
+            timestamp="2026-01-15T10:00:00Z",
+            features_used=12,
         )
         d = p.model_dump()
         assert d["symbol"] == "XAUUSD"
@@ -128,6 +153,7 @@ class TestSignalPayload:
 # ═══════════════════════════════════════════════════════════════════════
 # Constants and Configuration
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class TestPaperExecutorConfig:
     """Configuration constants edge cases."""
@@ -198,6 +224,7 @@ class TestPaperExecutorConfig:
 # Edge Cases: Direction and Signal Handling
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class TestDirectionHandling:
     """Edge cases for direction/signal handling."""
 
@@ -251,6 +278,7 @@ class TestDirectionHandling:
 # ═══════════════════════════════════════════════════════════════════════
 # Edge Cases: SL/TP Trigger Logic
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class TestSLTPLogic:
     """Edge cases for stop-loss and take-profit trigger logic."""
@@ -318,12 +346,14 @@ class TestSLTPLogic:
 # Edge Cases: Portfolio Management
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class TestPortfolioManagement:
     """Portfolio tracking edge cases."""
 
     def test_initial_balance(self):
         """Initial portfolio balance is INITIAL_BALANCE."""
         from graxia.packages.quant_os.docker.paper_executor import INITIAL_BALANCE
+
         assert INITIAL_BALANCE == 100000.0
 
     def test_balance_decreases_on_spread(self):
@@ -380,15 +410,18 @@ class TestPortfolioManagement:
 # Edge Cases: yfinance Data Fetching
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class TestYFinanceFetching:
     """yfinance data fetching edge cases."""
 
     def test_fetch_bars_empty_data(self):
         """Empty yfinance data returns empty bars."""
         from graxia.packages.quant_os.docker.paper_executor import _fetch_bars_yfinance
+
         # Patch yfinance to return empty DataFrame
         with patch("graxia.packages.quant_os.docker.paper_executor.yf") as mock_yf:
             import pandas as pd
+
             mock_ticker = MagicMock()
             mock_ticker.history.return_value = pd.DataFrame()
             mock_yf.Ticker.return_value = mock_ticker
@@ -400,6 +433,7 @@ class TestYFinanceFetching:
     def test_fetch_bars_exception_handling(self):
         """Exception in yfinance returns empty bars."""
         from graxia.packages.quant_os.docker.paper_executor import _fetch_bars_yfinance
+
         with patch("graxia.packages.quant_os.docker.paper_executor.yf") as mock_yf:
             mock_yf.Ticker.side_effect = Exception("network error")
             bars, bid, ask = _fetch_bars_yfinance("GC=F")

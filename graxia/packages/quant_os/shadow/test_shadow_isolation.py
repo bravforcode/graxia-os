@@ -1,7 +1,7 @@
 """Phase BE-P8 — Shadow isolation. Must never call order_send."""
+
 import ast
 from pathlib import Path
-
 
 FORBIDDEN_CALLS = ["order_send", "order_check", "order_calc_margin"]
 
@@ -39,6 +39,7 @@ def test_shadow_modules_no_order_send():
 def test_shadow_pipeline_has_no_order_api():
     """Shadow pipeline must not expose order API."""
     from graxia.packages.quant_os.shadow.shadow_pipeline import ShadowPipeline
+
     pipeline = ShadowPipeline()
-    assert not hasattr(pipeline, 'order_send')
-    assert not hasattr(pipeline, 'order_check')
+    assert not hasattr(pipeline, "order_send")
+    assert not hasattr(pipeline, "order_check")

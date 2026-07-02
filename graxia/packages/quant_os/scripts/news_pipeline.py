@@ -43,8 +43,8 @@ from core.agents.risk_agent import RiskAgent
 from core.agents.sentiment_agent import SentimentAgent
 from core.event_bus import EventBus
 from core.events import NewsEvent
-from core.news_blackout import NewsBlackout
 from core.metrics import PipelineMetrics
+from core.news_blackout import NewsBlackout
 
 logger = structlog.get_logger(__name__)
 
@@ -478,7 +478,9 @@ async def main():
             logger.info("pipeline.loop_start", interval=args.interval)
             while True:
                 try:
-                    digest = await run_pipeline(sentiment, event_bus=bus, centaur=centaur, vault_path=vault, news_blackout=blackout)
+                    digest = await run_pipeline(
+                        sentiment, event_bus=bus, centaur=centaur, vault_path=vault, news_blackout=blackout
+                    )
                     health.record_success()
                     logger.info(
                         "pipeline.cycle_complete",
@@ -501,7 +503,9 @@ async def main():
                                     f"Headlines: `{len(digest.items)}`"
                                 )
                                 url = f"https://api.telegram.org/bot{token}/sendMessage"
-                                resp = await tg_client.post(url, json={"chat_id": chat_id, "text": summary_msg, "parse_mode": "Markdown"})
+                                resp = await tg_client.post(
+                                    url, json={"chat_id": chat_id, "text": summary_msg, "parse_mode": "Markdown"}
+                                )
                                 if resp.status_code == 200:
                                     logger.info("pipeline.daily_summary_sent", regime=digest.regime)
                                 else:
@@ -520,7 +524,9 @@ async def main():
 
                 await asyncio.sleep(args.interval)
         else:
-            digest = await run_pipeline(sentiment, event_bus=bus, centaur=centaur, vault_path=vault, news_blackout=blackout)
+            digest = await run_pipeline(
+                sentiment, event_bus=bus, centaur=centaur, vault_path=vault, news_blackout=blackout
+            )
             print(f"\n{'='*60}")
             print("  Pipeline Complete")
             print(f"  Headlines: {len(digest.items)}")

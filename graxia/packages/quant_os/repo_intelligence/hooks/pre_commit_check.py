@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """Pre-commit hook: validate manifest consistency, block execution permission changes without approval."""
-import sys
+
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from manifest import RepoManifest
 
-MANIFEST_PATH = os.path.join(os.path.dirname(__file__), '..', 'registry', 'manifest.yml')
+MANIFEST_PATH = os.path.join(os.path.dirname(__file__), "..", "registry", "manifest.yml")
+
 
 def run_check():
     manifest = RepoManifest()
@@ -26,6 +29,7 @@ def run_check():
 
     print("Manifest validation: OK")
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(run_check())

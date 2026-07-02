@@ -1,10 +1,12 @@
 """Integration test for previously skipped items now implemented."""
-from datetime import datetime, UTC
+
+from datetime import UTC, datetime
+
+from graxia.packages.quant_os.events.event_gate import EventGate, EventRecord, GateState
+from graxia.packages.quant_os.events.event_metrics import EventMetrics
 from graxia.packages.quant_os.tick.data_quality import DataQualityChecker
 from graxia.packages.quant_os.tick.tick_analytics import TickAnalytics
 from graxia.packages.quant_os.tick.tick_logger import TickLogger
-from graxia.packages.quant_os.events.event_gate import EventGate, GateState, EventRecord
-from graxia.packages.quant_os.events.event_metrics import EventMetrics
 
 
 def test_stale_quality_rule():
@@ -26,6 +28,7 @@ def test_session_break_quality_rule():
 def test_parquet_export():
     import tempfile
     from pathlib import Path
+
     analytics = TickAnalytics()
     ticks = [{"bid": 100.0, "ask": 100.3, "symbol": "XAUUSD"}]
     tmp_dir = tempfile.mkdtemp()
@@ -38,8 +41,9 @@ def test_parquet_export():
 
 def test_unknown_fail_closed():
     gate = EventGate()
-    event = EventRecord(event_id="EVT001", event_name="", importance="HIGH",
-                        scheduled_at_utc="2026-06-22T12:00:00+00:00")
+    event = EventRecord(
+        event_id="EVT001", event_name="", importance="HIGH", scheduled_at_utc="2026-06-22T12:00:00+00:00"
+    )
     state = gate.evaluate_unknown([event])
     assert state == GateState.UNKNOWN_FAIL_CLOSED
 
@@ -48,7 +52,9 @@ def test_medium_importance():
     gate = EventGate()
     now = datetime(2026, 6, 22, 12, 0, tzinfo=UTC)
     event = EventRecord(
-        event_id="EVT002", event_name="Retail Sales", importance="MEDIUM",
+        event_id="EVT002",
+        event_name="Retail Sales",
+        importance="MEDIUM",
         scheduled_at_utc="2026-06-22T12:10:00+00:00",
     )
     state = gate.evaluate(now, [event])

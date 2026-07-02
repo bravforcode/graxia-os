@@ -1,7 +1,6 @@
 """Phase 10 — Controlled Expansion tests."""
-from graxia.packages.quant_os.expansion.planner import (
-    ExpansionPlanner, ExpansionPhase
-)
+
+from graxia.packages.quant_os.expansion.planner import ExpansionPhase, ExpansionPlanner
 from graxia.packages.quant_os.expansion.tracker import ExpansionTracker
 
 
@@ -30,6 +29,7 @@ class TestExpansionPlanner:
 
     def test_cannot_advance_with_unpassed_gates(self):
         from graxia.packages.quant_os.expansion.planner import ExpansionStatus
+
         planner = ExpansionPlanner()
         planner.get_step(ExpansionPhase.PHASE_1).status = ExpansionStatus.IN_PROGRESS
         can, reason = planner.can_advance()
@@ -38,6 +38,7 @@ class TestExpansionPlanner:
 
     def test_can_advance_after_gates_pass(self):
         from graxia.packages.quant_os.expansion.planner import ExpansionStatus
+
         planner = ExpansionPlanner()
         planner.get_step(ExpansionPhase.PHASE_1).status = ExpansionStatus.IN_PROGRESS
         for gate in planner.get_step(ExpansionPhase.PHASE_1).evidence_gates:
@@ -95,8 +96,13 @@ class TestExpansionTracker:
     def test_complete_phase(self):
         tracker = ExpansionTracker()
         tracker.start_phase(ExpansionPhase.PHASE_1)
-        for gate in ["Micro-Live Review Pass", "5-Day Campaign Complete",
-                      "Incident Drills Pass", "Kill Switch Verified", "Reconciliation Verified"]:
+        for gate in [
+            "Micro-Live Review Pass",
+            "5-Day Campaign Complete",
+            "Incident Drills Pass",
+            "Kill Switch Verified",
+            "Reconciliation Verified",
+        ]:
             tracker.complete_gate(ExpansionPhase.PHASE_1, gate, "tested")
         ok = tracker.complete_phase(ExpansionPhase.PHASE_1)
         assert ok is True
@@ -110,12 +116,15 @@ class TestExpansionTracker:
     def test_export_report(self):
         tracker = ExpansionTracker()
         import tempfile
-        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
+
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             tracker.export_report(f.name)
             import json
+
             data = json.load(open(f.name))
             assert "steps_completed" in data
         import os
+
         os.unlink(f.name)
 
     def test_report_summary(self):

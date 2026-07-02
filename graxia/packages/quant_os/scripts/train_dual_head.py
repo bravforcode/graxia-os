@@ -21,11 +21,12 @@ import logging
 import pickle
 import sys
 import warnings
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import xgboost as xgb
 from sklearn.metrics import (
     accuracy_score,
     f1_score,
@@ -35,7 +36,6 @@ from sklearn.metrics import (
     r2_score,
     recall_score,
 )
-import xgboost as xgb
 
 warnings.filterwarnings("ignore")
 
@@ -64,6 +64,7 @@ TARGET_SYMBOLS = ["XAUUSD", "EURUSD", "BTCUSD", "ETHUSD"]
 
 # ── Feature building (from Phase 3) ────────────────────────────────────────
 
+
 def build_features_if_needed(symbol: str, timeframe: str = "M15") -> Path:
     """Return path to feature parquet, building it if it doesn't exist."""
     parquet_path = FEATURES_DIR / f"features_v3_{symbol}_{timeframe}.parquet"
@@ -82,6 +83,7 @@ def build_features_if_needed(symbol: str, timeframe: str = "M15") -> Path:
 
 
 # ── Label creation ──────────────────────────────────────────────────────────
+
 
 def create_labels(df: pd.DataFrame) -> pd.DataFrame:
     """Add direction and magnitude labels.
@@ -108,12 +110,27 @@ def create_labels(df: pd.DataFrame) -> pd.DataFrame:
 # ── Feature column selection ────────────────────────────────────────────────
 
 EXCLUDE_COLS = {
-    "target", "target_return", "target_direction", "target_magnitude",
-    "symbol", "time", "freq", "timestamp", "tb_label", "tb_bar_hit",
-    "tb_side", "tb_ret", "tb_k_upper", "tb_k_lower",
+    "target",
+    "target_return",
+    "target_direction",
+    "target_magnitude",
+    "symbol",
+    "time",
+    "freq",
+    "timestamp",
+    "tb_label",
+    "tb_bar_hit",
+    "tb_side",
+    "tb_ret",
+    "tb_k_upper",
+    "tb_k_lower",
     # Raw OHLCV — not predictive features (XGBoost tree splits on price level
     # are not generalizable; use derived SMC/macro features instead)
-    "open", "high", "low", "close", "volume",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
 }
 
 
@@ -129,6 +146,7 @@ def get_feature_columns(df: pd.DataFrame) -> list[str]:
 
 
 # ── Purged k-fold CV ────────────────────────────────────────────────────────
+
 
 def purged_kfold_cv(
     X: np.ndarray,
@@ -157,10 +175,12 @@ def purged_kfold_cv(
         embargo_end = min(n, val_end + embargo)
 
         # Train = everything except validation + embargo
-        train_idx = np.concatenate([
-            np.arange(0, embargo_start),
-            np.arange(embargo_end, n),
-        ])
+        train_idx = np.concatenate(
+            [
+                np.arange(0, embargo_start),
+                np.arange(embargo_end, n),
+            ]
+        )
         val_idx = np.arange(val_start, val_end)
         splits.append((train_idx, val_idx))
 
@@ -168,6 +188,7 @@ def purged_kfold_cv(
 
 
 # ── Training ────────────────────────────────────────────────────────────────
+
 
 def train_direction_head(
     X_train: np.ndarray,
@@ -192,7 +213,8 @@ def train_direction_head(
         verbosity=0,
     )
     model.fit(
-        X_train, y_train,
+        X_train,
+        y_train,
         eval_set=[(X_val, y_val)],
         verbose=False,
     )
@@ -223,7 +245,8 @@ def train_magnitude_head(
         verbosity=0,
     )
     model.fit(
-        X_train, y_train,
+        X_train,
+        y_train,
         eval_set=[(X_val, y_val)],
         verbose=False,
     )
@@ -232,6 +255,7 @@ def train_magnitude_head(
 
 
 # ── Metrics ─────────────────────────────────────────────────────────────────
+
 
 def compute_direction_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     """Classification metrics for direction head."""
@@ -267,13 +291,14 @@ def compute_magnitude_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
 def compute_feature_importance(model, feature_names: list[str], top_n: int = 15) -> list[tuple[str, float]]:
     """Extract top feature importances."""
     if hasattr(model, "feature_importances_"):
-        pairs = sorted(zip(feature_names, model.feature_importances_), key=lambda x: x[1], reverse=True)
+        pairs = sorted(zip(feature_names, model.feature_importances_, strict=False), key=lambda x: x[1], reverse=True)
     else:
-        pairs = list(zip(feature_names, [0.0] * len(feature_names)))
+        pairs = list(zip(feature_names, [0.0] * len(feature_names), strict=False))
     return [(name, round(float(imp), 4)) for name, imp in pairs[:top_n]]
 
 
 # ── JSON-safe conversion ────────────────────────────────────────────────────
+
 
 def to_serializable(obj):
     """Convert numpy types to JSON-serializable Python types."""
@@ -293,6 +318,7 @@ def to_serializable(obj):
 
 
 # ── Main training pipeline ──────────────────────────────────────────────────
+
 
 def train_symbol(symbol: str, timeframe: str = "M15") -> dict:
     """Train dual-head models for a single symbol. Returns results dict."""
@@ -370,7 +396,9 @@ def train_symbol(symbol: str, timeframe: str = "M15") -> dict:
 
         logger.info(
             "  Fold %d: dir_acc=%.4f | mag_rmse=%.6f",
-            fold_idx + 1, fold_dir["accuracy"], fold_mag["rmse"],
+            fold_idx + 1,
+            fold_dir["accuracy"],
+            fold_mag["rmse"],
         )
 
     # Aggregate CV metrics
@@ -386,10 +414,18 @@ def train_symbol(symbol: str, timeframe: str = "M15") -> dict:
         "mean_r2": round(np.mean([m["r2"] for m in cv_mag_metrics]), 4),
         "folds": cv_mag_metrics,
     }
-    logger.info("  CV Direction: mean_acc=%.4f ± %.4f | mean_f1=%.4f",
-                cv_dir_avg["mean_accuracy"], cv_dir_avg["std_accuracy"], cv_dir_avg["mean_f1"])
-    logger.info("  CV Magnitude: mean_rmse=%.6f ± %.6f | mean_r2=%.4f",
-                cv_mag_avg["mean_rmse"], cv_mag_avg["std_rmse"], cv_mag_avg["mean_r2"])
+    logger.info(
+        "  CV Direction: mean_acc=%.4f ± %.4f | mean_f1=%.4f",
+        cv_dir_avg["mean_accuracy"],
+        cv_dir_avg["std_accuracy"],
+        cv_dir_avg["mean_f1"],
+    )
+    logger.info(
+        "  CV Magnitude: mean_rmse=%.6f ± %.6f | mean_r2=%.4f",
+        cv_mag_avg["mean_rmse"],
+        cv_mag_avg["std_rmse"],
+        cv_mag_avg["mean_r2"],
+    )
 
     # 6. Train final models on train+val
     logger.info("\n[5/6] Training final models on train+val data...")
@@ -398,10 +434,18 @@ def train_symbol(symbol: str, timeframe: str = "M15") -> dict:
     y_mag_trainval = np.concatenate([y_mag_train, y_mag_val])
 
     final_dir_model = train_direction_head(
-        X_trainval, y_dir_trainval, X_test, y_dir_test, feature_cols,
+        X_trainval,
+        y_dir_trainval,
+        X_test,
+        y_dir_test,
+        feature_cols,
     )
     final_mag_model = train_magnitude_head(
-        X_trainval, y_mag_trainval, X_test, y_mag_test, feature_cols,
+        X_trainval,
+        y_mag_trainval,
+        X_test,
+        y_mag_test,
+        feature_cols,
     )
 
     # 7. Evaluate on test set
@@ -412,11 +456,19 @@ def train_symbol(symbol: str, timeframe: str = "M15") -> dict:
     test_dir_metrics = compute_direction_metrics(y_dir_test, y_dir_test_pred)
     test_mag_metrics = compute_magnitude_metrics(y_mag_test, y_mag_test_pred)
 
-    logger.info("  Test Direction: acc=%.4f | prec=%.4f | rec=%.4f | f1=%.4f",
-                test_dir_metrics["accuracy"], test_dir_metrics["precision"],
-                test_dir_metrics["recall"], test_dir_metrics["f1"])
-    logger.info("  Test Magnitude: rmse=%.6f | mae=%.6f | r2=%.4f",
-                test_mag_metrics["rmse"], test_mag_metrics["mae"], test_mag_metrics["r2"])
+    logger.info(
+        "  Test Direction: acc=%.4f | prec=%.4f | rec=%.4f | f1=%.4f",
+        test_dir_metrics["accuracy"],
+        test_dir_metrics["precision"],
+        test_dir_metrics["recall"],
+        test_dir_metrics["f1"],
+    )
+    logger.info(
+        "  Test Magnitude: rmse=%.6f | mae=%.6f | r2=%.4f",
+        test_mag_metrics["rmse"],
+        test_mag_metrics["mae"],
+        test_mag_metrics["r2"],
+    )
 
     # Feature importance
     dir_fi = compute_feature_importance(final_dir_model, feature_cols)
@@ -427,25 +479,31 @@ def train_symbol(symbol: str, timeframe: str = "M15") -> dict:
     mag_model_path = MODELS_DIR / f"{symbol}_magnitude.pkl"
 
     with open(dir_model_path, "wb") as f:
-        pickle.dump({
-            "model": final_dir_model,
-            "feature_columns": feature_cols,
-            "symbol": symbol,
-            "trained_at": datetime.now(UTC).isoformat(),
-            "train_rows": len(X_trainval),
-            "test_rows": len(X_test),
-        }, f)
+        pickle.dump(
+            {
+                "model": final_dir_model,
+                "feature_columns": feature_cols,
+                "symbol": symbol,
+                "trained_at": datetime.now(UTC).isoformat(),
+                "train_rows": len(X_trainval),
+                "test_rows": len(X_test),
+            },
+            f,
+        )
     logger.info("  Saved direction model: %s", dir_model_path.name)
 
     with open(mag_model_path, "wb") as f:
-        pickle.dump({
-            "model": final_mag_model,
-            "feature_columns": feature_cols,
-            "symbol": symbol,
-            "trained_at": datetime.now(UTC).isoformat(),
-            "train_rows": len(X_trainval),
-            "test_rows": len(X_test),
-        }, f)
+        pickle.dump(
+            {
+                "model": final_mag_model,
+                "feature_columns": feature_cols,
+                "symbol": symbol,
+                "trained_at": datetime.now(UTC).isoformat(),
+                "train_rows": len(X_trainval),
+                "test_rows": len(X_test),
+            },
+            f,
+        )
     logger.info("  Saved magnitude model: %s", mag_model_path.name)
 
     # 9. Save metrics
@@ -476,12 +534,20 @@ def train_symbol(symbol: str, timeframe: str = "M15") -> dict:
     # Summary
     logger.info("\n" + "=" * 60)
     logger.info("RESULTS: %s", symbol)
-    logger.info("  Direction — CV acc: %.4f ± %.4f | Test acc: %.4f | F1: %.4f",
-                cv_dir_avg["mean_accuracy"], cv_dir_avg["std_accuracy"],
-                test_dir_metrics["accuracy"], test_dir_metrics["f1"])
-    logger.info("  Magnitude — CV rmse: %.6f ± %.6f | Test rmse: %.6f | R²: %.4f",
-                cv_mag_avg["mean_rmse"], cv_mag_avg["std_rmse"],
-                test_mag_metrics["rmse"], test_mag_metrics["r2"])
+    logger.info(
+        "  Direction — CV acc: %.4f ± %.4f | Test acc: %.4f | F1: %.4f",
+        cv_dir_avg["mean_accuracy"],
+        cv_dir_avg["std_accuracy"],
+        test_dir_metrics["accuracy"],
+        test_dir_metrics["f1"],
+    )
+    logger.info(
+        "  Magnitude — CV rmse: %.6f ± %.6f | Test rmse: %.6f | R²: %.4f",
+        cv_mag_avg["mean_rmse"],
+        cv_mag_avg["std_rmse"],
+        test_mag_metrics["rmse"],
+        test_mag_metrics["r2"],
+    )
     logger.info("  Top direction features: %s", [f[0] for f in dir_fi[:5]])
     logger.info("  Top magnitude features: %s", [f[0] for f in mag_fi[:5]])
     logger.info("=" * 60)
@@ -491,12 +557,14 @@ def train_symbol(symbol: str, timeframe: str = "M15") -> dict:
 
 # ── CLI ─────────────────────────────────────────────────────────────────────
 
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Train per-asset dual-head models (direction + magnitude)",
     )
     parser.add_argument(
-        "--symbol", required=True,
+        "--symbol",
+        required=True,
         help="Symbol to train, or ALL for all 4 target symbols",
     )
     parser.add_argument("--timeframe", default="M15", help="Timeframe (default M15)")

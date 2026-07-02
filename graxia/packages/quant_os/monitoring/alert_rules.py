@@ -3,7 +3,6 @@
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List, Optional
 
 
 class Severity(Enum):
@@ -32,7 +31,7 @@ class HighDrawdownAlert:
         self.name = "high_drawdown"
         self.severity = Severity.CRITICAL
 
-    def check(self, current_drawdown_pct: float) -> Optional[Alert]:
+    def check(self, current_drawdown_pct: float) -> Alert | None:
         if current_drawdown_pct > self.threshold:
             return Alert(
                 rule_name=self.name,
@@ -57,7 +56,7 @@ class ConsecutiveLossAlert:
         else:
             self._streak = 0
 
-    def check(self, current_drawdown_pct: float = 0.0) -> Optional[Alert]:
+    def check(self, current_drawdown_pct: float = 0.0) -> Alert | None:
         if self._streak >= self.max_losses:
             return Alert(
                 rule_name=self.name,
@@ -81,7 +80,7 @@ class SpreadWideningAlert:
         self.severity = Severity.WARNING
         self.threshold = normal_spread_pips * multiplier
 
-    def check(self, current_spread_pips: float) -> Optional[Alert]:
+    def check(self, current_spread_pips: float) -> Alert | None:
         if current_spread_pips > self.threshold:
             return Alert(
                 rule_name=self.name,
@@ -99,7 +98,7 @@ class DataStalenessAlert:
         self.name = "data_staleness"
         self.severity = Severity.CRITICAL
 
-    def check(self, data_age_seconds: float) -> Optional[Alert]:
+    def check(self, data_age_seconds: float) -> Alert | None:
         if data_age_seconds > self.max_age:
             return Alert(
                 rule_name=self.name,
@@ -113,14 +112,14 @@ class AlertEngine:
     """Runs all rules against current state and collects alerts."""
 
     def __init__(self):
-        self._rules: List = []
-        self._history: List[Alert] = []
+        self._rules: list = []
+        self._history: list[Alert] = []
 
     def add_rule(self, rule):
         self._rules.append(rule)
         return self
 
-    def evaluate(self, **kwargs) -> List[Alert]:
+    def evaluate(self, **kwargs) -> list[Alert]:
         fired = []
         for rule in self._rules:
             result = None
@@ -141,5 +140,5 @@ class AlertEngine:
         return fired
 
     @property
-    def history(self) -> List[Alert]:
+    def history(self) -> list[Alert]:
         return list(self._history)

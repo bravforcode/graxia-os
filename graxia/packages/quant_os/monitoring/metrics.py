@@ -2,13 +2,14 @@
 Metrics collection for Quant OS
 """
 
-from typing import Dict, Any, Optional
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
 class TradeMetrics:
     """Metrics for a single trade"""
+
     symbol: str
     entry_price: float
     exit_price: float
@@ -16,7 +17,7 @@ class TradeMetrics:
     pnl: float
     pnl_pct: float
     duration_seconds: int
-    regime: Optional[str] = None
+    regime: str | None = None
 
 
 class MetricsCollector:
@@ -60,7 +61,7 @@ class MetricsCollector:
         self.win_count = 0
         self.loss_count = 0
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Get metrics summary"""
         return {
             "total_trades": len(self.daily_trades),

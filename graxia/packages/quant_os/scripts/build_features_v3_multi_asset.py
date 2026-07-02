@@ -32,22 +32,22 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from core.data.macro_features import _shift_series
 from core.smc_detectors import (
     classify_killzone,
-    detect_fvg,
     detect_fractals,
+    detect_fvg,
     detect_judas_swings,
     detect_liquidity_pools,
     detect_liquidity_voids,
     detect_mitigation_and_inversion,
     detect_order_blocks,
+    detect_ote,
     detect_structure,
     detect_sweeps,
     detect_wyckoff_events,
-    detect_ote,
     volume_profile_features,
 )
-from core.data.macro_features import _shift_series
 
 logging.basicConfig(
     level=logging.INFO,
@@ -86,6 +86,8 @@ def _init_feature_filters() -> None:
         logger.info("  Deleted features (will be skipped): %s", sorted(_DELETED_FEATURES))
     if _QUARANTINED_FEATURES:
         logger.info("  Quarantined features (flagged): %s", sorted(_QUARANTINED_FEATURES))
+
+
 OUTPUT_DIR = PROJECT_ROOT / "artifacts" / "features_v3"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -97,11 +99,11 @@ COT_DIR = DATA_DIR / "market_data" / "cot"
 # Core macro series required by the plan
 CORE_FRED_SERIES = [
     "DFII10",  # 10Y real yield
-    "DGS10",   # 10Y nominal yield
+    "DGS10",  # 10Y nominal yield
     "VIXCLS",  # equity vol
     "GVZCLS",  # gold vol
     "DCOILWTICO",  # oil
-    "DTWEXBGS",    # broad dollar
+    "DTWEXBGS",  # broad dollar
 ]
 
 

@@ -14,10 +14,9 @@ Used to:
 - Filter false signals
 """
 
-from dataclasses import dataclass
-from typing import Dict, List, Tuple
-from enum import Enum
 import math
+from dataclasses import dataclass
+from enum import Enum
 
 
 class MarketRegime(str, Enum):
@@ -32,6 +31,7 @@ class MarketRegime(str, Enum):
 @dataclass
 class RegimeResult:
     """Regime detection result"""
+
     regime: MarketRegime
     confidence: float  # 0.0 - 1.0
     adx: float = 0.0
@@ -39,7 +39,7 @@ class RegimeResult:
     minus_di: float = 0.0
     volatility: float = 0.0
     trend_strength: float = 0.0
-    details: Dict = None
+    details: dict = None
 
     def __post_init__(self):
         if self.details is None:
@@ -73,7 +73,7 @@ class RegimeFilter:
         self.vol_high_mult = vol_high_mult
         self.vol_low_mult = vol_low_mult
 
-    def detect(self, data: Dict[str, List[float]]) -> RegimeResult:
+    def detect(self, data: dict[str, list[float]]) -> RegimeResult:
         """
         Detect current market regime.
 
@@ -102,9 +102,7 @@ class RegimeFilter:
         bb_width = self._calc_bb_width(close, 20)
 
         # Determine regime
-        regime, confidence = self._classify_regime(
-            adx, volatility, avg_volatility, trend_direction, bb_width
-        )
+        regime, confidence = self._classify_regime(adx, volatility, avg_volatility, trend_direction, bb_width)
 
         return RegimeResult(
             regime=regime,
@@ -121,7 +119,9 @@ class RegimeFilter:
             },
         )
 
-    def _calc_adx(self, high: List[float], low: List[float], close: List[float], period: int) -> Tuple[float, float, float]:
+    def _calc_adx(
+        self, high: list[float], low: list[float], close: list[float], period: int
+    ) -> tuple[float, float, float]:
         """Calculate Average Directional Index (Wilder's smoothed).
 
         Returns (adx, plus_di, minus_di).
@@ -135,13 +135,13 @@ class RegimeFilter:
 
         for i in range(1, len(close)):
             h_l = high[i] - low[i]
-            h_pc = abs(high[i] - close[i-1])
-            l_pc = abs(low[i] - close[i-1])
+            h_pc = abs(high[i] - close[i - 1])
+            l_pc = abs(low[i] - close[i - 1])
             tr = max(h_l, h_pc, l_pc)
             trs.append(tr)
 
-            up = high[i] - high[i-1]
-            down = low[i-1] - low[i]
+            up = high[i] - high[i - 1]
+            down = low[i - 1] - low[i]
 
             plus_dm.append(up if up > down and up > 0 else 0)
             minus_dm.append(down if down > up and down > 0 else 0)
@@ -182,12 +182,12 @@ class RegimeFilter:
 
         return adx, final_pdi, final_mdi
 
-    def _calc_volatility(self, close: List[float], period: int) -> float:
+    def _calc_volatility(self, close: list[float], period: int) -> float:
         """Calculate current volatility (normalized ATR)"""
         if len(close) < period + 1:
             return 0.0
 
-        returns = [(close[i] - close[i-1]) / close[i-1] for i in range(1, len(close))]
+        returns = [(close[i] - close[i - 1]) / close[i - 1] for i in range(1, len(close))]
         recent = returns[-period:]
 
         if not recent:
@@ -198,7 +198,7 @@ class RegimeFilter:
 
         return math.sqrt(variance) * 100
 
-    def _calc_avg_volatility(self, close: List[float], period: int) -> float:
+    def _calc_avg_volatility(self, close: list[float], period: int) -> float:
         """Calculate average volatility over longer period"""
         if len(close) < period * 3:
             return self._calc_volatility(close, period)
@@ -210,7 +210,7 @@ class RegimeFilter:
 
         return sum(volatilities) / len(volatilities) if volatilities else 0.0
 
-    def _calc_trend_direction(self, close: List[float]) -> float:
+    def _calc_trend_direction(self, close: list[float]) -> float:
         """Calculate trend direction using EMA alignment"""
         if len(close) < 50:
             return 0.0
@@ -226,7 +226,7 @@ class RegimeFilter:
 
         return max(-1, min(1, diff))
 
-    def _calc_bb_width(self, close: List[float], period: int) -> float:
+    def _calc_bb_width(self, close: list[float], period: int) -> float:
         """Calculate Bollinger Band width"""
         if len(close) < period:
             return 0.0
@@ -238,7 +238,7 @@ class RegimeFilter:
 
         return (std * 2 / mean) * 100 if mean > 0 else 0.0
 
-    def _ema(self, data: List[float], period: int) -> List[float]:
+    def _ema(self, data: list[float], period: int) -> list[float]:
         """Calculate EMA"""
         if len(data) < period:
             return []
@@ -258,7 +258,7 @@ class RegimeFilter:
         avg_volatility: float,
         trend_direction: float,
         bb_width: float,
-    ) -> Tuple[MarketRegime, float]:
+    ) -> tuple[MarketRegime, float]:
         """Classify market regime based on indicators"""
 
         if avg_volatility == 0:
@@ -312,7 +312,7 @@ class RegimeFilter:
         # Scale by confidence: low confidence → reduce position further
         return base * (0.5 + 0.5 * confidence)
 
-    def detect_regime_shift_risk(self, close: List[float], lookback: int = 50) -> Dict:
+    def detect_regime_shift_risk(self, close: list[float], lookback: int = 50) -> dict:
         """Detect accelerating volatility shift — early warning for regime change.
 
         The stress test shows regime_shift scenario causes -155% PnL and 631% DD.
@@ -324,7 +324,7 @@ class RegimeFilter:
             return {"risk_score": 0.0, "warning": False, "reason": "insufficient_data"}
 
         recent = close[-lookback:]
-        older = close[-lookback * 2:-lookback]
+        older = close[-lookback * 2 : -lookback]
 
         recent_vol = self._calc_volatility(recent, min(10, len(recent) // 5))
         older_vol = self._calc_volatility(older, min(10, len(older) // 5))
@@ -345,26 +345,41 @@ class RegimeFilter:
             "older_vol": older_vol,
         }
 
-    def get_allowed_strategies(self, regime: MarketRegime) -> List[str]:
+    def get_allowed_strategies(self, regime: MarketRegime) -> list[str]:
         """Get strategies allowed for current regime"""
         regime_strategies = {
             MarketRegime.TRENDING_UP: [
-                "ema_cross", "multi_tf_align", "bos_choch",
-                "order_block", "liquidity_sweep", "opening_range",
+                "ema_cross",
+                "multi_tf_align",
+                "bos_choch",
+                "order_block",
+                "liquidity_sweep",
+                "opening_range",
             ],
             MarketRegime.TRENDING_DOWN: [
-                "ema_cross", "multi_tf_align", "bos_choch",
-                "order_block", "liquidity_sweep", "opening_range",
+                "ema_cross",
+                "multi_tf_align",
+                "bos_choch",
+                "order_block",
+                "liquidity_sweep",
+                "opening_range",
             ],
             MarketRegime.RANGING: [
-                "supply_demand", "fibonacci", "vwap_rejection",
-                "fair_value_gap", "rsi_divergence",
+                "supply_demand",
+                "fibonacci",
+                "vwap_rejection",
+                "fair_value_gap",
+                "rsi_divergence",
             ],
             MarketRegime.HIGH_VOLATILITY: [
-                "news_fade", "liquidity_sweep", "fair_value_gap",
+                "news_fade",
+                "liquidity_sweep",
+                "fair_value_gap",
             ],
             MarketRegime.LOW_VOLATILITY: [
-                "london_breakout", "opening_range", "supply_demand",
+                "london_breakout",
+                "opening_range",
+                "supply_demand",
             ],
             MarketRegime.CRISIS: [],  # No trading in crisis
         }

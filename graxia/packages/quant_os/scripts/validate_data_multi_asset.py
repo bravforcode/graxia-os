@@ -22,7 +22,7 @@ import csv
 import json
 import os
 import sys
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(PROJECT_ROOT, "data")
@@ -42,7 +42,7 @@ DEFAULT_GAP_THRESHOLD_DAYS = 5
 def read_csv(filepath: str) -> list[dict]:
     """Read CSV and return list of row dicts."""
     rows = []
-    with open(filepath, "r", newline="", encoding="utf-8") as f:
+    with open(filepath, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
             rows.append(row)
@@ -81,10 +81,7 @@ def check_missing_values(rows: list[dict]) -> dict:
     columns = list(rows[0].keys())
     missing_counts = {}
     for col in columns:
-        count = sum(
-            1 for row in rows
-            if row.get(col) is None or str(row.get(col, "")).strip() == ""
-        )
+        count = sum(1 for row in rows if row.get(col) is None or str(row.get(col, "")).strip() == "")
         if count > 0:
             missing_counts[col] = count
 
@@ -203,11 +200,13 @@ def check_d1_gaps(rows: list[dict], gap_threshold_days: int = 5) -> dict:
         delta = timestamps[i] - timestamps[i - 1]
         delta_days = delta.total_seconds() / 86400
         if delta_days > gap_threshold_days:
-            gaps.append({
-                "from": timestamps[i - 1].strftime("%Y-%m-%d"),
-                "to": timestamps[i].strftime("%Y-%m-%d"),
-                "gap_days": round(delta_days, 1),
-            })
+            gaps.append(
+                {
+                    "from": timestamps[i - 1].strftime("%Y-%m-%d"),
+                    "to": timestamps[i].strftime("%Y-%m-%d"),
+                    "gap_days": round(delta_days, 1),
+                }
+            )
 
     status = "PASS" if len(gaps) == 0 else "FAIL"
     return {
@@ -242,12 +241,14 @@ def check_price_range(rows: list[dict], symbol: str) -> dict:
                 continue
             if val < low_bound or val > high_bound:
                 ts = row.get("time") or row.get("timestamp", f"row_{i}")
-                violations.append({
-                    "row": i,
-                    "timestamp": str(ts),
-                    "column": col,
-                    "value": val,
-                })
+                violations.append(
+                    {
+                        "row": i,
+                        "timestamp": str(ts),
+                        "column": col,
+                        "value": val,
+                    }
+                )
                 if len(violations) >= 5:
                     break
         if len(violations) >= 5:
@@ -391,27 +392,29 @@ def run_validation(
 # CLI
 # ---------------------------------------------------------------------------
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Multi-Asset Data Validator — batch CSV validation"
-    )
+    parser = argparse.ArgumentParser(description="Multi-Asset Data Validator — batch CSV validation")
     parser.add_argument(
-        "--symbols", "-s",
+        "--symbols",
+        "-s",
         default=",".join(DEFAULT_SYMBOLS),
         help=f"Comma-separated symbols (default: {','.join(DEFAULT_SYMBOLS)})",
     )
     parser.add_argument(
-        "--timeframes", "-t",
+        "--timeframes",
+        "-t",
         default=",".join(DEFAULT_TIMEFRAMES),
         help=f"Comma-separated timeframes (default: {','.join(DEFAULT_TIMEFRAMES)})",
     )
     parser.add_argument(
-        "--gap-threshold", "-g",
+        "--gap-threshold",
+        "-g",
         type=int,
         default=DEFAULT_GAP_THRESHOLD_DAYS,
         help=f"D1 gap threshold in days (default: {DEFAULT_GAP_THRESHOLD_DAYS})",
     )
     parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         default=DEFAULT_OUTPUT,
         help=f"Output JSON path (default: {DEFAULT_OUTPUT})",
     )
@@ -450,8 +453,10 @@ def main() -> None:
 
     print(f"\n{'=' * 60}")
     s = report["summary"]
-    print(f"Overall: {s['overall']}  |  Files: {s['total_files']}  "
-          f"Pass: {s['pass']}  Warn: {s['warn']}  Fail: {s['fail']}  Error: {s['error']}")
+    print(
+        f"Overall: {s['overall']}  |  Files: {s['total_files']}  "
+        f"Pass: {s['pass']}  Warn: {s['warn']}  Fail: {s['fail']}  Error: {s['error']}"
+    )
 
     # Write JSON
     with open(args.output, "w") as f:

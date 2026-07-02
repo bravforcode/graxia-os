@@ -7,12 +7,11 @@ Calculates expected values by hand and asserts them.
 NOTE: _apply_limits() caps position based on max_portfolio_exposure_pct (50%).
 For $10k account, max_exposure = $5000. Any notional > $5000 gets scaled down.
 """
-import pytest
+
 from decimal import Decimal
 
-from quant_os.risk.position_sizer import (
-    FixedFractionalSizer
-)
+import pytest
+from quant_os.risk.position_sizer import FixedFractionalSizer
 
 
 class TestPositionSizerNumeric:
@@ -126,8 +125,9 @@ class TestPositionSizerNumeric:
         )
 
         # Lots must differ
-        assert gold_result.lots != forex_result.lots, \
-            f"Gold ({gold_result.lots}) should differ from forex ({forex_result.lots})"
+        assert (
+            gold_result.lots != forex_result.lots
+        ), f"Gold ({gold_result.lots}) should differ from forex ({forex_result.lots})"
 
         # Gold should have fewer lots
         assert gold_result.lots < forex_result.lots

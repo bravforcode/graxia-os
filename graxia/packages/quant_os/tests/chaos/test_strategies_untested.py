@@ -31,10 +31,10 @@ from graxia.packages.quant_os.strategies.walk_forward import (
     _sharpe,
 )
 
-
 # ═══════════════════════════════════════════════════════════════════
 # Mock strategy for WalkForwardValidator
 # ═══════════════════════════════════════════════════════════════════
+
 
 class FakeSignal:
     def __init__(self, signal_type: str = "BUY"):
@@ -91,6 +91,7 @@ class SellStrategy:
 
 class VolatileStrategy:
     """Alternates between BUY and SELL signals for variety."""
+
     def __init__(self):
         self._id = "volatile_strat"
         self._counter = 0
@@ -113,9 +114,11 @@ class VolatileStrategy:
 # Data generators
 # ═══════════════════════════════════════════════════════════════════
 
+
 def _make_ohlcv(n: int, base_price: float = 100.0) -> dict[str, list]:
     """Generate synthetic OHLCV data."""
     import random
+
     random.seed(42)
     closes = []
     price = base_price
@@ -146,6 +149,7 @@ def _make_ohlcv_with_gaps(n: int, gap_positions: list[int] | None = None) -> dic
 # ═══════════════════════════════════════════════════════════════════
 # Helper function tests
 # ═══════════════════════════════════════════════════════════════════
+
 
 class TestSharpeChaos:
     """Edge cases for _sharpe helper."""
@@ -315,6 +319,7 @@ class TestPoomaChaos:
 # Split generation tests
 # ═══════════════════════════════════════════════════════════════════
 
+
 class TestGenerateSplitsChaos:
     """Edge cases for _generate_splits helper."""
 
@@ -357,13 +362,14 @@ class TestGenerateSplitsChaos:
 
     def test_splits_do_not_overlap(self):
         result = _generate_splits(1000, 5, 0.7, 10)
-        for ((tr_s, tr_e), (te_s, te_e)) in result:
+        for (tr_s, tr_e), (te_s, te_e) in result:
             assert tr_e <= te_s, "Train must end before test starts"
 
 
 # ═══════════════════════════════════════════════════════════════════
 # FoldMetrics tests
 # ═══════════════════════════════════════════════════════════════════
+
 
 class TestFoldMetricsChaos:
     """Edge cases for FoldMetrics dataclass."""
@@ -388,6 +394,7 @@ class TestFoldMetricsChaos:
 # ═══════════════════════════════════════════════════════════════════
 # WalkForwardValidator — Chaos
 # ═══════════════════════════════════════════════════════════════════
+
 
 class TestWalkForwardChaos:
     """Chaos tests for WalkForwardValidator."""
@@ -424,7 +431,13 @@ class TestWalkForwardChaos:
 
     def test_dataset_with_all_none_closes(self):
         strat = FakeStrategy()
-        data = {"close": [None] * 100, "open": [None] * 100, "high": [None] * 100, "low": [None] * 100, "volume": [0] * 100}
+        data = {
+            "close": [None] * 100,
+            "open": [None] * 100,
+            "high": [None] * 100,
+            "low": [None] * 100,
+            "volume": [0] * 100,
+        }
         v = WalkForwardValidator(strat, data, n_folds=3)
         with pytest.raises(TypeError):
             v.run_validation()
@@ -555,6 +568,7 @@ class TestWalkForwardChaos:
 # Compare strategies — Chaos
 # ═══════════════════════════════════════════════════════════════════
 
+
 class TestCompareStrategiesChaos:
     """Chaos tests for compare_strategies static method."""
 
@@ -593,7 +607,12 @@ class TestCompareStrategiesChaos:
         b = SellStrategy()
         data = _make_ohlcv(500)
         comp = WalkForwardValidator.compare_strategies(
-            a, b, data, n_folds=5, train_ratio=0.8, embargo_bars=10,
+            a,
+            b,
+            data,
+            n_folds=5,
+            train_ratio=0.8,
+            embargo_bars=10,
         )
         assert isinstance(comp, StrategyComparison)
 
@@ -611,6 +630,7 @@ class TestCompareStrategiesChaos:
 # ═══════════════════════════════════════════════════════════════════
 # WalkForwardResults — Chaos
 # ═══════════════════════════════════════════════════════════════════
+
 
 class TestWalkForwardResultsChaos:
     """Edge cases for WalkForwardResults aggregation."""
@@ -634,13 +654,16 @@ class TestWalkForwardResultsChaos:
         class CrashStrategy:
             def __init__(self):
                 self._id = "crash"
+
             @property
             def id(self):
                 return self._id
+
             def generate_signal(self, symbol, ohlcv_data, indicators=None, regime=None, **kwargs):
                 if len(ohlcv_data.get("close", [])) > 100:
                     return FakeSignal("SELL")
                 return FakeSignal("BUY")
+
             def required_features(self):
                 return []
 

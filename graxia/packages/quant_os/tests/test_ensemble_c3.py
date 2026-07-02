@@ -36,7 +36,9 @@ class TestGetEnsembleSignal:
     def test_unanimous_buy(self):
         s = make_signal(SignalType.BUY, 0.8)
         decision, confidence, details = get_ensemble_signal(
-            mtm_signal=s, mrb_signal=s, mlb_signal=s,
+            mtm_signal=s,
+            mrb_signal=s,
+            mlb_signal=s,
         )
         assert decision == DecisionType.BUY
         assert confidence > 0.7
@@ -44,7 +46,9 @@ class TestGetEnsembleSignal:
     def test_unanimous_sell(self):
         s = make_signal(SignalType.SELL, 0.8)
         decision, confidence, details = get_ensemble_signal(
-            mtm_signal=s, mrb_signal=s, mlb_signal=s,
+            mtm_signal=s,
+            mrb_signal=s,
+            mlb_signal=s,
         )
         assert decision == DecisionType.SELL
         assert confidence > 0.7
@@ -53,14 +57,18 @@ class TestGetEnsembleSignal:
         buy_s = make_signal(SignalType.BUY, 0.8)
         sell_s = make_signal(SignalType.SELL, 0.8)
         decision, _, details = get_ensemble_signal(
-            mtm_signal=buy_s, mrb_signal=sell_s, mlb_signal=sell_s,
+            mtm_signal=buy_s,
+            mrb_signal=sell_s,
+            mlb_signal=sell_s,
         )
         assert decision == DecisionType.NO_TRADE
 
     def test_low_confidence_no_trade(self):
         s = make_signal(SignalType.BUY, 0.3)
         decision, _, details = get_ensemble_signal(
-            mtm_signal=s, mrb_signal=s, mlb_signal=s,
+            mtm_signal=s,
+            mrb_signal=s,
+            mlb_signal=s,
         )
         assert decision == DecisionType.NO_TRADE
 
@@ -181,7 +189,9 @@ class TestBackwardCompatAPI:
     def test_all_three_kwargs(self):
         s = make_signal(SignalType.SELL, 0.8)
         decision, confidence, details = get_ensemble_signal(
-            mtm_signal=s, mrb_signal=s, mlb_signal=s,
+            mtm_signal=s,
+            mrb_signal=s,
+            mlb_signal=s,
         )
         assert decision == DecisionType.SELL
 
@@ -195,7 +205,9 @@ class TestBackwardCompatAPI:
     def test_regime_forwarded(self):
         s = make_signal(SignalType.BUY, 0.8)
         _, _, details = get_ensemble_signal(
-            mtm_signal=s, mrb_signal=s, mlb_signal=s,
+            mtm_signal=s,
+            mrb_signal=s,
+            mlb_signal=s,
             regime=RegimeType.TREND_STRONG_UP,
         )
         assert "weights" in details
@@ -214,7 +226,9 @@ class TestEdgeCases:
         weights = {"mtm": 0.5, "mrb": 0.3, "mlb": 0.2}
         s = make_signal(SignalType.BUY, 0.8)
         decision, _, _ = get_ensemble_signal(
-            mtm_signal=s, mrb_signal=s, mlb_signal=s,
+            mtm_signal=s,
+            mrb_signal=s,
+            mlb_signal=s,
             weights=weights,
         )
         assert decision == DecisionType.BUY
@@ -223,7 +237,9 @@ class TestEdgeCases:
         s = make_signal(SignalType.BUY, 0.8)
         strategies = [_wrap("mtm", s), _wrap("mrb", s), _wrap("mlb", s)]
         decision, confidence, details = get_ensemble_signal(
-            strategies=strategies, symbol="XAUUSD", ohlcv=_ohlcv(),
+            strategies=strategies,
+            symbol="XAUUSD",
+            ohlcv=_ohlcv(),
         )
         assert decision == DecisionType.BUY
         assert confidence > 0.7

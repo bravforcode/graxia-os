@@ -9,14 +9,14 @@ Tracks bid-ask spread per symbol:
 
 import statistics
 from dataclasses import dataclass
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Tuple
 
 
 @dataclass(frozen=True)
 class SpreadState:
     """Immutable snapshot of spread monitoring state."""
+
     symbol: str
     current_spread_points: Decimal
     baseline_mean: Decimal
@@ -55,9 +55,7 @@ class SpreadMonitor:
     # Public API
     # ------------------------------------------------------------------
 
-    def on_tick(
-        self, bid: Decimal, ask: Decimal, timestamp: datetime
-    ) -> SpreadState:
+    def on_tick(self, bid: Decimal, ask: Decimal, timestamp: datetime) -> SpreadState:
         """
         Process a new tick and update spread tracking.
 
@@ -79,7 +77,7 @@ class SpreadMonitor:
 
         # Trim to rolling window
         if len(self._spreads) > self._baseline_window:
-            self._spreads = self._spreads[-self._baseline_window:]
+            self._spreads = self._spreads[-self._baseline_window :]
 
         # Recompute baseline
         self._recalculate_baseline()
@@ -95,7 +93,7 @@ class SpreadMonitor:
         threshold = self._baseline_mean + Decimal(str(self._reject_multiplier)) * self._baseline_std
         return current_spread > threshold
 
-    def get_baseline(self) -> Tuple[Decimal, Decimal]:
+    def get_baseline(self) -> tuple[Decimal, Decimal]:
         """Return (mean, std) of the current rolling baseline."""
         return self._baseline_mean, self._baseline_std
 

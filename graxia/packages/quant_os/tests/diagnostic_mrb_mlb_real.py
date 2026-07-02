@@ -2,16 +2,18 @@
 Diagnostic: Run MRB and MLB through ACTUAL generate_signal() method.
 Logs partial condition hits and how close each sub-condition is to threshold.
 """
+
 from decimal import Decimal
 
-from quant_os.strategies.mrb import MeanReversionBollinger
+from quant_os.core.enums import RegimeType, SignalType
 from quant_os.strategies.mlb import MLBreakout
-from quant_os.core.enums import SignalType, RegimeType
+from quant_os.strategies.mrb import MeanReversionBollinger
 
 
 def generate_trending_data(n=500, start=1.0850, drift=0.0003):
     """Generate trending price data"""
     import random
+
     random.seed(42)
     prices = {"open": [], "high": [], "low": [], "close": [], "volume": []}
     price = start
@@ -32,6 +34,7 @@ def generate_trending_data(n=500, start=1.0850, drift=0.0003):
 def generate_ranging_data(n=500, center=1.0850, width=0.005):
     """Generate ranging/mean-reverting price data"""
     import random
+
     random.seed(99)
     prices = {"open": [], "high": [], "low": [], "close": [], "volume": []}
     price = center
@@ -64,18 +67,26 @@ def log_partial_conditions_mrb(strategy, ohlcv_data, regime, bar_idx):
     try:
         import pandas as pd
         import pandas_ta as ta
-        df = pd.DataFrame({
-            "open": ohlcv_data["open"][:bar_idx+1],
-            "high": ohlcv_data["high"][:bar_idx+1],
-            "low": ohlcv_data["low"][:bar_idx+1],
-            "close": ohlcv_data["close"][:bar_idx+1],
-            "volume": ohlcv_data["volume"][:bar_idx+1],
-        })
+
+        df = pd.DataFrame(
+            {
+                "open": ohlcv_data["open"][: bar_idx + 1],
+                "high": ohlcv_data["high"][: bar_idx + 1],
+                "low": ohlcv_data["low"][: bar_idx + 1],
+                "close": ohlcv_data["close"][: bar_idx + 1],
+                "volume": ohlcv_data["volume"][: bar_idx + 1],
+            }
+        )
         bb = ta.bbands(df["close"], length=strategy.bb_period, std=strategy.bb_std)
         adx_df = ta.adx(df["high"], df["low"], df["close"], length=strategy.adx_period)
-        stoch = ta.stoch(df["high"], df["low"], df["close"],
-                         k=strategy.stoch_k_period, d=strategy.stoch_d_period,
-                         smooth_k=strategy.stoch_smooth)
+        stoch = ta.stoch(
+            df["high"],
+            df["low"],
+            df["close"],
+            k=strategy.stoch_k_period,
+            d=strategy.stoch_d_period,
+            smooth_k=strategy.stoch_smooth,
+        )
         rsi = ta.rsi(df["close"], length=strategy.rsi_period)
     except ImportError:
         return None
@@ -160,17 +171,21 @@ def run_mrb_diagnostic():
 
         for i in range(mrb.bb_period, len(ohlcv["close"])):
             bars_checked += 1
-            bar_data = {k: v[:i+1] for k, v in ohlcv.items()}
+            bar_data = {k: v[: i + 1] for k, v in ohlcv.items()}
             signal = mrb.generate_signal("EURUSD", bar_data, regime=regime)
 
             if signal:
                 signals_found += 1
                 if signal.signal_type == SignalType.BUY:
-                    print(f"  Bar {i}: BUY  conf={signal.confidence:.2f} "
-                          f"entry={signal.entry_price} sl={signal.stop_loss} tp={signal.take_profit}")
+                    print(
+                        f"  Bar {i}: BUY  conf={signal.confidence:.2f} "
+                        f"entry={signal.entry_price} sl={signal.stop_loss} tp={signal.take_profit}"
+                    )
                 else:
-                    print(f"  Bar {i}: SELL conf={signal.confidence:.2f} "
-                          f"entry={signal.entry_price} sl={signal.stop_loss} tp={signal.take_profit}")
+                    print(
+                        f"  Bar {i}: SELL conf={signal.confidence:.2f} "
+                        f"entry={signal.entry_price} sl={signal.stop_loss} tp={signal.take_profit}"
+                    )
 
             # Log partial conditions every 50 bars
             if i % 50 == 0:
@@ -184,11 +199,13 @@ def run_mrb_diagnostic():
                         partial_short += 1
 
                     if lm >= 2 or sm >= 2:
-                        print(f"  Bar {i}: PARTIAL long={lm}/4 short={sm}/4 "
-                              f"adx={info['adx']:.1f}(gap={info['adx_gap']:.1f}) "
-                              f"stoch={info['stoch_k']:.1f} rsi={info['rsi']:.1f} "
-                              f"price={info['price']:.5f} "
-                              f"bbL={info['bb_lower']:.5f} bbU={info['bb_upper']:.5f}")
+                        print(
+                            f"  Bar {i}: PARTIAL long={lm}/4 short={sm}/4 "
+                            f"adx={info['adx']:.1f}(gap={info['adx_gap']:.1f}) "
+                            f"stoch={info['stoch_k']:.1f} rsi={info['rsi']:.1f} "
+                            f"price={info['price']:.5f} "
+                            f"bbL={info['bb_lower']:.5f} bbU={info['bb_upper']:.5f}"
+                        )
 
                         # Show which conditions failed
                         for name, met in info["long_conds"].items():
@@ -217,13 +234,13 @@ def log_partial_conditions_mlb(strategy, ohlcv_data, bar_idx):
     prev_close = close[bar_idx - 1]
     current_vol = volume[bar_idx]
 
-    recent_high = max(high[bar_idx - strategy.lookback_period:bar_idx])
-    recent_low = min(low[bar_idx - strategy.lookback_period:bar_idx])
+    recent_high = max(high[bar_idx - strategy.lookback_period : bar_idx])
+    recent_low = min(low[bar_idx - strategy.lookback_period : bar_idx])
 
     long_breakout = current_price > recent_high and prev_close <= recent_high
     short_breakout = current_price < recent_low and prev_close >= recent_low
 
-    avg_volume = sum(volume[bar_idx - strategy.lookback_period:bar_idx]) / strategy.lookback_period
+    avg_volume = sum(volume[bar_idx - strategy.lookback_period : bar_idx]) / strategy.lookback_period
     vol_ratio = current_vol / avg_volume if avg_volume > 0 else 0
     volume_ok = current_vol >= avg_volume * strategy.volume_mult
 
@@ -269,13 +286,15 @@ def run_mlb_diagnostic():
 
         for i in range(mlb.lookback_period + 5, len(ohlcv["close"])):
             bars_checked += 1
-            bar_data = {k: v[:i+1] for k, v in ohlcv.items()}
+            bar_data = {k: v[: i + 1] for k, v in ohlcv.items()}
             signal = mlb.generate_signal("EURUSD", bar_data, regime=regime)
 
             if signal:
                 signals_found += 1
-                print(f"  Bar {i}: {signal.signal_type.value} conf={signal.confidence:.2f} "
-                      f"entry={signal.entry_price} notes={signal.notes}")
+                print(
+                    f"  Bar {i}: {signal.signal_type.value} conf={signal.confidence:.2f} "
+                    f"entry={signal.entry_price} notes={signal.notes}"
+                )
 
             # Log partial conditions every 30 bars
             if i % 30 == 0:
@@ -283,13 +302,14 @@ def run_mlb_diagnostic():
                 if info:
                     if info["any_breakout"]:
                         breakout_count += 1
-                        print(f"  Bar {i}: BREAKOUT {'long' if info['long_breakout'] else 'short'} "
-                              f"price={info['price']:.5f} "
-                              f"high={info['recent_high']:.5f} low={info['recent_low']:.5f}")
+                        print(
+                            f"  Bar {i}: BREAKOUT {'long' if info['long_breakout'] else 'short'} "
+                            f"price={info['price']:.5f} "
+                            f"high={info['recent_high']:.5f} low={info['recent_low']:.5f}"
+                        )
                         if not info["volume_ok"]:
                             vol_fail_count += 1
-                            print(f"    Volume FAIL: ratio={info['volume_ratio']:.2f} "
-                                  f"need>={mlb.volume_mult:.1f}")
+                            print(f"    Volume FAIL: ratio={info['volume_ratio']:.2f} " f"need>={mlb.volume_mult:.1f}")
 
         print(f"\n  Summary ({data_name}): {signals_found} signals from {bars_checked} bars")
         print(f"  Breakout bars found: {breakout_count}")

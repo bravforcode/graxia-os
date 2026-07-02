@@ -8,7 +8,6 @@ against known mathematical values (not just "runs without error").
 import numpy as np
 import pytest
 
-
 # ---------------------------------------------------------------------------
 # Indicator implementations (pure, testable)
 # ---------------------------------------------------------------------------

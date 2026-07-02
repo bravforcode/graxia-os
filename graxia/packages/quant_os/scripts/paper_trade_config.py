@@ -14,7 +14,7 @@ import argparse
 import json
 import sys
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
 
 # ── Paths ─────────────────────────────────────────────────────────────
@@ -26,9 +26,11 @@ DEFAULT_OUTPUT = PROJECT_ROOT / "config" / "paper_trade_config.json"
 
 # ── Symbol-specific settings ──────────────────────────────────────────
 
+
 @dataclass(frozen=True)
 class SymbolConfig:
     """Per-symbol trading parameters."""
+
     symbol: str
     asset_class: str  # metals, crypto, forex
     lot_size: float
@@ -46,7 +48,7 @@ SYMBOL_CONFIGS: list[SymbolConfig] = [
         symbol="XAUUSD",
         asset_class="metals",
         lot_size=0.01,
-        stop_loss_pips=30.0,    # ~$30 = 300 points on gold
+        stop_loss_pips=30.0,  # ~$30 = 300 points on gold
         take_profit_pips=60.0,
         max_positions=1,
         spread_buffer_pips=5.0,
@@ -70,7 +72,7 @@ SYMBOL_CONFIGS: list[SymbolConfig] = [
         symbol="BTCUSD",
         asset_class="crypto",
         lot_size=0.01,
-        stop_loss_pips=500.0,   # ~$500
+        stop_loss_pips=500.0,  # ~$500
         take_profit_pips=1000.0,
         max_positions=1,
         spread_buffer_pips=50.0,
@@ -82,7 +84,7 @@ SYMBOL_CONFIGS: list[SymbolConfig] = [
         symbol="ETHUSD",
         asset_class="crypto",
         lot_size=0.01,
-        stop_loss_pips=30.0,    # ~$30
+        stop_loss_pips=30.0,  # ~$30
         take_profit_pips=60.0,
         max_positions=1,
         spread_buffer_pips=3.0,
@@ -95,9 +97,11 @@ SYMBOL_CONFIGS: list[SymbolConfig] = [
 
 # ── Risk parameters ───────────────────────────────────────────────────
 
+
 @dataclass(frozen=True)
 class RiskParams:
     """Portfolio-level risk controls for paper trading."""
+
     max_risk_per_trade_pct: float = 1.0
     max_daily_loss_pct: float = 2.0
     max_drawdown_pct: float = 10.0
@@ -111,31 +115,37 @@ class RiskParams:
 
 # ── News filter ───────────────────────────────────────────────────────
 
+
 @dataclass(frozen=True)
 class NewsFilterConfig:
     """News event filter settings — integrates with news_events module."""
+
     enabled: bool = True
     pre_block_minutes: int = 30
     post_block_minutes: int = 15
-    blocked_event_types: list[str] = field(default_factory=lambda: [
-        "NFP",           # Non-Farm Payrolls
-        "FOMC",          # Federal Reserve
-        "ECB_RATE",      # ECB rate decision
-        "BOJ_RATE",      # BOJ rate decision
-        "CPI_US",        # US CPI
-        "CPI_EU",        # EU CPI
-        "GDP_US",        # US GDP
-        "UNEMPLOYMENT_US",
-    ])
+    blocked_event_types: list[str] = field(
+        default_factory=lambda: [
+            "NFP",  # Non-Farm Payrolls
+            "FOMC",  # Federal Reserve
+            "ECB_RATE",  # ECB rate decision
+            "BOJ_RATE",  # BOJ rate decision
+            "CPI_US",  # US CPI
+            "CPI_EU",  # EU CPI
+            "GDP_US",  # US GDP
+            "UNEMPLOYMENT_US",
+        ]
+    )
     min_importance_for_block: str = "HIGH"
     notes: str = "30min pre-block, 15min post-block for HIGH importance events"
 
 
 # ── Trading schedule ──────────────────────────────────────────────────
 
+
 @dataclass(frozen=True)
 class TradingSchedule:
     """Daily schedule for paper trading operations."""
+
     data_pull_utc: str = "00:30"
     feature_build_utc: str = "01:00"
     signal_generation_utc: str = "01:15"
@@ -147,9 +157,11 @@ class TradingSchedule:
 
 # ── Alerts ────────────────────────────────────────────────────────────
 
+
 @dataclass(frozen=True)
 class AlertConfig:
     """Alert configuration for paper trade monitoring."""
+
     telegram_enabled: bool = True
     alert_on_trade: bool = True
     alert_on_daily_summary: bool = True
@@ -161,9 +173,11 @@ class AlertConfig:
 
 # ── Main config ───────────────────────────────────────────────────────
 
+
 @dataclass(frozen=True)
 class PaperTradeConfig:
     """Complete paper trade configuration."""
+
     version: str = "1.0"
     created_at: str = ""
     broker: str = "Pepperstone-Demo"
@@ -207,37 +221,45 @@ def print_summary(config: PaperTradeConfig) -> None:
 
     print("SYMBOLS:")
     for s in config.symbols:
-        print(f"  {s['symbol']:8s} | lot={s['lot_size']} SL={s['stop_loss_pips']} "
-              f"TP={s['take_profit_pips']} max_pos={s['max_positions']} "
-              f"min_conf={s['min_confidence']} | {s['trading_hours_utc']}")
+        print(
+            f"  {s['symbol']:8s} | lot={s['lot_size']} SL={s['stop_loss_pips']} "
+            f"TP={s['take_profit_pips']} max_pos={s['max_positions']} "
+            f"min_conf={s['min_confidence']} | {s['trading_hours_utc']}"
+        )
     print()
 
     risk = config.risk
-    print(f"RISK: risk/trade={risk['max_risk_per_trade_pct']}% "
-          f"daily_loss={risk['max_daily_loss_pct']}% "
-          f"drawdown={risk['max_drawdown_pct']}% "
-          f"capital=${risk['initial_capital']:,.0f}")
+    print(
+        f"RISK: risk/trade={risk['max_risk_per_trade_pct']}% "
+        f"daily_loss={risk['max_daily_loss_pct']}% "
+        f"drawdown={risk['max_drawdown_pct']}% "
+        f"capital=${risk['initial_capital']:,.0f}"
+    )
     print()
 
     nf = config.news_filter
-    print(f"NEWS FILTER: enabled={nf['enabled']} "
-          f"pre={nf['pre_block_minutes']}min post={nf['post_block_minutes']}min "
-          f"blocked={len(nf['blocked_event_types'])} event types")
+    print(
+        f"NEWS FILTER: enabled={nf['enabled']} "
+        f"pre={nf['pre_block_minutes']}min post={nf['post_block_minutes']}min "
+        f"blocked={len(nf['blocked_event_types'])} event types"
+    )
     print()
 
     sched = config.schedule
-    print(f"SCHEDULE: pull={sched['data_pull_utc']} features={sched['feature_build_utc']} "
-          f"signals={sched['signal_generation_utc']} execute={sched['execution_start_utc']}")
+    print(
+        f"SCHEDULE: pull={sched['data_pull_utc']} features={sched['feature_build_utc']} "
+        f"signals={sched['signal_generation_utc']} execute={sched['execution_start_utc']}"
+    )
     print()
     print("=" * 60)
 
 
 # ── CLI ───────────────────────────────────────────────────────────────
 
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Generate paper trade configuration")
-    parser.add_argument("--output", "-o", type=str, default=str(DEFAULT_OUTPUT),
-                        help="Output path for config JSON")
+    parser.add_argument("--output", "-o", type=str, default=str(DEFAULT_OUTPUT), help="Output path for config JSON")
     parser.add_argument("--summary", action="store_true", help="Print summary to stdout")
     args = parser.parse_args()
 

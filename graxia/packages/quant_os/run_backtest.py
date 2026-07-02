@@ -6,9 +6,9 @@ Usage:
     python graxia/packages/quant_os/run_backtest.py
 """
 
-import sys
-import os
 import json
+import os
+import sys
 from datetime import datetime
 
 # Add graxia os root to path (current working directory when run from graxia os)
@@ -16,10 +16,10 @@ sys.path.insert(0, os.getcwd())
 
 # Use absolute imports
 from graxia.packages.quant_os.backtest.data_loader import download_and_save_yahoo, load_yahoo_csv
-from graxia.packages.quant_os.backtest.engine import BacktestEngine, BacktestConfig
-from graxia.packages.quant_os.strategies.mtm import MultiTimeframeMomentum
-from graxia.packages.quant_os.strategies.mrb import MeanReversionBollinger
+from graxia.packages.quant_os.backtest.engine import BacktestConfig, BacktestEngine
 from graxia.packages.quant_os.strategies.mlb import MLBreakout
+from graxia.packages.quant_os.strategies.mrb import MeanReversionBollinger
+from graxia.packages.quant_os.strategies.mtm import MultiTimeframeMomentum
 
 
 def step1_download_data():
@@ -132,9 +132,11 @@ def step3_run_all_strategies(data, timestamps):
             engine.load_data(data, timestamps)
             results = engine.run()
             m = results["metrics"]
-            print(f"  Trades: {m.total_trades}, Win Rate: {m.win_rate:.1%}, "
-                  f"PF: {m.profit_factor:.2f}, Sharpe: {m.sharpe_ratio:.2f}, "
-                  f"Max DD: {m.max_drawdown_pct:.2f}%, P&L: ${m.total_pnl:+,.2f}")
+            print(
+                f"  Trades: {m.total_trades}, Win Rate: {m.win_rate:.1%}, "
+                f"PF: {m.profit_factor:.2f}, Sharpe: {m.sharpe_ratio:.2f}, "
+                f"Max DD: {m.max_drawdown_pct:.2f}%, P&L: ${m.total_pnl:+,.2f}"
+            )
             all_results[name] = results
         except Exception as e:
             print(f"  Error: {e}")
@@ -185,17 +187,22 @@ def main():
         }
 
     with open(output_file, "w") as f:
-        json.dump({
-            "timestamp": datetime.utcnow().isoformat(),
-            "data_bars": len(data["close"]),
-            "strategies": {
-                name: {
-                    "metrics": metrics_to_dict(r["metrics"]),
-                    "trade_count": len(r["trades"]),
-                }
-                for name, r in all_results.items()
-            }
-        }, f, indent=2, default=str)
+        json.dump(
+            {
+                "timestamp": datetime.utcnow().isoformat(),
+                "data_bars": len(data["close"]),
+                "strategies": {
+                    name: {
+                        "metrics": metrics_to_dict(r["metrics"]),
+                        "trade_count": len(r["trades"]),
+                    }
+                    for name, r in all_results.items()
+                },
+            },
+            f,
+            indent=2,
+            default=str,
+        )
 
     print(f"\n{'=' * 60}")
     print(f"Results saved to: {output_file}")

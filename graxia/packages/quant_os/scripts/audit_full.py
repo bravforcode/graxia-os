@@ -26,8 +26,9 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.build_features_v3_multi_asset import build_features
 from datetime import UTC
+
+from scripts.build_features_v3_multi_asset import build_features
 
 logging.basicConfig(
     level=logging.INFO,
@@ -48,6 +49,7 @@ MAX_GAP_MULTIPLIER = 2.0  # gaps > 2x expected interval
 # ═══════════════════════════════════════════════════════════════════════════════
 # AUDIT 1: Lookahead
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def audit_lookahead(symbol: str) -> dict[str, Any]:
     """Run the existing lookahead audit for one symbol."""
@@ -76,6 +78,7 @@ def audit_lookahead(symbol: str) -> dict[str, Any]:
 # ═══════════════════════════════════════════════════════════════════════════════
 # AUDIT 2: Data Integrity
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def audit_data_integrity(df: pd.DataFrame, symbol: str) -> dict[str, Any]:
     """Check for missing values, infinities, duplicates, timestamp gaps, zero-variance."""
@@ -131,7 +134,9 @@ def audit_data_integrity(df: pd.DataFrame, symbol: str) -> dict[str, Any]:
             gap_indices = diff_ms[diff_ms > expected * MAX_GAP_MULTIPLIER].index.tolist()[:5]
             gap_sizes = [round(diff_ms.loc[i] / 60000, 1) for i in gap_indices]
             details["timestamp_gap_samples"] = gap_sizes
-            issues.append(f"{n_gaps} timestamp gaps > {expected * MAX_GAP_MULTIPLIER / 60000:.0f} min (max={max_gap/60000:.1f} min)")
+            issues.append(
+                f"{n_gaps} timestamp gaps > {expected * MAX_GAP_MULTIPLIER / 60000:.0f} min (max={max_gap/60000:.1f} min)"
+            )
     else:
         issues.append("No 'time' column found — cannot check timestamp continuity")
 
@@ -157,6 +162,7 @@ def audit_data_integrity(df: pd.DataFrame, symbol: str) -> dict[str, Any]:
 # AUDIT 3: Feature Correlation
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 def audit_feature_correlation(df: pd.DataFrame, symbol: str) -> dict[str, Any]:
     """Compute correlation matrix, flag redundant pairs and high-missing features."""
     logger.info("[Correlation] Running for %s", symbol)
@@ -181,11 +187,13 @@ def audit_feature_correlation(df: pd.DataFrame, symbol: str) -> dict[str, Any]:
         for j in range(i + 1, len(feature_cols)):
             c = abs(corr.iloc[i, j])
             if c > 0.95:
-                high_corr_pairs.append({
-                    "feature_a": feature_cols[i],
-                    "feature_b": feature_cols[j],
-                    "correlation": round(float(corr.iloc[i, j]), 4),
-                })
+                high_corr_pairs.append(
+                    {
+                        "feature_a": feature_cols[i],
+                        "feature_b": feature_cols[j],
+                        "correlation": round(float(corr.iloc[i, j]), 4),
+                    }
+                )
     details["high_correlation_pairs"] = high_corr_pairs
     if high_corr_pairs:
         issues.append(f"{len(high_corr_pairs)} feature pairs with |corr| > 0.95 (potential redundancy)")
@@ -212,9 +220,11 @@ def audit_feature_correlation(df: pd.DataFrame, symbol: str) -> dict[str, Any]:
 # AUDIT 4: Risk Logic
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 def _scan_source_for_pattern(filepath: Path, pattern: str) -> list[str]:
     """Scan a Python file for a regex pattern, return matching lines."""
     import re
+
     results = []
     if not filepath.exists():
         return results
@@ -243,8 +253,12 @@ def audit_risk_logic() -> dict[str, Any]:
     if rp_path.exists():
         content = rp_path.read_text(encoding="utf-8")
         required_fields = [
-            "risk_per_trade_bps", "max_daily_loss_bps", "max_weekly_loss_bps",
-            "max_total_drawdown_bps", "max_open_positions", "require_stop_loss",
+            "risk_per_trade_bps",
+            "max_daily_loss_bps",
+            "max_weekly_loss_bps",
+            "max_total_drawdown_bps",
+            "max_open_positions",
+            "require_stop_loss",
             "fail_closed",
         ]
         found_fields = {f: f in content for f in required_fields}
@@ -255,6 +269,7 @@ def audit_risk_logic() -> dict[str, Any]:
 
         # Check for dangerous values in defaults
         import re
+
         dd_match = re.search(r"max_total_drawdown_bps:\s*int\s*=\s*(\d+)", content)
         if dd_match:
             dd_val = int(dd_match.group(1))
@@ -325,6 +340,7 @@ def audit_risk_logic() -> dict[str, Any]:
 
         # Check kelly cap
         import re
+
         kelly_match = re.search(r"KELLY_CAP:\s*float\s*=\s*([\d.]+)", content)
         if kelly_match:
             kelly_val = float(kelly_match.group(1))
@@ -353,6 +369,7 @@ def audit_risk_logic() -> dict[str, Any]:
 # AUDIT 5: Code Quality
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 def audit_code_quality() -> dict[str, Any]:
     """Run existing tests, scan for hardcoded values and TODO/FIXME/HACK."""
     logger.info("[CodeQuality] Running code quality audit")
@@ -364,9 +381,12 @@ def audit_code_quality() -> dict[str, Any]:
     try:
         result = subprocess.run(
             [
-                sys.executable, "-m", "pytest",
+                sys.executable,
+                "-m",
+                "pytest",
                 str(PROJECT_ROOT / "tests" / "test_smc_detectors.py"),
-                "-q", "--tb=short",
+                "-q",
+                "--tb=short",
             ],
             capture_output=True,
             text=True,
@@ -448,6 +468,7 @@ def audit_code_quality() -> dict[str, Any]:
 # HEALTH SCORE
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 def compute_health_score(audit_results: dict[str, Any]) -> int:
     """Compute a 0-100 health score from audit results.
 
@@ -484,6 +505,7 @@ def compute_health_score(audit_results: dict[str, Any]) -> int:
 # MAIN
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 def run_symbol_audit(symbol: str) -> dict[str, Any]:
     """Run all audits for a single symbol."""
     logger.info("=" * 70)
@@ -516,9 +538,7 @@ def run_symbol_audit(symbol: str) -> dict[str, Any]:
 
     # Compute health score
     results["health_score"] = compute_health_score(results["audits"])
-    results["overall_passed"] = all(
-        a.get("passed", False) for a in results["audits"].values()
-    )
+    results["overall_passed"] = all(a.get("passed", False) for a in results["audits"].values())
 
     # Write per-symbol JSON
     out_path = REPORTS_DIR / f"full_audit_{symbol}.json"
@@ -532,6 +552,7 @@ def run_symbol_audit(symbol: str) -> dict[str, Any]:
 def generate_summary(all_results: list[dict[str, Any]]) -> str:
     """Generate the summary markdown."""
     from datetime import datetime
+
     ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
 
     lines = [
@@ -548,8 +569,7 @@ def generate_summary(all_results: list[dict[str, Any]]) -> str:
     for r in all_results:
         status = "✅ PASS" if r["overall_passed"] else "❌ FAIL"
         lines.append(
-            f"| {r['symbol']} | {r['rows']} | {len(r['feature_columns'])} "
-            f"| {r['health_score']}/100 | {status} |"
+            f"| {r['symbol']} | {r['rows']} | {len(r['feature_columns'])} " f"| {r['health_score']}/100 | {status} |"
         )
 
     lines.extend(["", "## Audit Details", ""])
@@ -603,10 +623,12 @@ def generate_summary(all_results: list[dict[str, Any]]) -> str:
                 else:
                     warnings.append(f"[{sym}] CODE: {issue}")
 
-    lines.extend([
-        "### Critical Issues (must fix before paper trade)",
-        "",
-    ])
+    lines.extend(
+        [
+            "### Critical Issues (must fix before paper trade)",
+            "",
+        ]
+    )
     if critical:
         for c in critical:
             lines.append(f"- ❌ {c}")
@@ -639,10 +661,12 @@ def generate_summary(all_results: list[dict[str, Any]]) -> str:
             lines.append(f"- {name}: {status} ({n_issues} issues)")
         lines.append("")
 
-    lines.extend([
-        "---",
-        "*Report generated by `scripts/audit_full.py`*",
-    ])
+    lines.extend(
+        [
+            "---",
+            "*Report generated by `scripts/audit_full.py`*",
+        ]
+    )
 
     return "\n".join(lines)
 
@@ -676,13 +700,15 @@ def main() -> int:
             all_results.append(result)
         except Exception as e:
             logger.error("Audit failed for %s: %s", sym, e)
-            all_results.append({
-                "symbol": sym,
-                "health_score": 0,
-                "overall_passed": False,
-                "audits": {},
-                "error": str(e),
-            })
+            all_results.append(
+                {
+                    "symbol": sym,
+                    "health_score": 0,
+                    "overall_passed": False,
+                    "audits": {},
+                    "error": str(e),
+                }
+            )
 
     # Generate summary
     summary = generate_summary(all_results)

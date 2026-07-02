@@ -1,23 +1,26 @@
 """Pipeline pair filters from Freqtrade pattern"""
+
+import logging
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import List, Dict
-import logging
 
 logger = logging.getLogger(__name__)
+
 
 class BacktestSupport(Enum):
     SAFE = "safe"
     BIASED = "biased"
     UNSUPPORTED = "unsupported"
 
+
 class PairFilter(ABC):
     backtest_support: BacktestSupport = BacktestSupport.UNSUPPORTED
 
     @abstractmethod
-    def filter(self, pairs: List[str], context: Dict) -> List[str]:
+    def filter(self, pairs: list[str], context: dict) -> list[str]:
         """Filter and return allowed pairs"""
         pass
+
 
 class MinVolumeFilter(PairFilter):
     backtest_support = BacktestSupport.SAFE
@@ -29,6 +32,7 @@ class MinVolumeFilter(PairFilter):
         tickers = context.get("tickers", {})
         return [p for p in pairs if tickers.get(p, {}).get("volume", 0) >= self.min_volume]
 
+
 class SpreadFilter(PairFilter):
     backtest_support = BacktestSupport.SAFE
 
@@ -37,23 +41,23 @@ class SpreadFilter(PairFilter):
 
     def filter(self, pairs, context):
         tickers = context.get("tickers", {})
-        return [p for p in pairs
-                if tickers.get(p, {}).get("spread_pct", 100) <= self.max_spread_pct]
+        return [p for p in pairs if tickers.get(p, {}).get("spread_pct", 100) <= self.max_spread_pct]
+
 
 class PairFilterPipeline:
-    def __init__(self, filters: List[PairFilter] = None):
+    def __init__(self, filters: list[PairFilter] = None):
         self.filters = filters or []
 
     def add_filter(self, f: PairFilter):
         self.filters.append(f)
         return self
 
-    def apply(self, pairs: List[str], context: Dict) -> List[str]:
+    def apply(self, pairs: list[str], context: dict) -> list[str]:
         for f in self.filters:
             pairs = f.filter(pairs, context)
         return pairs
 
-    def validate_for_backtest(self) -> List[str]:
+    def validate_for_backtest(self) -> list[str]:
         """Warn about biased or unsupported filters"""
         warnings = []
         for f in self.filters:

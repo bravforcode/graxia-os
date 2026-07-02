@@ -10,7 +10,7 @@ import math
 import os
 from collections import deque
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
 
 import structlog
@@ -45,9 +45,7 @@ class DriftAlert:
     metric_name: str
     current_value: float
     threshold: float
-    timestamp: str = field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 
 @dataclass
@@ -61,9 +59,7 @@ class DriftReport:
     accuracy_trend: str  # "improving", "stable", "degrading"
     feature_drift_scores: dict[str, float]  # PSI per feature
     alerts: list[DriftAlert]
-    report_time: str = field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    report_time: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 
 class DriftMonitor:
@@ -193,9 +189,7 @@ class DriftMonitor:
         # Accuracy metrics
         resolved = [r for r in window if r.actual_label is not None]
         if resolved:
-            correct = sum(
-                1 for r in resolved if r.predicted_label == r.actual_label
-            )
+            correct = sum(1 for r in resolved if r.predicted_label == r.actual_label)
             accuracy = correct / len(resolved)
             trend = self._compute_accuracy_trend(resolved)
         else:
@@ -206,11 +200,7 @@ class DriftMonitor:
         psi_scores = self._compute_feature_psi(key)
 
         # Collect active alerts
-        active_alerts = [
-            a
-            for a in self._alerts
-            if a.model_version == model_version and a.symbol == symbol
-        ]
+        active_alerts = [a for a in self._alerts if a.model_version == model_version and a.symbol == symbol]
 
         # Check staleness
         stale_alert = self._check_staleness(model_version, symbol)
@@ -330,19 +320,13 @@ class DriftMonitor:
         if len(resolved) < 10:
             return None
 
-        correct = sum(
-            1 for r in resolved if r.predicted_label == r.actual_label
-        )
+        correct = sum(1 for r in resolved if r.predicted_label == r.actual_label)
         accuracy = correct / len(resolved)
 
         if accuracy < self._accuracy_threshold:
             parts = key.split("|", 1)
             mv, sym = parts[0], parts[1] if len(parts) > 1 else "unknown"
-            severity = (
-                "critical"
-                if accuracy < self._accuracy_threshold * 0.8
-                else "warning"
-            )
+            severity = "critical" if accuracy < self._accuracy_threshold * 0.8 else "warning"
             alert = DriftAlert(
                 alert_type="accuracy_drop",
                 severity=severity,
@@ -367,9 +351,7 @@ class DriftMonitor:
             return alert
         return None
 
-    def _check_staleness(
-        self, model_version: str, symbol: str
-    ) -> DriftAlert | None:
+    def _check_staleness(self, model_version: str, symbol: str) -> DriftAlert | None:
         """Check if predictions have stopped flowing."""
         key = self._key(model_version, symbol)
         last_ts = self._last_prediction_time.get(key)
@@ -396,21 +378,15 @@ class DriftMonitor:
             pass
         return None
 
-    def _compute_accuracy_trend(
-        self, resolved: list[PredictionRecord], split: int = 50
-    ) -> str:
+    def _compute_accuracy_trend(self, resolved: list[PredictionRecord], split: int = 50) -> str:
         """Compare accuracy of recent vs older predictions."""
         if len(resolved) < split * 2:
             return "stable"
         recent = resolved[-split:]
         older = resolved[-split * 2 : -split]
 
-        acc_recent = sum(
-            1 for r in recent if r.predicted_label == r.actual_label
-        ) / len(recent)
-        acc_older = sum(
-            1 for r in older if r.predicted_label == r.actual_label
-        ) / len(older)
+        acc_recent = sum(1 for r in recent if r.predicted_label == r.actual_label) / len(recent)
+        acc_older = sum(1 for r in older if r.predicted_label == r.actual_label) / len(older)
 
         diff = acc_recent - acc_older
         if diff > 0.05:
@@ -419,9 +395,7 @@ class DriftMonitor:
             return "degrading"
         return "stable"
 
-    def _update_feature_baseline(
-        self, key: str, features: dict[str, float]
-    ) -> None:
+    def _update_feature_baseline(self, key: str, features: dict[str, float]) -> None:
         """Incrementally update feature distribution baselines."""
         if key not in self._feature_baselines:
             self._feature_baselines[key] = {}
@@ -464,23 +438,15 @@ class DriftMonitor:
                 continue
 
             b_mean = baseline["sum"] / count
-            b_std = math.sqrt(
-                max(baseline["sum_sq"] / count - b_mean**2, 1e-10)
-            )
+            b_std = math.sqrt(max(baseline["sum_sq"] / count - b_mean**2, 1e-10))
 
             # Gather current window values for this feature
-            current_vals = [
-                r.feature_snapshot[fname]
-                for r in window
-                if fname in r.feature_snapshot
-            ]
+            current_vals = [r.feature_snapshot[fname] for r in window if fname in r.feature_snapshot]
             if len(current_vals) < 5:
                 continue
 
             c_mean = sum(current_vals) / len(current_vals)
-            c_std = math.sqrt(
-                sum((v - c_mean) ** 2 for v in current_vals) / len(current_vals)
-            )
+            c_std = math.sqrt(sum((v - c_mean) ** 2 for v in current_vals) / len(current_vals))
             c_std = max(c_std, 1e-10)
 
             # PSI via bin-based approach
@@ -496,9 +462,7 @@ class DriftMonitor:
             if psi > self._psi_threshold:
                 parts = key.split("|", 1)
                 mv, sym = parts[0], parts[1] if len(parts) > 1 else "unknown"
-                severity = (
-                    "critical" if psi > self._psi_threshold * 1.5 else "warning"
-                )
+                severity = "critical" if psi > self._psi_threshold * 1.5 else "warning"
                 alert = DriftAlert(
                     alert_type="feature_drift",
                     severity=severity,
@@ -547,9 +511,7 @@ class DriftMonitor:
         def _bin_probs(mu: float, sigma: float) -> list[float]:
             probs = []
             for i in range(n_bins):
-                p = _normal_cdf(edges[i + 1], mu, sigma) - _normal_cdf(
-                    edges[i], mu, sigma
-                )
+                p = _normal_cdf(edges[i + 1], mu, sigma) - _normal_cdf(edges[i], mu, sigma)
                 probs.append(max(p, 1e-10))
             return probs
 
@@ -557,7 +519,7 @@ class DriftMonitor:
         current_probs = _bin_probs(current_mean, current_std)
 
         psi = 0.0
-        for bp, cp in zip(baseline_probs, current_probs):
+        for bp, cp in zip(baseline_probs, current_probs, strict=False):
             psi += (cp - bp) * math.log(cp / bp)
         return psi
 
@@ -568,6 +530,7 @@ class DriftMonitor:
         # Save predictions to DuckDB for persistence across restarts
         try:
             import duckdb
+
             db_path = os.getenv("DUCKDB_PATH", "data/market_data.duckdb")
             con = duckdb.connect(db_path, read_only=False)
             con.execute("""
@@ -588,8 +551,7 @@ class DriftMonitor:
                 for r in window:
                     con.execute(
                         "INSERT INTO drift_predictions VALUES (?, ?, ?, ?, ?, ?, ?)",
-                        [key, r.timestamp, r.model_version, r.symbol,
-                         r.predicted_label, r.actual_label, r.confidence],
+                        [key, r.timestamp, r.model_version, r.symbol, r.predicted_label, r.actual_label, r.confidence],
                     )
             con.close()
         except Exception as e:

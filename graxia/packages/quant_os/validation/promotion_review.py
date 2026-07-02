@@ -1,6 +1,7 @@
 """Phase BE-P11 — Promotion review decision engine."""
+
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 
 class PromotionDecision:
@@ -90,13 +91,13 @@ class PromotionReviewer:
 
         if blockers:
             # Check if extend is possible
-            can_extend = (
-                inputs.demo_report.get("days_run", 0) > 0 and
-                not any(b in blockers for b in [
+            can_extend = inputs.demo_report.get("days_run", 0) > 0 and not any(
+                b in blockers
+                for b in [
                     "unresolved_critical_incidents",
                     "unprotected_positions",
                     "broker_identity_not_locked",
-                ])
+                ]
             )
 
             decision = PromotionDecision.EXTEND_DEMO if can_extend else PromotionDecision.RETURN_TO_RESEARCH

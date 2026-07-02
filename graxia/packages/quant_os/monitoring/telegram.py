@@ -8,7 +8,6 @@ Provides:
 - Manual commands (/status, /positions, /pnl, /killswitch)
 """
 
-from typing import Optional, List
 from datetime import datetime
 
 import aiohttp
@@ -20,12 +19,12 @@ from ..core.enums import IncidentSeverity, OrderSide, SignalType
 class TelegramNotifier:
     """Telegram bot for trading notifications"""
 
-    def __init__(self, bot_token: Optional[str] = None, chat_id: Optional[str] = None):
+    def __init__(self, bot_token: str | None = None, chat_id: str | None = None):
         self.config = get_config()
         self.bot_token = bot_token or self.config.telegram_bot_token
         self.chat_id = chat_id or self.config.telegram_chat_id
         self.base_url = f"https://api.telegram.org/bot{self.bot_token}"
-        self.session: Optional[aiohttp.ClientSession] = None
+        self.session: aiohttp.ClientSession | None = None
 
     async def _get_session(self) -> aiohttp.ClientSession:
         """Get or create aiohttp session"""
@@ -34,10 +33,7 @@ class TelegramNotifier:
         return self.session
 
     async def send_message(
-        self,
-        message: str,
-        severity: IncidentSeverity = IncidentSeverity.P2,
-        parse_mode: str = "HTML"
+        self, message: str, severity: IncidentSeverity = IncidentSeverity.P2, parse_mode: str = "HTML"
     ) -> bool:
         """Send message to Telegram"""
         if not self.bot_token or not self.chat_id:
@@ -46,9 +42,9 @@ class TelegramNotifier:
         # Add severity emoji
         emoji_map = {
             IncidentSeverity.P0: "🚨",  # Critical
-            IncidentSeverity.P1: "⚠️",   # High
-            IncidentSeverity.P2: "ℹ️",   # Medium
-            IncidentSeverity.P3: "💬",   # Low
+            IncidentSeverity.P1: "⚠️",  # High
+            IncidentSeverity.P2: "ℹ️",  # Medium
+            IncidentSeverity.P3: "💬",  # Low
         }
         emoji = emoji_map.get(severity, "ℹ️")
 
@@ -62,7 +58,7 @@ class TelegramNotifier:
                 "chat_id": self.chat_id,
                 "text": formatted_message,
                 "parse_mode": parse_mode,
-                "disable_notification": severity in [IncidentSeverity.P2, IncidentSeverity.P3]
+                "disable_notification": severity in [IncidentSeverity.P2, IncidentSeverity.P3],
             }
 
             async with session.post(url, json=payload) as response:
@@ -85,7 +81,7 @@ class TelegramNotifier:
         stop_loss: float,
         take_profit: float,
         strategy: str,
-        pnl: Optional[float] = None
+        pnl: float | None = None,
     ) -> bool:
         """Send trade notification"""
         emoji = "🟢" if side == OrderSide.BUY else "🔴"
@@ -109,12 +105,7 @@ class TelegramNotifier:
 
         return await self.send_message(message, IncidentSeverity.P2)
 
-    async def notify_kill_switch(
-        self,
-        trigger_type: str,
-        reason: str,
-        triggered_by: str
-    ) -> bool:
+    async def notify_kill_switch(self, trigger_type: str, reason: str, triggered_by: str) -> bool:
         """Send kill switch alert"""
         message = f"""
 🚨 <b>KILL SWITCH TRIGGERED</b> 🚨
@@ -138,7 +129,7 @@ Manual reset required.
         daily_pnl: float,
         cumulative_pnl: float,
         drawdown_pct: float,
-        open_positions: int
+        open_positions: int,
     ) -> bool:
         """Send daily P&L report"""
         win_rate = (win_count / (win_count + loss_count) * 100) if (win_count + loss_count) > 0 else 0
@@ -165,7 +156,7 @@ Manual reset required.
         strategy: str,
         entry_price: float,
         stop_loss: float,
-        take_profit: float
+        take_profit: float,
     ) -> bool:
         """Send signal notification"""
         emoji = "🟢" if signal_type == SignalType.BUY else "🔴"
@@ -187,11 +178,7 @@ Risk/Reward: {abs((take_profit - entry_price) / (entry_price - stop_loss)):.2f}
 """
         return await self.send_message(message, IncidentSeverity.P2)
 
-    async def notify_error(
-        self,
-        error_message: str,
-        context: Optional[str] = None
-    ) -> bool:
+    async def notify_error(self, error_message: str, context: str | None = None) -> bool:
         """Send error notification"""
         message = f"""
 ⚠️ <b>System Error</b>
@@ -204,10 +191,7 @@ Risk/Reward: {abs((take_profit - entry_price) / (entry_price - stop_loss)):.2f}
         return await self.send_message(message, IncidentSeverity.P1)
 
     async def send_custom_message(
-        self,
-        title: str,
-        content: str,
-        severity: IncidentSeverity = IncidentSeverity.P2
+        self, title: str, content: str, severity: IncidentSeverity = IncidentSeverity.P2
     ) -> bool:
         """Send custom formatted message"""
         message = f"""
@@ -240,12 +224,12 @@ class TelegramCommandHandler:
             "/help": self.handle_help,
         }
 
-    async def handle_command(self, command: str, args: List[str]) -> str:
+    async def handle_command(self, command: str, args: list[str]) -> str:
         """Handle a command and return response"""
         handler = self.commands.get(command, self.handle_unknown)
         return await handler(args)
 
-    async def handle_status(self, args: List[str]) -> str:
+    async def handle_status(self, args: list[str]) -> str:
         """Handle /status command with real data"""
         from ..core.config import get_config
         from ..core.golden_rules import validate_golden_rules
@@ -258,6 +242,7 @@ class TelegramCommandHandler:
         if self.db:
             try:
                 from ..data.models import Position
+
                 position_count = self.db.query(Position).filter(Position.is_open == True).count()
             except Exception:
                 pass
@@ -266,9 +251,12 @@ class TelegramCommandHandler:
         today_trades = 0
         if self.db:
             try:
-                from ..data.models import Fill
-                from sqlalchemy import func
                 from datetime import date
+
+                from sqlalchemy import func
+
+                from ..data.models import Fill
+
                 today_trades = self.db.query(Fill).filter(func.date(Fill.filled_at) == date.today()).count()
             except Exception:
                 pass
@@ -292,7 +280,7 @@ class TelegramCommandHandler:
 <b>Max Drawdown:</b> {config.max_drawdown_pct}%
 """
 
-    async def handle_positions(self, args: List[str]) -> str:
+    async def handle_positions(self, args: list[str]) -> str:
         """Handle /positions command with real data"""
         if not self.db:
             return "📈 No database connected"
@@ -300,9 +288,7 @@ class TelegramCommandHandler:
         try:
             from ..data.models import Position
 
-            positions = self.db.query(Position).filter(
-                Position.is_open == True
-            ).all()
+            positions = self.db.query(Position).filter(Position.is_open == True).all()
 
             if not positions:
                 return "📈 No open positions"
@@ -321,39 +307,36 @@ class TelegramCommandHandler:
         except Exception as e:
             return f"📈 Error: {e}"
 
-    async def handle_pnl(self, args: List[str]) -> str:
+    async def handle_pnl(self, args: list[str]) -> str:
         """Handle /pnl command with real data"""
         if not self.db:
             return "💰 No database connected"
 
         try:
-            from ..data.models import Fill
-            from sqlalchemy import func
             from datetime import date, timedelta
+
+            from sqlalchemy import func
+
+            from ..data.models import Fill
 
             # Today's P&L
             today = date.today()
-            today_pnl = self.db.query(
-                func.sum(Fill.realized_pnl)
-            ).filter(
-                func.date(Fill.filled_at) == today
-            ).scalar() or 0
+            today_pnl = (
+                self.db.query(func.sum(Fill.realized_pnl)).filter(func.date(Fill.filled_at) == today).scalar() or 0
+            )
 
             # Weekly P&L
             week_start = today - timedelta(days=today.weekday())
-            week_pnl = self.db.query(
-                func.sum(Fill.realized_pnl)
-            ).filter(
-                func.date(Fill.filled_at) >= week_start
-            ).scalar() or 0
+            week_pnl = (
+                self.db.query(func.sum(Fill.realized_pnl)).filter(func.date(Fill.filled_at) >= week_start).scalar() or 0
+            )
 
             # Monthly P&L
             month_start = today.replace(day=1)
-            month_pnl = self.db.query(
-                func.sum(Fill.realized_pnl)
-            ).filter(
-                func.date(Fill.filled_at) >= month_start
-            ).scalar() or 0
+            month_pnl = (
+                self.db.query(func.sum(Fill.realized_pnl)).filter(func.date(Fill.filled_at) >= month_start).scalar()
+                or 0
+            )
 
             # Total trades
             total_trades = self.db.query(Fill).count()
@@ -373,15 +356,14 @@ class TelegramCommandHandler:
         except Exception as e:
             return f"💰 Error: {e}"
 
-    async def handle_killswitch(self, args: List[str]) -> str:
+    async def handle_killswitch(self, args: list[str]) -> str:
         """Handle /killswitch command"""
         if len(args) > 0 and args[0] == "trigger":
             if self.kill_switch:
                 from ..core.enums import KillSwitchType
+
                 self.kill_switch.trigger(
-                    KillSwitchType.MANUAL,
-                    "Manual trigger via Telegram",
-                    triggered_by="telegram_user"
+                    KillSwitchType.MANUAL, "Manual trigger via Telegram", triggered_by="telegram_user"
                 )
                 return "🚨 Kill switch triggered manually via Telegram"
             return "❌ Kill switch not available"
@@ -391,7 +373,7 @@ class TelegramCommandHandler:
 
         return "🟢 Kill switch status: Armed (not triggered)"
 
-    async def handle_risk(self, args: List[str]) -> str:
+    async def handle_risk(self, args: list[str]) -> str:
         """Handle /risk command - show risk metrics"""
         from ..core.config import get_config
 
@@ -421,7 +403,7 @@ class TelegramCommandHandler:
   Max Positions: {config.max_positions}
 """
 
-    async def handle_help(self, args: List[str]) -> str:
+    async def handle_help(self, args: list[str]) -> str:
         """Handle /help command"""
         return """
 🤖 <b>Quant OS Bot Commands</b>
@@ -434,6 +416,6 @@ class TelegramCommandHandler:
 /help - This help message
 """
 
-    async def handle_unknown(self, args: List[str]) -> str:
+    async def handle_unknown(self, args: list[str]) -> str:
         """Handle unknown commands"""
         return "❓ Unknown command. Use /help for available commands."

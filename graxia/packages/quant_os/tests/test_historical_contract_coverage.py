@@ -1,12 +1,18 @@
 """Phase 3.1A — Historical contract and swap coverage tests."""
-from decimal import Decimal
+
 from datetime import datetime
+from decimal import Decimal
 
 from graxia.packages.quant_os.execution.provenance import (
-    ContractProvenance, SwapProvenance, AssumptionQuality, create_default_provenance,
+    AssumptionQuality,
+    ContractProvenance,
+    SwapProvenance,
+    create_default_provenance,
 )
 from graxia.packages.quant_os.execution.swap_model import (
-    SwapRates, SwapMode, calculate_swap,
+    SwapMode,
+    SwapRates,
+    calculate_swap,
 )
 
 
@@ -69,7 +75,9 @@ def test_swap_sensitivity_no_swap():
     result = calculate_swap(
         entry_time=datetime(2025, 1, 1, 10, 0),
         exit_time=datetime(2025, 1, 2, 10, 0),
-        side="BUY", volume=Decimal("0.1"), swap_rates=rates,
+        side="BUY",
+        volume=Decimal("0.1"),
+        swap_rates=rates,
     )
     assert result.is_unknown is True
     assert result.swap_applied == 0
@@ -78,13 +86,17 @@ def test_swap_sensitivity_no_swap():
 def test_swap_sensitivity_base_swap():
     """Base swap applied correctly."""
     rates = SwapRates(
-        swap_long=Decimal("-2.83"), swap_short=Decimal("0.56"),
-        mode=SwapMode.FIXED, rollover_day=2,
+        swap_long=Decimal("-2.83"),
+        swap_short=Decimal("0.56"),
+        mode=SwapMode.FIXED,
+        rollover_day=2,
     )
     result = calculate_swap(
         entry_time=datetime(2025, 1, 6, 10, 0),  # Monday
-        exit_time=datetime(2025, 1, 7, 10, 0),   # Tuesday
-        side="BUY", volume=Decimal("1.0"), swap_rates=rates,
+        exit_time=datetime(2025, 1, 7, 10, 0),  # Tuesday
+        side="BUY",
+        volume=Decimal("1.0"),
+        swap_rates=rates,
     )
     assert result.is_unknown is False
     assert result.swap_applied != 0
@@ -93,18 +105,24 @@ def test_swap_sensitivity_base_swap():
 def test_swap_sensitivity_1_5x():
     """1.5× adverse swap applied via volume multiplier."""
     rates = SwapRates(
-        swap_long=Decimal("-2.83"), swap_short=Decimal("0.56"),
-        mode=SwapMode.FIXED, rollover_day=2,
+        swap_long=Decimal("-2.83"),
+        swap_short=Decimal("0.56"),
+        mode=SwapMode.FIXED,
+        rollover_day=2,
     )
     result = calculate_swap(
         entry_time=datetime(2025, 1, 6, 10, 0),
         exit_time=datetime(2025, 1, 7, 10, 0),
-        side="BUY", volume=Decimal("1.5"), swap_rates=rates,
+        side="BUY",
+        volume=Decimal("1.5"),
+        swap_rates=rates,
     )
     base = calculate_swap(
         entry_time=datetime(2025, 1, 6, 10, 0),
         exit_time=datetime(2025, 1, 7, 10, 0),
-        side="BUY", volume=Decimal("1.0"), swap_rates=rates,
+        side="BUY",
+        volume=Decimal("1.0"),
+        swap_rates=rates,
     )
     assert result.swap_applied == base.swap_applied * Decimal("1.5")
 
@@ -112,18 +130,24 @@ def test_swap_sensitivity_1_5x():
 def test_swap_sensitivity_2_0x():
     """2.0× adverse swap applied via volume multiplier."""
     rates = SwapRates(
-        swap_long=Decimal("-2.83"), swap_short=Decimal("0.56"),
-        mode=SwapMode.FIXED, rollover_day=2,
+        swap_long=Decimal("-2.83"),
+        swap_short=Decimal("0.56"),
+        mode=SwapMode.FIXED,
+        rollover_day=2,
     )
     result = calculate_swap(
         entry_time=datetime(2025, 1, 6, 10, 0),
         exit_time=datetime(2025, 1, 7, 10, 0),
-        side="BUY", volume=Decimal("2.0"), swap_rates=rates,
+        side="BUY",
+        volume=Decimal("2.0"),
+        swap_rates=rates,
     )
     base = calculate_swap(
         entry_time=datetime(2025, 1, 6, 10, 0),
         exit_time=datetime(2025, 1, 7, 10, 0),
-        side="BUY", volume=Decimal("1.0"), swap_rates=rates,
+        side="BUY",
+        volume=Decimal("1.0"),
+        swap_rates=rates,
     )
     assert result.swap_applied == base.swap_applied * Decimal("2.0")
 
@@ -131,14 +155,18 @@ def test_swap_sensitivity_2_0x():
 def test_wednesday_3x_rollover():
     """Wednesday rollover = 3× daily rate."""
     rates = SwapRates(
-        swap_long=Decimal("-2.83"), swap_short=Decimal("0.56"),
-        mode=SwapMode.FIXED, rollover_day=2,  # Wednesday
+        swap_long=Decimal("-2.83"),
+        swap_short=Decimal("0.56"),
+        mode=SwapMode.FIXED,
+        rollover_day=2,  # Wednesday
     )
     # Mon→Wed: 2 days held, Wed is rollover day
     result = calculate_swap(
         entry_time=datetime(2025, 1, 6, 10, 0),  # Monday
-        exit_time=datetime(2025, 1, 8, 10, 0),   # Wednesday
-        side="BUY", volume=Decimal("1.0"), swap_rates=rates,
+        exit_time=datetime(2025, 1, 8, 10, 0),  # Wednesday
+        side="BUY",
+        volume=Decimal("1.0"),
+        swap_rates=rates,
     )
     # effective = 1 (Tue) + 3 (Wed) = 4
     assert result.swap_applied == Decimal("-2.83") * Decimal("4")

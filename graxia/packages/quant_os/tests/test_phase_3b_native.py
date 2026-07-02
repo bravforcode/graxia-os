@@ -1,14 +1,14 @@
 import random
-from decimal import Decimal
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, List
+from decimal import Decimal
+from typing import Any
 
+from graxia.packages.quant_os.core.enums import RegimeType, SignalType
+from graxia.packages.quant_os.strategies.base import Signal, Strategy
+from graxia.packages.quant_os.validation.cost_scenarios import ALL_SCENARIOS, BASE, STRESS_1
 from graxia.packages.quant_os.validation.locked_inputs import LockedInputs
-from graxia.packages.quant_os.validation.cost_scenarios import BASE, STRESS_1, ALL_SCENARIOS
-from graxia.packages.quant_os.validation.run_config import RunConfig
 from graxia.packages.quant_os.validation.native_runner import NativeRunner, ValidationResult
-from graxia.packages.quant_os.strategies.base import Strategy, Signal
-from graxia.packages.quant_os.core.enums import SignalType, RegimeType
+from graxia.packages.quant_os.validation.run_config import RunConfig
 
 
 class _StubStrategy(Strategy):
@@ -17,11 +17,11 @@ class _StubStrategy(Strategy):
     def generate_signal(
         self,
         symbol: str,
-        ohlcv_data: Dict[str, List],
-        indicators: Optional[Dict[str, Any]] = None,
-        regime: Optional[RegimeType] = None,
+        ohlcv_data: dict[str, list],
+        indicators: dict[str, Any] | None = None,
+        regime: RegimeType | None = None,
         **kwargs,
-    ) -> Optional[Signal]:
+    ) -> Signal | None:
         close = ohlcv_data.get("close", [])
         open_p = ohlcv_data.get("open", [])
         low = ohlcv_data.get("low", [])
@@ -67,7 +67,7 @@ class _StubStrategy(Strategy):
 
         return None
 
-    def required_features(self) -> List[str]:
+    def required_features(self) -> list[str]:
         return []
 
 
@@ -83,6 +83,7 @@ def _make_locked_inputs():
         event_filter_version="1.0.0",
         random_seed=42,
     )
+
 
 def _make_data(n=300):
     random.seed(42)
@@ -101,6 +102,7 @@ def _make_data(n=300):
         data["volume"].append(100000)
         price = c
     return data
+
 
 def _make_timestamps(n=300):
     base = datetime(2025, 1, 1)
@@ -138,6 +140,7 @@ class TestLockedInputs:
         assert match is False
         assert "strategy_source_hash" in mismatches
 
+
 class TestCostScenarios:
     def test_all_scenarios_count(self):
         assert len(ALL_SCENARIOS) == 4
@@ -148,6 +151,7 @@ class TestCostScenarios:
     def test_stress_multipliers(self):
         assert STRESS_1.spread_multiplier == Decimal("1.5")
 
+
 class TestRunConfig:
     def test_description(self):
         li = _make_locked_inputs()
@@ -155,6 +159,7 @@ class TestRunConfig:
         desc = config.description()
         assert "native" in desc
         assert "quant_os" in desc
+
 
 class TestValidationResult:
     def test_compute_hash(self):
@@ -164,6 +169,7 @@ class TestValidationResult:
         h = result.compute_hash()
         assert len(h) == 64
         assert h == result.metrics_hash
+
 
 class TestNativeRunner:
     def test_single_run(self):

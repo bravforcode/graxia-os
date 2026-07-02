@@ -52,6 +52,7 @@ class CircuitBreaker:
 
     def is_open(self, cls: str) -> bool:
         import time
+
         s = self._classes.get(cls, _ClassState())
         if not s.opened_at:
             return s.open
@@ -81,6 +82,7 @@ class CircuitBreaker:
 
     def trip(self, cls: str, reason: str = "manual") -> None:
         import time
+
         s = self._classes.setdefault(cls, _ClassState())
         cfg = self._cfg(cls)
         s.trip_count += 1
@@ -104,12 +106,11 @@ class CircuitBreaker:
                 )
                 logger.warning(
                     "circuit_breaker.trip: kill_switch activated for %s: %s",
-                    cls, reason,
+                    cls,
+                    reason,
                 )
             except Exception as exc:
-                logger.error(
-                    "circuit_breaker.trip: failed to activate kill_switch: %s", exc
-                )
+                logger.error("circuit_breaker.trip: failed to activate kill_switch: %s", exc)
 
     def reset(self, cls: str, authorized_by: str, reason: str) -> None:
         """Reset circuit breaker for a class. Requires authorization and reason for audit."""
@@ -121,12 +122,15 @@ class CircuitBreaker:
         s.consecutive_losses = 0
         logger.info(
             "circuit_breaker.reset: class=%s authorized_by=%s reason=%s",
-            cls, authorized_by, reason,
+            cls,
+            authorized_by,
+            reason,
         )
         self._save()
 
     def record_trade(self, cls: str, pnl: float) -> bool:
         import time
+
         s = self._classes.setdefault(cls, _ClassState())
         if pnl < 0:
             s.consecutive_losses += 1

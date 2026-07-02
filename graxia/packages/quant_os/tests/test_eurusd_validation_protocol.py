@@ -1,4 +1,5 @@
 """Tests for EURUSD validation protocol (BE-P7 API)."""
+
 from graxia.packages.quant_os.markets.eurusd.validation_protocol import EURUSDValidationProtocol
 
 

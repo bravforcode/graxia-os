@@ -1,7 +1,9 @@
 """Phase 8 — Drill executor."""
+
+from collections.abc import Callable
 from datetime import datetime
-from typing import Callable
-from .drill_definitions import DrillType, DrillResult, DRILL_CATALOG
+
+from .drill_definitions import DRILL_CATALOG, DrillResult, DrillType
 
 
 class DrillExecutor:

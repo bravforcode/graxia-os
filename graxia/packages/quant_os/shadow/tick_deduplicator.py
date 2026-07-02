@@ -27,7 +27,7 @@ class TickDeduplicator:
         if len(self._seen) > self._max_size:
             # Keep most recent half
             sorted_keys = sorted(self._seen)
-            self._seen = set(sorted_keys[len(sorted_keys) // 2:])
+            self._seen = set(sorted_keys[len(sorted_keys) // 2 :])
 
     def deduplicate(self, ticks: list[dict]) -> tuple[list[dict], int]:
         """Deduplicate a batch of ticks. Returns (unique_ticks, duplicate_count)."""

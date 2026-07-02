@@ -11,8 +11,13 @@ Usage:
   python scripts/download_everything.py --news          # economic calendar
 """
 
-import io, json, os, subprocess, sys, time
-from datetime import datetime, UTC
+import io
+import json
+import os
+import subprocess
+import sys
+import time
+from datetime import UTC, datetime
 from pathlib import Path
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
@@ -36,22 +41,25 @@ CRYPTO = ["BTCUSD", "ETHUSD"]
 ALL_SYMBOLS = FOREX + METALS + INDICES + COMMODITIES + CRYPTO
 
 # ─── ALL TIMEFRAMES ──────────────────────────────────────────────────
-TIMEFRAMES = {"M1": 1, "M5": 5, "M15": 15, "M30": 30,
-              "H1": 60, "H4": 240, "D1": 1440, "W1": 10080}
+TIMEFRAMES = {"M1": 1, "M5": 5, "M15": 15, "M30": 30, "H1": 60, "H4": 240, "D1": 1440, "W1": 10080}
 
 # ─── LOGGING ─────────────────────────────────────────────────────────
 _start_time = time.time()
 _downloaded = 0
 _errors = 0
 
+
 def log(msg):
     ts = datetime.now().strftime("%H:%M:%S")
     print(f"[{ts}] {msg}")
 
+
 def elapsed():
     return int(time.time() - _start_time)
 
+
 # ─── MT5 DOWNLOAD ────────────────────────────────────────────────────
+
 
 def download_all_mt5_bulk() -> dict:
     """Download ALL symbols × ALL timeframes in ONE process via --list-all."""
@@ -69,7 +77,11 @@ def download_all_mt5_bulk() -> dict:
         env["PYTHONPATH"] = str(QUANT_OS.parent.parent) + os.pathsep + env.get("PYTHONPATH", "")
         r = subprocess.run(
             [VENV_PYTHON, str(script), "--list-all"],
-            capture_output=True, text=True, timeout=600, encoding="utf-8", errors="replace",
+            capture_output=True,
+            text=True,
+            timeout=600,
+            encoding="utf-8",
+            errors="replace",
             env=env,
         )
         # Parse output lines like "XAUUSD M15 : 50000 bars ..."
@@ -104,25 +116,30 @@ def download_all_mt5_bulk() -> dict:
 
     return results
 
+
 # ─── YAHOO FALLBACK ──────────────────────────────────────────────────
+
 
 def download_yahoo_symbol(symbol: str) -> bool:
     """Download daily data from Yahoo Finance as fallback."""
     import yfinance as yf  # available via quant_OS deps
+
     try:
-        ticker = yf.Ticker(symbol.replace("XAUUSD", "GC=F")
-                                  .replace("XAGUSD", "SI=F")
-                                  .replace("US30", "^DJI")
-                                  .replace("SPX500", "^GSPC")
-                                  .replace("NAS100", "^IXIC")
-                                  .replace("DAX40", "^GDAXI")
-                                  .replace("NK225", "^N225")
-                                  .replace("FTSE100", "^FTSE")
-                                  .replace("USOIL", "CL=F")
-                                  .replace("UKOIL", "BZ=F")
-                                  .replace("NGAS", "NG=F")
-                                  .replace("BTCUSD", "BTC-USD")
-                                  .replace("ETHUSD", "ETH-USD"))
+        ticker = yf.Ticker(
+            symbol.replace("XAUUSD", "GC=F")
+            .replace("XAGUSD", "SI=F")
+            .replace("US30", "^DJI")
+            .replace("SPX500", "^GSPC")
+            .replace("NAS100", "^IXIC")
+            .replace("DAX40", "^GDAXI")
+            .replace("NK225", "^N225")
+            .replace("FTSE100", "^FTSE")
+            .replace("USOIL", "CL=F")
+            .replace("UKOIL", "BZ=F")
+            .replace("NGAS", "NG=F")
+            .replace("BTCUSD", "BTC-USD")
+            .replace("ETHUSD", "ETH-USD")
+        )
         df = ticker.history(period="6mo")
         if df.empty:
             return False
@@ -132,7 +149,9 @@ def download_yahoo_symbol(symbol: str) -> bool:
     except Exception:
         return False
 
+
 # ─── TICK DATA ───────────────────────────────────────────────────────
+
 
 def download_ticks(symbols: list[str], hours_back: int = 24) -> list:
     """Download tick data for given symbols from MT5."""
@@ -148,31 +167,40 @@ def download_ticks(symbols: list[str], hours_back: int = 24) -> list:
             if recorder.exists():
                 r = subprocess.run(
                     [VENV_PYTHON, str(recorder), "--symbol", symbol, "--hours", str(hours_back)],
-                    capture_output=True, text=True, timeout=120, encoding="utf-8", errors="replace",
+                    capture_output=True,
+                    text=True,
+                    timeout=120,
+                    encoding="utf-8",
+                    errors="replace",
                     env=env,
                 )
                 results.append((symbol, r.returncode == 0))
             else:
                 # Fallback: direct MT5 tick download
                 import MetaTrader5 as mt5
+
                 if mt5.initialize():
                     mt5.symbol_select(symbol, True)
-                    import pandas as pd
                     from datetime import timedelta
-                    ticks = mt5.copy_ticks_range(symbol,
-                        datetime.now() - timedelta(hours=hours_back),
-                        datetime.now(), mt5.COPY_TICKS_ALL)
+
+                    import pandas as pd
+
+                    ticks = mt5.copy_ticks_range(
+                        symbol, datetime.now() - timedelta(hours=hours_back), datetime.now(), mt5.COPY_TICKS_ALL
+                    )
                     if ticks is not None and len(ticks) > 0:
                         df = pd.DataFrame(ticks)
-                        df['time'] = pd.to_datetime(df['time'], unit='s')
+                        df["time"] = pd.to_datetime(df["time"], unit="s")
                         df.to_parquet(TICK_DIR / f"{symbol}_ticks.parquet")
                         results.append((symbol, True))
                     mt5.shutdown()
-        except Exception as e:
+        except Exception:
             results.append((symbol, False))
     return results
 
+
 # ─── MACRO DATA ──────────────────────────────────────────────────────
+
 
 def download_macro() -> dict:
     """Download macro-economic data from available sources."""
@@ -187,7 +215,11 @@ def download_macro() -> dict:
             env["PYTHONPATH"] = str(QUANT_OS.parent.parent) + os.pathsep + env.get("PYTHONPATH", "")
             r = subprocess.run(
                 [VENV_PYTHON, str(macro_script)],
-                capture_output=True, text=True, timeout=120, encoding="utf-8", errors="replace",
+                capture_output=True,
+                text=True,
+                timeout=120,
+                encoding="utf-8",
+                errors="replace",
                 env=env,
             )
             if r.returncode == 0:
@@ -198,14 +230,20 @@ def download_macro() -> dict:
     # Alternative: use investing.com or FRED if available
     try:
         import pandas as pd
+
         # Try to fetch from FRED API if key exists
         fred_key = os.environ.get("FRED_API_KEY")
         if fred_key:
             try:
                 from fredapi import Fred
+
                 fred = Fred(api_key=fred_key)
-                for series, name in [("GDP", "gdp"), ("CPIAUCSL", "cpi"),
-                                      ("FEDFUNDS", "interest_rates"), ("PAYEMS", "nfp")]:
+                for series, name in [
+                    ("GDP", "gdp"),
+                    ("CPIAUCSL", "cpi"),
+                    ("FEDFUNDS", "interest_rates"),
+                    ("PAYEMS", "nfp"),
+                ]:
                     data = fred.get_series(series)
                     if data is not None:
                         data.to_csv(MACRO_DIR / f"{name}.csv")
@@ -217,7 +255,9 @@ def download_macro() -> dict:
 
     return results
 
+
 # ─── NEWS / ECONOMIC EVENTS ──────────────────────────────────────────
+
 
 def download_news() -> dict:
     """Download economic calendar events."""
@@ -228,6 +268,7 @@ def download_news() -> dict:
     try:
         import pandas as pd
         import requests
+
         # Free economic calendar API (forex calendar)
         # Using investing.com via web scraping or API
         events_file = NEWS_DIR / "economic_events.json"
@@ -252,7 +293,9 @@ def download_news() -> dict:
 
     return results
 
+
 # ─── PARALLEL MASS DOWNLOAD ──────────────────────────────────────────
+
 
 def download_all_mt5(quick: bool = False) -> dict:
     """Download ALL symbols × ALL timeframes — single bulk MT5 call."""
@@ -263,8 +306,7 @@ def download_all_mt5(quick: bool = False) -> dict:
     log(f"Bulk result: {len(results['ok'])} ok, {len(results['fail'])} fail")
 
     # Fallback: try Yahoo for any missing D1
-    missing_d1 = [s for s in ALL_SYMBOLS
-                  if not (DATA_DIR / f"{s}_D1.csv").exists()]
+    missing_d1 = [s for s in ALL_SYMBOLS if not (DATA_DIR / f"{s}_D1.csv").exists()]
     if missing_d1:
         log(f"Yahoo fallback for {len(missing_d1)} missing D1 symbols...")
         for symbol in missing_d1:
@@ -273,10 +315,13 @@ def download_all_mt5(quick: bool = False) -> dict:
 
     return results
 
+
 # ─── MAIN ────────────────────────────────────────────────────────────
+
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="MEGA parallel data downloader")
     parser.add_argument("--quick", action="store_true", help="M15/H1/D1 only")
     parser.add_argument("--tick", action="store_true", help="Include tick data")
@@ -339,8 +384,7 @@ def main():
         "fail": total_fail,
     }
     MANIFEST_DIR.mkdir(parents=True, exist_ok=True)
-    (MANIFEST_DIR / "download_manifest.json").write_text(
-        json.dumps(manifest, indent=2), encoding="utf-8")
+    (MANIFEST_DIR / "download_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 
     return all_results
 

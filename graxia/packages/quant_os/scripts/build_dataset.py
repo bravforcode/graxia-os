@@ -7,12 +7,13 @@ Supports CSV and Parquet output via --format.
 Usage:
     python scripts/build_dataset.py [--tick-dir artifacts/tick_data] [--batch-dir artifacts/batch_orders] [--format csv|parquet]
 """
+
 import argparse
 import csv
 import json
 import os
 import sys
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from glob import glob
 
 try:
@@ -32,7 +33,7 @@ def load_ticks(tick_dir):
     ticks = []
     for filepath in sorted(glob(os.path.join(tick_dir, "*_ticks_*.csv"))):
         symbol = os.path.basename(filepath).split("_ticks_")[0]
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             reader = csv.DictReader(f)
             for row in reader:
                 row["symbol"] = symbol
@@ -50,7 +51,7 @@ def load_orders(batch_dir):
     """Load all batch order CSVs into list of dicts."""
     orders = []
     for filepath in sorted(glob(os.path.join(batch_dir, "batch_*.csv"))):
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             reader = csv.DictReader(f)
             for row in reader:
                 for key in ["entry_planned", "entry_actual", "sl", "tp", "buffer", "slippage_points"]:
@@ -147,7 +148,10 @@ def main():
     parser.add_argument("--tick-dir", type=str, default=os.path.join("artifacts", "tick_data"))
     parser.add_argument("--batch-dir", type=str, default=os.path.join("artifacts", "batch_orders"))
     parser.add_argument(
-        "--format", type=str, default="csv", choices=["csv", "parquet"],
+        "--format",
+        type=str,
+        default="csv",
+        choices=["csv", "parquet"],
         help="Output format (csv or parquet, default: csv). Requires pyarrow for parquet.",
     )
     args = parser.parse_args()

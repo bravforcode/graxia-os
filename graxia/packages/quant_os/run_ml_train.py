@@ -6,10 +6,10 @@ Usage:
     python graxia/packages/quant_os/run_ml_train.py
 """
 
+import json
+import os
 import signal
 import sys
-import os
-import json
 from datetime import datetime
 
 # Add graxia os root to path (current working directory when run from graxia os)
@@ -29,7 +29,7 @@ def _shutdown_handler(signum: int, frame) -> None:
 signal.signal(signal.SIGTERM, _shutdown_handler)
 signal.signal(signal.SIGINT, _shutdown_handler)
 
-from graxia.packages.quant_os.ml.pipeline import FeatureEngineer, MLTrainer, DriftDetector
+from graxia.packages.quant_os.ml.pipeline import DriftDetector, FeatureEngineer, MLTrainer
 
 
 def main():
@@ -56,6 +56,7 @@ def main():
         )
 
     from graxia.packages.quant_os.backtest.data_loader import load_yahoo_csv
+
     data, timestamps = load_yahoo_csv("EURUSD=X", data_dir)
     print(f"Loaded {len(data['close'])} bars of REAL data")
 
@@ -109,6 +110,7 @@ def main():
 
     # Simulate predictions
     import numpy as np
+
     np.random.seed(42)
     for _ in range(100):
         predicted = np.random.choice([0, 1, 2], p=[0.6, 0.2, 0.2])
@@ -126,33 +128,35 @@ def main():
 
     output_file = os.path.join(output_dir, "ml_training_results.json")
     with open(output_file, "w") as f:
-        json.dump({
-            "timestamp": datetime.utcnow().isoformat(),
-            "model": {
-                "name": result.model_name,
-                "version": result.version,
-                "accuracy": result.accuracy,
-                "precision": result.precision,
-                "recall": result.recall,
-                "f1_score": result.f1_score,
-                "oos_accuracy": result.oos_accuracy,
-                "training_samples": result.training_samples,
-                "model_path": result.model_path,
+        json.dump(
+            {
+                "timestamp": datetime.utcnow().isoformat(),
+                "model": {
+                    "name": result.model_name,
+                    "version": result.version,
+                    "accuracy": result.accuracy,
+                    "precision": result.precision,
+                    "recall": result.recall,
+                    "f1_score": result.f1_score,
+                    "oos_accuracy": result.oos_accuracy,
+                    "training_samples": result.training_samples,
+                    "model_path": result.model_path,
+                },
+                "walk_forward": [
+                    {
+                        "window": i + 1,
+                        "is_accuracy": wf.accuracy,
+                        "oos_accuracy": wf.oos_accuracy,
+                    }
+                    for i, wf in enumerate(wf_results)
+                ],
+                "top_features": [{"name": name, "importance": imp} for name, imp in sorted_features[:10]],
+                "drift_status": drift_status,
             },
-            "walk_forward": [
-                {
-                    "window": i+1,
-                    "is_accuracy": wf.accuracy,
-                    "oos_accuracy": wf.oos_accuracy,
-                }
-                for i, wf in enumerate(wf_results)
-            ],
-            "top_features": [
-                {"name": name, "importance": imp}
-                for name, imp in sorted_features[:10]
-            ],
-            "drift_status": drift_status,
-        }, f, indent=2, default=str)
+            f,
+            indent=2,
+            default=str,
+        )
 
     print(f"\n{'=' * 60}")
     print(f"Results saved to: {output_file}")

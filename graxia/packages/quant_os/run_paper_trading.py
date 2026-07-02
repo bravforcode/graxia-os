@@ -10,30 +10,31 @@ Requirements:
     - MetaTrader5 package installed
 """
 
+import asyncio
+import csv
+import json
+import os
 import signal
 import sys
-import os
-import asyncio
-import json
-import csv
 from datetime import datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
-from typing import Optional, Dict
 
 sys.path.insert(0, os.getcwd())
 
 from graxia.packages.quant_os.core.config import QuantConfig, get_config
-from graxia.packages.quant_os.core.enums import TradingMode, OrderSide, OrderType
+from graxia.packages.quant_os.core.enums import OrderSide, OrderType, TradingMode
 from graxia.packages.quant_os.execution.broker_adapter import PaperBroker
 from graxia.packages.quant_os.execution.order import Order
 from graxia.packages.quant_os.monitoring.telegram import TelegramNotifier
 from graxia.packages.quant_os.regime import RegimeDetector
-from graxia.packages.quant_os.regime.liquidity_map import LiquidityMap, get_session
-from graxia.packages.quant_os.regime.sweep_classifier import SweepClassifier
 from graxia.packages.quant_os.regime.entry_executor import EntryExecutor
+from graxia.packages.quant_os.regime.liquidity_map import LiquidityMap, get_session
+from graxia.packages.quant_os.regime.monitor import FillReport as MonFillReport
+from graxia.packages.quant_os.regime.monitor import Monitor
+from graxia.packages.quant_os.regime.monitor import OrderReport as MonOrderReport
 from graxia.packages.quant_os.regime.risk_overlay import RiskOverlay
-from graxia.packages.quant_os.regime.monitor import Monitor, OrderReport as MonOrderReport, FillReport as MonFillReport
+from graxia.packages.quant_os.regime.sweep_classifier import SweepClassifier
 
 # ── Graceful shutdown via SIGTERM/SIGINT ──────────────────────────────
 _shutdown_requested = False
@@ -53,11 +54,19 @@ signal.signal(signal.SIGINT, _shutdown_handler)
 class PaperTrader:
     """Paper trading engine — Liquidity Sweep pipeline on live MT5 data."""
 
-    def __init__(self, config: QuantConfig = None, telegram_token: str = None, telegram_chat: str = None, verbose: bool = True):
+    def __init__(
+        self, config: QuantConfig = None, telegram_token: str = None, telegram_chat: str = None, verbose: bool = True
+    ):
         self.config = config or get_config()
         self.broker = PaperBroker()
-        self.telegram = TelegramNotifier(bot_token=telegram_token or os.getenv("TELEGRAM_BOT_TOKEN", ""),
-                                          chat_id=telegram_chat or os.getenv("TELEGRAM_CHAT_ID", "")) if (telegram_token or telegram_chat or os.getenv("TELEGRAM_BOT_TOKEN")) else None
+        self.telegram = (
+            TelegramNotifier(
+                bot_token=telegram_token or os.getenv("TELEGRAM_BOT_TOKEN", ""),
+                chat_id=telegram_chat or os.getenv("TELEGRAM_CHAT_ID", ""),
+            )
+            if (telegram_token or telegram_chat or os.getenv("TELEGRAM_BOT_TOKEN"))
+            else None
+        )
 
         self.verbose = verbose
 
@@ -68,29 +77,33 @@ class PaperTrader:
 
         # State
         self.is_running = False
-        self.last_signal_time: Optional[datetime] = None
+        self.last_signal_time: datetime | None = None
         self.signal_cooldown = timedelta(seconds=1)  # per-symbol 300s handles real cooldown
         self._cycle_count = 0
-        self._market_cache: Dict[str, list] = {}
-        self._open_trades: Dict[str, dict] = {}  # symbol -> entry tracking
+        self._market_cache: dict[str, list] = {}
+        self._open_trades: dict[str, dict] = {}  # symbol -> entry tracking
         self._closing_positions: set = set()  # symbols being closed (prevent double-close)
 
         # Per-symbol cooldown (prevents same-signal spam)
-        self._entry_cooldowns: Dict[str, datetime] = {}
+        self._entry_cooldowns: dict[str, datetime] = {}
 
         # P2-15: Alert engine
         from monitoring.alerting import AlertEngine, TelegramConfig
+
         self._alert_engine = AlertEngine(
             telegram_config=TelegramConfig(
                 bot_token=telegram_token or os.getenv("TELEGRAM_BOT_TOKEN", ""),
                 chat_id=telegram_chat or os.getenv("TELEGRAM_CHAT_ID", ""),
-            ) if (telegram_token or telegram_chat or os.getenv("TELEGRAM_BOT_TOKEN")) else None,
+            )
+            if (telegram_token or telegram_chat or os.getenv("TELEGRAM_BOT_TOKEN"))
+            else None,
         )
 
         # Heartbeat + Dead Man's Switch
         self._heartbeat_state = {}
-        from monitoring.heartbeat import HeartbeatMonitor
         from monitoring.dead_mans_switch import DeadMansSwitch, create_mt5_close_all_callback
+        from monitoring.heartbeat import HeartbeatMonitor
+
         self._heartbeat = HeartbeatMonitor(self._heartbeat_state)
         self._dms = DeadMansSwitch(
             state=self._heartbeat_state,
@@ -102,7 +115,7 @@ class PaperTrader:
         # Stats
         self.total_signals = 0
         self.total_trades = 0
-        self.start_time: Optional[datetime] = None
+        self.start_time: datetime | None = None
         self._trades = []
         self._log_dir = Path("logs")
         self._log_dir.mkdir(exist_ok=True)
@@ -121,6 +134,7 @@ class PaperTrader:
         # P1-12: Init Sentry for crash reporting
         try:
             import sentry_sdk
+
             sentry_dsn = os.getenv("SENTRY_DSN", "")
             if sentry_dsn:
                 sentry_sdk.init(dsn=sentry_dsn, traces_sample_rate=0.1)
@@ -128,13 +142,16 @@ class PaperTrader:
             pass
 
         from core.observability import setup_logging
+
         setup_logging(log_file="logs/paper_trading.jsonl", level="INFO")
 
         # P2-14: Start Prometheus metrics
         from monitoring.metrics_exporter import start_metrics_server
+
         start_metrics_server()
 
         import MetaTrader5 as mt5
+
         if not mt5.initialize():
             mt5.initialize(path=r"C:\Program Files\Pepperstone MetaTrader 5\terminal64.exe")
 
@@ -154,8 +171,9 @@ class PaperTrader:
 
         # P1-8: Run crash recovery on startup
         try:
-            from execution.recovery import Recovery
             from execution.reconcile import Reconciler
+            from execution.recovery import Recovery
+
             reconciler = Reconciler(None)  # ledger=None for paper mode
             recovery = Recovery(
                 ledger=None,
@@ -196,6 +214,7 @@ class PaperTrader:
             print(f"\nCRASH: {e}")
             if self.telegram:
                 import asyncio
+
                 try:
                     asyncio.get_event_loop().run_until_complete(
                         self.telegram.notify_error("CRITICAL", f"Paper trader crashed: {e}")
@@ -217,6 +236,7 @@ class PaperTrader:
         self._heartbeat_state["last_heartbeat"] = datetime.utcnow().isoformat()
         try:
             import MetaTrader5 as mt5
+
             # Refresh market data (keep as numpy array)
             for sym in self.config.symbols:
                 rates = mt5.copy_rates_from_pos(sym, mt5.TIMEFRAME_M15, 0, 300)
@@ -236,7 +256,8 @@ class PaperTrader:
             await self._manage_positions()
 
             # P2-14: Update metrics
-            from monitoring.metrics_exporter import update_positions, update_drawdown
+            from monitoring.metrics_exporter import update_drawdown, update_positions
+
             positions = await self.broker.get_positions()
             update_positions(len(positions) if positions else 0)
             risk_status = self.risk_overlay.get_status()
@@ -244,12 +265,14 @@ class PaperTrader:
 
             # P2-15: Check alert rules
             if self._alert_engine:
-                self._alert_engine.check_alerts({
-                    "daily_pnl": self.risk_overlay.daily_pnl if hasattr(self.risk_overlay, 'daily_pnl') else 0,
-                    "open_positions": len(self._open_trades),
-                    "drawdown_pct": risk_status.get("daily_used_pct", 0.0),
-                    "kill_switch_active": risk_status.get("kill_switch", False),
-                })
+                self._alert_engine.check_alerts(
+                    {
+                        "daily_pnl": self.risk_overlay.daily_pnl if hasattr(self.risk_overlay, "daily_pnl") else 0,
+                        "open_positions": len(self._open_trades),
+                        "drawdown_pct": risk_status.get("daily_used_pct", 0.0),
+                        "kill_switch_active": risk_status.get("kill_switch", False),
+                    }
+                )
 
             # Signal cooldown
             if self.last_signal_time:
@@ -263,9 +286,11 @@ class PaperTrader:
             if self._cycle_count % 100 == 0:
                 try:
                     from execution.reconcile import Reconciler
+
                     reconciler = Reconciler(None)
                     # Basic position count check
                     import MetaTrader5 as _mt5
+
                     positions = _mt5.positions_get()
                     local_count = len(self._open_trades)
                     broker_count = len(positions) if positions else 0
@@ -280,6 +305,7 @@ class PaperTrader:
     async def _manage_positions(self):
         """Check SL/TP for open trades, close if hit, report results."""
         import MetaTrader5 as mt5
+
         try:
             positions = await self.broker.get_positions()
             for pos in positions:
@@ -334,8 +360,11 @@ class PaperTrader:
 
         side = OrderSide.SELL if pos.position_type.value == "LONG" else OrderSide.BUY
         order = Order(
-            symbol=pos.symbol, side=side, order_type=OrderType.MARKET,
-            quantity=pos.quantity, strategy_id="close_" + reason.lower(),
+            symbol=pos.symbol,
+            side=side,
+            order_type=OrderType.MARKET,
+            quantity=pos.quantity,
+            strategy_id="close_" + reason.lower(),
             trading_mode="PAPER",
         )
         result = await self.broker.place_order(order)
@@ -362,14 +391,16 @@ class PaperTrader:
             has_vol = "tick_volume" in rates.dtype.names
             bars = []
             for r in rates:
-                bars.append({
-                    "time": datetime.fromtimestamp(int(r["time"])),
-                    "open": float(r["open"]),
-                    "high": float(r["high"]),
-                    "low": float(r["low"]),
-                    "close": float(r["close"]),
-                    "volume": int(r["tick_volume"]) if has_vol else 0,
-                })
+                bars.append(
+                    {
+                        "time": datetime.fromtimestamp(int(r["time"])),
+                        "open": float(r["open"]),
+                        "high": float(r["high"]),
+                        "low": float(r["low"]),
+                        "close": float(r["close"]),
+                        "volume": int(r["tick_volume"]) if has_vol else 0,
+                    }
+                )
 
             closes = [b["close"] for b in bars]
             highs = [b["high"] for b in bars]
@@ -406,6 +437,7 @@ class PaperTrader:
 
             # Get current spread
             import MetaTrader5 as mt5
+
             tick = mt5.symbol_info_tick(symbol)
             spread = (tick.ask - tick.bid) if tick else 0.0
             # Average spread estimate from recent data
@@ -505,6 +537,7 @@ class PaperTrader:
 
                     # P2-14: Record trade in metrics
                     from monitoring.metrics_exporter import record_trade
+
                     record_trade(symbol, entry.side, 0.0)
 
                     trade = {
@@ -525,13 +558,16 @@ class PaperTrader:
                     }
                     self._trades.append(trade)
 
-                    print(f"[OK] {entry.side} {symbol} @ {fill_price:.5f} "
-                          f"(SL: {entry.stop_price:.5f}, TP: {entry.take_profit:.5f}) "
-                          f"[{signal.signal} c={signal.confidence:.2f}]")
+                    print(
+                        f"[OK] {entry.side} {symbol} @ {fill_price:.5f} "
+                        f"(SL: {entry.stop_price:.5f}, TP: {entry.take_profit:.5f}) "
+                        f"[{signal.signal} c={signal.confidence:.2f}]"
+                    )
 
                     if self.telegram:
                         await self.telegram.notify_trade(
-                            symbol=symbol, side=order_side,
+                            symbol=symbol,
+                            side=order_side,
                             quantity=entry.position_size,
                             entry_price=fill_price,
                             stop_loss=entry.stop_price,
@@ -567,7 +603,9 @@ class PaperTrader:
         # Monitor status
         mon = self.monitor.get_status()
         print(f"\n--- Monitor Health: {mon.health_status.value} ---")
-        print(f"  Fill rate: {mon.fill_stats.fill_rate:.1%} ({mon.fill_stats.total_fills}/{mon.fill_stats.total_attempts})")
+        print(
+            f"  Fill rate: {mon.fill_stats.fill_rate:.1%} ({mon.fill_stats.total_fills}/{mon.fill_stats.total_attempts})"
+        )
         print(f"  Avg slippage: {mon.slippage_stats.total_bps.mean:.2f} bps")
         print(f"  Avg anomaly:  {mon.slippage_stats.total_anomaly_bps.mean:.2f} bps (spread-exclusive)")
         print(f"  Avg latency: {mon.latency_stats.ms.mean:.0f} ms")
@@ -590,8 +628,10 @@ class PaperTrader:
         positions = await self.broker.get_positions()
         print(f"\nOpen Positions: {len(positions)}")
         for pos in positions:
-            print(f"  {pos.symbol} {pos.position_type.value} {pos.quantity} @ {pos.avg_price} "
-                  f"P&L: ${pos.unrealized_pnl:+,.2f}")
+            print(
+                f"  {pos.symbol} {pos.position_type.value} {pos.quantity} @ {pos.avg_price} "
+                f"P&L: ${pos.unrealized_pnl:+,.2f}"
+            )
 
         # Telegram
         if self.telegram:
@@ -641,15 +681,20 @@ class PaperTrader:
 async def main():
     """Main entry point"""
     import argparse
+
     parser = argparse.ArgumentParser(description="Paper Trading — Liquidity Sweep Pipeline")
-    parser.add_argument("--duration", type=int, default=60,
-                        help="Run duration in minutes (default: 60, 0 = forever)")
-    parser.add_argument("--symbols", type=str, nargs="+",
-                        default=["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "USDCHF", "NZDUSD", "XAUUSD"],
-                        help="Symbols to trade (space-separated)")
+    parser.add_argument("--duration", type=int, default=60, help="Run duration in minutes (default: 60, 0 = forever)")
+    parser.add_argument(
+        "--symbols",
+        type=str,
+        nargs="+",
+        default=["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "USDCHF", "NZDUSD", "XAUUSD"],
+        help="Symbols to trade (space-separated)",
+    )
     args = parser.parse_args()
 
     from graxia.packages.quant_os.core.config import reset_config
+
     reset_config()
 
     config = get_config()

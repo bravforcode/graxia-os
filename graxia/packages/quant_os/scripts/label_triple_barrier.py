@@ -13,17 +13,18 @@ Usage:
     python scripts/label_triple_barrier.py --symbol XAUUSD --freq 1min --method dynamic
     python scripts/label_triple_barrier.py --symbols XAUUSD,EURUSD --all-freqs
 """
+
 import argparse
 import json
 import os
 import warnings
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from glob import glob
 
 import numpy as np
 import pandas as pd
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
 FEAT_DIR = os.path.join(ROOT, "artifacts", "features")
@@ -34,13 +35,14 @@ OUT_DIR = os.path.join(ROOT, "artifacts", "labels")
 # CORE: Triple-Barrier Logic
 # ----------------------------------------------
 
+
 def compute_triple_barrier(
     df: pd.DataFrame,
     k_upper: float = 2.0,
     k_lower: float = 2.0,
     max_bars: int = 20,
-    atr_col: str = 'atr_5',
-    method: str = 'fixed',
+    atr_col: str = "atr_5",
+    method: str = "fixed",
     min_return: float = 0.0001,
 ) -> pd.DataFrame:
     """
@@ -84,40 +86,40 @@ def compute_triple_barrier(
     if atr_col not in df.columns:
         # Fallback: compute rolling ATR if missing
         print(f"  [WARN] {atr_col} not found, computing from OHLC")
-        tr = pd.concat([
-            df['high'] - df['low'],
-            (df['high'] - df['close'].shift(1)).abs(),
-            (df['low'] - df['close'].shift(1)).abs(),
-        ], axis=1).max(axis=1)
+        tr = pd.concat(
+            [
+                df["high"] - df["low"],
+                (df["high"] - df["close"].shift(1)).abs(),
+                (df["low"] - df["close"].shift(1)).abs(),
+            ],
+            axis=1,
+        ).max(axis=1)
         df = df.copy()
         df[atr_col] = tr.rolling(5).mean()
 
     n = len(df)
     labels = np.zeros(n, dtype=np.int8)
     bar_hit = np.full(n, -1, dtype=np.int32)
-    side = np.full(n, 'none', dtype=object)
+    side = np.full(n, "none", dtype=object)
     ret_at_hit = np.zeros(n, dtype=np.float64)
     k_used_upper = np.full(n, k_upper, dtype=np.float64)
     k_used_lower = np.full(n, k_lower, dtype=np.float64)
 
-    if 'close' not in df.columns:
+    if "close" not in df.columns:
         print("  [ERROR] No 'close' column")
         return pd.DataFrame()
 
-    close = df['close'].values
-    high = df['high'].values if 'high' in df.columns else close
-    low = df['low'].values if 'low' in df.columns else close
+    close = df["close"].values
+    high = df["high"].values if "high" in df.columns else close
+    low = df["low"].values if "low" in df.columns else close
     atr = df[atr_col].values
 
     # For dynamic method: volatility regime multiplier
-    if method == 'dynamic' and 'volatility_15' in df.columns:
-        vol_regime = df['volatility_15'].values
+    if method == "dynamic" and "volatility_15" in df.columns:
+        vol_regime = df["volatility_15"].values
         vol_median = np.nanmedian(vol_regime) if vol_regime.size > 0 else 1.0
         # Regime multiplier: low vol (0.5x), normal (1x), high vol (1.5x)
-        regime_mult = np.where(
-            vol_regime > vol_median * 1.5, 1.5,
-            np.where(vol_regime < vol_median * 0.5, 0.5, 1.0)
-        )
+        regime_mult = np.where(vol_regime > vol_median * 1.5, 1.5, np.where(vol_regime < vol_median * 0.5, 0.5, 1.0))
     else:
         regime_mult = np.ones(n)
 
@@ -127,8 +129,8 @@ def compute_triple_barrier(
             continue
 
         # Effective barrier width (volatility adjusted)
-        eff_k_upper = k_upper * regime_mult[i] if method == 'dynamic' else k_upper
-        eff_k_lower = k_lower * regime_mult[i] if method == 'dynamic' else k_lower
+        eff_k_upper = k_upper * regime_mult[i] if method == "dynamic" else k_upper
+        eff_k_lower = k_lower * regime_mult[i] if method == "dynamic" else k_lower
         k_used_upper[i] = eff_k_upper
         k_used_lower[i] = eff_k_lower
 
@@ -161,7 +163,7 @@ def compute_triple_barrier(
             if abs(entry_ret) >= min_return:
                 labels[i] = 1
                 bar_hit[i] = upper_bar
-                side[i] = 'upper'
+                side[i] = "upper"
                 ret_at_hit[i] = entry_ret
         elif lower_bar < max_bars:
             # Lower hit first
@@ -170,7 +172,7 @@ def compute_triple_barrier(
             if abs(entry_ret) >= min_return:
                 labels[i] = -1
                 bar_hit[i] = lower_bar
-                side[i] = 'lower'
+                side[i] = "lower"
                 ret_at_hit[i] = entry_ret
         else:
             # Time barrier expired -- label = 0
@@ -179,17 +181,17 @@ def compute_triple_barrier(
             final_ret = (close[final_idx] - close[i]) / close[i]
             labels[i] = 0
             bar_hit[i] = max_bars
-            side[i] = 'timeout'
+            side[i] = "timeout"
             ret_at_hit[i] = final_ret
 
     # Build result
     result = df.copy()
-    result['tb_label'] = labels
-    result['tb_bar_hit'] = bar_hit
-    result['tb_side'] = side
-    result['tb_ret'] = np.round(ret_at_hit, 6)
-    result['tb_k_upper'] = np.round(k_used_upper, 4)
-    result['tb_k_lower'] = np.round(k_used_lower, 4)
+    result["tb_label"] = labels
+    result["tb_bar_hit"] = bar_hit
+    result["tb_side"] = side
+    result["tb_ret"] = np.round(ret_at_hit, 6)
+    result["tb_k_upper"] = np.round(k_used_upper, 4)
+    result["tb_k_lower"] = np.round(k_used_lower, 4)
 
     return result
 
@@ -198,9 +200,10 @@ def compute_triple_barrier(
 # VARIANT: Meta-Label (secondary model)
 # ----------------------------------------------
 
+
 def compute_meta_label(
     df: pd.DataFrame,
-    tb_label_col: str = 'tb_label',
+    tb_label_col: str = "tb_label",
     vol_floor: float = 0.001,
 ) -> pd.Series:
     """
@@ -209,7 +212,7 @@ def compute_meta_label(
     The meta-label model predicts *whether* to act on the primary signal,
     not the direction. Useful for filtering low-conviction signals.
     """
-    primary = df.get('target', pd.Series(0, index=df.index))
+    primary = df.get("target", pd.Series(0, index=df.index))
     tb = df.get(tb_label_col, pd.Series(0, index=df.index))
 
     # Meta-label = 1 when primary signal is non-zero AND tb_label is non-zero
@@ -222,6 +225,7 @@ def compute_meta_label(
 # LOAD / SAVE
 # ----------------------------------------------
 
+
 def load_ohlc(symbol: str, freq: str) -> pd.DataFrame:
     """Load feature file, return OHLC + ATR columns."""
     path = os.path.join(FEAT_DIR, f"features_{symbol}_{freq}.parquet")
@@ -233,8 +237,8 @@ def load_ohlc(symbol: str, freq: str) -> pd.DataFrame:
         path = paths[0]
     df = pd.read_parquet(path)
     # Ensure timestamp index
-    if 'timestamp' in df.columns:
-        df = df.set_index('timestamp')
+    if "timestamp" in df.columns:
+        df = df.set_index("timestamp")
     df.index = pd.to_datetime(df.index, utc=True)
     return df
 
@@ -243,13 +247,14 @@ def load_ohlc(symbol: str, freq: str) -> pd.DataFrame:
 # DIAGNOSTIC
 # ----------------------------------------------
 
+
 def diagnostic_report(df: pd.DataFrame, symbol: str, freq: str):
     """Print summary of triple-barrier label distribution."""
-    if 'tb_label' not in df.columns:
+    if "tb_label" not in df.columns:
         print("  [ERROR] No tb_label column")
         return
 
-    labels = df['tb_label'].dropna()
+    labels = df["tb_label"].dropna()
 
     n_win = int((labels == 1).sum())
     n_loss = int((labels == -1).sum())
@@ -263,19 +268,19 @@ def diagnostic_report(df: pd.DataFrame, symbol: str, freq: str):
     print(f"     0 (neutral):    {n_neutral:>6d} ({100*n_neutral/total:>5.1f}%)")
     print(f"    Win/Loss ratio:  {n_win/max(n_loss,1):.3f}")
 
-    if 'tb_bar_hit' in df.columns:
-        avg_hit = df.loc[labels != 0, 'tb_bar_hit'].mean()
+    if "tb_bar_hit" in df.columns:
+        avg_hit = df.loc[labels != 0, "tb_bar_hit"].mean()
         print(f"    Avg bars to hit:  {avg_hit:.1f}")
 
-    if 'tb_ret' in df.columns:
-        win_ret = df.loc[labels == 1, 'tb_ret'].mean() if n_win > 0 else 0
-        loss_ret = df.loc[labels == -1, 'tb_ret'].mean() if n_loss > 0 else 0
+    if "tb_ret" in df.columns:
+        win_ret = df.loc[labels == 1, "tb_ret"].mean() if n_win > 0 else 0
+        loss_ret = df.loc[labels == -1, "tb_ret"].mean() if n_loss > 0 else 0
         print(f"    Avg win return:   {win_ret*100:+.3f}%")
         print(f"    Avg loss return:  {loss_ret*100:+.3f}%")
 
     # Side distribution
-    if 'tb_side' in df.columns:
-        sides = df['tb_side'].value_counts()
+    if "tb_side" in df.columns:
+        sides = df["tb_side"].value_counts()
         for s, c in sides.items():
             print(f"    Hit {s:<10s}: {c:>6d} ({100*c/total:>5.1f}%)")
 
@@ -287,7 +292,7 @@ def diagnostic_report(df: pd.DataFrame, symbol: str, freq: str):
         "loss": n_loss,
         "neutral": n_neutral,
         "win_rate": round(n_win / max(total, 1), 4),
-        "avg_bars_to_hit": round(float(avg_hit), 1) if 'tb_bar_hit' in df.columns else None,
+        "avg_bars_to_hit": round(float(avg_hit), 1) if "tb_bar_hit" in df.columns else None,
     }
 
 
@@ -295,29 +300,25 @@ def diagnostic_report(df: pd.DataFrame, symbol: str, freq: str):
 # MAIN
 # ----------------------------------------------
 
+
 def main():
     parser = argparse.ArgumentParser(description="Triple-barrier labelling")
-    parser.add_argument("--symbol", type=str, default="XAUUSD",
-                        help="Single symbol")
-    parser.add_argument("--symbols", type=str, default="",
-                        help="Comma-separated symbols (overrides --symbol)")
-    parser.add_argument("--freq", type=str, default="1min",
-                        help="Frequency (used alone or as default)")
-    parser.add_argument("--all-freqs", action="store_true",
-                        help="Process all available frequencies for each symbol")
-    parser.add_argument("--method", choices=["fixed", "dynamic"], default="fixed",
-                        help="Barrier method: fixed (std) or dynamic (vol-adjusted)")
-    parser.add_argument("--k-upper", type=float, default=2.0,
-                        help="Upper barrier width in ATR units")
-    parser.add_argument("--k-lower", type=float, default=2.0,
-                        help="Lower barrier width in ATR units")
-    parser.add_argument("--max-bars", type=int, default=20,
-                        help="Time barrier: max look-ahead bars")
-    parser.add_argument("--atr-col", type=str, default="atr_5",
-                        help="ATR column to use")
+    parser.add_argument("--symbol", type=str, default="XAUUSD", help="Single symbol")
+    parser.add_argument("--symbols", type=str, default="", help="Comma-separated symbols (overrides --symbol)")
+    parser.add_argument("--freq", type=str, default="1min", help="Frequency (used alone or as default)")
+    parser.add_argument("--all-freqs", action="store_true", help="Process all available frequencies for each symbol")
+    parser.add_argument(
+        "--method",
+        choices=["fixed", "dynamic"],
+        default="fixed",
+        help="Barrier method: fixed (std) or dynamic (vol-adjusted)",
+    )
+    parser.add_argument("--k-upper", type=float, default=2.0, help="Upper barrier width in ATR units")
+    parser.add_argument("--k-lower", type=float, default=2.0, help="Lower barrier width in ATR units")
+    parser.add_argument("--max-bars", type=int, default=20, help="Time barrier: max look-ahead bars")
+    parser.add_argument("--atr-col", type=str, default="atr_5", help="ATR column to use")
     parser.add_argument("--output", type=str, default=OUT_DIR)
-    parser.add_argument("--diagnose", action="store_true",
-                        help="Print diagnostic report")
+    parser.add_argument("--diagnose", action="store_true", help="Print diagnostic report")
     args = parser.parse_args()
 
     os.makedirs(args.output, exist_ok=True)
@@ -355,24 +356,27 @@ def main():
                 continue
 
             # Ensure OHLC columns
-            needed = ['close']
+            needed = ["close"]
             missing = [c for c in needed if c not in df.columns]
             if missing:
                 print(f"  [SKIP] Missing columns: {missing}")
                 continue
 
             labelled = compute_triple_barrier(
-                df, k_upper=args.k_upper, k_lower=args.k_lower,
-                max_bars=args.max_bars, atr_col=args.atr_col,
-                method=args.method
+                df,
+                k_upper=args.k_upper,
+                k_lower=args.k_lower,
+                max_bars=args.max_bars,
+                atr_col=args.atr_col,
+                method=args.method,
             )
 
             if labelled.empty:
                 continue
 
             # Add metadata
-            labelled['symbol'] = sym
-            labelled['freq'] = freq
+            labelled["symbol"] = sym
+            labelled["freq"] = freq
 
             # Save
             out_path = os.path.join(args.output, f"labels_{sym}_{freq}.parquet")
@@ -381,8 +385,7 @@ def main():
             print(f"  Saved: {len(labelled)} labelled bars -> {out_path}")
 
             # Also save a label-only file (small, fast to load for training)
-            label_cols = ['tb_label', 'tb_bar_hit', 'tb_side', 'tb_ret',
-                          'tb_k_upper', 'tb_k_lower']
+            label_cols = ["tb_label", "tb_bar_hit", "tb_side", "tb_ret", "tb_k_upper", "tb_k_lower"]
             label_only = labelled[label_cols].copy()
             label_only_path = os.path.join(args.output, f"tb_only_{sym}_{freq}.parquet")
             label_only.to_parquet(label_only_path)
@@ -408,7 +411,7 @@ def main():
         "output_files": label_files,
         "diagnostics": all_results,
     }
-    with open(os.path.join(args.output, "triple_barrier_run.json"), 'w') as f:
+    with open(os.path.join(args.output, "triple_barrier_run.json"), "w") as f:
         json.dump(record, f, indent=2)
 
     print(f"\n{'='*60}")
@@ -419,9 +422,11 @@ def main():
     if all_results:
         print("\n  Summary:")
         for d in all_results:
-            print(f"    {d['symbol']} @ {d['freq']}: "
-                  f"W={d['win']} L={d['loss']} N={d['neutral']} "
-                  f"WR={d['win_rate']:.1%} avg_bars={d['avg_bars_to_hit']}")
+            print(
+                f"    {d['symbol']} @ {d['freq']}: "
+                f"W={d['win']} L={d['loss']} N={d['neutral']} "
+                f"WR={d['win_rate']:.1%} avg_bars={d['avg_bars_to_hit']}"
+            )
     print(f"{'='*60}")
 
 

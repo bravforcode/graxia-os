@@ -1,4 +1,5 @@
 """Phase BE-P6 — Dataset protocol: train/validation/holdout."""
+
 from dataclasses import dataclass
 
 
@@ -53,7 +54,7 @@ class DatasetProtocol:
         """Check that splits don't overlap in time."""
         issues = []
         for i, a in enumerate(self._splits):
-            for b in self._splits[i+1:]:
+            for b in self._splits[i + 1 :]:
                 if a.start_date <= b.end_date and b.start_date <= a.end_date:
                     issues.append(f"overlap: {a.name} and {b.name}")
         return len(issues) == 0, issues

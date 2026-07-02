@@ -1,0 +1,137 @@
+# TSM Portfolio Alert Rules
+# Prometheus Alertmanager-compatible YAML
+# Thresholds derived from backtest results and portfolio constraints
+#
+# Usage:
+#   - Import into Alertmanager: alertmanager --config.file=tsm_alerts.yml
+#   - Or evaluate programmatically via monitoring.tsm_health_check
+
+groups:
+  - name: tsm_portfolio_critical
+    interval: 5m
+    rules:
+      # ── Portfolio Drawdown ────────────────────────────────────────────
+      # Backtest max DD was -20.3%.  15% is the hard breach threshold
+      # that should halt new positions and notify immediately.
+      - alert: PortfolioDrawdownBreach
+        expr: quant_os_tsm_drawdown_pct{portfolio="tsm"} > 15
+        for: 1m
+        labels:
+          severity: critical
+          portfolio: tsm
+          team: quant
+        annotations:
+          summary: "TSM portfolio drawdown {{ $value }}% exceeds 15% limit"
+          description: >
+            Current drawdown is {{ $value }}% which breaches the 15% hard limit.
+            Backtest max DD was -20.3%.  Immediate action required — verify
+            kill switch activated and no new orders submitted.
+          runbook: "https://internal.wiki/runbooks/tsm-drawdown-breach"
+
+      # ── Kill Switch ───────────────────────────────────────────────────
+      - alert: KillSwitchTriggered
+        expr: quant_os_tsm_kill_switch_active{portfolio="tsm"} == 1
+        for: 0s
+        labels:
+          severity: critical
+          portfolio: tsm
+          team: quant
+        annotations:
+          summary: "TSM kill switch is ACTIVE"
+          description: >
+            Kill switch has been triggered.  All trading halted.
+            Investigate root cause before re-enabling.
+          runbook: "https://internal.wiki/runbooks/tsm-kill-switch"
+
+  - name: tsm_portfolio_warning
+    interval: 15m
+    rules:
+      # ── Cross-Asset Correlation Spike ─────────────────────────────────
+      # Rolling 60d pairwise correlation > 0.7 signals regime shift
+      # where diversification benefit collapses.
+      - alert: CrossAssetCorrelationSpike
+        expr: quant_os_tsm_max_pairwise_corr{portfolio="tsm", window="60d"} > 0.7
+        for: 24h
+        labels:
+          severity: warning
+          portfolio: tsm
+          team: quant
+        annotations:
+          summary: "Max pairwise correlation {{ $value }} exceeds 0.7 threshold"
+          description: >
+            Rolling 60d max pairwise correlation is {{ $value }}.
+            Diversification benefit is degraded.  Consider reducing
+            position sizes or pausing new entries until decorrelation.
+          runbook: "https://internal.wiki/runbooks/tsm-correlation-spike"
+
+      # ── Volatility Target Breach ──────────────────────────────────────
+      # Target is 10% annualized vol.  15% = 1.5x target = breach.
+      - alert: VolTargetBreach
+        expr: quant_os_tsm_realized_vol{portfolio="tsm", window="20d"} > 15
+        for: 4h
+        labels:
+          severity: warning
+          portfolio: tsm
+          team: quant
+        annotations:
+          summary: "Realized vol {{ $value }}% exceeds 15% (target 10%)"
+          description: >
+            Realized volatility is {{ $value }}% against a 10% target.
+            Positions may need deleveraging.  Check if vol-scaling
+            logic is functioning correctly.
+          runbook: "https://internal.wiki/runbooks/tsm-vol-breach"
+
+      # ── Position Size Limit ───────────────────────────────────────────
+      # No single asset should exceed 20% of portfolio NAV.
+      - alert: PositionSizeExceedsLimit
+        expr: quant_os_tsm_position_weight{portfolio="tsm"} > 0.20
+        for: 1h
+        labels:
+          severity: warning
+          portfolio: tsm
+          team: quant
+        annotations:
+          summary: "Position {{ $labels.asset }} weight {{ $value }}% exceeds 20% limit"
+          description: >
+            Asset {{ $labels.asset }} has weight {{ $value }} in the
+            TSM portfolio, exceeding the 20% concentration limit.
+            Review inverse-vol weighting and rebalance logic.
+          runbook: "https://internal.wiki/runbooks/tsm-position-limit"
+
+  - name: tsm_data_health
+    interval: 30m
+    rules:
+      # ── Data Feed Stale ───────────────────────────────────────────────
+      # Weekly strategy so 48h staleness is generous but still actionable.
+      - alert: DataFeedStale
+        expr: (time() - quant_os_tsm_last_data_timestamp{portfolio="tsm"}) > 172800
+        for: 30m
+        labels:
+          severity: warning
+          portfolio: tsm
+          team: quant
+        annotations:
+          summary: "Data feed for {{ $labels.asset }} stale > 48 hours"
+          description: >
+            No new data received for {{ $labels.asset }} in over 48 hours.
+            Check data provider connectivity and feed health.
+            Weekly strategy can tolerate some delay but not indefinite gaps.
+          runbook: "https://internal.wiki/runbooks/tsm-stale-data"
+
+      # ── Weekly Rebalance Miss ─────────────────────────────────────────
+      # Expected every Friday.  Alert if Saturday 00:00 UTC passes with
+      # no rebalance recorded for the current week.
+      - alert: WeeklyRebalanceMiss
+        expr: (time() - quant_os_tsm_last_rebalance_timestamp{portfolio="tsm"}) > 691200
+        for: 1h
+        labels:
+          severity: warning
+          portfolio: tsm
+          team: quant
+        annotations:
+          summary: "No TSM rebalance in > 8 days — expected weekly on Friday"
+          description: >
+            Last rebalance was {{ $value }} seconds ago.
+            TSM portfolio rebalances weekly on Friday.  Verify scheduler
+            ran and signal computation succeeded.
+          runbook: "https://internal.wiki/runbooks/tsm-rebalance-miss"

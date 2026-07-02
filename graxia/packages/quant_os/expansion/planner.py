@@ -10,8 +10,8 @@ Expansion order per master plan:
 
 Each step requires passing evidence gates before proceeding.
 """
+
 from dataclasses import dataclass, field
-from typing import List, Optional, Dict
 from enum import Enum
 
 
@@ -46,12 +46,12 @@ class ExpansionStep:
     phase: ExpansionPhase
     description: str
     status: ExpansionStatus = ExpansionStatus.NOT_STARTED
-    symbols: List[str] = field(default_factory=list)
-    strategies: List[str] = field(default_factory=list)
-    risk_limits: Dict[str, float] = field(default_factory=dict)
-    evidence_gates: List[EvidenceGate] = field(default_factory=list)
-    started_at: Optional[str] = None
-    completed_at: Optional[str] = None
+    symbols: list[str] = field(default_factory=list)
+    strategies: list[str] = field(default_factory=list)
+    risk_limits: dict[str, float] = field(default_factory=dict)
+    evidence_gates: list[EvidenceGate] = field(default_factory=list)
+    started_at: str | None = None
+    completed_at: str | None = None
 
     def all_gates_passed(self) -> bool:
         return all(g.passed for g in self.evidence_gates)
@@ -74,9 +74,9 @@ class ExpansionPlanner:
     """Define and track controlled expansion steps."""
 
     def __init__(self):
-        self._steps: List[ExpansionStep] = self._create_default_steps()
+        self._steps: list[ExpansionStep] = self._create_default_steps()
 
-    def _create_default_steps(self) -> List[ExpansionStep]:
+    def _create_default_steps(self) -> list[ExpansionStep]:
         return [
             ExpansionStep(
                 phase=ExpansionPhase.PHASE_1,
@@ -179,19 +179,19 @@ class ExpansionPlanner:
             ),
         ]
 
-    def get_current_step(self) -> Optional[ExpansionStep]:
+    def get_current_step(self) -> ExpansionStep | None:
         for step in self._steps:
             if step.status in (ExpansionStatus.NOT_STARTED, ExpansionStatus.IN_PROGRESS):
                 return step
         return None
 
-    def get_step(self, phase: ExpansionPhase) -> Optional[ExpansionStep]:
+    def get_step(self, phase: ExpansionPhase) -> ExpansionStep | None:
         for step in self._steps:
             if step.phase == phase:
                 return step
         return None
 
-    def list_steps(self) -> List[ExpansionStep]:
+    def list_steps(self) -> list[ExpansionStep]:
         return self._steps
 
     def can_advance(self) -> tuple[bool, str]:

@@ -19,17 +19,18 @@ Usage:
     # All in one
     python scripts/features_advanced.py --mode all --symbols XAUUSD --freqs 1min,5min,15min
 """
+
 import argparse
 import json
 import os
 import warnings
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from glob import glob
 
 import numpy as np
 import pandas as pd
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
 TICK_DIR = os.path.join(ROOT, "artifacts", "tick_data")
@@ -41,6 +42,7 @@ OUT_DIR = os.path.join(ROOT, "artifacts", "features_v2")
 # ──────────────────────────────────────────────
 # 1. ORDER-FLOW PROXY + VOLUME PROFILE FROM TICKS
 # ──────────────────────────────────────────────
+
 
 def load_ticks(symbol: str) -> pd.DataFrame:
     """Load tick data from all available directories."""
@@ -61,25 +63,25 @@ def load_ticks(symbol: str) -> pd.DataFrame:
     dfs = []
     for p in paths:
         try:
-            df = pd.read_parquet(p) if p.endswith('.parquet') else pd.read_csv(p)
+            df = pd.read_parquet(p) if p.endswith(".parquet") else pd.read_csv(p)
         except Exception:
             continue
-        if 'time' in df.columns:
-            df['timestamp'] = pd.to_datetime(df['time'], unit='s', utc=True)
-        elif 'timestamp_utc' in df.columns:
-            df['timestamp'] = pd.to_datetime(df['timestamp_utc'], utc=True)
+        if "time" in df.columns:
+            df["timestamp"] = pd.to_datetime(df["time"], unit="s", utc=True)
+        elif "timestamp_utc" in df.columns:
+            df["timestamp"] = pd.to_datetime(df["timestamp_utc"], utc=True)
         else:
             continue
-        df = df.sort_values('timestamp').drop_duplicates(subset='timestamp')
+        df = df.sort_values("timestamp").drop_duplicates(subset="timestamp")
         dfs.append(df)
 
     if not dfs:
         return pd.DataFrame()
 
-    combined = pd.concat(dfs).sort_values('timestamp').drop_duplicates(subset='timestamp')
+    combined = pd.concat(dfs).sort_values("timestamp").drop_duplicates(subset="timestamp")
 
     # Ensure bid/ask exist
-    if 'bid' not in combined.columns or 'ask' not in combined.columns:
+    if "bid" not in combined.columns or "ask" not in combined.columns:
         print(f"  [SKIP] {symbol}: needs bid/ask columns")
         return pd.DataFrame()
 
@@ -91,49 +93,49 @@ def classify_ticks(ticks: pd.DataFrame) -> pd.DataFrame:
     """Add tick-direction columns using the tick rule (last-price comparison)."""
     df = ticks.copy()
     # Use 'last' if available, else mid-price
-    price_col = 'last' if 'last' in df.columns and df['last'].notna().any() else None
+    price_col = "last" if "last" in df.columns and df["last"].notna().any() else None
     if price_col is None:
-        df['mid'] = (df['bid'] + df['ask']) / 2
-        price_col = 'mid'
+        df["mid"] = (df["bid"] + df["ask"]) / 2
+        price_col = "mid"
 
     # Tick rule: uptick if price > prev, downtick if < prev, zero-tick if ==
-    df['price_prev'] = df[price_col].shift(1)
-    df['tick_up'] = ((df[price_col] > df['price_prev'])).astype(int)
-    df['tick_down'] = ((df[price_col] < df['price_prev'])).astype(int)
-    df['tick_zero'] = ((df[price_col] == df['price_prev'])).astype(int)
+    df["price_prev"] = df[price_col].shift(1)
+    df["tick_up"] = (df[price_col] > df["price_prev"]).astype(int)
+    df["tick_down"] = (df[price_col] < df["price_prev"]).astype(int)
+    df["tick_zero"] = (df[price_col] == df["price_prev"]).astype(int)
 
     # Cumulative delta (up - down ticks within bar)
-    df['tick_delta'] = df['tick_up'] - df['tick_down']
+    df["tick_delta"] = df["tick_up"] - df["tick_down"]
 
     # Micro-price bias: where is trade relative to mid?
-    df['mid_price'] = (df['bid'] + df['ask']) / 2
-    df['micro_bias'] = df[price_col] - df['mid_price']
-    df['spread'] = df['ask'] - df['bid']
+    df["mid_price"] = (df["bid"] + df["ask"]) / 2
+    df["micro_bias"] = df[price_col] - df["mid_price"]
+    df["spread"] = df["ask"] - df["bid"]
 
     # Tick size (absolute price change)
-    df['tick_size'] = df[price_col].diff().abs()
+    df["tick_size"] = df[price_col].diff().abs()
 
     return df
 
 
 def resample_orderflow(ticks: pd.DataFrame, freq: str) -> pd.DataFrame:
     """Resample classified ticks -> order-flow features at given freq."""
-    df = ticks.set_index('timestamp')
+    df = ticks.set_index("timestamp")
 
     agg = {
-        'tick_up': 'sum',
-        'tick_down': 'sum',
-        'tick_zero': 'sum',
-        'tick_delta': 'sum',
-        'micro_bias': ['mean', 'std'],
-        'spread': ['mean', 'max', 'std'],
-        'tick_size': 'mean',
-        'bid': 'count',  # total tick count per bar
+        "tick_up": "sum",
+        "tick_down": "sum",
+        "tick_zero": "sum",
+        "tick_delta": "sum",
+        "micro_bias": ["mean", "std"],
+        "spread": ["mean", "max", "std"],
+        "tick_size": "mean",
+        "bid": "count",  # total tick count per bar
     }
 
     # Add mid_price volatility if available
-    if 'mid_price' in df.columns:
-        agg['mid_price'] = 'std'
+    if "mid_price" in df.columns:
+        agg["mid_price"] = "std"
 
     # Some columns might not exist if ticks were tiny, handle gracefully
     available = {k: v for k, v in agg.items() if k in df.columns}
@@ -141,56 +143,57 @@ def resample_orderflow(ticks: pd.DataFrame, freq: str) -> pd.DataFrame:
 
     # Flatten multi-level columns
     if isinstance(resampled.columns, pd.MultiIndex):
-        resampled.columns = [f"{col[0]}_{col[1]}" if col[1] else col[0]
-                             for col in resampled.columns]
+        resampled.columns = [f"{col[0]}_{col[1]}" if col[1] else col[0] for col in resampled.columns]
     else:
         # Single level -- rename to avoid clashes
-        resampled = resampled.add_suffix('_bar')
+        resampled = resampled.add_suffix("_bar")
 
     # Derivative features
-    total_ticks = (resampled.get('tick_up_sum', 0)
-                   + resampled.get('tick_down_sum', 0)
-                   + resampled.get('tick_zero_sum', 0))
+    total_ticks = (
+        resampled.get("tick_up_sum", 0) + resampled.get("tick_down_sum", 0) + resampled.get("tick_zero_sum", 0)
+    )
     total_ticks = total_ticks.replace(0, np.nan)
 
     # ── Order-flow proxy ──
-    resampled['tick_imbalance'] = (
-        resampled.get('tick_up_sum', 0) - resampled.get('tick_down_sum', 0)
-    ) / total_ticks
-    resampled['tick_direction_ratio'] = (
-        resampled.get('tick_up_sum', 0) / total_ticks
-    )
-    resampled['cumulative_delta'] = resampled.get('tick_delta_sum', 0)
+    resampled["tick_imbalance"] = (resampled.get("tick_up_sum", 0) - resampled.get("tick_down_sum", 0)) / total_ticks
+    resampled["tick_direction_ratio"] = resampled.get("tick_up_sum", 0) / total_ticks
+    resampled["cumulative_delta"] = resampled.get("tick_delta_sum", 0)
 
     # ── Micro-price / microstructure ──
-    resampled['micro_bias_mean'] = resampled.get('micro_bias_mean', 0)
-    resampled['micro_bias_volatility'] = resampled.get('micro_bias_std', 0)
+    resampled["micro_bias_mean"] = resampled.get("micro_bias_mean", 0)
+    resampled["micro_bias_volatility"] = resampled.get("micro_bias_std", 0)
 
     # ── Spread features ──
-    resampled['spread_mean'] = resampled.get('spread_mean', 0)
-    resampled['spread_max'] = resampled.get('spread_max', 0)
-    resampled['spread_volatility'] = resampled.get('spread_std', 0)
+    resampled["spread_mean"] = resampled.get("spread_mean", 0)
+    resampled["spread_max"] = resampled.get("spread_max", 0)
+    resampled["spread_volatility"] = resampled.get("spread_std", 0)
 
     # ── Volume profile proxy ──
-    resampled['tick_concentration'] = (
-        resampled.get('bid_count', 0) /
-        (resampled.get('spread_std', 1e-10) + 1e-10)
-    )
-    resampled['avg_tick_size'] = resampled.get('tick_size_mean', 0)
+    resampled["tick_concentration"] = resampled.get("bid_count", 0) / (resampled.get("spread_std", 1e-10) + 1e-10)
+    resampled["avg_tick_size"] = resampled.get("tick_size_mean", 0)
 
     # Mid-price volatility (microstructure noise proxy)
-    if 'mid_price_std' in resampled.columns:
-        resampled['micro_price_volatility'] = resampled['mid_price_std']
+    if "mid_price_std" in resampled.columns:
+        resampled["micro_price_volatility"] = resampled["mid_price_std"]
 
     # Clean up -- drop raw intermediate columns
-    drop_cols = [c for c in resampled.columns
-                 if c.endswith(('_sum', '_std', '_mean', '_max'))
-                 and c not in ('spread_mean', 'spread_max', 'spread_volatility',
-                               'micro_bias_mean', 'micro_bias_volatility',
-                               'avg_tick_size')]
+    drop_cols = [
+        c
+        for c in resampled.columns
+        if c.endswith(("_sum", "_std", "_mean", "_max"))
+        and c
+        not in (
+            "spread_mean",
+            "spread_max",
+            "spread_volatility",
+            "micro_bias_mean",
+            "micro_bias_volatility",
+            "avg_tick_size",
+        )
+    ]
     for c in drop_cols:
-        if c not in ('tick_delta_sum',):  # keep cumulative_delta via this
-            resampled = resampled.drop(columns=[c], errors='ignore')
+        if c not in ("tick_delta_sum",):  # keep cumulative_delta via this
+            resampled = resampled.drop(columns=[c], errors="ignore")
 
     return resampled.dropna()
 
@@ -198,6 +201,7 @@ def resample_orderflow(ticks: pd.DataFrame, freq: str) -> pd.DataFrame:
 # ──────────────────────────────────────────────
 # 2. MULTI-TIMEFRAME CONFLUENCE
 # ──────────────────────────────────────────────
+
 
 def load_feature_file(symbol: str, freq: str) -> pd.DataFrame:
     """Load existing feature parquet with timestamp index."""
@@ -209,8 +213,8 @@ def load_feature_file(symbol: str, freq: str) -> pd.DataFrame:
         path = paths[0]
     df = pd.read_parquet(path)
     # Ensure timestamp is the index for alignment
-    if 'timestamp' in df.columns:
-        df = df.set_index('timestamp')
+    if "timestamp" in df.columns:
+        df = df.set_index("timestamp")
     elif not isinstance(df.index, pd.DatetimeIndex):
         return pd.DataFrame()
     df.index = pd.to_datetime(df.index, utc=True)
@@ -244,61 +248,47 @@ def compute_multitf_confluence(symbol: str, main_tf: str, higher_tfs: list[str])
 
         # Forward-fill higher TF to main TF resolution
         # Every main bar sees the most recent higher-TF bar's values
-        higher_ff = higher.reindex(main.index, method='ffill')
+        higher_ff = higher.reindex(main.index, method="ffill")
 
         # === Trend alignment ===
-        if 'sma_ratio' in main.columns and 'sma_ratio' in higher_ff.columns:
-            confluences[f'trend_align_{htf}'] = (
-                (main['sma_ratio'] - 1) * (higher_ff['sma_ratio'] - 1) > 0
-            ).astype(int)
+        if "sma_ratio" in main.columns and "sma_ratio" in higher_ff.columns:
+            confluences[f"trend_align_{htf}"] = ((main["sma_ratio"] - 1) * (higher_ff["sma_ratio"] - 1) > 0).astype(int)
 
         # === Volatility regime ===
-        if 'volatility_15' in main.columns and 'volatility_15' in higher_ff.columns:
-            confluences[f'vol_regime_{htf}'] = (
-                main['volatility_15'] / (higher_ff['volatility_15'] + 1e-10)
-            )
+        if "volatility_15" in main.columns and "volatility_15" in higher_ff.columns:
+            confluences[f"vol_regime_{htf}"] = main["volatility_15"] / (higher_ff["volatility_15"] + 1e-10)
 
         # === RSI divergence ===
-        if 'rsi_14' in main.columns and 'rsi_14' in higher_ff.columns:
-            confluences[f'rsi_divergence_{htf}'] = (
-                main['rsi_14'] - higher_ff['rsi_14']
-            )
+        if "rsi_14" in main.columns and "rsi_14" in higher_ff.columns:
+            confluences[f"rsi_divergence_{htf}"] = main["rsi_14"] - higher_ff["rsi_14"]
 
         # === MACD trend alignment ===
-        if 'macd_hist' in main.columns and 'macd_hist' in higher_ff.columns:
-            confluences[f'macd_trend_align_{htf}'] = (
-                (main['macd_hist'] * higher_ff['macd_hist']) > 0
-            ).astype(int)
+        if "macd_hist" in main.columns and "macd_hist" in higher_ff.columns:
+            confluences[f"macd_trend_align_{htf}"] = ((main["macd_hist"] * higher_ff["macd_hist"]) > 0).astype(int)
 
         # === BB zone (relative to higher TF) ===
-        if 'bb_mid' in higher_ff.columns and 'bb_width' in higher_ff.columns and 'close' in main.columns:
-            confluences[f'bb_zone_{htf}'] = (
-                main['close'] - higher_ff['bb_mid']
-            ) / (higher_ff['bb_mid'] * higher_ff['bb_width'] + 1e-10)
+        if "bb_mid" in higher_ff.columns and "bb_width" in higher_ff.columns and "close" in main.columns:
+            confluences[f"bb_zone_{htf}"] = (main["close"] - higher_ff["bb_mid"]) / (
+                higher_ff["bb_mid"] * higher_ff["bb_width"] + 1e-10
+            )
 
         # === Volatility expansion (short vol / long vol) ===
-        if 'volatility_5' in main.columns and 'volatility_5' in higher_ff.columns:
-            confluences[f'vol_expansion_{htf}'] = (
-                main['volatility_5'] / (higher_ff['volatility_5'] + 1e-10)
-            )
+        if "volatility_5" in main.columns and "volatility_5" in higher_ff.columns:
+            confluences[f"vol_expansion_{htf}"] = main["volatility_5"] / (higher_ff["volatility_5"] + 1e-10)
 
         # === ATR ratio ===
-        if 'atr_5' in main.columns and 'atr_5' in higher_ff.columns:
-            confluences[f'atr_ratio_{htf}'] = (
-                main['atr_5'] / (higher_ff['atr_5'] + 1e-10)
-            )
+        if "atr_5" in main.columns and "atr_5" in higher_ff.columns:
+            confluences[f"atr_ratio_{htf}"] = main["atr_5"] / (higher_ff["atr_5"] + 1e-10)
 
         # === Close relative to higher-TF Bollinger ===
-        if all(c in higher_ff.columns for c in ['bb_upper', 'bb_lower']):
-            bb_range = higher_ff['bb_upper'] - higher_ff['bb_lower']
-            confluences[f'bb_squeeze_{htf}'] = (
-                bb_range / (higher_ff['bb_mid'] + 1e-10)
-            )
+        if all(c in higher_ff.columns for c in ["bb_upper", "bb_lower"]):
+            bb_range = higher_ff["bb_upper"] - higher_ff["bb_lower"]
+            confluences[f"bb_squeeze_{htf}"] = bb_range / (higher_ff["bb_mid"] + 1e-10)
 
     if len(confluences.columns) == 0:
         print("  [WARN] No confluence features computed -- check TF indicator availability")
         # Return at least the empty structure
-        confluences['_no_confluence'] = 0
+        confluences["_no_confluence"] = 0
 
     print(f"  [OK] Confluence features: {len(confluences.columns)}")
     for c in confluences.columns:
@@ -312,6 +302,7 @@ def compute_multitf_confluence(symbol: str, main_tf: str, higher_tfs: list[str])
 # 3. MASTER: ADD ORDER-FLOW FEATURES TO EXISTING FEATURES
 # ──────────────────────────────────────────────
 
+
 def merge_orderflow_to_features(symbol: str, freq: str, of_df: pd.DataFrame) -> pd.DataFrame:
     """Load existing feature file, merge order-flow features, save to v2."""
     feats = load_feature_file(symbol, freq)
@@ -324,8 +315,7 @@ def merge_orderflow_to_features(symbol: str, freq: str, of_df: pd.DataFrame) -> 
     of_aligned = of_df.loc[common_idx]
 
     # Join -- order-flow columns get suffix to distinguish from existing
-    of_cols = [c for c in of_df.columns
-               if c not in ('timestamp',) and c not in feats.columns]
+    of_cols = [c for c in of_df.columns if c not in ("timestamp",) and c not in feats.columns]
     for c in of_cols:
         feats[c] = of_aligned[c]
 
@@ -348,20 +338,17 @@ def merge_confluence_to_features(feats: pd.DataFrame, confluence: pd.DataFrame) 
 # MAIN
 # ──────────────────────────────────────────────
 
+
 def main():
     parser = argparse.ArgumentParser(description="Advanced feature engineering")
-    parser.add_argument("--mode", choices=["orderflow", "multitf", "all"],
-                        default="all", help="Feature mode")
-    parser.add_argument("--symbols", type=str, default="XAUUSD,EURUSD,GBPUSD",
-                        help="Comma-separated symbols (for orderflow)")
-    parser.add_argument("--symbol", type=str, default="XAUUSD",
-                        help="Single symbol (for multitf)")
-    parser.add_argument("--freqs", type=str, default="1min,5min,15min",
-                        help="Comma-separated freqs (for orderflow)")
-    parser.add_argument("--main-tf", type=str, default="1min",
-                        help="Main timeframe (for multitf)")
-    parser.add_argument("--higher-tfs", type=str, default="5min,15min",
-                        help="Higher timeframes (for multitf)")
+    parser.add_argument("--mode", choices=["orderflow", "multitf", "all"], default="all", help="Feature mode")
+    parser.add_argument(
+        "--symbols", type=str, default="XAUUSD,EURUSD,GBPUSD", help="Comma-separated symbols (for orderflow)"
+    )
+    parser.add_argument("--symbol", type=str, default="XAUUSD", help="Single symbol (for multitf)")
+    parser.add_argument("--freqs", type=str, default="1min,5min,15min", help="Comma-separated freqs (for orderflow)")
+    parser.add_argument("--main-tf", type=str, default="1min", help="Main timeframe (for multitf)")
+    parser.add_argument("--higher-tfs", type=str, default="5min,15min", help="Higher timeframes (for multitf)")
     parser.add_argument("--tick-dir", type=str, default=TICK_DIR)
     parser.add_argument("--feat-dir", type=str, default=FEAT_DIR)
     parser.add_argument("--output", type=str, default=OUT_DIR)
@@ -405,11 +392,9 @@ def main():
         target_symbol = args.symbol
         if mode == "all" and symbols:
             target_symbol = symbols[0]
-        confluence_features = compute_multitf_confluence(
-            target_symbol, args.main_tf, higher_tfs
-        )
+        confluence_features = compute_multitf_confluence(target_symbol, args.main_tf, higher_tfs)
 
-    # ── Merge and save ──
+        # ── Merge and save ──
         print("\n=== Phase 3: Merge + Save ===")
     v2_files = []
 
@@ -421,10 +406,10 @@ def main():
             v2_path = os.path.join(args.output, f"features_v2_{key}.parquet")
             if os.path.exists(v2_path):
                 base_feats = pd.read_parquet(v2_path)
-                if 'timestamp' not in base_feats.columns:
+                if "timestamp" not in base_feats.columns:
                     base_feats = base_feats.reset_index()
-                if 'timestamp' in base_feats.columns:
-                    base_feats = base_feats.set_index('timestamp')
+                if "timestamp" in base_feats.columns:
+                    base_feats = base_feats.set_index("timestamp")
                     base_feats.index = pd.to_datetime(base_feats.index, utc=True)
                 print(f"\n--- {key} (loading v2: {len(base_feats)} rows) ---")
             else:
@@ -438,8 +423,7 @@ def main():
             # Merge order-flow
             if key in orderflow_features:
                 of_idx = merged.index.intersection(orderflow_features[key].index)
-                of_cols = [c for c in orderflow_features[key].columns
-                           if c not in merged.columns]
+                of_cols = [c for c in orderflow_features[key].columns if c not in merged.columns]
                 for c in of_cols:
                     merged[c] = orderflow_features[key][c]
                 print(f"  Order-flow: +{len(of_cols)} cols ({len(of_idx)} rows)")
@@ -456,8 +440,7 @@ def main():
             out_path = os.path.join(args.output, f"features_v2_{key}.parquet")
             merged.to_parquet(out_path)
             v2_files.append(out_path)
-            feat_count = len([c for c in merged.columns
-                              if c not in ('symbol', 'freq', 'target', 'target_return')])
+            feat_count = len([c for c in merged.columns if c not in ("symbol", "freq", "target", "target_return")])
             print(f"  Saved: {len(merged)} rows x {feat_count} features -> {out_path}")
 
     # Summary
@@ -469,7 +452,7 @@ def main():
         # Quick counts
         for p in v2_files:
             df = pd.read_parquet(p)
-            feat = [c for c in df.columns if c not in ('symbol', 'freq', 'target', 'target_return')]
+            feat = [c for c in df.columns if c not in ("symbol", "freq", "target", "target_return")]
             print(f"  {os.path.basename(p)}: {len(df)} rows, {len(feat)} features")
 
     # Run record
@@ -484,7 +467,7 @@ def main():
         "orderflow_keys": list(orderflow_features.keys()),
         "has_confluence": confluence_features is not None,
     }
-    with open(os.path.join(args.output, "advanced_features_run.json"), 'w') as f:
+    with open(os.path.join(args.output, "advanced_features_run.json"), "w") as f:
         json.dump(record, f, indent=2)
     print(f"  Run record: {os.path.join(args.output, 'advanced_features_run.json')}")
     print(f"{'='*60}")

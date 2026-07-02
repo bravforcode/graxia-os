@@ -1,5 +1,7 @@
 """Tests for feed health monitor."""
+
 import time
+
 from graxia.packages.quant_os.tick.feed_health import FeedHealthMonitor
 
 

@@ -1,7 +1,12 @@
+import os
+import tempfile
+
 from graxia.packages.quant_os.repo_intelligence.manifest import (
-    RepoManifest, RepoManifestEntry, RepoTier, RepoPermissions
+    RepoManifest,
+    RepoManifestEntry,
+    RepoPermissions,
+    RepoTier,
 )
-import tempfile, os
 
 
 class TestRepoManifest:
@@ -102,7 +107,7 @@ class TestRepoManifest:
     def test_save_and_load(self):
         manifest = RepoManifest()
         manifest.add_entry(self._make_entry())
-        with tempfile.NamedTemporaryFile(suffix='.yml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".yml", delete=False) as f:
             manifest.save(f.name)
             manifest2 = RepoManifest()
             manifest2.load(f.name)

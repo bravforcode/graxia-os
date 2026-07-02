@@ -1,6 +1,7 @@
 """Phase 5 — Walk-forward validation engine."""
+
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable
 
 
 @dataclass

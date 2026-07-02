@@ -2,15 +2,20 @@
 
 Tests the 4 temporal-consistency rules.
 """
-from datetime import datetime, UTC
+
+from datetime import UTC, datetime
 
 from graxia.packages.quant_os.shadow.time_source_reconciler import (
-    check_rule_a, check_rule_b, check_rule_c,
-    TimeConsistencyResult, SealedLedger, CycleEvidence,
+    CycleEvidence,
+    SealedLedger,
+    TimeConsistencyResult,
+    check_rule_a,
+    check_rule_b,
+    check_rule_c,
 )
 
-
 # ── Rule A: tick within ±60s of received_at ──────────────────────────
+
 
 class TestRuleA:
     def test_tick_matching_received(self):
@@ -55,6 +60,7 @@ class TestRuleA:
 
 # ── Rule B: ticks within requested window ────────────────────────────
 
+
 class TestRuleB:
     def test_all_ticks_in_window(self):
         # Use epochs that fall within the window
@@ -80,6 +86,7 @@ class TestRuleB:
 
 # ── Rule C: bars not in future ───────────────────────────────────────
 
+
 class TestRuleC:
     def test_bars_in_past(self):
         now = datetime(2026, 6, 22, 12, 0, 0, tzinfo=UTC)
@@ -100,6 +107,7 @@ class TestRuleC:
 
 
 # ── Consistency verdict ──────────────────────────────────────────────
+
 
 class TestConsistencyVerdict:
     def test_all_pass(self):
@@ -137,6 +145,7 @@ class TestConsistencyVerdict:
 
 # ── Sealed ledger ────────────────────────────────────────────────────
 
+
 class TestSealedLedger:
     def test_append_and_verify(self):
         ledger = SealedLedger()
@@ -160,6 +169,7 @@ class TestSealedLedger:
 
 
 # ── Rule A applied to real data (BROKER_CLOCK_ANOMALY) ───────────────
+
 
 class TestRealDataAnomaly:
     def test_3h_offset_fails_rule_a(self):

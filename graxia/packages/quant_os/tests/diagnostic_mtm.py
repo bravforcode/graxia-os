@@ -24,11 +24,11 @@ sell_count = 0
 
 for i in range(50, len(close)):
     ohlcv = {
-        "open": data.get("open", close)[:i+1],
-        "high": high[:i+1],
-        "low": low[:i+1],
-        "close": close[:i+1],
-        "volume": volume[:i+1],
+        "open": data.get("open", close)[: i + 1],
+        "high": high[: i + 1],
+        "low": low[: i + 1],
+        "close": close[: i + 1],
+        "volume": volume[: i + 1],
     }
 
     signal = strategy.generate_signal(
@@ -49,7 +49,9 @@ for i in range(50, len(close)):
         sl = f"{float(signal.stop_loss):.5f}" if signal.stop_loss else "N/A"
         tp = f"{float(signal.take_profit):.5f}" if signal.take_profit else "N/A"
 
-        print(f"{i:<6} {signal.signal_type.value:<10} {signal.confidence:.2f}    {signal.signal_type.value:<6} {entry:<10} {sl:<10} {tp:<10}")
+        print(
+            f"{i:<6} {signal.signal_type.value:<10} {signal.confidence:.2f}    {signal.signal_type.value:<6} {entry:<10} {sl:<10} {tp:<10}"
+        )
 
 print(f"\nSummary: {signal_count} signals from {len(close)} bars")
 print(f"  BUY: {buy_count}, SELL: {sell_count}")

@@ -66,8 +66,13 @@ def run_cost_stress_matrix(
 ) -> list[TradeCosts]:
     return [
         calculate_trade_costs(
-            entry_price, exit_price, volume, contract_size,
-            spread_points, s, commission_per_lot,
+            entry_price,
+            exit_price,
+            volume,
+            contract_size,
+            spread_points,
+            s,
+            commission_per_lot,
         )
         for s in ALL_SCENARIOS
     ]

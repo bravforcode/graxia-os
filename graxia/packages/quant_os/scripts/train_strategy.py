@@ -7,6 +7,7 @@ backtests with walk-forward validation, reports metrics.
 Usage:
     python scripts/train_strategy.py [--symbol XAUUSD] [--freq 1min] [--model xgboost|lightgbm|randomforest]
 """
+
 import argparse
 import json
 import os
@@ -16,12 +17,12 @@ from glob import glob
 import numpy as np
 import pandas as pd
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
 # ML
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 import xgboost as xgb
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, precision_score, recall_score
 
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "artifacts", "strategy_model")
 FEATURES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "artifacts", "features")
@@ -55,33 +56,50 @@ def load_features(symbol: str, freq: str, feat_dir: str = None) -> pd.DataFrame:
 
 def get_feature_cols(df: pd.DataFrame) -> list[str]:
     """Get feature columns (exclude target, metadata)."""
-    exclude = {'target', 'target_return', 'symbol', 'freq', 'timestamp',
-               'tb_label', 'tb_bar_hit', 'tb_side', 'tb_ret',
-               'tb_k_upper', 'tb_k_lower'}
+    exclude = {
+        "target",
+        "target_return",
+        "symbol",
+        "freq",
+        "timestamp",
+        "tb_label",
+        "tb_bar_hit",
+        "tb_side",
+        "tb_ret",
+        "tb_k_upper",
+        "tb_k_lower",
+    }
     return [c for c in df.columns if c not in exclude and df[c].dtype in (np.float64, np.int64)]
 
 
 def train_model(X_train, y_train, model_type: str):
     """Train classifier."""
-    if model_type == 'xgboost':
+    if model_type == "xgboost":
         model = xgb.XGBClassifier(
-            n_estimators=100, max_depth=5, learning_rate=0.1,
-            subsample=0.8, colsample_bytree=0.8,
-            random_state=42, eval_metric='logloss',
-            use_label_encoder=False, verbosity=0
+            n_estimators=100,
+            max_depth=5,
+            learning_rate=0.1,
+            subsample=0.8,
+            colsample_bytree=0.8,
+            random_state=42,
+            eval_metric="logloss",
+            use_label_encoder=False,
+            verbosity=0,
         )
-    elif model_type == 'lightgbm':
+    elif model_type == "lightgbm":
         import lightgbm as lgb
+
         model = lgb.LGBMClassifier(
-            n_estimators=100, max_depth=5, learning_rate=0.1,
-            subsample=0.8, colsample_bytree=0.8,
-            random_state=42, verbose=-1
+            n_estimators=100,
+            max_depth=5,
+            learning_rate=0.1,
+            subsample=0.8,
+            colsample_bytree=0.8,
+            random_state=42,
+            verbose=-1,
         )
     else:  # randomforest
-        model = RandomForestClassifier(
-            n_estimators=100, max_depth=10,
-            random_state=42, n_jobs=-1
-        )
+        model = RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42, n_jobs=-1)
     model.fit(X_train, y_train)
     return model
 
@@ -89,7 +107,7 @@ def train_model(X_train, y_train, model_type: str):
 def backtest(model, X_test, y_test, feature_names: list[str], y_test_orig=None) -> dict:
     """Run backtest and return metrics."""
     y_pred = model.predict(X_test)
-    
+
     # Classification metrics
     acc = accuracy_score(y_test, y_pred)
     prec = precision_score(y_test, y_pred, zero_division=0)
@@ -109,12 +127,12 @@ def backtest(model, X_test, y_test, feature_names: list[str], y_test_orig=None) 
         # Binary: 1=UP (+1), 0=DOWN (-1)
         actual_returns = np.where(y_test == 1, 1, -1)
         trade_returns = y_pred * actual_returns
-    
+
     # Apply 0.1% slippage per trade
     trades = np.abs(np.diff(y_pred, prepend=y_pred[0]))  # 1 when position changes
     slippage_cost = trades * 0.001 * 100
     trade_returns = trade_returns - slippage_cost
-    
+
     # Metrics
     total_return = trade_returns.sum()
     sharpe = (np.mean(trade_returns) / np.std(trade_returns) * np.sqrt(252)) if np.std(trade_returns) > 0 else 0
@@ -123,16 +141,20 @@ def backtest(model, X_test, y_test, feature_names: list[str], y_test_orig=None) 
     max_dd = np.max(np.maximum.accumulate(cum_returns) - cum_returns)
     avg_win = np.mean(trade_returns[trade_returns > 0]) if np.any(trade_returns > 0) else 0
     avg_loss = np.mean(trade_returns[trade_returns < 0]) if np.any(trade_returns < 0) else 0
-    profit_factor = abs(np.sum(trade_returns[trade_returns > 0]) / np.sum(trade_returns[trade_returns < 0])) if np.sum(trade_returns[trade_returns < 0]) != 0 else float('inf')
-    
+    profit_factor = (
+        abs(np.sum(trade_returns[trade_returns > 0]) / np.sum(trade_returns[trade_returns < 0]))
+        if np.sum(trade_returns[trade_returns < 0]) != 0
+        else float("inf")
+    )
+
     # Feature importance
-    if hasattr(model, 'feature_importances_'):
-        fi = sorted(zip(feature_names, model.feature_importances_), key=lambda x: x[1], reverse=True)
-    elif hasattr(model, 'coef_'):
-        fi = sorted(zip(feature_names, abs(model.coef_[0])), key=lambda x: x[1], reverse=True)
+    if hasattr(model, "feature_importances_"):
+        fi = sorted(zip(feature_names, model.feature_importances_, strict=False), key=lambda x: x[1], reverse=True)
+    elif hasattr(model, "coef_"):
+        fi = sorted(zip(feature_names, abs(model.coef_[0]), strict=False), key=lambda x: x[1], reverse=True)
     else:
-        fi = list(zip(feature_names, [0] * len(feature_names)))
-    
+        fi = list(zip(feature_names, [0] * len(feature_names), strict=False))
+
     return {
         "accuracy": round(acc, 4),
         "precision": round(prec, 4),
@@ -157,14 +179,17 @@ def main():
     parser = argparse.ArgumentParser(description="Train trading strategy model")
     parser.add_argument("--symbol", type=str, default="XAUUSD", help="Symbol to train on")
     parser.add_argument("--freq", type=str, default="1min", help="Feature frequency")
-    parser.add_argument("--model", choices=["xgboost", "lightgbm", "randomforest"],
-                        default="xgboost", help="Model type")
+    parser.add_argument(
+        "--model", choices=["xgboost", "lightgbm", "randomforest"], default="xgboost", help="Model type"
+    )
     parser.add_argument("--test-size", type=float, default=0.3, help="Fraction for testing")
-    parser.add_argument("--feat-dir", type=str, default=None,
-                        help="Feature directory (default: artifacts/features)")
-    parser.add_argument("--label-type", choices=["binary", "triple-barrier"],
-                        default="binary",
-                        help="Label type: binary (next-bar direction) or triple-barrier (vol-adjusted)")
+    parser.add_argument("--feat-dir", type=str, default=None, help="Feature directory (default: artifacts/features)")
+    parser.add_argument(
+        "--label-type",
+        choices=["binary", "triple-barrier"],
+        default="binary",
+        help="Label type: binary (next-bar direction) or triple-barrier (vol-adjusted)",
+    )
     args = parser.parse_args()
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -189,17 +214,16 @@ def main():
 
     # Determine target column
     if args.label_type == "triple-barrier":
-        if 'tb_label' not in df.columns:
+        if "tb_label" not in df.columns:
             print("  [ERROR] tb_label not found. Run label_triple_barrier.py first.")
             return
         # Filter neutral bars (tb_label==0) — no barrier hit
-        df = df[df['tb_label'] != 0].copy()
-        target_col = 'tb_label'
+        df = df[df["tb_label"] != 0].copy()
+        target_col = "tb_label"
         print(f"  Triple-barrier: filtered neutrals -> {len(df)} samples")
-        print(f"  Label distribution: +1={int((df['tb_label']==1).sum())} "
-              f"-1={int((df['tb_label']==-1).sum())}")
+        print(f"  Label distribution: +1={int((df['tb_label']==1).sum())} " f"-1={int((df['tb_label']==-1).sum())}")
     else:
-        target_col = 'target'
+        target_col = "target"
 
     # Train/test split (time-based)
     split_idx = int(len(df) * (1 - args.test_size))
@@ -222,11 +246,12 @@ def main():
     print(f"\n  Train: {len(X_train)} samples")
     print(f"  Test:  {len(X_test)} samples")
     if args.label_type == "binary":
-        print(f"  Target distribution (train): UP={y_train.sum()}/{len(y_train)} "
-              f"DOWN={len(y_train)-y_train.sum()}/{len(y_train)}")
+        print(
+            f"  Target distribution (train): UP={y_train.sum()}/{len(y_train)} "
+            f"DOWN={len(y_train)-y_train.sum()}/{len(y_train)}"
+        )
     else:
-        print(f"  Target distribution (train): +1={int((y_train==1).sum())} "
-              f"-1={int((y_train==0).sum())}")
+        print(f"  Target distribution (train): +1={int((y_train==1).sum())} " f"-1={int((y_train==0).sum())}")
 
     # Train
     print(f"\n--- Training {args.model} ---")
@@ -237,7 +262,7 @@ def main():
     print("\n--- Backtest ---")
     y_test_orig_for_bt = y_test_orig if args.label_type == "triple-barrier" else None
     metrics = backtest(model, X_test, y_test, feature_cols, y_test_orig=y_test_orig_for_bt)
-    
+
     print(f"  Accuracy:    {metrics['accuracy']}")
     print(f"  Precision:   {metrics['precision']}")
     print(f"  Recall:      {metrics['recall']}")
@@ -249,21 +274,22 @@ def main():
     print(f"  Profit Fctr: {metrics['profit_factor']}")
     print()
     print("  Top 5 features:")
-    for name, imp in metrics['feature_importance'][:5]:
+    for name, imp in metrics["feature_importance"][:5]:
         print(f"    {name}: {imp:.4f}")
 
     # Save model + metrics
     print("\n--- Saving ---")
     model_path = os.path.join(OUTPUT_DIR, f"{args.symbol}_{args.freq}_{args.model}.json")
-    if args.model == 'xgboost':
+    if args.model == "xgboost":
         model.save_model(model_path)
     else:
         import joblib
-        model_path = model_path.replace('.json', '.pkl')
+
+        model_path = model_path.replace(".json", ".pkl")
         joblib.dump(model, model_path)
-    
+
     metrics_path = os.path.join(OUTPUT_DIR, f"{args.symbol}_{args.freq}_{args.model}_metrics.json")
-    with open(metrics_path, 'w') as f:
+    with open(metrics_path, "w") as f:
         # Convert numpy types to Python native for JSON serialization
         def convert(obj):
             if isinstance(obj, dict):
@@ -272,13 +298,14 @@ def main():
                 return [convert(v) for v in obj]
             elif isinstance(obj, tuple):
                 return tuple(convert(v) for v in obj)
-            elif hasattr(obj, 'item'):
+            elif hasattr(obj, "item"):
                 return obj.item()
             elif isinstance(obj, float):
                 return round(obj, 6)
             return obj
+
         json.dump(convert(metrics), f, indent=2)
-    
+
     print(f"  Model:   {model_path}")
     print(f"  Metrics: {metrics_path}")
     print(f"\n{'='*60}")

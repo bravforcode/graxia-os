@@ -3,7 +3,7 @@ import re
 import sys
 import time
 import tomllib
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
 
 import requests

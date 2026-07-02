@@ -2,7 +2,9 @@
 Holdout Validation + Deflated Sharpe for MTM strategy.
 Uses 6 trades from real backtest, runs HoldoutValidator with deflated Sharpe.
 """
+
 import math
+
 from quant_os.core.holdout_validation import HoldoutValidator
 
 
@@ -77,8 +79,7 @@ def run():
 
     wins = [t for t in trades if t["pnl"] > 0]
     losses = [t for t in trades if t["pnl"] < 0]
-    print(f"\n  Wins: {len(wins)} | Losses: {len(losses)} | "
-          f"Net P&L: ${sum(t['pnl'] for t in trades):+.2f}")
+    print(f"\n  Wins: {len(wins)} | Losses: {len(losses)} | " f"Net P&L: ${sum(t['pnl'] for t in trades):+.2f}")
 
     # Calculate holdout metrics
     holdout_metrics = calculate_metrics_from_trades(trades)
@@ -124,8 +125,10 @@ def run():
             print(f"    - {w}")
 
     print(f"\n  Total tests (13 strats x 100 trials): {validator.total_tests}")
-    print(f"  Holdout trades: {holdout_metrics['total_trades']} "
-          f"{'(< 30, low statistical significance)' if holdout_metrics['total_trades'] < 30 else ''}")
+    print(
+        f"  Holdout trades: {holdout_metrics['total_trades']} "
+        f"{'(< 30, low statistical significance)' if holdout_metrics['total_trades'] < 30 else ''}"
+    )
 
     if not result.passed:
         print("\n  VERDICT: Strategy NOT validated on holdout data.")

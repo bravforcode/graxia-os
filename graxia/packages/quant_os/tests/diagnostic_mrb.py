@@ -1,6 +1,8 @@
 """Diagnostic: Log indicator values for MRB/MLB to see why they don't trigger"""
-import os
+
 import math
+import os
+
 from quant_os.backtest.data_loader import load_csv_data
 
 data_dir = os.path.join("graxia", "packages", "quant_os", "data")
@@ -12,6 +14,7 @@ high = data["high"][-500:]
 low = data["low"][-500:]
 volume = data["volume"][-500:]
 
+
 # Calculate indicators
 def ema(prices, period):
     if len(prices) < period:
@@ -22,10 +25,11 @@ def ema(prices, period):
         result.append((p - result[-1]) * k + result[-1])
     return result
 
+
 def rsi(prices, period=14):
     if len(prices) < period + 1:
         return [None] * len(prices)
-    deltas = [prices[i] - prices[i-1] for i in range(1, len(prices))]
+    deltas = [prices[i] - prices[i - 1] for i in range(1, len(prices))]
     gains = [max(d, 0) for d in deltas]
     losses = [max(-d, 0) for d in deltas]
 
@@ -43,18 +47,20 @@ def rsi(prices, period=14):
             result.append(100 - 100 / (1 + rs))
     return result
 
+
 def bollinger(prices, period=20, std_mult=2):
     if len(prices) < period:
         return [], [], []
     upper, middle, lower = [], [], []
     for i in range(period - 1, len(prices)):
-        window = prices[i - period + 1:i + 1]
+        window = prices[i - period + 1 : i + 1]
         mean = sum(window) / period
         std = math.sqrt(sum((x - mean) ** 2 for x in window) / period)
         middle.append(mean)
         upper.append(mean + std_mult * std)
         lower.append(mean - std_mult * std)
     return upper, middle, lower
+
 
 def adx_calc(high, low, close, period=14):
     if len(close) < period * 2 + 1:
@@ -63,11 +69,11 @@ def adx_calc(high, low, close, period=14):
     trs, pdm, mdm = [], [], []
     for i in range(1, len(close)):
         h_l = high[i] - low[i]
-        h_pc = abs(high[i] - close[i-1])
-        l_pc = abs(low[i] - close[i-1])
+        h_pc = abs(high[i] - close[i - 1])
+        l_pc = abs(low[i] - close[i - 1])
         trs.append(max(h_l, h_pc, l_pc))
-        up = high[i] - high[i-1]
-        down = low[i-1] - low[i]
+        up = high[i] - high[i - 1]
+        down = low[i - 1] - low[i]
         pdm.append(up if up > down and up > 0 else 0)
         mdm.append(down if down > up and down > 0 else 0)
 
@@ -100,6 +106,7 @@ def adx_calc(high, low, close, period=14):
 
     return result
 
+
 # Calculate all indicators
 ema20 = ema(close, 20)
 ema50 = ema(close, 50)
@@ -115,7 +122,7 @@ print("=" * 70)
 print(f"\n  {'Bar':<6} {'Close':<10} {'RSI':<8} {'ADX':<8} {'BB_Lower':<10} {'BB_Upper':<10} {'Stoch_K':<8}")
 print(f"  {'-'*60}")
 
-for i in range(max(0, len(close)-50), len(close)):
+for i in range(max(0, len(close) - 50), len(close)):
     r = rsi_vals[i] if i < len(rsi_vals) and rsi_vals[i] is not None else None
     a = adx_vals[i] if i < len(adx_vals) and adx_vals[i] is not None else None
     bl = bb_lower[i - (len(close) - len(bb_lower))] if bb_lower and i >= (len(close) - len(bb_lower)) else None
@@ -123,8 +130,8 @@ for i in range(max(0, len(close)-50), len(close)):
 
     # Stochastic (simplified)
     if i >= 14:
-        period_high = max(high[i-13:i+1])
-        period_low = min(low[i-13:i+1])
+        period_high = max(high[i - 13 : i + 1])
+        period_low = min(low[i - 13 : i + 1])
         if period_high != period_low:
             stoch_k = (close[i] - period_low) / (period_high - period_low) * 100
         else:
@@ -132,17 +139,22 @@ for i in range(max(0, len(close)-50), len(close)):
     else:
         stoch_k = 50
 
-    print(f"  {i:<6} {close[i]:<10.5f} {r if r else 'N/A':<8} {a if a else 'N/A':<8} "
-          f"{bl if bl else 'N/A':<10} {bu if bu else 'N/A':<10} {stoch_k:<8.1f}")
+    print(
+        f"  {i:<6} {close[i]:<10.5f} {r if r else 'N/A':<8} {a if a else 'N/A':<8} "
+        f"{bl if bl else 'N/A':<10} {bu if bu else 'N/A':<10} {stoch_k:<8.1f}"
+    )
 
 # Check how often conditions are met
 print("\n  MRB LONG conditions (ADX<25 + Price<BB_Lower + Stoch<20 + RSI<35):")
 long_count = 0
 for i in range(len(close)):
-    if i >= len(rsi_vals) or rsi_vals[i] is None: continue
-    if i >= len(adx_vals) or adx_vals[i] is None: continue
+    if i >= len(rsi_vals) or rsi_vals[i] is None:
+        continue
+    if i >= len(adx_vals) or adx_vals[i] is None:
+        continue
     bl_idx = i - (len(close) - len(bb_lower))
-    if bl_idx < 0 or bl_idx >= len(bb_lower): continue
+    if bl_idx < 0 or bl_idx >= len(bb_lower):
+        continue
 
     if adx_vals[i] < 25 and close[i] < bb_lower[bl_idx] and rsi_vals[i] < 35:
         long_count += 1
@@ -152,10 +164,13 @@ print(f"  Met {long_count} times out of {len(close)} bars ({long_count/len(close
 print("\n  MRB SHORT conditions (ADX<25 + Price>BB_Upper + Stoch>80 + RSI>65):")
 short_count = 0
 for i in range(len(close)):
-    if i >= len(rsi_vals) or rsi_vals[i] is None: continue
-    if i >= len(adx_vals) or adx_vals[i] is None: continue
+    if i >= len(rsi_vals) or rsi_vals[i] is None:
+        continue
+    if i >= len(adx_vals) or adx_vals[i] is None:
+        continue
     bu_idx = i - (len(close) - len(bb_upper))
-    if bu_idx < 0 or bu_idx >= len(bb_upper): continue
+    if bu_idx < 0 or bu_idx >= len(bb_upper):
+        continue
 
     if adx_vals[i] < 25 and close[i] > bb_upper[bu_idx] and rsi_vals[i] > 65:
         short_count += 1

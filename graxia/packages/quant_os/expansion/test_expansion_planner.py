@@ -1,7 +1,6 @@
 """Tests for expansion planner."""
-from graxia.packages.quant_os.expansion.expansion_planner import (
-    ExpansionPlanner, ExpansionRequest
-)
+
+from graxia.packages.quant_os.expansion.expansion_planner import ExpansionPlanner, ExpansionRequest
 
 
 def test_planner_creates():

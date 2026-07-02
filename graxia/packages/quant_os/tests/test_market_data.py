@@ -3,26 +3,26 @@ Tests for market_data/ modules:
   feed_health, spread_monitor, market_health, clock_guard, data_watermark
 """
 
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from unittest.mock import MagicMock
 
 import pytest
 
+from market_data.clock_guard import ClockGuard, ClockState
+from market_data.data_watermark import DataWatermarkTracker
 from market_data.feed_health import FeedHealthMonitor, FeedHealthState
-from market_data.spread_monitor import SpreadMonitor, SpreadState
 from market_data.market_health import (
     MarketHealthMachine,
     MarketHealthState,
 )
-from market_data.clock_guard import ClockGuard, ClockState
-from market_data.data_watermark import DataWatermarkTracker
+from market_data.spread_monitor import SpreadMonitor, SpreadState
 from market_data.tick_recorder import TickRecord
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _utcnow():
     return datetime.now(UTC)

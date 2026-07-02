@@ -1,8 +1,9 @@
 """Phase BE-P8 — Shadow pipeline runner. No order submission."""
-from dataclasses import dataclass
-from datetime import datetime, UTC
+
 import hashlib
 import json
+from dataclasses import dataclass
+from datetime import UTC, datetime
 
 
 @dataclass
@@ -40,9 +41,7 @@ class ShadowLedgerEntry:
             "exit_price": self.exit_price,
             "pnl_after_costs": self.pnl_after_costs,
         }
-        return hashlib.sha256(
-            json.dumps(d, sort_keys=True, default=str).encode()
-        ).hexdigest()
+        return hashlib.sha256(json.dumps(d, sort_keys=True, default=str).encode()).hexdigest()
 
 
 class ShadowPipeline:
@@ -100,11 +99,13 @@ class ShadowPipeline:
         return signal
 
     def _record_incident(self, incident_type: str, detail: str) -> None:
-        self._incidents.append({
-            "timestamp": datetime.now(UTC).isoformat(),
-            "type": incident_type,
-            "detail": detail,
-        })
+        self._incidents.append(
+            {
+                "timestamp": datetime.now(UTC).isoformat(),
+                "type": incident_type,
+                "detail": detail,
+            }
+        )
 
     def get_signals(self) -> list[ShadowSignal]:
         return self._signals.copy()
@@ -127,7 +128,7 @@ class ShadowPipeline:
     def verify_ledger_integrity(self) -> bool:
         """Verify append-only hash chain."""
         for i, entry in enumerate(self._ledger):
-            if i > 0 and entry.previous_hash != self._ledger[i-1].record_hash:
+            if i > 0 and entry.previous_hash != self._ledger[i - 1].record_hash:
                 return False
             if entry.record_hash != entry.compute_hash():
                 return False

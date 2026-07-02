@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-from typing import Any, Dict, List
 from enum import Enum
+from typing import Any
+
 
 class RegimeType(Enum):
     TRENDING_UP = "trending_up"
@@ -9,6 +10,7 @@ class RegimeType(Enum):
     HIGH_VOLATILITY = "high_volatility"
     LOW_VOLATILITY = "low_volatility"
     UNKNOWN = "unknown"
+
 
 @dataclass
 class RegimeSlice:
@@ -22,9 +24,11 @@ class RegimeSlice:
     def concentration_ratio(self, total_trades: int) -> float:
         return self.trade_count / total_trades if total_trades > 0 else 0
 
+
 @dataclass
 class TradeConcentration:
     """Trade contribution concentration test: no single trade or month dominates."""
+
     max_single_trade_pnl: float
     max_single_trade_pct_of_total: float
     max_month_pnl: float
@@ -39,19 +43,20 @@ class TradeConcentration:
             issues.append(f"SINGLE_MONTH_DOMINATES:{self.max_month_pct_of_total:.1%}")
         return len(issues) == 0, issues
 
+
 class RegimeAnalyzer:
     def __init__(self):
-        self._slices: List[RegimeSlice] = []
+        self._slices: list[RegimeSlice] = []
 
-    def classify_bar(self, close_prices: List[float], index: int, lookback: int = 20) -> RegimeType:
+    def classify_bar(self, close_prices: list[float], index: int, lookback: int = 20) -> RegimeType:
         if index < lookback:
             return RegimeType.UNKNOWN
 
-        window = close_prices[index-lookback:index+1]
+        window = close_prices[index - lookback : index + 1]
         if len(window) < 2:
             return RegimeType.UNKNOWN
 
-        returns = [(window[i] - window[i-1]) / window[i-1] for i in range(1, len(window))]
+        returns = [(window[i] - window[i - 1]) / window[i - 1] for i in range(1, len(window))]
         avg_return = sum(returns) / len(returns)
         volatility = (sum((r - avg_return) ** 2 for r in returns) / len(returns)) ** 0.5
 
@@ -69,7 +74,7 @@ class RegimeAnalyzer:
     def add_regime_slice(self, slice_data: RegimeSlice) -> None:
         self._slices.append(slice_data)
 
-    def analyze_trades(self, trades: List[dict], close_prices: List[float]) -> Dict[str, Any]:
+    def analyze_trades(self, trades: list[dict], close_prices: list[float]) -> dict[str, Any]:
         """Analyze regime distribution and trade concentration."""
         regime_trades = {r: [] for r in RegimeType}
 
@@ -85,14 +90,16 @@ class RegimeAnalyzer:
                 continue
             pnls = [t.get("pnl", 0) for t in r_trades]
             wins = [p for p in pnls if p > 0]
-            slices.append(RegimeSlice(
-                regime=regime,
-                trade_count=len(r_trades),
-                win_rate=len(wins) / len(r_trades) if r_trades else 0,
-                total_pnl=sum(pnls),
-                avg_pnl_per_trade=sum(pnls) / len(pnls) if pnls else 0,
-                max_drawdown_pct=0.0,
-            ))
+            slices.append(
+                RegimeSlice(
+                    regime=regime,
+                    trade_count=len(r_trades),
+                    win_rate=len(wins) / len(r_trades) if r_trades else 0,
+                    total_pnl=sum(pnls),
+                    avg_pnl_per_trade=sum(pnls) / len(pnls) if pnls else 0,
+                    max_drawdown_pct=0.0,
+                )
+            )
 
         self._slices = slices
 
@@ -136,5 +143,5 @@ class RegimeAnalyzer:
             "total_trades": total_trades,
         }
 
-    def get_slices(self) -> List[RegimeSlice]:
+    def get_slices(self) -> list[RegimeSlice]:
         return self._slices

@@ -1,4 +1,5 @@
 """Phase 3B — Metrics calculation and cost attribution."""
+
 import math
 from dataclasses import dataclass
 from datetime import datetime
@@ -123,9 +124,7 @@ def calculate_sharpe_ratio(
         return 0.0
 
     mean_return = sum(clean_returns) / len(clean_returns)
-    per_period_rf = (
-        risk_free_rate / periods_per_year if periods_per_year > 0 else 0.0
-    )
+    per_period_rf = risk_free_rate / periods_per_year if periods_per_year > 0 else 0.0
     std = _std_dev(clean_returns)
     if std < 1e-12:
         return 0.0
@@ -169,9 +168,7 @@ def _sharpe_ratio(equity_curve: list[dict]) -> float:
     """Annualized Sharpe ratio from equity-curve returns."""
     returns = _extract_returns(equity_curve)
     periods = _periods_per_year(equity_curve)
-    return calculate_sharpe_ratio(
-        returns, risk_free_rate=0.0, periods_per_year=periods
-    )
+    return calculate_sharpe_ratio(returns, risk_free_rate=0.0, periods_per_year=periods)
 
 
 def calculate_phase_3b_metrics(result: dict, scenario: str) -> Phase3BMetrics:

@@ -9,15 +9,16 @@ Runs N simulations of trade sequences to estimate:
 - p-value for strategy significance
 """
 
-from dataclasses import dataclass
-from typing import List, Optional, Dict, Literal
-import random
 import math
+import random
+from dataclasses import dataclass
+from typing import Literal
 
 
 @dataclass
 class MonteCarloResult:
     """Monte Carlo simulation result"""
+
     n_simulations: int
     n_trades: int
 
@@ -44,8 +45,8 @@ class MonteCarloResult:
     mode: Literal["bootstrap", "shuffle"] = "shuffle"
 
     # Details
-    returns: List[float] = None
-    max_drawdowns: List[float] = None
+    returns: list[float] = None
+    max_drawdowns: list[float] = None
 
     def __post_init__(self):
         if self.returns is None:
@@ -54,7 +55,7 @@ class MonteCarloResult:
             self.max_drawdowns = []
 
 
-def _t_test_p_value(returns: List[float]) -> float:
+def _t_test_p_value(returns: list[float]) -> float:
     """
     One-sample t-test: is mean return significantly different from 0?
 
@@ -78,6 +79,7 @@ def _t_test_p_value(returns: List[float]) -> float:
 
     try:
         from scipy.stats import t as t_dist
+
         # Two-tailed p-value
         p_value = t_dist.sf(abs(t_stat), df) * 2
     except ImportError:
@@ -103,12 +105,12 @@ class MonteCarloSimulator:
             print("Strategy is robust!")
     """
 
-    def __init__(self, seed: Optional[int] = None):
+    def __init__(self, seed: int | None = None):
         self.seed = seed
 
     def run(
         self,
-        trades: List[Dict],
+        trades: list[dict],
         n_simulations: int = 10000,
         initial_capital: float = 10000.0,
         risk_per_trade_pct: float = 1.0,
@@ -168,7 +170,7 @@ class MonteCarloSimulator:
             max_dd = 0
 
             for ret in shuffled:
-                equity *= (1 + ret)
+                equity *= 1 + ret
                 if equity > peak:
                     peak = equity
                 dd = (peak - equity) / peak
@@ -242,7 +244,7 @@ class MonteCarloSimulator:
             mode=mode,
         )
 
-    def validate_strategy(self, result: MonteCarloResult) -> Dict[str, bool]:
+    def validate_strategy(self, result: MonteCarloResult) -> dict[str, bool]:
         """
         Validate strategy against robustness criteria.
 
@@ -259,9 +261,5 @@ class MonteCarloSimulator:
             "p_value_pass": result.p_value < 0.05,
             "survival_pass": result.survival_rate > 0.90,
             "median_return_pass": result.median_return > 0,
-            "all_pass": (
-                result.p_value < 0.05 and
-                result.survival_rate > 0.90 and
-                result.median_return > 0
-            ),
+            "all_pass": (result.p_value < 0.05 and result.survival_rate > 0.90 and result.median_return > 0),
         }

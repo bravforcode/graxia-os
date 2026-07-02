@@ -1,7 +1,8 @@
 """Phase BE-P3 — Event gate state machine."""
-from enum import Enum
+
 from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
 
 
 class GateState(Enum):
@@ -30,8 +31,7 @@ class EventRecord:
 class EventGate:
     """Event-risk gate. Blocks entries during high-impact events."""
 
-    def __init__(self, pre_block_minutes: int = 30, post_block_minutes: int = 15,
-                 stabilization_ticks: int = 10):
+    def __init__(self, pre_block_minutes: int = 30, post_block_minutes: int = 15, stabilization_ticks: int = 10):
         self._state = GateState.CLEAR
         self._pre_block_minutes = pre_block_minutes
         self._post_block_minutes = post_block_minutes
@@ -43,9 +43,13 @@ class EventGate:
     def get_state(self) -> GateState:
         return self._state
 
-    def evaluate(self, now_utc: datetime, pending_events: list[EventRecord],
-                 current_spread_multiplier: float = 1.0,
-                 tick_age_ms: float = 0) -> GateState:
+    def evaluate(
+        self,
+        now_utc: datetime,
+        pending_events: list[EventRecord],
+        current_spread_multiplier: float = 1.0,
+        tick_age_ms: float = 0,
+    ) -> GateState:
         """Evaluate gate state against current conditions."""
 
         # Check for high-impact events

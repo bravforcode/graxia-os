@@ -2,14 +2,13 @@
 
 import threading
 from collections import defaultdict
-from typing import Dict, Optional
 
 
 class TradeCounter:
     """Counts total trades by symbol, side, strategy."""
 
     def __init__(self):
-        self._counts: Dict[tuple, int] = defaultdict(int)
+        self._counts: dict[tuple, int] = defaultdict(int)
         self._lock = threading.Lock()
 
     def inc(self, symbol: str = "", side: str = "", strategy: str = "", n: int = 1):
@@ -32,7 +31,7 @@ class TradeCounter:
                 if strat:
                     labels.append(f'strategy="{strat}"')
                 lbl = "," + ",".join(labels) if labels else ""
-                lines.append(f'{name}{lbl} {val}')
+                lines.append(f"{name}{lbl} {val}")
         return "\n".join(lines)
 
 
@@ -41,7 +40,7 @@ class PnLHistogram:
 
     DEFAULT_BUCKETS = (-100, -50, -20, -10, -5, -2, 0, 2, 5, 10, 20, 50, 100, float("inf"))
 
-    def __init__(self, buckets: Optional[tuple] = None):
+    def __init__(self, buckets: tuple | None = None):
         self._buckets = buckets or self.DEFAULT_BUCKETS
         self._counts = [0] * (len(self._buckets) - 1)
         self._total = 0.0
@@ -68,8 +67,8 @@ class PnLHistogram:
                 lines.append(f'{name}_bucket{{le="{bucket}"}} {cum}')
             cum_all = sum(self._counts)
             lines.append(f'{name}_bucket{{le="+Inf"}} {cum_all}')
-            lines.append(f'{name}_sum {self._total:.6f}')
-            lines.append(f'{name}_count {self._count}')
+            lines.append(f"{name}_sum {self._total:.6f}")
+            lines.append(f"{name}_count {self._count}")
         return "\n".join(lines)
 
 
@@ -99,7 +98,7 @@ class LatencyHistogram:
 
     DEFAULT_BUCKETS = (0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, float("inf"))
 
-    def __init__(self, buckets: Optional[tuple] = None):
+    def __init__(self, buckets: tuple | None = None):
         self._buckets = buckets or self.DEFAULT_BUCKETS
         self._counts = [0] * (len(self._buckets) - 1)
         self._total = 0.0
@@ -126,8 +125,8 @@ class LatencyHistogram:
                 lines.append(f'{name}_bucket{{le="{bucket}"}} {cum}')
             cum_all = sum(self._counts)
             lines.append(f'{name}_bucket{{le="+Inf"}} {cum_all}')
-            lines.append(f'{name}_sum {self._total:.6f}')
-            lines.append(f'{name}_count {self._count}')
+            lines.append(f"{name}_sum {self._total:.6f}")
+            lines.append(f"{name}_count {self._count}")
         return "\n".join(lines)
 
 

@@ -1,23 +1,26 @@
 """Structured record arrays from vectorbt pattern for efficient trade storage"""
-from dataclasses import dataclass
-from typing import List, Optional, Dict
+
 import json
+from dataclasses import dataclass
+
 
 @dataclass
 class TradeRecord:
     """Memory-efficient trade record"""
+
     id: str
     symbol: str
     side: str  # "BUY" or "SELL"
     entry_price: float
-    exit_price: Optional[float]
+    exit_price: float | None
     quantity: float
     entry_time: float  # timestamp
-    exit_time: Optional[float]
+    exit_time: float | None
     pnl: float = 0.0
     fees: float = 0.0
     exit_reason: str = ""
     strategy_id: str = ""
+
 
 class TradeRecords:
     """
@@ -37,20 +40,20 @@ class TradeRecords:
     """
 
     def __init__(self):
-        self._records: List[TradeRecord] = []
+        self._records: list[TradeRecord] = []
 
     def add(self, record: TradeRecord):
         """Add a trade record"""
         self._records.append(record)
 
-    def filter(self, **kwargs) -> List[TradeRecord]:
+    def filter(self, **kwargs) -> list[TradeRecord]:
         """Filter records by field values"""
         result = self._records
         for key, value in kwargs.items():
             result = [r for r in result if getattr(r, key, None) == value]
         return result
 
-    def group_by(self, field: str) -> Dict[str, List[TradeRecord]]:
+    def group_by(self, field: str) -> dict[str, list[TradeRecord]]:
         """Group records by field value"""
         groups = {}
         for record in self._records:
@@ -60,7 +63,7 @@ class TradeRecords:
             groups[key].append(record)
         return groups
 
-    def to_list(self) -> List[Dict]:
+    def to_list(self) -> list[dict]:
         """Convert to list of dicts"""
         return [
             {

@@ -10,10 +10,9 @@ import json
 import time
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
-
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -31,48 +30,45 @@ DEFAULT_DISCONNECT_SECONDS: int = 5  # short for CI; production=300
 @dataclass
 class SimulatedPosition:
     """A position the system believes is open."""
+
     ticket: str
     symbol: str
     side: str
     volume: float
     entry_price: float
-    opened_at: str = field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    opened_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     status: str = "OPEN"
 
 
 @dataclass
 class SimulatedOrder:
     """An order submitted to the simulated broker."""
+
     order_id: str
     symbol: str
     side: str
     volume: float
     price: float
-    submitted_at: str = field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    submitted_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     filled: bool = False
-    fill_price: Optional[float] = None
+    fill_price: float | None = None
 
 
 @dataclass
 class ChaosTestReport:
     """Output of a chaos test run."""
+
     test_name: str
     disconnect_duration_s: float
-    position_before: Optional[Dict[str, Any]]
-    position_after: Optional[Dict[str, Any]]
+    position_before: dict[str, Any] | None
+    position_after: dict[str, Any] | None
     orders_submitted: int
     duplicate_orders: int
     rejected_orders: int
     state_recovered: bool
     passed: bool
-    errors: List[str] = field(default_factory=list)
-    timestamp: str = field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    errors: list[str] = field(default_factory=list)
+    timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 
 # ---------------------------------------------------------------------------
@@ -85,9 +81,9 @@ class MockMT5Connector:
 
     def __init__(self) -> None:
         self.connected = True
-        self.positions: List[SimulatedPosition] = []
-        self.orders: List[SimulatedOrder] = []
-        self.error_log: List[str] = []
+        self.positions: list[SimulatedPosition] = []
+        self.orders: list[SimulatedOrder] = []
+        self.error_log: list[str] = []
 
     def connect(self) -> bool:
         self.connected = True
@@ -96,7 +92,7 @@ class MockMT5Connector:
     def disconnect(self) -> None:
         self.connected = False
 
-    def send_order(self, order: SimulatedOrder) -> Optional[str]:
+    def send_order(self, order: SimulatedOrder) -> str | None:
         if not self.connected:
             self.error_log.append("Order rejected: MT5 disconnected")
             raise ConnectionError("MT5 not connected")
@@ -105,7 +101,7 @@ class MockMT5Connector:
         order.fill_price = order.price
         return order.order_id
 
-    def get_positions(self) -> List[SimulatedPosition]:
+    def get_positions(self) -> list[SimulatedPosition]:
         if not self.connected:
             self.error_log.append("Position query failed: MT5 disconnected")
             raise ConnectionError("MT5 not connected")
@@ -132,7 +128,7 @@ class StatePersistence:
 
     def __init__(self, path: str = ".chaos_test_state.json") -> None:
         self.path = path
-        self._data: Dict[str, Any] = {}
+        self._data: dict[str, Any] = {}
 
     def save(self, key: str, value: Any) -> None:
         self._data[key] = value
@@ -171,7 +167,7 @@ class TradeLedger:
     """Simulates order ledger for duplicate detection."""
 
     def __init__(self) -> None:
-        self._orders: List[SimulatedOrder] = []
+        self._orders: list[SimulatedOrder] = []
         self._seen_keys: set = set()
         self._rejected: int = 0
 
@@ -191,7 +187,7 @@ class TradeLedger:
 
     def find_duplicates(self) -> int:
         """Return count of duplicate orders that were NOT rejected."""
-        seen: Dict[str, int] = {}
+        seen: dict[str, int] = {}
         for o in self._orders:
             key = f"{o.symbol}:{o.side}:{o.volume}"
             seen[key] = seen.get(key, 0) + 1
@@ -225,13 +221,11 @@ class ChaosTest:
         assert report.passed
     """
 
-    def __init__(self, state_path: Optional[str] = None) -> None:
+    def __init__(self, state_path: str | None = None) -> None:
         self.connector = MockMT5Connector()
-        self.state = StatePersistence(
-            state_path or ".chaos_test_state.json"
-        )
+        self.state = StatePersistence(state_path or ".chaos_test_state.json")
         self.ledger = TradeLedger()
-        self.position: Optional[SimulatedPosition] = None
+        self.position: SimulatedPosition | None = None
 
     def simulate_disconnect(
         self,
@@ -253,8 +247,8 @@ class ChaosTest:
         Returns:
             ChaosTestReport with pass/fail and details.
         """
-        errors: List[str] = []
-        expected_disconnect_errors: List[str] = []
+        errors: list[str] = []
+        expected_disconnect_errors: list[str] = []
 
         # --- Step 1: Open position ---
         self.connector.connect()
@@ -268,15 +262,18 @@ class ChaosTest:
         self.connector.positions.append(self.position)
 
         # Persist open position to survive "crash"
-        self.state.save("open_positions", [
-            {
-                "ticket": self.position.ticket,
-                "symbol": self.position.symbol,
-                "side": self.position.side,
-                "volume": self.position.volume,
-                "entry_price": self.position.entry_price,
-            }
-        ])
+        self.state.save(
+            "open_positions",
+            [
+                {
+                    "ticket": self.position.ticket,
+                    "symbol": self.position.symbol,
+                    "side": self.position.side,
+                    "volume": self.position.volume,
+                    "entry_price": self.position.entry_price,
+                }
+            ],
+        )
 
         position_before = {
             "ticket": self.position.ticket,
@@ -319,13 +316,10 @@ class ChaosTest:
         persisted_tickets = {p["ticket"] for p in persisted}
 
         if server_tickets != persisted_tickets:
-            errors.append(
-                f"Position mismatch: server={server_tickets} persisted={persisted_tickets}"
-            )
+            errors.append(f"Position mismatch: server={server_tickets} persisted={persisted_tickets}")
 
         position_after = {
-            "server_positions": [{"ticket": p.ticket, "symbol": p.symbol}
-                                 for p in server_positions],
+            "server_positions": [{"ticket": p.ticket, "symbol": p.symbol} for p in server_positions],
             "persisted_positions": persisted,
         }
 
@@ -403,7 +397,7 @@ class ChaosTest:
         Returns:
             ChaosTestReport (shorter scenario, no disconnect wait).
         """
-        errors: List[str] = []
+        errors: list[str] = []
 
         # Setup
         self.connector.connect()
@@ -487,9 +481,7 @@ class TestNetworkDisconnect:
         ct = ChaosTest()
         report = ct.simulate_disconnect(duration_seconds=0.1)
         assert report.passed, f"Chaos test failed: {report.errors}"
-        assert report.duplicate_orders == 0, (
-            f"Double execution detected: {report.duplicate_orders}"
-        )
+        assert report.duplicate_orders == 0, f"Double execution detected: {report.duplicate_orders}"
 
     def test_state_survives_disconnect(self) -> None:
         """Persisted state must be recoverable after reconnection."""

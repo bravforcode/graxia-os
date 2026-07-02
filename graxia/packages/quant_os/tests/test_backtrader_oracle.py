@@ -91,8 +91,8 @@ def test_normalize_output_adds_engine():
 
 def test_run_oracle_graceful_import_error():
     """run_oracle returns error dict when backtrader isn't importable."""
-    import unittest.mock as mock
     import builtins
+    import unittest.mock as mock
 
     real_import = builtins.__import__
 

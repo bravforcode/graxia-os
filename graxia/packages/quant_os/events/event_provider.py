@@ -1,6 +1,8 @@
 """Phase BE-P3 — Event provider with versioning."""
+
 from dataclasses import dataclass
-from datetime import datetime, UTC
+from datetime import UTC, datetime
+
 from .event_schema import PointInTimeEvent
 
 
@@ -10,8 +12,9 @@ class EventProvider:
     version: str
     tier: int  # 1=official, 2=licensed, 3=research-only
 
-    def create_event(self, event_name: str, importance: str,
-                     scheduled_at: str, country: str = "", currency: str = "") -> PointInTimeEvent:
+    def create_event(
+        self, event_name: str, importance: str, scheduled_at: str, country: str = "", currency: str = ""
+    ) -> PointInTimeEvent:
         """Create a point-in-time event record."""
         now = datetime.now(UTC).isoformat()
         event = PointInTimeEvent(
@@ -29,8 +32,7 @@ class EventProvider:
         event.compute_hash()
         return event
 
-    def update_actual(self, event: PointInTimeEvent, actual: str,
-                      published_at: str = "") -> PointInTimeEvent:
+    def update_actual(self, event: PointInTimeEvent, actual: str, published_at: str = "") -> PointInTimeEvent:
         """Update event with actual value."""
         event.actual = actual
         event.published_at_utc = published_at or datetime.now(UTC).isoformat()

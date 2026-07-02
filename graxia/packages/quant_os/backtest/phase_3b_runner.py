@@ -11,20 +11,29 @@ by overriding _execute_signal and _check_exits in a subclass.
 
 from datetime import datetime
 from decimal import Decimal
-from typing import List, Tuple, Dict, Any
+from typing import Any
 
 from ..backtest.engine import (
-    BacktestEngine, BacktestConfig, InlineContractSpec,
-    _exec_side, _historical_size,
+    BacktestConfig,
+    BacktestEngine,
+    InlineContractSpec,
+    _exec_side,
+    _historical_size,
 )
+from ..core.enums import CloseReason, PositionType, SignalType
+from ..execution.conservative_bar_model import estimate_bid_ask_from_bar
 from ..execution.cost_model import BASE, STRESS_1, STRESS_2, STRESS_3, CostScenario
 from ..execution.execution_simulator import (
-    MarketSnapshot, ContractSpec, OrderIntent, ExecutionQuality,
+    ContractSpec,
+    ExecutionQuality,
+    MarketSnapshot,
+    OrderIntent,
+)
+from ..execution.execution_simulator import (
     Position as ExecPosition,
 )
-from ..execution.fill_model import Side as FillSide, simulate_exit as fill_simulate_exit
-from ..execution.conservative_bar_model import estimate_bid_ask_from_bar
-from ..core.enums import SignalType, PositionType, CloseReason
+from ..execution.fill_model import Side as FillSide
+from ..execution.fill_model import simulate_exit as fill_simulate_exit
 from ..strategies.base import Signal
 
 
@@ -70,9 +79,14 @@ class SpreadPatchedEngine(BacktestEngine):
         spread = self._scaled_spread()
         bid, ask = estimate_bid_ask_from_bar(bar_open, bar_high, bar_low, bar_close, spread)
         snapshot = MarketSnapshot(
-            bid=bid, ask=ask, spread=spread,
-            high=bar_high, low=bar_low, close=bar_close,
-            timestamp=current_time, symbol=signal.symbol,
+            bid=bid,
+            ask=ask,
+            spread=spread,
+            high=bar_high,
+            low=bar_low,
+            close=bar_close,
+            timestamp=current_time,
+            symbol=signal.symbol,
         )
         contract_spec = ContractSpec(
             contract_size=InlineContractSpec.for_symbol(signal.symbol).trade_contract_size,
@@ -80,27 +94,38 @@ class SpreadPatchedEngine(BacktestEngine):
             spread_points=spread,
         )
         intent = OrderIntent(
-            symbol=signal.symbol, side=side, volume=volume,
-            stop_loss=signal.stop_loss, take_profit=signal.take_profit,
+            symbol=signal.symbol,
+            side=side,
+            volume=volume,
+            stop_loss=signal.stop_loss,
+            take_profit=signal.take_profit,
             strategy_id=self.strategy.id if self.strategy else "",
             signal_id=signal.id,
             execution_quality=ExecutionQuality.BAR_ONLY,
         )
         result = self._simulator.submit_intent(
-            intent, snapshot, self._bar_dicts(), bar_index,
+            intent,
+            snapshot,
+            self._bar_dicts(),
+            bar_index,
             contract_spec=contract_spec,
         )
         if result.entry_price <= 0 or volume <= 0:
             return
 
         from uuid import uuid4
+
         pos_id = str(uuid4())[:8]
         pos_side = PositionType.LONG if side == FillSide.BUY else PositionType.SHORT
         fill_time = self.timestamps[bar_index + 1] if bar_index + 1 < len(self.timestamps) else current_time
         self.positions[pos_id] = BacktestPosition(
-            id=pos_id, symbol=signal.symbol, side=pos_side,
-            entry_price=result.entry_price, quantity=volume,
-            stop_loss=signal.stop_loss, take_profit=signal.take_profit,
+            id=pos_id,
+            symbol=signal.symbol,
+            side=pos_side,
+            entry_price=result.entry_price,
+            quantity=volume,
+            stop_loss=signal.stop_loss,
+            take_profit=signal.take_profit,
             entry_time=fill_time,
             strategy_id=self.strategy.id if self.strategy else "",
             entry_spread_cost=result.spread_cost,
@@ -116,12 +141,14 @@ class SpreadPatchedEngine(BacktestEngine):
             return
 
         spread = self._scaled_spread()
-        bid, ask = estimate_bid_ask_from_bar(
-            Decimal("0"), bar_high, bar_low, bar_close, spread
-        )
+        bid, ask = estimate_bid_ask_from_bar(Decimal("0"), bar_high, bar_low, bar_close, spread)
         snapshot = MarketSnapshot(
-            bid=bid, ask=ask, spread=spread,
-            high=bar_high, low=bar_low, close=bar_close,
+            bid=bid,
+            ask=ask,
+            spread=spread,
+            high=bar_high,
+            low=bar_low,
+            close=bar_close,
             timestamp=current_time,
         )
 
@@ -130,8 +157,11 @@ class SpreadPatchedEngine(BacktestEngine):
         for pos_id, pos in self.positions.items():
             exec_side = FillSide.BUY if pos.side == PositionType.LONG else FillSide.SELL
             ep = ExecPosition(
-                trade_id=pos_id, symbol=pos.symbol, side=exec_side,
-                entry_price=pos.entry_price, volume=pos.quantity,
+                trade_id=pos_id,
+                symbol=pos.symbol,
+                side=exec_side,
+                entry_price=pos.entry_price,
+                volume=pos.quantity,
                 stop_loss=pos.stop_loss or Decimal("0"),
                 take_profit=pos.take_profit,
                 strategy_id=pos.strategy_id,
@@ -141,7 +171,10 @@ class SpreadPatchedEngine(BacktestEngine):
             pos_map[pos_id] = pos
 
         events = self._simulator.evaluate_open_positions(
-            exec_positions, snapshot, bar_high, bar_low,
+            exec_positions,
+            snapshot,
+            bar_high,
+            bar_low,
         )
 
         for event in events:
@@ -176,7 +209,7 @@ from ..backtest.engine import BacktestPosition  # noqa: E402
 class SignalStrategy:
     """Replay pre-computed signals."""
 
-    def __init__(self, signals: List[Tuple], strategy_id: str = "liquidity_sweep"):
+    def __init__(self, signals: list[tuple], strategy_id: str = "liquidity_sweep"):
         self.id = strategy_id
         self._signals = list(signals)
         self._idx = 0
@@ -218,12 +251,12 @@ class SignalStrategy:
 
 def run_scenario(
     config: BacktestConfig,
-    data: Dict[str, List],
-    timestamps: List[datetime],
-    signals_raw: List[Tuple],
+    data: dict[str, list],
+    timestamps: list[datetime],
+    signals_raw: list[tuple],
     cost_scenario: CostScenario = BASE,
     spread_multiplier: float = 1.0,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Run engine with given cost scenario and spread multiplier."""
     strategy = SignalStrategy(signals_raw)
     engine = SpreadPatchedEngine(config, spread_multiplier=spread_multiplier)
@@ -243,7 +276,7 @@ def run_scenario(
     return result
 
 
-def run_all_scenarios() -> Dict[str, Dict[str, Any]]:
+def run_all_scenarios() -> dict[str, dict[str, Any]]:
     """Run R0-R3 scenarios. R4-R6 BLOCKED/pending."""
     from .xauusd_liquidity_sweep_fixture import get_fixture
 

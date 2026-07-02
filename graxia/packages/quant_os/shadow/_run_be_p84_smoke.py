@@ -1,18 +1,21 @@
 """BE-P8.4 — 60-minute Pepperstone canonical shadow smoke run."""
-import sys
-import json
-import time
+
 import hashlib
-from datetime import datetime, UTC
+import json
+import sys
+import time
+from datetime import UTC, datetime
 
 sys.path.insert(0, ".")
 
 import MetaTrader5 as mt5
+
+from graxia.packages.quant_os.shadow.broker_profile import BrokerProfile, validate_broker_match
 from graxia.packages.quant_os.shadow.canonical_tick_source import (
-    CanonicalTickSource, CanonicalTickPolicy,
+    CanonicalTickPolicy,
+    CanonicalTickSource,
 )
 from graxia.packages.quant_os.shadow.canonical_time_authority import CanonicalTimeAuthority
-from graxia.packages.quant_os.shadow.broker_profile import BrokerProfile, validate_broker_match
 
 PEPPERSTONE = r"C:\Program Files\Pepperstone MetaTrader 5\terminal64.exe"
 SYMBOL = "XAUUSD"
@@ -38,8 +41,11 @@ def main():
     profile = BrokerProfile()
     profile.compute_fingerprint()
     match, issues = validate_broker_match(
-        acct.server, acct.login,
-        sym.trade_contract_size, sym.digits, sym.point,
+        acct.server,
+        acct.login,
+        sym.trade_contract_size,
+        sym.digits,
+        sym.point,
         profile,
     )
     print(f"Broker: {acct.server} | Login: {acct.login}")
@@ -70,14 +76,19 @@ def main():
     class MT5Wrapper:
         def __init__(self):
             self._mt5 = mt5
+
         def get_tick(self, symbol):
             tick = mt5.symbol_info_tick(symbol)
             if tick is None:
                 return None
             return {
-                "bid": tick.bid, "ask": tick.ask, "last": tick.last,
-                "volume": tick.volume, "time": tick.time,
-                "time_msc": tick.time_msc, "flags": tick.flags,
+                "bid": tick.bid,
+                "ask": tick.ask,
+                "last": tick.last,
+                "volume": tick.volume,
+                "time": tick.time,
+                "time_msc": tick.time_msc,
+                "flags": tick.flags,
             }
 
     wrapper = MT5Wrapper()
@@ -103,24 +114,31 @@ def main():
         batch = source.fetch_cycle()
 
         # Ledger entry
-        entry_hash = hashlib.sha256(json.dumps({
-            "cycle": cycle,
-            "system_utc": system_utc.isoformat(),
-            "verdict": batch.verdict,
-            "tick_count": batch.deduplicated_tick_count,
-            "batch_hash": batch.batch_hash,
-            "previous_hash": prev_hash,
-        }, sort_keys=True).encode()).hexdigest()
+        entry_hash = hashlib.sha256(
+            json.dumps(
+                {
+                    "cycle": cycle,
+                    "system_utc": system_utc.isoformat(),
+                    "verdict": batch.verdict,
+                    "tick_count": batch.deduplicated_tick_count,
+                    "batch_hash": batch.batch_hash,
+                    "previous_hash": prev_hash,
+                },
+                sort_keys=True,
+            ).encode()
+        ).hexdigest()
 
-        ledger_entries.append({
-            "cycle": cycle,
-            "system_utc": system_utc.isoformat(),
-            "verdict": batch.verdict,
-            "tick_count": batch.deduplicated_tick_count,
-            "batch_hash": batch.batch_hash,
-            "entry_hash": entry_hash,
-            "previous_hash": prev_hash,
-        })
+        ledger_entries.append(
+            {
+                "cycle": cycle,
+                "system_utc": system_utc.isoformat(),
+                "verdict": batch.verdict,
+                "tick_count": batch.deduplicated_tick_count,
+                "batch_hash": batch.batch_hash,
+                "entry_hash": entry_hash,
+                "previous_hash": prev_hash,
+            }
+        )
         prev_hash = entry_hash
 
         # Print status
@@ -145,7 +163,7 @@ def main():
     # Verify ledger
     ledger_valid = True
     for i in range(1, len(ledger_entries)):
-        if ledger_entries[i]["previous_hash"] != ledger_entries[i-1]["entry_hash"]:
+        if ledger_entries[i]["previous_hash"] != ledger_entries[i - 1]["entry_hash"]:
             ledger_valid = False
             break
 
@@ -175,6 +193,7 @@ def main():
 
     # Save results
     import os
+
     os.makedirs("shadow_results", exist_ok=True)
     ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     result = {

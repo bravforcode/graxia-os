@@ -18,7 +18,7 @@ import argparse
 import csv
 import logging
 import sys
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -75,7 +75,7 @@ def parse_stooq_file(filepath: str | Path) -> pd.DataFrame:
         return pd.DataFrame()
 
     rows = []
-    with open(filepath, "r", encoding="utf-8", errors="replace") as f:
+    with open(filepath, encoding="utf-8", errors="replace") as f:
         reader = csv.reader(f)
         header = next(reader, None)
         if not header:
@@ -97,14 +97,16 @@ def parse_stooq_file(filepath: str | Path) -> pd.DataFrame:
                         second=int(time_str[4:6]),
                     )
 
-                rows.append({
-                    "time": dt.strftime("%Y-%m-%d %H:%M:%S"),
-                    "open": float(open_),
-                    "high": float(high),
-                    "low": float(low),
-                    "close": float(close),
-                    "volume": vol,
-                })
+                rows.append(
+                    {
+                        "time": dt.strftime("%Y-%m-%d %H:%M:%S"),
+                        "open": float(open_),
+                        "high": float(high),
+                        "low": float(low),
+                        "close": float(close),
+                        "volume": vol,
+                    }
+                )
             except (ValueError, IndexError):
                 continue
 

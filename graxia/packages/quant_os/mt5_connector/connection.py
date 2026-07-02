@@ -12,11 +12,12 @@ Usage:
         account = conn.get_account_info()
         conn.disconnect()
 """
-from dataclasses import dataclass
-from typing import Optional
+
 import logging
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
+
 
 @dataclass
 class MT5AccountInfo:
@@ -29,6 +30,7 @@ class MT5AccountInfo:
     leverage: int
     currency: str
     trade_allowed: bool
+
 
 @dataclass
 class MT5SymbolInfo:
@@ -44,6 +46,7 @@ class MT5SymbolInfo:
     volume_step: float
     trade_allowed: bool
 
+
 class MT5Connection:
     """Manages connection to MetaTrader 5 terminal."""
 
@@ -51,10 +54,11 @@ class MT5Connection:
         self._connected = False
         self._mt5 = None
 
-    def connect(self, path: Optional[str] = None, timeout: int = 10000) -> bool:
+    def connect(self, path: str | None = None, timeout: int = 10000) -> bool:
         """Connect to MT5 terminal."""
         try:
             import MetaTrader5 as mt5
+
             self._mt5 = mt5
 
             if path:
@@ -103,17 +107,18 @@ class MT5Connection:
     def reconnect(self, max_retries: int = 3, delay_sec: float = 5.0) -> bool:
         """P1 fix: Reconnect with exponential backoff."""
         import time
+
         for attempt in range(max_retries):
             logger.info(f"MT5 reconnect attempt {attempt + 1}/{max_retries}")
             self.disconnect()
-            time.sleep(delay_sec * (2 ** attempt))  # exponential backoff
+            time.sleep(delay_sec * (2**attempt))  # exponential backoff
             if self.connect():
                 logger.info("MT5 reconnected successfully")
                 return True
         logger.error(f"MT5 reconnect failed after {max_retries} attempts")
         return False
 
-    def get_account_info(self) -> Optional[MT5AccountInfo]:
+    def get_account_info(self) -> MT5AccountInfo | None:
         """Get current account information."""
         if not self._connected:
             return None
@@ -134,7 +139,7 @@ class MT5Connection:
             trade_allowed=info.trade_allowed,
         )
 
-    def get_symbol_info(self, symbol: str) -> Optional[MT5SymbolInfo]:
+    def get_symbol_info(self, symbol: str) -> MT5SymbolInfo | None:
         """Get symbol specification."""
         if not self._connected:
             return None
@@ -157,7 +162,7 @@ class MT5Connection:
             trade_allowed=info.visible,
         )
 
-    def get_tick(self, symbol: str) -> Optional[dict]:
+    def get_tick(self, symbol: str) -> dict | None:
         """Get latest tick for symbol."""
         if not self._connected:
             return None
@@ -175,7 +180,7 @@ class MT5Connection:
             "flags": tick.flags,
         }
 
-    def get_bars(self, symbol: str, timeframe: int, count: int = 100) -> Optional[list]:
+    def get_bars(self, symbol: str, timeframe: int, count: int = 100) -> list | None:
         """Get historical bars using date range (more reliable).
 
         timeframe: Use MT5 constants (mt5.TIMEFRAME_H1=16385, mt5.TIMEFRAME_D1=16408)
@@ -186,14 +191,19 @@ class MT5Connection:
 
         # Map simple integers to MT5 constants if needed
         tf_map = {
-            1: self._mt5.TIMEFRAME_M1, 5: self._mt5.TIMEFRAME_M5,
-            15: self._mt5.TIMEFRAME_M15, 30: self._mt5.TIMEFRAME_M30,
-            60: self._mt5.TIMEFRAME_H1, 240: self._mt5.TIMEFRAME_H4,
+            1: self._mt5.TIMEFRAME_M1,
+            5: self._mt5.TIMEFRAME_M5,
+            15: self._mt5.TIMEFRAME_M15,
+            30: self._mt5.TIMEFRAME_M30,
+            60: self._mt5.TIMEFRAME_H1,
+            240: self._mt5.TIMEFRAME_H4,
             1440: self._mt5.TIMEFRAME_D1,
         }
         mt5_tf = tf_map.get(timeframe, timeframe)
 
-        from datetime import timedelta, datetime as dt
+        from datetime import datetime as dt
+        from datetime import timedelta
+
         now = dt.utcnow()
         to = now
         # Estimate time range: count bars * timeframe in seconds

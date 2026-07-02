@@ -107,6 +107,7 @@ def run_oracle(
 
     class _Feed(bt.feeds.PandasData):
         """Auto-map column indices from our OHLCV dict."""
+
         params = (
             ("datetime", None),
             ("open", 0),
@@ -119,13 +120,15 @@ def run_oracle(
 
     import pandas as pd
 
-    df = pd.DataFrame({
-        "open": opens,
-        "high": highs,
-        "low": lows,
-        "close": closes,
-        "volume": volumes,
-    })
+    df = pd.DataFrame(
+        {
+            "open": opens,
+            "high": highs,
+            "low": lows,
+            "close": closes,
+            "volume": volumes,
+        }
+    )
     if timestamps:
         df.index = pd.to_datetime(timestamps)
 
@@ -185,21 +188,23 @@ def run_oracle(
     strategy_result = results[0] if results else None
     trades = []
 
-    if strategy_result and hasattr(strategy_result, '_tradespending'):
+    if strategy_result and hasattr(strategy_result, "_tradespending"):
         for t in strategy_result._tradespending:
-            trades.append({
-                "signal_id": str(uuid.uuid4()),
-                "timestamp_utc": "",
-                "symbol": contract_spec.get("symbol", ""),
-                "side": "long" if t.size > 0 else "short",
-                "entry_price": float(t.price),
-                "stop_loss": 0.0,
-                "take_profit": 0.0,
-                "exit_price": 0.0,
-                "exit_reason": "strategy_exit",
-                "pnl_gross": float(t.pnl),
-                "pnl_net": float(t.pnl),
-            })
+            trades.append(
+                {
+                    "signal_id": str(uuid.uuid4()),
+                    "timestamp_utc": "",
+                    "symbol": contract_spec.get("symbol", ""),
+                    "side": "long" if t.size > 0 else "short",
+                    "entry_price": float(t.price),
+                    "stop_loss": 0.0,
+                    "take_profit": 0.0,
+                    "exit_price": 0.0,
+                    "exit_reason": "strategy_exit",
+                    "pnl_gross": float(t.pnl),
+                    "pnl_net": float(t.pnl),
+                }
+            )
 
     final_value = cerebro.broker.getvalue()
     return {

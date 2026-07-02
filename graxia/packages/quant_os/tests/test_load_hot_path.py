@@ -15,17 +15,16 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-
+from graxia.packages.quant_os.core.agents.portfolio_manager import PortfolioManagerAgent
+from graxia.packages.quant_os.core.agents.risk_auditor import RiskAuditorAgent
 from graxia.packages.quant_os.core.canonical.macro_regime import (
     MacroRegimeCache,
     RegimeBias,
     get_macro_regime,
     get_position_multiplier,
 )
-from graxia.packages.quant_os.core.agents.risk_auditor import RiskAuditorAgent
-from graxia.packages.quant_os.core.agents.portfolio_manager import PortfolioManagerAgent
-from graxia.packages.quant_os.core.events import SignalEvent, RiskEvent
 from graxia.packages.quant_os.core.enums import SignalType
+from graxia.packages.quant_os.core.events import RiskEvent, SignalEvent
 
 HOT_PATH_BUDGET_MS = 10.0
 ITERATIONS = 10000
@@ -90,8 +89,12 @@ class TestHotPath_Latency:
         latencies = []
         for _ in range(1000):
             sig = SignalEvent(
-                symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.8,
-                entry_price=2400.0, stop_loss=2390.0, take_profit=2430.0,
+                symbol="XAUUSD",
+                signal_type=SignalType.BUY,
+                confidence=0.8,
+                entry_price=2400.0,
+                stop_loss=2390.0,
+                take_profit=2430.0,
                 source="technical_analyst",
             )
             ra.observe(sig)
@@ -109,8 +112,12 @@ class TestHotPath_Latency:
         latencies = []
         for _ in range(1000):
             sig = SignalEvent(
-                symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.8,
-                entry_price=2400.0, stop_loss=2390.0, take_profit=2430.0,
+                symbol="XAUUSD",
+                signal_type=SignalType.BUY,
+                confidence=0.8,
+                entry_price=2400.0,
+                stop_loss=2390.0,
+                take_profit=2430.0,
                 source="technical_analyst",
             )
             risk = RiskEvent(check_name="audit", passed=True, source="risk_auditor")
@@ -134,8 +141,12 @@ class TestHotPath_Latency:
         latencies = []
         for _ in range(1000):
             sig = SignalEvent(
-                symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.8,
-                entry_price=2400.0, stop_loss=2390.0, take_profit=2430.0,
+                symbol="XAUUSD",
+                signal_type=SignalType.BUY,
+                confidence=0.8,
+                entry_price=2400.0,
+                stop_loss=2390.0,
+                take_profit=2430.0,
                 source="technical_analyst",
             )
 
@@ -165,8 +176,12 @@ class TestHotPath_Latency:
             pm = PortfolioManagerAgent()
             for _ in range(100):
                 sig = SignalEvent(
-                    symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.8,
-                    entry_price=2400.0, stop_loss=2390.0, take_profit=2430.0,
+                    symbol="XAUUSD",
+                    signal_type=SignalType.BUY,
+                    confidence=0.8,
+                    entry_price=2400.0,
+                    stop_loss=2390.0,
+                    take_profit=2430.0,
                     source="technical_analyst",
                 )
                 risk = RiskEvent(check_name="audit", passed=True, source="risk_auditor")
@@ -198,8 +213,12 @@ class TestHotPath_Latency:
             pm = PortfolioManagerAgent()
             for _ in range(100):
                 sig = SignalEvent(
-                    symbol="XAUUSD", signal_type=SignalType.BUY, confidence=0.8,
-                    entry_price=2400.0, stop_loss=2390.0, take_profit=2430.0,
+                    symbol="XAUUSD",
+                    signal_type=SignalType.BUY,
+                    confidence=0.8,
+                    entry_price=2400.0,
+                    stop_loss=2390.0,
+                    take_profit=2430.0,
                     source="technical_analyst",
                 )
                 risk = RiskEvent(check_name="audit", passed=True, source="risk_auditor")

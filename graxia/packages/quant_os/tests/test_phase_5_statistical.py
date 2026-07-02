@@ -1,4 +1,5 @@
 """Phase 5 — Statistical validation tests."""
+
 from graxia.packages.quant_os.validation.deflated_sharpe import deflated_sharpe_ratio
 from graxia.packages.quant_os.validation.probability_overfitting import calculate_pbo
 
@@ -14,9 +15,7 @@ def test_deflated_sharpe_zero_trials():
 
 def test_deflated_sharpe_high_sharpe():
     """High Sharpe with many observations passes threshold."""
-    result = deflated_sharpe_ratio(
-        observed_sharpe=3.0, n_trials=10, n_observations=1000
-    )
+    result = deflated_sharpe_ratio(observed_sharpe=3.0, n_trials=10, n_observations=1000)
     assert result.observed_sharpe == 3.0
     assert result.deflated_sharpe > 0
 

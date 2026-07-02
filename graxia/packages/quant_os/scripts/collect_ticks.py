@@ -7,12 +7,13 @@ Output: CSV files for training pipeline.
 Usage:
     python scripts/collect_ticks.py [--interval 1.0] [--duration 3600] [--symbols XAUUSD,EURUSD,GBPUSD]
 """
+
 import argparse
 import csv
 import os
 import sys
 import time
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 import MetaTrader5 as mt5
 
@@ -67,10 +68,21 @@ def main():
         filepath = os.path.join(OUTPUT_DIR, f"{sym}_ticks_{datetime.now(UTC).strftime('%Y%m%d')}.csv")
         is_new = not os.path.exists(filepath)
         f = open(filepath, "a", newline="")
-        writer = csv.DictWriter(f, fieldnames=[
-            "timestamp_utc", "time_msc", "symbol", "bid", "ask", "last",
-            "spread_points", "spread_price", "volume", "flags"
-        ])
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "timestamp_utc",
+                "time_msc",
+                "symbol",
+                "bid",
+                "ask",
+                "last",
+                "spread_points",
+                "spread_price",
+                "volume",
+                "flags",
+            ],
+        )
         if is_new:
             writer.writeheader()
         writers[sym] = writer

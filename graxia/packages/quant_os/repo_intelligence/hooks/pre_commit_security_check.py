@@ -5,6 +5,7 @@ Checks staged files for:
 1. Credential literals (password, api_key, MT5_* env var reads)
 2. Forbidden order API imports outside the allowlist (execution/demo_canary/)
 """
+
 import re
 import subprocess
 import sys
@@ -14,13 +15,13 @@ from pathlib import Path
 
 # password = "value", password: "value", or password: 'value' (non-empty, non-placeholder)
 PASSWORD_RE = re.compile(
-    r'''password\s*[:=]\s*(["'])(?!\1)(?!\s*\1).+?\1''',
+    r"""password\s*[:=]\s*(["'])(?!\1)(?!\s*\1).+?\1""",
     re.IGNORECASE,
 )
 
 # api_key = "value", api_key: "value", or api_key: 'value'
 API_KEY_RE = re.compile(
-    r'''api[_-]?key\s*[:=]\s*(["'])(?!\1)(?!\s*\1).+?\1''',
+    r"""api[_-]?key\s*[:=]\s*(["'])(?!\1)(?!\s*\1).+?\1""",
     re.IGNORECASE,
 )
 
@@ -31,15 +32,13 @@ CREDENTIAL_PATTERNS = [
 ]
 
 # MT5 env var reads restricted to gold_bot/
-MT5_ENV_RE = re.compile(
-    r'''(?:MT5_LOGIN|MT5_PASSWORD|MT5_SERVER)\s*=\s*os\.(?:environ|getenv)\('''
-)
+MT5_ENV_RE = re.compile(r"""(?:MT5_LOGIN|MT5_PASSWORD|MT5_SERVER)\s*=\s*os\.(?:environ|getenv)\(""")
 
 # Forbidden order API symbols outside allowlist
 FORBIDDEN_SYMBOLS = {
-    "order_send": re.compile(r'''\border_send\s*\('''),
-    "TRADE_ACTION_DEAL": re.compile(r'''\bTRADE_ACTION_DEAL\b'''),
-    "position_close": re.compile(r'''\bposition_close\s*\('''),
+    "order_send": re.compile(r"""\border_send\s*\("""),
+    "TRADE_ACTION_DEAL": re.compile(r"""\bTRADE_ACTION_DEAL\b"""),
+    "position_close": re.compile(r"""\bposition_close\s*\("""),
 }
 
 # Paths that ARE allowed to use order_send / TRADE_ACTION_DEAL / position_close
@@ -60,7 +59,9 @@ def _get_staged_files() -> list[str]:
     try:
         result = subprocess.run(
             ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],
-            capture_output=True, text=True, check=True,
+            capture_output=True,
+            text=True,
+            check=True,
         )
         return [f for f in result.stdout.strip().splitlines() if f]
     except (subprocess.CalledProcessError, FileNotFoundError):
@@ -72,7 +73,9 @@ def _read_staged_content(filepath: str) -> str:
     try:
         result = subprocess.run(
             ["git", "show", f":{filepath}"],
-            capture_output=True, text=True, check=True,
+            capture_output=True,
+            text=True,
+            check=True,
         )
         return result.stdout
     except (subprocess.CalledProcessError, FileNotFoundError):
@@ -102,18 +105,18 @@ def scan_file(filepath: str) -> list[str]:
 
     for label, pattern in CREDENTIAL_PATTERNS:
         for match in pattern.finditer(content):
-            line_num = content[:match.start()].count("\n") + 1
+            line_num = content[: match.start()].count("\n") + 1
             findings.append(f"  {filepath}:{line_num} — {label}: {match.group()!r}")
 
     if _in_gold_bot(filepath):
         for match in MT5_ENV_RE.finditer(content):
-            line_num = content[:match.start()].count("\n") + 1
+            line_num = content[: match.start()].count("\n") + 1
             findings.append(f"  {filepath}:{line_num} — MT5 env var read: {match.group()!r}")
 
     if not _in_allowlist(filepath):
         for symbol, pattern in FORBIDDEN_SYMBOLS.items():
             for match in pattern.finditer(content):
-                line_num = content[:match.start()].count("\n") + 1
+                line_num = content[: match.start()].count("\n") + 1
                 findings.append(
                     f"  {filepath}:{line_num} — forbidden symbol '{symbol}' outside allowlist: {match.group()!r}"
                 )
@@ -156,18 +159,18 @@ def run_check_on_file(filepath: str) -> int:
 
     for label, pattern in CREDENTIAL_PATTERNS:
         for match in pattern.finditer(content):
-            line_num = content[:match.start()].count("\n") + 1
+            line_num = content[: match.start()].count("\n") + 1
             findings.append(f"  {rel}:{line_num} — {label}: {match.group()!r}")
 
     if _in_gold_bot(rel):
         for match in MT5_ENV_RE.finditer(content):
-            line_num = content[:match.start()].count("\n") + 1
+            line_num = content[: match.start()].count("\n") + 1
             findings.append(f"  {rel}:{line_num} — MT5 env var read: {match.group()!r}")
 
     if not _in_allowlist(rel):
         for symbol, pat in FORBIDDEN_SYMBOLS.items():
             for match in pat.finditer(content):
-                line_num = content[:match.start()].count("\n") + 1
+                line_num = content[: match.start()].count("\n") + 1
                 findings.append(
                     f"  {rel}:{line_num} — forbidden symbol '{symbol}' outside allowlist: {match.group()!r}"
                 )

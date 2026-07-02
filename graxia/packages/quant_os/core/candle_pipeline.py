@@ -1,7 +1,8 @@
 """Candle pipelines from Jesse pattern for Monte Carlo simulation"""
-from abc import ABC, abstractmethod
-from typing import List, Dict
+
 import random
+from abc import ABC, abstractmethod
+
 
 class BaseCandlesPipeline(ABC):
     """Base class for candle regeneration pipelines"""
@@ -10,19 +11,18 @@ class BaseCandlesPipeline(ABC):
         self._batch_size = batch_size
 
     @abstractmethod
-    def process(self, original_candles: Dict[str, List[float]],
-                output: Dict[str, List[float]]) -> bool:
+    def process(self, original_candles: dict[str, list[float]], output: dict[str, list[float]]) -> bool:
         """Regenerate candles. Return True if output was modified."""
         pass
 
-    def get_candles(self, candles: Dict[str, List[float]],
-                    index: int) -> Dict[str, List[float]]:
+    def get_candles(self, candles: dict[str, list[float]], index: int) -> dict[str, list[float]]:
         """Get candle at index, regenerating batch if needed"""
         result = {}
         for key in candles:
             if index < len(candles[key]):
                 result[key] = candles[key][index]
         return result
+
 
 class MovingBlockBootstrapPipeline(BaseCandlesPipeline):
     """Bootstrap blocks of price changes to generate synthetic candles"""
@@ -31,8 +31,7 @@ class MovingBlockBootstrapPipeline(BaseCandlesPipeline):
         super().__init__(**kwargs)
         self.block_size = block_size
 
-    def process(self, original_candles: Dict[str, List[float]],
-                output: Dict[str, List[float]]) -> bool:
+    def process(self, original_candles: dict[str, list[float]], output: dict[str, list[float]]) -> bool:
         close = original_candles.get("close", [])
         high = original_candles.get("high", [])
         low = original_candles.get("low", [])
@@ -41,9 +40,9 @@ class MovingBlockBootstrapPipeline(BaseCandlesPipeline):
             return False
 
         # Calculate deltas
-        delta_close = [close[i] - close[i-1] for i in range(1, len(close))]
-        delta_high = [high[i] - close[i-1] for i in range(1, len(close))]
-        delta_low = [close[i-1] - low[i] for i in range(1, len(close))]
+        delta_close = [close[i] - close[i - 1] for i in range(1, len(close))]
+        delta_high = [high[i] - close[i - 1] for i in range(1, len(close))]
+        delta_low = [close[i - 1] - low[i] for i in range(1, len(close))]
 
         # Bootstrap blocks
         n = len(delta_close)
@@ -55,15 +54,18 @@ class MovingBlockBootstrapPipeline(BaseCandlesPipeline):
                 boot_close.append(boot_close[-1] + delta_close[idx])
 
         # Generate output
-        output["close"] = boot_close[:len(close)]
+        output["close"] = boot_close[: len(close)]
         output["open"] = [boot_close[0]] + boot_close[:-1]
-        output["high"] = [max(o, c) + abs(random.gauss(0, 0.001))
-                         for o, c in zip(output["open"], output["close"])]
-        output["low"] = [min(o, c) - abs(random.gauss(0, 0.001))
-                        for o, c in zip(output["open"], output["close"])]
+        output["high"] = [
+            max(o, c) + abs(random.gauss(0, 0.001)) for o, c in zip(output["open"], output["close"], strict=False)
+        ]
+        output["low"] = [
+            min(o, c) - abs(random.gauss(0, 0.001)) for o, c in zip(output["open"], output["close"], strict=False)
+        ]
         output["volume"] = original_candles.get("volume", [0] * len(close))
 
         return True
+
 
 class GaussianNoisePipeline(BaseCandlesPipeline):
     """Add Gaussian noise to candles"""
@@ -72,11 +74,7 @@ class GaussianNoisePipeline(BaseCandlesPipeline):
         super().__init__(**kwargs)
         self.noise_pct = noise_pct
 
-    def process(self, original_candles: Dict[str, List[float]],
-                output: Dict[str, List[float]]) -> bool:
+    def process(self, original_candles: dict[str, list[float]], output: dict[str, list[float]]) -> bool:
         for key in original_candles:
-            output[key] = [
-                v * (1 + random.gauss(0, self.noise_pct))
-                for v in original_candles[key]
-            ]
+            output[key] = [v * (1 + random.gauss(0, self.noise_pct)) for v in original_candles[key]]
         return True
