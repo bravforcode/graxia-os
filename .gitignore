@@ -162,3 +162,8 @@ sites/
 
 # LanceDB vector database
 lancedb/
+
+# Credential files — NEVER commit
+*_creds*
+*config.toml
+honest_web_research_report.md

@@ -15,6 +15,7 @@ from app.core.auth import (
 )
 from app.services.audit_service import log_audit_event
 from app.services.session_service import SessionService
+from app.models.user import User as _UserORM
 from fastapi import HTTPException, Request, Security, status, Depends
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -276,18 +277,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 request.state.internal_token_authenticated = True
                 return await call_next(request)
 
-            # Fallback to bearer token (deprecated)
-            configured = (settings.ALERTMANAGER_WEBHOOK_TOKEN or "").strip()
-            provided = request.headers.get("X-Alertmanager-Token", "").strip()
-            authorization = request.headers.get("Authorization", "")
-            if authorization.lower().startswith("bearer "):
-                provided = authorization.split(" ", 1)[1].strip()
+                return JSONResponse({"detail": "Unauthorized — HMAC signature required"}, status_code=401)
 
-            if not await verify_internal_bearer_token(configured, provided):
-                return JSONResponse({"detail": "Unauthorized"}, status_code=401)
-
-            request.state.internal_token_authenticated = True
-            return await call_next(request)
         if required_level == AuthLevel.PUBLIC:
             return await call_next(request)
 
@@ -334,7 +325,7 @@ async def get_current_user(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Security(security),
     db: AsyncSession = Depends(get_db_dependency),
-) -> "User":
+) -> _UserORM:
     """
     Returns the authenticated ORM User object.
     Validates: token present, signature valid, session active, user exists, user active.
@@ -373,9 +364,8 @@ async def get_current_user(
 
     # Load ORM User from DB
     from uuid import UUID as _UUID
-    from app.models.user import User as _User
 
-    user = await db.get(_User, _UUID(str(user_id)))
+    user = await db.get(_UserORM, _UUID(str(user_id)))
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -392,14 +382,14 @@ async def get_current_user(
 
 
 async def get_current_active_user(
-    current_user: "User" = Depends(get_current_user),
-) -> "User":
+    current_user: _UserORM = Depends(get_current_user),
+) -> _UserORM:
     return current_user
 
 
 async def require_role(
-    required_role: str, current_user: "User" = Depends(get_current_user)
-) -> "User":
+    required_role: str, current_user: _UserORM = Depends(get_current_user)
+) -> _UserORM:
     user_role = getattr(current_user, "role", "user") or "user"
     if not role_satisfies(
         AuthLevel.ADMIN if required_role == "admin" else AuthLevel.OPERATOR,
@@ -414,4 +404,6 @@ async def require_role(
 
 async def verify_api_key(api_key: str) -> bool:
     configured_key = (settings.API_KEY or "").strip()
-    return bool(configured_key) and api_key == configured_key
+    if not configured_key or not api_key:
+        return False
+    return hmac.compare_digest(api_key, configured_key)

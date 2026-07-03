@@ -12,9 +12,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from analysis.visual_search import IndexStats, SearchResult, VisualChartSearch
-from api.tv_cdp import PineCompileResult, TradingViewCDP
-from api.tv_client import (
+from graxia.packages.quant_os.analysis.visual_search import IndexStats, SearchResult, VisualChartSearch
+from graxia.packages.quant_os.api.tv_cdp import PineCompileResult, TradingViewCDP
+from graxia.packages.quant_os.api.tv_client import (
     BacktestResult,
     FullAnalysis,
     MarketSnapshot,
@@ -121,9 +121,11 @@ def _import_orchestrator():
     import importlib.util
     import sys
 
+    mod_name = "graxia.packages.quant_os.core.tv_integration"
+
     # If already importable, use it
-    if "core.tv_integration" in sys.modules:
-        mod = sys.modules["core.tv_integration"]
+    if mod_name in sys.modules:
+        mod = sys.modules[mod_name]
         return mod.TradingOrchestrator
 
     # Find the file directly
@@ -135,12 +137,12 @@ def _import_orchestrator():
     core_pkg_path = tv_int_path.parent
 
     spec = importlib.util.spec_from_file_location(
-        "core.tv_integration",
+        mod_name,
         str(tv_int_path),
         submodule_search_locations=[str(core_pkg_path)],
     )
     mod = importlib.util.module_from_spec(spec)
-    sys.modules["core.tv_integration"] = mod
+    sys.modules[mod_name] = mod
     spec.loader.exec_module(mod)
     return mod.TradingOrchestrator
 

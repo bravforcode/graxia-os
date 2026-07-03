@@ -130,7 +130,7 @@ class TestContractSpec:
     def test_contract_spec_frozen(self):
         spec = _xauusd_spec()
         with pytest.raises(AttributeError):
-            spec.symbol = "EURUSD"  # type: ignore
+            spec.symbol = "EURUSD"  # type: ignore[misc]
 
 
 # ============================================================

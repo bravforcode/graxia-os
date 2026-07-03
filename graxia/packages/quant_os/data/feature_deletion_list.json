@@ -1,0 +1,46 @@
+{
+  "version": "1.0",
+  "generated": "2026-07-01",
+  "rationale": {
+    "DELETE": "Features with confirmed lookahead bias or zero predictive power — must be removed from all pipelines",
+    "QUARANTINE": "Features with suspected issues requiring investigation before use"
+  },
+  "features": {
+    "bars_since_sweep": {
+      "action": "DELETE",
+      "reason": "Lookahead bias: sweep detection uses future bars to confirm, making this feature leak forward information",
+      "affected_detectors": ["detect_sweeps"],
+      "source": "core/smc_detectors.py"
+    },
+    "ob_strength": {
+      "action": "DELETE",
+      "reason": "Lookahead bias: order block strength computed using post-formation volume and price action",
+      "affected_detectors": ["detect_order_blocks"],
+      "source": "core/smc_detectors.py"
+    },
+    "ob_mitigation_depth": {
+      "action": "DELETE",
+      "reason": "Lookahead bias: mitigation requires observing future price action relative to order block",
+      "affected_detectors": ["detect_mitigation_and_inversion"],
+      "source": "core/smc_detectors.py"
+    },
+    "ob_distance_atr": {
+      "action": "QUARANTINE",
+      "reason": "Depends on ob_strength for nearest-OB selection; may inherit lookahead if strength filter is used",
+      "affected_detectors": ["detect_order_blocks"],
+      "source": "core/smc_detectors.py"
+    },
+    "ob_age_bars": {
+      "action": "QUARANTINE",
+      "reason": "Depends on order block selection which may be biased by ob_strength; needs independent validation",
+      "affected_detectors": ["detect_order_blocks"],
+      "source": "core/smc_detectors.py"
+    }
+  },
+  "pipeline_impact": {
+    "build_features_v3_multi_asset.py": {
+      "lines_affected": "107-108, 115",
+      "changes_required": "Remove bars_since_sweep from sweeps block, remove ob_strength from obs block, remove ob_mitigation_depth from mit_inv block"
+    }
+  }
+}

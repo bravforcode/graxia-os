@@ -337,3 +337,8 @@ def reset_config():
     """Reset config (for testing)"""
     global _config
     _config = None
+
+
+# Backward-compat alias — several modules import ``get_settings`` which was
+# the original name before the rename to ``get_config``.
+get_settings = get_config

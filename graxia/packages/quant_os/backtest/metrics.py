@@ -7,10 +7,13 @@ Calculates all standard trading performance metrics:
 - Max drawdown, max drawdown duration
 - Average win/loss, average R:R
 - CAGR, total return
+
+Phase 3: Added bootstrap confidence intervals (stationary bootstrap).
 """
 
 import math
-from dataclasses import dataclass
+import random
+from dataclasses import dataclass, field
 
 from ..core.enums import PositionType
 
@@ -79,6 +82,138 @@ class BacktestMetrics:
     # Consecutive
     max_consecutive_wins: int = 0
     max_consecutive_losses: int = 0
+
+
+@dataclass
+class BootstrapCI:
+    """Phase 3: Bootstrap confidence interval for a metric."""
+
+    metric_name: str
+    point_estimate: float
+    ci_lower: float  # 2.5th percentile
+    ci_upper: float  # 97.5th percentile
+    ci_level: float = 0.95
+    n_resamples: int = 1000
+    includes_zero: bool = True  # True if CI includes zero (no edge detected)
+
+
+def stationary_bootstrap(
+    returns: list[float],
+    mean_block_length: int = 10,
+    n_resamples: int = 1000,
+    seed: int | None = None,
+) -> list[list[float]]:
+    """Phase 3: Stationary bootstrap (Politis & Romano 1994).
+
+    Preserves autocorrelation and volatility clustering in financial time series.
+
+    Args:
+        returns: Per-bar return series
+        mean_block_length: Average block length (10-20 for daily FX)
+        n_resamples: Number of bootstrap samples
+        seed: Random seed for reproducibility
+
+    Returns:
+        List of n_resamples bootstrap return series
+    """
+    if len(returns) < 2:
+        return [returns] * n_resamples
+
+    rng = random.Random(seed)
+    n = len(returns)
+    p = 1.0 / mean_block_length  # Probability of starting a new block
+
+    resamples = []
+    for _ in range(n_resamples):
+        sample = []
+        idx = rng.randint(0, n - 1)
+        while len(sample) < n:
+            sample.append(returns[idx])
+            if rng.random() < p:
+                idx = rng.randint(0, n - 1)
+            else:
+                idx = (idx + 1) % n
+        resamples.append(sample)
+
+    return resamples
+
+
+def bootstrap_metric_ci(
+    returns: list[float],
+    metric_func,
+    n_resamples: int = 1000,
+    mean_block_length: int = 10,
+    ci_level: float = 0.95,
+    seed: int | None = None,
+) -> BootstrapCI:
+    """Phase 3: Compute bootstrap confidence interval for any metric.
+
+    Args:
+        returns: Per-bar return series
+        metric_func: Function that takes a return series and returns a scalar metric
+        n_resamples: Number of bootstrap resamples
+        mean_block_length: Average block length for stationary bootstrap
+        ci_level: Confidence level (default 0.95 = 95% CI)
+        seed: Random seed
+
+    Returns:
+        BootstrapCI with point estimate, CI bounds, and zero-inclusion check
+    """
+    if not returns or len(returns) < 10:
+        point = metric_func(returns) if returns else 0.0
+        return BootstrapCI(
+            metric_name=metric_func.__name__,
+            point_estimate=point,
+            ci_lower=point,
+            ci_upper=point,
+            ci_level=ci_level,
+            n_resamples=0,
+            includes_zero=True,
+        )
+
+    point = metric_func(returns)
+    resamples = stationary_bootstrap(returns, mean_block_length, n_resamples, seed)
+
+    bootstrap_values = []
+    for sample in resamples:
+        try:
+            val = metric_func(sample)
+            if math.isfinite(val):
+                bootstrap_values.append(val)
+        except Exception:
+            continue
+
+    if not bootstrap_values:
+        return BootstrapCI(
+            metric_name=metric_func.__name__,
+            point_estimate=point,
+            ci_lower=point,
+            ci_upper=point,
+            ci_level=ci_level,
+            n_resamples=0,
+            includes_zero=True,
+        )
+
+    bootstrap_values.sort()
+    alpha = (1 - ci_level) / 2
+    lower_idx = int(alpha * len(bootstrap_values))
+    upper_idx = int((1 - alpha) * len(bootstrap_values)) - 1
+    lower_idx = max(0, min(lower_idx, len(bootstrap_values) - 1))
+    upper_idx = max(0, min(upper_idx, len(bootstrap_values) - 1))
+
+    ci_lower = bootstrap_values[lower_idx]
+    ci_upper = bootstrap_values[upper_idx]
+    includes_zero = ci_lower <= 0 <= ci_upper
+
+    return BootstrapCI(
+        metric_name=metric_func.__name__,
+        point_estimate=point,
+        ci_lower=ci_lower,
+        ci_upper=ci_upper,
+        ci_level=ci_level,
+        n_resamples=len(bootstrap_values),
+        includes_zero=includes_zero,
+    )
 
 
 def calculate_metrics(

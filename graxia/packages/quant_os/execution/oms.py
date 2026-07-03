@@ -163,24 +163,6 @@ class OMS:
             sum(len(v) for v in events_by_order.values()),
         )
 
-    def _persist(self, order: Order) -> None:
-        """Append a single order record to the JSONL ledger."""
-        record = {
-            "order_id": order.order_id,
-            "signal_id": order.signal_id,
-            "symbol": order.symbol,
-            "asset_class": order.asset_class,
-            "side": order.side,
-            "quantity": order.quantity,
-            "stop_loss": order.stop_loss,
-            "take_profit": order.take_profit,
-            "status": order.status.value,
-            "broker_order_id": order.broker_order_id,
-            "created_at": order.created_at.isoformat(),
-        }
-        with open(self._ledger_path, "a", encoding="utf-8") as fh:
-            fh.write(json.dumps(record) + "\n")
-
     def _update_ledger(self, order: Order) -> None:
         """Append status update to the JSONL ledger (event sourcing)."""
         record = {
@@ -385,7 +367,6 @@ class OMS:
         self._orders[order.order_id] = order
         if order.signal_id:
             self._orders_by_signal_id[order.signal_id] = order
-        # ponytail: _update_ledger handles persistence; _persist creates duplicates
 
         # --- State machine: SIGNAL_CREATED → RISK_CHECKED → ORDER_PRECHECKED ---
         try:

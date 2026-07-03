@@ -66,7 +66,6 @@ const navItems = [
   { path: '/contacts', label: 'Contacts', icon: Users },
   { path: '/costs', label: 'Costs', icon: DollarSign },
   { path: '/metrics', label: 'Metrics', icon: BarChart3 },
-  { path: '/content-engine', label: 'Content Engine', icon: FileText },
   { path: '/settings', label: 'Settings', icon: Settings },
 ]
 
@@ -74,19 +73,7 @@ const systemNavItems = [
   { path: '/event-bus', label: 'Event Bus', icon: Activity },
 ]
 
-const adminNavItems = [
-  { path: '/admin/agent-control', label: 'Agent Control', icon: Gauge },
-  { path: '/admin/runtime', label: 'Runtime', icon: Server },
-  { path: '/admin/token-roi', label: 'Token ROI', icon: BarChart3 },
-  { path: '/admin/mcp-tools', label: 'MCP Tools', icon: TerminalSquare },
-  { path: '/admin/workflows', label: 'Workflows', icon: Workflow },
-  { path: '/admin/approvals', label: 'Approvals', icon: ShieldCheck },
-  { path: '/admin/context-packs', label: 'Context Packs', icon: Database },
-  { path: '/admin/workspace-exports', label: 'Workspace', icon: HardDrive },
-  { path: '/admin/funnel/analytics', label: 'Funnel', icon: Activity },
-  { path: '/admin/audit', label: 'Audit', icon: ScrollText },
-  { path: '/admin/readiness', label: 'Readiness', icon: CheckSquare },
-]
+const adminNavItems: never[] = []
 
 function isActivePath(pathname: string, path: string) {
   return path === '/' ? pathname === path : pathname === path || pathname.startsWith(`${path}/`)

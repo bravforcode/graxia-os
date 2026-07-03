@@ -121,7 +121,7 @@ def calculate_pbo_from_matrix(
             continue
 
         # Find the IS-best config
-        best_is_id = max(is_sharpes, key=is_sharpes.get)  # type: ignore[arg-type]
+        best_is_id = max(is_sharpes, key=lambda k: is_sharpes[k])
         best_is_oos_sharpe = oos_sharpes[best_is_id]
 
         # Rank: fraction of OOS configs that beat IS-best
@@ -221,7 +221,7 @@ def calculate_pbo(
         if not is_sharpes or not oos_sharpes:
             continue
 
-        best_is_idx = max(is_sharpes, key=is_sharpes.get)  # type: ignore[arg-type]
+        best_is_idx = max(is_sharpes, key=lambda k: is_sharpes[k])
         oos_sorted = sorted(oos_sharpes.values(), reverse=True)
         best_is_oos_sharpe = _sharpe(partitions[best_is_idx])
 

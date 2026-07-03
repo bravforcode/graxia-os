@@ -7,10 +7,16 @@ Implements anchored and rolling walk-forward analysis:
 - Aggregate OOS results for robust performance estimate
 
 Golden rule requirement: minimum 3 walk-forward windows
+
+Phase 3 enhancements:
+- Purge/embargo gaps between IS and OOS (López de Prado 2018)
+- Walk-Forward Efficiency (WFE) tracking
+- Parameter stability scoring (CV across windows)
 """
 
+import math
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Any
 
@@ -41,6 +47,7 @@ class WalkForwardWindow:
     # Validation
     is_oos_ratio: float = 0.0  # OOS/IS performance ratio
     is_degradation: float = 0.0  # Performance degradation from IS to OOS
+    wfe: float = 0.0  # Walk-Forward Efficiency = OOS Sharpe / IS Sharpe
 
 
 @dataclass
@@ -58,10 +65,15 @@ class WalkForwardResult:
     oos_total_pnl: float = 0.0
     oos_avg_win_rate: float = 0.0
 
+    # IS performance (for WFE)
+    is_sharpe: float = 0.0
+
     # Overfitting metrics
     avg_is_oos_ratio: float = 0.0
     oos_consistency: float = 0.0  # % of profitable OOS windows
     overfitting_score: float = 0.0  # 0 = no overfit, 1 = severe overfit
+    walk_forward_efficiency: float = 0.0  # OOS Sharpe / IS Sharpe
+    parameter_stability: dict[str, float] = field(default_factory=dict)  # CV per param
 
     # PBO result (populated after analyze())
     pbo_result: Any = None  # PBOResult from probability_overfitting
@@ -81,6 +93,8 @@ class WalkForwardAnalyzer:
     Supports two modes:
     - Anchored: IS window always starts from beginning, grows
     - Rolling: IS window has fixed length, slides forward
+
+    Phase 3: Adds purge/embargo gaps to prevent label leakage.
     """
 
     def __init__(
@@ -92,6 +106,8 @@ class WalkForwardAnalyzer:
         mode: str = "rolling",  # "rolling" or "anchored"
         strategy_id: str | None = None,
         search_budget: int | None = None,
+        purge_bars: int = 0,  # Phase 3: bars to remove between IS and OOS
+        embargo_bars: int = 0,  # Phase 3: bars to remove after OOS (before next IS)
     ):
         self.strategy_factory = strategy_factory
         self.config = config or BacktestConfig()
@@ -100,6 +116,8 @@ class WalkForwardAnalyzer:
         self.mode = mode
         self.strategy_id = strategy_id or "default"
         self._search_tracker = SearchBudgetTracker(max_trials=search_budget) if search_budget else None
+        self.purge_bars = purge_bars
+        self.embargo_bars = embargo_bars
 
     @property
     def search_tracker(self) -> SearchBudgetTracker | None:
@@ -131,7 +149,8 @@ class WalkForwardAnalyzer:
         if total_bars < 1000:
             raise ValueError(f"Insufficient data: {total_bars} bars. Need at least 1000.")
 
-        # Calculate window sizes
+        # Calculate window sizes (accounting for purge/embargo overhead)
+        total_gap = self.purge_bars + self.embargo_bars
         oos_size = total_bars // (n_windows + 1)  # Each OOS window
         is_size = int(oos_size * self.is_ratio / (1 - self.is_ratio))
 
@@ -145,23 +164,23 @@ class WalkForwardAnalyzer:
                 # Anchored: IS always starts at 0
                 is_start_idx = 0
                 is_end_idx = is_size + (w + 1) * oos_size
-                oos_start_idx = is_end_idx
+                oos_start_idx = is_end_idx + self.purge_bars  # Phase 3: purge gap
                 oos_end_idx = oos_start_idx + oos_size
             else:
                 # Rolling: fixed IS window
                 oos_end_idx = min(total_bars, (w + 1) * oos_size + is_size)
                 oos_start_idx = oos_end_idx - oos_size
-                is_end_idx = oos_start_idx
+                is_end_idx = oos_start_idx - self.purge_bars  # Phase 3: purge gap
                 is_start_idx = max(0, is_end_idx - is_size)
 
-            if oos_end_idx > total_bars:
+            if oos_end_idx > total_bars or is_end_idx <= is_start_idx:
                 break
 
             # Extract IS data
             is_data = {k: v[is_start_idx:is_end_idx] for k, v in data.items()}
             is_timestamps = timestamps[is_start_idx:is_end_idx]
 
-            # Extract OOS data
+            # Extract OOS data (after purge gap)
             oos_data = {k: v[oos_start_idx:oos_end_idx] for k, v in data.items()}
             oos_timestamps = timestamps[oos_start_idx:oos_end_idx]
 
@@ -227,12 +246,18 @@ class WalkForwardAnalyzer:
                         oos_returns.append((curr - prev) / prev)
                 window.oos_returns = oos_returns
 
-            # Calculate IS/OOS ratio
+            # Calculate IS/OOS ratio and WFE
             if window.is_metrics and window.oos_metrics:
                 is_pf = window.is_metrics.profit_factor if window.is_metrics.profit_factor != float("inf") else 10
                 oos_pf = window.oos_metrics.profit_factor if window.oos_metrics.profit_factor != float("inf") else 10
                 window.is_oos_ratio = oos_pf / is_pf if is_pf > 0 else 0
                 window.is_degradation = (1 - window.is_oos_ratio) * 100
+
+                # Walk-Forward Efficiency = OOS Sharpe / IS Sharpe
+                is_sharpe = window.is_metrics.sharpe_ratio
+                oos_sharpe = window.oos_metrics.sharpe_ratio
+                if is_sharpe > 0 and oos_sharpe != float("inf"):
+                    window.wfe = oos_sharpe / is_sharpe
 
             windows.append(window)
 
@@ -252,15 +277,20 @@ class WalkForwardAnalyzer:
 
         # Collect OOS metrics
         oos_metrics = [w.oos_metrics for w in windows if w.oos_metrics]
+        is_metrics = [w.is_metrics for w in windows if w.is_metrics]
 
         if not oos_metrics:
             return result
 
-        # Aggregate
+        # Aggregate OOS
         result.oos_win_rate = sum(m.win_rate for m in oos_metrics) / len(oos_metrics)
         result.oos_sharpe = sum(m.sharpe_ratio for m in oos_metrics) / len(oos_metrics)
         result.oos_max_drawdown_pct = max(m.max_drawdown_pct for m in oos_metrics)
         result.oos_total_pnl = sum(m.total_pnl for m in oos_metrics)
+
+        # Aggregate IS (for WFE)
+        if is_metrics:
+            result.is_sharpe = sum(m.sharpe_ratio for m in is_metrics) / len(is_metrics)
 
         # Profit factor (average)
         valid_pfs = [m.profit_factor for m in oos_metrics if m.profit_factor != float("inf")]
@@ -274,19 +304,52 @@ class WalkForwardAnalyzer:
         profitable_oos = sum(1 for m in oos_metrics if m.total_pnl > 0)
         result.oos_consistency = profitable_oos / len(oos_metrics)
 
+        # Walk-Forward Efficiency (aggregate)
+        wfes = [w.wfe for w in windows if w.wfe > 0]
+        result.walk_forward_efficiency = sum(wfes) / len(wfes) if wfes else 0
+
+        # Parameter stability scoring (CV across windows)
+        result.parameter_stability = self._compute_parameter_stability(windows)
+
         # Overfitting score (0-1, higher = more overfit)
-        # Based on: IS/OOS degradation, consistency, Sharpe degradation
+        # Based on: IS/OOS degradation, consistency, WFE
         degradation_scores = [w.is_degradation / 100 for w in windows if w.is_degradation > 0]
         avg_degradation = sum(degradation_scores) / len(degradation_scores) if degradation_scores else 0
 
         consistency_penalty = 1 - result.oos_consistency
-        result.overfitting_score = min(1.0, (avg_degradation * 0.5 + consistency_penalty * 0.5))
-
-        # PBO is now computed by the pipeline with a proper strategy matrix.
-        # Walk-forward stores per-window OOS returns (window.oos_returns) for
-        # the pipeline to use in CSCV. No direct PBO call here.
+        wfe_penalty = max(0, 1 - result.walk_forward_efficiency)  # Low WFE = high penalty
+        result.overfitting_score = min(1.0, (avg_degradation * 0.35 + consistency_penalty * 0.35 + wfe_penalty * 0.30))
 
         return result
+
+    def _compute_parameter_stability(self, windows: list[WalkForwardWindow]) -> dict[str, float]:
+        """Compute coefficient of variation (CV) for each parameter across windows.
+
+        CV < 15% = high stability, > 30% = fragile.
+        """
+        param_values: dict[str, list[float]] = {}
+        for w in windows:
+            if w.is_params is None:
+                continue
+            for k, v in w.is_params.items():
+                if isinstance(v, (int, float)):
+                    param_values.setdefault(k, []).append(float(v))
+
+        stability = {}
+        for param, values in param_values.items():
+            if len(values) < 2:
+                stability[param] = 0.0
+                continue
+            mean = sum(values) / len(values)
+            if mean == 0:
+                stability[param] = float("inf")
+                continue
+            variance = sum((v - mean) ** 2 for v in values) / (len(values) - 1)
+            std = math.sqrt(variance)
+            cv = std / abs(mean)
+            stability[param] = round(cv, 4)
+
+        return stability
 
 
 def validate_walk_forward_requirements(result: WalkForwardResult) -> dict[str, Any]:
@@ -303,7 +366,12 @@ def validate_walk_forward_requirements(result: WalkForwardResult) -> dict[str, A
         "oos_win_rate_sane": result.oos_win_rate >= 0.45,
         "overfitting_acceptable": result.overfitting_score < 0.6,
         "is_oos_ratio_acceptable": result.avg_is_oos_ratio >= 0.5,
+        "wfe_acceptable": result.walk_forward_efficiency >= 0.5,  # Phase 3: WFE threshold
     }
+
+    # Phase 3: Check parameter stability (CV > 30% = fragile)
+    fragile_params = [p for p, cv in result.parameter_stability.items() if cv > 0.30]
+    checks["parameter_stability_acceptable"] = len(fragile_params) == 0
 
     # Add PBO check if available
     if result.pbo_result is not None:

@@ -6,6 +6,13 @@ with mocked backends to avoid external dependencies.
 
 from __future__ import annotations
 
+import os
+
+# Set required secrets before importing app to avoid RuntimeError
+os.environ.setdefault("SECRET_KEY", "test-secret-key-for-ci-only")
+os.environ.setdefault("ENCRYPTION_KEY", "0123456789abcdef0123456789abcdef")
+os.environ.setdefault("POSTGRES_PASSWORD", "test-password")
+
 from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch

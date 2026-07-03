@@ -1,0 +1,11 @@
+{
+  "config": "B2 (conf\u22650.85, stop $6.30)",
+  "symbol": "XAUUSD",
+  "lot": 0.01,
+  "broker": "Pepperstone ECN Razor Demo",
+  "account": 61547941,
+  "start_date": "2026-06-26",
+  "status": "ready",
+  "trades": 0,
+  "last_heartbeat": null
+}

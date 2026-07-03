@@ -527,7 +527,6 @@ async def login(request: Request, response: Response, db=Depends(get_db)):
     raw_body = await request.body()
     email = ""
     password = ""
-    totp_code = ""
     form = None
 
     if (not email or not password) and "application/json" in content_type:
@@ -542,7 +541,6 @@ async def login(request: Request, response: Response, db=Depends(get_db)):
                     .lower()
                 )
                 password = str(payload.get("password") or "")
-                totp_code = str(payload.get("totp_code") or "").strip()
         except Exception:
             pass
 
@@ -555,7 +553,6 @@ async def login(request: Request, response: Response, db=Depends(get_db)):
             parsed = parse_qs(raw_body.decode("utf-8", errors="ignore"))
             email = str((parsed.get("username") or [""])[0]).strip().lower()
             password = str((parsed.get("password") or [""])[0])
-            totp_code = str((parsed.get("totp_code") or [""])[0]).strip()
         except Exception:
             pass
 
@@ -564,7 +561,6 @@ async def login(request: Request, response: Response, db=Depends(get_db)):
             form = await request.form()
             email = str(form.get("username") or "").strip().lower()
             password = str(form.get("password") or "")
-            totp_code = str(form.get("totp_code") or "").strip()
         except Exception:
             pass
 
@@ -575,12 +571,6 @@ async def login(request: Request, response: Response, db=Depends(get_db)):
 
     session_service = SessionService(getattr(request.app.state, "redis", None))
     identifier = f"login:{email}"
-
-    class DummyLockout:
-        is_locked = False
-        failures_in_window = 0
-
-    lockout_status = DummyLockout()
 
     try:
         user = await _lookup_user_by_email(db, email)

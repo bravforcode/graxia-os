@@ -820,6 +820,29 @@ class BacktestEngine:
             except Exception:
                 latency_slippage = Decimal("0")
 
+        # Phase 3: Square-root market impact (Almgren-Chriss)
+        market_impact_bps = 0.0
+        try:
+            from execution.market_impact import estimate_market_impact_bps
+            daily_vol_pct = float(bar_high - bar_low) / float(bar_close) * 100 if bar_close > 0 else 1.0
+            volume_lots = float(volume) / 100  # Convert units to lots
+            market_impact_bps = estimate_market_impact_bps(
+                order_lots=volume_lots,
+                daily_vol_pct=daily_vol_pct,
+                adv_lots=1_000_000,  # Default for XAUUSD
+                eta=0.1,
+            )
+        except Exception:
+            market_impact_bps = 0.0
+
+        # Phase 3: Adverse selection for momentum entries
+        adverse_selection_bps = 0.0
+        if signal.signal_type == SignalType.BUY:
+            # Momentum entry: buy at ask, adverse selection = half-spread
+            adverse_selection_bps = float(spread) / float(bar_close) * 10000 * 0.5 if bar_close > 0 else 0.0
+        elif signal.signal_type == SignalType.SELL:
+            adverse_selection_bps = float(spread) / float(bar_close) * 10000 * 0.5 if bar_close > 0 else 0.0
+
         bid, ask = estimate_bid_ask_from_bar(bar_open, bar_high, bar_low, bar_close, spread)
         snapshot = MarketSnapshot(
             bid=bid,
@@ -848,6 +871,8 @@ class BacktestEngine:
             signal_id=signal.id,
             execution_quality=ExecutionQuality.BAR_ONLY,
             latency_slippage=latency_slippage,
+            market_impact_bps=market_impact_bps,
+            adverse_selection_bps=adverse_selection_bps,
         )
 
         result = self._simulator.submit_intent(

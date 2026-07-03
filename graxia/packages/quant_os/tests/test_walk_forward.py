@@ -461,7 +461,7 @@ class TestValidateRequirements:
     """Tests for validate_walk_forward_requirements() golden rule checks."""
 
     def test_all_passed(self):
-        """Perfect result passes all 6 golden rule checks."""
+        """Perfect result passes all golden rule checks (including Phase 3 WFE + stability)."""
         result = WalkForwardResult(
             total_windows=5,
             valid_windows=5,
@@ -473,6 +473,8 @@ class TestValidateRequirements:
             oos_consistency=0.8,
             avg_is_oos_ratio=0.7,
             overfitting_score=0.2,
+            walk_forward_efficiency=0.8,  # Phase 3: OOS/IS Sharpe > 0.5
+            parameter_stability={"ema_period": 0.1},  # Phase 3: CV < 0.30
         )
         checks = validate_walk_forward_requirements(result)
         assert checks["all_passed"] is True
@@ -482,6 +484,8 @@ class TestValidateRequirements:
         assert checks["oos_win_rate_sane"] is True
         assert checks["overfitting_acceptable"] is True
         assert checks["is_oos_ratio_acceptable"] is True
+        assert checks["wfe_acceptable"] is True
+        assert checks["parameter_stability_acceptable"] is True
 
     def test_fails_min_windows(self):
         """Result with < 3 windows fails min_windows check."""

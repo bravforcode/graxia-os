@@ -328,7 +328,7 @@ class Settings(BaseSettings):
 
     # Admin seed
     ADMIN_DEFAULT_EMAIL: str = ""
-    ADMIN_DEFAULT_PASSWORD: str = "changeme"
+    ADMIN_DEFAULT_PASSWORD: str = ""
 
     # App
     APP_ENV: str = "development"
@@ -672,7 +672,7 @@ class Settings(BaseSettings):
 
     @property
     def CSRF_SIGNING_SECRET(self) -> str:
-        return (self.CSRF_SECRET or self.SECRET_KEY).strip()
+        return (self.CSRF_SECRET or self.SECRET_KEY or "").strip()
 
     @property
     def JWT_KEYSET(self) -> dict[str, str]:

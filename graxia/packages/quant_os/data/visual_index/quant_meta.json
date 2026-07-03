@@ -1,0 +1,15 @@
+{
+  "documents": {
+    "tmp0ushltgs": {
+      "source_type": "chart",
+      "original_path": "C:\\Users\\menum\\AppData\\Local\\Temp\\tmp0ushltgs.png",
+      "tile_path": "data\\visual_tiles\\tmp0ushltgs.png",
+      "indexed_at": "2026-07-03T18:55:36.018561+00:00",
+      "symbol": "AAPL"
+    }
+  },
+  "source_counts": {
+    "chart": 1
+  },
+  "updated_at": "2026-07-03T18:55:36.018561+00:00"
+}
