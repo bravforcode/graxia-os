@@ -23,7 +23,7 @@ import numpy as np
 import pandas as pd
 import structlog
 import uvicorn
-from fastapi import FastAPI, HTTPException, Security
+from fastapi import FastAPI, HTTPException, Request, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, Field
@@ -455,7 +455,7 @@ async def verify_signal_api_key(api_key: str = Security(_api_key_header)):
     """
     expected = os.environ.get("SIGNAL_SERVICE_API_KEY", "")
     if not expected:
-        return  # No key configured — open for dev
+        raise HTTPException(status_code=500, detail="SIGNAL_SERVICE_API_KEY not configured")
     if not api_key or not hmac.compare_digest(api_key, expected):
         raise HTTPException(status_code=401, detail="Invalid API key")
 
@@ -658,4 +658,4 @@ async def log_trade(req: TradeRequest, _key: str = Security(verify_signal_api_ke
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8752, log_level="info")
+    uvicorn.run(app, host="127.0.0.1", port=8752, log_level="info")

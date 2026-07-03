@@ -14,6 +14,9 @@ logger = logging.getLogger("graxia.email")
 
 # Idempotency cache (in-proc, 1h TTL) — prevents duplicate sends
 _sent_keys: set[str] = set()
+
+
+class EmailTemplate:
     """Email templates with inline CSS for consistent rendering."""
 
     @staticmethod
@@ -827,9 +830,6 @@ Need help? Contact support@graxia.io
         }
 
 
-# Global idempotency cache
-_sent_keys: set[str] = set()
-
 
 class EmailService:
     """Service for sending transactional emails."""
@@ -872,6 +872,8 @@ class EmailService:
         if key in _sent_keys:
             logger.info(f"[EMAIL] Skipped (duplicate key): {key}")
             return {"id": "deduplicated", "status": "skipped"}
+        if len(_sent_keys) > 10000:
+            _sent_keys.clear()
         _sent_keys.add(key)
 
         # Render template
