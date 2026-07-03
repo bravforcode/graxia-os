@@ -67,7 +67,8 @@ jobs:
       
       - name: Install dependencies
         run: |
-          pip install -e graxia/packages/quant_os/[test] 2>/dev/null || pip install -e graxia/packages/quant_os/ 2>/dev/null || pip install pytest pytest-asyncio httpx pydantic fastapi uvicorn sqlalchemy aiosqlite aiosqlcipher
+          pip install pytest pytest-cov pytest-asyncio
+          pip install -e graxia/packages/quant_os/ 2>/dev/null || pip install fastapi uvicorn httpx pydantic sqlalchemy aiosqlite
       
       - name: Run unit tests
         env:
