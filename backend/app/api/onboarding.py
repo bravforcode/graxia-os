@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.middleware.auth import get_current_user
+from app.middleware.auth import get_current_user_from_token
 from app.models.user import User
 
 router = APIRouter(prefix="/onboarding", tags=["onboarding"])
@@ -85,7 +85,7 @@ def _get_user_state(user: User) -> dict[str, Any]:
 
 @router.get("/state", response_model=OnboardingState)
 async def get_onboarding_state(
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_token),
 ) -> OnboardingState:
     """Get current onboarding state for logged-in user."""
     state = _get_user_state(user)
@@ -96,7 +96,7 @@ async def get_onboarding_state(
 async def update_onboarding_progress(
     progress: OnboardingProgress,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_token),
 ) -> OnboardingState:
     """
     Advance onboarding step.
@@ -144,7 +144,7 @@ async def update_onboarding_progress(
 @router.post("/skip")
 async def skip_onboarding(
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_token),
 ) -> OnboardingState:
     """
     Skip onboarding (mark complete with minimal data).
@@ -157,7 +157,7 @@ async def skip_onboarding(
 
 @router.get("/required")
 async def is_onboarding_required(
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_token),
 ) -> dict[str, Any]:
     """
     Check if user must complete onboarding before accessing dashboard.

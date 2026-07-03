@@ -16,7 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.middleware.auth import get_current_user
+from app.middleware.auth import get_current_user_from_token
 from app.models.organization import Organization
 from app.models.user import User
 
@@ -292,14 +292,14 @@ async def require_feature_flag(key: str):
     Usage:
         @router.get("/beta-feature")
         async def beta_endpoint(
-            user: User = Depends(get_current_user),
+            user: User = Depends(get_current_user_from_token),
             _: None = Depends(require_feature_flag("beta_api"))
         ):
             return {"message": "Beta feature"}
     """
     async def _check_flag(
         request: Request,
-        user: User = Depends(get_current_user),
+        user: User = Depends(get_current_user_from_token),
         db: AsyncSession = Depends(get_db),
     ):
         # Get organization

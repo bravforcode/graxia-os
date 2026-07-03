@@ -31,6 +31,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from graxia.packages.quant_os.core.safe_pickle import safe_load_model
+
 BASE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE))
 
@@ -170,8 +172,7 @@ def load_best_model():
             models = sorted(model_dir.glob("xgboost*.pkl"), key=lambda p: p.stat().st_mtime, reverse=True)
             if models:
                 path = models[0]
-                with open(path, "rb") as f:
-                    raw = pickle.load(f)
+                raw = safe_load_model(path)
                 # Models saved as {'model': XGBClassifier, 'feature_names': [...], ...}
                 if isinstance(raw, dict) and "model" in raw:
                     model = raw["model"]

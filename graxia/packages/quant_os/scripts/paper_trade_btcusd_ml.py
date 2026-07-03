@@ -26,6 +26,8 @@ import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 
+from graxia.packages.quant_os.core.safe_pickle import safe_load_model
+
 # Load .env before anything else
 try:
     from dotenv import load_dotenv
@@ -285,8 +287,7 @@ def load_model():
     """Load the BTCUSD v3 XGBoost model."""
     if not MODEL_PATH.exists():
         raise FileNotFoundError(f"Model not found: {MODEL_PATH}")
-    with open(MODEL_PATH, "rb") as f:
-        raw = pickle.load(f)
+    raw = safe_load_model(MODEL_PATH)
     if isinstance(raw, dict) and "model" in raw:
         model = raw["model"]
         feature_names = raw.get("feature_names", FEATURES_V3)

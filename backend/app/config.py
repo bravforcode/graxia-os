@@ -672,7 +672,7 @@ class Settings(BaseSettings):
 
     @property
     def CSRF_SIGNING_SECRET(self) -> str:
-        return (self.CSRF_SECRET or self.SECRET_KEY or "").strip()
+        return (self.CSRF_SECRET or self.SECRET_KEY or "").strip() or ""
 
     @property
     def JWT_KEYSET(self) -> dict[str, str]:

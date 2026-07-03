@@ -271,11 +271,11 @@ async def check_tiered_rate_limit(request: Request) -> None:
     Usage: from app.middleware.tiered_rate_limit import check_tiered_rate_limit
     """
     from app.database import get_db
-    from app.middleware.auth import get_current_user
+    from app.middleware.auth import get_current_user_from_token
     
     try:
         # Get current user and database session
-        user = await get_current_user(request)
+        user = await get_current_user_from_token(request)
         db_gen = get_db()
         db = await db_gen.__anext__()
         

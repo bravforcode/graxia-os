@@ -16,6 +16,8 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
+from graxia.packages.quant_os.core.safe_pickle import safe_load_model
+
 
 @dataclass
 class FeatureSet:
@@ -395,7 +397,7 @@ class MLTrainer:
                 from sklearn.metrics import accuracy_score
 
                 with open(result.model_path, "rb") as f:
-                    model_data = pickle.load(f)
+                    model_data = safe_load_model(result.model_path)
                 model = model_data["model"]
 
                 X_oos = np.array([list(f.values()) for f in oos_features])
@@ -447,8 +449,7 @@ class MLTrainer:
 
     def load_model(self, model_path: str) -> dict[str, Any]:
         """Load a trained model"""
-        with open(model_path, "rb") as f:
-            return pickle.load(f)
+        return safe_load_model(model_path)
 
     def predict(self, model_path: str, features: dict[str, float]) -> tuple[int, float]:
         """

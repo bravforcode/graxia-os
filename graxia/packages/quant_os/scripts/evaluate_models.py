@@ -32,6 +32,8 @@ from sklearn.metrics import (
     recall_score,
 )
 
+from graxia.packages.quant_os.core.safe_pickle import safe_load_model
+
 warnings.filterwarnings("ignore")
 
 # ── Path setup ──────────────────────────────────────────────────────────────
@@ -233,9 +235,9 @@ def evaluate_symbol(symbol: str, timeframe: str = "M15") -> dict:
         raise FileNotFoundError(f"Magnitude model not found: {mag_model_path}")
 
     with open(dir_model_path, "rb") as f:
-        dir_artifact = pickle.load(f)
+        dir_artifact = safe_load_model(dir_model_path)
     with open(mag_model_path, "rb") as f:
-        mag_artifact = pickle.load(f)
+        mag_artifact = safe_load_model(mag_model_path)
 
     dir_model = dir_artifact["model"]
     mag_model = mag_artifact["model"]

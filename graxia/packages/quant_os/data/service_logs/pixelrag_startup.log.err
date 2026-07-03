@@ -3536,3 +3536,6 @@ Call stack:
     logger.info(
 Message: 'HTTP Request: %s %s "%s %d %s"'
 Arguments: ('HEAD', URL('https://huggingface.co/Qwen/Qwen3-VL-Embedding-2B/resolve/main/model.safetensors'), 'HTTP/1.1', 302, 'Found')
+Traceback (most recent call last):
+Exception ignored in atexit callback: <function dump_compile_times at 0x0000019F00B8CB80>
+Exception ignored in sys.unraisablehook: <built-in function unraisablehook>

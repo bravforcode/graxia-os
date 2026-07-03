@@ -53,6 +53,8 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
+from graxia.packages.quant_os.core.safe_pickle import safe_load_model
+
 warnings.filterwarnings("ignore")
 
 # ---------------------------------------------------------------------------
@@ -616,8 +618,7 @@ def load_model(path: str):
         model.load_model(model_path)
         return model
     else:
-        with open(model_path, "rb") as f:
-            return pickle.load(f)
+        return safe_load_model(model_path)
 
 
 def save_synthetic_data(df: pd.DataFrame, path: str) -> None:

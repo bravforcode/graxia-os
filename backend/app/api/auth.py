@@ -1,4 +1,5 @@
 import logging
+import time
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -38,6 +39,20 @@ DUMMY_PASSWORD_HASH = get_password_hash("not-the-real-password")
 DATABASE_UNAVAILABLE_DETAIL = (
     "Database unavailable. Check DATABASE_URL connectivity and database reachability."
 )
+
+_login_attempts: dict[str, list[float]] = {}
+LOGIN_RATE_LIMIT = 5  # max attempts
+LOGIN_WINDOW = 300  # 5 minutes
+
+
+def _check_rate_limit(identifier: str) -> None:
+    now = time.time()
+    attempts = _login_attempts.get(identifier, [])
+    attempts = [t for t in attempts if now - t < LOGIN_WINDOW]
+    if len(attempts) >= LOGIN_RATE_LIMIT:
+        raise HTTPException(status_code=429, detail="Too many login attempts. Try again later.")
+    attempts.append(now)
+    _login_attempts[identifier] = attempts
 
 
 class UserRegister(BaseModel):
@@ -290,6 +305,7 @@ async def register(
         if _is_database_unavailable_error(exc):
             _raise_database_unavailable(exc)
         raise
+    _check_rate_limit(user_data.email)
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
@@ -422,8 +438,6 @@ async def social_login(
         raise
 
     if not user:
-        from datetime import datetime
-
         user = User(
             id=uuid4(),
             email=email,
@@ -464,8 +478,6 @@ async def social_login(
 
         logger.info("Created new social user: %s via %s", email, payload.provider)
     else:
-        from datetime import datetime
-
         # Update existing user with provider info if missing
         changed = False
         if not user.provider:
@@ -569,6 +581,8 @@ async def login(request: Request, response: Response, db=Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST, detail="Missing credentials"
         )
 
+    _check_rate_limit(email)
+
     session_service = SessionService(getattr(request.app.state, "redis", None))
     identifier = f"login:{email}"
 
@@ -585,8 +599,6 @@ async def login(request: Request, response: Response, db=Depends(get_db)):
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
-    from datetime import datetime
 
     user.last_login_at = datetime.now(UTC)
     try:

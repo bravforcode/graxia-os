@@ -21,6 +21,8 @@ from pathlib import Path
 
 import structlog
 
+from graxia.packages.quant_os.core.safe_pickle import safe_load_model
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from ml.labeling import label_from_source
@@ -50,8 +52,7 @@ def load_latest_model():
     if not model_files:
         return None, None
     latest = model_files[-1]
-    with open(latest, "rb") as f:
-        data = pickle.load(f)
+    data = safe_load_model(latest)
     return data, latest.name
 
 
@@ -59,8 +60,7 @@ def load_champion():
     """Load the champion model from CHAMPION_PATH. Returns None if not found."""
     if not CHAMPION_PATH.exists():
         return None
-    with open(CHAMPION_PATH, "rb") as f:
-        return pickle.load(f)
+    return safe_load_model(CHAMPION_PATH)
 
 
 def save_champion(model_data: dict) -> None:

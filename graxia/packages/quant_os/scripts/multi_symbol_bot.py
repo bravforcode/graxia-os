@@ -10,6 +10,8 @@ import pandas as pd
 import MetaTrader5 as mt5
 warnings.filterwarnings('ignore')
 
+from graxia.packages.quant_os.core.safe_pickle import safe_load_model
+
 BASE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE))
 DATA_DIR = BASE / 'data'
@@ -36,8 +38,7 @@ def load_models():
         sym = sym_cfg['name']
         model_files = sorted(MODEL_DIR.glob(f'xgboost_{sym}_*.pkl'), key=lambda p: p.stat().st_mtime, reverse=True)
         if model_files:
-            with open(model_files[0], 'rb') as f:
-                raw = pickle.load(f)
+            raw = safe_load_model(model_files[0])
             if isinstance(raw, dict) and 'model' in raw:
                 models[sym] = raw
             else:

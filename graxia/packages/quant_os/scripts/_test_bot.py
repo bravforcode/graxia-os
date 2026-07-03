@@ -4,6 +4,8 @@ import pickle, tomli, pathlib, pandas as pd
 import MetaTrader5 as mt5
 from core.telegram_notify import TelegramNotifier
 
+from graxia.packages.quant_os.core.safe_pickle import safe_load_model
+
 # 1. Telegram
 cfg = tomli.load(open('scripts/telegram_config.toml','rb'))
 bot = TelegramNotifier(token=cfg['bot_token'], chat_id=cfg['chat_id'])
@@ -11,7 +13,7 @@ print('Telegram:', 'OK' if bot.send('Test message') else 'FAIL')
 
 # 2. Model
 models = sorted(pathlib.Path('ml/models').glob('xgboost*.pkl'), key=lambda p: p.stat().st_mtime, reverse=True)
-raw = pickle.load(open(models[0],'rb'))
+raw = safe_load_model(models[0])
 model = raw['model'] if isinstance(raw, dict) and 'model' in raw else raw
 nf = model.n_features_in_
 print(f'Model: {type(model).__name__}, features={nf}')

@@ -177,28 +177,6 @@ def find_route_template(request: Request) -> str | None:
     return None
 
 
-async def verify_internal_bearer_token(
-    configured_token: str,
-    provided_token: str,
-) -> bool:
-    """
-    Verify bearer token for internal webhook requests (deprecated).
-
-    Args:
-        configured_token: Expected token from settings
-        provided_token: Provided token from request
-
-    Returns:
-        True if tokens match (constant-time comparison), False otherwise
-
-    Note:
-        This method is deprecated. Use HMAC signature verification instead.
-    """
-    if not configured_token or not provided_token:
-        return False
-    return hmac.compare_digest(configured_token, provided_token)
-
-
 async def build_auth_context(request: Request) -> dict[str, Any]:
     token = extract_access_token_from_request(request)
     if not token:
@@ -277,7 +255,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 request.state.internal_token_authenticated = True
                 return await call_next(request)
 
-                return JSONResponse({"detail": "Unauthorized — HMAC signature required"}, status_code=401)
+            return JSONResponse({"detail": "Unauthorized — HMAC signature required"}, status_code=401)
 
         if required_level == AuthLevel.PUBLIC:
             return await call_next(request)
@@ -321,7 +299,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-async def get_current_user(
+async def get_current_user_from_token(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Security(security),
     db: AsyncSession = Depends(get_db_dependency),
@@ -382,13 +360,13 @@ async def get_current_user(
 
 
 async def get_current_active_user(
-    current_user: _UserORM = Depends(get_current_user),
+    current_user: _UserORM = Depends(get_current_user_from_token),
 ) -> _UserORM:
     return current_user
 
 
 async def require_role(
-    required_role: str, current_user: _UserORM = Depends(get_current_user)
+    required_role: str, current_user: _UserORM = Depends(get_current_user_from_token)
 ) -> _UserORM:
     user_role = getattr(current_user, "role", "user") or "user"
     if not role_satisfies(
