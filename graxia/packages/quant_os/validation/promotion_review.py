@@ -14,6 +14,7 @@ class PromotionDecision:
 @dataclass
 class ReviewInput:
     strategy_id: str = ""
+    # historical_validation: dict — may contain "deflated_sharpe_result" and "pbo_result" keys
     historical_validation: dict = field(default_factory=dict)
     oracle_comparison: dict = field(default_factory=dict)
     shadow_report: dict = field(default_factory=dict)
@@ -82,6 +83,18 @@ class PromotionReviewer:
         # Oracle divergence unresolved
         if inputs.oracle_comparison.get("divergence_unresolved", False):
             blockers.append("oracle_divergence_unresolved")
+
+        # Overfitting detection — DSR/PBO
+        dsr_result = inputs.historical_validation.get("deflated_sharpe_result")
+        if dsr_result and isinstance(dsr_result, dict) and not dsr_result.get("passes_threshold", True):
+            blockers.append("deflated_sharpe_failed")
+
+        pbo_result = inputs.historical_validation.get("pbo_result")
+        if pbo_result and isinstance(pbo_result, dict):
+            if pbo_result.get("pbo", 0) > 0.7:
+                blockers.append("pbo_overfitting_severe")
+            elif pbo_result.get("pbo", 0) > 0.5:
+                blockers.append("pbo_overfitting_warning")
 
         return blockers
 

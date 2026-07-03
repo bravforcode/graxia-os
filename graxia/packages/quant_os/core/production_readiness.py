@@ -73,6 +73,7 @@ class ProductionReadiness:
         self._check("Session Filter", self._check_session, critical=False)
         self._check("News Blackout", self._check_blackout, critical=False)
         self._check("Walk-Forward", self._check_walk_forward, critical=False)
+        self._check("Overfitting Detection", self._check_overfitting, critical=False)
         self._check("Telegram Bot", self._check_telegram, critical=False)
         self._check("Loki Logging", self._check_loki, critical=False)
 
@@ -177,6 +178,18 @@ class ProductionReadiness:
         model_dir = Path(__file__).parent.parent / "ml" / "models"
         models = list(model_dir.glob("xgboost_*.pkl"))
         return f"{len(models)} models available"
+
+    def _check_overfitting(self) -> str:
+        """Check overfitting detection status."""
+        try:
+            from ..validation.overfitting_detector import OverfittingDetector
+
+            # Readiness check — verifies module is available and configured.
+            # Actual overfitting evaluation happens during strategy research phase.
+            detector = OverfittingDetector()
+            return f"Module available, max_trials={detector.config.max_trials}"
+        except ImportError as e:
+            raise RuntimeError(f"OverfittingDetector not available: {e}") from e
 
     def _check_telegram(self) -> str:
         token = os.getenv("TELEGRAM_BOT_TOKEN", "")

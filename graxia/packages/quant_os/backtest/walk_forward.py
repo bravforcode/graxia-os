@@ -12,6 +12,7 @@ Golden rule requirement: minimum 3 walk-forward windows
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, datetime
+from typing import Any
 
 from ..strategies.base import Strategy
 from .engine import BacktestConfig, BacktestEngine
@@ -59,6 +60,9 @@ class WalkForwardResult:
     avg_is_oos_ratio: float = 0.0
     oos_consistency: float = 0.0  # % of profitable OOS windows
     overfitting_score: float = 0.0  # 0 = no overfit, 1 = severe overfit
+
+    # PBO result (populated after analyze())
+    pbo_result: Any = None  # PBOResult from probability_overfitting
 
     # Per-window details
     windows: list[WalkForwardWindow] = None
@@ -243,10 +247,24 @@ class WalkForwardAnalyzer:
         consistency_penalty = 1 - result.oos_consistency
         result.overfitting_score = min(1.0, (avg_degradation * 0.5 + consistency_penalty * 0.5))
 
+        # Calculate PBO from OOS returns across windows
+        try:
+            from ..validation.probability_overfitting import calculate_pbo
+
+            oos_returns_for_pbo = []
+            for w in windows:
+                if w.oos_metrics and hasattr(w.oos_metrics, "total_pnl"):
+                    # Use IS/OOS ratio as proxy since we don't have raw OOS returns
+                    oos_returns_for_pbo.append([w.is_oos_ratio])
+            if len(oos_returns_for_pbo) >= 2:
+                result.pbo_result = calculate_pbo(oos_returns_for_pbo)
+        except Exception:
+            pass  # PBO is optional — don't break walk-forward if it fails
+
         return result
 
 
-def validate_walk_forward_requirements(result: WalkForwardResult) -> dict[str, any]:
+def validate_walk_forward_requirements(result: WalkForwardResult) -> dict[str, Any]:
     """
     Validate against golden rule requirements.
 
@@ -261,6 +279,10 @@ def validate_walk_forward_requirements(result: WalkForwardResult) -> dict[str, a
         "overfitting_acceptable": result.overfitting_score < 0.6,
         "is_oos_ratio_acceptable": result.avg_is_oos_ratio >= 0.5,
     }
+
+    # Add PBO check if available
+    if result.pbo_result is not None:
+        checks["pbo_acceptable"] = result.pbo_result.pbo < 0.5
 
     checks["all_passed"] = all(checks.values())
 
