@@ -1,7 +1,8 @@
 """Phase BE-P2 — Tick storage with parquet + DuckDB."""
+
 import hashlib
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -27,8 +28,7 @@ class TickStorage:
 
         return part_file
 
-    def write_manifest(self, broker: str, server: str, symbol: str, date: str,
-                        tick_count: int) -> Path:
+    def write_manifest(self, broker: str, server: str, symbol: str, date: str, tick_count: int) -> Path:
         """Write partition manifest."""
         part_dir = self._partition_path(broker, server, symbol, date)
         manifest = {
@@ -37,7 +37,7 @@ class TickStorage:
             "symbol": symbol,
             "date": date,
             "tick_count": tick_count,
-            "created_at": datetime.utcnow().isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
         }
         manifest_path = part_dir / "manifest.json"
         manifest_path.write_text(json.dumps(manifest, indent=2))

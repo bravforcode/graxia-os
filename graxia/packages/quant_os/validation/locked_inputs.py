@@ -1,7 +1,7 @@
 import hashlib
 import json
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 
 
 @dataclass(frozen=True)
@@ -17,7 +17,7 @@ class LockedInputs:
     risk_policy_version: str
     event_filter_version: str
     random_seed: int
-    locked_at_utc: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    locked_at_utc: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def master_hash(self) -> str:
         """SHA-256 of all locked input hashes combined."""

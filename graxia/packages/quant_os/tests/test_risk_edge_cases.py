@@ -853,7 +853,8 @@ class TestCircuitBreaker:
         fpath = tmp_path / "cb.json"
         fpath.write_text("{bad json")
         cb = CircuitBreaker(state_file=str(fpath))
-        assert not cb.is_open("metals")
+        # Fail-closed: corrupt state -> circuit OPEN for all classes
+        assert cb.is_open("metals")
 
     def test_independent_class_trackers(self):
         cb = CircuitBreaker()

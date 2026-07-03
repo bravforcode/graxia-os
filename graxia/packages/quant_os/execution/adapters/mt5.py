@@ -1,5 +1,6 @@
 """MetaTrader 5 broker adapter for Pepperstone (metals, forex, indices)."""
 
+import hashlib
 import logging
 import time
 
@@ -24,7 +25,8 @@ except ImportError:  # pragma: no cover
 
 # Constants mapped from mt5 module (referenced by name so import is optional)
 _TRADE_ACTION_DEAL = 1  # mt5.TRADE_ACTION_DEAL
-_ORDER_FILLING_IOC = 2  # mt5.ORDER_FILLING_IOC (also FOK on some brokers)
+_TRADE_ACTION_SLTP = 5  # mt5.TRADE_ACTION_SLTP
+_ORDER_FILLING_FOK = 1  # mt5.ORDER_FILLING_FOK (Fill or Kill - supported by Pepperstone)
 _ORDER_TYPE_BUY = 0  # mt5.ORDER_TYPE_BUY
 _ORDER_TYPE_SELL = 1  # mt5.ORDER_TYPE_SELL
 _RETRIES = 3
@@ -126,8 +128,8 @@ class MT5Adapter(BrokerAdapter):
             "symbol": order.symbol,
             "volume": order.quantity,
             "type": _side_to_order_type(order.side),
-            "comment": order.order_id,
-            "type_filling": _ORDER_FILLING_IOC,
+            "comment": hashlib.md5(order.order_id.encode()).hexdigest()[:8],  # Short alphanumeric comment for tracking
+            "type_filling": _ORDER_FILLING_FOK,
             "type_time": 0,  # ORDER_TIME_GTC
         }
 
@@ -220,6 +222,59 @@ class MT5Adapter(BrokerAdapter):
             broker_id=str(order.ticket),
         )
 
+    def close_position(self, broker_position_id: str, volume: float, symbol: str = "") -> OrderResult:
+        """Close an open position by its MT5 ticket.
+
+        Sends a ``TRADE_ACTION_DEAL`` in the opposite direction of the
+        existing position to flatten it.
+        """
+        self._ensure_connected()
+        # Determine position type to send opposite order
+        positions = mt5.positions_get(ticket=int(broker_position_id))  # type: ignore[union-attr]
+        if positions is None or len(positions) == 0:
+            return OrderResult(
+                status=OrderStatus.FAILED,
+                error=f"Position {broker_position_id} not found",
+            )
+        pos = positions[0]
+        close_type = _ORDER_TYPE_SELL if pos.type == _ORDER_TYPE_BUY else _ORDER_TYPE_BUY
+
+        request: dict = {
+            "action": _TRADE_ACTION_DEAL,
+            "symbol": symbol or pos.symbol,
+            "volume": volume,
+            "type": close_type,
+            "position": int(broker_position_id),
+            "type_filling": _ORDER_FILLING_FOK,
+            "type_time": 0,
+        }
+
+        for attempt in range(1, _RETRIES + 1):
+            result = mt5.order_send(request)  # type: ignore[union-attr]
+            if result is None:
+                error = mt5.last_error()  # type: ignore[union-attr]
+                logger.error("MT5 close_position returned None (attempt %d): %s", attempt, error)
+                self._connected = False
+                self._ensure_connected()
+                time.sleep(_RETRY_DELAY)
+                continue
+            if result.retcode == 10009:
+                return OrderResult(
+                    status=OrderStatus.FILLED,
+                    broker_id=str(result.order),
+                    filled_quantity=result.volume,
+                    avg_price=result.price,
+                )
+            if result.retcode == 10014:
+                logger.warning("MT5 close_position invalid price (attempt %d), retrying", attempt)
+                time.sleep(_RETRY_DELAY)
+                continue
+            error_msg = f"MT5 close retcode={result.retcode}: {result.comment}"
+            logger.error(error_msg)
+            return OrderResult(status=OrderStatus.FAILED, error=error_msg)
+
+        return OrderResult(status=OrderStatus.TIMEOUT, error="MT5 close_position retries exhausted")
+
     def get_account_info(self) -> AccountInfo:
         """Return a snapshot of the MT5 account."""
         self._ensure_connected()
@@ -231,4 +286,159 @@ class MT5Adapter(BrokerAdapter):
             cash=info.balance,
             margin_used=info.margin,
             margin_available=info.margin_free,
+        )
+
+    # ------------------------------------------------------------------
+    # Stop-loss management
+    # ------------------------------------------------------------------
+
+    def set_stop_loss(
+        self,
+        position_ticket: int,
+        symbol: str,
+        stop_loss_price: float,
+        take_profit: float | None = None,
+    ) -> bool:
+        """Set or modify the stop-loss (and optionally TP) on an open position.
+
+        Uses ``TRADE_ACTION_SLTP``.  Retries up to 3 times on
+        ``TRADE_RETCODE_INVALID_PRICE`` (10014) with auto-reconnect.
+        Returns ``True`` on success, ``False`` on permanent failure or
+        exhausted retries.
+        """
+        self._ensure_connected()
+
+        request: dict = {
+            "action": _TRADE_ACTION_SLTP,
+            "position": position_ticket,
+            "symbol": symbol,
+            "sl": stop_loss_price,
+        }
+        if take_profit is not None:
+            request["tp"] = take_profit
+
+        for attempt in range(1, _RETRIES + 1):
+            result = mt5.order_send(request)  # type: ignore[union-attr]
+            if result is None:
+                error = mt5.last_error()  # type: ignore[union-attr]
+                logger.error("MT5 set_stop_loss returned None (attempt %d): %s", attempt, error)
+                self._connected = False
+                self._ensure_connected()
+                time.sleep(_RETRY_DELAY)
+                continue
+
+            ret_code = result.retcode
+            if ret_code == 10009:  # TRADE_RETCODE_DONE
+                return True
+            if ret_code == 10014:  # TRADE_RETCODE_INVALID_PRICE – retry
+                logger.warning("MT5 set_stop_loss invalid price (attempt %d), retrying", attempt)
+                time.sleep(_RETRY_DELAY)
+                continue
+
+            # Permanent failure – do not retry
+            logger.error(
+                "MT5 set_stop_loss failed: retcode=%d %s", ret_code, result.comment
+            )
+            return False
+
+        return False  # retries exhausted
+
+    def update_trailing_stop(
+        self,
+        position_ticket: int,
+        symbol: str,
+        side: str,
+        entry_price: float,
+        current_price: float,
+        atr_value: float,
+        trail_multiplier: float = 2.0,
+    ) -> bool:
+        """Update trailing stop-loss on an open position.
+
+        BUY:  new SL = current_price - (ATR * multiplier)  — only moves UP.
+        SELL: new SL = current_price + (ATR * multiplier)  — only moves DOWN.
+
+        Returns ``True`` if the SL was updated, ``False`` if no move was
+        needed, ATR is negative, side is unknown, or the position was not
+        found.
+        """
+        if atr_value <= 0:
+            return False
+
+        side_upper = side.upper()
+        if side_upper not in ("BUY", "SELL"):
+            return False
+
+        self._ensure_connected()
+
+        # Look up the current position
+        positions = mt5.positions_get(ticket=position_ticket)  # type: ignore[union-attr]
+        if positions is None or len(positions) == 0:
+            return False
+
+        pos = positions[0]
+        current_sl = pos.sl
+
+        if side_upper == "BUY":
+            new_sl = round(current_price - (atr_value * trail_multiplier), 5)
+            if new_sl <= current_sl:
+                return False  # would move SL down — never trail backward
+        else:  # SELL
+            new_sl = round(current_price + (atr_value * trail_multiplier), 5)
+            if new_sl >= current_sl and current_sl > 0:
+                return False  # would move SL up — never trail backward
+
+        request: dict = {
+            "action": _TRADE_ACTION_SLTP,
+            "position": position_ticket,
+            "symbol": symbol,
+            "sl": new_sl,
+        }
+
+        result = mt5.order_send(request)  # type: ignore[union-attr]
+        if result is None:
+            error = mt5.last_error()  # type: ignore[union-attr]
+            logger.error("MT5 update_trailing_stop returned None: %s", error)
+            return False
+        if result.retcode == 10009:
+            return True
+
+        logger.error(
+            "MT5 update_trailing_stop failed: retcode=%d %s",
+            result.retcode,
+            result.comment,
+        )
+        return False
+
+    def set_fixed_atr_stop(
+        self,
+        position_ticket: int,
+        symbol: str,
+        side: str,
+        entry_price: float,
+        atr_value: float,
+        atr_multiplier: float,
+    ) -> bool:
+        """Set a fixed ATR-based stop-loss on an open position.
+
+        BUY:  SL = entry_price - (ATR * multiplier)
+        SELL: SL = entry_price + (ATR * multiplier)
+
+        Returns ``False`` if ATR is negative.
+        """
+        if atr_value <= 0:
+            return False
+
+        side_upper = side.upper()
+        if side_upper == "BUY":
+            sl_price = round(entry_price - (atr_value * atr_multiplier), 5)
+        elif side_upper == "SELL":
+            sl_price = round(entry_price + (atr_value * atr_multiplier), 5)
+        else:
+            return False
+
+        return self.set_stop_loss(
+            position_ticket=position_ticket,
+            symbol=symbol,
+            stop_loss_price=sl_price,
         )

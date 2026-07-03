@@ -268,16 +268,18 @@ class StressTest:
             vol_period = shock.vol_multiplier * pos.volatility * np.sqrt(max(scenario.duration_bars, 1))
             worst_price = shocked_price * (1.0 - vol_period)  # adverse direction
 
+            qty = abs(pos.quantity)
             if pos.direction == "LONG":
-                post_value = shocked_price * abs(pos.quantity)
-                max_val = worst_price * abs(pos.quantity)
+                post_value = shocked_price * qty
+                max_val = worst_price * qty
+                loss = pre_value - post_value
+                max_loss_vol = pre_value - max_val
             else:
-                # Short: price drop is profitable
-                post_value = (2 * pos.entry_price - shocked_price) * abs(pos.quantity)
-                max_val = (2 * pos.entry_price - worst_price) * abs(pos.quantity)
+                # Short: P&L = (entry - current) * qty; loss is negative of P&L
+                post_value = pos.entry_price * qty  # reference value at entry
+                loss = -(pos.entry_price - shocked_price) * qty
+                max_loss_vol = -(pos.entry_price - worst_price) * qty
 
-            loss = pre_value - post_value
-            max_loss_vol = pre_value - max_val
             loss_pct = loss / pre_value if pre_value else 0.0
 
             pos_results.append(

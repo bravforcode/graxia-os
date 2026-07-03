@@ -632,9 +632,27 @@ class TestExecutionSimulatorChaos:
             volume=Decimal("0.1"),
             stop_loss=Decimal("90"),
             take_profit=Decimal("110"),
+            signal_bar_index=0,
         )
         market = self._market(bid=Decimal("100"), ask=Decimal("100.5"))
-        events = sim.evaluate_open_positions([pos], market, Decimal("105"), Decimal("95"))
+        # current_bar_index=10 < max_bars_open=50 -> no TIME_STOP
+        events = sim.evaluate_open_positions([pos], market, Decimal("105"), Decimal("95"), current_bar_index=10)
+        assert events == []
+
+    def test_evaluate_time_stop_fires_at_threshold(self, sim):
+        pos = Position(
+            trade_id="t4b",
+            symbol="XAUUSD",
+            side=Side.BUY,
+            entry_price=Decimal("100"),
+            volume=Decimal("0.1"),
+            stop_loss=Decimal("90"),
+            take_profit=Decimal("110"),
+            signal_bar_index=10,
+        )
+        market = self._market(bid=Decimal("100"), ask=Decimal("100.5"))
+        # current_bar_index=60, signal_bar_index=10, diff=50 >= max_bars_open=50
+        events = sim.evaluate_open_positions([pos], market, Decimal("105"), Decimal("95"), current_bar_index=60)
         assert len(events) == 1
         assert events[0].event_type == EventType.TIME_STOP
 
@@ -657,7 +675,8 @@ class TestExecutionSimulatorChaos:
             for i in range(200)
         ]
         market = self._market()
-        events = sim.evaluate_open_positions(positions, market, Decimal("110"), Decimal("90"))
+        # current_bar_index=300 ensures all positions exceed max_bars_open=50
+        events = sim.evaluate_open_positions(positions, market, Decimal("110"), Decimal("90"), current_bar_index=300)
         assert len(events) == 200
 
 
@@ -1818,5 +1837,5 @@ class TestCrossModuleChaos:
             )
             for i in range(500)
         ]
-        events = sim.evaluate_open_positions(positions, market, Decimal("100"), Decimal("100"))
+        events = sim.evaluate_open_positions(positions, market, Decimal("100"), Decimal("100"), current_bar_index=600)
         assert len(events) == 500

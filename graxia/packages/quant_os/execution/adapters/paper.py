@@ -10,11 +10,10 @@ from __future__ import annotations
 import logging
 import random
 import uuid
-from datetime import datetime
-from typing import Optional
+from datetime import UTC, datetime
 
-from .base import AccountInfo, BrokerAdapter, Order, OrderResult, OrderStatus
 from ...core.config import get_config
+from .base import AccountInfo, BrokerAdapter, Order, OrderResult, OrderStatus
 
 logger = logging.getLogger(__name__)
 
@@ -22,14 +21,10 @@ logger = logging.getLogger(__name__)
 class PaperAdapter(BrokerAdapter):
     """In-memory paper broker implementing the unified adapter interface."""
 
-    def __init__(self, initial_capital: Optional[float] = None) -> None:
+    def __init__(self, initial_capital: float | None = None) -> None:
         super().__init__("PAPER")
         config = get_config()
-        self._initial_capital = (
-            initial_capital
-            if initial_capital is not None
-            else float(config.paper_initial_capital)
-        )
+        self._initial_capital = initial_capital if initial_capital is not None else float(config.paper_initial_capital)
         self._cash = self._initial_capital
         self._equity = self._initial_capital
         self._prices: dict[str, dict[str, float]] = {}
@@ -110,7 +105,7 @@ class PaperAdapter(BrokerAdapter):
                 "filled_quantity": order.quantity,
                 "avg_price": fill_price,
                 "fee": fee,
-                "filled_at": datetime.utcnow(),
+                "filled_at": datetime.now(UTC),
             }
 
             self._cash -= fee
@@ -135,9 +130,7 @@ class PaperAdapter(BrokerAdapter):
 
         if existing:
             existing_side = existing["side"]
-            is_close = (existing_side == "BUY" and side == "SELL") or (
-                existing_side == "SELL" and side == "BUY"
-            )
+            is_close = (existing_side == "BUY" and side == "SELL") or (existing_side == "SELL" and side == "BUY")
             if is_close:
                 if order.quantity >= existing["quantity"]:
                     del self._positions[order.symbol]
@@ -145,10 +138,7 @@ class PaperAdapter(BrokerAdapter):
                     existing["quantity"] -= order.quantity
             else:
                 total_qty = existing["quantity"] + order.quantity
-                avg = (
-                    existing["avg_price"] * existing["quantity"]
-                    + fill_price * order.quantity
-                ) / total_qty
+                avg = (existing["avg_price"] * existing["quantity"] + fill_price * order.quantity) / total_qty
                 existing["quantity"] = total_qty
                 existing["avg_price"] = avg
         else:
@@ -183,9 +173,7 @@ class PaperAdapter(BrokerAdapter):
                 error="Cannot cancel an already filled order",
             )
         order_data["status"] = OrderStatus.CANCELLED
-        return OrderResult(
-            status=OrderStatus.CANCELLED, broker_id=broker_order_id
-        )
+        return OrderResult(status=OrderStatus.CANCELLED, broker_id=broker_order_id)
 
     def get_order_status(self, broker_order_id: str) -> OrderResult:
         """Return the stored status of a simulated order."""
@@ -226,9 +214,7 @@ class PaperAdapter(BrokerAdapter):
             margin_available=self._cash,
         )
 
-    def close_position(
-        self, broker_position_id: str, volume: float, symbol: str = ""
-    ) -> OrderResult:
+    def close_position(self, broker_position_id: str, volume: float, symbol: str = "") -> OrderResult:
         """Close an open simulated position."""
         # broker_position_id is the symbol for PaperAdapter
         sym = symbol or broker_position_id

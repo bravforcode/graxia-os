@@ -36,6 +36,7 @@ class WalkForwardWindow:
 
     # OOS results
     oos_metrics: BacktestMetrics | None = None
+    oos_returns: list[float] | None = None  # Raw per-bar OOS returns for CSCV
 
     # Validation
     is_oos_ratio: float = 0.0  # OOS/IS performance ratio
@@ -201,8 +202,10 @@ class WalkForwardAnalyzer:
                         is_sharpe=is_sharpe,
                     )
 
-            # Run OOS backtest
+            # Run OOS backtest — CRITICAL: apply optimized params if available
             oos_strategy = self.strategy_factory()
+            if window.is_params and hasattr(oos_strategy, "from_hyperparameters"):
+                oos_strategy.from_hyperparameters(window.is_params)
             oos_engine = BacktestEngine(self.config)
             oos_engine.set_strategy(oos_strategy)
             oos_engine.load_data(oos_data, oos_timestamps)
@@ -212,6 +215,17 @@ class WalkForwardAnalyzer:
                 if hasattr(oos_results["metrics"], "__dict__")
                 else oos_results["metrics"]
             )
+
+            # Extract per-bar OOS returns from equity curve for CSCV
+            equity_curve = oos_results.get("equity_curve", [])
+            if len(equity_curve) > 1:
+                oos_returns = []
+                for i in range(1, len(equity_curve)):
+                    prev = equity_curve[i - 1]["equity"]
+                    curr = equity_curve[i]["equity"]
+                    if prev > 0:
+                        oos_returns.append((curr - prev) / prev)
+                window.oos_returns = oos_returns
 
             # Calculate IS/OOS ratio
             if window.is_metrics and window.oos_metrics:
@@ -268,19 +282,9 @@ class WalkForwardAnalyzer:
         consistency_penalty = 1 - result.oos_consistency
         result.overfitting_score = min(1.0, (avg_degradation * 0.5 + consistency_penalty * 0.5))
 
-        # Calculate PBO from OOS returns across windows
-        try:
-            from ..validation.probability_overfitting import calculate_pbo
-
-            oos_returns_for_pbo = []
-            for w in windows:
-                if w.oos_metrics and hasattr(w.oos_metrics, "total_pnl"):
-                    # Use IS/OOS ratio as proxy since we don't have raw OOS returns
-                    oos_returns_for_pbo.append([w.is_oos_ratio])
-            if len(oos_returns_for_pbo) >= 2:
-                result.pbo_result = calculate_pbo(oos_returns_for_pbo)
-        except Exception:
-            pass  # PBO is optional — don't break walk-forward if it fails
+        # PBO is now computed by the pipeline with a proper strategy matrix.
+        # Walk-forward stores per-window OOS returns (window.oos_returns) for
+        # the pipeline to use in CSCV. No direct PBO call here.
 
         return result
 

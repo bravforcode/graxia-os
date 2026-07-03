@@ -226,7 +226,7 @@ class TestClockGuard:
 class TestDataWatermark:
     def test_data_watermark_fresh_detects_fresh(self):
         tracker = DataWatermarkTracker("XAUUSD")
-        naive_now = datetime.utcnow()
+        naive_now = datetime.now(UTC)
         tick = _make_tick_record(dt=naive_now, received=naive_now)
         tracker.update(tick)
         assert tracker.is_fresh(max_age_seconds=5.0) is True
@@ -234,7 +234,7 @@ class TestDataWatermark:
 
     def test_data_watermark_stale_detects_stale(self):
         tracker = DataWatermarkTracker("XAUUSD")
-        old_naive = datetime.utcnow() - timedelta(seconds=10)
+        old_naive = datetime.now(UTC) - timedelta(seconds=10)
         tick = _make_tick_record(dt=old_naive, received=old_naive)
         tracker.update(tick)
         assert tracker.is_fresh(max_age_seconds=3.0) is False

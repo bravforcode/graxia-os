@@ -1,6 +1,9 @@
 """G2: Read-only MT5 snapshot for preflight. No order_send."""
-import json, hashlib
-from datetime import datetime
+
+import hashlib
+import json
+from datetime import UTC, datetime
+
 import MetaTrader5 as mt5
 
 res = mt5.initialize(path=r"C:\Program Files\Pepperstone MetaTrader 5\terminal64.exe", timeout=30000)
@@ -45,7 +48,7 @@ request = {
 check = mt5.order_check(request)
 
 output = {
-    "generated_at_utc": datetime.utcnow().isoformat(),
+    "generated_at_utc": datetime.now(UTC).isoformat(),
     "profile_hash": profile_hash,
     "position_count": position_count,
     "pending_order_count": order_count,
@@ -58,7 +61,9 @@ output = {
         "margin": check.margin if check else None,
         "margin_free": check.margin_free if check else None,
         "margin_level": check.margin_level if check else None,
-    } if check else None,
+    }
+    if check
+    else None,
     "xauusd": {
         "bid": tick.bid,
         "ask": tick.ask,
@@ -68,7 +73,7 @@ output = {
         "trade_stops_level": sym.trade_stops_level,
         "trade_freeze_level": sym.trade_freeze_level,
     },
-    "note": "READ-ONLY PREFLIGHT. No order was submitted."
+    "note": "READ-ONLY PREFLIGHT. No order was submitted.",
 }
 mt5.shutdown()
 with open(r"C:\Users\menum\graxia os\graxia\packages\quant_os\artifacts\preflight\g2_mt5_snapshot.json", "w") as f:

@@ -78,14 +78,17 @@ def deflated_sharpe_ratio(
         sr_std = 1e-10
 
     # Deflated Sharpe = probability that observed Sharpe is not due to chance
-    z = (observed_sharpe - expected_max_sharpe) / sr_std
+    # CORRECT formula: z = (SR₀ - σ(SR)·E[max Z]) / σ(SR)
+    # E[max SR] under null = sr_std * expected_max_sharpe (standard normal quantile scaled by SR std)
+    adjusted_expected = sr_std * expected_max_sharpe
+    z = (observed_sharpe - adjusted_expected) / sr_std
     probability_alpha = 1 - _norm_cdf(z)
 
-    # Deflated Sharpe ratio
-    deflated = observed_sharpe - expected_max_sharpe
-    multiple_testing = expected_max_sharpe
+    # Deflated Sharpe ratio — probability (not raw difference)
+    deflated = probability_alpha
+    multiple_testing = adjusted_expected
 
-    passes = observed_sharpe > expected_max_sharpe and probability_alpha < (1 - confidence_level)
+    passes = observed_sharpe > adjusted_expected and probability_alpha < (1 - confidence_level)
 
     return DeflatedSharpeResult(
         observed_sharpe=observed_sharpe,
@@ -165,7 +168,11 @@ def min_backtest_length(
     )
 
     # If observed Sharpe doesn't exceed expected max under null, no T suffices
-    if observed_sharpe <= expected_max_sharpe:
+    # Use a reasonable initial estimate of σ(SR) for the threshold check
+    sr_std_check = math.sqrt(max(1e-20, (1 - skewness * observed_sharpe + (kurtosis - 1) / 4 * observed_sharpe**2) / 99))
+    scaled_expected = sr_std_check * expected_max_sharpe
+
+    if observed_sharpe <= scaled_expected:
         z_conf = _norm_ppf(confidence_level)
         return MinBTLResult(
             min_observations=sentinel_inf,
@@ -182,11 +189,21 @@ def min_backtest_length(
     # Numerator of the MinBTL formula: z² * (1 - skew*SR + (kurt-1)/4 * SR²)
     numerator = z_conf**2 * (1 - skewness * observed_sharpe + (kurtosis - 1) / 4 * observed_sharpe**2)
 
-    # Denominator: (SR - E[max_SR])²
-    denominator = (observed_sharpe - expected_max_sharpe) ** 2
+    # Denominator: (SR - σ(SR)·E[max SR])²  — iterative solve since σ(SR) depends on T
+    # Start with sr_std from T=100, iterate to convergence
+    T_est = 100.0
+    for _ in range(10):
+        sr_std_est = math.sqrt(max(1e-20, (1 - skewness * observed_sharpe + (kurtosis - 1) / 4 * observed_sharpe**2) / max(T_est - 1, 1)))
+        scaled_exp = sr_std_est * expected_max_sharpe
+        denominator = (observed_sharpe - scaled_exp) ** 2
+        if denominator <= 0:
+            T_est = 999_999_999
+            break
+        min_obs = 1 + numerator / denominator
+        if abs(min_obs - T_est) < 1:
+            break
+        T_est = min_obs
 
-    # T >= 1 + numerator / denominator
-    min_obs = 1 + numerator / denominator
     min_obs_int = int(math.ceil(min_obs))
 
     sufficient = current_observations is not None and current_observations >= min_obs_int

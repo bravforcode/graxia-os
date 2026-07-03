@@ -2,6 +2,15 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
+rule_files:
+  - /etc/prometheus/tsm_alerts.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
 scrape_configs:
   - job_name: "graxia-api"
     scheme: https
@@ -22,3 +31,9 @@ scrape_configs:
   - job_name: "node-exporter"
     static_configs:
       - targets: ["node-exporter:9100"]
+
+  - job_name: "tsm-paper-bot"
+    static_configs:
+      - targets: ["host.docker.internal:9090"]
+        labels:
+          portfolio: "tsm"

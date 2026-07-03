@@ -8,15 +8,15 @@ All MT5 calls are wrapped in try/except and raise Mt5UnavailableError
 if MT5 is not accessible.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Optional
 
 from .contract_spec import ContractSpec, compute_snapshot_hash
 
 
 class Mt5UnavailableError(Exception):
     """Raised when MT5 terminal is not available."""
+
     pass
 
 
@@ -35,14 +35,12 @@ def _get_mt5():
     _mt5_imported = True
     try:
         import MetaTrader5 as mt5
+
         _mt5 = mt5
         return mt5
     except ImportError:
         _mt5 = None
-        raise Mt5UnavailableError(
-            "MetaTrader5 package not installed. "
-            "Install with: pip install MetaTrader5"
-        )
+        raise Mt5UnavailableError("MetaTrader5 package not installed. " "Install with: pip install MetaTrader5")
 
 
 def initialize_mt5(path: str, timeout_ms: int = 10000) -> bool:
@@ -77,7 +75,7 @@ def get_contract_spec(
         if acct is None:
             raise Mt5UnavailableError("Could not get account info")
 
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         spec = ContractSpec(
             broker=broker or acct.server.split("-")[0] if acct.server else "",
             server=server or acct.server or "",
@@ -131,9 +129,7 @@ def get_current_tick(symbol: str) -> dict:
         raise Mt5UnavailableError(f"Tick error for {symbol}: {e}") from e
 
 
-def calc_profit(
-    symbol: str, side: str, volume: float, entry: float, exit_price: float
-) -> Optional[float]:
+def calc_profit(symbol: str, side: str, volume: float, entry: float, exit_price: float) -> float | None:
     """Wrapper for order_calc_profit(). Returns None on error."""
     mt5 = _get_mt5()
     try:
@@ -144,7 +140,7 @@ def calc_profit(
         return None
 
 
-def calc_margin(symbol: str, volume: float, price: float) -> Optional[float]:
+def calc_margin(symbol: str, volume: float, price: float) -> float | None:
     """Wrapper for order_calc_margin(). Returns None on error."""
     mt5 = _get_mt5()
     try:
@@ -154,7 +150,7 @@ def calc_margin(symbol: str, volume: float, price: float) -> Optional[float]:
         return None
 
 
-def check_order(order_request: dict) -> Optional[dict]:
+def check_order(order_request: dict) -> dict | None:
     """Wrapper for order_check(). Returns None on error."""
     mt5 = _get_mt5()
     try:
@@ -212,6 +208,7 @@ def shutdown_mt5() -> None:
 def _verify_readonly():
     """Module-level check: these functions must not exist here."""
     import sys
+
     mod = sys.modules[__name__]
     forbidden = ["order_send", "order_modify", "order_close"]
     for fn in forbidden:

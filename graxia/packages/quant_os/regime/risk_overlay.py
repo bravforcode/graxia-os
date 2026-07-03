@@ -7,10 +7,12 @@ State persists to disk via JSON so kill switch and loss tracking survive restart
 """
 
 import json
+import os
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
 
 class KillSwitchReason(Enum):
@@ -80,6 +82,7 @@ class RiskOverlay:
         cooldown_minutes: int = 30,
         max_daily_trades: int = 10,
         state_file: str = "data/risk_overlay_state.json",
+        coordinator: Any | None = None,
     ):
         self.initial_balance = initial_balance
         self.max_risk_pct = max_risk_pct
@@ -89,6 +92,7 @@ class RiskOverlay:
         self.cooldown_minutes = cooldown_minutes
         self.max_daily_trades = max_daily_trades
         self._state_file = Path(state_file)
+        self._coordinator = coordinator
 
         self.state = self._load_state()
         self._reset_if_new_period()
@@ -187,17 +191,29 @@ class RiskOverlay:
             self.trigger_kill_switch("WEEKLY_LOSS_BREACH")
         self._save_state()
 
+    def set_coordinator(self, coordinator: Any) -> None:
+        """Wire in the StateCoordinator for cross-store sync."""
+        self._coordinator = coordinator
+
     def trigger_kill_switch(self, reason: str = "MANUAL"):
         """Activate kill switch. Blocks all further trading."""
         self.state.kill_switch_triggered = True
         self.state.kill_switch_reason = reason
         self._save_state()
+        if self._coordinator is not None:
+            self._coordinator.sync_kill_switch(
+                True, reason, source="risk_overlay", triggering_store="risk_overlay"
+            )
 
     def release_kill_switch(self):
         """Deactivate kill switch."""
         self.state.kill_switch_triggered = False
         self.state.kill_switch_reason = ""
         self._save_state()
+        if self._coordinator is not None:
+            self._coordinator.sync_kill_switch(
+                False, "manual", source="risk_overlay", triggering_store="risk_overlay"
+            )
 
     def get_status(self) -> dict:
         """Return current risk status summary."""
@@ -232,7 +248,9 @@ class RiskOverlay:
             self.state.weekly_realized_pnl = 0.0
 
     def _save_state(self):
-        """Persist state to disk so kill switch survives restart."""
+        """Persist state to disk atomically so kill switch survives restart."""
+        import tempfile
+
         self._state_file.parent.mkdir(parents=True, exist_ok=True)
         data = {
             "daily_start": self.state.daily_start.isoformat(),
@@ -246,7 +264,23 @@ class RiskOverlay:
             "last_trade_time": self.state.last_trade_time.isoformat() if self.state.last_trade_time else None,
             "cooldown_until": self.state.cooldown_until.isoformat() if self.state.cooldown_until else None,
         }
-        self._state_file.write_text(json.dumps(data, indent=2))
+        fd, tmp_path = tempfile.mkstemp(
+            dir=str(self._state_file.parent),
+            prefix=".risk_overlay_",
+            suffix=".tmp",
+        )
+        try:
+            with os.fdopen(fd, "w") as f:
+                json.dump(data, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_path, str(self._state_file))
+        except Exception:
+            import contextlib
+
+            with contextlib.suppress(OSError):
+                os.unlink(tmp_path)
+            raise
 
     def _load_state(self) -> RiskState:
         """Load state from disk, or return fresh state if file missing."""

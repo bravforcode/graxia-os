@@ -19,7 +19,7 @@ import os
 import sys
 import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 
 import yaml
@@ -209,7 +209,7 @@ class ShadowRunnerV2:
 
         self._running = False
         self._signal_count = 0
-        self._session_id = f"shadow_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
+        self._session_id = f"shadow_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}"
         self._records: list[SignalRecord] = []
         self._max_spread = 0.25
 
@@ -232,7 +232,7 @@ class ShadowRunnerV2:
         if tick is None:
             return None
         return TickEvidence(
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
             bid=tick["bid"],
             ask=tick["ask"],
             spread=tick["ask"] - tick["bid"],
@@ -247,7 +247,7 @@ class ShadowRunnerV2:
             return (
                 SignalRecord(
                     signal_id=signal_id,
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(UTC),
                     symbol=symbol,
                     direction="BUY",
                     entry_price=tick.ask,
@@ -279,7 +279,7 @@ class ShadowRunnerV2:
             return (
                 SignalRecord(
                     signal_id=signal_id,
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(UTC),
                     symbol=symbol,
                     direction="BUY",
                     entry_price=tick.ask,
@@ -298,7 +298,7 @@ class ShadowRunnerV2:
 
         record = SignalRecord(
             signal_id=signal_id,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
             symbol=symbol,
             direction=direction,
             entry_price=entry,
@@ -454,7 +454,7 @@ class ShadowRunnerV2:
 
     def _export_results(self):
         os.makedirs("shadow_results", exist_ok=True)
-        ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
 
         # Telemetry
         telemetry_path = f"shadow_results/telemetry_{ts}.json"

@@ -1,4 +1,5 @@
 """Authentication middleware and route classification helpers."""
+
 from __future__ import annotations
 
 import hashlib
@@ -121,7 +122,10 @@ def route_controls(method: str, route_path: str) -> list[str]:
     level = classify_route(method, route_path)
     if level in {AuthLevel.AUTHENTICATED, AuthLevel.OPERATOR, AuthLevel.ADMIN}:
         controls.append("jwt_auth")
-    if method.upper() in {"POST", "PUT", "PATCH", "DELETE"} and route_path not in CSRF_EXEMPT_PATHS:
+    if (
+        method.upper() in {"POST", "PUT", "PATCH", "DELETE"}
+        and route_path not in CSRF_EXEMPT_PATHS
+    ):
         controls.append("csrf")
     return controls
 
@@ -178,14 +182,14 @@ async def verify_internal_bearer_token(
 ) -> bool:
     """
     Verify bearer token for internal webhook requests (deprecated).
-    
+
     Args:
         configured_token: Expected token from settings
         provided_token: Provided token from request
-    
+
     Returns:
         True if tokens match (constant-time comparison), False otherwise
-    
+
     Note:
         This method is deprecated. Use HMAC signature verification instead.
     """
@@ -231,39 +235,44 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if required_level == AuthLevel.BLOCKED and settings.STRICT_BOOTSTRAP:
             return JSONResponse({"detail": "Not Found"}, status_code=404)
         if (request.method.upper(), route_path) in INTERNAL_TOKEN_ROUTES:
-            secret = (getattr(settings, "ALERTMANAGER_WEBHOOK_SECRET", "") or "").strip()
+            secret = (
+                getattr(settings, "ALERTMANAGER_WEBHOOK_SECRET", "") or ""
+            ).strip()
             signature = request.headers.get("X-Alertmanager-Signature", "").strip()
-            
+
             # Try HMAC signature verification first (preferred)
             if secret and signature.startswith("sha256="):
                 timestamp_str = request.headers.get("X-Graxia-Timestamp", "").strip()
-                
+
                 # Validate timestamp format
                 if not timestamp_str:
                     return JSONResponse({"detail": "Unauthorized"}, status_code=401)
-                
+
                 try:
-                    import time
                     timestamp = int(timestamp_str)
                 except ValueError:
                     return JSONResponse({"detail": "Unauthorized"}, status_code=401)
-                
+
                 # Check timestamp window (5 minutes)
                 import time as time_module
+
                 if abs(time_module.time() - timestamp) > 300:
                     return JSONResponse({"detail": "Unauthorized"}, status_code=401)
-                
+
                 # Read request body (cached by Starlette)
                 body = await request.body()
-                
+
                 # Compute expected signature
                 payload = f"{timestamp_str}.".encode() + body
-                expected_sig = "sha256=" + hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
-                
+                expected_sig = (
+                    "sha256="
+                    + hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
+                )
+
                 # Verify signature (constant-time comparison)
                 if not hmac.compare_digest(expected_sig, signature):
                     return JSONResponse({"detail": "Unauthorized"}, status_code=401)
-                
+
                 request.state.internal_token_authenticated = True
                 return await call_next(request)
 
@@ -273,10 +282,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
             authorization = request.headers.get("Authorization", "")
             if authorization.lower().startswith("bearer "):
                 provided = authorization.split(" ", 1)[1].strip()
-            
+
             if not await verify_internal_bearer_token(configured, provided):
                 return JSONResponse({"detail": "Unauthorized"}, status_code=401)
-            
+
             request.state.internal_token_authenticated = True
             return await call_next(request)
         if required_level == AuthLevel.PUBLIC:
@@ -301,7 +310,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 severity="CRITICAL",
                 outcome="blocked",
                 success=False,
-                metadata={"required_level": required_level.value, "actual_role": user_role},
+                metadata={
+                    "required_level": required_level.value,
+                    "actual_role": user_role,
+                },
                 user_id=str(payload.get("sub") or ""),
                 session_id=str(payload.get("session_id") or ""),
                 ip_address=get_client_ip(request),
@@ -362,6 +374,7 @@ async def get_current_user(
     # Load ORM User from DB
     from uuid import UUID as _UUID
     from app.models.user import User as _User
+
     user = await db.get(_User, _UUID(str(user_id)))
     if user is None:
         raise HTTPException(
@@ -378,11 +391,15 @@ async def get_current_user(
     return user
 
 
-async def get_current_active_user(current_user: "User" = Depends(get_current_user)) -> "User":
+async def get_current_active_user(
+    current_user: "User" = Depends(get_current_user),
+) -> "User":
     return current_user
 
 
-async def require_role(required_role: str, current_user: "User" = Depends(get_current_user)) -> "User":
+async def require_role(
+    required_role: str, current_user: "User" = Depends(get_current_user)
+) -> "User":
     user_role = getattr(current_user, "role", "user") or "user"
     if not role_satisfies(
         AuthLevel.ADMIN if required_role == "admin" else AuthLevel.OPERATOR,

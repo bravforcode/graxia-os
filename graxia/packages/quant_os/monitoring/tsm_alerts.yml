@@ -14,7 +14,7 @@ groups:
       # Backtest max DD was -20.3%.  15% is the hard breach threshold
       # that should halt new positions and notify immediately.
       - alert: PortfolioDrawdownBreach
-        expr: quant_os_tsm_drawdown_pct{portfolio="tsm"} > 15
+        expr: quant_os_drawdown_pct{portfolio="tsm"} > 15
         for: 1m
         labels:
           severity: critical
@@ -30,7 +30,7 @@ groups:
 
       # ── Kill Switch ───────────────────────────────────────────────────
       - alert: KillSwitchTriggered
-        expr: quant_os_tsm_kill_switch_active{portfolio="tsm"} == 1
+        expr: quant_os_kill_switch_active{portfolio="tsm"} == 1
         for: 0s
         labels:
           severity: critical

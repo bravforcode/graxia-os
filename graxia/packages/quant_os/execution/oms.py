@@ -4,6 +4,7 @@ import json
 import logging
 import time
 import uuid
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -17,6 +18,41 @@ from .adapters.base import (
 from .order_state_machine import OrderStateMachine
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Trailing / fixed stop-loss configuration
+# ---------------------------------------------------------------------------
+
+@dataclass
+class TrailingStopConfig:
+    """Configuration for post-fill stop-loss behaviour per asset class or symbol."""
+
+    enabled: bool = True
+    trail_multiplier: float = 2.0  # ATR multiplier for SL distance
+    stop_mode: str = "trailing"  # "trailing" | "fixed"
+
+# ---------------------------------------------------------------------------
+# Per-symbol stop-loss configuration (research-optimised multipliers)
+# ---------------------------------------------------------------------------
+
+_SYMBOL_STOP_CONFIGS: dict[str, TrailingStopConfig] = {
+    "XAUUSD": TrailingStopConfig(enabled=True, trail_multiplier=2.5, stop_mode="fixed"),
+    "NAS100": TrailingStopConfig(enabled=True, trail_multiplier=2.0, stop_mode="fixed"),
+    "USOIL": TrailingStopConfig(enabled=True, trail_multiplier=3.0, stop_mode="fixed"),
+    "USDJPY": TrailingStopConfig(enabled=True, trail_multiplier=1.5, stop_mode="fixed"),
+}
+
+# ---------------------------------------------------------------------------
+# Default per-asset-class stop configuration
+# ---------------------------------------------------------------------------
+
+_DEFAULT_TRAILING_CONFIGS: dict[str, TrailingStopConfig] = {
+    "metals": TrailingStopConfig(enabled=True, trail_multiplier=2.5, stop_mode="fixed"),
+    "forex": TrailingStopConfig(enabled=True, trail_multiplier=2.0, stop_mode="fixed"),
+    "indices": TrailingStopConfig(enabled=True, trail_multiplier=2.0, stop_mode="fixed"),
+    "crypto": TrailingStopConfig(enabled=True, trail_multiplier=2.0, stop_mode="trailing"),
+}
 
 # ---------------------------------------------------------------------------
 # Venue routing table
@@ -52,6 +88,8 @@ class OMS:
         adapters: dict[str, BrokerAdapter],
         ledger_path: Path = _DEFAULT_LEDGER,
         risk_engine: Any = None,
+        trailing_stop_configs: dict[str, TrailingStopConfig] | None = None,
+        symbol_stop_configs: dict[str, TrailingStopConfig] | None = None,
     ) -> None:
         self._adapters = adapters
         self._ledger_path = ledger_path
@@ -59,6 +97,8 @@ class OMS:
         self._orders: dict[str, Order] = {}
         self._state_machines: dict[str, OrderStateMachine] = {}
         self._risk_engine = risk_engine
+        self._trailing_stop_configs = trailing_stop_configs or dict(_DEFAULT_TRAILING_CONFIGS)
+        self._symbol_stop_configs = symbol_stop_configs or dict(_SYMBOL_STOP_CONFIGS)
         self._load_ledger()
 
     # ------------------------------------------------------------------
@@ -398,6 +438,119 @@ class OMS:
             logger.info("Kill switch: cancelled %d orders", len(cancelled))
 
         return cancelled
+
+    def close_position(
+        self,
+        symbol: str,
+        broker_position_id: str,
+        volume: float,
+        asset_class: str = "forex",
+        signal_id: str = "",
+    ) -> Order:
+        """Close an open position via the broker adapter.
+
+        Args:
+            symbol: MT5 symbol name.
+            broker_position_id: MT5 position ticket as string.
+            volume: Position volume (lots).
+            asset_class: Asset class for adapter routing.
+            signal_id: Signal ID for tracking.
+
+        Returns:
+            Order with status FILLED or FAILED.
+        """
+        adapter = self._get_adapter(asset_class)
+        self._ensure_connected(adapter)
+        try:
+            result = adapter.close_position(
+                broker_position_id=broker_position_id,
+                volume=volume,
+                symbol=symbol,
+            )
+            # Create an Order to track this close
+            order = Order(
+                order_id=f"close-{broker_position_id}",
+                signal_id=signal_id,
+                symbol=symbol,
+                asset_class=asset_class,
+                side="SELL" if volume > 0 else "BUY",
+                quantity=abs(volume),
+            )
+            order.status = result.status
+            order.broker_order_id = result.broker_id
+            if result.status == OrderStatus.FILLED:
+                logger.info("Closed position %s %s: filled", symbol, broker_position_id)
+            else:
+                logger.warning("Failed to close position %s %s: %s", symbol, broker_position_id, result)
+            return order
+        except Exception as exc:
+            logger.error("Error closing position %s %s: %s", symbol, broker_position_id, exc)
+            order = Order(
+                order_id=f"close-{broker_position_id}",
+                signal_id=signal_id,
+                symbol=symbol,
+                asset_class=asset_class,
+                side="SELL" if volume > 0 else "BUY",
+                quantity=abs(volume),
+            )
+            order.status = OrderStatus.FAILED
+            return order
+
+    # ------------------------------------------------------------------
+    # Post-fill stop-loss setup
+    # ------------------------------------------------------------------
+
+    def _setup_post_fill_stop_loss(
+        self,
+        order: Order,
+        avg_price: float,
+        adapter: BrokerAdapter,
+    ) -> None:
+        """Set stop-loss on a freshly-filled position.
+
+        Logic:
+        1. Skip if order already has ``stop_loss`` set.
+        2. Find the matching position by ``order_id`` in the comment field.
+        3. Resolve config: symbol override → asset-class default.
+        4. If disabled, skip.
+        5. Compute SL from ATR proxy (2 % of fill price) × multiplier.
+        """
+        if order.stop_loss is not None:
+            return
+
+        # Find the position that matches this order
+        positions = adapter.get_positions()
+        position = None
+        for p in positions:
+            if p.get("comment") == order.order_id:
+                position = p
+                break
+        if position is None:
+            return
+
+        # Resolve config: symbol override takes priority
+        symbol = position.get("symbol", order.symbol)
+        cfg = self._symbol_stop_configs.get(symbol)
+        if cfg is None:
+            asset_class = order.asset_class.lower()
+            cfg = self._trailing_stop_configs.get(asset_class)
+        if cfg is None or not cfg.enabled:
+            return
+
+        # ATR proxy: 2 % of fill price (no real ATR pipeline yet)
+        atr_proxy = avg_price * 0.02
+        multiplier = cfg.trail_multiplier
+
+        if order.side.upper() == "BUY":
+            sl_price = avg_price - (atr_proxy * multiplier)
+        else:
+            sl_price = avg_price + (atr_proxy * multiplier)
+
+        adapter.set_stop_loss(
+            position_ticket=position["ticket"],
+            symbol=symbol,
+            stop_loss_price=round(sl_price, 5),
+        )
 
     # ------------------------------------------------------------------
     # Query helpers

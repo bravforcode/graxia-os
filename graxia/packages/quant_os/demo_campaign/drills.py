@@ -20,7 +20,7 @@ import logging
 import os
 import sys
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -116,7 +116,7 @@ class IncidentDrills:
         # Simulate: process signal, then disconnect
         signal = ShadowSignal(
             signal_id="DRILL-002",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
             symbol="XAUUSD",
             direction="BUY",
             entry_price=2350.0,
@@ -137,7 +137,7 @@ class IncidentDrills:
         monitor = FeedHealthMonitor(symbol="XAUUSD", max_tick_age_seconds=3.0)
 
         # Record tick
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         monitor.on_tick_received(tick_timestamp=now, received_at=now)
         state = monitor.check_health()
 
@@ -158,10 +158,10 @@ class IncidentDrills:
 
         # Feed enough ticks to build a baseline (~10 normal spreads of ~13 points)
         for i in range(20):
-            monitor.on_tick(Decimal("2350.0"), Decimal("2350.13"), datetime.utcnow())
+            monitor.on_tick(Decimal("2350.0"), Decimal("2350.13"), datetime.now(UTC))
 
         # Now feed a wide spread
-        monitor.on_tick(Decimal("2350.0"), Decimal("2350.50"), datetime.utcnow())
+        monitor.on_tick(Decimal("2350.0"), Decimal("2350.50"), datetime.now(UTC))
 
         # Check via state (uses internal baseline)
         state = monitor.get_state()
@@ -306,7 +306,7 @@ def main():
     import json
 
     os.makedirs("shadow_results", exist_ok=True)
-    ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     path = f"shadow_results/drills_{ts}.json"
     with open(path, "w") as f:
         json.dump(

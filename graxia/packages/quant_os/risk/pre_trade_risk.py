@@ -55,20 +55,23 @@ def pre_trade_check(
     if sizing_result.rejected:
         reasons.extend(sizing_result.rejection_reasons)
 
-    # Daily loss limit
-    max_daily = account_equity * risk_policy.max_daily_loss_fraction
-    if daily_loss >= max_daily:
-        reasons.append(f"Daily loss limit reached: {daily_loss:.2f} >= {max_daily:.2f}")
+    # Daily loss limit — daily_loss is a dollar amount; compare as fraction of equity
+    if account_equity > 0:
+        daily_loss_frac = daily_loss / account_equity
+        if daily_loss_frac >= risk_policy.max_daily_loss_fraction:
+            reasons.append(f"Daily loss limit reached: {daily_loss_frac:.4f} >= {risk_policy.max_daily_loss_fraction}")
 
-    # Weekly loss limit
-    max_weekly = account_equity * risk_policy.max_weekly_loss_fraction
-    if weekly_loss >= max_weekly:
-        reasons.append(f"Weekly loss limit reached: {weekly_loss:.2f} >= {max_weekly:.2f}")
+    # Weekly loss limit — weekly_loss is a dollar amount; compare as fraction of equity
+    if account_equity > 0:
+        weekly_loss_frac = weekly_loss / account_equity
+        if weekly_loss_frac >= risk_policy.max_weekly_loss_fraction:
+            reasons.append(
+                f"Weekly loss limit reached: {weekly_loss_frac:.4f} >= {risk_policy.max_weekly_loss_fraction}"
+            )
 
-    # Drawdown limit
-    max_dd = account_equity * risk_policy.max_total_drawdown_fraction
-    if total_drawdown >= max_dd:
-        reasons.append(f"Drawdown limit reached: {total_drawdown:.2f} >= {max_dd:.2f}")
+    # Drawdown limit — total_drawdown is already a fraction (peak-equity)/peak
+    if total_drawdown >= risk_policy.max_total_drawdown_fraction:
+        reasons.append(f"Drawdown limit reached: {total_drawdown:.4f} >= {risk_policy.max_total_drawdown_fraction}")
 
     # Position count
     if risk_ledger.open_positions >= risk_policy.max_positions:

@@ -9,7 +9,7 @@ consumers can detect drift without re-reading the tick stream.
 import hashlib
 import json
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 
 from .tick_recorder import TickRecord
 
@@ -78,7 +78,7 @@ class DataWatermarkTracker:
         """True if the latest tick's provider timestamp is within max_age."""
         if self._watermark is None:
             return False
-        age = (datetime.utcnow() - self._watermark.latest_timestamp_utc).total_seconds()
+        age = (datetime.now(UTC) - self._watermark.latest_timestamp_utc).total_seconds()
         return age <= max_age_seconds
 
     def has_gaps(self) -> bool:

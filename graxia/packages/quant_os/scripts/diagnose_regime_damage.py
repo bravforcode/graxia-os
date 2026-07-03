@@ -16,7 +16,7 @@ import json
 import math
 import sys
 from collections import defaultdict
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 # Ensure the package root is on sys.path so we can import quant_os modules
@@ -142,7 +142,7 @@ def _write_report(results: dict, output_path: Path, asset_class: str, timeframe:
     lines = [
         "# Regime Damage Report",
         "",
-        f"**Generated:** {datetime.utcnow().isoformat()}Z",
+        f"**Generated:** {datetime.now(UTC).isoformat()}Z",
         f"**Asset class:** {asset_class} | **Timeframe:** {timeframe}",
         "",
         "## Summary",

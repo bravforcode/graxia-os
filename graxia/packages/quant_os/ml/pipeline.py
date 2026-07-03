@@ -13,7 +13,7 @@ Handles:
 import os
 import pickle
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -214,7 +214,7 @@ class FeatureEngineer:
 
         feature_list = features.iloc[valid_start:valid_end].to_dict("records")
         label_list = labels[valid_start:valid_end].tolist()
-        ts_list = timestamps[valid_start:valid_end] if timestamps else [datetime.utcnow()] * len(label_list)
+        ts_list = timestamps[valid_start:valid_end] if timestamps else [datetime.now(UTC)] * len(label_list)
 
         return FeatureSet(
             features=feature_list,
@@ -313,7 +313,7 @@ class MLTrainer:
                 feature_importance[name] = float(imp)
 
         # Save model
-        version = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        version = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         model_path = os.path.join(self.model_dir, f"{model_type}_{version}.pkl")
 
         with open(model_path, "wb") as f:

@@ -18,7 +18,31 @@ from dataclasses import dataclass
 from decimal import ROUND_DOWN, Decimal
 
 from ..core.config import get_config
-from ..core.golden_rules import GOLDEN_RULES
+from .risk_policy import RiskPolicy
+
+# Default risk per trade from RiskPolicy (10 bps = 0.10%)
+_DEFAULT_RISK_PCT = float(RiskPolicy().risk_per_trade_bps) / 100  # bps → pct
+
+# Per-symbol contract sizes (units per 1 lot)
+_SYMBOL_CONTRACT_SIZES: dict[str, float] = {
+    "XAUUSD": 100,       # 100 oz per lot
+    "XAGUSD": 5000,      # 5000 oz per lot
+    "BTCUSD": 1,         # 1 BTC per lot
+    "ETHUSD": 1,         # 1 ETH per lot
+    "EURUSD": 100_000,   # standard forex lot
+    "GBPUSD": 100_000,
+    "USDJPY": 100_000,
+    "AUDUSD": 100_000,
+    "USDCAD": 100_000,
+    "USDCHF": 100_000,
+    "NZDUSD": 100_000,
+}
+_DEFAULT_FOREX_LOT = 100_000
+
+
+def _units_per_lot_for_symbol(symbol: str) -> float:
+    """Return units-per-lot for the given symbol, defaulting to standard forex."""
+    return _SYMBOL_CONTRACT_SIZES.get(symbol.upper(), _DEFAULT_FOREX_LOT)
 
 # ── A2: Standalone Kelly helper (kvrancic pattern) ───────────────
 
@@ -226,12 +250,15 @@ class FixedFractionalSizer(PositionSizer):
 
     def __init__(self, risk_pct: float | None = None, units_per_lot: float = 100000.0):
         super().__init__("FixedFractional", units_per_lot)
-        self.risk_pct = risk_pct or GOLDEN_RULES.MAX_RISK_PER_TRADE_PCT
+        self.risk_pct = risk_pct or _DEFAULT_RISK_PCT
 
     def calculate(
         self, account_balance: Decimal, entry_price: Decimal, stop_loss: Decimal, symbol: str = "", **kwargs
     ) -> PositionSizeResult:
         """Calculate position size based on fixed risk percentage"""
+        # Use per-symbol contract size if available
+        units_per_lot = _units_per_lot_for_symbol(symbol) if symbol else self.units_per_lot
+
         # Calculate risk amount
         risk_amount = account_balance * Decimal(str(self.risk_pct)) / 100
 
@@ -252,10 +279,10 @@ class FixedFractionalSizer(PositionSizer):
         # Calculate units
         units = risk_amount / price_risk
 
-        # Standard forex lot = 100,000 units
-        lots = units / Decimal(str(self.units_per_lot))
+        # Convert to lots using per-symbol contract size
+        lots = units / Decimal(str(units_per_lot))
         lots = lots.quantize(Decimal("0.01"), rounding=ROUND_DOWN)  # Round to 2 decimals
-        units = lots * Decimal(str(self.units_per_lot))
+        units = lots * Decimal(str(units_per_lot))
 
         # Calculate notional value
         notional = units * entry_price
@@ -316,7 +343,7 @@ class KellySizer(PositionSizer):
         adjusted_kelly = kelly_pct * self.kelly_fraction
 
         # Cap at golden rule max
-        max_risk = GOLDEN_RULES.MAX_RISK_PER_TRADE_PCT / 100
+        max_risk = _DEFAULT_RISK_PCT / 100
         if adjusted_kelly > max_risk:
             adjusted_kelly = max_risk
             capped = True
@@ -473,7 +500,7 @@ class AntiMartingaleSizer(PositionSizer):
         adjusted_risk = self.base_risk_pct * adjustment
 
         # Cap at golden rule
-        adjusted_risk = min(adjusted_risk, GOLDEN_RULES.MAX_RISK_PER_TRADE_PCT)
+        adjusted_risk = min(adjusted_risk, _DEFAULT_RISK_PCT)
 
         # Use fixed fractional with adjusted percentage
         risk_amount = account_balance * Decimal(str(adjusted_risk)) / 100

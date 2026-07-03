@@ -66,6 +66,7 @@ class OrderIntent:
     strategy_id: str = ""
     signal_id: str = ""
     execution_quality: ExecutionQuality = ExecutionQuality.BAR_ONLY
+    latency_slippage: Decimal = Decimal("0")  # Additional slippage from execution latency
 
 
 @dataclass(frozen=True)
@@ -199,7 +200,7 @@ class BacktestExecutionSimulator:
         )
         spread = ask - bid
 
-        slippage_entry = market.spread / Decimal("2")
+        slippage_entry = market.spread / Decimal("2") + intent.latency_slippage
         slippage_exit = market.spread / Decimal("2")
 
         req = FillRequest(
@@ -272,12 +273,15 @@ class BacktestExecutionSimulator:
         bar_high: Decimal,
         bar_low: Decimal,
         max_bars_open: int = 50,
+        current_bar_index: int = 0,
     ) -> list[ExecutionEvent]:
         """Evaluate all open positions for SL/TP triggers on the current bar.
 
         Ambiguous bars (both SL and TP could hit) are resolved ADVERSE first:
           - BUY  → SL resolves first  (bid <= stop_loss)
           - SELL → SL resolves first  (ask >= stop_loss)
+
+        TIME_STOP fires only when ``current_bar_index - pos.signal_bar_index >= max_bars_open``.
 
         Returns a list of ExecutionEvent for each position that triggered.
         """
@@ -291,6 +295,18 @@ class BacktestExecutionSimulator:
                 market.bid,
                 market.ask,
             )
+
+            # Intra-bar check: if bar high/low touched SL level, trigger SL
+            # even if current bid/ask didn't reach it (price moved intra-bar)
+            if trigger is None:
+                if pos.side == Side.BUY and bar_low <= pos.stop_loss:
+                    trigger = "SL"
+                elif pos.side == Side.SELL and bar_high >= pos.stop_loss:
+                    trigger = "SL"
+                elif pos.side == Side.BUY and bar_high >= (pos.take_profit or Decimal("0")):
+                    trigger = "TP"
+                elif pos.side == Side.SELL and bar_low <= (pos.take_profit or Decimal("0")):
+                    trigger = "TP"
 
             if trigger == "SL" and pos.take_profit is not None:
                 tp_hit = (pos.side == Side.BUY and market.bid >= pos.take_profit) or (
@@ -333,7 +349,7 @@ class BacktestExecutionSimulator:
                 events.append(event)
                 self._record_event(pos, event)
 
-            elif max_bars_open > 0 and hasattr(pos, "signal_bar_index"):
+            elif max_bars_open > 0 and (current_bar_index - pos.signal_bar_index) >= max_bars_open:
                 mid = (market.high + market.low) / Decimal("2")
                 if pos.side == Side.BUY:
                     exit_price = mid - market.spread / Decimal("2")
@@ -359,21 +375,28 @@ class BacktestExecutionSimulator:
     # ------------------------------------------------------------------
 
     def _resolve_adverse(self, pos: Position, market: MarketSnapshot) -> tuple[Decimal, Decimal]:
-        """Resolve ambiguous bar — adverse (SL) outcome first."""
+        """Resolve ambiguous bar — adverse (SL) outcome first, with slippage."""
         exit_price, slippage = simulate_exit(pos.side, market.bid, market.ask, market.spread / Decimal("2"))
+        # Apply slippage to SL fill (realistic: stop fills are worse than exact level)
         if pos.side == Side.BUY:
-            exit_price = pos.stop_loss
+            exit_price = pos.stop_loss - slippage
             pnl = (exit_price - pos.entry_price) * pos.volume
         else:
-            exit_price = pos.stop_loss
+            exit_price = pos.stop_loss + slippage
             pnl = (pos.entry_price - exit_price) * pos.volume
         return exit_price, pnl
 
     def _resolve_exit(self, pos: Position, market: MarketSnapshot, trigger: str) -> tuple[Decimal, Decimal]:
-        """Resolve a clean SL or TP exit."""
+        """Resolve a clean SL or TP exit, with slippage for SL fills."""
+        exit_price, slippage = simulate_exit(pos.side, market.bid, market.ask, market.spread / Decimal("2"))
         if trigger == "SL":
-            exit_price = pos.stop_loss
+            # SL fills have slippage (worse than exact stop level)
+            if pos.side == Side.BUY:
+                exit_price = pos.stop_loss - slippage
+            else:
+                exit_price = pos.stop_loss + slippage
         else:
+            # TP fills at exact level (conservative assumption)
             exit_price = pos.take_profit or Decimal("0")
 
         if pos.side == Side.BUY:

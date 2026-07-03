@@ -16,7 +16,7 @@ import os
 import time
 import warnings
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 
 @dataclass
@@ -327,7 +327,7 @@ class DataPipeline:
         """Get cached data if valid"""
         if key in self._cache:
             entry = self._cache[key]
-            if datetime.utcnow() - entry["time"] < self._cache_ttl:
+            if datetime.now(UTC) - entry["time"] < self._cache_ttl:
                 return entry["data"]
         return None
 
@@ -335,7 +335,7 @@ class DataPipeline:
         """Set cache"""
         self._cache[key] = {
             "data": data,
-            "time": datetime.utcnow(),
+            "time": datetime.now(UTC),
         }
 
 

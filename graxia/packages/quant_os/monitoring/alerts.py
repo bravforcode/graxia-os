@@ -4,7 +4,7 @@ Centralized alert routing and management
 """
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from ..core.enums import IncidentSeverity
@@ -51,7 +51,7 @@ class AlertManager:
             severity=IncidentSeverity.P2,
             title=f"Trade Executed: {symbol}",
             message=f"{action} {lots} lots @ {price}",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
             context={"sl": sl, "tp": tp},
         )
         return await self.send_alert(alert)
@@ -62,6 +62,6 @@ class AlertManager:
             severity=IncidentSeverity.P0,
             title="KILL SWITCH TRIGGERED",
             message=f"{trigger_type}: {reason}",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
         return await self.send_alert(alert)

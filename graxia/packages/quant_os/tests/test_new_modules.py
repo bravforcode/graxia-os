@@ -198,7 +198,7 @@ class TestDashboard:
     def test_update(self):
         d = Dashboard()
         metrics = DashboardMetrics(
-            timestamp=__import__("datetime").datetime.utcnow(),
+            timestamp=__import__("datetime").datetime.now(UTC),
             balance=10000,
             equity=10100,
             unrealized_pnl=100,
@@ -226,7 +226,7 @@ class TestDashboard:
     def test_render(self):
         d = Dashboard()
         metrics = DashboardMetrics(
-            timestamp=__import__("datetime").datetime.utcnow(),
+            timestamp=__import__("datetime").datetime.now(UTC),
             balance=10000,
             equity=10100,
             unrealized_pnl=100,

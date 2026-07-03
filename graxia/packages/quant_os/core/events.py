@@ -84,6 +84,24 @@ class SignalEvent(Event):
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
+@dataclass(frozen=True)
+class SignalValidationEvent(Event):
+    """Result of AI signal validation — advisory only.
+
+    Published by SignalValidatorAgent after LLM second-opinion check.
+    Adjusted confidence is used by PortfolioManager for position sizing.
+    """
+
+    signal_id: str = ""
+    original_confidence: float = 0.0
+    adjusted_confidence: float = 0.0
+    valid: bool = True
+    reasoning: str = ""
+    red_flags: tuple[str, ...] = ()
+    tier_used: int = 0
+    latency_ms: float = 0.0
+
+
 # ── Order Events ──────────────────────────────────────────────────
 
 

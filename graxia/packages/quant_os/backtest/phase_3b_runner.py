@@ -175,6 +175,7 @@ class SpreadPatchedEngine(BacktestEngine):
             snapshot,
             bar_high,
             bar_low,
+            current_bar_index=bar_index,
         )
 
         for event in events:

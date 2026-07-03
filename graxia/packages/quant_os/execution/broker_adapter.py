@@ -22,7 +22,7 @@ warnings.warn(
 import random
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 from uuid import uuid4
 
@@ -208,7 +208,7 @@ class PaperBroker(BrokerAdapter):
                 "filled_quantity": order.quantity,
                 "avg_fill_price": fill_price,
                 "commission": commission,
-                "filled_at": datetime.utcnow(),
+                "filled_at": datetime.now(UTC),
             }
 
             # Update account

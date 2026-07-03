@@ -1,8 +1,10 @@
 """Simple JSON-file-based daily risk tracking."""
 
 import json
+import os
 from datetime import UTC, date, datetime
 from pathlib import Path
+from typing import Any
 
 
 class RiskLedger:
@@ -11,8 +13,9 @@ class RiskLedger:
     Reset daily counters at start of each trading day.
     """
 
-    def __init__(self, state_file: str = "data/risk_ledger.json"):
+    def __init__(self, state_file: str = "data/risk_ledger.json", coordinator: Any | None = None):
         self._state_file = Path(state_file)
+        self._coordinator = coordinator
         self._state = self._load()
 
     def _load(self) -> dict:
@@ -38,8 +41,27 @@ class RiskLedger:
         }
 
     def _save(self):
+        """Persist state atomically using temp file + rename."""
+        import tempfile
+
         self._state_file.parent.mkdir(parents=True, exist_ok=True)
-        self._state_file.write_text(json.dumps(self._state, indent=2))
+        fd, tmp_path = tempfile.mkstemp(
+            dir=str(self._state_file.parent),
+            prefix=".risk_ledger_",
+            suffix=".tmp",
+        )
+        try:
+            with os.fdopen(fd, "w") as f:
+                json.dump(self._state, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_path, str(self._state_file))
+        except Exception:
+            import contextlib
+
+            with contextlib.suppress(OSError):
+                os.unlink(tmp_path)
+            raise
 
     def _maybe_reset(self):
         """Reset daily/weekly counters if date/week changed."""
@@ -107,9 +129,18 @@ class RiskLedger:
             self._state["rejection_reasons"] = reasons[-1000:]
         self._save()
 
+    def set_coordinator(self, coordinator: Any) -> None:
+        """Wire in the StateCoordinator for cross-store sync."""
+        self._coordinator = coordinator
+
     def set_kill_switch_state(self, state: str) -> None:
         self._state["kill_switch_state"] = state
         self._save()
+        if self._coordinator is not None:
+            active = state.lower() in ("active", "triggered")
+            self._coordinator.sync_kill_switch(
+                active, f"ledger:{state}", source="risk_ledger", triggering_store="risk_ledger"
+            )
 
     @property
     def daily_realized_loss(self) -> float:

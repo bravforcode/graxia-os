@@ -6,7 +6,7 @@ BE-P8.1: Geometry validation, spread shock, dedup, full position lifecycle.
 import hashlib
 import json
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 
 
@@ -366,7 +366,7 @@ class ShadowPipeline:
     def start_session(self, session_id: str) -> ShadowSession:
         session = ShadowSession(
             session_id=session_id,
-            started_at=datetime.utcnow(),
+            started_at=datetime.now(UTC),
         )
         self._sessions[session_id] = session
         self._current_session = session
@@ -375,7 +375,7 @@ class ShadowPipeline:
 
     def end_session(self) -> None:
         if self._current_session:
-            self._current_session.ended_at = datetime.utcnow()
+            self._current_session.ended_at = datetime.now(UTC)
             self._current_session = None
 
     def _next_id(self) -> str:

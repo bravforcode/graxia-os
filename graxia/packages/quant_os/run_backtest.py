@@ -9,7 +9,7 @@ Usage:
 import json
 import os
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 
 # Add graxia os root to path (current working directory when run from graxia os)
 sys.path.insert(0, os.getcwd())
@@ -189,7 +189,7 @@ def main():
     with open(output_file, "w") as f:
         json.dump(
             {
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "data_bars": len(data["close"]),
                 "strategies": {
                     name: {

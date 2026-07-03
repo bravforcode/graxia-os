@@ -1,5 +1,5 @@
 import random
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -42,7 +42,7 @@ class _StubStrategy(Strategy):
                 strategy_id=self.id,
                 symbol=symbol,
                 signal_type=SignalType.BUY,
-                timestamp=kwargs.get("current_time", datetime.utcnow()),
+                timestamp=kwargs.get("current_time", datetime.now(UTC)),
                 entry_price=entry,
                 stop_loss=sl,
                 take_profit=tp,
@@ -58,7 +58,7 @@ class _StubStrategy(Strategy):
                 strategy_id=self.id,
                 symbol=symbol,
                 signal_type=SignalType.SELL,
-                timestamp=kwargs.get("current_time", datetime.utcnow()),
+                timestamp=kwargs.get("current_time", datetime.now(UTC)),
                 entry_price=entry,
                 stop_loss=sl,
                 take_profit=tp,

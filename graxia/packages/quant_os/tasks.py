@@ -9,7 +9,7 @@ Background task processing:
 """
 
 import os
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from celery import Celery
 from celery.schedules import crontab
@@ -67,7 +67,7 @@ def generate_daily_report(self):
         from .monitoring.telegram import TelegramNotifier
 
         # Calculate metrics
-        today = datetime.utcnow().date()
+        today = datetime.now(UTC).date()
 
         # Placeholder - would query database
         report_data = {
@@ -136,7 +136,7 @@ def take_portfolio_snapshot(self):
         config = get_config()
 
         snapshot_data = {
-            "snapshot_date": datetime.utcnow().date(),
+            "snapshot_date": datetime.now(UTC).date(),
             "balance": Decimal("10000.00"),
             "equity": Decimal("10000.00"),
             "floating_pnl": Decimal("0.00"),
@@ -154,7 +154,7 @@ def take_portfolio_snapshot(self):
         # Would save to database
         # PortfolioSnapshot(**snapshot_data)
 
-        return {"status": "success", "timestamp": datetime.utcnow().isoformat()}
+        return {"status": "success", "timestamp": datetime.now(UTC).isoformat()}
 
     except Exception as exc:
         raise self.retry(exc=exc, countdown=60)
@@ -233,7 +233,7 @@ def send_telegram_daily_summary(self):
         if not notifier.bot_token or not notifier.chat_id:
             return {"status": "skipped", "reason": "Telegram not configured"}
 
-        today = datetime.utcnow().date()
+        today = datetime.now(UTC).date()
 
         # Generate summary message
         message = f"""
@@ -246,7 +246,7 @@ def send_telegram_daily_summary(self):
 <b>Today's P&L:</b> $0.00
 <b>Cumulative P&L:</b> $0.00
 
-<i>Report generated at {datetime.utcnow().strftime('%H:%M')} UTC</i>
+<i>Report generated at {datetime.now(UTC).strftime('%H:%M')} UTC</i>
 """
 
         import asyncio
@@ -300,7 +300,7 @@ def process_trading_signal(self, signal_data: dict):
 def cleanup_old_data(self, days: int = 30):
     """Clean up old data (run weekly)"""
     try:
-        cutoff_date = datetime.utcnow() - timedelta(days=days)
+        cutoff_date = datetime.now(UTC) - timedelta(days=days)
 
         # Would clean up old:
         # - Order state history
@@ -321,7 +321,7 @@ def cleanup_old_data(self, days: int = 30):
 def backup_database(self):
     """Backup database (run daily)"""
     try:
-        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         backup_file = f"/backups/quant_os_{timestamp}.sql"
 
         # Would run: pg_dump command
@@ -387,7 +387,7 @@ def collect_live_logs(self):
         return {
             "status": "success",
             "stdout": result.stdout[-200:],
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
     except Exception as exc:
         raise self.retry(exc=exc, countdown=120)
@@ -414,7 +414,7 @@ def collect_spread_heatmap(self):
         return {
             "status": "success",
             "stdout": result.stdout[-200:],
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
     except Exception as exc:
         raise self.retry(exc=exc, countdown=300)

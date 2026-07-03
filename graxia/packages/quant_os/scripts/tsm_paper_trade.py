@@ -56,6 +56,15 @@ if str(_grandparent) not in sys.path:
 # OMS imports — all order flow must route through the OMS risk gate
 from quant_os.execution.adapters.mt5 import MT5Adapter
 from quant_os.execution.oms import OMS
+from quant_os.monitoring.metrics_exporter import (
+    start_metrics_server,
+    update_drawdown,
+    update_kill_switch,
+    update_positions,
+    update_heartbeat_timestamp,
+    update_rebalance_timestamp,
+    update_data_feed_timestamp,
+)
 from quant_os.risk.pre_trade_gate import PreTradeRiskGate, symbol_to_asset_class
 
 # ═══════════════════════════════════════════════════════════════
@@ -70,6 +79,26 @@ MAX_LEVERAGE = 1.5  # Cap on per-asset leverage
 RVOL_WINDOW = 60  # Realized vol lookback (days)
 MIN_LOT = 0.01  # Minimum lot size across all symbols
 MAGIC_NUMBER = 202507  # MT5 magic for TSM bot
+
+# Regime detection thresholds (volatility-based)
+REGIME_VOL_SHORT = 20  # Short-term vol lookback (days)
+REGIME_VOL_LONG = 60  # Long-term vol lookback (days)
+REGIME_VOL_HIGH_MULTIPLIER = 1.5  # HIGH_VOL if short > long * multiplier
+REGIME_VOL_LOW_MULTIPLIER = 0.8  # LOW_VOL if short < long * multiplier
+HIGH_VOL_POSITION_SCALE = 0.50  # Reduce positions by 50% in HIGH_VOL
+HIGH_VOL_ATR_MULT = 1.5  # Tighter stop-loss in HIGH_VOL
+NORMAL_ATR_MULT = 2.0  # Normal stop-loss multiplier
+LOW_VOL_ATR_MULT = 1.5  # Tighter stop-loss in calm markets
+
+# Trend detection thresholds (SMA crossover)
+TREND_FAST_SMA = 50  # Fast SMA for trend detection
+TREND_SLOW_SMA = 200  # Slow SMA for trend detection
+
+# Drawdown-aware position reduction
+DD_REDUCE_1_THRESHOLD = 0.05  # 5% drawdown -> reduce by 25%
+DD_REDUCE_1_SCALE = 0.75  # Position scale at 5% DD
+DD_REDUCE_2_THRESHOLD = 0.10  # 10% drawdown -> reduce by 50%
+DD_REDUCE_2_SCALE = 0.50  # Position scale at 10% DD
 
 # Per-asset measured costs (loaded from config/cost_calibration.json)
 COST_CALIBRATION_PATH = BASE / "config" / "cost_calibration.json"
@@ -91,39 +120,28 @@ def load_cost_calibration() -> dict[str, float]:
 
 COST_MAP = load_cost_calibration()  # {mt5_symbol: round_trip_bps}
 
-# Assets in the parquet (yfinance column names)
+# 4-asset concentrated portfolio (real alpha confirmed Sharpe 0.535)
+# Dead weight removed: EURUSD, GBPUSD, BTC, ETH, SILVER
 ASSETS = [
+    "NAS100",
     "XAUUSD",
-    "EURUSD_YF",
-    "GBPUSD_YF",
-    "USDJPY",
-    "BTC_YF",
-    "ETH_YF",
-    "SILVER",
     "OIL",
+    "USDJPY",
 ]
 
 # Map parquet asset names → MT5 symbol names
 MT5_SYMBOL_MAP = {
+    "NAS100": "NAS100",
     "XAUUSD": "XAUUSD",
-    "EURUSD_YF": "EURUSD",
-    "GBPUSD_YF": "GBPUSD",
-    "USDJPY": "USDJPY",
-    "BTC_YF": "BTCUSD",
-    "ETH_YF": "ETHUSD",
-    "SILVER": "XAGUSD",
     "OIL": "USOIL",
+    "USDJPY": "USDJPY",
 }
 
 # Contract sizes for lot→notional conversion (Pepperstone defaults)
 CONTRACT_SIZES = {
+    "NAS100": 1,  # 1 lot = 1 index unit (CFD)
     "XAUUSD": 100,  # 1 lot = 100 troy oz
-    "EURUSD": 100_000,  # 1 lot = 100k units
-    "GBPUSD": 100_000,
-    "USDJPY": 100_000,
-    "BTCUSD": 1,  # 1 lot = 1 BTC
-    "ETHUSD": 1,  # 1 lot = 1 ETH
-    "XAGUSD": 5_000,  # 1 lot = 5000 troy oz
+    "USDJPY": 100_000,  # 1 lot = 100k units
     "USOIL": 1_000,  # 1 lot = 1000 barrels
 }
 
@@ -346,53 +364,147 @@ def ensemble_signal(returns: pd.Series) -> pd.Series:
     return sum(w * s for w, s in zip(WEIGHTS, signals, strict=False))
 
 
+# ═══════════════════════════════════════════════════════════════
+# REGIME DETECTION & TREND FILTER
+# ═══════════════════════════════════════════════════════════════
+
+
+def detect_regime(daily_ret: pd.DataFrame) -> str:
+    """Detect market regime from short-term vs long-term realized vol.
+
+    HIGH_VOL: 20d vol > 1.5x 60d vol. LOW_VOL: 20d vol < 0.8x 60d vol. NORMAL: otherwise.
+    """
+    if daily_ret.empty:
+        return "NORMAL"
+    short_vol = daily_ret.rolling(REGIME_VOL_SHORT, min_periods=REGIME_VOL_SHORT).std() * np.sqrt(252)
+    long_vol = daily_ret.rolling(REGIME_VOL_LONG, min_periods=REGIME_VOL_LONG).std() * np.sqrt(252)
+    ratio = (short_vol / long_vol.replace(0, np.nan)).mean(axis=1)
+    latest_ratio = ratio.dropna().iloc[-1] if not ratio.dropna().empty else 1.0
+    if latest_ratio > REGIME_VOL_HIGH_MULTIPLIER:
+        return "HIGH_VOL"
+    if latest_ratio < REGIME_VOL_LOW_MULTIPLIER:
+        return "LOW_VOL"
+    return "NORMAL"
+
+
+def detect_trend(close_matrix: pd.DataFrame) -> str:
+    """Detect portfolio trend from SMA crossover (50d vs 200d)."""
+    filled = close_matrix.ffill()
+    all_valid = filled.notna().all(axis=1)
+    filled = filled[all_valid]
+    if len(filled) < TREND_SLOW_SMA:
+        return "FLAT"
+    sma_fast = filled.rolling(TREND_FAST_SMA, min_periods=TREND_FAST_SMA).mean()
+    sma_slow = filled.rolling(TREND_SLOW_SMA, min_periods=TREND_SLOW_SMA).mean()
+    sma_diff = (sma_fast - sma_slow) / sma_slow.replace(0, np.nan)
+    avg_diff = sma_diff.mean(axis=1)
+    latest_diff = avg_diff.dropna().iloc[-1] if not avg_diff.dropna().empty else 0.0
+    if latest_diff > 0.001:
+        return "UPTREND"
+    if latest_diff < -0.001:
+        return "DOWNTREND"
+    return "FLAT"
+
+
+def get_regime_atr_multiplier(regime: str) -> float:
+    """Get ATR stop-loss multiplier for the given regime."""
+    if regime == "HIGH_VOL":
+        return HIGH_VOL_ATR_MULT
+    if regime == "LOW_VOL":
+        return LOW_VOL_ATR_MULT
+    return NORMAL_ATR_MULT
+
+
+def apply_trend_filter(signal_df: pd.DataFrame, close_matrix: pd.DataFrame) -> pd.DataFrame:
+    """Filter signals to only trade in direction of trend."""
+    trend = detect_trend(close_matrix)
+    if trend == "FLAT":
+        return signal_df
+    filtered = signal_df.copy()
+    if trend == "UPTREND":
+        filtered[filtered < 0] = 0.0
+    elif trend == "DOWNTREND":
+        filtered[filtered > 0] = 0.0
+    return filtered
+
+
+def drawdown_position_scale(dd_pct: float) -> float:
+    """Compute position scale factor based on portfolio drawdown."""
+    dd_abs = abs(dd_pct)
+    if dd_abs >= DD_REDUCE_2_THRESHOLD:
+        return DD_REDUCE_2_SCALE
+    if dd_abs >= DD_REDUCE_1_THRESHOLD:
+        return DD_REDUCE_1_SCALE
+    return 1.0
+
+
+def log_regime_change(prev_regime: str, new_regime: str, prev_trend: str, new_trend: str):
+    """Log regime/trend transitions with timestamps."""
+    ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
+    regime_changed = prev_regime != new_regime
+    trend_changed = prev_trend != new_trend
+    if not regime_changed and not trend_changed:
+        return
+    changes = []
+    if regime_changed:
+        changes.append(f"regime: {prev_regime} -> {new_regime}")
+    if trend_changed:
+        changes.append(f"trend: {prev_trend} -> {new_trend}")
+    change_str = " | ".join(changes)
+    log(f"REGIME CHANGE [{ts}]: {change_str}")
+    tg(f"*TSM Regime Change*\n{change_str}\nTime: {ts}")
+
+
 def compute_target_weights(
     close_matrix: pd.DataFrame,
-) -> tuple[pd.DataFrame, pd.Series, pd.Series]:
-    """
-    Compute vol-targeted portfolio weights using ensemble TSM signal.
+    drawdown_pct: float = 0.0,
+) -> tuple[pd.DataFrame, pd.Series, pd.Series, str, str]:
+    """Compute inverse-volatility portfolio weights with regime + trend detection.
 
-    Per-asset position = ensemble_signal * (target_vol / realized_vol), capped at MAX_LEVERAGE.
-
-    Returns:
-        (final_weights_df, vol_scale_series, port_rvol_series)
+    Returns: (final_weights_df, vol_scale_series, port_rvol_series, regime_str, trend_str)
     """
-    # Forward-fill close prices before computing returns — assets have
-    # different listing dates (e.g. XAUUSD starts 2023-12) and the parquet
-    # covers 2006-2026.  Without ffill, rolling windows see NaN gaps even in
-    # the tail where all assets actually have data.
     filled_close = close_matrix.ffill()
-
-    # Only keep rows where ALL assets have data (intersection of trading calendars)
     all_valid = filled_close.notna().all(axis=1)
     filled_close = filled_close[all_valid]
-
     daily_ret = filled_close.pct_change(1)
 
-    # Step 1: Compute ensemble signal per asset
+    # Ensemble signal per asset
     signal_df = daily_ret.apply(ensemble_signal)
+    # Trend filter
+    signal_df = apply_trend_filter(signal_df, close_matrix)
+    trend = detect_trend(close_matrix)
 
-    # Step 2: Per-asset realized vol (60-day rolling, annualized)
-    asset_rvol = daily_ret.rolling(RVOL_WINDOW, min_periods=30).std() * np.sqrt(252)
+    # Inverse-volatility weights
+    ivol_window = 20
+    asset_rvol = daily_ret.rolling(ivol_window, min_periods=ivol_window).std() * np.sqrt(252)
+    inv_vol = 1.0 / asset_rvol.replace(0, np.nan)
+    inv_vol_sum = inv_vol.sum(axis=1).replace(0, np.nan)
+    inv_weights = inv_vol.div(inv_vol_sum, axis=0)
 
-    # Step 3: Vol-scale factor per asset
-    vol_scale = (TARGET_VOL / asset_rvol).clip(0, MAX_LEVERAGE)
+    # Portfolio-level realized vol for vol-targeting
+    port_returns = (inv_weights.shift(1) * daily_ret).sum(axis=1)
+    port_rvol = port_returns.rolling(RVOL_WINDOW, min_periods=30).std() * np.sqrt(252)
+    vol_scale = (TARGET_VOL / port_rvol).clip(0, MAX_LEVERAGE)
 
-    # Step 4: Raw weights = signal * vol_scale, shift(1) for execution lag
-    raw_weights = signal_df.shift(1) * vol_scale.shift(1)
+    # Signal-signed weights x vol-scale
+    signed_weights = signal_df.shift(1).apply(np.sign) * inv_weights.shift(1)
+    magnitude = vol_scale.shift(1)
+    raw_weights = signed_weights.mul(magnitude, axis=0)
 
-    # Step 5: Normalize so sum(|w|) = 1 across assets
+    # Regime detection
+    regime = detect_regime(daily_ret)
+    regime_scale = HIGH_VOL_POSITION_SCALE if regime == "HIGH_VOL" else 1.0
+    raw_weights = raw_weights * regime_scale
+
+    # Normalize
     abs_sum = raw_weights.abs().sum(axis=1).replace(0, np.nan)
     final_weights = raw_weights.div(abs_sum, axis=0)
 
-    # Step 6: Portfolio-level realized vol for logging
-    combined_raw_ret = (final_weights * daily_ret).sum(axis=1)
-    port_rvol = combined_raw_ret.rolling(RVOL_WINDOW, min_periods=10).std() * np.sqrt(252)
+    # Drawdown scaling (after normalization)
+    dd_scale = drawdown_position_scale(drawdown_pct)
+    final_weights = final_weights * dd_scale
 
-    # Use mean vol_scale across assets for the scalar return
-    mean_vol_scale = vol_scale.mean(axis=1)
-
-    return final_weights, mean_vol_scale, port_rvol
+    return final_weights, vol_scale, port_rvol, regime, trend
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -736,9 +848,13 @@ def save_state(
     prices: dict[str, float],
     positions: dict[str, dict],
     fills: list[dict] | None = None,
+    regime: str = "NORMAL",
+    trend: str = "FLAT",
+    drawdown_pct: float = 0.0,
 ):
     """Save daily portfolio state to JSON."""
     TRADE_LOG_DIR.mkdir(parents=True, exist_ok=True)
+    regime_atr_mult = get_regime_atr_multiplier(regime)
     state = {
         "timestamp_utc": datetime.now(UTC).isoformat(),
         "config": {
@@ -749,7 +865,15 @@ def save_state(
             "rvol_window": RVOL_WINDOW,
             "assets": ASSETS,
             "cost_map": COST_MAP,
+            "regime_vol_high_multiplier": REGIME_VOL_HIGH_MULTIPLIER,
+            "regime_vol_low_multiplier": REGIME_VOL_LOW_MULTIPLIER,
+            "trend_fast_sma": TREND_FAST_SMA,
+            "trend_slow_sma": TREND_SLOW_SMA,
         },
+        "regime": regime,
+        "regime_atr_multiplier": regime_atr_mult,
+        "trend": trend,
+        "drawdown_pct": round(drawdown_pct, 6),
         "signals": signals,
         "weights": {k: round(v, 6) for k, v in weights.items()},
         "vol_scale": round(vol_scale, 6),
@@ -823,11 +947,68 @@ def run_rebalance(live: bool = False, force: bool = False):
     # ── Step 1: Load data ──
     data = load_data()
     close_matrix = get_close_matrix(data)
+    update_data_feed_timestamp(portfolio="tsm")
     log(f"Data: {len(data)} rows, {data.index.min().date()} → {data.index.max().date()}")
     log(f"Assets: {list(close_matrix.columns)}")
 
-    # ── Step 2: Compute signals & weights ──
-    final_weights, vol_scale, port_rvol = compute_target_weights(close_matrix)
+    # ── Step 2: Compute signals & weights (with regime + DD scaling) ──
+    # Load previous regime/trend from state for change detection
+    prev_regime = "NORMAL"
+    prev_trend = "FLAT"
+    if STATE_PATH.exists():
+        try:
+            prev_state = json.loads(STATE_PATH.read_text())
+            prev_regime = prev_state.get("regime", "NORMAL")
+            prev_trend = prev_state.get("trend", "FLAT")
+        except Exception:
+            pass
+
+    # Compute preliminary drawdown (for position sizing via compute_target_weights)
+    _filled_prelim = close_matrix.ffill()
+    _all_valid_prelim = _filled_prelim.notna().all(axis=1)
+    daily_ret_prelim = _filled_prelim[_all_valid_prelim].pct_change(1)
+    n_assets = len(close_matrix.columns)
+    if n_assets > 0:
+        equal_ret = daily_ret_prelim.mean(axis=1).dropna()
+        if len(equal_ret) > 0:
+            cum_eq = (1 + equal_ret).cumprod()
+            peak_eq = cum_eq.cummax()
+            dd_series = (cum_eq - peak_eq) / peak_eq
+            latest_drawdown = float(dd_series.iloc[-1])
+        else:
+            latest_drawdown = 0.0
+    else:
+        latest_drawdown = 0.0
+
+    final_weights, vol_scale, port_rvol, regime, trend = compute_target_weights(
+        close_matrix, drawdown_pct=latest_drawdown
+    )
+
+    # Log regime/trend changes with timestamps
+    log_regime_change(prev_regime, regime, prev_trend, trend)
+
+    # Log regime info
+    regime_label = f"HIGH_VOL (pos x{HIGH_VOL_POSITION_SCALE})" if regime == "HIGH_VOL" else "NORMAL"
+    if regime == "LOW_VOL":
+        regime_label = f"LOW_VOL (atr x{LOW_VOL_ATR_MULT})"
+    regime_atr_mult = get_regime_atr_multiplier(regime)
+    log("\n--- Regime Detection ---")
+    log(f"  Short-term vol ({REGIME_VOL_SHORT}d) / Long-term vol ({REGIME_VOL_LONG}d)")
+    log(f"  HIGH_VOL threshold: >{REGIME_VOL_HIGH_MULTIPLIER}x | LOW_VOL threshold: <{REGIME_VOL_LOW_MULTIPLIER}x")
+    log(f"  Current regime: {regime_label}")
+    log(f"  ATR stop-loss multiplier: {regime_atr_mult}x")
+
+    # Log trend info
+    trend_label = "UPTREND" if trend == "UPTREND" else "DOWNTREND" if trend == "DOWNTREND" else "FLAT"
+    log("\n--- Trend Detection ---")
+    log(f"  SMA crossover: {TREND_FAST_SMA}d vs {TREND_SLOW_SMA}d")
+    log(f"  Current trend: {trend_label}")
+    log("  Filter: only trade in direction of trend")
+
+    # Log drawdown scaling
+    dd_scale = drawdown_position_scale(latest_drawdown)
+    if dd_scale < 1.0:
+        log(f"  Drawdown scaling: x{dd_scale} (DD={latest_drawdown:.2%})")
 
     # Get latest complete row (all assets have data)
     complete_mask = final_weights.notna().all(axis=1)
@@ -854,21 +1035,14 @@ def run_rebalance(live: bool = False, force: bool = False):
                 "weight": float(latest_weights.get(asset, 0.0)),
             }
 
-    # Compute portfolio drawdown for logging
-    combined_ret_series = (final_weights * daily_ret).sum(axis=1).dropna()
-    if len(combined_ret_series) > 0:
-        cumulative = (1 + combined_ret_series).cumprod()
-        running_max = cumulative.cummax()
-        drawdown = (cumulative - running_max) / running_max
-        latest_drawdown = float(drawdown.iloc[-1])
-    else:
-        latest_drawdown = 0.0
-
     log("\n--- Portfolio State ---")
     log(f"  Vol scale (mean): {latest_vol_scale:.4f}")
     log(f"  Realized vol (ann): {latest_rvol:.4f}")
     log(f"  Target vol: {TARGET_VOL:.4f}")
     log(f"  Drawdown: {latest_drawdown:.4%}")
+
+    update_drawdown(latest_drawdown * 100)
+    update_heartbeat_timestamp()
 
     log("\n--- Ensemble Signal & Weights ---")
     log(f"  Lookbacks: {LOOKBACKS}")
@@ -925,6 +1099,7 @@ def run_rebalance(live: bool = False, force: bool = False):
 
     if live:
         current_positions = get_current_positions(mt5)
+        update_positions(len(current_positions))
         log("\n--- Current Positions ---")
         if current_positions:
             for sym, pos in current_positions.items():
@@ -1045,6 +1220,9 @@ def run_rebalance(live: bool = False, force: bool = False):
         prices=prices,
         positions={k: v for k, v in current_positions.items()} if live else {},
         fills=fills,
+        regime=regime,
+        trend=trend,
+        drawdown_pct=latest_drawdown,
     )
 
     update_heartbeat(
@@ -1053,6 +1231,8 @@ def run_rebalance(live: bool = False, force: bool = False):
         equity=account_equity,
         weights=latest_weights,
     )
+    update_rebalance_timestamp(portfolio="tsm")
+    update_kill_switch(False)
     log(f"\n✅ Rebalance complete ({'LIVE' if live else 'DRY-RUN'})")
 
 
@@ -1084,6 +1264,7 @@ Examples:
         log(f"Today is {now.strftime('%A')} — rebalance only on Friday. Use --force to override.")
         return
 
+    start_metrics_server(port=9090)
     run_rebalance(live=args.live, force=args.force)
 
 

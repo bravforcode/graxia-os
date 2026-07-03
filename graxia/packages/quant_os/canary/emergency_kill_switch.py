@@ -1,8 +1,9 @@
 """Phase 10 — Emergency kill switch for micro-live canary."""
-from dataclasses import dataclass
-from datetime import datetime
-from pathlib import Path
+
 import json
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from pathlib import Path
 
 
 @dataclass
@@ -30,17 +31,22 @@ class EmergencyKillSwitch:
     def _save(self) -> None:
         if self._state_file:
             self._state_file.parent.mkdir(parents=True, exist_ok=True)
-            self._state_file.write_text(json.dumps({
-                "active": self._state.active,
-                "activated_at": self._state.activated_at,
-                "reason": self._state.reason,
-                "activated_by": self._state.activated_by,
-            }, indent=2))
+            self._state_file.write_text(
+                json.dumps(
+                    {
+                        "active": self._state.active,
+                        "activated_at": self._state.activated_at,
+                        "reason": self._state.reason,
+                        "activated_by": self._state.activated_by,
+                    },
+                    indent=2,
+                )
+            )
 
     def activate(self, reason: str, activated_by: str = "manual") -> None:
         self._state = KillSwitchState(
             active=True,
-            activated_at=datetime.utcnow().isoformat(),
+            activated_at=datetime.now(UTC).isoformat(),
             reason=reason,
             activated_by=activated_by,
         )

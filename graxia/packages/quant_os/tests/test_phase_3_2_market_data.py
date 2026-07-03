@@ -63,7 +63,7 @@ def _make_tick_record(
     source: str = "mt5",
 ) -> TickRecord:
     """Create a TickRecord with given parameters."""
-    rec_at = received_at or datetime.utcnow()
+    rec_at = received_at or datetime.now(UTC)
     return TickRecord(
         timestamp_utc=ts,
         received_at_utc=rec_at,
@@ -94,7 +94,7 @@ class TestTickRecorder:
 
     def test_records_ticks(self):
         rec = TickRecorder("XAUUSD", "session-001")
-        t1 = datetime.utcnow()
+        t1 = datetime.now(UTC)
         rec.record_tick(
             bid=Decimal("2330.0"),
             ask=Decimal("2331.0"),
@@ -105,7 +105,7 @@ class TestTickRecorder:
 
     def test_records_multiple_ticks(self):
         rec = TickRecorder("XAUUSD", "session-002")
-        base = datetime.utcnow()
+        base = datetime.now(UTC)
         for i in range(5):
             rec.record_tick(
                 bid=Decimal("2330.0"),
@@ -117,7 +117,7 @@ class TestTickRecorder:
 
     def test_detects_gap(self):
         rec = TickRecorder("XAUUSD", "session-003")
-        t1 = datetime.utcnow()
+        t1 = datetime.now(UTC)
         rec.record_tick(
             bid=Decimal("2330.0"),
             ask=Decimal("2331.0"),
@@ -135,7 +135,7 @@ class TestTickRecorder:
 
     def test_no_gap_when_within_threshold(self):
         rec = TickRecorder("XAUUSD", "session-004")
-        t1 = datetime.utcnow()
+        t1 = datetime.now(UTC)
         rec.record_tick(
             bid=Decimal("2330.0"),
             ask=Decimal("2331.0"),
@@ -152,7 +152,7 @@ class TestTickRecorder:
 
     def test_detects_out_of_order(self):
         rec = TickRecorder("XAUUSD", "session-005")
-        t1 = datetime.utcnow()
+        t1 = datetime.now(UTC)
         t2 = t1 + timedelta(seconds=5)
         rec.record_tick(
             bid=Decimal("2330.0"),
@@ -177,13 +177,13 @@ class TestTickRecorder:
             bid=Decimal("2330.0"),
             ask=Decimal("2331.0"),
             last=Decimal("2330.5"),
-            timestamp_utc=datetime.utcnow(),
+            timestamp_utc=datetime.now(UTC),
         )
         assert rec.count() == 1
 
     def test_get_latest_tick(self):
         rec = TickRecorder("XAUUSD", "session-007")
-        t1 = datetime.utcnow()
+        t1 = datetime.now(UTC)
         rec.record_tick(
             bid=Decimal("2330.0"),
             ask=Decimal("2331.0"),
@@ -207,7 +207,7 @@ class TestTickRecorder:
 
     def test_get_ticks_filtered(self):
         rec = TickRecorder("XAUUSD", "session-009")
-        base = datetime.utcnow()
+        base = datetime.now(UTC)
         for i in range(10):
             rec.record_tick(
                 bid=Decimal("2330.0"),
@@ -231,7 +231,7 @@ class TestTickRecorder:
     def test_stale_detection(self):
         """Tick older than threshold is marked STALE."""
         rec = TickRecorder("XAUUSD", "session-stale")
-        old_time = datetime.utcnow() - timedelta(seconds=10)
+        old_time = datetime.now(UTC) - timedelta(seconds=10)
         tick = rec.record_tick(
             bid=Decimal("2330.0"),
             ask=Decimal("2331.0"),
@@ -247,7 +247,7 @@ class TestTickRecorder:
             bid=Decimal("2330.0"),
             ask=Decimal("2331.0"),
             last=Decimal("2330.5"),
-            timestamp_utc=datetime.utcnow(),
+            timestamp_utc=datetime.now(UTC),
         )
         assert rec.count() == 1
 
@@ -264,7 +264,7 @@ class TestSpreadMonitor:
         """With only 1 sample, std=0. The is_wide_spread method only rejects > 10x mean."""
         mon = SpreadMonitor("XAUUSD", reject_multiplier=2.0)
         # Single sample — baseline_mean=1.0, baseline_std=0
-        mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.utcnow())
+        mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.now(UTC))
         # is_wide_spread returns False when std=0 and spread < 10x mean
         assert mon.is_wide_spread(Decimal("5.0")) is False
         # But extreme outlier (> 10x mean) is rejected
@@ -273,43 +273,43 @@ class TestSpreadMonitor:
     def test_normal_spread_after_baseline(self):
         mon = SpreadMonitor("XAUUSD", reject_multiplier=3.0)
         for _ in range(10):
-            mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.utcnow())
-        state = mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.utcnow())
+            mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.now(UTC))
+        state = mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.now(UTC))
         assert state.is_wide is False
 
     def test_wide_spread_detected(self):
         mon = SpreadMonitor("XAUUSD", reject_multiplier=2.0)
         for _ in range(10):
-            mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.utcnow())
+            mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.now(UTC))
         # Anomalous spread: 5.0 vs baseline 1.0
-        state = mon.on_tick(Decimal("2330.0"), Decimal("2335.0"), datetime.utcnow())
+        state = mon.on_tick(Decimal("2330.0"), Decimal("2335.0"), datetime.now(UTC))
         assert state.is_wide is True
 
     def test_invalid_bid_returns_current_state(self):
         mon = SpreadMonitor("XAUUSD")
-        state1 = mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.utcnow())
-        state2 = mon.on_tick(Decimal("-1.0"), Decimal("2331.0"), datetime.utcnow())
+        state1 = mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.now(UTC))
+        state2 = mon.on_tick(Decimal("-1.0"), Decimal("2331.0"), datetime.now(UTC))
         assert state2 == state1
 
     def test_ask_less_than_bid_returns_current_state(self):
         mon = SpreadMonitor("XAUUSD")
-        state1 = mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.utcnow())
-        state2 = mon.on_tick(Decimal("2330.0"), Decimal("2329.0"), datetime.utcnow())
+        state1 = mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.now(UTC))
+        state2 = mon.on_tick(Decimal("2330.0"), Decimal("2329.0"), datetime.now(UTC))
         assert state2 == state1
 
     def test_z_score_calculation(self):
         mon = SpreadMonitor("XAUUSD", reject_multiplier=3.0)
         for _ in range(20):
-            mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.utcnow())
-        state = mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.utcnow())
+            mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.now(UTC))
+        state = mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.now(UTC))
         # With consistent spreads, multiplier should be close to 1.0
         assert state.spread_multiplier == pytest.approx(1.0, abs=0.1)
 
     def test_baseline_mean(self):
         mon = SpreadMonitor("XAUUSD", reject_multiplier=3.0)
         for _ in range(20):
-            mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.utcnow())
-        state = mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.utcnow())
+            mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.now(UTC))
+        state = mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.now(UTC))
         assert state.baseline_mean == Decimal("1")
 
     def test_is_wide_spread_method(self):
@@ -318,19 +318,19 @@ class TestSpreadMonitor:
         assert mon.is_wide_spread(Decimal("100.0")) is False
         # Build baseline
         for _ in range(10):
-            mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.utcnow())
+            mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.now(UTC))
         assert mon.is_wide_spread(Decimal("1.0")) is False
 
     def test_get_baseline(self):
         mon = SpreadMonitor("XAUUSD")
-        mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.utcnow())
+        mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.now(UTC))
         mean, std = mon.get_baseline()
         assert mean == Decimal("1")
         assert std == Decimal("0")  # Only 1 sample
 
     def test_reset(self):
         mon = SpreadMonitor("XAUUSD")
-        mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.utcnow())
+        mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.now(UTC))
         mon.reset()
         state = mon.get_state()
         assert state.sample_count == 0
@@ -347,17 +347,17 @@ class TestFeedHealthMonitor:
     def test_healthy_after_tick(self):
         mon = FeedHealthMonitor("XAUUSD", max_tick_age_seconds=3.0)
         state = mon.on_tick_received(
-            tick_timestamp=datetime.utcnow(),
-            received_at=datetime.utcnow(),
+            tick_timestamp=datetime.now(UTC),
+            received_at=datetime.now(UTC),
         )
         assert state.state == "HEALTHY"
 
     def test_stale_detection(self):
         mon = FeedHealthMonitor("XAUUSD", max_tick_age_seconds=1.0)
-        old_time = datetime.utcnow() - timedelta(seconds=5)
+        old_time = datetime.now(UTC) - timedelta(seconds=5)
         mon.on_tick_received(
             tick_timestamp=old_time,
-            received_at=datetime.utcnow(),
+            received_at=datetime.now(UTC),
         )
         # Check health after time passes
         state = mon.check_health()
@@ -365,12 +365,12 @@ class TestFeedHealthMonitor:
 
     def test_gap_detection(self):
         mon = FeedHealthMonitor("XAUUSD", max_tick_age_seconds=5.0)
-        t1 = datetime.utcnow()
-        mon.on_tick_received(tick_timestamp=t1, received_at=datetime.utcnow())
+        t1 = datetime.now(UTC)
+        mon.on_tick_received(tick_timestamp=t1, received_at=datetime.now(UTC))
         # Gap of 10 seconds (threshold is 2x expected interval)
         mon.on_tick_received(
             tick_timestamp=t1 + timedelta(seconds=10),
-            received_at=datetime.utcnow(),
+            received_at=datetime.now(UTC),
         )
         state = mon.check_health()
         assert state.gap_count == 1
@@ -390,8 +390,8 @@ class TestFeedHealthMonitor:
         # 3 consecutive stale checks → DISCONNECTED
         for _ in range(3):
             mon.on_tick_received(
-                tick_timestamp=datetime.utcnow() - timedelta(seconds=5),
-                received_at=datetime.utcnow(),
+                tick_timestamp=datetime.now(UTC) - timedelta(seconds=5),
+                received_at=datetime.now(UTC),
             )
             mon.check_health()
         state = mon.check_health()
@@ -401,14 +401,14 @@ class TestFeedHealthMonitor:
         mon = FeedHealthMonitor("XAUUSD", max_tick_age_seconds=1.0)
         # Make it stale
         mon.on_tick_received(
-            tick_timestamp=datetime.utcnow() - timedelta(seconds=5),
-            received_at=datetime.utcnow(),
+            tick_timestamp=datetime.now(UTC) - timedelta(seconds=5),
+            received_at=datetime.now(UTC),
         )
         mon.check_health()
         # New fresh tick resets it
         mon.on_tick_received(
-            tick_timestamp=datetime.utcnow(),
-            received_at=datetime.utcnow(),
+            tick_timestamp=datetime.now(UTC),
+            received_at=datetime.now(UTC),
         )
         state = mon.check_health()
         assert state.state == "HEALTHY"
@@ -418,8 +418,8 @@ class TestFeedHealthMonitor:
         mon = FeedHealthMonitor("XAUUSD")
         assert mon.is_healthy() is False  # initial state is UNKNOWN
         mon.on_tick_received(
-            tick_timestamp=datetime.utcnow(),
-            received_at=datetime.utcnow(),
+            tick_timestamp=datetime.now(UTC),
+            received_at=datetime.now(UTC),
         )
         assert mon.is_healthy() is True
 
@@ -427,8 +427,8 @@ class TestFeedHealthMonitor:
         mon = FeedHealthMonitor("XAUUSD")
         for _ in range(5):
             mon.on_tick_received(
-                tick_timestamp=datetime.utcnow(),
-                received_at=datetime.utcnow(),
+                tick_timestamp=datetime.now(UTC),
+                received_at=datetime.now(UTC),
             )
         state = mon.check_health()
         assert state.tick_count_last_minute == 5
@@ -436,8 +436,8 @@ class TestFeedHealthMonitor:
     def test_reset(self):
         mon = FeedHealthMonitor("XAUUSD")
         mon.on_tick_received(
-            tick_timestamp=datetime.utcnow(),
-            received_at=datetime.utcnow(),
+            tick_timestamp=datetime.now(UTC),
+            received_at=datetime.now(UTC),
         )
         mon.reset()
         state = mon.check_health()
@@ -452,8 +452,8 @@ class TestFeedHealthMonitor:
         mon = FeedHealthMonitor("XAUUSD", max_tick_age_seconds=3.0)
         # Tick 2.5 seconds ago (approaching 3.0 threshold)
         mon.on_tick_received(
-            tick_timestamp=datetime.utcnow() - timedelta(seconds=2.5),
-            received_at=datetime.utcnow(),
+            tick_timestamp=datetime.now(UTC) - timedelta(seconds=2.5),
+            received_at=datetime.now(UTC),
         )
         state = mon.check_health()
         # Should still be HEALTHY but close to threshold
@@ -529,7 +529,7 @@ class TestClockGuard:
 
     def test_naive_datetime_treated_as_utc(self):
         guard = ClockGuard(max_drift_ms=500.0)
-        naive_time = datetime.utcnow()
+        naive_time = datetime.now(UTC)
         state = guard.check_clock(naive_time)
         assert state.is_drifted is False
 
@@ -900,28 +900,28 @@ class TestDataWatermark:
 
     def test_fresh_after_update(self):
         tracker = DataWatermarkTracker("XAUUSD")
-        tick = _make_tick_record(ts=datetime.utcnow())
+        tick = _make_tick_record(ts=datetime.now(UTC))
         tick.data_quality = "VALID"
         watermark = tracker.update(tick)
         assert tracker.is_fresh(max_age_seconds=10.0) is True
 
     def test_stale_after_timeout(self):
         tracker = DataWatermarkTracker("XAUUSD")
-        tick = _make_tick_record(ts=datetime.utcnow() - timedelta(seconds=5))
+        tick = _make_tick_record(ts=datetime.now(UTC) - timedelta(seconds=5))
         tracker.update(tick)
         assert tracker.is_fresh(max_age_seconds=1.0) is False
 
     def test_update_count(self):
         tracker = DataWatermarkTracker("XAUUSD")
         for i in range(3):
-            tick = _make_tick_record(ts=datetime.utcnow() + timedelta(seconds=i))
+            tick = _make_tick_record(ts=datetime.now(UTC) + timedelta(seconds=i))
             tracker.update(tick)
         watermark = tracker.get_watermark()
         assert watermark.tick_count == 3
 
     def test_gap_count(self):
         tracker = DataWatermarkTracker("XAUUSD")
-        tick = _make_tick_record(ts=datetime.utcnow())
+        tick = _make_tick_record(ts=datetime.now(UTC))
         tick.data_quality = "GAP"
         tracker.update(tick)
         watermark = tracker.get_watermark()
@@ -929,7 +929,7 @@ class TestDataWatermark:
 
     def test_stale_count(self):
         tracker = DataWatermarkTracker("XAUUSD")
-        tick = _make_tick_record(ts=datetime.utcnow())
+        tick = _make_tick_record(ts=datetime.now(UTC))
         tick.data_quality = "STALE"
         tracker.update(tick)
         watermark = tracker.get_watermark()
@@ -937,7 +937,7 @@ class TestDataWatermark:
 
     def test_out_of_order_count(self):
         tracker = DataWatermarkTracker("XAUUSD")
-        tick = _make_tick_record(ts=datetime.utcnow())
+        tick = _make_tick_record(ts=datetime.now(UTC))
         tick.data_quality = "OUT_OF_ORDER"
         tracker.update(tick)
         watermark = tracker.get_watermark()
@@ -946,20 +946,20 @@ class TestDataWatermark:
     def test_has_gaps(self):
         tracker = DataWatermarkTracker("XAUUSD")
         assert tracker.has_gaps() is False
-        tick = _make_tick_record(ts=datetime.utcnow())
+        tick = _make_tick_record(ts=datetime.now(UTC))
         tick.data_quality = "GAP"
         tracker.update(tick)
         assert tracker.has_gaps() is True
 
     def test_watermark_hash(self):
         tracker = DataWatermarkTracker("XAUUSD")
-        tick = _make_tick_record(ts=datetime.utcnow())
+        tick = _make_tick_record(ts=datetime.now(UTC))
         watermark = tracker.update(tick)
         assert len(watermark.watermark_hash) == 64  # SHA-256
 
     def test_symbol_mismatch_raises(self):
         tracker = DataWatermarkTracker("XAUUSD")
-        tick = _make_tick_record(ts=datetime.utcnow(), symbol="EURUSD")
+        tick = _make_tick_record(ts=datetime.now(UTC), symbol="EURUSD")
         with pytest.raises(ValueError, match="does not match"):
             tracker.update(tick)
 
@@ -1166,14 +1166,14 @@ class TestMarketHealthIntegration:
 
         # Feed healthy tick
         feed.on_tick_received(
-            tick_timestamp=datetime.utcnow(),
-            received_at=datetime.utcnow(),
+            tick_timestamp=datetime.now(UTC),
+            received_at=datetime.now(UTC),
         )
 
         # Spread baseline
         for _ in range(10):
-            spread.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.utcnow())
-        spread_state = spread.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.utcnow())
+            spread.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.now(UTC))
+        spread_state = spread.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.now(UTC))
 
         # Clock OK
         clock_state = clock.check_clock(datetime.now(UTC))
@@ -1194,14 +1194,14 @@ class TestMarketHealthIntegration:
         """Simulate wide spread and verify order blocked."""
         feed = FeedHealthMonitor("XAUUSD", max_tick_age_seconds=3.0)
         feed.on_tick_received(
-            tick_timestamp=datetime.utcnow(),
-            received_at=datetime.utcnow(),
+            tick_timestamp=datetime.now(UTC),
+            received_at=datetime.now(UTC),
         )
 
         spread = SpreadMonitor("XAUUSD", reject_multiplier=2.0)
         for _ in range(10):
-            spread.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.utcnow())
-        spread_state = spread.on_tick(Decimal("2330.0"), Decimal("2335.0"), datetime.utcnow())  # wide!
+            spread.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.now(UTC))
+        spread_state = spread.on_tick(Decimal("2330.0"), Decimal("2335.0"), datetime.now(UTC))  # wide!
 
         clock = ClockGuard(max_drift_ms=500.0)
         clock_state = clock.check_clock(datetime.now(UTC))
@@ -1223,14 +1223,14 @@ class TestMarketHealthIntegration:
         """Weekend → MARKET_CLOSED → not eligible."""
         feed = FeedHealthMonitor("XAUUSD", max_tick_age_seconds=3.0)
         feed.on_tick_received(
-            tick_timestamp=datetime.utcnow(),
-            received_at=datetime.utcnow(),
+            tick_timestamp=datetime.now(UTC),
+            received_at=datetime.now(UTC),
         )
 
         spread = SpreadMonitor("XAUUSD", reject_multiplier=3.0)
         for _ in range(10):
-            spread.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.utcnow())
-        spread_state = spread.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.utcnow())
+            spread.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.now(UTC))
+        spread_state = spread.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.now(UTC))
 
         clock = ClockGuard(max_drift_ms=500.0)
         clock_state = clock.check_clock(datetime.now(UTC))

@@ -61,13 +61,23 @@ api_router.include_router(runs_router, prefix="/api/v1")
 api_router.include_router(skills_router, prefix="/api/v1")
 
 # Specialized Routers (No prefix specified in original main.py)
-api_router.include_router(funnel_products_router, prefix="/api/v1/funnel", tags=["funnel"])
-api_router.include_router(funnel_delivery_router, prefix="/api/v1/funnel", tags=["funnel"])
-api_router.include_router(funnel_analytics_router, prefix="/api/v1/funnel", tags=["funnel"])
+api_router.include_router(
+    funnel_products_router, prefix="/api/v1/funnel", tags=["funnel"]
+)
+api_router.include_router(
+    funnel_delivery_router, prefix="/api/v1/funnel", tags=["funnel"]
+)
+api_router.include_router(
+    funnel_analytics_router, prefix="/api/v1/funnel", tags=["funnel"]
+)
 api_router.include_router(funnel_ai_router, prefix="/api/v1/funnel", tags=["funnel_ai"])
 api_router.include_router(lead_magnets_router, prefix="/api/v1", tags=["funnel"])
-api_router.include_router(funnel_automation_router, prefix="/api/v1/funnel", tags=["funnel_automation"])
-api_router.include_router(funnel_webhooks_router, prefix="/api/v1/funnel/webhooks", tags=["funnel_webhooks"])
+api_router.include_router(
+    funnel_automation_router, prefix="/api/v1/funnel", tags=["funnel_automation"]
+)
+api_router.include_router(
+    funnel_webhooks_router, prefix="/api/v1/funnel/webhooks", tags=["funnel_webhooks"]
+)
 api_router.include_router(email_threads_router)
 api_router.include_router(obsidian_router)
 api_router.include_router(outreach_router)
@@ -78,7 +88,9 @@ api_router.include_router(scrapers_router)
 api_router.include_router(tracking_router)
 
 # Advanced Orchestration
-api_router.include_router(orchestration_router, prefix="/api/v1/orchestration", tags=["orchestration"])
+api_router.include_router(
+    orchestration_router, prefix="/api/v1/orchestration", tags=["orchestration"]
+)
 
 # WebSockets
 api_router.include_router(websockets_router)

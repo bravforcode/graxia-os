@@ -28,7 +28,15 @@ from .opportunity import Opportunity
 from .orchestration import AgentMessage, AgentTask
 from .agent import Agent, AgentTeam, AgentSkill, AgentMarketplaceListing
 from .skillsmp_skill import SkillsMPSkill
-from .workflow import Workflow, WorkflowExecution, WorkflowTrigger, WorkflowSchedule, WorkflowEvent, Pipeline, PipelineRun # Add this
+from .workflow import (
+    Workflow,
+    WorkflowExecution,
+    WorkflowTrigger,
+    WorkflowSchedule,
+    WorkflowEvent,
+    Pipeline,
+    PipelineRun,
+)  # Add this
 from .organization import Organization
 from .usage_log import UsageLog
 from .outcome_pattern import OutcomePattern

@@ -14,9 +14,7 @@ from graxia.packages.quant_os.core.enums import OrderStatus
 from graxia.packages.quant_os.execution.adapters.base import (
     AccountInfo,
     Order,
-    OrderResult,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -65,7 +63,6 @@ class TestBinanceAdapter:
 
         # Patch sys.modules so the binance adapter can import ccxt
         with patch.dict("sys.modules", {"ccxt": mock_ccxt}):
-            import importlib
             # Force reimport of the binance module to pick up mocked ccxt
             import graxia.packages.quant_os.execution.adapters.binance as mod
 
@@ -142,12 +139,9 @@ class TestBinanceAdapter:
 
         Fetches position to determine LONG→sell, SHORT→buy.
         """
-        import ccxt
 
         # Mock fetch_positions to return a LONG position
-        self.mock_exchange.fetch_positions.return_value = [
-            {"symbol": "BTCUSDT", "side": "long", "contracts": 0.01}
-        ]
+        self.mock_exchange.fetch_positions.return_value = [{"symbol": "BTCUSDT", "side": "long", "contracts": 0.01}]
         self.mock_exchange.create_order.return_value = {
             "id": "CLOSE-1",
             "filled": 0.01,
@@ -167,9 +161,7 @@ class TestBinanceAdapter:
     def test_binance_close_short_position(self) -> None:
         """close_position sends 'buy' for SHORT positions."""
         # Mock fetch_positions to return a SHORT position
-        self.mock_exchange.fetch_positions.return_value = [
-            {"symbol": "BTCUSDT", "side": "short", "contracts": 0.01}
-        ]
+        self.mock_exchange.fetch_positions.return_value = [{"symbol": "BTCUSDT", "side": "short", "contracts": 0.01}]
         self.mock_exchange.create_order.return_value = {
             "id": "CLOSE-2",
             "filled": 0.01,
@@ -289,15 +281,13 @@ class TestBrokerManager:
 
     def _run(self, coro):
         """Run an async coroutine in a new event loop."""
-        return asyncio.get_event_loop().run_until_complete(coro)
+        return asyncio.run(coro)
 
     def test_manager_from_config_paper(self) -> None:
         """from_config with live_trading_enabled=False creates PaperAdapter."""
         mock_config = MagicMock()
         mock_config.live_trading_enabled = False
-        with patch(
-            "graxia.packages.quant_os.execution.adapters.manager.PaperAdapter"
-        ) as mock_paper:
+        with patch("graxia.packages.quant_os.execution.adapters.manager.PaperAdapter") as mock_paper:
             mock_paper.return_value = MagicMock(name="PAPER")
             from graxia.packages.quant_os.execution.adapters.manager import BrokerManager
 

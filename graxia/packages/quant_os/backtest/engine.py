@@ -176,6 +176,7 @@ class BacktestConfig:
     cost_scenario: str = "base"
     enable_swap: bool = True
     cost_params: Any = None  # Optional[CostParams] from core.cost_model
+    fill_timing: Any = None  # Optional[FillTimingConfig] for latency-based slippage
 
 
 @dataclass
@@ -807,6 +808,18 @@ class BacktestEngine:
             spread = Decimal("0.01") * _spread_config.get_spread(bar_hour)
         except Exception:
             spread = Decimal("0.01") * Decimal(str(self.config.spread_pips))
+
+        # Add latency-based slippage from FillTimingConfig
+        latency_slippage = Decimal("0")
+        if self.config.fill_timing is not None:
+            try:
+                atr = float(bar_high - bar_low)
+                latency_ms = self.config.fill_timing.estimate_latency_ms(atr)
+                latency_slippage = self.config.fill_timing.estimate_slippage_pips(latency_ms)
+                latency_slippage = Decimal("0.01") * latency_slippage
+            except Exception:
+                latency_slippage = Decimal("0")
+
         bid, ask = estimate_bid_ask_from_bar(bar_open, bar_high, bar_low, bar_close, spread)
         snapshot = MarketSnapshot(
             bid=bid,
@@ -834,6 +847,7 @@ class BacktestEngine:
             strategy_id=self.strategy.id if self.strategy else "",
             signal_id=signal.id,
             execution_quality=ExecutionQuality.BAR_ONLY,
+            latency_slippage=latency_slippage,
         )
 
         result = self._simulator.submit_intent(
@@ -924,6 +938,7 @@ class BacktestEngine:
             snapshot,
             bar_high,
             bar_low,
+            current_bar_index=bar_index,
         )
 
         for event in events:
@@ -1019,10 +1034,26 @@ class BacktestEngine:
         )
 
     def _close_all_positions(self, last_price: float, current_time: datetime) -> None:
-        """Close all remaining positions at last price"""
+        """Close all remaining positions at last price with slippage."""
         last_dec = Decimal(str(last_price))
+        try:
+            from backtest.dynamic_spread_model import SpreadConfig as _SpreadCfg
+            _spread_config = _SpreadCfg()
+            bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
+            exit_slippage = Decimal("0.01") * _spread_config.get_slippage(bar_hour)
+        except Exception:
+            exit_slippage = Decimal(str(self.config.slippage_pips)) * Decimal("0.01")
         for pos_id in list(self.positions.keys()):
-            self._close_position(pos_id, last_dec, current_time, CloseReason.MANUAL)
+            pos = self.positions.get(pos_id)
+            if pos and pos.side == PositionType.LONG:
+                # Selling: apply slippage (worse price)
+                exit_price = last_dec - exit_slippage
+            elif pos:
+                # Buying to close short: apply slippage (worse price)
+                exit_price = last_dec + exit_slippage
+            else:
+                exit_price = last_dec
+            self._close_position(pos_id, exit_price, current_time, CloseReason.MANUAL, exit_slippage)
 
     def _check_risk_halt(self) -> bool:
         """Check if any risk limit is breached. Returns True if trading should halt."""
@@ -1080,10 +1111,17 @@ class BacktestEngine:
 
     def _update_equity(self, current_price: float, current_time: datetime) -> None:
         """Update equity curve point"""
-        # Calculate unrealized P&L — P1 fix: subtract closing costs (spread+slippage)
+        # Calculate unrealized P&L — use dynamic spread consistent with execution
         unrealized = Decimal("0")
-        closing_cost = Decimal(str(self.config.spread_pips)) * Decimal("0.01") * Decimal("0.5")  # half-spread to close
-        closing_slip = Decimal(str(self.config.slippage_pips)) * Decimal("0.01")
+        try:
+            from backtest.dynamic_spread_model import SpreadConfig as _SpreadCfg
+            _spread_config = _SpreadCfg()
+            bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
+            closing_spread = Decimal("0.01") * _spread_config.get_spread(bar_hour)
+        except Exception:
+            closing_spread = Decimal(str(self.config.spread_pips)) * Decimal("0.01")
+        closing_cost = closing_spread * Decimal("0.5")  # half-spread to close
+        closing_slip = Decimal("0.01") * Decimal(str(self.config.slippage_pips))
         for pos in self.positions.values():
             current = Decimal(str(current_price))
             if pos.side == PositionType.LONG:

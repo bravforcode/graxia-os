@@ -22,10 +22,13 @@ Usage:
 from __future__ import annotations
 
 import itertools
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 from ..backtest.engine import BacktestConfig, BacktestEngine
 from ..backtest.metrics import BacktestMetrics
@@ -121,6 +124,7 @@ class ResearchPipeline:
     def run(self) -> PipelineResult:
         """Execute the full pipeline and return a go/no-go decision."""
         ts = datetime.now(UTC).isoformat()
+        logger.info("pipeline.run: starting strategy_id=%s timestamp=%s", self.strategy_id, ts)
         result = PipelineResult(
             strategy_id=self.strategy_id,
             timestamp=ts,
@@ -129,42 +133,56 @@ class ResearchPipeline:
 
         # Phase 1: Parameter sweep
         try:
+            logger.info("pipeline.run: phase1_sweep grid_size=%d", len(list(itertools.product(*self.param_grid.values()))) if self.param_grid else 0)
             result.sweep_result = self._run_sweep()
+            logger.info("pipeline.run: phase1_complete n_trials=%d best_sharpe=%.4f", result.sweep_result.n_trials, result.sweep_result.best_score)
         except Exception as exc:
+            logger.error("pipeline.run: phase1_sweep_failed error=%s", exc)
             result.errors.append(f"sweep_failed: {exc}")
-            # Without sweep data we can still attempt with defaults
             result.sweep_result = SweepResult(best_params={}, best_score=0.0, n_trials=0)
 
         best_params = result.sweep_result.best_params
 
         # Phase 2: Walk-forward validation
         try:
+            logger.info("pipeline.run: phase2_walk_forward windows=%d", self.walk_forward_windows)
             result.walk_forward_result = self._run_walk_forward(best_params)
+            wf = result.walk_forward_result
+            logger.info("pipeline.run: phase2_complete oos_consistency=%.2f overfitting_score=%.3f", wf.oos_consistency, wf.overfitting_score)
         except Exception as exc:
+            logger.error("pipeline.run: phase2_walk_forward_failed error=%s", exc)
             result.errors.append(f"walk_forward_failed: {exc}")
 
         # Phase 3: Full backtest with best params
         try:
+            logger.info("pipeline.run: phase3_full_backtest best_params=%s", best_params)
             bt_result, bt_metrics = self._run_full_backtest(best_params)
             result.backtest_result = bt_result
             result.backtest_metrics = bt_metrics
+            logger.info("pipeline.run: phase3_complete trades=%d sharpe=%.3f max_dd=%.1f%%", bt_metrics.total_trades, bt_metrics.sharpe_ratio, bt_metrics.max_drawdown_pct)
         except Exception as exc:
+            logger.error("pipeline.run: phase3_backtest_failed error=%s", exc)
             result.errors.append(f"backtest_failed: {exc}")
 
         # Phase 4: Overfitting detection
         try:
+            logger.info("pipeline.run: phase4_overfitting_detection")
             result.overfitting_report = self._run_overfitting_detection(
                 bt_result=result.backtest_result,
                 bt_metrics=result.backtest_metrics,
                 wf_result=result.walk_forward_result,
                 sweep_result=result.sweep_result,
             )
+            ovr = result.overfitting_report
+            logger.info("pipeline.run: phase4_complete score=%.3f recommendation=%s blockers=%d warnings=%d", ovr.score, ovr.recommendation, len(ovr.blockers), len(ovr.warnings))
         except Exception as exc:
+            logger.error("pipeline.run: phase4_overfitting_failed error=%s", exc)
             result.errors.append(f"overfitting_failed: {exc}")
 
         # Phase 5: Decision
         result.decision = self._make_decision(result)
         result.summary = self._build_summary(result)
+        logger.info("pipeline.run: final_decision=%s strategy_id=%s", result.decision, self.strategy_id)
 
         return result
 
@@ -296,8 +314,8 @@ class ResearchPipeline:
         # Observations = number of return bars
         n_observations = max(len(returns), 1)
 
-        # OOS returns per fold from walk-forward
-        oos_returns_per_fold = self._extract_oos_returns(wf_result)
+        # Build strategy matrix for proper CSCV (sweep configs × WF windows)
+        strategy_matrix = self._build_strategy_matrix(sweep_result, wf_result)
 
         # Parameter values and PnLs from sweep for stability analysis
         param_values, param_pnls = self._extract_param_stability_data(sweep_result)
@@ -307,13 +325,14 @@ class ResearchPipeline:
             returns=returns,
             n_trials=n_trials,
             n_observations=n_observations,
-            oos_returns_per_fold=oos_returns_per_fold,
+            oos_returns_per_fold=[],  # deprecated — strategy_matrix used instead
             cost_pnl=cost_pnl,
             total_costs=total_costs,
             param_values=param_values,
             param_pnls=param_pnls,
             data_length=len(self.data.get("close", [])),
             sharpe=bt_metrics.sharpe_ratio if bt_metrics else None,
+            strategy_matrix=strategy_matrix,
         )
 
     # ── Phase 5: Decision ─────────────────────────────────────────
@@ -472,32 +491,89 @@ class ResearchPipeline:
     def _extract_oos_returns(
         wf_result: WalkForwardResult | None,
     ) -> list[list[float]]:
-        """Extract OOS returns per fold from walk-forward result."""
+        """Extract OOS returns per fold from walk-forward result.
+
+        Returns real per-bar OOS returns from WalkForwardWindow.oos_returns
+        (stored by the walk-forward analyzer since the CSCV redesign).
+        Falls back to empty list if not available.
+        """
         if wf_result is None or not wf_result.windows:
             return []
 
         oos_returns_per_fold: list[list[float]] = []
         for window in wf_result.windows:
-            if window.oos_metrics is not None and window.oos_metrics.total_trades > 0:
-                # We use a synthetic representation: the window metrics
-                # encode aggregate OOS performance. For PBO, we approximate
-                # per-fold returns from the metrics available.
-                # WalkForwardWindow doesn't store raw OOS returns, so we
-                # construct a proxy from win_rate and total trades.
-                wm = window.oos_metrics
-                if wm.total_trades > 0:
-                    # Synthetic per-trade returns for PBO calculation
-                    avg_return = wm.total_pnl / max(wm.total_trades, 1)
-                    # Create pseudo-returns: wins and losses proportionally
-                    n_wins = int(wm.total_trades * wm.win_rate)
-                    n_losses = wm.total_trades - n_wins
-                    avg_win = wm.avg_win if wm.avg_win > 0 else abs(avg_return)
-                    avg_loss = wm.avg_loss if wm.avg_loss > 0 else abs(avg_return)
-                    fold_returns = [avg_win / 10000] * n_wins + [-avg_loss / 10000] * n_losses
-                    if fold_returns:
-                        oos_returns_per_fold.append(fold_returns)
-
+            if window.oos_returns and len(window.oos_returns) > 0:
+                oos_returns_per_fold.append(window.oos_returns)
         return oos_returns_per_fold
+
+    @staticmethod
+    def _build_strategy_matrix(
+        sweep_result: SweepResult | None,
+        wf_result: WalkForwardResult | None,
+    ) -> dict[str, list[list[float]]] | None:
+        """Build strategy matrix for CSCV: sweep configs × WF windows.
+
+        Returns dict mapping config_id -> list of per-window OOS return arrays.
+        Each config_id is a stringified parameter combination.
+        Returns None if insufficient data.
+        """
+        if sweep_result is None or not sweep_result.all_results:
+            return None
+        if wf_result is None or not wf_result.windows:
+            return None
+
+        # Get window OOS returns (must have real returns, not synthetic)
+        window_returns: list[list[float]] = []
+        for w in wf_result.windows:
+            if w.oos_returns and len(w.oos_returns) > 0:
+                window_returns.append(w.oos_returns)
+
+        if len(window_returns) < 2:
+            return None
+
+        n_windows = len(window_returns)
+
+        # Build strategy matrix: for each sweep config, run backtest on each
+        # window's OOS period and collect returns.
+        # Since we don't have per-config per-window data from the sweep,
+        # we approximate: use the sweep's all_results to get config params,
+        # and for each config, estimate per-window returns from the config's
+        # aggregate metrics scaled by the window's return distribution.
+        #
+        # This is an approximation — the ideal implementation would re-run
+        # each config on each window's OOS data. For now, we use the
+        # available data to construct a reasonable proxy.
+        strategy_matrix: dict[str, list[list[float]]] = {}
+
+        for trial in sweep_result.all_results:
+            params = trial.get("params", {})
+            if not params:
+                continue
+            config_id = str(sorted(params.items()))
+            trial_sharpe = trial.get("sharpe", 0.0)
+
+            # For each window, create a proxy return series by scaling the
+            # window's actual OOS returns by the config's relative Sharpe.
+            # This preserves the correlation structure across windows while
+            # scaling by the config's performance level.
+            config_returns: list[list[float]] = []
+            for wr in window_returns:
+                if trial_sharpe != 0:
+                    # Scale window returns by config's Sharpe ratio
+                    # (approximation: assumes all configs have similar return
+                    #  distribution shape but different performance levels)
+                    mean_wr = sum(wr) / len(wr) if wr else 0.0
+                    if mean_wr != 0:
+                        scaled = [r * (trial_sharpe / mean_wr) for r in wr]
+                    else:
+                        scaled = list(wr)
+                else:
+                    scaled = list(wr)
+                config_returns.append(scaled)
+
+            strategy_matrix[config_id] = config_returns
+
+        return strategy_matrix if len(strategy_matrix) >= 2 else None
 
     @staticmethod
     def _extract_param_stability_data(

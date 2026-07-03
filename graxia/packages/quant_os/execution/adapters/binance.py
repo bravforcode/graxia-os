@@ -266,3 +266,58 @@ class BinanceAdapter(BrokerAdapter):
             )
         except ccxt.ExchangeError as exc:
             raise RuntimeError(f"Binance account_info failed: {exc}") from exc
+
+    def close_position(self, broker_position_id: str, volume: float, symbol: str = "") -> OrderResult:
+        """Close an open position on Binance.
+
+        Fetches the position to determine the correct closing side.
+        LONG -> sell, SHORT -> buy.
+        """
+        sym = symbol or self._order_symbols.get(broker_position_id, "")
+        if not sym:
+            return OrderResult(
+                status=OrderStatus.FAILED,
+                error=f"Unknown symbol for position {broker_position_id}",
+            )
+
+        # Determine correct close side from live position info
+        side = "sell"  # default fallback for LONG positions
+        try:
+            self._throttle()
+            positions = self._exchange.fetch_positions([sym])
+            for p in positions:
+                if float(p.get("contracts", 0)) != 0:
+                    pos_side = (p.get("side") or "").lower()
+                    if pos_side == "short":
+                        side = "buy"
+                    else:
+                        side = "sell"
+                    break
+        except (ccxt.NetworkError, ccxt.ExchangeError) as exc:
+            logger.warning("Binance close_position fetch_positions failed, defaulting to sell: %s", exc)
+
+        for attempt in range(1, _MAX_RETRIES + 1):
+            try:
+                self._throttle()
+                result = self._exchange.create_order(
+                    symbol=sym,
+                    type="market",
+                    side=side,
+                    amount=volume,
+                    params={"closePosition": True},
+                )
+                broker_id = str(result.get("id", ""))
+                return OrderResult(
+                    status=OrderStatus.FILLED,
+                    broker_id=broker_id,
+                    filled_quantity=float(result.get("filled", volume)),
+                    avg_price=float(result.get("average", 0.0) or 0.0),
+                )
+            except ccxt.RateLimitExceeded:
+                time.sleep(_RATE_LIMIT_PAUSE * attempt * 2)
+                continue
+            except (ccxt.NetworkError, ccxt.ExchangeError) as exc:
+                if attempt == _MAX_RETRIES:
+                    return OrderResult(status=OrderStatus.FAILED, error=str(exc))
+                time.sleep(_RATE_LIMIT_PAUSE * attempt)
+        return OrderResult(status=OrderStatus.TIMEOUT, error="Binance close_position retries exhausted")

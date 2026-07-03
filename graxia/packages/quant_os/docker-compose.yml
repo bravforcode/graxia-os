@@ -342,7 +342,10 @@ services:
       - "9090:9090"
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/tsm_alerts.yml:/etc/prometheus/tsm_alerts.yml:ro
       - prometheus_data:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.retention.time=30d"
@@ -356,6 +359,39 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Alertmanager — Alert Routing to Telegram ─────────────────────────
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: graxia-alertmanager
+    restart: unless-stopped
+    networks:
+      graxia-trading-net:
+        ipv4_address: 172.22.0.202
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "128M"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
     logging:
       driver: "json-file"
       options:
@@ -397,6 +433,7 @@ services:
 volumes:
   prometheus_data:
   grafana_data:
+  alertmanager_data:
 
 # ── Networks ────────────────────────────────────────────────────────────
 networks:

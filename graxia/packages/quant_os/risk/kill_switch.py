@@ -60,6 +60,7 @@ class KillSwitch:
         state_file: str = "data/kill_switch_state.json",
         broker_adapter: BrokerAdapterLike | None = None,
         close_mode: CloseMode = CloseMode.CLOSE_ALL,
+        coordinator: Any | None = None,
     ):
         self._state_file = Path(state_file)
         self._allowed_users: set[int] = self._load_allowed_users()
@@ -67,6 +68,7 @@ class KillSwitch:
         self._last_user_id: int | None = None
         self._broker_adapter = broker_adapter
         self._close_mode = close_mode
+        self._coordinator = coordinator
         # Idempotent close tracking: ticket -> closed_at timestamp
         self._closed_tickets: dict[int, str] = self._state.get("closed_tickets", {})
 
@@ -117,18 +119,33 @@ class KillSwitch:
             return f"UNKNOWN COMMAND: {cmd}"
         return handler()
 
+    def set_coordinator(self, coordinator: Any) -> None:
+        """Wire in the StateCoordinator for cross-store sync."""
+        self._coordinator = coordinator
+
     def activate(self, reason: str, source: str = "manual") -> None:
         self._set_state(KillSwitchState.ACTIVE, reason=reason, authorized_by=source)
+        self._notify_coordinator(True, reason, source)
 
     def deactivate(self, reason: str, authorized_by: str = "system") -> None:
         self._set_state(KillSwitchState.INACTIVE, reason=reason, authorized_by=authorized_by)
         self._state["killed_classes"] = []
         self._save()
+        self._notify_coordinator(False, reason, authorized_by)
+
+    def _notify_coordinator(self, active: bool, reason: str, source: str) -> None:
+        """Propagate state change to coordinator for cross-store sync."""
+        if self._coordinator is not None:
+            self._coordinator.sync_kill_switch(
+                active, reason, source, triggering_store="kill_switch"
+            )
 
     def _cmd_kill_all(self) -> str:
+        source = f"telegram:{self._last_user_id}"
         self._set_state(
-            KillSwitchState.ACTIVE, reason="Telegram /kill_all", authorized_by=f"telegram:{self._last_user_id}"
+            KillSwitchState.ACTIVE, reason="Telegram /kill_all", authorized_by=source
         )
+        self._notify_coordinator(True, "Telegram /kill_all", source)
         return "KILL SWITCH ACTIVATED — all trading halted."
 
     def _cmd_kill_class(self, asset_class: str) -> str:
@@ -141,17 +158,21 @@ class KillSwitch:
         return f"KILLED: {asset_class} trading halted. Active kills: {killed}"
 
     def _cmd_pause(self) -> str:
+        source = f"telegram:{self._last_user_id}"
         self._set_state(
-            KillSwitchState.PAUSED, reason="Telegram /pause", authorized_by=f"telegram:{self._last_user_id}"
+            KillSwitchState.PAUSED, reason="Telegram /pause", authorized_by=source
         )
+        self._notify_coordinator(True, "Telegram /pause", source)
         return "PAUSED — no new entries. Closes still allowed."
 
     def _cmd_resume(self) -> str:
+        source = f"telegram:{self._last_user_id}"
         self._set_state(
-            KillSwitchState.INACTIVE, reason="Telegram /resume", authorized_by=f"telegram:{self._last_user_id}"
+            KillSwitchState.INACTIVE, reason="Telegram /resume", authorized_by=source
         )
         self._state["killed_classes"] = []
         self._save()
+        self._notify_coordinator(False, "Telegram /resume", source)
         return "RESUMED — normal operation."
 
     # ------------------------------------------------------------------

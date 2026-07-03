@@ -3,7 +3,7 @@
 import hashlib
 import json
 from dataclasses import asdict, dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -35,7 +35,7 @@ class QuarantineManager:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         manifest = {
             "version": "1.0",
-            "updated_at": datetime.utcnow().isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
             "entries": self._entries,
             "manifest_hash": self._compute_hash(),
         }

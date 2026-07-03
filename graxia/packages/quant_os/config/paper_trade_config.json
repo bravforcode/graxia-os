@@ -1,30 +1,81 @@
 {
-  "version": "1.0",
-  "created_at": "2026-07-01T12:12:07.579284+00:00",
+  "version": "2.0",
+  "created_at": "2026-07-04T00:00:00+00:00",
+  "description": "4-asset concentrated portfolio (real alpha confirmed Sharpe 0.535)",
   "broker": "Pepperstone-Demo",
   "trading_mode": "PAPER",
+  "portfolio": {
+    "type": "concentrated_4_asset",
+    "assets": ["NAS100", "XAUUSD", "OIL", "USDJPY"],
+    "weight_method": "inverse_volatility",
+    "target_vol": 0.15,
+    "position_sizing": "half_kelly",
+    "kelly_rolling_window": 20,
+    "kelly_cap_pct": 0.25,
+    "kelly_floor_pct": 0.05,
+    "regime_detection": true,
+    "trend_filter": true,
+    "drawdown_scaling": true
+  },
   "symbols": [
     {
+      "symbol": "NAS100",
+      "mt5_symbol": "NAS100",
+      "asset_class": "indices",
+      "lot_size": 0.01,
+      "atr_multiplier": 2.0,
+      "stop_mode": "fixed",
+      "max_positions": 1,
+      "spread_buffer_pips": 3.0,
+      "min_confidence": 0.6,
+      "trading_hours_utc": {
+        "start": "13:00",
+        "end": "21:00"
+      },
+      "weight": 0.45,
+      "notes": "NASDAQ 100 - highest Sharpe 0.598"
+    },
+    {
       "symbol": "XAUUSD",
+      "mt5_symbol": "XAUUSD",
       "asset_class": "metals",
       "lot_size": 0.01,
-      "stop_loss_pips": 30.0,
-      "take_profit_pips": 60.0,
+      "atr_multiplier": 2.5,
+      "stop_mode": "fixed",
       "max_positions": 1,
       "spread_buffer_pips": 5.0,
-      "min_confidence": 0.65,
+      "min_confidence": 0.6,
       "trading_hours_utc": {
         "start": "01:00",
         "end": "21:00"
       },
-      "notes": "Gold: avoid 21:00-01:00 low liquidity window"
+      "weight": 0.35,
+      "notes": "Gold - Sharpe 0.374, hedge vs USDJPY (corr -0.414)"
     },
     {
-      "symbol": "EURUSD",
+      "symbol": "OIL",
+      "mt5_symbol": "USOIL",
+      "asset_class": "commodities",
+      "lot_size": 0.01,
+      "atr_multiplier": 3.0,
+      "stop_mode": "fixed",
+      "max_positions": 1,
+      "spread_buffer_pips": 5.0,
+      "min_confidence": 0.6,
+      "trading_hours_utc": {
+        "start": "01:00",
+        "end": "21:00"
+      },
+      "weight": 0.05,
+      "notes": "Crude Oil - Sharpe 0.285, high DD risk -89%"
+    },
+    {
+      "symbol": "USDJPY",
+      "mt5_symbol": "USDJPY",
       "asset_class": "forex",
       "lot_size": 0.01,
-      "stop_loss_pips": 20.0,
-      "take_profit_pips": 40.0,
+      "atr_multiplier": 1.5,
+      "stop_mode": "fixed",
       "max_positions": 1,
       "spread_buffer_pips": 1.0,
       "min_confidence": 0.6,
@@ -32,37 +83,8 @@
         "start": "01:00",
         "end": "21:00"
       },
-      "notes": "EURUSD: high liquidity during London/NY overlap"
-    },
-    {
-      "symbol": "BTCUSD",
-      "asset_class": "crypto",
-      "lot_size": 0.01,
-      "stop_loss_pips": 500.0,
-      "take_profit_pips": 1000.0,
-      "max_positions": 1,
-      "spread_buffer_pips": 50.0,
-      "min_confidence": 0.65,
-      "trading_hours_utc": {
-        "start": "00:00",
-        "end": "23:59"
-      },
-      "notes": "BTC: 24/7 market, wider stops for volatility"
-    },
-    {
-      "symbol": "ETHUSD",
-      "asset_class": "crypto",
-      "lot_size": 0.01,
-      "stop_loss_pips": 30.0,
-      "take_profit_pips": 60.0,
-      "max_positions": 1,
-      "spread_buffer_pips": 3.0,
-      "min_confidence": 0.65,
-      "trading_hours_utc": {
-        "start": "00:00",
-        "end": "23:59"
-      },
-      "notes": "ETH: 24/7, correlated with BTC — reduce position if BTC also open"
+      "weight": 0.15,
+      "notes": "USDJPY - Sharpe 0.204, diversifier"
     }
   ],
   "risk": {
@@ -73,8 +95,26 @@
     "max_total_positions": 4,
     "max_correlated_positions": 2,
     "kill_switch_drawdown_pct": 15.0,
-    "initial_capital": 10000.0,
-    "currency": "USD"
+    "initial_capital": 49844.79,
+    "currency": "USD",
+    "regime": {
+      "vol_short_window": 20,
+      "vol_long_window": 60,
+      "high_vol_multiplier": 1.5,
+      "low_vol_multiplier": 0.8,
+      "high_vol_position_scale": 0.5
+    },
+    "trend": {
+      "fast_sma": 50,
+      "slow_sma": 200
+    },
+    "drawdown_scaling": {
+      "enabled": true,
+      "threshold_1_pct": 5.0,
+      "scale_1": 0.75,
+      "threshold_2_pct": 10.0,
+      "scale_2": 0.50
+    }
   },
   "news_filter": {
     "enabled": true,
@@ -83,12 +123,9 @@
     "blocked_event_types": [
       "NFP",
       "FOMC",
-      "ECB_RATE",
       "BOJ_RATE",
       "CPI_US",
-      "CPI_EU",
-      "GDP_US",
-      "UNEMPLOYMENT_US"
+      "GDP_US"
     ],
     "min_importance_for_block": "HIGH",
     "notes": "30min pre-block, 15min post-block for HIGH importance events"
@@ -109,6 +146,7 @@
     "alert_on_risk_breach": true,
     "alert_on_kill_switch": true,
     "alert_on_drawdown_warning": true,
-    "drawdown_warning_threshold_pct": 5.0
+    "drawdown_warning_threshold_pct": 5.0,
+    "alert_on_regime_change": true
   }
 }

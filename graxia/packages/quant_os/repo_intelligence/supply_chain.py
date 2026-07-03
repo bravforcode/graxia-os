@@ -1,6 +1,6 @@
 import hashlib
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -63,7 +63,7 @@ class SupplyChainScanner:
         entries = self.scan_requirements()
         unpinned = [e.package_name for e in entries if e.version == "UNPINNED"]
         return SupplyChainReport(
-            generated_at=datetime.utcnow().isoformat(),
+            generated_at=datetime.now(UTC).isoformat(),
             total_packages=len(entries),
             pinned_count=len(entries) - len(unpinned),
             unpinned_packages=unpinned,

@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 
 def versioned_filename(base_name: str = "xgboost") -> str:
     """Generate versioned filename: xgboost_v20260628_183045.pkl"""
-    ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     return f"{base_name}_v{ts}.pkl"
 
 

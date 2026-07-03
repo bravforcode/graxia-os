@@ -306,15 +306,13 @@ def _sortino_ratio(returns: list[float], risk_free_rate: float, bars_per_year: i
     excess_returns = [r - bar_rf for r in returns]
     avg_excess = sum(excess_returns) / len(excess_returns)
 
-    # Downside deviation
-    downside = [r for r in excess_returns if r < 0]
-    if not downside:
-        return float("inf") if avg_excess > 0 else 0.0
-
-    downside_std = math.sqrt(sum(r**2 for r in downside) / len(downside))
+    # Downside deviation — use ALL observations (not just negative returns)
+    # to avoid overstating risk-adjusted returns. Negative returns contribute 0.
+    downside_sq_sum = sum(r**2 for r in excess_returns if r < 0)
+    downside_std = math.sqrt(downside_sq_sum / len(excess_returns))
 
     if downside_std == 0:
-        return 0.0
+        return float("inf") if avg_excess > 0 else 0.0
 
     return (avg_excess / downside_std) * math.sqrt(bars_per_year)
 

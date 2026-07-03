@@ -60,7 +60,7 @@ class BuyOnceStrategy(Strategy):
             strategy_id=self.id,
             symbol=symbol,
             signal_type=SignalType.BUY,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
             entry_price=price,
             stop_loss=sl,
             take_profit=tp,

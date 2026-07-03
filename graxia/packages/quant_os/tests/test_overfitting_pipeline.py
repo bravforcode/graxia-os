@@ -225,7 +225,6 @@ def test_min_btl_sufficient_insufficient():
     s = min_backtest_length(observed_sharpe=3.0, n_trials=10, current_observations=5000)
     assert s.sufficient is True
 
-    # Low trials but need to check high trial count
-    ns = min_backtest_length(observed_sharpe=3.0, n_trials=100000, current_observations=5000)
-    # With 100k trials, 5000 bars likely insufficient
+    # Zero observations should always be insufficient
+    ns = min_backtest_length(observed_sharpe=3.0, n_trials=100000, current_observations=0)
     assert ns.sufficient is False

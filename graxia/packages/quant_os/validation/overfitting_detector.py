@@ -43,7 +43,7 @@ from .deflated_sharpe import (
     min_backtest_length,
 )
 from .parameter_stability import ParameterStabilityResult, analyze_parameter_stability
-from .probability_overfitting import PBOResult, calculate_pbo
+from .probability_overfitting import PBOResult, calculate_pbo_from_matrix
 
 
 @dataclass
@@ -118,6 +118,7 @@ class OverfittingDetector:
         sharpe: float | None = None,
         skewness: float = 0.0,
         kurtosis: float = 3.0,
+        strategy_matrix: dict[str, list[list[float]]] | None = None,
     ) -> OverfittingReport:
         """Run the full overfitting detection pipeline.
 
@@ -126,7 +127,7 @@ class OverfittingDetector:
             returns: Bar-level returns from the backtest
             n_trials: Total number of strategy configurations tried during research
             n_observations: Number of return observations used to compute Sharpe
-            oos_returns_per_fold: OOS returns for each walk-forward fold (for PBO)
+            oos_returns_per_fold: DEPRECATED — use strategy_matrix instead
             cost_pnl: Base PnL (before stress)
             total_costs: Total transaction costs
             param_values: Parameter values tested (for stability analysis)
@@ -135,6 +136,8 @@ class OverfittingDetector:
             sharpe: Observed Sharpe (computed from returns if not provided)
             skewness: Return distribution skewness
             kurtosis: Return distribution excess kurtosis
+            strategy_matrix: CSCV strategy matrix: config_id -> list of per-period
+                return arrays. When provided, uses proper CSCV algorithm.
 
         Returns:
             OverfittingReport with all results, blockers, warnings, score, recommendation
@@ -150,7 +153,7 @@ class OverfittingDetector:
 
         # --- Run each check ---
         report.dsr_result = self._check_dsr(sharpe, n_trials, n_observations, skewness, kurtosis)
-        report.pbo_result = self._check_pbo(oos_returns_per_fold)
+        report.pbo_result = self._check_pbo(strategy_matrix, oos_returns_per_fold)
         report.bootstrap_result = self._check_bootstrap(returns)
         report.cost_stress_result = self._check_cost_stress(cost_pnl, total_costs)
         report.param_stability_results = self._check_param_stability(param_values, param_pnls)
@@ -189,10 +192,16 @@ class OverfittingDetector:
             kurtosis=kurtosis,
         )
 
-    def _check_pbo(self, oos_returns_per_fold) -> PBOResult:
-        if not oos_returns_per_fold or len(oos_returns_per_fold) < 2:
-            return PBOResult(pbo=1.0, n_partitions=0, n_combinations_tested=0, passes_threshold=False)
-        return calculate_pbo(oos_returns_per_fold)
+    def _check_pbo(
+        self,
+        strategy_matrix: dict[str, list[list[float]]] | None = None,
+        oos_returns_per_fold: list[list[float]] | None = None,
+    ) -> PBOResult:
+        """Check PBO using proper CSCV with strategy matrix if available."""
+        if strategy_matrix and len(strategy_matrix) >= 2:
+            return calculate_pbo_from_matrix(strategy_matrix)
+        # Fallback: no strategy matrix available
+        return PBOResult(pbo=1.0, n_partitions=0, n_combinations_tested=0, passes_threshold=False)
 
     def _check_bootstrap(self, returns) -> BootstrapResult:
         if not returns:
@@ -238,16 +247,17 @@ class OverfittingDetector:
 
         # DSR blocker
         if report.dsr_result and not report.dsr_result.passes_threshold:
-            if report.dsr_result.deflated_sharpe < 0 and report.dsr_result.probability_alpha > 0.5:
+            # deflated_sharpe is now probability_alpha (P(false positive))
+            # High probability = bad (likely false positive)
+            if report.dsr_result.probability_alpha > 0.5:
                 report.blockers.append(
-                    f"DSR={report.dsr_result.deflated_sharpe:.3f} < 0 with "
-                    f"P(false positive)={report.dsr_result.probability_alpha:.3f} — "
+                    f"DSR P(false positive)={report.dsr_result.probability_alpha:.3f} > 0.5 — "
                     f"strong evidence of selection bias after "
                     f"{report.dsr_result.multiple_testing_adjustment:.1f} trials"
                 )
-            elif report.dsr_result.deflated_sharpe < cfg.min_deflated_sharpe:
+            elif report.dsr_result.probability_alpha > cfg.min_deflated_sharpe:
                 report.warnings.append(
-                    f"DSR={report.dsr_result.deflated_sharpe:.3f} < {cfg.min_deflated_sharpe} threshold"
+                    f"DSR P(false positive)={report.dsr_result.probability_alpha:.3f} > {cfg.min_deflated_sharpe} threshold"
                 )
 
         # PBO blocker
@@ -294,8 +304,10 @@ class OverfittingDetector:
 
         # DSR component (0.25)
         if report.dsr_result:
-            # Normalize: deflated_sharpe > 1 → score 1, < 0 → score 0
-            dsr_score = max(0, min(1, report.dsr_result.deflated_sharpe / 2))
+            # deflated_sharpe is now probability_alpha (CDF probability)
+            # Low probability = good (unlikely to be false positive)
+            # Score: 1 - probability_alpha (so P(false positive)=0 → score=1)
+            dsr_score = max(0, min(1, 1.0 - report.dsr_result.probability_alpha))
             scores.append(dsr_score)
             weights.append(0.25)
 

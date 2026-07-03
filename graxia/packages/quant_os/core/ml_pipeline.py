@@ -1,7 +1,7 @@
 """ML Pipeline from Jesse pattern - gather, train, deploy"""
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 
 
 @dataclass
@@ -47,7 +47,7 @@ class MLPipeline:
 
     def gather_start(self):
         """Start gathering ML data"""
-        self._current_point = MLDataPoint(timestamp=datetime.utcnow().timestamp(), features={})
+        self._current_point = MLDataPoint(timestamp=datetime.now(UTC).timestamp(), features={})
 
     def record_features(self, features: dict[str, float]):
         """Record features for current data point"""

@@ -12,7 +12,7 @@ import os
 import sys
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 
 import yaml
@@ -105,7 +105,7 @@ class DemoCampaign:
 
         self._mt5 = MT5Connection()
         self._runner = ShadowRunnerV2(config_path)
-        self._campaign_id = f"campaign_{datetime.utcnow().strftime('%Y%m%d')}"
+        self._campaign_id = f"campaign_{datetime.now(UTC).strftime('%Y%m%d')}"
         self._status = CampaignStatus.NOT_STARTED
         self._daily_reports: list[DailyReport] = []
         self._incidents: list[dict] = []
@@ -121,10 +121,10 @@ class DemoCampaign:
         logger.info("NO ORDERS WILL BE SUBMITTED")
         logger.info(f"{'='*60}")
 
-        start_date = datetime.utcnow()
+        start_date = datetime.now(UTC)
 
         for day in range(days):
-            day_start = datetime.utcnow()
+            day_start = datetime.now(UTC)
             logger.info(f"\n--- Day {day+1}/{days} ({day_start.strftime('%Y-%m-%d')}) ---")
 
             daily = self._run_day(symbol, session_minutes, day + 1)
@@ -140,7 +140,7 @@ class DemoCampaign:
             # Wait until next trading day
             if day < days - 1:
                 next_day = day_start + timedelta(days=1)
-                wait_seconds = max(0, (next_day - datetime.utcnow()).total_seconds())
+                wait_seconds = max(0, (next_day - datetime.now(UTC)).total_seconds())
                 if wait_seconds > 0:
                     logger.info(f"Waiting {wait_seconds/3600:.1f}h until next session...")
                     time.sleep(min(wait_seconds, 60))  # Cap wait for testing
@@ -153,7 +153,7 @@ class DemoCampaign:
 
     def _run_day(self, symbol: str, session_minutes: int, day_num: int) -> DailyReport:
         """Run one day of the campaign."""
-        daily = DailyReport(date=datetime.utcnow().strftime("%Y-%m-%d"))
+        daily = DailyReport(date=datetime.now(UTC).strftime("%Y-%m-%d"))
 
         if not self._runner.connect():
             daily.pipeline_errors += 1
@@ -267,15 +267,15 @@ class DemoCampaign:
 
     def _export_results(self):
         os.makedirs("shadow_results", exist_ok=True)
-        ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
 
         # Campaign summary
         path = f"shadow_results/campaign_{ts}.json"
         result = CampaignResult(
             campaign_id=self._campaign_id,
             status=self._status,
-            start_date=datetime.utcnow().strftime("%Y-%m-%d"),
-            end_date=datetime.utcnow().strftime("%Y-%m-%d"),
+            start_date=datetime.now(UTC).strftime("%Y-%m-%d"),
+            end_date=datetime.now(UTC).strftime("%Y-%m-%d"),
             symbol="XAUUSD",
             daily_reports=self._daily_reports,
             incidents=self._incidents,

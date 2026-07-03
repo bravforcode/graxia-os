@@ -7,7 +7,7 @@ Any change requires code review and explicit approval.
 Rule #1: Live trading must be explicitly enabled
 Rule #2: AI cannot directly submit live orders
 Rule #3: Minimum 60 days paper trading required
-Rule #4: Maximum 1% risk per trade
+Rule #4: Maximum 1% risk per trade (delegated to RiskPolicy)
 Rule #5: 15% hard stop drawdown
 Rule #6: Micro stage orders expire in 60 seconds
 """
@@ -18,7 +18,11 @@ from typing import Any
 
 @dataclass(frozen=True)
 class GoldenRules:
-    """Immutable golden rules - cannot be changed at runtime"""
+    """Immutable golden rules - cannot be changed at runtime.
+
+    Risk limits (risk_per_trade, daily_loss, weekly_loss, drawdown, exposure)
+    are defined in RiskPolicy — not duplicated here.
+    """
 
     # Trading Mode Safety
     LIVE_TRADING_DEFAULT: bool = False  # Must explicitly set True
@@ -30,12 +34,8 @@ class GoldenRules:
     AI_CANNOT_OVERRIDE_KILL_SWITCH: bool = True
     AI_CANNOT_MODIFY_RISK_LIMITS: bool = True
 
-    # Risk Limits (percentage-based)
-    MAX_RISK_PER_TRADE_PCT: float = 1.0  # Max 1% equity risk per trade
-    HARD_STOP_DRAWDOWN_PCT: float = 15.0  # Kill switch at 15% drawdown
-    MAX_DAILY_LOSS_PCT: float = 2.0  # Daily circuit breaker
-    MAX_WEEKLY_LOSS_PCT: float = 5.0  # Weekly circuit breaker
-    MAX_PORTFOLIO_EXPOSURE_PCT: float = 80.0  # Max 80% in positions
+    # Hard stop drawdown (kill switch threshold — not in RiskPolicy)
+    HARD_STOP_DRAWDOWN_PCT: float = 15.0
 
     # Micro Stage Controls
     ORDER_EXPIRY_MICRO_SECONDS: int = 60  # Orders expire after 60s in MICRO mode
@@ -75,13 +75,14 @@ def validate_golden_rules() -> dict[str, Any]:
     """
     Validate that golden rules are properly loaded and haven't been tampered with.
     Called at system startup.
+
+    Risk limits are validated via RiskPolicy, not GoldenRules.
     """
     checks = {
         "live_trading_default_disabled": not GOLDEN_RULES.LIVE_TRADING_DEFAULT,
         "ai_cannot_submit_order": GOLDEN_RULES.AI_CANNOT_SUBMIT_ORDER,
         "min_paper_days_enforced": GOLDEN_RULES.PAPER_MIN_TRADING_DAYS >= 60,
         "min_paper_trades_enforced": GOLDEN_RULES.PAPER_MIN_TRADES >= 100,
-        "max_risk_per_trade_sane": 0 < GOLDEN_RULES.MAX_RISK_PER_TRADE_PCT <= 2.0,
         "hard_stop_drawdown_sane": 5 < GOLDEN_RULES.HARD_STOP_DRAWDOWN_PCT <= 25.0,
         "order_expiry_micro_sane": 10 <= GOLDEN_RULES.ORDER_EXPIRY_MICRO_SECONDS <= 300,
         "all_checks_passed": True,
@@ -93,7 +94,6 @@ def validate_golden_rules() -> dict[str, Any]:
             checks["ai_cannot_submit_order"],
             checks["min_paper_days_enforced"],
             checks["min_paper_trades_enforced"],
-            checks["max_risk_per_trade_sane"],
             checks["hard_stop_drawdown_sane"],
             checks["order_expiry_micro_sane"],
         ]
@@ -103,6 +103,7 @@ def validate_golden_rules() -> dict[str, Any]:
 
 
 # Hard limits that can never be exceeded even by environment variables
+# Risk limits are enforced by RiskPolicy; these are absolute safety rails.
 HARD_LIMITS = {
     "max_risk_per_trade_pct": 2.0,  # Absolute max 2% per trade
     "max_drawdown_pct": 25.0,  # Absolute max 25% drawdown

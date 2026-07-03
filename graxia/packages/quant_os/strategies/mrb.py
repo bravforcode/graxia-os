@@ -25,7 +25,7 @@ Expected Performance (EURUSD ranging periods 2020-2026):
 - Sharpe: 1.31
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
@@ -203,7 +203,7 @@ class MeanReversionBollinger(Strategy):
 
     def _is_low_liquidity_time(self) -> bool:
         """Check if current time is low liquidity period"""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         return now.hour in self.avoid_hours
 
     def _calculate_indicators(self, ohlcv_data: dict[str, list]) -> dict[str, Any]:

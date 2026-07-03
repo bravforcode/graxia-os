@@ -13,8 +13,8 @@ import json
 import logging
 import math
 import os
-from datetime import datetime, UTC
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from ..core.enums import DataQualityCheck
 
@@ -31,13 +31,13 @@ class QualityCheckResult:
         self,
         check_name: DataQualityCheck,
         passed: bool,
-        details: Optional[Dict[str, Any]] = None,
-        timestamp: Optional[datetime] = None,
+        details: dict[str, Any] | None = None,
+        timestamp: datetime | None = None,
     ):
         self.check_name = check_name
         self.passed = passed
         self.details = details or {}
-        self.timestamp = timestamp or datetime.utcnow()
+        self.timestamp = timestamp or datetime.now(UTC)
 
 
 class DataQualityGate:
@@ -59,7 +59,7 @@ class DataQualityGate:
             "min_volume_threshold": 1,
         }
 
-    def validate_ohlcv(self, data: List[Dict]) -> List[QualityCheckResult]:
+    def validate_ohlcv(self, data: list[dict]) -> list[QualityCheckResult]:
         """Validate OHLCV data series."""
         results = []
         results.append(self._check_missing_timestamps(data))
@@ -69,39 +69,33 @@ class DataQualityGate:
         results.append(self._check_stale_quotes(data))
         return results
 
-    def _check_missing_timestamps(self, data: List[Dict]) -> QualityCheckResult:
+    def _check_missing_timestamps(self, data: list[dict]) -> QualityCheckResult:
         """Check for missing timestamps."""
         missing = [d for d in data if not d.get("timestamp")]
         return QualityCheckResult(
             check_name=DataQualityCheck.MISSING_TIMESTAMP,
             passed=len(missing) == 0,
-            details={"missing_count": len(missing)}
+            details={"missing_count": len(missing)},
         )
 
-    def _check_duplicate_timestamps(self, data: List[Dict]) -> QualityCheckResult:
+    def _check_duplicate_timestamps(self, data: list[dict]) -> QualityCheckResult:
         """Check for duplicate timestamps."""
         timestamps = [d.get("timestamp") for d in data if d.get("timestamp")]
         duplicates = len(timestamps) - len(set(timestamps))
         return QualityCheckResult(
             check_name=DataQualityCheck.DUPLICATE_TIMESTAMP,
             passed=duplicates == 0,
-            details={"duplicate_count": duplicates}
+            details={"duplicate_count": duplicates},
         )
 
-    def _check_outlier_prices(self, data: List[Dict]) -> QualityCheckResult:
+    def _check_outlier_prices(self, data: list[dict]) -> QualityCheckResult:
         """Check for price outliers using spike percentage."""
         if len(data) < 2:
-            return QualityCheckResult(
-                check_name=DataQualityCheck.OUTLIER_PRICE,
-                passed=True
-            )
+            return QualityCheckResult(check_name=DataQualityCheck.OUTLIER_PRICE, passed=True)
 
         prices = [d.get("close", 0) for d in data if d.get("close")]
         if not prices:
-            return QualityCheckResult(
-                check_name=DataQualityCheck.OUTLIER_PRICE,
-                passed=True
-            )
+            return QualityCheckResult(check_name=DataQualityCheck.OUTLIER_PRICE, passed=True)
 
         avg_price = sum(prices) / len(prices)
         max_spike = max(abs(p - avg_price) / avg_price * 100 for p in prices) if avg_price > 0 else 0
@@ -112,48 +106,42 @@ class DataQualityGate:
             details={
                 "max_spike_pct": max_spike,
                 "threshold": self.thresholds["max_price_spike_pct"],
-            }
+            },
         )
 
-    def _check_zero_volume(self, data: List[Dict]) -> QualityCheckResult:
+    def _check_zero_volume(self, data: list[dict]) -> QualityCheckResult:
         """Check for zero volume bars."""
         zero_vol = [d for d in data if d.get("volume", 0) == 0]
         return QualityCheckResult(
             check_name=DataQualityCheck.ZERO_VOLUME,
             passed=len(zero_vol) == 0 or len(zero_vol) < len(data) * 0.1,
-            details={"zero_volume_count": len(zero_vol)}
+            details={"zero_volume_count": len(zero_vol)},
         )
 
-    def _check_stale_quotes(self, data: List[Dict]) -> QualityCheckResult:
+    def _check_stale_quotes(self, data: list[dict]) -> QualityCheckResult:
         """Check for stale quotes."""
         if not data:
-            return QualityCheckResult(
-                check_name=DataQualityCheck.STALE_QUOTE,
-                passed=True
-            )
+            return QualityCheckResult(check_name=DataQualityCheck.STALE_QUOTE, passed=True)
 
         latest = data[-1]
         latest_ts = latest.get("timestamp")
 
         if isinstance(latest_ts, datetime):
-            age_seconds = (datetime.utcnow() - latest_ts).total_seconds()
+            age_seconds = (datetime.now(UTC) - latest_ts).total_seconds()
             return QualityCheckResult(
                 check_name=DataQualityCheck.STALE_QUOTE,
                 passed=age_seconds < self.thresholds["max_staleness_seconds"],
-                details={"staleness_seconds": age_seconds}
+                details={"staleness_seconds": age_seconds},
             )
 
-        return QualityCheckResult(
-            check_name=DataQualityCheck.STALE_QUOTE,
-            passed=True
-        )
+        return QualityCheckResult(check_name=DataQualityCheck.STALE_QUOTE, passed=True)
 
-    def all_checks_passed(self, results: List[QualityCheckResult]) -> bool:
+    def all_checks_passed(self, results: list[QualityCheckResult]) -> bool:
         """Check if all quality checks passed."""
         return all(r.passed for r in results)
 
 
-def _find_manifest(filepath: str) -> Optional[str]:
+def _find_manifest(filepath: str) -> str | None:
     """Find an existing manifest for the given file."""
     basename = os.path.splitext(os.path.basename(filepath))[0]
     for suffix in [".manifest.json", "_manifest.json"]:
@@ -165,8 +153,8 @@ def _find_manifest(filepath: str) -> Optional[str]:
 
 def run_quality_gate(
     filepath: str,
-    checks: Optional[List[str]] = None,
-) -> Dict[str, Any]:
+    checks: list[str] | None = None,
+) -> dict[str, Any]:
     """Run all applicable quality checks on a dataset.
 
     Args:
@@ -253,7 +241,7 @@ def run_quality_gate(
     return _finalize(absolute_path, results)
 
 
-def _finalize(filepath: str, results: Dict) -> Dict[str, Any]:
+def _finalize(filepath: str, results: dict) -> dict[str, Any]:
     """Build the final report dict from raw check results."""
     has_fail = any(r.get("status") == "FAIL" for r in results.values())
     has_warn = any(r.get("status") == "WARN" for r in results.values())
@@ -286,26 +274,29 @@ def _finalize(filepath: str, results: Dict) -> Dict[str, Any]:
     return report
 
 
-def _read_data_safe(filepath: str, ext: str) -> Optional[List[Dict]]:
+def _read_data_safe(filepath: str, ext: str) -> list[dict] | None:
     """Safely read data, returning None on failure."""
     try:
         if ext == ".parquet":
             try:
                 import pandas as pd
+
                 df = pd.read_parquet(filepath)
                 if len(df) > 100000:
                     df = df.head(100000)
                 return df.to_dict("records")
             except ImportError:
                 import pyarrow.parquet as pq
+
                 pf = pq.ParquetFile(filepath)
                 n = min(pf.metadata.num_rows, 100000)
                 table = pf.read_rows(0, n)
                 return table.to_pylist()
         elif ext == ".csv":
             import csv
+
             rows = []
-            with open(filepath, "r", newline="") as f:
+            with open(filepath, newline="") as f:
                 reader = csv.DictReader(f)
                 for i, row in enumerate(reader):
                     if i >= 100000:
@@ -317,7 +308,7 @@ def _read_data_safe(filepath: str, ext: str) -> Optional[List[Dict]]:
         return None
 
 
-def _infer_dataset_type(columns: List[str]) -> str:
+def _infer_dataset_type(columns: list[str]) -> str:
     """Detect tick vs OHLCV dataset."""
     col_set = set(col.lower() for col in columns)
     if {"bid", "ask"}.issubset(col_set):
@@ -327,7 +318,7 @@ def _infer_dataset_type(columns: List[str]) -> str:
     return "unknown"
 
 
-def _check_schema_gate(columns: List[str], ds_type: str, data: List[Dict]) -> Dict:
+def _check_schema_gate(columns: list[str], ds_type: str, data: list[dict]) -> dict:
     """Verify column presence matches expected contract."""
     if ds_type == "tick":
         expected = {"timestamp", "bid", "ask", "spread_points", "symbol", "source"}
@@ -356,7 +347,7 @@ def _check_schema_gate(columns: List[str], ds_type: str, data: List[Dict]) -> Di
     }
 
 
-def _check_range_gate(data: List[Dict], ds_type: str) -> Dict:
+def _check_range_gate(data: list[dict], ds_type: str) -> dict:
     """Verify bid/ask/price ranges."""
     violations = 0
     violation_sample = []
@@ -397,7 +388,7 @@ def _check_range_gate(data: List[Dict], ds_type: str) -> Dict:
     }
 
 
-def _check_completeness_gate(data: List[Dict]) -> Dict:
+def _check_completeness_gate(data: list[dict]) -> dict:
     """Check row count expectation and detect gaps."""
     actual = len(data)
     if actual == 0:
@@ -405,7 +396,7 @@ def _check_completeness_gate(data: List[Dict]) -> Dict:
     return {"status": "PASS", "details": {"rows_loaded": actual}}
 
 
-def _infer_bar_interval_sec(timestamps: List) -> Optional[float]:
+def _infer_bar_interval_sec(timestamps: list) -> float | None:
     """Infer typical bar interval from first N intervals (median)."""
     if len(timestamps) < 5:
         return None
@@ -423,7 +414,7 @@ def _infer_bar_interval_sec(timestamps: List) -> Optional[float]:
     return float(sorted_gaps[len(sorted_gaps) // 2])
 
 
-def _check_sequence_gate(data: List[Dict], columns: List[str]) -> Dict:
+def _check_sequence_gate(data: list[dict], columns: list[str]) -> dict:
     """Check timestamps strictly increasing, no duplicates."""
     if not data:
         return {"status": "PASS", "details": {"reason": "No data"}}
@@ -461,7 +452,7 @@ def _check_sequence_gate(data: List[Dict], columns: List[str]) -> Dict:
     }
 
 
-def _check_staleness_gate(data: List[Dict], columns: List[str]) -> Dict:
+def _check_staleness_gate(data: list[dict], columns: list[str]) -> dict:
     """Detect time gaps between consecutive rows.
 
     Adaptive threshold: 30s for ticks, 3x bar interval for OHLCV.
@@ -504,9 +495,10 @@ def _check_staleness_gate(data: List[Dict], columns: List[str]) -> Dict:
     }
 
 
-def _check_integrity_gate(filepath: str) -> Dict:
+def _check_integrity_gate(filepath: str) -> dict:
     """Verify SHA-256 against manifest if available."""
     import hashlib
+
     h = hashlib.sha256()
     try:
         with open(filepath, "rb") as f:
@@ -525,7 +517,7 @@ def _check_integrity_gate(filepath: str) -> Dict:
                 "computed_sha256": actual_hash[:32] + "...",
             },
         }
-    with open(manifest_path, "r") as f:
+    with open(manifest_path) as f:
         manifest = json.load(f)
     expected = manifest.get("sha256") or manifest.get("csv_sha256")
     if expected is None:
@@ -540,7 +532,7 @@ def _check_integrity_gate(filepath: str) -> Dict:
     }
 
 
-def _check_distribution_gate(data: List[Dict], ds_type: str) -> Dict:
+def _check_distribution_gate(data: list[dict], ds_type: str) -> dict:
     """Check price distribution sanity using 3-sigma outlier detection."""
     price_cols = []
     if ds_type == "tick":
@@ -556,6 +548,7 @@ def _check_distribution_gate(data: List[Dict], ds_type: str) -> Dict:
 
     try:
         import numpy as np
+
         has_np = True
     except ImportError:
         has_np = False
@@ -609,7 +602,7 @@ def _check_distribution_gate(data: List[Dict], ds_type: str) -> Dict:
     }
 
 
-def _to_float(val) -> Optional[float]:
+def _to_float(val) -> float | None:
     if val is None:
         return None
     try:

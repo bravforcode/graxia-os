@@ -1,7 +1,7 @@
 import hashlib
 import json
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 
 
 @dataclass(frozen=True)
@@ -20,7 +20,7 @@ class ExperimentRecord:
     random_seed: int
     trial_number: int
     trial_budget: int
-    created_at_utc: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    created_at_utc: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def fingerprint(self) -> str:
         data = json.dumps(

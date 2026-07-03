@@ -5,7 +5,7 @@ Expansion Tracker — track expansion progress and generate reports.
 import json
 import os
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 
 from .planner import ExpansionPhase, ExpansionPlanner, ExpansionStatus
 
@@ -61,8 +61,8 @@ class ExpansionTracker:
             )
 
         return ExpansionReport(
-            report_id=f"exp_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}",
-            created_at=datetime.utcnow().isoformat(),
+            report_id=f"exp_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}",
+            created_at=datetime.now(UTC).isoformat(),
             current_phase=current.phase.value if current else "completed",
             steps_completed=completed,
             steps_total=len(steps),
@@ -93,7 +93,7 @@ class ExpansionTracker:
             return False
 
         step.status = ExpansionStatus.IN_PROGRESS
-        step.started_at = datetime.utcnow().isoformat()
+        step.started_at = datetime.now(UTC).isoformat()
         return True
 
     def complete_phase(self, phase: ExpansionPhase) -> bool:
@@ -105,7 +105,7 @@ class ExpansionTracker:
             return False
 
         step.status = ExpansionStatus.COMPLETED
-        step.completed_at = datetime.utcnow().isoformat()
+        step.completed_at = datetime.now(UTC).isoformat()
         return True
 
     def export_report(self, path: str) -> None:

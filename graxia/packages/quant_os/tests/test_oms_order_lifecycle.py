@@ -83,6 +83,13 @@ class MockBrokerAdapter(BrokerAdapter):
             avg_price=1.1234,
         )
 
+    def close_position(self, broker_position_id: str, volume: float, symbol: str = "") -> OrderResult:
+        return OrderResult(
+            status=OrderStatus.FILLED,
+            broker_id=broker_position_id,
+            filled_quantity=volume,
+        )
+
     def get_account_info(self) -> AccountInfo:
         return self._account_info
 

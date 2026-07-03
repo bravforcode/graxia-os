@@ -86,7 +86,7 @@ const adminNavItems = [
   { path: '/admin/funnel/analytics', label: 'Funnel', icon: Activity },
   { path: '/admin/audit', label: 'Audit', icon: ScrollText },
   { path: '/admin/readiness', label: 'Readiness', icon: CheckSquare },
-] 
+]
 
 function isActivePath(pathname: string, path: string) {
   return path === '/' ? pathname === path : pathname === path || pathname.startsWith(`${path}/`)
@@ -231,7 +231,7 @@ export default function Layout() {
               Graxia
             </span>
           </div>
-          
+
           <ScrollArea className="flex-1 px-3 py-4">
             <NavLinks />
           </ScrollArea>
@@ -313,11 +313,11 @@ export default function Layout() {
                     </div>
                   </AnimatedTooltip>
                 </div>
-                
+
                 <div className="h-6 w-px bg-zinc-800 hidden sm:block" />
 
                 <ThemeToggle />
-                
+
                 <Button
                   variant="outline"
                   size="icon"

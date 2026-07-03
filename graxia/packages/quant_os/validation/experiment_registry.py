@@ -1,9 +1,9 @@
 """Phase 5 — Experiment registry. Every experiment must be registered before running."""
-from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Optional
-import json
+
 import hashlib
+import json
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 
 
 @dataclass
@@ -20,17 +20,20 @@ class ExperimentRecord:
     trial_number: int = 1
     trial_budget: int = 12
     random_seed: int = 42
-    created_at_utc: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    created_at_utc: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def fingerprint(self) -> str:
-        data = json.dumps({
-            "experiment_id": self.experiment_id,
-            "strategy_snapshot_hash": self.strategy_snapshot_hash,
-            "parameter_snapshot_hash": self.parameter_snapshot_hash,
-            "dataset_manifest_ids": self.dataset_manifest_ids,
-            "trial_number": self.trial_number,
-            "random_seed": self.random_seed,
-        }, sort_keys=True)
+        data = json.dumps(
+            {
+                "experiment_id": self.experiment_id,
+                "strategy_snapshot_hash": self.strategy_snapshot_hash,
+                "parameter_snapshot_hash": self.parameter_snapshot_hash,
+                "dataset_manifest_ids": self.dataset_manifest_ids,
+                "trial_number": self.trial_number,
+                "random_seed": self.random_seed,
+            },
+            sort_keys=True,
+        )
         return hashlib.sha256(data.encode()).hexdigest()
 
 
@@ -46,7 +49,7 @@ class ExperimentRegistry:
         self._trial_counts[record.experiment_id] = self._trial_counts.get(record.experiment_id, 0) + 1
         return record.experiment_id
 
-    def get(self, experiment_id: str) -> Optional[ExperimentRecord]:
+    def get(self, experiment_id: str) -> ExperimentRecord | None:
         return self._experiments.get(experiment_id)
 
     def list_by_strategy(self, strategy_hash: str) -> list[ExperimentRecord]:

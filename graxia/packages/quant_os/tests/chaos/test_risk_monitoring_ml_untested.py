@@ -612,7 +612,7 @@ class TestAlertsChaos:
         from graxia.packages.quant_os.core.enums import IncidentSeverity
         from graxia.packages.quant_os.monitoring.alerts import Alert
 
-        alert = Alert(severity=IncidentSeverity.P0, title="Test", message="msg", timestamp=datetime.utcnow())
+        alert = Alert(severity=IncidentSeverity.P0, title="Test", message="msg", timestamp=datetime.now(UTC))
         result = asyncio.run(mgr.send_alert(alert))
         assert result is True
         assert len(mgr.alert_history) == 1
@@ -622,7 +622,7 @@ class TestAlertsChaos:
         from graxia.packages.quant_os.monitoring.alerts import Alert
 
         for i in range(10):
-            a = Alert(severity=IncidentSeverity.P2, title=f"T{i}", message="m", timestamp=datetime.utcnow())
+            a = Alert(severity=IncidentSeverity.P2, title=f"T{i}", message="m", timestamp=datetime.now(UTC))
             asyncio.run(mgr.send_alert(a))
         assert len(mgr.alert_history) == 10
 
@@ -642,7 +642,7 @@ class TestAlertsChaos:
         from graxia.packages.quant_os.monitoring.alerts import Alert
 
         alert = Alert(
-            severity=IncidentSeverity.P1, title="ctx", message="m", timestamp=datetime.utcnow(), context={"key": "val"}
+            severity=IncidentSeverity.P1, title="ctx", message="m", timestamp=datetime.now(UTC), context={"key": "val"}
         )
         asyncio.run(mgr.send_alert(alert))
         assert mgr.alert_history[0].context == {"key": "val"}
@@ -652,7 +652,7 @@ class TestAlertsChaos:
         from graxia.packages.quant_os.monitoring.alerts import Alert
 
         for _ in range(500):
-            a = Alert(severity=IncidentSeverity.P3, title="flood", message="f", timestamp=datetime.utcnow())
+            a = Alert(severity=IncidentSeverity.P3, title="flood", message="f", timestamp=datetime.now(UTC))
             asyncio.run(mgr.send_alert(a))
         assert len(mgr.alert_history) == 500
 

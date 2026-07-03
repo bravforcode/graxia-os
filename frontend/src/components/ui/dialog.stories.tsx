@@ -9,7 +9,7 @@ const meta: Meta<typeof Dialog> = {
   component: Dialog,
   args: {
     open: true,
-    
+
     description: 'Capture operator context before removing this draft from the active queue.',
     onClose: () => {},
     children: null,
@@ -34,7 +34,7 @@ function DialogStoryDemo(args: DialogStoryArgs) {
       <Dialog
         {...args}
         open={open}
-        
+
         onClose={() => setOpen(false)}
         footer={
           <>

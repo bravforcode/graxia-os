@@ -529,3 +529,7 @@ class TradingLoop:
         self._daily_order_count = 0
         self._total_filled = 0
         self._total_rejected = 0
+
+    def reset_kill_switch(self) -> None:
+        """Reset kill switch state (called by StateCoordinator on deactivate)."""
+        self._kill_switch_active = False

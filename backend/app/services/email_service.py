@@ -3,6 +3,7 @@ Transactional email service via Resend.
 Dev mode: logs to console instead of sending.
 All sends are idempotent via idempotency_key.
 """
+
 import logging
 from datetime import UTC, datetime
 from typing import Any
@@ -39,7 +40,7 @@ class EmailTemplate:
                         <td style="padding:40px 40px 20px;">
                             <h1 style="margin:0 0 20px;color:#111;font-size:28px;font-weight:700;">Welcome to Graxia, {to_name}!</h1>
                             <p style="margin:0 0 20px;color:#444;font-size:16px;line-height:1.6;">
-                                Your AI-powered business development co-pilot is now active. 
+                                Your AI-powered business development co-pilot is now active.
                                 Graxia scans 100+ sources daily to find opportunities tailored to your profile.
                             </p>
                             <p style="margin:0 0 30px;color:#444;font-size:16px;line-height:1.6;">
@@ -110,7 +111,7 @@ Need help? Contact support@graxia.io
                         <td style="padding:40px 40px 20px;">
                             <h1 style="margin:0 0 20px;color:#111;font-size:28px;font-weight:700;">Your trial ends in {days_left} day{'s' if days_left > 1 else ''}</h1>
                             <p style="margin:0 0 20px;color:#444;font-size:16px;line-height:1.6;">
-                                Hi {to_name}, your Graxia {settings.TRIAL_DAYS if hasattr(settings, 'TRIAL_DAYS') else '14'}-day free trial ends soon. 
+                                Hi {to_name}, your Graxia {settings.TRIAL_DAYS if hasattr(settings, 'TRIAL_DAYS') else '14'}-day free trial ends soon.
                                 To keep your AI co-pilot running 24/7, upgrade to a paid plan.
                             </p>
                             <table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
@@ -143,16 +144,20 @@ Questions? Reply to this email.
         }
 
     @staticmethod
-    def leads_digest(to_name: str, lead_count: int, leads: list[dict], dashboard_url: str) -> dict[str, str]:
-        leads_html = "\n".join([
-            f"""<tr>
+    def leads_digest(
+        to_name: str, lead_count: int, leads: list[dict], dashboard_url: str
+    ) -> dict[str, str]:
+        leads_html = "\n".join(
+            [
+                f"""<tr>
                 <td style="padding:15px;border-bottom:1px solid #e5e7eb;">
                     <p style="margin:0 0 5px;color:#111;font-weight:600;">{lead['title']}</p>
                     <p style="margin:0;color:#666;font-size:14px;">{lead.get('platform', 'Unknown')} · Score: {lead.get('score', 'N/A')}/10</p>
                 </td>
             </tr>"""
-            for lead in leads[:5]
-        ])
+                for lead in leads[:5]
+            ]
+        )
 
         return {
             "subject": f"🎯 {lead_count} new opportunities matched your profile",
@@ -198,14 +203,23 @@ Hi {to_name},
 
 Your AI co-pilot found {lead_count} new opportunities today:
 
-""" + "\n\n".join([f"• {l['title']} ({l.get('platform', 'Unknown')}) — Score: {l.get('score', 'N/A')}/10" for l in leads[:5]]) + f"""
+"""
+            + "\n\n".join(
+                [
+                    f"• {l['title']} ({l.get('platform', 'Unknown')}) — Score: {l.get('score', 'N/A')}/10"
+                    for l in leads[:5]
+                ]
+            )
+            + f"""
 
 Review all opportunities: {dashboard_url}
 """,
         }
 
     @staticmethod
-    def draft_ready(to_name: str, draft_title: str, draft_preview: str, review_url: str) -> dict[str, str]:
+    def draft_ready(
+        to_name: str, draft_title: str, draft_preview: str, review_url: str
+    ) -> dict[str, str]:
         return {
             "subject": f"✍️ Draft ready: {draft_title[:50]}{'...' if len(draft_title) > 50 else ''}",
             "html": f"""
@@ -284,7 +298,7 @@ Review and send: {review_url}
                         <td style="padding:40px 40px 20px;">
                             <h1 style="margin:0 0 20px;color:#dc2626;font-size:28px;font-weight:700;">⚠️ Payment failed</h1>
                             <p style="margin:0 0 20px;color:#444;font-size:16px;line-height:1.6;">
-                                Hi {to_name}, we couldn't process your subscription payment. 
+                                Hi {to_name}, we couldn't process your subscription payment.
                                 Your account will remain active for 3 days while we retry.
                             </p>
                             <table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
@@ -385,7 +399,13 @@ Need help? Contact support@graxia.io
         }
 
     @staticmethod
-    def funnel_automation_abandoned_cart(to_name: str, product_name: str, product_benefits: str, price: str, checkout_url: str) -> dict[str, str]:
+    def funnel_automation_abandoned_cart(
+        to_name: str,
+        product_name: str,
+        product_benefits: str,
+        price: str,
+        checkout_url: str,
+    ) -> dict[str, str]:
         return {
             "subject": "You left something behind — complete your purchase",
             "html": f"""
@@ -460,7 +480,9 @@ Questions? Just reply to this email.
         }
 
     @staticmethod
-    def funnel_automation_post_purchase(to_name: str, product_name: str, delivery_url: str, review_url: str) -> dict[str, str]:
+    def funnel_automation_post_purchase(
+        to_name: str, product_name: str, delivery_url: str, review_url: str
+    ) -> dict[str, str]:
         return {
             "subject": "Thank you for your purchase — here's how to get started",
             "html": f"""
@@ -534,7 +556,9 @@ Love it? Leave a review: {review_url}
         }
 
     @staticmethod
-    def funnel_automation_review_request(to_name: str, product_name: str, review_url: str) -> dict[str, str]:
+    def funnel_automation_review_request(
+        to_name: str, product_name: str, review_url: str
+    ) -> dict[str, str]:
         return {
             "subject": f"How's {product_name}? We'd love your feedback",
             "html": f"""
@@ -595,7 +619,9 @@ Thanks!
         }
 
     @staticmethod
-    def funnel_automation_cross_sell(to_name: str, product_name: str, recommendations: str, store_url: str) -> dict[str, str]:
+    def funnel_automation_cross_sell(
+        to_name: str, product_name: str, recommendations: str, store_url: str
+    ) -> dict[str, str]:
         return {
             "subject": "You might also like these — based on your purchase",
             "html": f"""
@@ -666,7 +692,9 @@ Browse more: {store_url}
         }
 
     @staticmethod
-    def funnel_automation_win_back(to_name: str, new_products: str, store_url: str) -> dict[str, str]:
+    def funnel_automation_win_back(
+        to_name: str, new_products: str, store_url: str
+    ) -> dict[str, str]:
         return {
             "subject": "We miss you — here's 15% off to come back",
             "html": f"""
@@ -735,21 +763,25 @@ Browse now: {store_url}
 
     @staticmethod
     def funnel_delivery(to_name: str, delivery_items: list[dict]) -> dict[str, str]:
-        items_html = "\n".join([
-            f"""<tr>
+        items_html = "\n".join(
+            [
+                f"""<tr>
                 <td style="padding:15px;border-bottom:1px solid #e5e7eb;">
                     <p style="margin:0 0 5px;color:#111;font-weight:600;">{item['product_name']}</p>
                     <p style="margin:0 0 10px;color:#666;font-size:14px;">Access expires on: {item['expires_at']}</p>
                     <a href="{item['download_url']}" style="display:inline-block;padding:8px 16px;background:#2563eb;color:#fff;text-decoration:none;border-radius:4px;font-weight:600;font-size:14px;">Access Digital Asset</a>
                 </td>
             </tr>"""
-            for item in delivery_items
-        ])
+                for item in delivery_items
+            ]
+        )
 
-        items_text = "\n\n".join([
-            f"• {item['product_name']}\n  Access Link: {item['download_url']}\n  Expires: {item['expires_at']}"
-            for item in delivery_items
-        ])
+        items_text = "\n\n".join(
+            [
+                f"• {item['product_name']}\n  Access Link: {item['download_url']}\n  Expires: {item['expires_at']}"
+                for item in delivery_items
+            ]
+        )
 
         return {
             "subject": "🎁 Your digital product delivery is ready!",
@@ -810,12 +842,13 @@ class EmailService:
         # In development, we simulate sending by logging
         self.enabled = bool(self.api_key) and settings.APP_ENV != "development"
         if settings.APP_ENV == "development":
-             # Matches test expectation for disabled without API key if not in prod
-             self.enabled = False if not self.api_key else True
+            # Matches test expectation for disabled without API key if not in prod
+            self.enabled = False if not self.api_key else True
 
     async def _send_via_resend(self, params: dict[str, Any]) -> dict[str, Any]:
         """Internal method to send via Resend API."""
         import resend
+
         resend.api_key = self.api_key
         # Note: resend.Emails.send is usually synchronous, but we wrap it here
         # In a real async environment, you'd use an async client or run_in_executor
@@ -835,7 +868,10 @@ class EmailService:
         Idempotent: duplicate idempotency_key = no-op.
         """
         # Idempotency check
-        key = idempotency_key or f"{to}:{template_name}:{datetime.now(UTC).strftime('%Y-%m-%d-%H')}"
+        key = (
+            idempotency_key
+            or f"{to}:{template_name}:{datetime.now(UTC).strftime('%Y-%m-%d-%H')}"
+        )
         if key in _sent_keys:
             logger.info(f"[EMAIL] Skipped (duplicate key): {key}")
             return {"id": "deduplicated", "status": "skipped"}
@@ -873,16 +909,27 @@ class EmailService:
             # Don't raise — email is best-effort
             return {"id": None, "status": "failed", "error": str(e)}
 
-    async def send_welcome_email(self, to_email: str, user_name: str, idempotency_key: str | None = None) -> dict[str, Any]:
+    async def send_welcome_email(
+        self, to_email: str, user_name: str, idempotency_key: str | None = None
+    ) -> dict[str, Any]:
         """Send welcome email to new user."""
         return await self.send_email(
             to=to_email,
             template_name="welcome",
-            template_data={"to_name": user_name, "login_url": f"{settings.FRONTEND_URL}/login"},
+            template_data={
+                "to_name": user_name,
+                "login_url": f"{settings.FRONTEND_URL}/login",
+            },
             idempotency_key=idempotency_key or f"welcome:{to_email}",
         )
 
-    async def send_trial_ending_email(self, to_email: str, user_name: str, days_remaining: int, upgrade_url: str | None = None) -> dict[str, Any]:
+    async def send_trial_ending_email(
+        self,
+        to_email: str,
+        user_name: str,
+        days_remaining: int,
+        upgrade_url: str | None = None,
+    ) -> dict[str, Any]:
         """Send trial ending reminder."""
         return await self.send_email(
             to=to_email,
@@ -895,7 +942,9 @@ class EmailService:
             idempotency_key=f"trial-ending:{to_email}:{days_remaining}",
         )
 
-    async def send_leads_digest(self, to: str, to_name: str, leads: list[dict]) -> dict[str, Any]:
+    async def send_leads_digest(
+        self, to: str, to_name: str, leads: list[dict]
+    ) -> dict[str, Any]:
         """Send daily leads digest."""
         return await self.send_email(
             to=to,
@@ -909,7 +958,9 @@ class EmailService:
             idempotency_key=f"leads-digest:{to}:{datetime.now(UTC).strftime('%Y-%m-%d')}",
         )
 
-    async def send_draft_ready_email(self, to: str, to_name: str, draft_title: str, draft_preview: str) -> dict[str, Any]:
+    async def send_draft_ready_email(
+        self, to: str, to_name: str, draft_title: str, draft_preview: str
+    ) -> dict[str, Any]:
         """Send draft ready notification."""
         return await self.send_email(
             to=to,
@@ -923,7 +974,9 @@ class EmailService:
             idempotency_key=f"draft-ready:{to}:{draft_title}",
         )
 
-    async def send_payment_failed_email(self, to_email: str, user_name: str, billing_url: str | None = None) -> dict[str, Any]:
+    async def send_payment_failed_email(
+        self, to_email: str, user_name: str, billing_url: str | None = None
+    ) -> dict[str, Any]:
         """Send payment failed notification."""
         return await self.send_email(
             to=to_email,

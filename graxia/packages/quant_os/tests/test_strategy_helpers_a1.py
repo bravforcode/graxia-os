@@ -1,6 +1,6 @@
 """Tests for A1: Strategy helper methods (jesse-inspired ergonomics)"""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 
 import pytest
@@ -180,8 +180,8 @@ class TestLifecycleCallbacks:
                 pnl=Decimal("0.40"),
                 pnl_pct=0.012,
                 close_reason=CloseReason.TAKE_PROFIT,
-                opened_at=datetime.utcnow(),
-                closed_at=datetime.utcnow(),
+                opened_at=datetime.now(UTC),
+                closed_at=datetime.now(UTC),
             )
         )
 
@@ -200,8 +200,8 @@ class TestLifecycleCallbacks:
             pnl=Decimal("0.40"),
             pnl_pct=0.012,
             close_reason=CloseReason.TAKE_PROFIT,
-            opened_at=datetime.utcnow(),
-            closed_at=datetime.utcnow(),
+            opened_at=datetime.now(UTC),
+            closed_at=datetime.now(UTC),
         )
         s.on_trade_closed(trade_win)
         assert s.consecutive_losses == 0
@@ -217,8 +217,8 @@ class TestLifecycleCallbacks:
             pnl=Decimal("-0.40"),
             pnl_pct=-0.012,
             close_reason=CloseReason.STOP_LOSS,
-            opened_at=datetime.utcnow(),
-            closed_at=datetime.utcnow(),
+            opened_at=datetime.now(UTC),
+            closed_at=datetime.now(UTC),
         )
         s.on_trade_closed(trade_loss)
         assert s.consecutive_losses == 1
@@ -242,8 +242,8 @@ class TestLifecycleCallbacks:
             pnl=Decimal("0.40"),
             pnl_pct=0.012,
             close_reason=CloseReason.TAKE_PROFIT,
-            opened_at=datetime.utcnow(),
-            closed_at=datetime.utcnow(),
+            opened_at=datetime.now(UTC),
+            closed_at=datetime.now(UTC),
         )
         s.record_outcome(0.40, trade=trade)
         assert s.trades_taken == 1

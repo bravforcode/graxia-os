@@ -2,7 +2,7 @@
 """Test all yfinance tickers relevant to XAUUSD gold trading."""
 
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 
 import yfinance as yf
 
@@ -60,6 +60,7 @@ TICKERS = {
     },
 }
 
+
 def test_ticker(symbol: str) -> dict:
     """Test a single ticker and return metadata."""
     try:
@@ -75,6 +76,7 @@ def test_ticker(symbol: str) -> dict:
         }
     except Exception as e:
         return {"status": "error", "error": str(e)[:120], "rows": 0, "start": None, "end": None}
+
 
 def main():
     results = {}
@@ -101,11 +103,16 @@ def main():
     print(f"RESULTS: {ok} working / {empty} empty / {err} errors  (total {total})")
     print(f"{'='*60}")
 
-    out = {"tested_at": datetime.utcnow().isoformat() + "Z", "summary": {"ok": ok, "empty": empty, "errors": err, "total": total}, "results": results}
+    out = {
+        "tested_at": datetime.now(UTC).isoformat() + "Z",
+        "summary": {"ok": ok, "empty": empty, "errors": err, "total": total},
+        "results": results,
+    }
     out_path = "reports/yfinance_ticker_results.json"
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(out, f, indent=2, ensure_ascii=False)
     print(f"\nSaved to {out_path}")
+
 
 if __name__ == "__main__":
     main()

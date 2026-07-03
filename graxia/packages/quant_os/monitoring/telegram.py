@@ -8,7 +8,7 @@ Provides:
 - Manual commands (/status, /positions, /pnl, /killswitch)
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import aiohttp
 
@@ -113,7 +113,7 @@ class TelegramNotifier:
 <b>Type:</b> {trigger_type}
 <b>Reason:</b> {reason}
 <b>Triggered By:</b> {triggered_by}
-<b>Time:</b> {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}
+<b>Time:</b> {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}
 
 ⚠️ All trading has been halted.
 Manual reset required.

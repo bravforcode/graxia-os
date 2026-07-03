@@ -17,7 +17,9 @@ def test_deflated_sharpe_high_sharpe():
     """High Sharpe with many observations passes threshold."""
     result = deflated_sharpe_ratio(observed_sharpe=3.0, n_trials=10, n_observations=1000)
     assert result.observed_sharpe == 3.0
-    assert result.deflated_sharpe > 0
+    # deflated_sharpe is now probability_alpha (low = good)
+    assert result.passes_threshold is True
+    assert result.probability_alpha < 0.05
 
 
 def test_deflated_sharpe_multiple_testing_penalty():

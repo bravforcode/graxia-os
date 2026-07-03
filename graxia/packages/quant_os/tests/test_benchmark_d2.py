@@ -5,7 +5,7 @@ Isolates indicator computation for 125k synthetic XAUUSD M15 bars.
 
 import json
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -186,7 +186,7 @@ def main():
             },
             "speedup": speedup,
         },
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(UTC).isoformat() + "Z",
     }
 
     print(f"\n{'='*50}")
