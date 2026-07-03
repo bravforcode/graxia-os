@@ -2,6 +2,7 @@
 
 Adjusts Sharpe ratio for multiple testing bias.
 """
+
 import math
 from dataclasses import dataclass
 
@@ -64,15 +65,13 @@ def deflated_sharpe_ratio(
 
     # Expected max Sharpe under null (no skill)
     euler_mascheroni = 0.5772156649
-    expected_max_sharpe = (
-        (1 - euler_mascheroni) * _norm_ppf(1 - 1/n_trials)
-        + euler_mascheroni * _norm_ppf(1 - 1/(n_trials * math.e))
+    expected_max_sharpe = (1 - euler_mascheroni) * _norm_ppf(1 - 1 / n_trials) + euler_mascheroni * _norm_ppf(
+        1 - 1 / (n_trials * math.e)
     )
 
     # Standard error of Sharpe ratio
     sr_std = math.sqrt(
-        (1 - skewness * observed_sharpe + (kurtosis - 1) / 4 * observed_sharpe**2)
-        / (n_observations - 1)
+        (1 - skewness * observed_sharpe + (kurtosis - 1) / 4 * observed_sharpe**2) / (n_observations - 1)
     )
 
     if sr_std <= 0:
@@ -94,4 +93,109 @@ def deflated_sharpe_ratio(
         probability_alpha=probability_alpha,
         multiple_testing_adjustment=multiple_testing,
         passes_threshold=passes,
+    )
+
+
+@dataclass
+class MinBTLResult:
+    """Result of minimum backtest length calculation."""
+
+    min_observations: int  # Minimum bars/observations needed
+    n_trials: int  # Number of strategy trials
+    observed_sharpe: float  # The Sharpe being tested
+    expected_max_sharpe: float  # E[max_SR] under null
+    z_threshold: float  # z-score at confidence level
+    sufficient: bool  # True if caller indicates data >= min_observations
+
+
+def min_backtest_length(
+    observed_sharpe: float,
+    n_trials: int,
+    confidence_level: float = 0.95,
+    skewness: float = 0.0,
+    kurtosis: float = 3.0,
+    current_observations: int | None = None,
+) -> MinBTLResult:
+    """Calculate minimum observations needed for Sharpe to be statistically significant.
+
+    Uses the Bailey & Lopez de Prado approach: given N strategy trials and
+    an observed Sharpe ratio, compute the minimum T such that the Sharpe
+    is unlikely to arise from selection bias alone.
+
+    Args:
+        observed_sharpe: Annualized Sharpe ratio from backtest
+        n_trials: Number of strategy configurations tested
+        confidence_level: Desired confidence (default 0.95)
+        skewness: Return distribution skewness (default 0 = normal)
+        kurtosis: Return distribution kurtosis (default 3 = normal)
+        current_observations: If provided, checks whether current data is sufficient
+
+    Returns:
+        MinBTLResult with minimum observations needed
+    """
+    sentinel_inf = 999_999_999
+
+    # Edge cases
+    if n_trials <= 0:
+        z_conf = _norm_ppf(confidence_level)
+        return MinBTLResult(
+            min_observations=1,
+            n_trials=n_trials,
+            observed_sharpe=observed_sharpe,
+            expected_max_sharpe=0.0,
+            z_threshold=z_conf,
+            sufficient=(current_observations is not None and current_observations >= 1),
+        )
+
+    if observed_sharpe <= 0:
+        z_conf = _norm_ppf(confidence_level)
+        return MinBTLResult(
+            min_observations=sentinel_inf,
+            n_trials=n_trials,
+            observed_sharpe=observed_sharpe,
+            expected_max_sharpe=0.0,
+            z_threshold=z_conf,
+            sufficient=False,
+        )
+
+    # Expected maximum Sharpe under null (same formula as deflated_sharpe_ratio)
+    euler_mascheroni = 0.5772156649
+    expected_max_sharpe = (1 - euler_mascheroni) * _norm_ppf(1 - 1 / n_trials) + euler_mascheroni * _norm_ppf(
+        1 - 1 / (n_trials * math.e)
+    )
+
+    # If observed Sharpe doesn't exceed expected max under null, no T suffices
+    if observed_sharpe <= expected_max_sharpe:
+        z_conf = _norm_ppf(confidence_level)
+        return MinBTLResult(
+            min_observations=sentinel_inf,
+            n_trials=n_trials,
+            observed_sharpe=observed_sharpe,
+            expected_max_sharpe=expected_max_sharpe,
+            z_threshold=z_conf,
+            sufficient=False,
+        )
+
+    # z-score at confidence level
+    z_conf = _norm_ppf(confidence_level)
+
+    # Numerator of the MinBTL formula: z² * (1 - skew*SR + (kurt-1)/4 * SR²)
+    numerator = z_conf**2 * (1 - skewness * observed_sharpe + (kurtosis - 1) / 4 * observed_sharpe**2)
+
+    # Denominator: (SR - E[max_SR])²
+    denominator = (observed_sharpe - expected_max_sharpe) ** 2
+
+    # T >= 1 + numerator / denominator
+    min_obs = 1 + numerator / denominator
+    min_obs_int = int(math.ceil(min_obs))
+
+    sufficient = current_observations is not None and current_observations >= min_obs_int
+
+    return MinBTLResult(
+        min_observations=min_obs_int,
+        n_trials=n_trials,
+        observed_sharpe=observed_sharpe,
+        expected_max_sharpe=expected_max_sharpe,
+        z_threshold=z_conf,
+        sufficient=sufficient,
     )

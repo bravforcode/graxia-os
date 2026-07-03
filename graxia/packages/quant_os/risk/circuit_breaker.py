@@ -141,6 +141,25 @@ class CircuitBreaker:
                 s.trip_count += 1
                 s.opened_at = time.time()
                 self._save()
+
+                # Activate kill switch on trip — prevents hemorrhage across asset classes
+                if self._kill_switch is not None:
+                    try:
+                        self._kill_switch.activate(
+                            reason=f"Circuit breaker tripped for {cls}: {s.reason}",
+                            source=f"circuit_breaker:{cls}",
+                        )
+                        logger.warning(
+                            "circuit_breaker.record_trade: kill_switch activated for %s: %s",
+                            cls,
+                            s.reason,
+                        )
+                    except Exception as exc:
+                        logger.error(
+                            "circuit_breaker.record_trade: failed to activate kill_switch: %s",
+                            exc,
+                        )
+
                 return True
         else:
             s.consecutive_losses = 0

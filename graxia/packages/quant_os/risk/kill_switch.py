@@ -11,6 +11,7 @@ Supports three close modes:
 import json
 import logging
 import os
+import time
 from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
@@ -54,11 +55,18 @@ class ReadonlyClientLike(Protocol):
 
 
 class KillSwitch:
-    def __init__(self, state_file: str = "data/kill_switch_state.json"):
+    def __init__(
+        self,
+        state_file: str = "data/kill_switch_state.json",
+        broker_adapter: BrokerAdapterLike | None = None,
+        close_mode: CloseMode = CloseMode.CLOSE_ALL,
+    ):
         self._state_file = Path(state_file)
         self._allowed_users: set[int] = self._load_allowed_users()
         self._state: dict[str, Any] = self._load()
         self._last_user_id: int | None = None
+        self._broker_adapter = broker_adapter
+        self._close_mode = close_mode
         # Idempotent close tracking: ticket -> closed_at timestamp
         self._closed_tickets: dict[int, str] = self._state.get("closed_tickets", {})
 
@@ -289,15 +297,21 @@ class KillSwitch:
         try:
             return KillSwitchState(self._state.get("state", "INACTIVE"))
         except ValueError:
-            return KillSwitchState.INACTIVE
+            # Fail-closed: corrupted state cannot be trusted — block all trading
+            return KillSwitchState.ACTIVE
 
     def _set_state(self, state: KillSwitchState, reason: str, authorized_by: str) -> None:
+        old_state = self._get_state_enum()
         self._state["state"] = state.value
         self._state["reason"] = reason
         self._state["authorized_by"] = authorized_by
         self._state["activated_at_utc"] = datetime.now(UTC).isoformat()
         self._append_history(f"state={state.value}", authorized_by)
         self._save()
+
+        # Wire enforce: when transitioning to ACTIVE, automatically close positions
+        if state == KillSwitchState.ACTIVE and old_state != KillSwitchState.ACTIVE:
+            self.enforce(self._close_mode, self._broker_adapter)
 
     def _append_history(self, action: str, user: Any) -> None:
         history: list[dict[str, str]] = self._state.get("history", [])
@@ -309,8 +323,38 @@ class KillSwitch:
         if self._state_file.exists():
             try:
                 return json.loads(self._state_file.read_text())
-            except (json.JSONDecodeError, ValueError):
-                pass
+            except (json.JSONDecodeError, ValueError) as exc:
+                logger.critical(
+                    "kill_switch: state file corrupted — fail-closed default. "
+                    "file=%s error=%s",
+                    self._state_file,
+                    exc,
+                )
+                # Best-effort quarantine of the corrupted file for forensics.
+                corrupt_name = f"{self._state_file.stem}.corrupt.{int(time.time())}.json"
+                corrupt_path = self._state_file.with_name(corrupt_name)
+                try:
+                    self._state_file.rename(corrupt_path)
+                    logger.critical(
+                        "kill_switch: corrupted state file quarantined to %s",
+                        corrupt_path,
+                    )
+                except OSError as rename_exc:
+                    logger.critical(
+                        "kill_switch: failed to quarantine corrupted state file: %s",
+                        rename_exc,
+                    )
+                # Fail-closed: a corrupted kill-switch state cannot be trusted,
+                # so default to ACTIVE (block all trading) until manually cleared.
+                return {
+                    "state": KillSwitchState.ACTIVE.value,
+                    "killed_classes": [],
+                    "reason": "State file missing or corrupted — fail-closed default",
+                    "activated_at_utc": datetime.now(UTC).isoformat(),
+                    "authorized_by": "system:fail_closed",
+                    "history": [],
+                }
+        # Normal first-run case: file missing → INACTIVE.
         return {
             "state": KillSwitchState.INACTIVE.value,
             "killed_classes": [],
