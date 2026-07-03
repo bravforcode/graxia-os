@@ -15,6 +15,7 @@ Research:
 from __future__ import annotations
 
 import math
+from collections import deque
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -84,7 +85,8 @@ class RegimeDetector:
 
     def __init__(self, config: RegimeConfig | None = None):
         self.config = config or RegimeConfig()
-        self._returns: list[float] = []
+        # Phase 4: Use deque with maxlen to cap memory at vol_lookback_long
+        self._returns: deque[float] = deque(maxlen=self.config.vol_lookback_long)
         self._bar_count: int = 0
         self._current_state = RegimeState()
         self._regime_start_bar: int = 0

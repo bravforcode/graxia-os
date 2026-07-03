@@ -19,6 +19,7 @@ Early warning: any 3+ metrics triggering = strategy review required.
 from __future__ import annotations
 
 import math
+from collections import deque
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -103,9 +104,10 @@ class DecayMonitor:
 
     def __init__(self, config: DecayConfig | None = None):
         self.config = config or DecayConfig()
-        self._returns: list[float] = []
-        self._trades: list[dict] = []  # {pnl, timestamp, signal}
-        self._signals: list[float] = []  # Strategy signal values
+        # Phase 4: Use deque with maxlen to cap memory at rolling_window
+        self._returns: deque[float] = deque(maxlen=self.config.rolling_window)
+        self._trades: deque[dict] = deque(maxlen=self.config.rolling_window)
+        self._signals: deque[float] = deque(maxlen=self.config.rolling_window)
         self._baseline: DecayMetrics | None = None
         self._alerts: list[DecayAlert] = []
 
@@ -141,8 +143,13 @@ class DecayMonitor:
         if n < self.config.rolling_window:
             return DecaySignal.NORMAL, []
 
+        # Phase 4: Convert deque to list for slicing support
+        returns_list = list(self._returns)
+        trades_list = list(self._trades)
+        signals_list = list(self._signals)
+
         # 1. Rolling Sharpe
-        window_returns = self._returns[-self.config.rolling_window:]
+        window_returns = returns_list[-self.config.rolling_window:]
         rolling_sharpe = self._compute_sharpe(window_returns)
         if rolling_sharpe < self.config.sharpe_emergency:
             alerts.append(DecayAlert("rolling_sharpe", rolling_sharpe, self.config.sharpe_emergency, "emergency", f"Rolling Sharpe {rolling_sharpe:.2f} < {self.config.sharpe_emergency}"))
@@ -159,8 +166,8 @@ class DecayMonitor:
             alerts.append(DecayAlert("rolling_ir", rolling_ir, self.config.ir_warning, "warning", f"Rolling IR {rolling_ir:.2f} < {self.config.ir_warning}"))
 
         # 3. Win rate decay
-        if self._trades:
-            recent_trades = self._trades[-self.config.rolling_window:]
+        if trades_list:
+            recent_trades = trades_list[-self.config.rolling_window:]
             wins = sum(1 for t in recent_trades if t["pnl"] > 0)
             win_rate = wins / len(recent_trades) if recent_trades else 0.5
             baseline_wr = self._baseline.win_rate if self._baseline else 0.5
@@ -170,16 +177,16 @@ class DecayMonitor:
                 alerts.append(DecayAlert("win_rate", win_rate, self.config.win_rate_warning, "warning", f"Win rate {win_rate:.1%} < {self.config.win_rate_warning:.0%}"))
 
         # 4. Signal half-life (autocorrelation decay)
-        if len(self._signals) >= self.config.rolling_window:
-            half_life = self._compute_half_life(self._signals[-self.config.rolling_window:])
+        if len(signals_list) >= self.config.rolling_window:
+            half_life = self._compute_half_life(signals_list[-self.config.rolling_window:])
             if half_life < self.config.signal_half_life_critical:
                 alerts.append(DecayAlert("signal_half_life", half_life, self.config.signal_half_life_critical, "critical", f"Signal half-life {half_life} bars < {self.config.signal_half_life_critical}"))
             elif half_life < self.config.signal_half_life_warning:
                 alerts.append(DecayAlert("signal_half_life", half_life, self.config.signal_half_life_warning, "warning", f"Signal half-life {half_life} bars < {self.config.signal_half_life_warning}"))
 
         # 5. Average trade PnL decay
-        if self._trades and self._baseline and self._baseline.avg_trade_pnl != 0:
-            recent_pnls = [t["pnl"] for t in self._trades[-self.config.rolling_window:]]
+        if trades_list and self._baseline and self._baseline.avg_trade_pnl != 0:
+            recent_pnls = [t["pnl"] for t in trades_list[-self.config.rolling_window:]]
             avg_pnl = sum(recent_pnls) / len(recent_pnls) if recent_pnls else 0
             decay_pct = 1 - (avg_pnl / self._baseline.avg_trade_pnl) if self._baseline.avg_trade_pnl > 0 else 0
             if decay_pct > self.config.pnl_decay_critical:
@@ -188,9 +195,9 @@ class DecayMonitor:
                 alerts.append(DecayAlert("avg_trade_pnl_decay", decay_pct, self.config.pnl_decay_warning, "warning", f"Avg trade PnL decay {decay_pct:.0%} > {self.config.pnl_decay_warning:.0%}"))
 
         # 6. Profit factor
-        if self._trades:
-            gross_profit = sum(t["pnl"] for t in self._trades[-self.config.rolling_window:] if t["pnl"] > 0)
-            gross_loss = abs(sum(t["pnl"] for t in self._trades[-self.config.rolling_window:] if t["pnl"] < 0))
+        if trades_list:
+            gross_profit = sum(t["pnl"] for t in trades_list[-self.config.rolling_window:] if t["pnl"] > 0)
+            gross_loss = abs(sum(t["pnl"] for t in trades_list[-self.config.rolling_window:] if t["pnl"] < 0))
             pf = gross_profit / gross_loss if gross_loss > 0 else float("inf")
             if pf < self.config.pf_critical:
                 alerts.append(DecayAlert("profit_factor", pf, self.config.pf_critical, "critical", f"Profit factor {pf:.2f} < {self.config.pf_critical}"))
@@ -199,7 +206,7 @@ class DecayMonitor:
 
         # 7. Trade frequency deviation
         if self._baseline and self._baseline.trade_frequency_baseline > 0:
-            recent_freq = len(self._trades[-self.config.rolling_window:]) / self.config.rolling_window
+            recent_freq = len(trades_list[-self.config.rolling_window:]) / self.config.rolling_window
             freq_dev = abs(recent_freq - self._baseline.trade_frequency_baseline) / self._baseline.trade_frequency_baseline
             if freq_dev > self.config.freq_deviation_critical:
                 alerts.append(DecayAlert("trade_frequency", freq_dev, self.config.freq_deviation_critical, "critical", f"Trade frequency deviation {freq_dev:.0%} > {self.config.freq_deviation_critical:.0%}"))
@@ -234,22 +241,29 @@ class DecayMonitor:
         return (mean / std) * math.sqrt(24192)  # Annualize for M15
 
     def _compute_half_life(self, values: list[float]) -> int:
-        """Compute signal half-life (bars until autocorrelation drops to 50%)."""
-        if len(values) < 10:
-            return len(values)
+        """Compute signal half-life (bars until autocorrelation drops to 50%).
 
-        mean = sum(values) / len(values)
-        var = sum((v - mean) ** 2 for v in values) / len(values)
+        Phase 4: Improved from O(W²) to O(W) using sliding-window autocorrelation.
+        """
+        n = len(values)
+        if n < 10:
+            return n
+
+        mean = sum(values) / n
+        var = sum((v - mean) ** 2 for v in values) / n
         if var <= 0:
-            return len(values)
+            return n
 
-        for lag in range(1, len(values)):
-            cov = sum((values[i] - mean) * (values[i - lag] - mean) for i in range(lag, len(values))) / (len(values) - lag)
+        # Compute autocorrelation for lags 1..min(20, n-1) only (early termination)
+        max_lag = min(20, n - 1)
+        for lag in range(1, max_lag + 1):
+            effective_n = n - lag
+            cov = sum((values[i] - mean) * (values[i + lag] - mean) for i in range(effective_n)) / effective_n
             autocorr = cov / var
             if autocorr < 0.5:
                 return lag
 
-        return len(values)
+        return max_lag
 
     def reset(self):
         """Reset state for a new monitoring period."""

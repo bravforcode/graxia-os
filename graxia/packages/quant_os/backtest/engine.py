@@ -56,6 +56,22 @@ from ..execution.fill_model import Side as FillSide
 from ..execution.fill_model import simulate_exit as fill_simulate_exit
 from ..strategies.base import Signal, Strategy
 
+# Phase 4: Wire in regime detection, margin simulation, real-time P&L
+try:
+    from ..validation.regime_detector import RegimeDetector, RegimeConfig
+    from ..risk.margin_simulator import MarginSimulator, MarginConfig
+    from ..risk.realtime_pnl import RealTimePnLTracker, PnLConfig
+    _PHASE4_WIRING_AVAILABLE = True
+except ImportError:
+    _PHASE4_WIRING_AVAILABLE = False
+
+# Phase 3: Market impact (module-level to avoid per-bar lazy import)
+try:
+    from ..execution.market_impact import estimate_market_impact_bps
+    _MARKET_IMPACT_AVAILABLE = True
+except ImportError:
+    _MARKET_IMPACT_AVAILABLE = False
+
 
 @dataclass(frozen=True)
 class InlineContractSpec:
@@ -393,6 +409,11 @@ class BacktestEngine:
         self._peak_equity_pct: float = 0.0
         self._current_drawdown_pct: float = 0.0
 
+        # Phase 4: Regime detection, margin simulation, real-time P&L
+        self._regime_detector: Any = None
+        self._margin_simulator: Any = None
+        self._pnl_tracker: Any = None
+
     def set_strategy(self, strategy: Strategy) -> None:
         """Set the strategy to backtest"""
         self.strategy = strategy
@@ -560,16 +581,61 @@ class BacktestEngine:
                 symbol="BACKTEST",
                 ohlcv_data=bar_data,
                 indicators=indicators,
-                regime=None,
+                regime=self._get_regime_state(),  # Phase 4: Wire regime detection
                 current_time=current_time,
             )
 
+            # Phase 4: Update regime detector with current bar return
+            if self._regime_detector and len(self.equity_curve) >= 2:
+                prev_eq = self.equity_curve[-1].equity
+                if prev_eq > 0:
+                    bar_return = (float(bar_close) - prev_eq) / prev_eq
+                    self._regime_detector.update(bar_return, i)
+
             # 4. Execute signal (fills on NEXT bar)
             if signal and signal.signal_type in [SignalType.BUY, SignalType.SELL]:
+                # Phase 4: Check regime-adjusted position sizing
+                regime_mult = 1.0
+                if self._regime_detector:
+                    regime_mult = self._regime_detector.get_position_size_multiplier()
                 self._execute_signal(signal, bar_open, bar_high, bar_low, bar_close, current_time, i)
 
-            # 5. Update equity
-            self._update_equity(float(bar_close), current_time)
+            # 5. Update equity (Phase 4: use real-time P&L tracker)
+            unrealized = self._calculate_unrealized_pnl(float(bar_close))
+            if self._pnl_tracker:
+                self._pnl_tracker.update_tick(Decimal(str(unrealized)), float(i))
+                self.equity = self._pnl_tracker.equity
+            else:
+                self._update_equity(float(bar_close), current_time)
+
+            # Phase 4: Check margin calls
+            if self._margin_simulator and self.positions:
+                pos_dicts = [
+                    {
+                        "symbol": p.symbol,
+                        "entry_price": p.entry_price,
+                        "quantity": p.quantity,
+                        "side": "LONG" if p.side == PositionType.LONG else "SHORT",
+                        "current_price": Decimal(str(bar_close)),
+                    }
+                    for p in self.positions.values()
+                ]
+                margin_events = self._margin_simulator.check_margin(
+                    pos_dicts, self.equity, i,
+                    current_prices={p.symbol: Decimal(str(bar_close)) for p in self.positions.values()},
+                )
+                for evt in margin_events:
+                    if evt.event_type == "FORCED_LIQUIDATION" and evt.position_symbol:
+                        # Close the position at forced liquidation price
+                        for pid, pos in list(self.positions.items()):
+                            if pos.symbol == evt.position_symbol:
+                                exit_price, _pnl = self._margin_simulator.apply_forced_liquidation(
+                                    {"entry_price": pos.entry_price, "quantity": pos.quantity,
+                                     "side": "LONG" if pos.side == PositionType.LONG else "SHORT"},
+                                    Decimal(str(bar_close)),
+                                )
+                                self._close_position(pid, exit_price, current_time, CloseReason.MANUAL, Decimal("0"))
+                                break
 
         # Close any remaining positions at last price
         self._close_all_positions(close[-1], self.timestamps[-1] if self.timestamps else datetime.now(UTC))
@@ -648,6 +714,13 @@ class BacktestEngine:
         self._precomputed_indicators: dict[str, Any] | None = None
         self._cached_bar_dicts: list[dict] | None = None
         self._risk_policy = None
+        # Phase 4: Initialize regime, margin, P&L trackers
+        if _PHASE4_WIRING_AVAILABLE:
+            self._regime_detector = RegimeDetector()
+            self._margin_simulator = MarginSimulator()
+            self._pnl_tracker = RealTimePnLTracker(
+                initial_equity=Decimal(str(self.config.initial_capital))
+            )
 
     def _calculate_indicators(self, up_to_index: int) -> dict[str, Any]:
         """Calculate indicators using Numba JIT (B3) or pandas_ta fallback."""
@@ -822,18 +895,18 @@ class BacktestEngine:
 
         # Phase 3: Square-root market impact (Almgren-Chriss)
         market_impact_bps = 0.0
-        try:
-            from execution.market_impact import estimate_market_impact_bps
-            daily_vol_pct = float(bar_high - bar_low) / float(bar_close) * 100 if bar_close > 0 else 1.0
-            volume_lots = float(volume) / 100  # Convert units to lots
-            market_impact_bps = estimate_market_impact_bps(
-                order_lots=volume_lots,
-                daily_vol_pct=daily_vol_pct,
-                adv_lots=1_000_000,  # Default for XAUUSD
-                eta=0.1,
-            )
-        except Exception:
-            market_impact_bps = 0.0
+        if _MARKET_IMPACT_AVAILABLE:
+            try:
+                daily_vol_pct = float(bar_high - bar_low) / float(bar_close) * 100 if bar_close > 0 else 1.0
+                volume_lots = float(volume) / 100  # Convert units to lots
+                market_impact_bps = estimate_market_impact_bps(
+                    order_lots=volume_lots,
+                    daily_vol_pct=daily_vol_pct,
+                    adv_lots=1_000_000,  # Default for XAUUSD
+                    eta=0.1,
+                )
+            except Exception:
+                market_impact_bps = 0.0
 
         # Phase 3: Adverse selection for momentum entries
         adverse_selection_bps = 0.0
@@ -1109,6 +1182,35 @@ class BacktestEngine:
         import logging
 
         logging.critical(f"CRITICAL_INCIDENT: {incident_type} signal={signal}")
+
+    def _get_regime_state(self) -> str | None:
+        """Phase 4: Get current regime state string for strategy consumption."""
+        if not self._regime_detector:
+            return None
+        state = self._regime_detector._current_state
+        if hasattr(state, 'vol_regime'):
+            return state.vol_regime.value if hasattr(state.vol_regime, 'value') else str(state.vol_regime)
+        return None
+
+    def _calculate_unrealized_pnl(self, current_price: float) -> float:
+        """Calculate unrealized P&L across all open positions."""
+        unrealized = 0.0
+        current = Decimal(str(current_price))
+        try:
+            from backtest.dynamic_spread_model import SpreadConfig as _SpreadCfg
+            _spread_config = _SpreadCfg()
+            bar_hour = 12  # Default for equity calc
+            closing_spread = Decimal("0.01") * _spread_config.get_spread(bar_hour)
+        except Exception:
+            closing_spread = Decimal(str(self.config.spread_pips)) * Decimal("0.01")
+        closing_cost = closing_spread * Decimal("0.5")
+        closing_slip = Decimal("0.01") * Decimal(str(self.config.slippage_pips))
+        for pos in self.positions.values():
+            if pos.side == PositionType.LONG:
+                unrealized += float((current - closing_cost - closing_slip - pos.entry_price) * pos.quantity)
+            else:
+                unrealized += float((pos.entry_price - current - closing_cost - closing_slip) * pos.quantity)
+        return unrealized
 
     def _bar_dicts(self) -> list[dict]:
         """Convert loaded OHLCV arrays to list-of-dicts for the simulator.

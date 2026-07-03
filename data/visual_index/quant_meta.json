@@ -1,15 +1,15 @@
 {
   "documents": {
-    "tmpemvsze1t": {
+    "tmp_xkl53hh": {
       "source_type": "chart",
-      "original_path": "C:\\Users\\menum\\AppData\\Local\\Temp\\tmpemvsze1t.png",
-      "tile_path": "data\\visual_tiles\\tmpemvsze1t.png",
-      "indexed_at": "2026-07-03T15:38:57.621236+00:00",
+      "original_path": "C:\\Users\\menum\\AppData\\Local\\Temp\\tmp_xkl53hh.png",
+      "tile_path": "data\\visual_tiles\\tmp_xkl53hh.png",
+      "indexed_at": "2026-07-03T21:34:50.355566+00:00",
       "symbol": "AAPL"
     }
   },
   "source_counts": {
     "chart": 1
   },
-  "updated_at": "2026-07-03T15:38:57.621741+00:00"
+  "updated_at": "2026-07-03T21:34:50.355566+00:00"
 }

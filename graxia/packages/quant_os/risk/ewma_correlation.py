@@ -35,7 +35,8 @@ class EWMACorrelation:
 
     def __init__(self, config: EWMAConfig | None = None):
         self.config = config or EWMAConfig()
-        self._returns: dict[str, list[float]] = {}
+        # Phase 4: Use counter instead of storing all returns (saves memory)
+        self._return_counts: dict[str, int] = {}
         self._ewma_mean: dict[str, float] = {}
         self._ewma_var: dict[str, float] = {}
         self._ewma_covar: dict[tuple[str, str], float] = {}
@@ -50,7 +51,8 @@ class EWMACorrelation:
         self._count += 1
 
         for sym, ret in returns.items():
-            self._returns.setdefault(sym, []).append(ret)
+            # Phase 4: Count returns instead of storing them (saves memory)
+            self._return_counts[sym] = self._return_counts.get(sym, 0) + 1
 
             # Update EWMA mean
             old_mean = self._ewma_mean.get(sym, ret)
@@ -106,7 +108,7 @@ class EWMACorrelation:
         Returns:
             Dict mapping (sym1, sym2) → correlation
         """
-        symbols = list(self._returns.keys())
+        symbols = list(self._return_counts.keys())
         matrix = {}
 
         for i, s1 in enumerate(symbols):
@@ -123,7 +125,7 @@ class EWMACorrelation:
 
         Useful for regime detection (high avg correlation = crisis).
         """
-        symbols = list(self._returns.keys())
+        symbols = list(self._return_counts.keys())
         if len(symbols) < 2:
             return 0.0
 
@@ -145,7 +147,7 @@ class EWMACorrelation:
 
     def reset(self):
         """Reset state."""
-        self._returns.clear()
+        self._return_counts.clear()
         self._ewma_mean.clear()
         self._ewma_var.clear()
         self._ewma_covar.clear()

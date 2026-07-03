@@ -67,7 +67,9 @@ class MarginSimulator:
     def __init__(self, config: MarginConfig | None = None):
         self.config = config or MarginConfig()
         self._pending_calls: dict[str, int] = {}  # symbol -> bar_index when call triggered
+        # Phase 4: Cap events list to prevent unbounded memory growth
         self._events: list[MarginEvent] = []
+        self._max_events: int = 1000
 
     @property
     def events(self) -> list[MarginEvent]:
@@ -203,6 +205,9 @@ class MarginSimulator:
                 del self._pending_calls[sym]
 
         self._events.extend(events)
+        # Phase 4: Cap events list to prevent unbounded memory
+        if len(self._events) > self._max_events:
+            self._events = self._events[-self._max_events:]
         return events
 
     def apply_forced_liquidation(
