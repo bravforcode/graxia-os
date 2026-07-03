@@ -1,80 +1,124 @@
 {
-  "version": "1.0",
-  "generated": "2026-07-02",
+  "version": "2.0",
+  "generated": "2026-07-03T12:44:37.223469",
+  "cv_method": "CPCV",
   "models": [
     {
       "symbol": "XAUUSD",
-      "file": "xgboost_XAUUSD_20260626_160329.pkl",
-      "trained_at": "2026-06-26T16:03:29",
+      "train_acc": 0.5385496431766921,
+      "test_acc": 0.5413076784892624,
       "features": 17,
-      "train_acc": 0.8918,
-      "test_acc": 0.4767,
-      "model_type": "XGBClassifier",
-      "random_state": 42,
-      "n_estimators": 100,
-      "max_depth": 5
+      "bars": 29037,
+      "model_file": "xgboost_XAUUSD_20260703_124417.pkl",
+      "cv_method": "CPCV",
+      "n_folds": 15,
+      "n_test": 148420,
+      "z_score": 31.827827631078364,
+      "edge_status": "EDGE_CANDIDATE",
+      "confusion_matrix": [
+        [
+          0,
+          68115
+        ],
+        [
+          0,
+          80305
+        ]
+      ]
     },
     {
       "symbol": "EURUSD",
-      "file": "xgboost_EURUSD_20260626_160329.pkl",
-      "trained_at": "2026-06-26T16:03:29",
+      "train_acc": 0.548108461955304,
+      "test_acc": 0.5054325908159739,
       "features": 17,
-      "train_acc": 0.8780,
-      "test_acc": 0.4922,
-      "model_type": "XGBClassifier",
-      "random_state": 42,
-      "n_estimators": 100,
-      "max_depth": 5
-    },
-    {
-      "symbol": "BTCUSD",
-      "file": "xgboost_BTCUSD_20260626_160330.pkl",
-      "trained_at": "2026-06-26T16:03:30",
-      "features": 17,
-      "train_acc": 0.8906,
-      "test_acc": 0.5109,
-      "model_type": "XGBClassifier",
-      "random_state": 42,
-      "n_estimators": 100,
-      "max_depth": 5
+      "bars": 10467,
+      "model_file": "xgboost_EURUSD_20260703_124419.pkl",
+      "cv_method": "CPCV",
+      "n_folds": 15,
+      "n_test": 52225,
+      "z_score": 2.482997115831527,
+      "edge_status": "EDGE_CANDIDATE",
+      "confusion_matrix": [
+        [
+          4895,
+          20815
+        ],
+        [
+          5010,
+          21505
+        ]
+      ]
     },
     {
       "symbol": "US30",
-      "file": "xgboost_US30_20260626_160329.pkl",
-      "trained_at": "2026-06-26T16:03:29",
+      "train_acc": 0.5292854132949991,
+      "test_acc": 0.5179626519899422,
       "features": 17,
-      "train_acc": 0.8806,
-      "test_acc": 0.4943,
-      "model_type": "XGBClassifier",
-      "random_state": 42,
-      "n_estimators": 100,
-      "max_depth": 5
+      "bars": 22305,
+      "model_file": "xgboost_US30_20260703_124423.pkl",
+      "cv_method": "CPCV",
+      "n_folds": 15,
+      "n_test": 115905,
+      "z_score": 12.23070629408574,
+      "edge_status": "EDGE_CANDIDATE",
+      "confusion_matrix": [
+        [
+          1777,
+          54093
+        ],
+        [
+          1773,
+          58262
+        ]
+      ]
     },
     {
       "symbol": "NAS100",
-      "file": "xgboost_NAS100_20260626_160329.pkl",
-      "trained_at": "2026-06-26T16:03:29",
+      "train_acc": 0.5376172384624331,
+      "test_acc": 0.5376593930108357,
       "features": 17,
-      "train_acc": 0.8964,
-      "test_acc": 0.4785,
-      "model_type": "XGBClassifier",
-      "random_state": 42,
-      "n_estimators": 100,
-      "max_depth": 5
+      "bars": 30747,
+      "model_file": "xgboost_NAS100_20260703_124426.pkl",
+      "cv_method": "CPCV",
+      "n_folds": 15,
+      "n_test": 157240,
+      "z_score": 29.866534223907887,
+      "edge_status": "EDGE_CANDIDATE",
+      "confusion_matrix": [
+        [
+          41,
+          72639
+        ],
+        [
+          76,
+          84484
+        ]
+      ]
+    },
+    {
+      "symbol": "BTCUSD",
+      "train_acc": 0.547721274730874,
+      "test_acc": 0.5204293400401496,
+      "features": 17,
+      "bars": 47695,
+      "model_file": "xgboost_BTCUSD_20260703_124437.pkl",
+      "cv_method": "CPCV",
+      "n_folds": 15,
+      "n_test": 229005,
+      "z_score": 19.552703525056607,
+      "edge_status": "EDGE_CANDIDATE",
+      "confusion_matrix": [
+        [
+          42843,
+          69782
+        ],
+        [
+          40032,
+          76348
+        ]
+      ]
     }
   ],
-  "latest_by_symbol": {
-    "XAUUSD": "xgboost_XAUUSD_20260626_160329.pkl",
-    "EURUSD": "xgboost_EURUSD_20260626_160329.pkl",
-    "BTCUSD": "xgboost_BTCUSD_20260626_160330.pkl",
-    "US30": "xgboost_US30_20260626_160329.pkl",
-    "NAS100": "xgboost_NAS100_20260626_160329.pkl"
-  },
-  "data_manifest_hash": "TBD",
-  "feature_set_hash": "TBD",
-  "warnings": [
-    "Test accuracy ~0.48-0.51 = coin-flip. Model adds no edge above random.",
-    "Train/test gap ~0.40 = severe overfit. CPCV now wired but models were trained before fix.",
-    "Models should be retrained with CPCV + early stopping before live use."
-  ]
+  "overall_status": "EDGE_CANDIDATE",
+  "warnings": []
 }

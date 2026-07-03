@@ -3,7 +3,9 @@ train_all_models.py — Train XGBoost for every symbol using CPCV
 """
 
 import json
+import math
 import pickle
+import sys
 import warnings
 from datetime import datetime
 from pathlib import Path
@@ -11,13 +13,24 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import xgboost as xgb
+from sklearn.metrics import confusion_matrix
 
 warnings.filterwarnings("ignore")
 
-import sys
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from core.cross_validation import combine_purged_k_fold_cv
+from core.cross_validation import combine_purged_k_fold_cv  # noqa: E402
+
+
+def edge_decision(test_acc: float, n_test: int, baseline: float = 0.5) -> str:
+    """z-test for edge detection. Hard-coded decision rule — not a judgment call."""
+    se = math.sqrt(baseline * (1 - baseline) / n_test)
+    if se == 0:
+        return "ARCHIVE_NO_EDGE"
+    z = (test_acc - baseline) / se
+    if z > 1.96:  # 95% two-sided
+        return "EDGE_CANDIDATE"
+    return "ARCHIVE_NO_EDGE"
+
 
 BASE = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE / "data"
@@ -85,7 +98,7 @@ def train_symbol(symbol):
         if c.startswith(("ret_", "ma_", "ratio_", "atr_", "rsi_", "volume_", "close_", "high_low", "close_open"))
     ]
 
-    X_all = traded[feature_cols].fillna(0).values
+    X_all = traded[feature_cols].fillna(0).values  # noqa: N806
     y_all = traded["target"].values.astype(int)
 
     # CPCV: purged + embargoed cross-validation (no simple iloc[:split])
@@ -107,16 +120,15 @@ def train_symbol(symbol):
     fold_results = []
     best_model = None
     best_test_acc = -1.0
-    best_feature_cols = feature_cols
 
     for path_idx, path in enumerate(paths):
         for fold_idx, (train_idx, test_idx) in enumerate(path):
             if len(train_idx) < 50 or len(test_idx) < 10:
                 continue
 
-            X_train = X_all[train_idx]
+            X_train = X_all[train_idx]  # noqa: N806
             y_train = y_all[train_idx]
-            X_test = X_all[test_idx]
+            X_test = X_all[test_idx]  # noqa: N806
             y_test = y_all[test_idx]
 
             model = xgb.XGBClassifier(
@@ -142,6 +154,9 @@ def train_symbol(symbol):
             train_acc = (model.predict(X_train) == y_train).mean()
             test_acc = (model.predict(X_test) == y_test).mean()
 
+            y_pred = model.predict(X_test)
+            cm = confusion_matrix(y_test, y_pred, labels=[0, 1])
+
             fold_results.append(
                 {
                     "path": path_idx,
@@ -150,6 +165,7 @@ def train_symbol(symbol):
                     "test_acc": float(test_acc),
                     "n_train": len(train_idx),
                     "n_test": len(test_idx),
+                    "confusion_matrix": cm.tolist(),
                 }
             )
 
@@ -164,6 +180,16 @@ def train_symbol(symbol):
     # Use best model across all CPCV folds
     avg_train = np.mean([r["train_acc"] for r in fold_results])
     avg_test = np.mean([r["test_acc"] for r in fold_results])
+    total_n_test = sum(r["n_test"] for r in fold_results)
+
+    # Aggregate confusion matrix across all folds
+    agg_cm = np.zeros((2, 2), dtype=int)
+    for r in fold_results:
+        agg_cm += np.array(r["confusion_matrix"])
+
+    edge_status = edge_decision(avg_test, total_n_test)
+    z_se = math.sqrt(0.5 * 0.5 / total_n_test) if total_n_test > 0 else 0
+    z_score = (avg_test - 0.5) / z_se if z_se > 0 else 0.0
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     path = MODEL_DIR / f"xgboost_{symbol}_{timestamp}.pkl"
@@ -180,13 +206,20 @@ def train_symbol(symbol):
                 "n_folds": len(fold_results),
                 "purged_size": purged_size,
                 "embargo_size": embargo_size,
+                "edge_status": edge_status,
+                "z_score": float(z_score),
+                "n_test": total_n_test,
             },
             f,
         )
 
     print(
-        f"{symbol:6s}: CPCV avg_train={avg_train:.4f} avg_test={avg_test:.4f} features={len(feature_cols)} folds={len(fold_results)} -> {path.name}"
+        f"{symbol:6s}: CPCV avg_train={avg_train:.4f} avg_test={avg_test:.4f} "
+        f"n_test={total_n_test} z={z_score:.2f} edge={edge_status} "
+        f"features={len(feature_cols)} folds={len(fold_results)} -> {path.name}"
     )
+    print(f"        Confusion matrix (agg): TN={agg_cm[0,0]} FP={agg_cm[0,1]} FN={agg_cm[1,0]} TP={agg_cm[1,1]}")
+
     return {
         "symbol": symbol,
         "train_acc": float(avg_train),
@@ -196,6 +229,10 @@ def train_symbol(symbol):
         "model_file": path.name,
         "cv_method": "CPCV",
         "n_folds": len(fold_results),
+        "n_test": total_n_test,
+        "z_score": float(z_score),
+        "edge_status": edge_status,
+        "confusion_matrix": agg_cm.tolist(),
     }
 
 
@@ -216,6 +253,32 @@ if __name__ == "__main__":
         if r:
             results.append(r)
         _write_heartbeat()  # update after each symbol
+
+    # Determine overall status
+    overall_status = "ARCHIVE_NO_EDGE"
+    warnings_list = []
+    if any(r.get("edge_status") == "EDGE_CANDIDATE" for r in results):
+        overall_status = "EDGE_CANDIDATE"
+    for r in results:
+        if r.get("edge_status") == "ARCHIVE_NO_EDGE":
+            warnings_list.append(f"{r['symbol']}: no statistical edge (z={r.get('z_score', 0):.2f})")
+
+    # Write manifest
+    manifest = {
+        "version": "2.0",
+        "generated": datetime.now().isoformat(),
+        "cv_method": "CPCV",
+        "models": results,
+        "overall_status": overall_status,
+        "warnings": warnings_list,
+    }
+    manifest_path = MODEL_DIR / "manifest.json"
+    with open(manifest_path, "w") as f:
+        json.dump(manifest, f, indent=2)
+    print(f"\nManifest written to {manifest_path}")
+
     print(f"\nTrained {len(results)}/{len(SYMBOLS)} models")
-    json.dump(results, open(MODEL_DIR / "training_results.json", "w"), indent=2)
+    print(f"OVERALL STATUS: {overall_status}")
+    with open(MODEL_DIR / "training_results.json", "w") as f:
+        json.dump(results, f, indent=2)
     _write_heartbeat()  # final heartbeat
