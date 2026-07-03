@@ -159,3 +159,6 @@ backend/nul
 LEAN-CTX.md
 extraterrestrial-escape/
 sites/
+
+# LanceDB vector database
+lancedb/

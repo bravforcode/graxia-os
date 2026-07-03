@@ -208,39 +208,36 @@ class RequestSanitizationMiddleware(BaseHTTPMiddleware):
             "accept", "accept-encoding", "accept-language", "host", "user-agent",
             "referer", "connection", "cache-control", "pragma", "expires",
             "if-none-match", "if-modified-since", "origin", "x-requested-with",
-            "x-csrf-token", "csrf-token", "sec-ch-ua", "sec-ch-ua-mobile",
-            "sec-ch-ua-platform", "sec-fetch-dest", "sec-fetch-mode",
-            "sec-fetch-site", "sec-fetch-user", "upgrade-insecure-requests"
+            "x-csrf-token"
         }
 
     async def dispatch(self, request: Request, call_next):
-        from fastapi.responses import JSONResponse
-        
         # Check query parameters
         query_string = str(request.query_params)
         if self._contains_attack_patterns(query_string):
             logger.warning(f"Blocked potential attack in query params: {query_string[:100]}")
-            return JSONResponse(status_code=400, content={"detail": "Invalid request"})
+            raise HTTPException(status_code=400, detail="Invalid request")
 
         # Check URL path
         path = request.url.path
         if self.path_pattern.search(path):
             logger.warning(f"Blocked path traversal attempt: {path}")
-            return JSONResponse(status_code=400, content={"detail": "Invalid path"})
+            raise HTTPException(status_code=400, detail="Invalid path")
 
         # Check headers for suspicious content (skip safe standard headers)
         for header_name, header_value in request.headers.items():
             header_lower = header_name.lower()
 
             # Skip standard HTTP headers from attack pattern checks
+            # These come from browsers/clients and are less likely to contain attacks
             if header_lower in self.SAFE_HEADERS:
                 continue
 
             # Only check custom/suspicious headers
             header_str = f"{header_name}: {header_value}"
             if self._contains_attack_patterns(header_str):
-                logger.warning(f"Blocked potential attack in custom header: {header_name} = {header_value}")
-                return JSONResponse(status_code=400, content={"detail": "Invalid request"})
+                logger.warning(f"Blocked potential attack in custom header: {header_name}")
+                raise HTTPException(status_code=400, detail="Invalid request")
 
         return await call_next(request)
 

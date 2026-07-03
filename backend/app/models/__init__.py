@@ -39,17 +39,18 @@ from .skill_profile import SkillProfile
 from .submission import Submission
 from .user import User
 from .funnel import (
+    BundleDeal,
+    Coupon,
     FunnelCheckoutSession,
     ConversionEvent,
     DeliveryAccess,
     DeliveryAsset,
-    DeliveryEmailEvent,
     DigitalProduct,
+    EmailSequence,
     FunnelOrder,
     FunnelOrderItem,
-    FunnelRecommendation,
-    LeadCapture,
     LeadMagnet,
+    ProductReview,
 )
 
 __all__ = [
@@ -91,13 +92,14 @@ __all__ = [
     "RevenueSnapshot",
     "DigitalProduct",
     "DeliveryAsset",
-    "DeliveryEmailEvent",
     "FunnelCheckoutSession",
     "FunnelOrder",
     "FunnelOrderItem",
     "DeliveryAccess",
     "ConversionEvent",
-    "FunnelRecommendation",
-    "LeadCapture",
     "LeadMagnet",
+    "Coupon",
+    "ProductReview",
+    "EmailSequence",
+    "BundleDeal",
 ]

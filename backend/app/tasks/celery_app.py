@@ -21,7 +21,7 @@ celery_app = Celery(
         "app.tasks.outreach_tasks",
         "app.tasks.leadgen_tasks",
         "app.tasks.crm_sync_tasks",
-        "app.tasks.content_engine_tasks",
+        "app.tasks.funnel_automation_tasks",
     ],
 )
 

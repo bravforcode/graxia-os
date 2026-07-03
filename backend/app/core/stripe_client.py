@@ -14,8 +14,9 @@ PLAN_PRICE_MAP: dict[str, str] = {}  # populated at runtime
 
 def _price_map() -> dict[str, str]:
     return {
-        "starter": settings.STRIPE_PRICE_STARTER,
-        "pro": settings.STRIPE_PRICE_PRO,
+        "starter": settings.STRIPE_PRICE_STARTER_MONTHLY,
+        "pro": settings.STRIPE_PRICE_PRO_MONTHLY,
+        "enterprise": settings.STRIPE_PRICE_ENTERPRISE_MONTHLY,
     }
 
 
@@ -43,6 +44,29 @@ async def create_stripe_subscription(
 
 async def cancel_stripe_subscription(subscription_id: str) -> stripe.Subscription:
     return stripe.Subscription.cancel(subscription_id)
+
+
+async def create_stripe_checkout_session(
+    customer_id: str | None,
+    success_url: str,
+    cancel_url: str,
+    line_items: list[dict],
+    metadata: dict,
+    customer_email: str | None = None,
+) -> stripe.checkout.Session:
+    params = {
+        "mode": "payment",
+        "success_url": success_url,
+        "cancel_url": cancel_url,
+        "line_items": line_items,
+        "metadata": metadata,
+    }
+    if customer_id:
+        params["customer"] = customer_id
+    elif customer_email:
+        params["customer_email"] = customer_email
+    
+    return stripe.checkout.Session.create(**params)
 
 
 async def get_portal_url(customer_id: str, return_url: str) -> str:

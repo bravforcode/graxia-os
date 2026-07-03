@@ -1,9 +1,13 @@
 import { Suspense, lazy } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { PageTransition } from "./components/ui/PageTransition";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import Layout from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
+import { LanguageProvider } from "./i18n/LanguageContext";
+import ExitIntentPopup from "./components/ui/ExitIntentPopup";
+import SocialProofPopup from "./components/ui/SocialProofPopup";
 
 const UnifiedDashboard = lazy(() => import("./pages/UnifiedDashboard"));
 const ApprovalQueue = lazy(() => import("./pages/ApprovalQueue"));
@@ -22,28 +26,21 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
 const NotFound = lazy(() => import("./pages/NotFound"));
-const ContentEngine = lazy(() => import("./pages/ContentEngine"));
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+const StorePage = lazy(() => import("./pages/StorePage"));
+const StoreProductPage = lazy(() => import("./pages/StoreProductPage"));
 
-// Admin pages
-const AdminAgentControl = lazy(() => import("./pages/admin/AgentControl"));
-const AdminMCPTools = lazy(() => import("./pages/admin/MCPTools"));
-const AdminMCPToolDetail = lazy(() => import("./pages/admin/MCPToolDetail"));
-const AdminWorkflows = lazy(() => import("./pages/admin/Workflows"));
-const AdminWorkflowRun = lazy(() => import("./pages/admin/WorkflowRunDetail"));
-const AdminApprovals = lazy(() => import("./pages/admin/Approvals"));
-const AdminApprovalDetail = lazy(() => import("./pages/admin/ApprovalDetail"));
-const AdminContextPacks = lazy(() => import("./pages/admin/ContextPacks"));
-const AdminContextPackDetail = lazy(() => import("./pages/admin/ContextPackDetail"));
-const AdminWorkspaceExports = lazy(() => import("./pages/admin/WorkspaceExports"));
-const AdminFunnelAnalytics = lazy(() => import("./pages/admin/FunnelAnalytics"));
-const AdminAudit = lazy(() => import("./pages/admin/Audit"));
-const AdminReadiness = lazy(() => import("./pages/admin/Readiness"));
-const AdminRuntime = lazy(() => import("./pages/admin/Runtime"));
-const AdminTokenROI = lazy(() => import("./pages/admin/TokenROI"));
+// Funnel Pages
+const ProductList = lazy(() => import("./pages/funnel/ProductList"));
+const ProductEditor = lazy(() => import("./pages/funnel/ProductEditor"));
+const PublicProductPage = lazy(() => import("./pages/funnel/PublicProductPage"));
+const CheckoutSuccess = lazy(() => import("./pages/funnel/CheckoutSuccess"));
+const DeliveryAccessPage = lazy(() => import("./pages/funnel/DeliveryAccessPage"));
+const FunnelAnalytics = lazy(() => import("./pages/funnel/FunnelAnalytics"));
 
 function RouteFallback() {
   return (
-    <div className="min-h-screen bg-gray-50 p-6 text-sm text-gray-600">
+    <div className="min-h-screen bg-slate-950 p-6 text-sm text-slate-400">
       Loading...
     </div>
   );
@@ -56,10 +53,16 @@ export function AppRoutes() {
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/store" element={<PageTransition><StorePage /></PageTransition>} />
+        <Route path="/store/:slug" element={<PageTransition><StoreProductPage /></PageTransition>} />
+        <Route path="/f/:organization_id/:slug" element={<PublicProductPage />} />
+        <Route path="/checkout/success" element={<CheckoutSuccess />} />
+        <Route path="/delivery/:token" element={<DeliveryAccessPage />} />
 
         {/* Protected routes */}
+        <Route path="/" element={<PageTransition><LandingPage /></PageTransition>} />
         <Route
-          path="/"
+          path="/app"
           element={
             <ProtectedRoute>
               <Layout />
@@ -79,24 +82,12 @@ export function AppRoutes() {
           <Route path="costs" element={<Costs />} />
           <Route path="event-bus" element={<EventBus />} />
           <Route path="agents" element={<Agents />} />
-          <Route path="content-engine" element={<ContentEngine />} />
           <Route path="settings" element={<Settings />} />
-          {/* Admin routes */}
-          <Route path="admin/agent-control" element={<AdminAgentControl />} />
-          <Route path="admin/mcp-tools" element={<AdminMCPTools />} />
-          <Route path="admin/mcp-tools/:name" element={<AdminMCPToolDetail />} />
-          <Route path="admin/workflows" element={<AdminWorkflows />} />
-          <Route path="admin/workflows/:run_id" element={<AdminWorkflowRun />} />
-          <Route path="admin/approvals" element={<AdminApprovals />} />
-          <Route path="admin/approvals/:id" element={<AdminApprovalDetail />} />
-          <Route path="admin/context-packs" element={<AdminContextPacks />} />
-          <Route path="admin/context-packs/:id" element={<AdminContextPackDetail />} />
-          <Route path="admin/workspace-exports" element={<AdminWorkspaceExports />} />
-          <Route path="admin/funnel/analytics" element={<AdminFunnelAnalytics />} />
-          <Route path="admin/runtime" element={<AdminRuntime />} />
-          <Route path="admin/token-roi" element={<AdminTokenROI />} />
-          <Route path="admin/audit" element={<AdminAudit />} />
-          <Route path="admin/readiness" element={<AdminReadiness />} />
+          
+          {/* Funnel Routes */}
+          <Route path="products" element={<ProductList />} />
+          <Route path="products/:id" element={<ProductEditor />} />
+          <Route path="funnel/analytics" element={<FunnelAnalytics />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
@@ -113,9 +104,13 @@ function App() {
           v7_relativeSplatPath: true,
         }}
       >
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <AppRoutes />
+            <ExitIntentPopup />
+            <SocialProofPopup />
+          </AuthProvider>
+        </LanguageProvider>
       </BrowserRouter>
     </ErrorBoundary>
   );
