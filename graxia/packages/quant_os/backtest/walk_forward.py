@@ -15,6 +15,7 @@ from datetime import date, datetime
 from typing import Any
 
 from ..strategies.base import Strategy
+from ..validation.search_budget import SearchBudgetTracker
 from .engine import BacktestConfig, BacktestEngine
 from .metrics import BacktestMetrics
 
@@ -88,12 +89,21 @@ class WalkForwardAnalyzer:
         is_ratio: float = 0.7,  # 70% in-sample, 30% out-of-sample
         min_windows: int = 3,
         mode: str = "rolling",  # "rolling" or "anchored"
+        strategy_id: str | None = None,
+        search_budget: int | None = None,
     ):
         self.strategy_factory = strategy_factory
         self.config = config or BacktestConfig()
         self.is_ratio = is_ratio
         self.min_windows = min_windows
         self.mode = mode
+        self.strategy_id = strategy_id or "default"
+        self._search_tracker = SearchBudgetTracker(max_trials=search_budget) if search_budget else None
+
+    @property
+    def search_tracker(self) -> SearchBudgetTracker | None:
+        """Access the search-budget tracker (None if search_budget not set)."""
+        return self._search_tracker
 
     def analyze(
         self,
@@ -179,6 +189,17 @@ class WalkForwardAnalyzer:
             if optimize_func:
                 params = optimize_func(strategy, is_data, is_timestamps)
                 window.is_params = params
+
+                # Auto-record trial to search-budget tracker
+                if self._search_tracker is not None and window.is_metrics:
+                    is_sharpe = (
+                        window.is_metrics.sharpe_ratio if window.is_metrics.sharpe_ratio != float("inf") else 10.0
+                    )
+                    self._search_tracker.record_trial(
+                        self.strategy_id,
+                        params,
+                        is_sharpe=is_sharpe,
+                    )
 
             # Run OOS backtest
             oos_strategy = self.strategy_factory()
