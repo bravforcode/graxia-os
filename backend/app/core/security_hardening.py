@@ -136,16 +136,15 @@ class IPFilterMiddleware(BaseHTTPMiddleware):
 
     def _get_client_ip(self, request: Request) -> str:
         """Extract real client IP considering proxies."""
-        # Check X-Forwarded-For header (common for proxies)
-        forwarded_for = request.headers.get("X-Forwarded-For")
-        if forwarded_for:
-            # Get the first IP in the chain (closest to client)
-            return forwarded_for.split(",")[0].strip()
-
-        # Check X-Real-IP header
-        real_ip = request.headers.get("X-Real-IP")
-        if real_ip:
-            return real_ip
+        # Only trust proxy headers if TRUSTED_PROXIES is configured
+        import os
+        if os.environ.get("TRUSTED_PROXIES"):
+            forwarded_for = request.headers.get("X-Forwarded-For")
+            if forwarded_for:
+                return forwarded_for.split(",")[0].strip()
+            real_ip = request.headers.get("X-Real-IP")
+            if real_ip:
+                return real_ip
 
         # Fall back to direct connection
         return request.client.host if request.client else "unknown"
@@ -172,17 +171,11 @@ class RequestSanitizationMiddleware(BaseHTTPMiddleware):
     Sanitizes incoming requests to prevent injection attacks.
     """
 
-    # Patterns for common attacks
+    # Patterns for common attacks — defense-in-depth only, not primary security
     SQL_INJECTION_PATTERNS = [
-        r"(\%27)|(\')|(\-\-)|(\%23)|(#)",  # Basic SQL meta-characters
-        r"((\%3D)|(=))[^\n]*((\%27)|(\')|(\-\-)|(\%3B)|(;))",  # SQL injection attempts
-        r"\w*((\%27)|(\'))((\%6F)|o|(\%4F))((\%72)|r|(\%52))",  # Union select
-        r"((\%27)|(\'))union",  # Union-based injection
-        r"exec(\s|\+)+(s|x)p\w+",  # Stored procedures
-        r"UNION\s+SELECT",  # Union select
-        r"INSERT\s+INTO",  # Insert injection
-        r"DELETE\s+FROM",  # Delete injection
+        r"UNION\s+SELECT",  # Union-based injection
         r"DROP\s+TABLE",  # Drop table
+        r";\s*DROP\s+",  # Semicolon drop
     ]
 
     # Patterns for XSS attempts
@@ -290,6 +283,9 @@ class RequestSanitizationMiddleware(BaseHTTPMiddleware):
 class APIKeyRotationTracker:
     """
     Tracks API key usage and rotation for enterprise security.
+    
+    TODO: In-memory storage only — data lost on restart. For multi-instance
+    deployments, migrate to Redis or database-backed storage.
     """
 
     def __init__(self):

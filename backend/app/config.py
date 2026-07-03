@@ -146,9 +146,7 @@ class Settings(BaseSettings):
     SUPABASE_JWT_SECRET: str = ""
 
     # Database
-    DATABASE_URL: str = (
-        "postgresql+asyncpg://personal_os:changeme@postgres:5432/personal_os"
-    )
+    DATABASE_URL: str = ""
     DATABASE_MIGRATION_URL: str = ""
     REQUIRE_SUPABASE: bool = False
     DB_POOL_SIZE: int = 10
