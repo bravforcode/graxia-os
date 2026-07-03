@@ -7,6 +7,8 @@ auto-recovers after cooldown.  Optionally activates a KillSwitch on trip.
 
 import json
 import logging
+import os
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -179,22 +181,71 @@ class CircuitBreaker:
         return status
 
     def _save(self) -> None:
+        """Save state atomically using temp file + rename."""
         if not self._state_file:
             return
         data = {}
         for cls, s in self._classes.items():
             data[cls] = {"cl": s.consecutive_losses, "o": s.open, "r": s.reason, "tc": s.trip_count}
         self._state_file.parent.mkdir(parents=True, exist_ok=True)
-        self._state_file.write_text(json.dumps(data))
+
+        # Write to temp file first
+        fd, tmp_path = tempfile.mkstemp(
+            dir=str(self._state_file.parent),
+            prefix=".circuit_breaker_",
+            suffix=".tmp",
+        )
+        try:
+            with os.fdopen(fd, "w") as f:
+                json.dump(data, f)
+                f.flush()
+                os.fsync(f.fileno())
+            # Atomic rename
+            os.replace(tmp_path, str(self._state_file))
+        except Exception:
+            # Clean up temp file on failure
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            raise
 
     def _load(self) -> None:
+        import time
+
         try:
-            data = json.loads(self._state_file.read_text())
+            text = self._state_file.read_text(encoding="utf-8")
+            if not text.strip():
+                logger.critical(
+                    "circuit_breaker: state file is empty — fail-closed default (all tripped). "
+                    "file=%s",
+                    self._state_file,
+                )
+                for cls in ASSET_CLASSES:
+                    s = self._classes[cls]
+                    s.open = True
+                    s.reason = "State file empty — fail-closed default"
+                    s.opened_at = time.time()
+                return
+            data = json.loads(text)
             for cls, d in data.items():
                 s = self._classes.setdefault(cls, _ClassState())
                 s.consecutive_losses = d.get("cl", 0)
                 s.open = d.get("o", False)
                 s.reason = d.get("r", "")
                 s.trip_count = d.get("tc", 0)
-        except (json.JSONDecodeError, ValueError):
+        except (json.JSONDecodeError, ValueError) as exc:
+            # Fail-closed: corrupted circuit breaker state → trip all classes
+            logger.critical(
+                "circuit_breaker: state file corrupted — fail-closed default (all tripped). "
+                "file=%s error=%s",
+                self._state_file,
+                exc,
+            )
+            for cls in ASSET_CLASSES:
+                s = self._classes[cls]
+                s.open = True
+                s.reason = "State file corrupted — fail-closed default"
+                s.opened_at = time.time()
+        except FileNotFoundError:
             pass

@@ -364,5 +364,29 @@ class KillSwitch:
         }
 
     def _save(self) -> None:
-        self._state_file.parent.mkdir(parents=True, exist_ok=True)
-        self._state_file.write_text(json.dumps(self._state, indent=2))
+        """Save state atomically using temp file + rename."""
+        import tempfile
+
+        path = self._state_file
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Write to temp file first
+        fd, tmp_path = tempfile.mkstemp(
+            dir=str(path.parent),
+            prefix=".kill_switch_",
+            suffix=".tmp",
+        )
+        try:
+            with os.fdopen(fd, "w") as f:
+                json.dump(self._state, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            # Atomic rename
+            os.replace(tmp_path, str(path))
+        except Exception:
+            # Clean up temp file on failure
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            raise
