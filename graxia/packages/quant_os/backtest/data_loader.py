@@ -59,8 +59,8 @@ def load_csv_data(
             except (ValueError, KeyError):
                 continue
 
-            # Validate OHLCV consistency (high >= low, all positive)
-            if h < lo or o <= 0 or c <= 0:
+            # Validate OHLCV consistency (all positive, high >= low)
+            if o <= 0 or h <= 0 or lo <= 0 or c <= 0 or h < lo:
                 continue
 
             timestamps.append(ts)

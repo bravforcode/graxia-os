@@ -13,7 +13,7 @@ def create_scheduled_task(name: str, script: str, schedule: str, description: st
     cmd = [
         "schtasks", "/create",
         "/tn", name,
-        "/tr", f'"{py}" "{script}"',
+        "/tr", f"{py} {script}",
         "/sc", schedule,
         "/f", "/rl", "HIGHEST",
     ]
