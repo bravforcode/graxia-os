@@ -5,11 +5,11 @@ and kill switch. Must approve every trade before execution.
 
 State persists to disk via JSON so kill switch and loss tracking survive restarts.
 """
+
+import json
 from dataclasses import dataclass, field
-from typing import Optional
 from datetime import datetime, timedelta
 from enum import Enum
-import json
 from pathlib import Path
 
 
@@ -28,6 +28,7 @@ class KillSwitchReason(Enum):
 @dataclass
 class RiskResult:
     """Result of risk approval check."""
+
     approved: bool
     risk_usd: float = 0.0
     risk_pct: float = 0.0
@@ -43,6 +44,7 @@ class RiskResult:
 @dataclass
 class RiskState:
     """Persistent risk tracking state."""
+
     daily_start: datetime = field(default_factory=datetime.now)
     weekly_start: datetime = field(default_factory=datetime.now)
     daily_realized_pnl: float = 0.0
@@ -51,8 +53,8 @@ class RiskState:
     trade_count_today: int = 0
     kill_switch_reason: str = ""
     kill_switch_triggered: bool = False
-    last_trade_time: Optional[datetime] = None
-    cooldown_until: Optional[datetime] = None
+    last_trade_time: datetime | None = None
+    cooldown_until: datetime | None = None
 
 
 class RiskOverlay:
@@ -91,8 +93,7 @@ class RiskOverlay:
         self.state = self._load_state()
         self._reset_if_new_period()
 
-    def approve(self, risk_amount: float, stop_distance: float,
-                current_balance: float) -> RiskResult:
+    def approve(self, risk_amount: float, stop_distance: float, current_balance: float) -> RiskResult:
         """Check if a trade is allowed under current risk policy.
 
         Args:
@@ -173,8 +174,7 @@ class RiskOverlay:
         if pnl < 0:
             self.state.consecutive_losses += 1
             if self.state.consecutive_losses >= self.max_consecutive_losses:
-                self.state.cooldown_until = datetime.now() + timedelta(
-                    minutes=self.cooldown_minutes)
+                self.state.cooldown_until = datetime.now() + timedelta(minutes=self.cooldown_minutes)
         else:
             self.state.consecutive_losses = 0  # reset on win
 
@@ -263,8 +263,13 @@ class RiskOverlay:
                 trade_count_today=data.get("trade_count_today", 0),
                 kill_switch_reason=data.get("kill_switch_reason", ""),
                 kill_switch_triggered=data.get("kill_switch_triggered", False),
-                last_trade_time=datetime.fromisoformat(data["last_trade_time"]) if data.get("last_trade_time") else None,
+                last_trade_time=datetime.fromisoformat(data["last_trade_time"])
+                if data.get("last_trade_time")
+                else None,
                 cooldown_until=datetime.fromisoformat(data["cooldown_until"]) if data.get("cooldown_until") else None,
             )
         except (json.JSONDecodeError, KeyError, ValueError):
-            return RiskState()
+            state = RiskState()
+            state.kill_switch_triggered = True
+            state.kill_switch_reason = "STATE_FILE_CORRUPTED"
+            return state

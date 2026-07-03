@@ -16,7 +16,7 @@ import json
 import os
 import signal
 import sys
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 
@@ -27,7 +27,7 @@ from graxia.packages.quant_os.core.enums import OrderSide, OrderType, TradingMod
 from graxia.packages.quant_os.execution.broker_adapter import PaperBroker
 from graxia.packages.quant_os.execution.order import Order
 from graxia.packages.quant_os.monitoring.telegram import TelegramNotifier
-from graxia.packages.quant_os.regime import RegimeDetector
+from graxia.packages.quant_os.regime import RegimeDetector, compute_atr
 from graxia.packages.quant_os.regime.entry_executor import EntryExecutor
 from graxia.packages.quant_os.regime.liquidity_map import LiquidityMap, get_session
 from graxia.packages.quant_os.regime.monitor import FillReport as MonFillReport
@@ -86,6 +86,8 @@ class PaperTrader:
 
         # Per-symbol cooldown (prevents same-signal spam)
         self._entry_cooldowns: dict[str, datetime] = {}
+        # Per-symbol last bar timestamp (skip MT5 refresh if same bar)
+        self._last_bar_times: dict[str, int] = {}
 
         # P2-15: Alert engine
         from monitoring.alerting import AlertEngine, TelegramConfig
@@ -192,7 +194,7 @@ class PaperTrader:
         print(f"Account Balance: ${account.balance:,.2f}")
 
         self.is_running = True
-        self.start_time = datetime.utcnow()
+        self.start_time = datetime.now(UTC)
         end_time = self.start_time + timedelta(minutes=duration_minutes)
         await self._heartbeat.start()
         await self._dms.start()
@@ -205,7 +207,7 @@ class PaperTrader:
         print("Press Ctrl+C to stop\n")
 
         try:
-            while self.is_running and not _shutdown_requested and datetime.utcnow() < end_time:
+            while self.is_running and not _shutdown_requested and datetime.now(UTC) < end_time:
                 await self._trading_cycle()
                 await asyncio.sleep(10)
         except KeyboardInterrupt:
@@ -233,14 +235,20 @@ class PaperTrader:
     async def _trading_cycle(self):
         """Single trading cycle — refresh data, manage positions, check signals."""
         self._cycle_count += 1
-        self._heartbeat_state["last_heartbeat"] = datetime.utcnow().isoformat()
+        self._heartbeat_state["last_heartbeat"] = datetime.now(UTC).isoformat()
         try:
             import MetaTrader5 as mt5
 
             # Refresh market data (keep as numpy array)
+            # Skip if last bar timestamp unchanged — no new bar, no need to fetch
             for sym in self.config.symbols:
                 rates = mt5.copy_rates_from_pos(sym, mt5.TIMEFRAME_M15, 0, 300)
                 if rates is not None and len(rates) > 0:
+                    new_ts = int(rates[-1]["time"])
+                    old_ts = self._last_bar_times.get(sym)
+                    if old_ts == new_ts:
+                        continue  # same bar, skip update
+                    self._last_bar_times[sym] = new_ts
                     self._market_cache[sym] = rates
 
             # Sync PaperBroker prices with MT5 for realistic fills and P&L
@@ -276,7 +284,7 @@ class PaperTrader:
 
             # Signal cooldown
             if self.last_signal_time:
-                if datetime.utcnow() - self.last_signal_time < self.signal_cooldown:
+                if datetime.now(UTC) - self.last_signal_time < self.signal_cooldown:
                     return
 
             for symbol in self.config.symbols:
@@ -330,12 +338,12 @@ class PaperTrader:
                     pnl_pct = (entry - current_price) / entry * 100
 
                 # Check Take Profit
-                if tp and ((side == "LONG" and current_price >= tp) or (side == "SELL" and current_price <= tp)):
+                if tp and ((side == "LONG" and current_price >= tp) or (side == "SHORT" and current_price <= tp)):
                     await self._close_position(pos, "TP", pnl_pct)
                     continue
 
                 # Check Stop Loss
-                if sl and ((side == "LONG" and current_price <= sl) or (side == "SELL" and current_price >= sl)):
+                if sl and ((side == "LONG" and current_price <= sl) or (side == "SHORT" and current_price >= sl)):
                     await self._close_position(pos, "SL", pnl_pct)
                     continue
 
@@ -349,30 +357,35 @@ class PaperTrader:
                     await self._close_position(pos, "HARD_TP", pnl_pct)
                     continue
 
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"CRITICAL: Position management failed: {e}")
+            if self.telegram:
+                await self.telegram.notify_error("CRITICAL", f"Position management failed: {e}")
 
     async def _close_position(self, pos, reason: str, pnl_pct: float):
         """Close a position and report to risk/monitor. Idempotent per symbol."""
         if pos.symbol in self._closing_positions:
             return  # already being closed
         self._closing_positions.add(pos.symbol)
-
-        side = OrderSide.SELL if pos.position_type.value == "LONG" else OrderSide.BUY
-        order = Order(
-            symbol=pos.symbol,
-            side=side,
-            order_type=OrderType.MARKET,
-            quantity=pos.quantity,
-            strategy_id="close_" + reason.lower(),
-            trading_mode="PAPER",
-        )
-        result = await self.broker.place_order(order)
-        if result.success:
-            pnl_usd = float(pos.unrealized_pnl)
-            print(f"[{reason}] {pos.symbol} P&L={pnl_usd:+,.2f} USD")
-            self.risk_overlay.report_trade_result(pnl_usd)
-            self._open_trades.pop(pos.symbol, None)
+        try:
+            side = OrderSide.SELL if pos.position_type.value == "LONG" else OrderSide.BUY
+            order = Order(
+                symbol=pos.symbol,
+                side=side,
+                order_type=OrderType.MARKET,
+                quantity=pos.quantity,
+                strategy_id="close_" + reason.lower(),
+                trading_mode="PAPER",
+            )
+            result = await self.broker.place_order(order)
+            if result.success:
+                pnl_usd = float(pos.unrealized_pnl)
+                print(f"[{reason}] {pos.symbol} P&L={pnl_usd:+,.2f} USD")
+                self.risk_overlay.report_trade_result(pnl_usd)
+                self._open_trades.pop(pos.symbol, None)
+            else:
+                print(f"WARNING: Close failed for {pos.symbol}, will retry next cycle")
+        finally:
             self._closing_positions.discard(pos.symbol)
 
     async def _check_symbol(self, symbol: str):
@@ -380,32 +393,38 @@ class PaperTrader:
         try:
             # Per-symbol cooldown: 300s between entries on same symbol
             last_entry = self._entry_cooldowns.get(symbol)
-            if last_entry and (datetime.utcnow() - last_entry).total_seconds() < 300:
+            if last_entry and (datetime.now(UTC) - last_entry).total_seconds() < 300:
                 return
 
             rates = self._market_cache.get(symbol)
             if rates is None or len(rates) < 50:
                 return
 
-            # Convert MT5 rates (numpy structured array) to dict list
+            # Convert MT5 rates (numpy structured array) to vectorized arrays
+            # Only build dict list for components that need full bar data
             has_vol = "tick_volume" in rates.dtype.names
-            bars = []
-            for r in rates:
-                bars.append(
-                    {
-                        "time": datetime.fromtimestamp(int(r["time"])),
-                        "open": float(r["open"]),
-                        "high": float(r["high"]),
-                        "low": float(r["low"]),
-                        "close": float(r["close"]),
-                        "volume": int(r["tick_volume"]) if has_vol else 0,
-                    }
-                )
+            closes_arr = rates["close"].astype(float)
+            highs_arr = rates["high"].astype(float)
+            lows_arr = rates["low"].astype(float)
+            times_arr = rates["time"].astype(int)
 
-            closes = [b["close"] for b in bars]
-            highs = [b["high"] for b in bars]
-            lows = [b["low"] for b in bars]
+            closes = closes_arr.tolist()
+            highs = highs_arr.tolist()
+            lows = lows_arr.tolist()
             current_price = closes[-1]
+
+            # Build dict list only when needed by downstream components
+            bars = [
+                {
+                    "time": datetime.fromtimestamp(int(t)),
+                    "open": float(rates["open"][i]),
+                    "high": float(highs_arr[i]),
+                    "low": float(lows_arr[i]),
+                    "close": float(closes_arr[i]),
+                    "volume": int(rates["tick_volume"][i]) if has_vol else 0,
+                }
+                for i, t in enumerate(times_arr)
+            ]
 
             # Skip if already have position
             existing = [p for p in await self.broker.get_positions() if p.symbol == symbol]
@@ -427,8 +446,9 @@ class PaperTrader:
             if not levels:
                 return
 
-            # Phase 3: Sweep Classifier
-            classifier = SweepClassifier(bars, levels, regime.regime, regime.spread_state)
+            # Phase 3: Sweep Classifier (shared ATR computed once)
+            shared_atr = compute_atr(highs, lows, closes, period=14)
+            classifier = SweepClassifier(bars, levels, regime.regime, regime.spread_state, atr=shared_atr)
             signals = classifier.classify()
             if self.verbose:
                 print(f"  {symbol}: Phase3={len(signals)} signals")
@@ -444,7 +464,7 @@ class PaperTrader:
             avg_spread = spread * 1.5 if spread > 0 else 0.0002  # ponytail: fallback if no data
 
             # Session
-            session = get_session(datetime.utcnow())
+            session = get_session(datetime.now(UTC))
             account = await self.broker.get_account()
 
             # Phase 4: Entry Executor
@@ -458,6 +478,7 @@ class PaperTrader:
                     spread=spread,
                     avg_spread=avg_spread,
                     session=session,
+                    atr=shared_atr,
                 )
                 entry = executor.evaluate(signal, symbol, current_price)
                 if self.verbose:
@@ -479,7 +500,7 @@ class PaperTrader:
                     continue
 
                 # Phase 6: Monitor — report order
-                order_ts = datetime.utcnow()
+                order_ts = datetime.now(UTC)
                 order_report = MonOrderReport(
                     symbol=symbol,
                     side=entry.side,
@@ -507,7 +528,7 @@ class PaperTrader:
                 result = await self.broker.place_order(order)
 
                 if result.success:
-                    fill_ts = datetime.utcnow()
+                    fill_ts = datetime.now(UTC)
                     latency_ms = (fill_ts - order_ts).total_seconds() * 1000
                     fill_price = float(result.avg_fill_price) if result.avg_fill_price else entry.entry_price
 
@@ -532,8 +553,8 @@ class PaperTrader:
 
                     self.total_signals += 1
                     self.total_trades += 1
-                    self.last_signal_time = datetime.utcnow()
-                    self._entry_cooldowns[symbol] = datetime.utcnow()
+                    self.last_signal_time = datetime.now(UTC)
+                    self._entry_cooldowns[symbol] = datetime.now(UTC)
 
                     # P2-14: Record trade in metrics
                     from monitoring.metrics_exporter import record_trade
@@ -590,7 +611,7 @@ class PaperTrader:
         print("=" * 60)
 
         account = await self.broker.get_account()
-        duration = datetime.utcnow() - self.start_time if self.start_time else timedelta(0)
+        duration = datetime.now(UTC) - self.start_time if self.start_time else timedelta(0)
         pnl = float(account.equity) - self.config.paper_initial_capital
 
         print(f"Duration: {duration}")
