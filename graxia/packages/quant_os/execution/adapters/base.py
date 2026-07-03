@@ -107,6 +107,20 @@ class BrokerAdapter(ABC):
         ...
 
     @abstractmethod
+    def close_position(self, broker_position_id: str, volume: float, symbol: str = "") -> OrderResult:
+        """Close an open position by its broker-assigned ID.
+
+        Args:
+            broker_position_id: The broker's position ticket/ID.
+            volume: Volume to close (partial or full).
+            symbol: The instrument symbol (required by some brokers).
+
+        Returns:
+            ``OrderResult`` with the outcome of the close attempt.
+        """
+        ...
+
+    @abstractmethod
     def get_account_info(self) -> AccountInfo:
         """Return a point-in-time snapshot of account balances."""
         ...
