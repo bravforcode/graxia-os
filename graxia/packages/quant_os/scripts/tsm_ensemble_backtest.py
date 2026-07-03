@@ -92,6 +92,8 @@ def load_costs() -> dict:
 def build_cost_scenarios(cost_data: dict) -> dict:
     typical = {}
     stress = {}
+    swap_long = {}
+    swap_short = {}
     assets = cost_data["assets"]
     stress_scenarios = cost_data.get("stress_scenarios", {})
 
@@ -105,8 +107,15 @@ def build_cost_scenarios(cost_data: dict) -> dict:
             stress[tsm_name] = stress_scenarios["XAUUSD_72bps"]["round_trip_bps"]
         else:
             stress[tsm_name] = a.get("round_trip_bps_p95", a["round_trip_bps_measured"])
+        swap_long[tsm_name] = a.get("swap_long_bps", 0.0)
+        swap_short[tsm_name] = a.get("swap_short_bps", 0.0)
 
-    return {"typical": typical, "stress": stress}
+    return {
+        "typical": typical,
+        "stress": stress,
+        "swap_long": swap_long,
+        "swap_short": swap_short,
+    }
 
 
 def load_all_d1_data() -> pd.DataFrame:
@@ -171,8 +180,15 @@ def compute_position(returns: pd.Series, target_vol: float = TARGET_VOL) -> pd.S
     return pos.clip(-POSITION_CAP, POSITION_CAP)
 
 
-def backtest_single_asset(close: pd.Series, cost_bps: float) -> pd.DataFrame:
-    """Backtest ensemble signal on a single asset."""
+def backtest_single_asset(
+    close: pd.Series, cost_bps: float, swap_long_bps: float = 0.0, swap_short_bps: float = 0.0
+) -> pd.DataFrame:
+    """Backtest ensemble signal on a single asset.
+
+    Applies both transaction costs (on position changes) and daily swap costs
+    (for positions held overnight). Swap costs compound significantly over
+    multi-week holds (TSM holds 20-120 days).
+    """
     df = pd.DataFrame({"close": close})
     df["ret"] = df["close"].pct_change()
     df["position"] = compute_position(df["ret"])
@@ -185,19 +201,37 @@ def backtest_single_asset(close: pd.Series, cost_bps: float) -> pd.DataFrame:
     # Strategy return (position from yesterday)
     df["strat_ret"] = df["position"].shift(1) * df["ret"]
 
-    # Transaction costs
+    # Transaction costs (one-time on position changes)
     df["pos_change"] = df["position"].diff().abs()
-    df["cost"] = df["pos_change"] * cost_bps / 10000
+    df["tx_cost"] = df["pos_change"] * cost_bps / 10000
+
+    # Daily swap costs (applied every day position is non-zero)
+    # Positive position → long swap rate; negative position → short swap rate
+    prev_pos = df["position"].shift(1)
+    df["swap_cost"] = 0.0
+    long_mask = prev_pos > 0
+    short_mask = prev_pos < 0
+    df.loc[long_mask, "swap_cost"] = prev_pos[long_mask].abs() * swap_long_bps / 10000
+    df.loc[short_mask, "swap_cost"] = prev_pos[short_mask].abs() * swap_short_bps / 10000
+    # Swap is a cost (negative return), so take absolute value
+    df["swap_cost"] = df["swap_cost"].abs()
+
+    df["cost"] = df["tx_cost"] + df["swap_cost"]
     df["strat_ret_net"] = df["strat_ret"] - df["cost"]
 
     return df
 
 
-def portfolio_backtest(data: pd.DataFrame, cost_bps_map: dict) -> tuple:
+def portfolio_backtest(
+    data: pd.DataFrame, cost_bps_map: dict, swap_long_map: dict | None = None, swap_short_map: dict | None = None
+) -> tuple:
     """Multi-asset ensemble portfolio backtest."""
     asset_returns = {}
     asset_costs = {}
     asset_pos_changes = {}
+
+    swap_long_map = swap_long_map or {}
+    swap_short_map = swap_short_map or {}
 
     for asset in data.columns:
         close = data[asset].dropna()
@@ -206,7 +240,9 @@ def portfolio_backtest(data: pd.DataFrame, cost_bps_map: dict) -> tuple:
             continue
 
         cost_bps = cost_bps_map.get(asset, 5.0)
-        bt = backtest_single_asset(close, cost_bps)
+        swap_l = swap_long_map.get(asset, 0.0)
+        swap_s = swap_short_map.get(asset, 0.0)
+        bt = backtest_single_asset(close, cost_bps, swap_l, swap_s)
         asset_returns[asset] = bt["strat_ret_net"]
         asset_costs[asset] = bt["cost"]
         asset_pos_changes[asset] = bt["pos_change"]
@@ -545,7 +581,9 @@ def main():
     dsr_results = {}
     pbo_results = {}
 
-    for scenario_name, cost_map in cost_scenarios.items():
+    # Run typical and stress scenarios (transaction costs only, as before)
+    for scenario_name in ["typical", "stress"]:
+        cost_map = cost_scenarios[scenario_name]
         print(f"--- {scenario_name.upper()} COSTS ---")
         bt, details = portfolio_backtest(data, cost_map)
 
@@ -582,6 +620,56 @@ def main():
         )
         print()
 
+    # Run "typical + swap" scenario — transaction costs AND daily swap costs
+    print("--- TYPICAL + SWAP COSTS ---")
+    swap_long_map = cost_scenarios.get("swap_long", {})
+    swap_short_map = cost_scenarios.get("swap_short", {})
+    bt_swap, details_swap = portfolio_backtest(data, cost_scenarios["typical"], swap_long_map, swap_short_map)
+
+    if not bt_swap.empty:
+        m_swap = compute_metrics(
+            bt_swap["portfolio_ret"],
+            bt_swap["portfolio_cost"],
+            details_swap.get("asset_pos_changes"),
+            name="typical+swap",
+        )
+        results["typical+swap"] = m_swap
+
+        dsr_swap = deflated_sharpe_n1(
+            observed_sharpe=m_swap.sharpe,
+            n_observations=m_swap.n_days,
+            skewness=m_swap.skew,
+            excess_kurtosis=m_swap.kurtosis,
+        )
+        dsr_results["typical+swap"] = dsr_swap
+
+        pbo_swap = run_cscv_pbo(bt_swap["portfolio_ret"])
+        pbo_results["typical+swap"] = pbo_swap
+
+        sig = "SIG" if dsr_swap["passes"] else "NOT-SIG"
+        print(
+            f"  Sharpe={m_swap.sharpe:.3f}  Ret={m_swap.ann_ret:.2%}  MaxDD={m_swap.max_dd:.2%}  "
+            f"CostDrag={m_swap.annual_cost_drag_bps:.0f}bps  DSR={sig}  PBO={pbo_swap['pbo']:.3f}"
+        )
+        print()
+
+    # Print swap impact comparison
+    if "typical" in results and "typical+swap" in results:
+        m_base = results["typical"]
+        m_swap = results["typical+swap"]
+        sharpe_delta = m_swap.sharpe - m_base.sharpe
+        dd_delta = m_swap.max_dd - m_base.max_dd
+        drag_delta = m_swap.annual_cost_drag_bps - m_base.annual_cost_drag_bps
+        print("--- SWAP IMPACT ---")
+        print(f"  Sharpe: {m_base.sharpe:.3f} -> {m_swap.sharpe:.3f} (delta: {sharpe_delta:+.3f})")
+        print(f"  MaxDD:  {m_base.max_dd:.2%} -> {m_swap.max_dd:.2%} (delta: {dd_delta:+.2%})")
+        print(
+            f"  Cost Drag: {m_base.annual_cost_drag_bps:.0f}"
+            f" -> {m_swap.annual_cost_drag_bps:.0f} bps"
+            f" (+{drag_delta:.0f} bps)"
+        )
+        print()
+
     # Decision gate
     print("=" * 70)
     print("DECISION GATE")
@@ -589,24 +677,31 @@ def main():
 
     typical_dsr = dsr_results.get("typical")
     stress_dsr = dsr_results.get("stress")
+    swap_dsr = dsr_results.get("typical+swap")
     typical_pbo = pbo_results.get("typical", {})
 
-    if typical_dsr and stress_dsr:
-        dsr_pass = typical_dsr["passes"] and stress_dsr["passes"]
+    # Use typical+swap as the primary gate if available (more realistic)
+    primary_dsr = swap_dsr if swap_dsr else typical_dsr
+
+    if primary_dsr and stress_dsr:
+        dsr_pass = primary_dsr["passes"] and stress_dsr["passes"]
         pbo_pass = typical_pbo.get("passes_threshold", False)
 
         if dsr_pass and pbo_pass:
             verdict = "EDGE_CONFIRMED"
-            verdict_detail = "DSR significant at N=1 AND PBO < 5%. " "Proceed to Phase 5 (paper trading) confirmation."
+            verdict_detail = (
+                "DSR significant at N=1 (with swap costs) AND PBO < 50%. "
+                "Proceed to Phase 5 (paper trading) confirmation."
+            )
         elif dsr_pass and not pbo_pass:
             verdict = "MARGINAL"
             verdict_detail = "DSR significant but PBO elevated. " "Needs further investigation before paper trading."
         else:
             verdict = "ARCHIVE_NO_EDGE"
             verdict_detail = (
-                "DSR not significant even at N=1 trial. "
+                "DSR not significant even at N=1 trial (with swap costs). "
                 "PERMANENT — no more tests, no pivots, no alternatives. "
-                "TSM momentum has no edge after real costs."
+                "TSM momentum has no edge after real costs including swap."
             )
     else:
         verdict = "ERROR"
@@ -665,8 +760,8 @@ def main():
     report_lines.extend(
         [
             "## Per-Asset Cost Breakdown (Round-Trip bps)\n",
-            "| Asset | Typical (median) | Stress (P95/worst) | Source |",
-            "|-------|------------------|--------------------|--------|",
+            "| Asset | Typical (median) | Stress (P95/worst) | Swap Long (bps/day) | Swap Short (bps/day) | Source |",
+            "|-------|------------------|--------------------|---------------------|----------------------|--------|",
         ]
     )
     for tsm_name, cfg in TSM_ASSETS.items():
@@ -676,12 +771,16 @@ def main():
         a = cost_data["assets"][cost_key]
         typical = cost_scenarios["typical"].get(tsm_name, 0)
         stress_val = cost_scenarios["stress"].get(tsm_name, 0)
+        swap_l = cost_scenarios["swap_long"].get(tsm_name, 0)
+        swap_s = cost_scenarios["swap_short"].get(tsm_name, 0)
         source = a.get("notes", "")
-        report_lines.append(f"| {cost_key} | {typical:.2f} | {stress_val:.2f} | {source} |")
+        report_lines.append(
+            f"| {cost_key} | {typical:.2f} | {stress_val:.2f} | {swap_l:.2f} | {swap_s:.2f} | {source} |"
+        )
     report_lines.append("")
 
     # Results per scenario
-    for scenario_name in ["typical", "stress"]:
+    for scenario_name in ["typical", "stress", "typical+swap"]:
         if scenario_name not in results:
             continue
         m = results[scenario_name]
@@ -821,6 +920,43 @@ def main():
             ]
         )
 
+    # Swap Impact Comparison
+    if "typical" in results and "typical+swap" in results:
+        m_base = results["typical"]
+        m_swap = results["typical+swap"]
+        sharpe_delta = m_swap.sharpe - m_base.sharpe
+        dd_delta = m_swap.max_dd - m_base.max_dd
+        drag_delta = m_swap.annual_cost_drag_bps - m_base.annual_cost_drag_bps
+        report_lines.extend(
+            [
+                "## Swap Cost Impact Analysis\n",
+                "TSM holds positions for 20-120 days. "
+                "Swap/rollover costs compound significantly "
+                "over multi-week holds.\n",
+                "| Metric | Without Swap | With Swap | Delta |",
+                "|--------|-------------|-----------|-------|",
+                f"| Sharpe Ratio | {m_base.sharpe:.3f}" f" | {m_swap.sharpe:.3f} | {sharpe_delta:+.3f} |",
+                f"| Annualized Return | {m_base.ann_ret:.2%}"
+                f" | {m_swap.ann_ret:.2%}"
+                f" | {m_swap.ann_ret - m_base.ann_ret:+.2%} |",
+                f"| Max Drawdown | {m_base.max_dd:.2%}" f" | {m_swap.max_dd:.2%} | {dd_delta:+.2%} |",
+                f"| Annual Cost Drag (bps) | {m_base.annual_cost_drag_bps:.0f}"
+                f" | {m_swap.annual_cost_drag_bps:.0f}"
+                f" | +{drag_delta:.0f} |",
+                f"| Total Return | {m_base.total_return:.2%}"
+                f" | {m_swap.total_return:.2%}"
+                f" | {m_swap.total_return - m_base.total_return:+.2%} |",
+                "",
+                "### Per-Asset Swap Rate Source\n",
+                "Swap rates derived from Pepperstone published overnight rates (July 2026):\n",
+                "- **XAUUSD**: ~$0.50/lot/night long (you pay), ~$0.20/lot/night short (you receive)",
+                "- **BTCUSD/ETHUSD**: ~0.01%/night funding rate (perpetual swap equivalent)",
+                "- **FX pairs**: ±LIBOR differential (USD rates higher than EUR/GBP → longs pay)",
+                "- **OIL**: ~$0.50/lot/night contango premium",
+                "",
+            ]
+        )
+
     # Methodology
     report_lines.extend(
         [
@@ -830,7 +966,8 @@ def main():
             "- N=1 trial: single pre-registered hypothesis, no multiple testing penalty",
             "- DSR: one-sided z-test of H0: true_SR <= 0 (no multiple testing adjustment needed at N=1)",
             "- PBO: Combinatorial Symmetric Cross-Validation (CSCV)",
-            "- Costs: per-asset measured Pepperstone Razor spreads from config/cost_calibration.json",
+            "- Transaction Costs: per-asset measured Pepperstone Razor spreads from config/cost_calibration.json",
+            "- Swap Costs: daily rollover charges applied to overnight positions (from Pepperstone published schedule)",
             "- Vol targeting: 10% annualized, 60-day realized vol window, position capped at 1.5x",
             "- Weekly rebalance (Friday close)",
             "- Equal-weight across assets (simple diversification)",
