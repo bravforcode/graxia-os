@@ -64,7 +64,11 @@ class OrderListResponse(BaseModel):
 
 
 @orders_router.post("/", response_model=OrderResponse)
-async def create_order(request: OrderCreateRequest, db: AsyncSession = Depends(get_db)):
+async def create_order(
+    request: OrderCreateRequest,
+    db: AsyncSession = Depends(get_db),
+    credentials=Depends(security),
+):
     """Create a new order"""
     # This would integrate with OrderManager
     # For now, return placeholder
@@ -79,6 +83,7 @@ async def list_orders(
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
+    credentials=Depends(security),
 ):
     """List orders with optional filters"""
     query = db.query(OrderModel)
@@ -97,7 +102,11 @@ async def list_orders(
 
 
 @orders_router.get("/{order_id}", response_model=OrderResponse)
-async def get_order(order_id: str, db: Session = Depends(get_db)):
+async def get_order(
+    order_id: str,
+    db: Session = Depends(get_db),
+    credentials=Depends(security),
+):
     """Get order by ID"""
     order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
     if not order:
@@ -106,7 +115,11 @@ async def get_order(order_id: str, db: Session = Depends(get_db)):
 
 
 @orders_router.post("/{order_id}/cancel")
-async def cancel_order(order_id: str, db: Session = Depends(get_db)):
+async def cancel_order(
+    order_id: str,
+    db: Session = Depends(get_db),
+    credentials=Depends(security),
+):
     """Cancel an order"""
     order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
     if not order:

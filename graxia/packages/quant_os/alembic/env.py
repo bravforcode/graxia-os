@@ -1,4 +1,5 @@
 """Alembic environment for Quant OS."""
+
 import importlib.util
 import os
 import sys
@@ -48,12 +49,10 @@ config = context.config
 
 # Resolve database URL from the environment. Alembic needs a synchronous driver,
 # so normalize the common asyncpg URL used by the API to psycopg2.
-_raw_url = os.environ.get(
-    "DATABASE_URL", "postgresql+asyncpg://graxia:graxia@localhost:5432/quant_os"
-)
-config.set_main_option(
-    "sqlalchemy.url", _raw_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
-)
+_raw_url = os.environ.get("DATABASE_URL", "")
+if not _raw_url:
+    raise RuntimeError("DATABASE_URL environment variable is required")
+config.set_main_option("sqlalchemy.url", _raw_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://"))
 
 # Interpret the config file for Python logging.
 if config.config_file_name is not None:

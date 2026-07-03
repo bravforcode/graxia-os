@@ -13,26 +13,25 @@ Risk:
   - Session filter: 08:00-17:00 UTC
 """
 
-import os
+import asyncio
 import json
 import logging
-import asyncio
-from datetime import datetime, UTC
-from typing import Optional
+import os
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 
 import httpx
 import yfinance as yf
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import (
-    create_engine, Column, Integer, String, Float, DateTime, Text
-)
+from sqlalchemy import Column, DateTime, Float, Integer, String, Text, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 # --- Config ---
 SIGNAL_SERVICE_URL = os.getenv("SIGNAL_SERVICE_URL", "http://graxia-signal:8752")
-DB_URL = os.getenv("DATABASE_URL", "postgresql://graxia:graxia_secret@graxia-db:5432/graxia_trading")
+DB_URL = os.environ.get("DATABASE_URL", "")
+if not DB_URL:
+    raise RuntimeError("DATABASE_URL environment variable is required")
 POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", "60"))
 RISK_PER_TRADE = float(os.getenv("RISK_PER_TRADE", "0.001"))  # 0.10% — matches backtest RiskPolicy
 INITIAL_BALANCE = float(os.getenv("INITIAL_BALANCE", "100000"))
@@ -173,7 +172,7 @@ def _get_portfolio(db) -> PaperPortfolio:
     return p
 
 
-def _get_open_position(db) -> Optional[PaperPosition]:
+def _get_open_position(db) -> PaperPosition | None:
     return db.query(PaperPosition).first()
 
 
@@ -184,10 +183,11 @@ def _calculate_lot_size(balance: float, sl_distance: float) -> float:
     lot_size = risk_amount / (sl_distance * 100)
     # P1 fix: round DOWN to 0.01 (INV-007), not banker's round
     import math
+
     return max(0.01, math.floor(lot_size * 100) / 100.0)
 
 
-def _open_trade(signal: SignalPayload) -> Optional[TradeResponse]:
+def _open_trade(signal: SignalPayload) -> TradeResponse | None:
     with SessionLocal() as db:
         portfolio = _get_portfolio(db)
         existing_pos = _get_open_position(db)
@@ -352,14 +352,16 @@ def _fetch_bars_yfinance(symbol: str = "GC=F", count: int = 200) -> tuple[list, 
         bars = []
         for idx, row in df.iterrows():
             ts = int(idx.timestamp())
-            bars.append({
-                "time": ts,
-                "open": round(float(row["Open"]), 5),
-                "high": round(float(row["High"]), 5),
-                "low": round(float(row["Low"]), 5),
-                "close": round(float(row["Close"]), 5),
-                "volume": float(row.get("Volume", 0)),
-            })
+            bars.append(
+                {
+                    "time": ts,
+                    "open": round(float(row["Open"]), 5),
+                    "high": round(float(row["High"]), 5),
+                    "low": round(float(row["Low"]), 5),
+                    "close": round(float(row["Close"]), 5),
+                    "volume": float(row.get("Volume", 0)),
+                }
+            )
 
         last_close = float(df["Close"].iloc[-1])
         spread = 0.3
@@ -454,12 +456,7 @@ def get_portfolio():
 @app.get("/api/trades")
 def get_trades(limit: int = 50):
     with SessionLocal() as db:
-        trades = (
-            db.query(PaperTrade)
-            .order_by(PaperTrade.id.desc())
-            .limit(limit)
-            .all()
-        )
+        trades = db.query(PaperTrade).order_by(PaperTrade.id.desc()).limit(limit).all()
         return [
             {
                 "id": t.id,
@@ -547,4 +544,5 @@ async def manual_poll():
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8753)

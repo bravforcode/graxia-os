@@ -9,6 +9,7 @@ No MT5 dependency — all bar data comes from the EA.
 
 from __future__ import annotations
 
+import hmac
 import json
 import os
 import pickle
@@ -22,8 +23,9 @@ import numpy as np
 import pandas as pd
 import structlog
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Security
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, Field
 
 logger = structlog.get_logger(__name__)
@@ -429,10 +431,33 @@ def compute_features_live(live_df: pd.DataFrame, feature_cols: list[str]) -> np.
 app = FastAPI(title="GRAXIA Signal Service", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:8080",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:8080",
+    ],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "X-API-Key"],
 )
+
+# ---------------------------------------------------------------------------
+# API key verification for sensitive endpoints
+# ---------------------------------------------------------------------------
+_api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+
+async def verify_signal_api_key(api_key: str = Security(_api_key_header)):
+    """Verify X-API-Key header for signal and trade endpoints.
+
+    If SIGNAL_SERVICE_API_KEY env var is not set, the endpoint is open (dev mode).
+    In production, always set the env var.
+    """
+    expected = os.environ.get("SIGNAL_SERVICE_API_KEY", "")
+    if not expected:
+        return  # No key configured — open for dev
+    if not api_key or not hmac.compare_digest(api_key, expected):
+        raise HTTPException(status_code=401, detail="Invalid API key")
 
 
 class BarData(BaseModel):
@@ -514,7 +539,7 @@ async def health():
 
 
 @app.post("/api/signal")
-async def get_signal(req: SignalRequest):
+async def get_signal(req: SignalRequest, _key: str = Security(verify_signal_api_key)):
     """
     Compute signal from bars sent by EA.
     EA sends last 200 M15 bars, service computes features and returns prediction.
@@ -615,7 +640,7 @@ async def get_signal(req: SignalRequest):
 
 
 @app.post("/api/trade")
-async def log_trade(req: TradeRequest):
+async def log_trade(req: TradeRequest, _key: str = Security(verify_signal_api_key)):
     """Log trade execution. EA calls this after placing a trade."""
     # Validate trade data
     if req.entry_price <= 0:

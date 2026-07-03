@@ -54,7 +54,12 @@ class PositionListResponse(BaseModel):
 
 
 @positions_router.get("/", response_model=PositionListResponse)
-async def list_positions(is_open: bool | None = True, symbol: str | None = None, db: AsyncSession = Depends(get_db)):
+async def list_positions(
+    is_open: bool | None = True,
+    symbol: str | None = None,
+    db: AsyncSession = Depends(get_db),
+    credentials=Depends(security),
+):
     """List positions with filters"""
     query = db.query(Position)
 
@@ -76,7 +81,11 @@ async def list_positions(is_open: bool | None = True, symbol: str | None = None,
 
 
 @positions_router.get("/{position_id}", response_model=PositionResponse)
-async def get_position(position_id: str, db: Session = Depends(get_db)):
+async def get_position(
+    position_id: str,
+    db: Session = Depends(get_db),
+    credentials=Depends(security),
+):
     """Get position by ID"""
     position = db.query(Position).filter(Position.id == position_id).first()
     if not position:
@@ -85,7 +94,11 @@ async def get_position(position_id: str, db: Session = Depends(get_db)):
 
 
 @positions_router.get("/symbol/{symbol}", response_model=PositionResponse)
-async def get_position_by_symbol(symbol: str, db: Session = Depends(get_db)):
+async def get_position_by_symbol(
+    symbol: str,
+    db: Session = Depends(get_db),
+    credentials=Depends(security),
+):
     """Get position by symbol"""
     position = db.query(Position).filter(Position.symbol == symbol.upper(), Position.is_open == True).first()
     if not position:
