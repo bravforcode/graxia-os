@@ -385,8 +385,7 @@ class KillSwitch:
             os.replace(tmp_path, str(path))
         except Exception:
             # Clean up temp file on failure
-            try:
+            import contextlib
+            with contextlib.suppress(OSError):
                 os.unlink(tmp_path)
-            except OSError:
-                pass
             raise

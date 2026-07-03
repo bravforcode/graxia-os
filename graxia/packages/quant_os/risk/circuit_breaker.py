@@ -204,10 +204,9 @@ class CircuitBreaker:
             os.replace(tmp_path, str(self._state_file))
         except Exception:
             # Clean up temp file on failure
-            try:
+            import contextlib
+            with contextlib.suppress(OSError):
                 os.unlink(tmp_path)
-            except OSError:
-                pass
             raise
 
     def _load(self) -> None:
@@ -217,8 +216,7 @@ class CircuitBreaker:
             text = self._state_file.read_text(encoding="utf-8")
             if not text.strip():
                 logger.critical(
-                    "circuit_breaker: state file is empty — fail-closed default (all tripped). "
-                    "file=%s",
+                    "circuit_breaker: state file is empty — fail-closed default (all tripped). " "file=%s",
                     self._state_file,
                 )
                 for cls in ASSET_CLASSES:
@@ -237,8 +235,7 @@ class CircuitBreaker:
         except (json.JSONDecodeError, ValueError) as exc:
             # Fail-closed: corrupted circuit breaker state → trip all classes
             logger.critical(
-                "circuit_breaker: state file corrupted — fail-closed default (all tripped). "
-                "file=%s error=%s",
+                "circuit_breaker: state file corrupted — fail-closed default (all tripped). " "file=%s error=%s",
                 self._state_file,
                 exc,
             )

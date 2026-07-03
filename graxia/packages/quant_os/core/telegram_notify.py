@@ -3,10 +3,8 @@
 Config priority: env vars > toml config file > constructor args.
 """
 
-import logging
 import os
 import pathlib
-from typing import Optional
 
 import requests
 
@@ -15,12 +13,10 @@ try:
 except ImportError:
     import tomli as tomllib  # type: ignore[no-redef]
 
-logger = logging.getLogger(__name__)
-
 DEFAULT_CONFIG_PATH = pathlib.Path(__file__).resolve().parent.parent / "scripts" / "telegram_config.toml"
 
 
-def _load_config(path: Optional[pathlib.Path] = None) -> dict:
+def _load_config(path: pathlib.Path | None = None) -> dict:
     cfg: dict = {}
     p = path or DEFAULT_CONFIG_PATH
     if p.exists():
@@ -29,7 +25,7 @@ def _load_config(path: Optional[pathlib.Path] = None) -> dict:
     return cfg
 
 
-def _get_token(config: Optional[dict] = None) -> str:
+def _get_token(config: dict | None = None) -> str:
     token = os.getenv("TELEGRAM_BOT_TOKEN")
     if token:
         return token
@@ -37,7 +33,7 @@ def _get_token(config: Optional[dict] = None) -> str:
     return cfg.get("bot_token", "")
 
 
-def _get_chat_id(config: Optional[dict] = None) -> str:
+def _get_chat_id(config: dict | None = None) -> str:
     chat_id = os.getenv("TELEGRAM_CHAT_ID")
     if chat_id:
         return chat_id
@@ -46,7 +42,7 @@ def _get_chat_id(config: Optional[dict] = None) -> str:
 
 
 class TelegramNotifier:
-    def __init__(self, token: Optional[str] = None, chat_id: Optional[str] = None):
+    def __init__(self, token: str | None = None, chat_id: str | None = None):
         self.token = token or _get_token()
         self.chat_id = chat_id or _get_chat_id()
         if not self.token or not self.chat_id:
@@ -70,6 +66,7 @@ class TelegramNotifier:
     async def send_async(self, msg: str) -> bool:
         """Send message asynchronously using httpx."""
         import httpx
+
         if not self.token or not self.chat_id:
             return False
         try:
@@ -80,12 +77,18 @@ class TelegramNotifier:
                 )
                 return resp.status_code == 200
         except Exception as exc:
-            logger.warning("telegram.send_async_failed", error=str(exc))
+            print(f"Telegram send_async error: {exc}")
             return False
 
     def trade_opened(
-        self, direction: str, entry: float, sl: float, tp: float,
-        confidence: float, lot: float, regime: str,
+        self,
+        direction: str,
+        entry: float,
+        sl: float,
+        tp: float,
+        confidence: float,
+        lot: float,
+        regime: str,
     ):
         emoji = "🟢 LONG" if direction.upper() == "BUY" else "🔴 SHORT"
         self.send(
@@ -96,8 +99,14 @@ class TelegramNotifier:
         )
 
     async def trade_opened_async(
-        self, direction: str, entry: float, sl: float, tp: float,
-        confidence: float, lot: float, regime: str,
+        self,
+        direction: str,
+        entry: float,
+        sl: float,
+        tp: float,
+        confidence: float,
+        lot: float,
+        regime: str,
     ):
         emoji = "🟢 LONG" if direction.upper() == "BUY" else "🔴 SHORT"
         await self.send_async(
@@ -108,28 +117,32 @@ class TelegramNotifier:
         )
 
     def trade_closed(
-        self, direction: str, pnl_net: float, reason: str,
-        daily_pnl: float, monthly_pnl: float, swap_paid: float = 0.0,
+        self,
+        direction: str,
+        pnl_net: float,
+        reason: str,
+        daily_pnl: float,
+        monthly_pnl: float,
+        swap_paid: float = 0.0,
     ):
         emoji = "💚" if pnl_net > 0 else "❤️"
-        msg = (
-            f"{emoji} *CLOSED | {reason}*\n"
-            f"P&L: `${pnl_net:+.2f}`"
-        )
+        msg = f"{emoji} *CLOSED | {reason}*\n" f"P&L: `${pnl_net:+.2f}`"
         if swap_paid:
             msg += f" (incl. swap `${swap_paid:+.2f}`)"
         msg += f"\nDaily: `${daily_pnl:+.2f}` | Monthly: `${monthly_pnl:+.2f}`"
         self.send(msg)
 
     async def trade_closed_async(
-        self, direction: str, pnl_net: float, reason: str,
-        daily_pnl: float, monthly_pnl: float, swap_paid: float = 0.0,
+        self,
+        direction: str,
+        pnl_net: float,
+        reason: str,
+        daily_pnl: float,
+        monthly_pnl: float,
+        swap_paid: float = 0.0,
     ):
         emoji = "💚" if pnl_net > 0 else "❤️"
-        msg = (
-            f"{emoji} *CLOSED | {reason}*\n"
-            f"P&L: `${pnl_net:+.2f}`"
-        )
+        msg = f"{emoji} *CLOSED | {reason}*\n" f"P&L: `${pnl_net:+.2f}`"
         if swap_paid:
             msg += f" (incl. swap `${swap_paid:+.2f}`)"
         msg += f"\nDaily: `${daily_pnl:+.2f}` | Monthly: `${monthly_pnl:+.2f}`"
@@ -142,8 +155,11 @@ class TelegramNotifier:
         await self.send_async(f"⚠️ *RISK ALERT*\n{reason}")
 
     def heartbeat(
-        self, trades_today: int, win_rate_7d: float, balance: float,
-        prob_ruin_at_current_lot: Optional[float] = None,
+        self,
+        trades_today: int,
+        win_rate_7d: float,
+        balance: float,
+        prob_ruin_at_current_lot: float | None = None,
     ):
         msg = (
             f"💓 *Daily Heartbeat*\n"
@@ -156,8 +172,11 @@ class TelegramNotifier:
         self.send(msg)
 
     async def heartbeat_async(
-        self, trades_today: int, win_rate_7d: float, balance: float,
-        prob_ruin_at_current_lot: Optional[float] = None,
+        self,
+        trades_today: int,
+        win_rate_7d: float,
+        balance: float,
+        prob_ruin_at_current_lot: float | None = None,
     ):
         msg = (
             f"💓 *Daily Heartbeat*\n"
