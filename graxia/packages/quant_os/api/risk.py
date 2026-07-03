@@ -1,14 +1,14 @@
 """Risk management API endpoints"""
 
-from typing import Optional, Dict, Any
-from decimal import Decimal
+from typing import Any
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import HTTPBearer
 from pydantic import BaseModel, Field
 
 from ..core.config import get_config
-from ..risk.kill_switch import KillSwitch
-from ..risk.circuit_breaker import CircuitBreaker
+
+security = HTTPBearer()
 
 
 risk_router = APIRouter(prefix="/risk", tags=["risk"])
@@ -16,69 +16,75 @@ risk_router = APIRouter(prefix="/risk", tags=["risk"])
 
 class RiskStatusResponse(BaseModel):
     """Risk status response"""
-    kill_switch: Dict[str, Any]
-    circuit_breaker: Dict[str, Any]
-    limits: Dict[str, float]
+
+    kill_switch: dict[str, Any]
+    circuit_breaker: dict[str, Any]
+    limits: dict[str, float]
 
 
 class KillSwitchActionRequest(BaseModel):
     """Kill switch action request"""
+
     action: str = Field(..., description="trigger or reset")
     reason: str = Field(..., description="Reason for action")
     user_id: str = Field(..., description="User performing action")
 
 
 @risk_router.get("/status", response_model=RiskStatusResponse)
-async def get_risk_status():
+async def get_risk_status(credentials=Depends(security)):
     """Get current risk system status"""
     config = get_config()
-    
+
     # These would be injected dependencies in real app
     kill_switch = None  # Would get from app state
     circuit_breaker = None
-    
+
     return RiskStatusResponse(
         kill_switch={
             "is_triggered": kill_switch.is_triggered if kill_switch else False,
             "trigger_type": kill_switch.trigger_type.value if kill_switch and kill_switch.trigger_type else None,
-        } if kill_switch else {"is_triggered": False},
+        }
+        if kill_switch
+        else {"is_triggered": False},
         circuit_breaker={
             "is_blocked": circuit_breaker.is_blocked if circuit_breaker else False,
             "reason": circuit_breaker.reason if circuit_breaker else None,
-        } if circuit_breaker else {"is_blocked": False},
+        }
+        if circuit_breaker
+        else {"is_blocked": False},
         limits={
             "max_risk_per_trade_pct": config.max_risk_per_trade_pct,
             "max_daily_loss_pct": config.max_daily_loss_pct,
             "max_drawdown_pct": config.max_drawdown_pct,
             "max_portfolio_exposure_pct": config.max_portfolio_exposure_pct,
             "max_positions": config.max_positions,
-        }
+        },
     )
 
 
 @risk_router.post("/kill-switch")
-async def kill_switch_action(request: KillSwitchActionRequest):
+async def kill_switch_action(request: KillSwitchActionRequest, credentials=Depends(security)):
     """Trigger or reset kill switch"""
     # This would integrate with actual kill switch
-    
+
     if request.action not in ["trigger", "reset"]:
         raise HTTPException(status_code=400, detail="Action must be 'trigger' or 'reset'")
-    
+
     # Would perform actual kill switch action
     return {
         "success": True,
         "action": request.action,
         "reason": request.reason,
         "user_id": request.user_id,
-        "timestamp": "2024-01-01T00:00:00Z"
+        "timestamp": "2024-01-01T00:00:00Z",
     }
 
 
 @risk_router.get("/limits")
-async def get_risk_limits():
+async def get_risk_limits(credentials=Depends(security)):
     """Get current risk limits"""
     config = get_config()
-    
+
     return {
         "trading_mode": config.trading_mode.value,
         "mode_limits": config.get_mode_risk_limits(),
@@ -95,12 +101,12 @@ async def get_risk_limits():
             "max_risk_per_trade_pct": 1.0,
             "hard_stop_drawdown_pct": 15.0,
             "max_daily_loss_pct": 2.0,
-        }
+        },
     }
 
 
 @risk_router.get("/exposure")
-async def get_portfolio_exposure():
+async def get_portfolio_exposure(credentials=Depends(security)):
     """Get current portfolio exposure"""
     # Would calculate from positions
     return {
@@ -114,7 +120,7 @@ async def get_portfolio_exposure():
 
 
 @risk_router.get("/pnl")
-async def get_pnl_summary():
+async def get_pnl_summary(credentials=Depends(security)):
     """Get P&L summary"""
     return {
         "today": {
@@ -133,5 +139,5 @@ async def get_pnl_summary():
         "ytd": {
             "realized": "0.00",
             "total": "0.00",
-        }
+        },
     }

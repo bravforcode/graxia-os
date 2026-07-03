@@ -1,0 +1,24 @@
+# MT5 Connection Configuration
+# This file is gitignored — never commit credentials
+# See config.template.yaml for format
+
+mt5:
+  # Path to MT5 terminal64.exe — use terminal you are logged into
+  path: ""
+
+  # Connection timeout (milliseconds)
+  timeout: 30000
+
+  # Allowed symbols
+  symbols:
+    - XAUUSD
+
+  # Timeframe for bar data (MT5 constant)
+  timeframe: 60  # H1
+
+# Demo canary settings
+canary:
+  execution_enabled: false
+  account_mode: DEMO
+  max_open_positions: 1
+  max_orders_per_day: 3

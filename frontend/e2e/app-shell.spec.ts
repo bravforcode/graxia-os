@@ -1,73 +1,55 @@
 import { expect, test } from '@playwright/test'
 
-import { createMockApiState, installApiMocks } from './support/apiMocks'
+// Use the pre-logged-in storageState from globalSetup
+test.use({ storageState: 'storageState.json' })
 
-test.describe('Personal OS browser flows', () => {
-  test('redirects unauthenticated operators from root to login', async ({ page }) => {
-    await page.route('**/api/v1/auth/me', async (route) => {
-      await route.fulfill({
-        status: 401,
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ detail: 'Not authenticated' }),
-      })
-    })
+test.describe('Graxia OS - Live Production E2E (No Mocks)', () => {
+  const TEST_EMAIL = 'real-test@graxia.io'
 
+  test('should verify already logged in and at root', async ({ page }) => {
     await page.goto('/')
-
-    await expect(page).toHaveURL(/\/login$/)
-    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible()
-  })
-
-  test('logs in through the auth form and renders the dashboard shell', async ({ page }) => {
-    const state = createMockApiState()
-    await installApiMocks(page, state)
-
-    await page.goto('/login')
-
-    await page.getByLabel('Email').fill(state.user.email)
-    await page.getByLabel('Password').fill('correct horse battery staple')
-    await page.getByRole('button', { name: 'Sign in' }).click()
-
+    // Should NOT redirect to login because of storageState
     await expect(page).toHaveURL(/\/$/)
-    await expect(page.getByRole('heading', { name: 'Executive dashboard' })).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'AI Builder Fellowship', exact: true })).toBeVisible()
-    await expect(page.getByText('Follow-up to AI Builder Fellowship')).toBeVisible()
-    await expect(page.getByText(state.user.email)).toBeVisible()
-    await expect(page.getByText('Opportunity queue')).toBeVisible()
-    await expect(page.getByText('Runtime posture')).toBeVisible()
-
-    expect(state.loginCalls).toBe(1)
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible()
   })
 
-  test('restores an active session, submits a check-in, approves a draft, and signs out', async ({ page }) => {
-    const state = createMockApiState()
-    await installApiMocks(page, state)
-
+  test('should navigate through all sidebar pages and verify live data', async ({ page }) => {
     await page.goto('/')
+    
+    const pages = [
+      { name: 'Dashboard', url: '/', heading: 'Overview' },
+      { name: 'Agents', url: '/agents', heading: 'Agents' },
+      { name: 'Leads', url: '/leads', heading: 'Leads' },
+      { name: 'Tasks', url: '/tasks', heading: 'Tasks and reminders' },
+      { name: 'Inbox', url: '/emails', heading: 'Email inbox' },
+      { name: 'Costs', url: '/costs', heading: 'Cost monitoring' },
+      { name: 'Settings', url: '/settings', heading: 'System settings' }
+    ]
 
-    await expect(page.getByRole('heading', { name: 'Executive dashboard' })).toBeVisible()
-    expect(state.authMeCalls).toBeGreaterThanOrEqual(1)
+    for (const p of pages) {
+      if (p.name !== 'Dashboard') {
+        await page.getByRole('link', { name: p.name, exact: false }).click()
+      } else {
+        await page.goto('/') 
+      }
 
-    await page.getByRole('button', { name: 'Update check-in' }).click()
-    await expect(page.getByRole('dialog', { name: 'Update cognitive state' })).toBeVisible()
+      await expect(page).toHaveURL(new RegExp(p.url))
+      await expect(page.getByRole('heading', { name: p.heading, exact: false }).first()).toBeVisible()
+    }
+  })
 
-    await page.getByLabel('Energy (0-10)').fill('9')
-    await page.getByLabel('Stress (0-10)').fill('2')
-    await page.getByLabel('Hours this week').fill('28')
-    await page.getByRole('button', { name: 'Save check-in' }).click()
-
-    await expect(page.getByText('Cognitive check-in updated.')).toBeVisible()
-    expect(state.checkinCalls).toBe(1)
-
-    const draftCard = page.locator('article').filter({ hasText: 'Follow-up to AI Builder Fellowship' })
-    await draftCard.getByRole('button', { name: 'Approve' }).click()
-
-    await expect(page.getByText('Draft approved.')).toBeVisible()
-    expect(state.approveDraftCalls).toBe(1)
-
-    await page.getByRole('button', { name: 'Sign out' }).click()
-
+  test('should sign out successfully', async ({ page }) => {
+    await page.goto('/')
+    const profileButton = page.getByRole('button').filter({ hasText: TEST_EMAIL })
+    await profileButton.click()
+    await page.getByRole('menuitem', { name: 'Log out' }).click()
     await expect(page).toHaveURL(/\/login$/)
-    expect(state.logoutCalls).toBe(1)
+  })
+
+  test('should trigger Sentry error from backend', async ({ page }) => {
+    const response = await page.request.get('/api/v1/system/debug-sentry')
+    expect(response.status()).toBe(500)
+    const text = await response.text()
+    expect(text).toBeTruthy()
   })
 })

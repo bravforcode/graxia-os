@@ -1,6 +1,7 @@
 """Pytest configuration for Quant OS tests"""
 import pytest
 import sys
+import time
 from pathlib import Path
 
 # Add project root to path
@@ -17,28 +18,54 @@ def reset_config():
     yield
 
 
+class MockRedis:
+    """In-memory Redis stand-in for tests."""
+
+    def __init__(self):
+        self.store = {}
+        self._ttl = {}
+
+    def get(self, key):
+        if key in self._ttl and self._ttl[key] is not None and time.time() > self._ttl[key]:
+            self.store.pop(key, None)
+            self._ttl.pop(key, None)
+            return None
+        return self.store.get(key)
+
+    def set(self, key, value, ex=None):
+        self.store[key] = str(value)
+        if ex is not None:
+            self._ttl[key] = time.time() + ex
+        else:
+            self._ttl.pop(key, None)
+        return True
+
+    def setex(self, key, time_, value):
+        self.set(key, value, ex=time_)
+        return True
+
+    def ttl(self, key):
+        if key not in self._ttl or self._ttl[key] is None:
+            return None
+        remaining = self._ttl[key] - time.time()
+        if remaining <= 0:
+            self.store.pop(key, None)
+            self._ttl.pop(key, None)
+            return None
+        return remaining
+
+    def exists(self, key):
+        return self.get(key) is not None
+
+    def delete(self, key):
+        self.store.pop(key, None)
+        self._ttl.pop(key, None)
+        return 1
+
+
 @pytest.fixture
 def mock_redis():
     """Mock Redis for testing"""
-    class MockRedis:
-        def __init__(self):
-            self.store = {}
-        
-        def get(self, key):
-            return self.store.get(key)
-        
-        def set(self, key, value, ex=None):
-            self.store[key] = value
-            return True
-        
-        def exists(self, key):
-            return key in self.store
-        
-        def delete(self, key):
-            if key in self.store:
-                del self.store[key]
-            return 1
-    
     return MockRedis()
 
 

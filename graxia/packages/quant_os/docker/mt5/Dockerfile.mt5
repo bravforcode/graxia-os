@@ -1,0 +1,70 @@
+# ═══════════════════════════════════════════════════════════════════════
+# Dockerfile.mt5 — Wine + MT5 + Python (all under same Wine prefix)
+# ═══════════════════════════════════════════════════════════════════════
+FROM scottyhardy/docker-wine:latest
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    WINEDEBUG=-all \
+    DISPLAY=:99 \
+    WINEDLLOVERRIDES="winemenubuilder.exe=d;ntdll=d" \
+    WINEPREFIX=/home/wineuser/.wine \
+    PYTHONUNBUFFERED=1
+
+# ── System deps ──────────────────────────────────────────────────────
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    xvfb x11vnc xdotool \
+    python3 python3-pip python3-venv python3-dev \
+    cabextract wget curl procps \
+    && rm -rf /var/lib/apt/lists/*
+
+USER wineuser
+
+# ── Initialize Wine prefix ───────────────────────────────────────────
+RUN wine wineboot --init 2>/dev/null; wineserver --wait
+
+# ── Install core Windows DLLs ────────────────────────────────────────
+RUN winetricks -q vcrun2019 2>/dev/null; wineserver --wait || true
+
+# ── Download MT5 installer ───────────────────────────────────────────
+RUN wget -q "https://download.terminal.free/cdn/web/pepperstone.group.limited/mt5/pepperstone5setup.exe" \
+      -O /tmp/mt5setup.exe && echo "[DL] MT5 installer downloaded"
+
+# ── Install MT5 under Xvfb ──────────────────────────────────────────
+# Start Xvfb, run installer, wait for completion
+RUN rm -f /tmp/.X99-lock /tmp/.X11-unix/X99 2>/dev/null; \
+    Xvfb :99 -screen 0 1024x768x24 -ac &
+RUN sleep 2 && \
+    wine /tmp/mt5setup.exe &
+RUN sleep 10 && wineserver --wait; \
+    echo "[MT5] Installer completed"
+
+# ── Check if MT5 installed ──────────────────────────────────────────
+RUN find $WINEPREFIX/drive_c -name "terminal64.exe" 2>/dev/null && echo "[MT5] Found!" || \
+    echo "[MT5] NOT FOUND - manual setup needed"
+
+# ── Install Python under Wine ────────────────────────────────────────
+RUN wget -q "https://www.python.org/ftp/python/3.12.3/python-3.12.3-amd64.exe" \
+      -O /tmp/python-installer.exe && \
+    wine /tmp/python-installer.exe /quiet InstallAllUsers=0 PrependPath=1 2>/dev/null; \
+    wineserver --wait; \
+    echo "[Python] Wine Python installed"
+
+# ── Install MetaTrader5 package under Wine Python ────────────────────
+RUN wine "$HOME/.wine/drive_c/Program Files/Python312/python.exe" -m pip install \
+      MetaTrader5 pandas numpy requests python-dotenv 2>/dev/null; \
+    wineserver --wait || echo "[Python] Package install attempted"
+
+# ── Copy bot source ──────────────────────────────────────────────────
+COPY quant_os/ /app/quant_os/
+WORKDIR /app/quant_os
+
+# ── Entry script ─────────────────────────────────────────────────────
+COPY docker/mt5/start.sh /start.sh
+COPY docker/mt5/run_bot.sh /run_bot.sh
+USER root
+RUN chmod +x /start.sh /run_bot.sh
+USER wineuser
+
+ENTRYPOINT ["/start.sh"]
+CMD ["/run_bot.sh"]

@@ -52,7 +52,7 @@ class MLBreakout(Strategy):
             timeframes=["M15"],
             risk_per_trade_pct=1.0,
             max_trades_per_day=3,
-            min_confidence=0.65,
+            min_confidence=0.55,
             min_risk_reward=2.0,
             regime_filter=[
                 RegimeType.TREND_STRONG_UP,
@@ -65,7 +65,7 @@ class MLBreakout(Strategy):
         # ML Model
         self.model = model  # XGBoost or similar
         self.model_version = "1.0"
-        self.min_prediction_prob = 0.72
+        self.min_prediction_prob = 0.55  # ponytail: lowered from 0.72 — was too strict (0 trades)
         
         # Breakout parameters
         self.lookback_period = 20

@@ -1,6 +1,6 @@
 import { Moon, SunMedium } from 'lucide-react'
 
-import { Button } from '@/components/ui/Button'
+import { Button } from '@/components/ui/button'
 import { useUIStore } from '@/store/uiStore'
 
 export function ThemeToggle() {

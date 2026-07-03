@@ -19,7 +19,7 @@ supabase-migrate:
 	docker compose exec backend python scripts/alembic_safe.py upgrade head
 
 supabase-env-audit:
-	cd backend && python scripts/production_env_audit.py --env-file ../.env.production --compose-file ../docker-compose.supabase.yml --frontend-env-file ../frontend/.env.production
+	cd backend && python ../scripts/ops/production_env_audit.py --env-file ../.env.production --compose-file ../docker-compose.supabase.yml --frontend-env-file ../frontend/.env.production
 
 supabase-preflight:
 	$(MAKE) supabase-env-audit
@@ -61,7 +61,7 @@ migrate:
 	docker compose exec backend python scripts/alembic_safe.py upgrade head
 
 migrate-local:
-	cd backend && python scripts/alembic_safe.py upgrade head
+	cd backend && python ../scripts/ops/alembic_safe.py upgrade head
 
 db-upgrade:
 	docker compose exec backend python scripts/alembic_safe.py upgrade head
@@ -95,20 +95,20 @@ frontend-build:
 	cd frontend && bun run build
 
 openapi-export:
-	cd backend && python scripts/export_openapi.py --output openapi.json
+	cd backend && python ../scripts/ops/export_openapi.py --output openapi.json
 
 smoke:
-	bash backend/scripts/smoke_tests.sh
+	bash scripts/ops/smoke_tests.sh
 
 verify:
 	cd backend && python -m pytest tests -q
-	cd backend && python scripts/export_openapi.py --output openapi.json
+	cd backend && python ../scripts/ops/export_openapi.py --output openapi.json
 	cd frontend && bun run lint
 	cd frontend && bun run build
 	bash -n setup.sh
-	bash -n backend/scripts/backup_database.sh
-	bash -n backend/scripts/restore_database.sh
-	bash -n backend/scripts/smoke_tests.sh
+	bash -n scripts/ops/backup_database.sh
+	bash -n scripts/ops/restore_database.sh
+	bash -n scripts/ops/smoke_tests.sh
 
 # ── Integration Tests ──────────────────────────────────────────────────
 test-integration:
@@ -123,7 +123,7 @@ setup-monitoring:
 
 # ── Documentation ──────────────────────────────────────────────────────
 docs:
-	cd backend && python scripts/export_openapi.py --output openapi.json
+	cd backend && python ../scripts/ops/export_openapi.py --output openapi.json
 	@echo "API documentation generated at backend/openapi.json"
 
 .env:

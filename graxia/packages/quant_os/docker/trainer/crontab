@@ -1,0 +1,14 @@
+# Graxia Trainer — Supercronic Crontab
+# All times in UTC
+
+# Daily model training at 02:00 UTC
+0 2 * * * python /app/graxia/packages/quant_os/run_ml_train.py 2>&1 | tee -a /logs/train-$(date +\%Y\%m\%d).log
+
+# Walk-forward validation at 04:00 UTC
+0 4 * * * python /app/graxia/packages/quant_os/scripts/run_walk_forward.py 2>&1 | tee -a /logs/walkforward-$(date +\%Y\%m\%d).log
+
+# Build features every 6 hours
+0 */6 * * * python /app/graxia/packages/quant_os/scripts/build_features.py 2>&1 | tee -a /logs/features-$(date +\%Y\%m\%d).log
+
+# Health heartbeat every 15 minutes
+*/15 * * * * date +\%s > /tmp/trainer-health

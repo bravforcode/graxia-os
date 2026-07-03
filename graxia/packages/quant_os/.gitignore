@@ -1,0 +1,23 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.venv/
+artifacts/
+shadow_results/
+logs/
+*.duckdb
+*.parquet
+*.pkl
+.env
+coverage.xml
+.coverage
+htmlcov/
+
+# Generated / temp files.contextignore.ipynb_checkpoints/
+data/warehouse/
+data/ticks/
+dashboard.ipynb

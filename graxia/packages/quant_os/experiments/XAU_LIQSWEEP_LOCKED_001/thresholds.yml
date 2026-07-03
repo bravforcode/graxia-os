@@ -1,0 +1,13 @@
+xau_liquidity_sweep_gate:
+  min_oos_trades: 100
+  execution_quality_required: CONSERVATIVE_BAR
+  no_differential_critical_mismatch: true
+  positive_net_expectancy_base: true
+  positive_net_expectancy_stress_1: true
+  min_profit_factor_stress_1: 1.10
+  positive_median_month_net: true
+  max_top_trade_share_pct: 20
+  max_top_month_share_pct: 35
+  max_drawdown_within_policy: true
+  no_integrity_incident: true
+  no_risk_bypass: true

@@ -1,19 +1,20 @@
 """Admin API endpoints - requires authentication"""
 
-from typing import Optional, Dict, Any, List
+import hmac
+from typing import Any
 
-from fastapi import APIRouter, HTTPException, Depends, Header
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, Header, HTTPException
+from pydantic import BaseModel
 
 from ..core.config import get_config
-from ..core.enums import TradingMode, SystemState
-
+from ..core.enums import TradingMode
 
 admin_router = APIRouter(prefix="/admin", tags=["admin"])
 
 
 class ModeChangeRequest(BaseModel):
     """Request to change trading mode"""
+
     new_mode: TradingMode
     reason: str
     approved_by: str
@@ -21,51 +22,49 @@ class ModeChangeRequest(BaseModel):
 
 class StrategyUpdateRequest(BaseModel):
     """Request to update strategy parameters"""
+
     strategy_id: str
-    params: Dict[str, Any]
+    params: dict[str, Any]
     freeze_after_update: bool = True
 
 
 async def verify_admin(api_key: str = Header(..., alias="X-Admin-Key")):
-    """Verify admin API key"""
+    """Verify admin API key — constant-time comparison to prevent timing attacks."""
     config = get_config()
-    if api_key != config.admin_api_key:
+    if not config.admin_api_key or not hmac.compare_digest(api_key, config.admin_api_key):
         raise HTTPException(status_code=401, detail="Invalid admin key")
     return True
 
 
 @admin_router.post("/mode")
-async def change_trading_mode(
-    request: ModeChangeRequest,
-    authorized: bool = Depends(verify_admin)
-):
+async def change_trading_mode(request: ModeChangeRequest, authorized: bool = Depends(verify_admin)):
     """
     Change system trading mode.
-    
-    Modes: RESEARCH_ONLY, BACKTEST_ONLY, SHADOW_MODE, 
+
+    Modes: RESEARCH_ONLY, BACKTEST_ONLY, SHADOW_MODE,
            PAPER_TRADING, LIVE_MICRO, LIVE_LIMITED, LIVE_CONTROLLED
-    
+
     Requires explicit approval and reason.
     """
     config = get_config()
-    
+
     # Validate mode transition
     valid_transitions = {
         TradingMode.PAPER: [TradingMode.LIVE_MICRO],
         TradingMode.LIVE_MICRO: [TradingMode.PAPER, TradingMode.LIVE_LIMITED],
         TradingMode.LIVE_LIMITED: [TradingMode.PAPER, TradingMode.LIVE_MICRO, TradingMode.LIVE_CONTROLLED],
     }
-    
+
     current_mode = config.trading_mode
     allowed_next = valid_transitions.get(current_mode, [])
-    
+
     if request.new_mode not in allowed_next and current_mode != request.new_mode:
         raise HTTPException(
             status_code=400,
             detail=f"Invalid mode transition: {current_mode.value} → {request.new_mode.value}. "
-                   f"Allowed: {[m.value for m in allowed_next]}"
+            f"Allowed: {[m.value for m in allowed_next]}",
         )
-    
+
     # Would update configuration (requires restart or hot-reload)
     return {
         "success": True,
@@ -74,7 +73,7 @@ async def change_trading_mode(
         "reason": request.reason,
         "approved_by": request.approved_by,
         "requires_restart": True,
-        "message": f"Mode change to {request.new_mode.value} scheduled. Restart required."
+        "message": f"Mode change to {request.new_mode.value} scheduled. Restart required.",
     }
 
 
@@ -82,7 +81,7 @@ async def change_trading_mode(
 async def get_config_endpoint(authorized: bool = Depends(verify_admin)):
     """Get current configuration (redacted)"""
     config = get_config()
-    
+
     return {
         "trading_mode": config.trading_mode.value,
         "system_state": config.system_state.value,
@@ -99,26 +98,20 @@ async def get_config_endpoint(authorized: bool = Depends(verify_admin)):
 
 
 @admin_router.post("/strategy/update")
-async def update_strategy(
-    request: StrategyUpdateRequest,
-    authorized: bool = Depends(verify_admin)
-):
+async def update_strategy(request: StrategyUpdateRequest, authorized: bool = Depends(verify_admin)):
     """Update strategy parameters"""
     return {
         "success": True,
         "strategy_id": request.strategy_id,
         "params_updated": request.params,
         "frozen": request.freeze_after_update,
-        "message": "Strategy parameters updated. Backtest required for promotion."
+        "message": "Strategy parameters updated. Backtest required for promotion.",
     }
 
 
 @admin_router.post("/kill-switch/trigger")
 async def admin_trigger_kill_switch(
-    reason: str,
-    user_id: str,
-    close_positions: bool = True,
-    authorized: bool = Depends(verify_admin)
+    reason: str, user_id: str, close_positions: bool = True, authorized: bool = Depends(verify_admin)
 ):
     """Manually trigger kill switch"""
     return {
@@ -128,37 +121,26 @@ async def admin_trigger_kill_switch(
         "triggered_by": user_id,
         "close_positions": close_positions,
         "requires_manual_reset": True,
-        "message": "Kill switch triggered. All trading halted."
+        "message": "Kill switch triggered. All trading halted.",
     }
 
 
 @admin_router.post("/kill-switch/reset")
-async def admin_reset_kill_switch(
-    reason: str,
-    user_id: str,
-    authorized: bool = Depends(verify_admin)
-):
+async def admin_reset_kill_switch(reason: str, user_id: str, authorized: bool = Depends(verify_admin)):
     """Manually reset kill switch"""
     return {
         "success": True,
         "action": "reset",
         "reason": reason,
         "reset_by": user_id,
-        "message": "Kill switch reset. Trading resumed."
+        "message": "Kill switch reset. Trading resumed.",
     }
 
 
 @admin_router.get("/audit-log")
-async def get_audit_log(
-    limit: int = 100,
-    authorized: bool = Depends(verify_admin)
-):
+async def get_audit_log(limit: int = 100, authorized: bool = Depends(verify_admin)):
     """Get recent audit log entries"""
-    return {
-        "entries": [],
-        "total": 0,
-        "limit": limit
-    }
+    return {"entries": [], "total": 0, "limit": limit}
 
 
 @admin_router.get("/system-stats")
@@ -192,5 +174,5 @@ async def get_system_stats(authorized: bool = Depends(verify_admin)):
             "mtm": {"signals_today": 0, "win_rate": 0.0},
             "mrb": {"signals_today": 0, "win_rate": 0.0},
             "mlb": {"signals_today": 0, "win_rate": 0.0},
-        }
+        },
     }

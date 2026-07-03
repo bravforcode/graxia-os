@@ -1,0 +1,335 @@
+{
+  "cot_reports": {
+    "status": "ok",
+    "detail": "Gold COT 2025: 52 rows, 191 cols",
+    "rows": 52,
+    "date_range": "",
+    "tested_at": "2026-06-26T17:37:15.207898",
+    "sample": {
+      "As_of_Date_In_Form_YYMMDD": "251230",
+      "Report_Date_as_YYYY-MM-DD": "2025-12-30",
+      "Prod_Merc_Positions_Long_All": "12958",
+      "Prod_Merc_Positions_Short_All": "67439",
+      "Swap_Positions_Long_All": "37010",
+      "Swap__Positions_Short_All": "257775",
+      "Swap__Positions_Spread_All": "32286",
+      "M_Money_Positions_Long_All": "148642",
+      "M_Money_Positions_Short_All": "22602",
+      "M_Money_Positions_Spread_All": "44374"
+    }
+  },
+  "cot_reports_cached": {
+    "status": "ok",
+    "detail": "3 cached parquet files",
+    "rows": 3,
+    "date_range": "",
+    "tested_at": "2026-06-26T17:37:15.209993",
+    "sample": {
+      "cot_xauusd_disaggregated_fut_2024.parquet": "175589 bytes",
+      "cot_xauusd_disaggregated_fut_2025.parquet": "174824 bytes",
+      "cot_xauusd_disaggregated_fut_2026.parquet": "158347 bytes"
+    }
+  },
+  "cot_module": {
+    "status": "ok",
+    "detail": "fetch_cot_gold_range(2024-2025): 105 rows",
+    "rows": 105,
+    "date_range": "2024-01-02 \u2192 2025-12-30",
+    "tested_at": "2026-06-26T17:37:15.391986",
+    "sample": {
+      "date": "2025-12-30 00:00:00",
+      "mm_net_long": "126040.0",
+      "mm_net_long_pct": "0.2615664935895041",
+      "cot_index_52w": "0.38461538461538464",
+      "prod_net_short": "54481.0",
+      "open_interest": "481866.0"
+    }
+  },
+  "mt5_terminal": {
+    "status": "ok",
+    "detail": "Terminal: Pepperstone MetaTrader 5, Build: 500, Build date: 28 Apr 2026",
+    "rows": 0,
+    "date_range": "",
+    "tested_at": "2026-06-26T17:37:15.425429"
+  },
+  "mt5_xauusd": {
+    "status": "ok",
+    "detail": "XAUUSD found: XAUUSD, digits=2",
+    "rows": 0,
+    "date_range": "",
+    "tested_at": "2026-06-26T17:37:15.425429"
+  },
+  "mt5_timeframes": {
+    "status": "ok",
+    "detail": "MT5 XAUUSD: M15=2yr, M30=5yr, H1=10yr, H4=10yr, D1=10yr, W1=10yr, MN1=10yr",
+    "rows": 0,
+    "date_range": "",
+    "tested_at": "2026-06-26T17:37:15.501228",
+    "sample": {
+      "M5": {
+        "bars": 0,
+        "max_range": "N/A"
+      },
+      "M15": {
+        "bars": 47265,
+        "max_range": "2yr",
+        "start": "2024-06-26",
+        "end": "2026-06-26"
+      },
+      "M30": {
+        "bars": 59130,
+        "max_range": "5yr",
+        "start": "2021-06-28",
+        "end": "2026-06-26"
+      },
+      "H1": {
+        "bars": 59027,
+        "max_range": "10yr",
+        "start": "2016-06-28",
+        "end": "2026-06-26"
+      },
+      "H4": {
+        "bars": 15464,
+        "max_range": "10yr",
+        "start": "2016-06-28",
+        "end": "2026-06-26"
+      },
+      "D1": {
+        "bars": 2579,
+        "max_range": "10yr",
+        "start": "2016-06-29",
+        "end": "2026-06-26"
+      },
+      "W1": {
+        "bars": 521,
+        "max_range": "10yr",
+        "start": "2016-07-03",
+        "end": "2026-06-21"
+      },
+      "MN1": {
+        "bars": 120,
+        "max_range": "10yr",
+        "start": "2016-07-01",
+        "end": "2026-06-01"
+      }
+    }
+  },
+  "mt5_h1_10yr_save": {
+    "status": "ok",
+    "detail": "Saved H1 10yr to data\\mt5_xauusd_h1_10yr.parquet: 59027 bars",
+    "rows": 59027,
+    "date_range": "",
+    "tested_at": "2026-06-26T17:37:15.717746"
+  },
+  "yf_gold_futures": {
+    "status": "ok",
+    "detail": "GC=F max history: 6479 rows",
+    "rows": 6479,
+    "date_range": "2000-08-30 \u2192 2026-06-26",
+    "tested_at": "2026-06-26T17:37:17.548880"
+  },
+  "yf_gld_etf": {
+    "status": "ok",
+    "detail": "GLD ETF: 5433 rows",
+    "rows": 5433,
+    "date_range": "2004-11-18 \u2192 2026-06-25",
+    "tested_at": "2026-06-26T17:37:17.850353"
+  },
+  "yf_iau_etf": {
+    "status": "ok",
+    "detail": "IAU ETF: 5385 rows",
+    "rows": 5385,
+    "date_range": "2005-01-28 \u2192 2026-06-25",
+    "tested_at": "2026-06-26T17:37:18.159223"
+  },
+  "yf_gvz_volatility": {
+    "status": "ok",
+    "detail": "^GVZ: 4544 rows",
+    "rows": 4544,
+    "date_range": "2008-06-03 \u2192 2026-06-25",
+    "tested_at": "2026-06-26T17:37:18.385898"
+  },
+  "yf_gdx_miners": {
+    "status": "ok",
+    "detail": "GDX: 5055 rows",
+    "rows": 5055,
+    "date_range": "2006-05-22 \u2192 2026-06-25",
+    "tested_at": "2026-06-26T17:37:18.710123"
+  },
+  "yf_xauusd_spot": {
+    "status": "warn",
+    "detail": "XAUUSD=X may not have full history",
+    "rows": 0,
+    "date_range": "",
+    "tested_at": "2026-06-26T17:37:19.716190"
+  },
+  "quandl_lbma_gold": {
+    "status": "warn",
+    "detail": "HTTP 403: <html style=\"height:100%\"><head><META NAME=\"ROBOTS\" CONTENT=\"NOINDEX, NOFOLLOW\"><meta name=\"format-detection\" content=\"telephone=no\"><meta name=\"viewport\" content=\"initial-scale=1.0\"><meta http-equiv=",
+    "rows": 0,
+    "date_range": "",
+    "tested_at": "2026-06-26T17:37:20.479766"
+  },
+  "quandl_lbma_gold2": {
+    "status": "warn",
+    "detail": "HTTP 403",
+    "rows": 0,
+    "date_range": "",
+    "tested_at": "2026-06-26T17:37:21.160365"
+  },
+  "quandl_gld_holdings": {
+    "status": "warn",
+    "detail": "HTTP 403",
+    "rows": 0,
+    "date_range": "",
+    "tested_at": "2026-06-26T17:37:21.841136"
+  },
+  "wgc_demand_page": {
+    "status": "warn",
+    "detail": "HTTP 404",
+    "rows": 0,
+    "date_range": "",
+    "tested_at": "2026-06-26T17:37:22.479691"
+  },
+  "wgc_gold_prices": {
+    "status": "ok",
+    "detail": "Gold prices page accessible",
+    "rows": 0,
+    "date_range": "",
+    "tested_at": "2026-06-26T17:37:22.745054"
+  },
+  "wgc_api": {
+    "status": "warn",
+    "detail": "WGC API HTTP 404",
+    "rows": 0,
+    "date_range": "",
+    "tested_at": "2026-06-26T17:37:23.263355"
+  },
+  "wgc_note": {
+    "status": "skip",
+    "detail": "WGC offers PDF/Excel reports (no public API). Best alternative: use yfinance GLD/IAU holdings + LBMA prices from Quandl.",
+    "rows": 0,
+    "date_range": "",
+    "tested_at": "2026-06-26T17:37:23.263355"
+  },
+  "etf_gld_shares": {
+    "status": "ok",
+    "detail": "GLD shares outstanding: 185 rows",
+    "rows": 185,
+    "date_range": "2016-05-06 \u2192 2021-03-17",
+    "tested_at": "2026-06-26T17:37:23.343764"
+  },
+  "etf_iau_shares": {
+    "status": "ok",
+    "detail": "IAU shares outstanding: 189 rows",
+    "rows": 189,
+    "date_range": "2016-04-20 \u2192 2021-03-17",
+    "tested_at": "2026-06-26T17:37:23.417808"
+  },
+  "etf_gdx_correlation": {
+    "status": "ok",
+    "detail": "GLD-GDX 20d rolling corr: 0.9259",
+    "rows": 0,
+    "date_range": "",
+    "tested_at": "2026-06-26T17:37:23.891488",
+    "sample": {
+      "latest_corr": 0.9259370652966435
+    }
+  },
+  "investingpy": {
+    "status": "skip",
+    "detail": "investingpy not installed. Install via: pip install investingpy. Alternative: use yfinance GC=F for gold futures data.",
+    "rows": 0,
+    "date_range": "",
+    "tested_at": "2026-06-26T17:37:23.893033"
+  },
+  "api_openexchange": {
+    "status": "warn",
+    "detail": "HTTP 401",
+    "rows": 0,
+    "date_range": "",
+    "tested_at": "2026-06-26T17:37:25.160118"
+  },
+  "api_alphavantage": {
+    "status": "skip",
+    "detail": "Alpha Vantage: free key at https://www.alphavantage.co/support/#api-key. Provides: FX_DAILY, CURRENCY_EXCHANGE_RATE for XAU/USD.",
+    "rows": 0,
+    "date_range": "",
+    "tested_at": "2026-06-26T17:37:25.160118"
+  },
+  "api_twelvedata": {
+    "status": "skip",
+    "detail": "Twelve Data: free tier at https://twelvedata.com/. Provides XAU/USD real-time and historical.",
+    "rows": 0,
+    "date_range": "",
+    "tested_at": "2026-06-26T17:37:25.160118"
+  },
+  "api_coingecko_gold_tokens": {
+    "status": "ok",
+    "detail": "Gold-backed tokens: ['Tether Gold', 'PAX Gold']",
+    "rows": 0,
+    "date_range": "",
+    "tested_at": "2026-06-26T17:37:25.590906",
+    "sample": {
+      "Tether Gold": 4038.0,
+      "PAX Gold": 4041.22
+    }
+  },
+  "existing_fred_data": {
+    "status": "ok",
+    "detail": "6 macro parquet files in data/macro/",
+    "rows": 5062,
+    "date_range": "",
+    "tested_at": "2026-06-26T17:37:25.620203",
+    "sample": {
+      "DFII10_2026-05-27_2026-06-26.parquet": {
+        "rows": 20,
+        "cols": [
+          "date",
+          "value"
+        ],
+        "date_range": "0 \u2192 19"
+      },
+      "VIXCLS_2026-05-27_2026-06-26.parquet": {
+        "rows": 21,
+        "cols": [
+          "date",
+          "value"
+        ],
+        "date_range": "0 \u2192 20"
+      },
+      "yf_DFII10.parquet": {
+        "rows": 1254,
+        "cols": [
+          "date",
+          "value"
+        ],
+        "date_range": "0 \u2192 1253"
+      },
+      "yf_DTWEXBGS.parquet": {
+        "rows": 1257,
+        "cols": [
+          "date",
+          "value"
+        ],
+        "date_range": "0 \u2192 1256"
+      },
+      "yf_GVZCLS.parquet": {
+        "rows": 1254,
+        "cols": [
+          "date",
+          "value"
+        ],
+        "date_range": "0 \u2192 1253"
+      },
+      "yf_VIXCLS.parquet": {
+        "rows": 1256,
+        "cols": [
+          "date",
+          "value"
+        ],
+        "date_range": "0 \u2192 1255"
+      }
+    }
+  }
+}

@@ -7,10 +7,10 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base
+from .base import Base, TenantMixin
 
 
-class EmailThread(Base):
+class EmailThread(Base, TenantMixin):
     """
     Email thread model for grouping related emails.
     

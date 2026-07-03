@@ -1,0 +1,19 @@
+{
+  "experiment_id": "XAU_LIQSWEEP_LOCKED_001",
+  "parent_hypothesis_id": "LIQUIDITY_SWEEP_XAUUSD_D1",
+  "git_commit": "0be33752c9d38065a8e2d09413898f61e8981843",
+  "created_at_utc": "2026-06-22T00:00:00Z",
+  "strategy_hash": "30f815ab60aa03fc51175bc75bde4609e5b14a4ef43aebedc443c9c0e498f3a3",
+  "parameter_hash": "30f815ab60aa03fc51175bc75bde4609e5b14a4ef43aebedc443c9c0e498f3a3",
+  "dataset_manifest_ids": [
+    "9e33c45409944b15f7c8ee796840ea41860d6e6a610266790595f10c08e564de",
+    "c118b6d5a8c73efc8804c0bf03e0814a2405b8db1514d817681267729c80a398",
+    "67df2780b599c0083c12a3ef3e1a34ee29e7167fc0bc1a787611ed566e3b7a1f"
+  ],
+  "contract_snapshot_id": null,
+  "execution_model_version": "CONSERVATIVE_BAR_V1",
+  "cost_scenario_id": "BASE",
+  "risk_policy_id": "DEFAULT_V1",
+  "status": "CANDIDATE_ONLY",
+  "verdict": null
+}

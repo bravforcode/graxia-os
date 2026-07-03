@@ -37,9 +37,9 @@ class AIClient:
 
     def __init__(self):
         # Primary: Ollama Pay (ThaiGQ Soft)
-        self.ollama_pay_key = os.getenv("OLLAMA_PAY_API_KEY")
-        self.ollama_pay_base = os.getenv(
-            "OLLAMA_PAY_BASE_URL", "https://ollama-pay.thaigqsoft.com/api/v1"
+        self.openai_key = os.getenv("OPENAI_API_KEY")
+        self.openai_base = os.getenv(
+            "OPENAI_BASE_URL", "https://api.deepseek.com/v1"
         )
 
         # Fallback providers

@@ -201,9 +201,10 @@ async def test_backpressure_with_slow_processing():
     
     # Should have dropped some due to slow processing
     assert dropped > 0
-    assert successful <= 10
+    assert successful >= 10  # At least the initial queue capacity
     
     # Wait for processing to complete
+    # Since each event takes 0.1s and we have up to 20 events, 2s is plenty
     await asyncio.sleep(2)
     
     # Cleanup

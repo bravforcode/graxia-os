@@ -1,14 +1,12 @@
 """Tests for Quant OS strategies"""
 
-import pytest
 from decimal import Decimal
 
-from graxia.packages.quant_os.strategies.base import Signal, StrategyConfig
-from graxia.packages.quant_os.strategies.mtm import MultiTimeframeMomentum
+from graxia.packages.quant_os.core.enums import SignalType
+from graxia.packages.quant_os.strategies.base import Signal
+from graxia.packages.quant_os.strategies.ensemble import get_ensemble_signal
 from graxia.packages.quant_os.strategies.mrb import MeanReversionBollinger
-from graxia.packages.quant_os.strategies.mlb import MLBreakout
-from graxia.packages.quant_os.strategies.ensemble import get_ensemble_signal, EnsembleStrategy
-from graxia.packages.quant_os.core.enums import SignalType, RegimeType
+from graxia.packages.quant_os.strategies.mtm import MultiTimeframeMomentum
 
 
 class TestSignal:
@@ -16,12 +14,7 @@ class TestSignal:
 
     def test_signal_creation(self):
         """Can create a signal"""
-        signal = Signal.create(
-            strategy_id="test",
-            symbol="EURUSD",
-            signal_type=SignalType.BUY,
-            confidence=0.75
-        )
+        signal = Signal.create(strategy_id="test", symbol="EURUSD", signal_type=SignalType.BUY, confidence=0.75)
         assert signal.strategy_id == "test"
         assert signal.symbol == "EURUSD"
         assert signal.signal_type == SignalType.BUY
@@ -35,7 +28,7 @@ class TestSignal:
             signal_type=SignalType.BUY,
             entry_price=Decimal("1.0850"),
             stop_loss=Decimal("1.0820"),
-            take_profit=Decimal("1.0910")
+            take_profit=Decimal("1.0910"),
         )
         rr = signal.risk_reward_ratio
         assert rr is not None
@@ -97,48 +90,26 @@ class TestEnsemble:
     def test_ensemble_weights(self):
         """Ensemble uses correct weights"""
         from graxia.packages.quant_os.strategies.ensemble import STRATEGY_WEIGHTS
+
         assert STRATEGY_WEIGHTS["mtm"] == 0.40
         assert STRATEGY_WEIGHTS["mrb"] == 0.25
         assert STRATEGY_WEIGHTS["mlb"] == 0.35
 
     def test_get_ensemble_signal_buy(self):
         """Ensemble correctly aggregates buy signals"""
-        mtm = Signal.create(
-            strategy_id="mtm",
-            symbol="EURUSD",
-            signal_type=SignalType.BUY,
-            confidence=0.80
-        )
+        mtm = Signal.create(strategy_id="mtm", symbol="EURUSD", signal_type=SignalType.BUY, confidence=0.80)
 
-        decision, confidence, details = get_ensemble_signal(
-            mtm_signal=mtm,
-            mrb_signal=None,
-            mlb_signal=None
-        )
+        decision, confidence, details = get_ensemble_signal(mtm_signal=mtm, mrb_signal=None, mlb_signal=None)
 
         assert decision in [SignalType.BUY, SignalType.NO_TRADE]
         assert 0 <= confidence <= 1
 
     def test_get_ensemble_signal_conflict(self):
         """Ensemble handles conflicting signals"""
-        mtm = Signal.create(
-            strategy_id="mtm",
-            symbol="EURUSD",
-            signal_type=SignalType.BUY,
-            confidence=0.80
-        )
-        mrb = Signal.create(
-            strategy_id="mrb",
-            symbol="EURUSD",
-            signal_type=SignalType.SELL,
-            confidence=0.70
-        )
+        mtm = Signal.create(strategy_id="mtm", symbol="EURUSD", signal_type=SignalType.BUY, confidence=0.80)
+        mrb = Signal.create(strategy_id="mrb", symbol="EURUSD", signal_type=SignalType.SELL, confidence=0.70)
 
-        decision, confidence, details = get_ensemble_signal(
-            mtm_signal=mtm,
-            mrb_signal=mrb,
-            mlb_signal=None
-        )
+        decision, confidence, details = get_ensemble_signal(mtm_signal=mtm, mrb_signal=mrb, mlb_signal=None)
 
         # Should abstain on conflicting signals
         assert decision != SignalType.BUY or decision != SignalType.SELL or confidence < 0.6
@@ -156,7 +127,7 @@ class TestPositionSizing:
             account_balance=Decimal("10000"),
             entry_price=Decimal("1.0850"),
             stop_loss=Decimal("1.0820"),
-            symbol="EURUSD"
+            symbol="EURUSD",
         )
 
         assert result.lots > 0
@@ -171,7 +142,7 @@ class TestPositionSizing:
             account_balance=Decimal("10000"),
             entry_price=Decimal("1.0850"),
             stop_loss=Decimal("1.0820"),
-            symbol="EURUSD"
+            symbol="EURUSD",
         )
 
         assert result.lots > 0

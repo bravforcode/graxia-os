@@ -3,9 +3,12 @@ __pycache__/
 *.py[cod]
 *.pyo
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 *.egg-info/
 dist/
 build/
+coverage/
 .eggs/
 
 # xiarchitect cache (keep docs/)
@@ -13,6 +16,13 @@ build/
 
 # Env - ALL env files are gitignored, including frontend
 .env
+.env.*
+!.env.example
+
+# MT5 credentials — NEVER commit
+mt5_connector/config.yaml
+*.secret.yaml
+secret*.yaml
 .env.production
 .env.backup-*
 .env.bak*
@@ -115,16 +125,40 @@ backend/venv/
 # Test artifacts
 backend/.state/
 backend/tests/conftest.py.bak
+backend/tests/*.db
+backend/tests/*.db-journal
+backend/tests/*.sqlite
+backend/tests/*.sqlite3
+backend/tests/*.bak
+backend/*.bak
+*.bak
 test-results-*.md
 test_report.txt
+
+# DB journal files
+*.db-journal
+*.db-wal
+*.db-shm
 
 # Build artifacts
 frontend/dev_log.txt
 *.sqlite3
 
+# Local-only agent and test artifacts
+frontend/storageState.json
+.agents/
+.planning/
+.hypothesis/
+backend/.hypothesis/
+.openclaude-profile.json
+.testsprite.json
+.lean-ctx-init
+backups/
+nul
+backend/nul
+LEAN-CTX.md
+extraterrestrial-escape/
+sites/
+
 # LanceDB vector database
 lancedb/
-
-# Junk files
-nul
-Usersmenumgraxia-os-funnelbackendvenv/

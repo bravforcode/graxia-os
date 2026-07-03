@@ -77,12 +77,22 @@ jobs:
         run: |
           python -m pytest graxia/packages/quant_os/tests/ -v --tb=short --cov=graxia.packages.quant_os --cov-report=xml
       
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: env.CODECOV_TOKEN != ''
         with:
           files: ./coverage.xml
           flags: unittests
           name: quant-os-coverage
+          fail_ci_if_error: false
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+          retention-days: 30
 
   # ═══════════════════════════════════════════════════════════════════════════════
   # Security Scan

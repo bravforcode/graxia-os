@@ -1,0 +1,75 @@
+# ═══════════════════════════════════════════════════════════════════════
+# Dockerfile.trainer — Graxia XGBoost Model Trainer
+# Supercronic-based cron scheduler for auto-retrain
+# ═══════════════════════════════════════════════════════════════════════
+
+FROM python:3.11-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY docker/requirements.trainer.txt /tmp/requirements.txt
+RUN pip install --upgrade pip && \
+    pip install -r /tmp/requirements.txt
+
+# ── Production ────────────────────────────────────────────────────────
+FROM python:3.11-slim AS production
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONFAULTHANDLER=1 \
+    PYTHONPATH="/app" \
+    PATH="/opt/venv/bin:$PATH"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /opt/venv /opt/venv
+
+WORKDIR /app
+
+# Mirror full package structure: graxia.packages.quant_os.*
+RUN mkdir -p /app/graxia/packages
+
+COPY quant_os/ /app/graxia/packages/quant_os/
+
+# Copy shared graxia.database module (SQLAlchemy Base)
+COPY graxia/database.py /app/graxia/database.py
+
+# Touch __init__.py at each package level
+RUN touch /app/graxia/__init__.py /app/graxia/packages/__init__.py
+
+# Install supercronic for cron scheduling
+RUN curl -fsSL \
+    "https://github.com/aptible/supercronic/releases/download/v0.2.32/supercronic-linux-amd64" \
+    -o /usr/local/bin/supercronic && \
+    chmod +x /usr/local/bin/supercronic
+
+# Create data dirs with correct ownership
+RUN mkdir -p /models /features /logs && \
+    useradd -m -u 1002 graxia && \
+    chown -R graxia:graxia /app /models /features /logs
+
+# Copy crontab + entrypoint (paths updated for package structure)
+COPY docker/trainer/crontab /app/crontab
+COPY docker/trainer/entrypoint-trainer.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+USER graxia
+
+HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
+    CMD ["sh", "-c", "test -f /tmp/trainer-health && test $(($(date +%s) - $(cat /tmp/trainer-health))) -lt 7200 || exit 1"]
+
+ENTRYPOINT ["/app/entrypoint.sh"]

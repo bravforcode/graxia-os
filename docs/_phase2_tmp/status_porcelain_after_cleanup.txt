@@ -1,0 +1,20 @@
+Generated from `git status --porcelain=v1` after Phase 1.5 cleanup.
+
+Bucket counts at capture time:
+- A backend implementation: 46
+- B backend tests: 30
+- C frontend implementation: 53
+- D frontend tests/build config: 11
+- E migrations/schema: 8
+- F CI/scripts: 68
+- G docs: 28
+- H generated/runtime/cache: 6
+- I suspicious/stray: 3
+- J unknown: 8
+
+Key suspicious entries:
+- `D "ersmenumgraxia os\\357\\200\\242 && git status"`
+- `?? backend/nul`
+- `?? nul`
+
+Full path inventory is summarized in `docs/PHASE2_REMAINING_PRODUCT_DIFF_CLASSIFICATION.md`.

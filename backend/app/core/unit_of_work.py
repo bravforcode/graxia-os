@@ -13,12 +13,18 @@ class AsyncUnitOfWork:
         return self
 
     async def __aexit__(self, exc_type, exc_val, traceback):
-        if exc_type is not None:
+        try:
+            if exc_type is not None:
+                await self.rollback()
+                logger.error(f"UoW rollback due to: {exc_val}")
+            else:
+                await self.commit()
+        except Exception as e:
             await self.rollback()
-            logger.error(f"UoW rollback due to: {exc_val}")
-        else:
-            await self.commit()
-        await self.session.close()
+            logger.error(f"UoW rollback due to commit failure: {e}")
+            raise
+        finally:
+            await self.session.close()
 
     async def commit(self):
         await self.session.commit()

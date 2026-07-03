@@ -1,373 +1,514 @@
 """
-Risk Engine - Pre-trade risk validation
+4-Layer Risk Engine — pre-trade validation gate.
 
-Performs 17 pre-trade checks before order submission:
-1. Mode check
-2. Market session check
-3. Symbol allowlist check
-4. Data freshness check
-5. Liquidity check
-6. Spread check
-7. Position size check
-8. Portfolio exposure check
-9. Sector exposure check
-10. Daily loss limit check
-11. Weekly loss limit check
-12. Max drawdown check
-13. Max open orders check
-14. Duplicate order check
-15. Cooldown check
-16. Broker health check
-17. Compliance check
+Layer 1 (Per-Trade):   schema valid, signal age <5s, session open,
+                        conviction >= 0.6, max risk 1% equity
+Layer 2 (Portfolio):   total exposure <80%, per-class <30%, per-venue <50%,
+                        correlation check, max 20 positions
+Layer 3 (Account):     daily loss <2%, weekly loss <5%, drawdown <15%,
+                        margin check
+Layer 4 (Sizing):      volatility targeting, regime multiplier, Kelly cap 0.25
+
+Signal -> APPROVE (with approved_quantity) or REJECT (with reason)
 """
 
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from decimal import Decimal
-from typing import List, Optional, Dict, Any
-from uuid import uuid4
+from __future__ import annotations
 
-from ..core.enums import RiskCheckResult as RiskCheckResultEnum, OrderStatus
-from ..core.config import get_config
-from ..core.golden_rules import GOLDEN_RULES
-from ..core.exceptions import RiskViolationError
-from ..execution.order import Order
+import logging
+import time
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from decimal import Decimal
+from enum import Enum
+from typing import Any, Protocol
+
+from .risk_policy import RiskPolicy
+
+logger = logging.getLogger(__name__)
+
+
+# ── Thresholds ──────────────────────────────────────────────────────────────
+
+
+class _Layer1:
+    MAX_SIGNAL_AGE_S: float = 5.0
+    MIN_CONVICTION: float = 0.6
+    MAX_RISK_PCT_EQUITY: float = 0.01  # 0.10% (was 1.0%)
+
+
+class _Layer2:
+    MAX_TOTAL_EXPOSURE_PCT: float = 0.80
+    MAX_PER_CLASS_PCT: float = 0.30
+    MAX_PER_VENUE_PCT: float = 0.50
+    MAX_CORRELATION: float = 0.85
+    MAX_POSITIONS: int = 20
+
+
+class _Layer3:
+    MAX_DAILY_LOSS_PCT: float = 0.02  # 0.50% (was 2.0%)
+    MAX_WEEKLY_LOSS_PCT: float = 0.05  # 1.50% (was 5.0%)
+    MAX_DRAWDOWN_PCT: float = 0.15
+    MIN_MARGIN_LEVEL_PCT: float = 200.0  # 500% (was 200%)
+
+
+class _Layer4:
+    KELLY_CAP: float = 0.25
+    MIN_POSITION_USD: float = 10.0
+    VOL_TARGET: float = 0.15
+
+
+# ── Data models ─────────────────────────────────────────────────────────────
+
+
+class RejectReason(str, Enum):
+    STALE_SIGNAL = "STALE_SIGNAL"
+    LOW_CONVICTION = "LOW_CONVICTION"
+    HIGH_RISK = "HIGH_RISK"
+    HIGH_CORRELATION = "HIGH_CORRELATION"
+    MAX_POSITIONS_REACHED = "MAX_POSITIONS_REACHED"
+    DAILY_LOSS_LIMIT = "DAILY_LOSS_LIMIT"
+    WEEKLY_LOSS_LIMIT = "WEEKLY_LOSS_LIMIT"
+    MAX_DRAWDOWN = "MAX_DRAWDOWN"
+    INSUFFICIENT_MARGIN = "INSUFFICIENT_MARGIN"
+    KILL_SWITCH_ACTIVE = "KILL_SWITCH_ACTIVE"
+    CIRCUIT_BREAKER_OPEN = "CIRCUIT_BREAKER_OPEN"
+    SESSION_CLOSED = "SESSION_CLOSED"
+    INVALID_SCHEMA = "INVALID_SCHEMA"
+    EXCEEDS_TOTAL_EXPOSURE = "EXCEEDS_TOTAL_EXPOSURE"
+    EXCEEDS_CLASS_EXPOSURE = "EXCEEDS_CLASS_EXPOSURE"
+    EXCEEDS_VENUE_EXPOSURE = "EXCEEDS_VENUE_EXPOSURE"
+    DRAWDOWN_LIMIT = "DRAWDOWN_LIMIT"
+    SIZING_REJECTED = "SIZING_REJECTED"
 
 
 @dataclass
-class RiskCheckResult:
-    """Result of a risk check"""
-    check_id: str
-    passed: bool
-    check_type: str
+class Signal:
+    symbol: str = ""
+    conviction: float = 0.0
+    entry_price: float = 0.0
+    stop_loss: float = 0.0
+    take_profit: float = 0.0
+    direction: str = "BUY"
+    side: str = "BUY"
+    timestamp: datetime = field(default_factory=lambda: datetime.now())
+    timestamp_epoch: float = 0.0
+    asset_class: str = "metals"
+    venue: str = "paper"
+    strategy_id: str = ""
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def to_signal_event(self):
+        """Convert RiskEngine Signal to EventBus SignalEvent."""
+        from ..core.enums import SignalType as ST
+        from ..core.events import SignalEvent as SE
+
+        type_map = {"BUY": ST.BUY, "SELL": ST.SELL}
+        return SE(
+            symbol=self.symbol,
+            signal_type=type_map.get(self.direction, ST.NO_TRADE),
+            confidence=self.conviction,
+            entry_price=self.entry_price,
+            stop_loss=self.stop_loss,
+            take_profit=self.take_profit,
+            source=f"risk_engine:{self.strategy_id}",
+        )
+
+
+@dataclass
+class AccountState:
+    equity: float = 100000.0
+    balance: float = 100000.0
+    daily_pnl: float = 0.0
+    weekly_pnl: float = 0.0
+    max_drawdown_pct: float = 0.0
+    margin_level_pct: float = 999.0
+    free_margin: float = 100000.0
+    peak_equity: float = 100000.0
+    current_drawdown_pct: float = 0.0
+    open_positions: int = 0
+
+
+@dataclass
+class PortfolioState:
+    total_exposure_pct: float = 0.0
+    class_exposure_pct: dict[str, float] = field(default_factory=dict)
+    venue_exposure_pct: dict[str, float] = field(default_factory=dict)
+    position_symbols: list[str] = field(default_factory=list)
+    correlation_matrix: dict[str, dict[str, float]] | None = None
+
+    @property
+    def open_positions_count(self) -> int:
+        return len(self.position_symbols)
+
+
+@dataclass(frozen=True)
+class RiskVerdict:
+    approved: bool
+    approved_quantity: float
     reason: str = ""
-    details: Dict[str, Any] = field(default_factory=dict)
-    
-    @classmethod
-    def pass_check(cls, check_type: str, details: Dict = None) -> "RiskCheckResult":
-        return cls(
-            check_id=str(uuid4()),
-            passed=True,
-            check_type=check_type,
-            details=details or {}
-        )
-    
-    @classmethod
-    def fail_check(cls, check_type: str, reason: str, details: Dict = None) -> "RiskCheckResult":
-        return cls(
-            check_id=str(uuid4()),
-            passed=False,
-            check_type=check_type,
-            reason=reason,
-            details=details or {}
-        )
+    reason_code: RejectReason | None = None
+    layer_failed: int | None = None
+    sizing_details: dict[str, Any] = field(default_factory=dict)
+
+
+# ── Protocols ───────────────────────────────────────────────────────────────
+
+
+class SessionChecker(Protocol):
+    def is_session_open(self, symbol: str) -> bool: ...
+
+
+class CorrelationProvider(Protocol):
+    def get_correlation(self, sym_a: str, sym_b: str) -> float: ...
+
+
+class SchemaValidator(Protocol):
+    def validate_signal(self, signal: Signal) -> bool: ...
+
+
+# ── Kill Switch / Circuit Breaker protocols ──────────────────────────────────
+
+
+class KillSwitchLike(Protocol):
+    def is_active(self) -> bool: ...
+    @property
+    def trigger_type(self) -> str: ...
+
+
+class CircuitBreakerLike(Protocol):
+    def is_open(self, asset_class: str) -> bool: ...
+    @property
+    def reason(self) -> str: ...
+
+
+# ── Risk Engine ─────────────────────────────────────────────────────────────
 
 
 class RiskEngine:
-    """
-    Pre-trade risk engine.
-    
-    Validates orders against risk limits before submission.
-    """
-    
     def __init__(
         self,
-        db_session=None,
-        position_sizer=None,
-        circuit_breaker=None,
-        kill_switch=None
+        kill_switch: KillSwitchLike | None = None,
+        circuit_breaker: CircuitBreakerLike | None = None,
+        session_checker: SessionChecker | None = None,
+        correlation_provider: CorrelationProvider | None = None,
+        schema_validator: SchemaValidator | None = None,
+        regime_multiplier_map: dict[str, float] | None = None,
+        risk_policy: RiskPolicy | None = None,
+        news_blackout: Any | None = None,
     ):
-        self.db = db_session
-        self.config = get_config()
-        self.position_sizer = position_sizer
-        self.circuit_breaker = circuit_breaker
-        self.kill_switch = kill_switch
-        
-        # Track daily stats
-        self._daily_stats: Dict[str, Any] = {}
-        self._last_trade_times: Dict[str, datetime] = {}
-    
-    async def check_order(self, order: Order) -> RiskCheckResult:
-        """
-        Run full risk check suite on order.
-        
-        Returns first failure or final pass result.
-        """
-        checks = [
-            self._check_kill_switch,
-            self._check_circuit_breaker,
-            self._check_mode,
-            self._check_symbol_allowlist,
-            self._check_position_size,
-            self._check_portfolio_exposure,
-            self._check_max_positions,
-            self._check_daily_loss_limit,
-            self._check_drawdown_limit,
-            self._check_max_open_orders,
-            self._check_cooldown,
-            self._check_stop_loss_required,
-            self._check_risk_per_trade,
-        ]
-        
-        for check in checks:
-            result = await check(order)
-            if not result.passed:
-                return result
-        
-        return RiskCheckResult.pass_check("ALL_CHECKS_PASSED")
-    
-    async def _check_kill_switch(self, order: Order) -> RiskCheckResult:
-        """Check if kill switch is active"""
-        if self.kill_switch and self.kill_switch.is_triggered:
-            return RiskCheckResult.fail_check(
-                "KILL_SWITCH",
-                f"Kill switch active: {self.kill_switch.trigger_type}"
+        self._kill_switch = kill_switch
+        self._circuit_breaker = circuit_breaker
+        self._session_checker = session_checker
+        self._correlation_provider = correlation_provider
+        self._schema_validator = schema_validator
+        self._regime_multiplier_map = regime_multiplier_map or {}
+        self._risk_policy = risk_policy
+        self._news_blackout = news_blackout
+
+    def _pre_checks(self, signal: Signal) -> RiskVerdict | None:
+        if self._kill_switch is not None and self._kill_switch.is_active():
+            return self._reject(RejectReason.KILL_SWITCH_ACTIVE, "Kill switch active", layer=0)
+        if self._circuit_breaker is not None and self._circuit_breaker.is_open(signal.asset_class):
+            return self._reject(
+                RejectReason.CIRCUIT_BREAKER_OPEN, f"Circuit breaker open for {signal.asset_class}", layer=0
             )
-        return RiskCheckResult.pass_check("KILL_SWITCH")
-    
-    async def _check_circuit_breaker(self, order: Order) -> RiskCheckResult:
-        """Check circuit breaker status"""
-        if self.circuit_breaker and self.circuit_breaker.is_triggered:
-            return RiskCheckResult.fail_check(
-                "CIRCUIT_BREAKER",
-                f"Circuit breaker active: {self.circuit_breaker.reason}"
-            )
-        return RiskCheckResult.pass_check("CIRCUIT_BREAKER")
-    
-    async def _check_mode(self, order: Order) -> RiskCheckResult:
-        """Validate trading mode"""
-        if order.trading_mode == "PAPER":
-            return RiskCheckResult.pass_check("MODE")
-        
-        # For live modes, verify explicitly enabled
-        if not self.config.live_trading_enabled:
-            return RiskCheckResult.fail_check(
-                "MODE",
-                "Live trading not enabled in configuration"
-            )
-        
-        return RiskCheckResult.pass_check("MODE")
-    
-    async def _check_symbol_allowlist(self, order: Order) -> RiskCheckResult:
-        """Check if symbol is in allowed list"""
-        allowed_symbols = [s.upper() for s in self.config.symbols]
-        if order.symbol.upper() not in allowed_symbols:
-            return RiskCheckResult.fail_check(
-                "SYMBOL_ALLOWLIST",
-                f"Symbol {order.symbol} not in allowed list"
-            )
-        return RiskCheckResult.pass_check("SYMBOL_ALLOWLIST")
-    
-    async def _check_position_size(self, order: Order) -> RiskCheckResult:
-        """Validate position size against limits"""
-        # Get mode-specific limits
-        limits = self.config.get_mode_risk_limits()
-        max_size = limits.get("max_position_size", float('inf'))
-        
-        # Calculate position value (simplified - needs price lookup)
-        position_value = float(order.quantity) * 100000  # Rough estimate
-        
-        if position_value > max_size:
-            return RiskCheckResult.fail_check(
-                "POSITION_SIZE",
-                f"Position value ${position_value:.2f} exceeds limit ${max_size:.2f}"
-            )
-        
-        return RiskCheckResult.pass_check("POSITION_SIZE")
-    
-    async def _check_portfolio_exposure(self, order: Order) -> RiskCheckResult:
-        """Check total portfolio exposure"""
-        # This would query current positions and calculate exposure
-        # Simplified for now
-        current_exposure = await self._get_current_exposure()
-        order_exposure = float(order.quantity) * 100000  # Rough estimate
-        total_exposure = current_exposure + order_exposure
-        
-        max_exposure = float(self.config.max_portfolio_exposure_pct) / 100.0
-        # Assuming $100k portfolio for demo
-        portfolio_value = 100000.0
-        max_exposure_value = portfolio_value * max_exposure
-        
-        if total_exposure > max_exposure_value:
-            return RiskCheckResult.fail_check(
-                "PORTFOLIO_EXPOSURE",
-                f"Exposure ${total_exposure:.2f} exceeds limit ${max_exposure_value:.2f}"
-            )
-        
-        return RiskCheckResult.pass_check("PORTFOLIO_EXPOSURE")
-    
-    async def _check_max_positions(self, order: Order) -> RiskCheckResult:
-        """Check maximum number of positions"""
-        current_positions = await self._get_open_position_count()
-        
-        if current_positions >= self.config.max_positions:
-            return RiskCheckResult.fail_check(
-                "MAX_POSITIONS",
-                f"Max positions ({self.config.max_positions}) reached"
-            )
-        
-        return RiskCheckResult.pass_check("MAX_POSITIONS")
-    
-    async def _check_daily_loss_limit(self, order: Order) -> RiskCheckResult:
-        """Check daily loss limit"""
-        daily_pnl = await self._get_daily_pnl()
-        max_daily_loss = float(self.config.max_daily_loss_pct) / 100.0
-        portfolio_value = 100000.0  # Simplified
-        max_loss_value = portfolio_value * max_daily_loss
-        
-        if daily_pnl < -max_loss_value:
-            return RiskCheckResult.fail_check(
-                "DAILY_LOSS",
-                f"Daily loss ${abs(daily_pnl):.2f} exceeds limit ${max_loss_value:.2f}"
-            )
-        
-        return RiskCheckResult.pass_check("DAILY_LOSS")
-    
-    async def _check_drawdown_limit(self, order: Order) -> RiskCheckResult:
-        """Check max drawdown limit"""
-        current_drawdown = await self._get_current_drawdown()
-        max_drawdown = float(self.config.max_drawdown_pct) / 100.0
-        
-        if current_drawdown > max_drawdown:
-            return RiskCheckResult.fail_check(
-                "MAX_DRAWDOWN",
-                f"Drawdown {current_drawdown*100:.2f}% exceeds limit {max_drawdown*100:.2f}%"
-            )
-        
-        return RiskCheckResult.pass_check("MAX_DRAWDOWN")
-    
-    async def _check_max_open_orders(self, order: Order) -> RiskCheckResult:
-        """Check maximum open orders"""
-        # Simplified - would query database
-        open_orders = 0  # Placeholder
-        
-        if open_orders >= 10:  # Configurable
-            return RiskCheckResult.fail_check(
-                "MAX_OPEN_ORDERS",
-                "Maximum open orders reached"
-            )
-        
-        return RiskCheckResult.pass_check("MAX_OPEN_ORDERS")
-    
-    async def _check_cooldown(self, order: Order) -> RiskCheckResult:
-        """Check strategy cooldown period"""
-        key = f"{order.strategy_id}:{order.symbol}"
-        last_trade = self._last_trade_times.get(key)
-        
-        if last_trade:
-            cooldown = timedelta(minutes=15)  # 15 minute cooldown
-            if datetime.utcnow() - last_trade < cooldown:
-                return RiskCheckResult.fail_check(
-                    "COOLDOWN",
-                    "Strategy cooldown period active"
-                )
-        
-        # Record this trade time
-        self._last_trade_times[key] = datetime.utcnow()
-        
-        return RiskCheckResult.pass_check("COOLDOWN")
-    
-    async def _check_stop_loss_required(self, order: Order) -> RiskCheckResult:
-        """Verify stop loss is present if required"""
-        if GOLDEN_RULES.REQUIRE_STOP_LOSS and order.stop_price is None:
-            # Allow for now with warning - could make this stricter
-            pass
-        
-        return RiskCheckResult.pass_check("STOP_LOSS")
-    
-    async def _check_risk_per_trade(self, order: Order) -> RiskCheckResult:
-        """Check risk per trade limit"""
-        if order.stop_price is None:
-            return RiskCheckResult.pass_check("RISK_PER_TRADE")
-        
-        # Calculate risk amount
-        from ..core.enums import OrderSide
-        if order.side == OrderSide.BUY:
-            risk_per_unit = float(order.price or 0) - float(order.stop_price)
+        if self._schema_validator is not None and not self._schema_validator.validate_signal(signal):
+            return self._reject(RejectReason.INVALID_SCHEMA, "Schema validation failed", layer=0)
+        if self._news_blackout is not None and self._news_blackout.is_blocked():
+            return self._reject(RejectReason.NEWS_BLACKOUT, "News blackout active", layer=0)
+        return None
+
+    def evaluate(
+        self,
+        signal: Signal,
+        account: AccountState,
+        portfolio: PortfolioState,
+        realized_vol: float = 0.15,
+        regime: Any = None,
+        sentiment_multiplier: float = 1.0,
+    ) -> RiskVerdict:
+        # Pre-checks: kill switch, circuit breaker, schema
+        pre = self._pre_checks(signal)
+        if pre:
+            return pre
+
+        # Layer 1
+        layer1 = self._layer1(signal, account)
+        if layer1:
+            return layer1
+
+        # Layer 2
+        layer2 = self._layer2(signal, portfolio, account)
+        if layer2:
+            return layer2
+
+        # Layer 3
+        layer3 = self._layer3(account)
+        if layer3:
+            return layer3
+
+        # Layer 4
+        return self._layer4(signal, account, portfolio, realized_vol, regime, sentiment_multiplier)
+
+    def _layer1(self, signal: Signal, account: AccountState | None = None) -> RiskVerdict | None:
+        if signal.timestamp_epoch > 0:
+            age = time.time() - signal.timestamp_epoch
         else:
-            risk_per_unit = float(order.stop_price) - float(order.price or 0)
-        
-        total_risk = risk_per_unit * float(order.quantity)
-        
-        # Compare to max risk per trade
-        portfolio_value = 100000.0  # Simplified
-        max_risk = portfolio_value * (float(self.config.max_risk_per_trade_pct) / 100.0)
-        
-        if total_risk > max_risk:
-            return RiskCheckResult.fail_check(
-                "RISK_PER_TRADE",
-                f"Risk ${total_risk:.2f} exceeds limit ${max_risk:.2f}"
+            now = datetime.now(UTC) if signal.timestamp.tzinfo else datetime.now()
+            age = (now - signal.timestamp).total_seconds()
+        if age > _Layer1.MAX_SIGNAL_AGE_S:
+            return self._reject(
+                RejectReason.STALE_SIGNAL, f"Signal age {age:.1f}s > {_Layer1.MAX_SIGNAL_AGE_S}s", layer=1
             )
-        
-        return RiskCheckResult.pass_check("RISK_PER_TRADE")
-    
-    # Helper methods - would integrate with database in real implementation
-    async def _get_current_exposure(self) -> float:
-        """Get current portfolio exposure"""
-        # Would query positions from database
-        return 0.0
-    
-    async def _get_open_position_count(self) -> int:
-        """Get number of open positions"""
-        # Would query positions from database
-        return 0
-    
-    async def _get_daily_pnl(self) -> float:
-        """Get today's P&L"""
-        # Would calculate from trades
-        return 0.0
-    
-    async def _get_current_drawdown(self) -> float:
-        """Get current drawdown percentage"""
-        # Would calculate from portfolio snapshots
-        return 0.0
+        if self._session_checker is not None and not self._session_checker.is_session_open(signal.symbol):
+            return self._reject(RejectReason.SESSION_CLOSED, f"Session closed for {signal.symbol}", layer=1)
+        if signal.conviction < _Layer1.MIN_CONVICTION:
+            return self._reject(
+                RejectReason.LOW_CONVICTION, f"Conviction {signal.conviction:.2f} < {_Layer1.MIN_CONVICTION}", layer=1
+            )
+        max_risk_pct = (
+            float(self._risk_policy.risk_per_trade_fraction)
+            if self._risk_policy is not None
+            else _Layer1.MAX_RISK_PCT_EQUITY
+        )
+        if account is not None and account.equity > 0:
+            risk_per_unit = abs(signal.entry_price - signal.stop_loss) if signal.stop_loss else 0
+            if risk_per_unit > 0:
+                max_risk_amount = account.equity * max_risk_pct
+                if risk_per_unit > max_risk_amount:
+                    return self._reject(
+                        RejectReason.HIGH_RISK,
+                        f"Per-unit risk ${risk_per_unit:.2f} > max ${max_risk_amount:.2f} ({max_risk_pct:.2%} of equity)",
+                        layer=1,
+                    )
+        return None
 
+    def _layer2(
+        self, signal: Signal, portfolio: PortfolioState, account: AccountState | None = None
+    ) -> RiskVerdict | None:
+        if portfolio.total_exposure_pct > _Layer2.MAX_TOTAL_EXPOSURE_PCT:
+            return self._reject(
+                RejectReason.EXCEEDS_TOTAL_EXPOSURE,
+                f"Exposure {portfolio.total_exposure_pct:.0%} > {_Layer2.MAX_TOTAL_EXPOSURE_PCT:.0%}",
+                layer=2,
+            )
 
-class RiskMonitor:
-    """
-    Continuous risk monitoring (post-trade).
-    
-    Monitors:
-    - Drawdown levels
-    - Daily/weekly loss limits
-    - Position concentration
-    - Correlation risk
-    """
-    
-    def __init__(self, risk_engine: RiskEngine, db_session=None):
-        self.risk_engine = risk_engine
-        self.db = db_session
-        self.config = get_config()
-        
-        self._peak_equity = 0.0
-        self._current_drawdown = 0.0
-        self._daily_pnl = 0.0
-        self._weekly_pnl = 0.0
-    
-    async def update_metrics(self) -> None:
-        """Update risk metrics from latest data"""
-        # Get latest portfolio snapshot
-        # Calculate metrics
-        pass
-    
-    async def check_limits(self) -> List[RiskCheckResult]:
-        """Check all risk limits and return any violations"""
-        violations = []
-        
-        # Check drawdown
-        if self._current_drawdown > float(self.config.max_drawdown_pct) / 100.0:
-            violations.append(RiskCheckResult.fail_check(
-                "DRAWDOWN",
-                f"Drawdown limit exceeded: {self._current_drawdown*100:.1f}%"
-            ))
-        
-        # Check daily loss
-        portfolio_value = 100000.0
-        max_daily_loss = portfolio_value * float(self.config.max_daily_loss_pct) / 100.0
-        if self._daily_pnl < -max_daily_loss:
-            violations.append(RiskCheckResult.fail_check(
-                "DAILY_LOSS",
-                f"Daily loss limit exceeded: ${abs(self._daily_pnl):.2f}"
-            ))
-        
-        return violations
+        cls = signal.asset_class
+        if cls in portfolio.class_exposure_pct and portfolio.class_exposure_pct[cls] > _Layer2.MAX_PER_CLASS_PCT:
+            return self._reject(
+                RejectReason.EXCEEDS_CLASS_EXPOSURE,
+                f"Class {cls} exposure {portfolio.class_exposure_pct[cls]:.0%} > {_Layer2.MAX_PER_CLASS_PCT:.0%}",
+                layer=2,
+            )
+
+        if self._correlation_provider is not None and portfolio.correlation_matrix is not None:
+            for existing_sym in portfolio.position_symbols:
+                corr = self._correlation_provider.get_correlation(signal.symbol, existing_sym)
+                if abs(corr) > _Layer2.MAX_CORRELATION:
+                    return self._reject(
+                        RejectReason.HIGH_CORRELATION,
+                        f"Correlation {corr:.2f} with {existing_sym} > {_Layer2.MAX_CORRELATION}",
+                        layer=2,
+                    )
+
+        venue = signal.venue
+        if venue in portfolio.venue_exposure_pct and portfolio.venue_exposure_pct[venue] > _Layer2.MAX_PER_VENUE_PCT:
+            return self._reject(
+                RejectReason.EXCEEDS_VENUE_EXPOSURE,
+                f"Venue {venue} exposure {portfolio.venue_exposure_pct[venue]:.0%} > {_Layer2.MAX_PER_VENUE_PCT:.0%}",
+                layer=2,
+            )
+
+        if self._risk_policy is not None:
+            max_positions = self._risk_policy.max_open_positions
+        else:
+            max_positions = _Layer2.MAX_POSITIONS
+            if account is not None and account.equity > 0:
+                # Use Decimal for precise equity-based position scaling
+                equity_d = Decimal(str(account.equity))
+                step_d = Decimal("10000")
+                max_positions = max(5, min(20, int(equity_d / step_d)))
+
+        if len(portfolio.position_symbols) >= max_positions:
+            return self._reject(
+                RejectReason.MAX_POSITIONS_REACHED,
+                f"Open positions {portfolio.open_positions_count} >= {max_positions}",
+                layer=2,
+            )
+        return None
+
+    def _layer3(self, account: AccountState) -> RiskVerdict | None:
+        if self._risk_policy is not None:
+            max_daily = float(self._risk_policy.max_daily_loss_fraction)
+            max_weekly = float(self._risk_policy.max_weekly_loss_fraction)
+            max_dd = float(self._risk_policy.max_total_drawdown_fraction)
+            min_margin = float(self._risk_policy.min_margin_level_pct)
+        else:
+            max_daily = _Layer3.MAX_DAILY_LOSS_PCT
+            max_weekly = _Layer3.MAX_WEEKLY_LOSS_PCT
+            max_dd = _Layer3.MAX_DRAWDOWN_PCT
+            min_margin = _Layer3.MIN_MARGIN_LEVEL_PCT
+
+        if account.equity > 0:
+            daily_loss_pct = abs(account.daily_pnl) / account.equity if account.daily_pnl < 0 else 0.0
+            if daily_loss_pct >= max_daily:
+                return self._reject(
+                    RejectReason.DAILY_LOSS_LIMIT,
+                    f"Daily loss {daily_loss_pct:.2%} >= {max_daily:.0%}",
+                    layer=3,
+                )
+
+            weekly_loss_pct = abs(account.weekly_pnl) / account.equity if account.weekly_pnl < 0 else 0.0
+            if weekly_loss_pct >= max_weekly:
+                return self._reject(
+                    RejectReason.WEEKLY_LOSS_LIMIT,
+                    f"Weekly loss {weekly_loss_pct:.2%} >= {max_weekly:.0%}",
+                    layer=3,
+                )
+
+            if account.max_drawdown_pct >= max_dd:
+                return self._reject(
+                    RejectReason.MAX_DRAWDOWN,
+                    f"Drawdown {account.max_drawdown_pct:.2%} >= {max_dd:.0%}",
+                    layer=3,
+                )
+
+            if account.current_drawdown_pct >= max_dd:
+                return self._reject(
+                    RejectReason.DRAWDOWN_LIMIT,
+                    f"Current drawdown {account.current_drawdown_pct:.2%} >= {max_dd:.0%}",
+                    layer=3,
+                )
+
+        if account.margin_level_pct > 0 and account.margin_level_pct < min_margin:
+            return self._reject(
+                RejectReason.INSUFFICIENT_MARGIN,
+                f"Margin level {account.margin_level_pct:.0f}% < {min_margin:.0f}%",
+                layer=3,
+            )
+        return None
+
+    def _layer4(
+        self,
+        signal: Signal,
+        account: AccountState,
+        portfolio: PortfolioState,
+        realized_vol: float,
+        regime: Any,
+        sentiment_multiplier: float = 1.0,
+    ) -> RiskVerdict:
+        vol_scalar = _Layer4.VOL_TARGET / max(realized_vol, 0.01)
+        vol_scalar = max(vol_scalar, 0.1)
+        vol_scalar = min(vol_scalar, 2.0)
+
+        regime_mult = 1.0
+        regime_name = ""
+        if regime is not None:
+            regime_name = getattr(regime, "value", str(regime))
+            if "CRISIS" in regime_name.upper():
+                regime_mult = 0.25
+            elif "TREND" in regime_name.upper():
+                regime_mult = 1.1
+
+        kelly_fraction = signal.conviction * vol_scalar * regime_mult * sentiment_multiplier
+        kelly_fraction = min(kelly_fraction, _Layer4.KELLY_CAP)
+
+        risk_per_unit = abs(signal.entry_price - signal.stop_loss) if signal.stop_loss else 0
+        if risk_per_unit <= 0:
+            return self._reject(RejectReason.SIZING_REJECTED, "Zero or negative stop distance", layer=4)
+
+        max_risk_pct = (
+            float(self._risk_policy.risk_per_trade_fraction)
+            if self._risk_policy is not None
+            else _Layer1.MAX_RISK_PCT_EQUITY
+        )
+        risk_budget = account.equity * max_risk_pct
+        approved_qty = round(risk_budget / risk_per_unit, 2)
+
+        approved_qty = max(approved_qty * kelly_fraction, 0)
+        dollar_value = approved_qty * signal.entry_price if signal.entry_price else 0
+
+        if dollar_value < _Layer4.MIN_POSITION_USD:
+            return self._reject(
+                RejectReason.HIGH_RISK, f"Position ${dollar_value:.2f} < ${_Layer4.MIN_POSITION_USD}", layer=4
+            )
+
+        return RiskVerdict(
+            approved=True,
+            approved_quantity=approved_qty,
+            sizing_details={
+                "vol_scalar": round(vol_scalar, 4),
+                "regime_multiplier": regime_mult,
+                "regime": regime_name,
+                "kelly_fraction": round(kelly_fraction, 4),
+                "risk_per_unit": round(risk_per_unit, 2),
+                "dollar_value": round(dollar_value, 2),
+            },
+        )
+
+    @staticmethod
+    def _reject(reason: RejectReason, msg: str, layer: int) -> RiskVerdict:
+        return RiskVerdict(approved=False, approved_quantity=0, reason=msg, reason_code=reason, layer_failed=layer)
+
+    # ── VaR / Correlation helpers ──────────────────────────────────────────
+
+    @staticmethod
+    def var_95(returns) -> float:
+        """Compute 95% historical VaR from an array of returns."""
+        import numpy as np
+
+        arr = np.asarray(returns, dtype=float)
+        if arr.size == 0:
+            return 0.0
+        return float(-np.percentile(arr, 5))
+
+    async def check_var_exposure(self, order, returns, max_var_pct: float = 0.02):
+        """Check if order's VaR exposure is within limits."""
+        from dataclasses import dataclass
+
+        @dataclass
+        class CheckResult:
+            passed: bool
+            check_type: str
+            reason: str = ""
+
+        if returns is None or len(returns) == 0:
+            return CheckResult(passed=True, check_type="VAR_EXPOSURE")
+
+        var = self.var_95(returns)
+        order_value = getattr(order, "quantity", 0) * getattr(order, "price", 0)
+        portfolio_var_pct = var  # simplified: use return-based VaR directly
+
+        if portfolio_var_pct > max_var_pct:
+            return CheckResult(
+                passed=False,
+                check_type="VAR_EXPOSURE",
+                reason=f"VaR {portfolio_var_pct:.4f} exceeds {max_var_pct:.4f}",
+            )
+        return CheckResult(passed=True, check_type="VAR_EXPOSURE")
+
+    async def check_correlation_exposure(self, order, positions: dict, corr_matrix: dict, threshold: float = 0.8):
+        """Check if new position's correlation with existing positions exceeds threshold."""
+        from dataclasses import dataclass
+
+        @dataclass
+        class CheckResult:
+            passed: bool
+            check_type: str
+            reason: str = ""
+
+        symbol = getattr(order, "symbol", "")
+        if not positions or symbol not in corr_matrix:
+            return CheckResult(passed=True, check_type="CORRELATION_EXPOSURE")
+
+        for pos_symbol, weight in positions.items():
+            if weight == 0:
+                continue
+            corr = corr_matrix.get(symbol, {}).get(pos_symbol, 0.0)
+            if corr > threshold:
+                return CheckResult(
+                    passed=False,
+                    check_type="CORRELATION_EXPOSURE",
+                    reason=f"Correlation {corr:.2f} with {pos_symbol} exceeds {threshold}",
+                )
+        return CheckResult(passed=True, check_type="CORRELATION_EXPOSURE")

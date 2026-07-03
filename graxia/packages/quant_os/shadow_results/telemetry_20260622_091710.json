@@ -1,0 +1,36 @@
+[
+  {
+    "event_type": "session_started",
+    "timestamp": "2026-06-22T09:17:00.619518",
+    "session_id": "shadow_20260622_091700",
+    "signal_id": null,
+    "details": {}
+  },
+  {
+    "event_type": "pipeline_error",
+    "timestamp": "2026-06-22T09:17:00.619518",
+    "session_id": "shadow_20260622_091700",
+    "signal_id": null,
+    "details": {
+      "error": "'FeedHealthMonitor' object has no attribute 'record_tick'"
+    }
+  },
+  {
+    "event_type": "pipeline_error",
+    "timestamp": "2026-06-22T09:17:05.623829",
+    "session_id": "shadow_20260622_091700",
+    "signal_id": null,
+    "details": {
+      "error": "'FeedHealthMonitor' object has no attribute 'record_tick'"
+    }
+  },
+  {
+    "event_type": "pipeline_error",
+    "timestamp": "2026-06-22T09:17:10.624493",
+    "session_id": "shadow_20260622_091700",
+    "signal_id": null,
+    "details": {
+      "error": "'FeedHealthMonitor' object has no attribute 'record_tick'"
+    }
+  }
+]

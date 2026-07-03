@@ -50,6 +50,7 @@ class SocialLoginRequest(BaseModel):
     token: str
     provider: str
 
+
 class Token(BaseModel):
     access_token: str
     refresh_token: str
@@ -133,14 +134,24 @@ def _set_auth_cookies(
 
 def _clear_auth_cookies(response: Response) -> None:
     domain = settings.COOKIE_DOMAIN or None
-    response.set_cookie(settings.ACCESS_COOKIE_NAME, "", max_age=0, path="/api/v1", domain=domain)
     response.set_cookie(
-        settings.REFRESH_COOKIE_NAME, "", max_age=0, path="/api/v1/auth/refresh", domain=domain
+        settings.ACCESS_COOKIE_NAME, "", max_age=0, path="/api/v1", domain=domain
     )
-    response.set_cookie(settings.CSRF_COOKIE_NAME, "", max_age=0, path="/", domain=domain)
+    response.set_cookie(
+        settings.REFRESH_COOKIE_NAME,
+        "",
+        max_age=0,
+        path="/api/v1/auth/refresh",
+        domain=domain,
+    )
+    response.set_cookie(
+        settings.CSRF_COOKIE_NAME, "", max_age=0, path="/", domain=domain
+    )
 
 
-def _build_auth_payloads(user: User, *, session_id: str, device_id: str, refresh_jti: str) -> tuple[str, str]:
+def _build_auth_payloads(
+    user: User, *, session_id: str, device_id: str, refresh_jti: str
+) -> tuple[str, str]:
     access_payload = {
         "sub": str(user.id),
         "email": user.email,
@@ -164,7 +175,9 @@ async def _lookup_user_by_email(db, email: str) -> User | None:
 
 
 def _is_database_unavailable_error(exc: Exception) -> bool:
-    return isinstance(exc, (SQLAlchemyError, OSError, ConnectionError, TimeoutError, PermissionError))
+    return isinstance(
+        exc, (SQLAlchemyError, OSError, ConnectionError, TimeoutError, PermissionError)
+    )
 
 
 def _raise_database_unavailable(exc: Exception) -> None:
@@ -259,12 +272,18 @@ async def get_current_user(request: Request, db=Depends(get_db)) -> User:
     if user is None:
         raise credentials_exception
     if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User account is disabled")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="User account is disabled"
+        )
     return user
 
 
-@router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
-async def register(user_data: UserRegister, request: Request, response: Response, db=Depends(get_db)):
+@router.post(
+    "/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED
+)
+async def register(
+    user_data: UserRegister, request: Request, response: Response, db=Depends(get_db)
+):
     try:
         existing_user = await _lookup_user_by_email(db, user_data.email)
     except Exception as exc:
@@ -272,7 +291,9 @@ async def register(user_data: UserRegister, request: Request, response: Response
             _raise_database_unavailable(exc)
         raise
     if existing_user:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
+        )
     if len(user_data.password) < 12:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -320,7 +341,9 @@ async def register(user_data: UserRegister, request: Request, response: Response
             event_category="auth",
             metadata={"email": user.email},
             user_id=str(user.id),
-            session_id=decode_access_token(auth_response.access_token).get("session_id"),
+            session_id=decode_access_token(auth_response.access_token).get(
+                "session_id"
+            ),
             ip_address=get_client_ip(request),
             user_agent=request.headers.get("user-agent"),
             request_path=str(request.url.path),
@@ -334,6 +357,7 @@ async def register(user_data: UserRegister, request: Request, response: Response
     try:
         if user.organization_id:
             from app.services.automation_email_service import AutomationEmailService
+
             automation_svc = AutomationEmailService(db)
             await automation_svc.trigger_welcome(
                 organization_id=user.organization_id,
@@ -347,36 +371,35 @@ async def register(user_data: UserRegister, request: Request, response: Response
     return auth_response
 
 
-
 @router.post("/social-login", response_model=AuthResponse)
 async def social_login(
     payload: SocialLoginRequest,
     request: Request,
     response: Response,
-    db=Depends(get_db)
+    db=Depends(get_db),
 ):
     import jwt as pyjwt
-    
+
     try:
-        # Supabase JWTs are signed with a secret. 
+        # Supabase JWTs are signed with a secret.
         # For security, the user must provide SUPABASE_JWT_SECRET in .env
         if not settings.SUPABASE_JWT_SECRET:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Supabase JWT secret not configured"
+                detail="Supabase JWT secret not configured",
             )
-            
+
         decoded = pyjwt.decode(
-            payload.token, 
-            settings.SUPABASE_JWT_SECRET, 
+            payload.token,
+            settings.SUPABASE_JWT_SECRET,
             algorithms=["HS256"],
-            audience="authenticated"
+            audience="authenticated",
         )
     except Exception as e:
         logger.error("Social login token verification failed: %s", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid social login token"
+            detail="Invalid social login token",
         )
 
     email = decoded.get("email")
@@ -388,7 +411,7 @@ async def social_login(
     if not email:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Social login provider did not return an email"
+            detail="Social login provider did not return an email",
         )
 
     try:
@@ -397,9 +420,10 @@ async def social_login(
         if _is_database_unavailable_error(exc):
             _raise_database_unavailable(exc)
         raise
-    
+
     if not user:
         from datetime import datetime
+
         user = User(
             id=uuid4(),
             email=email,
@@ -426,6 +450,7 @@ async def social_login(
         try:
             if user.organization_id:
                 from app.services.automation_email_service import AutomationEmailService
+
                 automation_svc = AutomationEmailService(db)
                 await automation_svc.trigger_welcome(
                     organization_id=user.organization_id,
@@ -433,11 +458,14 @@ async def social_login(
                     customer_name=full_name or user.email.split("@")[0],
                 )
         except Exception as exc:
-            logger.warning("Welcome email automation skipped for social signup: %s", exc)
+            logger.warning(
+                "Welcome email automation skipped for social signup: %s", exc
+            )
 
         logger.info("Created new social user: %s via %s", email, payload.provider)
     else:
         from datetime import datetime
+
         # Update existing user with provider info if missing
         changed = False
         if not user.provider:
@@ -447,7 +475,7 @@ async def social_login(
         if avatar_url and not user.avatar_url:
             user.avatar_url = avatar_url
             changed = True
-        
+
         user.last_login_at = datetime.now(UTC)
         try:
             await db.commit()
@@ -456,7 +484,11 @@ async def social_login(
                 _raise_database_unavailable(exc)
             raise
         if changed:
-            logger.info("Linked social provider %s to existing user: %s", payload.provider, email)
+            logger.info(
+                "Linked social provider %s to existing user: %s",
+                payload.provider,
+                email,
+            )
 
     session_service = SessionService(getattr(request.app.state, "redis", None))
     auth_response = await _issue_auth_response(
@@ -466,7 +498,7 @@ async def social_login(
         session_service=session_service,
         db=db,
     )
-    
+
     try:
         await log_audit_event(
             db=db,
@@ -475,7 +507,9 @@ async def social_login(
             event_category="auth",
             metadata={"provider": payload.provider, "email": email},
             user_id=str(user.id),
-            session_id=decode_access_token(auth_response.access_token).get("session_id"),
+            session_id=decode_access_token(auth_response.access_token).get(
+                "session_id"
+            ),
             ip_address=get_client_ip(request),
             user_agent=request.headers.get("user-agent"),
             request_path=str(request.url.path),
@@ -485,6 +519,7 @@ async def social_login(
     except Exception as exc:
         logger.warning("Auth social login audit logging skipped: %s", exc)
     return auth_response
+
 
 @router.post("/login", response_model=AuthResponse)
 async def login(request: Request, response: Response, db=Depends(get_db)):
@@ -501,13 +536,19 @@ async def login(request: Request, response: Response, db=Depends(get_db)):
 
             payload = _json.loads(raw_body.decode("utf-8", errors="ignore") or "{}")
             if isinstance(payload, dict):
-                email = str(payload.get("email") or payload.get("username") or "").strip().lower()
+                email = (
+                    str(payload.get("email") or payload.get("username") or "")
+                    .strip()
+                    .lower()
+                )
                 password = str(payload.get("password") or "")
                 totp_code = str(payload.get("totp_code") or "").strip()
         except Exception:
             pass
 
-    if (not email or not password) and "application/x-www-form-urlencoded" in content_type:
+    if (
+        not email or not password
+    ) and "application/x-www-form-urlencoded" in content_type:
         try:
             from urllib.parse import parse_qs
 
@@ -528,7 +569,9 @@ async def login(request: Request, response: Response, db=Depends(get_db)):
             pass
 
     if not email or not password:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing credentials")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Missing credentials"
+        )
 
     session_service = SessionService(getattr(request.app.state, "redis", None))
     identifier = f"login:{email}"
@@ -536,6 +579,7 @@ async def login(request: Request, response: Response, db=Depends(get_db)):
     class DummyLockout:
         is_locked = False
         failures_in_window = 0
+
     lockout_status = DummyLockout()
 
     try:
@@ -553,6 +597,7 @@ async def login(request: Request, response: Response, db=Depends(get_db)):
         )
 
     from datetime import datetime
+
     user.last_login_at = datetime.now(UTC)
     try:
         await db.commit()
@@ -580,7 +625,11 @@ async def login(request: Request, response: Response, db=Depends(get_db)):
             action="auth.login",
             event_type="login_success",
             event_category="auth",
-            metadata={"risk_score": 0, "factors": [], "device_id": payload.get("device_id")},
+            metadata={
+                "risk_score": 0,
+                "factors": [],
+                "device_id": payload.get("device_id"),
+            },
             user_id=str(user.id),
             session_id=str(payload.get("session_id") or ""),
             ip_address=get_client_ip(request),
@@ -599,7 +648,9 @@ async def login(request: Request, response: Response, db=Depends(get_db)):
 async def refresh_token(request: Request, response: Response, db=Depends(get_db)):
     refresh_token = await _resolve_refresh_token(request)
     if not refresh_token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing refresh token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing refresh token"
+        )
     try:
         payload = decode_refresh_token(refresh_token)
         user_id = parse_subject_uuid(payload.get("sub"))
@@ -607,7 +658,9 @@ async def refresh_token(request: Request, response: Response, db=Depends(get_db)
         old_jti = str(payload.get("jti") or "")
     except HTTPException as exc:
         _clear_auth_cookies(response)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token") from exc
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
+        ) from exc
 
     try:
         result = await db.execute(select(User).where(User.id == user_id))
@@ -618,12 +671,18 @@ async def refresh_token(request: Request, response: Response, db=Depends(get_db)
     user = result.scalar_one_or_none()
     if not user or not user.is_active:
         _clear_auth_cookies(response)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found or inactive")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found or inactive",
+        )
 
     session_service = SessionService(getattr(request.app.state, "redis", None))
     if not await session_service.is_session_active(session_id):
         _clear_auth_cookies(response)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session is no longer active")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session is no longer active",
+        )
 
     new_refresh_jti = str(uuid4())
     try:
@@ -654,7 +713,10 @@ async def refresh_token(request: Request, response: Response, db=Depends(get_db)
         except Exception as exc:
             logger.warning("Auth refresh reuse audit logging skipped: %s", exc)
         _clear_auth_cookies(response)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token reuse detected") from exc
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token reuse detected",
+        ) from exc
 
     access_token, next_refresh_token = _build_auth_payloads(
         user,
@@ -685,7 +747,9 @@ async def refresh_token(request: Request, response: Response, db=Depends(get_db)
         await db.commit()
     except Exception as exc:
         logger.warning("Auth refresh audit logging skipped: %s", exc)
-    return Token(access_token=access_token, refresh_token=next_refresh_token, token_type="bearer")
+    return Token(
+        access_token=access_token, refresh_token=next_refresh_token, token_type="bearer"
+    )
 
 
 @router.get("/me", response_model=UserResponse)
@@ -730,8 +794,13 @@ async def change_password(
     current_user: User = Depends(get_current_user),
     db=Depends(get_db),
 ):
-    if not verify_password(password_data.current_password, current_user.hashed_password):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect")
+    if not verify_password(
+        password_data.current_password, current_user.hashed_password
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect",
+        )
     if len(password_data.new_password) < 12:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -743,7 +812,9 @@ async def change_password(
     await db.commit()
 
     session_service = SessionService(getattr(request.app.state, "redis", None))
-    await session_service.invalidate_all_user_sessions(str(current_user.id), reason="password_change")
+    await session_service.invalidate_all_user_sessions(
+        str(current_user.id), reason="password_change"
+    )
     _clear_auth_cookies(response)
     await log_audit_event(
         db=db,
@@ -783,7 +854,9 @@ async def logout(request: Request, response: Response):
                 payload = None
 
     if payload and payload.get("session_id"):
-        await session_service.invalidate_session(str(payload["session_id"]), reason="logout")
+        await session_service.invalidate_session(
+            str(payload["session_id"]), reason="logout"
+        )
         await log_audit_event(
             app=request.app,
             action="auth.logout",

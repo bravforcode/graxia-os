@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 
-import { NoticeBanner } from '@/components/ui/NoticeBanner'
+import { NoticeBanner } from '@/components/ui/notice-banner'
 
 const meta = {
   title: 'Primitives/NoticeBanner',

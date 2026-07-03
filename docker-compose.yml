@@ -23,16 +23,16 @@ services:
     restart: unless-stopped
     volumes:
       - redis_data:/data
-      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
       - ./docker/redis-entrypoint.sh:/docker-entrypoint-scripts/redis-entrypoint.sh:ro
+    # Note: ./redis.conf was removed — not present in repo. Redis uses internal defaults.
 
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     image: graxia-backend:${TAG:-latest}
     container_name: graxia_backend
-    env_file: .env
+    env_file: .env.production
     environment:
       RUNNING_IN_DOCKER: "true"
       SCHEDULER_EMBEDDED: "false"
@@ -42,6 +42,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    volumes:
+      - ./scripts/ops:/app/scripts:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -52,11 +54,11 @@ services:
 
   celery:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     image: graxia-backend:${TAG:-latest}
     container_name: graxia_celery
-    env_file: .env
+    env_file: .env.production
     environment:
       RUNNING_IN_DOCKER: "true"
     command: celery -A app.tasks.celery_app worker --loglevel=info --concurrency=2
@@ -71,7 +73,7 @@ services:
       dockerfile: Dockerfile
     image: graxia-backend:${TAG:-latest}
     container_name: graxia_beat
-    env_file: .env
+    env_file: .env.production
     environment:
       RUNNING_IN_DOCKER: "true"
       SCHEDULER_EMBEDDED: "false"
@@ -94,8 +96,8 @@ services:
       - "5678:5678"
     environment:
       - N8N_BASIC_AUTH_ACTIVE=true
-      - "N8N_BASIC_AUTH_USER=${N8N_USER:?N8N_USER must be set}"
-      - "N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:?N8N_PASSWORD must be set}"
+      - "N8N_BASIC_AUTH_USER=${N8N_USER:-operator}"
+      - "N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-changeme}"
       - N8N_HOST=localhost
       - N8N_PORT=5678
       - N8N_PROTOCOL=http

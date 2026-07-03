@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRAXIA-OS Live Dashboard</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0e17;
+  color: #c8d6e5;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.dashboard {
+  max-width: 520px;
+  width: 100%;
+}
+.header {
+  text-align: center;
+  padding: 16px 0 20px;
+  border-bottom: 1px solid #1a2340;
+  margin-bottom: 24px;
+}
+.header h1 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #e8eef5;
+  letter-spacing: 1px;
+}
+.header .subtitle {
+  font-size: 12px;
+  color: #5a6a8a;
+  margin-top: 4px;
+}
+.symbol-badge {
+  display: inline-block;
+  background: #1a2340;
+  color: #f0b90b;
+  padding: 2px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-top: 6px;
+}
+.price-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.price-card {
+  flex: 1;
+  background: #111827;
+  border: 1px solid #1e2a45;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+}
+.price-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #5a6a8a;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+.price-value {
+  font-size: 32px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
+}
+.price-value.green { color: #34d399; }
+.price-value.red { color: #f87171; }
+.price-value.gray { color: #6b7280; }
+.price-change {
+  font-size: 13px;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.price-change.up { color: #34d399; }
+.price-change.down { color: #f87171; }
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.info-card {
+  background: #111827;
+  border: 1px solid #1e2a45;
+  border-radius: 10px;
+  padding: 14px;
+}
+.info-card.full { grid-column: 1 / -1; }
+.info-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: #5a6a8a;
+  letter-spacing: 0.8px;
+  margin-bottom: 4px;
+}
+.info-value {
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.info-value.green { color: #34d399; }
+.info-value.red { color: #f87171; }
+.info-value.yellow { color: #fbbf24; }
+.info-value.blue { color: #60a5fa; }
+.info-value.small { font-size: 14px; }
+.gauge-container {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  background: #1e2a45;
+  border-radius: 4px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+.gauge-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease, background 0.5s ease;
+}
+.gauge-fill.weak { background: #f87171; width: 20%; }
+.gauge-fill.medium { background: #fbbf24; width: 50%; }
+.gauge-fill.strong { background: #34d399; width: 85%; }
+.conf-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #5a6a8a;
+  margin-top: 4px;
+}
+.signal-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.signal-pill.long {
+  background: rgba(52, 211, 153, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+.signal-pill.short {
+  background: rgba(248, 113, 113, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+.signal-pill.na {
+  background: rgba(107, 114, 128, 0.15);
+  color: #6b7280;
+  border: 1px solid rgba(107, 114, 128, 0.3);
+}
+.session-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.session-pill.eu {
+  background: rgba(96, 165, 250, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(96, 165, 250, 0.3);
+}
+.session-pill.out {
+  background: rgba(107, 114, 128, 0.15);
+  color: #6b7280;
+  border: 1px solid rgba(107, 114, 128, 0.3);
+}
+.footer {
+  text-align: center;
+  padding-top: 16px;
+  border-top: 1px solid #1a2340;
+  font-size: 11px;
+  color: #3a4a6a;
+}
+.footer .row {
+  margin-bottom: 4px;
+}
+.timestamp {
+  font-size: 11px;
+  color: #3a4a6a;
+  font-variant-numeric: tabular-nums;
+}
+.position-card {
+  background: #111827;
+  border: 1px solid #1e2a45;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 20px;
+}
+.position-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.position-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #5a6a8a;
+  letter-spacing: 0.8px;
+}
+.position-detail {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #9aa8b9;
+}
+.direction-arrow {
+  font-size: 14px;
+  margin-left: 4px;
+}
+</style>
+</head>
+<body>
+<div class="dashboard">
+  <div class="header">
+    <h1>GRAXIA-OS</h1>
+    <div class="subtitle">Live Trading Monitor</div>
+    <div class="symbol-badge">XAUUSD</div>
+  </div>
+
+  <div class="price-row">
+    <div class="price-card">
+      <div class="price-label">Bid</div>
+      <div class="price-value gray" id="bid">--</div>
+      <div class="price-change" id="bid-change"></div>
+    </div>
+    <div class="price-card">
+      <div class="price-label">Ask</div>
+      <div class="price-value gray" id="ask">--</div>
+      <div class="price-change" id="ask-change"></div>
+    </div>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <div class="info-label">Spread</div>
+      <div class="info-value blue small" id="spread">--</div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">Session</div>
+      <div><span class="session-pill" id="session">--</span></div>
+    </div>
+    <div class="info-card full">
+      <div class="info-label">Prediction</div>
+      <div><span class="signal-pill na" id="prediction">--</span></div>
+      <div class="gauge-container">
+        <div class="gauge-fill weak" id="gauge" style="width:0%"></div>
+      </div>
+      <div class="conf-label">
+        <span id="conf-text">Confidence: --</span>
+        <span id="signal-strength">--</span>
+      </div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">Daily P&amp;L</div>
+      <div class="info-value" id="daily-pnl">--</div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">Daily Trades</div>
+      <div class="info-value small" id="daily-trades">--</div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">Balance</div>
+      <div class="info-value small" id="balance">--</div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">Uptime</div>
+      <div class="info-value small" id="uptime">--</div>
+    </div>
+  </div>
+
+  <div class="position-card" id="position-card" style="display:none">
+    <div class="position-header">
+      <div class="position-title">Open Position</div>
+      <div><span class="signal-pill" id="pos-direction">--</span></div>
+    </div>
+    <div class="position-detail">
+      <span>Entry</span>
+      <span id="pos-entry">--</span>
+    </div>
+    <div class="position-detail">
+      <span>Profit</span>
+      <span id="pos-pnl">--</span>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="row" id="model-info"></div>
+    <div class="row" id="config-info"></div>
+    <div class="timestamp" id="timestamp">--</div>
+  </div>
+</div>
+
+<script>
+let prevBid = null;
+let prevAsk = null;
+
+function formatTime(ts) {
+  if (!ts || ts === '--') return '--';
+  try {
+    const d = new Date(ts);
+    return d.toLocaleTimeString();
+  } catch {
+    return ts;
+  }
+}
+
+function fmtUptime(secs) {
+  if (secs == null || secs === 0) return '--';
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  let r = '';
+  if (h > 0) r += h + 'h ';
+  if (m > 0) r += m + 'm ';
+  r += s + 's';
+  return r;
+}
+
+function updateGauge(conf, strength) {
+  const gauge = document.getElementById('gauge');
+  const pct = Math.min(conf * 100, 100);
+  gauge.style.width = pct + '%';
+  gauge.className = 'gauge-fill ' + strength;
+}
+
+function updateDashboard(data) {
+  const bidEl = document.getElementById('bid');
+  const askEl = document.getElementById('ask');
+  const bidChangeEl = document.getElementById('bid-change');
+  const askChangeEl = document.getElementById('ask-change');
+
+  if (data.bid != null && data.bid > 0) {
+    bidEl.textContent = data.bid.toFixed(2);
+    bidEl.className = 'price-value';
+    if (prevBid !== null) {
+      const diff = data.bid - prevBid;
+      if (Math.abs(diff) > 0.001) {
+        bidChangeEl.textContent = (diff > 0 ? '▲' : '▼') + ' ' + diff.toFixed(2);
+        bidChangeEl.className = 'price-change ' + (diff > 0 ? 'up' : 'down');
+        bidEl.className = 'price-value ' + (diff > 0 ? 'green' : 'red');
+      } else {
+        bidChangeEl.textContent = '▸ 0.00';
+        bidChangeEl.className = 'price-change';
+      }
+    } else {
+      bidChangeEl.textContent = '';
+    }
+    prevBid = data.bid;
+  }
+
+  if (data.ask != null && data.ask > 0) {
+    askEl.textContent = data.ask.toFixed(2);
+    askEl.className = 'price-value';
+    if (prevAsk !== null) {
+      const diff = data.ask - prevAsk;
+      if (Math.abs(diff) > 0.001) {
+        askChangeEl.textContent = (diff > 0 ? '▲' : '▼') + ' ' + diff.toFixed(2);
+        askChangeEl.className = 'price-change ' + (diff > 0 ? 'up' : 'down');
+        askEl.className = 'price-value ' + (diff > 0 ? 'green' : 'red');
+      } else {
+        askChangeEl.textContent = '▸ 0.00';
+        askChangeEl.className = 'price-change';
+      }
+    } else {
+      askChangeEl.textContent = '';
+    }
+    prevAsk = data.ask;
+  }
+
+  document.getElementById('spread').textContent = data.spread != null ? '$' + data.spread.toFixed(2) : '--';
+
+  const predEl = document.getElementById('prediction');
+  if (data.prediction && data.prediction !== 'N/A') {
+    predEl.textContent = data.prediction + ' ' + (data.prediction === 'LONG' ? '▲' : '▼');
+    predEl.className = 'signal-pill ' + data.prediction.toLowerCase();
+  } else {
+    predEl.textContent = '--';
+    predEl.className = 'signal-pill na';
+  }
+
+  document.getElementById('conf-text').textContent = 'Confidence: ' + (data.confidence != null ? (data.confidence * 100).toFixed(0) + '%' : '--');
+  const strengthEl = document.getElementById('signal-strength');
+  strengthEl.textContent = data.signal_strength ? data.signal_strength.toUpperCase() : '--';
+  updateGauge(data.confidence || 0, data.signal_strength || 'weak');
+
+  const pnlEl = document.getElementById('daily-pnl');
+  if (data.daily_pnl != null) {
+    pnlEl.textContent = '$' + data.daily_pnl.toFixed(2);
+    pnlEl.className = 'info-value ' + (data.daily_pnl >= 0 ? 'green' : 'red');
+  } else {
+    pnlEl.textContent = '--';
+    pnlEl.className = 'info-value';
+  }
+
+  document.getElementById('daily-trades').textContent = data.daily_trades != null ? data.daily_trades : '--';
+  document.getElementById('balance').textContent = data.balance != null ? '$' + data.balance.toFixed(2) : '--';
+  document.getElementById('uptime').textContent = fmtUptime(data.uptime_seconds);
+
+  const sessionEl = document.getElementById('session');
+  if (data.session) {
+    sessionEl.textContent = data.session;
+    sessionEl.className = 'session-pill ' + data.session.toLowerCase();
+  } else {
+    sessionEl.textContent = '--';
+    sessionEl.className = 'session-pill out';
+  }
+
+  const posCard = document.getElementById('position-card');
+  if (data.position) {
+    posCard.style.display = 'block';
+    document.getElementById('pos-direction').textContent = data.position.direction || '--';
+    document.getElementById('pos-entry').textContent = data.position.entry_price || '--';
+    document.getElementById('pos-pnl').textContent = data.position.pnl != null ? '$' + data.position.pnl.toFixed(2) : '--';
+  } else {
+    posCard.style.display = 'none';
+  }
+
+  document.getElementById('model-info').textContent = data.model || '';
+  document.getElementById('config-info').textContent = data.config || '';
+  document.getElementById('timestamp').textContent = 'Last update: ' + formatTime(data.timestamp);
+}
+
+async function fetchStatus() {
+  try {
+    const res = await fetch('/api/status');
+    const data = await res.json();
+    updateDashboard(data);
+  } catch (err) {
+    console.error('Dashboard fetch error:', err);
+  }
+}
+
+fetchStatus();
+setInterval(fetchStatus, 2000);
+</script>
+</body>
+</html>

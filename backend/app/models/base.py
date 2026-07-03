@@ -13,6 +13,16 @@ def _compile_jsonb_for_sqlite(*_: object, **__: object) -> str:
     return "JSON"
 
 
+@compiles(PG_UUID, "sqlite")
+def _compile_pg_uuid_for_sqlite(*_: object, **__: object) -> str:
+    """Let local tests use SQLite while production keeps PostgreSQL UUID.
+
+    Must match CHAR(32) inferred from Mapped[uuid.UUID] on SQLite
+    so that foreign key constraints work correctly.
+    """
+    return "CHAR(32)"
+
+
 class Base(DeclarativeBase):
     pass
 
@@ -27,5 +37,6 @@ class TenantMixin:
 @event.listens_for(TenantMixin, "before_insert", propagate=True)
 def validate_tenant_id(mapper: Any, connection: Any, target: Any) -> None:
     """Ensure organization_id is never null before saving to DB."""
-    if not getattr(target, "organization_id", None):
+    if not getattr(target, 'organization_id', None):
         raise ValueError(f"CRITICAL: {target.__class__.__name__} missing organization_id. Data leak prevented.")
+

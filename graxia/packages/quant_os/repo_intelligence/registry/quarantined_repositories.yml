@@ -1,0 +1,55 @@
+# Quarantined Repositories
+# These repos have ZERO credential/network execution paths.
+# No read, no execute, no import under any circumstance.
+---
+quarantined:
+
+  - repo_id: solana_arbitrage_bot
+    canonical_url: https://github.com/solana-arbitrage-bot/solana-arbitrage-bot
+    restrictions:
+      - no_execution
+      - no_keys
+      - no_wallet_access
+      - no_network
+    reason: >
+      MEV/arbitrage taxonomy research only. Contains wallet key handling
+      and private RPC endpoint configuration. Must never be executed,
+      imported, or have credentials exposed to it.
+    reviewed_at_utc: "2026-06-22T00:00:00Z"
+
+  - repo_id: solana_trading_cli
+    canonical_url: https://github.com/solana-trading-cli/solana-trading-cli
+    restrictions:
+      - no_execution
+      - no_keys
+      - no_wallet_access
+      - no_network
+    reason: >
+      CLI trading tool with direct wallet and RPC integration.
+      Taxonomy/security research only. Must never be executed,
+      imported, or have credentials exposed to it.
+    reviewed_at_utc: "2026-06-22T00:00:00Z"
+
+  - repo_id: solana_mev_bot
+    canonical_url: https://github.com/solana-mev-bot/solana-mev-bot
+    restrictions:
+      - no_execution
+      - no_keys
+      - no_wallet_access
+      - no_network
+    reason: >
+      MEV bot with sandwich/frontrun patterns. Contains private key
+      management and wallet signing. Taxonomy/security research only.
+    reviewed_at_utc: "2026-06-22T00:00:00Z"
+
+  - repo_id: bsc_fourmeme_bot
+    canonical_url: https://github.com/bsc-fourmeme-bot/bsc-fourmeme-bot
+    restrictions:
+      - no_execution
+      - no_keys
+      - no_wallet_access
+      - no_network
+    reason: >
+      BSC meme token sniper bot. Contains wallet key handling and
+      direct on-chain execution patterns. Taxonomy/security research only.
+    reviewed_at_utc: "2026-06-22T00:00:00Z"

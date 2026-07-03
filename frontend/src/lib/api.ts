@@ -141,6 +141,7 @@ export interface Contact {
   role?: string;
   company?: string;
   contact_type?: string;
+  status?: string;
   email?: string;
   telegram_handle?: string;
   linkedin_url?: string;

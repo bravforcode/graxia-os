@@ -1,0 +1,13 @@
+Tracked diff stat after Phase 1.5 cleanup:
+
+- `126 files changed, 3198 insertions(+), 2177 deletions(-)`
+
+Largest active groups:
+- backend implementation and tests
+- frontend UI/pages/components
+- CI/scripts/config
+- documentation
+
+See:
+- `docs/PHASE2_REMAINING_PRODUCT_DIFF_CLASSIFICATION.md`
+- `docs/PHASE2_COMMIT_STRATEGY.md`

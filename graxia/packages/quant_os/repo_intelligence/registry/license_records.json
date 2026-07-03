@@ -1,0 +1,52 @@
+{
+  "licenses": [
+    {
+      "package": "vectorbt",
+      "version": "0.26.0",
+      "source_url": "https://github.com/polakowo/vectorbt",
+      "pinned_commit": "TBD",
+      "license": "Apache-2.0 with Commons Clause",
+      "license_risk": "HIGH — Commons Clause prohibits selling products primarily based on this software",
+      "usage": "isolated research oracle only",
+      "production_import": "forbidden",
+      "mt5_permission": "forbidden",
+      "secrets_access": "forbidden",
+      "sbom_entry": "TBD",
+      "decision": "USE_AS_ISOLATED_ORACLE",
+      "decision_date": "2026-06-22",
+      "decision_owner": "quant_os_team"
+    },
+    {
+      "package": "backtesting",
+      "version": "1.7.0",
+      "source_url": "https://github.com/kernc/backtesting.py",
+      "pinned_commit": "TBD",
+      "license": "AGPL-3.0-or-later",
+      "license_risk": "HIGH — AGPL requires source distribution for network use",
+      "usage": "isolated research oracle only",
+      "production_import": "forbidden",
+      "mt5_permission": "forbidden",
+      "secrets_access": "forbidden",
+      "sbom_entry": "TBD",
+      "decision": "USE_AS_ISOLATED_ORACLE",
+      "decision_date": "2026-06-22",
+      "decision_owner": "quant_os_team"
+    },
+    {
+      "package": "backtrader",
+      "version": "1.9.78.123",
+      "source_url": "https://github.com/mementum/backtrader",
+      "pinned_commit": "TBD",
+      "license": "GPL-3.0-only",
+      "license_risk": "HIGH — GPL requires source distribution, no copying into proprietary",
+      "usage": "isolated research oracle only",
+      "production_import": "forbidden",
+      "mt5_permission": "forbidden",
+      "secrets_access": "forbidden",
+      "sbom_entry": "TBD",
+      "decision": "USE_AS_ISOLATED_ORACLE",
+      "decision_date": "2026-06-22",
+      "decision_owner": "quant_os_team"
+    }
+  ]
+}

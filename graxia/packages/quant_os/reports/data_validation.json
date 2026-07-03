@@ -1,0 +1,921 @@
+{
+  "report_type": "data_validation_multi_asset",
+  "generated_at_utc": "2026-07-01T12:11:12Z",
+  "data_dir": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data",
+  "symbols_validated": [
+    "BTCUSD",
+    "ETHUSD",
+    "XAUUSD",
+    "EURUSD"
+  ],
+  "timeframes_validated": [
+    "D1",
+    "H1",
+    "H4",
+    "M15"
+  ],
+  "gap_threshold_days": 5,
+  "files": {
+    "BTCUSD_D1": {
+      "file": "BTCUSD_D1.csv",
+      "symbol": "BTCUSD",
+      "timeframe": "D1",
+      "path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\BTCUSD_D1.csv",
+      "total_rows": 5827,
+      "checks": {
+        "missing_values": {
+          "status": "PASS",
+          "total_rows": 5827,
+          "total_missing_cells": 0,
+          "missing_pct": 0.0,
+          "missing_counts": {}
+        },
+        "ohlc_integrity": {
+          "status": "PASS",
+          "total_rows": 5827,
+          "violations": 0,
+          "violation_pct": 0.0,
+          "samples": []
+        },
+        "volume": {
+          "status": "WARN",
+          "total_rows": 5827,
+          "zero_volume_rows": 4183,
+          "zero_volume_pct": 0.7179,
+          "negative_volume_rows": 0,
+          "negative_volume_pct": 0.0
+        },
+        "price_range": {
+          "status": "PASS",
+          "expected_range": [
+            0.01,
+            500000
+          ],
+          "violations": 0,
+          "samples": []
+        },
+        "d1_gaps": {
+          "status": "PASS",
+          "gap_threshold_days": 5,
+          "gaps_found": 0,
+          "gaps": []
+        }
+      },
+      "status": "WARN"
+    },
+    "BTCUSD_H1": {
+      "file": "BTCUSD_H1.csv",
+      "symbol": "BTCUSD",
+      "timeframe": "H1",
+      "path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\BTCUSD_H1.csv",
+      "total_rows": 50000,
+      "checks": {
+        "missing_values": {
+          "status": "PASS",
+          "total_rows": 50000,
+          "total_missing_cells": 0,
+          "missing_pct": 0.0,
+          "missing_counts": {}
+        },
+        "ohlc_integrity": {
+          "status": "PASS",
+          "total_rows": 50000,
+          "violations": 0,
+          "violation_pct": 0.0,
+          "samples": []
+        },
+        "volume": {
+          "status": "PASS",
+          "total_rows": 50000,
+          "zero_volume_rows": 0,
+          "zero_volume_pct": 0.0,
+          "negative_volume_rows": 0,
+          "negative_volume_pct": 0.0
+        },
+        "price_range": {
+          "status": "PASS",
+          "expected_range": [
+            0.01,
+            500000
+          ],
+          "violations": 0,
+          "samples": []
+        }
+      },
+      "status": "PASS"
+    },
+    "BTCUSD_H4": {
+      "file": "BTCUSD_H4.csv",
+      "symbol": "BTCUSD",
+      "timeframe": "H4",
+      "path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\BTCUSD_H4.csv",
+      "total_rows": 19919,
+      "checks": {
+        "missing_values": {
+          "status": "PASS",
+          "total_rows": 19919,
+          "total_missing_cells": 0,
+          "missing_pct": 0.0,
+          "missing_counts": {}
+        },
+        "ohlc_integrity": {
+          "status": "PASS",
+          "total_rows": 19919,
+          "violations": 0,
+          "violation_pct": 0.0,
+          "samples": []
+        },
+        "volume": {
+          "status": "PASS",
+          "total_rows": 19919,
+          "zero_volume_rows": 0,
+          "zero_volume_pct": 0.0,
+          "negative_volume_rows": 0,
+          "negative_volume_pct": 0.0
+        },
+        "price_range": {
+          "status": "WARN",
+          "expected_range": [
+            0.01,
+            500000
+          ],
+          "violations": 2,
+          "samples": [
+            {
+              "row": 43,
+              "timestamp": "2010-08-30 08:00:00",
+              "column": "low",
+              "value": 0.0
+            },
+            {
+              "row": 82,
+              "timestamp": "2010-10-08 08:00:00",
+              "column": "low",
+              "value": 0.0
+            }
+          ]
+        }
+      },
+      "status": "WARN"
+    },
+    "BTCUSD_M15": {
+      "file": "BTCUSD_M15.csv",
+      "symbol": "BTCUSD",
+      "timeframe": "M15",
+      "path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\BTCUSD_M15.csv",
+      "total_rows": 62881,
+      "checks": {
+        "missing_values": {
+          "status": "PASS",
+          "total_rows": 62881,
+          "total_missing_cells": 0,
+          "missing_pct": 0.0,
+          "missing_counts": {}
+        },
+        "ohlc_integrity": {
+          "status": "PASS",
+          "total_rows": 62881,
+          "violations": 0,
+          "violation_pct": 0.0,
+          "samples": []
+        },
+        "volume": {
+          "status": "PASS",
+          "total_rows": 62881,
+          "zero_volume_rows": 3,
+          "zero_volume_pct": 0.0,
+          "negative_volume_rows": 0,
+          "negative_volume_pct": 0.0
+        },
+        "price_range": {
+          "status": "PASS",
+          "expected_range": [
+            0.01,
+            500000
+          ],
+          "violations": 0,
+          "samples": []
+        }
+      },
+      "status": "PASS"
+    },
+    "ETHUSD_D1": {
+      "file": "ETHUSD_D1.csv",
+      "symbol": "ETHUSD",
+      "timeframe": "D1",
+      "path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\ETHUSD_D1.csv",
+      "total_rows": 3980,
+      "checks": {
+        "missing_values": {
+          "status": "PASS",
+          "total_rows": 3980,
+          "total_missing_cells": 0,
+          "missing_pct": 0.0,
+          "missing_counts": {}
+        },
+        "ohlc_integrity": {
+          "status": "PASS",
+          "total_rows": 3980,
+          "violations": 0,
+          "violation_pct": 0.0,
+          "samples": []
+        },
+        "volume": {
+          "status": "WARN",
+          "total_rows": 3980,
+          "zero_volume_rows": 2333,
+          "zero_volume_pct": 0.5862,
+          "negative_volume_rows": 0,
+          "negative_volume_pct": 0.0
+        },
+        "price_range": {
+          "status": "PASS",
+          "expected_range": [
+            0.01,
+            50000
+          ],
+          "violations": 0,
+          "samples": []
+        },
+        "d1_gaps": {
+          "status": "PASS",
+          "gap_threshold_days": 5,
+          "gaps_found": 0,
+          "gaps": []
+        }
+      },
+      "status": "WARN"
+    },
+    "ETHUSD_H1": {
+      "file": "ETHUSD_H1.csv",
+      "symbol": "ETHUSD",
+      "timeframe": "H1",
+      "path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\ETHUSD_H1.csv",
+      "total_rows": 50000,
+      "checks": {
+        "missing_values": {
+          "status": "PASS",
+          "total_rows": 50000,
+          "total_missing_cells": 0,
+          "missing_pct": 0.0,
+          "missing_counts": {}
+        },
+        "ohlc_integrity": {
+          "status": "PASS",
+          "total_rows": 50000,
+          "violations": 0,
+          "violation_pct": 0.0,
+          "samples": []
+        },
+        "volume": {
+          "status": "PASS",
+          "total_rows": 50000,
+          "zero_volume_rows": 0,
+          "zero_volume_pct": 0.0,
+          "negative_volume_rows": 0,
+          "negative_volume_pct": 0.0
+        },
+        "price_range": {
+          "status": "PASS",
+          "expected_range": [
+            0.01,
+            50000
+          ],
+          "violations": 0,
+          "samples": []
+        }
+      },
+      "status": "PASS"
+    },
+    "ETHUSD_H4": {
+      "file": "ETHUSD_H4.csv",
+      "symbol": "ETHUSD",
+      "timeframe": "H4",
+      "path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\ETHUSD_H4.csv",
+      "total_rows": 15786,
+      "checks": {
+        "missing_values": {
+          "status": "PASS",
+          "total_rows": 15786,
+          "total_missing_cells": 0,
+          "missing_pct": 0.0,
+          "missing_counts": {}
+        },
+        "ohlc_integrity": {
+          "status": "PASS",
+          "total_rows": 15786,
+          "violations": 0,
+          "violation_pct": 0.0,
+          "samples": []
+        },
+        "volume": {
+          "status": "PASS",
+          "total_rows": 15786,
+          "zero_volume_rows": 0,
+          "zero_volume_pct": 0.0,
+          "negative_volume_rows": 0,
+          "negative_volume_pct": 0.0
+        },
+        "price_range": {
+          "status": "PASS",
+          "expected_range": [
+            0.01,
+            50000
+          ],
+          "violations": 0,
+          "samples": []
+        }
+      },
+      "status": "PASS"
+    },
+    "ETHUSD_M15": {
+      "file": "ETHUSD_M15.csv",
+      "symbol": "ETHUSD",
+      "timeframe": "M15",
+      "path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\ETHUSD_M15.csv",
+      "total_rows": 60000,
+      "checks": {
+        "missing_values": {
+          "status": "PASS",
+          "total_rows": 60000,
+          "total_missing_cells": 0,
+          "missing_pct": 0.0,
+          "missing_counts": {}
+        },
+        "ohlc_integrity": {
+          "status": "PASS",
+          "total_rows": 60000,
+          "violations": 0,
+          "violation_pct": 0.0,
+          "samples": []
+        },
+        "volume": {
+          "status": "PASS",
+          "total_rows": 60000,
+          "zero_volume_rows": 3,
+          "zero_volume_pct": 0.0001,
+          "negative_volume_rows": 0,
+          "negative_volume_pct": 0.0
+        },
+        "price_range": {
+          "status": "PASS",
+          "expected_range": [
+            0.01,
+            50000
+          ],
+          "violations": 0,
+          "samples": []
+        }
+      },
+      "status": "PASS"
+    },
+    "XAUUSD_D1": {
+      "file": "XAUUSD_D1.csv",
+      "symbol": "XAUUSD",
+      "timeframe": "D1",
+      "path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\XAUUSD_D1.csv",
+      "total_rows": 20300,
+      "checks": {
+        "missing_values": {
+          "status": "PASS",
+          "total_rows": 20300,
+          "total_missing_cells": 0,
+          "missing_pct": 0.0,
+          "missing_counts": {}
+        },
+        "ohlc_integrity": {
+          "status": "FAIL",
+          "total_rows": 20300,
+          "violations": 441,
+          "violation_pct": 0.021724,
+          "samples": [
+            {
+              "row": 8748,
+              "timestamp": "2001-02-13 00:00:00",
+              "errors": [
+                "close(260.29998779296875) < low(261.0)"
+              ]
+            },
+            {
+              "row": 9320,
+              "timestamp": "2003-04-29 00:00:00",
+              "errors": [
+                "close(333.70001220703125) > high(333.0)"
+              ]
+            },
+            {
+              "row": 9321,
+              "timestamp": "2003-04-30 00:00:00",
+              "errors": [
+                "close(339.1000061035156) > high(337.0)"
+              ]
+            },
+            {
+              "row": 9322,
+              "timestamp": "2003-05-01 00:00:00",
+              "errors": [
+                "close(342.1000061035156) > high(339.0)"
+              ]
+            },
+            {
+              "row": 9323,
+              "timestamp": "2003-05-02 00:00:00",
+              "errors": [
+                "open(342.1000061035156) < low(342.20001220703125)",
+                "close(341.0) < low(342.20001220703125)"
+              ]
+            }
+          ]
+        },
+        "volume": {
+          "status": "PASS",
+          "total_rows": 20300,
+          "zero_volume_rows": 9237,
+          "zero_volume_pct": 0.455,
+          "negative_volume_rows": 0,
+          "negative_volume_pct": 0.0
+        },
+        "price_range": {
+          "status": "WARN",
+          "expected_range": [
+            500,
+            10000
+          ],
+          "violations": 5,
+          "samples": [
+            {
+              "row": 0,
+              "timestamp": "1793-03-01 00:00:00",
+              "column": "open",
+              "value": 19.39
+            },
+            {
+              "row": 0,
+              "timestamp": "1793-03-01 00:00:00",
+              "column": "high",
+              "value": 19.39
+            },
+            {
+              "row": 0,
+              "timestamp": "1793-03-01 00:00:00",
+              "column": "low",
+              "value": 19.39
+            },
+            {
+              "row": 0,
+              "timestamp": "1793-03-01 00:00:00",
+              "column": "close",
+              "value": 19.39
+            },
+            {
+              "row": 1,
+              "timestamp": "1793-06-01 00:00:00",
+              "column": "open",
+              "value": 19.39
+            }
+          ]
+        },
+        "d1_gaps": {
+          "status": "FAIL",
+          "gap_threshold_days": 5,
+          "gaps_found": 716,
+          "gaps": [
+            {
+              "from": "1793-03-01",
+              "to": "1793-06-01",
+              "gap_days": 92.0
+            },
+            {
+              "from": "1793-06-01",
+              "to": "1793-09-01",
+              "gap_days": 92.0
+            },
+            {
+              "from": "1793-09-01",
+              "to": "1793-12-01",
+              "gap_days": 91.0
+            },
+            {
+              "from": "1793-12-01",
+              "to": "1794-03-01",
+              "gap_days": 90.0
+            },
+            {
+              "from": "1794-03-01",
+              "to": "1794-06-01",
+              "gap_days": 92.0
+            },
+            {
+              "from": "1794-06-01",
+              "to": "1794-09-01",
+              "gap_days": 92.0
+            },
+            {
+              "from": "1794-09-01",
+              "to": "1794-12-01",
+              "gap_days": 91.0
+            },
+            {
+              "from": "1794-12-01",
+              "to": "1795-03-01",
+              "gap_days": 90.0
+            },
+            {
+              "from": "1795-03-01",
+              "to": "1795-06-01",
+              "gap_days": 92.0
+            },
+            {
+              "from": "1795-06-01",
+              "to": "1795-09-01",
+              "gap_days": 92.0
+            },
+            {
+              "from": "1795-09-01",
+              "to": "1795-12-01",
+              "gap_days": 91.0
+            },
+            {
+              "from": "1795-12-01",
+              "to": "1796-03-01",
+              "gap_days": 91.0
+            },
+            {
+              "from": "1796-03-01",
+              "to": "1796-06-01",
+              "gap_days": 92.0
+            },
+            {
+              "from": "1796-06-01",
+              "to": "1796-09-01",
+              "gap_days": 92.0
+            },
+            {
+              "from": "1796-09-01",
+              "to": "1796-12-01",
+              "gap_days": 91.0
+            },
+            {
+              "from": "1796-12-01",
+              "to": "1797-03-01",
+              "gap_days": 90.0
+            },
+            {
+              "from": "1797-03-01",
+              "to": "1797-06-01",
+              "gap_days": 92.0
+            },
+            {
+              "from": "1797-06-01",
+              "to": "1797-09-01",
+              "gap_days": 92.0
+            },
+            {
+              "from": "1797-09-01",
+              "to": "1797-12-01",
+              "gap_days": 91.0
+            },
+            {
+              "from": "1797-12-01",
+              "to": "1798-03-01",
+              "gap_days": 90.0
+            }
+          ]
+        }
+      },
+      "status": "FAIL"
+    },
+    "XAUUSD_H1": {
+      "file": "XAUUSD_H1.csv",
+      "symbol": "XAUUSD",
+      "timeframe": "H1",
+      "path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\XAUUSD_H1.csv",
+      "total_rows": 50000,
+      "checks": {
+        "missing_values": {
+          "status": "PASS",
+          "total_rows": 50000,
+          "total_missing_cells": 0,
+          "missing_pct": 0.0,
+          "missing_counts": {}
+        },
+        "ohlc_integrity": {
+          "status": "PASS",
+          "total_rows": 50000,
+          "violations": 0,
+          "violation_pct": 0.0,
+          "samples": []
+        },
+        "volume": {
+          "status": "PASS",
+          "total_rows": 50000,
+          "zero_volume_rows": 0,
+          "zero_volume_pct": 0.0,
+          "negative_volume_rows": 0,
+          "negative_volume_pct": 0.0
+        },
+        "price_range": {
+          "status": "PASS",
+          "expected_range": [
+            500,
+            10000
+          ],
+          "violations": 0,
+          "samples": []
+        }
+      },
+      "status": "PASS"
+    },
+    "XAUUSD_H4": {
+      "file": "XAUUSD_H4.csv",
+      "symbol": "XAUUSD",
+      "timeframe": "H4",
+      "path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\XAUUSD_H4.csv",
+      "total_rows": 20679,
+      "checks": {
+        "missing_values": {
+          "status": "PASS",
+          "total_rows": 20679,
+          "total_missing_cells": 0,
+          "missing_pct": 0.0,
+          "missing_counts": {}
+        },
+        "ohlc_integrity": {
+          "status": "PASS",
+          "total_rows": 20679,
+          "violations": 0,
+          "violation_pct": 0.0,
+          "samples": []
+        },
+        "volume": {
+          "status": "PASS",
+          "total_rows": 20679,
+          "zero_volume_rows": 0,
+          "zero_volume_pct": 0.0,
+          "negative_volume_rows": 0,
+          "negative_volume_pct": 0.0
+        },
+        "price_range": {
+          "status": "WARN",
+          "expected_range": [
+            500,
+            10000
+          ],
+          "violations": 5,
+          "samples": [
+            {
+              "row": 0,
+              "timestamp": "1998-04-22 00:00:00",
+              "column": "open",
+              "value": 310.3
+            },
+            {
+              "row": 0,
+              "timestamp": "1998-04-22 00:00:00",
+              "column": "high",
+              "value": 314.4
+            },
+            {
+              "row": 0,
+              "timestamp": "1998-04-22 00:00:00",
+              "column": "low",
+              "value": 310.0
+            },
+            {
+              "row": 0,
+              "timestamp": "1998-04-22 00:00:00",
+              "column": "close",
+              "value": 313.5
+            },
+            {
+              "row": 1,
+              "timestamp": "1998-04-23 00:00:00",
+              "column": "open",
+              "value": 312.6
+            }
+          ]
+        }
+      },
+      "status": "WARN"
+    },
+    "XAUUSD_M15": {
+      "file": "XAUUSD_M15.csv",
+      "symbol": "XAUUSD",
+      "timeframe": "M15",
+      "path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\XAUUSD_M15.csv",
+      "total_rows": 50000,
+      "checks": {
+        "missing_values": {
+          "status": "PASS",
+          "total_rows": 50000,
+          "total_missing_cells": 0,
+          "missing_pct": 0.0,
+          "missing_counts": {}
+        },
+        "ohlc_integrity": {
+          "status": "PASS",
+          "total_rows": 50000,
+          "violations": 0,
+          "violation_pct": 0.0,
+          "samples": []
+        },
+        "volume": {
+          "status": "PASS",
+          "total_rows": 50000,
+          "zero_volume_rows": 0,
+          "zero_volume_pct": 0.0,
+          "negative_volume_rows": 0,
+          "negative_volume_pct": 0.0
+        },
+        "price_range": {
+          "status": "PASS",
+          "expected_range": [
+            500,
+            10000
+          ],
+          "violations": 0,
+          "samples": []
+        }
+      },
+      "status": "PASS"
+    },
+    "EURUSD_D1": {
+      "file": "EURUSD_D1.csv",
+      "symbol": "EURUSD",
+      "timeframe": "D1",
+      "path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\EURUSD_D1.csv",
+      "total_rows": 14220,
+      "checks": {
+        "missing_values": {
+          "status": "PASS",
+          "total_rows": 14220,
+          "total_missing_cells": 0,
+          "missing_pct": 0.0,
+          "missing_counts": {}
+        },
+        "ohlc_integrity": {
+          "status": "PASS",
+          "total_rows": 14220,
+          "violations": 0,
+          "violation_pct": 0.0,
+          "samples": []
+        },
+        "volume": {
+          "status": "WARN",
+          "total_rows": 14220,
+          "zero_volume_rows": 14206,
+          "zero_volume_pct": 0.999,
+          "negative_volume_rows": 0,
+          "negative_volume_pct": 0.0
+        },
+        "price_range": {
+          "status": "PASS",
+          "expected_range": [
+            0.5,
+            2.0
+          ],
+          "violations": 0,
+          "samples": []
+        },
+        "d1_gaps": {
+          "status": "PASS",
+          "gap_threshold_days": 5,
+          "gaps_found": 0,
+          "gaps": []
+        }
+      },
+      "status": "WARN"
+    },
+    "EURUSD_H1": {
+      "file": "EURUSD_H1.csv",
+      "symbol": "EURUSD",
+      "timeframe": "H1",
+      "path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\EURUSD_H1.csv",
+      "total_rows": 50000,
+      "checks": {
+        "missing_values": {
+          "status": "PASS",
+          "total_rows": 50000,
+          "total_missing_cells": 0,
+          "missing_pct": 0.0,
+          "missing_counts": {}
+        },
+        "ohlc_integrity": {
+          "status": "PASS",
+          "total_rows": 50000,
+          "violations": 0,
+          "violation_pct": 0.0,
+          "samples": []
+        },
+        "volume": {
+          "status": "PASS",
+          "total_rows": 50000,
+          "zero_volume_rows": 0,
+          "zero_volume_pct": 0.0,
+          "negative_volume_rows": 0,
+          "negative_volume_pct": 0.0
+        },
+        "price_range": {
+          "status": "PASS",
+          "expected_range": [
+            0.5,
+            2.0
+          ],
+          "violations": 0,
+          "samples": []
+        }
+      },
+      "status": "PASS"
+    },
+    "EURUSD_H4": {
+      "file": "EURUSD_H4.csv",
+      "symbol": "EURUSD",
+      "timeframe": "H4",
+      "path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\EURUSD_H4.csv",
+      "total_rows": 25000,
+      "checks": {
+        "missing_values": {
+          "status": "PASS",
+          "total_rows": 25000,
+          "total_missing_cells": 0,
+          "missing_pct": 0.0,
+          "missing_counts": {}
+        },
+        "ohlc_integrity": {
+          "status": "PASS",
+          "total_rows": 25000,
+          "violations": 0,
+          "violation_pct": 0.0,
+          "samples": []
+        },
+        "volume": {
+          "status": "PASS",
+          "total_rows": 25000,
+          "zero_volume_rows": 0,
+          "zero_volume_pct": 0.0,
+          "negative_volume_rows": 0,
+          "negative_volume_pct": 0.0
+        },
+        "price_range": {
+          "status": "PASS",
+          "expected_range": [
+            0.5,
+            2.0
+          ],
+          "violations": 0,
+          "samples": []
+        }
+      },
+      "status": "PASS"
+    },
+    "EURUSD_M15": {
+      "file": "EURUSD_M15.csv",
+      "symbol": "EURUSD",
+      "timeframe": "M15",
+      "path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\EURUSD_M15.csv",
+      "total_rows": 50000,
+      "checks": {
+        "missing_values": {
+          "status": "PASS",
+          "total_rows": 50000,
+          "total_missing_cells": 0,
+          "missing_pct": 0.0,
+          "missing_counts": {}
+        },
+        "ohlc_integrity": {
+          "status": "PASS",
+          "total_rows": 50000,
+          "violations": 0,
+          "violation_pct": 0.0,
+          "samples": []
+        },
+        "volume": {
+          "status": "PASS",
+          "total_rows": 50000,
+          "zero_volume_rows": 0,
+          "zero_volume_pct": 0.0,
+          "negative_volume_rows": 0,
+          "negative_volume_pct": 0.0
+        },
+        "price_range": {
+          "status": "PASS",
+          "expected_range": [
+            0.5,
+            2.0
+          ],
+          "violations": 0,
+          "samples": []
+        }
+      },
+      "status": "PASS"
+    }
+  },
+  "summary": {
+    "total_files": 16,
+    "pass": 10,
+    "warn": 5,
+    "fail": 1,
+    "error": 0,
+    "overall": "FAIL"
+  }
+}

@@ -1,0 +1,44 @@
+## CodeRabbit configuration
+## https://docs.coderabbit.ai/getting-started/configure-coderabbit
+
+reviews:
+  profile: chill
+  request_changes_workflow: true
+  collapse_walkthrough: false
+  path_instructions:
+    - path: "core/agents/**"
+      instructions: |
+        Review for: fail-closed defaults, proper error handling,
+        backward compatibility, and type safety.
+    - path: "core/canonical/**"
+      instructions: |
+        Review for: frozen models, proper validation,
+        and round-trip serialization correctness.
+    - path: "tests/**"
+      instructions: |
+        Review for: test isolation, proper assertions,
+        and edge case coverage.
+    - path: "scripts/**"
+      instructions: |
+        Review for: proper error handling, graceful degradation,
+        and security (no hardcoded secrets).
+
+  tools:
+    ruff:
+      enabled: true
+    mypy:
+      enabled: false
+
+  ignore_keywords:
+    - "wip"
+    - "draft"
+
+chat:
+  auto_reply: true
+
+keywords:
+  - "quant_os"
+  - "trading"
+  - "risk"
+  - "xgboost"
+  - "mt5"

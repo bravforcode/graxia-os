@@ -71,6 +71,10 @@ google-api-python-client==2.95.0
 python-dateutil==2.9.0
 structlog==24.1.0
 
+# Testing
+hypothesis==6.100.0
+pytest-cov==4.1.0
+
 # Development & Type Checking
 mypy==1.9.0
 ruff==0.4.0

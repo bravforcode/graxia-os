@@ -83,7 +83,7 @@ export function AppRoutes() {
           <Route path="event-bus" element={<EventBus />} />
           <Route path="agents" element={<Agents />} />
           <Route path="settings" element={<Settings />} />
-          
+
           {/* Funnel Routes */}
           <Route path="products" element={<ProductList />} />
           <Route path="products/:id" element={<ProductEditor />} />

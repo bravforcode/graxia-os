@@ -72,7 +72,7 @@ class Opportunity(Base, TenantMixin):
     id: Mapped[UUIDType] = mapped_column(
         SQLUUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    type: Mapped[str] = mapped_column(String(50), nullable=False)
+    type: Mapped[str] = mapped_column(String(50), nullable=False, default="other", server_default="other")
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     source_url: Mapped[str | None] = mapped_column(Text)

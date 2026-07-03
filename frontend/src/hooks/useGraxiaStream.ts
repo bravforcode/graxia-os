@@ -4,7 +4,7 @@ interface GraxiaEvent {
   type: string;
   agent_id?: string;
   message?: string;
-  payload?: any;
+  payload?: Record<string, unknown>;
   timestamp: string;
 }
 

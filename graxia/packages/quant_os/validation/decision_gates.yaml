@@ -1,0 +1,23 @@
+# BE-P6 Pre-Committed Decision Gates
+# These gates are frozen before any results are seen.
+# Hash: sha256:<computed at commit time>
+
+xau_candidate_gate:
+  minimum_effective_oos_trades: 100
+  minimum_time_segments: 12
+  positive_median_segment_expectancy: true
+  positive_expectancy_after_stress_1: true
+  profit_factor_after_stress_1_min: 1.10
+  no_single_trade_pnl_share_over_pct: 20
+  no_single_month_pnl_share_over_pct: 35
+  majority_positive_oos_folds: true
+  require_oracle_decision_alignment: true
+  require_ledger_integrity: true
+  require_no_unresolved_data_incident: true
+  require_precommitted_threshold_hash: true
+
+valid_outputs:
+  - CONTINUE_TO_SHADOW
+  - ARCHIVE_NO_EDGE
+  - INSUFFICIENT_SAMPLE
+  - INVALID_RUN

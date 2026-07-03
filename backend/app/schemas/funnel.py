@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 # ── Digital Product ───────────────────────────────────────────────────────
 
+
 class DigitalProductBase(BaseModel):
     name: str = Field(..., max_length=255)
     slug: str = Field(..., max_length=255)
@@ -19,8 +20,10 @@ class DigitalProductBase(BaseModel):
     cover_image_url: Optional[str] = None
     sales_page_content: Optional[str] = None
 
+
 class DigitalProductCreate(DigitalProductBase):
     organization_id: Optional[UUID] = None
+
 
 class DigitalProductUpdate(BaseModel):
     name: Optional[str] = None
@@ -33,6 +36,7 @@ class DigitalProductUpdate(BaseModel):
     currency: Optional[str] = None
     cover_image_url: Optional[str] = None
     sales_page_content: Optional[str] = None
+
 
 class DigitalProductRead(DigitalProductBase):
     model_config = ConfigDict(from_attributes=True)
@@ -49,6 +53,7 @@ class DigitalProductRead(DigitalProductBase):
 
 # ── Delivery Asset ────────────────────────────────────────────────────────
 
+
 class DeliveryAssetBase(BaseModel):
     asset_type: str
     title: str = Field(..., max_length=255)
@@ -58,9 +63,11 @@ class DeliveryAssetBase(BaseModel):
     content_body: Optional[str] = None
     is_active: bool = True
 
+
 class DeliveryAssetCreate(DeliveryAssetBase):
     product_id: Optional[UUID] = None
     organization_id: Optional[UUID] = None
+
 
 class DeliveryAssetUpdate(BaseModel):
     asset_type: Optional[str] = None
@@ -70,6 +77,7 @@ class DeliveryAssetUpdate(BaseModel):
     external_url: Optional[str] = None
     content_body: Optional[str] = None
     is_active: Optional[bool] = None
+
 
 class DeliveryAssetRead(DeliveryAssetBase):
     model_config = ConfigDict(from_attributes=True)
@@ -83,6 +91,7 @@ class DeliveryAssetRead(DeliveryAssetBase):
 
 # ── Checkout Session ──────────────────────────────────────────────────────
 
+
 class FunnelCheckoutCreate(BaseModel):
     contact_id: Optional[UUID] = None
     customer_email: Optional[str] = None
@@ -90,8 +99,10 @@ class FunnelCheckoutCreate(BaseModel):
     cancel_url: str
     metadata: Optional[dict[str, Any]] = None
 
+
 class FunnelCheckoutCreatePublic(FunnelCheckoutCreate):
     organization_id: UUID
+
 
 class FunnelCheckoutRead(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
@@ -106,6 +117,7 @@ class FunnelCheckoutRead(BaseModel):
     currency: str
     customer_email: Optional[str] = None
     created_at: datetime
+
 
 class FunnelCheckoutSessionRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -129,6 +141,7 @@ class FunnelCheckoutSessionRead(BaseModel):
 
 # ── Order ─────────────────────────────────────────────────────────────────
 
+
 class FunnelOrderItemRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -139,6 +152,7 @@ class FunnelOrderItemRead(BaseModel):
     total_amount: Decimal
     currency: str
     created_at: datetime
+
 
 class FunnelOrderRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -159,6 +173,7 @@ class FunnelOrderRead(BaseModel):
 
 # ── Delivery Access ───────────────────────────────────────────────────────
 
+
 class DeliveryAccessRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -175,9 +190,11 @@ class DeliveryAccessRead(BaseModel):
     last_accessed_at: Optional[datetime] = None
     created_at: datetime
 
+
 class DeliveryAccessGrantResponse(BaseModel):
     access_id: UUID
     raw_token: str  # Only returned once at creation
+
 
 class DeliveryPayload(BaseModel):
     product_name: str
@@ -191,6 +208,7 @@ class DeliveryPayload(BaseModel):
 
 # ── Conversion Event ──────────────────────────────────────────────────────
 
+
 class ConversionEventCreate(BaseModel):
     event_type: str
     product_id: Optional[UUID] = None
@@ -203,8 +221,10 @@ class ConversionEventCreate(BaseModel):
     referrer: Optional[str] = None
     metadata_json: Optional[dict[str, Any]] = None
 
+
 class ConversionEventCreatePublic(ConversionEventCreate):
     organization_id: UUID
+
 
 class ConversionEventRead(ConversionEventCreate):
     model_config = ConfigDict(from_attributes=True)
@@ -213,6 +233,7 @@ class ConversionEventRead(ConversionEventCreate):
     organization_id: UUID
     occurred_at: datetime
     created_at: datetime
+
 
 class FunnelAnalyticsSummary(BaseModel):
     views: int
@@ -229,6 +250,7 @@ class FunnelAnalyticsSummary(BaseModel):
     total_revenue: float
     average_order_value: float
 
+
 class FunnelDailyAnalytics(BaseModel):
     date: str
     views: int
@@ -239,6 +261,7 @@ class FunnelDailyAnalytics(BaseModel):
 
 # ── Lead Magnet ───────────────────────────────────────────────────────────
 
+
 class LeadMagnetBase(BaseModel):
     name: str = Field(..., max_length=255)
     slug: str = Field(..., max_length=255)
@@ -247,8 +270,10 @@ class LeadMagnetBase(BaseModel):
     file_url: Optional[str] = Field(None, max_length=500)
     landing_page_url: Optional[str] = Field(None, max_length=500)
 
+
 class LeadMagnetCreate(LeadMagnetBase):
     organization_id: Optional[UUID] = None
+
 
 class LeadMagnetUpdate(BaseModel):
     name: Optional[str] = None
@@ -258,6 +283,7 @@ class LeadMagnetUpdate(BaseModel):
     file_url: Optional[str] = None
     landing_page_url: Optional[str] = None
     status: Optional[str] = None
+
 
 class LeadMagnetRead(LeadMagnetBase):
     model_config = ConfigDict(from_attributes=True)
@@ -269,6 +295,7 @@ class LeadMagnetRead(LeadMagnetBase):
     created_at: datetime
     updated_at: datetime
 
+
 class LeadCaptureRequest(BaseModel):
     organization_id: UUID
     email: str = Field(..., max_length=300)
@@ -278,6 +305,7 @@ class LeadCaptureRequest(BaseModel):
     campaign: Optional[str] = None
     referrer: Optional[str] = None
 
+
 class LeadCaptureResponse(BaseModel):
     contact_id: UUID
     raw_token: Optional[str] = None
@@ -285,6 +313,7 @@ class LeadCaptureResponse(BaseModel):
 
 
 # ── Coupon ────────────────────────────────────────────────────────────────
+
 
 class CouponCreate(BaseModel):
     code: str = Field(..., max_length=50)
@@ -297,6 +326,7 @@ class CouponCreate(BaseModel):
     expires_at: Optional[datetime] = None
     description: Optional[str] = None
 
+
 class CouponUpdate(BaseModel):
     code: Optional[str] = None
     coupon_type: Optional[str] = None
@@ -306,6 +336,7 @@ class CouponUpdate(BaseModel):
     status: Optional[str] = None
     expires_at: Optional[datetime] = None
     description: Optional[str] = None
+
 
 class CouponRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -326,10 +357,12 @@ class CouponRead(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+
 class CouponValidateRequest(BaseModel):
     code: str
     order_amount: Decimal
     product_id: Optional[UUID] = None
+
 
 class CouponValidateResponse(BaseModel):
     is_valid: bool
@@ -339,6 +372,7 @@ class CouponValidateResponse(BaseModel):
 
 
 # ── Review ────────────────────────────────────────────────────────────────
+
 
 class ReviewCreate(BaseModel):
     product_id: UUID
@@ -350,11 +384,13 @@ class ReviewCreate(BaseModel):
     title: Optional[str] = Field(None, max_length=255)
     body: Optional[str] = None
 
+
 class ReviewUpdate(BaseModel):
     rating: Optional[int] = Field(None, ge=1, le=5)
     title: Optional[str] = None
     body: Optional[str] = None
     status: Optional[str] = None
+
 
 class ReviewRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -373,6 +409,7 @@ class ReviewRead(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+
 class ReviewStats(BaseModel):
     total_reviews: int
     average_rating: float
@@ -380,6 +417,7 @@ class ReviewStats(BaseModel):
 
 
 # ── Bundle ────────────────────────────────────────────────────────────────
+
 
 class BundleCreate(BaseModel):
     name: str = Field(..., max_length=255)
@@ -391,6 +429,7 @@ class BundleCreate(BaseModel):
     cover_image_url: Optional[str] = None
     badge: Optional[str] = None
 
+
 class BundleUpdate(BaseModel):
     name: Optional[str] = None
     slug: Optional[str] = None
@@ -401,6 +440,7 @@ class BundleUpdate(BaseModel):
     status: Optional[str] = None
     cover_image_url: Optional[str] = None
     badge: Optional[str] = None
+
 
 class BundleRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -423,6 +463,7 @@ class BundleRead(BaseModel):
 
 # ── Email Sequence ────────────────────────────────────────────────────────
 
+
 class EmailSequenceCreate(BaseModel):
     name: str = Field(..., max_length=255)
     trigger_type: str  # welcome, abandoned_cart, post_purchase, etc.
@@ -430,6 +471,7 @@ class EmailSequenceCreate(BaseModel):
     subject_template: str = Field(..., max_length=500)
     body_template: str
     product_id: Optional[UUID] = None
+
 
 class EmailSequenceUpdate(BaseModel):
     name: Optional[str] = None
@@ -439,6 +481,7 @@ class EmailSequenceUpdate(BaseModel):
     body_template: Optional[str] = None
     status: Optional[str] = None
     product_id: Optional[UUID] = None
+
 
 class EmailSequenceRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -457,4 +500,3 @@ class EmailSequenceRead(BaseModel):
     total_clicked: int
     created_at: datetime
     updated_at: datetime
-

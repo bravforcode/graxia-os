@@ -8,7 +8,9 @@ import re
 import secrets
 
 from app.config import settings
+from app.core.errors import build_error_response
 from app.core.monitoring import metrics_collector
+from app.core.request_context import get_correlation_id, get_request_id
 from app.middleware.auth import CSRF_EXEMPT_PATHS
 from app.services.audit_service import log_audit_event
 from fastapi import Request, Response
@@ -109,7 +111,7 @@ def validate_csrf_token_signature(token: str, session_id: str, secret: str | Non
             current_time = int(time.time())
             expiry_seconds = settings.CSRF_TOKEN_EXPIRY_HOURS * 3600
             
-            if current_time - timestamp > expiry_seconds:
+            if current_time - timestamp >= expiry_seconds:
                 # Token expired
                 return False
             
@@ -208,7 +210,12 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 request_path=path,
                 request_method=request.method,
             )
-            return JSONResponse({"detail": "CSRF token missing"}, status_code=403)
+            return build_error_response(
+                request,
+                code="PERMISSION_DENIED",
+                message="Not authorized to access this resource",
+                status_code=403,
+            )
 
         # SECURITY: Use hmac.compare_digest for constant-time string comparison
         # to prevent timing attacks that could leak token information.
@@ -230,7 +237,12 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 request_path=path,
                 request_method=request.method,
             )
-            return JSONResponse({"detail": "CSRF token invalid"}, status_code=403)
+            return build_error_response(
+                request,
+                code="PERMISSION_DENIED",
+                message="Not authorized to access this resource",
+                status_code=403,
+            )
 
         if not validate_csrf_token_signature(cookie_token, request.state.session_id):
             metrics_collector.record_csrf_violation(path)
@@ -250,7 +262,12 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 request_path=path,
                 request_method=request.method,
             )
-            return JSONResponse({"detail": "CSRF token forged"}, status_code=403)
+            return build_error_response(
+                request,
+                code="PERMISSION_DENIED",
+                message="Not authorized to access this resource",
+                status_code=403,
+            )
 
         return await call_next(request)
 
@@ -327,8 +344,13 @@ class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         content_length = request.headers.get("content-length")
         if content_length and int(content_length) > self.max_size:
-            return Response(
-                content=f"Request body too large. Maximum size: {self.max_size} bytes",
+            return build_error_response(
+                request,
+                code="PAYLOAD_TOO_LARGE",
+                message="Request payload is too large",
                 status_code=413,
             )
-        return await call_next(request)
+        response = await call_next(request)
+        response.headers.setdefault("X-Request-ID", get_request_id(request))
+        response.headers.setdefault("X-Correlation-ID", get_correlation_id(request))
+        return response

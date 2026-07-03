@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Activity } from 'lucide-react'
 
-import { MetricCard } from '@/components/ui/MetricCard'
+import { MetricCard } from '@/components/ui/metric-card'
 
 const meta = {
   title: 'Primitives/MetricCard',

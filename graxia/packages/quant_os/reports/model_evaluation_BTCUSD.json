@@ -1,0 +1,64 @@
+{
+  "symbol": "BTCUSD",
+  "timeframe": "M15",
+  "evaluated_at": "2026-07-01T12:14:16.165664+00:00",
+  "model_trained_at": "2026-07-01T12:14:04.368578+00:00",
+  "n_features": 46,
+  "test_samples": 9000,
+  "direction_metrics": {
+    "accuracy": 0.6282,
+    "precision": 0.6169,
+    "recall": 0.6667,
+    "f1": 0.6408,
+    "n_samples": 9000,
+    "n_up_true": 4477,
+    "n_down_true": 4523,
+    "n_up_pred": 4839,
+    "n_down_pred": 4161
+  },
+  "magnitude_metrics": {
+    "rmse": 0.002107,
+    "mae": 0.001384,
+    "r2": 0.1175,
+    "n_samples": 9000,
+    "mean_true": -1.6e-05,
+    "std_true": 0.002243,
+    "mean_pred": 1.8e-05,
+    "std_pred": 0.000773
+  },
+  "strategy_metrics": {
+    "cumulative_return": 497.6887,
+    "sharpe_ratio": 39.5618,
+    "win_rate": 0.6282,
+    "max_drawdown": 4.2693,
+    "buy_hold_return": 1328.7416,
+    "n_trades": 9000
+  },
+  "classification_report": {
+    "0": {
+      "precision": 0.6414323479932709,
+      "recall": 0.5900950696440416,
+      "f1-score": 0.614693689543989,
+      "support": 4523.0
+    },
+    "1": {
+      "precision": 0.6168629882207067,
+      "recall": 0.6667411212865758,
+      "f1-score": 0.6408329755259768,
+      "support": 4477.0
+    },
+    "accuracy": 0.6282222222222222,
+    "macro avg": {
+      "precision": 0.6291476681069887,
+      "recall": 0.6284180954653087,
+      "f1-score": 0.627763332534983,
+      "support": 9000.0
+    },
+    "weighted avg": {
+      "precision": 0.6292104564708519,
+      "recall": 0.6282222222222222,
+      "f1-score": 0.6276965321374733,
+      "support": 9000.0
+    }
+  }
+}

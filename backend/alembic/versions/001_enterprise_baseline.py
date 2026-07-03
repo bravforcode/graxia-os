@@ -51,6 +51,12 @@ def _uuid():
 
 def upgrade() -> None:
     bind = op.get_bind()
+    
+    # Ensure extensions are present before creating tables that depend on them
+    if _is_postgres():
+        op.execute("CREATE EXTENSION IF NOT EXISTS vector")
+        op.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto")
+
     # Use create_all with checkfirst=True to be idempotent.
     # This is the pragmatic approach for a baseline migration since the
     # schema already exists in production. Running this on a fresh database

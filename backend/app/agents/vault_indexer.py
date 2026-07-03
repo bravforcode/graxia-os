@@ -4,10 +4,11 @@ from pathlib import Path
 from app.agents.base import BaseAgent
 from app.config import settings
 from app.core.event_bus import event_bus
-from app.core.knowledge_service import KnowledgeService
 from app.database import AsyncSessionLocal
+from app.services.knowledge_service import get_knowledge_service
 
 logger = logging.getLogger(__name__)
+
 
 class VaultIndexerAgent(BaseAgent):
     name = "vault_indexer"
@@ -25,9 +26,9 @@ class VaultIndexerAgent(BaseAgent):
 
         md_files = list(vault_dir.rglob("*.md"))
         total_indexed = 0
-        
+
         async with AsyncSessionLocal() as db:
-            service = KnowledgeService(db)
+            service = await get_knowledge_service()
             for file_path in md_files:
                 try:
                     content = file_path.read_text(encoding="utf-8")
@@ -37,15 +38,14 @@ class VaultIndexerAgent(BaseAgent):
 
                 source_path = str(file_path.relative_to(vault_dir))
                 indexed = await service.index_markdown_content(
-                    title=file_path.stem,
-                    content=content,
-                    source_path=source_path
+                    db=db, title=file_path.stem, content=content, source_path=source_path
                 )
                 total_indexed += indexed
-                
+
             await db.commit()
 
         logger.info(f"Vault indexing complete. Total indexed chunks: {total_indexed}")
         await event_bus.emit("vault.indexed", {"vault_path": vault_path, "count": total_indexed})
+
 
 vault_indexer_agent = VaultIndexerAgent()

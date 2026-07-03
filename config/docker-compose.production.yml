@@ -2,16 +2,19 @@ version: "3.8"
 
 services:
   # PostgreSQL Database
+  # NOTE: Ports not exposed to host — backend/celery access via Docker internal DNS
   postgres:
     image: postgres:15-alpine
+    env_file: ../.env.production
     environment:
       POSTGRES_USER: graxia
       POSTGRES_PASSWORD: ${DB_PASSWORD:-graxia_secure_password}
       POSTGRES_DB: graxia_production
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    # Security: No host port exposure — accessed via internal Docker network
+    expose:
+      - "5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U graxia"]
       interval: 10s
@@ -20,13 +23,15 @@ services:
     restart: unless-stopped
 
   # Redis Cache
+  # NOTE: Ports not exposed to host — backend/celery access via Docker internal DNS
   redis:
     image: redis:7-alpine
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
-    ports:
-      - "6379:6379"
+    # Security: No host port exposure — accessed via internal Docker network
+    expose:
+      - "6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -39,6 +44,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    env_file: ../.env.production
     environment:
       - ENVIRONMENT=production
       - APP_ENV=production
@@ -109,6 +115,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    env_file: ../.env.production
     environment:
       - ENVIRONMENT=production
       - APP_ENV=production
@@ -128,6 +135,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    env_file: ../.env.production
     environment:
       - ENVIRONMENT=production
       - APP_ENV=production

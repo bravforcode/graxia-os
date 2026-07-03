@@ -18,7 +18,7 @@ from app.tasks.queues import BACKGROUND_QUEUE, CRITICAL_QUEUE, get_sync_redis_cl
 
 
 async def run_daily_backup_async() -> dict[str, str]:
-    from scripts.backup_database import DatabaseBackup
+    from scripts.ops.backup_database import DatabaseBackup
 
     backup = DatabaseBackup()
     success = await backup.run()
@@ -29,7 +29,7 @@ async def run_daily_backup_async() -> dict[str, str]:
 
 
 async def run_redis_backup_async() -> dict[str, str]:
-    from scripts.backup_database import RedisSnapshotBackup
+    from scripts.ops.backup_database import RedisSnapshotBackup
 
     redis_client = get_sync_redis_client()
     if redis_client is None:
@@ -60,8 +60,8 @@ async def run_redis_backup_async() -> dict[str, str]:
 
 async def run_restore_drill_async() -> dict[str, str]:
     """Restore the newest local encrypted Postgres backup into a disposable container."""
-    from scripts.backup_database import BackupManifest
-    from scripts.restore_database import DatabaseRestore
+    from scripts.ops.backup_database import BackupManifest
+    from scripts.ops.restore_database import DatabaseRestore
 
     backup_dir = Path(settings.BACKUP_DIR)
     manifests = sorted(backup_dir.glob("*.manifest.json"), key=lambda p: p.stat().st_mtime, reverse=True)

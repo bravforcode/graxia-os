@@ -1,0 +1,8 @@
+# Pepperstone Demo Credentials — B2 Paper Trade
+# DO NOT commit this file to git
+
+SERVER=Pepperstone-Demo
+LOGIN=61547941
+PASSWORD=Graxia-12345
+ACCOUNT_TYPE=Razor
+PLATFORM=MT5

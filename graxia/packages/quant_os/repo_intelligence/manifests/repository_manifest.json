@@ -1,0 +1,26 @@
+{
+  "total_repos": 56,
+  "by_role": {
+    "APPROVED_DIFFERENTIAL_ORACLE": 4,
+    "APPROVED_ARCHITECTURE_REFERENCE": 10,
+    "APPROVED_HYPOTHESIS_CORPUS": 10,
+    "APPROVED_DATA_REFERENCE": 1,
+    "CRYPTO_ONLY_REFERENCE": 10,
+    "VERIFY_IDENTITY_ONLY": 17,
+    "QUARANTINED": 4
+  },
+  "by_language": {
+    "Python": 40,
+    "C#": 2,
+    "C++": 1,
+    "Rust": 4,
+    "TypeScript": 1,
+    "JavaScript": 1,
+    "Java": 1,
+    "Markdown": 1
+  },
+  "generated_at_utc": "2026-06-22T00:00:00Z",
+  "phase": "1R",
+  "status": "initial_registration",
+  "note": "All pinned_commit values are PLACEHOLDER_SHA until actual pinning workflow runs"
+}

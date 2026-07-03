@@ -1,0 +1,57 @@
+[
+  {
+    "drill": "Kill Switch Activation",
+    "passed": true,
+    "details": "Kill switch prevented order progression"
+  },
+  {
+    "drill": "MT5 Disconnection",
+    "passed": true,
+    "details": "Pipeline handles disconnect gracefully"
+  },
+  {
+    "drill": "Stale Tick Detection",
+    "passed": true,
+    "details": "Healthy after stale: False"
+  },
+  {
+    "drill": "Wide Spread Detection",
+    "passed": true,
+    "details": "Wide spread detected: True, multiplier: 3.4"
+  },
+  {
+    "drill": "Contract Metadata Change",
+    "passed": true,
+    "details": "Change detected: True"
+  },
+  {
+    "drill": "Broker Rejection",
+    "passed": true,
+    "details": "Order rejected: REJECTED"
+  },
+  {
+    "drill": "Order Timeout",
+    "passed": true,
+    "details": "Order expired: EXPIRED"
+  },
+  {
+    "drill": "Position Mismatch",
+    "passed": true,
+    "details": "Detection: DIRECTION_MISMATCH:expected=BUY,actual=SELL"
+  },
+  {
+    "drill": "Missing SL/TP Verification",
+    "passed": true,
+    "details": "Detection: SL_MISMATCH:broker=0,expected=2340.0"
+  },
+  {
+    "drill": "Restart Recovery",
+    "passed": true,
+    "details": "Pipeline recovered after restart"
+  },
+  {
+    "drill": "Telemetry Outage",
+    "passed": true,
+    "details": "Telemetry survived: True"
+  }
+]

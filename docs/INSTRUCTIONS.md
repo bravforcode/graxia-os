@@ -1,0 +1,27 @@
+# Universal AI Skills Routing
+
+This workspace uses a local Obsidian skills hub:
+
+`C:\Users\menum\OneDrive\Documents\Gracia\Second Brain\brain\skills-universal`
+
+Use skills on demand. Do not preload the full hub.
+
+## Routing Policy
+
+1. Read `skills-router.md` when a task asks for a skill or clearly matches one.
+2. Search `skills-registry-compact.json` for candidate skills.
+3. Load only the selected `<skill-id>\SKILL.md` files.
+4. Use 1 skill by default and no more than 3 unless explicitly requested.
+5. Prefer this repo's `AGENTS.md`, `CLAUDE.md`, live code, and tests over generic skill guidance.
+
+## Local Bridges
+
+- `skills\` points to the Obsidian hub.
+- `.vscode\skills\` points to the Obsidian hub.
+- `.claude\skills-universal\` points to the Obsidian hub.
+- `%USERPROFILE%\.claude\skills-all` points to the Obsidian hub.
+- `%USERPROFILE%\.codex\skills\gracia-universal-skills\SKILL.md` is the Codex bridge skill.
+
+## Boundary
+
+Local agents can read the hub through the filesystem. Web-only AI tools cannot automatically read local Obsidian files unless they have local-file access or the user provides the relevant skill file.

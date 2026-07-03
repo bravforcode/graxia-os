@@ -1,0 +1,1418 @@
+# Repository Intelligence Registry
+# Master inventory from quant_os master plan Section 4.4
+# Status: Phase 1R — initial registration with placeholder pins
+# ponytail: placeholder SHAs until actual pinning workflow runs
+---
+repositories:
+
+  # === A. Differential backtesting and research oracles ===
+
+  - repo_id: mementum_backtrader
+    canonical_url: https://github.com/mementum/backtrader
+    owner: mementum
+    name: backtrader
+    pinned_commit: "PLACEHOLDER_SHA_BACKTRADER"
+    license: UNKNOWN
+    language: Python
+    proposed_role: APPROVED_DIFFERENTIAL_ORACLE
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: true
+      research_import: true
+      differential_oracle: true
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: kernc_backtesting_py
+    canonical_url: https://github.com/kernc/backtesting.py
+    owner: kernc
+    name: backtesting.py
+    pinned_commit: "PLACEHOLDER_SHA_BACKTESTING_PY"
+    license: UNKNOWN
+    language: Python
+    proposed_role: APPROVED_DIFFERENTIAL_ORACLE
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: true
+      research_import: true
+      differential_oracle: true
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: polakowo_vectorbt
+    canonical_url: https://github.com/polakowo/vectorbt
+    owner: polakowo
+    name: vectorbt
+    pinned_commit: "PLACEHOLDER_SHA_VECTORBT"
+    license: UNKNOWN
+    language: Python
+    proposed_role: APPROVED_DIFFERENTIAL_ORACLE
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: true
+      research_import: true
+      differential_oracle: true
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: quantconnect_lean
+    canonical_url: https://github.com/QuantConnect/Lean
+    owner: QuantConnect
+    name: Lean
+    pinned_commit: "PLACEHOLDER_SHA_LEAN"
+    license: UNKNOWN
+    language: C#
+    proposed_role: APPROVED_DIFFERENTIAL_ORACLE
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: true
+      research_import: true
+      differential_oracle: true
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: stocksharp_stocksharp
+    canonical_url: https://github.com/StockSharp/StockSharp
+    owner: StockSharp
+    name: StockSharp
+    pinned_commit: "PLACEHOLDER_SHA_STOCKSHARP"
+    license: UNKNOWN
+    language: C#
+    proposed_role: APPROVED_ARCHITECTURE_REFERENCE
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: true
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: fasiondog_hikyuu
+    canonical_url: https://github.com/fasiondog/hikyuu
+    owner: fasiondog
+    name: hikyuu
+    pinned_commit: "PLACEHOLDER_SHA_HIKYUU"
+    license: UNKNOWN
+    language: C++
+    proposed_role: APPROVED_ARCHITECTURE_REFERENCE
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: true
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: enzoampil_fastquant
+    canonical_url: https://github.com/enzoampil/fastquant
+    owner: enzoampil
+    name: fastquant
+    pinned_commit: "PLACEHOLDER_SHA_FASTQUANT"
+    license: UNKNOWN
+    language: Python
+    proposed_role: APPROVED_ARCHITECTURE_REFERENCE
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: true
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: edtechre_pybroker
+    canonical_url: https://github.com/edtechre/pybroker
+    owner: edtechre
+    name: pybroker
+    pinned_commit: "PLACEHOLDER_SHA_PYBROKER"
+    license: UNKNOWN
+    language: Python
+    proposed_role: APPROVED_HYPOTHESIS_CORPUS
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: true
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: lumiwealth_lumibot
+    canonical_url: https://github.com/Lumiwealth/lumibot
+    owner: Lumiwealth
+    name: lumibot
+    pinned_commit: "PLACEHOLDER_SHA_LUMIBOT"
+    license: UNKNOWN
+    language: Python
+    proposed_role: APPROVED_ARCHITECTURE_REFERENCE
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: true
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: austin_starks_nexttrade
+    canonical_url: https://github.com/austin-starks/NextTrade
+    owner: austin-starks
+    name: NextTrade
+    pinned_commit: "PLACEHOLDER_SHA_NEXTTRADE"
+    license: UNKNOWN
+    language: Python
+    proposed_role: VERIFY_IDENTITY_ONLY
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: scottfreellc_alphapy
+    canonical_url: https://github.com/ScottfreeLLC/AlphaPy
+    owner: ScottfreeLLC
+    name: AlphaPy
+    pinned_commit: "PLACEHOLDER_SHA_ALPHAPY"
+    license: UNKNOWN
+    language: Python
+    proposed_role: APPROVED_HYPOTHESIS_CORPUS
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: true
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: michaelchu_optopsy
+    canonical_url: https://github.com/michaelchu/optopsy
+    owner: michaelchu
+    name: optopsy
+    pinned_commit: "PLACEHOLDER_SHA_OPTOPSY"
+    license: UNKNOWN
+    language: Python
+    proposed_role: APPROVED_ARCHITECTURE_REFERENCE
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  # === B. Execution, connector, workflow, and monitoring references ===
+
+  - repo_id: hummingbot_hummingbot
+    canonical_url: https://github.com/hummingbot/hummingbot
+    owner: hummingbot
+    name: hummingbot
+    pinned_commit: "PLACEHOLDER_SHA_HUMMINGBOT"
+    license: UNKNOWN
+    language: Python
+    proposed_role: CRYPTO_ONLY_REFERENCE
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: drakkar_software_octobot
+    canonical_url: https://github.com/Drakkar-Software/OctoBot
+    owner: Drakkar-Software
+    name: OctoBot
+    pinned_commit: "PLACEHOLDER_SHA_OCTOBOT"
+    license: UNKNOWN
+    language: Python
+    proposed_role: CRYPTO_ONLY_REFERENCE
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: barter_rs_barter_rs
+    canonical_url: https://github.com/barter-rs/barter-rs
+    owner: barter-rs
+    name: barter-rs
+    pinned_commit: "PLACEHOLDER_SHA_BARTER_RS"
+    license: UNKNOWN
+    language: Rust
+    proposed_role: APPROVED_ARCHITECTURE_REFERENCE
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: whittlem_pycryptobot
+    canonical_url: https://github.com/whittlem/pycryptobot
+    owner: whittlem
+    name: pycryptobot
+    pinned_commit: "PLACEHOLDER_SHA_PYCRYPTOBOT"
+    license: UNKNOWN
+    language: Python
+    proposed_role: CRYPTO_ONLY_REFERENCE
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: socktrader_socktrader
+    canonical_url: https://github.com/SockTrader/SockTrader
+    owner: SockTrader
+    name: SockTrader
+    pinned_commit: "PLACEHOLDER_SHA_SOCKTRADER"
+    license: UNKNOWN
+    language: TypeScript
+    proposed_role: VERIFY_IDENTITY_ONLY
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: finanzobot_finanzobot
+    canonical_url: https://github.com/finanzobot/finanzobot
+    owner: finanzobot
+    name: finanzobot
+    pinned_commit: "PLACEHOLDER_SHA_FINANZOBOT"
+    license: UNKNOWN
+    language: Python
+    proposed_role: VERIFY_IDENTITY_ONLY
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: quantweb3_nexustrader
+    canonical_url: https://github.com/Quantweb3-com/NexusTrader
+    owner: Quantweb3-com
+    name: NexusTrader
+    pinned_commit: "PLACEHOLDER_SHA_NEXUSTRADER"
+    license: UNKNOWN
+    language: Python
+    proposed_role: VERIFY_IDENTITY_ONLY
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: superalgos_superalgos
+    canonical_url: https://github.com/superalgos/Superalgos
+    owner: superalgos
+    name: Superalgos
+    pinned_commit: "PLACEHOLDER_SHA_SUPERALGOS"
+    license: UNKNOWN
+    language: JavaScript
+    proposed_role: APPROVED_ARCHITECTURE_REFERENCE
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: trading_bot_tv_webhook
+    canonical_url: https://github.com/trading-bot/Tradingview-Webhook-Bot
+    owner: trading-bot
+    name: Tradingview-Webhook-Bot
+    pinned_commit: "PLACEHOLDER_SHA_TV_WEBHOOK"
+    license: UNKNOWN
+    language: Python
+    proposed_role: VERIFY_IDENTITY_ONLY
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: cryptognome_tv_webhook
+    canonical_url: https://github.com/CryptoGnome/Tradingview-Webhook-Bot
+    owner: CryptoGnome
+    name: Tradingview-Webhook-Bot
+    pinned_commit: "PLACEHOLDER_SHA_CRYPTOGNOME_TV"
+    license: UNKNOWN
+    language: Python
+    proposed_role: CRYPTO_ONLY_REFERENCE
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: elias_aboukhater_trading_bot
+    canonical_url: https://github.com/EliasAbouKhater/trading-bot
+    owner: EliasAbouKhater
+    name: trading-bot
+    pinned_commit: "PLACEHOLDER_SHA_ELIAS_BOT"
+    license: UNKNOWN
+    language: Python
+    proposed_role: VERIFY_IDENTITY_ONLY
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: backpack455_trading_bot
+    canonical_url: https://github.com/backpack455/trading-bot
+    owner: backpack455
+    name: trading-bot
+    pinned_commit: "PLACEHOLDER_SHA_BACKPACK_BOT"
+    license: UNKNOWN
+    language: Python
+    proposed_role: VERIFY_IDENTITY_ONLY
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  # === C. Walk-forward, Monte Carlo, robustness, and analytics corpus ===
+
+  - repo_id: tonyma_walk_forward_backtester
+    canonical_url: https://github.com/TonyMa1/walk-forward-backtester
+    owner: TonyMa1
+    name: walk-forward-backtester
+    pinned_commit: "PLACEHOLDER_SHA_WFB"
+    license: UNKNOWN
+    language: Python
+    proposed_role: APPROVED_HYPOTHESIS_CORPUS
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: true
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: kiploks_walk_forward_validator
+    canonical_url: https://github.com/kiploks/walk-forward-validator
+    owner: kiploks
+    name: walk-forward-validator
+    pinned_commit: "PLACEHOLDER_SHA_WFV"
+    license: UNKNOWN
+    language: Python
+    proposed_role: VERIFY_IDENTITY_ONLY
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: cluster2600_elvis
+    canonical_url: https://github.com/cluster2600/ELVIS
+    owner: cluster2600
+    name: ELVIS
+    pinned_commit: "PLACEHOLDER_SHA_ELVIS"
+    license: UNKNOWN
+    language: Python
+    proposed_role: VERIFY_IDENTITY_ONLY
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: robert_zag_stockanalysis
+    canonical_url: https://github.com/robert-zag/StockAnalysis
+    owner: robert-zag
+    name: StockAnalysis
+    pinned_commit: "PLACEHOLDER_SHA_STOCKANALYSIS"
+    license: UNKNOWN
+    language: Python
+    proposed_role: VERIFY_IDENTITY_ONLY
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: anthonydickson_algotrader
+    canonical_url: https://github.com/AnthonyDickson/AlgoTrader
+    owner: AnthonyDickson
+    name: AlgoTrader
+    pinned_commit: "PLACEHOLDER_SHA_ALGOTRADER"
+    license: UNKNOWN
+    language: Python
+    proposed_role: VERIFY_IDENTITY_ONLY
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  # === D. Strategy, ML, RL, and idea corpus ===
+
+  - repo_id: jesuistm_quant_trading
+    canonical_url: https://github.com/je-suis-tm/quant-trading
+    owner: je-suis-tm
+    name: quant-trading
+    pinned_commit: "PLACEHOLDER_SHA_QUANT_TRADING"
+    license: UNKNOWN
+    language: Python
+    proposed_role: APPROVED_HYPOTHESIS_CORPUS
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: true
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: xavierleeeugene_trading_strategies
+    canonical_url: https://github.com/Xavierleeeugene/Trading_Strategies
+    owner: Xavierleeeugene
+    name: Trading_Strategies
+    pinned_commit: "PLACEHOLDER_SHA_TRADING_STRATS"
+    license: UNKNOWN
+    language: Python
+    proposed_role: APPROVED_HYPOTHESIS_CORPUS
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: true
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: elitequant_elitequant
+    canonical_url: https://github.com/EliteQuant/EliteQuant
+    owner: EliteQuant
+    name: EliteQuant
+    pinned_commit: "PLACEHOLDER_SHA_ELITEQUANT"
+    license: UNKNOWN
+    language: Python
+    proposed_role: VERIFY_IDENTITY_ONLY
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: jadelam_algorithmictrading
+    canonical_url: https://github.com/jade-lam/AlgorithmicTrading
+    owner: jade-lam
+    name: AlgorithmicTrading
+    pinned_commit: "PLACEHOLDER_SHA_ALGO_TRADING"
+    license: UNKNOWN
+    language: Python
+    proposed_role: APPROVED_HYPOTHESIS_CORPUS
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: true
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: ro234jk_trading_bot
+    canonical_url: https://github.com/ro234jk/Trading-Bot.
+    owner: ro234jk
+    name: Trading-Bot.
+    pinned_commit: "PLACEHOLDER_SHA_RO234JK"
+    license: UNKNOWN
+    language: Python
+    proposed_role: VERIFY_IDENTITY_ONLY
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: asavinov_intelligent_trading_bot
+    canonical_url: https://github.com/asavinov/intelligent-trading-bot
+    owner: asavinov
+    name: intelligent-trading-bot
+    pinned_commit: "PLACEHOLDER_SHA_ITB"
+    license: UNKNOWN
+    language: Python
+    proposed_role: APPROVED_HYPOTHESIS_CORPUS
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: true
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: mun_min_ml_trading_bot
+    canonical_url: https://github.com/Mun-Min/ML_Trading_Bot
+    owner: Mun-Min
+    name: ML_Trading_Bot
+    pinned_commit: "PLACEHOLDER_SHA_ML_BOT"
+    license: UNKNOWN
+    language: Python
+    proposed_role: VERIFY_IDENTITY_ONLY
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: zeroxemmkty_quantmuse
+    canonical_url: https://github.com/0xemmkty/QuantMuse
+    owner: 0xemmkty
+    name: QuantMuse
+    pinned_commit: "PLACEHOLDER_SHA_QUANTMUSE"
+    license: UNKNOWN
+    language: Python
+    proposed_role: VERIFY_IDENTITY_ONLY
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: eugeneow_trading
+    canonical_url: https://github.com/EugeneOw/trading
+    owner: EugeneOw
+    name: trading
+    pinned_commit: "PLACEHOLDER_SHA_EUGENEOW"
+    license: UNKNOWN
+    language: Python
+    proposed_role: VERIFY_IDENTITY_ONLY
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: hamidreza_rhz_ml_strategy
+    canonical_url: https://github.com/hamidreza-rhz/Technical-Analysis-ML-Strategy-Optimization
+    owner: hamidreza-rhz
+    name: Technical-Analysis-ML-Strategy-Optimization
+    pinned_commit: "PLACEHOLDER_SHA_HAMIDREZA"
+    license: UNKNOWN
+    language: Python
+    proposed_role: VERIFY_IDENTITY_ONLY
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: trading_bot_robo_advisor_stock_bots
+    canonical_url: https://github.com/trading-bot-robo-advisor/Stock-Trading-Bots
+    owner: trading-bot-robo-advisor
+    name: Stock-Trading-Bots
+    pinned_commit: "PLACEHOLDER_SHA_ROBO_ADVISOR"
+    license: UNKNOWN
+    language: Python
+    proposed_role: VERIFY_IDENTITY_ONLY
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  # === E. Data, macro, and sentiment corpus ===
+
+  - repo_id: coinquanta_awesome_crypto_api
+    canonical_url: https://github.com/CoinQuanta/awesome-crypto-api
+    owner: CoinQuanta
+    name: awesome-crypto-api
+    pinned_commit: "PLACEHOLDER_SHA_CRYPTO_API"
+    license: UNKNOWN
+    language: Python
+    proposed_role: CRYPTO_ONLY_REFERENCE
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: stephan_akkerman_crypto_ohlcv
+    canonical_url: https://github.com/StephanAkkerman/crypto-ohlcv
+    owner: StephanAkkerman
+    name: crypto-ohlcv
+    pinned_commit: "PLACEHOLDER_SHA_CRYPTO_OHLCV"
+    license: UNKNOWN
+    language: Python
+    proposed_role: CRYPTO_ONLY_REFERENCE
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: alihanucar_fredapi
+    canonical_url: https://github.com/alihanucar/fredapi
+    owner: alihanucar
+    name: fredapi
+    pinned_commit: "PLACEHOLDER_SHA_FREDAPI"
+    license: UNKNOWN
+    language: Python
+    proposed_role: APPROVED_DATA_REFERENCE
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: true
+      research_import: true
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: alternative_macro_signals_api_docs
+    canonical_url: https://github.com/alternative-macro-signals/api-docs
+    owner: alternative-macro-signals
+    name: api-docs
+    pinned_commit: "PLACEHOLDER_SHA_ALTERNATIVE_MACRO"
+    license: UNKNOWN
+    language: Markdown
+    proposed_role: VERIFY_IDENTITY_ONLY
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: staituned_financial_sentiment
+    canonical_url: https://github.com/stAItuned/financial-sentiment-analysis
+    owner: stAItuned
+    name: financial-sentiment-analysis
+    pinned_commit: "PLACEHOLDER_SHA_SENTIMENT"
+    license: UNKNOWN
+    language: Python
+    proposed_role: APPROVED_HYPOTHESIS_CORPUS
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: true
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: sashaflores_crypto_sentiment
+    canonical_url: https://github.com/SashaFlores/Crypto-Sentiment-Analysis
+    owner: SashaFlores
+    name: Crypto-Sentiment-Analysis
+    pinned_commit: "PLACEHOLDER_SHA_CRYPTO_SENTIMENT"
+    license: UNKNOWN
+    language: Python
+    proposed_role: CRYPTO_ONLY_REFERENCE
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: john_gee3_newsapi_crypto_sentiment
+    canonical_url: https://github.com/John-Gee3/Using-NewsAPI-to-scrap-data-for-crypto-sentiment-and-NER-analysis
+    owner: John-Gee3
+    name: Using-NewsAPI-to-scrap-data-for-crypto-sentiment-and-NER-analysis
+    pinned_commit: "PLACEHOLDER_SHA_JOHN_GEE"
+    license: UNKNOWN
+    language: Python
+    proposed_role: CRYPTO_ONLY_REFERENCE
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: sajanpoudel_cryptosensei
+    canonical_url: https://github.com/sajanpoudel/CryptoSensei
+    owner: sajanpoudel
+    name: CryptoSensei
+    pinned_commit: "PLACEHOLDER_SHA_CRYPTOSENSEI"
+    license: UNKNOWN
+    language: Python
+    proposed_role: CRYPTO_ONLY_REFERENCE
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: br0ski777_crypto_news_mcp
+    canonical_url: https://claudemarketplaces.com/mcp/io.github.br0ski777/crypto-news
+    owner: br0ski777
+    name: crypto-news
+    pinned_commit: "PLACEHOLDER_SHA_CRYPTO_NEWS_MCP"
+    license: UNKNOWN
+    language: Python
+    proposed_role: VERIFY_IDENTITY_ONLY
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  # === F. HFT, arbitrage, MEV, and quarantine-only corpus ===
+
+  - repo_id: nkaz001_hftbacktest
+    canonical_url: https://github.com/nkaz001/hftbacktest
+    owner: nkaz001
+    name: hftbacktest
+    pinned_commit: "PLACEHOLDER_SHA_HFTBACKTEST"
+    license: UNKNOWN
+    language: Rust
+    proposed_role: APPROVED_ARCHITECTURE_REFERENCE
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: algotraders_stock_analysis_engine
+    canonical_url: https://github.com/AlgoTraders/stock-analysis-engine
+    owner: AlgoTraders
+    name: stock-analysis-engine
+    pinned_commit: "PLACEHOLDER_SHA_STOCK_ENGINE"
+    license: UNKNOWN
+    language: Python
+    proposed_role: VERIFY_IDENTITY_ONLY
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: gazbert_bxbot
+    canonical_url: https://github.com/gazbert/bxbot
+    owner: gazbert
+    name: bxbot
+    pinned_commit: "PLACEHOLDER_SHA_BXBOT"
+    license: UNKNOWN
+    language: Java
+    proposed_role: CRYPTO_ONLY_REFERENCE
+    allowed_environment: isolated_research_container
+    permissions:
+      read_only_reference: true
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: low
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: solana_arbitrage_bot
+    canonical_url: https://github.com/solana-arbitrage-bot/solana-arbitrage-bot
+    owner: solana-arbitrage-bot
+    name: solana-arbitrage-bot
+    pinned_commit: "PLACEHOLDER_SHA_SOL_ARB"
+    license: UNKNOWN
+    language: Rust
+    proposed_role: QUARANTINED
+    allowed_environment: none
+    permissions:
+      read_only_reference: false
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: high
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: solana_trading_cli
+    canonical_url: https://github.com/solana-trading-cli/solana-trading-cli
+    owner: solana-trading-cli
+    name: solana-trading-cli
+    pinned_commit: "PLACEHOLDER_SHA_SOL_CLI"
+    license: UNKNOWN
+    language: Rust
+    proposed_role: QUARANTINED
+    allowed_environment: none
+    permissions:
+      read_only_reference: false
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: high
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: solana_mev_bot
+    canonical_url: https://github.com/solana-mev-bot/solana-mev-bot
+    owner: solana-mev-bot
+    name: solana-mev-bot
+    pinned_commit: "PLACEHOLDER_SHA_SOL_MEV"
+    license: UNKNOWN
+    language: Rust
+    proposed_role: QUARANTINED
+    allowed_environment: none
+    permissions:
+      read_only_reference: false
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: high
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending
+
+  - repo_id: bsc_fourmeme_bot
+    canonical_url: https://github.com/bsc-fourmeme-bot/bsc-fourmeme-bot
+    owner: bsc-fourmeme-bot
+    name: bsc-fourmeme-bot
+    pinned_commit: "PLACEHOLDER_SHA_BSC_BOT"
+    license: UNKNOWN
+    language: Python
+    proposed_role: QUARANTINED
+    allowed_environment: none
+    permissions:
+      read_only_reference: false
+      isolated_execute: false
+      research_import: false
+      differential_oracle: false
+      production_import: false
+      broker_credential_access: false
+      mt5_execution_access: false
+      wallet_access: false
+      unrestricted_network: false
+    risk_findings:
+      secrets_risk: high
+      dependency_risk: pending
+      license_risk: pending
+      maintenance_risk: pending

@@ -9,6 +9,7 @@ class ContactCreate(BaseModel):
     role: str | None = None
     company: str | None = None
     contact_type: str | None = None
+    status: str | None = "New"
     email: str | None = None
     telegram_handle: str | None = None
     linkedin_url: str | None = None
@@ -23,6 +24,7 @@ class ContactUpdate(BaseModel):
     role: str | None = None
     company: str | None = None
     contact_type: str | None = None
+    status: str | None = None
     email: str | None = None
     telegram_handle: str | None = None
     linkedin_url: str | None = None

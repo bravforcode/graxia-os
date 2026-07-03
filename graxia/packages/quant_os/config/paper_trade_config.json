@@ -1,0 +1,152 @@
+{
+  "version": "2.0",
+  "created_at": "2026-07-04T00:00:00+00:00",
+  "description": "4-asset concentrated portfolio (real alpha confirmed Sharpe 0.535)",
+  "broker": "Pepperstone-Demo",
+  "trading_mode": "PAPER",
+  "portfolio": {
+    "type": "concentrated_4_asset",
+    "assets": ["NAS100", "XAUUSD", "OIL", "USDJPY"],
+    "weight_method": "inverse_volatility",
+    "target_vol": 0.15,
+    "position_sizing": "half_kelly",
+    "kelly_rolling_window": 20,
+    "kelly_cap_pct": 0.25,
+    "kelly_floor_pct": 0.05,
+    "regime_detection": true,
+    "trend_filter": true,
+    "drawdown_scaling": true
+  },
+  "symbols": [
+    {
+      "symbol": "NAS100",
+      "mt5_symbol": "NAS100",
+      "asset_class": "indices",
+      "lot_size": 0.01,
+      "atr_multiplier": 2.0,
+      "stop_mode": "fixed",
+      "max_positions": 1,
+      "spread_buffer_pips": 3.0,
+      "min_confidence": 0.6,
+      "trading_hours_utc": {
+        "start": "13:00",
+        "end": "21:00"
+      },
+      "weight": 0.45,
+      "notes": "NASDAQ 100 - highest Sharpe 0.598"
+    },
+    {
+      "symbol": "XAUUSD",
+      "mt5_symbol": "XAUUSD",
+      "asset_class": "metals",
+      "lot_size": 0.01,
+      "atr_multiplier": 2.5,
+      "stop_mode": "fixed",
+      "max_positions": 1,
+      "spread_buffer_pips": 5.0,
+      "min_confidence": 0.6,
+      "trading_hours_utc": {
+        "start": "01:00",
+        "end": "21:00"
+      },
+      "weight": 0.35,
+      "notes": "Gold - Sharpe 0.374, hedge vs USDJPY (corr -0.414)"
+    },
+    {
+      "symbol": "OIL",
+      "mt5_symbol": "USOIL",
+      "asset_class": "commodities",
+      "lot_size": 0.01,
+      "atr_multiplier": 3.0,
+      "stop_mode": "fixed",
+      "max_positions": 1,
+      "spread_buffer_pips": 5.0,
+      "min_confidence": 0.6,
+      "trading_hours_utc": {
+        "start": "01:00",
+        "end": "21:00"
+      },
+      "weight": 0.05,
+      "notes": "Crude Oil - Sharpe 0.285, high DD risk -89%"
+    },
+    {
+      "symbol": "USDJPY",
+      "mt5_symbol": "USDJPY",
+      "asset_class": "forex",
+      "lot_size": 0.01,
+      "atr_multiplier": 1.5,
+      "stop_mode": "fixed",
+      "max_positions": 1,
+      "spread_buffer_pips": 1.0,
+      "min_confidence": 0.6,
+      "trading_hours_utc": {
+        "start": "01:00",
+        "end": "21:00"
+      },
+      "weight": 0.15,
+      "notes": "USDJPY - Sharpe 0.204, diversifier"
+    }
+  ],
+  "risk": {
+    "max_risk_per_trade_pct": 1.0,
+    "max_daily_loss_pct": 2.0,
+    "max_drawdown_pct": 10.0,
+    "max_portfolio_exposure_pct": 50.0,
+    "max_total_positions": 4,
+    "max_correlated_positions": 2,
+    "kill_switch_drawdown_pct": 15.0,
+    "initial_capital": 49844.79,
+    "currency": "USD",
+    "regime": {
+      "vol_short_window": 20,
+      "vol_long_window": 60,
+      "high_vol_multiplier": 1.5,
+      "low_vol_multiplier": 0.8,
+      "high_vol_position_scale": 0.5
+    },
+    "trend": {
+      "fast_sma": 50,
+      "slow_sma": 200
+    },
+    "drawdown_scaling": {
+      "enabled": true,
+      "threshold_1_pct": 5.0,
+      "scale_1": 0.75,
+      "threshold_2_pct": 10.0,
+      "scale_2": 0.50
+    }
+  },
+  "news_filter": {
+    "enabled": true,
+    "pre_block_minutes": 30,
+    "post_block_minutes": 15,
+    "blocked_event_types": [
+      "NFP",
+      "FOMC",
+      "BOJ_RATE",
+      "CPI_US",
+      "GDP_US"
+    ],
+    "min_importance_for_block": "HIGH",
+    "notes": "30min pre-block, 15min post-block for HIGH importance events"
+  },
+  "schedule": {
+    "data_pull_utc": "00:30",
+    "feature_build_utc": "01:00",
+    "signal_generation_utc": "01:15",
+    "execution_start_utc": "01:30",
+    "daily_review_utc": "22:00",
+    "weekly_review_day": "friday",
+    "timezone": "UTC"
+  },
+  "alerts": {
+    "telegram_enabled": true,
+    "alert_on_trade": true,
+    "alert_on_daily_summary": true,
+    "alert_on_risk_breach": true,
+    "alert_on_kill_switch": true,
+    "alert_on_drawdown_warning": true,
+    "drawdown_warning_threshold_pct": 5.0,
+    "alert_on_regime_change": true
+  }
+}

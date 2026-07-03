@@ -1,0 +1,36 @@
+[
+  {
+    "event_type": "session_started",
+    "timestamp": "2026-06-22T09:18:19.875209",
+    "session_id": "shadow_20260622_091819",
+    "signal_id": null,
+    "details": {}
+  },
+  {
+    "event_type": "pipeline_error",
+    "timestamp": "2026-06-22T09:18:19.875209",
+    "session_id": "shadow_20260622_091819",
+    "signal_id": null,
+    "details": {
+      "error": "SpreadMonitor.on_tick() missing 1 required positional argument: 'timestamp'"
+    }
+  },
+  {
+    "event_type": "pipeline_error",
+    "timestamp": "2026-06-22T09:18:24.876044",
+    "session_id": "shadow_20260622_091819",
+    "signal_id": null,
+    "details": {
+      "error": "SpreadMonitor.on_tick() missing 1 required positional argument: 'timestamp'"
+    }
+  },
+  {
+    "event_type": "pipeline_error",
+    "timestamp": "2026-06-22T09:18:29.877647",
+    "session_id": "shadow_20260622_091819",
+    "signal_id": null,
+    "details": {
+      "error": "SpreadMonitor.on_tick() missing 1 required positional argument: 'timestamp'"
+    }
+  }
+]

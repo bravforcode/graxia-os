@@ -47,6 +47,7 @@ class Contact(Base, TenantMixin):
     role = Column(String(200))
     company = Column(String(300))
     contact_type = Column(String(50))
+    status = Column(String(50), default="New")
     linkedin_url = Column(Text)
     email = Column(String(300))
     telegram_handle = Column(String(200))

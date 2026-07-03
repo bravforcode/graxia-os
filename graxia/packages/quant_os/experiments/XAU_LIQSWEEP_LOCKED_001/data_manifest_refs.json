@@ -1,0 +1,29 @@
+{
+  "manifests": [
+    {
+      "path": "graxia/packages/quant_os/data/manifests/XAUUSD_D1.manifest.json",
+      "sha256": "9e33c45409944b15f7c8ee796840ea41860d6e6a610266790595f10c08e564de",
+      "dataset_id": "XAUUSD_D1_MT5_2007_01_23_2026_06_19",
+      "timeframe": "D1",
+      "bar_count": 5000,
+      "date_range": "2007-01-23 to 2026-06-19"
+    },
+    {
+      "path": "graxia/packages/quant_os/data/manifests/XAUUSD_H1.manifest.json",
+      "sha256": "c118b6d5a8c73efc8804c0bf03e0814a2405b8db1514d817681267729c80a398",
+      "dataset_id": "XAUUSD_H1_MT5_2017_12_21_2026_06_20",
+      "timeframe": "H1",
+      "bar_count": 50000,
+      "date_range": "2017-12-21 to 2026-06-20"
+    },
+    {
+      "path": "graxia/packages/quant_os/data/manifests/XAUUSD_M15.manifest.json",
+      "sha256": "67df2780b599c0083c12a3ef3e1a34ee29e7167fc0bc1a787611ed566e3b7a1f",
+      "dataset_id": "XAUUSD_M15_MT5_2024_05_03_2026_06_20",
+      "timeframe": "M15",
+      "bar_count": 50000,
+      "date_range": "2024-05-03 to 2026-06-20"
+    }
+  ],
+  "note": "M15 is the primary data timeframe for liquidity_sweep. H1/D1 used for context."
+}

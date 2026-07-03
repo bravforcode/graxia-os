@@ -1,0 +1,33 @@
+Q7 Test Census Manifest
+Commit: d6e955f1c515c2ec13bc5f0636f95c908dc93e07
+Verification worktree: C:\tmp\quant_os_q7_verify_d6e955f
+
+[commands]
+1. cd /d C:\tmp\quant_os_q7_verify_d6e955f\graxia\packages\quant_os && python -m pytest tests\test_repo_hooks.py tests\test_repo_manifest.py tests\test_collection_hygiene.py tests\test_pre_commit_hook.py -q -p no:cacheprovider --basetemp C:\tmp\quant_os_q7_artifacts_d6e955f\pytest_registry
+2. cd /d C:\tmp\quant_os_q7_verify_d6e955f\graxia\packages\quant_os && python -m pytest tests\unit -q -p no:cacheprovider --basetemp C:\tmp\quant_os_q7_artifacts_d6e955f\pytest_unit
+3. cd /d C:\tmp\quant_os_q7_verify_d6e955f\graxia\packages\quant_os && set QUANT_OS_MARKET_DATA_DIR=C:\tmp\quant_os_q7_verify_d6e955f\graxia\packages\quant_os\data&& python -m pytest tests\integration\test_market_data_contract.py -q -p no:cacheprovider --basetemp C:\tmp\quant_os_q7_artifacts_d6e955f\pytest_market
+4. cd /d C:\tmp\quant_os_q7_verify_d6e955f\graxia\packages\quant_os && python -m pytest tests\test_pre_commit_hook.py tests\test_repo_hooks.py tests\test_repo_manifest.py tests\test_collection_hygiene.py tests\test_secret_scan_script.py -q -p no:cacheprovider --basetemp C:\tmp\quant_os_q7_artifacts_d6e955f\pytest_security
+5. cd /d C:\tmp\quant_os_q7_verify_d6e955f\graxia\packages\quant_os && python -m pytest . --collect-only -q -p no:cacheprovider --basetemp C:\tmp\quant_os_q7_artifacts_d6e955f\pytest_pkg_collect
+6. cd /d C:\tmp\quant_os_q7_verify_d6e955f\graxia\packages\quant_os && python -m pytest tests --collect-only -q -p no:cacheprovider --basetemp C:\tmp\quant_os_q7_artifacts_d6e955f\pytest_default_collect2
+7. python -m pytest tests -m "not market_data" -q -p no:cacheprovider --maxfail=1 --durations=20 --basetemp C:\tmp\quant_os_q7_artifacts_d6e955f\pytest_default_core_ps
+8. cd /d C:\tmp\quant_os_q7_verify_d6e955f\graxia\packages\quant_os && python -m pytest tests\test_antimartingale_tiers.py -q -p no:cacheprovider --basetemp C:\tmp\quant_os_q7_artifacts_d6e955f\pytest_antimartingale
+
+[results]
+registry_targeted=44 passed
+unit_suite=5 passed
+market_data_suite=2 passed
+security_suite=48 passed
+package_collect=1453 collected, 2 errors
+default_collect=935 collected, 2 errors
+default_core=maxfail stopped on ImportError in tests/test_g2_preflight.py
+isolated_antimartingale=5 failed
+
+[collect_blockers]
+tests/test_g2_preflight.py -> ImportError: cannot import name 'order_geometry_guard' from execution.demo_canary
+tests/test_stop_geometry.py -> ModuleNotFoundError: No module named 'scripts.g2_1_calibrate'
+
+[default_core_blocker]
+tests/test_g2_preflight.py -> ImportError before execution
+
+[isolated_failure]
+tests/test_antimartingale_tiers.py -> TypeError: AntiMartingaleSizer.__init__() got an unexpected keyword argument 'units_per_lot'

@@ -7,15 +7,13 @@
 ```bash
 git clone <repo-url>
 cd "graxia os"
-cp .env.example .env
-
-# Edit .env — at minimum set:
+# Edit .env.development — at minimum set:
 #   DATABASE_URL, SECRET_KEY, ADMIN_DEFAULT_EMAIL, ADMIN_DEFAULT_PASSWORD
 # For offline dev without Postgres, add:
 #   USE_SQLITE_FALLBACK=true
 
 # Start the full stack (development mode)
-docker compose -f docker-compose.dev.yml up
+docker compose --env-file .env.development -f config/docker-compose.dev.yml up
 ```
 
 - Backend API: http://localhost:8000 (docs at `/docs`)
@@ -31,6 +29,13 @@ Graxia OS คือ workspace สำหรับสร้าง Personal Soverei
 เป้าหมายของ repo นี้ไม่ใช่แค่ dashboard แต่เป็น control plane ที่รวม backend API, frontend operations UI, agent pipeline, job scheduler, integrations, monitoring และ production deployment path ไว้ในระบบเดียว
 
 สถานะปัจจุบัน: repo นี้เป็น stabilized development baseline ที่ใช้งานและทดสอบเส้นทางหลักได้แล้ว แต่ยังไม่ควรถูกอ่านว่าเป็น production-readiness attestation แบบสมบูรณ์ งานที่ต้องตรวจจริงก่อนใช้งาน production คือ Docker stack บนเครื่องเป้าหมาย, credentials ของ external integrations, deployment/rollback จริง, และ audit เชิง runtime บนข้อมูลจริง
+
+## Directory Structure
+
+- `config/`: Centralized configuration files for Docker, PM2, and Redis.
+- `scripts/`: Operational and deployment scripts.
+- `frontend/`: React frontend application.
+- `backend/`: FastAPI backend service.
 
 ## Project Goal
 
@@ -682,9 +687,9 @@ Shell/script checks:
 
 ```bash
 bash -n setup.sh
-bash -n backend/scripts/backup_database.sh
-bash -n backend/scripts/restore_database.sh
-bash -n backend/scripts/smoke_tests.sh
+bash -n scripts/ops/backup_database.sh
+bash -n scripts/ops/restore_database.sh
+bash -n scripts/ops/smoke_tests.sh
 ```
 
 ## Test Policy
@@ -752,8 +757,8 @@ docs/runbooks/
 Backup and restore scripts:
 
 ```bash
-bash backend/scripts/backup_database.sh
-bash backend/scripts/restore_database.sh backups/backup_YYYYMMDD_HHMMSS.sql.gz
+bash scripts/ops/backup_database.sh
+bash scripts/ops/restore_database.sh backups/backup_YYYYMMDD_HHMMSS.sql.gz
 ```
 
 ## Development Rules
@@ -762,7 +767,7 @@ bash backend/scripts/restore_database.sh backups/backup_YYYYMMDD_HHMMSS.sql.gz
 - Do not revive `dashboard/` unless explicitly migrating it
 - Keep frontend development on port `5173`
 - Update `backend/openapi.json` after route/schema changes
-- Keep migrations deterministic and review destructive operations with `backend/scripts/check_destructive_migrations.py`
+- Keep migrations deterministic and review destructive operations with `scripts/ops/check_destructive_migrations.py`
 - Keep Redis optional enough for degraded local startup, but required for full worker/scheduler behavior
 - Keep PostgreSQL/Supabase as the production data target
 - Avoid external calls in import-time tooling; integrations should initialize lazily when possible
