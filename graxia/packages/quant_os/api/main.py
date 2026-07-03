@@ -175,6 +175,14 @@ def create_app() -> FastAPI:
     app.include_router(admin_router, prefix="/api/v1/admin")
     app.include_router(health_router, prefix="/api")
 
+    # TradingView / Visual Search / CDP routers
+    from .tv_routes import tv_router
+    from .visual_routes import visual_router
+    from .cdp_routes import cdp_router
+    app.include_router(tv_router, prefix="/api/v1")
+    app.include_router(visual_router, prefix="/api/v1")
+    app.include_router(cdp_router, prefix="/api/v1")
+
     # ── Prometheus /metrics endpoint ──────────────────────────────────
     try:
         from prometheus_client import make_asgi_app

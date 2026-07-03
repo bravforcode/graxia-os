@@ -11,12 +11,8 @@ from sqlalchemy.orm import Session
 # Database dependency - use shared session from Revenue OS
 from graxia.packages.revenue_os.db import get_db as _get_db
 
-try:
-    from ..core.enums import CloseReason
-    from ..data.models import Position
-except ImportError:
-    from core.enums import CloseReason
-    from data.models import Position
+from ..core.enums import CloseReason
+from ..data.models import Position
 
 security = HTTPBearer()
 
