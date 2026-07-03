@@ -573,7 +573,9 @@ class BacktestEngine:
         # Close any remaining positions at last price
         self._close_all_positions(close[-1], self.timestamps[-1] if self.timestamps else datetime.now(UTC))
 
-        return self._build_results()
+        result = self._build_results()
+        self._last_results = result
+        return result
 
     @staticmethod
     def run_batch(configs: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -623,6 +625,10 @@ class BacktestEngine:
             results.append(result)
 
         return results
+
+    def get_overfitting_report(self) -> dict | None:
+        """Return the last overfitting report from run(), or None if not yet run."""
+        return getattr(self, "_last_results", None)
 
     def _reset(self) -> None:
         """Reset engine state for a new run"""
@@ -1179,5 +1185,42 @@ class BacktestEngine:
                 "quality_breakdown": quality_counts,
             },
         }
+
+        # AUTO: Run overfitting detection if enough trades
+        if len(self.trades) >= 10:
+            try:
+                from ..validation.overfitting_detector import OverfittingDetector
+
+                # Extract bar-level returns from equity curve
+                returns = []
+                for i in range(1, len(self.equity_curve)):
+                    prev_eq = self.equity_curve[i - 1].equity
+                    curr_eq = self.equity_curve[i].equity
+                    if prev_eq > 0:
+                        returns.append((curr_eq - prev_eq) / prev_eq)
+
+                detector = OverfittingDetector()
+                overfit_report = detector.evaluate(
+                    strategy_id=self.strategy.id if self.strategy else "unknown",
+                    returns=returns,
+                    n_trials=1,
+                    n_observations=len(returns),
+                    oos_returns_per_fold=[],
+                    cost_pnl=float(sum(float(t.pnl) for t in self.trades)),
+                    total_costs=float(sum(float(t.fees) for t in self.trades)),
+                    param_values=[],
+                    param_pnls=[],
+                    data_length=len(self.equity_curve),
+                    sharpe=metrics.sharpe_ratio if hasattr(metrics, "sharpe_ratio") else None,
+                )
+
+                result["overfitting"] = {
+                    "score": overfit_report.score,
+                    "recommendation": overfit_report.recommendation,
+                    "blockers": overfit_report.blockers,
+                    "warnings": overfit_report.warnings,
+                }
+            except Exception as e:
+                result["overfitting"] = {"error": str(e), "score": 0, "recommendation": "UNKNOWN"}
 
         return result
