@@ -225,3 +225,27 @@ class PaperAdapter(BrokerAdapter):
             margin_used=0.0,
             margin_available=self._cash,
         )
+
+    def close_position(
+        self, broker_position_id: str, volume: float, symbol: str = ""
+    ) -> OrderResult:
+        """Close an open simulated position."""
+        # broker_position_id is the symbol for PaperAdapter
+        sym = symbol or broker_position_id
+        existing = self._positions.get(sym)
+        if existing is None:
+            return OrderResult(
+                status=OrderStatus.FAILED,
+                error=f"No position for {sym}",
+            )
+        close_side = "SELL" if existing["side"] == "BUY" else "BUY"
+        close_qty = min(volume, existing["quantity"])
+        order = Order(
+            order_id=f"CLOSE_{uuid.uuid4().hex[:8]}",
+            signal_id="",
+            symbol=sym,
+            asset_class="",
+            side=close_side,
+            quantity=close_qty,
+        )
+        return self.submit_order(order)

@@ -68,7 +68,7 @@ def pre_trade_check(
     # Drawdown limit
     max_dd = account_equity * risk_policy.max_total_drawdown_fraction
     if total_drawdown >= max_dd:
-        reasons.append(f"Drawdown limit reached: {total_dd:.2f} >= {max_dd:.2f}")
+        reasons.append(f"Drawdown limit reached: {total_drawdown:.2f} >= {max_dd:.2f}")
 
     # Position count
     if risk_ledger.open_positions >= risk_policy.max_positions:
