@@ -1,77 +1,82 @@
-import hashlib
-import json
-from dataclasses import dataclass
+"""Unit tests for the real async SignalGateway.
+
+Imports from core.signal_gateway -- no inline class definitions.
+"""
+
+import asyncio
 
 import pytest
 
-
-@dataclass(frozen=True)
-class Signal:
-    symbol: str
-    direction: str
-    source: str
-    strength: float = 1.0
-
-    @property
-    def dedup_key(self) -> str:
-        payload = json.dumps({"symbol": self.symbol, "direction": self.direction}, sort_keys=True)
-        return hashlib.sha256(payload.encode()).hexdigest()[:16]
-
-
-class SignalGateway:
-    def __init__(self):
-        self._seen: set[str] = set()
-        self._queue: list[Signal] = []
-
-    def submit(self, signal: Signal) -> bool:
-        if signal.strength <= 0 or signal.direction not in ("BUY", "SELL"):
-            return False
-        key = signal.dedup_key
-        if key in self._seen:
-            return False
-        self._seen.add(key)
-        self._queue.append(signal)
-        return True
-
-    @property
-    def queue(self) -> list[Signal]:
-        return list(self._queue)
+from graxia.packages.quant_os.core.signal_gateway import (
+    Side,
+    SignalGateway,
+)
 
 
 @pytest.fixture
 def gateway():
-    return SignalGateway()
+    queue = asyncio.Queue()
+    return SignalGateway(queue=queue), queue
+
+
+def _valid_raw(**overrides) -> dict:
+    """Build a valid raw signal payload."""
+    base = {
+        "symbol": "XAUUSD",
+        "asset_class": "metals",
+        "side": "BUY",
+        "conviction": 0.8,
+        "strategy": "test_strategy",
+        "entry_price": 2400.0,
+        "stop_loss": 2390.0,
+        "take_profit": 2420.0,
+    }
+    base.update(overrides)
+    return base
+
+
+class TestSignalIngestion:
+    @pytest.mark.asyncio
+    async def test_valid_signal_accepted(self, gateway):
+        gw, queue = gateway
+        sig = await gw.ingest(_valid_raw(), source="python")
+        assert sig is not None
+        assert sig.symbol == "XAUUSD"
+        assert sig.side == Side.BUY
+        assert not queue.empty()
+
+    @pytest.mark.asyncio
+    async def test_invalid_symbol_rejected(self, gateway):
+        gw, queue = gateway
+        result = await gw.ingest(_valid_raw(symbol=""), source="python")
+        assert result is None
+        assert queue.empty()
+
+    @pytest.mark.asyncio
+    async def test_invalid_side_rejected(self, gateway):
+        gw, queue = gateway
+        result = await gw.ingest(_valid_raw(side="HOLD"), source="python")
+        assert result is None
+        assert queue.empty()
 
 
 class TestSignalDeduplication:
-    def test_same_signal_from_3_sources_only_1_queued(self, gateway):
-        sig1 = Signal(symbol="XAUUSD", direction="BUY", source="tradingview")
-        sig2 = Signal(symbol="XAUUSD", direction="BUY", source="ml_model")
-        sig3 = Signal(symbol="XAUUSD", direction="BUY", source="manual")
+    @pytest.mark.asyncio
+    async def test_duplicate_signal_rejected(self, gateway):
+        gw, queue = gateway
+        sig1 = await gw.ingest(_valid_raw(), source="python")
+        assert sig1 is not None
+        sig2 = await gw.ingest(_valid_raw(), source="python")
+        assert sig2 is None  # deduped
+        assert queue.qsize() == 1
 
-        results = [gateway.submit(sig) for sig in [sig1, sig2, sig3]]
-
-        assert results[0] is True
-        assert results[1] is False
-        assert results[2] is False
-        assert len(gateway.queue) == 1
-
-    def test_different_signals_all_accepted(self, gateway):
-        sig1 = Signal(symbol="XAUUSD", direction="BUY", source="tv")
-        sig2 = Signal(symbol="EURUSD", direction="SELL", source="tv")
-        sig3 = Signal(symbol="XAUUSD", direction="SELL", source="tv")
-
-        results = [gateway.submit(sig) for sig in [sig1, sig2, sig3]]
-
-        assert all(results)
-        assert len(gateway.queue) == 3
-
-    def test_invalid_signal_rejected(self, gateway):
-        bad1 = Signal(symbol="XAUUSD", direction="HOLD", source="tv")
-        bad2 = Signal(symbol="XAUUSD", direction="BUY", source="tv", strength=-1.0)
-        good = Signal(symbol="XAUUSD", direction="BUY", source="tv", strength=0.5)
-
-        assert gateway.submit(bad1) is False
-        assert gateway.submit(bad2) is False
-        assert gateway.submit(good) is True
-        assert len(gateway.queue) == 1
+    @pytest.mark.asyncio
+    async def test_different_signals_all_accepted(self, gateway):
+        gw, queue = gateway
+        r1 = await gw.ingest(_valid_raw(), source="python")
+        r2 = await gw.ingest(_valid_raw(side="SELL"), source="python")
+        r3 = await gw.ingest(_valid_raw(symbol="EURUSD"), source="python")
+        assert r1 is not None
+        assert r2 is not None
+        assert r3 is not None
+        assert queue.qsize() == 3

@@ -3,6 +3,7 @@
 import os
 from dataclasses import dataclass, field
 
+from ..risk.risk_policy import RiskPolicy
 from .enums import SystemState, TradingMode
 from .golden_rules import HARD_LIMITS
 
@@ -57,13 +58,34 @@ class QuantConfig:
     primary_timeframe: str = "M15"
     higher_timeframes: list[str] = field(default_factory=lambda: ["H1", "H4"])
 
-    # ==================== RISK LIMITS (soft limits) ====================
-    max_risk_per_trade_pct: float = 1.0
-    max_daily_loss_pct: float = 2.0
-    max_weekly_loss_pct: float = 5.0
-    max_drawdown_pct: float = 10.0
-    max_portfolio_exposure_pct: float = 50.0
-    max_positions: int = 5
+    # ==================== RISK LIMITS (canonical source: RiskPolicy) ====================
+    risk_policy: RiskPolicy = field(default_factory=RiskPolicy)
+
+    # Legacy aliases — delegate to risk_policy for backward compatibility
+    @property
+    def max_risk_per_trade_pct(self) -> float:
+        return float(self.risk_policy.max_risk_per_trade_pct)
+
+    @property
+    def max_daily_loss_pct(self) -> float:
+        return float(self.risk_policy.max_daily_loss_pct)
+
+    @property
+    def max_weekly_loss_pct(self) -> float:
+        return float(self.risk_policy.max_weekly_loss_pct)
+
+    @property
+    def max_drawdown_pct(self) -> float:
+        return float(self.risk_policy.max_drawdown_pct)
+
+    @property
+    def max_portfolio_exposure_pct(self) -> float:
+        return 50.0  # Not in RiskPolicy — kept as config-level
+
+    @property
+    def max_positions(self) -> int:
+        return self.risk_policy.max_open_positions
+
     max_correlation_threshold: float = 0.7
     max_var_pct: float = 2.0
 
@@ -151,11 +173,47 @@ class QuantConfig:
         self.telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN", self.telegram_bot_token)
         self.telegram_chat_id = os.getenv("TELEGRAM_CHAT_ID", self.telegram_chat_id)
 
-        # Risk limits (soft - can be overridden by env but not hard limits)
-        self.max_risk_per_trade_pct = float(os.getenv("RISK_PER_TRADE_PCT", self.max_risk_per_trade_pct))
-        self.max_daily_loss_pct = float(os.getenv("MAX_DAILY_LOSS_PCT", self.max_daily_loss_pct))
-        self.max_drawdown_pct = float(os.getenv("MAX_DRAWDOWN_PCT", self.max_drawdown_pct))
-        self.max_positions = int(os.getenv("MAX_POSITIONS", self.max_positions))
+        # Risk limits — loaded into risk_policy (env overrides the bps values)
+        risk_per_trade_pct_env = os.getenv("RISK_PER_TRADE_PCT")
+        if risk_per_trade_pct_env is not None:
+            # Convert pct to bps: 1.0% = 100 bps
+            self.risk_policy = RiskPolicy(
+                risk_per_trade_bps=int(float(risk_per_trade_pct_env) * 100),
+                max_daily_loss_bps=self.risk_policy.max_daily_loss_bps,
+                max_weekly_loss_bps=self.risk_policy.max_weekly_loss_bps,
+                max_total_drawdown_bps=self.risk_policy.max_total_drawdown_bps,
+                max_open_positions=self.risk_policy.max_open_positions,
+            )
+
+        max_daily_env = os.getenv("MAX_DAILY_LOSS_PCT")
+        if max_daily_env is not None:
+            self.risk_policy = RiskPolicy(
+                risk_per_trade_bps=self.risk_policy.risk_per_trade_bps,
+                max_daily_loss_bps=int(float(max_daily_env) * 100),
+                max_weekly_loss_bps=self.risk_policy.max_weekly_loss_bps,
+                max_total_drawdown_bps=self.risk_policy.max_total_drawdown_bps,
+                max_open_positions=self.risk_policy.max_open_positions,
+            )
+
+        max_dd_env = os.getenv("MAX_DRAWDOWN_PCT")
+        if max_dd_env is not None:
+            self.risk_policy = RiskPolicy(
+                risk_per_trade_bps=self.risk_policy.risk_per_trade_bps,
+                max_daily_loss_bps=self.risk_policy.max_daily_loss_bps,
+                max_weekly_loss_bps=self.risk_policy.max_weekly_loss_bps,
+                max_total_drawdown_bps=int(float(max_dd_env) * 100),
+                max_open_positions=self.risk_policy.max_open_positions,
+            )
+
+        max_pos_env = os.getenv("MAX_POSITIONS")
+        if max_pos_env is not None:
+            self.risk_policy = RiskPolicy(
+                risk_per_trade_bps=self.risk_policy.risk_per_trade_bps,
+                max_daily_loss_bps=self.risk_policy.max_daily_loss_bps,
+                max_weekly_loss_bps=self.risk_policy.max_weekly_loss_bps,
+                max_total_drawdown_bps=self.risk_policy.max_total_drawdown_bps,
+                max_open_positions=int(max_pos_env),
+            )
 
         # Paper trading
         self.paper_initial_capital = float(os.getenv("PAPER_INITIAL_CAPITAL", self.paper_initial_capital))
@@ -165,13 +223,45 @@ class QuantConfig:
 
     def _enforce_hard_limits(self):
         """Ensure soft limits don't exceed hard limits"""
-        self.max_risk_per_trade_pct = min(self.max_risk_per_trade_pct, HARD_LIMITS["max_risk_per_trade_pct"])
-        self.max_drawdown_pct = min(self.max_drawdown_pct, HARD_LIMITS["max_drawdown_pct"])
-        self.max_daily_loss_pct = min(self.max_daily_loss_pct, HARD_LIMITS["max_daily_loss_pct"])
-        self.max_portfolio_exposure_pct = min(
-            self.max_portfolio_exposure_pct, HARD_LIMITS["max_portfolio_exposure_pct"]
-        )
-        self.max_positions = min(self.max_positions, HARD_LIMITS["max_positions"])
+        # Enforce via RiskPolicy properties
+        risk_pct = float(self.risk_policy.max_risk_per_trade_pct)
+        if risk_pct > HARD_LIMITS["max_risk_per_trade_pct"]:
+            self.risk_policy = RiskPolicy(
+                risk_per_trade_bps=int(HARD_LIMITS["max_risk_per_trade_pct"] * 100),
+                max_daily_loss_bps=self.risk_policy.max_daily_loss_bps,
+                max_weekly_loss_bps=self.risk_policy.max_weekly_loss_bps,
+                max_total_drawdown_bps=self.risk_policy.max_total_drawdown_bps,
+                max_open_positions=self.risk_policy.max_open_positions,
+            )
+
+        dd_pct = float(self.risk_policy.max_drawdown_pct)
+        if dd_pct > HARD_LIMITS["max_drawdown_pct"]:
+            self.risk_policy = RiskPolicy(
+                risk_per_trade_bps=self.risk_policy.risk_per_trade_bps,
+                max_daily_loss_bps=self.risk_policy.max_daily_loss_bps,
+                max_weekly_loss_bps=self.risk_policy.max_weekly_loss_bps,
+                max_total_drawdown_bps=int(HARD_LIMITS["max_drawdown_pct"] * 100),
+                max_open_positions=self.risk_policy.max_open_positions,
+            )
+
+        daily_pct = float(self.risk_policy.max_daily_loss_pct)
+        if daily_pct > HARD_LIMITS["max_daily_loss_pct"]:
+            self.risk_policy = RiskPolicy(
+                risk_per_trade_bps=self.risk_policy.risk_per_trade_bps,
+                max_daily_loss_bps=int(HARD_LIMITS["max_daily_loss_pct"] * 100),
+                max_weekly_loss_bps=self.risk_policy.max_weekly_loss_bps,
+                max_total_drawdown_bps=self.risk_policy.max_total_drawdown_bps,
+                max_open_positions=self.risk_policy.max_open_positions,
+            )
+
+        if self.max_positions > HARD_LIMITS["max_positions"]:
+            self.risk_policy = RiskPolicy(
+                risk_per_trade_bps=self.risk_policy.risk_per_trade_bps,
+                max_daily_loss_bps=self.risk_policy.max_daily_loss_bps,
+                max_weekly_loss_bps=self.risk_policy.max_weekly_loss_bps,
+                max_total_drawdown_bps=self.risk_policy.max_total_drawdown_bps,
+                max_open_positions=HARD_LIMITS["max_positions"],
+            )
 
     def _validate_mode_consistency(self):
         """Ensure trading mode and live flag are consistent"""
@@ -199,30 +289,31 @@ class QuantConfig:
 
     def get_mode_risk_limits(self) -> dict:
         """Get risk limits for current trading mode"""
+        rp = self.risk_policy
         limits = {
             TradingMode.PAPER: {
-                "max_risk_per_trade_pct": self.max_risk_per_trade_pct,
-                "max_daily_loss_pct": self.max_daily_loss_pct,
+                "max_risk_per_trade_pct": float(rp.max_risk_per_trade_pct),
+                "max_daily_loss_pct": float(rp.max_daily_loss_pct),
                 "max_position_size": float("inf"),  # No limit in paper
                 "requires_human_confirm": False,
             },
             TradingMode.LIVE_MICRO: {
-                "max_risk_per_trade_pct": min(self.max_risk_per_trade_pct, 0.5),
-                "max_daily_loss_pct": min(self.max_daily_loss_pct, 1.5),
+                "max_risk_per_trade_pct": min(float(rp.max_risk_per_trade_pct), 0.5),
+                "max_daily_loss_pct": min(float(rp.max_daily_loss_pct), 1.5),
                 "max_position_size": self.micro_max_position_size,
                 "requires_human_confirm": True,
                 "order_expiry_seconds": self.micro_order_expiry_seconds,
             },
             TradingMode.LIVE_LIMITED: {
-                "max_risk_per_trade_pct": self.max_risk_per_trade_pct,
-                "max_daily_loss_pct": self.max_daily_loss_pct,
+                "max_risk_per_trade_pct": float(rp.max_risk_per_trade_pct),
+                "max_daily_loss_pct": float(rp.max_daily_loss_pct),
                 "max_position_size": self.limited_max_position_size,
                 "requires_human_confirm": False,
                 "max_daily_trades": self.limited_max_daily_trades,
             },
             TradingMode.LIVE_CONTROLLED: {
-                "max_risk_per_trade_pct": self.max_risk_per_trade_pct,
-                "max_daily_loss_pct": self.max_daily_loss_pct,
+                "max_risk_per_trade_pct": float(rp.max_risk_per_trade_pct),
+                "max_daily_loss_pct": float(rp.max_daily_loss_pct),
                 "max_position_size": float("inf"),  # Higher limits
                 "requires_human_confirm": False,
             },

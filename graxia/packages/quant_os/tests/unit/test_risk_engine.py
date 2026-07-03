@@ -1,30 +1,19 @@
+"""Unit tests for the real 4-Layer RiskEngine.
+
+Imports from risk.engine -- no inline class definitions.
+"""
+
+import time
+
 import pytest
-from dataclasses import dataclass
 
-
-@dataclass
-class RiskLimits:
-    max_daily_loss_pct: float = 0.03
-    max_positions: int = 5
-    max_position_size: float = 1.0
-
-
-@dataclass
-class PortfolioState:
-    daily_pnl_pct: float = 0.0
-    open_positions: int = 0
-
-
-class RiskEngine:
-    def __init__(self, limits: RiskLimits | None = None):
-        self.limits = limits or RiskLimits()
-
-    def check(self, portfolio: PortfolioState) -> tuple[bool, str]:
-        if portfolio.daily_pnl_pct <= -self.limits.max_daily_loss_pct:
-            return False, "daily_loss_exceeded"
-        if portfolio.open_positions >= self.limits.max_positions:
-            return False, "max_positions_exceeded"
-        return True, "approved"
+from graxia.packages.quant_os.risk.engine import (
+    AccountState,
+    PortfolioState,
+    RejectReason,
+    RiskEngine,
+    Signal,
+)
 
 
 @pytest.fixture
@@ -32,37 +21,65 @@ def engine():
     return RiskEngine()
 
 
+def _fresh_signal(**overrides) -> Signal:
+    """Build a Signal with timestamp_epoch=now so it passes the staleness check."""
+    defaults = dict(
+        symbol="XAUUSD",
+        conviction=0.8,
+        entry_price=2400.0,
+        stop_loss=2390.0,
+        take_profit=2420.0,
+        direction="BUY",
+        timestamp_epoch=time.time(),
+    )
+    defaults.update(overrides)
+    return Signal(**defaults)
+
+
 class TestRiskApproval:
     def test_within_limits_approved(self, engine):
-        state = PortfolioState(daily_pnl_pct=-0.01, open_positions=2)
-        ok, reason = engine.check(state)
-        assert ok is True
-        assert reason == "approved"
+        signal = _fresh_signal()
+        account = AccountState(equity=100_000, daily_pnl=0, weekly_pnl=0, open_positions=2)
+        portfolio = PortfolioState(total_exposure_pct=0.2, position_symbols=["SYM1", "SYM2"])
+        verdict = engine.evaluate(signal, account, portfolio)
+        assert verdict.approved is True
+        assert verdict.approved_quantity > 0
+
+
+class TestLowConviction:
+    def test_below_min_conviction_rejected(self, engine):
+        signal = _fresh_signal(conviction=0.3)
+        account = AccountState()
+        portfolio = PortfolioState()
+        verdict = engine.evaluate(signal, account, portfolio)
+        assert verdict.approved is False
+        assert verdict.reason_code == RejectReason.LOW_CONVICTION
 
 
 class TestDailyLoss:
     def test_exceeds_daily_loss_rejected(self, engine):
-        state = PortfolioState(daily_pnl_pct=-0.035, open_positions=1)
-        ok, reason = engine.check(state)
-        assert ok is False
-        assert reason == "daily_loss_exceeded"
-
-    def test_exactly_at_limit_rejected(self, engine):
-        state = PortfolioState(daily_pnl_pct=-0.03, open_positions=1)
-        ok, reason = engine.check(state)
-        assert ok is False
-        assert reason == "daily_loss_exceeded"
+        signal = _fresh_signal()
+        account = AccountState(equity=100_000, daily_pnl=-2_500, weekly_pnl=0)
+        portfolio = PortfolioState()
+        verdict = engine.evaluate(signal, account, portfolio)
+        assert verdict.approved is False
+        assert verdict.reason_code == RejectReason.DAILY_LOSS_LIMIT
 
 
 class TestMaxPositions:
-    def test_exceeds_max_positions_rejected(self, engine):
-        state = PortfolioState(daily_pnl_pct=0.0, open_positions=5)
-        ok, reason = engine.check(state)
-        assert ok is False
-        assert reason == "max_positions_exceeded"
+    def test_at_max_positions_rejected(self, engine):
+        signal = _fresh_signal()
+        account = AccountState()
+        # 20 symbols = default max for 100k equity
+        symbols = [f"SYM{i}" for i in range(20)]
+        portfolio = PortfolioState(position_symbols=symbols)
+        verdict = engine.evaluate(signal, account, portfolio)
+        assert verdict.approved is False
+        assert verdict.reason_code == RejectReason.MAX_POSITIONS_REACHED
 
     def test_under_max_positions_approved(self, engine):
-        state = PortfolioState(daily_pnl_pct=0.0, open_positions=4)
-        ok, reason = engine.check(state)
-        assert ok is True
-        assert reason == "approved"
+        signal = _fresh_signal()
+        account = AccountState()
+        portfolio = PortfolioState(position_symbols=["SYM1", "SYM2", "SYM3"])
+        verdict = engine.evaluate(signal, account, portfolio)
+        assert verdict.approved is True

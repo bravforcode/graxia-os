@@ -1,81 +1,92 @@
+"""Unit tests for the real position sizing modules.
+
+Imports from risk.position_sizer — no inline class definitions.
+Tests standalone kelly_fraction() and TradeStatsTracker (config-free).
+"""
+
 import pytest
 
+from graxia.packages.quant_os.risk.position_sizer import (
+    TradeStatsTracker,
+    kelly_fraction,
+)
 
-KELLY_CAP = 0.25
-
-
-class PositionSizer:
-    def __init__(self, target_vol: float = 0.10, kelly_cap: float = KELLY_CAP):
-        self.target_vol = target_vol
-        self.kelly_cap = kelly_cap
-
-    def size_by_volatility(self, realized_vol: float, price: float) -> float:
-        if realized_vol <= 0 or price <= 0:
-            return 0.0
-        notional_pct = self.target_vol / realized_vol
-        return round(notional_pct, 6)
-
-    def size_by_kelly(self, win_rate: float, avg_win: float, avg_loss: float) -> float:
-        if avg_loss == 0:
-            return 0.0
-        b = avg_win / abs(avg_loss)
-        kelly = (win_rate * b - (1 - win_rate)) / b
-        capped = max(0.0, min(kelly, self.kelly_cap))
-        return round(capped, 6)
-
-    def apply_regime_multiplier(self, base_size: float, regime: str) -> float:
-        multipliers = {
-            "trending": 1.2,
-            "ranging": 0.8,
-            "volatile": 0.5,
-            "unknown": 0.6,
-        }
-        mult = multipliers.get(regime, 0.6)
-        return round(base_size * mult, 6)
+# ── Standalone kelly_fraction() ────────────────────────────────────────
 
 
-@pytest.fixture
-def sizer():
-    return PositionSizer(target_vol=0.10, kelly_cap=KELLY_CAP)
+class TestKellyFraction:
+    def test_high_edge(self):
+        result = kelly_fraction(win_rate=0.8, avg_win=3.0, avg_loss=1.0)
+        assert result > 0.0
+        assert result <= 0.25  # default fraction cap
+
+    def test_negative_edge_returns_zero(self):
+        result = kelly_fraction(win_rate=0.3, avg_win=1.0, avg_loss=1.0)
+        assert result == 0.0
+
+    def test_custom_fraction(self):
+        full = kelly_fraction(win_rate=0.6, avg_win=2.0, avg_loss=1.0, fraction=1.0)
+        half = kelly_fraction(win_rate=0.6, avg_win=2.0, avg_loss=1.0, fraction=0.5)
+        assert full == pytest.approx(half * 2, abs=1e-6)
+
+    def test_zero_avg_loss_returns_zero(self):
+        result = kelly_fraction(win_rate=0.6, avg_win=1.0, avg_loss=0.0)
+        assert result == 0.0
+
+    def test_fifty_fifty_with_positive_edge(self):
+        result = kelly_fraction(win_rate=0.6, avg_win=2.0, avg_loss=1.0, fraction=1.0)
+        # Full Kelly: b=2, p=0.6, q=0.4 → (2*0.6 - 0.4)/2 = 0.4
+        assert result == pytest.approx(0.4, abs=0.01)
+
+    def test_breakeven_returns_zero(self):
+        result = kelly_fraction(win_rate=0.5, avg_win=1.0, avg_loss=1.0)
+        assert result == 0.0
 
 
-class TestVolatilityTargeting:
-    def test_low_vol_larger_size(self, sizer):
-        size = sizer.size_by_volatility(realized_vol=0.05, price=2400.0)
-        assert size == 2.0
-
-    def test_high_vol_smaller_size(self, sizer):
-        size = sizer.size_by_volatility(realized_vol=0.20, price=2400.0)
-        assert size == 0.5
-
-    def test_zero_vol_returns_zero(self, sizer):
-        assert sizer.size_by_volatility(0.0, 2400.0) == 0.0
+# ── TradeStatsTracker ──────────────────────────────────────────────────
 
 
-class TestRegimeMultiplier:
-    def test_trending_boosts_size(self, sizer):
-        result = sizer.apply_regime_multiplier(1.0, "trending")
-        assert result == 1.2
+class TestTradeStatsTracker:
+    def test_empty_tracker_has_defaults(self):
+        tracker = TradeStatsTracker()
+        assert tracker.win_rate == 0.5
+        assert tracker.trade_count == 0
 
-    def test_volatile_reduces_size(self, sizer):
-        result = sizer.apply_regime_multiplier(1.0, "volatile")
-        assert result == 0.5
+    def test_records_wins_and_losses(self):
+        tracker = TradeStatsTracker()
+        tracker.record(10.0)
+        tracker.record(-5.0)
+        tracker.record(8.0)
+        assert tracker.trade_count == 3
+        assert tracker.win_rate == pytest.approx(2 / 3)
+        assert tracker.avg_win == pytest.approx(9.0)
+        assert tracker.avg_loss == pytest.approx(5.0)
 
-    def test_unknown_defaults_to_06(self, sizer):
-        result = sizer.apply_regime_multiplier(1.0, "unknown")
-        assert result == 0.6
+    def test_sliding_window(self):
+        tracker = TradeStatsTracker(window=3)
+        for _ in range(10):
+            tracker.record(1.0)
+        assert tracker.trade_count == 3  # window limits to 3
 
+    def test_profit_factor(self):
+        tracker = TradeStatsTracker()
+        tracker.record(10.0)
+        tracker.record(10.0)
+        tracker.record(-5.0)
+        assert tracker.profit_factor == pytest.approx(20.0 / 5.0)
 
-class TestKellyCap:
-    def test_high_edge_capped_at_025(self, sizer):
-        kelly = sizer.size_by_kelly(win_rate=0.8, avg_win=3.0, avg_loss=1.0)
-        assert kelly == KELLY_CAP
+    def test_profit_factor_all_wins(self):
+        tracker = TradeStatsTracker()
+        tracker.record(10.0)
+        tracker.record(5.0)
+        assert tracker.profit_factor == float("inf")
 
-    def test_low_edge_below_cap(self, sizer):
-        kelly = sizer.size_by_kelly(win_rate=0.5, avg_win=1.5, avg_loss=1.0)
-        assert kelly < KELLY_CAP
-        assert kelly > 0.0
-
-    def test_negative_edge_returns_zero(self, sizer):
-        kelly = sizer.size_by_kelly(win_rate=0.3, avg_win=1.0, avg_loss=1.0)
-        assert kelly == 0.0
+    def test_get_stats(self):
+        tracker = TradeStatsTracker()
+        tracker.record(10.0)
+        stats = tracker.get_stats()
+        assert "win_rate" in stats
+        assert "avg_win" in stats
+        assert "avg_loss" in stats
+        assert "trade_count" in stats
+        assert "profit_factor" in stats
