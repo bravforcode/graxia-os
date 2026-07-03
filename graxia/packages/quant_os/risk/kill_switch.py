@@ -325,8 +325,7 @@ class KillSwitch:
                 return json.loads(self._state_file.read_text())
             except (json.JSONDecodeError, ValueError) as exc:
                 logger.critical(
-                    "kill_switch: state file corrupted — fail-closed default. "
-                    "file=%s error=%s",
+                    "kill_switch: state file corrupted — fail-closed default. " "file=%s error=%s",
                     self._state_file,
                     exc,
                 )

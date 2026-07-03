@@ -8,18 +8,12 @@ Tests:
 """
 
 import json
-import tempfile
-from pathlib import Path
-from typing import Any
-from unittest.mock import MagicMock, call, patch
-
-import pytest
-
 from decimal import Decimal
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
-from risk.kill_switch import CloseMode, KillSwitch, KillSwitchState
 from risk.circuit_breaker import CircuitBreaker, CircuitBreakerConfig
-
+from risk.kill_switch import CloseMode, KillSwitch, KillSwitchState
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -27,10 +21,7 @@ from risk.circuit_breaker import CircuitBreaker, CircuitBreakerConfig
 
 
 def _make_positions(n: int = 3) -> list[dict]:
-    return [
-        {"ticket": 1000 + i, "symbol": f"SYM{i}", "pnl": float(i - 1), "volume": 0.1}
-        for i in range(n)
-    ]
+    return [{"ticket": 1000 + i, "symbol": f"SYM{i}", "pnl": float(i - 1), "volume": 0.1} for i in range(n)]
 
 
 def _mock_broker(positions: list[dict] | None = None) -> MagicMock:
@@ -144,14 +135,18 @@ class TestFailClosedOnCorruptedState:
     def test_corrupted_state_value_returns_active(self, tmp_path: Path):
         """If state file has invalid enum value, is_active() must return True."""
         ks_file = tmp_path / "ks.json"
-        ks_file.write_text(json.dumps({
-            "state": "GARBAGE_VALUE",
-            "killed_classes": [],
-            "reason": "test",
-            "activated_at_utc": None,
-            "authorized_by": "",
-            "history": [],
-        }))
+        ks_file.write_text(
+            json.dumps(
+                {
+                    "state": "GARBAGE_VALUE",
+                    "killed_classes": [],
+                    "reason": "test",
+                    "activated_at_utc": None,
+                    "authorized_by": "",
+                    "history": [],
+                }
+            )
+        )
 
         ks = KillSwitch(state_file=str(ks_file))
         # Corrupted state → fail-closed → ACTIVE
@@ -161,14 +156,18 @@ class TestFailClosedOnCorruptedState:
     def test_empty_state_value_returns_active(self, tmp_path: Path):
         """Empty state string → fail-closed."""
         ks_file = tmp_path / "ks.json"
-        ks_file.write_text(json.dumps({
-            "state": "",
-            "killed_classes": [],
-            "reason": "",
-            "activated_at_utc": None,
-            "authorized_by": "",
-            "history": [],
-        }))
+        ks_file.write_text(
+            json.dumps(
+                {
+                    "state": "",
+                    "killed_classes": [],
+                    "reason": "",
+                    "activated_at_utc": None,
+                    "authorized_by": "",
+                    "history": [],
+                }
+            )
+        )
 
         ks = KillSwitch(state_file=str(ks_file))
         assert ks.is_active() is True
@@ -189,14 +188,18 @@ class TestFailClosedOnCorruptedState:
     def test_valid_inactive_state_stays_inactive(self, tmp_path: Path):
         """Valid INACTIVE state → not active."""
         ks_file = tmp_path / "ks.json"
-        ks_file.write_text(json.dumps({
-            "state": "INACTIVE",
-            "killed_classes": [],
-            "reason": "",
-            "activated_at_utc": None,
-            "authorized_by": "",
-            "history": [],
-        }))
+        ks_file.write_text(
+            json.dumps(
+                {
+                    "state": "INACTIVE",
+                    "killed_classes": [],
+                    "reason": "",
+                    "activated_at_utc": None,
+                    "authorized_by": "",
+                    "history": [],
+                }
+            )
+        )
 
         ks = KillSwitch(state_file=str(ks_file))
         assert not ks.is_active()
@@ -221,7 +224,7 @@ class TestCircuitBreakerActivatesKillSwitch:
         # Record 3 consecutive losses (hits threshold=3)
         assert cb.record_trade("metals", -10.0) is False  # 1 loss
         assert cb.record_trade("metals", -20.0) is False  # 2 losses
-        assert cb.record_trade("metals", -30.0) is True   # 3 losses → trip
+        assert cb.record_trade("metals", -30.0) is True  # 3 losses → trip
 
         assert cb.is_open("metals")
         assert ks.is_active(), "Kill switch must be activated on circuit breaker trip"
@@ -257,7 +260,7 @@ class TestCircuitBreakerActivatesKillSwitch:
         assert not cb.is_open("metals")
         assert not ks.is_active()
 
-    def test_record_trade_kill_switch_failure_caught(self, tmp_path: Path):
+    def test_record_trade_kill_switch_failure_caught(self):
         """If kill switch activation fails, record_trade must not raise."""
         ks = MagicMock()
         ks.activate.side_effect = RuntimeError("broker offline")
@@ -297,10 +300,10 @@ class TestIntegrationPreTradeRisk:
 
     def test_killed_switch_blocks_new_orders(self, tmp_path: Path):
         """When kill switch is ACTIVE, pre_trade_check must reject."""
-        from risk.pre_trade_risk import pre_trade_check, RiskCheckResult
-        from risk.risk_policy import RiskPolicy
-        from risk.risk_ledger import RiskLedger
         from risk.position_sizer_v2 import SizingResult
+        from risk.pre_trade_risk import pre_trade_check
+        from risk.risk_ledger import RiskLedger
+        from risk.risk_policy import RiskPolicy
 
         ks = KillSwitch(state_file=str(tmp_path / "ks.json"))
         ks.activate(reason="test", source="test")
