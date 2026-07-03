@@ -28,6 +28,17 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    env:
+      SECRET_KEY: ci-test-secret-key-not-for-production
+      ENCRYPTION_KEY: ci-test-encryption-key-not-for-production-32ch
+      POSTGRES_PASSWORD: test
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/test_db
+      REDIS_URL: redis://localhost:6379/0
+      TRADING_MODE: PAPER
+      TELEGRAM_BOT_TOKEN: ""
+      MT5_LOGIN: "0"
+      MT5_PASSWORD: ""
+      MT5_SERVER: ""
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -69,6 +80,17 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    env:
+      SECRET_KEY: ci-test-secret-key-not-for-production
+      ENCRYPTION_KEY: ci-test-encryption-key-not-for-production-32ch
+      POSTGRES_PASSWORD: test
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/test_db
+      REDIS_URL: redis://localhost:6379/0
+      TRADING_MODE: PAPER
+      TELEGRAM_BOT_TOKEN: ""
+      MT5_LOGIN: "0"
+      MT5_PASSWORD: ""
+      MT5_SERVER: ""
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -96,6 +118,17 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    env:
+      SECRET_KEY: ci-test-secret-key-not-for-production
+      ENCRYPTION_KEY: ci-test-encryption-key-not-for-production-32ch
+      POSTGRES_PASSWORD: test
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/test_db
+      REDIS_URL: redis://localhost:6379/0
+      TRADING_MODE: PAPER
+      TELEGRAM_BOT_TOKEN: ""
+      MT5_LOGIN: "0"
+      MT5_PASSWORD: ""
+      MT5_SERVER: ""
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
