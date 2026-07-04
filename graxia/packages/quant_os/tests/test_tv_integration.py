@@ -555,7 +555,7 @@ class TestTradingOrchestrator:
             index_chart=AsyncMock(return_value=True),
         )
 
-        with patch("core.tv_integration.Path.exists", return_value=True):
+        with patch("pathlib.Path.exists", return_value=True):
             result = await orch.auto_backtest_workflow("AAPL", strategy="rsi")
 
         assert result.symbol == "AAPL"
@@ -623,7 +623,7 @@ class TestTradingOrchestrator:
             index_chart=AsyncMock(return_value=True),
         )
 
-        with patch("core.tv_integration.Path.exists", return_value=True):
+        with patch("pathlib.Path.exists", return_value=True):
             result = await orch.auto_pine_workflow("AAPL", {"name": "TestRSI", "length": 14})
 
         assert result.compile_result.success is True
