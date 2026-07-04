@@ -1,0 +1,1 @@
+"""Gold Bot tests package"""
