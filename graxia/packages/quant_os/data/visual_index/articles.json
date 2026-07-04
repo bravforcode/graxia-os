@@ -1,1 +1,26 @@
-[]
+[
+  {
+    "url": "double_top.png",
+    "title": "Double Top"
+  },
+  {
+    "url": "head_shoulders.png",
+    "title": "Head Shoulders"
+  },
+  {
+    "url": "ascending_triangle.png",
+    "title": "Ascending Triangle"
+  },
+  {
+    "url": "cup_handle.png",
+    "title": "Cup Handle"
+  },
+  {
+    "url": "bear_flag.png",
+    "title": "Bear Flag"
+  },
+  {
+    "url": "support_bounce.png",
+    "title": "Support Bounce"
+  }
+]

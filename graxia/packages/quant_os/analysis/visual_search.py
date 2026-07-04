@@ -18,6 +18,7 @@ Usage:
 from __future__ import annotations
 
 import asyncio
+import base64
 import json
 import logging
 import subprocess
@@ -475,15 +476,20 @@ class VisualChartSearch:
     async def serve_index(
         self,
         index_dir: Path | None = None,
-        port: int = 30001,
+        port: int = 30002,
+        host: str = "127.0.0.1",
+        startup_timeout: int = 300,
     ) -> bool:
         """Start serving the PixelRAG index.
 
         Launches ``pixelrag serve`` as a background process.
+        Model loading can take 1-5 minutes on first run (downloading weights).
 
         Args:
             index_dir: Directory containing the FAISS index (default: self.index_dir).
-            port: Port to serve on.
+            port: Port to serve on (default: 30002).
+            host: Bind address (default: 127.0.0.1 for security).
+            startup_timeout: Seconds to wait for health check (default: 300).
 
         Returns:
             True if the server started successfully (health check passed).
@@ -494,17 +500,65 @@ class VisualChartSearch:
             logger.error("Index directory not found: %s", index)
             return False
 
-        try:
-            # Start serve in background
-            proc = subprocess.Popen(
-                [
-                    "pixelrag",
+        import sys
+
+        python_exe = sys.executable
+        # If running from venv but pixelrag is in system Python 3.12, use it directly
+        import shutil
+
+        # Prefer our patched launcher (persists across pixelrag upgrades)
+        _project_root = Path(__file__).resolve().parent.parent
+        _patched_launcher = _project_root / "scripts" / "pixelrag_serve_patched.py"
+
+        if _patched_launcher.exists():
+            cmd = [
+                python_exe,
+                str(_patched_launcher),
+                "--index-dir",
+                str(index),
+                "--tiles-dir",
+                str(self.tiles_dir),
+                "--host",
+                host,
+                "--port",
+                str(port),
+                "--device",
+                "cpu",
+            ]
+        else:
+            pixelrag_bin = shutil.which("pixelrag")
+            if pixelrag_bin:
+                cmd = [
+                    pixelrag_bin,
                     "serve",
                     "--index-dir",
                     str(index),
+                    "--host",
+                    host,
                     "--port",
                     str(port),
-                ],
+                    "--device",
+                    "cpu",
+                ]
+            else:
+                cmd = [
+                    python_exe,
+                    "-m",
+                    "pixelrag_serve.api",
+                    "--index-dir",
+                    str(index),
+                    "--host",
+                    host,
+                    "--port",
+                    str(port),
+                    "--device",
+                    "cpu",
+                ]
+
+        try:
+            # Start serve in background
+            proc = subprocess.Popen(
+                cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
@@ -513,23 +567,30 @@ class VisualChartSearch:
             return False
 
         # Update serve URL
-        self.serve_url = f"http://localhost:{port}"
+        self.serve_url = f"http://{host}:{port}"
 
         # Wait for server to be ready (health check)
+        # Model loading takes 1-5 minutes on first run
         client = await self._get_client()
-        for attempt in range(10):
-            await asyncio.sleep(1.0)
+        logger.info("Waiting for PixelRAG serve on port %d (pid=%d, timeout=%ds)...", port, proc.pid, startup_timeout)
+        for attempt in range(startup_timeout // 2):
+            await asyncio.sleep(2.0)
             try:
                 resp = await client.get(f"{self.serve_url}/health")
                 if resp.status_code == 200:
-                    logger.info("PixelRAG serve started on port %d (pid=%d)", port, proc.pid)
+                    logger.info("PixelRAG serve started on port %d (pid=%d, attempt=%d)", port, proc.pid, attempt + 1)
                     return True
             except httpx.HTTPError:
                 continue
+            # Check if process died
+            if proc.poll() is not None:
+                stderr = proc.stderr.read().decode(errors="replace") if proc.stderr else ""
+                logger.error("PixelRAG serve process exited (code=%d): %s", proc.returncode, stderr[:500])
+                return False
 
         # If we get here, server didn't start
         proc.terminate()
-        logger.error("PixelRAG serve failed to start within 10s")
+        logger.error("PixelRAG serve failed to start within %ds", startup_timeout)
         return False
 
     # -- search methods -----------------------------------------------------
@@ -573,14 +634,43 @@ class VisualChartSearch:
             logger.error("Query image not found: %s", image_path)
             return []
 
+        # PixelRAG expects base64-encoded image, not file path
+        loop = asyncio.get_running_loop()
+        img_bytes = await loop.run_in_executor(None, image_path.read_bytes)
+        img_b64 = base64.b64encode(img_bytes).decode("utf-8")
+
         payload = {
-            "queries": [{"image": str(image_path.resolve())}],
+            "queries": [{"image": img_b64}],
             "n_docs": n_docs,
         }
         return await self._search(payload)
 
     async def _search(self, payload: dict[str, Any]) -> list[SearchResult]:
-        """Execute a search request against the PixelRAG serve API."""
+        """Execute a search request against the PixelRAG serve API.
+
+        PixelRAG response format:
+        {
+            "results": [
+                {
+                    "hits": [
+                        {
+                            "score": 0.95,
+                            "vector_id": 12345,
+                            "article_id": 42,
+                            "tile_index": 0,
+                            "chunk_index": 3,
+                            "y_offset": 3072,
+                            "tile_height": 1024,
+                            "path": "42.png.tiles/chunk_0000_03.png",
+                            "url": "https://example.com",
+                            "article_pages": "0:0-8",
+                            "image_base64": null
+                        }
+                    ]
+                }
+            ]
+        }
+        """
         client = await self._get_client()
 
         try:
@@ -599,21 +689,39 @@ class VisualChartSearch:
         data = resp.json()
         results: list[SearchResult] = []
 
-        for item in data.get("results", []):
-            doc_id = item.get("id", "")
-            # Enrich with our metadata if available
-            meta = self._metadata.get(doc_id, {})
-            meta.update(item.get("metadata", {}))
+        # PixelRAG returns results[].hits[] — must iterate hits inside each result
+        for query_result in data.get("results", []):
+            for hit in query_result.get("hits", []):
+                hit_id = f"{hit.get('article_id', 0)}_{hit.get('tile_index', 0)}_{hit.get('chunk_index', 0)}"
+                score = float(hit.get("score", 0.0))
+                path = hit.get("path", "")
+                url = hit.get("url", "")
 
-            results.append(
-                SearchResult(
-                    id=doc_id,
-                    score=float(item.get("score", 0.0)),
-                    image_path=Path(item.get("image_path", "")),
-                    metadata=meta,
-                    snippet=item.get("snippet", ""),
+                # Build metadata from hit fields
+                meta: dict[str, Any] = {
+                    "article_id": hit.get("article_id"),
+                    "tile_index": hit.get("tile_index"),
+                    "chunk_index": hit.get("chunk_index"),
+                    "y_offset": hit.get("y_offset"),
+                    "tile_height": hit.get("tile_height"),
+                    "url": url,
+                    "article_pages": hit.get("article_pages"),
+                }
+
+                # Enrich with our tracked metadata if available
+                doc_id = str(hit.get("article_id", ""))
+                if doc_id in self._metadata:
+                    meta.update(self._metadata[doc_id])
+
+                results.append(
+                    SearchResult(
+                        id=hit_id,
+                        score=score,
+                        image_path=Path(path),
+                        metadata=meta,
+                        snippet=url,
+                    )
                 )
-            )
 
         return results
 
