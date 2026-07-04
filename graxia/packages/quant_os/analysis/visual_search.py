@@ -506,13 +506,18 @@ class VisualChartSearch:
         # If running from venv but pixelrag is in system Python 3.12, use it directly
         import shutil
 
-        pixelrag_bin = shutil.which("pixelrag")
-        if pixelrag_bin:
+        # Prefer our patched launcher (persists across pixelrag upgrades)
+        _project_root = Path(__file__).resolve().parent.parent
+        _patched_launcher = _project_root / "scripts" / "pixelrag_serve_patched.py"
+
+        if _patched_launcher.exists():
             cmd = [
-                pixelrag_bin,
-                "serve",
+                python_exe,
+                str(_patched_launcher),
                 "--index-dir",
                 str(index),
+                "--tiles-dir",
+                str(self.tiles_dir),
                 "--host",
                 host,
                 "--port",
@@ -521,20 +526,34 @@ class VisualChartSearch:
                 "cpu",
             ]
         else:
-            # Fallback: use Python 3.12 directly
-            cmd = [
-                python_exe,
-                "-m",
-                "pixelrag_serve.api",
-                "--index-dir",
-                str(index),
-                "--host",
-                host,
-                "--port",
-                str(port),
-                "--device",
-                "cpu",
-            ]
+            pixelrag_bin = shutil.which("pixelrag")
+            if pixelrag_bin:
+                cmd = [
+                    pixelrag_bin,
+                    "serve",
+                    "--index-dir",
+                    str(index),
+                    "--host",
+                    host,
+                    "--port",
+                    str(port),
+                    "--device",
+                    "cpu",
+                ]
+            else:
+                cmd = [
+                    python_exe,
+                    "-m",
+                    "pixelrag_serve.api",
+                    "--index-dir",
+                    str(index),
+                    "--host",
+                    host,
+                    "--port",
+                    str(port),
+                    "--device",
+                    "cpu",
+                ]
 
         try:
             # Start serve in background

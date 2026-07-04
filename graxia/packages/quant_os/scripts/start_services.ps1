@@ -107,7 +107,12 @@ if ($StartAll -or (-not $Stop -and -not $Status)) {
     $prJob = Start-Job -Name "PixelRAG-$PIXELRAG_PORT" -ScriptBlock {
         param($python, $indexDir, $port, $logDir)
         $logFile = "$logDir\pixelrag.log"
-        & $python -m pixelrag_serve.api --index-dir $indexDir --host 127.0.0.1 --port $port --device cpu 2>&1 | Tee-Object -FilePath $logFile
+        $patchedLauncher = Join-Path (Split-Path $indexDir) ".." "scripts" "pixelrag_serve_patched.py"
+        if (Test-Path $patchedLauncher) {
+            & $python $patchedLauncher --index-dir $indexDir --host 127.0.0.1 --port $port --device cpu 2>&1 | Tee-Object -FilePath $logFile
+        } else {
+            & $python -m pixelrag_serve.api --index-dir $indexDir --host 127.0.0.1 --port $port --device cpu 2>&1 | Tee-Object -FilePath $logFile
+        }
     } -ArgumentList $PYTHON_312, $indexDir, $PIXELRAG_PORT, $LOG_DIR
 
     Write-Host "    Job: $($prJob.Id) | URL: http://localhost:$PIXELRAG_PORT" -ForegroundColor Green

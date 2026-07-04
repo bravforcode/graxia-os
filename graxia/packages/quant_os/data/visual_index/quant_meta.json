@@ -1,15 +1,50 @@
 {
   "documents": {
-    "tmp0ushltgs": {
+    "double_top": {
       "source_type": "chart",
-      "original_path": "C:\\Users\\menum\\AppData\\Local\\Temp\\tmp0ushltgs.png",
-      "tile_path": "data\\visual_tiles\\tmp0ushltgs.png",
-      "indexed_at": "2026-07-03T18:55:36.018561+00:00",
-      "symbol": "AAPL"
+      "original_path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\visual_tiles\\double_top.png",
+      "tile_path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\visual_tiles\\double_top.png",
+      "indexed_at": "2026-07-04T00:00:00+00:00",
+      "symbol": "DOUBLE_TOP"
+    },
+    "head_shoulders": {
+      "source_type": "chart",
+      "original_path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\visual_tiles\\head_shoulders.png",
+      "tile_path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\visual_tiles\\head_shoulders.png",
+      "indexed_at": "2026-07-04T00:00:00+00:00",
+      "symbol": "HEAD_SHOULDERS"
+    },
+    "ascending_triangle": {
+      "source_type": "chart",
+      "original_path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\visual_tiles\\ascending_triangle.png",
+      "tile_path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\visual_tiles\\ascending_triangle.png",
+      "indexed_at": "2026-07-04T00:00:00+00:00",
+      "symbol": "ASCENDING_TRIANGLE"
+    },
+    "cup_handle": {
+      "source_type": "chart",
+      "original_path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\visual_tiles\\cup_handle.png",
+      "tile_path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\visual_tiles\\cup_handle.png",
+      "indexed_at": "2026-07-04T00:00:00+00:00",
+      "symbol": "CUP_HANDLE"
+    },
+    "bear_flag": {
+      "source_type": "chart",
+      "original_path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\visual_tiles\\bear_flag.png",
+      "tile_path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\visual_tiles\\bear_flag.png",
+      "indexed_at": "2026-07-04T00:00:00+00:00",
+      "symbol": "BEAR_FLAG"
+    },
+    "support_bounce": {
+      "source_type": "chart",
+      "original_path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\visual_tiles\\support_bounce.png",
+      "tile_path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\visual_tiles\\support_bounce.png",
+      "indexed_at": "2026-07-04T00:00:00+00:00",
+      "symbol": "SUPPORT_BOUNCE"
     }
   },
   "source_counts": {
-    "chart": 1
+    "chart": 6
   },
-  "updated_at": "2026-07-03T18:55:36.018561+00:00"
+  "updated_at": "2026-07-04T00:00:00+00:00"
 }
