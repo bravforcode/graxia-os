@@ -65,7 +65,7 @@ def pm() -> PortfolioManagerAgent:
 class TestAgentABC:
     def test_cannot_instantiate_directly(self):
         with pytest.raises(TypeError):
-            Agent("test")  # type: ignore
+            Agent("test")  # type: ignore[call-arg]
 
     def test_repr(self, analyst):
         assert "TechnicalAnalystAgent" in repr(analyst)

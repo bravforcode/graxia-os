@@ -13,10 +13,13 @@ Rules enforced:
   - Short TP trigger = ask <= take_profit
   - Ambiguous bar (both SL and TP) → resolve ADVERSE first, record ambiguous_bar=true
   - Signal timing: signal from closed bar N → fill on N+1 only
+
+Phase 3: Added square-root market impact (Almgren-Chriss) and adverse selection.
 """
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
@@ -67,6 +70,8 @@ class OrderIntent:
     signal_id: str = ""
     execution_quality: ExecutionQuality = ExecutionQuality.BAR_ONLY
     latency_slippage: Decimal = Decimal("0")  # Additional slippage from execution latency
+    market_impact_bps: float = 0.0  # Phase 3: square-root market impact in bps
+    adverse_selection_bps: float = 0.0  # Phase 3: adverse selection cost in bps
 
 
 @dataclass(frozen=True)
@@ -200,7 +205,10 @@ class BacktestExecutionSimulator:
         )
         spread = ask - bid
 
-        slippage_entry = market.spread / Decimal("2") + intent.latency_slippage
+        # Phase 3: Add market impact and adverse selection to entry slippage
+        market_impact = Decimal(str(intent.market_impact_bps)) / Decimal("10000") * (bid + ask) / Decimal("2")
+        adverse_selection = Decimal(str(intent.adverse_selection_bps)) / Decimal("10000") * (bid + ask) / Decimal("2")
+        slippage_entry = market.spread / Decimal("2") + intent.latency_slippage + market_impact + adverse_selection
         slippage_exit = market.spread / Decimal("2")
 
         req = FillRequest(

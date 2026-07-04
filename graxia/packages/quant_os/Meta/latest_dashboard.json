@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-06-26T10:35:32.109033+00:00",
+  "data_files": 135,
+  "data_mb": 162.9,
+  "model_count": 16,
+  "latest_model": "xgboost_XAUUSD_20260626_160329.pkl",
+  "symbols": [
+    "AUDUSD",
+    "BTCUSD",
+    "ETHUSD",
+    "EURUSD",
+    "GBPUSD",
+    "NAS100",
+    "NZDUSD",
+    "US30",
+    "USDCAD",
+    "USDCHF",
+    "USDJPY",
+    "XAGUSD",
+    "XAUUSD",
+    "XPDUSD",
+    "XPTUSD"
+  ],
+  "balance": 49940.92,
+  "equity": 49954.24,
+  "profit": 13.32,
+  "open_positions": 2
+}

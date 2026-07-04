@@ -398,35 +398,38 @@ function isRuntimeHealthResponse(response: {
   );
 }
 
-export function getAccessToken() {
-  return null;
+export function getAccessToken(): string | null {
+  return getCookieValue("access_token");
 }
 
-export function storeAuthTokens(accessToken: string, refreshToken: string) {
+export function storeAuthTokens(accessToken: string, refreshToken: string): void {
+  // Tokens are stored as httpOnly cookies by the backend
+  // These functions are kept for API compatibility
   void accessToken;
   void refreshToken;
 }
 
-export function clearAuthTokens() {
-  return;
+export function clearAuthTokens(): void {
+  // Cookies are cleared by the backend's /auth/logout endpoint
+  document.cookie = "access_token=; path=/; max-age=0";
+  document.cookie = "refresh_token=; path=/api/v1/auth/refresh; max-age=0";
+  document.cookie = "csrf_token=; path=/; max-age=0";
 }
 
 let refreshPromise: Promise<boolean> | null = null;
-
 async function refreshAccessToken(): Promise<boolean> {
-  if (!refreshPromise) {
-    refreshPromise = publicClient
-      .post("/auth/refresh")
-      .then(() => true)
-      .catch(() => {
-        clearAuthTokens();
-        return false;
-      })
-      .finally(() => {
-        refreshPromise = null;
-      });
-  }
-
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = (async () => {
+    try {
+      await publicClient.post("/auth/refresh");
+      return true;
+    } catch {
+      clearAuthTokens();
+      return false;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
   return refreshPromise;
 }
 

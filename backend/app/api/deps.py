@@ -7,13 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 
 from app.database import AsyncSessionLocal, get_db
-from app.middleware.auth import get_current_user
+from app.middleware.auth import get_current_user_from_token
 from app.middleware.tenant import get_org
 from app.models.organization import Organization
 from app.models.user import User
 
 
-async def get_tenant_db(current_user: User = Depends(get_current_user)):
+async def get_tenant_db(current_user: User = Depends(get_current_user_from_token)):
     async with AsyncSessionLocal() as session:
         if current_user.organization_id:
             await session.execute(text(f"SET LOCAL myapp.current_tenant_id = '{current_user.organization_id}'"))
@@ -25,7 +25,7 @@ async def get_tenant_db(current_user: User = Depends(get_current_user)):
 
 
 async def require_admin(
-    current_user: "User" = Depends(get_current_user),
+    current_user: "User" = Depends(get_current_user_from_token),
 ) -> "User":
     """FastAPI dependency — rejects non-admin callers with HTTP 403."""
     from app.middleware.auth import role_satisfies, AuthLevel, ROLE_ORDER
@@ -37,4 +37,4 @@ async def require_admin(
         )
     return current_user
 
-__all__ = ["get_tenant_db", "get_org", "get_current_user", "require_admin", "get_db"]
+__all__ = ["get_tenant_db", "get_org", "get_current_user_from_token", "require_admin", "get_db"]

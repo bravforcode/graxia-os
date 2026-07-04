@@ -113,17 +113,14 @@ def create_app() -> FastAPI:
 
     # CORS — restrict origins in live mode
     config = get_config()
-    if config.live_trading_enabled:
-        allowed_origins = ["https://graxia.dev"]  # production domain
-    else:
-        allowed_origins = ["*"]  # open for development
+    allowed_origins = ["https://graxia.dev", "http://localhost:5173", "http://localhost:3000"]
 
     app.add_middleware(
         CORSMiddleware,
         allow_origins=allowed_origins,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization", "X-API-Key"],
     )
 
     # Rate limiting — per-IP sliding window (middleware runs in reverse order,

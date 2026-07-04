@@ -22,7 +22,7 @@ from datetime import UTC, datetime
 
 import httpx
 import yfinance as yf
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy import Column, DateTime, Float, Integer, String, Text, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
@@ -144,6 +144,16 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Graxia Paper Executor", lifespan=lifespan)
+
+API_KEY = os.environ.get("PAPER_EXECUTOR_API_KEY", "")
+
+
+def _check_auth(request: Request) -> None:
+    if API_KEY:
+        key = request.headers.get("X-API-Key", "")
+        if key != API_KEY:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=401, detail="Unauthorized")
 
 
 def _init_portfolio():
@@ -500,7 +510,8 @@ def get_positions():
 
 
 @app.post("/api/manual/close")
-def manual_close():
+def manual_close(request: Request):
+    _check_auth(request)
     with SessionLocal() as db:
         pos = _get_open_position(db)
         if not pos:
@@ -510,7 +521,8 @@ def manual_close():
 
 
 @app.post("/api/poll")
-async def manual_poll():
+async def manual_poll(request: Request):
+    _check_auth(request)
     bars, bid, ask = _fetch_bars_yfinance()
     if not bars:
         return {"error": "Could not fetch price data"}
@@ -545,4 +557,4 @@ async def manual_poll():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8753)
+    uvicorn.run(app, host="127.0.0.1", port=8753)

@@ -114,6 +114,16 @@ class PaperTrader:
             send_alert=self._send_alert,
         )
 
+        # Phase 4: Broker reconnection logic + position reconciliation
+        try:
+            from execution.broker_reconnector import BrokerReconnector, BrokerConfig
+            from execution.position_reconciler import PositionReconciler, ReconciliationConfig
+            self._broker_reconnector = BrokerReconnector(BrokerConfig())
+            self._position_reconciler = PositionReconciler(ReconciliationConfig())
+        except ImportError:
+            self._broker_reconnector = None
+            self._position_reconciler = None
+
         # Stats
         self.total_signals = 0
         self.total_trades = 0
@@ -260,6 +270,17 @@ class PaperTrader:
             # Refresh unrealized PnL on all positions with current MT5 prices
             await self.broker.refresh_pnl()
 
+            # Phase 4: Broker reconnection check
+            if self._broker_reconnector:
+                if not self._broker_reconnector.check_heartbeat():
+                    event = self._broker_reconnector.attempt_reconnect()
+                    print(f"[RECONNECT] {event.message}")
+                    if self._broker_reconnector.state.value == "failed":
+                        await self._emergency_halt()
+                        return
+                else:
+                    self._broker_reconnector.heartbeat_received()
+
             # Manage open positions (SL/TP checks)
             await self._manage_positions()
 
@@ -293,17 +314,52 @@ class PaperTrader:
             # P1-9: Periodic reconciliation (every 100 cycles)
             if self._cycle_count % 100 == 0:
                 try:
-                    from execution.reconcile import Reconciler
+                    # Phase 4: Use position reconciler if available
+                    if self._position_reconciler:
+                        from execution.position_reconciler import InternalPosition, BrokerPosition
+                        import MetaTrader5 as _mt5
 
-                    reconciler = Reconciler(None)
-                    # Basic position count check
-                    import MetaTrader5 as _mt5
+                        # Build internal positions list
+                        internal = []
+                        for sym, trade in self._open_trades.items():
+                            internal.append(InternalPosition(
+                                symbol=sym,
+                                side=trade.get("side", "LONG"),
+                                quantity=Decimal(str(trade.get("quantity", 0))),
+                                entry_price=Decimal(str(trade.get("entry_price", 0))),
+                            ))
 
-                    positions = _mt5.positions_get()
-                    local_count = len(self._open_trades)
-                    broker_count = len(positions) if positions else 0
-                    if local_count != broker_count:
-                        print(f"RECONCILIATION MISMATCH: local={local_count} broker={broker_count}")
+                        # Build broker positions list
+                        broker_positions = _mt5.positions_get()
+                        broker = []
+                        if broker_positions:
+                            for p in broker_positions:
+                                broker.append(BrokerPosition(
+                                    symbol=p.symbol,
+                                    side="LONG" if p.type == 0 else "SHORT",
+                                    quantity=Decimal(str(p.volume)),
+                                    avg_price=Decimal(str(p.price_open)),
+                                ))
+
+                        result = self._position_reconciler.reconcile(internal, broker)
+                        if result.drift_detected:
+                            print(f"[RECONCILIATION] DRIFT DETECTED: {len(result.mismatches)} mismatches")
+                            for m in result.mismatches:
+                                print(f"  - {m['message']}")
+                            if self.telegram:
+                                await self._send_alert("CRITICAL", f"Position drift: {len(result.mismatches)} mismatches")
+                    else:
+                        # Fallback: basic position count check
+                        from execution.reconcile import Reconciler
+
+                        reconciler = Reconciler(None)
+                        import MetaTrader5 as _mt5
+
+                        positions = _mt5.positions_get()
+                        local_count = len(self._open_trades)
+                        broker_count = len(positions) if positions else 0
+                        if local_count != broker_count:
+                            print(f"RECONCILIATION MISMATCH: local={local_count} broker={broker_count}")
                 except Exception:
                     pass
 

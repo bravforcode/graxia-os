@@ -1,0 +1,49 @@
+{
+  "timestamp": "2026-07-03T07:54:22.389090+00:00",
+  "total": 8,
+  "passed": 6,
+  "failed": 2,
+  "all_pass": false,
+  "checks": [
+    {
+      "name": "mt5_connection",
+      "pass": true,
+      "detail": "account=phirawit jitnarong balance=$49808 equity=$49846 server=Pepperstone-Demo trade_allowed=True"
+    },
+    {
+      "name": "data_freshness",
+      "pass": false,
+      "detail": "newest_csv=2026-07-03 14:34:55.443769 age=0:19:25.973884 | DuckDB latest: 2026-06-27 06:00:00 (6 days, 8:54:21.517704)"
+    },
+    {
+      "name": "model_staleness",
+      "pass": true,
+      "detail": "version=3.0 generated=2026-07-03T13:11:50.808851 overall=EDGE_CANDIDATE edge_models=1/5 degenerate=4 age=1:42:30.710855"
+    },
+    {
+      "name": "kill_switch",
+      "pass": true,
+      "detail": "state=INACTIVE"
+    },
+    {
+      "name": "heartbeat",
+      "pass": false,
+      "detail": "last_beat=2026-07-02 22:15:53.037999 age=16:38:28.498015"
+    },
+    {
+      "name": "telegram",
+      "pass": true,
+      "detail": "bot=@bravmxij_bot chat_id=8760327152"
+    },
+    {
+      "name": "risk_policy",
+      "pass": true,
+      "detail": "fail_closed=True risk_per_trade=10bps daily_loss=50bps"
+    },
+    {
+      "name": "config_files",
+      "pass": true,
+      "detail": "all 3 present"
+    }
+  ]
+}

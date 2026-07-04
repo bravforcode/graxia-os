@@ -1,0 +1,698 @@
+{
+  "created_at": "2026-06-27 15:58:46.881281",
+  "notebooks": {
+    "strategy-bos-choch": {
+      "name": "Strategy: BOS/CHOCH",
+      "desc": "Break of Structure / Change of Character strategy analysis, entries, exits, and backtest results",
+      "source_count": 1,
+      "sources": [
+        "Strategy: BOS/CHOCH"
+      ]
+    },
+    "strategy-ema-cross": {
+      "name": "Strategy: EMA Cross",
+      "desc": "EMA crossover strategy for trend following, multi-timeframe analysis",
+      "source_count": 1,
+      "sources": [
+        "Strategy: EMA Cross"
+      ]
+    },
+    "strategy-fvg": {
+      "name": "Strategy: Fair Value Gap",
+      "desc": "Fair Value Gap (FVG) imbalances strategy, institutional order flow",
+      "source_count": 1,
+      "sources": [
+        "Strategy: Fair Value Gap"
+      ]
+    },
+    "strategy-fibonacci": {
+      "name": "Strategy: Fibonacci",
+      "desc": "Fibonacci retracement and extension strategy, confluence zones",
+      "source_count": 1,
+      "sources": [
+        "Strategy: Fibonacci"
+      ]
+    },
+    "strategy-liquidity-sweep": {
+      "name": "Strategy: Liquidity Sweep",
+      "desc": "Liquidity sweep strategy, stop hunt detection, institutional manipulation",
+      "source_count": 1,
+      "sources": [
+        "Strategy: Liquidity Sweep"
+      ]
+    },
+    "strategy-london-breakout": {
+      "name": "Strategy: London Breakout",
+      "desc": "London session breakout strategy, volatility expansion patterns",
+      "source_count": 1,
+      "sources": [
+        "Strategy: London Breakout"
+      ]
+    },
+    "strategy-multi-tf": {
+      "name": "Strategy: Multi-TF Alignment",
+      "desc": "Multi-timeframe alignment strategy, confluence across timeframes",
+      "source_count": 1,
+      "sources": [
+        "Strategy: Multi-TF Align"
+      ]
+    },
+    "strategy-news-fade": {
+      "name": "Strategy: News Fade",
+      "desc": "News fade strategy, trading against impulse moves after news releases",
+      "source_count": 1,
+      "sources": [
+        "Strategy: News Fade"
+      ]
+    },
+    "strategy-opening-range": {
+      "name": "Strategy: Opening Range",
+      "desc": "Opening range breakout strategy, first hour/15min range expansion",
+      "source_count": 1,
+      "sources": [
+        "Strategy: Opening Range"
+      ]
+    },
+    "strategy-order-block": {
+      "name": "Strategy: Order Block",
+      "desc": "Order block strategy, institutional supply/demand zones, mitigation entries",
+      "source_count": 1,
+      "sources": [
+        "Strategy: Order Block"
+      ]
+    },
+    "strategy-rsi-divergence": {
+      "name": "Strategy: RSI Divergence",
+      "desc": "RSI divergence strategy, momentum shifts, hidden and regular divergences",
+      "source_count": 1,
+      "sources": [
+        "Strategy: RSI Divergence"
+      ]
+    },
+    "strategy-supply-demand": {
+      "name": "Strategy: Supply/Demand",
+      "desc": "Supply and demand zone strategy, fresh vs tested zones, rally-base-rally patterns",
+      "source_count": 1,
+      "sources": [
+        "Strategy: Supply/Demand"
+      ]
+    },
+    "strategy-vwap-rejection": {
+      "name": "Strategy: VWAP Rejection",
+      "desc": "VWAP rejection strategy, mean reversion from VWAP, intraday levels",
+      "source_count": 1,
+      "sources": [
+        "Strategy: VWAP Rejection"
+      ]
+    },
+    "backtest-xauusd": {
+      "name": "Backtest: XAUUSD Analysis",
+      "desc": "XAUUSD gold backtest results across all strategies and timeframes",
+      "source_count": 5,
+      "sources": [
+        "2026-06-26_XAUUSD_MeanReversion",
+        "2026-06-26_XAUUSD_Momentum",
+        "2026-06-26_XAUUSD_RSI",
+        "2026-06-26_XAUUSD_TrendFollow",
+        "2026-06-26_XAUUSD_VolBreakout"
+      ]
+    },
+    "backtest-multi-symbol": {
+      "name": "Backtest: Multi-Symbol Suite",
+      "desc": "Complete backtest suite: XAUUSD, EURUSD, GBPUSD, USDJPY, US30, NAS100, BTCUSD",
+      "source_count": 38,
+      "sources": [
+        "2026-06-20_MLB",
+        "2026-06-20_MRB",
+        "2026-06-20_MTM",
+        "2026-06-26_BTCUSD_MeanReversion",
+        "2026-06-26_BTCUSD_Momentum",
+        "2026-06-26_BTCUSD_RSI",
+        "2026-06-26_BTCUSD_TrendFollow",
+        "2026-06-26_BTCUSD_VolBreakout",
+        "2026-06-26_EURUSD_MeanReversion",
+        "2026-06-26_EURUSD_Momentum",
+        "2026-06-26_EURUSD_RSI",
+        "2026-06-26_EURUSD_TrendFollow",
+        "2026-06-26_EURUSD_VolBreakout",
+        "2026-06-26_GBPUSD_MeanReversion",
+        "2026-06-26_GBPUSD_Momentum",
+        "2026-06-26_GBPUSD_RSI",
+        "2026-06-26_GBPUSD_TrendFollow",
+        "2026-06-26_GBPUSD_VolBreakout",
+        "2026-06-26_NAS100_MeanReversion",
+        "2026-06-26_NAS100_Momentum",
+        "2026-06-26_NAS100_RSI",
+        "2026-06-26_NAS100_TrendFollow",
+        "2026-06-26_NAS100_VolBreakout",
+        "2026-06-26_US30_MeanReversion",
+        "2026-06-26_US30_Momentum",
+        "2026-06-26_US30_RSI",
+        "2026-06-26_US30_TrendFollow",
+        "2026-06-26_US30_VolBreakout",
+        "2026-06-26_USDJPY_MeanReversion",
+        "2026-06-26_USDJPY_Momentum",
+        "2026-06-26_USDJPY_RSI",
+        "2026-06-26_USDJPY_TrendFollow",
+        "2026-06-26_USDJPY_VolBreakout",
+        "2026-06-26_XAUUSD_MeanReversion",
+        "2026-06-26_XAUUSD_Momentum",
+        "2026-06-26_XAUUSD_RSI",
+        "2026-06-26_XAUUSD_TrendFollow",
+        "2026-06-26_XAUUSD_VolBreakout"
+      ]
+    },
+    "backtest-strategies": {
+      "name": "Backtest: Strategy Comparison",
+      "desc": "Strategy performance comparison across all symbols and timeframes",
+      "source_count": 38,
+      "sources": [
+        "2026-06-20_MLB",
+        "2026-06-20_MRB",
+        "2026-06-20_MTM",
+        "2026-06-26_BTCUSD_MeanReversion",
+        "2026-06-26_BTCUSD_Momentum",
+        "2026-06-26_BTCUSD_RSI",
+        "2026-06-26_BTCUSD_TrendFollow",
+        "2026-06-26_BTCUSD_VolBreakout",
+        "2026-06-26_EURUSD_MeanReversion",
+        "2026-06-26_EURUSD_Momentum",
+        "2026-06-26_EURUSD_RSI",
+        "2026-06-26_EURUSD_TrendFollow",
+        "2026-06-26_EURUSD_VolBreakout",
+        "2026-06-26_GBPUSD_MeanReversion",
+        "2026-06-26_GBPUSD_Momentum",
+        "2026-06-26_GBPUSD_RSI",
+        "2026-06-26_GBPUSD_TrendFollow",
+        "2026-06-26_GBPUSD_VolBreakout",
+        "2026-06-26_NAS100_MeanReversion",
+        "2026-06-26_NAS100_Momentum",
+        "2026-06-26_NAS100_RSI",
+        "2026-06-26_NAS100_TrendFollow",
+        "2026-06-26_NAS100_VolBreakout",
+        "2026-06-26_US30_MeanReversion",
+        "2026-06-26_US30_Momentum",
+        "2026-06-26_US30_RSI",
+        "2026-06-26_US30_TrendFollow",
+        "2026-06-26_US30_VolBreakout",
+        "2026-06-26_USDJPY_MeanReversion",
+        "2026-06-26_USDJPY_Momentum",
+        "2026-06-26_USDJPY_RSI",
+        "2026-06-26_USDJPY_TrendFollow",
+        "2026-06-26_USDJPY_VolBreakout",
+        "2026-06-26_XAUUSD_MeanReversion",
+        "2026-06-26_XAUUSD_Momentum",
+        "2026-06-26_XAUUSD_RSI",
+        "2026-06-26_XAUUSD_TrendFollow",
+        "2026-06-26_XAUUSD_VolBreakout"
+      ]
+    },
+    "backtest-mtm-mrb-mlb": {
+      "name": "Backtest: MTM/MRB/MLB",
+      "desc": "Mean Trend Momentum / Mean Reversion Bias / Mean Linear Bias strategy results",
+      "source_count": 3,
+      "sources": [
+        "2026-06-20_MTM",
+        "2026-06-20_MRB",
+        "2026-06-20_MLB"
+      ]
+    },
+    "backtest-cost-analysis": {
+      "name": "Backtest: Cost Analysis",
+      "desc": "Transaction cost impact analysis, spread and commission effects on strategy returns",
+      "source_count": 3,
+      "sources": [
+        "backtest_results",
+        "backtest_suite_20260626_160813",
+        "backtest_suite_20260626_164814"
+      ]
+    },
+    "macro-dashboard": {
+      "name": "Macro: Daily Dashboard",
+      "desc": "Daily macro overview: VIX, GVZ, DXY, yields, regime detection, key events",
+      "source_count": 7,
+      "sources": [
+        "2026-06-26",
+        "2026-06-27-credit",
+        "2026-06-27-cross-market",
+        "2026-06-27-liquidity",
+        "2026-06-27-weekly",
+        "2026-06-27-yields",
+        "2026-06-27"
+      ]
+    },
+    "macro-yields": {
+      "name": "Macro: Yield Curve",
+      "desc": "US yield curve analysis, real yields, inflation expectations, term premium",
+      "source_count": 1,
+      "sources": [
+        "2026-06-27-yields"
+      ]
+    },
+    "macro-credit": {
+      "name": "Macro: Credit Markets",
+      "desc": "Credit spreads, HY OAS, financial stress indicators, corporate bond markets",
+      "source_count": 1,
+      "sources": [
+        "2026-06-27-credit"
+      ]
+    },
+    "macro-liquidity": {
+      "name": "Macro: Liquidity",
+      "desc": "Market liquidity: Fed balance sheet, RRP, TGA, net reserves, plumbing",
+      "source_count": 1,
+      "sources": [
+        "2026-06-27-liquidity"
+      ]
+    },
+    "macro-cross-market": {
+      "name": "Macro: Cross-Market",
+      "desc": "Cross-market correlations: equities, bonds, FX, commodities, volatility",
+      "source_count": 1,
+      "sources": [
+        "2026-06-27-cross-market"
+      ]
+    },
+    "macro-weekly": {
+      "name": "Macro: Weekly Review",
+      "desc": "Weekly macro summary, key themes, regime shifts, outlook",
+      "source_count": 1,
+      "sources": [
+        "2026-06-27-weekly"
+      ]
+    },
+    "ml-model-registry": {
+      "name": "ML: Model Registry",
+      "desc": "All ML models: XGBoost, LightGBM, training metrics, feature importance",
+      "source_count": 26,
+      "sources": [
+        "BTCUSD_20260626_160330",
+        "EURUSD_20260626_160329",
+        "Index",
+        "live_20260626_143317",
+        "live_20260626_160730",
+        "live_20260626_161034",
+        "live_20260626_173551",
+        "live_20260626_173759",
+        "live_20260626_174009",
+        "live_20260626_174445",
+        "live_20260626_174624",
+        "live_20260626_174837",
+        "live_20260626_175431",
+        "live_20260627_130006",
+        "NAS100_20260626_160329",
+        "US30_20260626_160329",
+        "XAUUSD_20260626_160329",
+        "_20260619_201454",
+        "_20260619_201455",
+        "_20260619_201456",
+        "_20260619_201457",
+        "_20260619_203244",
+        "_20260619_203245",
+        "_20260619_203247",
+        "_20260619_203251",
+        "_20260626"
+      ]
+    },
+    "ml-training-results": {
+      "name": "ML: Training Results",
+      "desc": "Model training history, hyperparameters, validation scores, overfitting analysis",
+      "source_count": 1,
+      "sources": [
+        "ml_training_results"
+      ]
+    },
+    "ml-feature-importance": {
+      "name": "ML: Feature Importance",
+      "desc": "Feature importance rankings, SHAP values, feature engineering notes",
+      "source_count": 0,
+      "sources": []
+    },
+    "ml-live-performance": {
+      "name": "ML: Live Performance",
+      "desc": "Live model predictions, accuracy tracking, drift detection, retraining triggers",
+      "source_count": 0,
+      "sources": []
+    },
+    "trade-journal": {
+      "name": "Trade Journal",
+      "desc": "Live trade journal: entries, exits, P&L, lessons learned, emotional notes",
+      "source_count": 4,
+      "sources": [
+        "2026-06-25",
+        "2026-06-26",
+        "2026-06-26_original_backup",
+        "2026-06-27"
+      ]
+    },
+    "risk-management": {
+      "name": "Risk Management",
+      "desc": "Risk dashboard: drawdown, circuit breaker, kill switch, position sizing, exposure",
+      "source_count": 1,
+      "sources": [
+        "dashboard"
+      ]
+    },
+    "regime-analysis": {
+      "name": "Regime Analysis",
+      "desc": "Market regime detection: trending, ranging, volatile, regime transitions",
+      "source_count": 1,
+      "sources": [
+        "current"
+      ]
+    },
+    "signal-quality": {
+      "name": "Signal Quality",
+      "desc": "Signal quality metrics: hit rate, false positive analysis, signal decay",
+      "source_count": 3,
+      "sources": [
+        "2026-06-26",
+        "2026-06-26_precision",
+        "2026-06-27"
+      ]
+    },
+    "attribution": {
+      "name": "P&L Attribution",
+      "desc": "P&L attribution by strategy, symbol, timeframe, session, market condition",
+      "source_count": 2,
+      "sources": [
+        "week-25",
+        "week-26"
+      ]
+    },
+    "ensemble-optimizer": {
+      "name": "Ensemble Optimizer",
+      "desc": "Ensemble weight optimization: MTM, MRB, MLB allocation, dynamic rebalancing",
+      "source_count": 1,
+      "sources": [
+        "week-26"
+      ]
+    },
+    "system-architecture": {
+      "name": "System Architecture",
+      "desc": "Trading system architecture: components, data flow, execution pipeline, integration points",
+      "source_count": 15,
+      "sources": [
+        "aws_deployment_guide",
+        "bridge_deploy_state",
+        "bridge_real_web_research_report",
+        "deep_research_report",
+        "execution_plan",
+        "exit_risk_research_b3",
+        "gcloud_deployment_guide",
+        "graxia_mega_plan_v3",
+        "honest_web_research_report",
+        "master_deep_research_synthesis",
+        "pre_register_b2",
+        "pre_register_config2",
+        "research_edge_cost_report",
+        "stop_loss_audit",
+        "verified_sources_report"
+      ]
+    },
+    "xauusd-playbook": {
+      "name": "XAUUSD Playbook",
+      "desc": "Complete XAUUSD trading playbook: all strategies, macro context, regime notes",
+      "source_count": 5,
+      "sources": [
+        "2026-06-26_XAUUSD_MeanReversion",
+        "2026-06-26_XAUUSD_Momentum",
+        "2026-06-26_XAUUSD_RSI",
+        "2026-06-26_XAUUSD_TrendFollow",
+        "2026-06-26_XAUUSD_VolBreakout"
+      ]
+    },
+    "multi-asset-overview": {
+      "name": "Multi-Asset Overview",
+      "desc": "Cross-asset analysis: correlations, relative strength, sector rotation",
+      "source_count": 13,
+      "sources": [
+        "bos_choch",
+        "ema_cross",
+        "fair_value_gap",
+        "fibonacci",
+        "liquidity_sweep",
+        "london_breakout",
+        "multi_tf_align",
+        "news_fade",
+        "opening_range",
+        "order_block",
+        "rsi_divergence",
+        "supply_demand",
+        "vwap_rejection"
+      ]
+    },
+    "daily-briefing": {
+      "name": "Daily Briefing",
+      "desc": "Daily pre-market briefing: overnight moves, key levels, economic calendar, risk events",
+      "source_count": 8,
+      "sources": [
+        "2026-06-26",
+        "2026-06-27-credit",
+        "2026-06-27-cross-market",
+        "2026-06-27-liquidity",
+        "2026-06-27-weekly",
+        "2026-06-27-yields",
+        "2026-06-27",
+        "current"
+      ]
+    }
+  },
+  "results": {
+    "created": [
+      "Strategy: BOS/CHOCH",
+      "Strategy: EMA Cross",
+      "Strategy: Fair Value Gap",
+      "Strategy: Fibonacci",
+      "Strategy: Liquidity Sweep",
+      "Strategy: London Breakout",
+      "Strategy: Multi-TF Alignment",
+      "Strategy: News Fade",
+      "Strategy: Opening Range",
+      "Strategy: Order Block",
+      "Strategy: RSI Divergence",
+      "Strategy: Supply/Demand",
+      "Strategy: VWAP Rejection",
+      "Backtest: XAUUSD Analysis",
+      "Backtest: Multi-Symbol Suite",
+      "Backtest: Strategy Comparison",
+      "Backtest: MTM/MRB/MLB",
+      "Backtest: Cost Analysis",
+      "Macro: Daily Dashboard",
+      "Macro: Yield Curve",
+      "Macro: Credit Markets",
+      "Macro: Liquidity",
+      "Macro: Cross-Market",
+      "Macro: Weekly Review",
+      "ML: Model Registry",
+      "ML: Training Results",
+      "ML: Feature Importance",
+      "ML: Live Performance",
+      "Trade Journal",
+      "Risk Management",
+      "Regime Analysis",
+      "Signal Quality",
+      "P&L Attribution",
+      "Ensemble Optimizer",
+      "System Architecture",
+      "XAUUSD Playbook",
+      "Multi-Asset Overview",
+      "Daily Briefing"
+    ],
+    "sources_added": [
+      "Strategy: BOS/CHOCH/Strategy: BOS/CHOCH",
+      "Strategy: EMA Cross/Strategy: EMA Cross",
+      "Strategy: Fair Value Gap/Strategy: Fair Value Gap",
+      "Strategy: Fibonacci/Strategy: Fibonacci",
+      "Strategy: Liquidity Sweep/Strategy: Liquidity Sweep",
+      "Strategy: London Breakout/Strategy: London Breakout",
+      "Strategy: Multi-TF Alignment/Strategy: Multi-TF Align",
+      "Strategy: News Fade/Strategy: News Fade",
+      "Strategy: Opening Range/Strategy: Opening Range",
+      "Strategy: Order Block/Strategy: Order Block",
+      "Strategy: RSI Divergence/Strategy: RSI Divergence",
+      "Strategy: Supply/Demand/Strategy: Supply/Demand",
+      "Strategy: VWAP Rejection/Strategy: VWAP Rejection",
+      "Backtest: XAUUSD Analysis/2026-06-26_XAUUSD_MeanReversion",
+      "Backtest: XAUUSD Analysis/2026-06-26_XAUUSD_Momentum",
+      "Backtest: XAUUSD Analysis/2026-06-26_XAUUSD_RSI",
+      "Backtest: XAUUSD Analysis/2026-06-26_XAUUSD_TrendFollow",
+      "Backtest: XAUUSD Analysis/2026-06-26_XAUUSD_VolBreakout",
+      "Backtest: Multi-Symbol Suite/2026-06-20_MLB",
+      "Backtest: Multi-Symbol Suite/2026-06-20_MRB",
+      "Backtest: Multi-Symbol Suite/2026-06-20_MTM",
+      "Backtest: Multi-Symbol Suite/2026-06-26_BTCUSD_MeanReversion",
+      "Backtest: Multi-Symbol Suite/2026-06-26_BTCUSD_Momentum",
+      "Backtest: Multi-Symbol Suite/2026-06-26_BTCUSD_RSI",
+      "Backtest: Multi-Symbol Suite/2026-06-26_BTCUSD_TrendFollow",
+      "Backtest: Multi-Symbol Suite/2026-06-26_BTCUSD_VolBreakout",
+      "Backtest: Multi-Symbol Suite/2026-06-26_EURUSD_MeanReversion",
+      "Backtest: Multi-Symbol Suite/2026-06-26_EURUSD_Momentum",
+      "Backtest: Multi-Symbol Suite/2026-06-26_EURUSD_RSI",
+      "Backtest: Multi-Symbol Suite/2026-06-26_EURUSD_TrendFollow",
+      "Backtest: Multi-Symbol Suite/2026-06-26_EURUSD_VolBreakout",
+      "Backtest: Multi-Symbol Suite/2026-06-26_GBPUSD_MeanReversion",
+      "Backtest: Multi-Symbol Suite/2026-06-26_GBPUSD_Momentum",
+      "Backtest: Multi-Symbol Suite/2026-06-26_GBPUSD_RSI",
+      "Backtest: Multi-Symbol Suite/2026-06-26_GBPUSD_TrendFollow",
+      "Backtest: Multi-Symbol Suite/2026-06-26_GBPUSD_VolBreakout",
+      "Backtest: Multi-Symbol Suite/2026-06-26_NAS100_MeanReversion",
+      "Backtest: Multi-Symbol Suite/2026-06-26_NAS100_Momentum",
+      "Backtest: Multi-Symbol Suite/2026-06-26_NAS100_RSI",
+      "Backtest: Multi-Symbol Suite/2026-06-26_NAS100_TrendFollow",
+      "Backtest: Multi-Symbol Suite/2026-06-26_NAS100_VolBreakout",
+      "Backtest: Multi-Symbol Suite/2026-06-26_US30_MeanReversion",
+      "Backtest: Multi-Symbol Suite/2026-06-26_US30_Momentum",
+      "Backtest: Multi-Symbol Suite/2026-06-26_US30_RSI",
+      "Backtest: Multi-Symbol Suite/2026-06-26_US30_TrendFollow",
+      "Backtest: Multi-Symbol Suite/2026-06-26_US30_VolBreakout",
+      "Backtest: Multi-Symbol Suite/2026-06-26_USDJPY_MeanReversion",
+      "Backtest: Multi-Symbol Suite/2026-06-26_USDJPY_Momentum",
+      "Backtest: Multi-Symbol Suite/2026-06-26_USDJPY_RSI",
+      "Backtest: Multi-Symbol Suite/2026-06-26_USDJPY_TrendFollow",
+      "Backtest: Multi-Symbol Suite/2026-06-26_USDJPY_VolBreakout",
+      "Backtest: Multi-Symbol Suite/2026-06-26_XAUUSD_MeanReversion",
+      "Backtest: Multi-Symbol Suite/2026-06-26_XAUUSD_Momentum",
+      "Backtest: Multi-Symbol Suite/2026-06-26_XAUUSD_RSI",
+      "Backtest: Multi-Symbol Suite/2026-06-26_XAUUSD_TrendFollow",
+      "Backtest: Multi-Symbol Suite/2026-06-26_XAUUSD_VolBreakout",
+      "Backtest: Strategy Comparison/2026-06-20_MLB",
+      "Backtest: Strategy Comparison/2026-06-20_MRB",
+      "Backtest: Strategy Comparison/2026-06-20_MTM",
+      "Backtest: Strategy Comparison/2026-06-26_BTCUSD_MeanReversion",
+      "Backtest: Strategy Comparison/2026-06-26_BTCUSD_Momentum",
+      "Backtest: Strategy Comparison/2026-06-26_BTCUSD_RSI",
+      "Backtest: Strategy Comparison/2026-06-26_BTCUSD_TrendFollow",
+      "Backtest: Strategy Comparison/2026-06-26_BTCUSD_VolBreakout",
+      "Backtest: Strategy Comparison/2026-06-26_EURUSD_MeanReversion",
+      "Backtest: Strategy Comparison/2026-06-26_EURUSD_Momentum",
+      "Backtest: Strategy Comparison/2026-06-26_EURUSD_RSI",
+      "Backtest: Strategy Comparison/2026-06-26_EURUSD_TrendFollow",
+      "Backtest: Strategy Comparison/2026-06-26_EURUSD_VolBreakout",
+      "Backtest: Strategy Comparison/2026-06-26_GBPUSD_MeanReversion",
+      "Backtest: Strategy Comparison/2026-06-26_GBPUSD_Momentum",
+      "Backtest: Strategy Comparison/2026-06-26_GBPUSD_RSI",
+      "Backtest: Strategy Comparison/2026-06-26_GBPUSD_TrendFollow",
+      "Backtest: Strategy Comparison/2026-06-26_GBPUSD_VolBreakout",
+      "Backtest: Strategy Comparison/2026-06-26_NAS100_MeanReversion",
+      "Backtest: Strategy Comparison/2026-06-26_NAS100_Momentum",
+      "Backtest: Strategy Comparison/2026-06-26_NAS100_RSI",
+      "Backtest: Strategy Comparison/2026-06-26_NAS100_TrendFollow",
+      "Backtest: Strategy Comparison/2026-06-26_NAS100_VolBreakout",
+      "Backtest: Strategy Comparison/2026-06-26_US30_MeanReversion",
+      "Backtest: Strategy Comparison/2026-06-26_US30_Momentum",
+      "Backtest: Strategy Comparison/2026-06-26_US30_RSI",
+      "Backtest: Strategy Comparison/2026-06-26_US30_TrendFollow",
+      "Backtest: Strategy Comparison/2026-06-26_US30_VolBreakout",
+      "Backtest: Strategy Comparison/2026-06-26_USDJPY_MeanReversion",
+      "Backtest: Strategy Comparison/2026-06-26_USDJPY_Momentum",
+      "Backtest: Strategy Comparison/2026-06-26_USDJPY_RSI",
+      "Backtest: Strategy Comparison/2026-06-26_USDJPY_TrendFollow",
+      "Backtest: Strategy Comparison/2026-06-26_USDJPY_VolBreakout",
+      "Backtest: Strategy Comparison/2026-06-26_XAUUSD_MeanReversion",
+      "Backtest: Strategy Comparison/2026-06-26_XAUUSD_Momentum",
+      "Backtest: Strategy Comparison/2026-06-26_XAUUSD_RSI",
+      "Backtest: Strategy Comparison/2026-06-26_XAUUSD_TrendFollow",
+      "Backtest: Strategy Comparison/2026-06-26_XAUUSD_VolBreakout",
+      "Backtest: MTM/MRB/MLB/2026-06-20_MTM",
+      "Backtest: MTM/MRB/MLB/2026-06-20_MRB",
+      "Backtest: MTM/MRB/MLB/2026-06-20_MLB",
+      "Backtest: Cost Analysis/backtest_results",
+      "Backtest: Cost Analysis/backtest_suite_20260626_160813",
+      "Backtest: Cost Analysis/backtest_suite_20260626_164814",
+      "Macro: Daily Dashboard/2026-06-26",
+      "Macro: Daily Dashboard/2026-06-27-credit",
+      "Macro: Daily Dashboard/2026-06-27-cross-market",
+      "Macro: Daily Dashboard/2026-06-27-liquidity",
+      "Macro: Daily Dashboard/2026-06-27-weekly",
+      "Macro: Daily Dashboard/2026-06-27-yields",
+      "Macro: Daily Dashboard/2026-06-27",
+      "Macro: Yield Curve/2026-06-27-yields",
+      "Macro: Credit Markets/2026-06-27-credit",
+      "Macro: Liquidity/2026-06-27-liquidity",
+      "Macro: Cross-Market/2026-06-27-cross-market",
+      "Macro: Weekly Review/2026-06-27-weekly",
+      "ML: Model Registry/BTCUSD_20260626_160330",
+      "ML: Model Registry/EURUSD_20260626_160329",
+      "ML: Model Registry/Index",
+      "ML: Model Registry/live_20260626_143317",
+      "ML: Model Registry/live_20260626_160730",
+      "ML: Model Registry/live_20260626_161034",
+      "ML: Model Registry/live_20260626_173551",
+      "ML: Model Registry/live_20260626_173759",
+      "ML: Model Registry/live_20260626_174009",
+      "ML: Model Registry/live_20260626_174445",
+      "ML: Model Registry/live_20260626_174624",
+      "ML: Model Registry/live_20260626_174837",
+      "ML: Model Registry/live_20260626_175431",
+      "ML: Model Registry/live_20260627_130006",
+      "ML: Model Registry/NAS100_20260626_160329",
+      "ML: Model Registry/US30_20260626_160329",
+      "ML: Model Registry/XAUUSD_20260626_160329",
+      "ML: Model Registry/_20260619_201454",
+      "ML: Model Registry/_20260619_201455",
+      "ML: Model Registry/_20260619_201456",
+      "ML: Model Registry/_20260619_201457",
+      "ML: Model Registry/_20260619_203244",
+      "ML: Model Registry/_20260619_203245",
+      "ML: Model Registry/_20260619_203247",
+      "ML: Model Registry/_20260619_203251",
+      "ML: Model Registry/_20260626",
+      "ML: Training Results/ml_training_results",
+      "Trade Journal/2026-06-25",
+      "Trade Journal/2026-06-26",
+      "Trade Journal/2026-06-26_original_backup",
+      "Trade Journal/2026-06-27",
+      "Risk Management/dashboard",
+      "Regime Analysis/current",
+      "Signal Quality/2026-06-26",
+      "Signal Quality/2026-06-26_precision",
+      "Signal Quality/2026-06-27",
+      "P&L Attribution/week-25",
+      "P&L Attribution/week-26",
+      "Ensemble Optimizer/week-26",
+      "System Architecture/aws_deployment_guide",
+      "System Architecture/bridge_deploy_state",
+      "System Architecture/bridge_real_web_research_report",
+      "System Architecture/deep_research_report",
+      "System Architecture/execution_plan",
+      "System Architecture/exit_risk_research_b3",
+      "System Architecture/gcloud_deployment_guide",
+      "System Architecture/graxia_mega_plan_v3",
+      "System Architecture/honest_web_research_report",
+      "System Architecture/master_deep_research_synthesis",
+      "System Architecture/pre_register_b2",
+      "System Architecture/pre_register_config2",
+      "System Architecture/research_edge_cost_report",
+      "System Architecture/stop_loss_audit",
+      "System Architecture/verified_sources_report",
+      "XAUUSD Playbook/2026-06-26_XAUUSD_MeanReversion",
+      "XAUUSD Playbook/2026-06-26_XAUUSD_Momentum",
+      "XAUUSD Playbook/2026-06-26_XAUUSD_RSI",
+      "XAUUSD Playbook/2026-06-26_XAUUSD_TrendFollow",
+      "XAUUSD Playbook/2026-06-26_XAUUSD_VolBreakout",
+      "Multi-Asset Overview/bos_choch",
+      "Multi-Asset Overview/ema_cross",
+      "Multi-Asset Overview/fair_value_gap",
+      "Multi-Asset Overview/fibonacci",
+      "Multi-Asset Overview/liquidity_sweep",
+      "Multi-Asset Overview/london_breakout",
+      "Multi-Asset Overview/multi_tf_align",
+      "Multi-Asset Overview/news_fade",
+      "Multi-Asset Overview/opening_range",
+      "Multi-Asset Overview/order_block",
+      "Multi-Asset Overview/rsi_divergence",
+      "Multi-Asset Overview/supply_demand",
+      "Multi-Asset Overview/vwap_rejection",
+      "Daily Briefing/2026-06-26",
+      "Daily Briefing/2026-06-27-credit",
+      "Daily Briefing/2026-06-27-cross-market",
+      "Daily Briefing/2026-06-27-liquidity",
+      "Daily Briefing/2026-06-27-weekly",
+      "Daily Briefing/2026-06-27-yields",
+      "Daily Briefing/2026-06-27",
+      "Daily Briefing/current"
+    ],
+    "errors": []
+  }
+}

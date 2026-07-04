@@ -281,7 +281,7 @@ class DuckDBHealth:
                 # Estimate last write from the largest table's max row
                 # (DuckDB doesn't track write timestamps natively)
                 if row_counts:
-                    largest = max(row_counts, key=row_counts.get)  # type: ignore[arg-type]
+                    largest = max(row_counts, key=lambda k: row_counts[k])
                     try:
                         result = conn.execute(
                             f"SELECT MAX(rowid) FROM \"{largest}\""

@@ -1,0 +1,324 @@
+{
+  "files": {
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\states\\auditor_state.md": {
+      "hash": "6f4ee24e139dd6540a6be5c11fbb7bee4ed90e56ad7a06e4a53ddd6ae2f409b7",
+      "dest": "Meta\\states\\quant_os\\auditor_state.md",
+      "synced_at": "2026-06-26T10:41:20.520928+00:00",
+      "category": "state"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\states\\backtest_cost_unit_bug.md": {
+      "hash": "2c611c9d1c39d6797ed672082a7daba4249bf78da65e6fe055f6276cdfd122bc",
+      "dest": "Meta\\states\\quant_os\\backtest_cost_unit_bug.md",
+      "synced_at": "2026-06-26T10:41:20.520928+00:00",
+      "category": "state"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\states\\bridge_handoff.md": {
+      "hash": "6407a727cb4243240ae047f836c8aa3c7f313da275ea0d242684046e4e474fea",
+      "dest": "Meta\\states\\quant_os\\bridge_handoff.md",
+      "synced_at": "2026-06-26T10:41:20.531389+00:00",
+      "category": "state"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\states\\researcher.md": {
+      "hash": "0dbf9a566baf26350c7b4f3cb85ab94fa5baa47e20b10702332caa5e49ba9ac6",
+      "dest": "Meta\\states\\quant_os\\researcher.md",
+      "synced_at": "2026-06-26T10:41:20.549674+00:00",
+      "category": "state"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\states\\researcher_chaos_complete.md": {
+      "hash": "fffdb4629e20e76851141fc443230e012273a0b86f7819f5c19ed62c54ef6543",
+      "dest": "Meta\\states\\quant_os\\researcher_chaos_complete.md",
+      "synced_at": "2026-06-26T10:41:20.549674+00:00",
+      "category": "state"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\states\\researcher_cross_asset_features.md": {
+      "hash": "d47e42bd2e67bff83ab1518a99ea2680809ff213ac522ed05cb11f94587757f4",
+      "dest": "Meta\\states\\quant_os\\researcher_cross_asset_features.md",
+      "synced_at": "2026-06-26T10:41:20.551682+00:00",
+      "category": "state"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\states\\researcher_gap_analysis.md": {
+      "hash": "715b4716a82c515236ddd7cfbcfb43e8a714fb853bf098b953882ddf74aa1f2d",
+      "dest": "Meta\\states\\quant_os\\researcher_gap_analysis.md",
+      "synced_at": "2026-06-26T10:41:20.553191+00:00",
+      "category": "state"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\states\\researcher_loss_drivers.md": {
+      "hash": "7640fb57d8cafb5a6bd5463024e0caec9b1aebd187dbd8d18250b5e95afc0e9d",
+      "dest": "Meta\\states\\quant_os\\researcher_loss_drivers.md",
+      "synced_at": "2026-06-26T10:41:20.553191+00:00",
+      "category": "state"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\states\\worst_folds_analysis.md": {
+      "hash": "55e633f220690b23f0e69f0e679861b71881c07c1cb44c34adc603da06ef1bdb",
+      "dest": "Meta\\states\\quant_os\\worst_folds_analysis.md",
+      "synced_at": "2026-06-26T10:41:20.565603+00:00",
+      "category": "state"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\archive\\bridge_30day_roadmap_complete.md": {
+      "hash": "604bd862247949b528a7d90a190d8cc2c498b424f612d950340316b73ed658ba",
+      "dest": "Meta\\states\\quant_os\\archive\\bridge_30day_roadmap_complete.md",
+      "synced_at": "2026-06-26T10:41:20.567613+00:00",
+      "category": "archive"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\archive\\bridge_audit_cost_bug.md": {
+      "hash": "09f69411e161cf80bfd759107db9f881775dbab6be89c5c1b47e39f9c3ab73db",
+      "dest": "Meta\\states\\quant_os\\archive\\bridge_audit_cost_bug.md",
+      "synced_at": "2026-06-26T10:41:20.569622+00:00",
+      "category": "archive"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\archive\\bridge_cleanup.md": {
+      "hash": "be8ed56a918df8d7675750cd69c8c10873829e495713460b062b1926128c85a8",
+      "dest": "Meta\\states\\quant_os\\archive\\bridge_cleanup.md",
+      "synced_at": "2026-06-26T10:41:20.569622+00:00",
+      "category": "archive"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\archive\\bridge_data_factory_day1.md": {
+      "hash": "4e21b6e835b1047e59cae67873d4b4ef59000dbff4e02a061e1a6691069335d6",
+      "dest": "Meta\\states\\quant_os\\archive\\bridge_data_factory_day1.md",
+      "synced_at": "2026-06-26T10:41:20.571630+00:00",
+      "category": "archive"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\archive\\bridge_final_corrected.md": {
+      "hash": "65e6ceeff847d2797854a8e4c573664ff60b06acb030fc6f59eae6725de871a0",
+      "dest": "Meta\\states\\quant_os\\archive\\bridge_final_corrected.md",
+      "synced_at": "2026-06-26T10:41:20.573378+00:00",
+      "category": "archive"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\archive\\bridge_final_synthesis.md": {
+      "hash": "06258e73a84a9b08eed688e8a333bb9be6b1cecacbbe5be1eff0d765ef85537d",
+      "dest": "Meta\\states\\quant_os\\archive\\bridge_final_synthesis.md",
+      "synced_at": "2026-06-26T10:41:20.575883+00:00",
+      "category": "archive"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\archive\\bridge_post_audit.md": {
+      "hash": "d2e7bbf83c5a22054ecbec131436bdaaada5dac781b371dac490484bd4b2134f",
+      "dest": "Meta\\states\\quant_os\\archive\\bridge_post_audit.md",
+      "synced_at": "2026-06-26T10:41:20.575883+00:00",
+      "category": "archive"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\archive\\bridge_summary.md": {
+      "hash": "d3fe2ebe2ccdbe475ebc650c1249539e24fc55de8f1bf5340148869466c7be00",
+      "dest": "Meta\\states\\quant_os\\archive\\bridge_summary.md",
+      "synced_at": "2026-06-26T10:41:20.575883+00:00",
+      "category": "archive"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\execution_plan.md": {
+      "hash": "c66da0142086b113dd7836efe6594dda92be25624762b6864d0cdfb7299878b7",
+      "dest": "Meta\\states\\quant_os\\execution_plan.md",
+      "synced_at": "2026-06-26T10:41:20.575883+00:00",
+      "category": "meta-root"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\pre_register_b2.md": {
+      "hash": "ff5e69a3161ef3ebe4fc6497fe7ec89bc96ee648c53f672ad2804c1d5bf96c19",
+      "dest": "Meta\\states\\quant_os\\pre_register_b2.md",
+      "synced_at": "2026-06-26T10:41:20.584126+00:00",
+      "category": "meta-root"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\stop_loss_audit.md": {
+      "hash": "7d0ed8d9ff92feeab94d37c025f398a20332fe5df0be5eee046033ae498871a0",
+      "dest": "Meta\\states\\quant_os\\stop_loss_audit.md",
+      "synced_at": "2026-06-26T10:41:20.584126+00:00",
+      "category": "meta-root"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\strategies\\__init__.py": {
+      "hash": "f6c0d1aa393105a666cf47e0b4dd01bd727f2c302bc5c0ab90cb9083648522ca",
+      "dest": "01-projects\\Graxia-OS\\quant_os\\strategies\\__init__.py",
+      "synced_at": "2026-06-26T10:41:20.590922+00:00",
+      "category": "strategy"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\strategies\\base.py": {
+      "hash": "4a87121cea3f5f14b4ca618f3c7ed6c00d7664eab172aa280f4df880abc17502",
+      "dest": "01-projects\\Graxia-OS\\quant_os\\strategies\\base.py",
+      "synced_at": "2026-06-26T10:41:20.590922+00:00",
+      "category": "strategy"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\strategies\\ensemble.py": {
+      "hash": "45e33b7ed46eb77c4cb0eb4ed0250f8974734a125750801986d11811859eb10f",
+      "dest": "01-projects\\Graxia-OS\\quant_os\\strategies\\ensemble.py",
+      "synced_at": "2026-06-26T10:41:20.590922+00:00",
+      "category": "strategy"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\strategies\\mlb.py": {
+      "hash": "9fa5c7ab0cc35937607a3816847021a301c6376cddea0259e358852418bc1a10",
+      "dest": "01-projects\\Graxia-OS\\quant_os\\strategies\\mlb.py",
+      "synced_at": "2026-06-26T10:41:20.590922+00:00",
+      "category": "strategy"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\strategies\\mrb.py": {
+      "hash": "fb2a11bfd60a9481fa7903574a7c3bf01582ea88107fe2f0b9aac5ebf1cf6b13",
+      "dest": "01-projects\\Graxia-OS\\quant_os\\strategies\\mrb.py",
+      "synced_at": "2026-06-26T10:41:20.600979+00:00",
+      "category": "strategy"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\strategies\\mtm.py": {
+      "hash": "08e759d171a3caa4a7f877d356f8ca688153acb8f16b7896c700a76c540bc916",
+      "dest": "01-projects\\Graxia-OS\\quant_os\\strategies\\mtm.py",
+      "synced_at": "2026-06-26T10:41:20.601507+00:00",
+      "category": "strategy"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\risk\\__init__.py": {
+      "hash": "7cd7db8ab63a16fcff22be238a4b0632ed0325d3c09f3059957c663c2d79712e",
+      "dest": "01-projects\\Graxia-OS\\quant_os\\risk\\__init__.py",
+      "synced_at": "2026-06-26T10:41:20.605040+00:00",
+      "category": "risk"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\risk\\circuit_breaker.py": {
+      "hash": "a9ca5897b87aee0b8d308d6e7f124084ef8b222c49b967e30e9abc50b8a220b2",
+      "dest": "01-projects\\Graxia-OS\\quant_os\\risk\\circuit_breaker.py",
+      "synced_at": "2026-06-26T10:41:20.605040+00:00",
+      "category": "risk"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\risk\\engine.py": {
+      "hash": "25b8ab8f565a899115660a970b73e8b5f9a25e2e881f653cb47c6ffa87e68208",
+      "dest": "01-projects\\Graxia-OS\\quant_os\\risk\\engine.py",
+      "synced_at": "2026-06-26T10:41:20.605040+00:00",
+      "category": "risk"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\risk\\historical_sizing_provider.py": {
+      "hash": "245b05f95b2a4e64cc45b66122df14f2645869aaee8b3809ae897c5826d9395f",
+      "dest": "01-projects\\Graxia-OS\\quant_os\\risk\\historical_sizing_provider.py",
+      "synced_at": "2026-06-26T10:41:20.611139+00:00",
+      "category": "risk"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\risk\\kill_switch.py": {
+      "hash": "a5b01209c6219a6232dfe9af32fbe858c32c9b74ac77f94a6faf35b62a45d232",
+      "dest": "01-projects\\Graxia-OS\\quant_os\\risk\\kill_switch.py",
+      "synced_at": "2026-06-26T10:41:20.611139+00:00",
+      "category": "risk"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\risk\\micro_live_policy.py": {
+      "hash": "92f46ac4a9237fc6452e126b170aacd0fced930e301ba38920cfad636203054f",
+      "dest": "01-projects\\Graxia-OS\\quant_os\\risk\\micro_live_policy.py",
+      "synced_at": "2026-06-26T10:41:20.611139+00:00",
+      "category": "risk"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\risk\\portfolio.py": {
+      "hash": "3767f4d57bde460a68762f6ab61c37dde17fd4683a48bae780153f91fae89d83",
+      "dest": "01-projects\\Graxia-OS\\quant_os\\risk\\portfolio.py",
+      "synced_at": "2026-06-26T10:41:20.611139+00:00",
+      "category": "risk"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\risk\\position_sizer.py": {
+      "hash": "1d0058c7e6aad064be3732d222cf0b1235f5026fb9c515aa50b0f1958ee6ad5e",
+      "dest": "01-projects\\Graxia-OS\\quant_os\\risk\\position_sizer.py",
+      "synced_at": "2026-06-26T10:41:20.611139+00:00",
+      "category": "risk"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\risk\\position_sizer_v2.py": {
+      "hash": "08a22b4d8d58c4d80cae4a203437a2fa3bd15f2c2e17720f944bb9da0c1f128a",
+      "dest": "01-projects\\Graxia-OS\\quant_os\\risk\\position_sizer_v2.py",
+      "synced_at": "2026-06-26T10:41:20.611139+00:00",
+      "category": "risk"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\risk\\pre_trade_risk.py": {
+      "hash": "61cb514ec21d8466304b31dc2ca1e5e71923fe7c7bf168b2e6f06b74b5513d8c",
+      "dest": "01-projects\\Graxia-OS\\quant_os\\risk\\pre_trade_risk.py",
+      "synced_at": "2026-06-26T10:41:20.621349+00:00",
+      "category": "risk"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\risk\\risk_ledger.py": {
+      "hash": "ca1f542a7eab3552b6f57710930adbc76e47b5c2f2f3c9c86d530869d81fd1f7",
+      "dest": "01-projects\\Graxia-OS\\quant_os\\risk\\risk_ledger.py",
+      "synced_at": "2026-06-26T10:41:20.621349+00:00",
+      "category": "risk"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\risk\\risk_policy.py": {
+      "hash": "aeaf5d34906715adf4e0675aa89223612bc6ca0af94a7fc9a8af7bc58322bf01",
+      "dest": "01-projects\\Graxia-OS\\quant_os\\risk\\risk_policy.py",
+      "synced_at": "2026-06-26T10:41:20.621349+00:00",
+      "category": "risk"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\states\\bridge_state.md": {
+      "hash": "bb81ed94b8fc0745e4e4b4e26b31339fdcc95425000759e502b239d77fdf6a95",
+      "dest": "Meta\\states\\quant_os\\bridge_state.md",
+      "synced_at": "2026-06-26T10:59:46.017110+00:00",
+      "category": "state"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\archive\\bridge_full_upgrade_2026-06-26.md": {
+      "hash": "2b0409ac941a3a852ddeb0c2b6f9bdc90ea65815bfef135b9a9c9b018b29a0f0",
+      "dest": "Meta\\states\\quant_os\\archive\\bridge_full_upgrade_2026-06-26.md",
+      "synced_at": "2026-06-26T10:41:20.575883+00:00",
+      "category": "archive"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\states\\backtest_expansion_state.md": {
+      "hash": "8059a0cc468ecc4217afc238808bb5f6fe5cbb0e2b719e33bbff93673ce51497",
+      "dest": "Meta\\states\\quant_os\\backtest_expansion_state.md",
+      "synced_at": "2026-06-26T10:41:20.520928+00:00",
+      "category": "state"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\states\\bridge_state_mega_data_2026-06-26.md": {
+      "hash": "90e1d7de791dab145f8c1d8248c14bba39c95a41eae426f85efb5091bab13383",
+      "dest": "Meta\\states\\quant_os\\bridge_state_mega_data_2026-06-26.md",
+      "synced_at": "2026-06-26T10:41:20.539768+00:00",
+      "category": "state"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\states\\dashboard_state.md": {
+      "hash": "35942f93f7d1b2b46961752b0dec722f86e5f9da9fdb21f181a173d0e1dcb2ad",
+      "dest": "Meta\\states\\quant_os\\dashboard_state.md",
+      "synced_at": "2026-06-26T10:41:20.542905+00:00",
+      "category": "state"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\states\\infrastructure_state.md": {
+      "hash": "c15921d8a5b0dcedb5b09b96f4d57a508204bcc29a2e8b2584020d2a2277e6a1",
+      "dest": "Meta\\states\\quant_os\\infrastructure_state.md",
+      "synced_at": "2026-06-26T10:41:20.545601+00:00",
+      "category": "state"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\states\\ml_training_state.md": {
+      "hash": "becbfeead1b7136c45184854c8341443d777320be4817efbb326d052da85741c",
+      "dest": "Meta\\states\\quant_os\\ml_training_state.md",
+      "synced_at": "2026-06-26T10:41:20.547661+00:00",
+      "category": "state"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\states\\trading_bots_state.md": {
+      "hash": "e43214e7f5dffc12018e7fb40358f9f6a32e1d3031cfdb4ff8caedeff0d50d3c",
+      "dest": "Meta\\states\\quant_os\\trading_bots_state.md",
+      "synced_at": "2026-06-26T10:41:20.563338+00:00",
+      "category": "state"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\states\\data_expansion_state.md": {
+      "hash": "05432ad6bbc799ba9a11e05174fdbadea84bce737aa51d6116cee0756c58fd2a",
+      "dest": "Meta\\states\\quant_os\\data_expansion_state.md",
+      "synced_at": "2026-06-26T10:41:20.542905+00:00",
+      "category": "state"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\states\\test_bots_dashboard.md": {
+      "hash": "bf8b042095d2d6dc5c58c3b7f4a3a18e547c80042c833c1a126e635eccff1596",
+      "dest": "Meta\\states\\quant_os\\test_bots_dashboard.md",
+      "synced_at": "2026-06-26T10:41:20.555296+00:00",
+      "category": "state"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\states\\test_data_pipeline.md": {
+      "hash": "a18e3958f2a09edf03fd8dbc559a160b05e401b406f78b8ce7983a9f408a2237",
+      "dest": "Meta\\states\\quant_os\\test_data_pipeline.md",
+      "synced_at": "2026-06-26T10:41:20.557308+00:00",
+      "category": "state"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\states\\test_integration.md": {
+      "hash": "8a252714c7879bc2db733e0fcb9ef8675d0aed11b16f674651f025d3147b35a6",
+      "dest": "Meta\\states\\quant_os\\test_integration.md",
+      "synced_at": "2026-06-26T10:41:20.559319+00:00",
+      "category": "state"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\states\\test_ml_backtest.md": {
+      "hash": "02fd2f268ade160a169ca58affddc9f9354cf78b810ae44e7f389769992e67d6",
+      "dest": "Meta\\states\\quant_os\\test_ml_backtest.md",
+      "synced_at": "2026-06-26T10:41:20.561330+00:00",
+      "category": "state"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\states\\bridge_audit_correction.md": {
+      "hash": "638d368d5173f86f7ac69d2bc52409408de7c62e024145937d82f6c19006a256",
+      "dest": "Meta\\states\\quant_os\\bridge_audit_correction.md",
+      "synced_at": "2026-06-26T10:41:20.525453+00:00",
+      "category": "state"
+    },
+    "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\Meta\\states\\bridge_fixes_2026-06-26.md": {
+      "hash": "661813a0976bf00144c47004fa02ac57d5f2cbb1a8382e5b137fe1cd7627cc03",
+      "dest": "Meta\\states\\quant_os\\bridge_fixes_2026-06-26.md",
+      "synced_at": "2026-06-26T10:41:20.528880+00:00",
+      "category": "state"
+    }
+  },
+  "last_sync": "2026-06-26T10:59:46.331905+00:00",
+  "syncs_total": 42
+}

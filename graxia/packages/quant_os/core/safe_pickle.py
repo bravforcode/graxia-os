@@ -38,8 +38,12 @@ class RestrictedUnpickler(pickle.Unpickler):
     def find_class(self, module: str, name: str) -> Any:
         key = f"{module}.{name}"
 
-        # Always allow numpy submodules (dtype reconstruction, etc.)
-        if module.startswith("numpy.") or module == "numpy":
+        # Allow specific numpy classes for dtype reconstruction
+        if module == "numpy" and name in ("ndarray", "dtype"):
+            return super().find_class(module, name)
+        if module == "numpy.core.multiarray" and name in ("_reconstruct", "scalar"):
+            return super().find_class(module, name)
+        if module == "numpy.ma.core" and name in ("MaskedArray",):
             return super().find_class(module, name)
 
         if key not in self.ALLOWED_MODULES:

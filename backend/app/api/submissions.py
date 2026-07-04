@@ -21,7 +21,7 @@ from app.cqrs.commands import (
 )
 from app.cqrs.handlers import mediator
 from app.cqrs.queries import ListSubmissionsQuery
-from app.middleware.auth import get_current_user
+from app.middleware.auth import get_current_user_from_token
 from app.models.user import User
 from app.schemas.submission import SubmissionCreate, SubmissionOut
 
@@ -72,7 +72,7 @@ async def list_submissions(
 
 
 @router.post("", response_model=SubmissionOut, status_code=201)
-async def create_submission(data: SubmissionCreate, current_user: User = Depends(get_current_user)) -> SubmissionOut:
+async def create_submission(data: SubmissionCreate, current_user: User = Depends(get_current_user_from_token)) -> SubmissionOut:
     """
     Create submission using CQRS Command.
     

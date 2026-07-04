@@ -14,6 +14,8 @@ import numpy as np
 import pandas as pd
 import xgboost as xgb
 
+from graxia.packages.quant_os.core.safe_pickle import safe_load_model
+
 BASE = Path(__file__).parent.parent
 LOG_DIR = BASE / "logs" / "paper_research"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -80,8 +82,7 @@ def load_model():
     if model_path.exists():
         import pickle
 
-        with open(model_path, "rb") as f:
-            return pickle.load(f)
+        return safe_load_model(model_path)
 
     # Train on historical data
     log("Training model on historical data...")

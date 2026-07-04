@@ -1,10 +1,9 @@
 """Check what features the live model expects."""
-import pickle
+from graxia.packages.quant_os.core.safe_pickle import safe_load_model
 from pathlib import Path
 
 model_path = Path("ml/models/xgboost_live_20260626.pkl")
-with open(model_path, "rb") as f:
-    raw = pickle.load(f)
+raw = safe_load_model(model_path)
 
 if isinstance(raw, dict):
     model = raw.get("model", raw)

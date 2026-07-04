@@ -17,6 +17,8 @@ from typing import Any
 
 import structlog
 
+from graxia.packages.quant_os.core.safe_pickle import safe_load_model
+
 logger = structlog.get_logger(__name__)
 
 DEFAULT_MODELS_DIR = Path(__file__).parent / "models"
@@ -236,7 +238,7 @@ class ModelRegistry:
         if not os.path.exists(artifact_path):
             raise FileNotFoundError(f"Artifact missing: {artifact_path}")
         with open(artifact_path, "rb") as f:
-            model = pickle.load(f)  # noqa: S301
+            model = safe_load_model(artifact_path)  # noqa: S301
         logger.debug("model_loaded", version_id=version_id)
         return model
 

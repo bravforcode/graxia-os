@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.skill_chaining import SkillChainUI, SkillCoOccurrenceEngine
 from app.database import get_db
-from app.middleware.auth import get_current_user
+from app.middleware.auth import get_current_user_from_token
 from app.models.user import User
 
 router = APIRouter(prefix="/skill-chaining", tags=["skill-chaining"])
@@ -62,7 +62,7 @@ class WorkflowResponse(BaseModel):
 @router.get("/analyze")
 async def analyze_skill_patterns(
     request: ChainAnalysisRequest,
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_token),
     db: AsyncSession = Depends(get_db),
 ) -> ChainResponse:
     """Analyze skill execution patterns to find co-occurrences."""
@@ -91,7 +91,7 @@ async def analyze_skill_patterns(
 async def get_chain_visualization(
     days_back: int = Query(default=30, ge=1, le=90),
     min_confidence: float = Query(default=0.3, ge=0.0, le=1.0),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_token),
     db: AsyncSession = Depends(get_db),
 ):
     """Get skill chain visualization data for UI."""
@@ -121,7 +121,7 @@ async def get_chain_visualization(
 @router.post("/suggest")
 async def suggest_workflows(
     request: WorkflowSuggestionRequest,
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_token),
     db: AsyncSession = Depends(get_db),
 ) -> SuggestionResponse:
     """Generate workflow suggestions based on goal and skill patterns."""
@@ -143,7 +143,7 @@ async def suggest_workflows(
 @router.post("/create-workflow")
 async def create_recommended_workflow(
     request: CreateWorkflowRequest,
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_token),
     db: AsyncSession = Depends(get_db),
 ) -> WorkflowResponse:
     """Create a workflow from a recommended skill chain."""
@@ -208,7 +208,7 @@ async def get_ui_components():
 @router.get("/stats")
 async def get_chaining_stats(
     days: int = Query(default=7, ge=1, le=90),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_token),
     db: AsyncSession = Depends(get_db),
 ):
     """Get skill chaining statistics for dashboard."""

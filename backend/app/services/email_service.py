@@ -206,8 +206,8 @@ Your AI co-pilot found {lead_count} new opportunities today:
 """
             + "\n\n".join(
                 [
-                    f"• {l['title']} ({l.get('platform', 'Unknown')}) — Score: {l.get('score', 'N/A')}/10"
-                    for l in leads[:5]
+                    f"• {lead['title']} ({lead.get('platform', 'Unknown')}) — Score: {lead.get('score', 'N/A')}/10"
+                    for lead in leads[:5]
                 ]
             )
             + f"""
@@ -830,9 +830,6 @@ Need help? Contact support@graxia.io
         }
 
 
-# Global idempotency cache
-_sent_keys: set[str] = set()
-
 
 class EmailService:
     """Service for sending transactional emails."""
@@ -875,6 +872,8 @@ class EmailService:
         if key in _sent_keys:
             logger.info(f"[EMAIL] Skipped (duplicate key): {key}")
             return {"id": "deduplicated", "status": "skipped"}
+        if len(_sent_keys) > 10000:
+            _sent_keys.clear()
         _sent_keys.add(key)
 
         # Render template

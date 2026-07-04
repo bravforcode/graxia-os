@@ -1,0 +1,412 @@
+{
+  "timestamp": "2026-06-26 16:48 UTC",
+  "symbols_tested": 7,
+  "results": {
+    "XAUUSD": {
+      "regime": {
+        "regime": "trending",
+        "trend_strength": 5.0,
+        "vol_regime": "normal",
+        "vol_ratio": 0.84,
+        "current_price": 4047.98,
+        "ma_50": 4020.2498000000005,
+        "ma_200": 4014.8493
+      },
+      "strategies": {
+        "Momentum": {
+          "strategy": "Momentum",
+          "total_return_pct": 69.19,
+          "sharpe": 1.31,
+          "win_rate_pct": 49.0,
+          "max_drawdown_pct": 13.38,
+          "profit_factor": 1.03,
+          "n_trades": 59999
+        },
+        "MeanReversion": {
+          "strategy": "MeanReversion",
+          "total_return_pct": -4.27,
+          "sharpe": -0.17,
+          "win_rate_pct": 6.1,
+          "max_drawdown_pct": 22.35,
+          "profit_factor": 0.99,
+          "n_trades": 59999
+        },
+        "TrendFollow": {
+          "strategy": "TrendFollow",
+          "total_return_pct": 55.2,
+          "sharpe": 1.04,
+          "win_rate_pct": 49.7,
+          "max_drawdown_pct": 18.47,
+          "profit_factor": 1.02,
+          "n_trades": 59999
+        },
+        "VolBreakout": {
+          "strategy": "VolBreakout",
+          "total_return_pct": 0.0,
+          "sharpe": 0.0,
+          "win_rate_pct": 0.0,
+          "max_drawdown_pct": 0.0,
+          "profit_factor": Infinity,
+          "n_trades": 59999
+        },
+        "RSI": {
+          "strategy": "RSI",
+          "total_return_pct": -11.93,
+          "sharpe": -0.41,
+          "win_rate_pct": 12.6,
+          "max_drawdown_pct": 20.13,
+          "profit_factor": 0.98,
+          "n_trades": 59999
+        }
+      }
+    },
+    "EURUSD": {
+      "regime": {
+        "regime": "ranging",
+        "trend_strength": 0.23,
+        "vol_regime": "normal",
+        "vol_ratio": 0.92,
+        "current_price": 1.14059,
+        "ma_50": 1.1374114,
+        "ma_200": 1.13620655
+      },
+      "strategies": {
+        "Momentum": {
+          "strategy": "Momentum",
+          "total_return_pct": -18.11,
+          "sharpe": -1.02,
+          "win_rate_pct": 48.1,
+          "max_drawdown_pct": 21.83,
+          "profit_factor": 0.98,
+          "n_trades": 59999
+        },
+        "MeanReversion": {
+          "strategy": "MeanReversion",
+          "total_return_pct": 13.87,
+          "sharpe": 1.82,
+          "win_rate_pct": 6.1,
+          "max_drawdown_pct": 1.97,
+          "profit_factor": 1.11,
+          "n_trades": 59999
+        },
+        "TrendFollow": {
+          "strategy": "TrendFollow",
+          "total_return_pct": -18.4,
+          "sharpe": -1.03,
+          "win_rate_pct": 48.3,
+          "max_drawdown_pct": 22.84,
+          "profit_factor": 0.98,
+          "n_trades": 59999
+        },
+        "VolBreakout": {
+          "strategy": "VolBreakout",
+          "total_return_pct": 0.0,
+          "sharpe": 0.0,
+          "win_rate_pct": 0.0,
+          "max_drawdown_pct": 0.0,
+          "profit_factor": Infinity,
+          "n_trades": 59999
+        },
+        "RSI": {
+          "strategy": "RSI",
+          "total_return_pct": 13.64,
+          "sharpe": 1.49,
+          "win_rate_pct": 11.9,
+          "max_drawdown_pct": 2.54,
+          "profit_factor": 1.06,
+          "n_trades": 59999
+        }
+      }
+    },
+    "GBPUSD": {
+      "regime": {
+        "regime": "ranging",
+        "trend_strength": 0.18,
+        "vol_regime": "normal",
+        "vol_ratio": 0.89,
+        "current_price": 1.32236,
+        "ma_50": 1.3197618,
+        "ma_200": 1.3181896999999998
+      },
+      "strategies": {
+        "Momentum": {
+          "strategy": "Momentum",
+          "total_return_pct": -36.08,
+          "sharpe": -2.04,
+          "win_rate_pct": 47.9,
+          "max_drawdown_pct": 37.1,
+          "profit_factor": 0.96,
+          "n_trades": 59999
+        },
+        "MeanReversion": {
+          "strategy": "MeanReversion",
+          "total_return_pct": 9.7,
+          "sharpe": 1.38,
+          "win_rate_pct": 6.0,
+          "max_drawdown_pct": 3.55,
+          "profit_factor": 1.08,
+          "n_trades": 59999
+        },
+        "TrendFollow": {
+          "strategy": "TrendFollow",
+          "total_return_pct": -18.17,
+          "sharpe": -1.03,
+          "win_rate_pct": 48.7,
+          "max_drawdown_pct": 23.84,
+          "profit_factor": 0.98,
+          "n_trades": 59999
+        },
+        "VolBreakout": {
+          "strategy": "VolBreakout",
+          "total_return_pct": 0.0,
+          "sharpe": 0.0,
+          "win_rate_pct": 0.0,
+          "max_drawdown_pct": 0.0,
+          "profit_factor": Infinity,
+          "n_trades": 59999
+        },
+        "RSI": {
+          "strategy": "RSI",
+          "total_return_pct": 6.88,
+          "sharpe": 0.77,
+          "win_rate_pct": 12.0,
+          "max_drawdown_pct": 3.31,
+          "profit_factor": 1.03,
+          "n_trades": 59999
+        }
+      }
+    },
+    "USDJPY": {
+      "regime": {
+        "regime": "trending",
+        "trend_strength": 5.0,
+        "vol_regime": "normal",
+        "vol_ratio": 1.2,
+        "current_price": 161.566,
+        "ma_50": 161.70858,
+        "ma_200": 161.751425
+      },
+      "strategies": {
+        "Momentum": {
+          "strategy": "Momentum",
+          "total_return_pct": -18.07,
+          "sharpe": -0.76,
+          "win_rate_pct": 48.7,
+          "max_drawdown_pct": 18.49,
+          "profit_factor": 0.98,
+          "n_trades": 59999
+        },
+        "MeanReversion": {
+          "strategy": "MeanReversion",
+          "total_return_pct": 9.52,
+          "sharpe": 0.93,
+          "win_rate_pct": 6.0,
+          "max_drawdown_pct": 3.68,
+          "profit_factor": 1.06,
+          "n_trades": 59999
+        },
+        "TrendFollow": {
+          "strategy": "TrendFollow",
+          "total_return_pct": 30.84,
+          "sharpe": 1.3,
+          "win_rate_pct": 49.4,
+          "max_drawdown_pct": 8.09,
+          "profit_factor": 1.03,
+          "n_trades": 59999
+        },
+        "VolBreakout": {
+          "strategy": "VolBreakout",
+          "total_return_pct": 0.0,
+          "sharpe": 0.0,
+          "win_rate_pct": 0.0,
+          "max_drawdown_pct": 0.0,
+          "profit_factor": Infinity,
+          "n_trades": 59999
+        },
+        "RSI": {
+          "strategy": "RSI",
+          "total_return_pct": 0.63,
+          "sharpe": 0.05,
+          "win_rate_pct": 12.3,
+          "max_drawdown_pct": 13.6,
+          "profit_factor": 1.0,
+          "n_trades": 59999
+        }
+      }
+    },
+    "US30": {
+      "regime": {
+        "regime": "trending",
+        "trend_strength": 5.0,
+        "vol_regime": "low_vol",
+        "vol_ratio": 0.61,
+        "current_price": 52025.0,
+        "ma_50": 52062.362,
+        "ma_200": 52027.66650000001
+      },
+      "strategies": {
+        "Momentum": {
+          "strategy": "Momentum",
+          "total_return_pct": -24.85,
+          "sharpe": -0.66,
+          "win_rate_pct": 48.7,
+          "max_drawdown_pct": 28.28,
+          "profit_factor": 0.98,
+          "n_trades": 59999
+        },
+        "MeanReversion": {
+          "strategy": "MeanReversion",
+          "total_return_pct": 5.85,
+          "sharpe": 0.35,
+          "win_rate_pct": 6.1,
+          "max_drawdown_pct": 7.32,
+          "profit_factor": 1.02,
+          "n_trades": 59999
+        },
+        "TrendFollow": {
+          "strategy": "TrendFollow",
+          "total_return_pct": 6.98,
+          "sharpe": 0.18,
+          "win_rate_pct": 49.6,
+          "max_drawdown_pct": 21.49,
+          "profit_factor": 1.0,
+          "n_trades": 59999
+        },
+        "VolBreakout": {
+          "strategy": "VolBreakout",
+          "total_return_pct": 0.0,
+          "sharpe": 0.0,
+          "win_rate_pct": 0.0,
+          "max_drawdown_pct": 0.0,
+          "profit_factor": Infinity,
+          "n_trades": 59999
+        },
+        "RSI": {
+          "strategy": "RSI",
+          "total_return_pct": -6.42,
+          "sharpe": -0.33,
+          "win_rate_pct": 12.9,
+          "max_drawdown_pct": 13.34,
+          "profit_factor": 0.99,
+          "n_trades": 59999
+        }
+      }
+    },
+    "NAS100": {
+      "regime": {
+        "regime": "trending",
+        "trend_strength": 5.0,
+        "vol_regime": "low_vol",
+        "vol_ratio": 0.55,
+        "current_price": 29153.2,
+        "ma_50": 29228.06,
+        "ma_200": 29502.5625
+      },
+      "strategies": {
+        "Momentum": {
+          "strategy": "Momentum",
+          "total_return_pct": 49.16,
+          "sharpe": 0.94,
+          "win_rate_pct": 49.3,
+          "max_drawdown_pct": 18.34,
+          "profit_factor": 1.02,
+          "n_trades": 59999
+        },
+        "MeanReversion": {
+          "strategy": "MeanReversion",
+          "total_return_pct": -7.03,
+          "sharpe": -0.3,
+          "win_rate_pct": 6.1,
+          "max_drawdown_pct": 13.73,
+          "profit_factor": 0.98,
+          "n_trades": 59999
+        },
+        "TrendFollow": {
+          "strategy": "TrendFollow",
+          "total_return_pct": 2.99,
+          "sharpe": 0.06,
+          "win_rate_pct": 49.7,
+          "max_drawdown_pct": 37.47,
+          "profit_factor": 1.0,
+          "n_trades": 59999
+        },
+        "VolBreakout": {
+          "strategy": "VolBreakout",
+          "total_return_pct": 0.0,
+          "sharpe": 0.0,
+          "win_rate_pct": 0.0,
+          "max_drawdown_pct": 0.0,
+          "profit_factor": Infinity,
+          "n_trades": 59999
+        },
+        "RSI": {
+          "strategy": "RSI",
+          "total_return_pct": -14.51,
+          "sharpe": -0.53,
+          "win_rate_pct": 13.6,
+          "max_drawdown_pct": 24.84,
+          "profit_factor": 0.98,
+          "n_trades": 59999
+        }
+      }
+    },
+    "BTCUSD": {
+      "regime": {
+        "regime": "trending",
+        "trend_strength": 5.0,
+        "vol_regime": "low_vol",
+        "vol_ratio": 0.52,
+        "current_price": 59887.41,
+        "ma_50": 59742.070999999996,
+        "ma_200": 60536.661550000004
+      },
+      "strategies": {
+        "Momentum": {
+          "strategy": "Momentum",
+          "total_return_pct": -48.85,
+          "sharpe": -0.5,
+          "win_rate_pct": 47.8,
+          "max_drawdown_pct": 88.38,
+          "profit_factor": 0.99,
+          "n_trades": 59999
+        },
+        "MeanReversion": {
+          "strategy": "MeanReversion",
+          "total_return_pct": 18.86,
+          "sharpe": 0.42,
+          "win_rate_pct": 6.1,
+          "max_drawdown_pct": 29.67,
+          "profit_factor": 1.03,
+          "n_trades": 59999
+        },
+        "TrendFollow": {
+          "strategy": "TrendFollow",
+          "total_return_pct": 33.5,
+          "sharpe": 0.34,
+          "win_rate_pct": 49.3,
+          "max_drawdown_pct": 43.85,
+          "profit_factor": 1.01,
+          "n_trades": 59999
+        },
+        "VolBreakout": {
+          "strategy": "VolBreakout",
+          "total_return_pct": 0.0,
+          "sharpe": 0.0,
+          "win_rate_pct": 0.0,
+          "max_drawdown_pct": 0.0,
+          "profit_factor": Infinity,
+          "n_trades": 59999
+        },
+        "RSI": {
+          "strategy": "RSI",
+          "total_return_pct": 29.62,
+          "sharpe": 0.56,
+          "win_rate_pct": 11.2,
+          "max_drawdown_pct": 22.06,
+          "profit_factor": 1.02,
+          "n_trades": 59999
+        }
+      }
+    }
+  }
+}

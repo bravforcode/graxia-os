@@ -464,7 +464,6 @@ class RiskEngine:
 
     async def check_var_exposure(self, order, returns, max_var_pct: float = 0.02):
         """Check if order's VaR exposure is within limits."""
-        from dataclasses import dataclass
 
         @dataclass
         class CheckResult:
@@ -489,7 +488,6 @@ class RiskEngine:
 
     async def check_correlation_exposure(self, order, positions: dict, corr_matrix: dict, threshold: float = 0.8):
         """Check if new position's correlation with existing positions exceeds threshold."""
-        from dataclasses import dataclass
 
         @dataclass
         class CheckResult:

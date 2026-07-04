@@ -1,0 +1,27 @@
+{
+  "source": "XAUUSD_D1.csv",
+  "output": "data\\canonical\\XAUUSD_D1_clean.csv",
+  "quarantine_output": "data\\quarantine\\XAUUSD_D1_quarantined.csv",
+  "cutoff_date": "2004-01-01",
+  "filters": [
+    "drop_pre_2004",
+    "drop_high_lt_low",
+    "drop_high_lt_max_oc",
+    "drop_low_gt_min_oc",
+    "drop_nonpositive_ohlc"
+  ],
+  "stats": {
+    "pre_2004_rows": 9494,
+    "ohlc_violation_h_lt_l": 1,
+    "ohlc_violation_high_lt_oc": 236,
+    "ohlc_violation_low_gt_oc": 227,
+    "nonpositive_prices": 0,
+    "total_quarantined": 9880,
+    "total_clean": 10420
+  },
+  "date_range": {
+    "first": "2004-01-02T00:00:00+00:00",
+    "last": "2026-07-01T00:00:00+00:00"
+  },
+  "generated_at": "2026-07-02T15:12:57.997485+00:00"
+}

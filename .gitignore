@@ -162,3 +162,11 @@ sites/
 
 # LanceDB vector database
 lancedb/
+
+# Credential files — NEVER commit
+*_creds*
+*config.toml
+honest_web_research_report.md
+
+# Large data files — use Git LFS or external storage
+FUT86_16.txt

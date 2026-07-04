@@ -1,11 +1,14 @@
 """Order Management System – multi-venue router with idempotency, crash safety, and state machine."""
 
+import contextlib
 import json
 import logging
+import os
+import tempfile
 import time
 import uuid
-from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +27,7 @@ logger = logging.getLogger(__name__)
 # Trailing / fixed stop-loss configuration
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class TrailingStopConfig:
     """Configuration for post-fill stop-loss behaviour per asset class or symbol."""
@@ -31,6 +35,7 @@ class TrailingStopConfig:
     enabled: bool = True
     trail_multiplier: float = 2.0  # ATR multiplier for SL distance
     stop_mode: str = "trailing"  # "trailing" | "fixed"
+
 
 # ---------------------------------------------------------------------------
 # Per-symbol stop-loss configuration (research-optimised multipliers)
@@ -67,6 +72,9 @@ VENUE_MAP: dict[str, str] = {
 # Partial-fill timeout (seconds)
 _FILL_TIMEOUT = 30.0
 
+# Auto-compact when ledger exceeds this many lines
+COMPACT_THRESHOLD = 10_000
+
 # Ledger path (JSONL – one record per order)
 _DEFAULT_LEDGER = Path("data/execution_ledger.jsonl")
 
@@ -95,11 +103,15 @@ class OMS:
         self._ledger_path = ledger_path
         self._ledger_path.parent.mkdir(parents=True, exist_ok=True)
         self._orders: dict[str, Order] = {}
+        self._orders_by_signal_id: dict[str, Order] = {}
         self._state_machines: dict[str, OrderStateMachine] = {}
         self._risk_engine = risk_engine
         self._trailing_stop_configs = trailing_stop_configs or dict(_DEFAULT_TRAILING_CONFIGS)
         self._symbol_stop_configs = symbol_stop_configs or dict(_SYMBOL_STOP_CONFIGS)
         self._load_ledger()
+        # Auto-compact on startup if ledger exceeds threshold
+        if self._line_count() > COMPACT_THRESHOLD:
+            self.compact_ledger()
 
     # ------------------------------------------------------------------
     # Ledger helpers
@@ -136,38 +148,20 @@ class OMS:
             sm = OrderStateMachine(order_id=oid, initial=OrderStatus.SIGNAL_CREATED)
             for evt in events[1:]:
                 target = OrderStatus(evt["status"])
-                try:
+                with contextlib.suppress(Exception):
                     sm.advance(target, f"replay: {target.value}")
-                except Exception:
-                    pass
                 order.status = target
                 if evt.get("broker_order_id"):
                     order.broker_order_id = evt["broker_order_id"]
             self._orders[oid] = order
+            if order.signal_id:
+                self._orders_by_signal_id[order.signal_id] = order
             self._state_machines[oid] = sm
         logger.info(
             "Ledger loaded: %d orders replayed across %d events",
             len(self._orders),
             sum(len(v) for v in events_by_order.values()),
         )
-
-    def _persist(self, order: Order) -> None:
-        """Append a single order record to the JSONL ledger."""
-        record = {
-            "order_id": order.order_id,
-            "signal_id": order.signal_id,
-            "symbol": order.symbol,
-            "asset_class": order.asset_class,
-            "side": order.side,
-            "quantity": order.quantity,
-            "stop_loss": order.stop_loss,
-            "take_profit": order.take_profit,
-            "status": order.status.value,
-            "broker_order_id": order.broker_order_id,
-            "created_at": order.created_at.isoformat(),
-        }
-        with open(self._ledger_path, "a", encoding="utf-8") as fh:
-            fh.write(json.dumps(record) + "\n")
 
     def _update_ledger(self, order: Order) -> None:
         """Append status update to the JSONL ledger (event sourcing)."""
@@ -189,15 +183,109 @@ class OMS:
             fh.write(json.dumps(record) + "\n")
 
     # ------------------------------------------------------------------
+    # Ledger compaction
+    # ------------------------------------------------------------------
+
+    def _line_count(self) -> int:
+        """Return the number of lines in the ledger file."""
+        if not self._ledger_path.exists():
+            return 0
+        count = 0
+        with open(self._ledger_path, encoding="utf-8") as fh:
+            for _ in fh:
+                count += 1
+        return count
+
+    def compact_ledger(self, max_age_days: int = 30) -> bool:
+        """Compact the JSONL ledger: deduplicate by order_id, drop old entries.
+
+        Steps:
+        1. Read all lines, deduplicate by order_id (keep latest per order).
+        2. Drop orders older than ``max_age_days``.
+        3. Write to a temp file, then atomically ``os.replace`` into place.
+
+        Returns True if compaction happened, False otherwise.
+        """
+        if not self._ledger_path.exists():
+            return False
+
+        cutoff = datetime.now(UTC) - timedelta(days=max_age_days)
+        latest_by_order: dict[str, dict] = {}
+
+        with open(self._ledger_path, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                record = json.loads(line)
+                oid = record["order_id"]
+                latest_by_order[oid] = record
+
+        if not latest_by_order:
+            return False
+
+        # Filter out old orders
+        kept: list[dict] = []
+        for _oid, rec in latest_by_order.items():
+            created = rec.get("created_at") or rec.get("updated_at")
+            if created:
+                try:
+                    ts = datetime.fromisoformat(created)
+                    if ts.tzinfo is None:
+                        ts = ts.replace(tzinfo=UTC)
+                    if ts < cutoff:
+                        continue
+                except (ValueError, TypeError):
+                    pass
+            kept.append(rec)
+
+        if not kept:
+            # Write empty ledger atomically
+            fd, tmp_path = tempfile.mkstemp(
+                suffix=".jsonl",
+                dir=str(self._ledger_path.parent),
+            )
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                    pass  # empty file
+                os.replace(tmp_path, str(self._ledger_path))
+            except Exception:
+                os.unlink(tmp_path)
+                raise
+            logger.info("Ledger compacted: all orders expired, ledger emptied")
+            return True
+
+        # Sort by created_at for clean ordering
+        kept.sort(key=lambda r: r.get("created_at") or r.get("updated_at") or "")
+
+        # Atomic write via tempfile + os.replace
+        fd, tmp_path = tempfile.mkstemp(
+            suffix=".jsonl",
+            dir=str(self._ledger_path.parent),
+        )
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                for rec in kept:
+                    fh.write(json.dumps(rec) + "\n")
+            os.replace(tmp_path, str(self._ledger_path))
+        except Exception:
+            os.unlink(tmp_path)
+            raise
+
+        logger.info(
+            "Ledger compacted: %d orders retained (max_age=%d days)",
+            len(kept),
+            max_age_days,
+        )
+        return True
+
+    # ------------------------------------------------------------------
     # Idempotency check
     # ------------------------------------------------------------------
 
     def _find_by_signal_id(self, signal_id: str) -> Order | None:
-        """Return the first order matching *signal_id*, if any."""
-        for order in self._orders.values():
-            if order.signal_id == signal_id:
-                return order
-        return None
+        """Return the order matching *signal_id*, if any (O(1) via secondary index)."""
+        return self._orders_by_signal_id.get(signal_id)
 
     # ------------------------------------------------------------------
     # Adapter lookup
@@ -277,7 +365,8 @@ class OMS:
 
         # --- Crash safety: persist BEFORE sending ---
         self._orders[order.order_id] = order
-        # ponytail: _update_ledger handles persistence; _persist creates duplicates
+        if order.signal_id:
+            self._orders_by_signal_id[order.signal_id] = order
 
         # --- State machine: SIGNAL_CREATED → RISK_CHECKED → ORDER_PRECHECKED ---
         try:
@@ -292,10 +381,8 @@ class OMS:
                 risk_result = self._risk_engine.check_order_sync(order)
                 if not risk_result.passed:
                     order.status = OrderStatus.REJECTED
-                    try:
+                    with contextlib.suppress(Exception):
                         sm.advance(OrderStatus.REJECTED, f"risk rejected: {risk_result.reason}")
-                    except Exception:
-                        pass
                     self._update_ledger(order)
                     logger.warning(
                         "Order %s REJECTED by pre-trade risk: %s",
@@ -306,10 +393,8 @@ class OMS:
             except Exception as exc:
                 logger.error("oms.risk_check_error order_id=%s error=%s", order.order_id, exc)
                 order.status = OrderStatus.REJECTED
-                try:
+                with contextlib.suppress(Exception):
                     sm.advance(OrderStatus.REJECTED, f"risk check error: {exc}")
-                except Exception:
-                    pass
                 self._update_ledger(order)
                 return order
 

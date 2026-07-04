@@ -146,9 +146,7 @@ class Settings(BaseSettings):
     SUPABASE_JWT_SECRET: str = ""
 
     # Database
-    DATABASE_URL: str = (
-        "postgresql+asyncpg://personal_os:changeme@postgres:5432/personal_os"
-    )
+    DATABASE_URL: str = ""
     DATABASE_MIGRATION_URL: str = ""
     REQUIRE_SUPABASE: bool = False
     DB_POOL_SIZE: int = 10
@@ -328,7 +326,7 @@ class Settings(BaseSettings):
 
     # Admin seed
     ADMIN_DEFAULT_EMAIL: str = ""
-    ADMIN_DEFAULT_PASSWORD: str = "changeme"
+    ADMIN_DEFAULT_PASSWORD: str = ""
 
     # App
     APP_ENV: str = "development"
@@ -672,7 +670,7 @@ class Settings(BaseSettings):
 
     @property
     def CSRF_SIGNING_SECRET(self) -> str:
-        return (self.CSRF_SECRET or self.SECRET_KEY).strip()
+        return (self.CSRF_SECRET or self.SECRET_KEY or "").strip() or ""
 
     @property
     def JWT_KEYSET(self) -> dict[str, str]:
