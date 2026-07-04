@@ -1,0 +1,17 @@
+[Unit]
+Description=Gold Bot Paper Trading (Linux)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/goldbot
+ExecStart=/opt/goldbot-venv/bin/python /opt/goldbot/gold_bot/run_linux.py
+Restart=always
+RestartSec=30
+Environment=PYTHONUNBUFFERED=1
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
