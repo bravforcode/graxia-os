@@ -170,3 +170,20 @@ honest_web_research_report.md
 
 # Large data files — use Git LFS or external storage
 FUT86_16.txt
+
+# Temporary generated images
+**/data/visual_tiles/tmp*.png
+**/data/visual_tiles/test_chart.png
+**/data/visual_tiles/test/
+data/visual_tiles/
+
+# Scratch job/run logs
+jobs.json
+jobs[0-9].json
+runs.json
+runs[0-9].json
+run[0-9].json
+
+# CI artifacts
+ci_log.txt
+%f
