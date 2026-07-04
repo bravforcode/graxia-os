@@ -187,3 +187,6 @@ run[0-9].json
 # CI artifacts
 ci_log.txt
 %f
+
+# Local repos (submodules managed separately)
+repos/

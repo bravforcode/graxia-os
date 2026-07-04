@@ -716,7 +716,7 @@ class GoldBotEngine:
             try:
                 await self.notifier.send_message(
                     f"{emoji} <b>Trade Closed ({reason})</b>\n"
-                    f"Entry: {trade.entry_price:.2f} → Exit: {exit_price:.2f}\n"
+                    f"Entry: {trade.entry_price:.2f} -> Exit: {exit_price:.2f}\n"
                     f"P&amp;L: ${pnl_dollars:+,.2f} ({pnl_pips:+.0f} pips)\n"
                     f"Strategies: {', '.join(trade.strategy_scores.keys())}"
                 )

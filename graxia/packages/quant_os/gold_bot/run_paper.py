@@ -382,11 +382,11 @@ class PaperTrader:
                     self._min_score_floor
                 )
                 self._cycles_without_trade = 0
-                _log(f"  [AUTO-ADJUST] min_score: {old_score} → {self.config.min_score_to_trade}")
+                _log(f"  [AUTO-ADJUST] min_score: {old_score} -> {self.config.min_score_to_trade}")
                 if self.telegram:
                     await self.telegram.send_message(
                         f"⚙️ <b>Auto-Adjust</b>\n"
-                        f"No trades for 3h. Lowered min_score: {old_score} → {self.config.min_score_to_trade}"
+                        f"No trades for 3h. Lowered min_score: {old_score} -> {self.config.min_score_to_trade}"
                     )
             
             # Heartbeat every 10 cycles (5 min) — shows bot is alive
@@ -561,7 +561,7 @@ class PaperTrader:
                             emoji = "🟢" if pnl_dollars > 0 else "🔴"
                             msg = (f"{emoji} <b>Trade Closed ({reason})</b>\n"
                                    f"Direction: {trade.direction.value}\n"
-                                   f"Entry: {trade.entry_price:.2f} → Exit: {exit_price:.2f}\n"
+                                   f"Entry: {trade.entry_price:.2f} -> Exit: {exit_price:.2f}\n"
                                    f"P&L: ${pnl_dollars:+.2f}\n"
                                    f"Score: {trade.strategy_scores.get('total', '?')}")
                             asyncio.ensure_future(self.telegram.send_message(msg))
@@ -604,12 +604,12 @@ class PaperTrader:
                         new_sl = trade.entry_price + 0.01  # 1 pip above entry
                         if trade.stop_loss < new_sl:
                             trade.stop_loss = new_sl
-                            _log(f"  [BE] {trade.direction.value} SL→{new_sl:.2f} (profit={profit_pips:.0f}p)")
+                            _log(f"  [BE] {trade.direction.value} SL->{new_sl:.2f} (profit={profit_pips:.0f}p)")
                     else:
                         new_sl = trade.entry_price - 0.01
                         if trade.stop_loss > new_sl:
                             trade.stop_loss = new_sl
-                            _log(f"  [BE] {trade.direction.value} SL→{new_sl:.2f} (profit={profit_pips:.0f}p)")
+                            _log(f"  [BE] {trade.direction.value} SL->{new_sl:.2f} (profit={profit_pips:.0f}p)")
                 
                 # Trail stop
                 if profit_pips >= trailing_pips:
@@ -617,12 +617,12 @@ class PaperTrader:
                         new_sl = current_price - (trailing_pips * 0.01)
                         if trade.stop_loss < new_sl:
                             trade.stop_loss = new_sl
-                            _log(f"  [TRAIL] BUY SL→{new_sl:.2f} (profit={profit_pips:.0f}p)")
+                            _log(f"  [TRAIL] BUY SL->{new_sl:.2f} (profit={profit_pips:.0f}p)")
                     else:
                         new_sl = current_price + (trailing_pips * 0.01)
                         if trade.stop_loss > new_sl:
                             trade.stop_loss = new_sl
-                            _log(f"  [TRAIL] SELL SL→{new_sl:.2f} (profit={profit_pips:.0f}p)")
+                            _log(f"  [TRAIL] SELL SL->{new_sl:.2f} (profit={profit_pips:.0f}p)")
         
         except Exception:
             pass
