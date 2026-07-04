@@ -378,8 +378,27 @@ class TestVisualChartSearch:
     async def test_search_by_text(self):
         """Test text search."""
         search = VisualChartSearch()
+        # PixelRAG returns results[].hits[] nested structure
         mock_response_data = {
-            "results": [{"id": "001", "score": 0.92, "image_path": "test.png", "metadata": {}, "snippet": "double top"}]
+            "results": [
+                {
+                    "hits": [
+                        {
+                            "score": 0.92,
+                            "vector_id": 100,
+                            "article_id": 1,
+                            "tile_index": 0,
+                            "chunk_index": 0,
+                            "y_offset": 0,
+                            "tile_height": 1024,
+                            "path": "1.png.tiles/chunk_0000_00.png",
+                            "url": "https://example.com/chart",
+                            "article_pages": "0:0-0",
+                            "image_base64": None,
+                        }
+                    ]
+                }
+            ]
         }
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -403,7 +422,25 @@ class TestVisualChartSearch:
         """Test image search."""
         search = VisualChartSearch()
         mock_response_data = {
-            "results": [{"id": "002", "score": 0.88, "image_path": "chart.png", "metadata": {}, "snippet": ""}]
+            "results": [
+                {
+                    "hits": [
+                        {
+                            "score": 0.88,
+                            "vector_id": 200,
+                            "article_id": 2,
+                            "tile_index": 0,
+                            "chunk_index": 1,
+                            "y_offset": 1024,
+                            "tile_height": 1024,
+                            "path": "2.png.tiles/chunk_0000_01.png",
+                            "url": "",
+                            "article_pages": None,
+                            "image_base64": None,
+                        }
+                    ]
+                }
+            ]
         }
         mock_response = MagicMock()
         mock_response.status_code = 200

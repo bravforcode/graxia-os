@@ -107,7 +107,7 @@ if ($StartAll -or (-not $Stop -and -not $Status)) {
     $prJob = Start-Job -Name "PixelRAG-$PIXELRAG_PORT" -ScriptBlock {
         param($python, $indexDir, $port, $logDir)
         $logFile = "$logDir\pixelrag.log"
-        & $python -m pixelrag.serve --index-dir $indexDir --port $port 2>&1 | Tee-Object -FilePath $logFile
+        & $python -m pixelrag_serve.api --index-dir $indexDir --host 127.0.0.1 --port $port --device cpu 2>&1 | Tee-Object -FilePath $logFile
     } -ArgumentList $PYTHON_312, $indexDir, $PIXELRAG_PORT, $LOG_DIR
 
     Write-Host "    Job: $($prJob.Id) | URL: http://localhost:$PIXELRAG_PORT" -ForegroundColor Green
@@ -124,12 +124,22 @@ if ($StartAll -or (-not $Stop -and -not $Status)) {
         Write-Host "TradingView MCP: Starting... (may need TradingView open)" -ForegroundColor Yellow
     }
 
-    # Health check PixelRAG
-    try {
-        $resp = Invoke-WebRequest -Uri "http://localhost:$PIXELRAG_PORT/health" -TimeoutSec 5 -ErrorAction Stop
-        Write-Host "PixelRAG:        HEALTHY" -ForegroundColor Green
-    } catch {
-        Write-Host "PixelRAG:        Starting... (loading models)" -ForegroundColor Yellow
+    # Health check PixelRAG (model loading takes 1-5 minutes)
+    Write-Host "PixelRAG: Checking health (model loading may take 1-5 min)..." -ForegroundColor Yellow
+    $pixelragReady = $false
+    for ($i = 1; $i -le 30; $i++) {
+        Start-Sleep -Seconds 10
+        try {
+            $resp = Invoke-WebRequest -Uri "http://localhost:$PIXELRAG_PORT/health" -TimeoutSec 5 -ErrorAction Stop
+            Write-Host "PixelRAG: HEALTHY (after $($i * 10)s)" -ForegroundColor Green
+            $pixelragReady = $true
+            break
+        } catch {
+            Write-Host "  Attempt $i/30..." -ForegroundColor Gray
+        }
+    }
+    if (-not $pixelragReady) {
+        Write-Host "PixelRAG: Still loading (check logs in $LOG_DIR)" -ForegroundColor Yellow
     }
 
     Write-Host ""

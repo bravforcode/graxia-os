@@ -248,14 +248,15 @@ async def build_index() -> dict[str, Any]:
 
 @visual_router.post("/serve")
 async def serve_index(
-    port: int = Query(30001, ge=1024, le=65535),
+    port: int = Query(30002, ge=1024, le=65535),
 ) -> dict[str, Any]:
     """Start serving the PixelRAG index.
 
     Launches the PixelRAG HTTP search service on the specified port.
+    Note: First startup may take 1-5 minutes while the Qwen model downloads.
 
     Args:
-        port: Port to serve on (default: 30001).
+        port: Port to serve on (default: 30002).
 
     Returns:
         Dict with serve status and URL.
