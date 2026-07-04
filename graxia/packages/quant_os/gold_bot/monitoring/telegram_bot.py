@@ -78,7 +78,7 @@ class GoldBotTelegram:
 <b>Quantity:</b> {trade.quantity:.2f} lots
 
 <b>Score:</b> {signal.total_score}
-<b>AI Validated:</b> {"Yes" if trade.ai_validated else "No"}
+<b>AI Validated:</b> {"Yes" if trade.ai_approved else "No"}
 
 <b>Top Strategies:</b>
 {strategy_text}
