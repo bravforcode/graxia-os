@@ -93,8 +93,8 @@ def main():
     _log("=" * 60)
 
     config = BotConfig()
-    config.sl_distance_points = 37
-    config.tp_distance_points = 74
+    config.sl_distance_points = 100
+    config.tp_distance_points = 200
     config.risk_reward_ratio = 2.0
     config.min_score_to_trade = 280
     config.max_open_trades = 3
@@ -128,6 +128,7 @@ def main():
     last_daily_report = datetime.now()
     min_score = config.min_score_to_trade
     cycles = 0
+    last_price = 0.0
     symbol = "XAUUSD"
     point = 0.01
 
@@ -161,6 +162,11 @@ def main():
                 continue
 
             current_price = rates[-1].close
+
+            if current_price == last_price and last_price != 0:
+                time.sleep(15)
+                continue
+            last_price = current_price
 
             for trade in list(open_trades):
                 hit_sl = False
@@ -207,7 +213,7 @@ def main():
                 time.sleep(15)
                 continue
 
-            if last_trade_time and (datetime.now() - last_trade_time).seconds < 300:
+            if last_trade_time and (datetime.now() - last_trade_time).total_seconds() < 300:
                 time.sleep(15)
                 continue
 
@@ -279,11 +285,11 @@ def main():
             csv_file.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')},{aggregated.direction.value},{current_price:.2f},,{sl:.2f},{tp:.2f},{aggregated.total_score},{'+'.join(s.strategy_name for s in aggregated.signals)},,OPEN\n")
             csv_file.flush()
 
-            if last_trade_time and (datetime.now() - last_trade_time).seconds > 3600 and min_score > 250:
+            if last_trade_time and (datetime.now() - last_trade_time).total_seconds() > 3600 and min_score > 250:
                 min_score = max(250, min_score - 10)
                 _log(f"[AUTO-ADJUST] min_score lowered to {min_score}")
 
-            if (datetime.now() - last_daily_report).seconds > 86400:
+            if (datetime.now() - last_daily_report).total_seconds() > 86400:
                 report = f"DAILY REPORT\nCycles: {cycles}\nOpen: {len(open_trades)}\nClosed: {len(closed_trades)}\nTotal PnL: ${total_pnl:.2f}"
                 _send_telegram(report)
                 last_daily_report = datetime.now()
