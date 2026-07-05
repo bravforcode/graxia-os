@@ -26,7 +26,9 @@ except ImportError:  # pragma: no cover
 # Constants mapped from mt5 module (referenced by name so import is optional)
 _TRADE_ACTION_DEAL = 1  # mt5.TRADE_ACTION_DEAL
 _TRADE_ACTION_SLTP = 5  # mt5.TRADE_ACTION_SLTP
-_ORDER_FILLING_FOK = 1  # mt5.ORDER_FILLING_FOK (Fill or Kill - supported by Pepperstone)
+_ORDER_FILLING_FOK = 0  # mt5.ORDER_FILLING_FOK (Fill or Kill)
+_ORDER_FILLING_IOC = 1  # mt5.ORDER_FILLING_IOC (Immediate or Cancel)
+_ORDER_FILLING_RETURN = 2  # mt5.ORDER_FILLING_RETURN (Good Till Cancelled)
 _ORDER_TYPE_BUY = 0  # mt5.ORDER_TYPE_BUY
 _ORDER_TYPE_SELL = 1  # mt5.ORDER_TYPE_SELL
 _RETRIES = 3
@@ -40,6 +42,53 @@ def _side_to_order_type(side: str) -> int:
     if side.upper() == "SELL":
         return _ORDER_TYPE_SELL
     raise ValueError(f"Unknown side: {side}")
+
+
+def _get_filling_mode(symbol: str) -> int:
+    """Detect the best filling mode for a symbol from MT5 symbol info.
+
+    Pepperstone supports FOK (0) and RETURN (2) for most instruments.
+    IOC (1) is NOT supported for indices/CFDs. Falls back to RETURN (2)
+    if symbol info is unavailable.
+    """
+    if mt5 is None:
+        return _ORDER_FILLING_RETURN
+    info = mt5.symbol_info(symbol)
+    if info is None:
+        logger.warning("symbol_info returned None for %s — using RETURN filling", symbol)
+        return _ORDER_FILLING_RETURN
+    # filling_mode is a bitmask: bit 0 = FOK, bit 1 = IOC, bit 2 = RETURN
+    filling = info.filling_mode
+    if filling & 4:  # bit 2 set → RETURN supported
+        return _ORDER_FILLING_RETURN
+    if filling & 1:  # bit 0 set → FOK supported
+        return _ORDER_FILLING_FOK
+    if filling & 2:  # bit 1 set → IOC supported
+        return _ORDER_FILLING_IOC
+    # Default to RETURN (most widely supported on Pepperstone)
+    return _ORDER_FILLING_RETURN
+
+
+def _ensure_symbol_visible(symbol: str) -> bool:
+    """Ensure a symbol is in MT5 Market Watch so it receives live ticks.
+
+    Returns True if the symbol is available for trading.
+    """
+    if mt5 is None:
+        return False
+    info = mt5.symbol_info(symbol)
+    if info is None:
+        logger.error("Symbol %s not found in MT5 — check symbol name", symbol)
+        return False
+    if not info.visible:
+        logger.info("Symbol %s not in Market Watch — adding it", symbol)
+        selected = mt5.symbol_select(symbol, True)
+        if not selected:
+            logger.error("Failed to add %s to Market Watch", symbol)
+            return False
+        # Brief pause for the first tick to arrive
+        time.sleep(0.3)
+    return True
 
 
 class MT5Adapter(BrokerAdapter):
@@ -120,8 +169,21 @@ class MT5Adapter(BrokerAdapter):
 
         The ``comment`` field is set to ``order.order_id`` for idempotency.
         Retries up to 3 times on transient failures with automatic reconnect.
+
+        Filling mode is auto-detected per symbol (FOK vs RETURN) because
+        Pepperstone indices do NOT support IOC — only FOK and RETURN.
         """
         self._ensure_connected()
+
+        # Ensure symbol is in Market Watch (required for live ticks)
+        if not _ensure_symbol_visible(order.symbol):
+            return OrderResult(
+                status=OrderStatus.FAILED,
+                error=f"Symbol {order.symbol} not found or not visible in MT5",
+            )
+
+        # Auto-detect filling mode (FOK vs RETURN — Pepperstone indices need RETURN)
+        filling_mode = _get_filling_mode(order.symbol)
 
         request: dict = {
             "action": _TRADE_ACTION_DEAL,
@@ -129,7 +191,7 @@ class MT5Adapter(BrokerAdapter):
             "volume": order.quantity,
             "type": _side_to_order_type(order.side),
             "comment": hashlib.md5(order.order_id.encode()).hexdigest()[:8],  # Short alphanumeric comment for tracking
-            "type_filling": _ORDER_FILLING_FOK,
+            "type_filling": filling_mode,
             "type_time": 0,  # ORDER_TIME_GTC
         }
 
@@ -137,6 +199,11 @@ class MT5Adapter(BrokerAdapter):
             request["sl"] = order.stop_loss
         if order.take_profit is not None:
             request["tp"] = order.take_profit
+
+        logger.info(
+            "MT5 submit_order: symbol=%s side=%s qty=%.2f filling=%d",
+            order.symbol, order.side, order.quantity, filling_mode,
+        )
 
         for attempt in range(1, _RETRIES + 1):
             result = mt5.order_send(request)  # type: ignore[union-attr]
@@ -150,6 +217,10 @@ class MT5Adapter(BrokerAdapter):
 
             ret_code = result.retcode
             if ret_code == 10009:  # TRADE_RETCODE_DONE
+                logger.info(
+                    "MT5 order filled: ticket=%s price=%.5f vol=%.2f",
+                    result.order, result.price, result.volume,
+                )
                 return OrderResult(
                     status=OrderStatus.FILLED,
                     broker_id=str(result.order),
@@ -157,12 +228,15 @@ class MT5Adapter(BrokerAdapter):
                     avg_price=result.price,
                 )
             if ret_code == 10014:  # TRADE_RETCODE_INVALID_PRICE – retry
-                logger.warning("MT5 invalid price (attempt %d), retrying", attempt)
+                logger.warning(
+                    "MT5 invalid price (attempt %d): symbol=%s retcode=%d comment=%s — retrying",
+                    attempt, order.symbol, ret_code, result.comment,
+                )
                 time.sleep(_RETRY_DELAY)
                 continue
 
             # Permanent failure – do not retry
-            error_msg = f"MT5 retcode={ret_code}: {result.comment}"
+            error_msg = f"MT5 retcode={ret_code}: {result.comment} (symbol={order.symbol}, filling={filling_mode})"
             logger.error(error_msg)
             return OrderResult(status=OrderStatus.FAILED, error=error_msg)
 
@@ -238,14 +312,18 @@ class MT5Adapter(BrokerAdapter):
             )
         pos = positions[0]
         close_type = _ORDER_TYPE_SELL if pos.type == _ORDER_TYPE_BUY else _ORDER_TYPE_BUY
+        close_symbol = symbol or pos.symbol
+
+        # Auto-detect filling mode for the symbol
+        filling_mode = _get_filling_mode(close_symbol)
 
         request: dict = {
             "action": _TRADE_ACTION_DEAL,
-            "symbol": symbol or pos.symbol,
+            "symbol": close_symbol,
             "volume": volume,
             "type": close_type,
             "position": int(broker_position_id),
-            "type_filling": _ORDER_FILLING_FOK,
+            "type_filling": filling_mode,
             "type_time": 0,
         }
 

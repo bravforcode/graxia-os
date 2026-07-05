@@ -65,6 +65,8 @@ from quant_os.monitoring.metrics_exporter import (
     update_rebalance_timestamp,
     update_data_feed_timestamp,
 )
+from quant_os.risk.circuit_breaker import CircuitBreaker
+from quant_os.risk.market_session_guard import MarketSessionGuard
 from quant_os.risk.pre_trade_gate import PreTradeRiskGate, symbol_to_asset_class
 
 # ═══════════════════════════════════════════════════════════════
@@ -89,6 +91,16 @@ HIGH_VOL_POSITION_SCALE = 0.50  # Reduce positions by 50% in HIGH_VOL
 HIGH_VOL_ATR_MULT = 1.5  # Tighter stop-loss in HIGH_VOL
 NORMAL_ATR_MULT = 2.0  # Normal stop-loss multiplier
 LOW_VOL_ATR_MULT = 1.5  # Tighter stop-loss in calm markets
+# Per-asset ATR stop-loss multipliers (user-specified)
+ASSET_ATR_MULTIPLIERS = {
+    "NAS100": 2.0,
+    "XAUUSD": 2.5,
+    "OIL": 3.0,
+    "USDJPY": 1.5,
+}
+
+# ATR lookback period
+ATR_PERIOD = 14
 
 # Trend detection thresholds (SMA crossover)
 TREND_FAST_SMA = 50  # Fast SMA for trend detection
@@ -105,14 +117,18 @@ COST_CALIBRATION_PATH = BASE / "config" / "cost_calibration.json"
 
 
 def load_cost_calibration() -> dict[str, float]:
-    """Load per-asset round-trip cost in bps from measured calibration."""
+    """Load per-asset round-trip cost in bps from measured calibration.
+
+    Keys are mt5_symbol (not the JSON dict key) so lookups by MT5 symbol work.
+    """
     if not COST_CALIBRATION_PATH.exists():
         log("⚠️ cost_calibration.json not found, falling back to 10bps default")
         return {}
     with open(COST_CALIBRATION_PATH) as f:
         cal = json.load(f)
     costs = {}
-    for mt5_sym, info in cal.get("assets", {}).items():
+    for key, info in cal.get("assets", {}).items():
+        mt5_sym = info.get("mt5_symbol", key)
         rt_bps = info.get("round_trip_bps_measured", 10.0)
         costs[mt5_sym] = rt_bps
     return costs
@@ -151,6 +167,8 @@ TRADE_LOG_DIR = BASE / "artifacts" / "portfolio" / "paper_trades"
 STATE_PATH = TRADE_LOG_DIR / "tsm_portfolio_state.json"
 CSV_LOG_PATH = TRADE_LOG_DIR / "tsm_trade_log.csv"
 HEARTBEAT_PATH = BASE / "data" / "tsm_heartbeat.txt"
+OPEN_TRADES_PATH = TRADE_LOG_DIR / "tsm_open_trades.json"
+PNL_SUMMARY_PATH = TRADE_LOG_DIR / "tsm_pnl_summary.json"
 
 CSV_HEADERS = [
     "timestamp",
@@ -165,6 +183,11 @@ CSV_HEADERS = [
     "price",
     "status",
     "notes",
+    "entry_price",
+    "exit_price",
+    "realized_pnl",
+    "cumulative_pnl",
+    "win_rate",
 ]
 
 
@@ -415,6 +438,25 @@ def get_regime_atr_multiplier(regime: str) -> float:
     return NORMAL_ATR_MULT
 
 
+def compute_atr(close_matrix: pd.DataFrame, period: int = ATR_PERIOD) -> dict[str, float]:
+    """Compute ATR(period) for each asset from close prices.
+
+    Uses True Range approximation: TR ≈ |Close - PrevClose| (no intraday high/low
+    in daily data). Returns {asset: latest_atr_value}.
+    """
+    atrs = {}
+    for asset in close_matrix.columns:
+        series = close_matrix[asset].dropna()
+        if len(series) < period + 1:
+            continue
+        daily_range = series.diff().abs()
+        atr_series = daily_range.rolling(period, min_periods=period).mean()
+        latest = atr_series.dropna()
+        if not latest.empty:
+            atrs[asset] = float(latest.iloc[-1])
+    return atrs
+
+
 def apply_trend_filter(signal_df: pd.DataFrame, close_matrix: pd.DataFrame) -> pd.DataFrame:
     """Filter signals to only trade in direction of trend."""
     trend = detect_trend(close_matrix)
@@ -572,6 +614,48 @@ _mt5_initialized = False
 _oms: OMS | None = None
 
 
+def _resolve_mt5_symbols(mt5):
+    """Resolve and validate MT5 symbol names, adding to Market Watch.
+
+    Some Pepperstone servers use NAS100, others US100 for the Nasdaq 100.
+    This function checks which name exists and adds it to Market Watch.
+    """
+    # Aliases to try for each symbol (primary -> fallback)
+    symbol_aliases = {
+        "NAS100": ["NAS100", "US100", "USTEC"],
+    }
+
+    for asset in ASSETS:
+        mt5_sym = MT5_SYMBOL_MAP.get(asset)
+        if not mt5_sym:
+            continue
+
+        info = mt5.symbol_info(mt5_sym)
+        if info is not None:
+            if not info.visible:
+                mt5.symbol_select(mt5_sym, True)
+                log(f"  Added {mt5_sym} to Market Watch")
+            continue
+
+        aliases = symbol_aliases.get(mt5_sym, [])
+        resolved = False
+        for alias in aliases:
+            if alias == mt5_sym:
+                continue
+            info = mt5.symbol_info(alias)
+            if info is not None:
+                log(f"  Symbol {mt5_sym} not found — using {alias} instead")
+                MT5_SYMBOL_MAP[asset] = alias
+                if not info.visible:
+                    mt5.symbol_select(alias, True)
+                    log(f"  Added {alias} to Market Watch")
+                resolved = True
+                break
+
+        if not resolved:
+            log(f"  WARNING: No valid MT5 symbol found for {asset} (tried: {mt5_sym}, {aliases})")
+
+
 def ensure_mt5():
     """Initialize MT5 connection via OMS adapter, verify demo account."""
     global _mt5_initialized, _oms
@@ -598,6 +682,9 @@ def ensure_mt5():
                 f"(login={account_info.login}). TSM bot requires demo server."
             )
 
+        # Validate and resolve MT5 symbols (NAS100 vs US100 etc.)
+        _resolve_mt5_symbols(mt5)
+
         # Initialize OMS with MT5 adapter + risk gate
         mt5_adapter = MT5Adapter(login=login, password=password, server=server)
         mt5_adapter.connect()
@@ -605,7 +692,11 @@ def ensure_mt5():
         from quant_os.risk.kill_switch import KillSwitch
 
         ks = KillSwitch(str(BASE / "data" / "kill_switch_state.json"))
-        risk_gate = PreTradeRiskGate(kill_switch=ks)
+        cb = CircuitBreaker(
+            state_file=str(BASE / "data" / "circuit_breaker_state.json"),
+            kill_switch=ks,
+        )
+        risk_gate = PreTradeRiskGate(kill_switch=ks, circuit_breaker=cb)
 
         _oms = OMS(
             adapters={"mt5": mt5_adapter},
@@ -776,19 +867,95 @@ def compute_orders(
     return orders
 
 
-def execute_orders(mt5, orders: list[dict]) -> list[dict]:
-    """Execute a list of orders via MT5. Returns fill results."""
+def check_market_session(mt5, symbol: str) -> bool:
+    """Return True if market session allows trading for symbol."""
+    try:
+        guard = MarketSessionGuard(mt5=mt5)
+        skip, reason = guard.should_skip(symbol)
+        if skip:
+            log(f"⏸️ Market session guard: {symbol} blocked — {reason}")
+            return False
+        return True
+    except Exception as e:
+        log(f"⚠️ Market session guard check failed for {symbol}: {e} — proceeding")
+        return True
+
+
+def set_atr_stops_after_fill(mt5, fills: list[dict], atrs: dict[str, float]):
+    """Set ATR-based stop-losses on newly opened positions."""
+    from quant_os.execution.adapters.mt5 import MT5Adapter
+
+    adapter = get_oms().adapters.get("mt5")
+    if not adapter:
+        return
+
+    for fill in fills:
+        if not fill.get("success") or fill["action"] == "close":
+            continue
+        if not fill.get("ticket"):
+            continue
+
+        symbol = fill["symbol"]
+        lots = fill["lots"]
+        side = "BUY" if lots > 0 else "SELL"
+        atr = atrs.get(symbol)
+        if atr is None or atr <= 0:
+            log(f"⚠️ No ATR data for {symbol} — skipping stop-loss placement")
+            continue
+
+        atr_mult = ASSET_ATR_MULTIPLIERS.get(symbol, NORMAL_ATR_MULT)
+        tick = mt5.symbol_info_tick(symbol)
+        if tick is None:
+            continue
+        entry_price = (tick.bid + tick.ask) / 2.0
+
+        ok = adapter.set_fixed_atr_stop(
+            position_ticket=fill["ticket"],
+            symbol=symbol,
+            side=side,
+            entry_price=entry_price,
+            atr_value=atr,
+            atr_multiplier=atr_mult,
+        )
+        if ok:
+            log(f"🛡️ ATR stop set: {symbol} {side} ATR={atr:.5f} mult={atr_mult}x")
+        else:
+            log(f"⚠️ ATR stop FAILED for {symbol} (ticket={fill['ticket']})")
+
+
+def execute_orders(mt5, orders: list[dict], atrs: dict[str, float] | None = None) -> list[dict]:
+    """Execute a list of orders via MT5. Returns fill results.
+
+    Checks market session guard before each order and sets ATR-based
+    stop-losses after fills when ATR data is available.
+    """
     fills = []
     for order in orders:
         sym = order["symbol"]
         lots = order["lots"]
         action = order["action"]
 
+        if action in ("open", "adjust"):
+            if not check_market_session(mt5, sym):
+                fills.append(
+                    {
+                        "symbol": sym,
+                        "action": action,
+                        "lots": lots,
+                        "success": False,
+                        "ticket": None,
+                        "price": None,
+                        "notes": "blocked by market session guard",
+                    }
+                )
+                continue
+
         if action == "close":
             # Close existing positions for this symbol
             positions = mt5.positions_get(symbol=sym)
             if positions:
                 for pos in positions:
+                    exit_price = get_latest_price(mt5, sym) or pos.price_open
                     ok = close_position(mt5, pos.ticket, sym, pos.volume, f"TSM close {action}")
                     fills.append(
                         {
@@ -797,8 +964,14 @@ def execute_orders(mt5, orders: list[dict]) -> list[dict]:
                             "lots": pos.volume,
                             "success": ok,
                             "ticket": pos.ticket,
+                            "price": exit_price,
                         }
                     )
+                    if ok:
+                        trade = record_exit(sym, exit_price, pos.volume)
+                        if trade:
+                            fills[-1]["realized_pnl"] = trade["pnl"]
+                            fills[-1]["entry_price"] = trade["entry_price"]
             else:
                 log(f"⚠️ No open position to close for {sym}")
 
@@ -814,6 +987,11 @@ def execute_orders(mt5, orders: list[dict]) -> list[dict]:
                     "price": result["price"] if result else None,
                 }
             )
+            if result and result.get("price", 0) > 0:
+                record_entry(sym, result["price"], lots, result.get("ticket"))
+
+    if atrs:
+        set_atr_stops_after_fill(mt5, fills, atrs)
 
     return fills
 
@@ -840,6 +1018,114 @@ def log_to_csv(rows: list[dict]):
             writer.writerow(row)
 
 
+# ═══════════════════════════════════════════════════════════════
+# REALIZED P&L TRACKING
+# ═══════════════════════════════════════════════════════════════
+
+
+def load_open_trades() -> list[dict]:
+    """Load currently open trades (entry tracking)."""
+    if not OPEN_TRADES_PATH.exists():
+        return []
+    try:
+        return json.loads(OPEN_TRADES_PATH.read_text())
+    except (json.JSONDecodeError, ValueError):
+        return []
+
+
+def save_open_trades(trades: list[dict]):
+    """Persist open trades."""
+    TRADE_LOG_DIR.mkdir(parents=True, exist_ok=True)
+    OPEN_TRADES_PATH.write_text(json.dumps(trades, indent=2, default=str))
+
+
+def load_pnl_summary() -> dict:
+    """Load cumulative P&L summary."""
+    if not PNL_SUMMARY_PATH.exists():
+        return {"total_pnl": 0.0, "total_trades": 0, "wins": 0, "losses": 0, "closed_trades": []}
+    try:
+        return json.loads(PNL_SUMMARY_PATH.read_text())
+    except (json.JSONDecodeError, ValueError):
+        return {"total_pnl": 0.0, "total_trades": 0, "wins": 0, "losses": 0, "closed_trades": []}
+
+
+def save_pnl_summary(summary: dict):
+    """Persist P&L summary."""
+    TRADE_LOG_DIR.mkdir(parents=True, exist_ok=True)
+    PNL_SUMMARY_PATH.write_text(json.dumps(summary, indent=2, default=str))
+
+
+def record_entry(symbol: str, entry_price: float, lots: float, ticket: str | None = None):
+    """Record a new open trade entry."""
+    trades = load_open_trades()
+    trades.append({
+        "symbol": symbol,
+        "entry_price": entry_price,
+        "lots": lots,
+        "entry_time": datetime.now(UTC).isoformat(),
+        "ticket": ticket,
+    })
+    save_open_trades(trades)
+
+
+def record_exit(symbol: str, exit_price: float, lots: float) -> dict | None:
+    """Record a trade exit, compute realized P&L. Returns trade record or None."""
+    trades = load_open_trades()
+    # Find matching entry (FIFO by symbol)
+    match_idx = None
+    for i, t in enumerate(trades):
+        if t["symbol"] == symbol:
+            match_idx = i
+            break
+    if match_idx is None:
+        return None
+
+    entry = trades.pop(match_idx)
+    save_open_trades(trades)
+
+    entry_price = entry["entry_price"]
+    # P&L = (exit - entry) * direction * lots * contract_size
+    # Positive lots = long, negative = short
+    direction = 1.0 if entry["lots"] > 0 else -1.0
+    contract_size = CONTRACT_SIZES.get(symbol, 100_000)
+    pnl = direction * (exit_price - entry_price) * abs(entry["lots"]) * contract_size
+
+    trade_record = {
+        "symbol": symbol,
+        "entry_price": entry_price,
+        "exit_price": exit_price,
+        "lots": entry["lots"],
+        "entry_time": entry["entry_time"],
+        "exit_time": datetime.now(UTC).isoformat(),
+        "pnl": pnl,
+    }
+
+    # Update cumulative summary
+    summary = load_pnl_summary()
+    summary["total_pnl"] = summary.get("total_pnl", 0.0) + pnl
+    summary["total_trades"] = summary.get("total_trades", 0) + 1
+    if pnl > 0:
+        summary["wins"] = summary.get("wins", 0) + 1
+    elif pnl < 0:
+        summary["losses"] = summary.get("losses", 0) + 1
+    # Keep last 200 closed trades
+    closed = summary.get("closed_trades", [])
+    closed.append(trade_record)
+    summary["closed_trades"] = closed[-200:]
+    save_pnl_summary(summary)
+
+    return trade_record
+
+
+def get_pnl_summary() -> dict:
+    """Get current P&L summary with computed win rate."""
+    summary = load_pnl_summary()
+    total = summary.get("total_trades", 0)
+    wins = summary.get("wins", 0)
+    summary["win_rate"] = (wins / total * 100.0) if total > 0 else 0.0
+    return summary
+
+
 def save_state(
     weights: dict[str, float],
     signals: dict[str, float],
@@ -851,6 +1137,7 @@ def save_state(
     regime: str = "NORMAL",
     trend: str = "FLAT",
     drawdown_pct: float = 0.0,
+    pnl_summary: dict | None = None,
 ):
     """Save daily portfolio state to JSON."""
     TRADE_LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -863,8 +1150,9 @@ def save_state(
             "weights": WEIGHTS,
             "max_leverage": MAX_LEVERAGE,
             "rvol_window": RVOL_WINDOW,
-            "assets": ASSETS,
-            "cost_map": COST_MAP,
+        "assets": ASSETS,
+        "cost_map": COST_MAP,
+        "asset_atr_multipliers": ASSET_ATR_MULTIPLIERS,
             "regime_vol_high_multiplier": REGIME_VOL_HIGH_MULTIPLIER,
             "regime_vol_low_multiplier": REGIME_VOL_LOW_MULTIPLIER,
             "trend_fast_sma": TREND_FAST_SMA,
@@ -882,6 +1170,8 @@ def save_state(
         "positions": positions,
         "fills": fills or [],
     }
+    if pnl_summary:
+        state["pnl_summary"] = pnl_summary
     STATE_PATH.write_text(json.dumps(state, indent=2, default=str))
     log(f"State saved: {STATE_PATH}")
 
@@ -950,6 +1240,11 @@ def run_rebalance(live: bool = False, force: bool = False):
     update_data_feed_timestamp(portfolio="tsm")
     log(f"Data: {len(data)} rows, {data.index.min().date()} → {data.index.max().date()}")
     log(f"Assets: {list(close_matrix.columns)}")
+
+    # Compute ATR for all assets (used for stop-loss placement after fills)
+    atrs = compute_atr(close_matrix)
+    for asset, atr_val in atrs.items():
+        log(f"  ATR({ATR_PERIOD}) {asset}: {atr_val:.5f}")
 
     # ── Step 2: Compute signals & weights (with regime + DD scaling) ──
     # Load previous regime/trend from state for change detection
@@ -1124,7 +1419,7 @@ def run_rebalance(live: bool = False, force: bool = False):
                         }
                     )
                 if close_orders:
-                    fills = execute_orders(mt5, close_orders)
+                    fills = execute_orders(mt5, close_orders, atrs=atrs)
                     ok_count = sum(1 for f in fills if f.get("success"))
                     log(f"🛑 Auto-stop close: {ok_count}/{len(fills)} positions closed")
                     tg(f"🛑 *TSM Bot*: Auto-stop closed {ok_count}/{len(fills)} positions")
@@ -1141,19 +1436,21 @@ def run_rebalance(live: bool = False, force: bool = False):
             if not check_kill_switch():
                 log("⛔ Rebalance skipped — kill switch active")
             else:
-                fills = execute_orders(mt5, orders)
+                fills = execute_orders(mt5, orders, atrs=atrs)
                 ok_count = sum(1 for f in fills if f.get("success"))
                 log(f"\n--- Fills: {ok_count}/{len(fills)} successful ---")
                 for fill in fills:
                     status = "✅" if fill.get("success") else "❌"
                     log(f"  {status} {fill['action']:8s} {fill['symbol']:10s} lots={fill['lots']:+.2f}")
 
+                _pnl = get_pnl_summary()
                 tg(
                     f"📊 *TSM Rebalance Complete*\n"
                     f"Orders: {len(orders)} | Fills: {ok_count}/{len(fills)}\n"
                     f"Vol scale: {latest_vol_scale:.3f} | RVol: {latest_rvol:.1%}\n"
                     f"Drawdown: {latest_drawdown:.2%}\n"
                     f"Equity: ${account_equity:,.2f}"
+                    + (f"\nP&L: ${_pnl['total_pnl']:+,.2f} | WR: {_pnl['win_rate']:.0f}% ({_pnl['total_trades']} trades)" if _pnl["total_trades"] > 0 else "")
                 )
     else:
         log("\n--- DRY-RUN: No orders placed ---")
@@ -1187,11 +1484,15 @@ def run_rebalance(live: bool = False, force: bool = False):
                 "price": f"{tpos['price']:.5f}",
                 "status": "dry_run" if not live else "target",
                 "notes": f"ensemble={ens_val:+.4f} cost={cost_bps:.1f}bps",
+                "entry_price": "",
+                "exit_price": "",
+                "realized_pnl": "",
             }
         )
 
     # Log fills
     for fill in fills:
+        pnl = fill.get("realized_pnl")
         csv_rows.append(
             {
                 "timestamp": ts,
@@ -1206,10 +1507,24 @@ def run_rebalance(live: bool = False, force: bool = False):
                 "price": f"{fill.get('price', 0):.5f}" if fill.get("price") else "",
                 "status": "filled" if fill.get("success") else "failed",
                 "notes": f"ticket={fill.get('ticket', '')}",
+                "entry_price": f"{fill['entry_price']:.5f}" if fill.get("entry_price") else "",
+                "exit_price": f"{fill['price']:.5f}" if fill.get("action") == "close" and fill.get("price") else "",
+                "realized_pnl": f"{pnl:+.2f}" if pnl is not None else "",
             }
         )
 
     log_to_csv(csv_rows)
+
+    # Log realized P&L summary
+    pnl_summary = get_pnl_summary()
+    if pnl_summary["total_trades"] > 0:
+        log("\n--- Realized P&L Summary ---")
+        log(f"  Total trades: {pnl_summary['total_trades']}")
+        log(f"  Wins: {pnl_summary['wins']} | Losses: {pnl_summary['losses']}")
+        log(f"  Win rate: {pnl_summary['win_rate']:.1f}%")
+        log(f"  Cumulative P&L: ${pnl_summary['total_pnl']:+,.2f}")
+        open_trades = load_open_trades()
+        log(f"  Open positions tracked: {len(open_trades)}")
 
     # Save state
     save_state(
@@ -1223,6 +1538,14 @@ def run_rebalance(live: bool = False, force: bool = False):
         regime=regime,
         trend=trend,
         drawdown_pct=latest_drawdown,
+        pnl_summary={
+            "total_pnl": pnl_summary["total_pnl"],
+            "total_trades": pnl_summary["total_trades"],
+            "wins": pnl_summary["wins"],
+            "losses": pnl_summary["losses"],
+            "win_rate": pnl_summary["win_rate"],
+            "open_trades": len(load_open_trades()),
+        },
     )
 
     update_heartbeat(

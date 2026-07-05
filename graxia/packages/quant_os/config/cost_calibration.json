@@ -90,7 +90,7 @@
       "swap_short_bps": -0.08
     },
     "OIL": {
-      "mt5_symbol": "SpotCrude",
+      "mt5_symbol": "USOIL",
       "spread_bps_measured": 4.88,
       "spread_bps_p95": 4.88,
       "spread_bps_mean": 4.31,
@@ -172,6 +172,27 @@
       "notes": "Pepperstone Razor: $0 commission on metals",
       "swap_long_bps": -0.50,
       "swap_short_bps": 0.20
+    },
+    "NAS100": {
+      "mt5_symbol": "NAS100",
+      "spread_bps_measured": 0.5,
+      "spread_bps_p95": 0.6,
+      "spread_bps_mean": 0.5,
+      "spread_bps_min": 0.4,
+      "spread_bps_max": 0.75,
+      "spread_bps_std": 0.1,
+      "commission_bps": 0,
+      "slippage_bps_measured": null,
+      "round_trip_bps_measured": 1.0,
+      "round_trip_bps_p95": 1.2,
+      "contract_size": 1,
+      "tick_size": 0.01,
+      "status": "ESTIMATED",
+      "sample_size": 0,
+      "measurement_window": null,
+      "notes": "Pepperstone Razor: ~1.0pt typical spread on NAS100 CFD, $0 commission. Estimated from published typical spread.",
+      "swap_long_bps": -0.30,
+      "swap_short_bps": 0.10
     }
   },
   "stress_scenarios": {
@@ -185,5 +206,5 @@
   },
   "calibration_status": "MEASURED",
   "measurement_total_samples": 160,
-  "measurement_asset_count": 8
+  "measurement_asset_count": 9
 }

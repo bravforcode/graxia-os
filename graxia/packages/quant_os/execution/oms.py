@@ -44,6 +44,8 @@ class TrailingStopConfig:
 _SYMBOL_STOP_CONFIGS: dict[str, TrailingStopConfig] = {
     "XAUUSD": TrailingStopConfig(enabled=True, trail_multiplier=2.5, stop_mode="fixed"),
     "NAS100": TrailingStopConfig(enabled=True, trail_multiplier=2.0, stop_mode="fixed"),
+    "US100": TrailingStopConfig(enabled=True, trail_multiplier=2.0, stop_mode="fixed"),
+    "USTEC": TrailingStopConfig(enabled=True, trail_multiplier=2.0, stop_mode="fixed"),
     "USOIL": TrailingStopConfig(enabled=True, trail_multiplier=3.0, stop_mode="fixed"),
     "USDJPY": TrailingStopConfig(enabled=True, trail_multiplier=1.5, stop_mode="fixed"),
 }
