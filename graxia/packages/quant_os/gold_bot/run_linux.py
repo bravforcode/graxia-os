@@ -19,6 +19,7 @@ sys.path.insert(0, '/opt/goldbot')
 from gold_bot.core.engine import GoldBotEngine, SignalDirection
 from gold_bot.core.config import BotConfig
 from gold_bot.mt5_adapter import MT5Connection, TIMEFRAME_M15
+from gold_bot.core.risk_bridge import RiskBridge
 
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', '')
@@ -112,9 +113,11 @@ def main():
     strategies = engine.strategies
     _log(f"Loaded {len(strategies)} strategies")
 
+    risk_bridge = RiskBridge(config)
+
     try:
-        from gold_bot.ai.validator import GoldAIValidator
-        ai_validator = GoldAIValidator(config)
+        from gold_bot.ai.validator import ClaudeAIValidator
+        ai_validator = ClaudeAIValidator(config)
         has_ai = True
         _log("AI Validator: available")
     except Exception as e:
@@ -163,11 +166,7 @@ def main():
 
             current_price = rates[-1].close
 
-            if current_price == last_price and last_price != 0:
-                time.sleep(15)
-                continue
-            last_price = current_price
-
+            # SL/TP monitoring — always runs (even when price is stale)
             for trade in list(open_trades):
                 hit_sl = False
                 hit_tp = False
@@ -193,7 +192,7 @@ def main():
                         pnl_pips = (exit_price - trade.entry_price) / point
                     else:
                         pnl_pips = (trade.entry_price - exit_price) / point
-                    pnl = pnl_pips * trade.score * 0.001
+                    pnl = pnl_pips * 0.10  # $0.10 per pip for 0.01 lot XAUUSD cent account
 
                     trade.pnl = pnl
                     trade.status = "CLOSED"
@@ -208,6 +207,48 @@ def main():
 
                     open_trades.remove(trade)
                     closed_trades.append(trade)
+
+            # Trailing stop — always runs
+            for trade in list(open_trades):
+                if trade.direction == SignalDirection.BUY:
+                    profit_pips = (current_price - trade.entry_price) / point
+                else:
+                    profit_pips = (trade.entry_price - current_price) / point
+                if profit_pips <= 0:
+                    continue
+                # Breakeven at 30 pips profit
+                if profit_pips >= 30:
+                    if trade.direction == SignalDirection.BUY:
+                        new_sl = trade.entry_price + point
+                        if trade.stop_loss < new_sl:
+                            trade.stop_loss = new_sl
+                            _log(f"  [BE] BUY SL->{new_sl:.2f} (profit={profit_pips:.0f}p)")
+                    else:
+                        new_sl = trade.entry_price - point
+                        if trade.stop_loss > new_sl:
+                            trade.stop_loss = new_sl
+                            _log(f"  [BE] SELL SL->{new_sl:.2f} (profit={profit_pips:.0f}p)")
+                # Trail at 50 pips profit
+                if profit_pips >= 50:
+                    if trade.direction == SignalDirection.BUY:
+                        new_sl = current_price - (50 * point)
+                        if trade.stop_loss < new_sl:
+                            trade.stop_loss = new_sl
+                            _log(f"  [TRAIL] BUY SL->{new_sl:.2f} (profit={profit_pips:.0f}p)")
+                    else:
+                        new_sl = current_price + (50 * point)
+                        if trade.stop_loss > new_sl:
+                            trade.stop_loss = new_sl
+                            _log(f"  [TRAIL] SELL SL->{new_sl:.2f} (profit={profit_pips:.0f}p)")
+
+            # Stale price — skip new entry only (SL/TP + trail already ran)
+            price_stale = (current_price == last_price and last_price != 0)
+            if not price_stale:
+                last_price = current_price
+
+            if price_stale:
+                time.sleep(15)
+                continue
 
             if len(open_trades) >= config.max_open_trades:
                 time.sleep(15)
@@ -253,6 +294,18 @@ def main():
                 except Exception:
                     ai_ok = aggregated.total_score >= (min_score * 1.2)
             if not ai_ok:
+                time.sleep(15)
+                continue
+
+            risk_result = risk_bridge.check(
+                signal=aggregated,
+                open_trades=open_trades,
+                daily_pnl=total_pnl,
+                balance=config.initial_capital + total_pnl,
+                equity=config.initial_capital + total_pnl,
+            )
+            if not risk_result.approved:
+                _log(f"[RISK] Rejected: {risk_result.reason}")
                 time.sleep(15)
                 continue
 
