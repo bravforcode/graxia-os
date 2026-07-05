@@ -20,4 +20,13 @@ htmlcov/
 # Generated / temp files.contextignore.ipynb_checkpoints/
 data/warehouse/
 data/ticks/
+data/*.csv
 dashboard.ipynb
+
+# Chroma DB runtime artifacts
+data_pipeline/storage/chroma_db/
+
+# Credentials and sensitive files
+Meta/pepperstone_creds.txt
+Meta/*_creds.txt
+Meta/*_credentials.txt

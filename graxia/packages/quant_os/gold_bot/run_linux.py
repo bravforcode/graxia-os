@@ -131,7 +131,7 @@ def main():
     last_daily_report = datetime.now()
     min_score = config.min_score_to_trade
     cycles = 0
-    last_price = 0.0
+    last_price = None  # init on first cycle from live data
     symbol = "XAUUSD"
     point = 0.01
 
@@ -166,7 +166,40 @@ def main():
 
             current_price = rates[-1].close
 
-            # SL/TP monitoring — always runs (even when price is stale)
+            # First cycle — capture baseline price, skip trading
+            if last_price is None:
+                last_price = current_price
+                _log(f"First cycle: price={current_price:.2f}, monitoring started")
+                time.sleep(15)
+                continue
+
+            # --- always-on reporting (before any continue) ---
+            if cycles % 10 == 0:
+                _log(f"Heartbeat: cycle={cycles} open={len(open_trades)} closed={len(closed_trades)} pnl=${total_pnl:.2f} min_score={min_score}")
+
+            try:
+                health = {
+                    "timestamp": datetime.now().isoformat(),
+                    "bot_running": True,
+                    "pid": os.getpid(),
+                    "cycles": cycles,
+                    "open_trades": len(open_trades),
+                    "closed_trades": len(closed_trades),
+                    "total_pnl": total_pnl,
+                    "min_score": min_score,
+                }
+                HEALTH_FILE.write_text(json.dumps(health, indent=2), encoding="utf-8")
+            except Exception:
+                pass
+
+            # Weekend guard — pause on SAT/SUN (after health/heartbeat)
+            if datetime.now().weekday() >= 5:
+                if cycles % 600 == 0:  # log every ~2.5h
+                    _log("Weekend — market closed, waiting...")
+                time.sleep(15)
+                continue
+
+            # SL/TP monitoring — always runs (only on weekdays) (even when price is stale)
             for trade in list(open_trades):
                 hit_sl = False
                 hit_tp = False
@@ -242,7 +275,7 @@ def main():
                             _log(f"  [TRAIL] SELL SL->{new_sl:.2f} (profit={profit_pips:.0f}p)")
 
             # Stale price — skip new entry only (SL/TP + trail already ran)
-            price_stale = (current_price == last_price and last_price != 0)
+            price_stale = (current_price == last_price)
             if not price_stale:
                 last_price = current_price
 
@@ -347,24 +380,6 @@ def main():
                 _send_telegram(report)
                 last_daily_report = datetime.now()
                 _log(f"DAILY REPORT sent | PnL: ${total_pnl:.2f}")
-
-            if cycles % 10 == 0:
-                _log(f"Heartbeat: cycle={cycles} open={len(open_trades)} closed={len(closed_trades)} pnl=${total_pnl:.2f} min_score={min_score}")
-
-            try:
-                health = {
-                    "timestamp": datetime.now().isoformat(),
-                    "bot_running": True,
-                    "pid": os.getpid(),
-                    "cycles": cycles,
-                    "open_trades": len(open_trades),
-                    "closed_trades": len(closed_trades),
-                    "total_pnl": total_pnl,
-                    "min_score": min_score,
-                }
-                HEALTH_FILE.write_text(json.dumps(health, indent=2), encoding="utf-8")
-            except Exception:
-                pass
 
             time.sleep(15)
 
