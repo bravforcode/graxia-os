@@ -39,8 +39,12 @@ def compute_fold_pnl(
     returns: np.ndarray, preds: np.ndarray, confs: np.ndarray,
     spread_cost: float, slippage_p90: float,
     min_confidence: float = 0.85,
+    close_prices: np.ndarray | None = None,
 ) -> dict:
     """3-class TB labels: 0→-1 short, 1→0 neutral/skip, 2→+1 long."""
+    if close_prices is None:
+        raise ValueError("close_prices is required for accurate PnL calculation")
+
     direction = np.array([-1.0, 0.0, 1.0])[preds.astype(int)]
     mask = (confs >= min_confidence) & (direction != 0.0)
     n_total = len(preds)
@@ -57,9 +61,11 @@ def compute_fold_pnl(
 
     dir_mask = direction[mask]
     rets = returns[mask]
+    closes_masked = close_prices[mask]
 
-    raw_pnl_dollars = dir_mask * rets * 2350.0
-    cost_per = spread_cost + slippage_p90
+    price_mult = float(np.mean(closes_masked))
+    raw_pnl_dollars = dir_mask * rets * closes_masked
+    cost_per = (spread_cost + slippage_p90) * price_mult
 
     net_pnl = raw_pnl_dollars - cost_per
 
@@ -75,7 +81,8 @@ def compute_fold_pnl(
 
     sr_mean = net_pnl.mean() if len(net_pnl) > 0 else 0.0
     sr_std = net_pnl.std() if len(net_pnl) > 1 else 1e-10
-    sharpe = sr_mean / sr_std * np.sqrt(252 * 390) if sr_std > 1e-10 else 0.0
+    # Use 1440 for FX 24h markets (not 390 which is equity hours)
+    sharpe = sr_mean / sr_std * np.sqrt(252 * 1440) if sr_std > 1e-10 else 0.0
 
     return {
         "n_trades": int(n_trades),
@@ -91,7 +98,7 @@ def compute_fold_pnl(
         "avg_loss": round(float(avg_loss), 2),
         "max_drawdown": round(float(max_dd), 2),
         "sharpe_ratio": round(float(sharpe), 2),
-        "avg_move_points": round(float(np.abs(rets).mean() * 2350 * 100), 1) if len(rets) > 0 else 0.0,
+        "avg_move_points": round(float(np.abs(rets).mean() * price_mult * 100), 1) if len(rets) > 0 else 0.0,
     }
 
 
@@ -107,6 +114,7 @@ def walk_forward(
     data = df[feature_cols].fillna(0).values
     targets = df["target"].values
     returns = df["target_return"].values
+    close_prices = df["close"].values if "close" in df.columns else None
 
     fold_idx = 0
     while True:
@@ -121,6 +129,7 @@ def walk_forward(
         X_test = data[train_end:test_end]
         y_test = targets[train_end:test_end]
         ret_test = returns[train_end:test_end]
+        test_close = close_prices[train_end:test_end] if close_prices is not None else None
 
         model = xgb.XGBClassifier(**model_params)
         model.fit(X_train, y_train)
@@ -136,6 +145,7 @@ def walk_forward(
             spread_cost=spread_cost,
             slippage_p90=slippage_p90,
             min_confidence=min_confidence,
+            close_prices=test_close,
         )
 
         result["fold"] = fold_idx

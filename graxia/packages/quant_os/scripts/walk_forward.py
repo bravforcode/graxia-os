@@ -17,7 +17,10 @@ FEAT_DIR = os.path.join(BASE, "artifacts", "features_v2")
 
 
 def load_features(symbol: str, freq: str) -> pd.DataFrame:
-    path = os.path.join(FEAT_DIR, f"features_v2_{symbol}_{freq}.parquet")
+    # Try v2 naming first, then fallback to v1 naming
+    path_v2 = os.path.join(FEAT_DIR, f"features_v2_{symbol}_{freq}.parquet")
+    path_v1 = os.path.join(FEAT_DIR, f"features_{symbol}_{freq}.parquet")
+    path = path_v2 if os.path.exists(path_v2) else path_v1
     df = pd.read_parquet(path)
     if "timestamp" in df.columns:
         df = df.set_index("timestamp")
@@ -56,9 +59,8 @@ def compute_fold_pnl(
     """
     Compute net P&L for a single fold's test predictions.
 
-    Uses actual bar close prices for dollar PnL conversion instead of
-    the previous hardcoded $2350.0 (Bug #1 fix).
-    Falls back to $2350.0 if close_prices is not provided (backward compat).
+    Uses actual bar close prices for dollar PnL conversion.
+    Requires close_prices to be provided (no hardcoded fallback).
 
     Args:
         returns: Forward returns array (fractional), same shape as preds.
@@ -69,7 +71,11 @@ def compute_fold_pnl(
         min_confidence: Minimum confidence threshold for trade entry.
         mask: Optional pre-computed trade selection mask.
         close_prices: Bar close prices for dollar conversion (same shape as returns).
+                      Required parameter - no fallback.
     """
+    if close_prices is None:
+        raise ValueError("close_prices is required for accurate PnL calculation")
+
     direction = 2 * preds.astype(float) - 1  # 0→-1 (short), 1→+1 (long)
     if mask is None:
         mask = confs >= min_confidence
@@ -89,22 +95,19 @@ def compute_fold_pnl(
     rets = returns[mask]
     confs_masked = confs[mask]
 
-    if close_prices is not None:
-        closes_masked = close_prices[mask]
-        assert closes_masked.shape == rets.shape, (
-            f"Shape mismatch: close_prices {closes_masked.shape} vs returns {rets.shape}"
-        )
-        assert closes_masked.min() > 1000, (
-            f"Price sanity check failed: min close {closes_masked.min():.2f} < $1000"
-        )
-        assert closes_masked.max() < 10000, (
-            f"Price sanity check failed: max close {closes_masked.max():.2f} > $10000"
-        )
-        price_mult = float(np.mean(closes_masked))
-    else:
-        price_mult = 2350.0
+    closes_masked = close_prices[mask]
+    assert closes_masked.shape == rets.shape, (
+        f"Shape mismatch: close_prices {closes_masked.shape} vs returns {rets.shape}"
+    )
+    assert closes_masked.min() > 1000, (
+        f"Price sanity check failed: min close {closes_masked.min():.2f} < $1000"
+    )
+    assert closes_masked.max() < 10000, (
+        f"Price sanity check failed: max close {closes_masked.max():.2f} > $10000"
+    )
+    price_mult = float(np.mean(closes_masked))
 
-    raw_pnl_dollars = dir_mask * rets * (close_prices[mask] if close_prices is not None else 2350.0)
+    raw_pnl_dollars = dir_mask * rets * closes_masked
     cost_per_dollars = (spread_cost + slippage_p90) * price_mult
 
     net_pnl = raw_pnl_dollars - cost_per_dollars
@@ -121,7 +124,8 @@ def compute_fold_pnl(
 
     sr_mean = net_pnl.mean() if len(net_pnl) > 0 else 0.0
     sr_std = net_pnl.std() if len(net_pnl) > 1 else 1e-10
-    sharpe = sr_mean / sr_std * np.sqrt(252 * 390) if sr_std > 1e-10 else 0.0
+    # Use 1440 for FX 24h markets (not 390 which is equity hours)
+    sharpe = sr_mean / sr_std * np.sqrt(252 * 1440) if sr_std > 1e-10 else 0.0
 
     avg_move_points = round(float(np.abs(rets).mean() * price_mult * 100), 1) if len(rets) > 0 else 0.0
 

@@ -75,6 +75,8 @@ class EnsembleVote:
     signal_type: SignalType
     confidence: float
     weighted_score: float
+    stop_loss: Decimal | None = None
+    take_profit: Decimal | None = None
 
 
 @dataclass
@@ -247,6 +249,8 @@ class StrategyEnsemble:
                     signal_type=sig.signal_type,
                     confidence=sig.confidence,
                     weighted_score=weighted,
+                    stop_loss=sig.stop_loss,
+                    take_profit=sig.take_profit,
                 )
             )
             if sig.signal_type == SignalType.BUY:
@@ -428,9 +432,31 @@ class StrategyEnsemble:
 
         Falls back to ``None`` when no sub-signal provided SL/TP.
         """
-        # We need the original signals; look them up from each strategy
-        # For simplicity, return None — callers can override with their own levels.
-        return None, None
+        if not votes:
+            return None, None
+
+        # Filter votes that have SL/TP set
+        votes_with_sl = [v for v in votes if v.stop_loss is not None]
+        votes_with_tp = [v for v in votes if v.take_profit is not None]
+
+        consensus_sl = None
+        consensus_tp = None
+
+        # Compute weighted average SL
+        if votes_with_sl:
+            total_weight_sl = sum(v.weight for v in votes_with_sl)
+            if total_weight_sl > 0:
+                weighted_sl_sum = sum(v.stop_loss * v.weight for v in votes_with_sl)
+                consensus_sl = weighted_sl_sum / total_weight_sl
+
+        # Compute weighted average TP
+        if votes_with_tp:
+            total_weight_tp = sum(v.weight for v in votes_with_tp)
+            if total_weight_tp > 0:
+                weighted_tp_sum = sum(v.take_profit * v.weight for v in votes_with_tp)
+                consensus_tp = weighted_tp_sum / total_weight_tp
+
+        return consensus_sl, consensus_tp
 
     def __repr__(self) -> str:
         names = ", ".join(self._records.keys())

@@ -72,6 +72,13 @@ try:
 except ImportError:
     _MARKET_IMPACT_AVAILABLE = False
 
+# Swap cost model
+try:
+    from ..core.risk.swap_cost import get_swap_cost_for_trade, get_live_swap_rates
+    _SWAP_COST_AVAILABLE = True
+except ImportError:
+    _SWAP_COST_AVAILABLE = False
+
 
 @dataclass(frozen=True)
 class InlineContractSpec:
@@ -239,6 +246,7 @@ class BacktestTrade:
     entry_spread_cost: Decimal = Decimal("0")
     entry_slippage_cost: Decimal = Decimal("0")
     exit_slippage_cost: Decimal = Decimal("0")
+    swap_cost: Decimal = Decimal("0")
     ambiguous_bar: bool = False
     signal_id: str = ""
     order_intent_id: str = ""
@@ -1098,7 +1106,16 @@ class BacktestEngine:
         exit_commission = lots * Decimal(str(self.config.commission_per_lot))
         total_fees = exit_commission
 
-        pnl -= total_fees
+        # Calculate swap cost
+        swap_cost = self._calculate_swap_cost(
+            symbol=pos.symbol,
+            side=pos.side,
+            quantity=pos.quantity,
+            entry_time=pos.entry_time or datetime.now(UTC),
+            exit_time=exit_time,
+        )
+
+        pnl -= total_fees + swap_cost
         self.balance += pnl
 
         notional = pos.entry_price * pos.quantity
@@ -1127,6 +1144,7 @@ class BacktestEngine:
                 entry_spread_cost=pos.entry_spread_cost,
                 entry_slippage_cost=pos.entry_slippage_cost,
                 exit_slippage_cost=exit_slippage_cost,
+                swap_cost=swap_cost,
                 ambiguous_bar=is_ambiguous,
             )
         )
@@ -1152,6 +1170,62 @@ class BacktestEngine:
             else:
                 exit_price = last_dec
             self._close_position(pos_id, exit_price, current_time, CloseReason.MANUAL, exit_slippage)
+
+    def _calculate_swap_cost(
+        self,
+        symbol: str,
+        side: PositionType,
+        quantity: Decimal,
+        entry_time: datetime,
+        exit_time: datetime,
+    ) -> Decimal:
+        """
+        Calculate swap cost for a position held across rollover.
+
+        Uses the swap_cost module if available, otherwise returns 0.
+        """
+        if not _SWAP_COST_AVAILABLE or not self.config.enable_swap:
+            return Decimal("0")
+
+        try:
+            # Get live swap rates (or use default XAUUSD rates)
+            swap_rates = get_live_swap_rates(symbol)
+            if not swap_rates:
+                # Default XAUUSD swap rates for Pepperstone Razor
+                swap_rates = {
+                    "swap_long": -28.5,
+                    "swap_short": 5.2,
+                    "swap_mode": 0,
+                    "swap_rollover3days": 3,  # Wednesday
+                    "point": 0.01,
+                    "contract_size": 100.0,
+                    "currency_profit": "USD",
+                }
+
+            # Convert position side to string
+            side_str = "BUY" if side == PositionType.LONG else "SELL"
+
+            # Calculate lot size (XAUUSD: 1 lot = 100 oz)
+            contract_size = Decimal(str(swap_rates.get("contract_size", 100.0)))
+            lots = quantity / contract_size if contract_size > 0 else Decimal("0")
+
+            # Get triple swap weekday
+            triple_swap_weekday = swap_rates.get("swap_rollover3days", 3)
+
+            # Calculate swap cost
+            swap_cost = get_swap_cost_for_trade(
+                entry_time=entry_time,
+                exit_time=exit_time,
+                side=side_str,
+                lot=float(lots),
+                swap_rates=swap_rates,
+                triple_swap_weekday=triple_swap_weekday,
+            )
+
+            return Decimal(str(abs(swap_cost)))
+        except Exception:
+            # If swap calculation fails, return 0
+            return Decimal("0")
 
     def _check_risk_halt(self) -> bool:
         """Check if any risk limit is breached. Returns True if trading should halt."""
