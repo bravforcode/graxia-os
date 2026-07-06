@@ -107,7 +107,15 @@ def price_sanity_check(
     std_dev = variance**0.5
 
     if std_dev == 0:
-        # All prices are identical — allow (no volatility)
+        # All prices are identical — reject if current price differs from SMA
+        # (zero volatility means any deviation is anomalous)
+        if abs(current_price - sma) > 1e-10:
+            reason = (
+                f"Price anomaly: zero volatility (all prices={sma:.5f}) but "
+                f"current={current_price:.5f} differs — likely bad data"
+            )
+            logger.warning("price_sanity_check REJECTED: %s", reason)
+            return False, reason
         return True, ""
 
     z_score = (current_price - sma) / std_dev
@@ -183,28 +191,36 @@ class PreTradeRiskGate:
             ``RiskCheckResult(passed=True)`` if all checks pass,
             ``RiskCheckResult(passed=False, reason=...)`` if rejected.
         """
-        # 1. Kill switch
-        if self._kill_switch is not None:
-            try:
-                if self._kill_switch.is_active():
-                    return RiskCheckResult(passed=False, reason="Kill switch is active")
-                if self._kill_switch.is_paused():
-                    return RiskCheckResult(passed=False, reason="Kill switch is paused — no new entries")
-            except Exception as exc:
-                logger.warning("Kill switch check failed: %s — rejecting as precaution", exc)
-                return RiskCheckResult(passed=False, reason=f"Kill switch error: {exc}")
+        # 1. Kill switch — fail-closed when missing (no safety = no trade)
+        if self._kill_switch is None:
+            logger.critical("PreTradeGate: kill_switch is None — FAIL-CLOSED (rejecting all orders)")
+            return RiskCheckResult(passed=False, reason="Kill switch not configured — fail-closed")
+        try:
+            if self._kill_switch.is_active():
+                return RiskCheckResult(passed=False, reason="Kill switch is active")
+            if self._kill_switch.is_paused():
+                return RiskCheckResult(passed=False, reason="Kill switch is paused — no new entries")
+        except Exception as exc:
+            logger.critical("Kill switch check FAILED (exception): %s — FAIL-CLOSED", exc)
+            return RiskCheckResult(passed=False, reason=f"Kill switch error (fail-closed): {exc}")
 
-        # 2. Circuit breaker
-        if self._circuit_breaker is not None:
-            try:
-                asset_class = getattr(order, "asset_class", "")
-                if asset_class and self._circuit_breaker.is_open(asset_class):
-                    return RiskCheckResult(
-                        passed=False,
-                        reason=f"Circuit breaker open for {asset_class}",
-                    )
-            except Exception as exc:
-                logger.warning("Circuit breaker check failed: %s", exc)
+        # 2. Circuit breaker — fail-closed when missing or exception
+        if self._circuit_breaker is None:
+            logger.critical("PreTradeGate: circuit_breaker is None — FAIL-CLOSED (rejecting all orders)")
+            return RiskCheckResult(passed=False, reason="Circuit breaker not configured — fail-closed")
+        try:
+            asset_class = getattr(order, "asset_class", None)
+            if not asset_class:
+                logger.critical("PreTradeGate: order.asset_class is None/empty — FAIL-CLOSED")
+                return RiskCheckResult(passed=False, reason="Order has no asset_class — fail-closed")
+            if self._circuit_breaker.is_open(asset_class):
+                return RiskCheckResult(
+                    passed=False,
+                    reason=f"Circuit breaker open for {asset_class}",
+                )
+        except Exception as exc:
+            logger.critical("Circuit breaker check FAILED (exception): %s — FAIL-CLOSED", exc)
+            return RiskCheckResult(passed=False, reason=f"Circuit breaker error (fail-closed): {exc}")
 
         # 3. Price sanity check
         if self._price_provider is not None:

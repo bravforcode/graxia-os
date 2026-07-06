@@ -94,7 +94,7 @@ class PaperAdapter(BrokerAdapter):
             fill_price = market_price + slippage if order.side.upper() == "BUY" else market_price - slippage
 
             lot_size = float(getattr(config, "units_per_lot", 100000.0))
-            lots = order.quantity / lot_size
+            lots = float(order.quantity) / lot_size
             fee = lots * float(config.paper_commission_per_lot)
 
             broker_id = f"PAPER_{uuid.uuid4().hex[:12]}"
@@ -115,7 +115,7 @@ class PaperAdapter(BrokerAdapter):
             return OrderResult(
                 status=OrderStatus.FILLED,
                 broker_id=broker_id,
-                filled_quantity=order.quantity,
+                filled_quantity=float(order.quantity),
                 avg_price=fill_price,
                 fee=fee,
             )
@@ -127,25 +127,26 @@ class PaperAdapter(BrokerAdapter):
         """Update or clear the internal position for ``order.symbol``."""
         existing = self._positions.get(order.symbol)
         side = order.side.upper()
+        qty = float(order.quantity)
 
         if existing:
             existing_side = existing["side"]
             is_close = (existing_side == "BUY" and side == "SELL") or (existing_side == "SELL" and side == "BUY")
             if is_close:
-                if order.quantity >= existing["quantity"]:
+                if qty >= existing["quantity"]:
                     del self._positions[order.symbol]
                 else:
-                    existing["quantity"] -= order.quantity
+                    existing["quantity"] -= qty
             else:
-                total_qty = existing["quantity"] + order.quantity
-                avg = (existing["avg_price"] * existing["quantity"] + fill_price * order.quantity) / total_qty
+                total_qty = existing["quantity"] + qty
+                avg = (existing["avg_price"] * existing["quantity"] + fill_price * qty) / total_qty
                 existing["quantity"] = total_qty
                 existing["avg_price"] = avg
         else:
             self._positions[order.symbol] = {
                 "symbol": order.symbol,
                 "side": side,
-                "quantity": order.quantity,
+                "quantity": qty,
                 "avg_price": fill_price,
             }
 
@@ -235,3 +236,13 @@ class PaperAdapter(BrokerAdapter):
             quantity=close_qty,
         )
         return self.submit_order(order)
+
+    def set_stop_loss(
+        self,
+        position_ticket: int,
+        symbol: str,
+        stop_loss_price: float,
+        take_profit: float | None = None,
+    ) -> bool:
+        """No-op for paper trading — SL/TP are simulated at fill time."""
+        return True

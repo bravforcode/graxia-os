@@ -20,7 +20,7 @@ class RiskLedger:
 
     def _load(self) -> dict:
         if self._state_file.exists():
-            return json.loads(self._state_file.read_text())
+            return json.loads(self._state_file.read_text(encoding="utf-8"))
         return self._default_state()
 
     def _default_state(self) -> dict:

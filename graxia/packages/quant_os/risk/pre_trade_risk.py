@@ -2,12 +2,15 @@
 
 from dataclasses import dataclass, field
 from decimal import Decimal
+from typing import Any
 
 from .circuit_breaker import CircuitBreaker
 from .kill_switch import KillSwitch
 from .position_sizer_v2 import SizingResult
 from .risk_ledger import RiskLedger
 from .risk_policy import RiskPolicy
+
+_UNSET_STOP_LOSS = object()
 
 
 @dataclass
@@ -31,10 +34,11 @@ def pre_trade_check(
     circuit_breaker: CircuitBreaker = None,
     asset_class: str = "",
     margin_level_pct: Decimal | None = None,
+    signal_stop_loss: Any = _UNSET_STOP_LOSS,
 ) -> RiskCheckResult:
     """
     Final risk gate before order submission.
-    Checks: kill switch, circuit breaker, daily/weekly/drawdown limits, position count, order rate, margin.
+    Checks: kill switch, circuit breaker, daily/weekly/drawdown limits, position count, order rate, margin, stop-loss.
     """
     reasons = []
     risk_budget = account_equity * risk_policy.risk_per_trade_fraction
@@ -50,6 +54,14 @@ def pre_trade_check(
     if circuit_breaker and asset_class:
         if circuit_breaker.is_open(asset_class):
             reasons.append(f"Circuit breaker open for {asset_class}: {circuit_breaker.reason}")
+
+    # Stop-loss requirement (only checked when signal stop-loss is explicitly provided)
+    if (
+        signal_stop_loss is not _UNSET_STOP_LOSS
+        and risk_policy.require_stop_loss
+        and (signal_stop_loss is None or signal_stop_loss <= 0)
+    ):
+        reasons.append("Stop-loss required but not provided")
 
     # Rejected by sizer
     if sizing_result.rejected:

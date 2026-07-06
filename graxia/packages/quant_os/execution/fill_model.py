@@ -38,10 +38,9 @@ class FillResult:
     ambiguous_path: str
 
 
-def simulate_entry(
-    req: FillRequest, bid: Decimal, ask: Decimal, spread: Decimal
-) -> FillResult:
-    if req.side == Side.BUY:
+def simulate_entry(req: FillRequest, bid: Decimal, ask: Decimal, spread: Decimal) -> FillResult:
+    # Use .value comparison to survive importlib.reload (enum identity changes).
+    if req.side.value == "BUY":
         entry = ask + req.slippage_entry
     else:
         entry = bid - req.slippage_entry
@@ -56,10 +55,8 @@ def simulate_entry(
     )
 
 
-def simulate_exit(
-    side: Side, bid: Decimal, ask: Decimal, slippage: Decimal
-) -> tuple[Decimal, Decimal]:
-    if side == Side.BUY:
+def simulate_exit(side: Side, bid: Decimal, ask: Decimal, slippage: Decimal) -> tuple[Decimal, Decimal]:
+    if side.value == "BUY":
         return bid - slippage, slippage
     return ask + slippage, slippage
 
@@ -71,7 +68,7 @@ def check_sl_tp_trigger(
     bid: Decimal,
     ask: Decimal,
 ) -> str | None:
-    if side == Side.BUY:
+    if side.value == "BUY":
         sl_hit = bid <= stop_loss
         tp_hit = bid >= take_profit
     else:
@@ -102,7 +99,7 @@ def check_sl_tp_trigger_ambiguous(
     - trigger is "SL", "TP", or None
     - is_ambiguous is True when both SL and TP could have been touched
     """
-    if side == Side.BUY:
+    if side.value == "BUY":
         sl_hit = bar_low <= stop_loss
         tp_hit = bar_high >= take_profit
     else:

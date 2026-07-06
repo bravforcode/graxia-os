@@ -84,7 +84,7 @@ class TradeLedger:
             return
         for f in sorted(self._dir.glob("*.json")):
             try:
-                data = json.loads(f.read_text())
+                data = json.loads(f.read_text(encoding="utf-8"))
                 self._records.append(_from_serializable(data))
             except Exception:
                 pass

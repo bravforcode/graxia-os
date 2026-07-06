@@ -321,3 +321,35 @@ class BinanceAdapter(BrokerAdapter):
                     return OrderResult(status=OrderStatus.FAILED, error=str(exc))
                 time.sleep(_RATE_LIMIT_PAUSE * attempt)
         return OrderResult(status=OrderStatus.TIMEOUT, error="Binance close_position retries exhausted")
+
+    def set_stop_loss(
+        self,
+        position_ticket: int,
+        symbol: str,
+        stop_loss_price: float,
+        take_profit: float | None = None,
+    ) -> bool:
+        """Set stop-loss via ccxt stop-market order.
+
+        Uses ``position_ticket`` as a reference for the parent position.
+        """
+        sym = symbol or self._order_symbols.get(str(position_ticket), "")
+        if not sym:
+            return False
+        try:
+            self._throttle()
+            self._exchange.create_order(
+                symbol=sym,
+                type="stop_market",
+                side="sell",
+                amount=0,
+                params={
+                    "stopPrice": stop_loss_price,
+                    "closePosition": True,
+                    "reduceOnly": True,
+                },
+            )
+            return True
+        except (ccxt.NetworkError, ccxt.ExchangeError) as exc:
+            logger.error("Binance set_stop_loss failed: %s", exc)
+            return False
