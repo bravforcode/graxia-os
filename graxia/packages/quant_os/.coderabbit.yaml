@@ -1,0 +1,11 @@
+reviews:
+  profile: chill
+  path_filters:
+    - "graxia/packages/quant_os/core/**"
+    - "graxia/packages/quant_os/ml/**"
+    - "graxia/packages/quant_os/strategies/**"
+    - "graxia/packages/quant_os/execution/**"
+    - "graxia/packages/quant_os/risk/**"
+    - "graxia/packages/quant_os/backtest/**"
+    - "graxia/packages/quant_os/validation/**"
+  review_status: true

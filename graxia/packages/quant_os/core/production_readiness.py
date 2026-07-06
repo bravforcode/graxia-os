@@ -133,7 +133,7 @@ class ProductionReadiness:
         issues = 0
         for py_file in core_dir.rglob("*.py"):
             try:
-                content = py_file.read_text()
+                content = py_file.read_text(encoding="utf-8")
                 if 'return {"event_type"' in content:
                     issues += 1
             except Exception:

@@ -201,9 +201,9 @@ class MeanReversionBollinger(Strategy):
             notes=f"MRB signal: {'Long' if long_signal else 'Short'} - Mean reversion in ranging market",
         )
 
-    def _is_low_liquidity_time(self) -> bool:
+    def _is_low_liquidity_time(self, current_time: datetime | None = None) -> bool:
         """Check if current time is low liquidity period"""
-        now = datetime.now(UTC)
+        now = current_time if current_time is not None else datetime.now(UTC)
         return now.hour in self.avoid_hours
 
     def _calculate_indicators(self, ohlcv_data: dict[str, list]) -> dict[str, Any]:

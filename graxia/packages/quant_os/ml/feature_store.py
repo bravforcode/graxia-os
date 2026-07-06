@@ -122,9 +122,12 @@ class FeatureStore:
         partition_dir.mkdir(parents=True, exist_ok=True)
         file_path = partition_dir / f"{cache_key}.parquet"
 
-        # Write parquet
+        # Write parquet — preserve DatetimeIndex
         df = pd.DataFrame(data)
-        df.to_parquet(file_path, index=False, engine="pyarrow")
+        if isinstance(df.index, pd.DatetimeIndex):
+            df.to_parquet(file_path, index=True, engine="pyarrow")
+        else:
+            df.to_parquet(file_path, index=False, engine="pyarrow")
         file_size = file_path.stat().st_size
 
         now = datetime.now(UTC)
@@ -223,6 +226,15 @@ class FeatureStore:
             return None
 
         df = pd.read_parquet(file_path)
+
+        # Restore DatetimeIndex if first column is datetime (written with index=True)
+        if not isinstance(df.index, pd.DatetimeIndex):
+            for col in df.columns:
+                if pd.api.types.is_datetime64_any_dtype(df[col]):
+                    df.set_index(col, inplace=True)
+                    df.index.name = None
+                    break
+
         logger.info(
             "cache_hit",
             cache_key=best.cache_key,

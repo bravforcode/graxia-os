@@ -1,7 +1,7 @@
 """Configuration management for Quant OS"""
 
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from ..risk.risk_policy import RiskPolicy
 from .enums import SystemState, TradingMode
@@ -176,44 +176,19 @@ class QuantConfig:
         # Risk limits — loaded into risk_policy (env overrides the bps values)
         risk_per_trade_pct_env = os.getenv("RISK_PER_TRADE_PCT")
         if risk_per_trade_pct_env is not None:
-            # Convert pct to bps: 1.0% = 100 bps
-            self.risk_policy = RiskPolicy(
-                risk_per_trade_bps=int(float(risk_per_trade_pct_env) * 100),
-                max_daily_loss_bps=self.risk_policy.max_daily_loss_bps,
-                max_weekly_loss_bps=self.risk_policy.max_weekly_loss_bps,
-                max_total_drawdown_bps=self.risk_policy.max_total_drawdown_bps,
-                max_open_positions=self.risk_policy.max_open_positions,
-            )
+            self.risk_policy = replace(self.risk_policy, risk_per_trade_bps=int(float(risk_per_trade_pct_env) * 100))
 
         max_daily_env = os.getenv("MAX_DAILY_LOSS_PCT")
         if max_daily_env is not None:
-            self.risk_policy = RiskPolicy(
-                risk_per_trade_bps=self.risk_policy.risk_per_trade_bps,
-                max_daily_loss_bps=int(float(max_daily_env) * 100),
-                max_weekly_loss_bps=self.risk_policy.max_weekly_loss_bps,
-                max_total_drawdown_bps=self.risk_policy.max_total_drawdown_bps,
-                max_open_positions=self.risk_policy.max_open_positions,
-            )
+            self.risk_policy = replace(self.risk_policy, max_daily_loss_bps=int(float(max_daily_env) * 100))
 
         max_dd_env = os.getenv("MAX_DRAWDOWN_PCT")
         if max_dd_env is not None:
-            self.risk_policy = RiskPolicy(
-                risk_per_trade_bps=self.risk_policy.risk_per_trade_bps,
-                max_daily_loss_bps=self.risk_policy.max_daily_loss_bps,
-                max_weekly_loss_bps=self.risk_policy.max_weekly_loss_bps,
-                max_total_drawdown_bps=int(float(max_dd_env) * 100),
-                max_open_positions=self.risk_policy.max_open_positions,
-            )
+            self.risk_policy = replace(self.risk_policy, max_total_drawdown_bps=int(float(max_dd_env) * 100))
 
         max_pos_env = os.getenv("MAX_POSITIONS")
         if max_pos_env is not None:
-            self.risk_policy = RiskPolicy(
-                risk_per_trade_bps=self.risk_policy.risk_per_trade_bps,
-                max_daily_loss_bps=self.risk_policy.max_daily_loss_bps,
-                max_weekly_loss_bps=self.risk_policy.max_weekly_loss_bps,
-                max_total_drawdown_bps=self.risk_policy.max_total_drawdown_bps,
-                max_open_positions=int(max_pos_env),
-            )
+            self.risk_policy = replace(self.risk_policy, max_open_positions=int(max_pos_env))
 
         # Paper trading
         self.paper_initial_capital = float(os.getenv("PAPER_INITIAL_CAPITAL", self.paper_initial_capital))
@@ -223,45 +198,26 @@ class QuantConfig:
 
     def _enforce_hard_limits(self):
         """Ensure soft limits don't exceed hard limits"""
-        # Enforce via RiskPolicy properties
         risk_pct = float(self.risk_policy.max_risk_per_trade_pct)
         if risk_pct > HARD_LIMITS["max_risk_per_trade_pct"]:
-            self.risk_policy = RiskPolicy(
-                risk_per_trade_bps=int(HARD_LIMITS["max_risk_per_trade_pct"] * 100),
-                max_daily_loss_bps=self.risk_policy.max_daily_loss_bps,
-                max_weekly_loss_bps=self.risk_policy.max_weekly_loss_bps,
-                max_total_drawdown_bps=self.risk_policy.max_total_drawdown_bps,
-                max_open_positions=self.risk_policy.max_open_positions,
+            self.risk_policy = replace(
+                self.risk_policy, risk_per_trade_bps=int(HARD_LIMITS["max_risk_per_trade_pct"] * 100)
             )
 
         dd_pct = float(self.risk_policy.max_drawdown_pct)
         if dd_pct > HARD_LIMITS["max_drawdown_pct"]:
-            self.risk_policy = RiskPolicy(
-                risk_per_trade_bps=self.risk_policy.risk_per_trade_bps,
-                max_daily_loss_bps=self.risk_policy.max_daily_loss_bps,
-                max_weekly_loss_bps=self.risk_policy.max_weekly_loss_bps,
-                max_total_drawdown_bps=int(HARD_LIMITS["max_drawdown_pct"] * 100),
-                max_open_positions=self.risk_policy.max_open_positions,
+            self.risk_policy = replace(
+                self.risk_policy, max_total_drawdown_bps=int(HARD_LIMITS["max_drawdown_pct"] * 100)
             )
 
         daily_pct = float(self.risk_policy.max_daily_loss_pct)
         if daily_pct > HARD_LIMITS["max_daily_loss_pct"]:
-            self.risk_policy = RiskPolicy(
-                risk_per_trade_bps=self.risk_policy.risk_per_trade_bps,
-                max_daily_loss_bps=int(HARD_LIMITS["max_daily_loss_pct"] * 100),
-                max_weekly_loss_bps=self.risk_policy.max_weekly_loss_bps,
-                max_total_drawdown_bps=self.risk_policy.max_total_drawdown_bps,
-                max_open_positions=self.risk_policy.max_open_positions,
+            self.risk_policy = replace(
+                self.risk_policy, max_daily_loss_bps=int(HARD_LIMITS["max_daily_loss_pct"] * 100)
             )
 
         if self.max_positions > HARD_LIMITS["max_positions"]:
-            self.risk_policy = RiskPolicy(
-                risk_per_trade_bps=self.risk_policy.risk_per_trade_bps,
-                max_daily_loss_bps=self.risk_policy.max_daily_loss_bps,
-                max_weekly_loss_bps=self.risk_policy.max_weekly_loss_bps,
-                max_total_drawdown_bps=self.risk_policy.max_total_drawdown_bps,
-                max_open_positions=HARD_LIMITS["max_positions"],
-            )
+            self.risk_policy = replace(self.risk_policy, max_open_positions=HARD_LIMITS["max_positions"])
 
     def _validate_mode_consistency(self):
         """Ensure trading mode and live flag are consistent"""
