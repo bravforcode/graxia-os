@@ -25,7 +25,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from quant_os.execution.adapters.base import (
-    Order,
     OrderStatus,
 )
 
@@ -56,6 +55,7 @@ from quant_os.execution.ledger import (
 from quant_os.execution.ledger import (
     Position as LedgerPosition,
 )
+from quant_os.execution.order import Order
 from quant_os.execution.order_state_machine import OrderState
 from quant_os.execution.quality_tracker import (
     ExecutionQualityTracker,
@@ -1266,7 +1266,7 @@ class TestBinanceAdapterChaos:
 
     def _order(self, order_id="ord-1", symbol="XAUUSD/USDT", side="BUY", qty=0.1):
         return Order(
-            order_id=order_id,
+            id=order_id,
             signal_id="sig-1",
             symbol=symbol,
             asset_class="metals",
@@ -1472,7 +1472,7 @@ class TestMT5AdapterChaos:
 
     def _order(self, order_id="ord-1", symbol="XAUUSD", side="BUY", qty=0.1):
         return Order(
-            order_id=order_id,
+            id=order_id,
             signal_id="sig-1",
             symbol=symbol,
             asset_class="metals",
@@ -1592,7 +1592,8 @@ class TestMT5AdapterChaos:
         c.mt5.order_send.return_value = None
         c.mt5.last_error.return_value = "error"
         result = c.adapter.cancel_order("12345")
-        assert result.status == OrderStatus.FAILED
+        # With retry logic, None result returns TIMEOUT after retries exhausted
+        assert result.status == OrderStatus.TIMEOUT
 
     def test_get_positions_empty(self):
         c = self.ctx
@@ -1623,7 +1624,8 @@ class TestMT5AdapterChaos:
         c.adapter._connected = True
         c.mt5.orders_get.return_value = None
         result = c.adapter.get_order_status("12345")
-        assert result.status == OrderStatus.FILLED
+        # Bug fix: missing order now returns UNKNOWN (not FILLED)
+        assert result.status == OrderStatus.UNKNOWN
 
     def test_get_order_status_open(self):
         c = self.ctx

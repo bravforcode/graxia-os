@@ -396,7 +396,7 @@ class TestAutoRetrainChaos:
 
             log_retrain({"status": "test"})
             assert log_path.exists()
-            content = log_path.read_text()
+            content = log_path.read_text(encoding="utf-8")
             assert "test" in content
 
 

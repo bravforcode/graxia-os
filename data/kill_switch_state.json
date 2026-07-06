@@ -1,9 +1,9 @@
 {
-  "state": "INACTIVE",
+  "state": "ACTIVE",
   "killed_classes": [],
-  "reason": "canary_deactivate",
-  "activated_at_utc": "2026-07-03T12:41:07.137757+00:00",
-  "authorized_by": "system",
+  "reason": "test actual close",
+  "activated_at_utc": "2026-07-06T08:45:02.775151+00:00",
+  "authorized_by": "manual",
   "history": [
     {
       "action": "state=ACTIVE",
@@ -354,6 +354,95 @@
       "action": "state=INACTIVE",
       "user": "system",
       "timestamp": "2026-07-03T12:41:07.137757+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T08:25:42.197769+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T08:29:18.660317+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T08:30:33.435403+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T08:34:20.860459+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T08:34:37.977041+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T08:37:00.534028+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T08:37:31.303298+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T08:38:51.240774+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T08:40:01.205568+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T08:40:37.254016+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T08:41:18.259583+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T08:41:55.498778+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T08:42:31.426804+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T08:43:07.139382+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T08:43:43.662912+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T08:44:24.113783+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T08:45:02.775151+00:00"
     }
-  ]
+  ],
+  "closed_tickets": {
+    "42": "2026-07-06T08:44:24.120160+00:00",
+    "42": "2026-07-06T08:45:02.779013+00:00"
+  }
 }

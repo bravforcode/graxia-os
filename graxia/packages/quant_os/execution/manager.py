@@ -1,6 +1,7 @@
 """Order Manager - orchestrates order lifecycle"""
 
 import asyncio
+import logging
 from collections.abc import Callable
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -24,6 +25,8 @@ from .adapters.base import Order as AdapterOrder
 from .adapters.manager import BrokerManager
 from .idempotency import IdempotencyChecker
 from .order import Order, OrderStateMachine, create_order
+
+logger = logging.getLogger(__name__)
 
 
 class OrderManager:
@@ -62,6 +65,11 @@ class OrderManager:
 
         # Human approval callbacks for MICRO mode
         self._approval_callbacks: dict[str, Callable] = {}
+
+        # Strong references to fire-and-forget background tasks (e.g. MICRO
+        # mode expiry timers) so they are not garbage-collected mid-flight.
+        # Cleared by _on_expiry_task_done() once each task completes.
+        self._background_tasks: set[asyncio.Task] = set()
 
     async def submit_order(
         self,
@@ -150,8 +158,16 @@ class OrderManager:
                 state_machine.transition(OrderStatus.PENDING_HUMAN, "Awaiting human approval")
                 await self._persist_order(order, state_machine)
 
-                # Set expiration timer
-                asyncio.create_task(self._expire_order_after_delay(order.id, GOLDEN_RULES.ORDER_EXPIRY_MICRO_SECONDS))
+                # Set expiration timer. Keep a strong reference in
+                # self._background_tasks so the task cannot be garbage-collected
+                # mid-flight, and log if it ever raises — otherwise a failed
+                # expiry would silently leave the order stuck in PENDING_HUMAN
+                # forever.
+                expiry_task = asyncio.create_task(
+                    self._expire_order_after_delay(order.id, GOLDEN_RULES.ORDER_EXPIRY_MICRO_SECONDS)
+                )
+                self._background_tasks.add(expiry_task)
+                expiry_task.add_done_callback(self._on_expiry_task_done)
 
                 return {
                     "success": True,
@@ -291,6 +307,10 @@ class OrderManager:
 
     async def _submit_to_broker(self, order: Order, state_machine: OrderStateMachine) -> dict[str, Any]:
         """Submit order to broker via the unified adapter interface."""
+        if order.stop_price is None or order.stop_price <= 0:
+            logger.error("CRITICAL: Order %s has no stop-loss — blocking submission", order.id)
+            raise RiskViolationError("Stop-loss is required", violation_type="MISSING_STOP_LOSS")
+
         # Health check
         if not await self.broker_manager.health_check():
             raise BrokerError("Broker connection unhealthy")

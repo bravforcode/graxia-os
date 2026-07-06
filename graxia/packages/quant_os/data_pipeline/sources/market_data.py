@@ -1,15 +1,18 @@
 """
 sources/market_data.py — Market Data Sources (yfinance, ccxt, alpha_vantage)
 """
-import pandas as pd
-import yfinance as yf
+
+import json
+import sys
+import time
 from datetime import datetime
 from pathlib import Path
-import json
-import time
-import sys
+
+import pandas as pd
+import yfinance as yf
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from config import SYMBOLS, STORAGE_DIR, RETRY_MAX, RETRY_DELAY
+from config import RETRY_DELAY, RETRY_MAX, STORAGE_DIR, SYMBOLS
 
 CACHE_FILE = STORAGE_DIR / "market_cache.json"
 
@@ -17,7 +20,7 @@ CACHE_FILE = STORAGE_DIR / "market_cache.json"
 def _load_cache() -> dict:
     if CACHE_FILE.exists():
         try:
-            return json.loads(CACHE_FILE.read_text())
+            return json.loads(CACHE_FILE.read_text(encoding="utf-8"))
         except Exception:
             pass
     return {}
@@ -73,6 +76,7 @@ def fetch_yfinance(symbols: list[str], period: str = "5d") -> pd.DataFrame:
 def fetch_crypto_ccxt(symbols: list[str], timeframe: str = "1d") -> pd.DataFrame:
     """Fetch crypto data from ccxt (Binance)"""
     import ccxt
+
     results = []
     for symbol in symbols:
         for attempt in range(RETRY_MAX):

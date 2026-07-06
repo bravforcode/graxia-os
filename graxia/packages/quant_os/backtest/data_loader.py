@@ -10,7 +10,7 @@ Supports:
 
 import csv
 import os
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import pandas as pd
 
@@ -175,9 +175,9 @@ def generate_sample_data(
     Returns:
         Tuple of (ohlcv_dict, timestamps)
     """
-    import random
+    import random as _random_mod
 
-    random.seed(seed)
+    rng = _random_mod.Random(seed)
 
     timestamps = []
     data = {"open": [], "high": [], "low": [], "close": [], "volume": []}
@@ -186,22 +186,22 @@ def generate_sample_data(
     start_date = datetime(2020, 1, 1)
 
     for i in range(bars):
-        ts = start_date + __import__("datetime").timedelta(hours=i)
+        ts = start_date + timedelta(hours=i)
         timestamps.append(ts)
 
         # Generate OHLCV with random walk
         open_price = price
-        change = random.gauss(trend, volatility)
+        change = rng.gauss(trend, volatility)
         close_price = open_price * (1 + change)
 
         # High/low
         intrabar_vol = volatility * 0.5
-        high_price = max(open_price, close_price) * (1 + abs(random.gauss(0, intrabar_vol)))
-        low_price = min(open_price, close_price) * (1 - abs(random.gauss(0, intrabar_vol)))
+        high_price = max(open_price, close_price) * (1 + abs(rng.gauss(0, intrabar_vol)))
+        low_price = min(open_price, close_price) * (1 - abs(rng.gauss(0, intrabar_vol)))
 
         # Volume (random with some pattern)
         base_volume = 1000000
-        volume = base_volume * (1 + random.gauss(0, 0.3))
+        volume = base_volume * (1 + rng.gauss(0, 0.3))
 
         data["open"].append(round(open_price, 5))
         data["high"].append(round(high_price, 5))

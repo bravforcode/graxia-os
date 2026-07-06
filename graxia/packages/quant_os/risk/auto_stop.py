@@ -335,7 +335,7 @@ class AutoStop:
     def _load(self) -> None:
         """Load state from JSON."""
         try:
-            data = json.loads(self._state_file.read_text())
+            data = json.loads(self._state_file.read_text(encoding="utf-8"))
             self._threshold_pct = data.get("threshold_pct", self._threshold_pct)
             self._hwm = data.get("hwm", 0.0)
             self._triggered = data.get("triggered", False)

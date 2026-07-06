@@ -25,8 +25,12 @@ Expected Performance (EURUSD 2020-2026):
 from decimal import Decimal
 from typing import Any
 
+import structlog
+
 from ..core.enums import RegimeType, SignalType
 from .base import Signal, Strategy, StrategyConfig
+
+logger = structlog.get_logger(__name__)
 
 
 class MultiTimeframeMomentum(Strategy):
@@ -230,7 +234,7 @@ class MultiTimeframeMomentum(Strategy):
             # Fallback: return empty dict, indicators should be pre-calculated
             return {}
         except Exception as e:
-            print(f"Indicator calculation error: {e}")
+            logger.warning("mtm.indicator_error", error=str(e))
             return {}
 
     def _calculate_confidence(self, conditions: dict[str, bool], rsi: float, direction: str) -> float:

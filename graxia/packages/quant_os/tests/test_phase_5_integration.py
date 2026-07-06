@@ -1,16 +1,20 @@
 """Phase 5 integration tests — statistical validation."""
+
+from pathlib import Path
+
 import pytest
-from graxia.packages.quant_os.validation.experiment_registry import ExperimentRegistry, ExperimentRecord
-from graxia.packages.quant_os.validation.walk_forward import walk_forward_split
-from graxia.packages.quant_os.validation.deflated_sharpe import deflated_sharpe_ratio
-from graxia.packages.quant_os.validation.probability_overfitting import calculate_pbo
-from graxia.packages.quant_os.validation.cost_stress import analyze_cost_sensitivity
-from graxia.packages.quant_os.validation.parameter_stability import analyze_parameter_stability
+
 from graxia.packages.quant_os.validation.bootstrap_sensitivity import bootstrap_confidence_interval
+from graxia.packages.quant_os.validation.cost_stress import analyze_cost_sensitivity
+from graxia.packages.quant_os.validation.deflated_sharpe import deflated_sharpe_ratio
+from graxia.packages.quant_os.validation.experiment_registry import ExperimentRecord, ExperimentRegistry
+from graxia.packages.quant_os.validation.parameter_stability import analyze_parameter_stability
+from graxia.packages.quant_os.validation.probability_overfitting import calculate_pbo
+from graxia.packages.quant_os.validation.walk_forward import walk_forward_split
 
 
-def test_experiment_registry_works():
-    reg = ExperimentRegistry()
+def test_experiment_registry_works(tmp_path):
+    reg = ExperimentRegistry(path=Path(tmp_path) / "registry.json")
     record = ExperimentRecord(
         experiment_id="TEST-001",
         git_commit="abc123",

@@ -11,16 +11,15 @@ import pathlib
 import subprocess
 import sys
 import time
-from datetime import datetime, UTC
-from typing import Optional
+from datetime import UTC, datetime
 
 import requests
 
 from ..core.telegram_notify import TelegramNotifier
 
 HEARTBEAT_FILE = pathlib.Path("data/heartbeat.txt")
-MAX_STALE_SECONDS_LOCAL_RESTART = 900    # 15 min — try local restart first
-MAX_STALE_SECONDS_FAILOVER = 1800        # 30 min — escalate to standby VPS
+MAX_STALE_SECONDS_LOCAL_RESTART = 900  # 15 min — try local restart first
+MAX_STALE_SECONDS_FAILOVER = 1800  # 30 min — escalate to standby VPS
 
 
 def update_heartbeat():
@@ -45,25 +44,21 @@ def trigger_standby_takeover(standby_webhook_url: str, notifier: TelegramNotifie
         )
         notifier.failover_triggered("Primary VPS heartbeat stale > 30min")
     except Exception as e:
-        notifier.risk_alert(
-            f"FAILOVER CALL FAILED: {e} — standby may not have activated, check manually"
-        )
+        notifier.risk_alert(f"FAILOVER CALL FAILED: {e} — standby may not have activated, check manually")
 
 
-def watchdog_loop(standby_webhook_url: str, notifier: Optional[TelegramNotifier] = None):
+def watchdog_loop(standby_webhook_url: str, notifier: TelegramNotifier | None = None):
     """Run as a separate process. Checks heartbeat every 300 s."""
     if notifier is None:
         notifier = TelegramNotifier()
     failover_sent = False
     while True:
-        time.sleep(300)   # check every 5 min
+        time.sleep(300)  # check every 5 min
         if HEARTBEAT_FILE.exists():
-            last = datetime.fromisoformat(HEARTBEAT_FILE.read_text().strip())
+            last = datetime.fromisoformat(HEARTBEAT_FILE.read_text(encoding="utf-8").strip())
             age = (datetime.now(UTC) - last).total_seconds()
             if MAX_STALE_SECONDS_LOCAL_RESTART < age <= MAX_STALE_SECONDS_FAILOVER:
-                notifier.risk_alert(
-                    f"Bot heartbeat stale {age:.0f}s — attempting local RESTART"
-                )
+                notifier.risk_alert(f"Bot heartbeat stale {age:.0f}s — attempting local RESTART")
                 subprocess.Popen(
                     [sys.executable, "webhook.py", "--live"],
                     cwd=HEARTBEAT_FILE.parent.parent,
@@ -77,6 +72,7 @@ def watchdog_loop(standby_webhook_url: str, notifier: Optional[TelegramNotifier]
 
 if __name__ == "__main__":
     import os
+
     standby = os.getenv("STANDBY_WEBHOOK_URL", "")
     if not standby:
         print("STANDBY_WEBHOOK_URL not set — failover disabled.")

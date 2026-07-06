@@ -1,4 +1,5 @@
 """Tests for quarantine_manager."""
+
 import json
 from pathlib import Path
 
@@ -66,7 +67,7 @@ def test_quarantine_integrity():
     assert msg == "OK"
 
     # Tamper with manifest
-    data = json.loads(path.read_text())
+    data = json.loads(path.read_text(encoding="utf-8"))
     data["entries"][0]["test_id"] = "tampered"
     path.write_text(json.dumps(data, indent=2))
     ok2, msg2 = mgr.verify_integrity()

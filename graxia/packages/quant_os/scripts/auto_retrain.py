@@ -14,13 +14,11 @@ from __future__ import annotations
 
 import asyncio
 import os
-import pickle
 import sys
 import time
 from pathlib import Path
 
 import structlog
-
 from graxia.packages.quant_os.core.safe_pickle import safe_load_model
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -33,7 +31,7 @@ logger = structlog.get_logger(__name__)
 # Load .env
 ENV_PATH = Path(__file__).parent.parent / ".env"
 if ENV_PATH.exists():
-    for line in ENV_PATH.read_text().splitlines():
+    for line in ENV_PATH.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if line and not line.startswith("#") and "=" in line:
             k, v = line.split("=", 1)
@@ -64,22 +62,71 @@ def load_champion():
 
 
 def save_champion(model_data: dict) -> None:
-    """Save model to CHAMPION_PATH, creating directories if needed."""
+    """Save model to CHAMPION_PATH using joblib (compatible with safe_load_model)."""
+    import joblib
+
     CHAMPION_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(CHAMPION_PATH, "wb") as f:
-        pickle.dump(model_data, f)
+    joblib.dump(model_data, CHAMPION_PATH)
 
 
 def evaluate_model(model_data: dict):
-    """Evaluate a model and return metrics object."""
+    """Evaluate a model on labeled data and return real metrics."""
     from dataclasses import dataclass
+
+    import numpy as np
 
     @dataclass
     class ModelMetrics:
-        deflated_sharpe: float = 1.0
-        oos_max_drawdown: float = 10.0
+        deflated_sharpe: float = 0.0
+        oos_max_drawdown: float = 0.0
 
-    return ModelMetrics()
+    model = model_data.get("model")
+    feature_names = model_data.get("feature_names", [])
+
+    if model is None:
+        logger.error("evaluate_model.no_model_in_data")
+        return ModelMetrics()
+
+    try:
+        labeled = label_from_source("warehouse")
+        if len(labeled) < MIN_SAMPLES:
+            return ModelMetrics()
+
+        engineer = FeatureEngineer()
+        feature_set = engineer.generate_features(labeled)
+
+        X = np.array([[f.get(name, 0.0) for name in feature_names] for f in feature_set.features])
+        y_true = np.array(feature_set.labels)
+
+        if len(X) == 0 or len(feature_names) == 0:
+            return ModelMetrics()
+
+        y_pred = model.predict(X)
+        correct = (y_true == y_pred).astype(int)
+        returns = np.where(correct, np.abs(feature_set.labels), -np.abs(feature_set.labels) * 0.5)
+
+        if len(returns) >= 30 and np.std(returns) > 0:
+            sharpe = np.mean(returns) / np.std(returns) * np.sqrt(252 * 96)
+        elif len(returns) > 1 and np.std(returns) > 0:
+            sharpe = np.mean(returns) / np.std(returns) * np.sqrt(len(returns))
+        else:
+            sharpe = 0.0
+
+        cumulative = np.cumsum(returns)
+        running_max = np.maximum.accumulate(cumulative)
+        drawdowns = running_max - cumulative
+        max_dd = float(np.max(drawdowns)) if len(drawdowns) > 0 else 0.0
+
+        n_trials = max(1, len(feature_names))
+        deflated = sharpe * (1 - 0.05 * np.log(n_trials + 1))
+
+        return ModelMetrics(
+            deflated_sharpe=round(deflated, 4),
+            oos_max_drawdown=round(max_dd, 4),
+        )
+    except Exception as e:
+        logger.error("evaluate_model.failed", error=str(e))
+        return ModelMetrics()
 
 
 def hot_swap(challenger_data: dict, challenger_metrics) -> bool:
@@ -200,12 +247,56 @@ def retrain_model() -> dict:
     }
 
 
+def check_drift_monitor() -> dict:
+    """Check drift using the DriftMonitor from ml/drift_monitor.py.
+
+    Instantiates a DriftMonitor, loads persisted state, and checks for
+    accuracy or feature drift across tracked model/symbol combinations.
+    """
+    try:
+        from ml.drift_monitor import DriftMonitor
+
+        monitor = DriftMonitor()
+        reports = monitor.get_drift_stats()
+
+        if not reports:
+            return {"drifted": False, "reason": "no_monitor_state"}
+
+        for report in reports:
+            if report.accuracy_window < 0.45:
+                logger.warning(
+                    "drift_monitor.accuracy_low",
+                    model=report.model_version,
+                    symbol=report.symbol,
+                    accuracy=report.accuracy_window,
+                )
+                return {"drifted": True, "reason": "accuracy_drop", "accuracy": report.accuracy_window}
+            for alert in report.alerts:
+                if alert.severity in ("warning", "critical"):
+                    logger.warning(
+                        "drift_monitor.alert",
+                        alert_type=alert.alert_type,
+                        severity=alert.severity,
+                        message=alert.message,
+                    )
+                    return {"drifted": True, "reason": alert.alert_type, "message": alert.message}
+
+        return {"drifted": False, "reason": "within_thresholds", "reports": len(reports)}
+    except Exception as e:
+        logger.warning("drift_monitor.check_failed", error=str(e))
+        return {"drifted": False, "reason": f"monitor_error: {e}"}
+
+
 async def run_auto_retrain(force: bool = False) -> dict:
     """Run auto-retrain cycle."""
     if not force:
         drift = check_drift()
         logger.info("retrain.drift_check", **drift)
-        if not drift["drifted"]:
+
+        monitor_drift = check_drift_monitor()
+        logger.info("retrain.drift_monitor_check", **monitor_drift)
+
+        if not drift["drifted"] and not monitor_drift["drifted"]:
             return {"action": "skipped", "reason": "no_drift", **drift}
 
     logger.info("retrain.start", force=force)

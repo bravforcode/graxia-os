@@ -1,4 +1,25 @@
 """
+DEPRECATED — ORPHANED module, not used in production.
+
+This 6-regime per-asset-class detector is superseded by the canonical
+RegimeDetector in validation/regime_detector.py. It was designed for a
+multi-asset architecture that was never completed.
+
+Migration:
+    from core.regime import RegimeDetector, RegimeConfig, RegimeState
+
+Do not import from this module.
+"""
+
+import warnings as _warnings
+
+_warnings.warn(
+    "alpha/regime_detector.py is orphaned and deprecated. " "Use core.regime or validation.regime_detector.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+"""
 Regime Detector — per-asset-class market regime classification.
 
 Detects regimes using asset-class-specific methods:
@@ -14,7 +35,7 @@ Each regime maps to a position multiplier and a list of allowed strategies.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 import structlog
 
@@ -64,7 +85,7 @@ INDICES_REGIMES = {
 # Position multipliers by regime
 # ---------------------------------------------------------------------------
 
-_POSITION_MULTIPLIERS: Dict[str, float] = {
+_POSITION_MULTIPLIERS: dict[str, float] = {
     # Metals
     "TRENDING_UP": 1.0,
     "TRENDING_DOWN": 0.8,
@@ -96,7 +117,7 @@ _POSITION_MULTIPLIERS: Dict[str, float] = {
 # Allowed strategies by regime
 # ---------------------------------------------------------------------------
 
-_ALLOWED_STRATEGIES: Dict[str, Dict[str, List[str]]] = {
+_ALLOWED_STRATEGIES: dict[str, dict[str, list[str]]] = {
     "metals": {
         "TRENDING_UP": ["mtm", "mlb", "ensemble"],
         "TRENDING_DOWN": ["mtm", "mlb", "ensemble"],
@@ -155,7 +176,7 @@ class RegimeDetector:
     CRYPTO_VOL_HIGH_PERCENTILE: float = 90.0
     CRYPTO_VOL_LOW_PERCENTILE: float = 10.0
 
-    def detect(self, data: Dict[str, Any], asset_class: AssetClass) -> str:
+    def detect(self, data: dict[str, Any], asset_class: AssetClass) -> str:
         """Detect current regime for the given asset class.
 
         Args:
@@ -189,7 +210,7 @@ class RegimeDetector:
         """
         return _POSITION_MULTIPLIERS.get(regime, 0.5)
 
-    def get_allowed_strategies(self, regime: str, asset_class: AssetClass) -> List[str]:
+    def get_allowed_strategies(self, regime: str, asset_class: AssetClass) -> list[str]:
         """Return list of strategy names allowed in the given regime.
 
         Args:
@@ -206,7 +227,7 @@ class RegimeDetector:
     # Metals detection (ADX-based)
     # ------------------------------------------------------------------
 
-    def _detect_metals(self, data: Dict[str, Any]) -> str:
+    def _detect_metals(self, data: dict[str, Any]) -> str:
         """Detect metals regime using ADX, EMA slope, and ATR state."""
         closes = self._extract_series(data, "closes", "close")
         highs = self._extract_series(data, "highs", "high")
@@ -253,7 +274,7 @@ class RegimeDetector:
     # Crypto detection (volatility clustering)
     # ------------------------------------------------------------------
 
-    def _detect_crypto(self, data: Dict[str, Any]) -> str:
+    def _detect_crypto(self, data: dict[str, Any]) -> str:
         """Detect crypto regime using volatility clustering and returns."""
         closes = self._extract_series(data, "closes", "close")
         volumes = self._extract_series(data, "volumes", "volume")
@@ -299,7 +320,7 @@ class RegimeDetector:
     # Forex detection (ADX-based)
     # ------------------------------------------------------------------
 
-    def _detect_forex(self, data: Dict[str, Any]) -> str:
+    def _detect_forex(self, data: dict[str, Any]) -> str:
         """Detect forex regime using ADX and spread data."""
         closes = self._extract_series(data, "closes", "close")
         highs = self._extract_series(data, "highs", "high")
@@ -337,7 +358,7 @@ class RegimeDetector:
     # Indices detection (VIX proxy)
     # ------------------------------------------------------------------
 
-    def _detect_indices(self, data: Dict[str, Any]) -> str:
+    def _detect_indices(self, data: dict[str, Any]) -> str:
         """Detect indices regime using VIX proxy and volatility."""
         closes = self._extract_series(data, "closes", "close")
         vix = data.get("vix_proxy") or data.get("vix")
@@ -389,9 +410,7 @@ class RegimeDetector:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _extract_series(
-        data: Dict[str, Any], *keys: str
-    ) -> List[float]:
+    def _extract_series(data: dict[str, Any], *keys: str) -> list[float]:
         """Extract a numeric series from data dict, trying multiple key names."""
         for key in keys:
             val = data.get(key)
@@ -400,15 +419,13 @@ class RegimeDetector:
         return []
 
     @staticmethod
-    def _calc_adx(
-        highs: List[float], lows: List[float], closes: List[float], period: int
-    ) -> List[float]:
+    def _calc_adx(highs: list[float], lows: list[float], closes: list[float], period: int) -> list[float]:
         """Wilder's ADX."""
         if len(closes) < period + 1:
             return []
-        tr: List[float] = []
-        up_moves: List[float] = []
-        down_moves: List[float] = []
+        tr: list[float] = []
+        up_moves: list[float] = []
+        down_moves: list[float] = []
         for i in range(1, len(closes)):
             hl = highs[i] - lows[i]
             hc = abs(highs[i] - closes[i - 1])
@@ -419,7 +436,7 @@ class RegimeDetector:
             up_moves.append(um if um > dm and um > 0 else 0.0)
             down_moves.append(dm if dm > um and dm > 0 else 0.0)
 
-        def _wilder_smooth(vals: List[float], p: int) -> List[float]:
+        def _wilder_smooth(vals: list[float], p: int) -> list[float]:
             if not vals or p <= 1:
                 return []
             result = [sum(vals[:p]) / p]
@@ -431,7 +448,7 @@ class RegimeDetector:
         up_s = _wilder_smooth(up_moves, period)
         dn_s = _wilder_smooth(down_moves, period)
         n = min(len(atr_s), len(up_s), len(dn_s))
-        dx: List[float] = []
+        dx: list[float] = []
         for i in range(n):
             if atr_s[i] > 0:
                 pdi = 100 * up_s[i] / atr_s[i]
@@ -443,7 +460,7 @@ class RegimeDetector:
         return _wilder_smooth(dx, period)
 
     @staticmethod
-    def _calc_ema(values: List[float], period: int) -> List[float]:
+    def _calc_ema(values: list[float], period: int) -> list[float]:
         """Exponential Moving Average."""
         if len(values) < period:
             return []
@@ -454,28 +471,26 @@ class RegimeDetector:
         return ema
 
     @staticmethod
-    def _calc_slope(values: List[float], lookback: int) -> float:
+    def _calc_slope(values: list[float], lookback: int) -> float:
         """Normalized slope over lookback bars."""
         if len(values) < lookback + 1:
             return 0.0
-        recent = values[-(lookback + 1):]
+        recent = values[-(lookback + 1) :]
         return (recent[-1] - recent[0]) / recent[0] if recent[0] != 0 else 0.0
 
     @staticmethod
-    def _calc_atr(
-        highs: List[float], lows: List[float], closes: List[float], period: int
-    ) -> List[float]:
+    def _calc_atr(highs: list[float], lows: list[float], closes: list[float], period: int) -> list[float]:
         """Average True Range (Wilder smoothing)."""
         if len(closes) < period + 1:
             return []
-        tr: List[float] = []
+        tr: list[float] = []
         for i in range(1, len(closes)):
             hl = highs[i] - lows[i]
             hc = abs(highs[i] - closes[i - 1])
             lc = abs(lows[i] - closes[i - 1])
             tr.append(max(hl, hc, lc))
 
-        def _wilder_smooth(vals: List[float], p: int) -> List[float]:
+        def _wilder_smooth(vals: list[float], p: int) -> list[float]:
             if not vals or p <= 1:
                 return []
             result = [sum(vals[:p]) / p]
@@ -486,44 +501,42 @@ class RegimeDetector:
         return _wilder_smooth(tr, period)
 
     @staticmethod
-    def _calc_returns(prices: List[float], period: int) -> List[float]:
+    def _calc_returns(prices: list[float], period: int) -> list[float]:
         """Calculate percentage returns over period bars."""
         if len(prices) <= period:
             return []
         return [
-            (prices[i] - prices[i - period]) / prices[i - period]
-            if prices[i - period] != 0
-            else 0.0
+            (prices[i] - prices[i - period]) / prices[i - period] if prices[i - period] != 0 else 0.0
             for i in range(period, len(prices))
         ]
 
     @staticmethod
-    def _rolling_volatility(returns: List[float], window: int) -> List[float]:
+    def _rolling_volatility(returns: list[float], window: int) -> list[float]:
         """Rolling standard deviation of returns."""
         if len(returns) < window:
             return []
-        result: List[float] = []
+        result: list[float] = []
         for i in range(window, len(returns) + 1):
-            chunk = returns[i - window:i]
+            chunk = returns[i - window : i]
             mean = sum(chunk) / len(chunk)
             var = sum((x - mean) ** 2 for x in chunk) / len(chunk)
-            result.append(var ** 0.5)
+            result.append(var**0.5)
         return result
 
     @staticmethod
-    def _percentiles(values: List[float], pcts: List[float]) -> Dict[float, float]:
+    def _percentiles(values: list[float], pcts: list[float]) -> dict[float, float]:
         """Calculate percentiles from a list of values."""
         if not values:
             return {p: 0.0 for p in pcts}
         sorted_vals = sorted(values)
-        result: Dict[float, float] = {}
+        result: dict[float, float] = {}
         for pct in pcts:
             idx = int(len(sorted_vals) * pct / 100)
             idx = min(idx, len(sorted_vals) - 1)
             result[pct] = sorted_vals[idx]
         return result
 
-    def _atr_ratio(self, atr: List[float], window: int) -> float:
+    def _atr_ratio(self, atr: list[float], window: int) -> float:
         """Current ATR / SMA(ATR, window)."""
         if not atr:
             return 1.0

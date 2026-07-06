@@ -4,6 +4,7 @@ RESTORED from deleted test_phase_4_integration.py (BE-P7 commit 3ae373f).
 Migrated to current API. Contamination/hypothesis tests quarantined
 (see QUARANTINE_MANIFEST.md).
 """
+
 import json
 from pathlib import Path
 
@@ -32,7 +33,7 @@ def test_eurusd_data_manifests_valid():
     for tf in ["D1", "H1", "M15"]:
         path = MANIFEST_DIR / f"EURUSD_{tf}_manifest.json"
         if path.exists():
-            data = json.loads(path.read_text())
+            data = json.loads(path.read_text(encoding="utf-8"))
             for field in required:
                 assert field in data, f"Missing {field} in EURUSD_{tf}_manifest.json"
             assert data["symbol"] == "EURUSD"
@@ -42,6 +43,7 @@ def test_eurusd_data_manifests_valid():
 def test_eurusd_contract_snapshot_exists():
     """EURUSD contract snapshot module must exist."""
     from graxia.packages.quant_os.markets.eurusd.contract_snapshot import EURUSDContractSnapshot
+
     c = EURUSDContractSnapshot()
     assert c.symbol == "EURUSD"
     assert c.contract_size == 100000
@@ -50,6 +52,7 @@ def test_eurusd_contract_snapshot_exists():
 def test_eurusd_session_calendar_works():
     """Session calendar must identify sessions."""
     from graxia.packages.quant_os.markets.eurusd.session_calendar import EURUSDSessionCalendar
+
     cal = EURUSDSessionCalendar()
     sessions = cal.get_active_sessions(10)
     assert any(s.name == "london" for s in sessions)
@@ -58,6 +61,7 @@ def test_eurusd_session_calendar_works():
 def test_eurusd_event_calendar_works():
     """Event calendar must list high-impact events."""
     from graxia.packages.quant_os.markets.eurusd.event_calendar import EURUSDEventCalendar
+
     cal = EURUSDEventCalendar()
     events = cal.get_high_impact()
     assert len(events) >= 5
@@ -67,7 +71,7 @@ def test_no_xauusd_data_in_eurusd():
     """EURUSD data must not contain XAUUSD values."""
     csv_path = DATA_DIR / "EURUSD_D1.csv"
     if csv_path.exists():
-        content = csv_path.read_text()
+        content = csv_path.read_text(encoding="utf-8")
         lines = content.strip().split("\n")[1:101]
         for line in lines:
             parts = line.split(",")

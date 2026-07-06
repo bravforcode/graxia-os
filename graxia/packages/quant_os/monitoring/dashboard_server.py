@@ -6,12 +6,12 @@ Serves real-time bot state via HTTP on port 8080.
 
 import json
 import os
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
 
+import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse
-import uvicorn
 
 BASE = Path(__file__).resolve().parent.parent
 LOG_FILE = BASE / "logs" / "paper_trading.jsonl"
@@ -36,7 +36,7 @@ def load_session() -> dict:
     if not SESSION_FILE.exists():
         return {}
     try:
-        return json.loads(SESSION_FILE.read_text())
+        return json.loads(SESSION_FILE.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
         return {}
 
@@ -109,9 +109,7 @@ def parse_status(lines: list[str]) -> dict:
         result["timestamp"] = ts
 
     # Count trades
-    result["daily_trades"] = sum(
-        1 for e in jsonl_entries if e.get("event") in ("trade_opened", "trade_closed")
-    )
+    result["daily_trades"] = sum(1 for e in jsonl_entries if e.get("event") in ("trade_opened", "trade_closed"))
 
     return result
 

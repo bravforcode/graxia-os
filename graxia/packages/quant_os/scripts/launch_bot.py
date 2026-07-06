@@ -1,4 +1,5 @@
 """Launcher for paper trade bot - handles logging properly."""
+
 import os
 import subprocess
 from pathlib import Path
@@ -31,11 +32,12 @@ proc = subprocess.Popen(
 print(f"Bot started PID: {proc.pid}")
 print("Waiting 10s to verify...")
 import time
+
 time.sleep(10)
 
 if proc.poll() is not None:
     print(f"Bot CRASHED with code {proc.returncode}")
-    print("STDERR:", ERR_LOG.read_text()[:500])
+    print("STDERR:", ERR_LOG.read_text(encoding="utf-8")[:500])
 else:
     print(f"Bot RUNNING (PID {proc.pid})")
-    print("STDOUT:", OUT_LOG.read_text()[:500])
+    print("STDOUT:", OUT_LOG.read_text(encoding="utf-8")[:500])

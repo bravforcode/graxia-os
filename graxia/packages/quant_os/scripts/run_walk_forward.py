@@ -18,7 +18,7 @@ import subprocess
 import sys
 import time
 import warnings
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Any
 
 import numpy as np
@@ -28,6 +28,8 @@ warnings.filterwarnings("ignore")
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPTS_DIR = os.path.join(BASE, "scripts")
+sys.path.insert(0, BASE)
+from core.features import build_features as canonical_build_features  # noqa: E402
 
 DEFAULT_DATA_DIR = os.path.join(BASE, "data")
 DEFAULT_FEAT_DIR = os.path.join(BASE, "artifacts", "features")
@@ -38,8 +40,13 @@ DEFAULT_OUT_DIR = os.path.join(BASE, "artifacts", "walk_forward_v2")
 DEFAULT_DUCKDB_PATH = os.path.join(BASE, "data", "warehouse", "quantos.duckdb")
 
 FREQ_PD: dict[str, str] = {
-    "M1": "1min", "M5": "5min", "M15": "15min",
-    "M30": "30min", "H1": "1h", "H4": "4h", "D1": "1d",
+    "M1": "1min",
+    "M5": "5min",
+    "M15": "15min",
+    "M30": "30min",
+    "H1": "1h",
+    "H4": "4h",
+    "D1": "1d",
 }
 
 VERDICT_LABELS = [
@@ -53,9 +60,13 @@ VERDICT_LABELS = [
 
 # ─── Phase 1: Data Loading ────────────────────────────────────────────────
 
+
 def load_ohlcv_from_csv(
-    data_dir: str, symbol: str, freq: str,
-    start: str | None = None, end: str | None = None,
+    data_dir: str,
+    symbol: str,
+    freq: str,
+    start: str | None = None,
+    end: str | None = None,
 ) -> pd.DataFrame:
     csv_path = os.path.join(data_dir, f"{symbol}_{freq}.csv")
     if not os.path.exists(csv_path):
@@ -77,15 +88,16 @@ def load_ohlcv_from_csv(
 
 
 def load_ohlcv_from_parquet(
-    data_dir: str, symbol: str, freq: str,
-    start: str | None = None, end: str | None = None,
+    data_dir: str,
+    symbol: str,
+    freq: str,
+    start: str | None = None,
+    end: str | None = None,
 ) -> pd.DataFrame:
     from glob import glob as glob_glob
 
     # Hive-partitioned: symbol={sym}/frequency={freq}/**/*.parquet
-    hive_pattern = os.path.join(data_dir, "**", "ohlcv",
-                                f"symbol={symbol}", f"frequency={freq}",
-                                "**", "*.parquet")
+    hive_pattern = os.path.join(data_dir, "**", "ohlcv", f"symbol={symbol}", f"frequency={freq}", "**", "*.parquet")
     paths = sorted(glob_glob(hive_pattern, recursive=True))
 
     # Fallback: flat files named *{symbol}_{freq}*.parquet
@@ -125,8 +137,11 @@ def load_ohlcv_from_parquet(
 
 
 def load_ohlcv_from_duckdb(
-    db_path: str, symbol: str, freq: str,
-    start: str | None = None, end: str | None = None,
+    db_path: str,
+    symbol: str,
+    freq: str,
+    start: str | None = None,
+    end: str | None = None,
 ) -> pd.DataFrame:
     try:
         import duckdb
@@ -180,8 +195,11 @@ def load_ohlcv_from_duckdb(
 
 
 def load_ohlcv(
-    data_dir: str, symbol: str, freq: str,
-    start: str | None = None, end: str | None = None,
+    data_dir: str,
+    symbol: str,
+    freq: str,
+    start: str | None = None,
+    end: str | None = None,
     db_path: str | None = None,
 ) -> pd.DataFrame:
     if db_path and os.path.exists(db_path):
@@ -204,47 +222,17 @@ def load_ohlcv(
 
 # ─── Phase 2: Feature Engineering ─────────────────────────────────────────
 
+
 def compute_technical_features(df: pd.DataFrame) -> pd.DataFrame:
-    result = df.copy()
-    result["return_1"] = result["close"].pct_change(1)
-    result["return_5"] = result["close"].pct_change(5)
-    result["return_15"] = result["close"].pct_change(15)
-    result["log_return"] = np.log(result["close"] / result["close"].shift(1))
-    result["high_minus_low"] = result["high"] - result["low"]
-    result["close_position"] = (result["close"] - result["low"]) / (result["high"] - result["low"] + 1e-10)
-    result["volatility_5"] = result["return_1"].rolling(5).std()
-    result["volatility_15"] = result["return_1"].rolling(15).std()
-    tr = pd.concat([
-        result["high"] - result["low"],
-        (result["high"] - result["close"].shift(1)).abs(),
-        (result["low"] - result["close"].shift(1)).abs(),
-    ], axis=1).max(axis=1)
-    result["tr"] = tr
-    result["atr_5"] = tr.rolling(5).mean()
-    result["atr_15"] = tr.rolling(15).mean()
-    delta = result["close"].diff()
-    gain = delta.where(delta > 0, 0).rolling(14).mean()
-    loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
-    rs = gain / (loss + 1e-10)
-    result["rsi_14"] = 100 - (100 / (1 + rs))
-    ema12 = result["close"].ewm(span=12).mean()
-    ema26 = result["close"].ewm(span=26).mean()
-    result["macd"] = ema12 - ema26
-    result["macd_signal"] = result["macd"].ewm(span=9).mean()
-    result["macd_hist"] = result["macd"] - result["macd_signal"]
-    result["bb_mid"] = result["close"].rolling(20).mean()
-    result["bb_std"] = result["close"].rolling(20).std()
-    result["bb_upper"] = result["bb_mid"] + 2 * result["bb_std"]
-    result["bb_lower"] = result["bb_mid"] - 2 * result["bb_std"]
-    result["bb_width"] = (result["bb_upper"] - result["bb_lower"]) / result["bb_mid"]
-    result["bb_position"] = (result["close"] - result["bb_lower"]) / (result["bb_upper"] - result["bb_lower"] + 1e-10)
-    result["sma_5"] = result["close"].rolling(5).mean()
-    result["sma_20"] = result["close"].rolling(20).mean()
-    result["sma_ratio"] = result["sma_5"] / result["sma_20"]
+    """Compute technical features using canonical FeatureEngineer.
+
+    ponytail: delegates to core.features.build_features — single source of truth.
+    Adds script-specific target columns after canonical feature generation.
+    """
+    result = canonical_build_features(df)
+    # Script-specific target columns (not part of canonical FeatureEngineer)
     result["target"] = (result["close"].shift(-1) > result["close"]).astype(int)
-    result["target_return"] = result["return_1"].shift(-1)
-    nan_cols = [c for c in result.columns if result[c].isna().all()]
-    result = result.drop(columns=nan_cols)
+    result["target_return"] = result["close"].pct_change(1).shift(-1)
     return result.dropna()
 
 
@@ -267,10 +255,7 @@ def add_regime_features(df: pd.DataFrame) -> pd.DataFrame:
     vol = result["volatility_15"]
     vol_percentile = vol.rolling(100, min_periods=20).rank(pct=True)
     result["vol_percentile"] = vol_percentile
-    result["vol_regime"] = np.where(
-        vol_percentile > 0.8, 2,
-        np.where(vol_percentile > 0.5, 1, 0)
-    )
+    result["vol_regime"] = np.where(vol_percentile > 0.8, 2, np.where(vol_percentile > 0.5, 1, 0))
     result["vol_regime"] = result["vol_regime"].fillna(1).astype(int)
     if "atr_5" in result.columns:
         atr_ma = result["atr_5"].rolling(50).mean()
@@ -295,8 +280,12 @@ def save_features_v2(df: pd.DataFrame, feat_v2_dir: str, symbol: str, freq_pd: s
 
 
 def build_features_pipeline(
-    df: pd.DataFrame, symbol: str, freq: str, freq_pd: str,
-    feat_dir: str, feat_v2_dir: str,
+    df: pd.DataFrame,
+    symbol: str,
+    freq: str,
+    freq_pd: str,
+    feat_dir: str,
+    feat_v2_dir: str,
     feature_groups: list[str],
 ) -> pd.DataFrame:
     t0 = time.time()
@@ -326,14 +315,22 @@ def build_features_pipeline(
 def run_advanced_features(symbol: str, freq_pd: str, feat_dir: str, feat_v2_dir: str, verbose: bool) -> bool:
     t0 = time.time()
     cmd = [
-        sys.executable, os.path.join(SCRIPTS_DIR, "features_advanced.py"),
-        "--mode", "all",
-        "--symbols", symbol,
-        "--freqs", freq_pd,
-        "--main-tf", freq_pd,
-        "--higher-tfs", "1h,4h",
-        "--feat-dir", feat_dir,
-        "--output", feat_v2_dir,
+        sys.executable,
+        os.path.join(SCRIPTS_DIR, "features_advanced.py"),
+        "--mode",
+        "all",
+        "--symbols",
+        symbol,
+        "--freqs",
+        freq_pd,
+        "--main-tf",
+        freq_pd,
+        "--higher-tfs",
+        "1h,4h",
+        "--feat-dir",
+        feat_dir,
+        "--output",
+        feat_v2_dir,
     ]
     if verbose:
         print(f"  [CMD] {' '.join(cmd)}")
@@ -352,19 +349,26 @@ def run_advanced_features(symbol: str, freq_pd: str, feat_dir: str, feat_v2_dir:
 
 # ─── Phase 3: Labels ──────────────────────────────────────────────────────
 
-def run_triple_barrier_labels(
-    symbol: str, freq_pd: str, feat_dir: str, label_dir: str, verbose: bool
-) -> bool:
+
+def run_triple_barrier_labels(symbol: str, freq_pd: str, feat_dir: str, label_dir: str, verbose: bool) -> bool:
     t0 = time.time()
     cmd = [
-        sys.executable, os.path.join(SCRIPTS_DIR, "label_triple_barrier.py"),
-        "--symbol", symbol,
-        "--freq", freq_pd,
-        "--method", "dynamic",
-        "--k-upper", "2.0",
-        "--k-lower", "2.0",
-        "--max-bars", "20",
-        "--output", label_dir,
+        sys.executable,
+        os.path.join(SCRIPTS_DIR, "label_triple_barrier.py"),
+        "--symbol",
+        symbol,
+        "--freq",
+        freq_pd,
+        "--method",
+        "dynamic",
+        "--k-upper",
+        "2.0",
+        "--k-lower",
+        "2.0",
+        "--max-bars",
+        "20",
+        "--output",
+        label_dir,
     ]
     if verbose:
         print(f"  [CMD] {' '.join(cmd)}")
@@ -383,11 +387,14 @@ def run_triple_barrier_labels(
         label_path = os.path.join(label_dir, f"labels_{symbol}_{freq_pd}.parquet")
         if os.path.exists(label_path):
             labels = pd.read_parquet(label_path)
-            print(f"  Labels: {len(labels)} bars, "
-                  f"+1={int((labels['tb_label']==1).sum())} "
-                  f"-1={int((labels['tb_label']==-1).sum())} "
-                  f"0={int((labels['tb_label']==0).sum())}"
-                  if "tb_label" in labels.columns else f"  Labels loaded: {len(labels)} rows")
+            print(
+                f"  Labels: {len(labels)} bars, "
+                f"+1={int((labels['tb_label']==1).sum())} "
+                f"-1={int((labels['tb_label']==-1).sum())} "
+                f"0={int((labels['tb_label']==0).sum())}"
+                if "tb_label" in labels.columns
+                else f"  Labels loaded: {len(labels)} rows"
+            )
     except Exception as e:
         print(f"  [WARN] Could not read label output: {e}")
     return True
@@ -395,26 +402,48 @@ def run_triple_barrier_labels(
 
 # ─── Phase 4: Walk-Forward Execution ──────────────────────────────────────
 
+
 def run_walk_forward(
-    symbol: str, freq_pd: str, train_window: int, test_window: int, step: int,
-    spread_cost: float, slippage_p90: float, min_confidence: float,
-    max_depth: int, n_estimators: int, output_dir: str, seed: int, verbose: bool,
+    symbol: str,
+    freq_pd: str,
+    train_window: int,
+    test_window: int,
+    step: int,
+    spread_cost: float,
+    slippage_p90: float,
+    min_confidence: float,
+    max_depth: int,
+    n_estimators: int,
+    output_dir: str,
+    seed: int,
+    verbose: bool,
     cost_config: str | None = None,
 ) -> dict | None:
     t0 = time.time()
     os.makedirs(output_dir, exist_ok=True)
     cmd = [
-        sys.executable, os.path.join(SCRIPTS_DIR, "walk_forward.py"),
-        "--symbol", symbol,
-        "--freq", freq_pd,
-        "--train-window", str(train_window),
-        "--test-window", str(test_window),
-        "--step", str(step),
-        "--spread-cost", str(spread_cost),
-        "--slippage-p90", str(slippage_p90),
-        "--min-confidence", str(min_confidence),
-        "--max-depth", str(max_depth),
-        "--n-estimators", str(n_estimators),
+        sys.executable,
+        os.path.join(SCRIPTS_DIR, "walk_forward.py"),
+        "--symbol",
+        symbol,
+        "--freq",
+        freq_pd,
+        "--train-window",
+        str(train_window),
+        "--test-window",
+        str(test_window),
+        "--step",
+        str(step),
+        "--spread-cost",
+        str(spread_cost),
+        "--slippage-p90",
+        str(slippage_p90),
+        "--min-confidence",
+        str(min_confidence),
+        "--max-depth",
+        str(max_depth),
+        "--n-estimators",
+        str(n_estimators),
     ]
     if cost_config and os.path.exists(cost_config):
         cmd.extend(["--cost-config", cost_config])
@@ -445,6 +474,7 @@ def run_walk_forward(
             return json.load(f)
     alt_pattern = f"wf_{symbol}_{freq_pd}*.json"
     from glob import glob
+
     alt_files = glob(os.path.join(output_dir, alt_pattern))
     if alt_files:
         with open(sorted(alt_files)[-1]) as f:
@@ -455,18 +485,28 @@ def run_walk_forward(
 
 # ─── Phase 5: Cost Backtest ───────────────────────────────────────────────
 
+
 def run_cost_backtest(
-    symbol: str, freq_pd: str, spread_cost: float, slippage_p90: float,
-    output_dir: str, verbose: bool,
+    symbol: str,
+    freq_pd: str,
+    spread_cost: float,
+    slippage_p90: float,
+    output_dir: str,
+    verbose: bool,
     cost_config: str | None = None,
 ) -> dict | None:
     t0 = time.time()
     cmd = [
-        sys.executable, os.path.join(SCRIPTS_DIR, "backtest_cost.py"),
-        "--symbol", symbol,
-        "--freq", freq_pd,
-        "--spread-cost", str(spread_cost),
-        "--slippage-p90", str(slippage_p90),
+        sys.executable,
+        os.path.join(SCRIPTS_DIR, "backtest_cost.py"),
+        "--symbol",
+        symbol,
+        "--freq",
+        freq_pd,
+        "--spread-cost",
+        str(spread_cost),
+        "--slippage-p90",
+        str(slippage_p90),
     ]
     if cost_config and os.path.exists(cost_config):
         cmd.extend(["--cost-config", cost_config])
@@ -495,10 +535,14 @@ def run_cost_backtest(
 
 # ─── Phase 6: Comparison ─────────────────────────────────────────────────
 
+
 def find_previous_result(
-    wf_dir: str, symbol: str, freq_pd: str,
+    wf_dir: str,
+    symbol: str,
+    freq_pd: str,
 ) -> dict | None:
     from glob import glob
+
     pattern = os.path.join(wf_dir, f"wf_{symbol}_{freq_pd}*.json")
     files = sorted(glob(pattern))
     if not files:
@@ -512,6 +556,7 @@ def find_previous_result(
 
 def format_previous_path(wf_dir: str, symbol: str, freq_pd: str) -> str:
     from glob import glob
+
     pattern = os.path.join(wf_dir, f"wf_{symbol}_{freq_pd}*.json")
     files = sorted(glob(pattern))
     return files[-1] if files else "N/A"
@@ -559,8 +604,7 @@ def determine_verdict_from_current(wf_agg: dict, backtest: dict | None) -> tuple
 
     if positive_pct > 0.6 and total_net > 5:
         return "PASS_TO_NEXT_PHASE", (
-            f"Edge is stable: {positive_folds}/{n_folds} folds positive "
-            f"({positive_pct:.0%}), net ${total_net:.2f}"
+            f"Edge is stable: {positive_folds}/{n_folds} folds positive " f"({positive_pct:.0%}), net ${total_net:.2f}"
         )
 
     if is_significant and total_net < 0:
@@ -572,19 +616,14 @@ def determine_verdict_from_current(wf_agg: dict, backtest: dict | None) -> tuple
 
     if positive_pct > 0.4 and total_net > 0:
         return "CONDITIONAL_PASS", (
-            f"Edge is emerging but not yet stable. "
-            f"{positive_folds}/{n_folds} folds positive, net=${total_net:.2f}"
+            f"Edge is emerging but not yet stable. " f"{positive_folds}/{n_folds} folds positive, net=${total_net:.2f}"
         )
 
     if not is_significant:
-        return "INSUFFICIENT_SAMPLE", (
-            f"t={t_stat:.2f}, not significant yet. "
-            f"Need more folds before concluding."
-        )
+        return "INSUFFICIENT_SAMPLE", (f"t={t_stat:.2f}, not significant yet. " f"Need more folds before concluding.")
 
     return "ARCHIVE_NO_EDGE", (
-        f"No positive signal — net=${total_net:.2f}, t={t_stat:.2f}. "
-        f"No statistically significant edge found."
+        f"No positive signal — net=${total_net:.2f}, t={t_stat:.2f}. " f"No statistically significant edge found."
     )
 
 
@@ -593,6 +632,7 @@ def determine_verdict(wf_agg: dict, backtest: dict | None) -> tuple[str, str]:
 
 
 # ─── Phase 7: Report ──────────────────────────────────────────────────────
+
 
 def get_verdict_change(prev_verdict: str | None, current_verdict: str) -> str | None:
     if prev_verdict is None:
@@ -611,12 +651,20 @@ def compute_prev_verdict(previous: dict | None, current_wf_agg: dict) -> str | N
 
 
 def generate_report(
-    symbol: str, timeframe: str, start: str | None, end: str | None,
-    df: pd.DataFrame, data_summary: dict,
-    wf_result: dict | None, backtest_result: dict | None,
-    comparison: dict, previous_result: dict | None,
-    wf_dir: str, freq_pd: str,
-    verdict: str, recommendation: str,
+    symbol: str,
+    timeframe: str,
+    start: str | None,
+    end: str | None,
+    df: pd.DataFrame,
+    data_summary: dict,
+    wf_result: dict | None,
+    backtest_result: dict | None,
+    comparison: dict,
+    previous_result: dict | None,
+    wf_dir: str,
+    freq_pd: str,
+    verdict: str,
+    recommendation: str,
     elapsed: dict[str, float],
 ) -> dict:
     wf_agg = wf_result.get("aggregate", {}) if wf_result else {}
@@ -640,13 +688,17 @@ def generate_report(
             "weighted_accuracy": wf_agg.get("weighted_accuracy", 0),
             "net_stability_t": wf_agg.get("net_stability_t", 0),
             "fold_results": wf_result.get("folds", []) if wf_result else [],
-        } if wf_result else None,
+        }
+        if wf_result
+        else None,
         "backtest": {
             "net_pnl_with_costs": backtest_result.get("total_cost", 0),
             "win_rate": 0,
             "avg_trade_pnl": 0,
             "max_drawdown_pct": 0,
-        } if backtest_result else None,
+        }
+        if backtest_result
+        else None,
         "comparison": {
             "previous_run": prev_path,
             "previous_net_pnl": comparison.get("previous_net_pnl", 0),
@@ -664,7 +716,9 @@ def generate_report(
 
     if backtest_result:
         bt_results = backtest_result.get("results", [])
-        positive = [r for r in bt_results if isinstance(r, dict) and r.get("net_pnl", 0) > 0 and r.get("n_trades", 0) >= 5]
+        positive = [
+            r for r in bt_results if isinstance(r, dict) and r.get("net_pnl", 0) > 0 and r.get("n_trades", 0) >= 5
+        ]
         best = max(positive, key=lambda r: r["net_pnl"]) if positive else None
         if not best and bt_results:
             best = max(bt_results, key=lambda r: r.get("net_pnl", 0))
@@ -693,18 +747,20 @@ def print_human_summary(report: dict):
     print("=" * 72)
     print(f"  WALK-FORWARD RE-RUN REPORT — {report['symbol']} @ {report['timeframe']}")
     print("=" * 72)
-    feat_count = report['data_summary'].get('features', 'N/A')
+    feat_count = report["data_summary"].get("features", "N/A")
     print(f"  Period:     {report['period']['start']} to {report['period']['end']}")
     print(f"  Bars:       {report['data_summary'].get('bars', 'N/A')}")
-    if feat_count and feat_count != 'N/A' and feat_count > 0:
+    if feat_count and feat_count != "N/A" and feat_count > 0:
         print(f"  Features:   {feat_count}")
     print()
 
     wf = report.get("walk_forward")
     if wf:
         print("  Walk-Forward:")
-        print(f"    Folds:      {wf['n_folds']}  "
-              f"Positive: {wf['positive_folds']}/{wf['n_folds']} ({wf['positive_pct']}%)")
+        print(
+            f"    Folds:      {wf['n_folds']}  "
+            f"Positive: {wf['positive_folds']}/{wf['n_folds']} ({wf['positive_pct']}%)"
+        )
         print(f"    Net P&L:    ${wf['aggregate_net_pnl']:>+.2f}")
         print(f"    Wtd Acc:    {wf['weighted_accuracy']:.4f}")
         print(f"    t-stat:     {wf['net_stability_t']:.2f}")
@@ -725,11 +781,9 @@ def print_human_summary(report: dict):
     print("  Comparison with Previous:")
     if cmp.get("previous_run") and cmp["previous_run"] != "N/A":
         prev_label = f"${cmp['previous_net_pnl']:>+.2f}" if cmp.get("previous_net_pnl") != 0 else "N/A"
-        print(f"    Previous:   {prev_label} "
-              f"({cmp['previous_positive_folds']} folds positive)")
+        print(f"    Previous:   {prev_label} " f"({cmp['previous_positive_folds']} folds positive)")
     cur_label = f"${cmp['current_net_pnl']:>+.2f}" if cmp.get("current_net_pnl") != 0 else "N/A"
-    print(f"    Current:    {cur_label} "
-          f"({cmp['current_positive_folds']} folds positive)")
+    print(f"    Current:    {cur_label} " f"({cmp['current_positive_folds']} folds positive)")
     if cmp.get("improvement_pct") and cmp["improvement_pct"] != 0:
         print(f"    Change:     {cmp['improvement_pct']:>+.1f}%")
     vc = cmp.get("verdict_change")
@@ -751,6 +805,7 @@ def print_human_summary(report: dict):
 
 # ─── Main Pipeline ────────────────────────────────────────────────────────
 
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Walk-Forward Re-run Pipeline — from warehouse data to verdict",
@@ -768,7 +823,8 @@ Examples:
     parser.add_argument("--start", default=None, help="Start date (YYYY-MM-DD)")
     parser.add_argument("--end", default=None, help="End date (YYYY-MM-DD)")
     parser.add_argument(
-        "--features", default="session,regime,microstructure",
+        "--features",
+        default="session,regime,microstructure",
         help="Comma-separated feature groups (session,regime,microstructure)",
     )
     parser.add_argument("--output-dir", default=DEFAULT_OUT_DIR, help="Output directory")
@@ -783,8 +839,12 @@ Examples:
     wf_group.add_argument("--step", type=int, default=None, help="Step size (bars)")
     wf_group.add_argument("--spread-cost", type=float, default=0.024, help="Spread cost per trade ($)")
     wf_group.add_argument("--slippage-p90", type=float, default=0.02, help="Slippage P90 per trade ($)")
-    wf_group.add_argument("--cost-config", type=str, default=os.path.join(BASE, "config", "cost_calibration.json"),
-        help="Path to cost calibration JSON for symbol-specific costs.")
+    wf_group.add_argument(
+        "--cost-config",
+        type=str,
+        default=os.path.join(BASE, "config", "cost_calibration.json"),
+        help="Path to cost calibration JSON for symbol-specific costs.",
+    )
     wf_group.add_argument("--min-confidence", type=float, default=0.85, help="Minimum confidence threshold")
     wf_group.add_argument("--max-depth", type=int, default=5, help="XGBoost max depth")
     wf_group.add_argument("--n-estimators", type=int, default=100, help="XGBoost n_estimators")
@@ -872,14 +932,17 @@ def main():
         features = None
     else:
         features = build_features_pipeline(
-            df, symbol, timeframe, freq_pd,
-            feat_dir, feat_v2_dir,
+            df,
+            symbol,
+            timeframe,
+            freq_pd,
+            feat_dir,
+            feat_v2_dir,
             feature_groups,
         )
 
     if features is not None:
-        feat_cols = [c for c in features.columns
-                     if c not in ("symbol", "freq", "target", "target_return")]
+        feat_cols = [c for c in features.columns if c not in ("symbol", "freq", "target", "target_return")]
         data_summary["features"] = len(feat_cols)
 
     if "microstructure" in feature_groups and not args.skip_advanced:
@@ -934,12 +997,12 @@ def main():
         backtest_result = run_cost_backtest(
             symbol=symbol,
             freq_pd=freq_pd,
-        spread_cost=args.spread_cost,
-        slippage_p90=args.slippage_p90,
-        output_dir=bt_out_dir,
-        verbose=args.verbose,
-        cost_config=args.cost_config,
-    )
+            spread_cost=args.spread_cost,
+            slippage_p90=args.slippage_p90,
+            output_dir=bt_out_dir,
+            verbose=args.verbose,
+            cost_config=args.cost_config,
+        )
     elapsed["cost_backtest"] = round(time.time() - t_phase, 1)
     print()
 
@@ -951,14 +1014,19 @@ def main():
     if previous_result:
         print(f"  Previous run found: {wf_prev_dir}")
         prev_agg = previous_result.get("aggregate", {})
-        print(f"    Net: ${prev_agg.get('total_net', 0):>+.2f}  "
-              f"Positive folds: {prev_agg.get('positive_folds', 0)}/{prev_agg.get('n_folds', 0)}")
+        print(
+            f"    Net: ${prev_agg.get('total_net', 0):>+.2f}  "
+            f"Positive folds: {prev_agg.get('positive_folds', 0)}/{prev_agg.get('n_folds', 0)}"
+        )
     else:
         print("  No previous run found")
 
     comparison: dict[str, Any] = {
-        "previous_net_pnl": 0, "current_net_pnl": 0, "improvement_pct": 0,
-        "previous_positive_folds": 0, "current_positive_folds": 0,
+        "previous_net_pnl": 0,
+        "current_net_pnl": 0,
+        "improvement_pct": 0,
+        "previous_positive_folds": 0,
+        "current_positive_folds": 0,
     }
     if previous_result and wf_result:
         comparison = compare_results(wf_result, previous_result)
@@ -972,9 +1040,7 @@ def main():
         comparison["current_positive_folds"] = wf_agg.get("positive_folds", 0)
 
     if wf_result:
-        verdict, recommendation = determine_verdict(
-            wf_result.get("aggregate", {}), backtest_result
-        )
+        verdict, recommendation = determine_verdict(wf_result.get("aggregate", {}), backtest_result)
     else:
         verdict = "INSUFFICIENT_SAMPLE"
         recommendation = "Walk-forward failed to produce results. Check logs."
@@ -988,13 +1054,20 @@ def main():
     t_phase = time.time()
 
     report = generate_report(
-        symbol=symbol, timeframe=timeframe,
-        start=args.start, end=args.end,
-        df=df, data_summary=data_summary,
-        wf_result=wf_result, backtest_result=backtest_result,
-        comparison=comparison, previous_result=previous_result,
-        wf_dir=wf_prev_dir, freq_pd=freq_pd,
-        verdict=verdict, recommendation=recommendation,
+        symbol=symbol,
+        timeframe=timeframe,
+        start=args.start,
+        end=args.end,
+        df=df,
+        data_summary=data_summary,
+        wf_result=wf_result,
+        backtest_result=backtest_result,
+        comparison=comparison,
+        previous_result=previous_result,
+        wf_dir=wf_prev_dir,
+        freq_pd=freq_pd,
+        verdict=verdict,
+        recommendation=recommendation,
         elapsed=elapsed,
     )
 

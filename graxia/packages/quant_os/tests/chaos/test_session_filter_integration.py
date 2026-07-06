@@ -165,7 +165,7 @@ class TestSessionFilterAuditLog:
 
         assert result is None
         assert audit_path.exists()
-        lines = audit_path.read_text().strip().splitlines()
+        lines = audit_path.read_text(encoding="utf-8").strip().splitlines()
         blocked = [json.loads(l) for l in lines if "blocked_by_session" in l]
         assert len(blocked) == 1
         assert blocked[0]["event"] == "signal.blocked_by_session"

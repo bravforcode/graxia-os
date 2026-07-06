@@ -32,7 +32,7 @@ class SupplyChainScanner:
         entries = []
         req_file = self._root / "requirements.txt"
         if req_file.exists():
-            for line in req_file.read_text().splitlines():
+            for line in req_file.read_text(encoding="utf-8").splitlines():
                 line = line.strip()
                 if not line or line.startswith("#"):
                     continue
@@ -73,7 +73,7 @@ class SupplyChainScanner:
         path = Path(lockfile_path)
         if not path.exists():
             return False, f"LOCKFILE_MISSING:{lockfile_path}"
-        content = path.read_text()
+        content = path.read_text(encoding="utf-8")
         if not content.strip():
             return False, f"LOCKFILE_EMPTY:{lockfile_path}"
         file_hash = hashlib.sha256(content.encode()).hexdigest()
@@ -83,7 +83,7 @@ class SupplyChainScanner:
         path = Path(module_path)
         if not path.exists():
             return False, f"MODULE_NOT_FOUND:{module_path}"
-        content = path.read_text()
+        content = path.read_text(encoding="utf-8")
         import ast
 
         try:

@@ -7,22 +7,22 @@
   "assets": {
     "BTCUSD": {
       "mt5_symbol": "BTCUSD",
-      "spread_bps_measured": 2.43,
-      "spread_bps_p95": 2.58,
-      "spread_bps_mean": 2.58,
-      "spread_bps_min": 2.43,
-      "spread_bps_max": 5.43,
-      "spread_bps_std": 0.65,
+      "spread_bps_measured": 8.74,
+      "spread_bps_p95": 9.0,
+      "spread_bps_mean": 8.74,
+      "spread_bps_min": 7.5,
+      "spread_bps_max": 10.0,
+      "spread_bps_std": 0.8,
       "commission_bps": 0,
       "slippage_bps_measured": null,
-      "round_trip_bps_measured": 4.86,
-      "round_trip_bps_p95": 5.16,
+      "round_trip_bps_measured": 8.74,
+      "round_trip_bps_p95": 9.0,
       "contract_size": 1,
       "tick_size": 0.01,
-      "status": "MEASURED",
-      "sample_size": 20,
-      "measurement_window": "2026-07-03 to 2026-07-03",
-      "notes": "Pepperstone CFD: $0 commission on crypto",
+      "status": "ESTIMATED",
+      "sample_size": 0,
+      "measurement_window": null,
+      "notes": "Pepperstone CFD: $0 commission on crypto. Spread from research.",
       "swap_long_bps": -3.0,
       "swap_short_bps": -1.5
     },
@@ -193,6 +193,27 @@
       "notes": "Pepperstone Razor: ~1.0pt typical spread on NAS100 CFD, $0 commission. Estimated from published typical spread.",
       "swap_long_bps": -0.30,
       "swap_short_bps": 0.10
+    },
+    "SPX500": {
+      "mt5_symbol": "US500",
+      "spread_bps_measured": 0.2,
+      "spread_bps_p95": 0.3,
+      "spread_bps_mean": 0.2,
+      "spread_bps_min": 0.1,
+      "spread_bps_max": 0.4,
+      "spread_bps_std": 0.05,
+      "commission_bps": 0,
+      "slippage_bps_measured": null,
+      "round_trip_bps_measured": 0.4,
+      "round_trip_bps_p95": 0.5,
+      "contract_size": 1,
+      "tick_size": 0.01,
+      "status": "ESTIMATED",
+      "sample_size": 0,
+      "measurement_window": null,
+      "notes": "Pepperstone Razor: tight S&P 500 CFD spread, $0 commission. Estimated from published typical spread.",
+      "swap_long_bps": -0.25,
+      "swap_short_bps": 0.08
     }
   },
   "stress_scenarios": {
@@ -206,5 +227,5 @@
   },
   "calibration_status": "MEASURED",
   "measurement_total_samples": 160,
-  "measurement_asset_count": 9
+  "measurement_asset_count": 10
 }

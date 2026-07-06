@@ -342,6 +342,7 @@ def get_feature_cols(df: pd.DataFrame) -> list[str]:
     exclude = {
         "target",
         "target_return",
+        "target_3class",
         "symbol",
         "freq",
         "tb_label",

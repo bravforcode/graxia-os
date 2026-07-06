@@ -19,8 +19,7 @@ Checks:
 import json
 import os
 import sys
-import time
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -54,6 +53,7 @@ def _check_mt5_equity() -> dict[str, Any]:
     """Check 2: MT5 account equity > 0."""
     try:
         import MetaTrader5 as mt5
+
         if not mt5.initialize():
             return {"name": "mt5_equity", "pass": False, "detail": "MT5 init failed"}
         info = mt5.account_info()
@@ -72,6 +72,7 @@ def _check_broker_specs() -> dict[str, Any]:
     """Check 3: Broker symbol specs loadable."""
     try:
         from risk.risk_policy import RiskPolicy
+
         policy = RiskPolicy()
         # If we can instantiate, specs are structurally valid
         return {"name": "broker_specs", "pass": True, "detail": f"policy loaded, fail_closed={policy.fail_closed}"}
@@ -83,6 +84,7 @@ def _check_risk_policy() -> dict[str, Any]:
     """Check 4: Risk policy uses bps (not pct) and is sane."""
     try:
         from risk.risk_policy import RiskPolicy
+
         policy = RiskPolicy()
         issues = []
         if policy.risk_per_trade_bps > 200:
@@ -100,6 +102,7 @@ def _check_kill_switch() -> dict[str, Any]:
     """Check 5: Kill switch state file accessible."""
     try:
         from risk.kill_switch import KillSwitch
+
         ks = KillSwitch(state_file=str(ROOT / "data" / "kill_switch_state.json"))
         status = ks.get_status()
         return {"name": "kill_switch", "pass": True, "detail": f"state={status['state']}"}
@@ -109,13 +112,16 @@ def _check_kill_switch() -> dict[str, Any]:
 
 def _check_data_freshness() -> dict[str, Any]:
     """Check 6: Market data freshness."""
-    from datetime import datetime as dt, timedelta
+    from datetime import datetime as dt
+    from datetime import timedelta
+
     try:
         latest_dt = None
-        
+
         # Try DuckDB first
         try:
             import duckdb
+
             db_path = ROOT / "data" / "market_data.duckdb"
             if db_path.exists():
                 con = duckdb.connect(str(db_path), read_only=True)
@@ -127,7 +133,7 @@ def _check_data_freshness() -> dict[str, Any]:
                     con.close()
         except Exception:
             pass
-        
+
         # Also check CSV file modification times
         csv_files = list(ROOT.glob("data/*_D1.csv")) + list(ROOT.glob("data/*_H1.csv"))
         if csv_files:
@@ -136,10 +142,10 @@ def _check_data_freshness() -> dict[str, Any]:
             # Use the more recent of DuckDB data or CSV file mtime
             if latest_dt is None or newest_csv_dt > latest_dt:
                 latest_dt = newest_csv_dt
-        
+
         if latest_dt is None:
             return {"name": "data_freshness", "pass": False, "detail": "no data found"}
-        
+
         age = dt.now() - latest_dt
         fresh = age < timedelta(hours=24)
         return {"name": "data_freshness", "pass": fresh, "detail": f"age={age}, latest={latest_dt}"}
@@ -155,7 +161,7 @@ def _check_model_version() -> dict[str, Any]:
     if not manifest.exists():
         return {"name": "model_version", "pass": False, "detail": "manifest.json not found"}
     try:
-        data = json.loads(manifest.read_text())
+        data = json.loads(manifest.read_text(encoding="utf-8"))
         version = data.get("version", "unknown")
         return {"name": "model_version", "pass": version != "unknown", "detail": f"version={version}"}
     except Exception as e:
@@ -180,7 +186,11 @@ def _check_oms_risk_wired() -> dict[str, Any]:
             return {"name": "oms_risk_wired", "pass": False, "detail": "oms.py not found"}
         src = oms_file.read_text(encoding="utf-8")
         has_risk = "risk_engine" in src and "def __init__" in src
-        return {"name": "oms_risk_wired", "pass": has_risk, "detail": "risk_engine param exists" if has_risk else "missing risk_engine param"}
+        return {
+            "name": "oms_risk_wired",
+            "pass": has_risk,
+            "detail": "risk_engine param exists" if has_risk else "missing risk_engine param",
+        }
     except Exception as e:
         return {"name": "oms_risk_wired", "pass": False, "detail": str(e)}
 
@@ -193,7 +203,11 @@ def _check_correlation_ids() -> dict[str, Any]:
             return {"name": "correlation_ids", "pass": False, "detail": "oms.py not found"}
         src = oms_file.read_text(encoding="utf-8")
         has_corr = "correlation" in src.lower() or "signal_id" in src or "trace_id" in src
-        return {"name": "correlation_ids", "pass": has_corr, "detail": "signal_id/trace_id in oms.py" if has_corr else "no correlation tracking found"}
+        return {
+            "name": "correlation_ids",
+            "pass": has_corr,
+            "detail": "signal_id/trace_id in oms.py" if has_corr else "no correlation tracking found",
+        }
     except Exception as e:
         return {"name": "correlation_ids", "pass": False, "detail": str(e)}
 
@@ -201,6 +215,7 @@ def _check_correlation_ids() -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 def run_preflight() -> dict[str, Any]:
     """Run all 10 checks and return report."""
@@ -233,7 +248,7 @@ def main():
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     REPORT_PATH.write_text(json.dumps(report, indent=2, default=str))
 
-    print(f"=== Paper Pre-flight v2 ===")
+    print("=== Paper Pre-flight v2 ===")
     print(f"Passed: {report['passed']}/{report['total']}")
     for c in report["checks"]:
         status = "PASS" if c["pass"] else "FAIL"

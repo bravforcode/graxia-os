@@ -15,6 +15,7 @@ _SYMBOL_TO_ASSET_CLASS: dict[str, str] = {
     "US100": "indices",
     "USTEC": "indices",
     "SPX500": "indices",
+    "US500": "indices",
     "DAX40": "indices",
     "DE40": "indices",
     # Energy

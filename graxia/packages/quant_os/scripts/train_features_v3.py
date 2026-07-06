@@ -26,6 +26,7 @@ warnings.filterwarnings("ignore")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from core.cross_validation import combine_purged_k_fold_cv  # noqa: E402
+from core.features import build_features  # noqa: E402
 
 
 def edge_decision(test_acc: float, n_test: int, baseline: float = 0.5) -> str:
@@ -47,105 +48,42 @@ MODEL_DIR.mkdir(parents=True, exist_ok=True)
 SYMBOLS = ["XAUUSD", "EURUSD", "US30", "NAS100", "BTCUSD"]
 TF = "M15"
 
-# features_v3 technical indicators from build_features_v3_multi_asset.py
+# features_v3 technical indicators — canonical names from ml/pipeline.py FeatureEngineer
 TECH_FEATURES = [
     "rsi_14",
+    "rsi_14_normalized",
     "macd",
     "macd_signal",
     "macd_hist",
     "bb_width",
+    "bb_position",
     "atr_ratio",
-    "adx_14",
-    "dist_ma_20",
-    "dist_ma_50",
-    "dist_ma_200",
+    "adx",
+    "ema_20_dist",
+    "ema_50_dist",
+    "ema_200_dist",
 ]
 
-# Basic price/volume features to keep
+# Basic price/volume features — canonical names
 BASIC_FEATURES = [
-    "ret_1",
-    "ret_5",
-    "ret_10",
+    "return_1",
+    "return_5",
+    "return_10",
     "atr_14",
     "volume_ratio",
-    "high_low_pct",
-    "close_open_pct",
 ]
 
 ALL_FEATURES = TECH_FEATURES + BASIC_FEATURES
 
 
 def add_technical_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Compute features_v3 technical indicators (lag-safe)."""
-    close = df["close"]
-    high = df["high"]
-    low = df["low"]
+    """DEPRECATED: Technical indicators now provided by core.features.build_features.
 
-    # RSI 14
-    delta = close.diff()
-    gain = delta.clip(lower=0).rolling(14).mean()
-    loss = (-delta.clip(upper=0)).rolling(14).mean()
-    rs = gain / loss.replace(0, np.nan)
-    df["rsi_14"] = 100 - (100 / (1 + rs))
+    Kept for backward compatibility with any external callers.
+    """
+    from core.features import build_features as _bf
 
-    # MACD (12, 26, 9)
-    ema_12 = close.ewm(span=12, adjust=False).mean()
-    ema_26 = close.ewm(span=26, adjust=False).mean()
-    df["macd"] = ema_12 - ema_26
-    df["macd_signal"] = df["macd"].ewm(span=9, adjust=False).mean()
-    df["macd_hist"] = df["macd"] - df["macd_signal"]
-
-    # Bollinger Band width (20, 2σ)
-    bb_mid = close.rolling(20).mean()
-    bb_std = close.rolling(20).std()
-    bb_upper = bb_mid + 2 * bb_std
-    bb_lower = bb_mid - 2 * bb_std
-    df["bb_width"] = (bb_upper - bb_lower) / bb_mid.replace(0, np.nan)
-
-    # ATR ratio (ATR14 / close)
-    tr = pd.concat(
-        [high - low, (high - close.shift()).abs(), (low - close.shift()).abs()],
-        axis=1,
-    ).max(axis=1)
-    atr_14 = tr.rolling(14).mean()
-    df["atr_ratio"] = atr_14 / close.replace(0, np.nan)
-    df["atr_14"] = atr_14
-
-    # ADX (14)
-    plus_dm = high.diff()
-    minus_dm = -low.diff()
-    plus_dm = plus_dm.where((plus_dm > minus_dm) & (plus_dm > 0), 0.0)
-    minus_dm = minus_dm.where((minus_dm > plus_dm) & (minus_dm > 0), 0.0)
-    atr_smooth = tr.rolling(14).mean()
-    plus_di = 100 * (plus_dm.rolling(14).mean() / atr_smooth.replace(0, np.nan))
-    minus_di = 100 * (minus_dm.rolling(14).mean() / atr_smooth.replace(0, np.nan))
-    dx = 100 * (plus_di - minus_di).abs() / (plus_di + minus_di).replace(0, np.nan)
-    df["adx_14"] = dx.rolling(14).mean()
-
-    # Distance from MA 20, 50, 200
-    for period in [20, 50, 200]:
-        ma = close.rolling(period).mean()
-        df[f"dist_ma_{period}"] = (close - ma) / ma.replace(0, np.nan)
-
-    return df
-
-
-def build_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Build all features: basic price/volume + features_v3 technical."""
-    df = df.copy()
-
-    # Basic price/volume features
-    df["ret_1"] = df["close"].pct_change(1)
-    df["ret_5"] = df["close"].pct_change(5)
-    df["ret_10"] = df["close"].pct_change(10)
-    df["volume_ratio"] = df["volume"] / df["volume"].rolling(20).mean()
-    df["high_low_pct"] = (df["high"] - df["low"]) / df["close"]
-    df["close_open_pct"] = (df["close"] - df["open"]) / df["open"]
-
-    # features_v3 technical indicators
-    df = add_technical_features(df)
-
-    return df
+    return _bf(df)
 
 
 def train_symbol(symbol: str) -> dict | None:

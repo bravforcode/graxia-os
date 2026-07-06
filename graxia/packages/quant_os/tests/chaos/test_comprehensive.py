@@ -661,7 +661,7 @@ class TestAutoRetrainComprehensive:
             log_retrain({"status": "run1"})
             log_retrain({"status": "run2"})
 
-            lines = log_path.read_text().strip().split("\n")
+            lines = log_path.read_text(encoding="utf-8").strip().split("\n")
             assert len(lines) == 2
             assert "run1" in lines[0]
             assert "run2" in lines[1]

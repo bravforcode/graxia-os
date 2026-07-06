@@ -1,4 +1,9 @@
-"""Phase BE-P2 — Feed watermark and staleness monitor."""
+"""Phase BE-P2 — Feed watermark and staleness monitor.
+
+.. deprecated::
+    Use ``market_data.feed_health.FeedHealthMonitor`` instead.
+    This module will be removed in a future release.
+"""
 
 import time
 

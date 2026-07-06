@@ -26,19 +26,21 @@ import re
 import shutil
 import sys
 import time
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
 
 # Force UTF-8 on stdout/stderr (Windows cp1252 fix)
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8")
 
 # ─── Paths ───────────────────────────────────────────────────────────────
 QUANT_OS = Path(__file__).resolve().parent.parent
-VAULT = Path(os.environ.get(
-    "OBSIDIAN_VAULT_PATH",
-    r"C:\Users\menum\quant\quant bot",
-))
+VAULT = Path(
+    os.environ.get(
+        "OBSIDIAN_VAULT_PATH",
+        r"C:\Users\menum\quant\quant bot",
+    )
+)
 
 SYNC_MANIFEST = QUANT_OS / "Meta" / "bridge_manifest.json"
 STATE_DIR = QUANT_OS / "Meta" / "states"
@@ -69,6 +71,7 @@ BACKTEST_RESULTS = QUANT_OS / "artifacts"
 #  UPGRADE 1: Automated bridge-sync (Meta/states/ → vault)
 # ══════════════════════════════════════════════════════════════════════════
 
+
 def sync_states_to_vault(manifest: dict) -> list:
     """Sync Meta/states/*.md and root Meta/*.md to vault's Meta/states/quant_os/."""
     synced = []
@@ -97,6 +100,7 @@ def sync_states_to_vault(manifest: dict) -> list:
 # ══════════════════════════════════════════════════════════════════════════
 #  UPGRADE 2: Backtest results → vault inbox
 # ══════════════════════════════════════════════════════════════════════════
+
 
 def sync_backtest_to_inbox(manifest: dict) -> list:
     """Create/update inbox notes for latest backtest run results."""
@@ -135,7 +139,7 @@ def _aggregate_backtest_stats(json_paths: list) -> dict:
     totals = {"net_pnl": 0, "gross_profit": 0, "gross_loss": 0, "trades": 0, "files": 0}
     for jp in json_paths:
         try:
-            data = json.loads(jp.read_text())
+            data = json.loads(jp.read_text(encoding="utf-8"))
             totals["net_pnl"] += data.get("net_pnl", data.get("total_net_pnl", 0))
             totals["gross_profit"] += data.get("gross_profit", data.get("total_gross_profit", 0))
             totals["gross_loss"] += data.get("gross_loss", data.get("total_gross_loss", 0))
@@ -199,6 +203,7 @@ _Source: `{BACKTEST_RESULTS.relative_to(QUANT_OS)}/{run_name}/`_
 # ══════════════════════════════════════════════════════════════════════════
 #  UPGRADE 3: Strategy/risk config mirror → vault
 # ══════════════════════════════════════════════════════════════════════════
+
 
 def sync_strategy_risk_to_vault(manifest: dict) -> list:
     """Mirror strategy and risk config files to vault project folder."""
@@ -264,6 +269,7 @@ Auto-synced by bridge_automated_sync.py at {now}.
 #  UPGRADE 4: Knowledge graph sync (codebase ↔ vault)
 # ══════════════════════════════════════════════════════════════════════════
 
+
 def sync_knowledge_graph(manifest: dict) -> list:
     """Analyze quant_OS codebase structure and sync a dependency graph to vault."""
     synced = []
@@ -292,12 +298,18 @@ def sync_knowledge_graph(manifest: dict) -> list:
 
     # Write lean-ctx enrichable manifest
     enrich_manifest = VAULT_GRAPH / "enrich_nodes.json"
-    enrich_manifest.write_text(json.dumps({
-        "source": "quant_os",
-        "generated": datetime.now(UTC).isoformat(),
-        "nodes": [{"id": n, "type": guess_node_type(n)} for n in graph["nodes"]],
-        "description": "Import dependency graph for lean-ctx enrichment",
-    }, indent=2), encoding="utf-8")
+    enrich_manifest.write_text(
+        json.dumps(
+            {
+                "source": "quant_os",
+                "generated": datetime.now(UTC).isoformat(),
+                "nodes": [{"id": n, "type": guess_node_type(n)} for n in graph["nodes"]],
+                "description": "Import dependency graph for lean-ctx enrichment",
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
     synced.append(("graph", str(enrich_manifest.relative_to(VAULT)), "enrich-manifest"))
 
     return synced
@@ -366,10 +378,23 @@ def _build_import_graph(source_dir: Path) -> dict:
             # Accept short-form imports from quant_OS top-level packages
             first = target.split(".")[0]
             if first in (
-                "core", "execution", "risk", "validation", "strategies",
-                "api", "broker", "market_data", "shadow", "canary",
-                "backtest", "oracle", "live", "expansion", "demo_campaign",
-                "mt5_connector", "live_readiness",
+                "core",
+                "execution",
+                "risk",
+                "validation",
+                "strategies",
+                "api",
+                "broker",
+                "market_data",
+                "shadow",
+                "canary",
+                "backtest",
+                "oracle",
+                "live",
+                "expansion",
+                "demo_campaign",
+                "mt5_connector",
+                "live_readiness",
             ):
                 edges.append({"source": mod, "target": f"{root_pkg}.{target}"})
 
@@ -389,7 +414,8 @@ def _render_graph_summary(graph: dict) -> str:
     now = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
     node_count = len(graph["nodes"])
     edge_count = len(graph["edges"])
-    return f"""---
+    return (
+        f"""---
 created: {now}
 tags: [codebase-graph, bridge-auto, quant_os]
 ---
@@ -408,7 +434,11 @@ tags: [codebase-graph, bridge-auto, quant_os]
 
 | Module | Type |
 |--------|------|
-""" + "\n".join(f"| `{n}` | {guess_node_type(n)} |" for n in sorted(graph["nodes"])) + "\n\n" + _render_mermaid_graph(graph)
+"""
+        + "\n".join(f"| `{n}` | {guess_node_type(n)} |" for n in sorted(graph["nodes"]))
+        + "\n\n"
+        + _render_mermaid_graph(graph)
+    )
 
 
 def _render_mermaid_graph(graph: dict) -> str:
@@ -467,11 +497,12 @@ Mermaid diagram: `Meta/states/quant_os/graph/codebase_graph.md`
 #  Manifest management
 # ══════════════════════════════════════════════════════════════════════════
 
+
 def load_manifest() -> dict:
     """Load or create the sync manifest (tracks file hashes)."""
     if SYNC_MANIFEST.exists():
         try:
-            return json.loads(SYNC_MANIFEST.read_text())
+            return json.loads(SYNC_MANIFEST.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             pass
     return {"files": {}, "last_sync": None, "syncs_total": 0}
@@ -519,6 +550,7 @@ def _copy_with_manifest(src: Path, dest_dir: Path, manifest: dict, category: str
 #  Watch mode (upgrade 1 continuous)
 # ══════════════════════════════════════════════════════════════════════════
 
+
 def watch_states():
     """Poll for changes in Meta/states/ every 30s."""
     print(f"[bridge] WATCH mode active. Polling {STATE_DIR} every 30s...")
@@ -550,6 +582,7 @@ def watch_states():
 # ══════════════════════════════════════════════════════════════════════════
 #  Main
 # ══════════════════════════════════════════════════════════════════════════
+
 
 def main():
     parser = argparse.ArgumentParser(description="Ruflow/Gracia Bridge Agent v2")

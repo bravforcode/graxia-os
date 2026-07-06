@@ -16,9 +16,6 @@ Each component is tested in isolation (like k8s pods):
 """
 
 import asyncio
-import os
-import pickle
-import tempfile
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -690,21 +687,15 @@ class TestIsolation_TechnicalAnalyst:
 class TestIsolation_MLPipeline:
     def test_predict_payload_returns_model(self):
         pipeline = MLPipeline()
-        with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as f:
-            pickle.dump(
-                {
-                    "model": _SimpleModel(prediction=1, probabilities=[0.2, 0.8]),
-                    "feature_names": ["f1", "f2"],
-                    "model_type": "xgboost",
-                    "version": "test",
-                },
-                f,
-            )
-            model_path = f.name
-
-        try:
+        mock_model_data = {
+            "model": _SimpleModel(prediction=1, probabilities=[0.2, 0.8]),
+            "feature_names": ["f1", "f2"],
+            "model_type": "xgboost",
+            "version": "test",
+        }
+        with patch("graxia.packages.quant_os.ml.pipeline.safe_load_model", return_value=mock_model_data):
             result = pipeline.predict_payload(
-                model_path=model_path,
+                model_path="dummy.pkl",
                 features={"f1": 0.5, "f2": 0.3},
                 symbol="XAUUSD",
                 entry_price=2400.0,
@@ -714,29 +705,19 @@ class TestIsolation_MLPipeline:
             assert result.symbol == "XAUUSD"
             assert result.direction == SignalDirection.BUY
             assert result.xgb_probability == 0.8
-        finally:
-            os.unlink(model_path)
 
     def test_predict_returns_tuple(self):
         pipeline = MLPipeline()
-        with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as f:
-            pickle.dump(
-                {
-                    "model": _SimpleModel(prediction=0, probabilities=[0.6, 0.4]),
-                    "feature_names": ["f1"],
-                    "model_type": "xgboost",
-                    "version": "test",
-                },
-                f,
-            )
-            model_path = f.name
-
-        try:
-            pred, conf = pipeline.predict(model_path, {"f1": 0.5})
+        mock_model_data = {
+            "model": _SimpleModel(prediction=0, probabilities=[0.6, 0.4]),
+            "feature_names": ["f1"],
+            "model_type": "xgboost",
+            "version": "test",
+        }
+        with patch("graxia.packages.quant_os.ml.pipeline.safe_load_model", return_value=mock_model_data):
+            pred, conf = pipeline.predict("dummy.pkl", {"f1": 0.5})
             assert pred == 0
             assert conf == 0.6
-        finally:
-            os.unlink(model_path)
 
 
 # ═══════════════════════════════════════════════════════════════════

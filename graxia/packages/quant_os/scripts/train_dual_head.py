@@ -66,14 +66,16 @@ TARGET_SYMBOLS = ["XAUUSD", "EURUSD", "BTCUSD", "ETHUSD"]
 
 
 def build_features_if_needed(symbol: str, timeframe: str = "M15") -> Path:
-    """Return path to feature parquet, building it if it doesn't exist."""
+    """Return path to feature parquet, building it if it doesn't exist.
+
+    DEPRECATED inline feature building. Now delegates to build_features_v3_multi_asset.
+    """
     parquet_path = FEATURES_DIR / f"features_v3_{symbol}_{timeframe}.parquet"
     if parquet_path.exists():
         logger.info("  Feature parquet exists: %s", parquet_path.name)
         return parquet_path
 
     logger.info("  Building features for %s from raw CSV...", symbol)
-    # Import build_features from Phase 3 script
     from scripts.build_features_v3_multi_asset import build_features
 
     df = build_features(symbol, timeframe)
@@ -112,6 +114,7 @@ def create_labels(df: pd.DataFrame) -> pd.DataFrame:
 EXCLUDE_COLS = {
     "target",
     "target_return",
+    "target_3class",
     "target_direction",
     "target_magnitude",
     "symbol",

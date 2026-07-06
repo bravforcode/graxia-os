@@ -177,10 +177,10 @@ def train():
         files = _find_data_files()
         data_hash = _compute_data_hash(files)
         if MODEL_PATH.exists() and CACHE_HASH_PATH.exists():
-            cached = CACHE_HASH_PATH.read_text().strip()
+            cached = CACHE_HASH_PATH.read_text(encoding="utf-8").strip()
             if cached == data_hash and SUMMARY_PATH.exists():
                 print("Model cache is fresh — using cached model. Skipping training.")
-                summary = json.loads(SUMMARY_PATH.read_text())
+                summary = json.loads(SUMMARY_PATH.read_text(encoding="utf-8"))
                 feat_imps = list(summary["feature_importances"].items())
                 print(f"Samples: {summary['training_samples']}  Features: {summary['feature_count']}")
                 print(

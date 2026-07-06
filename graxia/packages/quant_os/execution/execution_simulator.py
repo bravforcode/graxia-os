@@ -19,7 +19,6 @@ Phase 3: Added square-root market impact (Almgren-Chriss) and adverse selection.
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
@@ -90,7 +89,12 @@ class MarketSnapshot:
 
 @dataclass(frozen=True)
 class ContractSpec:
-    """Contract parameters for cost calculation."""
+    """Contract parameters for cost calculation.
+
+    .. deprecated::
+        Use ``core.contract_spec.ContractSpec`` for the full specification.
+        This simplified version is retained only for execution simulator internals.
+    """
 
     contract_size: Decimal = Decimal("1")
     commission_per_lot: Decimal = Decimal("0")
@@ -307,13 +311,19 @@ class BacktestExecutionSimulator:
             # Intra-bar check: if bar high/low touched SL level, trigger SL
             # even if current bid/ask didn't reach it (price moved intra-bar)
             if trigger is None:
-                if pos.side == Side.BUY and bar_low <= pos.stop_loss:
+                if (
+                    pos.side == Side.BUY
+                    and bar_low <= pos.stop_loss
+                    or pos.side == Side.SELL
+                    and bar_high >= pos.stop_loss
+                ):
                     trigger = "SL"
-                elif pos.side == Side.SELL and bar_high >= pos.stop_loss:
-                    trigger = "SL"
-                elif pos.side == Side.BUY and bar_high >= (pos.take_profit or Decimal("0")):
-                    trigger = "TP"
-                elif pos.side == Side.SELL and bar_low <= (pos.take_profit or Decimal("0")):
+                elif (
+                    pos.side == Side.BUY
+                    and bar_high >= (pos.take_profit or Decimal("0"))
+                    or pos.side == Side.SELL
+                    and bar_low <= (pos.take_profit or Decimal("0"))
+                ):
                     trigger = "TP"
 
             if trigger == "SL" and pos.take_profit is not None:

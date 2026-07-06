@@ -1,4 +1,5 @@
 """Verify quarantine manifest is consistent with actual test state."""
+
 import json
 from pathlib import Path
 
@@ -13,13 +14,13 @@ def test_quarantine_manifest_exists():
 
 def test_quarantine_manifest_valid_json():
     """Manifest must be valid JSON."""
-    data = json.loads(MANIFEST.read_text())
+    data = json.loads(MANIFEST.read_text(encoding="utf-8"))
     assert "quarantined_tests" in data
 
 
 def test_quarantined_tests_have_required_fields():
     """Each quarantined test must have required fields."""
-    data = json.loads(MANIFEST.read_text())
+    data = json.loads(MANIFEST.read_text(encoding="utf-8"))
     required = ["test_file", "reason", "quarantined_at", "expiry", "release_impact"]
     for entry in data["quarantined_tests"]:
         for field in required:
@@ -28,7 +29,7 @@ def test_quarantined_tests_have_required_fields():
 
 def test_quarantined_test_file_exists():
     """Each quarantined test file must exist."""
-    data = json.loads(MANIFEST.read_text())
+    data = json.loads(MANIFEST.read_text(encoding="utf-8"))
     for entry in data["quarantined_tests"]:
         path = TESTS_DIR / entry["test_file"].replace("tests/", "")
         assert path.exists(), f"Quarantined file missing: {path}"
@@ -37,9 +38,8 @@ def test_quarantined_test_file_exists():
 def test_no_expired_quarantines():
     """No quarantine should be expired."""
     from datetime import date
-    data = json.loads(MANIFEST.read_text())
+
+    data = json.loads(MANIFEST.read_text(encoding="utf-8"))
     today = date.today().isoformat()
     for entry in data["quarantined_tests"]:
-        assert entry["expiry"] >= today, (
-            f"Expired quarantine: {entry['test_file']} expired {entry['expiry']}"
-        )
+        assert entry["expiry"] >= today, f"Expired quarantine: {entry['test_file']} expired {entry['expiry']}"

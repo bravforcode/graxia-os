@@ -1,11 +1,23 @@
 #!/usr/bin/env python3
 """
 WALK-FORWARD VALIDATION — patched for 3-class triple-barrier labels.
+
+DEPRECATED: Use validation.walk_forward.run_walk_forward with label_mode="3class".
+This inline implementation will be removed in a future phase.
 """
-import argparse, json, os, warnings
+
+import argparse
+import json
+import os
+import sys
+import warnings
+
 import numpy as np
 import pandas as pd
 import xgboost as xgb
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from core.feature_config import EXCLUDE_COLS
 
 warnings.filterwarnings("ignore")
 
@@ -25,23 +37,24 @@ def load_features(symbol: str, freq: str) -> pd.DataFrame:
 
 
 def get_feature_cols(df: pd.DataFrame) -> list[str]:
-    exclude = {
-        "target", "target_return", "symbol", "freq",
-        "tb_label", "tb_bar_hit", "tb_side", "tb_ret",
-        "tb_k_upper", "tb_k_lower", "open", "high", "low", "close",
-        "volume", "tick_count",
-    }
-    return [c for c in df.columns if c not in exclude
-            and df[c].dtype in (np.float64, np.float32, np.int64, np.int32)]
+    """Get numeric feature columns, excluding centralized EXCLUDE_COLS."""
+    available = set(df.columns) & EXCLUDE_COLS
+    return [c for c in df.columns if c not in available and df[c].dtype in (np.float64, np.float32, np.int64, np.int32)]
 
 
 def compute_fold_pnl(
-    returns: np.ndarray, preds: np.ndarray, confs: np.ndarray,
-    spread_cost: float, slippage_p90: float,
+    returns: np.ndarray,
+    preds: np.ndarray,
+    confs: np.ndarray,
+    spread_cost: float,
+    slippage_p90: float,
     min_confidence: float = 0.85,
     close_prices: np.ndarray | None = None,
 ) -> dict:
-    """3-class TB labels: 0→-1 short, 1→0 neutral/skip, 2→+1 long."""
+    """3-class TB labels: 0→-1 short, 1→0 neutral/skip, 2→+1 long.
+
+    DEPRECATED: Use validation.walk_forward.compute_fold_pnl with label_mode="3class".
+    """
     if close_prices is None:
         raise ValueError("close_prices is required for accurate PnL calculation")
 
@@ -52,11 +65,20 @@ def compute_fold_pnl(
 
     if n_trades == 0:
         return {
-            "n_trades": 0, "pct_bars": 0.0, "accuracy": 0.0,
-            "wins": 0, "losses": 0, "gross_pnl": 0.0,
-            "total_cost": 0.0, "net_pnl": 0.0,
-            "win_rate": 0.0, "avg_win": 0.0, "avg_loss": 0.0,
-            "max_drawdown": 0.0, "sharpe_ratio": 0.0, "avg_move_points": 0.0,
+            "n_trades": 0,
+            "pct_bars": 0.0,
+            "accuracy": 0.0,
+            "wins": 0,
+            "losses": 0,
+            "gross_pnl": 0.0,
+            "total_cost": 0.0,
+            "net_pnl": 0.0,
+            "win_rate": 0.0,
+            "avg_win": 0.0,
+            "avg_loss": 0.0,
+            "max_drawdown": 0.0,
+            "sharpe_ratio": 0.0,
+            "avg_move_points": 0.0,
         }
 
     dir_mask = direction[mask]
@@ -103,12 +125,20 @@ def compute_fold_pnl(
 
 
 def walk_forward(
-    df: pd.DataFrame, feature_cols: list[str],
+    df: pd.DataFrame,
+    feature_cols: list[str],
     model_params: dict,
-    train_window: int, test_window: int, step: int,
-    spread_cost: float, slippage_p90: float,
+    train_window: int,
+    test_window: int,
+    step: int,
+    spread_cost: float,
+    slippage_p90: float,
     min_confidence: float = 0.85,
 ) -> dict:
+    """Run walk-forward for 3-class triple-barrier labels.
+
+    DEPRECATED: Use validation.walk_forward.run_walk_forward with label_mode="3class".
+    """
     n = len(df)
     folds = []
     data = df[feature_cols].fillna(0).values
@@ -141,7 +171,9 @@ def walk_forward(
         oos_acc = (preds == y_test).mean()
 
         result = compute_fold_pnl(
-            ret_test, preds, conf,
+            ret_test,
+            preds,
+            conf,
             spread_cost=spread_cost,
             slippage_p90=slippage_p90,
             min_confidence=min_confidence,
@@ -207,11 +239,17 @@ def print_results(agg: dict):
     print(f"  Folds: {a['n_folds']}  Windows: train={p['train_window']} test={p['test_window']} step={p['step']}")
     print(f"  Cost: ${p['spread_cost']+p['slippage_p90']:.3f}/trade  Conf>={p['min_confidence']}")
     print()
-    print(f"  {'Fold':>4s} | {'TrainAcc':>8s} | {'OOSAcc':>7s} | {'Trades':>6s} | {'Acc':>6s} | {'Gross':>7s} | {'Net':>8s} | {'SR':>6s} |")
-    print(f"  {'----':>4s}-+-{'--------':>8s}-+-{'-------':>7s}-+-{'------':>6s}-+-{'------':>6s}-+-{'-------':>7s}-+-{'--------':>8s}-+-{'------':>6s}-+")
+    print(
+        f"  {'Fold':>4s} | {'TrainAcc':>8s} | {'OOSAcc':>7s} | {'Trades':>6s} | {'Acc':>6s} | {'Gross':>7s} | {'Net':>8s} | {'SR':>6s} |"
+    )
+    print(
+        f"  {'----':>4s}-+-{'--------':>8s}-+-{'-------':>7s}-+-{'------':>6s}-+-{'------':>6s}-+-{'-------':>7s}-+-{'--------':>8s}-+-{'------':>6s}-+"
+    )
     for f in agg["folds"]:
         ok = "*" if f["net_pnl"] > 0 and f["n_trades"] >= 3 else " "
-        print(f"  {f['fold']:>4d}{ok} | {f['train_acc']:>.4f}   | {f['oos_acc']:>.4f}  | {f['n_trades']:>6d} | {f['accuracy']:>.4f} | {f['gross_pnl']:>+6.2f}  | {f['net_pnl']:>+7.2f}  | {f['sharpe_ratio']:>+5.1f}  |")
+        print(
+            f"  {f['fold']:>4d}{ok} | {f['train_acc']:>.4f}   | {f['oos_acc']:>.4f}  | {f['n_trades']:>6d} | {f['accuracy']:>.4f} | {f['gross_pnl']:>+6.2f}  | {f['net_pnl']:>+7.2f}  | {f['sharpe_ratio']:>+5.1f}  |"
+        )
 
     print()
     print("  === AGGREGATE ===")
@@ -222,7 +260,9 @@ def print_results(agg: dict):
     if a["stable"]:
         print(f"\n  [OK] EDGE STABLE — {a['positive_folds']}/{a['n_folds']} folds positive, net=${a['total_net']:.2f}")
     else:
-        print(f"\n  [WARN] EDGE NOT STABLE — {a['positive_folds']}/{a['n_folds']} folds positive, net=${a['total_net']:.2f}")
+        print(
+            f"\n  [WARN] EDGE NOT STABLE — {a['positive_folds']}/{a['n_folds']} folds positive, net=${a['total_net']:.2f}"
+        )
     print("=" * 70)
 
 
@@ -273,15 +313,21 @@ def main():
     for conf in [args.min_confidence]:
         print(f"\n--- Conf >= {conf} ---")
         agg = walk_forward(
-            df, feature_cols, model_params,
-            args.train_window, args.test_window, args.step,
-            args.spread_cost, args.slippage_p90,
+            df,
+            feature_cols,
+            model_params,
+            args.train_window,
+            args.test_window,
+            args.step,
+            args.spread_cost,
+            args.slippage_p90,
             min_confidence=conf,
         )
         print_results(agg)
 
-        path = os.path.join(args.output,
-            f"wf_{args.symbol}_{args.freq}_{args.train_window}w_{args.test_window}t_conf{conf}.json")
+        path = os.path.join(
+            args.output, f"wf_{args.symbol}_{args.freq}_{args.train_window}w_{args.test_window}t_conf{conf}.json"
+        )
         with open(path, "w") as f:
             json.dump(convert_numpy(agg), f, indent=2)
         print(f"  Saved: {path}")

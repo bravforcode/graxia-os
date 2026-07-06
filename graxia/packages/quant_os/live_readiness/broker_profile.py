@@ -1,4 +1,9 @@
-"""Broker profile model — defines expected runtime configuration per broker."""
+"""Broker profile model — defines expected runtime configuration per broker.
+
+.. deprecated::
+    Use ``runtime.broker_identity_guard.BrokerProfile`` instead.
+    This module will be removed in a future release.
+"""
 
 from __future__ import annotations
 

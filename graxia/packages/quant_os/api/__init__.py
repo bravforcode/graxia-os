@@ -17,6 +17,7 @@ def __getattr__(name: str):
         "tv_router": (".tv_routes", "tv_router"),
         "visual_router": (".visual_routes", "visual_router"),
         "cdp_router": (".cdp_routes", "cdp_router"),
+        "autonomous_router": (".autonomous_routes", "autonomous_router"),
     }
     if name in _lazy:
         module_path, attr = _lazy[name]
@@ -36,4 +37,5 @@ __all__ = [
     "tv_router",
     "visual_router",
     "cdp_router",
+    "autonomous_router",
 ]

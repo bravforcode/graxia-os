@@ -15,16 +15,22 @@ Usage:
 import json
 import time
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # ── Constants ────────────────────────────────────────────────────────────
 
 TSM_ASSETS = [
-    "XAUUSD", "EURUSD_YF", "GBPUSD_YF", "USDJPY",
-    "BTC_YF", "ETH_YF", "SILVER", "OIL",
+    "XAUUSD",
+    "EURUSD_YF",
+    "GBPUSD_YF",
+    "USDJPY",
+    "BTC_YF",
+    "ETH_YF",
+    "SILVER",
+    "OIL",
 ]
 
 # Weekly strategy: 48h staleness is generous but actionable
@@ -54,24 +60,22 @@ class CheckResult:
     name: str
     status: HealthStatus
     message: str
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
     timestamp: float = field(default_factory=time.time)
 
 
 @dataclass
 class HealthReport:
     overall_status: HealthStatus
-    checks: List[CheckResult]
+    checks: list[CheckResult]
     timestamp: float = field(default_factory=time.time)
     portfolio: str = "tsm"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "portfolio": self.portfolio,
             "overall_status": self.overall_status.value,
-            "timestamp": datetime.fromtimestamp(
-                self.timestamp, tz=UTC
-            ).isoformat(),
+            "timestamp": datetime.fromtimestamp(self.timestamp, tz=UTC).isoformat(),
             "checks": [asdict(c) for c in self.checks],
         }
 
@@ -92,8 +96,8 @@ class TSMHealthChecker:
 
     def __init__(
         self,
-        data_dir: Optional[Path] = None,
-        state_file: Optional[Path] = None,
+        data_dir: Path | None = None,
+        state_file: Path | None = None,
     ):
         self.data_dir = data_dir or Path("artifacts/portfolio")
         self.state_file = state_file or Path("artifacts/portfolio/paper_trades/tsm_portfolio_state.json")
@@ -127,8 +131,8 @@ class TSMHealthChecker:
         checks the state file's last_data_timestamp field.
         """
         now = time.time()
-        stale_assets: List[str] = []
-        asset_ages: Dict[str, float] = {}
+        stale_assets: list[str] = []
+        asset_ages: dict[str, float] = {}
 
         state = self._load_state()
         if state and "last_data_timestamp" in state:
@@ -172,10 +176,7 @@ class TSMHealthChecker:
             )
 
         # Check if any asset is approaching staleness (> 24h)
-        aging_assets = [
-            a for a, age in asset_ages.items()
-            if age > MAX_DATA_AGE_SECONDS / 2
-        ]
+        aging_assets = [a for a, age in asset_ages.items() if age > MAX_DATA_AGE_SECONDS / 2]
         if aging_assets:
             return CheckResult(
                 name="data_freshness",
@@ -228,10 +229,7 @@ class TSMHealthChecker:
             return CheckResult(
                 name="signal_health",
                 status=HealthStatus.DEGRADED,
-                message=(
-                    f"Signals computed {signal_age:.0f}s ago "
-                    f"(threshold: {MAX_SIGNAL_COMPUTE_SECONDS}s)"
-                ),
+                message=(f"Signals computed {signal_age:.0f}s ago " f"(threshold: {MAX_SIGNAL_COMPUTE_SECONDS}s)"),
                 details={"signal_age_seconds": signal_age},
             )
 
@@ -239,7 +237,8 @@ class TSMHealthChecker:
         signals = state.get("signals", {})
         missing_assets = [a for a in TSM_ASSETS if a not in signals]
         invalid_assets = [
-            a for a, s in signals.items()
+            a
+            for a, s in signals.items()
             if s is None or s != s  # NaN check
         ]
 
@@ -247,10 +246,7 @@ class TSMHealthChecker:
             return CheckResult(
                 name="signal_health",
                 status=HealthStatus.UNHEALTHY,
-                message=(
-                    f"Signal issues — missing: {missing_assets}, "
-                    f"invalid: {invalid_assets}"
-                ),
+                message=(f"Signal issues — missing: {missing_assets}, " f"invalid: {invalid_assets}"),
                 details={
                     "missing_assets": missing_assets,
                     "invalid_assets": invalid_assets,
@@ -292,7 +288,7 @@ class TSMHealthChecker:
                 details={"positions": {}},
             )
 
-        issues: List[str] = []
+        issues: list[str] = []
         total_weight = 0.0
 
         for asset, pos in positions.items():
@@ -301,16 +297,12 @@ class TSMHealthChecker:
 
             # Concentration check
             if weight > 0.20 + POSITION_TOLERANCE_PCT:
-                issues.append(
-                    f"{asset}: weight {weight:.1%} exceeds 20% limit"
-                )
+                issues.append(f"{asset}: weight {weight:.1%} exceeds 20% limit")
 
         # Sum of absolute weights check (should be ~1.0 for fully invested)
         if total_weight > 0:
             if abs(total_weight - 1.0) > POSITION_TOLERANCE_PCT * 2:
-                issues.append(
-                    f"Sum of |weights| = {total_weight:.4f}, expected ~1.0"
-                )
+                issues.append(f"Sum of |weights| = {total_weight:.4f}, expected ~1.0")
 
         # Cross-check: positions vs signals
         signals = state.get("signals", {})
@@ -338,8 +330,7 @@ class TSMHealthChecker:
         return CheckResult(
             name="position_reconciliation",
             status=HealthStatus.HEALTHY,
-            message=f"{len(positions)} positions reconciled, "
-            f"total |weight| = {total_weight:.4f}",
+            message=f"{len(positions)} positions reconciled, " f"total |weight| = {total_weight:.4f}",
             details={
                 "total_weight": total_weight,
                 "position_count": len(positions),
@@ -350,12 +341,12 @@ class TSMHealthChecker:
 
     # ── Internal ─────────────────────────────────────────────────────
 
-    def _load_state(self) -> Optional[Dict[str, Any]]:
+    def _load_state(self) -> dict[str, Any] | None:
         """Load portfolio state from JSON file."""
         if not self.state_file.exists():
             return None
         try:
-            return json.loads(self.state_file.read_text())
+            return json.loads(self.state_file.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             return None
 

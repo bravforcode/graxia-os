@@ -332,7 +332,7 @@ class TestMemoryLeak:
         report = ml.check_memory_growth()
         path = ml.write_report(report)
         assert path.exists(), f"Report not found at {path}"
-        content = json.loads(path.read_text())
+        content = json.loads(path.read_text(encoding="utf-8"))
         assert "baseline_rss_mb" in content
         assert "passed" in content
         # Cleanup

@@ -1,0 +1,101 @@
+{
+  "baseline_4asset": {
+    "name": "4-Asset Baseline",
+    "ann_ret": 0.2976,
+    "ann_vol": 0.9565,
+    "sharpe": 0.3112,
+    "sortino": 0.7771,
+    "max_dd": -0.8318,
+    "n_days": 2531,
+    "n_years": 10.04,
+    "total_return": 0.535,
+    "deflated_sharpe": 0.0075
+  },
+  "extended_6asset": {
+    "name": "6-Asset Extended",
+    "ann_ret": 0.1939,
+    "ann_vol": 0.4929,
+    "sharpe": 0.3934,
+    "sortino": 0.874,
+    "max_dd": -0.5525,
+    "n_days": 2713,
+    "n_years": 10.77,
+    "total_return": 2.1584,
+    "deflated_sharpe": 0.0027
+  },
+  "correlation_matrix": {
+    "NAS100": {
+      "NAS100": 1.0,
+      "XAUUSD": -0.0282,
+      "OIL": 0.1574,
+      "USDJPY": -0.0841,
+      "BTCUSD": 0.075,
+      "SPX500": 0.9439
+    },
+    "XAUUSD": {
+      "NAS100": -0.0282,
+      "XAUUSD": 1.0,
+      "OIL": -0.0245,
+      "USDJPY": -0.0263,
+      "BTCUSD": -0.0204,
+      "SPX500": -0.0332
+    },
+    "OIL": {
+      "NAS100": 0.1574,
+      "XAUUSD": -0.0245,
+      "OIL": 1.0,
+      "USDJPY": 0.0285,
+      "BTCUSD": 0.0091,
+      "SPX500": 0.0814
+    },
+    "USDJPY": {
+      "NAS100": -0.0841,
+      "XAUUSD": -0.0263,
+      "OIL": 0.0285,
+      "USDJPY": 1.0,
+      "BTCUSD": -0.0564,
+      "SPX500": -0.076
+    },
+    "BTCUSD": {
+      "NAS100": 0.075,
+      "XAUUSD": -0.0204,
+      "OIL": 0.0091,
+      "USDJPY": -0.0564,
+      "BTCUSD": 1.0,
+      "SPX500": 0.0735
+    },
+    "SPX500": {
+      "NAS100": 0.9439,
+      "XAUUSD": -0.0332,
+      "OIL": 0.0814,
+      "USDJPY": -0.076,
+      "BTCUSD": 0.0735,
+      "SPX500": 1.0
+    }
+  },
+  "assets_6": [
+    "NAS100",
+    "XAUUSD",
+    "OIL",
+    "USDJPY",
+    "BTCUSD",
+    "SPX500"
+  ],
+  "signal_spec": {
+    "lookbacks": [
+      20,
+      40,
+      60,
+      120
+    ],
+    "weights": [
+      0.25,
+      0.25,
+      0.25,
+      0.25
+    ],
+    "target_vol": 0.1,
+    "rebalance": "W-FRI",
+    "position_cap": 1.5
+  }
+}

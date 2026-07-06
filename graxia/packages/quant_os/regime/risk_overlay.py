@@ -201,9 +201,7 @@ class RiskOverlay:
         self.state.kill_switch_reason = reason
         self._save_state()
         if self._coordinator is not None:
-            self._coordinator.sync_kill_switch(
-                True, reason, source="risk_overlay", triggering_store="risk_overlay"
-            )
+            self._coordinator.sync_kill_switch(True, reason, source="risk_overlay", triggering_store="risk_overlay")
 
     def release_kill_switch(self):
         """Deactivate kill switch."""
@@ -211,9 +209,7 @@ class RiskOverlay:
         self.state.kill_switch_reason = ""
         self._save_state()
         if self._coordinator is not None:
-            self._coordinator.sync_kill_switch(
-                False, "manual", source="risk_overlay", triggering_store="risk_overlay"
-            )
+            self._coordinator.sync_kill_switch(False, "manual", source="risk_overlay", triggering_store="risk_overlay")
 
     def get_status(self) -> dict:
         """Return current risk status summary."""
@@ -287,7 +283,7 @@ class RiskOverlay:
         if not self._state_file.exists():
             return RiskState()
         try:
-            data = json.loads(self._state_file.read_text())
+            data = json.loads(self._state_file.read_text(encoding="utf-8"))
             return RiskState(
                 daily_start=datetime.fromisoformat(data["daily_start"]),
                 weekly_start=datetime.fromisoformat(data["weekly_start"]),

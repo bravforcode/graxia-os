@@ -26,7 +26,7 @@ class TestGoldenRules:
         from risk.risk_policy import RiskPolicy
 
         rp = RiskPolicy()
-        assert rp.risk_per_trade_bps == 10  # 0.10% risk per trade
+        assert rp.risk_per_trade_bps == 100  # 1.00% risk per trade
 
     def test_hard_stop_drawdown(self):
         """15% hard stop drawdown"""

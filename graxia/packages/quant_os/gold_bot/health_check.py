@@ -13,11 +13,10 @@ Usage:
     python gold_bot/health_check.py --auto-restart
 """
 
-import os
-import sys
 import json
 import subprocess
-from datetime import datetime, timezone
+import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
 # Paths
@@ -44,10 +43,7 @@ def log(msg: str):
 def check_process_alive(pid: int) -> bool:
     """Check if a process is running by PID."""
     try:
-        result = subprocess.run(
-            ["tasklist", "/FI", f"PID eq {pid}", "/NH"],
-            capture_output=True, text=True, timeout=10
-        )
+        result = subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/NH"], capture_output=True, text=True, timeout=10)
         return str(pid) in result.stdout
     except Exception:
         return False
@@ -58,7 +54,7 @@ def check_bot_process() -> tuple[bool, int]:
     # Check PID file first
     if PID_FILE.exists():
         try:
-            pid = int(PID_FILE.read_text().strip())
+            pid = int(PID_FILE.read_text(encoding="utf-8").strip())
             if check_process_alive(pid):
                 return True, pid
         except (ValueError, OSError):
@@ -67,11 +63,17 @@ def check_bot_process() -> tuple[bool, int]:
     # Fallback: find python or cmd process running run_paper.py via PowerShell
     try:
         result = subprocess.run(
-            ["powershell", "-NoProfile", "-Command",
-             "Get-CimInstance Win32_Process -Filter \"Name='python.exe' or Name='cmd.exe'\" "
-             "| Where-Object { $_.CommandLine -like '*run_paper.py*' } "
-             "| Select-Object -ExpandProperty ProcessId"],
-            capture_output=True, text=True, timeout=15
+            [
+                "powershell",
+                "-NoProfile",
+                "-Command",
+                "Get-CimInstance Win32_Process -Filter \"Name='python.exe' or Name='cmd.exe'\" "
+                "| Where-Object { $_.CommandLine -like '*run_paper.py*' } "
+                "| Select-Object -ExpandProperty ProcessId",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=15,
         )
         for line in result.stdout.strip().split("\n"):
             line = line.strip()
@@ -90,8 +92,7 @@ def check_mt5_running() -> bool:
     """Check if MT5 terminal is running."""
     try:
         result = subprocess.run(
-            ["tasklist", "/FI", "IMAGENAME eq terminal64.exe", "/NH"],
-            capture_output=True, text=True, timeout=10
+            ["tasklist", "/FI", "IMAGENAME eq terminal64.exe", "/NH"], capture_output=True, text=True, timeout=10
         )
         return "terminal64.exe" in result.stdout
     except Exception:
@@ -105,6 +106,7 @@ def check_log_growing() -> bool:
 
     size1 = BOT_LOG.stat().st_size
     import time
+
     time.sleep(3)
     size2 = BOT_LOG.stat().st_size
 
@@ -115,7 +117,7 @@ def check_error_log() -> list[str]:
     """Read recent errors from error log."""
     errors = []
     if ERR_LOG.exists():
-        content = ERR_LOG.read_text().strip()
+        content = ERR_LOG.read_text(encoding="utf-8").strip()
         if content:
             # Get last 5 lines
             lines = content.split("\n")
@@ -126,6 +128,7 @@ def check_error_log() -> list[str]:
 def check_csv_activity() -> dict:
     """Check trade CSV activity."""
     import glob
+
     # Check both possible locations for CSV
     csv_files = sorted(glob.glob(str(LOG_DIR / "paper_trades_*.csv")))
     if not csv_files:
@@ -158,15 +161,21 @@ def restart_bot():
     # Kill existing processes
     try:
         subprocess.run(
-            ["powershell", "-NoProfile", "-Command",
-             "Get-Process python,cmd -ErrorAction SilentlyContinue | "
-             "Where-Object { $_.CommandLine -like '*run_paper*' } | Stop-Process -Force"],
-            capture_output=True, timeout=15
+            [
+                "powershell",
+                "-NoProfile",
+                "-Command",
+                "Get-Process python,cmd -ErrorAction SilentlyContinue | "
+                "Where-Object { $_.CommandLine -like '*run_paper*' } | Stop-Process -Force",
+            ],
+            capture_output=True,
+            timeout=15,
         )
     except Exception:
         pass
 
     import time
+
     time.sleep(5)
 
     # Start via PS1 script
@@ -188,7 +197,7 @@ def restart_bot():
 def run_health_check(auto_restart: bool = False) -> dict:
     """Run full health check."""
     report = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "bot_alive": False,
         "bot_pid": 0,
         "mt5_running": False,
@@ -205,7 +214,7 @@ def run_health_check(auto_restart: bool = False) -> dict:
     alive, pid = check_bot_process()
     report["bot_alive"] = alive
     report["bot_pid"] = pid
-    log(f"Bot process: {'ALIVE (PID={})' .format(pid) if alive else 'DEAD'}")
+    log(f"Bot process: {f'ALIVE (PID={pid})' if alive else 'DEAD'}")
 
     # 2. Check MT5
     mt5 = check_mt5_running()

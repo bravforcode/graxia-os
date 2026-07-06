@@ -33,6 +33,7 @@ import structlog
 from fastapi import APIRouter, Header, Request
 from pydantic import BaseModel
 
+from ..autonomous.live_approval import LiveApprovalGate
 from ..core.telegram_callback import TelegramCallbackHandler
 
 logger = structlog.get_logger(__name__)
@@ -130,17 +131,26 @@ class SetWebhookResponse(BaseModel):
 _callback_handler: TelegramCallbackHandler | None = None
 _command_handler: Any = None  # TelegramCommandHandler — avoid circular import
 _polling_loop: TelegramPollingLoop | None = None
+_live_approval_gate: LiveApprovalGate | None = None
 
 
 def set_handlers(
     callback_handler: TelegramCallbackHandler,
     command_handler: Any,
+    live_approval_gate: LiveApprovalGate | None = None,
 ) -> None:
     """Register callback and command handlers (called from main.py lifespan)."""
-    global _callback_handler, _command_handler
+    global _callback_handler, _command_handler, _live_approval_gate
     _callback_handler = callback_handler
     _command_handler = command_handler
+    _live_approval_gate = live_approval_gate
     logger.info("telegram.handlers_registered")
+
+
+def set_live_approval_gate(gate: LiveApprovalGate) -> None:
+    """Register the LiveApprovalGate singleton."""
+    global _live_approval_gate
+    _live_approval_gate = gate
 
 
 # ---------------------------------------------------------------------------
@@ -154,16 +164,47 @@ async def _dispatch_update(update: dict) -> None:
     Args:
         update: Parsed Telegram Update object
     """
-    # Handle callback_query (inline keyboard presses)
     callback_query = update.get("callback_query")
-    if callback_query and _callback_handler:
-        try:
-            await _callback_handler.handle_callback(callback_query)
-        except Exception as exc:
-            logger.warning("telegram.callback_error", error=str(exc))
-        return
+    if callback_query:
+        data = callback_query.get("data", "")
+        cb_id = callback_query.get("id", "")
+        user = callback_query.get("from", {})
+        user_id = str(user.get("id", ""))
 
-    # Handle text commands
+        if data.startswith("live:") and _live_approval_gate:
+            try:
+                parsed = LiveApprovalGate.parse_live_callback(data)
+                if parsed:
+                    request_id, action = parsed
+                    _live_approval_gate.handle_callback(request_id, action, user_id)
+                    await _answer_callback_query(cb_id, "Action received")
+                    logger.info(
+                        "telegram.live_callback",
+                        request_id=request_id,
+                        action=action.value,
+                    )
+                else:
+                    await _answer_callback_query(cb_id, "Invalid format")
+            except Exception as exc:
+                logger.warning("telegram.live_callback_error", error=str(exc))
+            return
+
+        if data.startswith("live:") and not _live_approval_gate:
+            logger.warning(
+                "telegram.live_callback.no_gate",
+                data=data,
+                hint="LiveApprovalGate not registered. Call set_live_approval_gate() or check orchestrator wiring.",
+            )
+            await _answer_callback_query(cb_id, "Approval gate not configured")
+            return
+
+        if _callback_handler:
+            try:
+                await _callback_handler.handle_callback(callback_query)
+            except Exception as exc:
+                logger.warning("telegram.callback_error", error=str(exc))
+            return
+
     message = update.get("message")
     if message and _command_handler:
         text = message.get("text", "").strip()
@@ -174,8 +215,22 @@ async def _dispatch_update(update: dict) -> None:
                 logger.warning("telegram.command_error", error=str(exc))
             return
 
-    # Unhandled update type — log and ignore
     logger.debug("telegram.unhandled_update", keys=list(update.keys()))
+
+
+async def _answer_callback_query(callback_id: str, text: str = "") -> None:
+    """Answer a callback query to remove the loading spinner."""
+    token = _get_bot_token()
+    if not token or not callback_id:
+        return
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            await client.post(
+                f"https://api.telegram.org/bot{token}/answerCallbackQuery",
+                json={"callback_query_id": callback_id, "text": text},
+            )
+    except Exception:
+        pass
 
 
 # ---------------------------------------------------------------------------

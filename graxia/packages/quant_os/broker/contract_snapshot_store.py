@@ -62,7 +62,7 @@ class ContractSnapshotStore:
         path = self._base_dir / f"{snapshot_hash}.json"
         if not path.exists():
             raise FileNotFoundError(f"Snapshot {snapshot_hash} not found")
-        data = json.loads(path.read_text())
+        data = json.loads(path.read_text(encoding="utf-8"))
         return ContractSpec(
             broker=data["broker"],
             server=data["server"],

@@ -1,4 +1,9 @@
-"""Phase BE-P3 — Unified event risk gate. Combines event + market health."""
+"""Phase BE-P3 — Unified event risk gate. Combines event + market health.
+
+.. deprecated::
+    Use ``shadow.event_risk_gate.EventRiskGate`` instead.
+    This module will be removed in a future release.
+"""
 
 from datetime import datetime
 

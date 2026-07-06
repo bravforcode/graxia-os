@@ -262,6 +262,10 @@ def add_technical_features(df: pd.DataFrame) -> pd.DataFrame:
     - ATR ratio (ATR14 / close)
     - ADX (14)
     - Distance from MA 20, 50, 200
+
+    NOTE: OHLCV technical features overlap with canonical FeatureEngineer in
+    ml/pipeline.py. This function is kept because the v3 pipeline uses specific
+    column names (adx_14, dist_ma_*) and adds SMC/macro layers on top.
     """
     logger.info("  -> Technical features")
 

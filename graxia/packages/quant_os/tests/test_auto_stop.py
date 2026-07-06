@@ -239,7 +239,7 @@ class TestStatePersistence:
         assert state_path.exists()
 
         # Load state and verify
-        state = json.loads(state_path.read_text())
+        state = json.loads(state_path.read_text(encoding="utf-8"))
         assert state["triggered"] is True
         assert state["hwm"] == 100_000
 
@@ -257,7 +257,7 @@ class TestStatePersistence:
 
         # Verify state file
         state_path = Path(tmp_state_file)
-        state = json.loads(state_path.read_text())
+        state = json.loads(state_path.read_text(encoding="utf-8"))
         assert state["triggered"] is False
 
     def test_state_loads_on_restart(self, kill_switch, tmp_state_file):

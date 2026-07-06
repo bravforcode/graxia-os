@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import hmac
 import json
-import os
 import threading
 import time
 from collections import defaultdict
@@ -22,11 +21,12 @@ import numpy as np
 import pandas as pd
 import structlog
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request, Security
+from fastapi import FastAPI, HTTPException, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, Field
 
+from graxia.packages.quant_os.core.config import get_config
 from graxia.packages.quant_os.core.safe_pickle import safe_load_model
 
 logger = structlog.get_logger(__name__)
@@ -58,11 +58,12 @@ _rate_limiter = _RateLimiter(max_requests=30, window_seconds=60)
 # Config
 # ---------------------------------------------------------------------------
 
-SYMBOL = os.getenv("TRADE_SYMBOL", "XAUUSD")
-LOT_SIZE = float(os.getenv("LOT_SIZE", "0.01"))
-B2_STOP_DOLLARS = float(os.getenv("B2_STOP", "3.00"))
-MIN_CONFIDENCE = float(os.getenv("MIN_CONFIDENCE", "0.50"))
-LOG_DIR = Path(os.getenv("LOG_DIR", "/app/data"))
+_cfg = get_config()
+SYMBOL = _cfg.symbols[0] if _cfg.symbols else "XAUUSD"
+LOT_SIZE = float(_cfg.units_per_lot)
+B2_STOP_DOLLARS = 3.00
+MIN_CONFIDENCE = _cfg.ml_min_confidence
+LOG_DIR = Path("/app/data")
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 # ---------------------------------------------------------------------------
@@ -241,6 +242,7 @@ def _retrain_model():
     # Save retrained model to disk for faster restart
     try:
         import pickle
+
         model_save_dir = Path("/app/artifacts/strategy_model")
         model_save_dir.mkdir(parents=True, exist_ok=True)
         save_path = model_save_dir / f"xgboost_{SYMBOL}_live_features.pkl"
@@ -433,13 +435,13 @@ app = FastAPI(title="GRAXIA Signal Service", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "https://graxia.dev",
+        "http://localhost:5173",
         "http://localhost:3000",
-        "http://localhost:8080",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:8080",
     ],
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type", "X-API-Key"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "X-API-Key", "Authorization"],
 )
 
 # ---------------------------------------------------------------------------
@@ -454,6 +456,8 @@ async def verify_signal_api_key(api_key: str = Security(_api_key_header)):
     If SIGNAL_SERVICE_API_KEY env var is not set, the endpoint is open (dev mode).
     In production, always set the env var.
     """
+    import os
+
     expected = os.environ.get("SIGNAL_SERVICE_API_KEY", "")
     if not expected:
         raise HTTPException(status_code=500, detail="SIGNAL_SERVICE_API_KEY not configured")

@@ -1,4 +1,5 @@
 """Create EURUSD data manifests."""
+
 import hashlib
 import json
 from pathlib import Path
@@ -12,7 +13,7 @@ for tf in ["D1", "H1", "M15"]:
     if not csv.exists():
         print(f"SKIP {tf}: file not found")
         continue
-    content = csv.read_text()
+    content = csv.read_text(encoding="utf-8")
     sha = hashlib.sha256(content.encode()).hexdigest()
     lines = content.strip().split("\n")
     header = lines[0].split(",")

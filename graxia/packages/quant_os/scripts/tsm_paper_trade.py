@@ -58,12 +58,12 @@ from quant_os.execution.adapters.mt5 import MT5Adapter
 from quant_os.execution.oms import OMS
 from quant_os.monitoring.metrics_exporter import (
     start_metrics_server,
+    update_data_feed_timestamp,
     update_drawdown,
+    update_heartbeat_timestamp,
     update_kill_switch,
     update_positions,
-    update_heartbeat_timestamp,
     update_rebalance_timestamp,
-    update_data_feed_timestamp,
 )
 from quant_os.risk.circuit_breaker import CircuitBreaker
 from quant_os.risk.market_session_guard import MarketSessionGuard
@@ -79,7 +79,20 @@ WEIGHTS = [0.25, 0.25, 0.25, 0.25]  # Equal-weight
 TARGET_VOL = 0.10  # 10% annualized vol target
 MAX_LEVERAGE = 1.5  # Cap on per-asset leverage
 RVOL_WINDOW = 60  # Realized vol lookback (days)
-MIN_LOT = 0.01  # Minimum lot size across all symbols
+MIN_LOT = 0.01  # Default minimum lot size (overridden per-symbol from MT5)
+
+
+def _get_symbol_lots_info(mt5_mod, symbol: str) -> tuple[float, float]:
+    """Return (volume_min, volume_step) for an MT5 symbol."""
+    try:
+        info = mt5_mod.symbol_info(symbol)
+        if info:
+            return info.volume_min, info.volume_step
+    except Exception:
+        pass
+    return 0.01, 0.01  # fallback
+
+
 MAGIC_NUMBER = 202507  # MT5 magic for TSM bot
 
 # Regime detection thresholds (volatility-based)
@@ -97,6 +110,8 @@ ASSET_ATR_MULTIPLIERS = {
     "XAUUSD": 2.5,
     "OIL": 3.0,
     "USDJPY": 1.5,
+    "BTCUSD": 3.0,
+    "SPX500": 2.0,
 }
 
 # ATR lookback period
@@ -136,21 +151,34 @@ def load_cost_calibration() -> dict[str, float]:
 
 COST_MAP = load_cost_calibration()  # {mt5_symbol: round_trip_bps}
 
-# 4-asset concentrated portfolio (real alpha confirmed Sharpe 0.535)
-# Dead weight removed: EURUSD, GBPUSD, BTC, ETH, SILVER
+# 6-asset portfolio (BTCUSD validated OOS Sharpe 0.564)
 ASSETS = [
     "NAS100",
     "XAUUSD",
     "OIL",
     "USDJPY",
+    "BTCUSD",
+    "SPX500",
 ]
 
 # Map parquet asset names → MT5 symbol names
 MT5_SYMBOL_MAP = {
     "NAS100": "NAS100",
     "XAUUSD": "XAUUSD",
-    "OIL": "USOIL",
+    "OIL": "SpotCrude",
     "USDJPY": "USDJPY",
+    "BTCUSD": "BTCUSD",
+    "SPX500": "US500",
+}
+
+# Map ASSETS names → parquet column prefixes (some use different names in parquet)
+PARQUET_COL_MAP = {
+    "NAS100": "NAS100",
+    "XAUUSD": "XAUUSD",
+    "OIL": "OIL",
+    "USDJPY": "USDJPY",
+    "BTCUSD": "BTC_YF",  # parquet uses BTC_YF_close
+    "SPX500": "SPX500",  # will fall back to yfinance if missing
 }
 
 # Contract sizes for lot→notional conversion (Pepperstone defaults)
@@ -158,7 +186,9 @@ CONTRACT_SIZES = {
     "NAS100": 1,  # 1 lot = 1 index unit (CFD)
     "XAUUSD": 100,  # 1 lot = 100 troy oz
     "USDJPY": 100_000,  # 1 lot = 100k units
-    "USOIL": 1_000,  # 1 lot = 1000 barrels
+    "SpotCrude": 1_000,  # 1 lot = 1000 barrels
+    "BTCUSD": 1,  # 1 lot = 1 BTC
+    "US500": 1,  # 1 lot = 1 index unit
 }
 
 # Paths
@@ -330,7 +360,8 @@ def get_close_matrix(data: pd.DataFrame) -> pd.DataFrame:
     """Extract close price matrix for all assets."""
     cols = {}
     for asset in ASSETS:
-        col = f"{asset}_close"
+        parquet_prefix = PARQUET_COL_MAP.get(asset, asset)
+        col = f"{parquet_prefix}_close"
         if col in data.columns:
             cols[asset] = data[col]
     if not cols:
@@ -582,13 +613,22 @@ def weights_to_lots(
         price = prices[asset]
         contract_size = CONTRACT_SIZES.get(mt5_sym, 100_000)
 
+        # Get symbol-specific lot constraints
+        import MetaTrader5 as _mt5
+
+        sym_min_lot, sym_step = _get_symbol_lots_info(_mt5, mt5_sym)
+
         # Target notional in USD
         target_notional = weight * account_equity
 
         # Convert to lots
         target_lots = target_notional / (price * contract_size)
-        target_lots = round(max(abs(target_lots), 0) * 100) / 100  # round to 0.01
-        if target_lots < MIN_LOT:
+        # Round to step and enforce minimum
+        if sym_step > 0:
+            target_lots = round(target_lots / sym_step) * sym_step
+        else:
+            target_lots = round(target_lots * 100) / 100
+        if target_lots < sym_min_lot:
             target_lots = 0.0
 
         # Preserve sign for direction
@@ -623,6 +663,7 @@ def _resolve_mt5_symbols(mt5):
     # Aliases to try for each symbol (primary -> fallback)
     symbol_aliases = {
         "NAS100": ["NAS100", "US100", "USTEC"],
+        "US500": ["US500", "SPX500"],
     }
 
     for asset in ASSETS:
@@ -665,8 +706,9 @@ def ensure_mt5():
         login = int(os.getenv("MT5_LOGIN", "0"))
         password = os.getenv("MT5_PASSWORD", "")
         server = os.getenv("MT5_SERVER", "Pepperstone-Demo")
+        mt5_path = os.getenv("MT5_PATH", r"C:\Program Files\Pepperstone MetaTrader 5\terminal64.exe")
 
-        initialized = mt5.initialize(login=login, password=password, server=server)
+        initialized = mt5.initialize(path=mt5_path, login=login, password=password, server=server)
         if not initialized:
             error = mt5.last_error()
             raise RuntimeError(f"MT5 init failed: {error}")
@@ -883,9 +925,8 @@ def check_market_session(mt5, symbol: str) -> bool:
 
 def set_atr_stops_after_fill(mt5, fills: list[dict], atrs: dict[str, float]):
     """Set ATR-based stop-losses on newly opened positions."""
-    from quant_os.execution.adapters.mt5 import MT5Adapter
 
-    adapter = get_oms().adapters.get("mt5")
+    adapter = get_oms()._adapters.get("mt5")
     if not adapter:
         return
 
@@ -1028,7 +1069,7 @@ def load_open_trades() -> list[dict]:
     if not OPEN_TRADES_PATH.exists():
         return []
     try:
-        return json.loads(OPEN_TRADES_PATH.read_text())
+        return json.loads(OPEN_TRADES_PATH.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, ValueError):
         return []
 
@@ -1044,7 +1085,7 @@ def load_pnl_summary() -> dict:
     if not PNL_SUMMARY_PATH.exists():
         return {"total_pnl": 0.0, "total_trades": 0, "wins": 0, "losses": 0, "closed_trades": []}
     try:
-        return json.loads(PNL_SUMMARY_PATH.read_text())
+        return json.loads(PNL_SUMMARY_PATH.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, ValueError):
         return {"total_pnl": 0.0, "total_trades": 0, "wins": 0, "losses": 0, "closed_trades": []}
 
@@ -1058,13 +1099,15 @@ def save_pnl_summary(summary: dict):
 def record_entry(symbol: str, entry_price: float, lots: float, ticket: str | None = None):
     """Record a new open trade entry."""
     trades = load_open_trades()
-    trades.append({
-        "symbol": symbol,
-        "entry_price": entry_price,
-        "lots": lots,
-        "entry_time": datetime.now(UTC).isoformat(),
-        "ticket": ticket,
-    })
+    trades.append(
+        {
+            "symbol": symbol,
+            "entry_price": entry_price,
+            "lots": lots,
+            "entry_time": datetime.now(UTC).isoformat(),
+            "ticket": ticket,
+        }
+    )
     save_open_trades(trades)
 
 
@@ -1150,9 +1193,9 @@ def save_state(
             "weights": WEIGHTS,
             "max_leverage": MAX_LEVERAGE,
             "rvol_window": RVOL_WINDOW,
-        "assets": ASSETS,
-        "cost_map": COST_MAP,
-        "asset_atr_multipliers": ASSET_ATR_MULTIPLIERS,
+            "assets": ASSETS,
+            "cost_map": COST_MAP,
+            "asset_atr_multipliers": ASSET_ATR_MULTIPLIERS,
             "regime_vol_high_multiplier": REGIME_VOL_HIGH_MULTIPLIER,
             "regime_vol_low_multiplier": REGIME_VOL_LOW_MULTIPLIER,
             "trend_fast_sma": TREND_FAST_SMA,
@@ -1252,7 +1295,7 @@ def run_rebalance(live: bool = False, force: bool = False):
     prev_trend = "FLAT"
     if STATE_PATH.exists():
         try:
-            prev_state = json.loads(STATE_PATH.read_text())
+            prev_state = json.loads(STATE_PATH.read_text(encoding="utf-8"))
             prev_regime = prev_state.get("regime", "NORMAL")
             prev_trend = prev_state.get("trend", "FLAT")
         except Exception:
@@ -1450,7 +1493,11 @@ def run_rebalance(live: bool = False, force: bool = False):
                     f"Vol scale: {latest_vol_scale:.3f} | RVol: {latest_rvol:.1%}\n"
                     f"Drawdown: {latest_drawdown:.2%}\n"
                     f"Equity: ${account_equity:,.2f}"
-                    + (f"\nP&L: ${_pnl['total_pnl']:+,.2f} | WR: {_pnl['win_rate']:.0f}% ({_pnl['total_trades']} trades)" if _pnl["total_trades"] > 0 else "")
+                    + (
+                        f"\nP&L: ${_pnl['total_pnl']:+,.2f} | WR: {_pnl['win_rate']:.0f}% ({_pnl['total_trades']} trades)"
+                        if _pnl["total_trades"] > 0
+                        else ""
+                    )
                 )
     else:
         log("\n--- DRY-RUN: No orders placed ---")

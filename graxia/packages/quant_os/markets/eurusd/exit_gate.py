@@ -1,12 +1,21 @@
-from dataclasses import dataclass, field
+"""EURUSD exit gate.
+
+.. deprecated::
+    Use ``validation.exit_gate.ExitGateEvaluator`` instead.
+    This module will be removed in a future release.
+"""
+
 import hashlib
 import json
+from dataclasses import dataclass, field
+
 
 @dataclass
 class ExitGateCheck:
     name: str
     passed: bool
     evidence: str
+
 
 @dataclass
 class ExitGateResult:
@@ -29,34 +38,19 @@ class ExitGateResult:
         data = json.dumps(self.to_dict(), sort_keys=True)
         return hashlib.sha256(data.encode()).hexdigest()
 
+
 class Phase4ExitGate:
     """Phase 4 exit gate: EURUSD Clean Research Foundation."""
 
     def evaluate(self) -> ExitGateResult:
         result = ExitGateResult()
 
-        result.add_check(
-            "EURUSD_DATA_CLEAN",
-            True,
-            "contract_snapshot validated"
-        )
+        result.add_check("EURUSD_DATA_CLEAN", True, "contract_snapshot validated")
 
-        result.add_check(
-            "HYPOTHESIS_EXPLICIT",
-            True,
-            "hypothesis template created"
-        )
+        result.add_check("HYPOTHESIS_EXPLICIT", True, "hypothesis template created")
 
-        result.add_check(
-            "BASELINE_EXECUTABLE",
-            True,
-            "engine compatibility verified"
-        )
+        result.add_check("BASELINE_EXECUTABLE", True, "engine compatibility verified")
 
-        result.add_check(
-            "NO_XAU_CONTAMINATION",
-            True,
-            "anti-contamination guard passed"
-        )
+        result.add_check("NO_XAU_CONTAMINATION", True, "anti-contamination guard passed")
 
         return result

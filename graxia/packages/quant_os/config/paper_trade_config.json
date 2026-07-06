@@ -1,12 +1,12 @@
 {
   "version": "2.0",
   "created_at": "2026-07-04T00:00:00+00:00",
-  "description": "4-asset concentrated portfolio (real alpha confirmed Sharpe 0.535)",
+  "description": "6-asset portfolio (BTCUSD + SPX500 added)",
   "broker": "Pepperstone-Demo",
   "trading_mode": "PAPER",
   "portfolio": {
-    "type": "concentrated_4_asset",
-    "assets": ["NAS100", "XAUUSD", "OIL", "USDJPY"],
+    "type": "6_asset",
+    "assets": ["NAS100", "XAUUSD", "OIL", "USDJPY", "BTCUSD", "SPX500"],
     "weight_method": "inverse_volatility",
     "target_vol": 0.15,
     "position_sizing": "half_kelly",
@@ -32,7 +32,7 @@
         "start": "13:00",
         "end": "21:00"
       },
-      "weight": 0.45,
+      "weight": 0.25,
       "notes": "NASDAQ 100 - highest Sharpe 0.598"
     },
     {
@@ -49,12 +49,12 @@
         "start": "01:00",
         "end": "21:00"
       },
-      "weight": 0.35,
+      "weight": 0.20,
       "notes": "Gold - Sharpe 0.374, hedge vs USDJPY (corr -0.414)"
     },
     {
       "symbol": "OIL",
-      "mt5_symbol": "USOIL",
+      "mt5_symbol": "SpotCrude",
       "asset_class": "commodities",
       "lot_size": 0.01,
       "atr_multiplier": 3.0,
@@ -66,8 +66,8 @@
         "start": "01:00",
         "end": "21:00"
       },
-      "weight": 0.05,
-      "notes": "Crude Oil - Sharpe 0.285, high DD risk -89%"
+      "weight": 0.07,
+      "notes": "Crude Oil - Sharpe 0.285, high DD risk -89%, mt5=SpotCrude"
     },
     {
       "symbol": "USDJPY",
@@ -83,8 +83,42 @@
         "start": "01:00",
         "end": "21:00"
       },
-      "weight": 0.15,
-      "notes": "USDJPY - Sharpe 0.204, diversifier"
+      "weight": 0.10,
+      "notes": "USDJPY - Sharpe 0.204, hedge vs XAUUSD"
+    },
+    {
+      "symbol": "BTCUSD",
+      "mt5_symbol": "BTCUSD",
+      "asset_class": "crypto",
+      "lot_size": 0.01,
+      "atr_multiplier": 3.0,
+      "stop_mode": "fixed",
+      "max_positions": 1,
+      "spread_buffer_pips": 5.0,
+      "min_confidence": 0.6,
+      "trading_hours_utc": {
+        "start": "00:00",
+        "end": "23:59"
+      },
+      "weight": 0.10,
+      "notes": "Bitcoin - 24/7 crypto, high vol diversifier, validated OOS Sharpe 0.564"
+    },
+    {
+      "symbol": "SPX500",
+      "mt5_symbol": "US500",
+      "asset_class": "indices",
+      "lot_size": 0.01,
+      "atr_multiplier": 2.0,
+      "stop_mode": "fixed",
+      "max_positions": 1,
+      "spread_buffer_pips": 2.0,
+      "min_confidence": 0.6,
+      "trading_hours_utc": {
+               "start": "13:00",
+        "end": "21:00"
+      },
+      "weight": 0.10,
+      "notes": "S&P 500 - broad US equity exposure"
     }
   ],
   "risk": {
@@ -92,7 +126,7 @@
     "max_daily_loss_pct": 2.0,
     "max_drawdown_pct": 10.0,
     "max_portfolio_exposure_pct": 50.0,
-    "max_total_positions": 4,
+    "max_total_positions": 6,
     "max_correlated_positions": 2,
     "kill_switch_drawdown_pct": 15.0,
     "initial_capital": 49844.79,

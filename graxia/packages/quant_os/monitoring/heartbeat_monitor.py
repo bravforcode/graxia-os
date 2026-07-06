@@ -45,7 +45,7 @@ def _load_heartbeat() -> dict | None:
         logger.warning("Heartbeat file missing: %s", HEARTBEAT_PATH)
         return None
     try:
-        raw = HEARTBEAT_PATH.read_text().strip()
+        raw = HEARTBEAT_PATH.read_text(encoding="utf-8").strip()
         # Support legacy plain-timestamp format
         if raw.startswith("{"):
             return json.loads(raw)

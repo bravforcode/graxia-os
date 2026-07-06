@@ -147,7 +147,7 @@ class StatePersistence:
     def _load_from_disk(self) -> None:
         try:
             if Path(self.path).exists():
-                self._data = json.loads(Path(self.path).read_text())
+                self._data = json.loads(Path(self.path).read_text(encoding="utf-8"))
         except Exception:
             pass
 
@@ -516,7 +516,7 @@ class TestNetworkDisconnect:
         report = ct.simulate_disconnect(duration_seconds=0.1)
         path = ct.write_test_report(report)
         assert path.exists(), f"Report not found at {path}"
-        content = json.loads(path.read_text())
+        content = json.loads(path.read_text(encoding="utf-8"))
         assert "passed" in content
         assert "errors" in content
         # Cleanup

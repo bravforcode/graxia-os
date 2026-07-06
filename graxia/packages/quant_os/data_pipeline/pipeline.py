@@ -1,18 +1,24 @@
 """
 pipeline.py — Main Data Pipeline
+
+.. deprecated::
+    Use ``core.multi_source_pipeline.DataPipeline`` instead.
+    This module will be removed in a future release.
 """
-import sys
+
 import logging
-from pathlib import Path
+import sys
 from datetime import datetime
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from sources.market_data import fetch_all_market_data
 from sources.macro_data import fetch_all_macro_data
+from sources.market_data import fetch_all_market_data
 from sources.news_sentiment import fetch_news_with_sentiment
-from storage.duckdb_store import DuckDBStore
 from storage.chroma_store import ChromaStore
+from storage.duckdb_store import DuckDBStore
+
 from config import LOG_DIR
 
 LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -80,12 +86,14 @@ class DataPipeline:
                 if f.name == "Index.md":
                     continue
                 content = f.read_text(encoding="utf-8")
-                strategies.append({
-                    "name": f.stem,
-                    "description": content[:500],
-                    "category": "strategy",
-                    "symbols": "all",
-                })
+                strategies.append(
+                    {
+                        "name": f.stem,
+                        "description": content[:500],
+                        "category": "strategy",
+                        "symbols": "all",
+                    }
+                )
             if strategies:
                 self.chroma.add_strategy(strategies)
                 self.results["strategies"] = len(strategies)

@@ -1,12 +1,14 @@
 """Phase BE-P0 — Secret provider. Never returns secrets to logs."""
+
+import os
 from dataclasses import dataclass
 from pathlib import Path
-import os
 
 
 @dataclass
 class SecretRef:
     """Reference to a secret, not the secret itself."""
+
     name: str
     source: str  # "env", "file", "keychain"
     env_var: str = ""
@@ -47,7 +49,7 @@ class SecretProvider:
             path = Path(ref.file_path)
             if not path.exists():
                 raise ValueError(f"Secret file {ref.file_path} not found")
-            return path.read_text().strip()
+            return path.read_text(encoding="utf-8").strip()
         else:
             raise ValueError(f"Unknown secret source: {ref.source}")
 

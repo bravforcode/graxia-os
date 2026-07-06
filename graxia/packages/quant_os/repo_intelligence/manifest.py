@@ -1,10 +1,10 @@
-import json
-from enum import Enum
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Optional
-import yaml
 import hashlib
+import json
+from dataclasses import dataclass, field
+from enum import Enum
+from pathlib import Path
+
+import yaml
 
 
 class RepoTier(Enum):
@@ -68,7 +68,7 @@ class RepoManifest:
     def add_entry(self, entry: RepoManifestEntry) -> None:
         self._entries[entry.name] = entry
 
-    def get_entry(self, name: str) -> Optional[RepoManifestEntry]:
+    def get_entry(self, name: str) -> RepoManifestEntry | None:
         return self._entries.get(name)
 
     def check_permission(self, name: str, perm: str) -> tuple[bool, str]:
@@ -113,7 +113,7 @@ class RepoManifest:
 
     def load(self, path: str) -> None:
         if Path(path).exists():
-            data = yaml.safe_load(Path(path).read_text())
+            data = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
             for item in data:
                 entry = RepoManifestEntry(
                     name=item["name"],

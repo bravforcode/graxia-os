@@ -455,10 +455,15 @@ class TestPreTradeGatePriceSanity:
         return order
 
     def test_passes_without_provider(self):
-        """Gate passes when no price_provider is set."""
+        """Gate passes when no price_provider is set (with mock KS/CB)."""
         from graxia.packages.quant_os.risk.pre_trade_gate import PreTradeRiskGate
 
-        gate = PreTradeRiskGate()
+        mock_ks = MagicMock()
+        mock_ks.is_active.return_value = False
+        mock_ks.is_paused.return_value = False
+        mock_cb = MagicMock()
+        mock_cb.is_open.return_value = False
+        gate = PreTradeRiskGate(kill_switch=mock_ks, circuit_breaker=mock_cb)
         result = gate.check_order_sync(self._make_order())
         assert result.passed is True
 
@@ -472,7 +477,12 @@ class TestPreTradeGatePriceSanity:
         prices.append(2300.5)  # current price (most recent)
         provider.get_recent_prices.return_value = prices
 
-        gate = PreTradeRiskGate(price_provider=provider)
+        mock_ks = MagicMock()
+        mock_ks.is_active.return_value = False
+        mock_ks.is_paused.return_value = False
+        mock_cb = MagicMock()
+        mock_cb.is_open.return_value = False
+        gate = PreTradeRiskGate(kill_switch=mock_ks, circuit_breaker=mock_cb, price_provider=provider)
         result = gate.check_order_sync(self._make_order())
         assert result.passed is True
 
@@ -486,7 +496,12 @@ class TestPreTradeGatePriceSanity:
         prices.append(2400.0)  # way off
         provider.get_recent_prices.return_value = prices
 
-        gate = PreTradeRiskGate(price_provider=provider)
+        mock_ks = MagicMock()
+        mock_ks.is_active.return_value = False
+        mock_ks.is_paused.return_value = False
+        mock_cb = MagicMock()
+        mock_cb.is_open.return_value = False
+        gate = PreTradeRiskGate(kill_switch=mock_ks, circuit_breaker=mock_cb, price_provider=provider)
         result = gate.check_order_sync(self._make_order())
         assert result.passed is False
         assert "Price anomaly" in result.reason
@@ -498,7 +513,12 @@ class TestPreTradeGatePriceSanity:
         provider = MagicMock()
         provider.get_recent_prices.side_effect = RuntimeError("DB connection lost")
 
-        gate = PreTradeRiskGate(price_provider=provider)
+        mock_ks = MagicMock()
+        mock_ks.is_active.return_value = False
+        mock_ks.is_paused.return_value = False
+        mock_cb = MagicMock()
+        mock_cb.is_open.return_value = False
+        gate = PreTradeRiskGate(kill_switch=mock_ks, circuit_breaker=mock_cb, price_provider=provider)
         result = gate.check_order_sync(self._make_order())
         assert result.passed is False
         assert "Price check error" in result.reason
@@ -510,7 +530,12 @@ class TestPreTradeGatePriceSanity:
         provider = MagicMock()
         provider.get_recent_prices.return_value = []
 
-        gate = PreTradeRiskGate(price_provider=provider)
+        mock_ks = MagicMock()
+        mock_ks.is_active.return_value = False
+        mock_ks.is_paused.return_value = False
+        mock_cb = MagicMock()
+        mock_cb.is_open.return_value = False
+        gate = PreTradeRiskGate(kill_switch=mock_ks, circuit_breaker=mock_cb, price_provider=provider)
         result = gate.check_order_sync(self._make_order())
         assert result.passed is True
 
@@ -524,7 +549,9 @@ class TestPreTradeGatePriceSanity:
         provider = MagicMock()
         provider.get_recent_prices.return_value = [2300.0] * 21
 
-        gate = PreTradeRiskGate(kill_switch=kill_switch, price_provider=provider)
+        mock_cb = MagicMock()
+        mock_cb.is_open.return_value = False
+        gate = PreTradeRiskGate(kill_switch=kill_switch, circuit_breaker=mock_cb, price_provider=provider)
         result = gate.check_order_sync(self._make_order())
         assert result.passed is False
         assert "Kill switch" in result.reason
@@ -569,18 +596,18 @@ class TestOMSPostFillSL:
     def test_skip_when_sl_already_set(self):
         """Skip post-fill SL if order already has stop_loss."""
         from graxia.packages.quant_os.core.enums import OrderStatus
-        from graxia.packages.quant_os.execution.adapters.base import Order
+        from graxia.packages.quant_os.execution.order import Order
 
         oms, adapter = self._make_oms()
 
         order = Order(
-            order_id="test-1",
+            id="test-1",
             signal_id="sig-1",
             symbol="XAUUSD",
             asset_class="metals",
             side="BUY",
             quantity=0.1,
-            stop_loss=2280.0,  # Already set
+            stop_price=2280.0,  # Already set
             status=OrderStatus.FILLED,
         )
 
@@ -590,7 +617,7 @@ class TestOMSPostFillSL:
     def test_sets_default_sl_when_not_set(self):
         """Post-fill SL computed when order has no stop_loss."""
         from graxia.packages.quant_os.core.enums import OrderStatus
-        from graxia.packages.quant_os.execution.adapters.base import Order
+        from graxia.packages.quant_os.execution.order import Order
 
         oms, adapter = self._make_oms()
 
@@ -600,13 +627,13 @@ class TestOMSPostFillSL:
         ]
 
         order = Order(
-            order_id="test-1",
+            id="test-1",
             signal_id="sig-1",
             symbol="XAUUSD",
             asset_class="metals",
             side="BUY",
             quantity=0.1,
-            stop_loss=None,
+            stop_price=None,
             status=OrderStatus.FILLED,
         )
 
@@ -621,19 +648,19 @@ class TestOMSPostFillSL:
     def test_skip_when_config_disabled(self):
         """Skip post-fill SL when trailing SL disabled for asset class."""
         from graxia.packages.quant_os.core.enums import OrderStatus
-        from graxia.packages.quant_os.execution.adapters.base import Order
         from graxia.packages.quant_os.execution.oms import TrailingStopConfig
+        from graxia.packages.quant_os.execution.order import Order
 
         oms, adapter = self._make_oms(trailing_configs={"metals": TrailingStopConfig(enabled=False)})
 
         order = Order(
-            order_id="test-1",
+            id="test-1",
             signal_id="sig-1",
             symbol="XAUUSD",
             asset_class="metals",
             side="BUY",
             quantity=0.1,
-            stop_loss=None,
+            stop_price=None,
             status=OrderStatus.FILLED,
         )
 
@@ -643,7 +670,7 @@ class TestOMSPostFillSL:
     def test_sell_sl_direction(self):
         """SELL order: SL is above entry price."""
         from graxia.packages.quant_os.core.enums import OrderStatus
-        from graxia.packages.quant_os.execution.adapters.base import Order
+        from graxia.packages.quant_os.execution.order import Order
 
         oms, adapter = self._make_oms()
 
@@ -652,13 +679,13 @@ class TestOMSPostFillSL:
         ]
 
         order = Order(
-            order_id="test-1",
+            id="test-1",
             signal_id="sig-1",
             symbol="XAUUSD",
             asset_class="metals",
             side="SELL",
             quantity=0.1,
-            stop_loss=None,
+            stop_price=None,
             status=OrderStatus.FILLED,
         )
 
@@ -670,19 +697,19 @@ class TestOMSPostFillSL:
     def test_position_not_found(self):
         """Skip when position ticket not found."""
         from graxia.packages.quant_os.core.enums import OrderStatus
-        from graxia.packages.quant_os.execution.adapters.base import Order
+        from graxia.packages.quant_os.execution.order import Order
 
         oms, adapter = self._make_oms()
         adapter.get_positions.return_value = []  # No matching position
 
         order = Order(
-            order_id="test-1",
+            id="test-1",
             signal_id="sig-1",
             symbol="XAUUSD",
             asset_class="metals",
             side="BUY",
             quantity=0.1,
-            stop_loss=None,
+            stop_price=None,
             status=OrderStatus.FILLED,
         )
 

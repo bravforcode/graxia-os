@@ -8,22 +8,32 @@ Retrains with:
   3. 40 live-compatible features only
   4. Walk-forward purged CV (5 folds)
   5. Platt scaling calibration via CalibratedClassifierCV
+
+DEPRECATED: walk_forward_split() and purged_cv() here are superseded by
+validation.walk_forward.simple_train_test_split and validation.walk_forward.purged_cv.
+This script remains as a CLI entry-point; import from validation.walk_forward or
+core.walk_forward instead.
 """
 
-import json, pickle, time, warnings
+import json
+import pickle
+import time
+import warnings
 from datetime import datetime
 from pathlib import Path
 
 import numpy as np
+import optuna
 import pandas as pd
 import xgboost as xgb
-import optuna
 from optuna.samplers import TPESampler
 from sklearn.calibration import CalibratedClassifierCV, calibration_curve
 from sklearn.metrics import (
-    accuracy_score, precision_score, brier_score_loss,
+    accuracy_score,
+    brier_score_loss,
+    precision_score,
 )
-import warnings
+
 warnings.filterwarnings("ignore")
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
@@ -44,14 +54,48 @@ CV_FOLDS = 5
 CV_EMBARGO = 12
 
 LIVE_FEATURES = [
-    "lower_shadow", "is_london_session", "rvol_20", "vol_ratio_20", "obv_slope_20",
-    "stoch_d", "rsi_14", "month", "ret_1bar", "day_of_month", "atr_7",
-    "is_ny_session", "ema_5_dist", "day_of_week", "is_asian_session", "is_bull_engulf",
-    "ret_60bar", "is_doji", "cci_20", "upper_shadow", "bb_squeeze", "atr_21",
-    "is_hammer", "ret_10bar", "ema_200_dist", "ema_20_dist", "sma_20_50_cross",
-    "ema_10_dist", "rvol_10", "ret_5bar", "ret_15bar", "ret_30bar", "atr_14",
-    "rvol_60", "bb_width", "bb_pctb", "rsi_7", "rsi_21", "stoch_k", "willr_14",
+    "lower_shadow",
+    "is_london_session",
+    "rvol_20",
+    "vol_ratio_20",
+    "obv_slope_20",
+    "stoch_d",
+    "rsi_14",
+    "month",
+    "ret_1bar",
+    "day_of_month",
+    "atr_7",
+    "is_ny_session",
+    "ema_5_dist",
+    "day_of_week",
+    "is_asian_session",
+    "is_bull_engulf",
+    "ret_60bar",
+    "is_doji",
+    "cci_20",
+    "upper_shadow",
+    "bb_squeeze",
+    "atr_21",
+    "is_hammer",
+    "ret_10bar",
+    "ema_200_dist",
+    "ema_20_dist",
+    "sma_20_50_cross",
+    "ema_10_dist",
+    "rvol_10",
+    "ret_5bar",
+    "ret_15bar",
+    "ret_30bar",
+    "atr_14",
+    "rvol_60",
+    "bb_width",
+    "bb_pctb",
+    "rsi_7",
+    "rsi_21",
+    "stoch_k",
+    "willr_14",
 ]
+
 
 def log(msg: str):
     ts = time.strftime("%H:%M:%S")
@@ -61,6 +105,7 @@ def log(msg: str):
 # ══════════════════════════════════════════════════════════════
 # SECTION 1: LOAD DATA + BUILD CALIBRATED TARGET
 # ══════════════════════════════════════════════════════════════
+
 
 def load_data() -> pd.DataFrame:
     log(f"Loading {FEAT_PATH.name}...")
@@ -94,7 +139,12 @@ def load_data() -> pd.DataFrame:
 # SECTION 2: WALK-FORWARD UTILS
 # ══════════════════════════════════════════════════════════════
 
+
 def walk_forward_split(n: int, train_ratio: float = 0.8):
+    """Time-ordered train/test split.
+
+    DEPRECATED: Use validation.walk_forward.simple_train_test_split instead.
+    """
     split_idx = int(n * train_ratio)
     train_idx = np.arange(0, split_idx)
     test_idx = np.arange(split_idx, n)
@@ -103,6 +153,10 @@ def walk_forward_split(n: int, train_ratio: float = 0.8):
 
 
 def purged_cv(n: int, n_folds: int = 5, embargo: int = 12):
+    """Purged walk-forward CV generator.
+
+    DEPRECATED: Use validation.walk_forward.purged_cv instead.
+    """
     fold_size = n // (n_folds + 1)
     for i in range(n_folds):
         train_end = (i + 1) * fold_size
@@ -119,29 +173,34 @@ def purged_cv(n: int, n_folds: int = 5, embargo: int = 12):
 # SECTION 3: OPTUNA OBJECTIVE (seeded from prior best)
 # ══════════════════════════════════════════════════════════════
 
+
 def make_optuna_objective(X, y, sample_weights, prior_best):
     """Optuna objective: maximize mean CV accuracy."""
     center = prior_best
 
     def objective(trial):
         params = {
-            "max_depth": trial.suggest_int("max_depth",
-                max(3, center["max_depth"] - 2), min(12, center["max_depth"] + 3)),
-            "learning_rate": trial.suggest_float("learning_rate",
+            "max_depth": trial.suggest_int(
+                "max_depth", max(3, center["max_depth"] - 2), min(12, center["max_depth"] + 3)
+            ),
+            "learning_rate": trial.suggest_float(
+                "learning_rate",
                 max(0.01, center["learning_rate"] * 0.3),
-                min(0.5, center["learning_rate"] * 2.0), log=True),
-            "n_estimators": trial.suggest_int("n_estimators",
-                max(80, center["n_estimators"] - 100),
-                min(800, center["n_estimators"] + 300), step=10),
-            "subsample": trial.suggest_float("subsample",
-                max(0.5, center["subsample"] - 0.2),
-                min(1.0, center["subsample"] + 0.2)),
-            "colsample_bytree": trial.suggest_float("colsample_bytree",
+                min(0.5, center["learning_rate"] * 2.0),
+                log=True,
+            ),
+            "n_estimators": trial.suggest_int(
+                "n_estimators", max(80, center["n_estimators"] - 100), min(800, center["n_estimators"] + 300), step=10
+            ),
+            "subsample": trial.suggest_float(
+                "subsample", max(0.5, center["subsample"] - 0.2), min(1.0, center["subsample"] + 0.2)
+            ),
+            "colsample_bytree": trial.suggest_float(
+                "colsample_bytree",
                 max(0.2, center["colsample_bytree"] - 0.15),
-                min(1.0, center["colsample_bytree"] + 0.3)),
-            "gamma": trial.suggest_float("gamma",
-                max(0.0, center["gamma"] - 2.0),
-                min(8.0, center["gamma"] + 3.0)),
+                min(1.0, center["colsample_bytree"] + 0.3),
+            ),
+            "gamma": trial.suggest_float("gamma", max(0.0, center["gamma"] - 2.0), min(8.0, center["gamma"] + 3.0)),
             "reg_alpha": trial.suggest_float("reg_alpha", 1e-4, 10, log=True),
             "reg_lambda": trial.suggest_float("reg_lambda", 1e-4, 10, log=True),
         }
@@ -152,8 +211,9 @@ def make_optuna_objective(X, y, sample_weights, prior_best):
             y_tr, y_te = y[tr_i], y[te_i]
             sw_tr = sample_weights[tr_i]
 
-            model = xgb.XGBClassifier(**params, random_state=RANDOM_STATE,
-                eval_metric="logloss", verbosity=0, n_jobs=-1)
+            model = xgb.XGBClassifier(
+                **params, random_state=RANDOM_STATE, eval_metric="logloss", verbosity=0, n_jobs=-1
+            )
             model.fit(X_tr, y_tr, sample_weight=sw_tr, verbose=False)
             preds = model.predict(X_te)
             fold_accs.append(accuracy_score(y_te, preds))
@@ -167,13 +227,14 @@ def make_optuna_objective(X, y, sample_weights, prior_best):
 # SECTION 4: METRICS
 # ══════════════════════════════════════════════════════════════
 
+
 def compute_metrics(y_true, y_pred, y_proba, returns, label=""):
     acc = accuracy_score(y_true, y_pred)
     brier = brier_score_loss(y_true, y_proba)
     precision = precision_score(y_true, y_pred, zero_division=0)
 
     # Sharpe from directional returns
-    correct = (y_true == y_pred)
+    correct = y_true == y_pred
     strat_returns = np.where(correct, returns, -returns * 0.5)
     if len(strat_returns) >= 30 and np.std(strat_returns) > 0:
         sharpe = np.mean(strat_returns) / np.std(strat_returns) * np.sqrt(35040)
@@ -226,6 +287,7 @@ def calibration_data(y_true, y_proba, n_bins=10):
 # SECTION 5: MAIN
 # ══════════════════════════════════════════════════════════════
 
+
 def main():
     t0 = time.time()
     log("=" * 70)
@@ -263,8 +325,7 @@ def main():
     log(f"OPTUNA TUNING — {N_TRIALS} trials")
     log(f"{'='*70}")
 
-    study = optuna.create_study(direction="maximize",
-        sampler=TPESampler(seed=RANDOM_STATE))
+    study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=RANDOM_STATE))
     obj = make_optuna_objective(X_train, y_train, sw_train, prior_best)
 
     def progress(study, trial):
@@ -282,8 +343,9 @@ def main():
     log("TRAINING FINAL XGBOOST")
     log(f"{'='*70}")
 
-    xgb_model = xgb.XGBClassifier(**best_params, random_state=RANDOM_STATE,
-        eval_metric="logloss", verbosity=0, n_jobs=-1)
+    xgb_model = xgb.XGBClassifier(
+        **best_params, random_state=RANDOM_STATE, eval_metric="logloss", verbosity=0, n_jobs=-1
+    )
     xgb_model.fit(X_train, y_train, sample_weight=sw_train, verbose=False)
 
     # Raw (uncalibrated) metrics
@@ -321,8 +383,7 @@ def main():
         y_tr, y_te = y[tr_i], y[te_i]
         sw_tr = sample_weights[tr_i]
 
-        m = xgb.XGBClassifier(**best_params, random_state=RANDOM_STATE,
-            eval_metric="logloss", verbosity=0, n_jobs=-1)
+        m = xgb.XGBClassifier(**best_params, random_state=RANDOM_STATE, eval_metric="logloss", verbosity=0, n_jobs=-1)
         m.fit(X_tr, y_tr, sample_weight=sw_tr, verbose=False)
         # Calibrate each fold
         cal_m = CalibratedClassifierCV(m, method="sigmoid", cv=3)
@@ -357,13 +418,15 @@ def main():
     log("\n  Threshold analysis:")
     for thr, m in thr_metrics.items():
         if m.get("signals", 0) > 0:
-            log(f"    @{m['threshold']:.2f}: signals={m['signals']} ({m['signal_pct']}%) "
-                f"precision={m['precision']:.4f} win_rate={m['win_rate']:.4f}")
+            log(
+                f"    @{m['threshold']:.2f}: signals={m['signals']} ({m['signal_pct']}%) "
+                f"precision={m['precision']:.4f} win_rate={m['win_rate']:.4f}"
+            )
 
     # Calibration curve
     prob_true, prob_pred = calibration_data(y_test, cal_test_proba, n_bins=10)
     log("\n  Calibration curve (uncal → cal):")
-    for pt, pp in zip(prob_true, prob_pred):
+    for pt, pp in zip(prob_true, prob_pred, strict=False):
         log(f"    mean_pred={pp:.3f} → actual={pt:.3f}")
 
     # 9. Feature importance
@@ -371,7 +434,7 @@ def main():
     log("FEATURE IMPORTANCE (Top 20)")
     log(f"{'='*70}")
     imp = xgb_model.feature_importances_
-    ranked = sorted(zip(LIVE_FEATURES, imp), key=lambda x: -x[1])
+    ranked = sorted(zip(LIVE_FEATURES, imp, strict=False), key=lambda x: -x[1])
     for i, (name, score) in enumerate(ranked[:20]):
         log(f"  {i+1:2d}. {name:30s} {score:.4f}")
 
@@ -429,13 +492,15 @@ def main():
         f.write(f"  {'Threshold':>10s} {'Signals':>8s} {'Sig%':>6s} {'Precision':>10s} {'WinRate':>10s}\n")
         for thr, m in thr_metrics.items():
             if m.get("signals", 0) > 0:
-                f.write(f"  {m['threshold']:>10.2f} {m['signals']:>8d} {m['signal_pct']:>5.1f}% "
-                        f"{m['precision']:>10.4f} {m['win_rate']:>10.4f}\n")
+                f.write(
+                    f"  {m['threshold']:>10.2f} {m['signals']:>8d} {m['signal_pct']:>5.1f}% "
+                    f"{m['precision']:>10.4f} {m['win_rate']:>10.4f}\n"
+                )
         f.write("\n")
 
         f.write("CALIBRATION CURVE\n")
         f.write(f"  {'Pred_Prob':>12s} {'Actual_Prob':>12s}\n")
-        for pt, pp in zip(prob_true, prob_pred):
+        for pt, pp in zip(prob_true, prob_pred, strict=False):
             f.write(f"  {pp:>12.4f} {pt:>12.4f}\n")
         f.write("\n")
 

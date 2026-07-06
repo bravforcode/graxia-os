@@ -13,7 +13,6 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import pickle
 import sys
 import warnings
 from datetime import UTC, datetime
@@ -21,6 +20,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from graxia.packages.quant_os.core.safe_pickle import safe_load_model
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
@@ -31,8 +31,6 @@ from sklearn.metrics import (
     r2_score,
     recall_score,
 )
-
-from graxia.packages.quant_os.core.safe_pickle import safe_load_model
 
 warnings.filterwarnings("ignore")
 
@@ -81,6 +79,7 @@ def create_labels(df: pd.DataFrame) -> pd.DataFrame:
 EXCLUDE_COLS = {
     "target",
     "target_return",
+    "target_3class",
     "target_direction",
     "target_magnitude",
     "symbol",

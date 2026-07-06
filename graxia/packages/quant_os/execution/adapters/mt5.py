@@ -105,12 +105,14 @@ class MT5Adapter(BrokerAdapter):
         password: str,
         server: str = "Pepperstone-Live",
         timeout: int = 10_000,
+        path: str = r"C:\Program Files\Pepperstone MetaTrader 5\terminal64.exe",
     ) -> None:
         super().__init__("MT5")
         self._login = login
         self._password = password
         self._server = server
         self._timeout = timeout
+        self._path = path
 
     # ------------------------------------------------------------------
     # Connection helpers
@@ -120,7 +122,7 @@ class MT5Adapter(BrokerAdapter):
         """Initialise the MT5 terminal and authenticate."""
         if mt5 is None:
             raise RuntimeError("MetaTrader5 package is not installed")
-        ok = mt5.initialize(timeout=self._timeout)
+        ok = mt5.initialize(path=self._path, timeout=self._timeout)
         if not ok:
             logger.error("MT5 initialize failed: %s", mt5.last_error())
             return False
@@ -182,13 +184,22 @@ class MT5Adapter(BrokerAdapter):
                 error=f"Symbol {order.symbol} not found or not visible in MT5",
             )
 
+        # Cast quantity to float (defensive: may be str or Decimal)
+        try:
+            qty_float = float(order.quantity)
+        except (TypeError, ValueError) as exc:
+            return OrderResult(
+                status=OrderStatus.FAILED,
+                error=f"Invalid quantity {order.quantity!r}: {exc}",
+            )
+
         # Auto-detect filling mode (FOK vs RETURN — Pepperstone indices need RETURN)
         filling_mode = _get_filling_mode(order.symbol)
 
         request: dict = {
             "action": _TRADE_ACTION_DEAL,
             "symbol": order.symbol,
-            "volume": order.quantity,
+            "volume": qty_float,
             "type": _side_to_order_type(order.side),
             "comment": hashlib.md5(order.order_id.encode()).hexdigest()[:8],  # Short alphanumeric comment for tracking
             "type_filling": filling_mode,
@@ -202,7 +213,10 @@ class MT5Adapter(BrokerAdapter):
 
         logger.info(
             "MT5 submit_order: symbol=%s side=%s qty=%.2f filling=%d",
-            order.symbol, order.side, order.quantity, filling_mode,
+            order.symbol,
+            order.side,
+            qty_float,
+            filling_mode,
         )
 
         for attempt in range(1, _RETRIES + 1):
@@ -217,9 +231,38 @@ class MT5Adapter(BrokerAdapter):
 
             ret_code = result.retcode
             if ret_code == 10009:  # TRADE_RETCODE_DONE
+                # Sanity check fill result data
+                if result.price <= 0:
+                    logger.error("MT5 fill returned invalid price=%.5f — treating as FAILED", result.price)
+                    return OrderResult(
+                        status=OrderStatus.FAILED,
+                        error=f"Invalid fill price: {result.price}",
+                    )
+                if result.volume <= 0:
+                    logger.error("MT5 fill returned invalid volume=%.2f — treating as FAILED", result.volume)
+                    return OrderResult(
+                        status=OrderStatus.FAILED,
+                        error=f"Invalid fill volume: {result.volume}",
+                    )
+                # Detect partial fills: filled_volume < requested
+                if result.volume < qty_float:
+                    logger.warning(
+                        "MT5 partial fill: ticket=%s filled=%.2f requested=%.2f",
+                        result.order,
+                        result.volume,
+                        order.quantity,
+                    )
+                    return OrderResult(
+                        status=OrderStatus.PARTIALLY_FILLED,
+                        broker_id=str(result.order),
+                        filled_quantity=result.volume,
+                        avg_price=result.price,
+                    )
                 logger.info(
                     "MT5 order filled: ticket=%s price=%.5f vol=%.2f",
-                    result.order, result.price, result.volume,
+                    result.order,
+                    result.price,
+                    result.volume,
                 )
                 return OrderResult(
                     status=OrderStatus.FILLED,
@@ -230,7 +273,10 @@ class MT5Adapter(BrokerAdapter):
             if ret_code == 10014:  # TRADE_RETCODE_INVALID_PRICE – retry
                 logger.warning(
                     "MT5 invalid price (attempt %d): symbol=%s retcode=%d comment=%s — retrying",
-                    attempt, order.symbol, ret_code, result.comment,
+                    attempt,
+                    order.symbol,
+                    ret_code,
+                    result.comment,
                 )
                 time.sleep(_RETRY_DELAY)
                 continue
@@ -243,24 +289,33 @@ class MT5Adapter(BrokerAdapter):
         return OrderResult(status=OrderStatus.TIMEOUT, error="MT5 retries exhausted")
 
     def cancel_order(self, broker_order_id: str) -> OrderResult:
-        """Cancel a pending order by its MT5 ticket."""
+        """Cancel a pending order by its MT5 ticket. Retries on transient failures."""
         self._ensure_connected()
         request: dict = {
             "action": 2,  # mt5.TRADE_ACTION_REMOVE (pending orders)
             "order": int(broker_order_id),
         }
-        result = mt5.order_send(request)  # type: ignore[union-attr]
-        if result is None:
+
+        for attempt in range(1, _RETRIES + 1):
+            result = mt5.order_send(request)  # type: ignore[union-attr]
+            if result is None:
+                error = mt5.last_error()  # type: ignore[union-attr]
+                logger.error("MT5 cancel_order returned None (attempt %d): %s", attempt, error)
+                self._connected = False
+                self._ensure_connected()
+                time.sleep(_RETRY_DELAY)
+                continue
+            if result.retcode == 10009:
+                return OrderResult(status=OrderStatus.CANCELLED, broker_id=broker_order_id)
+            if result.retcode == 10014:  # invalid price — retry
+                time.sleep(_RETRY_DELAY)
+                continue
             return OrderResult(
                 status=OrderStatus.FAILED,
-                error=str(mt5.last_error()),  # type: ignore[union-attr]
+                error=f"cancel retcode={result.retcode}: {result.comment}",
             )
-        if result.retcode == 10009:
-            return OrderResult(status=OrderStatus.CANCELLED, broker_id=broker_order_id)
-        return OrderResult(
-            status=OrderStatus.FAILED,
-            error=f"cancel retcode={result.retcode}: {result.comment}",
-        )
+
+        return OrderResult(status=OrderStatus.TIMEOUT, error="cancel_order retries exhausted")
 
     def get_positions(self) -> list[dict]:
         """Return all open MT5 positions."""
@@ -268,28 +323,47 @@ class MT5Adapter(BrokerAdapter):
         positions = mt5.positions_get()  # type: ignore[union-attr]
         if positions is None:
             return []
-        return [
-            {
-                "ticket": p.ticket,
-                "symbol": p.symbol,
-                "type": "BUY" if p.type == 0 else "SELL",
-                "volume": p.volume,
-                "price_open": p.price_open,
-                "profit": p.profit,
-                "sl": p.sl,
-                "tp": p.tp,
-                "comment": p.comment,
-            }
-            for p in positions
-        ]
+        result = []
+        for p in positions:
+            if p is None:
+                logger.warning("MT5 positions_get returned None item — skipping")
+                continue
+            result.append(
+                {
+                    "ticket": p.ticket,
+                    "symbol": p.symbol,
+                    "type": "BUY" if p.type == 0 else "SELL",
+                    "volume": p.volume,
+                    "price_open": p.price_open,
+                    "profit": p.profit,
+                    "sl": p.sl,
+                    "tp": p.tp,
+                    "comment": p.comment,
+                }
+            )
+        return result
 
     def get_order_status(self, broker_order_id: str) -> OrderResult:
-        """Check the current state of an MT5 order by ticket."""
+        """Check the current state of an MT5 order by ticket.
+
+        Returns UNKNOWN when the order is not found in MT5's open orders list.
+        This avoids the previous bug of defaulting to FILLED, which could cause
+        the strategy to believe a rejected/cancelled order was executed.
+        """
         self._ensure_connected()
         orders = mt5.orders_get(ticket=int(broker_order_id))  # type: ignore[union-attr]
         if orders is None or len(orders) == 0:
-            # Not an open order – assume it was filled or cancelled
-            return OrderResult(status=OrderStatus.FILLED, broker_id=broker_order_id)
+            # Not an open order — could be filled, cancelled, or expired.
+            # Return UNKNOWN so the caller checks position history.
+            logger.warning(
+                "MT5 order %s not found in open orders — returning UNKNOWN (check fills)",
+                broker_order_id,
+            )
+            return OrderResult(
+                status=OrderStatus.UNKNOWN,
+                broker_id=broker_order_id,
+                error="Order not found in MT5 open orders",
+            )
         order = orders[0]
         return OrderResult(
             status=OrderStatus.SUBMITTED,
@@ -414,9 +488,7 @@ class MT5Adapter(BrokerAdapter):
                 continue
 
             # Permanent failure – do not retry
-            logger.error(
-                "MT5 set_stop_loss failed: retcode=%d %s", ret_code, result.comment
-            )
+            logger.error("MT5 set_stop_loss failed: retcode=%d %s", ret_code, result.comment)
             return False
 
         return False  # retries exhausted

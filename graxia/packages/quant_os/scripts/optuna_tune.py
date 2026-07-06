@@ -1,17 +1,25 @@
 #!/usr/bin/env python3
 """Optuna hyperparameter tuning for XGBoost on XAUUSD M15 data."""
 
-import json, os, time, warnings
+import json
+import os
+import sys
+import time
+import warnings
+
+import matplotlib
 import numpy as np
+import optuna
 import pandas as pd
 import xgboost as xgb
-import optuna
-from optuna.samplers import TPESampler
 from optuna.pruners import MedianPruner
-from sklearn.metrics import accuracy_score, f1_score, confusion_matrix
-import matplotlib
+from optuna.samplers import TPESampler
+from sklearn.metrics import accuracy_score, confusion_matrix, f1_score
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 warnings.filterwarnings("ignore")
 
@@ -39,19 +47,32 @@ def load_and_prep():
 
 def get_feature_cols(df):
     exclude = {
-        "target", "target_return", "symbol", "freq",
-        "tb_label", "tb_bar_hit", "tb_side", "tb_ret",
-        "tb_k_upper", "tb_k_lower", "open", "high", "low", "close",
-        "volume", "tick_count",
+        "target",
+        "target_return",
+        "target_3class",
+        "symbol",
+        "freq",
+        "tb_label",
+        "tb_bar_hit",
+        "tb_side",
+        "tb_ret",
+        "tb_k_upper",
+        "tb_k_lower",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "tick_count",
     }
     available = set(df.columns)
     exclude &= available
-    return [c for c in df.columns if c not in exclude
-            and df[c].dtype in (np.float64, np.float32, np.int64, np.int32)]
+    return [c for c in df.columns if c not in exclude and df[c].dtype in (np.float64, np.float32, np.int64, np.int32)]
 
 
 class TimeSeriesCV:
     """Standalone PurgedKFold: sequential folds, no lookahead."""
+
     def __init__(self, n_folds=5, embargo=12):
         self.n_folds = n_folds
         self.embargo = embargo
@@ -148,9 +169,8 @@ def plot_feature_importance(model, feature_names, path):
     ax.set_xlabel("Importance")
     ax.set_title("XGBoost Feature Importance (Optuna Best)")
     ax.invert_yaxis()
-    for bar, val in zip(bars, top_vals[::-1]):
-        ax.text(bar.get_width() + 0.001, bar.get_y() + bar.get_height() / 2,
-                f"{val:.4f}", va="center", fontsize=8)
+    for bar, val in zip(bars, top_vals[::-1], strict=False):
+        ax.text(bar.get_width() + 0.001, bar.get_y() + bar.get_height() / 2, f"{val:.4f}", va="center", fontsize=8)
     plt.tight_layout()
     fig.savefig(path, dpi=150)
     plt.close(fig)
@@ -193,8 +213,7 @@ def main():
         "reg_lambda": 1.0,
     }
     print("\n--- DEFAULT PARAMS BASELINE ---")
-    default_result = train_eval(default_params, X_train_cv, y_train_cv,
-                                X_holdout, y_holdout, label="Default")
+    default_result = train_eval(default_params, X_train_cv, y_train_cv, X_holdout, y_holdout, label="Default")
 
     # --- Optuna Study ---
     print("\n--- OPTUNA STUDY (50 trials) ---")
@@ -225,8 +244,7 @@ def main():
     )
     best_model.fit(X_train_cv, y_train_cv)
     print("\n--- BEST PARAMS EVALUATION ---")
-    best_result = train_eval(best_params, X_train_cv, y_train_cv,
-                             X_holdout, y_holdout, label="Best")
+    best_result = train_eval(best_params, X_train_cv, y_train_cv, X_holdout, y_holdout, label="Best")
 
     # --- Save results ---
     with open(os.path.join(OUT_DIR, "best_params.json"), "w") as f:
@@ -237,8 +255,7 @@ def main():
     df_study.to_csv(os.path.join(OUT_DIR, "study_results.csv"), index=False)
     print(f"  Saved: study_results.csv ({len(df_study)} trials)")
 
-    plot_feature_importance(best_model, feature_cols,
-                            os.path.join(OUT_DIR, "feature_importance.png"))
+    plot_feature_importance(best_model, feature_cols, os.path.join(OUT_DIR, "feature_importance.png"))
 
     # --- Top 5 trials ---
     sorted_trials = sorted(study.trials, key=lambda t: t.value if t.value else 0, reverse=True)

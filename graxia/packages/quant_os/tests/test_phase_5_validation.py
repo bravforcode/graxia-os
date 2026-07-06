@@ -1,6 +1,8 @@
 """Phase 5 — Validation module tests."""
-import sys
+
 import os
+import sys
+from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -22,8 +24,8 @@ def _make_record(experiment_id="exp-001", strategy_hash="abc123"):
     )
 
 
-def test_experiment_registry_register():
-    reg = ExperimentRegistry()
+def test_experiment_registry_register(tmp_path):
+    reg = ExperimentRegistry(path=Path(tmp_path) / "registry.json")
     rec = _make_record()
     eid = reg.register(rec)
     assert eid == "exp-001"
@@ -31,8 +33,8 @@ def test_experiment_registry_register():
     assert reg.count() == 1
 
 
-def test_experiment_registry_duplicate_rejected():
-    reg = ExperimentRegistry()
+def test_experiment_registry_duplicate_rejected(tmp_path):
+    reg = ExperimentRegistry(path=Path(tmp_path) / "registry.json")
     reg.register(_make_record())
     try:
         reg.register(_make_record())
@@ -41,8 +43,8 @@ def test_experiment_registry_duplicate_rejected():
         pass
 
 
-def test_experiment_registry_budget_check():
-    reg = ExperimentRegistry()
+def test_experiment_registry_budget_check(tmp_path):
+    reg = ExperimentRegistry(path=Path(tmp_path) / "registry.json")
     strategy_hash = "abc123"
     for i in range(11):
         reg.register(_make_record(experiment_id=f"exp-{i:03d}", strategy_hash=strategy_hash))
