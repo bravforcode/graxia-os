@@ -57,8 +57,21 @@ def compute_pairs_mr_signal(
         half_life = np.nan
 
     signal = pd.Series(0.0, index=price_a.index)
-    signal[zscore > entry_z] = -1  # Spread high -> short A, long B
-    signal[zscore < -entry_z] = 1  # Spread low -> long A, short B
+    in_position = 0
+    for i in range(len(zscore)):
+        z = zscore.iloc[i]
+        if pd.isna(z):
+            continue
+        if in_position == 0:
+            if z > entry_z:
+                in_position = -1  # Spread high -> short A, long B
+            elif z < -entry_z:
+                in_position = 1   # Spread low -> long A, short B
+        elif in_position == -1 and z < exit_z:
+            in_position = 0
+        elif in_position == 1 and z > -exit_z:
+            in_position = 0
+        signal.iloc[i] = in_position
 
     return PairsMRSignal(
         signal=signal,

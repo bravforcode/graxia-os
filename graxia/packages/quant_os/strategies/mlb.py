@@ -36,6 +36,8 @@ from typing import Any
 
 import numpy as np
 
+import structlog
+
 from ..core.enums import RegimeType, SignalType
 from .base import Signal, Strategy, StrategyConfig
 
@@ -277,8 +279,6 @@ class MLBreakout(Strategy):
         except ImportError:
             return {}
         except Exception as e:
-            import structlog
-
             structlog.get_logger(__name__).warning("mlb.indicator_error", error=str(e))
             return {}
 
@@ -312,8 +312,6 @@ class MLBreakout(Strategy):
             else:
                 return 0.5
         except Exception as e:
-            import structlog
-
             structlog.get_logger(__name__).warning("mlb.prediction_error", error=str(e))
             return 0.5
 

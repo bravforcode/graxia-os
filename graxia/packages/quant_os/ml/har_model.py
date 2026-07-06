@@ -129,6 +129,14 @@ class HARModel:
         Returns:
             HARResult with forecast, R², coefficients, residuals
         """
+        if test_size <= 0:
+            self.fit(realized_vol)
+            return HARResult(
+                forecast=pd.Series(dtype=float),
+                r_squared=0.0,
+                coefficients=self.coefficients or {},
+                residuals=pd.Series(dtype=float),
+            )
         train = realized_vol[:-test_size]
         test = realized_vol[-test_size:]
 

@@ -127,6 +127,13 @@ class FeatureStore:
         if isinstance(df.index, pd.DatetimeIndex):
             df.to_parquet(file_path, index=True, engine="pyarrow")
         else:
+            if len(df) > 0:
+                logger.warning(
+                    "missing_datetime_index",
+                    symbol=symbol,
+                    timeframe=timeframe,
+                    hint="DatetimeIndex not found; index will not be preserved in parquet",
+                )
             df.to_parquet(file_path, index=False, engine="pyarrow")
         file_size = file_path.stat().st_size
 

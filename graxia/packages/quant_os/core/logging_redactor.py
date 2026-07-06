@@ -22,9 +22,11 @@ class RedactingFilter:
             for pattern, replacement in self.patterns:
                 record.msg = pattern.sub(replacement, record.msg)
         if record.args and isinstance(record.args, tuple):
-            record.args = tuple(
-                pattern.sub(replacement, str(arg)) if isinstance(arg, str) else arg
-                for arg in record.args
-                for pattern, replacement in self.patterns
-            )
+            new_args = []
+            for arg in record.args:
+                if isinstance(arg, str):
+                    for pattern, replacement in self.patterns:
+                        arg = pattern.sub(replacement, arg)
+                new_args.append(arg)
+            record.args = tuple(new_args)
         return True

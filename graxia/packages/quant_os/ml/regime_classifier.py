@@ -91,12 +91,12 @@ class RegimeClassifier:
         Raises:
             ValueError: If series is too short
         """
+        close = close.dropna()
+
         if len(close) < self.MIN_BARS:
             raise ValueError(
                 f"Need at least {self.MIN_BARS} bars, got {len(close)}"
             )
-
-        close = close.dropna()
 
         # --- Vol features ---
         returns = close.pct_change().dropna()

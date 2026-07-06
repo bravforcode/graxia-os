@@ -73,10 +73,10 @@ def compute_vol_ratio(vol_short: pd.Series, vol_long: pd.Series) -> pd.Series:
 
 def compute_vol_autocorr(vol: pd.Series, window: int = 20, lag: int = 1) -> pd.Series:
     """Vol autocorrelation — high means vol clusters."""
-    return vol.rolling(window).apply(lambda x: pd.Series(x).autocorr(lag=lag), raw=False)
+    return vol.rolling(window).apply(lambda x: x.autocorr(lag=lag), raw=False)
 
 
-def build_volatility_features(df: pd.DataFrame, windows: list[int] = [5, 20, 60]) -> VolatilityFeatures:
+def build_volatility_features(df: pd.DataFrame, windows: tuple[int, ...] = (5, 20, 60)) -> VolatilityFeatures:
     """
     Build all volatility features from OHLCV DataFrame.
 

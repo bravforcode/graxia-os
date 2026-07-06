@@ -180,7 +180,7 @@ def _profit_factor(trades: Sequence[float]) -> float:
     return gross_profit / gross_loss
 
 
-def _deflated_sharpe(sharpe_obs: float, n_trials: int, var_sharpe: float = 1.0) -> float:
+def _deflated_sharpe(sharpe_obs: float, n_trials: int) -> float:
     """Bailey & Lopez de Prado deflated Sharpe ratio.
 
     Adjusts observed Sharpe for multiple-testing bias.

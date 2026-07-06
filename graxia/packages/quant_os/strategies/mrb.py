@@ -266,7 +266,8 @@ class MeanReversionBollinger(Strategy):
         except ImportError:
             return {}
         except Exception as e:
-            print(f"MRB indicator calculation error: {e}")
+            import structlog
+            structlog.get_logger(__name__).warning("mrb.indicator_error", error=str(e))
             return {}
 
     def _calculate_confidence(self, conditions: dict[str, bool], stoch_value: float, direction: str) -> float:
