@@ -9,15 +9,29 @@ const noticeStyles: Record<NoticeTone, string> = {
 
 interface NoticeBannerProps {
   tone?: NoticeTone;
-  msg: string;
+  message: string;
+  onDismiss?: () => void;
 }
 
-export function NoticeBanner({ tone = 'info', msg }: NoticeBannerProps) {
+export function NoticeBanner({ tone = 'info', message, onDismiss }: NoticeBannerProps) {
+  const isDanger = tone === 'danger';
+
   return (
     <div
+      role={isDanger ? 'alert' : 'status'}
+      aria-live={isDanger ? 'assertive' : 'polite'}
       className={`rounded-[12px] border px-4 py-3 text-sm ${noticeStyles[tone]}`}
     >
-      {msg}
+      <span>{message}</span>
+      {onDismiss && (
+        <button
+          onClick={onDismiss}
+          className="ml-2 float-right text-current opacity-60 hover:opacity-100"
+          aria-label="Dismiss"
+        >
+          ×
+        </button>
+      )}
     </div>
   );
 }

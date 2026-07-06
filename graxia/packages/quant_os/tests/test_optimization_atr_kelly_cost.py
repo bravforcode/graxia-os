@@ -120,8 +120,8 @@ class TestATRMultiplierOptimization:
     def test_post_fill_uses_symbol_config_over_asset_class(self):
         """_setup_post_fill_stop_loss should prefer symbol config over asset class."""
         from graxia.packages.quant_os.core.enums import OrderStatus
-        from graxia.packages.quant_os.execution.adapters.base import Order
         from graxia.packages.quant_os.execution.oms import OMS, TrailingStopConfig
+        from graxia.packages.quant_os.execution.order import Order
 
         mock_risk = MagicMock()
         mock_risk.check_order_sync.return_value = MagicMock(passed=True)
@@ -150,13 +150,13 @@ class TestATRMultiplierOptimization:
         )
 
         order = Order(
-            order_id="test-symbol-config",
+            id="test-symbol-config",
             signal_id="sig-test",
             symbol="XAUUSD",
             asset_class="metals",
             side="BUY",
             quantity=0.1,
-            stop_loss=None,
+            stop_price=None,
             status=OrderStatus.FILLED,
         )
 

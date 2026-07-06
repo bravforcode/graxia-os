@@ -6,11 +6,18 @@ charges tick-level spread + fill-simulator slippage P90,
 reports net P&L in dollars for 0.01 lot XAUUSD.
 """
 
-import argparse, json, os, sys, warnings
+import argparse
+import json
+import os
+import sys
+import warnings
 
 import numpy as np
 import pandas as pd
 import xgboost as xgb
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from core.feature_config import EXCLUDE_COLS
 
 warnings.filterwarnings("ignore")
 
@@ -24,6 +31,7 @@ OUT_DIR = os.path.join(BASE, "artifacts", "backtest_cost")
 # XAUUSD constants (0.01 lot = 1 oz)
 POINT_VALUE = 0.01  # 1 point = $0.01 for 0.01 lot XAUUSD
 
+
 # ---------- helpers ----------
 def load_slippage_p90(symbol: str, freq: str) -> dict:
     """Load fill simulator data and compute P90 slippage by condition."""
@@ -36,9 +44,12 @@ def load_slippage_p90(symbol: str, freq: str) -> dict:
             print("  [FALLBACK] Using 1min fill samples")
         else:
             print(f"  [WARN] Fill samples not found: {path}")
-            return {"overall": 39.0, "vol_regime": {"high": 45, "low": 33, "med": 42},
-                    "spread_bucket": {"med": 40, "tight": 34, "wide": 48},
-                    "session": {"asian": 44, "london": 38, "ny": 34, "overlap": 37}}
+            return {
+                "overall": 39.0,
+                "vol_regime": {"high": 45, "low": 33, "med": 42},
+                "spread_bucket": {"med": 40, "tight": 34, "wide": 48},
+                "session": {"asian": 44, "london": 38, "ny": 34, "overlap": 37},
+            }
     df = pd.read_csv(path)
     result = {"overall": float(df["slippage_points"].quantile(0.9))}
     for col in ["vol_regime", "spread_bucket", "session"]:
@@ -70,16 +81,8 @@ def load_features(symbol: str, freq: str) -> pd.DataFrame:
 
 def get_feature_cols(df: pd.DataFrame) -> list[str]:
     """Return numeric columns usable as model features."""
-    exclude = {
-        "target", "target_return", "symbol", "freq",
-        "tb_label", "tb_bar_hit", "tb_side", "tb_ret",
-        "tb_k_upper", "tb_k_lower", "open", "high", "low", "close",
-        "volume", "tick_count",
-    }
-    return [
-        c for c in df.columns if c not in exclude
-        and df[c].dtype in (np.float64, np.float32, np.int64, np.int32)
-    ]
+    available = set(df.columns) & EXCLUDE_COLS
+    return [c for c in df.columns if c not in available and df[c].dtype in (np.float64, np.float32, np.int64, np.int32)]
 
 
 def compute_trade_pnl(
@@ -206,10 +209,22 @@ def evaluate_backtest(
     pct_bars = n_trades / n_total * 100
 
     if n_trades == 0:
-        return {"n_trades": 0, "pct_bars": 0, "accuracy": 0, "wins": 0, "losses": 0,
-                "gross_pnl": 0, "total_cost": 0, "net_pnl": 0, "win_rate": 0,
-                "avg_win": 0, "avg_loss": 0, "max_drawdown": 0, "sharpe_ratio": 0,
-                "avg_move_points": 0}
+        return {
+            "n_trades": 0,
+            "pct_bars": 0,
+            "accuracy": 0,
+            "wins": 0,
+            "losses": 0,
+            "gross_pnl": 0,
+            "total_cost": 0,
+            "net_pnl": 0,
+            "win_rate": 0,
+            "avg_win": 0,
+            "avg_loss": 0,
+            "max_drawdown": 0,
+            "sharpe_ratio": 0,
+            "avg_move_points": 0,
+        }
 
     # Get close prices for per-trade dollar conversion
     close_col = df_test["close"].values if "close" in df_test.columns else None
@@ -230,10 +245,16 @@ def evaluate_backtest(
     total_cost = pnl_df["cost_dollars"].sum()
     net_pnl = pnl_df["net_pnl_dollars"].sum()
     win_rate = (pnl_df["net_pnl_dollars"] > 0).mean()
-    avg_win = pnl_df.loc[pnl_df["net_pnl_dollars"] > 0, "net_pnl_dollars"].mean() if (
-        pnl_df["net_pnl_dollars"] > 0).sum() > 0 else 0
-    avg_loss = pnl_df.loc[pnl_df["net_pnl_dollars"] < 0, "net_pnl_dollars"].mean() if (
-        pnl_df["net_pnl_dollars"] < 0).sum() > 0 else 0
+    avg_win = (
+        pnl_df.loc[pnl_df["net_pnl_dollars"] > 0, "net_pnl_dollars"].mean()
+        if (pnl_df["net_pnl_dollars"] > 0).sum() > 0
+        else 0
+    )
+    avg_loss = (
+        pnl_df.loc[pnl_df["net_pnl_dollars"] < 0, "net_pnl_dollars"].mean()
+        if (pnl_df["net_pnl_dollars"] < 0).sum() > 0
+        else 0
+    )
     max_dd = pnl_df["net_pnl_dollars"].cumsum().min()
     # Sharpe ratio — annualize based on actual number of returns
     # Assume returns are evenly spaced; use sqrt(n) for annualization
@@ -270,7 +291,9 @@ def sweep_thresholds(
     sweeps: list[dict],
 ) -> list[dict]:
     """Pretty-print threshold sweep results."""
-    print(f"  {'Conf':>6s} | {'Trades':>7s} | {'%Bars':>6s} | {'Acc':>7s} | {'Gross':>7s} | {'Cost':>7s} | {'Net':>8s} | {'WR':>6s} | {'SR':>5s} | {'OK?':>4s}")
+    print(
+        f"  {'Conf':>6s} | {'Trades':>7s} | {'%Bars':>6s} | {'Acc':>7s} | {'Gross':>7s} | {'Cost':>7s} | {'Net':>8s} | {'WR':>6s} | {'SR':>5s} | {'OK?':>4s}"
+    )
     print(f"  {'-'*6}-|-{'-'*7}-|-{'-'*6}-|-{'-'*7}-|-{'-'*7}-|-{'-'*7}-|-{'-'*8}-|-{'-'*6}-|-{'-'*5}-|-{'-'*4}")
     for s in sweeps:
         ok = "[OK]" if s["net_pnl"] > 0 else "   "
@@ -288,17 +311,29 @@ def main():
     parser.add_argument("--symbol", type=str, default="XAUUSD")
     parser.add_argument("--freq", type=str, default="1min")
     parser.add_argument("--feat-dir", type=str, default=FEAT_DIR)
-    parser.add_argument("--spread-cost", type=float, default=0.000050,
-                        help="Round-trip spread cost in RETURN units (fraction of price). XAUUSD calibrated: 0.000050")
-    parser.add_argument("--slippage-p90", type=float, default=0.000027,
-                        help="Round-trip slippage P90 cost in RETURN units (fraction of price). XAUUSD calibrated: 0.000027")
-    parser.add_argument("--lot-mult", type=float, default=1.0,
-                        help="Lot multiplier (1.0 = 0.01 lot)")
+    parser.add_argument(
+        "--spread-cost",
+        type=float,
+        default=0.000050,
+        help="Round-trip spread cost in RETURN units (fraction of price). XAUUSD calibrated: 0.000050",
+    )
+    parser.add_argument(
+        "--slippage-p90",
+        type=float,
+        default=0.000027,
+        help="Round-trip slippage P90 cost in RETURN units (fraction of price). XAUUSD calibrated: 0.000027",
+    )
+    parser.add_argument("--lot-mult", type=float, default=1.0, help="Lot multiplier (1.0 = 0.01 lot)")
     parser.add_argument("--output", type=str, default=OUT_DIR)
-    parser.add_argument("--label-type", choices=["binary", "triple-barrier"], default="binary",
-                        help="Label type for training and evaluation")
-    parser.add_argument("--regime-threshold", type=float, default=0.55,
-                        help="Min regime score (default 0.55; lower=more trades)")
+    parser.add_argument(
+        "--label-type",
+        choices=["binary", "triple-barrier"],
+        default="binary",
+        help="Label type for training and evaluation",
+    )
+    parser.add_argument(
+        "--regime-threshold", type=float, default=0.55, help="Min regime score (default 0.55; lower=more trades)"
+    )
     args = parser.parse_args()
 
     os.makedirs(args.output, exist_ok=True)
@@ -306,7 +341,9 @@ def main():
     print("=" * 70)
     print("PHASE F — BACKTEST WITH REAL COSTS")
     print(f"  Symbol: {args.symbol} @ {args.freq}")
-    print(f"  Spread cost: {args.spread_cost:.6f} (return units) + Slippage P90: {args.slippage_p90:.6f} (return units)")
+    print(
+        f"  Spread cost: {args.spread_cost:.6f} (return units) + Slippage P90: {args.slippage_p90:.6f} (return units)"
+    )
     print(f"  Cost/trade at $2350: ${(args.spread_cost + args.slippage_p90) * 2350:.2f}")
     print(f"  Lot size: {args.lot_mult * 0.01:.2f} lot")
     print("=" * 70)
@@ -345,7 +382,9 @@ def main():
         train_keep = y_train_raw != 0
         X_train = X_train[train_keep]
         y_train = (y_train_raw[train_keep] + 1) // 2  # -1→0, +1→1
-        print(f"  Triple-barrier training: {len(y_train)} samples (excluded {train_keep.size - train_keep.sum()} neutral)")
+        print(
+            f"  Triple-barrier training: {len(y_train)} samples (excluded {train_keep.size - train_keep.sum()} neutral)"
+        )
     else:
         y_train = df["target"].values[:split]
 
@@ -354,10 +393,15 @@ def main():
     # 5. Train model
     print("\n--- Training XGBoost ---")
     model = xgb.XGBClassifier(
-        n_estimators=100, max_depth=5, learning_rate=0.1,
-        subsample=0.8, colsample_bytree=0.8,
-        random_state=42, eval_metric="logloss",
-        use_label_encoder=False, verbosity=0,
+        n_estimators=100,
+        max_depth=5,
+        learning_rate=0.1,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        random_state=42,
+        eval_metric="logloss",
+        use_label_encoder=False,
+        verbosity=0,
     )
     model.fit(X_train, y_train)
     train_acc = (model.predict(X_train) == y_train).mean()
@@ -378,6 +422,7 @@ def main():
     try:
         sys.path.insert(0, os.path.join(BASE, "scripts"))
         from regime_filter import compute_regime_scores
+
         all_scores = compute_regime_scores(df)
         regime_scores = all_scores["_regime_score"]
         print(f"  Regime scores computed for {len(regime_scores)} bars")
@@ -390,7 +435,10 @@ def main():
     results = []
     for conf_thresh in [0.0, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90]:
         res = evaluate_backtest(
-            df, model, feature_cols, test_mask,
+            df,
+            model,
+            feature_cols,
+            test_mask,
             spread_cost=args.spread_cost,
             slippage_p90=args.slippage_p90,
             lot_mult=args.lot_mult,
@@ -408,22 +456,33 @@ def main():
     positive = [r for r in results if r["net_pnl"] > 0 and r["n_trades"] >= 5]
     if positive:
         best = max(positive, key=lambda r: r["net_pnl"])
-        print(f"\n  [OK] POSITIVE EXPECTANCY at conf>={best['min_confidence']:.2f}: "
-              f"${best['net_pnl']:.2f} net ({best['n_trades']} trades, {best['accuracy']:.1%} acc)")
+        print(
+            f"\n  [OK] POSITIVE EXPECTANCY at conf>={best['min_confidence']:.2f}: "
+            f"${best['net_pnl']:.2f} net ({best['n_trades']} trades, {best['accuracy']:.1%} acc)"
+        )
     else:
         print("\n  [WARN] No positive expectancy at any confidence threshold")
 
     # 10. Compare with zero-cost baseline
     print("\n--- Cost Impact Summary ---")
     zero_cost = evaluate_backtest(
-        df, model, feature_cols, test_mask,
-        spread_cost=0, slippage_p90=0, lot_mult=1.0,
-        regime_scores=regime_scores, confidences=None,
-        min_confidence=0.75, min_regime=args.regime_threshold,
+        df,
+        model,
+        feature_cols,
+        test_mask,
+        spread_cost=0,
+        slippage_p90=0,
+        lot_mult=1.0,
+        regime_scores=regime_scores,
+        confidences=None,
+        min_confidence=0.75,
+        min_regime=args.regime_threshold,
     )
-    idx75 = [r['min_confidence'] for r in results].index(0.75)
+    idx75 = [r["min_confidence"] for r in results].index(0.75)
     print(f"  Zero cost (conf>=0.75):  ${zero_cost['gross_pnl']:>+.2f} gross")
-    print(f"  Real cost (conf>=0.75): ${results[idx75]['net_pnl']:>+.2f} net  ({results[idx75]['total_cost']:.2f} total cost)")
+    print(
+        f"  Real cost (conf>=0.75): ${results[idx75]['net_pnl']:>+.2f} net  ({results[idx75]['total_cost']:.2f} total cost)"
+    )
     print(f"  Cost erosion:           ${zero_cost['gross_pnl'] - results[idx75]['net_pnl']:>+.2f}")
 
     # 11. Save

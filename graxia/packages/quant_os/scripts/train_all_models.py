@@ -19,6 +19,7 @@ warnings.filterwarnings("ignore")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from core.cross_validation import combine_purged_k_fold_cv  # noqa: E402
+from core.features import build_features  # noqa: E402
 
 
 def edge_decision(test_acc: float, n_test: int, baseline: float = 0.5) -> str:
@@ -44,36 +45,6 @@ SYMBOLS = ["XAUUSD", "EURUSD", "US30", "NAS100", "BTCUSD"]
 TF = "M15"
 
 
-def build_features(df):
-    df = df.copy()
-    df["ret_1"] = df["close"].pct_change(1)
-    df["ret_5"] = df["close"].pct_change(5)
-    df["ret_10"] = df["close"].pct_change(10)
-    df["ma_5"] = df["close"].rolling(5).mean()
-    df["ma_10"] = df["close"].rolling(10).mean()
-    df["ma_20"] = df["close"].rolling(20).mean()
-    df["ma_50"] = df["close"].rolling(50).mean()
-    df["ratio_ma5_ma20"] = df["ma_5"] / df["ma_20"]
-    df["ratio_ma10_ma50"] = df["ma_10"] / df["ma_50"]
-    tr = pd.concat(
-        [df["high"] - df["low"], (df["high"] - df["close"].shift()).abs(), (df["low"] - df["close"].shift()).abs()],
-        axis=1,
-    ).max(axis=1)
-    df["atr_14"] = tr.rolling(14).mean()
-    delta = df["close"].diff()
-    gain = delta.clip(lower=0).rolling(14).mean()
-    loss = (-delta.clip(upper=0)).rolling(14).mean()
-    rs = gain / loss.replace(0, np.nan)
-    df["rsi_14"] = 100 - (100 / (1 + rs))
-    df["volume_ratio"] = df["volume"] / df["volume"].rolling(20).mean()
-    for col in ["close", "volume", "atr_14"]:
-        if col in df.columns:
-            df[f"{col}_zscore"] = (df[col] - df[col].rolling(20).mean()) / df[col].rolling(20).std().replace(0, np.nan)
-    df["high_low_pct"] = (df["high"] - df["low"]) / df["close"]
-    df["close_open_pct"] = (df["close"] - df["open"]) / df["open"]
-    return df
-
-
 def train_symbol(symbol):
     csv_path = DATA_DIR / f"{symbol}_{TF}.csv"
     if not csv_path.exists():
@@ -95,7 +66,30 @@ def train_symbol(symbol):
     feature_cols = [
         c
         for c in traded.columns
-        if c.startswith(("ret_", "ma_", "ratio_", "atr_", "rsi_", "volume_", "close_", "high_low", "close_open"))
+        if c.startswith(
+            (
+                "return_",
+                "log_return_",
+                "price_position_",
+                "ema_",
+                "rsi_",
+                "macd",
+                "bb_",
+                "atr_",
+                "adx",
+                "volume_",
+                "obv_",
+                "realized_vol_",
+                "vol_ratio",
+                "gk_vol_",
+                "parkinson_vol_",
+                "candle_",
+                "upper_shadow",
+                "lower_shadow",
+                "momentum_",
+                "stoch_",
+            )
+        )
     ]
 
     X_all = traded[feature_cols].fillna(0).values  # noqa: N806

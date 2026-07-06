@@ -110,11 +110,11 @@ class TestBackupState:
         backup_dir = Path(result["backup_dir"])
 
         # Check kill switch state
-        ks = json.loads((backup_dir / "data" / "kill_switch_state.json").read_text())
+        ks = json.loads((backup_dir / "data" / "kill_switch_state.json").read_text(encoding="utf-8"))
         assert ks["state"] == "INACTIVE"
 
         # Check system state
-        ss = json.loads((backup_dir / "state" / "system_state.json").read_text())
+        ss = json.loads((backup_dir / "state" / "system_state.json").read_text(encoding="utf-8"))
         assert ss["system_state"] == "RUNNING"
 
     def test_rotate_backups(self, tmp_path, monkeypatch):
@@ -219,7 +219,7 @@ class TestRestoreState:
         assert (tmp_path / "data" / "kill_switch_state.json").exists()
         assert (tmp_path / "state" / "system_state.json").exists()
 
-        ks = json.loads((tmp_path / "data" / "kill_switch_state.json").read_text())
+        ks = json.loads((tmp_path / "data" / "kill_switch_state.json").read_text(encoding="utf-8"))
         assert ks["state"] == "INACTIVE"
 
     def test_restore_dry_run(self, tmp_path):
@@ -266,14 +266,14 @@ class TestBackupRestoreRoundTrip:
         # 2. Modify state files
         ks_path = tmp_path / "data" / "kill_switch_state.json"
         ks_path.write_text(json.dumps({"state": "ACTIVE"}))
-        assert json.loads(ks_path.read_text())["state"] == "ACTIVE"
+        assert json.loads(ks_path.read_text(encoding="utf-8"))["state"] == "ACTIVE"
 
         # 3. Restore from backup
         restore_result = restore_from_backup(backup_dir)
         assert restore_result["status"] == "success"
 
         # 4. Verify state is restored to original
-        ks = json.loads(ks_path.read_text())
+        ks = json.loads(ks_path.read_text(encoding="utf-8"))
         assert ks["state"] == "INACTIVE"
 
     def test_multiple_backups(self):

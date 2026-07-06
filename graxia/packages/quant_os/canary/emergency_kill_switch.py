@@ -25,7 +25,7 @@ class EmergencyKillSwitch:
 
     def _load(self) -> None:
         if self._state_file:
-            data = json.loads(self._state_file.read_text())
+            data = json.loads(self._state_file.read_text(encoding="utf-8"))
             self._state = KillSwitchState(**data)
 
     def _save(self) -> None:

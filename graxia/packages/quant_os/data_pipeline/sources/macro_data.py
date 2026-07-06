@@ -1,14 +1,17 @@
 """
 sources/macro_data.py — Macro Economic Data Sources (FRED, fredapi)
 """
-import pandas as pd
+
+import json
+import sys
+import time
 from datetime import datetime
 from pathlib import Path
-import json
-import time
-import sys
+
+import pandas as pd
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from config import FRED_API_KEY, FRED_SERIES, RETRY_MAX, RETRY_DELAY, STORAGE_DIR
+from config import FRED_API_KEY, FRED_SERIES, RETRY_DELAY, RETRY_MAX, STORAGE_DIR
 
 MACRO_CACHE_FILE = STORAGE_DIR / "macro_cache.json"
 
@@ -16,7 +19,7 @@ MACRO_CACHE_FILE = STORAGE_DIR / "macro_cache.json"
 def _load_macro_cache() -> dict:
     if MACRO_CACHE_FILE.exists():
         try:
-            return json.loads(MACRO_CACHE_FILE.read_text())
+            return json.loads(MACRO_CACHE_FILE.read_text(encoding="utf-8"))
         except Exception:
             pass
     return {}
@@ -30,6 +33,7 @@ def _save_macro_cache(data: dict):
 def fetch_fred_series(series_id: str) -> pd.DataFrame:
     """Fetch a single FRED series with retry"""
     from fredapi import Fred
+
     for attempt in range(RETRY_MAX):
         try:
             fred = Fred(api_key=FRED_API_KEY)

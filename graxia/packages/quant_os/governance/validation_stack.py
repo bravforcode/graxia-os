@@ -1,6 +1,8 @@
 import math
 from dataclasses import dataclass, field
 
+from validation.deflated_sharpe import deflated_sharpe_ratio
+
 
 @dataclass
 class CheckResult:
@@ -72,20 +74,21 @@ class DeflatedSharpeRatio:
                 passed=False,
                 details="INVALID_INPUTS",
             )
-        euler_gamma = 0.5772156649015329
-        log_n = math.log(max(n_trials, 2))
-        expected_max_sharpe = math.sqrt(2 * log_n) * (1 - euler_gamma / (2 * log_n)) if n_trials > 1 else 0
-        variance_adjusted = sharpe - expected_max_sharpe
-        if variance_adjusted <= 0:
+        result = deflated_sharpe_ratio(
+            observed_sharpe=sharpe,
+            n_trials=n_trials,
+            n_observations=n_bars,
+        )
+        if not result.passes_threshold:
             return CheckResult(
                 name="deflated_sharpe",
                 passed=False,
-                details=f"DSR_NOT_SIGNIFICANT:sharpe={sharpe:.4f},expected_max={expected_max_sharpe:.4f}",
+                details=f"DSR_NOT_SIGNIFICANT:sharpe={sharpe:.4f},expected_max={result.multiple_testing_adjustment:.4f}",
             )
         return CheckResult(
             name="deflated_sharpe",
             passed=True,
-            details=f"DSR_PASS:sharpe={sharpe:.4f},deflated={variance_adjusted:.4f}",
+            details=f"DSR_PASS:sharpe={sharpe:.4f},deflated={result.deflated_sharpe:.4f}",
         )
 
 

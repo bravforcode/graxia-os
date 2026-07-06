@@ -1,12 +1,19 @@
-"""Broker profile for Pepperstone MT5 — verified."""
+"""Broker profile for Pepperstone MT5 — verified.
+
+.. deprecated::
+    Use ``runtime.broker_identity_guard.BrokerProfile`` instead.
+    This module will be removed in a future release.
+"""
+
 import hashlib
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 
 
 @dataclass
 class BrokerProfile:
     """Expected broker profile. Mismatch = fail-closed."""
+
     expected_server: str = "Pepperstone-Demo"
     terminal_path: str = r"C:\Program Files\Pepperstone MetaTrader 5\terminal64.exe"
     # Symbol expectations (XAUUSD)
@@ -31,9 +38,7 @@ class BrokerProfile:
             "expected_point": self.expected_point,
             "terminal_path": self.terminal_path,
         }
-        self.profile_fingerprint = hashlib.sha256(
-            json.dumps(d, sort_keys=True).encode()
-        ).hexdigest()[:16]
+        self.profile_fingerprint = hashlib.sha256(json.dumps(d, sort_keys=True).encode()).hexdigest()[:16]
         return self.profile_fingerprint
 
     def to_dict(self) -> dict:
@@ -51,19 +56,11 @@ def validate_broker_match(
     """Validate actual broker matches expected profile."""
     issues = []
     if actual_server != profile.expected_server:
-        issues.append(
-            f"SERVER_MISMATCH: expected={profile.expected_server} actual={actual_server}"
-        )
+        issues.append(f"SERVER_MISMATCH: expected={profile.expected_server} actual={actual_server}")
     if abs(actual_contract_size - profile.expected_contract_size) > 0.01:
-        issues.append(
-            f"CONTRACT_MISMATCH: expected={profile.expected_contract_size} actual={actual_contract_size}"
-        )
+        issues.append(f"CONTRACT_MISMATCH: expected={profile.expected_contract_size} actual={actual_contract_size}")
     if actual_digits != profile.expected_digits:
-        issues.append(
-            f"DIGITS_MISMATCH: expected={profile.expected_digits} actual={actual_digits}"
-        )
+        issues.append(f"DIGITS_MISMATCH: expected={profile.expected_digits} actual={actual_digits}")
     if abs(actual_point - profile.expected_point) > 0.0001:
-        issues.append(
-            f"POINT_MISMATCH: expected={profile.expected_point} actual={actual_point}"
-        )
+        issues.append(f"POINT_MISMATCH: expected={profile.expected_point} actual={actual_point}")
     return len(issues) == 0, issues

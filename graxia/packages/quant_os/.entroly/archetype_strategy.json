@@ -1,0 +1,32 @@
+{
+  "python_backend": {
+    "weights": {
+      "w_recency": 0.35,
+      "w_frequency": 0.25,
+      "w_semantic": 0.2,
+      "w_entropy": 0.2,
+      "w_resonance": 0.1,
+      "decay_half_life": 15.0,
+      "min_relevance": 0.05,
+      "exploration_rate": 0.1
+    },
+    "sample_count": 0,
+    "confidence": 0.5,
+    "created_at": 1783328357.0208566,
+    "fingerprint": {
+      "lang_python": 0.6401425178147269,
+      "lang_rust": 0.0,
+      "lang_js_ts": 0.0,
+      "lang_other": 0.35985748218527314,
+      "avg_file_size": 0.6949997471144487,
+      "func_density": 0.47310916758391364,
+      "class_ratio": 0.22058823529411764,
+      "import_density": 0.43914794075333524,
+      "test_ratio": 0.26187648456057006,
+      "module_count": 1.0655749093134255,
+      "ffi_ratio": 0.0,
+      "entropy_mean": 0.4586819566792934,
+      "entropy_var": 0.028108606159158576
+    }
+  }
+}

@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  autonomous:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ..:/app
+      - ./data:/app/data
+    environment:
+      - PYTHONPATH=/app
+      - TRADING_MODE=paper
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

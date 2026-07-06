@@ -42,7 +42,7 @@ def parity_strategy_class():
     from pathlib import Path
 
     mlb_path = Path(__file__).parent.parent / "strategies" / "mlb.py"
-    content = mlb_path.read_text()
+    content = mlb_path.read_text(encoding="utf-8")
     assert "class MLBreakout" in content, "MLBreakout class not found"
     return {"file": str(mlb_path)}
 
@@ -132,7 +132,7 @@ def parity_no_raw_dicts():
     core_dir = Path(__file__).parent.parent / "core"
     for py_file in core_dir.rglob("*.py"):
         try:
-            tree = ast.parse(py_file.read_text())
+            tree = ast.parse(py_file.read_text(encoding="utf-8"))
             for node in ast.walk(tree):
                 if isinstance(node, ast.Return) and isinstance(node.value, ast.Dict):
                     issues.append(f"{py_file.name}:{node.lineno}")

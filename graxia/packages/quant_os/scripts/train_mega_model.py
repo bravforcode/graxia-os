@@ -11,6 +11,12 @@ Training strategy:
   2. Feature selection via mutual information (top 50)
   3. Optuna hyperparameter tuning (100 trials)
   4. Train 3 models + ensemble soft voting
+
+DEPRECATED: walk_forward_split(), walk_forward_cv(), and walk_forward_evaluate()
+here are superseded by validation.walk_forward.simple_train_test_split,
+validation.walk_forward.purged_cv, and validation.walk_forward.run_walk_forward.
+This script remains as a CLI entry-point; import from validation.walk_forward or
+core.walk_forward instead.
 """
 
 import json
@@ -22,19 +28,19 @@ import warnings
 from datetime import datetime
 from pathlib import Path
 
+import catboost as cb
+import lightgbm as lgb
 import numpy as np
+import optuna
 import pandas as pd
 import xgboost as xgb
-import lightgbm as lgb
-import catboost as cb
-import optuna
 from optuna.samplers import TPESampler
 from sklearn.feature_selection import mutual_info_classif
 from sklearn.metrics import (
     accuracy_score,
+    f1_score,
     precision_score,
     recall_score,
-    f1_score,
 )
 
 warnings.filterwarnings("ignore")
@@ -61,6 +67,7 @@ def log(msg: str):
 # ══════════════════════════════════════════════════════════════
 # SECTION 1: LOAD & PREPARE DATA
 # ══════════════════════════════════════════════════════════════
+
 
 def load_data() -> pd.DataFrame:
     log(f"Loading features from {FEAT_PATH.name}...")
@@ -102,24 +109,42 @@ def load_data() -> pd.DataFrame:
 
 EXCLUDE_COLS = {
     # Targets / leakage
-    "is_long", "next_bar_return", "target", "target_return",
+    "is_long",
+    "next_bar_return",
+    "target",
+    "target_return",
+    "target_3class",
     "target_class",
     # Forward returns (look-ahead leakage)
-    "fwd_ret_1bar", "fwd_ret_5bar", "fwd_ret_10bar", "fwd_ret_15bar",
+    "fwd_ret_1bar",
+    "fwd_ret_5bar",
+    "fwd_ret_10bar",
+    "fwd_ret_15bar",
     # Triple-barrier labels
-    "tb_label", "tb_bar_hit", "tb_side", "tb_ret",
-    "tb_k_upper", "tb_k_lower",
+    "tb_label",
+    "tb_bar_hit",
+    "tb_side",
+    "tb_ret",
+    "tb_k_upper",
+    "tb_k_lower",
     # OHLCV raw (not features)
-    "open", "high", "low", "close", "volume", "tick_count",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
+    "tick_count",
     # Identifiers
-    "symbol", "freq",
+    "symbol",
+    "freq",
 }
 
 
 def get_feature_cols(df: pd.DataFrame) -> list:
     """Get numeric feature columns, excluding targets and OHLCV."""
     return [
-        c for c in df.columns
+        c
+        for c in df.columns
         if c not in EXCLUDE_COLS
         and df[c].dtype in (np.float64, np.float32, np.int64, np.int32)
         and df[c].nunique() > 1  # drop constant columns
@@ -130,7 +155,7 @@ def select_features_mi(X: np.ndarray, y: np.ndarray, feature_names: list, k: int
     """Select top-k features by mutual information."""
     log(f"Selecting top {k} features by mutual information...")
     mi_scores = mutual_info_classif(X, y, random_state=RANDOM_STATE, n_neighbors=5)
-    mi_ranking = sorted(zip(feature_names, mi_scores), key=lambda x: -x[1])
+    mi_ranking = sorted(zip(feature_names, mi_scores, strict=False), key=lambda x: -x[1])
 
     log("  Top 15 MI scores:")
     for name, score in mi_ranking[:15]:
@@ -145,17 +170,26 @@ def select_features_mi(X: np.ndarray, y: np.ndarray, feature_names: list, k: int
 # SECTION 3: WALK-FORWARD SPLIT
 # ══════════════════════════════════════════════════════════════
 
+
 def walk_forward_split(n: int, train_ratio: float = 0.8):
-    """Time-ordered 80/20 split — NO look-ahead."""
+    """Time-ordered 80/20 split — NO look-ahead.
+
+    DEPRECATED: Use validation.walk_forward.simple_train_test_split instead.
+    """
     split_idx = int(n * train_ratio)
     train_idx = np.arange(0, split_idx)
     test_idx = np.arange(split_idx, n)
-    log(f"  Walk-forward split: train={len(train_idx)} ({train_ratio*100:.0f}%), test={len(test_idx)} ({(1-train_ratio)*100:.0f}%)")
+    log(
+        f"  Walk-forward split: train={len(train_idx)} ({train_ratio*100:.0f}%), test={len(test_idx)} ({(1-train_ratio)*100:.0f}%)"
+    )
     return train_idx, test_idx
 
 
 def walk_forward_cv(n: int, n_folds: int = 5, embargo: int = 12):
-    """Purged walk-forward CV for Optuna inner loop."""
+    """Purged walk-forward CV for Optuna inner loop.
+
+    DEPRECATED: Use validation.walk_forward.purged_cv instead.
+    """
     fold_size = n // (n_folds + 1)
     for i in range(n_folds):
         train_end = (i + 1) * fold_size
@@ -171,6 +205,7 @@ def walk_forward_cv(n: int, n_folds: int = 5, embargo: int = 12):
 # ══════════════════════════════════════════════════════════════
 # SECTION 4: OPTUNA OBJECTIVE
 # ══════════════════════════════════════════════════════════════
+
 
 def make_objective(X: np.ndarray, y: np.ndarray, feature_names: list):
     """Create Optuna objective for XGBoost with walk-forward CV."""
@@ -202,7 +237,8 @@ def make_objective(X: np.ndarray, y: np.ndarray, feature_names: list):
                 n_jobs=-1,
             )
             model.fit(
-                X_train, y_train,
+                X_train,
+                y_train,
                 eval_set=[(X_test, y_test)],
                 verbose=False,
             )
@@ -218,6 +254,7 @@ def make_objective(X: np.ndarray, y: np.ndarray, feature_names: list):
 # SECTION 5: TRAIN MODELS
 # ══════════════════════════════════════════════════════════════
 
+
 def train_xgboost(X_train, y_train, X_test, y_test, best_params):
     """Train XGBoost with best params + early stopping."""
     log("Training XGBoost...")
@@ -229,7 +266,8 @@ def train_xgboost(X_train, y_train, X_test, y_test, best_params):
         n_jobs=-1,
     )
     model.fit(
-        X_train, y_train,
+        X_train,
+        y_train,
         eval_set=[(X_test, y_test)],
         verbose=False,
     )
@@ -258,7 +296,8 @@ def train_lightgbm(X_train, y_train, X_test, y_test, feature_names):
         n_jobs=-1,
     )
     model.fit(
-        X_train, y_train,
+        X_train,
+        y_train,
         eval_set=[(X_test, y_test)],
         callbacks=[lgb.early_stopping(EARLY_STOP, verbose=False)],
     )
@@ -283,7 +322,8 @@ def train_catboost(X_train, y_train, X_test, y_test, feature_names):
         early_stopping_rounds=EARLY_STOP,
     )
     model.fit(
-        X_train, y_train,
+        X_train,
+        y_train,
         eval_set=(X_test, y_test),
         verbose=0,
     )
@@ -299,13 +339,14 @@ def train_catboost(X_train, y_train, X_test, y_test, feature_names):
 # SECTION 6: ENSEMBLE
 # ══════════════════════════════════════════════════════════════
 
+
 def soft_vote_ensemble(models, X_test, y_test, weights=None):
     """Soft voting ensemble — average predicted probabilities."""
     if weights is None:
         weights = [1.0 / len(models)] * len(models)
 
     probas = []
-    for model, w in zip(models, weights):
+    for model, w in zip(models, weights, strict=False):
         proba = model.predict_proba(X_test)[:, 1]
         probas.append(proba * w)
 
@@ -319,9 +360,10 @@ def soft_vote_ensemble(models, X_test, y_test, weights=None):
 # SECTION 7: METRICS
 # ══════════════════════════════════════════════════════════════
 
+
 def compute_trading_metrics(y_true, y_pred, next_bar_returns):
     """Compute trading-relevant metrics."""
-    correct = (y_true == y_pred)
+    correct = y_true == y_pred
     returns = np.where(correct, next_bar_returns, -next_bar_returns * 0.5)
 
     # Basic metrics
@@ -370,16 +412,23 @@ def compute_trading_metrics(y_true, y_pred, next_bar_returns):
 
 
 def walk_forward_evaluate(X, y, model, n_folds=5, embargo=12):
-    """Evaluate model with walk-forward CV."""
+    """Evaluate model with walk-forward CV.
+
+    DEPRECATED: Use validation.walk_forward.run_walk_forward instead.
+    """
     fold_accs = []
     for train_idx, test_idx in walk_forward_cv(len(X), n_folds=n_folds, embargo=embargo):
         X_tr, X_te = X[train_idx], X[test_idx]
         y_tr, y_te = y[train_idx], y[test_idx]
 
         m = xgb.XGBClassifier(
-            n_estimators=100, max_depth=5, learning_rate=0.1,
-            random_state=RANDOM_STATE, eval_metric="logloss",
-            verbosity=0, n_jobs=-1,
+            n_estimators=100,
+            max_depth=5,
+            learning_rate=0.1,
+            random_state=RANDOM_STATE,
+            eval_metric="logloss",
+            verbosity=0,
+            n_jobs=-1,
         )
         m.fit(X_tr, y_tr, verbose=False)
         y_pred = m.predict(X_te)
@@ -392,6 +441,7 @@ def walk_forward_evaluate(X, y, model, n_folds=5, embargo=12):
 # SECTION 8: FEATURE IMPORTANCE
 # ══════════════════════════════════════════════════════════════
 
+
 def aggregate_feature_importance(models, feature_names):
     """Aggregate feature importance across all 3 models."""
     importance_dict = {name: 0.0 for name in feature_names}
@@ -400,7 +450,7 @@ def aggregate_feature_importance(models, feature_names):
         if hasattr(model, "feature_importances_"):
             imp = model.feature_importances_
             imp = imp / imp.sum() if imp.sum() > 0 else imp
-            for name, score in zip(feature_names, imp):
+            for name, score in zip(feature_names, imp, strict=False):
                 importance_dict[name] += score / len(models)
 
     ranked = sorted(importance_dict.items(), key=lambda x: -x[1])
@@ -410,6 +460,7 @@ def aggregate_feature_importance(models, feature_names):
 # ══════════════════════════════════════════════════════════════
 # MAIN
 # ══════════════════════════════════════════════════════════════
+
 
 def main():
     start_time = time.time()
@@ -469,9 +520,7 @@ def main():
     log("TRAINING FINAL MODELS")
     log(f"{'='*70}")
 
-    xgb_model, xgb_train_acc, xgb_test_acc = train_xgboost(
-        X_train_sel, y_train_full, X_test_sel, y_test, best_params
-    )
+    xgb_model, xgb_train_acc, xgb_test_acc = train_xgboost(X_train_sel, y_train_full, X_test_sel, y_test, best_params)
     lgb_model, lgb_train_acc, lgb_test_acc = train_lightgbm(
         X_train_sel, y_train_full, X_test_sel, y_test, selected_features
     )
@@ -491,7 +540,7 @@ def main():
     # Weight by test accuracy
     total_acc = sum(test_accs)
     weights = [a / total_acc for a in test_accs]
-    log(f"  Weights: {', '.join(f'{n}={w:.3f}' for n, w in zip(model_names, weights))}")
+    log(f"  Weights: {', '.join(f'{n}={w:.3f}' for n, w in zip(model_names, weights, strict=False))}")
 
     ens_preds, ens_proba, ens_acc = soft_vote_ensemble(models, X_test_sel, y_test, weights)
     log(f"  Ensemble test accuracy: {ens_acc:.4f}")
@@ -529,6 +578,7 @@ def main():
     try:
         sys.path.insert(0, os.path.join(BASE, "..", "quant_os"))
         from validation.deflated_sharpe import deflated_sharpe_ratio
+
         ds_result = deflated_sharpe_ratio(
             observed_sharpe=ens_metrics.get("sharpe_ratio", 0),
             n_trials=N_TRIALS,
@@ -591,7 +641,7 @@ def main():
         "lightgbm": lgb_model,
         "catboost": cb_model,
         "feature_names": selected_features,
-        "weights": dict(zip(model_names, weights)),
+        "weights": dict(zip(model_names, weights, strict=False)),
         "best_params": best_params,
         "trained": TIMESTAMP,
     }
@@ -667,7 +717,17 @@ def main():
     ml_dir.mkdir(parents=True, exist_ok=True)
     compat_path = ml_dir / f"xgboost_XAUUSD_{TIMESTAMP}.pkl"
     with open(compat_path, "wb") as f:
-        pickle.dump({"model": xgb_model, "feature_names": selected_features, "train_acc": xgb_train_acc, "test_acc": xgb_test_acc, "symbol": "XAUUSD", "trained": TIMESTAMP}, f)
+        pickle.dump(
+            {
+                "model": xgb_model,
+                "feature_names": selected_features,
+                "train_acc": xgb_train_acc,
+                "test_acc": xgb_test_acc,
+                "symbol": "XAUUSD",
+                "trained": TIMESTAMP,
+            },
+            f,
+        )
     log(f"  Paper-trade compatible: {compat_path.name}")
 
     log(f"\n{'='*70}")

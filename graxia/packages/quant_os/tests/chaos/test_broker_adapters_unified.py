@@ -4,13 +4,13 @@ These tests assert that all canonical adapters expose the same interface and
 that the OMS/OrderManager callers use that interface.
 """
 
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 from graxia.packages.quant_os.execution.adapters.base import (
     AccountInfo,
     BrokerAdapter,
-    Order,
     OrderResult,
     OrderStatus,
 )
@@ -19,6 +19,7 @@ from graxia.packages.quant_os.execution.adapters.manager import BrokerManager
 from graxia.packages.quant_os.execution.adapters.mt5 import MT5Adapter
 from graxia.packages.quant_os.execution.adapters.paper import PaperAdapter
 from graxia.packages.quant_os.execution.oms import OMS
+from graxia.packages.quant_os.execution.order import Order
 
 
 class TestUnifiedBrokerInterface:
@@ -69,7 +70,7 @@ class TestPaperAdapter:
         adapter = PaperAdapter()
         adapter.connect()
         order = Order(
-            order_id="o1",
+            id="o1",
             signal_id="s1",
             symbol="EURUSD",
             asset_class="forex",
@@ -88,7 +89,7 @@ class TestPaperAdapter:
         adapter = PaperAdapter()
         adapter.connect()
         order = Order(
-            order_id="o2",
+            id="o2",
             signal_id="s2",
             symbol="EURUSD",
             asset_class="forex",
@@ -107,7 +108,7 @@ class TestPaperAdapter:
         adapter = PaperAdapter()
         adapter.connect()
         order = Order(
-            order_id="o3",
+            id="o3",
             signal_id="s3",
             symbol="EURUSD",
             asset_class="forex",

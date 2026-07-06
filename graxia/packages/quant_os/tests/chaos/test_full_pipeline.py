@@ -454,7 +454,7 @@ class TestNewsPipeline:
 
         path = write_to_obsidian(digest)
         assert path.exists()
-        content = path.read_text()
+        content = path.read_text(encoding="utf-8")
         today = datetime.now(UTC).strftime("%Y-%m-%d")
         assert today in content
         assert "NORMAL" in content

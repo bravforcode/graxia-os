@@ -48,6 +48,7 @@ class OrderStatus(str, Enum):
     PARTIALLY_FILLED = "PARTIALLY_FILLED"
     FAILED = "FAILED"
     TIMEOUT = "TIMEOUT"
+    UNKNOWN = "UNKNOWN"
     # --- Execution state machine states ---
     SIGNAL_CREATED = "SIGNAL_CREATED"
     RISK_CHECKED = "RISK_CHECKED"

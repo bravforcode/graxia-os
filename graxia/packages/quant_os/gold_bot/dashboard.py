@@ -12,14 +12,15 @@ from datetime import datetime, timedelta
 import glob
 import os
 import json
+import time
 
-LOG_DIR = Path(r"C:\Users\menum\graxia os\graxia\packages\quant_os\logs")
-BOT_LOG = LOG_DIR / "paper_7day.log"
-PID_FILE = LOG_DIR / "paper_7day.pid"
+LOG_DIR = Path("/opt/goldbot/logs")
+BOT_LOG = LOG_DIR / "linux_paper.log"
+PID_FILE = LOG_DIR / "linux_paper.pid"
 HEALTH_LOG = LOG_DIR / "health_check.log"
 HEALTH_JSON = LOG_DIR / "health_report_latest.json"
-ERR_LOG = LOG_DIR / "paper_7day_err.log"
-ALT_CSV_DIR = Path(r"C:\Users\menum\graxia os\graxia\packages\quant_os\gold_bot\logs")
+ERR_LOG = LOG_DIR / "linux_paper_err.log"
+ALT_CSV_DIR = LOG_DIR
 
 st.set_page_config(
     page_title="Gold Bot Dashboard",
@@ -67,9 +68,9 @@ def _read_safe(path, encoding="cp1252"):
 
 
 def _get_latest_csv():
-    csvs = sorted(glob.glob(str(LOG_DIR / "paper_trades_*.csv")))
+    csvs = sorted(glob.glob(str(LOG_DIR / "linux_trades_*.csv")))
     if not csvs:
-        csvs = sorted(glob.glob(str(ALT_CSV_DIR / "paper_trades_*.csv")))
+        csvs = sorted(glob.glob(str(ALT_CSV_DIR / "linux_trades_*.csv")))
     return Path(csvs[-1]) if csvs else None
 
 

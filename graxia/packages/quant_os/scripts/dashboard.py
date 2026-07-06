@@ -30,7 +30,7 @@ from core.canonical.macro_regime import MacroRegimeCache, get_position_multiplie
 # Load .env
 ENV_PATH = Path(__file__).parent.parent / ".env"
 if ENV_PATH.exists():
-    for line in ENV_PATH.read_text().splitlines():
+    for line in ENV_PATH.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if line and not line.startswith("#") and "=" in line:
             k, v = line.split("=", 1)

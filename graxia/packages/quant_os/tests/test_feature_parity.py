@@ -1,6 +1,8 @@
 """Test that live feature computation covers all training features."""
+
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 
@@ -12,15 +14,17 @@ def test_feature_coverage():
         print("SKIP: signal_service.py not found")
         return
 
-    content = signal_path.read_text()
+    content = signal_path.read_text(encoding="utf-8")
 
     # Check for feature mismatch warning
-    assert "FEATURE MISMATCH" in content or "feature_cols" in content, \
-        "signal_service.py should document feature mismatch"
+    assert (
+        "FEATURE MISMATCH" in content or "feature_cols" in content
+    ), "signal_service.py should document feature mismatch"
 
     # Check that missing features are logged
-    assert "missing" in content.lower() or "fillna" in content.lower() or "0.0" in content, \
-        "signal_service.py should handle missing features"
+    assert (
+        "missing" in content.lower() or "fillna" in content.lower() or "0.0" in content
+    ), "signal_service.py should handle missing features"
 
     print("PASS: Feature parity checks")
 

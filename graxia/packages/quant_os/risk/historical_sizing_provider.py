@@ -2,13 +2,20 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass, field
-from decimal import Decimal, ROUND_DOWN
+from decimal import ROUND_DOWN, Decimal
 
 # ponytail: deterministic historical sizing, no MT5 dependency
 
 
 @dataclass(frozen=True)
 class ContractSpec:
+    """Contract specification for historical sizing.
+
+    .. deprecated::
+        Use ``core.contract_spec.ContractSpec`` for the full specification.
+        This simplified version is retained only for historical sizing internals.
+    """
+
     symbol: str
     trade_contract_size: Decimal
     trade_tick_size: Decimal
@@ -78,21 +85,19 @@ class HistoricalSizingProviderImpl:
 
         raw_volume = risk_budget / one_lot_loss
 
-        volume = (raw_volume / contract_snapshot.volume_step).to_integral_value(rounding=ROUND_DOWN) * contract_snapshot.volume_step
+        volume = (raw_volume / contract_snapshot.volume_step).to_integral_value(
+            rounding=ROUND_DOWN
+        ) * contract_snapshot.volume_step
         volume = max(volume, Decimal(0))
 
         loss_at_stop = volume * one_lot_loss
         margin_estimate = volume * contract_snapshot.trade_contract_size * entry_price / Decimal(1000)
 
         if volume < contract_snapshot.volume_min:
-            rejection_reasons.append(
-                f"volume {volume} below minimum {contract_snapshot.volume_min}"
-            )
+            rejection_reasons.append(f"volume {volume} below minimum {contract_snapshot.volume_min}")
 
         if volume > contract_snapshot.volume_max:
-            rejection_reasons.append(
-                f"volume {volume} above maximum {contract_snapshot.volume_max}"
-            )
+            rejection_reasons.append(f"volume {volume} above maximum {contract_snapshot.volume_max}")
 
         rejected = len(rejection_reasons) > 0
 

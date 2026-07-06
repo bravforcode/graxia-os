@@ -27,11 +27,12 @@ logger = structlog.get_logger(__name__)
 
 # ─── Load .env ─────────────────────────────────────────────────────────────
 
+
 def load_env():
     """Load .env file into os.environ."""
     env_path = Path(__file__).parent.parent / ".env"
     if env_path.exists():
-        for line in env_path.read_text().splitlines():
+        for line in env_path.read_text(encoding="utf-8").splitlines():
             line = line.strip()
             if line and not line.startswith("#") and "=" in line:
                 k, v = line.split("=", 1)
@@ -40,9 +41,11 @@ def load_env():
 
 # ─── Provider Usage Classes ────────────────────────────────────────────────
 
+
 @dataclass
 class ProviderUsage:
     """Usage stats for a single provider."""
+
     name: str
     requests_today: int
     requests_limit: int
@@ -53,6 +56,7 @@ class ProviderUsage:
 
 
 # ─── Groq Usage ────────────────────────────────────────────────────────────
+
 
 async def check_groq_usage(client: httpx.AsyncClient) -> ProviderUsage | None:
     """Check Groq API usage via /usage endpoint."""
@@ -79,6 +83,7 @@ async def check_groq_usage(client: httpx.AsyncClient) -> ProviderUsage | None:
 
 # ─── Cohere Usage ──────────────────────────────────────────────────────────
 
+
 async def check_cohere_usage(client: httpx.AsyncClient) -> ProviderUsage | None:
     """Check Cohere API usage."""
     api_key = os.getenv("COHERE_API_KEY", "")
@@ -104,6 +109,7 @@ async def check_cohere_usage(client: httpx.AsyncClient) -> ProviderUsage | None:
 
 # ─── Cerebras Usage ────────────────────────────────────────────────────────
 
+
 async def check_cerebras_usage(client: httpx.AsyncClient) -> ProviderUsage | None:
     """Check Cerebras API usage via /models endpoint."""
     api_key = os.getenv("CEREBRAS_API_KEY", "")
@@ -128,6 +134,7 @@ async def check_cerebras_usage(client: httpx.AsyncClient) -> ProviderUsage | Non
 
 
 # ─── OpenRouter Usage ──────────────────────────────────────────────────────
+
 
 async def check_openrouter_usage(client: httpx.AsyncClient) -> ProviderUsage | None:
     """Check OpenRouter API usage via /key endpoint."""
@@ -168,6 +175,7 @@ async def check_openrouter_usage(client: httpx.AsyncClient) -> ProviderUsage | N
 
 # ─── Display ───────────────────────────────────────────────────────────────
 
+
 def display_usage(usages: list[ProviderUsage]):
     """Display usage stats in a formatted table."""
     print("\n" + "=" * 70)
@@ -201,6 +209,7 @@ def display_usage(usages: list[ProviderUsage]):
 
 
 # ─── Main ──────────────────────────────────────────────────────────────────
+
 
 async def main():
     """Main entry point."""

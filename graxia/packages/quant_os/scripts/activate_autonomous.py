@@ -26,7 +26,7 @@ STATE_PATH = Path(__file__).parent.parent / "state" / "autonomous_state.json"
 
 def load_state() -> dict:
     if STATE_PATH.exists():
-        return json.loads(STATE_PATH.read_text())
+        return json.loads(STATE_PATH.read_text(encoding="utf-8"))
     return {"enabled": False, "kill_switch": True}
 
 
@@ -35,9 +35,14 @@ def save_state(state: dict):
     STATE_PATH.write_text(json.dumps(state, indent=2))
 
 
-def activate(daily_loss: float = 2.0, weekly_loss: float = 5.0,
-             max_position: float = 1.0, max_positions: int = 3,
-             cooldown: int = 300, dry_run: bool = False):
+def activate(
+    daily_loss: float = 2.0,
+    weekly_loss: float = 5.0,
+    max_position: float = 1.0,
+    max_positions: int = 3,
+    cooldown: int = 300,
+    dry_run: bool = False,
+):
     """Enable autonomous engine with specified risk budget."""
     state = load_state()
     state["enabled"] = True
@@ -52,9 +57,7 @@ def activate(daily_loss: float = 2.0, weekly_loss: float = 5.0,
     }
     save_state(state)
 
-    logger.info("engine.activated",
-                daily_loss=daily_loss, weekly_loss=weekly_loss,
-                dry_run=dry_run)
+    logger.info("engine.activated", daily_loss=daily_loss, weekly_loss=weekly_loss, dry_run=dry_run)
 
     print(f"\n{'='*60}")
     print(f"  Autonomous Engine: {'DRY RUN' if dry_run else 'ACTIVE'}")
@@ -112,8 +115,7 @@ def main():
     if args.kill:
         deactivate()
     elif args.activate:
-        activate(args.daily_loss, args.weekly_loss, args.max_position,
-                 args.max_positions, args.cooldown, args.dry_run)
+        activate(args.daily_loss, args.weekly_loss, args.max_position, args.max_positions, args.cooldown, args.dry_run)
     else:
         status()
 

@@ -9,16 +9,28 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Optional
 
-from ...risk.engine import (
-    RiskEngine,
-    Signal,
-    AccountState,
-    PortfolioState,
-    RiskVerdict,
-    RejectReason,
-)
-from ...risk.kill_switch import KillSwitch
-from ...risk.circuit_breaker import CircuitBreaker
+try:
+    from risk.engine import (
+        RiskEngine,
+        Signal,
+        AccountState,
+        PortfolioState,
+        RiskVerdict,
+        RejectReason,
+    )
+    from risk.kill_switch import KillSwitch
+    from risk.circuit_breaker import CircuitBreaker
+except ImportError:
+    from ...risk.engine import (
+        RiskEngine,
+        Signal,
+        AccountState,
+        PortfolioState,
+        RiskVerdict,
+        RejectReason,
+    )
+    from ...risk.kill_switch import KillSwitch
+    from ...risk.circuit_breaker import CircuitBreaker
 from .config import BotConfig
 
 logger = logging.getLogger(__name__)

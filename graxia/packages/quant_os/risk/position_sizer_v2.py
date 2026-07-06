@@ -32,6 +32,8 @@ def size_position(
     calc_margin_fn: Callable | None = None,
     calc_profit_fn_kwargs: dict = None,
     calc_margin_fn_kwargs: dict = None,
+    current_exposure_pct: Decimal = Decimal("0"),
+    max_portfolio_exposure_pct: Decimal = Decimal("0"),
 ) -> SizingResult:
     """
     Calculate position size using broker-native calculations.
@@ -52,8 +54,35 @@ def size_position(
     one_lot = float(contract_spec.trade_contract_size)
     risk_budget = equity * risk_policy.risk_per_trade_fraction
 
+    # --- Portfolio exposure cap (cross-strategy) ---
+    if max_portfolio_exposure_pct > 0 and current_exposure_pct > 0:
+        remaining_capacity = max_portfolio_exposure_pct - current_exposure_pct
+        if remaining_capacity <= 0:
+            return SizingResult(
+                volume=Decimal("0"),
+                volume_before_round=Decimal("0"),
+                risk_amount=Decimal("0"),
+                risk_budget=risk_budget,
+                loss_at_stop=Decimal("0"),
+                margin_estimate=Decimal("0"),
+                rejected=True,
+                rejection_reasons=[
+                    f"Portfolio exposure at limit: {float(current_exposure_pct):.1%} >= "
+                    f"{float(max_portfolio_exposure_pct):.1%}"
+                ],
+                contract_snapshot_id=contract_spec.snapshot_hash,
+            )
+        capped_budget = equity * remaining_capacity
+        if capped_budget < risk_budget:
+            risk_budget = capped_budget
+            reasons.append(
+                f"Portfolio exposure cap: new risk budget {float(capped_budget):.2f} "
+                f"(current exposure {float(current_exposure_pct):.1%}, "
+                f"cap {float(max_portfolio_exposure_pct):.1%})"
+            )
+
     # --- Step 1: Validate stop loss ---
-    if stop_loss == 0 or stop_loss is None:
+    if stop_loss is None or stop_loss == 0:
         return SizingResult(
             volume=Decimal("0"),
             volume_before_round=Decimal("0"),
@@ -157,6 +186,12 @@ def size_position(
     else:
         volume_before_round = raw_volume
         rounded_volume = raw_volume
+
+    # --- Cap at volume_max ---
+    volume_max = contract_spec.volume_max
+    if volume_max > 0 and rounded_volume > volume_max:
+        reasons.append(f"Rounded volume {rounded_volume} > volume_max {volume_max} — capping")
+        rounded_volume = volume_max
 
     # --- Step 5: Reject if below volume_min ---
     if rounded_volume < contract_spec.volume_min:

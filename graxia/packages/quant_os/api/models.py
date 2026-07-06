@@ -5,7 +5,7 @@ Kept self-contained (local declarative Base) so Alembic and the API can import
 models without the external graxia.database package.
 """
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional
 
@@ -311,7 +311,7 @@ class Backtest(Base):
     monthly_returns: Mapped[list | None] = mapped_column(JSONB)
 
     is_walk_forward: Mapped[bool] = mapped_column(Boolean, default=False)
-    oos_start_date: Mapped[datetime.date | None] = mapped_column(Date)
+    oos_start_date: Mapped[date | None] = mapped_column(Date)
     overfitting_tests: Mapped[dict | None] = mapped_column(JSONB)
 
     notes: Mapped[str | None] = mapped_column(Text)
@@ -482,8 +482,8 @@ class MLModel(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=False)
 
     trained_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    train_start: Mapped[datetime.date | None] = mapped_column(Date)
-    train_end: Mapped[datetime.date | None] = mapped_column(Date)
+    train_start: Mapped[date | None] = mapped_column(Date)
+    train_end: Mapped[date | None] = mapped_column(Date)
 
     last_drift_check: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     drift_score: Mapped[Decimal | None] = mapped_column(Numeric(5, 4))

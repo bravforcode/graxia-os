@@ -450,7 +450,7 @@ class TestIntegration:
                     trend="UPTREND",
                     drawdown_pct=0.03,
                 )
-                state = json.loads((tmp_path / "state.json").read_text())
+                state = json.loads((tmp_path / "state.json").read_text(encoding="utf-8"))
                 assert state["regime"] == "HIGH_VOL"
                 assert state["trend"] == "UPTREND"
                 assert state["regime_atr_multiplier"] == 1.5

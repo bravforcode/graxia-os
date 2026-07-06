@@ -44,7 +44,7 @@ class ReleaseGate:
     def check_quarantine_manifest(self) -> None:
         qm_path = self.root / "graxia" / "packages" / "quant_os" / "quarantine_manifest.json"
         if qm_path.exists():
-            data = json.loads(qm_path.read_text())
+            data = json.loads(qm_path.read_text(encoding="utf-8"))
             entries = data.get("entries", [])
             self.check("quarantine_manifest", True, f"{len(entries)} entries")
         else:

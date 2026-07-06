@@ -220,7 +220,7 @@ class ChaosStateStore:
     def _load_from_disk(self) -> None:
         try:
             if self._path.exists():
-                self._data = json.loads(self._path.read_text())
+                self._data = json.loads(self._path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             pass
 
@@ -636,7 +636,7 @@ sys.exit(0)
         time.sleep(0.5)
 
         # Step 6: re-read state
-        recovered_state = json.loads(Path(local_state_path).read_text())
+        recovered_state = json.loads(Path(local_state_path).read_text(encoding="utf-8"))
         details["recovered_state_system_state"] = recovered_state.get("system_state")
         details["recovered_state_heartbeat"] = recovered_state.get("last_heartbeat")
 

@@ -63,6 +63,7 @@ def estimate_overnight_cost(
     triple_swap_weekday: int,
     swap_rates: dict[str, Any],
     point_value_per_lot: float = 1.0,
+    apply_triple_multiplier: bool = True,
 ) -> float:
     """
     Estimate overnight swap cost for a position held across rollover.
@@ -77,6 +78,9 @@ def estimate_overnight_cost(
             with keys swap_long, swap_short, swap_mode, point, contract_size.
         point_value_per_lot: Dollar value of 1 point move per lot.
             For XAUUSD 0.01 lot: 1 point = $0.01 (0.01 × 1 oz × $1/point).
+        apply_triple_multiplier: If True, apply 3× multiplier for single night
+            on triple swap day. Set to False when nights_held already accounts
+            for triple swap (e.g., from get_swap_cost_for_trade).
 
     Returns:
         Estimated overnight cost in account currency (negative = cost to you).
@@ -91,7 +95,7 @@ def estimate_overnight_cost(
 
     is_triple_day = triple_swap_weekday not in (None, -1)
     multiplier_base = nights_held
-    if is_triple_day and nights_held == 1:
+    if apply_triple_multiplier and is_triple_day and nights_held == 1:
         multiplier_base = 3
 
     if mode == 0:
@@ -159,4 +163,5 @@ def get_swap_cost_for_trade(
         nights_held=effective_nights,
         triple_swap_weekday=triple_swap_weekday,
         swap_rates=swap_rates,
+        apply_triple_multiplier=False,  # Already accounted for in effective_nights
     )

@@ -136,15 +136,11 @@ class KillSwitch:
     def _notify_coordinator(self, active: bool, reason: str, source: str) -> None:
         """Propagate state change to coordinator for cross-store sync."""
         if self._coordinator is not None:
-            self._coordinator.sync_kill_switch(
-                active, reason, source, triggering_store="kill_switch"
-            )
+            self._coordinator.sync_kill_switch(active, reason, source, triggering_store="kill_switch")
 
     def _cmd_kill_all(self) -> str:
         source = f"telegram:{self._last_user_id}"
-        self._set_state(
-            KillSwitchState.ACTIVE, reason="Telegram /kill_all", authorized_by=source
-        )
+        self._set_state(KillSwitchState.ACTIVE, reason="Telegram /kill_all", authorized_by=source)
         self._notify_coordinator(True, "Telegram /kill_all", source)
         return "KILL SWITCH ACTIVATED — all trading halted."
 
@@ -159,17 +155,13 @@ class KillSwitch:
 
     def _cmd_pause(self) -> str:
         source = f"telegram:{self._last_user_id}"
-        self._set_state(
-            KillSwitchState.PAUSED, reason="Telegram /pause", authorized_by=source
-        )
+        self._set_state(KillSwitchState.PAUSED, reason="Telegram /pause", authorized_by=source)
         self._notify_coordinator(True, "Telegram /pause", source)
         return "PAUSED — no new entries. Closes still allowed."
 
     def _cmd_resume(self) -> str:
         source = f"telegram:{self._last_user_id}"
-        self._set_state(
-            KillSwitchState.INACTIVE, reason="Telegram /resume", authorized_by=source
-        )
+        self._set_state(KillSwitchState.INACTIVE, reason="Telegram /resume", authorized_by=source)
         self._state["killed_classes"] = []
         self._save()
         self._notify_coordinator(False, "Telegram /resume", source)
@@ -343,7 +335,7 @@ class KillSwitch:
     def _load(self) -> dict[str, Any]:
         if self._state_file.exists():
             try:
-                return json.loads(self._state_file.read_text())
+                return json.loads(self._state_file.read_text(encoding="utf-8"))
             except (json.JSONDecodeError, ValueError) as exc:
                 logger.critical(
                     "kill_switch: state file corrupted — fail-closed default. " "file=%s error=%s",
@@ -407,6 +399,7 @@ class KillSwitch:
         except Exception:
             # Clean up temp file on failure
             import contextlib
+
             with contextlib.suppress(OSError):
                 os.unlink(tmp_path)
             raise

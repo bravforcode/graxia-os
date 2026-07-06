@@ -1,8 +1,16 @@
-from datetime import datetime, timedelta
-from typing import Optional
+"""Event risk gate for news events.
+
+.. deprecated::
+    Use ``shadow.event_risk_gate.EventRiskGate`` instead.
+    This module will be removed in a future release.
+"""
+
 from dataclasses import dataclass
-from .event_models import EconomicEvent, EventImportance, EventStatus, GateState
+from datetime import datetime, timedelta
+
+from .event_models import EventStatus, GateState
 from .event_store import EventStore
+
 
 @dataclass
 class GateResult:
@@ -12,14 +20,14 @@ class GateResult:
     eligible_for_new_order_intent: bool
     evidence_hash: str
 
+
 class EventRiskGate:
-    def __init__(self, event_store: EventStore, pre_block_minutes: int = 30,
-                 post_block_minutes: int = 15):
+    def __init__(self, event_store: EventStore, pre_block_minutes: int = 30, post_block_minutes: int = 15):
         self._store = event_store
         self._pre_block_minutes = pre_block_minutes
         self._post_block_minutes = post_block_minutes
 
-    def evaluate(self, at: datetime, currency: Optional[str] = None) -> GateResult:
+    def evaluate(self, at: datetime, currency: str | None = None) -> GateResult:
         events = self._store.query_at(as_of=at, currency=currency, min_importance="HIGH")
 
         active_events = []
@@ -39,7 +47,7 @@ class EventRiskGate:
                 event_ids=[],
                 reason_codes=[],
                 eligible_for_new_order_intent=True,
-                evidence_hash=self._hash_result([], GateState.CLEAR)
+                evidence_hash=self._hash_result([], GateState.CLEAR),
             )
 
         event_ids = [e.event_id for e in active_events]
@@ -57,10 +65,12 @@ class EventRiskGate:
             event_ids=event_ids,
             reason_codes=reason_codes,
             eligible_for_new_order_intent=False,
-            evidence_hash=self._hash_result(event_ids, state)
+            evidence_hash=self._hash_result(event_ids, state),
         )
 
     def _hash_result(self, event_ids: list[str], state: GateState) -> str:
-        import hashlib, json
+        import hashlib
+        import json
+
         data = json.dumps({"event_ids": sorted(event_ids), "state": state.value}, sort_keys=True)
         return hashlib.sha256(data.encode()).hexdigest()

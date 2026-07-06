@@ -1,0 +1,21 @@
+[Unit]
+Description=Graxia Autonomous Trading Loop
+After=network.target
+
+[Service]
+Type=simple
+User=trading
+WorkingDirectory=/opt/graxia/packages/quant_os
+ExecStart=/usr/bin/python3 -m scripts.launch_autonomous_paper
+Restart=always
+RestartSec=10
+Environment=PYTHONPATH=/opt/graxia
+Environment=PYTHONUNBUFFERED=1
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/opt/graxia/packages/quant_os/data
+ReadWritePaths=/opt/graxia/packages/quant_os/logs
+
+[Install]
+WantedBy=multi-user.target

@@ -33,7 +33,7 @@ class TestDatasetManifests:
         for tf, csv_path in CSV_FILES.items():
             manifest_path = MANIFEST_DIR / f"XAUUSD_{tf}.manifest.json"
             if manifest_path.exists():
-                self.manifests[tf] = json.loads(manifest_path.read_text())
+                self.manifests[tf] = json.loads(manifest_path.read_text(encoding="utf-8"))
 
     def test_dataset_manifests_exist(self):
         """Test 1: all 3 XAUUSD manifests exist and are valid JSON."""

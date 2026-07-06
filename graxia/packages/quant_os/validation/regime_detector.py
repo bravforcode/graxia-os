@@ -62,18 +62,26 @@ class RegimeConfig:
     corr_elevated_threshold: float = 0.5  # Avg correlation > 0.5 = elevated
     corr_crisis_threshold: float = 0.7  # Avg correlation > 0.7 = crisis
 
+    # Bars per year for annualization (default: M15 forex = 24192)
+    # Override per asset class: equities=252, crypto=365, M15=24192, H1=6048
+    bars_per_year: float = 24192.0
+
     # Position size adjustments per regime
-    vol_size_mult: dict[str, float] = field(default_factory=lambda: {
-        "low_vol": 1.2,  # Slightly larger in calm markets
-        "normal": 1.0,
-        "elevated": 0.7,  # Reduce in elevated vol
-        "stressed": 0.3,  # Minimal in stressed markets
-    })
-    corr_size_mult: dict[str, float] = field(default_factory=lambda: {
-        "normal": 1.0,
-        "elevated": 0.8,
-        "crisis": 0.5,  # Half size in crisis
-    })
+    vol_size_mult: dict[str, float] = field(
+        default_factory=lambda: {
+            "low_vol": 1.2,  # Slightly larger in calm markets
+            "normal": 1.0,
+            "elevated": 0.7,  # Reduce in elevated vol
+            "stressed": 0.3,  # Minimal in stressed markets
+        }
+    )
+    corr_size_mult: dict[str, float] = field(
+        default_factory=lambda: {
+            "normal": 1.0,
+            "elevated": 0.8,
+            "crisis": 0.5,  # Half size in crisis
+        }
+    )
 
 
 class RegimeDetector:
@@ -154,11 +162,11 @@ class RegimeDetector:
             return VolRegime.NORMAL
 
         # Short-term realized vol (annualized)
-        short_returns = self._returns[-self.config.vol_lookback_short:]
+        short_returns = list(self._returns)[-self.config.vol_lookback_short :]
         short_vol = self._annualized_vol(short_returns)
 
         # Long-term reference vol
-        long_returns = self._returns[-self.config.vol_lookback_long:]
+        long_returns = list(self._returns)[-self.config.vol_lookback_long :]
         long_vol = self._annualized_vol(long_returns)
 
         if long_vol <= 0:
@@ -185,7 +193,7 @@ class RegimeDetector:
         if len(self._returns) < self.config.corr_lookback:
             return CorrelationRegime.NORMAL
 
-        recent = self._returns[-self.config.corr_lookback:]
+        recent = list(self._returns)[-self.config.corr_lookback :]
 
         # Calculate autocorrelation at lag 1
         n = len(recent)
@@ -219,7 +227,7 @@ class RegimeDetector:
             return 0.0
         mean = sum(returns) / len(returns)
         var = sum((r - mean) ** 2 for r in returns) / (len(returns) - 1)
-        return math.sqrt(var * 24192)  # Annualize for M15 bars
+        return math.sqrt(var * self.config.bars_per_year)  # Annualize per asset class
 
     def get_position_size_multiplier(self) -> float:
         """Get recommended position size multiplier based on current regime."""

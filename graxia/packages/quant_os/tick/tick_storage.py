@@ -58,7 +58,7 @@ class TickStorage:
         if not part_file.exists():
             return []
         ticks = []
-        for line in part_file.read_text().splitlines():
+        for line in part_file.read_text(encoding="utf-8").splitlines():
             if line.strip():
                 ticks.append(json.loads(line))
         return ticks
@@ -70,7 +70,7 @@ class TickStorage:
         if not sha_file.exists():
             return False, "no sha256.txt"
 
-        stored_hash = sha_file.read_text().strip()
+        stored_hash = sha_file.read_text(encoding="utf-8").strip()
         h = hashlib.sha256()
         for f in sorted(part_dir.iterdir()):
             if f.name != "sha256.txt":

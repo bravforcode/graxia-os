@@ -35,7 +35,7 @@ class RevalidationRunner:
 
             p = Path(path) if path else Path(__file__).parent / "decision_gates.yaml"
             if p.exists():
-                return yaml.safe_load(p.read_text())
+                return yaml.safe_load(p.read_text(encoding="utf-8"))
         except Exception:
             pass
         # Default gates

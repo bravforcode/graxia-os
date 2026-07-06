@@ -15,8 +15,13 @@ Usage:
   python scripts/run_upgrade_pipeline.py --dry-run      # print plan only
 """
 
-import io, json, os, subprocess, sys, time
-from datetime import datetime, UTC
+import io
+import json
+import os
+import subprocess
+import sys
+import time
+from datetime import UTC, datetime
 from pathlib import Path
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
@@ -29,10 +34,12 @@ DATA_DIR = QUANT_OS / "data"
 ML_DIR = QUANT_OS / "ml" / "models"
 RESULTS_DIR = QUANT_OS / "results"
 SCRIPTS_DIR = HERE
-VAULT = Path(os.environ.get(
-    "OBSIDIAN_VAULT_PATH",
-    r"C:\Users\menum\quant\quant bot",
-))
+VAULT = Path(
+    os.environ.get(
+        "OBSIDIAN_VAULT_PATH",
+        r"C:\Users\menum\quant\quant bot",
+    )
+)
 VAULT_RESEARCH = VAULT / "02-areas" / "trading" / "research"
 VAULT_UPGRADE = VAULT_RESEARCH / "upgrade_reports"
 SYNC_MANIFEST = QUANT_OS / "Meta" / "upgrade_pipeline_manifest.json"
@@ -44,19 +51,20 @@ INDICES = ["US30", "SPX500", "NAS100", "DAX40", "FTSE100", "NK225"]
 COMMODITIES = ["USOIL", "UKOIL", "NGAS"]
 CRYPTO = ["BTCUSD", "ETHUSD"]
 SYMBOLS = FOREX + METALS + INDICES + COMMODITIES + CRYPTO
-TIMEFRAMES = {"M1": 1, "M5": 5, "M15": 15, "M30": 30,
-              "H1": 60, "H4": 240, "D1": 1440, "W1": 10080}
+TIMEFRAMES = {"M1": 1, "M5": 5, "M15": 15, "M30": 30, "H1": 60, "H4": 240, "D1": 1440, "W1": 10080}
 
 # ─── Helpers ────────────────────────────────────────────────────────────
+
 
 def log(msg: str):
     ts = datetime.now().strftime("%H:%M:%S")
     print(f"[{ts}] {msg}")
 
+
 def run(cmd: list[str], timeout: int = 300) -> subprocess.CompletedProcess:
     """Run a CLI command with sensible defaults."""
-    return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout,
-                          encoding="utf-8", errors="replace")
+    return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, encoding="utf-8", errors="replace")
+
 
 def run_py(script_name: str, args: list[str] | None = None, timeout: int = 300):
     """Run a quant_OS Python script with correct PYTHONPATH."""
@@ -67,15 +75,18 @@ def run_py(script_name: str, args: list[str] | None = None, timeout: int = 300):
     cmd = [sys.executable, str(script), *(args or [])]
     return run(cmd, timeout=timeout)
 
+
 def append_to_vault(path: Path, content: str):
     """Append a report to the vault."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
     log(f"    Wrote {path.relative_to(VAULT)}")
 
+
 # ══════════════════════════════════════════════════════════════════════
 #  PHASE 1: MARKET DATA
 # ══════════════════════════════════════════════════════════════════════
+
 
 def phase_download_market_data() -> dict:
     """MEGA parallel download — ALL symbols × ALL timeframes."""
@@ -111,20 +122,23 @@ def phase_download_market_data() -> dict:
             age_seconds = time.time() - csv.stat().st_mtime
             if age_seconds < 600:  # downloaded in last 10 min
                 results["downloaded"].append(symbol_tf)
-                bars = len(csv.read_text().splitlines()) - 1
+                bars = len(csv.read_text(encoding="utf-8").splitlines()) - 1
                 results["total_bars"] += max(bars, 0)
             else:
                 results["skipped"].append(symbol_tf)
 
     results["downloaded"] = sorted(set(results["downloaded"]))
     results["skipped"] = sorted(set(results["skipped"]))
-    log(f"  Downloaded: {len(results['downloaded'])} | Skipped: {len(results['skipped'])} | Bars: {results['total_bars']}")
+    log(
+        f"  Downloaded: {len(results['downloaded'])} | Skipped: {len(results['skipped'])} | Bars: {results['total_bars']}"
+    )
     return results
 
 
 # ══════════════════════════════════════════════════════════════════════
 #  PHASE 2: FEATURE ENGINEERING
 # ══════════════════════════════════════════════════════════════════════
+
 
 def phase_feature_engineering() -> dict:
     """Build feature sets for ML training."""
@@ -154,11 +168,18 @@ def phase_feature_engineering() -> dict:
 #  PHASE 3: ML RETRAIN (drift check + walk-forward)
 # ══════════════════════════════════════════════════════════════════════
 
+
 def phase_ml_retrain() -> dict:
     """Check drift, retrain if needed, run walk-forward validation."""
     log("=== Phase 3/6: ML Retrain ===")
-    results = {"drift_checked": False, "drift_detected": False, "retrained": False,
-               "models_before": 0, "models_after": 0, "walk_forward_passed": False}
+    results = {
+        "drift_checked": False,
+        "drift_detected": False,
+        "retrained": False,
+        "models_before": 0,
+        "models_after": 0,
+        "walk_forward_passed": False,
+    }
 
     # Count existing models
     results["models_before"] = len(list(ML_DIR.glob("*.pkl"))) if ML_DIR.exists() else 0
@@ -194,13 +215,16 @@ def phase_ml_retrain() -> dict:
             pass
 
     results["models_after"] = len(list(ML_DIR.glob("*.pkl"))) if ML_DIR.exists() else 0
-    log(f"  Drift: {results['drift_detected']} | Retrained: {results['retrained']} | Models: {results['models_before']} -> {results['models_after']}")
+    log(
+        f"  Drift: {results['drift_detected']} | Retrained: {results['retrained']} | Models: {results['models_before']} -> {results['models_after']}"
+    )
     return results
 
 
 # ══════════════════════════════════════════════════════════════════════
 #  PHASE 4: BACKTEST SUITE
 # ══════════════════════════════════════════════════════════════════════
+
 
 def phase_backtest_suite() -> dict:
     """Run all strategy backtests on latest data."""
@@ -225,6 +249,7 @@ def phase_backtest_suite() -> dict:
 
             # Parse key metrics from output
             import re
+
             metrics = {}
             for pattern, key in [
                 (r"sharpe[\s_]*:?\s*([\d\.\-]+)", "sharpe"),
@@ -248,9 +273,9 @@ def phase_backtest_suite() -> dict:
                 results["golden_rule_fails"].append(f"{name}: WinRate {metrics.get('win_rate', '?')}")
 
             results["strategies_tested"] += 1
-            s = metrics.get('sharpe', '?')
-            wr = metrics.get('win_rate', '?')
-            pf = metrics.get('profit_factor', '?')
+            s = metrics.get("sharpe", "?")
+            wr = metrics.get("win_rate", "?")
+            pf = metrics.get("profit_factor", "?")
             s_str = f"{s:.2f}" if isinstance(s, float) else str(s)
             wr_str = f"{wr:.1f}%" if isinstance(wr, float) else str(wr)
             pf_str = f"{pf:.2f}" if isinstance(pf, float) else str(pf)
@@ -267,6 +292,7 @@ def phase_backtest_suite() -> dict:
 # ══════════════════════════════════════════════════════════════════════
 #  PHASE 5: NOTEBOOKLM RESEARCH
 # ══════════════════════════════════════════════════════════════════════
+
 
 def phase_notebooklm_research() -> dict:
     """Query NotebookLM with upgrade-focused questions."""
@@ -285,21 +311,21 @@ def phase_notebooklm_research() -> dict:
         {
             "id": "upgrade_opportunities",
             "q": "Based on the quant_OS research data provided, what are the top 3 "
-                 "upgrade opportunities right now? Consider: strategy parameters, "
-                 "risk settings, data quality, ML model improvements, and market "
-                 "regime changes. Provide specific recommendations.",
+            "upgrade opportunities right now? Consider: strategy parameters, "
+            "risk settings, data quality, ML model improvements, and market "
+            "regime changes. Provide specific recommendations.",
         },
         {
             "id": "strategy_edge_analysis",
             "q": "Compare the MTM (momentum), MRB (mean reversion), and MLB (ML breakout) "
-                 "strategies. Which has the strongest current edge? Are there signs of "
-                 "degradation? What parameter changes could help?",
+            "strategies. Which has the strongest current edge? Are there signs of "
+            "degradation? What parameter changes could help?",
         },
         {
             "id": "risk_parameter_review",
             "q": "Review the current risk parameters. Are position sizing, drawdown limits, "
-                 "and stop-loss settings appropriate for current market conditions? "
-                 "Any recommended adjustments?",
+            "and stop-loss settings appropriate for current market conditions? "
+            "Any recommended adjustments?",
         },
     ]
 
@@ -336,6 +362,7 @@ tags: [notebooklm, upgrade-auto, {q['id']}]
 #  PHASE 6: UPGRADE REPORT
 # ══════════════════════════════════════════════════════════════════════
 
+
 def phase_upgrade_report(all_results: dict) -> dict:
     """Synthesise everything into a single upgrade report in the vault."""
     log("=== Phase 6/6: Upgrade Report ===")
@@ -353,10 +380,12 @@ def phase_upgrade_report(all_results: dict) -> dict:
     strat_rows = ""
     for name, result in bt.get("results", {}).items():
         m = result.get("metrics", {})
+
         def fmt(v, fmt_str):
             if isinstance(v, (int, float)):
                 return f"{v:{fmt_str}}"
             return str(v)
+
         strat_rows += f"| {name} | {fmt(m.get('sharpe'), '.2f')} | {fmt(m.get('win_rate'), '.1f')}% | {fmt(m.get('profit_factor'), '.2f')} | {fmt(m.get('max_dd'), '.1f')}% | {fmt(m.get('total_return'), '.2f')} | {'OK' if result.get('exit_code') == 0 else 'FAIL'} |\n"
 
     # Compute data coverage
@@ -442,25 +471,34 @@ Scheduled: next full pipeline run in ~6 hours.
     # Save current state manifest
     all_results["_report_time"] = now_str
     SYNC_MANIFEST.parent.mkdir(parents=True, exist_ok=True)
-    SYNC_MANIFEST.write_text(json.dumps({
-        "last_run": now_str,
-        "phases": all_results.get("_phases_run", []),
-        "summary": {
-            "market_data_downloaded": len(data.get("downloaded", [])),
-            "ml_retrained": ml.get("retrained", False),
-            "strategies_tested": bt.get("strategies_tested", 0),
-            "insights_saved": nb.get("answers_saved", 0),
-        }
-    }, indent=2), encoding="utf-8")
+    SYNC_MANIFEST.write_text(
+        json.dumps(
+            {
+                "last_run": now_str,
+                "phases": all_results.get("_phases_run", []),
+                "summary": {
+                    "market_data_downloaded": len(data.get("downloaded", [])),
+                    "ml_retrained": ml.get("retrained", False),
+                    "strategies_tested": bt.get("strategies_tested", 0),
+                    "insights_saved": nb.get("answers_saved", 0),
+                },
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
 
     return {"report_path": str(report_path.relative_to(VAULT))}
 
 
 # ─── Utilities ──────────────────────────────────────────────────────────
 
+
 def _strip_ansi(text: str) -> str:
     import re
-    return re.sub(r'\x1b\[[0-9;]*m', '', text)
+
+    return re.sub(r"\x1b\[[0-9;]*m", "", text)
+
 
 def _elapsed(start: datetime) -> str:
     delta = datetime.now(UTC) - start
@@ -473,8 +511,10 @@ def _elapsed(start: datetime) -> str:
 #  MAIN
 # ══════════════════════════════════════════════════════════════════════
 
+
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="Graxia Continuous Upgrade Pipeline")
     parser.add_argument("--quick", action="store_true", help="Skip retrain, just data+backtest")
     parser.add_argument("--dry-run", action="store_true", help="Print plan only")

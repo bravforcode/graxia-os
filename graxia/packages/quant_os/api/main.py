@@ -4,6 +4,7 @@ Quant OS FastAPI Application
 Main FastAPI app that mounts all routers.
 """
 
+import os
 import uuid
 from contextlib import asynccontextmanager
 from datetime import UTC
@@ -26,6 +27,9 @@ from .webhook import webhook_router
 
 # Security
 security = HTTPBearer(auto_error=False)
+
+# JWT Auth — optional, enabled via ENABLE_AUTH=true
+_ENABLE_AUTH: bool = os.environ.get("ENABLE_AUTH", "").lower() in ("1", "true", "yes")
 
 
 @asynccontextmanager
@@ -90,7 +94,7 @@ def create_app() -> FastAPI:
     try:
         from pathlib import Path
 
-        _ver = Path(__file__).parent.parent.joinpath("VERSION").read_text().strip()
+        _ver = Path(__file__).parent.parent.joinpath("VERSION").read_text(encoding="utf-8").strip()
     except Exception:
         _ver = "0.0.0"
 
@@ -173,12 +177,51 @@ def create_app() -> FastAPI:
     app.include_router(health_router, prefix="/api")
 
     # TradingView / Visual Search / CDP routers
+    from .cdp_routes import cdp_router
     from .tv_routes import tv_router
     from .visual_routes import visual_router
-    from .cdp_routes import cdp_router
+
     app.include_router(tv_router, prefix="/api/v1")
     app.include_router(visual_router, prefix="/api/v1")
     app.include_router(cdp_router, prefix="/api/v1")
+
+    # ── JWT Auth (optional) ────────────────────────────────────────────
+    if _ENABLE_AUTH:
+        from .auth import create_access_token
+
+        # Public paths that bypass auth
+        _PUBLIC_PATHS = {"/", "/health", "/status", "/docs", "/openapi.json", "/metrics", "/api/metrics"}
+
+        @app.middleware("http")
+        async def jwt_auth_middleware(request: Request, call_next):
+            # Skip auth for public paths and OPTIONS (CORS preflight)
+            if request.url.path in _PUBLIC_PATHS or request.method == "OPTIONS":
+                return await call_next(request)
+            try:
+                from .auth import verify_token
+
+                auth_header = request.headers.get("Authorization", "")
+                if auth_header.startswith("Bearer "):
+                    token = auth_header[7:]
+                    request.state.user = verify_token(token)
+                else:
+                    return Response(
+                        status_code=401, content='{"detail":"Not authenticated"}', media_type="application/json"
+                    )
+            except Exception:
+                return Response(status_code=401, content='{"detail":"Invalid token"}', media_type="application/json")
+            return await call_next(request)
+
+        @app.post("/api/v1/auth/token", tags=["auth"])
+        async def generate_token(sub: str = "test_user", role: str = "user"):
+            """Generate a test JWT token. In production, use proper auth flow."""
+            token = create_access_token(sub=sub, role=role)
+            return {"access_token": token, "token_type": "bearer", "role": role}
+    else:
+        # Stub: auth endpoints return 501 when auth is disabled
+        @app.post("/api/v1/auth/token", tags=["auth"])
+        async def generate_token_disabled():
+            return {"error": "Auth is disabled. Set ENABLE_AUTH=true to enable."}
 
     # ── Prometheus /metrics endpoint ──────────────────────────────────
     try:

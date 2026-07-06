@@ -13,8 +13,8 @@ import pytest
 from graxia.packages.quant_os.core.enums import OrderStatus
 from graxia.packages.quant_os.execution.adapters.base import (
     AccountInfo,
-    Order,
 )
+from graxia.packages.quant_os.execution.order import Order
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -29,7 +29,7 @@ def _make_order(
 ) -> Order:
     """Create a minimal Order for testing."""
     return Order(
-        order_id=order_id,
+        id=order_id,
         signal_id="SIG-001",
         symbol=symbol,
         asset_class="crypto",

@@ -26,7 +26,7 @@ class QuarantineManager:
 
     def _load(self) -> None:
         if self.path.exists():
-            data = json.loads(self.path.read_text())
+            data = json.loads(self.path.read_text(encoding="utf-8"))
             self._entries = data.get("entries", [])
         else:
             self._entries = []
@@ -84,7 +84,7 @@ class QuarantineManager:
         """Verify manifest integrity."""
         if not self.path.exists():
             return False, "no_manifest"
-        data = json.loads(self.path.read_text())
+        data = json.loads(self.path.read_text(encoding="utf-8"))
         stored_hash = data.get("manifest_hash")
         disk_entries = data.get("entries", [])
         h = hashlib.sha256()

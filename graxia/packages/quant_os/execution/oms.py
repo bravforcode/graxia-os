@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import tempfile
+import threading
 import time
 import uuid
 from dataclasses import dataclass
@@ -44,6 +45,8 @@ class TrailingStopConfig:
 _SYMBOL_STOP_CONFIGS: dict[str, TrailingStopConfig] = {
     "XAUUSD": TrailingStopConfig(enabled=True, trail_multiplier=2.5, stop_mode="fixed"),
     "NAS100": TrailingStopConfig(enabled=True, trail_multiplier=2.0, stop_mode="fixed"),
+    "US100": TrailingStopConfig(enabled=True, trail_multiplier=2.0, stop_mode="fixed"),
+    "USTEC": TrailingStopConfig(enabled=True, trail_multiplier=2.0, stop_mode="fixed"),
     "USOIL": TrailingStopConfig(enabled=True, trail_multiplier=3.0, stop_mode="fixed"),
     "USDJPY": TrailingStopConfig(enabled=True, trail_multiplier=1.5, stop_mode="fixed"),
 }
@@ -108,6 +111,7 @@ class OMS:
         self._risk_engine = risk_engine
         self._trailing_stop_configs = trailing_stop_configs or dict(_DEFAULT_TRAILING_CONFIGS)
         self._symbol_stop_configs = symbol_stop_configs or dict(_SYMBOL_STOP_CONFIGS)
+        self._lock = threading.Lock()  # protects _orders, _orders_by_signal_id, ledger writes
         self._load_ledger()
         # Auto-compact on startup if ledger exceeds threshold
         if self._line_count() > COMPACT_THRESHOLD:
@@ -122,13 +126,23 @@ class OMS:
         if not self._ledger_path.exists():
             return
         events_by_order: dict[str, list[dict]] = {}
+        skipped = 0
         with open(self._ledger_path, encoding="utf-8") as fh:
-            for line in fh:
+            for line_no, line in enumerate(fh, 1):
                 line = line.strip()
                 if not line:
                     continue
-                record = json.loads(line)
-                oid = record["order_id"]
+                try:
+                    record = json.loads(line)
+                except json.JSONDecodeError as exc:
+                    logger.warning("Ledger line %d: corrupted JSON, skipping: %s", line_no, exc)
+                    skipped += 1
+                    continue
+                oid = record.get("order_id")
+                if not oid:
+                    logger.warning("Ledger line %d: missing order_id, skipping", line_no)
+                    skipped += 1
+                    continue
                 events_by_order.setdefault(oid, []).append(record)
         for oid, events in events_by_order.items():
             first = events[0]
@@ -146,10 +160,24 @@ class OMS:
                 created_at=datetime.fromisoformat(first["created_at"]),
             )
             sm = OrderStateMachine(order_id=oid, initial=OrderStatus.SIGNAL_CREATED)
-            for evt in events[1:]:
+            for evt in events:
                 target = OrderStatus(evt["status"])
-                with contextlib.suppress(Exception):
-                    sm.advance(target, f"replay: {target.value}")
+                # Map legacy status names to execution state machine chain
+                _LEGACY_CHAINS = {
+                    OrderStatus.SUBMITTED: [
+                        OrderStatus.RISK_CHECKED,
+                        OrderStatus.ORDER_PRECHECKED,
+                        OrderStatus.ORDER_SUBMITTED,
+                    ],
+                    OrderStatus.FILLED: [
+                        OrderStatus.ORDER_ACKNOWLEDGED,
+                        OrderStatus.FILLED,
+                    ],
+                }
+                chain = _LEGACY_CHAINS.get(target, [target])
+                for step in chain:
+                    with contextlib.suppress(Exception):
+                        sm.advance(step, f"replay: {step.value}")
                 order.status = target
                 if evt.get("broker_order_id"):
                     order.broker_order_id = evt["broker_order_id"]
@@ -158,13 +186,14 @@ class OMS:
                 self._orders_by_signal_id[order.signal_id] = order
             self._state_machines[oid] = sm
         logger.info(
-            "Ledger loaded: %d orders replayed across %d events",
+            "Ledger loaded: %d orders replayed across %d events, %d skipped (corrupted)",
             len(self._orders),
             sum(len(v) for v in events_by_order.values()),
+            skipped,
         )
 
     def _update_ledger(self, order: Order) -> None:
-        """Append status update to the JSONL ledger (event sourcing)."""
+        """Append status update to the JSONL ledger (event sourcing). Thread-safe."""
         record = {
             "order_id": order.order_id,
             "signal_id": order.signal_id,
@@ -179,8 +208,9 @@ class OMS:
             "created_at": order.created_at.isoformat(),
             "updated_at": datetime.now(UTC).isoformat(),
         }
-        with open(self._ledger_path, "a", encoding="utf-8") as fh:
-            fh.write(json.dumps(record) + "\n")
+        with self._lock:
+            with open(self._ledger_path, "a", encoding="utf-8") as fh:
+                fh.write(json.dumps(record) + "\n")
 
     # ------------------------------------------------------------------
     # Ledger compaction
@@ -334,39 +364,40 @@ class OMS:
         Returns:
             The ``Order`` object with final status and broker metadata.
         """
-        # --- Idempotency guard ---
-        existing = self._find_by_signal_id(signal_id)
-        if existing is not None:
-            logger.info(
-                "Signal %s already in ledger (order %s, status %s) – skipping",
-                signal_id,
-                existing.order_id,
-                existing.status.value,
+        # --- Idempotency guard (thread-safe) ---
+        with self._lock:
+            existing = self._find_by_signal_id(signal_id)
+            if existing is not None:
+                logger.info(
+                    "Signal %s already in ledger (order %s, status %s) – skipping",
+                    signal_id,
+                    existing.order_id,
+                    existing.status.value,
+                )
+                return existing
+
+            # --- Build order ---
+            order = Order(
+                order_id=str(uuid.uuid4()),
+                signal_id=signal_id,
+                symbol=symbol,
+                asset_class=asset_class,
+                side=side,
+                quantity=quantity,
+                stop_loss=stop_loss,
+                take_profit=take_profit,
+                status=OrderStatus.PENDING,
+                trace_id=trace_id,
             )
-            return existing
 
-        # --- Build order ---
-        order = Order(
-            order_id=str(uuid.uuid4()),
-            signal_id=signal_id,
-            symbol=symbol,
-            asset_class=asset_class,
-            side=side,
-            quantity=quantity,
-            stop_loss=stop_loss,
-            take_profit=take_profit,
-            status=OrderStatus.PENDING,
-            trace_id=trace_id,
-        )
+            # --- Initialize state machine ---
+            sm = OrderStateMachine(order_id=order.order_id, initial=OrderStatus.SIGNAL_CREATED)
+            self._state_machines[order.order_id] = sm
 
-        # --- Initialize state machine ---
-        sm = OrderStateMachine(order_id=order.order_id, initial=OrderStatus.SIGNAL_CREATED)
-        self._state_machines[order.order_id] = sm
-
-        # --- Crash safety: persist BEFORE sending ---
-        self._orders[order.order_id] = order
-        if order.signal_id:
-            self._orders_by_signal_id[order.signal_id] = order
+            # --- Crash safety: persist BEFORE sending ---
+            self._orders[order.order_id] = order
+            if order.signal_id:
+                self._orders_by_signal_id[order.signal_id] = order
 
         # --- State machine: SIGNAL_CREATED → RISK_CHECKED → ORDER_PRECHECKED ---
         try:
@@ -409,6 +440,10 @@ class OMS:
         self._update_ledger(order)
 
         result = adapter.submit_order(order)
+
+        # --- Propagate broker_order_id from result ---
+        if result.broker_id:
+            order.broker_order_id = result.broker_id
 
         # --- Handle result with state machine ---
         if result.status == OrderStatus.FILLED:
@@ -478,6 +513,8 @@ class OMS:
                     sm.advance(OrderStatus.REJECTED, f"poll result: {status.status.value}")
                 order.status = status.status
                 return order
+            if status.status == OrderStatus.UNKNOWN:
+                logger.warning("Order %s status UNKNOWN (not in broker open orders) — continuing poll", order.order_id)
         # Timeout – mark as TIMEOUT
         if sm is not None:
             sm.advance(OrderStatus.REJECTED, "fill poll timeout")
@@ -563,10 +600,25 @@ class OMS:
             )
             order.status = result.status
             order.broker_order_id = result.broker_id
+
+            # Create state machine for audit trail
+            sm = OrderStateMachine(order_id=order.order_id, initial=OrderStatus.SIGNAL_CREATED)
+            try:
+                sm.advance(OrderStatus.RISK_CHECKED, "close_position: risk passed")
+                sm.advance(OrderStatus.ORDER_PRECHECKED, "close_position: pre-checked")
+                sm.advance(OrderStatus.ORDER_SUBMITTED, "close_position: sent to adapter")
+                if result.status == OrderStatus.FILLED:
+                    sm.advance(OrderStatus.ORDER_ACKNOWLEDGED, "close_position: broker acknowledged")
+                    sm.advance(OrderStatus.FILLED, "close_position: filled")
+            except Exception as exc:
+                logger.error("oms.close_position state_machine_error order_id=%s error=%s", order.order_id, exc)
+            self._state_machines[order.order_id] = sm
+
             if result.status == OrderStatus.FILLED:
                 logger.info("Closed position %s %s: filled", symbol, broker_position_id)
             else:
                 logger.warning("Failed to close position %s %s: %s", symbol, broker_position_id, result)
+            self._update_ledger(order)
             return order
         except Exception as exc:
             logger.error("Error closing position %s %s: %s", symbol, broker_position_id, exc)
@@ -579,6 +631,13 @@ class OMS:
                 quantity=abs(volume),
             )
             order.status = OrderStatus.FAILED
+            sm = OrderStateMachine(order_id=order.order_id, initial=OrderStatus.SIGNAL_CREATED)
+            try:
+                sm.advance(OrderStatus.REJECTED, f"close_position error: {exc}")
+            except Exception:
+                pass
+            self._state_machines[order.order_id] = sm
+            self._update_ledger(order)
             return order
 
     # ------------------------------------------------------------------

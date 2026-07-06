@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 class _Layer1:
     MAX_SIGNAL_AGE_S: float = 5.0
     MIN_CONVICTION: float = 0.6
-    MAX_RISK_PCT_EQUITY: float = 0.01  # 0.10% (was 1.0%)
+    MAX_RISK_PCT_EQUITY: float = 0.01  # 1.0% per trade
 
 
 class _Layer2:
@@ -45,10 +45,10 @@ class _Layer2:
 
 
 class _Layer3:
-    MAX_DAILY_LOSS_PCT: float = 0.02  # 0.50% (was 2.0%)
+    MAX_DAILY_LOSS_PCT: float = 0.02  # 2.0% daily loss
     MAX_WEEKLY_LOSS_PCT: float = 0.05  # 1.50% (was 5.0%)
     MAX_DRAWDOWN_PCT: float = 0.15
-    MIN_MARGIN_LEVEL_PCT: float = 200.0  # 500% (was 200%)
+    MIN_MARGIN_LEVEL_PCT: float = 200.0  # 200% minimum margin
 
 
 class _Layer4:
@@ -349,36 +349,43 @@ class RiskEngine:
             max_dd = _Layer3.MAX_DRAWDOWN_PCT
             min_margin = _Layer3.MIN_MARGIN_LEVEL_PCT
 
-        if account.equity > 0:
-            daily_loss_pct = abs(account.daily_pnl) / account.equity if account.daily_pnl < 0 else 0.0
-            if daily_loss_pct >= max_daily:
-                return self._reject(
-                    RejectReason.DAILY_LOSS_LIMIT,
-                    f"Daily loss {daily_loss_pct:.2%} >= {max_daily:.0%}",
-                    layer=3,
-                )
+        # Fail-closed: negative equity means account is wiped — reject everything
+        if account.equity <= 0:
+            return self._reject(
+                RejectReason.MAX_DRAWDOWN,
+                f"Account equity ${account.equity:.2f} <= 0 — account wiped",
+                layer=3,
+            )
 
-            weekly_loss_pct = abs(account.weekly_pnl) / account.equity if account.weekly_pnl < 0 else 0.0
-            if weekly_loss_pct >= max_weekly:
-                return self._reject(
-                    RejectReason.WEEKLY_LOSS_LIMIT,
-                    f"Weekly loss {weekly_loss_pct:.2%} >= {max_weekly:.0%}",
-                    layer=3,
-                )
+        daily_loss_pct = abs(account.daily_pnl) / account.equity if account.daily_pnl < 0 else 0.0
+        if daily_loss_pct >= max_daily:
+            return self._reject(
+                RejectReason.DAILY_LOSS_LIMIT,
+                f"Daily loss {daily_loss_pct:.2%} >= {max_daily:.0%}",
+                layer=3,
+            )
 
-            if account.max_drawdown_pct >= max_dd:
-                return self._reject(
-                    RejectReason.MAX_DRAWDOWN,
-                    f"Drawdown {account.max_drawdown_pct:.2%} >= {max_dd:.0%}",
-                    layer=3,
-                )
+        weekly_loss_pct = abs(account.weekly_pnl) / account.equity if account.weekly_pnl < 0 else 0.0
+        if weekly_loss_pct >= max_weekly:
+            return self._reject(
+                RejectReason.WEEKLY_LOSS_LIMIT,
+                f"Weekly loss {weekly_loss_pct:.2%} >= {max_weekly:.0%}",
+                layer=3,
+            )
 
-            if account.current_drawdown_pct >= max_dd:
-                return self._reject(
-                    RejectReason.DRAWDOWN_LIMIT,
-                    f"Current drawdown {account.current_drawdown_pct:.2%} >= {max_dd:.0%}",
-                    layer=3,
-                )
+        if account.max_drawdown_pct >= max_dd:
+            return self._reject(
+                RejectReason.MAX_DRAWDOWN,
+                f"Drawdown {account.max_drawdown_pct:.2%} >= {max_dd:.0%}",
+                layer=3,
+            )
+
+        if account.current_drawdown_pct >= max_dd:
+            return self._reject(
+                RejectReason.DRAWDOWN_LIMIT,
+                f"Current drawdown {account.current_drawdown_pct:.2%} >= {max_dd:.0%}",
+                layer=3,
+            )
 
         if account.margin_level_pct > 0 and account.margin_level_pct < min_margin:
             return self._reject(

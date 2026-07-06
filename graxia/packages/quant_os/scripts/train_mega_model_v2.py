@@ -141,6 +141,7 @@ EXCLUDE_COLS = {
     "next_bar_return",
     "target",
     "target_return",
+    "target_3class",
     "target_class",
     "target_win",
     # Forward returns (look-ahead leakage)
@@ -258,7 +259,8 @@ def make_objective(X: np.ndarray, y: np.ndarray, feature_names: list, scale_pos_
                 random_state=RANDOM_STATE,
                 eval_metric="logloss",
                 verbosity=0,
-                n_jobs=-1,
+                n_jobs=1,
+                tree_method="hist",
             )
             model.fit(
                 X_train,
@@ -289,7 +291,8 @@ def train_xgboost(X_train, y_train, X_test, y_test, best_params, scale_pos_weigh
         random_state=RANDOM_STATE,
         eval_metric="logloss",
         verbosity=0,
-        n_jobs=-1,
+        n_jobs=1,
+        tree_method="hist",
     )
     model.fit(
         X_train,
@@ -309,7 +312,7 @@ def train_lightgbm(X_train, y_train, X_test, y_test, feature_names):
     """Train LightGBM with regularized params."""
     log("Training LightGBM (regularized)...")
     params = {k: v for k, v in BASE_LGB_PARAMS.items()}
-    model = lgb.LGBMClassifier(**params, random_state=RANDOM_STATE, verbosity=-1, n_jobs=-1)
+    model = lgb.LGBMClassifier(**params, random_state=RANDOM_STATE, verbosity=-1, n_jobs=1, deterministic=True)
     model.fit(
         X_train,
         y_train,
@@ -434,7 +437,8 @@ def walk_forward_evaluate(X, y, model, n_folds=5, embargo=24, scale_pos_weight=2
             random_state=RANDOM_STATE,
             eval_metric="logloss",
             verbosity=0,
-            n_jobs=-1,
+            n_jobs=1,
+            tree_method="hist",
         )
         m.fit(X_tr, y_tr, verbose=False)
         y_pred = m.predict(X_te)

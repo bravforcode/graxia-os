@@ -5,8 +5,8 @@ Get-Process python -ErrorAction SilentlyContinue | Stop-Process -Force
 Get-Process terminal64 -ErrorAction SilentlyContinue | Stop-Process -Force
 Start-Sleep -Seconds 5
 
-# Start MT5
-Start-Process "C:\Program Files\Pepperstone MetaTrader 5\terminal64.exe" -ArgumentList "/login:61547941","/password:Graxia-12345Ghr","/server:Pepperstone-Demo"
+# Start MT5 — password via env var only (no command-line argument)
+Start-Process "C:\Program Files\Pepperstone MetaTrader 5\terminal64.exe" -ArgumentList "/login:$env:MT5_LOGIN","/server:$env:MT5_SERVER"
 Write-Host "MT5 starting..."
 Start-Sleep -Seconds 60
 

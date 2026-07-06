@@ -1,60 +1,10 @@
 {
-  "state": "INACTIVE",
+  "state": "ACTIVE",
   "killed_classes": [],
-  "reason": "Ready for paper trading - 7 day test",
-  "activated_at_utc": "2026-07-03T18:53:38.324198+00:00",
+  "reason": "test actual close",
+  "activated_at_utc": "2026-07-06T10:43:00.209216+00:00",
   "authorized_by": "manual",
   "history": [
-    {
-      "action": "state=ACTIVE",
-      "user": "unit_test",
-      "timestamp": "2026-07-03T10:07:35.244358+00:00"
-    },
-    {
-      "action": "state=ACTIVE",
-      "user": "manual",
-      "timestamp": "2026-07-03T10:07:35.251394+00:00"
-    },
-    {
-      "action": "state=INACTIVE",
-      "user": "system",
-      "timestamp": "2026-07-03T10:07:35.258489+00:00"
-    },
-    {
-      "action": "state=ACTIVE",
-      "user": "manual",
-      "timestamp": "2026-07-03T10:10:15.882397+00:00"
-    },
-    {
-      "action": "state=INACTIVE",
-      "user": "system",
-      "timestamp": "2026-07-03T10:10:15.882397+00:00"
-    },
-    {
-      "action": "state=ACTIVE",
-      "user": "unit_test",
-      "timestamp": "2026-07-03T10:10:15.896259+00:00"
-    },
-    {
-      "action": "state=ACTIVE",
-      "user": "manual",
-      "timestamp": "2026-07-03T10:10:15.910497+00:00"
-    },
-    {
-      "action": "state=INACTIVE",
-      "user": "system",
-      "timestamp": "2026-07-03T10:10:15.910497+00:00"
-    },
-    {
-      "action": "state=ACTIVE",
-      "user": "manual",
-      "timestamp": "2026-07-03T10:13:16.194212+00:00"
-    },
-    {
-      "action": "state=INACTIVE",
-      "user": "system",
-      "timestamp": "2026-07-03T10:13:16.194212+00:00"
-    },
     {
       "action": "state=ACTIVE",
       "user": "unit_test",
@@ -504,6 +454,60 @@
       "action": "state=INACTIVE",
       "user": "manual",
       "timestamp": "2026-07-03T18:53:38.324198+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T07:02:37.797271+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T07:03:43.217612+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T07:04:35.630014+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T07:05:19.446620+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T07:05:43.681699+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T07:20:44.918160+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T07:36:23.841989+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T07:36:47.483071+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T10:29:03.522633+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-06T10:43:00.209216+00:00"
     }
-  ]
+  ],
+  "closed_tickets": {
+    "42": "2026-07-06T10:29:03.527938+00:00",
+    "42": "2026-07-06T10:43:00.211074+00:00"
+  }
 }

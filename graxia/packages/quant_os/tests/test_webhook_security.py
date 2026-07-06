@@ -8,10 +8,6 @@ the pure crypto logic (no FastAPI/DB deps).
 import hashlib
 import hmac
 import time
-from typing import Optional
-
-import pytest
-
 
 # ---------------------------------------------------------------------------
 # Re-implement verify_webhook_signature locally to avoid import chain
@@ -19,7 +15,7 @@ import pytest
 # ---------------------------------------------------------------------------
 
 
-def verify_webhook_signature(payload: bytes, signature: str, secret: Optional[str]) -> bool:
+def verify_webhook_signature(payload: bytes, signature: str, secret: str | None) -> bool:
     """Verify HMAC-SHA256 signature.
 
     Security: Rejects when secret is empty (fail-closed) to prevent
@@ -33,11 +29,7 @@ def verify_webhook_signature(payload: bytes, signature: str, secret: Optional[st
     if not signature:
         return False
 
-    expected = hmac.new(
-        secret.encode(),
-        payload,
-        hashlib.sha256
-    ).hexdigest()
+    expected = hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
 
     # Use constant-time comparison to prevent timing attacks
     return hmac.compare_digest(expected, signature)
@@ -138,7 +130,8 @@ class TestMissingTimestampRejected:
         # We can't import due to relative import chain, but we verify the
         # schema definition exists in the source file
         from pathlib import Path
+
         webhook_src = Path(__file__).resolve().parent.parent / "api" / "webhook.py"
-        content = webhook_src.read_text()
+        content = webhook_src.read_text(encoding="utf-8")
         assert "timestamp: int" in content
         assert "default_factory" in content

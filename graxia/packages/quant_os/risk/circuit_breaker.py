@@ -71,7 +71,8 @@ class CircuitBreaker:
 
     @property
     def is_blocked(self) -> bool:
-        return any(s.open for s in self._classes.values())
+        """Check if ANY class is open — uses is_open() to respect cooldown."""
+        return any(self.is_open(cls) for cls in self._classes)
 
     @property
     def is_triggered(self) -> bool:
@@ -164,7 +165,9 @@ class CircuitBreaker:
 
                 return True
         else:
-            s.consecutive_losses = 0
+            # Only reset on actual profit, not break-even
+            if pnl > 0:
+                s.consecutive_losses = 0
         self._save()
         return False
 
@@ -205,6 +208,7 @@ class CircuitBreaker:
         except Exception:
             # Clean up temp file on failure
             import contextlib
+
             with contextlib.suppress(OSError):
                 os.unlink(tmp_path)
             raise

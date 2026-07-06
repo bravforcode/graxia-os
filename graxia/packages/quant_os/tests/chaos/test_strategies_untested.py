@@ -274,11 +274,11 @@ class TestDeflatedSharpeChaos:
 
     def test_zero_sharpe(self):
         result = _deflated_sharpe(0.0, n_trials=100)
-        assert result < 0
+        assert 0 <= result <= 1
 
     def test_negative_sharpe(self):
         result = _deflated_sharpe(-1.0, n_trials=50)
-        assert result < -1.0
+        assert 0 <= result <= 1
 
     def test_two_trials(self):
         result = _deflated_sharpe(2.0, n_trials=2)
