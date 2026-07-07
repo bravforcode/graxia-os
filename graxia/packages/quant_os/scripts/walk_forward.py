@@ -117,7 +117,8 @@ def compute_fold_pnl(
     avg_win = net_pnl[net_pnl > 0].mean() if (net_pnl > 0).sum() > 0 else 0.0
     avg_loss = net_pnl[net_pnl < 0].mean() if (net_pnl < 0).sum() > 0 else 0.0
     cumsum = net_pnl.cumsum()
-    max_dd = cumsum.min() if len(cumsum) > 0 else 0.0
+    peak = cumsum.cummax()
+    max_dd = (cumsum - peak).min() if len(cumsum) > 0 else 0.0
 
     sr_mean = net_pnl.mean() if len(net_pnl) > 0 else 0.0
     sr_std = net_pnl.std() if len(net_pnl) > 1 else 1e-10

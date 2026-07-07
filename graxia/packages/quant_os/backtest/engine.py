@@ -58,9 +58,10 @@ from ..strategies.base import Signal, Strategy
 
 # Phase 4: Wire in regime detection, margin simulation, real-time P&L
 try:
-    from ..validation.regime_detector import RegimeDetector, RegimeConfig
-    from ..risk.margin_simulator import MarginSimulator, MarginConfig
-    from ..risk.realtime_pnl import RealTimePnLTracker, PnLConfig
+    from ..risk.margin_simulator import MarginSimulator
+    from ..risk.realtime_pnl import RealTimePnLTracker
+    from ..validation.regime_detector import RegimeDetector
+
     _PHASE4_WIRING_AVAILABLE = True
 except ImportError:
     _PHASE4_WIRING_AVAILABLE = False
@@ -68,9 +69,18 @@ except ImportError:
 # Phase 3: Market impact (module-level to avoid per-bar lazy import)
 try:
     from ..execution.market_impact import estimate_market_impact_bps
+
     _MARKET_IMPACT_AVAILABLE = True
 except ImportError:
     _MARKET_IMPACT_AVAILABLE = False
+
+# Swap cost model
+try:
+    from ..core.risk.swap_cost import get_live_swap_rates, get_swap_cost_for_trade
+
+    _SWAP_COST_AVAILABLE = True
+except ImportError:
+    _SWAP_COST_AVAILABLE = False
 
 
 @dataclass(frozen=True)
@@ -239,6 +249,7 @@ class BacktestTrade:
     entry_spread_cost: Decimal = Decimal("0")
     entry_slippage_cost: Decimal = Decimal("0")
     exit_slippage_cost: Decimal = Decimal("0")
+    swap_cost: Decimal = Decimal("0")
     ambiguous_bar: bool = False
     signal_id: str = ""
     order_intent_id: str = ""
@@ -529,7 +540,7 @@ class BacktestEngine:
         for i in range(1, total_bars):
             self.current_index = i
             guard.advance()
-            current_time = self.timestamps[i] if i < len(self.timestamps) else datetime.now(UTC)
+            current_time = self.timestamps[i] if i < len(self.timestamps) else self._deterministic_timestamp(i)
 
             # Current bar OHLCV
             bar_open = Decimal(str(open_price[i]))
@@ -586,10 +597,10 @@ class BacktestEngine:
             )
 
             # Phase 4: Update regime detector with current bar return
-            if self._regime_detector and len(self.equity_curve) >= 2:
-                prev_eq = self.equity_curve[-1].equity
-                if prev_eq > 0:
-                    bar_return = (float(bar_close) - prev_eq) / prev_eq
+            if self._regime_detector:
+                prev_close = float(close[i - 1])
+                if prev_close > 0:
+                    bar_return = (float(bar_close) - prev_close) / prev_close
                     self._regime_detector.update(bar_return, i)
 
             # 4. Execute signal (fills on NEXT bar)
@@ -598,7 +609,7 @@ class BacktestEngine:
                 regime_mult = 1.0
                 if self._regime_detector:
                     regime_mult = self._regime_detector.get_position_size_multiplier()
-                self._execute_signal(signal, bar_open, bar_high, bar_low, bar_close, current_time, i)
+                self._execute_signal(signal, bar_open, bar_high, bar_low, bar_close, current_time, i, regime_mult)
 
             # 5. Update equity (Phase 4: use real-time P&L tracker)
             unrealized = self._calculate_unrealized_pnl(float(bar_close))
@@ -621,7 +632,9 @@ class BacktestEngine:
                     for p in self.positions.values()
                 ]
                 margin_events = self._margin_simulator.check_margin(
-                    pos_dicts, self.equity, i,
+                    pos_dicts,
+                    self.equity,
+                    i,
                     current_prices={p.symbol: Decimal(str(bar_close)) for p in self.positions.values()},
                 )
                 for evt in margin_events:
@@ -630,8 +643,11 @@ class BacktestEngine:
                         for pid, pos in list(self.positions.items()):
                             if pos.symbol == evt.position_symbol:
                                 exit_price, _pnl = self._margin_simulator.apply_forced_liquidation(
-                                    {"entry_price": pos.entry_price, "quantity": pos.quantity,
-                                     "side": "LONG" if pos.side == PositionType.LONG else "SHORT"},
+                                    {
+                                        "entry_price": pos.entry_price,
+                                        "quantity": pos.quantity,
+                                        "side": "LONG" if pos.side == PositionType.LONG else "SHORT",
+                                    },
                                     Decimal(str(bar_close)),
                                 )
                                 self._close_position(pid, exit_price, current_time, CloseReason.MANUAL, Decimal("0"))
@@ -718,9 +734,7 @@ class BacktestEngine:
         if _PHASE4_WIRING_AVAILABLE:
             self._regime_detector = RegimeDetector()
             self._margin_simulator = MarginSimulator()
-            self._pnl_tracker = RealTimePnLTracker(
-                initial_equity=Decimal(str(self.config.initial_capital))
-            )
+            self._pnl_tracker = RealTimePnLTracker(initial_equity=Decimal(str(self.config.initial_capital)))
 
     def _calculate_indicators(self, up_to_index: int) -> dict[str, Any]:
         """Calculate indicators using Numba JIT (B3) or pandas_ta fallback."""
@@ -823,7 +837,9 @@ class BacktestEngine:
         except ImportError:
             return {}
         except Exception as e:
-            print(f"Indicator calculation error: {e}")
+            import structlog
+
+            structlog.get_logger(__name__).warning("backtest.indicator_error", error=str(e))
             return {}
 
     def _execute_signal(
@@ -835,6 +851,7 @@ class BacktestEngine:
         bar_close: Decimal,
         current_time: datetime,
         bar_index: int,
+        regime_mult: float = 1.0,
     ) -> None:
         """Execute a trading signal via ExecutionSimulator with next-bar fill."""
         if len(self.positions) >= self.config.max_positions:
@@ -869,6 +886,8 @@ class BacktestEngine:
             stop_loss=signal.stop_loss,
             contract=InlineContractSpec.for_symbol(signal.symbol),
         )
+        if regime_mult != 1.0:
+            volume = volume * Decimal(str(regime_mult))
         if volume <= 0:
             return
 
@@ -1087,21 +1106,32 @@ class BacktestEngine:
         if not pos:
             return
 
-        # Calculate P&L
+        # Calculate P&L — quantity is in LOTS, convert to UNITS via contract_size
+        contract_size = getattr(pos, "contract_size", Decimal("100"))
         if pos.side == PositionType.LONG:
-            pnl = (exit_price - pos.entry_price) * pos.quantity
+            pnl = (exit_price - pos.entry_price) * pos.quantity * contract_size
         else:
-            pnl = (pos.entry_price - exit_price) * pos.quantity
+            pnl = (pos.entry_price - exit_price) * pos.quantity * contract_size
 
-        # Commission on exit
-        lots = pos.quantity / getattr(pos, "contract_size", Decimal("100"))
-        exit_commission = lots * Decimal(str(self.config.commission_per_lot))
+        # Commission on exit — quantity is already in lots
+        exit_commission = pos.quantity * Decimal(str(self.config.commission_per_lot))
         total_fees = exit_commission
 
+        # Calculate swap cost — negative=cost, positive=credit
+        swap_cost = self._calculate_swap_cost(
+            symbol=pos.symbol,
+            side=pos.side,
+            quantity=pos.quantity,
+            entry_time=pos.entry_time
+            or self._deterministic_timestamp(pos.signal_bar_index if hasattr(pos, "signal_bar_index") else 0),
+            exit_time=exit_time,
+        )
+
         pnl -= total_fees
+        pnl += swap_cost
         self.balance += pnl
 
-        notional = pos.entry_price * pos.quantity
+        notional = pos.entry_price * pos.quantity * contract_size
         return_pct = (pnl / notional * 100) if notional > 0 else Decimal("0")
 
         is_ambiguous = reason == CloseReason.AMBIGUOUS
@@ -1114,7 +1144,8 @@ class BacktestEngine:
                 entry_price=pos.entry_price,
                 exit_price=exit_price,
                 quantity=pos.quantity,
-                entry_time=pos.entry_time or datetime.now(UTC),
+                entry_time=pos.entry_time
+                or self._deterministic_timestamp(pos.signal_bar_index if hasattr(pos, "signal_bar_index") else 0),
                 exit_time=exit_time,
                 pnl=pnl,
                 return_pct=return_pct,
@@ -1127,6 +1158,7 @@ class BacktestEngine:
                 entry_spread_cost=pos.entry_spread_cost,
                 entry_slippage_cost=pos.entry_slippage_cost,
                 exit_slippage_cost=exit_slippage_cost,
+                swap_cost=swap_cost,
                 ambiguous_bar=is_ambiguous,
             )
         )
@@ -1136,6 +1168,7 @@ class BacktestEngine:
         last_dec = Decimal(str(last_price))
         try:
             from backtest.dynamic_spread_model import SpreadConfig as _SpreadCfg
+
             _spread_config = _SpreadCfg()
             bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
             exit_slippage = Decimal("0.01") * _spread_config.get_slippage(bar_hour)
@@ -1152,6 +1185,61 @@ class BacktestEngine:
             else:
                 exit_price = last_dec
             self._close_position(pos_id, exit_price, current_time, CloseReason.MANUAL, exit_slippage)
+
+    def _calculate_swap_cost(
+        self,
+        symbol: str,
+        side: PositionType,
+        quantity: Decimal,
+        entry_time: datetime,
+        exit_time: datetime,
+    ) -> Decimal:
+        """
+        Calculate swap cost for a position held across rollover.
+
+        Uses the swap_cost module if available, otherwise returns 0.
+        """
+        if not _SWAP_COST_AVAILABLE or not self.config.enable_swap:
+            return Decimal("0")
+
+        try:
+            # Get live swap rates (or use default XAUUSD rates)
+            swap_rates = get_live_swap_rates(symbol)
+            if not swap_rates:
+                # Default XAUUSD swap rates for Pepperstone Razor
+                swap_rates = {
+                    "swap_long": -28.5,
+                    "swap_short": 5.2,
+                    "swap_mode": 0,
+                    "swap_rollover3days": 3,  # Wednesday
+                    "point": 0.01,
+                    "contract_size": 100.0,
+                    "currency_profit": "USD",
+                }
+
+            # Convert position side to string
+            side_str = "BUY" if side == PositionType.LONG else "SELL"
+
+            # quantity is already in lots (from _historical_size)
+            lots = quantity
+
+            # Get triple swap weekday
+            triple_swap_weekday = swap_rates.get("swap_rollover3days", 3)
+
+            # Calculate swap cost — preserves sign: negative=cost, positive=credit
+            swap_cost = get_swap_cost_for_trade(
+                entry_time=entry_time,
+                exit_time=exit_time,
+                side=side_str,
+                lot=float(lots),
+                swap_rates=swap_rates,
+                triple_swap_weekday=triple_swap_weekday,
+            )
+
+            return Decimal(str(swap_cost))
+        except Exception:
+            # If swap calculation fails, return 0
+            return Decimal("0")
 
     def _check_risk_halt(self) -> bool:
         """Check if any risk limit is breached. Returns True if trading should halt."""
@@ -1183,13 +1271,19 @@ class BacktestEngine:
 
         logging.critical(f"CRITICAL_INCIDENT: {incident_type} signal={signal}")
 
+    def _deterministic_timestamp(self, bar_index: int) -> datetime:
+        """Deterministic fallback timestamp based on bar index (no datetime.now)."""
+        if self.timestamps:
+            return self.timestamps[-1]
+        return datetime(2000, 1, 1, tzinfo=UTC)
+
     def _get_regime_state(self) -> str | None:
         """Phase 4: Get current regime state string for strategy consumption."""
         if not self._regime_detector:
             return None
         state = self._regime_detector._current_state
-        if hasattr(state, 'vol_regime'):
-            return state.vol_regime.value if hasattr(state.vol_regime, 'value') else str(state.vol_regime)
+        if hasattr(state, "vol_regime"):
+            return state.vol_regime.value if hasattr(state.vol_regime, "value") else str(state.vol_regime)
         return None
 
     def _calculate_unrealized_pnl(self, current_price: float) -> float:
@@ -1198,6 +1292,7 @@ class BacktestEngine:
         current = Decimal(str(current_price))
         try:
             from backtest.dynamic_spread_model import SpreadConfig as _SpreadCfg
+
             _spread_config = _SpreadCfg()
             bar_hour = 12  # Default for equity calc
             closing_spread = Decimal("0.01") * _spread_config.get_spread(bar_hour)
@@ -1206,10 +1301,15 @@ class BacktestEngine:
         closing_cost = closing_spread * Decimal("0.5")
         closing_slip = Decimal("0.01") * Decimal(str(self.config.slippage_pips))
         for pos in self.positions.values():
+            contract_size = getattr(pos, "contract_size", Decimal("100"))
             if pos.side == PositionType.LONG:
-                unrealized += float((current - closing_cost - closing_slip - pos.entry_price) * pos.quantity)
+                unrealized += float(
+                    (current - closing_cost - closing_slip - pos.entry_price) * pos.quantity * contract_size
+                )
             else:
-                unrealized += float((pos.entry_price - current - closing_cost - closing_slip) * pos.quantity)
+                unrealized += float(
+                    (pos.entry_price - current - closing_cost - closing_slip) * pos.quantity * contract_size
+                )
         return unrealized
 
     def _bar_dicts(self) -> list[dict]:
@@ -1242,6 +1342,7 @@ class BacktestEngine:
         unrealized = Decimal("0")
         try:
             from backtest.dynamic_spread_model import SpreadConfig as _SpreadCfg
+
             _spread_config = _SpreadCfg()
             bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
             closing_spread = Decimal("0.01") * _spread_config.get_spread(bar_hour)
@@ -1251,12 +1352,13 @@ class BacktestEngine:
         closing_slip = Decimal("0.01") * Decimal(str(self.config.slippage_pips))
         for pos in self.positions.values():
             current = Decimal(str(current_price))
+            contract_size = getattr(pos, "contract_size", Decimal("100"))
             if pos.side == PositionType.LONG:
                 # Close = sell at bid - slippage (worse than mid)
-                unrealized += (current - closing_cost - closing_slip - pos.entry_price) * pos.quantity
+                unrealized += (current - closing_cost - closing_slip - pos.entry_price) * pos.quantity * contract_size
             else:
                 # Close = buy at ask + slippage (worse than mid)
-                unrealized += (pos.entry_price - current - closing_cost - closing_slip) * pos.quantity
+                unrealized += (pos.entry_price - current - closing_cost - closing_slip) * pos.quantity * contract_size
 
         self.equity = self.balance + unrealized
 

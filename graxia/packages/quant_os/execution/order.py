@@ -1,4 +1,9 @@
-"""Order entity and state machine for Quant OS"""
+"""Order entity and state machine for Quant OS
+
+Single canonical Order class used across the entire execution layer.
+Broker adapters, the OMS, the OrderManager, and all test code share
+this one definition.
+"""
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -13,12 +18,22 @@ from ..core.exceptions import OrderStateError, ValidationError
 
 @dataclass
 class Order:
-    """Order data class"""
+    """Canonical order entity for Quant OS.
+
+    Used by both the internal order-management layer (OrderManager,
+    trading loop) **and** the broker adapter layer (OMS, MT5/Paper/Binance
+    adapters).  Backward-compatible aliases are provided for the adapter
+    naming convention (``order_id`` → ``id``, ``stop_loss`` → ``stop_price``).
+
+    Type coercion in ``__post_init__`` silently accepts the adapter
+    conventions (``side`` as ``str``, ``quantity`` as ``float``) so that
+    existing callers do not break.
+    """
 
     symbol: str
     side: OrderSide
-    order_type: OrderType
-    quantity: Decimal
+    order_type: OrderType = OrderType.MARKET
+    quantity: Decimal = field(default_factory=lambda: Decimal("0"))
     price: Decimal | None = None
     stop_price: Decimal | None = None
     take_profit: Decimal | None = None
@@ -54,9 +69,54 @@ class Order:
     rejection_reason: str | None = None
     raw_broker_response: dict[str, Any] | None = None
 
+    # Adapter-specific fields (backward compatibility)
+    asset_class: str = ""
+    trace_id: str = ""
+
+    # ------------------------------------------------------------------
+    # Backward-compat type coercion
+    # ------------------------------------------------------------------
+
     def __post_init__(self):
+        # Coerce side: adapter code passes plain str ("BUY" / "SELL")
+        if isinstance(self.side, str) and not isinstance(self.side, OrderSide):
+            try:
+                self.side = OrderSide(self.side)
+            except ValueError:
+                pass  # keep as-is; validation will catch it later
+
+        # Coerce quantity: adapter code passes float
+        if isinstance(self.quantity, (int, float)):
+            self.quantity = Decimal(str(self.quantity))
+
+        # Coerce stop_price: adapter code may pass float
+        if isinstance(self.stop_price, (int, float)):
+            self.stop_price = Decimal(str(self.stop_price))
+
+        # Coerce take_profit: adapter code may pass float
+        if isinstance(self.take_profit, (int, float)):
+            self.take_profit = Decimal(str(self.take_profit))
+
+        # Coerce price: adapter code may pass float
+        if isinstance(self.price, (int, float)):
+            self.price = Decimal(str(self.price))
+
         if not self.idempotency_key:
             self.idempotency_key = self._generate_idempotency_key()
+
+    # ------------------------------------------------------------------
+    # Backward-compat aliases (adapter naming convention)
+    # ------------------------------------------------------------------
+
+    @property
+    def order_id(self) -> str:  # noqa: D401 – alias, not new behaviour
+        """Alias for ``id`` — the broker-adapter naming convention."""
+        return self.id
+
+    @property
+    def stop_loss(self) -> Decimal | None:  # noqa: D401
+        """Alias for ``stop_price`` — the broker-adapter naming convention."""
+        return self.stop_price
 
     def _generate_idempotency_key(self) -> str:
         """Generate idempotency key from order attributes"""

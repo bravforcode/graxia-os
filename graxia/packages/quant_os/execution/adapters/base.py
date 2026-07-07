@@ -121,6 +121,17 @@ class BrokerAdapter(ABC):
         ...
 
     @abstractmethod
+    def set_stop_loss(
+        self,
+        position_ticket: int,
+        symbol: str,
+        stop_loss_price: float,
+        take_profit: float | None = None,
+    ) -> bool:
+        """Set or modify the stop-loss (and optionally TP) on an open position."""
+        ...
+
+    @abstractmethod
     def get_account_info(self) -> AccountInfo:
         """Return a point-in-time snapshot of account balances."""
         ...

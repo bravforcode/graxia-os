@@ -28,8 +28,11 @@ Usage:
         pass
 """
 
+import contextlib
 import json
 import logging
+import os
+import tempfile
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -294,9 +297,10 @@ class AutoStop:
         }
 
     def _save(self) -> None:
-        """Persist state to JSON."""
+        """Save state atomically using temp file + rename."""
         if not self._state_file:
             return
+
         state = {
             "threshold_pct": self._threshold_pct,
             "hwm": self._hwm,
@@ -307,13 +311,30 @@ class AutoStop:
             "reset_by": self._reset_by,
             "history": self._history[-100:],  # Keep last 100 events
         }
-        self._state_file.parent.mkdir(parents=True, exist_ok=True)
-        self._state_file.write_text(json.dumps(state, indent=2))
+
+        path = self._state_file
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        fd, tmp_path = tempfile.mkstemp(
+            dir=str(path.parent),
+            prefix=".auto_stop_",
+            suffix=".tmp",
+        )
+        try:
+            with os.fdopen(fd, "w") as f:
+                json.dump(state, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_path, str(path))
+        except Exception:
+            with contextlib.suppress(OSError):
+                os.unlink(tmp_path)
+            raise
 
     def _load(self) -> None:
         """Load state from JSON."""
         try:
-            data = json.loads(self._state_file.read_text())
+            data = json.loads(self._state_file.read_text(encoding="utf-8"))
             self._threshold_pct = data.get("threshold_pct", self._threshold_pct)
             self._hwm = data.get("hwm", 0.0)
             self._triggered = data.get("triggered", False)

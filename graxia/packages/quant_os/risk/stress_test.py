@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import Optional
 
 import numpy as np
 import structlog
@@ -30,7 +29,7 @@ class ScenarioShock:
 
     shock_pct: float = 0.0
     vol_multiplier: float = 1.0
-    correlation_override: Optional[float] = None
+    correlation_override: float | None = None
 
 
 @dataclass
@@ -276,9 +275,9 @@ class StressTest:
                 max_loss_vol = pre_value - max_val
             else:
                 # Short: P&L = (entry - current) * qty; loss is negative of P&L
-                post_value = pos.entry_price * qty  # reference value at entry
                 loss = -(pos.entry_price - shocked_price) * qty
                 max_loss_vol = -(pos.entry_price - worst_price) * qty
+                post_value = pre_value - loss
 
             loss_pct = loss / pre_value if pre_value else 0.0
 
