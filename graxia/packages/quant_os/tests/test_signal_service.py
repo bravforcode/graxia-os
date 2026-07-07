@@ -20,10 +20,14 @@ from __future__ import annotations
 
 import importlib
 import importlib.util
+import os
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import MagicMock
+
+# Ensure signal_service API key is always available for tests
+os.environ["SIGNAL_SERVICE_API_KEY"] = "test-api-key-12345"
 
 import numpy as np
 import pandas as pd
@@ -105,6 +109,26 @@ def _valid_signal_payload() -> dict:
     }
 
 
+_API_KEY = "test-api-key-12345"
+
+
+class _AuthClient:
+    """TestClient wrapper that injects X-API-Key header into all requests."""
+
+    def __init__(self, app):
+        self._client = TestClient(app, raise_server_exceptions=False)
+
+    def post(self, url, **kwargs):
+        headers = kwargs.pop("headers", None) or {}
+        headers["X-API-Key"] = _API_KEY
+        return self._client.post(url, headers=headers, **kwargs)
+
+    def get(self, url, **kwargs):
+        headers = kwargs.pop("headers", None) or {}
+        headers["X-API-Key"] = _API_KEY
+        return self._client.get(url, headers=headers, **kwargs)
+
+
 def _setup_app_with_mock_model():
     """
     Configure signal_service globals with a mock model and return (app, mock_model).
@@ -133,7 +157,7 @@ class TestSignalIngestion:
 
     def setup_method(self):
         self.app, self.mock_model = _setup_app_with_mock_model()
-        self.client = TestClient(self.app)
+        self.client = _AuthClient(self.app)
 
     def test_valid_signal_returns_direction(self):
         """Valid payload with 200 bars returns a valid direction and confidence."""
@@ -309,7 +333,7 @@ class TestModelUnavailable:
         original_loaded = svc._model_loaded
         svc._model_loaded = False
         try:
-            client = TestClient(svc.app)
+            client = _AuthClient(svc.app)
             payload = _valid_signal_payload()
             resp = client.post("/api/signal", json=payload)
             assert resp.status_code == 503
@@ -328,7 +352,7 @@ class TestModelUnavailable:
         svc._model_loaded = True
         svc._feature_names = [f"feat_{i}" for i in range(40)]
         try:
-            client = TestClient(svc.app)
+            client = _AuthClient(svc.app)
             payload = _valid_signal_payload()
             resp = client.post("/api/signal", json=payload)
             assert resp.status_code == 200
@@ -359,7 +383,7 @@ class TestConcurrentIngestion:
         svc._model = mock_model
         svc._rate_limiter = svc._RateLimiter(max_requests=300, window_seconds=60)
 
-        client = TestClient(svc.app, raise_server_exceptions=False)
+        client = _AuthClient(svc.app)
 
         results = []
         for _ in range(10):
@@ -383,7 +407,7 @@ class TestHealthEndpoint:
     def test_health_returns_ok(self):
         """Health endpoint returns status=ok and model metadata."""
         self_app, _ = _setup_app_with_mock_model()
-        client = TestClient(self_app)
+        client = _AuthClient(self_app)
         resp = client.get("/api/health")
         assert resp.status_code == 200
         data = resp.json()
@@ -404,7 +428,7 @@ class TestTradeLogging:
     def test_valid_trade_logged(self):
         """Valid trade payload returns status=logged with ticket."""
         self_app, _ = _setup_app_with_mock_model()
-        client = TestClient(self_app)
+        client = _AuthClient(self_app)
         payload = {
             "ticket": 12345,
             "direction": "long",
@@ -423,7 +447,7 @@ class TestTradeLogging:
     def test_invalid_entry_price_rejected(self):
         """entry_price <= 0 returns 400."""
         self_app, _ = _setup_app_with_mock_model()
-        client = TestClient(self_app)
+        client = _AuthClient(self_app)
         payload = {
             "ticket": 1,
             "direction": "long",
@@ -439,7 +463,7 @@ class TestTradeLogging:
     def test_invalid_sl_tp_rejected(self):
         """sl=0 returns 400."""
         self_app, _ = _setup_app_with_mock_model()
-        client = TestClient(self_app)
+        client = _AuthClient(self_app)
         payload = {
             "ticket": 1,
             "direction": "long",
@@ -455,7 +479,7 @@ class TestTradeLogging:
     def test_invalid_lot_size_rejected(self):
         """lot_size <= 0 returns 400."""
         self_app, _ = _setup_app_with_mock_model()
-        client = TestClient(self_app)
+        client = _AuthClient(self_app)
         payload = {
             "ticket": 1,
             "direction": "long",

@@ -569,7 +569,8 @@ class TestBrokerChaos:
         broker.active.get_account_info.side_effect = ConnectionError("MT5 connection lost")
         executor = _make_executor(broker)
         account, portfolio = executor._fetch_account_state()
-        assert account.equity == 100000.0
+        # Fail-closed: $0 equity means all risk checks reject
+        assert account.equity == 0.0
 
     @pytest.mark.asyncio
     async def test_broker_submit_order_exception(self) -> None:

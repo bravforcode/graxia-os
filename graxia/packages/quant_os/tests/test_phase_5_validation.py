@@ -1,6 +1,7 @@
 """Phase 5 — Validation module tests."""
-import sys
+
 import os
+import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -24,6 +25,7 @@ def _make_record(experiment_id="exp-001", strategy_hash="abc123"):
 
 def test_experiment_registry_register():
     reg = ExperimentRegistry()
+    reg.clear()
     rec = _make_record()
     eid = reg.register(rec)
     assert eid == "exp-001"
@@ -33,6 +35,7 @@ def test_experiment_registry_register():
 
 def test_experiment_registry_duplicate_rejected():
     reg = ExperimentRegistry()
+    reg.clear()
     reg.register(_make_record())
     try:
         reg.register(_make_record())
@@ -43,6 +46,7 @@ def test_experiment_registry_duplicate_rejected():
 
 def test_experiment_registry_budget_check():
     reg = ExperimentRegistry()
+    reg.clear()
     strategy_hash = "abc123"
     for i in range(11):
         reg.register(_make_record(experiment_id=f"exp-{i:03d}", strategy_hash=strategy_hash))

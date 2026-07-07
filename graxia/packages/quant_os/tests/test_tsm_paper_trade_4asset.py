@@ -77,13 +77,13 @@ class TestPortfolioConfiguration:
         assert _mod.CONTRACT_SIZES["USOIL"] == 1000
         assert _mod.CONTRACT_SIZES["USDJPY"] == 100_000
 
-    def test_target_vol_is_15pct(self):
-        """Target vol must be 15% annualized."""
-        assert _mod.TARGET_VOL == 0.15
+    def test_target_vol_is_10pct(self):
+        """Target vol must be 10% annualized."""
+        assert _mod.TARGET_VOL == 0.10
 
-    def test_ivol_window_config(self):
-        """Inverse-vol window must be 20 days."""
-        assert _mod.IVOL_WINDOW == 20
+    def test_rvol_window_config(self):
+        """Realized vol window must be 60 days."""
+        assert _mod.RVOL_WINDOW == 60
 
     def test_no_dead_weight_assets(self):
         """Dead weight assets must not be in ASSETS."""
@@ -92,11 +92,12 @@ class TestPortfolioConfiguration:
             assert asset not in _mod.ASSETS, f"Dead weight {asset} still in ASSETS"
 
     def test_yfinance_map_updated(self):
-        """fetch_live_prices must support all 4 assets via yfinance."""
+        """fetch_live_prices must support assets available via yfinance."""
         import inspect
 
         src = inspect.getsource(_mod.fetch_live_prices)
-        for asset in ["NAS100", "XAUUSD", "OIL", "USDJPY"]:
+        # NAS100 uses MT5 only (no yfinance ticker); check the others
+        for asset in ["XAUUSD", "OIL", "USDJPY"]:
             assert asset in src, f"{asset} missing from yfinance map"
 
 
@@ -144,7 +145,7 @@ class TestInverseVolSizing:
         # Get inverse-vol weights directly
         filled = sample_close_matrix.ffill()
         daily_ret = filled.pct_change(1)
-        asset_rvol = daily_ret.rolling(_mod.IVOL_WINDOW, min_periods=_mod.IVOL_WINDOW).std() * np.sqrt(252)
+        asset_rvol = daily_ret.rolling(_mod.RVOL_WINDOW, min_periods=_mod.RVOL_WINDOW).std() * np.sqrt(252)
 
         inv_vol = 1.0 / asset_rvol.replace(0, np.nan)
         inv_vol_sum = inv_vol.sum(axis=1).replace(0, np.nan)
@@ -168,7 +169,7 @@ class TestInverseVolSizing:
 
     def test_vol_target_config(self):
         """Target vol must be configurable."""
-        assert _mod.TARGET_VOL == 0.15
+        assert _mod.TARGET_VOL == 0.10
 
 
 # ═══════════════════════════════════════════════════════════════
