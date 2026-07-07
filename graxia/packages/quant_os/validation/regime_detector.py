@@ -161,12 +161,15 @@ class RegimeDetector:
         if len(self._returns) < self.config.vol_lookback_long:
             return VolRegime.NORMAL
 
+        # Convert deque to list once, then slice for both windows
+        all_returns = list(self._returns)
+
         # Short-term realized vol (annualized)
-        short_returns = list(self._returns)[-self.config.vol_lookback_short :]
+        short_returns = all_returns[-self.config.vol_lookback_short :]
         short_vol = self._annualized_vol(short_returns)
 
         # Long-term reference vol
-        long_returns = list(self._returns)[-self.config.vol_lookback_long :]
+        long_returns = all_returns[-self.config.vol_lookback_long :]
         long_vol = self._annualized_vol(long_returns)
 
         if long_vol <= 0:

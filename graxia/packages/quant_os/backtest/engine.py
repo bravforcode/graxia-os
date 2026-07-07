@@ -58,9 +58,9 @@ from ..strategies.base import Signal, Strategy
 
 # Phase 4: Wire in regime detection, margin simulation, real-time P&L
 try:
-    from ..risk.margin_simulator import MarginConfig, MarginSimulator
-    from ..risk.realtime_pnl import PnLConfig, RealTimePnLTracker
-    from ..validation.regime_detector import RegimeConfig, RegimeDetector
+    from ..risk.margin_simulator import MarginSimulator
+    from ..risk.realtime_pnl import RealTimePnLTracker
+    from ..validation.regime_detector import RegimeDetector
 
     _PHASE4_WIRING_AVAILABLE = True
 except ImportError:

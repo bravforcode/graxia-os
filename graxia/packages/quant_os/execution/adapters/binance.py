@@ -336,6 +336,11 @@ class BinanceAdapter(BrokerAdapter):
         sym = symbol or self._order_symbols.get(str(position_ticket), "")
         if not sym:
             return False
+        if take_profit is not None:
+            logger.warning(
+                "Binance set_stop_loss: take_profit=%.4f requested but not supported via stop_market order; ignored",
+                take_profit,
+            )
         try:
             self._throttle()
             self._exchange.create_order(

@@ -9,7 +9,7 @@ from pathlib import Path
 _DEFAULT_REGISTRY_PATH = Path(__file__).parent / ".experiment_registry.json"
 
 
-@dataclass
+@dataclass(frozen=True)
 class ExperimentRecord:
     experiment_id: str
     git_commit: str
