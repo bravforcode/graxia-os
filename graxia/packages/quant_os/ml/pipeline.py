@@ -43,7 +43,7 @@ class ModelResult:
     f1_score: float
     oos_accuracy: float = 0.0
     feature_importance: dict[str, float] = field(default_factory=dict)
-    trained_at: datetime = field(default_factory=datetime.utcnow)
+    trained_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     model_path: str = ""
     feature_list: list[str] = field(default_factory=list)
     training_samples: int = 0
@@ -424,6 +424,8 @@ class MLTrainer:
                 reg_lambda=5.0,
                 reg_alpha=2.0,
                 random_state=42,
+                n_jobs=1,
+                tree_method="hist",
             )
         elif model_type == "lightgbm":
             from lightgbm import LGBMClassifier
@@ -434,6 +436,8 @@ class MLTrainer:
                 learning_rate=0.1,
                 random_state=42,
                 verbose=-1,
+                n_jobs=1,
+                deterministic=True,
             )
         elif model_type == "random_forest":
             from sklearn.ensemble import RandomForestClassifier
@@ -442,7 +446,7 @@ class MLTrainer:
                 n_estimators=100,
                 max_depth=10,
                 random_state=42,
-                n_jobs=-1,
+                n_jobs=1,
             )
         else:
             raise ValueError(f"Unknown model type: {model_type}")

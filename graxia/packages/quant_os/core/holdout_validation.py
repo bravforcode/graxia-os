@@ -5,8 +5,9 @@ Ensures strategy performance is validated on data never seen during development.
 Includes multiple testing correction (deflated Sharpe) for 13 strategies.
 """
 
-import math
 from dataclasses import dataclass
+
+from validation.deflated_sharpe import deflated_sharpe_ratio
 
 
 @dataclass
@@ -98,7 +99,13 @@ class HoldoutValidator:
         wr_deg = (dev_win_rate - holdout_win_rate) / dev_win_rate if dev_win_rate > 0 else 1.0
 
         # Deflated Sharpe Ratio
-        deflated_sharpe, threshold = self._deflated_sharpe(holdout_sharpe, holdout_trades)
+        dsr_result = deflated_sharpe_ratio(
+            observed_sharpe=holdout_sharpe,
+            n_trials=self.total_tests,
+            n_observations=holdout_trades,
+        )
+        deflated_sharpe = dsr_result.probability_alpha
+        threshold = 1 - 0.95  # 0.05 for 95% confidence
 
         # Warnings
         if sharpe_deg > max_acceptable_degradation:
@@ -135,53 +142,3 @@ class HoldoutValidator:
             passed=passed,
             warnings=warnings,
         )
-
-    def _deflated_sharpe(
-        self,
-        observed_sharpe: float,
-        n_trades: int,
-        annualization: float = None,
-    ) -> tuple:
-        """
-        Deflated Sharpe Ratio (Bailey & López de Prado, 2014)
-
-        Adjusts Sharpe for multiple testing. More tests = higher threshold.
-
-        ASSUMPTION: observed_sharpe is already annualized.
-        n_trades = number of trades (used as proxy for observations)
-
-        NOTE: This is an approximation. For rigorous use, pass n_observations
-        (number of return periods) instead of n_trades.
-
-        Formula:
-            PSR(SR*) = Φ((SR* - E[max_SR]) / std[max_SR])
-
-        Where:
-            E[max_SR] ≈ sqrt(2 * ln(N)) * annualization / sqrt(T)
-            std[max_SR] ≈ annualization / sqrt(T)
-        """
-        if n_trades < 5:
-            return 0.0, 1.0
-
-        if annualization is None:
-            annualization = math.sqrt(252)
-
-        n = max(self.total_tests, 1)
-        T = n_trades
-
-        # Expected max Sharpe under null hypothesis
-        expected_max = math.sqrt(2 * math.log(n)) * annualization / math.sqrt(T)
-
-        # Std of max Sharpe under null (simplified)
-        std_max = annualization / math.sqrt(T)
-
-        # Deflated Sharpe (z-score)
-        if std_max == 0:
-            deflated = 0.0
-        else:
-            deflated = (observed_sharpe - expected_max) / std_max
-
-        # Threshold: need deflated > 1.96 for 95% confidence
-        threshold = 1.96
-
-        return round(deflated, 4), round(threshold, 4)

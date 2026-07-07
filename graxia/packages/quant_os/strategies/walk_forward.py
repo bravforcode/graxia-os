@@ -36,6 +36,11 @@ try:
 except ImportError:
     from core.enums import RegimeType
 
+try:
+    from ..validation.deflated_sharpe import deflated_sharpe_ratio as _canonical_dsr
+except ImportError:
+    from validation.deflated_sharpe import deflated_sharpe_ratio as _canonical_dsr
+
 logger = structlog.get_logger(__name__)
 
 # ── protocols ───────────────────────────────────────────────────────────
@@ -175,19 +180,20 @@ def _profit_factor(trades: Sequence[float]) -> float:
     return gross_profit / gross_loss
 
 
-def _deflated_sharpe(sharpe_obs: float, n_trials: int, var_sharpe: float = 1.0) -> float:
-    """
-    Bailey & Lopez de Prado deflated Sharpe ratio.
+def _deflated_sharpe(sharpe_obs: float, n_trials: int) -> float:
+    """Bailey & Lopez de Prado deflated Sharpe ratio.
 
     Adjusts observed Sharpe for multiple-testing bias.
+    Delegates to canonical validation.deflated_sharpe.
     """
     if n_trials <= 1:
         return sharpe_obs
-    # Expected max Sharpe under null (Euler-Mascheroni corrected)
-    e_max = math.sqrt(2 * math.log(n_trials)) - (math.log(math.pi) + 0.5772) / (2 * math.sqrt(2 * math.log(n_trials)))
-    # Deflated Sharpe
-    deflated = (sharpe_obs - e_max * math.sqrt(var_sharpe)) / math.sqrt(var_sharpe)
-    return deflated
+    result = _canonical_dsr(
+        observed_sharpe=sharpe_obs,
+        n_trials=n_trials,
+        n_observations=1000,  # default; walk-forward caller doesn't track this
+    )
+    return result.deflated_sharpe
 
 
 def _pooma(is_sharpe: float, oos_sharpe: float, n_folds: int) -> float:
