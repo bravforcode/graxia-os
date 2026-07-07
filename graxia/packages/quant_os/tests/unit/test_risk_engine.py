@@ -7,6 +7,7 @@ import time
 
 import pytest
 
+from graxia.packages.quant_os.risk.circuit_breaker import CircuitBreaker
 from graxia.packages.quant_os.risk.engine import (
     AccountState,
     PortfolioState,
@@ -16,9 +17,22 @@ from graxia.packages.quant_os.risk.engine import (
 )
 
 
+class _FakeKillSwitch:
+    """Minimal kill-switch mock that is never active."""
+
+    def is_active(self):
+        return False
+
+    def is_paused(self):
+        return False
+
+
 @pytest.fixture
 def engine():
-    return RiskEngine()
+    return RiskEngine(
+        kill_switch=_FakeKillSwitch(),
+        circuit_breaker=CircuitBreaker(),
+    )
 
 
 def _fresh_signal(**overrides) -> Signal:
