@@ -30,6 +30,23 @@ from graxia.packages.quant_os.risk.slippage_model import (
 # ═══════════════════════════════════════════════════════════════════════
 
 
+class _FakeKillSwitch:
+    """Minimal kill-switch mock that is never active."""
+
+    def is_active(self):
+        return False
+
+    def is_paused(self):
+        return False
+
+
+def _make_engine(**overrides):
+    """Create a RiskEngine with mock kill_switch and circuit_breaker by default."""
+    defaults = dict(kill_switch=_FakeKillSwitch(), circuit_breaker=CircuitBreaker())
+    defaults.update(overrides)
+    return RiskEngine(**defaults)
+
+
 def _make_signal(**overrides):
     defaults = dict(
         symbol="XAUUSD",
@@ -85,7 +102,7 @@ class TestRiskEnginePreChecks:
     def test_kill_switch_active_rejects_all(self):
         ks = MagicMock()
         ks.is_active.return_value = True
-        engine = RiskEngine(kill_switch=ks)
+        engine = RiskEngine(kill_switch=ks, circuit_breaker=CircuitBreaker())
         verdict = engine.evaluate(
             _make_signal(),
             _make_account(),
@@ -100,7 +117,7 @@ class TestRiskEnginePreChecks:
     def test_circuit_breaker_open_rejects_asset_class(self):
         cb = MagicMock()
         cb.is_open.return_value = True
-        engine = RiskEngine(circuit_breaker=cb)
+        engine = RiskEngine(kill_switch=_FakeKillSwitch(), circuit_breaker=cb)
         verdict = engine.evaluate(
             _make_signal(asset_class="metals"),
             _make_account(),
@@ -112,8 +129,8 @@ class TestRiskEnginePreChecks:
         assert verdict.reason_code == RejectReason.CIRCUIT_BREAKER_OPEN
 
     def test_no_kill_switch_no_breaker_passes_pre_checks(self):
-        engine = RiskEngine()
-        # Should not raise — pre-checks pass when components are None
+        # With both kill_switch and circuit_breaker wired, pre-checks should pass
+        engine = _make_engine()
         pre = engine._pre_checks(_make_signal())
         assert pre is None
 
@@ -122,7 +139,7 @@ class TestRiskEngineLayer1:
     """Layer 1: per-trade checks."""
 
     def test_stale_signal_rejected(self):
-        engine = RiskEngine()
+        engine = _make_engine()
         sig = _make_signal(timestamp_epoch=time.time() - 10)
         verdict = engine.evaluate(
             sig,
@@ -136,7 +153,7 @@ class TestRiskEngineLayer1:
         assert verdict.layer_failed == 1
 
     def test_low_conviction_rejected(self):
-        engine = RiskEngine()
+        engine = _make_engine()
         sig = _make_signal(conviction=0.3)
         verdict = engine.evaluate(
             sig,
@@ -149,7 +166,7 @@ class TestRiskEngineLayer1:
         assert verdict.reason_code == RejectReason.LOW_CONVICTION
 
     def test_conviction_at_boundary_passes(self):
-        engine = RiskEngine()
+        engine = _make_engine()
         sig = _make_signal(conviction=0.6)
         verdict = engine.evaluate(
             sig,
@@ -164,7 +181,7 @@ class TestRiskEngineLayer1:
     def test_schema_validator_failure(self):
         validator = MagicMock()
         validator.validate_signal.return_value = False
-        engine = RiskEngine(schema_validator=validator)
+        engine = _make_engine(schema_validator=validator)
         verdict = engine.evaluate(
             _make_signal(),
             _make_account(),
@@ -178,7 +195,7 @@ class TestRiskEngineLayer1:
     def test_session_closed_rejected(self):
         checker = MagicMock()
         checker.is_session_open.return_value = False
-        engine = RiskEngine(session_checker=checker)
+        engine = _make_engine(session_checker=checker)
         verdict = engine.evaluate(
             _make_signal(),
             _make_account(),
@@ -190,7 +207,7 @@ class TestRiskEngineLayer1:
         assert verdict.reason_code == RejectReason.SESSION_CLOSED
 
     def test_zero_equity_rejected(self):
-        engine = RiskEngine()
+        engine = _make_engine()
         sig = _make_signal(entry_price=2025.0, stop_loss=2020.0)
         verdict = engine.evaluate(
             sig,
@@ -203,7 +220,7 @@ class TestRiskEngineLayer1:
         assert not verdict.approved
 
     def test_negative_equity_rejected(self):
-        engine = RiskEngine()
+        engine = _make_engine()
         verdict = engine.evaluate(
             _make_signal(),
             _make_account(equity=-5000.0),
@@ -218,7 +235,7 @@ class TestRiskEngineLayer2:
     """Layer 2: portfolio-level checks."""
 
     def test_max_total_exposure_rejected(self):
-        engine = RiskEngine()
+        engine = _make_engine()
         verdict = engine.evaluate(
             _make_signal(),
             _make_account(),
@@ -230,7 +247,7 @@ class TestRiskEngineLayer2:
         assert verdict.reason_code == RejectReason.EXCEEDS_TOTAL_EXPOSURE
 
     def test_total_exposure_at_boundary_passes(self):
-        engine = RiskEngine()
+        engine = _make_engine()
         verdict = engine.evaluate(
             _make_signal(),
             _make_account(),
@@ -242,7 +259,7 @@ class TestRiskEngineLayer2:
         assert verdict.layer_failed != 2
 
     def test_max_class_exposure_rejected(self):
-        engine = RiskEngine()
+        engine = _make_engine()
         verdict = engine.evaluate(
             _make_signal(asset_class="metals"),
             _make_account(),
@@ -254,7 +271,7 @@ class TestRiskEngineLayer2:
         assert verdict.reason_code == RejectReason.EXCEEDS_CLASS_EXPOSURE
 
     def test_max_venue_exposure_rejected(self):
-        engine = RiskEngine()
+        engine = _make_engine()
         verdict = engine.evaluate(
             _make_signal(venue="pepperstone"),
             _make_account(),
@@ -268,7 +285,7 @@ class TestRiskEngineLayer2:
     def test_high_correlation_rejected(self):
         corr_provider = MagicMock()
         corr_provider.get_correlation.return_value = 0.90
-        engine = RiskEngine(correlation_provider=corr_provider)
+        engine = _make_engine(correlation_provider=corr_provider)
         portfolio = _make_portfolio(
             position_symbols=["XAGUSD"],
             correlation_matrix={"XAUUSD": {"XAGUSD": 0.90}},
@@ -285,7 +302,7 @@ class TestRiskEngineLayer2:
 
     def test_correlation_check_skipped_when_no_matrix(self):
         corr_provider = MagicMock()
-        engine = RiskEngine(correlation_provider=corr_provider)
+        engine = _make_engine(correlation_provider=corr_provider)
         portfolio = _make_portfolio(position_symbols=["XAGUSD"], correlation_matrix=None)
         verdict = engine.evaluate(
             _make_signal(),
@@ -298,7 +315,7 @@ class TestRiskEngineLayer2:
         assert verdict.reason_code != RejectReason.HIGH_CORRELATION
 
     def test_max_positions_reached_rejected(self):
-        engine = RiskEngine()
+        engine = _make_engine()
         symbols = [f"SYM{i}" for i in range(20)]
         portfolio = _make_portfolio(position_symbols=symbols)
         verdict = engine.evaluate(
@@ -312,7 +329,7 @@ class TestRiskEngineLayer2:
         assert verdict.reason_code == RejectReason.MAX_POSITIONS_REACHED
 
     def test_positions_at_boundary_passes(self):
-        engine = RiskEngine()
+        engine = _make_engine()
         symbols = [f"SYM{i}" for i in range(19)]
         verdict = engine.evaluate(
             _make_signal(),
@@ -328,7 +345,7 @@ class TestRiskEngineLayer3:
     """Layer 3: account-level checks."""
 
     def test_daily_loss_limit_rejected(self):
-        engine = RiskEngine()
+        engine = _make_engine()
         verdict = engine.evaluate(
             _make_signal(),
             _make_account(daily_pnl=-250.0, equity=10000.0),
@@ -340,7 +357,7 @@ class TestRiskEngineLayer3:
         assert verdict.reason_code == RejectReason.DAILY_LOSS_LIMIT
 
     def test_weekly_loss_limit_rejected(self):
-        engine = RiskEngine()
+        engine = _make_engine()
         verdict = engine.evaluate(
             _make_signal(),
             _make_account(weekly_pnl=-600.0, equity=10000.0),
@@ -352,7 +369,7 @@ class TestRiskEngineLayer3:
         assert verdict.reason_code == RejectReason.WEEKLY_LOSS_LIMIT
 
     def test_drawdown_limit_rejected(self):
-        engine = RiskEngine()
+        engine = _make_engine()
         verdict = engine.evaluate(
             _make_signal(),
             _make_account(current_drawdown_pct=0.18),
@@ -364,7 +381,7 @@ class TestRiskEngineLayer3:
         assert verdict.reason_code == RejectReason.DRAWDOWN_LIMIT
 
     def test_drawdown_at_boundary_passes(self):
-        engine = RiskEngine()
+        engine = _make_engine()
         verdict = engine.evaluate(
             _make_signal(),
             _make_account(current_drawdown_pct=0.14),
@@ -375,7 +392,7 @@ class TestRiskEngineLayer3:
         assert verdict.layer_failed != 3
 
     def test_insufficient_margin_rejected(self):
-        engine = RiskEngine()
+        engine = _make_engine()
         verdict = engine.evaluate(
             _make_signal(),
             _make_account(margin_level_pct=150.0),
@@ -388,7 +405,7 @@ class TestRiskEngineLayer3:
 
     def test_margin_level_zero_skipped(self):
         """margin_level_pct=0 means no margin data available — should skip check."""
-        engine = RiskEngine()
+        engine = _make_engine()
         verdict = engine.evaluate(
             _make_signal(),
             _make_account(margin_level_pct=0.0),
@@ -400,7 +417,7 @@ class TestRiskEngineLayer3:
 
     def test_positive_daily_pnl_not_rejected(self):
         """Profitable day should not trigger daily loss."""
-        engine = RiskEngine()
+        engine = _make_engine()
         verdict = engine.evaluate(
             _make_signal(),
             _make_account(daily_pnl=500.0),
@@ -415,7 +432,7 @@ class TestRiskEngineLayer4:
     """Layer 4: sizing checks."""
 
     def test_zero_stop_distance_rejected(self):
-        engine = RiskEngine()
+        engine = _make_engine()
         sig = _make_signal(entry_price=2025.0, stop_loss=2025.0)
         verdict = engine.evaluate(
             sig,
@@ -428,7 +445,7 @@ class TestRiskEngineLayer4:
         assert verdict.reason_code == RejectReason.SIZING_REJECTED
 
     def test_sizing_with_high_volatility(self):
-        engine = RiskEngine()
+        engine = _make_engine()
         verdict = engine.evaluate(
             _make_signal(),
             _make_account(),
@@ -440,7 +457,7 @@ class TestRiskEngineLayer4:
         assert verdict.approved_quantity > 0
 
     def test_sizing_with_zero_volatility(self):
-        engine = RiskEngine()
+        engine = _make_engine()
         verdict = engine.evaluate(
             _make_signal(),
             _make_account(),
@@ -452,7 +469,7 @@ class TestRiskEngineLayer4:
 
     def test_sizing_clamp_vol_scalar_max(self):
         """Very low vol should clamp vol_scalar to 3.0 max."""
-        engine = RiskEngine()
+        engine = _make_engine()
         verdict = engine.evaluate(
             _make_signal(),
             _make_account(),
@@ -465,7 +482,7 @@ class TestRiskEngineLayer4:
 
     def test_sizing_clamp_vol_scalar_min(self):
         """Very high vol should clamp vol_scalar to 0.1 min."""
-        engine = RiskEngine()
+        engine = _make_engine()
         verdict = engine.evaluate(
             _make_signal(),
             _make_account(),
@@ -482,7 +499,7 @@ class TestRiskEngineLayer4:
             RegimeType.HIGH_VOLATILITY: 0.5,
             RegimeType.RANGE_BOUND: 1.0,
         }
-        engine = RiskEngine(regime_multiplier_map=multipliers)
+        engine = _make_engine(regime_multiplier_map=multipliers)
         crisis = engine.evaluate(
             _make_signal(),
             _make_account(),
@@ -502,7 +519,7 @@ class TestRiskEngineLayer4:
         assert crisis.approved_quantity < normal.approved_quantity
 
     def test_approved_quantity_positive(self):
-        engine = RiskEngine()
+        engine = _make_engine()
         verdict = engine.evaluate(
             _make_signal(),
             _make_account(equity=10000.0),
@@ -514,7 +531,7 @@ class TestRiskEngineLayer4:
         assert verdict.approved_quantity > 0
 
     def test_kelly_cap_enforced(self):
-        engine = RiskEngine()
+        engine = _make_engine()
         verdict = engine.evaluate(
             _make_signal(),
             _make_account(),
@@ -530,7 +547,7 @@ class TestRiskEngineCRISISCascade:
     """CRISIS regime cascade — extreme volatility, drawdowns, full halt."""
 
     def test_crisis_regime_reduces_sizing(self):
-        engine = RiskEngine(regime_multiplier_map={RegimeType.CRISIS: 0.25})
+        engine = _make_engine(regime_multiplier_map={RegimeType.CRISIS: 0.25})
         crisis = engine.evaluate(
             _make_signal(),
             _make_account(),
@@ -549,7 +566,7 @@ class TestRiskEngineCRISISCascade:
 
     def test_crisis_with_high_drawdown双重打击(self):
         """CRISIS regime + high drawdown → double protection."""
-        engine = RiskEngine()
+        engine = _make_engine()
         verdict = engine.evaluate(
             _make_signal(),
             _make_account(current_drawdown_pct=0.16),
@@ -563,7 +580,7 @@ class TestRiskEngineCRISISCascade:
         """CRISIS + kill switch + drawdown = blocked at every layer."""
         ks = MagicMock()
         ks.is_active.return_value = True
-        engine = RiskEngine(kill_switch=ks)
+        engine = _make_engine(kill_switch=ks)
         verdict = engine.evaluate(
             _make_signal(),
             _make_account(),
@@ -577,7 +594,7 @@ class TestRiskEngineCRISISCascade:
     def test_crisis_circuit_breaker_combination(self):
         cb = MagicMock()
         cb.is_open.return_value = True
-        engine = RiskEngine(circuit_breaker=cb)
+        engine = _make_engine(circuit_breaker=cb)
         verdict = engine.evaluate(
             _make_signal(),
             _make_account(),
@@ -593,7 +610,7 @@ class TestRiskEngineFailover:
 
     def test_session_checker_unavailable(self):
         """No session checker → skip session check, don't block."""
-        engine = RiskEngine(session_checker=None)
+        engine = _make_engine(session_checker=None)
         verdict = engine.evaluate(
             _make_signal(),
             _make_account(),
@@ -605,7 +622,7 @@ class TestRiskEngineFailover:
 
     def test_schema_validator_unavailable(self):
         """No schema validator → skip validation, don't block."""
-        engine = RiskEngine(schema_validator=None)
+        engine = _make_engine(schema_validator=None)
         verdict = engine.evaluate(
             _make_signal(),
             _make_account(),
@@ -617,7 +634,7 @@ class TestRiskEngineFailover:
 
     def test_correlation_provider_unavailable(self):
         """No correlation provider → skip correlation check."""
-        engine = RiskEngine(correlation_provider=None)
+        engine = _make_engine(correlation_provider=None)
         portfolio = _make_portfolio(position_symbols=["XAGUSD"])
         verdict = engine.evaluate(
             _make_signal(),
@@ -731,7 +748,8 @@ class TestKillSwitch:
         fpath = tmp_path / "ks.json"
         fpath.write_text("NOT JSON!!!")
         ks = KillSwitch(state_file=str(fpath))
-        assert not ks.is_active()
+        # Corrupted state → fail-closed (kill switch activates)
+        assert ks.is_active()
 
     def test_persistence_across_instances(self, tmp_path):
         fpath = str(tmp_path / "ks.json")
