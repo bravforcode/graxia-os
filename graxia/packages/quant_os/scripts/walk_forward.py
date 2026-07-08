@@ -4,7 +4,11 @@ WALK-FORWARD VALIDATION — N sequential folds, single 70/30 split not enough.
 Self-contained: trains XGBoost, evaluates with real costs, aggregates across folds.
 """
 
-import argparse, json, os, warnings
+import argparse
+import json
+import os
+import warnings
+
 import numpy as np
 import pandas as pd
 import xgboost as xgb
@@ -35,20 +39,34 @@ def load_features(symbol: str, freq: str) -> pd.DataFrame:
 
 def get_feature_cols(df: pd.DataFrame) -> list[str]:
     exclude = {
-        "target", "target_return", "symbol", "freq",
-        "tb_label", "tb_bar_hit", "tb_side", "tb_ret",
-        "tb_k_upper", "tb_k_lower", "open", "high", "low", "close",
-        "volume", "tick_count",
+        "target",
+        "target_return",
+        "symbol",
+        "freq",
+        "tb_label",
+        "tb_bar_hit",
+        "tb_side",
+        "tb_ret",
+        "tb_k_upper",
+        "tb_k_lower",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "tick_count",
     }
     available = set(df.columns)
     exclude &= available
-    return [c for c in df.columns if c not in exclude
-            and df[c].dtype in (np.float64, np.float32, np.int64, np.int32)]
+    return [c for c in df.columns if c not in exclude and df[c].dtype in (np.float64, np.float32, np.int64, np.int32)]
 
 
 def compute_fold_pnl(
-    returns: np.ndarray, preds: np.ndarray, confs: np.ndarray,
-    spread_cost: float, slippage_p90: float,
+    returns: np.ndarray,
+    preds: np.ndarray,
+    confs: np.ndarray,
+    spread_cost: float,
+    slippage_p90: float,
     min_confidence: float = 0.85,
     mask: np.ndarray | None = None,
     close_prices: np.ndarray | None = None,
@@ -78,11 +96,20 @@ def compute_fold_pnl(
 
     if n_trades == 0:
         return {
-            "n_trades": 0, "pct_bars": 0.0, "accuracy": 0.0,
-            "wins": 0, "losses": 0, "gross_pnl": 0.0,
-            "total_cost": 0.0, "net_pnl": 0.0,
-            "win_rate": 0.0, "avg_win": 0.0, "avg_loss": 0.0,
-            "max_drawdown": 0.0, "sharpe_ratio": 0.0, "avg_move_points": 0.0,
+            "n_trades": 0,
+            "pct_bars": 0.0,
+            "accuracy": 0.0,
+            "wins": 0,
+            "losses": 0,
+            "gross_pnl": 0.0,
+            "total_cost": 0.0,
+            "net_pnl": 0.0,
+            "win_rate": 0.0,
+            "avg_win": 0.0,
+            "avg_loss": 0.0,
+            "max_drawdown": 0.0,
+            "sharpe_ratio": 0.0,
+            "avg_move_points": 0.0,
         }
 
     dir_mask = direction[mask]
@@ -91,15 +118,11 @@ def compute_fold_pnl(
 
     if close_prices is not None:
         closes_masked = close_prices[mask]
-        assert closes_masked.shape == rets.shape, (
-            f"Shape mismatch: close_prices {closes_masked.shape} vs returns {rets.shape}"
-        )
-        assert closes_masked.min() > 1000, (
-            f"Price sanity check failed: min close {closes_masked.min():.2f} < $1000"
-        )
-        assert closes_masked.max() < 10000, (
-            f"Price sanity check failed: max close {closes_masked.max():.2f} > $10000"
-        )
+        assert (
+            closes_masked.shape == rets.shape
+        ), f"Shape mismatch: close_prices {closes_masked.shape} vs returns {rets.shape}"
+        assert closes_masked.min() > 1000, f"Price sanity check failed: min close {closes_masked.min():.2f} < $1000"
+        assert closes_masked.max() < 10000, f"Price sanity check failed: max close {closes_masked.max():.2f} > $10000"
         price_mult = float(np.mean(closes_masked))
     else:
         price_mult = 2350.0
@@ -117,7 +140,7 @@ def compute_fold_pnl(
     avg_win = net_pnl[net_pnl > 0].mean() if (net_pnl > 0).sum() > 0 else 0.0
     avg_loss = net_pnl[net_pnl < 0].mean() if (net_pnl < 0).sum() > 0 else 0.0
     cumsum = net_pnl.cumsum()
-    peak = cumsum.cummax()
+    peak = np.maximum.accumulate(cumsum)
     max_dd = (cumsum - peak).min() if len(cumsum) > 0 else 0.0
 
     sr_mean = net_pnl.mean() if len(net_pnl) > 0 else 0.0
@@ -145,10 +168,14 @@ def compute_fold_pnl(
 
 
 def walk_forward(
-    df: pd.DataFrame, feature_cols: list[str],
+    df: pd.DataFrame,
+    feature_cols: list[str],
     model_params: dict,
-    train_window: int, test_window: int, step: int,
-    spread_cost: float, slippage_p90: float,
+    train_window: int,
+    test_window: int,
+    step: int,
+    spread_cost: float,
+    slippage_p90: float,
     min_confidence: float = 0.85,
     min_expected_profit: float = 0.0005,
     per_trade_path: str | None = None,
@@ -209,22 +236,26 @@ def walk_forward(
         # Collect per-trade data for Gate #2 (mag_pred quality) and #3 (conf accuracy)
         test_times = df.index[train_end:test_end]
         for t_bar in range(len(X_test)):
-            per_trade_records.append({
-                "fold": fold_idx,
-                "timestamp": test_times[t_bar],
-                "direction": int(direction[t_bar]),
-                "confidence": float(conf[t_bar]),
-                "mag_pred": float(mag_pred[t_bar]),
-                "realized_return": float(ret_test[t_bar]),
-                "expected_profit": float(expected_profit[t_bar]),
-                "trade_selected": bool(combined_mask[t_bar]),
-                "target": int(y_test_cls[t_bar]),
-            })
+            per_trade_records.append(
+                {
+                    "fold": fold_idx,
+                    "timestamp": test_times[t_bar],
+                    "direction": int(direction[t_bar]),
+                    "confidence": float(conf[t_bar]),
+                    "mag_pred": float(mag_pred[t_bar]),
+                    "realized_return": float(ret_test[t_bar]),
+                    "expected_profit": float(expected_profit[t_bar]),
+                    "trade_selected": bool(combined_mask[t_bar]),
+                    "target": int(y_test_cls[t_bar]),
+                }
+            )
 
         # Evaluate
         test_close = close_array[train_end:test_end] if close_array is not None else None
         result = compute_fold_pnl(
-            ret_test, preds, conf,
+            ret_test,
+            preds,
+            conf,
             spread_cost=spread_cost,
             slippage_p90=slippage_p90,
             min_confidence=0.0,
@@ -246,6 +277,7 @@ def walk_forward(
     # Save per-trade data (for Gate #2 mag_pred quality, Gate #3 conf accuracy)
     if per_trade_path and per_trade_records:
         import pandas as pd
+
         pt_df = pd.DataFrame(per_trade_records)
         out_dir = os.path.dirname(per_trade_path)
         if out_dir:
@@ -303,11 +335,17 @@ def print_results(agg: dict):
     print(f"  Folds: {a['n_folds']}  Windows: train={p['train_window']} test={p['test_window']} step={p['step']}")
     print(f"  Cost: ${p['spread_cost']+p['slippage_p90']:.3f}/trade  Conf>={p['min_confidence']}")
     print()
-    print(f"  {'Fold':>4s} | {'TrainAcc':>8s} | {'OOSAcc':>7s} | {'Trades':>6s} | {'Acc':>6s} | {'Gross':>7s} | {'Net':>8s} | {'SR':>6s} |")
-    print(f"  {'----':>4s}-+-{'--------':>8s}-+-{'-------':>7s}-+-{'------':>6s}-+-{'------':>6s}-+-{'-------':>7s}-+-{'--------':>8s}-+-{'------':>6s}-+")
+    print(
+        f"  {'Fold':>4s} | {'TrainAcc':>8s} | {'OOSAcc':>7s} | {'Trades':>6s} | {'Acc':>6s} | {'Gross':>7s} | {'Net':>8s} | {'SR':>6s} |"
+    )
+    print(
+        f"  {'----':>4s}-+-{'--------':>8s}-+-{'-------':>7s}-+-{'------':>6s}-+-{'------':>6s}-+-{'-------':>7s}-+-{'--------':>8s}-+-{'------':>6s}-+"
+    )
     for f in agg["folds"]:
         ok = "*" if f["net_pnl"] > 0 and f["n_trades"] >= 3 else " "
-        print(f"  {f['fold']:>4d}{ok} | {f['train_acc']:>.4f}   | {f['oos_acc']:>.4f}  | {f['n_trades']:>6d} | {f['accuracy']:>.4f} | {f['gross_pnl']:>+6.2f}  | {f['net_pnl']:>+7.2f}  | {f['sharpe_ratio']:>+5.1f}  |")
+        print(
+            f"  {f['fold']:>4d}{ok} | {f['train_acc']:>.4f}   | {f['oos_acc']:>.4f}  | {f['n_trades']:>6d} | {f['accuracy']:>.4f} | {f['gross_pnl']:>+6.2f}  | {f['net_pnl']:>+7.2f}  | {f['sharpe_ratio']:>+5.1f}  |"
+        )
 
     print()
     print("  === AGGREGATE ===")
@@ -318,7 +356,9 @@ def print_results(agg: dict):
     if a["stable"]:
         print(f"\n  [OK] EDGE STABLE — {a['positive_folds']}/{a['n_folds']} folds positive, net=${a['total_net']:.2f}")
     else:
-        print(f"\n  [WARN] EDGE NOT STABLE — {a['positive_folds']}/{a['n_folds']} folds positive, net=${a['total_net']:.2f}")
+        print(
+            f"\n  [WARN] EDGE NOT STABLE — {a['positive_folds']}/{a['n_folds']} folds positive, net=${a['total_net']:.2f}"
+        )
     print("=" * 70)
 
 
@@ -332,13 +372,21 @@ def main():
     parser.add_argument("--spread-cost", type=float, default=0.024)
     parser.add_argument("--slippage-p90", type=float, default=0.02)
     parser.add_argument("--min-confidence", type=float, default=0.85)
-    parser.add_argument("--min-expected-profit", type=float, default=0.0005,
-        help="Minimum expected profit (return units) to take a trade")
+    parser.add_argument(
+        "--min-expected-profit",
+        type=float,
+        default=0.0005,
+        help="Minimum expected profit (return units) to take a trade",
+    )
     parser.add_argument("--max-depth", type=int, default=5)
     parser.add_argument("--n-estimators", type=int, default=100)
     parser.add_argument("--output", default=OUT_DIR)
-    parser.add_argument("--cost-config", type=str, default=None,
-        help="Path to cost calibration JSON. If provided, overrides --spread-cost and --slippage-p90 per symbol.")
+    parser.add_argument(
+        "--cost-config",
+        type=str,
+        default=None,
+        help="Path to cost calibration JSON. If provided, overrides --spread-cost and --slippage-p90 per symbol.",
+    )
     args = parser.parse_args()
 
     os.makedirs(args.output, exist_ok=True)
@@ -382,20 +430,28 @@ def main():
     # Run multiple confidence thresholds if sweep requested
     for conf in [args.min_confidence]:
         print(f"\n--- Conf >= {conf} ---")
-        per_trade_path = os.path.join(args.output,
-            f"per_trade_{args.symbol}_{args.freq}_{args.train_window}w_{args.test_window}t_conf{conf}.parquet")
+        per_trade_path = os.path.join(
+            args.output,
+            f"per_trade_{args.symbol}_{args.freq}_{args.train_window}w_{args.test_window}t_conf{conf}.parquet",
+        )
         agg = walk_forward(
-            df, feature_cols, model_params,
-            args.train_window, args.test_window, args.step,
-            args.spread_cost, args.slippage_p90,
+            df,
+            feature_cols,
+            model_params,
+            args.train_window,
+            args.test_window,
+            args.step,
+            args.spread_cost,
+            args.slippage_p90,
             min_confidence=conf,
             min_expected_profit=args.min_expected_profit,
             per_trade_path=per_trade_path,
         )
         print_results(agg)
 
-        path = os.path.join(args.output,
-            f"wf_{args.symbol}_{args.freq}_{args.train_window}w_{args.test_window}t_conf{conf}.json")
+        path = os.path.join(
+            args.output, f"wf_{args.symbol}_{args.freq}_{args.train_window}w_{args.test_window}t_conf{conf}.json"
+        )
         with open(path, "w") as f:
             json.dump(convert_numpy(agg), f, indent=2)
         print(f"  Saved: {path}")
