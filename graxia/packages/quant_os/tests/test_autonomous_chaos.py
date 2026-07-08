@@ -1582,7 +1582,7 @@ class TestNotificationsChaos:
 
     @pytest.mark.asyncio
     async def test_disabled_notifier_no_send(self) -> None:
-        notifier = TradeNotifier(bot_token="", chat_id="")
+        notifier = TradeNotifier(bot_token="", chat_id="", enabled=False)
         await notifier.notify_trade(_make_decision(), MagicMock(success=True))
 
     @pytest.mark.asyncio

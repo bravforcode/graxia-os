@@ -45,8 +45,6 @@ class TrailingStopConfig:
 _SYMBOL_STOP_CONFIGS: dict[str, TrailingStopConfig] = {
     "XAUUSD": TrailingStopConfig(enabled=True, trail_multiplier=2.5, stop_mode="fixed"),
     "NAS100": TrailingStopConfig(enabled=True, trail_multiplier=2.0, stop_mode="fixed"),
-    "US100": TrailingStopConfig(enabled=True, trail_multiplier=2.0, stop_mode="fixed"),
-    "USTEC": TrailingStopConfig(enabled=True, trail_multiplier=2.0, stop_mode="fixed"),
     "USOIL": TrailingStopConfig(enabled=True, trail_multiplier=3.0, stop_mode="fixed"),
     "USDJPY": TrailingStopConfig(enabled=True, trail_multiplier=1.5, stop_mode="fixed"),
 }
@@ -69,7 +67,7 @@ VENUE_MAP: dict[str, str] = {
     "metals": "mt5",
     "forex": "mt5",
     "indices": "mt5",
-    "crypto": "mt5",
+    "crypto": "binance",
 }
 
 # Partial-fill timeout (seconds)
@@ -581,8 +579,42 @@ class OMS:
         Returns:
             Order with status FILLED or FAILED.
         """
+        # NOTE: close orders are intentionally exempt from the pre-trade risk
+        # gate — closing a position reduces risk, never increases it.
+        logger.info(
+            "oms.close_position: risk gate skipped (close reduces risk) symbol=%s ticket=%s",
+            symbol,
+            broker_position_id,
+        )
         adapter = self._get_adapter(asset_class)
         self._ensure_connected(adapter)
+
+        # Sanity check: verify the position actually exists before attempting
+        # the close.  If we cannot confirm it, warn but still defer to the
+        # broker (the broker is the source of truth and will reject a close
+        # on a non-existent ticket).
+        try:
+            _existing = adapter.get_positions()
+        except Exception as exc:
+            logger.warning(
+                "oms.close_position: could not verify position existence symbol=%s ticket=%s error=%s",
+                symbol,
+                broker_position_id,
+                exc,
+            )
+            _existing = []
+        if _existing:
+            _ticket_found = any(
+                str(p.get("ticket", p.get("position_id", ""))) == str(broker_position_id) for p in _existing
+            )
+            if not _ticket_found:
+                logger.warning(
+                    "oms.close_position: position not found in broker state symbol=%s ticket=%s — "
+                    "proceeding (broker will reject if truly absent)",
+                    symbol,
+                    broker_position_id,
+                )
+
         try:
             result = adapter.close_position(
                 broker_position_id=broker_position_id,
@@ -662,11 +694,13 @@ class OMS:
         if order.stop_loss is not None:
             return
 
-        # Find the position that matches this order
+        # Find the position that matches this order.
+        # MT5 may truncate the comment field to 31 chars, so match with
+        # ``startswith`` rather than exact equality against the full UUID.
         positions = adapter.get_positions()
         position = None
         for p in positions:
-            if p.get("comment") == order.order_id:
+            if p.get("comment", "").startswith(order.order_id):
                 position = p
                 break
         if position is None:

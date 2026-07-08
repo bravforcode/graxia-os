@@ -22,11 +22,15 @@ class TestGoldenRules:
         assert GOLDEN_RULES.PAPER_MIN_TRADING_DAYS >= 60
 
     def test_max_risk_per_trade(self):
-        """Max risk per trade is defined in RiskPolicy (10 bps = 0.10%)"""
+        """Risk per trade is defined in RiskPolicy (100 bps = 1.00%)."""
+        # Updated 2026-07-07: RiskPolicy defaults changed to 1% per trade (100 bps)
         from risk.risk_policy import RiskPolicy
 
         rp = RiskPolicy()
-        assert rp.risk_per_trade_bps == 10  # 0.10% risk per trade
+        assert rp.risk_per_trade_bps == 100  # 1.00% risk per trade
+        assert rp.max_daily_loss_bps == 50  # 0.50% daily loss limit
+        assert rp.max_weekly_loss_bps == 150  # 1.50% weekly loss limit
+        assert rp.max_total_drawdown_bps == 300  # 3.00% total drawdown limit
 
     def test_hard_stop_drawdown(self):
         """15% hard stop drawdown"""

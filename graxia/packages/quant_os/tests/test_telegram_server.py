@@ -14,6 +14,7 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, patch
 
 import pytest
+import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
 from graxia.packages.quant_os.api.telegram_server import (
@@ -52,7 +53,7 @@ def app():
     return application
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def client(app):
     """Create an async test client."""
     transport = ASGITransport(app=app)

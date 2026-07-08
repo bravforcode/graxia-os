@@ -333,9 +333,9 @@ class TestRiskPolicy:
     def test_default_values(self):
         rp = RiskPolicy()
         assert rp.risk_per_trade_bps == 100
-        assert rp.max_daily_loss_bps == 200
-        assert rp.max_weekly_loss_bps == 500
-        assert rp.max_total_drawdown_bps == 1000
+        assert rp.max_daily_loss_bps == 50
+        assert rp.max_weekly_loss_bps == 150
+        assert rp.max_total_drawdown_bps == 300
 
     def test_risk_per_trade_fraction(self):
         rp = RiskPolicy(risk_per_trade_bps=10)

@@ -68,7 +68,9 @@ _SYMBOL_ASSET_CLASS: dict[str, str] = {
     "NAS100": "indices",
     "DE40": "indices",
     "BTCUSD": "crypto",
+    "BTCUSDT": "crypto",
     "ETHUSD": "crypto",
+    "ETHUSDT": "crypto",
 }
 
 
@@ -354,6 +356,7 @@ class TradingLoop:
             if mode in (TradingMode.PAPER, TradingMode.LIVE_MICRO):
                 self._execute_paper(tracked)
             else:
+                # LIVE_LIMITED, LIVE_CONTROLLED — real broker execution.
                 self._execute_live(tracked, asset_class)
         except Exception as exc:
             logger.error(
@@ -431,21 +434,30 @@ class TradingLoop:
 
         if order.status == OrderStatus.FILLED:
             tracked.status = "filled"
-            tracked.fill_price = tracked.entry_price  # broker fills near entry for market orders
+            # TODO: query broker for actual fill price and commission
+            tracked.fill_price = (
+                order.fill_price if hasattr(order, "fill_price") and order.fill_price else tracked.entry_price
+            )
+            slippage = abs(tracked.fill_price - tracked.entry_price) if tracked.fill_price else 0.0
             tracked.fill_quantity = order.quantity
             tracked.broker_order_id = order.broker_order_id or ""
             tracked.filled_at = datetime.now(UTC)
             self._daily_order_count += 1
             self._total_filled += 1
 
+            # TODO: query broker for actual commission
+            logger.warning(
+                "trading_loop.commission_tracking_pending order_id=%s",
+                tracked.order_id,
+            )
             fill_event = FillEvent(
                 order_id=tracked.order_id,
                 symbol=tracked.symbol,
                 side=tracked.side,
-                fill_price=tracked.entry_price,
+                fill_price=tracked.fill_price,
                 fill_quantity=order.quantity,
                 commission=0.0,
-                slippage=0.0,
+                slippage=slippage,
                 strategy_id=tracked.strategy_id,
                 source="mt5_adapter",
                 trace_id=tracked.trace_id if tracked.trace_id else str(uuid.uuid4()),
