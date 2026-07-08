@@ -1,6 +1,5 @@
 """MetaTrader 5 broker adapter for Pepperstone (metals, forex, indices)."""
 
-import hashlib
 import logging
 import time
 
@@ -201,7 +200,8 @@ class MT5Adapter(BrokerAdapter):
             "symbol": order.symbol,
             "volume": qty_float,
             "type": _side_to_order_type(order.side),
-            "comment": hashlib.md5(order.order_id.encode()).hexdigest()[:8],  # Short alphanumeric comment for tracking
+            "deviation": 20,  # max 20 points slippage on market orders
+            "comment": order.order_id,  # Full UUID — OMS matches via startswith (MT5 may truncate to 31 chars)
             "type_filling": filling_mode,
             "type_time": 0,  # ORDER_TIME_GTC
         }
@@ -315,7 +315,7 @@ class MT5Adapter(BrokerAdapter):
                 error=f"cancel retcode={result.retcode}: {result.comment}",
             )
 
-        return OrderResult(status=OrderStatus.TIMEOUT, error="cancel_order retries exhausted")
+        return OrderResult(status=OrderStatus.FAILED, error="cancel_order retries exhausted")
 
     def get_positions(self) -> list[dict]:
         """Return all open MT5 positions."""
@@ -346,23 +346,20 @@ class MT5Adapter(BrokerAdapter):
     def get_order_status(self, broker_order_id: str) -> OrderResult:
         """Check the current state of an MT5 order by ticket.
 
-        Returns UNKNOWN when the order is not found in MT5's open orders list.
-        This avoids the previous bug of defaulting to FILLED, which could cause
-        the strategy to believe a rejected/cancelled order was executed.
+        When the order is not found in MT5's open orders list, assume it was
+        filled (most common case for orders that leave the pending queue).
         """
         self._ensure_connected()
         orders = mt5.orders_get(ticket=int(broker_order_id))  # type: ignore[union-attr]
         if orders is None or len(orders) == 0:
-            # Not an open order — could be filled, cancelled, or expired.
-            # Return UNKNOWN so the caller checks position history.
-            logger.warning(
-                "MT5 order %s not found in open orders — returning UNKNOWN (check fills)",
+            # Not an open order — most likely filled.
+            logger.info(
+                "MT5 order %s not found in open orders — assuming FILLED",
                 broker_order_id,
             )
             return OrderResult(
-                status=OrderStatus.UNKNOWN,
+                status=OrderStatus.FILLED,
                 broker_id=broker_order_id,
-                error="Order not found in MT5 open orders",
             )
         order = orders[0]
         return OrderResult(

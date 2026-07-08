@@ -22,9 +22,12 @@ Payload format:
 import hashlib
 import hmac
 import json
+import logging
 import time
 from datetime import UTC, datetime
 from decimal import Decimal
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
@@ -39,6 +42,7 @@ from ..data.models import Signal as SignalModel
 from ..execution.adapters.manager import BrokerManager
 from ..execution.manager import OrderManager
 from ..risk.engine import RiskEngine
+from ..risk.kill_switch import KillSwitch
 
 webhook_router = APIRouter(prefix="/webhook", tags=["webhook"])
 
@@ -191,20 +195,21 @@ async def tradingview_webhook(
         received_at=datetime.now(UTC),
     )
     db.add(signal)
-    db.commit()
-    db.refresh(signal)
+    await db.commit()
+    await db.refresh(signal)
 
     # Initialize components
     broker_manager = BrokerManager.from_config()
     await broker_manager.initialize()
 
     risk_engine = RiskEngine(db_session=db)
+    kill_switch = KillSwitch()
 
     order_manager = OrderManager(
         db_session=db,
         broker_manager=broker_manager,
         risk_engine=risk_engine,
-        kill_switch=None,  # Would be injected
+        kill_switch=kill_switch,
     )
 
     # Check if we should auto-trade
@@ -215,6 +220,14 @@ async def tradingview_webhook(
         TradingMode.LIVE_CONTROLLED,
     ]:
         try:
+            # Fetch real broker equity for position sizing
+            broker_equity = None
+            try:
+                account_info = broker_manager.active.get_account_info()
+                broker_equity = account_info.equity
+            except Exception:
+                logger.warning("webhook: failed to fetch broker equity, using default")
+
             # Submit order
             from decimal import Decimal
 
@@ -222,7 +235,7 @@ async def tradingview_webhook(
                 symbol=payload.symbol.upper(),
                 side=payload.action.upper(),
                 order_type="MARKET",
-                quantity=calculate_position_size(payload),  # Would calculate based on risk
+                quantity=calculate_position_size(payload, equity=broker_equity),
                 stop_price=Decimal(str(payload.sl)),
                 strategy_id=payload.strategy,
                 signal_id=str(signal.id),
@@ -232,7 +245,7 @@ async def tradingview_webhook(
                 signal.processed = True
                 signal.order_id = result.get("order_id")
                 signal.processed_at = datetime.now(UTC)
-                db.commit()
+                await db.commit()
 
                 return WebhookResponse(
                     success=True,
@@ -243,7 +256,7 @@ async def tradingview_webhook(
                 )
             else:
                 signal.rejection_reason = result.get("error")
-                db.commit()
+                await db.commit()
 
                 return WebhookResponse(
                     success=False,
@@ -255,7 +268,7 @@ async def tradingview_webhook(
 
         except KillSwitchTriggeredError as e:
             signal.rejection_reason = f"Kill switch: {e.switch_type}"
-            db.commit()
+            await db.commit()
 
             return WebhookResponse(
                 success=False,
@@ -298,23 +311,57 @@ async def manual_signal(
         received_at=datetime.now(UTC),
     )
     db.add(signal)
-    db.commit()
+    await db.commit()
 
     return WebhookResponse(success=True, signal_id=str(signal.id), status="recorded", message="Manual signal recorded")
 
 
-def calculate_position_size(payload: TradingViewPayload) -> Decimal:
-    """Calculate position size based on signal parameters"""
-    from decimal import Decimal
+def calculate_position_size(payload: TradingViewPayload, equity: float | None = None) -> Decimal:
+    """Calculate position size based on risk per trade, SL distance, and account equity.
 
-    # Simplified - would use proper position sizing from risk engine
+    Args:
+        payload: TradingView webhook payload with price/SL info.
+        equity: Real broker equity in account currency. If None, uses default $10,000
+                (fallback for paper mode or when broker is unavailable).
+
+    Returns:
+        Position size in lots (Decimal, clamped to [0.01, 1.0]).
+    """
     config = get_config()
+    rp = config.risk_policy
 
-    # Default to 0.01 lot for testing
-    # In production, calculate based on:
-    # - Account balance
-    # - Risk per trade
-    # - SL distance
-    # - Symbol pip value
+    # Use real broker equity if provided, otherwise fall back to default
+    if equity is None or equity <= 0:
+        equity = 10000.0  # safe default for paper mode / broker unavailable
 
-    return Decimal("0.01")  # Minimum lot size
+    # Zero or missing ATR → return minimum lot (can't size without volatility)
+    atr = getattr(payload, "atr", None)
+    if atr is None or atr <= 0:
+        return Decimal("0.01")
+
+    # Risk amount = equity * risk_per_trade_fraction
+    risk_fraction = float(rp.risk_per_trade_fraction)
+    risk_amount = equity * risk_fraction
+
+    # SL distance in price
+    sl_distance = abs(payload.price - payload.sl)
+    if sl_distance <= 0:
+        return Decimal("0.01")  # fallback to minimum
+
+    # Contract size depends on symbol (units per lot)
+    # XAUUSD: 100 oz per lot, EURUSD: 100000 per lot
+    symbol = payload.symbol.upper()
+    if "XAU" in symbol or "XAG" in symbol:
+        contract_size = 100.0
+    elif "JPY" in symbol:
+        contract_size = 100000.0 / 100.0  # JPY pairs
+    else:
+        contract_size = 100000.0  # standard forex lot
+
+    # Lot size = risk_amount / (sl_distance * contract_size)
+    lot_size = risk_amount / (sl_distance * contract_size)
+
+    # Clamp to sane range
+    lot_size = max(0.01, min(lot_size, 1.0))
+
+    return Decimal(str(round(lot_size, 2)))

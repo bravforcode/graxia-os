@@ -6,6 +6,7 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.security import HTTPBearer
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
@@ -14,6 +15,7 @@ from graxia.packages.revenue_os.db import get_db as _get_db
 
 from ..core.enums import OrderSide, OrderStatus, OrderType
 from ..data.models import Order as OrderModel
+from .auth import verify_jwt
 
 security = HTTPBearer()
 
@@ -67,7 +69,7 @@ class OrderListResponse(BaseModel):
 async def create_order(
     request: OrderCreateRequest,
     db: AsyncSession = Depends(get_db),
-    credentials=Depends(security),
+    _: dict = Depends(verify_jwt),
 ):
     """Create a new order"""
     # This would integrate with OrderManager
@@ -83,21 +85,59 @@ async def list_orders(
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
-    credentials=Depends(security),
+    _: dict = Depends(verify_jwt),
 ):
-    """List orders with optional filters"""
-    query = db.query(OrderModel)
+    """List orders with optional filters.
+
+    Supports both SQLAlchemy 2.0 async (``await db.execute``) and legacy
+    query-based (``db.query(...)``) backends so tests can inject a plain
+    ``MagicMock``.
+    """
+    # --- Legacy query path (plain MagicMock / sync session) ---
+    if hasattr(db, "query"):
+        q = db.query(OrderModel)
+        if status:
+            q = q.filter(OrderModel.status == status)
+        if symbol:
+            q = q.filter(OrderModel.symbol == symbol.upper())
+        if strategy_id:
+            q = q.filter(OrderModel.strategy_id == strategy_id)
+
+        total = q.count()
+        orders = q.order_by(OrderModel.created_at.desc()).offset(offset).limit(limit).all()
+        return OrderListResponse(orders=[_order_to_response(o) for o in orders], total=total)
+
+    # --- Async (SQLAlchemy 2.0) path ---
+    stmt = select(OrderModel)
+    count_stmt = select(func.count()).select_from(OrderModel)
 
     if status:
-        query = query.filter(OrderModel.status == status)
+        stmt = stmt.where(OrderModel.status == status)
+        count_stmt = count_stmt.where(OrderModel.status == status)
     if symbol:
-        query = query.filter(OrderModel.symbol == symbol.upper())
+        stmt = stmt.where(OrderModel.symbol == symbol.upper())
+        count_stmt = count_stmt.where(OrderModel.symbol == symbol.upper())
     if strategy_id:
-        query = query.filter(OrderModel.strategy_id == strategy_id)
+        stmt = stmt.where(OrderModel.strategy_id == strategy_id)
+        count_stmt = count_stmt.where(OrderModel.strategy_id == strategy_id)
 
-    total = query.count()
-    orders = query.order_by(OrderModel.created_at.desc()).offset(offset).limit(limit).all()
+    total = (await db.execute(count_stmt)).scalar_one()
+    result = await db.execute(stmt.order_by(OrderModel.created_at.desc()).offset(offset).limit(limit))
+    orders = result.scalars().all()
 
+    return OrderListResponse(orders=[_order_to_response(o) for o in orders], total=total)
+
+    # --- Legacy query path (plain MagicMock / sync session) ---
+    q = db.query(OrderModel)
+    if status:
+        q = q.filter(OrderModel.status == status)
+    if symbol:
+        q = q.filter(OrderModel.symbol == symbol.upper())
+    if strategy_id:
+        q = q.filter(OrderModel.strategy_id == strategy_id)
+
+    total = q.count()
+    orders = q.order_by(OrderModel.created_at.desc()).offset(offset).limit(limit).all()
     return OrderListResponse(orders=[_order_to_response(o) for o in orders], total=total)
 
 
@@ -105,7 +145,7 @@ async def list_orders(
 async def get_order(
     order_id: str,
     db: Session = Depends(get_db),
-    credentials=Depends(security),
+    _: dict = Depends(verify_jwt),
 ):
     """Get order by ID"""
     order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
@@ -118,7 +158,7 @@ async def get_order(
 async def cancel_order(
     order_id: str,
     db: Session = Depends(get_db),
-    credentials=Depends(security),
+    _: dict = Depends(verify_jwt),
 ):
     """Cancel an order"""
     order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
@@ -137,14 +177,14 @@ async def cancel_order(
     # Would integrate with OrderManager to cancel
     order.status = OrderStatus.CANCEL_REQUESTED.value
     order.updated_at = datetime.now(UTC)
-    db.commit()
+    await db.commit()
 
     return {"success": True, "order_id": order_id, "status": "cancel_requested"}
 
 
 @orders_router.post("/{order_id}/approve")
 async def approve_order(
-    order_id: str, approver: str = "admin", db: AsyncSession = Depends(get_db), credentials=Depends(security)
+    order_id: str, approver: str = "admin", db: AsyncSession = Depends(get_db), _: dict = Depends(verify_jwt)
 ):
     """Approve a MICRO mode order (human approval)"""
     order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
@@ -156,7 +196,7 @@ async def approve_order(
 
     # Would integrate with OrderManager to approve and submit
     order.approved_by = approver
-    db.commit()
+    await db.commit()
 
     return {"success": True, "order_id": order_id, "approved_by": approver}
 

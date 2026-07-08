@@ -1,15 +1,43 @@
 """Admin API endpoints - requires authentication"""
 
 import hmac
+import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import BaseModel
 
 from ..core.config import get_config
 from ..core.enums import TradingMode
 
+logger = logging.getLogger(__name__)
+
 admin_router = APIRouter(prefix="/admin", tags=["admin"])
+
+
+async def verify_admin(
+    api_key: str = Header(..., alias="X-Admin-Key"),
+) -> bool:
+    """Verify admin API key — constant-time comparison.
+
+    Local definition (not re-exported from api.auth) so tests can
+    patch ``api.admin.get_config`` and have it affect this function.
+    Fail-closed: empty configured key → 500, missing/invalid header → 401.
+    """
+    config = get_config()
+    expected = config.admin_api_key
+    if not expected:
+        logger.error("auth.verify_admin: ADMIN_API_KEY not configured — fail-closed")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Admin API key not configured",
+        )
+    if not api_key or not hmac.compare_digest(api_key, expected):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid admin key",
+        )
+    return True
 
 
 class ModeChangeRequest(BaseModel):
@@ -26,14 +54,6 @@ class StrategyUpdateRequest(BaseModel):
     strategy_id: str
     params: dict[str, Any]
     freeze_after_update: bool = True
-
-
-async def verify_admin(api_key: str = Header(..., alias="X-Admin-Key")):
-    """Verify admin API key — constant-time comparison to prevent timing attacks."""
-    config = get_config()
-    if not config.admin_api_key or not hmac.compare_digest(api_key, config.admin_api_key):
-        raise HTTPException(status_code=401, detail="Invalid admin key")
-    return True
 
 
 @admin_router.post("/mode")
@@ -114,6 +134,10 @@ async def admin_trigger_kill_switch(
     reason: str, user_id: str, close_positions: bool = True, authorized: bool = Depends(verify_admin)
 ):
     """Manually trigger kill switch"""
+    from ..risk.kill_switch import KillSwitch
+
+    ks = KillSwitch()
+    ks.activate(reason=reason, source=f"admin:{user_id}")
     return {
         "success": True,
         "action": "trigger",
@@ -128,6 +152,10 @@ async def admin_trigger_kill_switch(
 @admin_router.post("/kill-switch/reset")
 async def admin_reset_kill_switch(reason: str, user_id: str, authorized: bool = Depends(verify_admin)):
     """Manually reset kill switch"""
+    from ..risk.kill_switch import KillSwitch
+
+    ks = KillSwitch()
+    ks.deactivate(reason=reason, authorized_by=f"admin:{user_id}")
     return {
         "success": True,
         "action": "reset",
@@ -139,8 +167,12 @@ async def admin_reset_kill_switch(reason: str, user_id: str, authorized: bool = 
 
 @admin_router.get("/audit-log")
 async def get_audit_log(limit: int = 100, authorized: bool = Depends(verify_admin)):
-    """Get recent audit log entries"""
-    return {"entries": [], "total": 0, "limit": limit}
+    """Get recent audit log entries from kill switch state"""
+    from ..risk.kill_switch import KillSwitch
+
+    ks = KillSwitch()
+    history = ks._state.get("history", [])[-limit:]
+    return {"entries": history, "total": len(history), "limit": limit}
 
 
 @admin_router.get("/system-stats")
