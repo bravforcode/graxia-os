@@ -127,19 +127,6 @@ async def list_orders(
 
     return OrderListResponse(orders=[_order_to_response(o) for o in orders], total=total)
 
-    # --- Legacy query path (plain MagicMock / sync session) ---
-    q = db.query(OrderModel)
-    if status:
-        q = q.filter(OrderModel.status == status)
-    if symbol:
-        q = q.filter(OrderModel.symbol == symbol.upper())
-    if strategy_id:
-        q = q.filter(OrderModel.strategy_id == strategy_id)
-
-    total = q.count()
-    orders = q.order_by(OrderModel.created_at.desc()).offset(offset).limit(limit).all()
-    return OrderListResponse(orders=[_order_to_response(o) for o in orders], total=total)
-
 
 @orders_router.get("/{order_id}", response_model=OrderResponse)
 async def get_order(

@@ -178,6 +178,24 @@ class SchemaValidator(Protocol):
     def validate_signal(self, signal: Signal) -> bool: ...
 
 
+class CheckableOrder(Protocol):
+    """Protocol for objects accepted by :meth:`RiskEngine.check_order`.
+
+    The canonical :class:`execution.order.Order` dataclass satisfies this.
+    """
+
+    @property
+    def symbol(self) -> str: ...
+    @property
+    def side(self) -> str: ...
+    @property
+    def price(self) -> float | None: ...
+    @property
+    def stop_price(self) -> float | None: ...
+    @property
+    def stop_loss(self) -> float | None: ...
+
+
 # ── Kill Switch / Circuit Breaker protocols ──────────────────────────────────
 
 
@@ -262,7 +280,7 @@ class RiskEngine:
         # Layer 4
         return self._layer4(signal, account, portfolio, realized_vol, regime, sentiment_multiplier)
 
-    async def check_order(self, order: Any) -> RiskCheckResult:
+    async def check_order(self, order: CheckableOrder) -> RiskCheckResult:
         """OrderManager pre-trade gate.
 
         Wraps :meth:`evaluate` by converting the incoming ``order`` object
@@ -271,9 +289,8 @@ class RiskEngine:
         resulting :class:`RiskVerdict` to a :class:`RiskCheckResult`.
 
         The ``order`` object is expected to expose ``.symbol``,
-        ``.stop_price`` (or ``.stop_loss``), ``.quantity``, ``.side`` and
-        ``.price`` attributes — the canonical :class:`execution.order.Order`
-        satisfies this.
+        ``.side``, ``.price``, ``.stop_price`` (or ``.stop_loss``) — the
+        canonical :class:`execution.order.Order` satisfies this.
         """
         # Explicit fast path: kill switch active short-circuits everything.
         if self._kill_switch is not None and self._kill_switch.is_active():

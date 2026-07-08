@@ -1,6 +1,5 @@
 """Admin API endpoints - requires authentication"""
 
-import hmac
 import logging
 from typing import Any
 
@@ -18,25 +17,15 @@ admin_router = APIRouter(prefix="/admin", tags=["admin"])
 async def verify_admin(
     api_key: str = Header(..., alias="X-Admin-Key"),
 ) -> bool:
-    """Verify admin API key — constant-time comparison.
+    """Verify admin API key — delegates to shared ``verify_admin_key`` helper.
 
     Local definition (not re-exported from api.auth) so tests can
     patch ``api.admin.get_config`` and have it affect this function.
-    Fail-closed: empty configured key → 500, missing/invalid header → 401.
     """
+    from .auth import verify_admin_key
+
     config = get_config()
-    expected = config.admin_api_key
-    if not expected:
-        logger.error("auth.verify_admin: ADMIN_API_KEY not configured — fail-closed")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Admin API key not configured",
-        )
-    if not api_key or not hmac.compare_digest(api_key, expected):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid admin key",
-        )
+    verify_admin_key(api_key, config.admin_api_key)
     return True
 
 

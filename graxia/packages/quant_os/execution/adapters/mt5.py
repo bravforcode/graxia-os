@@ -348,18 +348,23 @@ class MT5Adapter(BrokerAdapter):
 
         When the order is not found in MT5's open orders list, assume it was
         filled (most common case for orders that leave the pending queue).
+
+        .. warning:: This is an assumption.  The caller should verify fills
+           via ``mt5.history_deals_get()`` for critical paths.
         """
         self._ensure_connected()
         orders = mt5.orders_get(ticket=int(broker_order_id))  # type: ignore[union-attr]
         if orders is None or len(orders) == 0:
             # Not an open order — most likely filled.
-            logger.info(
-                "MT5 order %s not found in open orders — assuming FILLED",
+            logger.warning(
+                "MT5 order %s not found in open orders — assuming FILLED "
+                "(caller should verify via history_deals_get for critical paths)",
                 broker_order_id,
             )
             return OrderResult(
                 status=OrderStatus.FILLED,
                 broker_id=broker_order_id,
+                error="Assumed FILLED — order not in MT5 open orders",
             )
         order = orders[0]
         return OrderResult(
