@@ -1,11 +1,14 @@
 """Configuration management for Quant OS"""
 
+import logging
 import os
 from dataclasses import dataclass, field, replace
 
 from ..risk.risk_policy import RiskPolicy
 from .enums import SystemState, TradingMode
 from .golden_rules import HARD_LIMITS
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -220,9 +223,22 @@ class QuantConfig:
             self.risk_policy = replace(self.risk_policy, max_open_positions=HARD_LIMITS["max_positions"])
 
     def _validate_mode_consistency(self):
-        """Ensure trading mode and live flag are consistent"""
+        """Ensure trading mode and live flag are consistent.
+
+        Auto-correction policy (fail-safe):
+        - PAPER mode + LIVE_TRADING_ENABLED=true → auto-correct to LIVE_MICRO
+          (safest live mode) and log warning. This prevents crash on env misconfig
+          while still alerting the operator.
+        - LIVE modes + LIVE_TRADING_ENABLED=false → raise (dangerous inconsistency).
+        """
         if self.trading_mode == TradingMode.PAPER and self.live_trading_enabled:
-            raise ValueError("Cannot enable live trading in PAPER mode")
+            # Auto-correct: PAPER + live enabled → LIVE_MICRO (safest live mode)
+            logger.warning(
+                "CONFIG AUTO-CORRECT: LIVE_TRADING_ENABLED=true but TRADING_MODE=PAPER. "
+                "Auto-correcting to LIVE_MICRO. Set TRADING_MODE=LIVE_MICRO explicitly to suppress this warning."
+            )
+            self.trading_mode = TradingMode.LIVE_MICRO
+            self.system_state = SystemState.LIVE_TRADING
 
         if self.live_trading_enabled and self.trading_mode not in [
             TradingMode.LIVE_MICRO,

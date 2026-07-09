@@ -1622,6 +1622,12 @@ class TestMT5AdapterChaos:
         c = self.ctx
         c.adapter._connected = True
         c.mt5.orders_get.return_value = None
+        # Mock history_deals_get to return a fill deal (entry=0 = ENTRY_IN)
+        fill_deal = MagicMock()
+        fill_deal.entry = 0  # ENTRY_IN
+        fill_deal.volume = 0.1
+        fill_deal.price = 2000.0
+        c.mt5.history_deals_get.return_value = [fill_deal]
         result = c.adapter.get_order_status("12345")
         assert result.status == OrderStatus.FILLED
 

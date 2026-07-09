@@ -10,23 +10,18 @@ Tests the full order lifecycle through the OMS:
 """
 
 import json
-import tempfile
-from datetime import datetime, UTC
-from pathlib import Path
-from typing import Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from graxia.packages.quant_os.core.enums import OrderStatus
-from graxia.packages.quant_os.execution.oms import OMS, VENUE_MAP
 from graxia.packages.quant_os.execution.adapters.base import (
-    Order,
-    OrderResult,
     AccountInfo,
     BrokerAdapter,
+    Order,
+    OrderResult,
 )
-
+from graxia.packages.quant_os.execution.oms import OMS, VENUE_MAP
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -39,8 +34,8 @@ class MockBrokerAdapter(BrokerAdapter):
     def __init__(self, name: str = "mock_mt5"):
         super().__init__(name)
         self._connected = True
-        self._submit_result: Optional[OrderResult] = None
-        self._cancel_result: Optional[OrderResult] = None
+        self._submit_result: OrderResult | None = None
+        self._cancel_result: OrderResult | None = None
         self._positions: list[dict] = []
         self._account_info = AccountInfo(
             equity=10000.0,
@@ -93,6 +88,13 @@ class MockBrokerAdapter(BrokerAdapter):
     def get_account_info(self) -> AccountInfo:
         return self._account_info
 
+    def set_stop_loss(self, position_ticket: str, symbol: str, stop_loss_price: float) -> OrderResult:
+        """Mock set_stop_loss implementation."""
+        return OrderResult(
+            status=OrderStatus.FILLED,
+            broker_id=position_ticket,
+        )
+
 
 class MockRiskEngine:
     """Mock risk engine that can approve or reject orders."""
@@ -124,10 +126,12 @@ def mock_adapter():
 
 @pytest.fixture
 def oms(mock_adapter, tmp_ledger):
-    """Provide an OMS with a mock adapter and no risk engine."""
+    """Provide an OMS with a mock adapter and an approving risk engine."""
+    risk_engine = MockRiskEngine(approved=True)
     return OMS(
         adapters={"mt5": mock_adapter},
         ledger_path=tmp_ledger,
+        risk_engine=risk_engine,
     )
 
 
@@ -278,6 +282,7 @@ class TestBrokerReject:
         oms = OMS(
             adapters={"mt5": mock_adapter},
             ledger_path=tmp_ledger,
+            risk_engine=MockRiskEngine(approved=True),
         )
 
         order = oms.submit_order(
@@ -300,6 +305,7 @@ class TestBrokerReject:
         oms = OMS(
             adapters={"mt5": mock_adapter},
             ledger_path=tmp_ledger,
+            risk_engine=MockRiskEngine(approved=True),
         )
 
         order = oms.submit_order(
@@ -322,6 +328,7 @@ class TestBrokerReject:
         oms = OMS(
             adapters={"mt5": mock_adapter},
             ledger_path=tmp_ledger,
+            risk_engine=MockRiskEngine(approved=True),
         )
 
         oms.submit_order(
@@ -373,6 +380,7 @@ class TestPartialFill:
         oms = OMS(
             adapters={"mt5": mock_adapter},
             ledger_path=tmp_ledger,
+            risk_engine=MockRiskEngine(approved=True),
         )
 
         order = oms.submit_order(
@@ -406,6 +414,7 @@ class TestPartialFill:
         oms = OMS(
             adapters={"mt5": mock_adapter},
             ledger_path=tmp_ledger,
+            risk_engine=MockRiskEngine(approved=True),
         )
 
         # Use a short timeout for testing
@@ -518,6 +527,7 @@ class TestDuplicateIdempotency:
         oms = OMS(
             adapters={"mt5": mock_adapter},
             ledger_path=tmp_ledger,
+            risk_engine=MockRiskEngine(approved=True),
         )
 
         # First submission
@@ -558,6 +568,7 @@ class TestDuplicateIdempotency:
         oms1 = OMS(
             adapters={"mt5": mock_adapter},
             ledger_path=tmp_ledger,
+            risk_engine=MockRiskEngine(approved=True),
         )
 
         order1 = oms1.submit_order(
@@ -572,6 +583,7 @@ class TestDuplicateIdempotency:
         oms2 = OMS(
             adapters={"mt5": mock_adapter},
             ledger_path=tmp_ledger,
+            risk_engine=MockRiskEngine(approved=True),
         )
 
         # Submit same signal_id
@@ -611,13 +623,22 @@ class TestOMSInitialization:
     """Test OMS initialization and configuration."""
 
     def test_oms_with_no_risk_engine(self, mock_adapter, tmp_ledger):
-        """OMS should work without a risk engine."""
+        """OMS should work without a risk engine (but orders will be rejected)."""
         oms = OMS(
             adapters={"mt5": mock_adapter},
             ledger_path=tmp_ledger,
         )
 
         assert oms._risk_engine is None
+        # Fail-closed: submitting without risk_engine rejects the order
+        order = oms.submit_order(
+            signal_id="SIG-NO-RISK-001",
+            symbol="XAUUSD",
+            asset_class="metals",
+            side="BUY",
+            quantity=0.1,
+        )
+        assert order.status == OrderStatus.REJECTED
 
     def test_oms_with_risk_engine(self, mock_adapter, tmp_ledger):
         """OMS should accept a risk engine."""
@@ -638,6 +659,7 @@ class TestOMSInitialization:
         oms = OMS(
             adapters={"mt5": mock_adapter},
             ledger_path=ledger_path,
+            risk_engine=MockRiskEngine(approved=True),
         )
 
         assert ledger_dir.exists()

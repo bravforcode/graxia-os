@@ -4,8 +4,9 @@ These tests assert that all canonical adapters expose the same interface and
 that the OMS/OrderManager callers use that interface.
 """
 
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 from graxia.packages.quant_os.execution.adapters.base import (
     AccountInfo,
@@ -19,6 +20,21 @@ from graxia.packages.quant_os.execution.adapters.manager import BrokerManager
 from graxia.packages.quant_os.execution.adapters.mt5 import MT5Adapter
 from graxia.packages.quant_os.execution.adapters.paper import PaperAdapter
 from graxia.packages.quant_os.execution.oms import OMS
+
+
+class MockRiskEngine:
+    """Mock risk engine for OMS tests."""
+
+    def __init__(self, approved: bool = True):
+        self._approved = approved
+
+    def check_order_sync(self, order):
+        from unittest.mock import MagicMock
+
+        result = MagicMock()
+        result.passed = self._approved
+        result.reason = "" if self._approved else "mock rejection"
+        return result
 
 
 class TestUnifiedBrokerInterface:
@@ -218,6 +234,7 @@ class TestOMSUsesUnifiedInterface:
         oms = OMS(
             adapters={"mt5": adapter},
             ledger_path=tmp_path / "ledger.jsonl",
+            risk_engine=MockRiskEngine(approved=True),
         )
         order = oms.submit_order(
             signal_id="sig1",
@@ -234,6 +251,7 @@ class TestOMSUsesUnifiedInterface:
         oms = OMS(
             adapters={"mt5": adapter},
             ledger_path=tmp_path / "ledger.jsonl",
+            risk_engine=MockRiskEngine(approved=True),
         )
         oms.submit_order(
             signal_id="sig2",

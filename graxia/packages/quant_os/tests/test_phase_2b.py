@@ -280,11 +280,13 @@ class TestPreTradeRisk:
         ledger._state_file = Path(tempfile.mktemp(suffix=".json"))
 
         policy = RiskPolicy(max_daily_loss_bps=200)
+        ks = KillSwitch(state_file=tempfile.mktemp(suffix=".json"))
         result = pre_trade_check(
             self._ok_sizer_result(),
             policy,
             ledger,
             account_equity=Decimal("10000"),
+            kill_switch=ks,
         )
         assert not result.approved
         assert any("Daily loss" in r for r in result.reasons)
@@ -296,11 +298,13 @@ class TestPreTradeRisk:
         ledger._state_file = Path(tempfile.mktemp(suffix=".json"))
 
         policy = RiskPolicy(max_weekly_loss_bps=500)
+        ks = KillSwitch(state_file=tempfile.mktemp(suffix=".json"))
         result = pre_trade_check(
             self._ok_sizer_result(),
             policy,
             ledger,
             account_equity=Decimal("10000"),
+            kill_switch=ks,
         )
         assert not result.approved
         assert any("Weekly loss" in r for r in result.reasons)
@@ -312,11 +316,13 @@ class TestPreTradeRisk:
         ledger._state_file = Path(tempfile.mktemp(suffix=".json"))
 
         policy = RiskPolicy(max_open_positions=5)
+        ks = KillSwitch(state_file=tempfile.mktemp(suffix=".json"))
         result = pre_trade_check(
             self._ok_sizer_result(),
             policy,
             ledger,
             account_equity=Decimal("10000"),
+            kill_switch=ks,
         )
         assert not result.approved
         assert any("Max positions" in r for r in result.reasons)

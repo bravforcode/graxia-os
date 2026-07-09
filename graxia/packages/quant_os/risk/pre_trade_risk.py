@@ -30,7 +30,7 @@ def pre_trade_check(
     risk_policy: RiskPolicy,
     risk_ledger: RiskLedger,
     account_equity: Decimal,
-    kill_switch: KillSwitch = None,
+    kill_switch: KillSwitch,
     circuit_breaker: CircuitBreaker = None,
     asset_class: str = "",
     margin_level_pct: Decimal | None = None,
@@ -39,15 +39,31 @@ def pre_trade_check(
     """
     Final risk gate before order submission.
     Checks: kill switch, circuit breaker, daily/weekly/drawdown limits, position count, order rate, margin, stop-loss.
+
+    Fail-closed: kill_switch is required. If None, all orders are rejected.
     """
     reasons = []
+
+    # Fail-closed: kill_switch is required
+    if kill_switch is None:
+        return RiskCheckResult(
+            approved=False,
+            reasons=["kill_switch is required but not provided (fail-closed)"],
+            risk_budget=Decimal("0"),
+            daily_loss=Decimal("0"),
+            weekly_loss=Decimal("0"),
+            total_drawdown=Decimal("0"),
+            orders_today=0,
+            open_positions=0,
+        )
+
     risk_budget = account_equity * risk_policy.risk_per_trade_fraction
     daily_loss = Decimal(str(risk_ledger.daily_realized_loss))
     weekly_loss = Decimal(str(risk_ledger.weekly_realized_loss))
     total_drawdown = Decimal(str(risk_ledger.total_drawdown))
 
     # Kill switch check
-    if kill_switch and kill_switch.is_active():
+    if kill_switch.is_active():
         reasons.append("Kill switch is active")
 
     # Circuit breaker check

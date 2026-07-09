@@ -407,27 +407,38 @@ class OMS:
             logger.error("oms.state_machine_error order_id=%s error=%s", order.order_id, exc)
 
         # --- Pre-trade risk gate (fail-closed) ---
-        if self._risk_engine is not None:
-            try:
-                risk_result = self._risk_engine.check_order_sync(order)
-                if not risk_result.passed:
-                    order.status = OrderStatus.REJECTED
-                    with contextlib.suppress(Exception):
-                        sm.advance(OrderStatus.REJECTED, f"risk rejected: {risk_result.reason}")
-                    self._update_ledger(order)
-                    logger.warning(
-                        "Order %s REJECTED by pre-trade risk: %s",
-                        order.order_id,
-                        risk_result.reason,
-                    )
-                    return order
-            except Exception as exc:
-                logger.error("oms.risk_check_error order_id=%s error=%s", order.order_id, exc)
+        if self._risk_engine is None:
+            # Fail-closed: no risk engine = no orders allowed
+            order.status = OrderStatus.REJECTED
+            with contextlib.suppress(Exception):
+                sm.advance(OrderStatus.REJECTED, "no risk engine configured")
+            self._update_ledger(order)
+            logger.error(
+                "Order %s REJECTED: no risk_engine configured (fail-closed)",
+                order.order_id,
+            )
+            return order
+
+        try:
+            risk_result = self._risk_engine.check_order_sync(order)
+            if not risk_result.passed:
                 order.status = OrderStatus.REJECTED
                 with contextlib.suppress(Exception):
-                    sm.advance(OrderStatus.REJECTED, f"risk check error: {exc}")
+                    sm.advance(OrderStatus.REJECTED, f"risk rejected: {risk_result.reason}")
                 self._update_ledger(order)
+                logger.warning(
+                    "Order %s REJECTED by pre-trade risk: %s",
+                    order.order_id,
+                    risk_result.reason,
+                )
                 return order
+        except Exception as exc:
+            logger.error("oms.risk_check_error order_id=%s error=%s", order.order_id, exc)
+            order.status = OrderStatus.REJECTED
+            with contextlib.suppress(Exception):
+                sm.advance(OrderStatus.REJECTED, f"risk check error: {exc}")
+            self._update_ledger(order)
+            return order
 
         # --- Route & submit ---
         adapter = self._get_adapter(asset_class)

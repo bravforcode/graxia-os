@@ -13,8 +13,8 @@ class EURUSDContractSnapshot:
     min_volume: Decimal = Decimal("0.01")
     max_volume: Decimal = Decimal("100.0")
     volume_step: Decimal = Decimal("0.01")
-    tick_size: Decimal = Decimal("0.00001")  # 0.1 pip
-    tick_value: Decimal = Decimal("10.0")  # $10 per pip per standard lot
+    tick_size: Decimal = Decimal("0.00001")  # 1 point (1/10 pip)
+    tick_value: Decimal = Decimal("1.0")  # $1 per point per standard lot
     digits: int = 5
     spread_typical: Decimal = Decimal("1.0")  # 1 pip typical
     swap_long: Decimal = Decimal("-0.5")
