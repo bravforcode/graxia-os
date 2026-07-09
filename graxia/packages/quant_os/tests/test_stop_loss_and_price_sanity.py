@@ -454,16 +454,27 @@ class TestPreTradeGatePriceSanity:
         order.asset_class = asset_class
         return order
 
+    def _make_kill_switch(self, active=False):
+        """Create a mock kill switch that satisfies KillSwitchLike protocol."""
+        ks = MagicMock()
+        ks.is_active.return_value = active
+        ks.is_paused.return_value = False
+        return ks
+
+    def _make_circuit_breaker(self, is_open=False):
+        """Create a mock circuit breaker that satisfies CircuitBreakerLike protocol."""
+        cb = MagicMock()
+        cb.is_open.return_value = is_open
+        return cb
+
     def test_passes_without_provider(self):
         """Gate passes when no price_provider is set (with mock KS/CB)."""
         from graxia.packages.quant_os.risk.pre_trade_gate import PreTradeRiskGate
 
-        mock_ks = MagicMock()
-        mock_ks.is_active.return_value = False
-        mock_ks.is_paused.return_value = False
-        mock_cb = MagicMock()
-        mock_cb.is_open.return_value = False
-        gate = PreTradeRiskGate(kill_switch=mock_ks, circuit_breaker=mock_cb)
+        gate = PreTradeRiskGate(
+            kill_switch=self._make_kill_switch(),
+            circuit_breaker=self._make_circuit_breaker(),
+        )
         result = gate.check_order_sync(self._make_order())
         assert result.passed is True
 
@@ -477,12 +488,11 @@ class TestPreTradeGatePriceSanity:
         prices.append(2300.5)  # current price (most recent)
         provider.get_recent_prices.return_value = prices
 
-        mock_ks = MagicMock()
-        mock_ks.is_active.return_value = False
-        mock_ks.is_paused.return_value = False
-        mock_cb = MagicMock()
-        mock_cb.is_open.return_value = False
-        gate = PreTradeRiskGate(kill_switch=mock_ks, circuit_breaker=mock_cb, price_provider=provider)
+        gate = PreTradeRiskGate(
+            price_provider=provider,
+            kill_switch=self._make_kill_switch(),
+            circuit_breaker=self._make_circuit_breaker(),
+        )
         result = gate.check_order_sync(self._make_order())
         assert result.passed is True
 
@@ -496,12 +506,11 @@ class TestPreTradeGatePriceSanity:
         prices.append(2400.0)  # way off
         provider.get_recent_prices.return_value = prices
 
-        mock_ks = MagicMock()
-        mock_ks.is_active.return_value = False
-        mock_ks.is_paused.return_value = False
-        mock_cb = MagicMock()
-        mock_cb.is_open.return_value = False
-        gate = PreTradeRiskGate(kill_switch=mock_ks, circuit_breaker=mock_cb, price_provider=provider)
+        gate = PreTradeRiskGate(
+            price_provider=provider,
+            kill_switch=self._make_kill_switch(),
+            circuit_breaker=self._make_circuit_breaker(),
+        )
         result = gate.check_order_sync(self._make_order())
         assert result.passed is False
         assert "Price anomaly" in result.reason
@@ -513,12 +522,11 @@ class TestPreTradeGatePriceSanity:
         provider = MagicMock()
         provider.get_recent_prices.side_effect = RuntimeError("DB connection lost")
 
-        mock_ks = MagicMock()
-        mock_ks.is_active.return_value = False
-        mock_ks.is_paused.return_value = False
-        mock_cb = MagicMock()
-        mock_cb.is_open.return_value = False
-        gate = PreTradeRiskGate(kill_switch=mock_ks, circuit_breaker=mock_cb, price_provider=provider)
+        gate = PreTradeRiskGate(
+            price_provider=provider,
+            kill_switch=self._make_kill_switch(),
+            circuit_breaker=self._make_circuit_breaker(),
+        )
         result = gate.check_order_sync(self._make_order())
         assert result.passed is False
         assert "Price check error" in result.reason
@@ -530,12 +538,11 @@ class TestPreTradeGatePriceSanity:
         provider = MagicMock()
         provider.get_recent_prices.return_value = []
 
-        mock_ks = MagicMock()
-        mock_ks.is_active.return_value = False
-        mock_ks.is_paused.return_value = False
-        mock_cb = MagicMock()
-        mock_cb.is_open.return_value = False
-        gate = PreTradeRiskGate(kill_switch=mock_ks, circuit_breaker=mock_cb, price_provider=provider)
+        gate = PreTradeRiskGate(
+            price_provider=provider,
+            kill_switch=self._make_kill_switch(),
+            circuit_breaker=self._make_circuit_breaker(),
+        )
         result = gate.check_order_sync(self._make_order())
         assert result.passed is True
 

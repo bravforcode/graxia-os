@@ -28,8 +28,11 @@ Usage:
         pass
 """
 
+import contextlib
 import json
 import logging
+import os
+import tempfile
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -295,10 +298,6 @@ class AutoStop:
 
     def _save(self) -> None:
         """Save state atomically using temp file + rename."""
-        import contextlib
-        import os
-        import tempfile
-
         if not self._state_file:
             return
 

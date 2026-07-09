@@ -58,9 +58,9 @@ from ..strategies.base import Signal, Strategy
 
 # Phase 4: Wire in regime detection, margin simulation, real-time P&L
 try:
-    from ..risk.margin_simulator import MarginConfig, MarginSimulator
-    from ..risk.realtime_pnl import PnLConfig, RealTimePnLTracker
-    from ..validation.regime_detector import RegimeConfig, RegimeDetector
+    from ..risk.margin_simulator import MarginSimulator
+    from ..risk.realtime_pnl import RealTimePnLTracker
+    from ..validation.regime_detector import RegimeDetector
 
     _PHASE4_WIRING_AVAILABLE = True
 except ImportError:
@@ -96,6 +96,16 @@ class InlineContractSpec:
     volume_max: Decimal = Decimal("100")
     stops_level_points: Decimal = Decimal("0")
     snapshot_hash: str = "inline"
+
+    @property
+    def pip_size(self) -> Decimal:
+        """Pip size for this symbol (= trade_tick_size).
+
+        Used to convert spread/slippage from pips to price points.
+        For 5-digit FX majors: 0.0001 (1 pip = 10 points)
+        For JPY/XAUUSD: 0.01 (1 pip = 1 point)
+        """
+        return self.trade_tick_size
 
     @classmethod
     def for_symbol(cls, symbol: str) -> "InlineContractSpec":
@@ -879,12 +889,14 @@ class BacktestEngine:
 
         # Historical sizing — deterministic, no MT5
         entry_price = signal.entry_price or bar_close
+        contract = InlineContractSpec.for_symbol(signal.symbol)
+        pip_size = contract.pip_size  # Symbol-aware: 0.0001 for 5-digit FX, 0.01 for JPY/XAUUSD
         volume = _historical_size(
             equity=self.equity,
             risk_per_trade_bps=self.config.risk_per_trade_bps,
             entry_price=entry_price,
             stop_loss=signal.stop_loss,
-            contract=InlineContractSpec.for_symbol(signal.symbol),
+            contract=contract,
         )
         if regime_mult != 1.0:
             volume = volume * Decimal(str(regime_mult))
@@ -897,9 +909,9 @@ class BacktestEngine:
 
             _spread_config = SpreadConfig()
             bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
-            spread = Decimal("0.01") * _spread_config.get_spread(bar_hour)
+            spread = pip_size * _spread_config.get_spread(bar_hour)
         except Exception:
-            spread = Decimal("0.01") * Decimal(str(self.config.spread_pips))
+            spread = pip_size * Decimal(str(self.config.spread_pips))
 
         # Add latency-based slippage from FillTimingConfig
         latency_slippage = Decimal("0")
@@ -908,7 +920,7 @@ class BacktestEngine:
                 atr = float(bar_high - bar_low)
                 latency_ms = self.config.fill_timing.estimate_latency_ms(atr)
                 latency_slippage = self.config.fill_timing.estimate_slippage_pips(latency_ms)
-                latency_slippage = Decimal("0.01") * latency_slippage
+                latency_slippage = pip_size * latency_slippage
             except Exception:
                 latency_slippage = Decimal("0")
 
@@ -1012,15 +1024,19 @@ class BacktestEngine:
         if not self.positions:
             return
 
+        # Get pip_size from first position's symbol (all positions should be same symbol in backtest)
+        first_pos = next(iter(self.positions.values()))
+        pip_size = InlineContractSpec.for_symbol(first_pos.symbol).pip_size
+
         # Dynamic spread based on time of day
         try:
             from backtest.dynamic_spread_model import SpreadConfig
 
             _spread_config = SpreadConfig()
             bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
-            spread = Decimal("0.01") * _spread_config.get_spread(bar_hour)
+            spread = pip_size * _spread_config.get_spread(bar_hour)
         except Exception:
-            spread = Decimal("0.01") * Decimal(str(self.config.spread_pips))
+            spread = pip_size * Decimal(str(self.config.spread_pips))
         bid, ask = estimate_bid_ask_from_bar(Decimal("0"), bar_high, bar_low, bar_close, spread)
         snapshot = MarketSnapshot(
             bid=bid,
@@ -1079,15 +1095,16 @@ class BacktestEngine:
                 exit_price = event.exit_price
                 exit_slip = Decimal("0")
             else:
+                pos_pip_size = InlineContractSpec.for_symbol(pos.symbol).pip_size
                 try:
                     from backtest.dynamic_spread_model import SpreadConfig
 
                     _spread_config = SpreadConfig()
                     bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
                     atr = float(bar_high - bar_low)
-                    exit_slippage = Decimal("0.01") * _spread_config.get_slippage(bar_hour, atr=atr)
+                    exit_slippage = pos_pip_size * _spread_config.get_slippage(bar_hour, atr=atr)
                 except Exception:
-                    exit_slippage = Decimal(str(self.config.slippage_pips)) * Decimal("0.01")
+                    exit_slippage = Decimal(str(self.config.slippage_pips)) * pos_pip_size
                 exec_side = FillSide.BUY if pos.side == PositionType.LONG else FillSide.SELL
                 exit_price, exit_slip = fill_simulate_exit(exec_side, bid, ask, exit_slippage)
 
@@ -1166,24 +1183,25 @@ class BacktestEngine:
     def _close_all_positions(self, last_price: float, current_time: datetime) -> None:
         """Close all remaining positions at last price with slippage."""
         last_dec = Decimal(str(last_price))
-        try:
-            from backtest.dynamic_spread_model import SpreadConfig as _SpreadCfg
-
-            _spread_config = _SpreadCfg()
-            bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
-            exit_slippage = Decimal("0.01") * _spread_config.get_slippage(bar_hour)
-        except Exception:
-            exit_slippage = Decimal(str(self.config.slippage_pips)) * Decimal("0.01")
         for pos_id in list(self.positions.keys()):
             pos = self.positions.get(pos_id)
-            if pos and pos.side == PositionType.LONG:
+            if not pos:
+                continue
+            pos_pip_size = InlineContractSpec.for_symbol(pos.symbol).pip_size
+            try:
+                from backtest.dynamic_spread_model import SpreadConfig as _SpreadCfg
+
+                _spread_config = _SpreadCfg()
+                bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
+                exit_slippage = pos_pip_size * _spread_config.get_slippage(bar_hour)
+            except Exception:
+                exit_slippage = Decimal(str(self.config.slippage_pips)) * pos_pip_size
+            if pos.side == PositionType.LONG:
                 # Selling: apply slippage (worse price)
                 exit_price = last_dec - exit_slippage
-            elif pos:
+            else:
                 # Buying to close short: apply slippage (worse price)
                 exit_price = last_dec + exit_slippage
-            else:
-                exit_price = last_dec
             self._close_position(pos_id, exit_price, current_time, CloseReason.MANUAL, exit_slippage)
 
     def _calculate_swap_cost(
@@ -1290,17 +1308,18 @@ class BacktestEngine:
         """Calculate unrealized P&L across all open positions."""
         unrealized = 0.0
         current = Decimal(str(current_price))
-        try:
-            from backtest.dynamic_spread_model import SpreadConfig as _SpreadCfg
-
-            _spread_config = _SpreadCfg()
-            bar_hour = 12  # Default for equity calc
-            closing_spread = Decimal("0.01") * _spread_config.get_spread(bar_hour)
-        except Exception:
-            closing_spread = Decimal(str(self.config.spread_pips)) * Decimal("0.01")
-        closing_cost = closing_spread * Decimal("0.5")
-        closing_slip = Decimal("0.01") * Decimal(str(self.config.slippage_pips))
         for pos in self.positions.values():
+            pos_pip_size = InlineContractSpec.for_symbol(pos.symbol).pip_size
+            try:
+                from backtest.dynamic_spread_model import SpreadConfig as _SpreadCfg
+
+                _spread_config = _SpreadCfg()
+                bar_hour = 12  # Default for equity calc
+                closing_spread = pos_pip_size * _spread_config.get_spread(bar_hour)
+            except Exception:
+                closing_spread = Decimal(str(self.config.spread_pips)) * pos_pip_size
+            closing_cost = closing_spread * Decimal("0.5")
+            closing_slip = pos_pip_size * Decimal(str(self.config.slippage_pips))
             contract_size = getattr(pos, "contract_size", Decimal("100"))
             if pos.side == PositionType.LONG:
                 unrealized += float(
@@ -1340,17 +1359,18 @@ class BacktestEngine:
         """Update equity curve point"""
         # Calculate unrealized P&L — use dynamic spread consistent with execution
         unrealized = Decimal("0")
-        try:
-            from backtest.dynamic_spread_model import SpreadConfig as _SpreadCfg
-
-            _spread_config = _SpreadCfg()
-            bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
-            closing_spread = Decimal("0.01") * _spread_config.get_spread(bar_hour)
-        except Exception:
-            closing_spread = Decimal(str(self.config.spread_pips)) * Decimal("0.01")
-        closing_cost = closing_spread * Decimal("0.5")  # half-spread to close
-        closing_slip = Decimal("0.01") * Decimal(str(self.config.slippage_pips))
         for pos in self.positions.values():
+            pos_pip_size = InlineContractSpec.for_symbol(pos.symbol).pip_size
+            try:
+                from backtest.dynamic_spread_model import SpreadConfig as _SpreadCfg
+
+                _spread_config = _SpreadCfg()
+                bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
+                closing_spread = pos_pip_size * _spread_config.get_spread(bar_hour)
+            except Exception:
+                closing_spread = Decimal(str(self.config.spread_pips)) * pos_pip_size
+            closing_cost = closing_spread * Decimal("0.5")  # half-spread to close
+            closing_slip = pos_pip_size * Decimal(str(self.config.slippage_pips))
             current = Decimal(str(current_price))
             contract_size = getattr(pos, "contract_size", Decimal("100"))
             if pos.side == PositionType.LONG:

@@ -44,8 +44,10 @@ class SpreadPatchedEngine(BacktestEngine):
         super().__init__(config)
         self._spread_multiplier = spread_multiplier
 
-    def _scaled_spread(self) -> Decimal:
-        return Decimal("0.01") * Decimal("2") * Decimal(str(self._spread_multiplier))
+    def _scaled_spread(self, symbol: str = "") -> Decimal:
+        """Calculate spread with multiplier, using symbol-aware pip size."""
+        pip_size = InlineContractSpec.for_symbol(symbol).pip_size if symbol else Decimal("0.01")
+        return pip_size * Decimal("2") * Decimal(str(self._spread_multiplier))
 
     def _execute_signal(self, signal, bar_open, bar_high, bar_low, bar_close, current_time, bar_index):
         if len(self.positions) >= self.config.max_positions:
@@ -76,7 +78,7 @@ class SpreadPatchedEngine(BacktestEngine):
         if volume <= 0:
             return
 
-        spread = self._scaled_spread()
+        spread = self._scaled_spread(signal.symbol)
         bid, ask = estimate_bid_ask_from_bar(bar_open, bar_high, bar_low, bar_close, spread)
         snapshot = MarketSnapshot(
             bid=bid,
@@ -140,7 +142,9 @@ class SpreadPatchedEngine(BacktestEngine):
         if not self.positions:
             return
 
-        spread = self._scaled_spread()
+        # Get pip_size from first position's symbol
+        first_pos = next(iter(self.positions.values()))
+        spread = self._scaled_spread(first_pos.symbol)
         bid, ask = estimate_bid_ask_from_bar(Decimal("0"), bar_high, bar_low, bar_close, spread)
         snapshot = MarketSnapshot(
             bid=bid,
@@ -197,7 +201,8 @@ class SpreadPatchedEngine(BacktestEngine):
                 exit_price = event.exit_price
                 exit_slip = Decimal("0")
             else:
-                exit_slippage = Decimal(str(self.config.slippage_pips)) * Decimal("0.01")
+                pos_pip_size = InlineContractSpec.for_symbol(pos.symbol).pip_size
+                exit_slippage = Decimal(str(self.config.slippage_pips)) * pos_pip_size
                 exec_side = FillSide.BUY if pos.side == PositionType.LONG else FillSide.SELL
                 exit_price, exit_slip = fill_simulate_exit(exec_side, bid, ask, exit_slippage)
             self._close_position(event.trade_id, exit_price, current_time, reason, exit_slip)

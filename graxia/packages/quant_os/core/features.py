@@ -113,7 +113,7 @@ def build_features(
     feat_df = pd.DataFrame(fs.features)
 
     # Align with original index if lengths match
-    valid_start = len(df) - len(feat_df)
+    valid_start = max(0, len(df) - len(feat_df))
     if valid_start > 0 and isinstance(df.index, pd.DatetimeIndex):
         feat_df.index = df.index[valid_start:]
     elif "time" in df.columns:

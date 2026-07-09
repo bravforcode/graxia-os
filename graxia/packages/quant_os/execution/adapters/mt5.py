@@ -346,28 +346,62 @@ class MT5Adapter(BrokerAdapter):
     def get_order_status(self, broker_order_id: str) -> OrderResult:
         """Check the current state of an MT5 order by ticket.
 
-        Returns UNKNOWN when the order is not found in MT5's open orders list.
+        Checks open orders first, then history if not found.
+        Returns UNKNOWN only when the order is not found in either place.
         This avoids the previous bug of defaulting to FILLED, which could cause
         the strategy to believe a rejected/cancelled order was executed.
         """
         self._ensure_connected()
-        orders = mt5.orders_get(ticket=int(broker_order_id))  # type: ignore[union-attr]
-        if orders is None or len(orders) == 0:
-            # Not an open order — could be filled, cancelled, or expired.
-            # Return UNKNOWN so the caller checks position history.
+        ticket = int(broker_order_id)
+
+        # Check open orders first
+        orders = mt5.orders_get(ticket=ticket)  # type: ignore[union-attr]
+        if orders is not None and len(orders) > 0:
+            order = orders[0]
+            return OrderResult(
+                status=OrderStatus.SUBMITTED,
+                broker_id=str(order.ticket),
+            )
+
+        # Not an open order — check deal history to determine actual status
+        # This prevents assuming FILLED when order may have been rejected/cancelled
+        deals = mt5.history_deals_get(ticket=ticket)  # type: ignore[union-attr]
+        if deals is not None and len(deals) > 0:
+            # Order was executed — find the fill deal
+            for deal in deals:
+                if deal.entry == 0:  # ENTRY_IN = fill deal
+                    logger.info(
+                        "MT5 order %s found in deal history — FILLED (volume=%.2f, price=%.5f)",
+                        broker_order_id,
+                        deal.volume,
+                        deal.price,
+                    )
+                    return OrderResult(
+                        status=OrderStatus.FILLED,
+                        broker_id=broker_order_id,
+                        filled_quantity=deal.volume,
+                        avg_price=deal.price,
+                    )
+            # Deals exist but no fill deal found — check if order was cancelled
             logger.warning(
-                "MT5 order %s not found in open orders — returning UNKNOWN (check fills)",
+                "MT5 order %s found in deal history but no fill deal — returning UNKNOWN",
                 broker_order_id,
             )
             return OrderResult(
                 status=OrderStatus.UNKNOWN,
                 broker_id=broker_order_id,
-                error="Order not found in MT5 open orders",
+                error="Order in history but no fill deal found",
             )
-        order = orders[0]
+
+        # Not in open orders or history — truly unknown
+        logger.warning(
+            "MT5 order %s not found in open orders or history — returning UNKNOWN",
+            broker_order_id,
+        )
         return OrderResult(
-            status=OrderStatus.SUBMITTED,
-            broker_id=str(order.ticket),
+            status=OrderStatus.UNKNOWN,
+            broker_id=broker_order_id,
+            error="Order not found in MT5 open orders or history",
         )
 
     def close_position(self, broker_position_id: str, volume: float, symbol: str = "") -> OrderResult:

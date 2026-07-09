@@ -46,7 +46,7 @@ class _Layer2:
 
 class _Layer3:
     MAX_DAILY_LOSS_PCT: float = 0.02  # 2.0% daily loss
-    MAX_WEEKLY_LOSS_PCT: float = 0.05  # 1.50% (was 5.0%)
+    MAX_WEEKLY_LOSS_PCT: float = 0.05  # 5.0% weekly loss
     MAX_DRAWDOWN_PCT: float = 0.15
     MIN_MARGIN_LEVEL_PCT: float = 200.0  # 200% minimum margin
 

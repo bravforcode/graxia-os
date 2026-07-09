@@ -99,8 +99,8 @@ class TestKillSwitch:
         assert not result.approved
         assert any("Kill switch" in r for r in result.reasons)
 
-    def test_kill_switch_none_allows_trade(self) -> None:
-        """When kill_switch=None, the check is skipped (no rejection)."""
+    def test_kill_switch_none_rejects_trade(self) -> None:
+        """When kill_switch=None, trade is rejected (fail-closed)."""
         result = pre_trade_check(
             sizing_result=_make_sizing_result(),
             risk_policy=_make_risk_policy(),
@@ -108,7 +108,8 @@ class TestKillSwitch:
             account_equity=Decimal("10000"),
             kill_switch=None,
         )
-        assert result.approved
+        assert not result.approved
+        assert any("kill_switch is required" in r for r in result.reasons)
 
 
 class TestCircuitBreaker:
@@ -121,6 +122,7 @@ class TestCircuitBreaker:
             risk_policy=_make_risk_policy(),
             risk_ledger=_make_risk_ledger(),
             account_equity=Decimal("10000"),
+            kill_switch=_make_kill_switch(active=False),
             circuit_breaker=_make_circuit_breaker(open=True, reason="3 consecutive losses"),
             asset_class="metals",
         )
@@ -134,6 +136,7 @@ class TestCircuitBreaker:
             risk_policy=_make_risk_policy(),
             risk_ledger=_make_risk_ledger(),
             account_equity=Decimal("10000"),
+            kill_switch=_make_kill_switch(active=False),
             circuit_breaker=_make_circuit_breaker(open=False),
             asset_class="metals",
         )
@@ -146,6 +149,7 @@ class TestCircuitBreaker:
             risk_policy=_make_risk_policy(),
             risk_ledger=_make_risk_ledger(),
             account_equity=Decimal("10000"),
+            kill_switch=_make_kill_switch(active=False),
             circuit_breaker=_make_circuit_breaker(open=True),
             asset_class="",
         )
@@ -162,6 +166,7 @@ class TestSizerRejection:
             risk_policy=_make_risk_policy(),
             risk_ledger=_make_risk_ledger(),
             account_equity=Decimal("10000"),
+            kill_switch=_make_kill_switch(active=False),
         )
         assert not result.approved
         assert "Volume below minimum" in result.reasons
@@ -178,6 +183,7 @@ class TestDailyLossLimit:
             risk_policy=_make_risk_policy(max_daily_loss_bps=50),
             risk_ledger=_make_risk_ledger(daily_realized_loss=50.0),
             account_equity=Decimal("10000"),
+            kill_switch=_make_kill_switch(active=False),
         )
         assert not result.approved
         assert any("Daily loss" in r for r in result.reasons)
@@ -189,6 +195,7 @@ class TestDailyLossLimit:
             risk_policy=_make_risk_policy(max_daily_loss_bps=50),
             risk_ledger=_make_risk_ledger(daily_realized_loss=49.99),
             account_equity=Decimal("10000"),
+            kill_switch=_make_kill_switch(active=False),
         )
         assert result.approved
 
@@ -204,6 +211,7 @@ class TestWeeklyLossLimit:
             risk_policy=_make_risk_policy(max_weekly_loss_bps=150),
             risk_ledger=_make_risk_ledger(weekly_realized_loss=150.0),
             account_equity=Decimal("10000"),
+            kill_switch=_make_kill_switch(active=False),
         )
         assert not result.approved
         assert any("Weekly loss" in r for r in result.reasons)
@@ -221,6 +229,7 @@ class TestDrawdownLimit:
             risk_policy=_make_risk_policy(max_total_drawdown_bps=300),
             risk_ledger=_make_risk_ledger(total_drawdown=300.0),
             account_equity=Decimal("10000"),
+            kill_switch=_make_kill_switch(active=False),
         )
         assert not result.approved
         assert any("Drawdown" in r for r in result.reasons)
@@ -236,6 +245,7 @@ class TestMaxPositions:
             risk_policy=_make_risk_policy(max_open_positions=1),
             risk_ledger=_make_risk_ledger(open_positions=1),
             account_equity=Decimal("10000"),
+            kill_switch=_make_kill_switch(active=False),
         )
         assert not result.approved
         assert any("Max positions" in r for r in result.reasons)
@@ -251,6 +261,7 @@ class TestMaxOrdersPerDay:
             risk_policy=_make_risk_policy(max_orders_per_day=3),
             risk_ledger=_make_risk_ledger(orders_today=3),
             account_equity=Decimal("10000"),
+            kill_switch=_make_kill_switch(active=False),
         )
         assert not result.approved
         assert any("Max orders" in r for r in result.reasons)
@@ -267,6 +278,7 @@ class TestMarginLevel:
             risk_policy=_make_risk_policy(min_margin_level_pct=500),
             risk_ledger=_make_risk_ledger(),
             account_equity=Decimal("10000"),
+            kill_switch=_make_kill_switch(active=False),
             margin_level_pct=Decimal("499"),
         )
         assert not result.approved
@@ -279,6 +291,7 @@ class TestMarginLevel:
             risk_policy=_make_risk_policy(min_margin_level_pct=500),
             risk_ledger=_make_risk_ledger(),
             account_equity=Decimal("10000"),
+            kill_switch=_make_kill_switch(active=False),
             margin_level_pct=None,
         )
         assert result.approved
@@ -315,6 +328,7 @@ class TestHappyPath:
             risk_policy=_make_risk_policy(risk_per_trade_bps=10),
             risk_ledger=_make_risk_ledger(),
             account_equity=Decimal("10000"),
+            kill_switch=_make_kill_switch(active=False),
         )
         # 10 bps = 0.001 → $10000 * 0.001 = $10
         assert result.risk_budget == Decimal("10.0000")
@@ -357,6 +371,7 @@ class TestMultipleFailures:
                 open_positions=1,
             ),
             account_equity=Decimal("10000"),
+            kill_switch=_make_kill_switch(active=False),
         )
         assert result.daily_loss == Decimal("10.0")
         assert result.weekly_loss == Decimal("20.0")

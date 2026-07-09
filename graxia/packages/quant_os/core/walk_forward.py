@@ -32,6 +32,7 @@ from validation.walk_forward import (
 )
 
 # CPCV variant — kept in core/cross_validation.py (separate concern)
+_CPCV_AVAILABLE = False
 try:
     from core.cross_validation import (
         CPCVFoldResult,
@@ -40,6 +41,7 @@ try:
         cpcv_groups,
         walk_forward_cpcv,
     )
+    _CPCV_AVAILABLE = True
 except ImportError:
     pass
 
@@ -54,10 +56,13 @@ __all__ = [
     "compute_fold_pnl",
     "evaluate_fold",
     "infer_bars_per_year",
-    # CPCV (if available)
-    "CPCVResult",
-    "CPCVFoldResult",
-    "walk_forward_cpcv",
-    "combine_purged_k_fold_cv",
-    "cpcv_groups",
 ]
+
+if _CPCV_AVAILABLE:
+    __all__ += [
+        "CPCVResult",
+        "CPCVFoldResult",
+        "walk_forward_cpcv",
+        "combine_purged_k_fold_cv",
+        "cpcv_groups",
+    ]

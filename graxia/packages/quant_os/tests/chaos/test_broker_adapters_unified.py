@@ -22,6 +22,21 @@ from graxia.packages.quant_os.execution.oms import OMS
 from graxia.packages.quant_os.execution.order import Order
 
 
+class MockRiskEngine:
+    """Mock risk engine for OMS tests."""
+
+    def __init__(self, approved: bool = True):
+        self._approved = approved
+
+    def check_order_sync(self, order):
+        from unittest.mock import MagicMock
+
+        result = MagicMock()
+        result.passed = self._approved
+        result.reason = "" if self._approved else "mock rejection"
+        return result
+
+
 class TestUnifiedBrokerInterface:
     """The base class defines the contract every adapter must satisfy."""
 
@@ -219,6 +234,7 @@ class TestOMSUsesUnifiedInterface:
         oms = OMS(
             adapters={"mt5": adapter},
             ledger_path=tmp_path / "ledger.jsonl",
+            risk_engine=MockRiskEngine(approved=True),
         )
         order = oms.submit_order(
             signal_id="sig1",
@@ -235,6 +251,7 @@ class TestOMSUsesUnifiedInterface:
         oms = OMS(
             adapters={"mt5": adapter},
             ledger_path=tmp_path / "ledger.jsonl",
+            risk_engine=MockRiskEngine(approved=True),
         )
         oms.submit_order(
             signal_id="sig2",

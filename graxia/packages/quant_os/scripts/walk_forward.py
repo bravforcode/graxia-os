@@ -2,25 +2,16 @@
 """
 WALK-FORWARD VALIDATION — N sequential folds, single 70/30 split not enough.
 Self-contained: trains XGBoost, evaluates with real costs, aggregates across folds.
-
-DEPRECATED: The walk_forward() and compute_fold_pnl() functions here are
-superseded by validation.walk_forward.run_walk_forward and
-validation.walk_forward.compute_fold_pnl.  This script remains as a CLI
-entry-point; import from validation.walk_forward or core.walk_forward instead.
 """
 
 import argparse
 import json
 import os
-import sys
 import warnings
 
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from core.feature_config import EXCLUDE_COLS
 
 warnings.filterwarnings("ignore")
 
@@ -30,10 +21,7 @@ FEAT_DIR = os.path.join(BASE, "artifacts", "features_v2")
 
 
 def load_features(symbol: str, freq: str) -> pd.DataFrame:
-    # Try v2 naming first, then fallback to v1 naming
-    path_v2 = os.path.join(FEAT_DIR, f"features_v2_{symbol}_{freq}.parquet")
-    path_v1 = os.path.join(FEAT_DIR, f"features_{symbol}_{freq}.parquet")
-    path = path_v2 if os.path.exists(path_v2) else path_v1
+    path = os.path.join(FEAT_DIR, f"features_v2_{symbol}_{freq}.parquet")
     df = pd.read_parquet(path)
     if "timestamp" in df.columns:
         df = df.set_index("timestamp")
@@ -50,9 +38,27 @@ def load_features(symbol: str, freq: str) -> pd.DataFrame:
 
 
 def get_feature_cols(df: pd.DataFrame) -> list[str]:
-    """Get numeric feature columns, excluding centralized EXCLUDE_COLS."""
-    available = set(df.columns) & EXCLUDE_COLS
-    return [c for c in df.columns if c not in available and df[c].dtype in (np.float64, np.float32, np.int64, np.int32)]
+    exclude = {
+        "target",
+        "target_return",
+        "symbol",
+        "freq",
+        "tb_label",
+        "tb_bar_hit",
+        "tb_side",
+        "tb_ret",
+        "tb_k_upper",
+        "tb_k_lower",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "tick_count",
+    }
+    available = set(df.columns)
+    exclude &= available
+    return [c for c in df.columns if c not in exclude and df[c].dtype in (np.float64, np.float32, np.int64, np.int32)]
 
 
 def compute_fold_pnl(
@@ -64,15 +70,13 @@ def compute_fold_pnl(
     min_confidence: float = 0.85,
     mask: np.ndarray | None = None,
     close_prices: np.ndarray | None = None,
-    bars_per_year: int = 252 * 1440,
 ) -> dict:
     """
     Compute net P&L for a single fold's test predictions.
 
-    DEPRECATED: Use validation.walk_forward.compute_fold_pnl instead.
-
-    Uses actual bar close prices for dollar PnL conversion.
-    Requires close_prices to be provided (no hardcoded fallback).
+    Uses actual bar close prices for dollar PnL conversion instead of
+    the previous hardcoded $2350.0 (Bug #1 fix).
+    Falls back to $2350.0 if close_prices is not provided (backward compat).
 
     Args:
         returns: Forward returns array (fractional), same shape as preds.
@@ -83,11 +87,7 @@ def compute_fold_pnl(
         min_confidence: Minimum confidence threshold for trade entry.
         mask: Optional pre-computed trade selection mask.
         close_prices: Bar close prices for dollar conversion (same shape as returns).
-                      Required parameter - no fallback.
     """
-    if close_prices is None:
-        raise ValueError("close_prices is required for accurate PnL calculation")
-
     direction = 2 * preds.astype(float) - 1  # 0→-1 (short), 1→+1 (long)
     if mask is None:
         mask = confs >= min_confidence
@@ -116,14 +116,18 @@ def compute_fold_pnl(
     rets = returns[mask]
     confs_masked = confs[mask]
 
-    closes_masked = close_prices[mask]
-    assert (
-        closes_masked.shape == rets.shape
-    ), f"Shape mismatch: close_prices {closes_masked.shape} vs returns {rets.shape}"
-    assert closes_masked.min() > 0, f"Price sanity check failed: min close {closes_masked.min():.4f} <= 0"
-    price_mult = float(np.mean(closes_masked))
+    if close_prices is not None:
+        closes_masked = close_prices[mask]
+        assert (
+            closes_masked.shape == rets.shape
+        ), f"Shape mismatch: close_prices {closes_masked.shape} vs returns {rets.shape}"
+        assert closes_masked.min() > 1000, f"Price sanity check failed: min close {closes_masked.min():.2f} < $1000"
+        assert closes_masked.max() < 10000, f"Price sanity check failed: max close {closes_masked.max():.2f} > $10000"
+        price_mult = float(np.mean(closes_masked))
+    else:
+        price_mult = 2350.0
 
-    raw_pnl_dollars = dir_mask * rets * closes_masked
+    raw_pnl_dollars = dir_mask * rets * (close_prices[mask] if close_prices is not None else 2350.0)
     cost_per_dollars = (spread_cost + slippage_p90) * price_mult
 
     net_pnl = raw_pnl_dollars - cost_per_dollars
@@ -136,11 +140,12 @@ def compute_fold_pnl(
     avg_win = net_pnl[net_pnl > 0].mean() if (net_pnl > 0).sum() > 0 else 0.0
     avg_loss = net_pnl[net_pnl < 0].mean() if (net_pnl < 0).sum() > 0 else 0.0
     cumsum = net_pnl.cumsum()
-    max_dd = cumsum.min() if len(cumsum) > 0 else 0.0
+    peak = np.maximum.accumulate(cumsum)
+    max_dd = (cumsum - peak).min() if len(cumsum) > 0 else 0.0
 
     sr_mean = net_pnl.mean() if len(net_pnl) > 0 else 0.0
     sr_std = net_pnl.std() if len(net_pnl) > 1 else 1e-10
-    sharpe = sr_mean / sr_std * np.sqrt(bars_per_year) if sr_std > 1e-10 else 0.0
+    sharpe = sr_mean / sr_std * np.sqrt(252 * 390) if sr_std > 1e-10 else 0.0
 
     avg_move_points = round(float(np.abs(rets).mean() * price_mult * 100), 1) if len(rets) > 0 else 0.0
 
@@ -174,15 +179,8 @@ def walk_forward(
     min_confidence: float = 0.85,
     min_expected_profit: float = 0.0005,
     per_trade_path: str | None = None,
-    purge_gap: int = 14,
 ) -> dict:
-    """Run walk-forward. Each fold: train on window, predict on next window.
-
-    DEPRECATED: Use validation.walk_forward.run_walk_forward instead.
-    """
-    PURGE_BARS = purge_gap  # Minimum gap between train end and test start
-    EMBARGO_BARS = 0  # Additional embargo after purge
-
+    """Run walk-forward. Each fold: train on window, predict on next window."""
     n = len(df)
     folds = []
     data = df[feature_cols].fillna(0).values
@@ -192,35 +190,21 @@ def walk_forward(
     y_reg_col = "tb_ret" if "tb_ret" in df.columns else "target_return"
     y_reg = df[y_reg_col].values
 
-    # Infer bars_per_year from data frequency
-    if len(df.index) > 1:
-        avg_gap = (df.index[-1] - df.index[0]).total_seconds() / (len(df.index) - 1)
-        if avg_gap < 120:  # M1 or faster
-            bars_per_year = 252 * 1440
-        elif avg_gap < 3600:  # M5, M15, M30
-            bars_per_year = 252 * int(1440 / max(1, avg_gap / 60))
-        else:  # H1 or slower
-            bars_per_year = 252 * 24
-    else:
-        bars_per_year = 252 * 24
-
     per_trade_records: list[dict] = []
     fold_idx = 0
     while True:
         train_start = fold_idx * step
         train_end = train_start + train_window
-        # Purge + embargo gap: prevent look-ahead bias between train and test
-        test_start = train_end + PURGE_BARS + EMBARGO_BARS
-        test_end = test_start + test_window
+        test_end = train_end + test_window
         if test_end > n:
             break
 
         X_train = data[train_start:train_end]
         y_train_cls = targets[train_start:train_end]
         y_train_reg = y_reg[train_start:train_end]
-        X_test = data[test_start:test_end]
-        y_test_cls = targets[test_start:test_end]
-        ret_test = returns[test_start:test_end]
+        X_test = data[train_end:test_end]
+        y_test_cls = targets[train_end:test_end]
+        ret_test = returns[train_end:test_end]
 
         # Train classifier
         model = xgb.XGBClassifier(**model_params)
@@ -250,7 +234,7 @@ def walk_forward(
         combined_mask = (conf >= min_confidence) & (expected_profit > min_expected_profit)
 
         # Collect per-trade data for Gate #2 (mag_pred quality) and #3 (conf accuracy)
-        test_times = df.index[test_start:test_end]
+        test_times = df.index[train_end:test_end]
         for t_bar in range(len(X_test)):
             per_trade_records.append(
                 {
@@ -267,7 +251,7 @@ def walk_forward(
             )
 
         # Evaluate
-        test_close = close_array[test_start:test_end] if close_array is not None else None
+        test_close = close_array[train_end:test_end] if close_array is not None else None
         result = compute_fold_pnl(
             ret_test,
             preds,
@@ -277,13 +261,12 @@ def walk_forward(
             min_confidence=0.0,
             mask=combined_mask,
             close_prices=test_close,
-            bars_per_year=bars_per_year,
         )
 
         result["fold"] = fold_idx
         result["train_start"] = str(df.index[train_start])
         result["train_end"] = str(df.index[train_end - 1])
-        result["test_start"] = str(df.index[test_start])
+        result["test_start"] = str(df.index[train_end])
         result["test_end"] = str(df.index[test_end - 1])
         result["train_acc"] = round(float(train_acc), 4)
         result["oos_acc"] = round(float(oos_acc), 4)
@@ -301,9 +284,6 @@ def walk_forward(
             os.makedirs(out_dir, exist_ok=True)
         pt_df.to_parquet(per_trade_path, index=False)
         print(f"  Saved per-trade data: {per_trade_path} ({len(pt_df)} rows)")
-
-    if not folds:
-        print("  [WARN] No folds generated — check window sizes and purge_gap.")
 
     # Aggregate
     total_trades = sum(f["n_trades"] for f in folds)
@@ -325,7 +305,6 @@ def walk_forward(
             "train_window": train_window,
             "test_window": test_window,
             "step": step,
-            "purge_gap": purge_gap,
             "n_folds": len(folds),
             "spread_cost": spread_cost,
             "slippage_p90": slippage_p90,
