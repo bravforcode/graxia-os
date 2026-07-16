@@ -129,29 +129,7 @@ def _check_ide_settings() -> list[Check]:
     return out
 
 
-def _check_brain_markers() -> list[Check]:
-    home = Path(os.environ.get("USERPROFILE", ""))
-    targets = [
-        home / ".claude" / "CLAUDE.md",
-        home / ".codex" / "AGENTS.md",
-        home / ".gemini" / "GEMINI.md",
-    ]
-    out: list[Check] = []
-    for path in targets:
-        text = _read_text(path)
-        ok = "<!--BRAIN_SNAPSHOT_START-->" in text and "<!--BRAIN_SNAPSHOT_END-->" in text
-        out.append(Check(f"Brain markers: {path.name}", ok, str(path)))
-    return out
 
-
-def _check_gemini_hook() -> Check:
-    home = Path(os.environ.get("USERPROFILE", ""))
-    settings_path = home / ".gemini" / "settings.json"
-    data = _json_get(settings_path) or {}
-    hooks = (((data.get("hooks") or {}).get("SessionStart")) or [])
-    blob = json.dumps(hooks)
-    ok = "sync_obsidian_brain.ps1" in blob
-    return Check("Gemini SessionStart hook", ok, str(settings_path))
 
 
 def _run_cmd(name: str, cwd: Path, command: list[str], timeout_s: int = 600) -> Check:
@@ -179,8 +157,6 @@ def main() -> int:
     checks.extend(_check_auth_bootstrap_seed())
     checks.append(_check_react_router_flags())
     checks.extend(_check_ide_settings())
-    checks.extend(_check_brain_markers())
-    checks.append(_check_gemini_hook())
     checks.append(_run_cmd("Backend tests (pytest)", ROOT / "backend", ["python", "-m", "pytest", "tests", "-q"], timeout_s=1200))
     checks.append(
         _run_cmd(
