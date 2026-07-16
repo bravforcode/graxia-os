@@ -46,13 +46,10 @@ $removeScripts = @(
     "quick-staging.ps1",
     
     # Unused utility scripts
-    "apply_global_ai_rules.ps1",
     "configure_all_ides_obsidian.ps1",
     "setup_global_obsidian_env.ps1",
     "setup-skill-symlinks.ps1",
-    "patch_gemini_settings.ps1",
     "rename_folder.ps1",
-    "sync_obsidian_brain.ps1",
     "run-chaos-tests.ps1",
     
     # MCP (if not used)
