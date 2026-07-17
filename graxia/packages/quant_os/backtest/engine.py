@@ -224,6 +224,8 @@ class BacktestPosition:
     execution_quality: str = ""
     signal_bar_index: int = -1
     contract_size: Decimal = Decimal("100")
+    tick_size: Decimal = Decimal("0.01")
+    tick_value: Decimal = Decimal("1.0")
 
 
 @dataclass
@@ -997,6 +999,8 @@ class BacktestEngine:
             execution_quality=result.execution_quality.value,
             signal_bar_index=bar_index,
             contract_size=InlineContractSpec.for_symbol(signal.symbol).trade_contract_size,
+            tick_size=InlineContractSpec.for_symbol(signal.symbol).trade_tick_size,
+            tick_value=InlineContractSpec.for_symbol(signal.symbol).trade_tick_value,
         )
         self.balance -= result.commission
 
@@ -1093,6 +1097,23 @@ class BacktestEngine:
 
             self._close_position(pos_id, exit_price, current_time, reason, exit_slip)
 
+    @staticmethod
+    def _pnl_from_ticks(
+        price_diff: Decimal,
+        quantity: Decimal,
+        tick_size: Decimal,
+        tick_value: Decimal,
+    ) -> Decimal:
+        """Convert a price difference to PnL using tick_size/tick_value.
+
+        This correctly handles JPY pairs where contract_size (100k) is in
+        quote-currency units but PnL must be in account-currency (USD).
+        For USDJPY: tick_size=0.01, tick_value=6.67 → 1 pip = $6.67/lot.
+        """
+        if tick_size <= 0:
+            return Decimal("0")
+        return (price_diff / tick_size) * tick_value * quantity
+
     def _close_position(
         self,
         pos_id: str,
@@ -1106,12 +1127,13 @@ class BacktestEngine:
         if not pos:
             return
 
-        # Calculate P&L — quantity is in LOTS, convert to UNITS via contract_size
-        contract_size = getattr(pos, "contract_size", Decimal("100"))
+        # Calculate P&L via tick_size/tick_value (correct for JPY pairs)
+        tick_size = getattr(pos, "tick_size", Decimal("0.01"))
+        tick_value = getattr(pos, "tick_value", Decimal("1.0"))
         if pos.side == PositionType.LONG:
-            pnl = (exit_price - pos.entry_price) * pos.quantity * contract_size
+            pnl = self._pnl_from_ticks(exit_price - pos.entry_price, pos.quantity, tick_size, tick_value)
         else:
-            pnl = (pos.entry_price - exit_price) * pos.quantity * contract_size
+            pnl = self._pnl_from_ticks(pos.entry_price - exit_price, pos.quantity, tick_size, tick_value)
 
         # Commission on exit — quantity is already in lots
         exit_commission = pos.quantity * Decimal(str(self.config.commission_per_lot))
@@ -1301,14 +1323,15 @@ class BacktestEngine:
         closing_cost = closing_spread * Decimal("0.5")
         closing_slip = Decimal("0.01") * Decimal(str(self.config.slippage_pips))
         for pos in self.positions.values():
-            contract_size = getattr(pos, "contract_size", Decimal("100"))
+            tick_size = getattr(pos, "tick_size", Decimal("0.01"))
+            tick_value = getattr(pos, "tick_value", Decimal("1.0"))
             if pos.side == PositionType.LONG:
                 unrealized += float(
-                    (current - closing_cost - closing_slip - pos.entry_price) * pos.quantity * contract_size
+                    self._pnl_from_ticks(current - closing_cost - closing_slip - pos.entry_price, pos.quantity, tick_size, tick_value)
                 )
             else:
                 unrealized += float(
-                    (pos.entry_price - current - closing_cost - closing_slip) * pos.quantity * contract_size
+                    self._pnl_from_ticks(pos.entry_price - current - closing_cost - closing_slip, pos.quantity, tick_size, tick_value)
                 )
         return unrealized
 
@@ -1352,13 +1375,14 @@ class BacktestEngine:
         closing_slip = Decimal("0.01") * Decimal(str(self.config.slippage_pips))
         for pos in self.positions.values():
             current = Decimal(str(current_price))
-            contract_size = getattr(pos, "contract_size", Decimal("100"))
+            tick_size = getattr(pos, "tick_size", Decimal("0.01"))
+            tick_value = getattr(pos, "tick_value", Decimal("1.0"))
             if pos.side == PositionType.LONG:
                 # Close = sell at bid - slippage (worse than mid)
-                unrealized += (current - closing_cost - closing_slip - pos.entry_price) * pos.quantity * contract_size
+                unrealized += self._pnl_from_ticks(current - closing_cost - closing_slip - pos.entry_price, pos.quantity, tick_size, tick_value)
             else:
                 # Close = buy at ask + slippage (worse than mid)
-                unrealized += (pos.entry_price - current - closing_cost - closing_slip) * pos.quantity * contract_size
+                unrealized += self._pnl_from_ticks(pos.entry_price - current - closing_cost - closing_slip, pos.quantity, tick_size, tick_value)
 
         self.equity = self.balance + unrealized
 

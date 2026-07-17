@@ -75,6 +75,15 @@ CRYPTO = CostParams(
     swap_short_bps=-5.0,
 )
 
+INDICES = CostParams(
+    name="INDICES",
+    spread_bps=3.0,  # ~3 bps for major indices
+    commission_per_lot=5.0,  # $5 round-trip commission
+    slippage_bps=1.0,
+    swap_long_bps=-0.2,
+    swap_short_bps=-0.2,
+)
+
 # XAUUSD stress scenario: 72 bps (regulatory stress test)
 XAUUSD_STRESS_72BPS = CostParams(
     name="XAUUSD_STRESS_72BPS",
