@@ -24,7 +24,6 @@ from ..execution.adapters.mt5 import MT5Adapter
 from ..execution.oms import OMS
 from ..risk.risk_ledger import RiskLedger
 from ..risk.risk_policy import RiskPolicy
-from .account import get_account_equity
 from .agents.portfolio_manager import PortfolioManagerAgent
 from .agents.risk_auditor import RiskAuditorAgent
 from .config import QuantConfig
@@ -200,10 +199,14 @@ class TradingOrchestrator:
                 # This would connect to MT5 tick feed in production
                 # For now, positions track their own entry prices
 
-                # Account equity sync: query canonical equity source
-                equity = get_account_equity()
-                if equity > 0:
-                    self._trading_loop.update_account_equity(equity)
+                # Account equity sync: query broker adapter directly
+                if self._broker_adapter is not None and self._broker_adapter.is_connected:
+                    try:
+                        info = self._broker_adapter.get_account_info()
+                        if info.equity > 0:
+                            self._trading_loop.update_account_equity(info.equity)
+                    except Exception as exc:
+                        logger.warning("orchestrator.equity_sync_failed error=%s", exc)
             except asyncio.CancelledError:
                 break
             except Exception as exc:
