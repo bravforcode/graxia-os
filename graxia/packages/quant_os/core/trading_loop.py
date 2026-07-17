@@ -29,6 +29,7 @@ import logging
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from decimal import Decimal
 from typing import Any
 
 from .enums import SignalType, TradingMode
@@ -42,6 +43,15 @@ from .events import (
     TradeClosedEvent,
 )
 from .golden_rules import GOLDEN_RULES
+
+# Risk gate — pre_trade_check
+try:
+    from ..risk.pre_trade_risk import RiskCheckResult, pre_trade_check
+    from ..risk.risk_policy import RiskPolicy
+    from ..risk.risk_ledger import RiskLedger
+    from ..risk.position_sizer_v2 import SizingResult
+except ImportError:
+    pre_trade_check = None  # graceful degradation if risk module missing
 
 logger = logging.getLogger(__name__)
 
@@ -190,11 +200,17 @@ class TradingLoop:
         oms: Any | None = None,
         config: Any | None = None,
         paper_executor: PaperExecutor | None = None,
+        risk_policy: Any | None = None,
+        risk_ledger: Any | None = None,
+        account_equity: float = 0.0,
     ) -> None:
         self._bus = bus
         self._oms = oms
         self._config = config
         self._paper = paper_executor or PaperExecutor()
+        self._risk_policy = risk_policy
+        self._risk_ledger = risk_ledger
+        self._account_equity = account_equity
         self._kill_switch_active = False
         self._tracked: dict[str, TrackedOrder] = {}
         self._daily_order_count: int = 0
@@ -322,6 +338,34 @@ class TradingLoop:
             trace_id=signal.trace_id,
         )
         self._tracked[order_id] = tracked
+
+        # ── Risk gate: pre_trade_check (P0 safety) ──────────────────────
+        if pre_trade_check is not None and self._risk_policy is not None and self._risk_ledger is not None:
+            sizing = SizingResult(
+                volume=Decimal(str(quantity)),
+                volume_before_round=Decimal(str(quantity)),
+                risk_amount=Decimal("0"),
+                risk_budget=Decimal("0"),
+                loss_at_stop=Decimal("0"),
+                margin_estimate=Decimal("0"),
+                rejected=False,
+            )
+            risk_result = pre_trade_check(
+                sizing_result=sizing,
+                risk_policy=self._risk_policy,
+                risk_ledger=self._risk_ledger,
+                account_equity=Decimal(str(self._account_equity)),
+                signal_stop_loss=signal.stop_loss,
+            )
+            if not risk_result.approved:
+                logger.warning(
+                    "trading_loop.risk_rejected order_id=%s reasons=%s",
+                    order_id,
+                    risk_result.reasons,
+                )
+                self._total_rejected += 1
+                self._risk_ledger.add_rejection(f"pre_trade: {risk_result.reasons}")
+                return
 
         # Emit OrderEvent for audit trail
         order_event = OrderEvent(
@@ -507,6 +551,10 @@ class TradingLoop:
         )
         self._bus.publish(closed_event)
 
+        # Record to risk ledger for daily/weekly/drawdown tracking
+        if self._risk_ledger is not None:
+            self._risk_ledger.record_trade(pnl=pnl, symbol=tracked.symbol, volume=tracked.quantity)
+
     # ── Helpers ───────────────────────────────────────────────────────
 
     def _get_trading_mode(self) -> TradingMode:
@@ -545,3 +593,9 @@ class TradingLoop:
     def reset_kill_switch(self) -> None:
         """Reset kill switch state (called by StateCoordinator on deactivate)."""
         self._kill_switch_active = False
+
+    def update_account_equity(self, equity: float) -> None:
+        """Update account equity for risk gate checks (called on account snapshot)."""
+        self._account_equity = equity
+        if self._risk_ledger is not None:
+            self._risk_ledger.update_equity(equity)

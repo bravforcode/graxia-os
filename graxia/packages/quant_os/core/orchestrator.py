@@ -22,6 +22,9 @@ from typing import Any
 from ..execution.adapters.base import BrokerAdapter
 from ..execution.adapters.mt5 import MT5Adapter
 from ..execution.oms import OMS
+from ..risk.risk_ledger import RiskLedger
+from ..risk.risk_policy import RiskPolicy
+from .account import get_account_equity
 from .agents.portfolio_manager import PortfolioManagerAgent
 from .agents.risk_auditor import RiskAuditorAgent
 from .config import QuantConfig
@@ -67,11 +70,16 @@ class TradingOrchestrator:
         self._risk_auditor = RiskAuditorAgent()
         self._portfolio_manager = PortfolioManagerAgent()
         self._position_manager = PositionManager(bus=self._bus)
+        self._risk_policy = RiskPolicy()
+        self._risk_ledger = RiskLedger()
         self._trading_loop = TradingLoop(
             bus=self._bus,
             oms=self._oms,
             config=self._config,
             paper_executor=self._paper,
+            risk_policy=self._risk_policy,
+            risk_ledger=self._risk_ledger,
+            account_equity=self._config.paper_initial_capital,
         )
         self._running = False
         self._sync_task: asyncio.Task | None = None
@@ -96,6 +104,10 @@ class TradingOrchestrator:
     @property
     def portfolio_manager(self) -> PortfolioManagerAgent:
         return self._portfolio_manager
+
+    @property
+    def risk_ledger(self) -> RiskLedger:
+        return self._risk_ledger
 
     def wire(self) -> None:
         """Wire all EventBus subscriptions and register the two-phase signal processor.
@@ -188,8 +200,10 @@ class TradingOrchestrator:
                 # This would connect to MT5 tick feed in production
                 # For now, positions track their own entry prices
 
-                # Account equity sync: would call MT5 account_info() in production
-                # self._position_manager.sync_account_state(equity, balance, margin_level)
+                # Account equity sync: query canonical equity source
+                equity = get_account_equity()
+                if equity > 0:
+                    self._trading_loop.update_account_equity(equity)
             except asyncio.CancelledError:
                 break
             except Exception as exc:

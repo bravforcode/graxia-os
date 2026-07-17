@@ -443,3 +443,67 @@ class TestOrderStateMachineIntegration:
 
         sm2 = OrderStateMachine(initial=OrderStatus.SIGNAL_CREATED)
         assert sm2.is_terminal() is False
+
+
+# ── Risk Gate Integration ─────────────────────────────────────────────────
+
+
+class TestRiskGate:
+    """Verify pre_trade_check is actually wired and rejects bad orders."""
+
+    def test_risk_gate_rejects_when_daily_loss_exceeded(self, tmp_path):
+        """Order rejected if daily loss limit already hit."""
+        from decimal import Decimal
+
+        from graxia.packages.quant_os.risk.risk_ledger import RiskLedger
+        from graxia.packages.quant_os.risk.risk_policy import RiskPolicy
+
+        bus = EventBus()
+        policy = RiskPolicy(max_daily_loss_bps=50)  # 0.50% daily limit
+        ledger = RiskLedger(state_file=str(tmp_path / "risk.json"))
+        # Simulate: $50 loss on $10k account = 0.50% → at limit
+        ledger._state["daily_realized_loss"] = 50.0
+
+        loop = TradingLoop(
+            bus=bus,
+            risk_policy=policy,
+            risk_ledger=ledger,
+            account_equity=10000.0,
+        )
+        signal = _make_signal(approved_quantity=0.1)
+        loop.observe(signal)
+
+        # Should be rejected — no fill event published
+        assert loop.get_stats()["total_rejected"] == 1
+        assert loop.get_stats()["total_filled"] == 0
+
+    def test_risk_gate_passes_normal_order(self, tmp_path):
+        """Order passes when within risk limits."""
+        from graxia.packages.quant_os.risk.risk_ledger import RiskLedger
+        from graxia.packages.quant_os.risk.risk_policy import RiskPolicy
+
+        bus = EventBus()
+        policy = RiskPolicy()
+        ledger = RiskLedger(state_file=str(tmp_path / "risk.json"))
+
+        loop = TradingLoop(
+            bus=bus,
+            risk_policy=policy,
+            risk_ledger=ledger,
+            account_equity=10000.0,
+        )
+        signal = _make_signal(approved_quantity=0.1)
+        loop.observe(signal)
+
+        # Should pass — fill event published
+        assert loop.get_stats()["total_filled"] == 1
+        assert loop.get_stats()["total_rejected"] == 0
+
+    def test_orchestrator_passes_risk_components(self):
+        """Orchestrator constructs TradingLoop with real risk_policy and risk_ledger."""
+        from graxia.packages.quant_os.core.orchestrator import TradingOrchestrator
+
+        orch = TradingOrchestrator()
+        assert orch.trading_loop._risk_policy is not None
+        assert orch.trading_loop._risk_ledger is not None
+        assert orch.trading_loop._account_equity > 0

@@ -37,6 +37,7 @@ def calculate_trade_costs(
     spread_points: Decimal,
     scenario: CostScenario,
     commission_per_lot: Decimal | None = None,
+    slippage_points: Decimal | None = None,
 ) -> TradeCosts:
     comm = commission_per_lot or Decimal("0")
     # Coerce any float inputs to Decimal for safe multiplication
@@ -44,8 +45,11 @@ def calculate_trade_costs(
     volume = Decimal(str(volume)) if not isinstance(volume, Decimal) else volume
     contract_size = Decimal(str(contract_size)) if not isinstance(contract_size, Decimal) else contract_size
     spread_points = Decimal(str(spread_points)) if not isinstance(spread_points, Decimal) else spread_points
+    # Slippage defaults to spread_points if not provided (backward compat)
+    slip_pts = slippage_points if slippage_points is not None else spread_points
+    slip_pts = Decimal(str(slip_pts)) if not isinstance(slip_pts, Decimal) else slip_pts
     spread = spread_points * scenario.spread_mult * contract_size * volume
-    slippage = spread_points * scenario.slippage_mult * contract_size * volume
+    slippage = slip_pts * scenario.slippage_mult * contract_size * volume
     commission = comm * scenario.commission_mult * volume
     return TradeCosts(
         scenario=scenario.name,
@@ -63,6 +67,7 @@ def run_cost_stress_matrix(
     contract_size: Decimal,
     spread_points: Decimal,
     commission_per_lot: Decimal | None = None,
+    slippage_points: Decimal | None = None,
 ) -> list[TradeCosts]:
     return [
         calculate_trade_costs(
@@ -73,6 +78,7 @@ def run_cost_stress_matrix(
             spread_points,
             s,
             commission_per_lot,
+            slippage_points,
         )
         for s in ALL_SCENARIOS
     ]
