@@ -3,6 +3,7 @@
 ## 0.2.0-dev (2026-06-25)
 
 ### Features
+- INV-012: Edge Claim Discipline — any edge claim must cite trial_number + p-value/dk_t + artifact path from hypothesis_registry.json; without citations, claim is UNTESTED HYPOTHESIS, not finding
 - regime filter + confidence threshold — first positive expectancy
 - regime accuracy diagnostic -- find accuracy clusters by regime
 - V2 pipeline -- order-flow features, triple-barrier labels
