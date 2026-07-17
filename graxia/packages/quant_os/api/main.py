@@ -54,16 +54,21 @@ async def lifespan(app: FastAPI):
     app.state.orchestrator = orchestrator
     print(f"✓ Orchestrator started (mode={config.trading_mode.value})")
 
-    # Initialize Telegram command handler with coordinator for kill-switch sync
+    # Initialize Telegram handlers with coordinator for kill-switch sync
+    from ..core.telegram_callback import TelegramCallbackHandler
     from .telegram_commands import TelegramCommandHandler
+    from .telegram_server import set_handlers
 
-    telegram_handler = TelegramCommandHandler(
+    telegram_callback = TelegramCallbackHandler()
+    telegram_command = TelegramCommandHandler(
         coordinator=orchestrator.coordinator,
         state_store=orchestrator.coordinator._state_store,
         config=config,
     )
-    app.state.telegram_handler = telegram_handler
-    print("✓ Telegram command handler wired")
+    set_handlers(telegram_callback, telegram_command)
+    app.state.telegram_handler = telegram_command
+    app.state.telegram_callback = telegram_callback
+    print("✓ Telegram handlers wired (callback + command + set_handlers)")
 
     # Initialize broker connection
     broker_manager = BrokerManager.from_config()
@@ -191,6 +196,11 @@ def create_app() -> FastAPI:
     app.include_router(tv_router, prefix="/api/v1")
     app.include_router(visual_router, prefix="/api/v1")
     app.include_router(cdp_router, prefix="/api/v1")
+
+    # Telegram bot routes (webhook, status, set-webhook)
+    from .telegram_server import telegram_router
+
+    app.include_router(telegram_router, prefix="/api/v1")
 
     # ── Prometheus /metrics endpoint ──────────────────────────────────
     try:

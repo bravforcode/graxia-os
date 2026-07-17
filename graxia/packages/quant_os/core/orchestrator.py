@@ -110,6 +110,10 @@ class TradingOrchestrator:
         return self._coordinator
 
     @property
+    def kill_switch(self) -> KillSwitch:
+        return self._kill_switch
+
+    @property
     def trading_loop(self) -> TradingLoop:
         return self._trading_loop
 
@@ -216,22 +220,111 @@ class TradingOrchestrator:
             try:
                 await asyncio.sleep(5.0)
                 self._beat()
-                # Price sync: update position unrealized PnL
-                # This would connect to MT5 tick feed in production
-                # For now, positions track their own entry prices
-
-                # Account equity sync: query broker adapter directly
-                if self._broker_adapter is not None and self._broker_adapter.is_connected:
-                    try:
-                        info = self._broker_adapter.get_account_info()
-                        if info.equity > 0:
-                            self._trading_loop.update_account_equity(info.equity)
-                    except Exception as exc:
-                        logger.warning("orchestrator.equity_sync_failed error=%s", exc)
+                self._sync_live_market_state()
             except asyncio.CancelledError:
                 break
             except Exception as exc:
                 logger.error("orchestrator.sync_error error=%s", exc)
+
+    def _sync_live_market_state(self) -> None:
+        """Sync live market state: account equity + position prices.
+
+        Called periodically by _sync_loop. Queries broker adapter for:
+        1. Account equity → TradingLoop + PositionManager
+        2. Tick prices for open positions → PositionManager.update_prices()
+
+        Graceful degradation: if broker is disconnected or adapter lacks
+        get_tick(), only equity is synced.
+        """
+        if self._broker_adapter is None or not self._broker_adapter.is_connected:
+            return
+
+        # 1. Account equity sync
+        try:
+            info = self._broker_adapter.get_account_info()
+            if info.equity > 0:
+                self._trading_loop.update_account_equity(info.equity)
+                self._position_manager.sync_account_state(
+                    equity=info.equity,
+                    balance=getattr(info, "balance", 0.0),
+                    margin_level=getattr(info, "margin_level", 0.0),
+                )
+        except Exception as exc:
+            logger.warning("orchestrator.equity_sync_failed error=%s", exc)
+
+        # 2. Price sync for open positions (if adapter supports get_tick)
+        if not hasattr(self._broker_adapter, "get_tick"):
+            return
+        open_positions = list(self._position_manager.get_positions().values())
+        if not open_positions:
+            return
+        prices: dict[str, float] = {}
+        for pos in open_positions:
+            try:
+                tick = self._broker_adapter.get_tick(pos.symbol)
+                if tick is not None:
+                    # get_tick returns dict with 'bid'/'ask' or similar
+                    bid = tick.get("bid") if isinstance(tick, dict) else getattr(tick, "bid", None)
+                    if bid is not None and bid > 0:
+                        prices[pos.symbol] = bid
+            except Exception as exc:
+                logger.debug("orchestrator.tick_fetch_failed symbol=%s error=%s", pos.symbol, exc)
+        if prices:
+            self._position_manager.update_prices(prices)
+
+    # ── Kill Switch Public API ──────────────────────────────────────
+
+    def trigger_kill_switch(self, reason: str, source: str = "unknown") -> None:
+        """Activate kill switch with fail-closed retry + direct fallback.
+
+        1. Syncs state to all stores directly (KillSwitch, SystemState, RiskLedger).
+        2. Publishes KillSwitchEvent on the bus with bounded retry (3 attempts).
+        3. If all bus deliveries fail (handler_errors increment), falls back
+           to directly calling trading_loop.on_kill_switch() to ensure halt
+           is never skipped.
+
+        Note: State is set directly (not via kill_switch.activate) to avoid
+        the coordinator cascade that would re-publish on the bus and break
+        the bounded-retry counting.
+        """
+        from ..risk.kill_switch import KillSwitchState
+
+        MAX_RETRIES = 3
+        event = KillSwitchEvent(trigger=source, reason=reason, source="orchestrator")
+
+        # 1. Sync state directly to all stores (no cascade, no bus re-publish)
+        self._kill_switch._set_state(KillSwitchState.ACTIVE, reason=reason, authorized_by=source)
+        self._state_store.kill_switch_active = True
+        self._state_store.system_state = "HALTED"
+        if self._risk_ledger is not None and hasattr(self._risk_ledger, "_state"):
+            # Set directly to avoid coordinator cascade that re-publishes on bus
+            self._risk_ledger._state["kill_switch_state"] = "active"
+            if hasattr(self._risk_ledger, "_save"):
+                self._risk_ledger._save()
+
+        # 2. Publish on bus with bounded retry + direct fallback
+        for attempt in range(1, MAX_RETRIES + 1):
+            errors_before = self._bus.handler_errors
+            self._bus.publish(event)
+            if self._bus.handler_errors == errors_before:
+                return
+
+        # All bus attempts failed — direct synchronous fallback
+        logger.warning(
+            "orchestrator.kill_switch_fallback reason=%s attempts=%d",
+            reason,
+            MAX_RETRIES,
+        )
+        self._trading_loop.on_kill_switch(event)
+
+    def reset_kill_switch(self, reason: str, authorized_by: str = "unknown") -> None:
+        """Deactivate kill switch via StateCoordinator.
+
+        Reset is a safe operation that always succeeds — it goes through
+        the coordinator directly, not the EventBus. A broken subscriber
+        cannot prevent the system from resuming.
+        """
+        self._coordinator.deactivate(reason=reason, source=authorized_by)
 
     def get_status(self) -> dict[str, Any]:
         return {
