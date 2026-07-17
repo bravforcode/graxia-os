@@ -1,6 +1,14 @@
 """
 Label Shuffling Null Hypothesis Test — Phase 13.1
 
+INFRASTRUCTURE ONLY: This test framework exists but has never been validated
+with real strategy data. The _compute_sharpe() helper always returns 0.0 due
+to import errors. All pytest tests pass because they test infrastructure
+(shuffling, distribution creation) but never compute actual Sharpe ratios.
+
+Do NOT use this as evidence of strategy validation until real Sharpe
+computation is implemented and tested with actual backtest data.
+
 Mandatory per audit protocol: shuffle labels, rerun backtest >=100 times.
 Real Sharpe must fall OUTSIDE null distribution for edge to exist.
 """
