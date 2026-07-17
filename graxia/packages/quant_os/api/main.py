@@ -187,6 +187,7 @@ def create_app() -> FastAPI:
     from .tv_routes import tv_router
     from .visual_routes import visual_router
     from .cdp_routes import cdp_router
+
     app.include_router(tv_router, prefix="/api/v1")
     app.include_router(visual_router, prefix="/api/v1")
     app.include_router(cdp_router, prefix="/api/v1")

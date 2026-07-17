@@ -12,10 +12,12 @@ computation is implemented and tested with actual backtest data.
 Mandatory per audit protocol: shuffle labels, rerun backtest >=100 times.
 Real Sharpe must fall OUTSIDE null distribution for edge to exist.
 """
-import numpy as np
-import pytest
+
 import sys
 from pathlib import Path
+
+import numpy as np
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))  # graxia/packages for quant_os.*
 
@@ -52,7 +54,7 @@ def run_label_shuffle_test(
         sharpe = _compute_sharpe(features, shuffled, config)
         null_sharpes.append(sharpe)
         if (i + 1) % 10 == 0:
-            print(f"  Permutation {i+1}/{n_permutations}: Sharpe={sharpe:.3f}")
+            print(f"  Permutation {i + 1}/{n_permutations}: Sharpe={sharpe:.3f}")
 
     null_sharpes = np.array(null_sharpes)
     null_mean = float(null_sharpes.mean())
@@ -83,6 +85,7 @@ def _compute_sharpe(features: np.ndarray, labels: np.ndarray, config: BacktestCo
     # but the statistical logic is the same
     try:
         from backtest.metrics import _sharpe_ratio
+
         # Simulate returns: 1 unit per trade, return = label * small_random
         returns = labels * np.random.normal(0.001, 0.01, size=len(labels))
         returns = returns.tolist()

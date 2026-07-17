@@ -1153,6 +1153,7 @@ class BacktestEngine:
         pnl += swap_cost
         self.balance += pnl
 
+        contract_size = getattr(pos, "contract_size", Decimal("100"))
         notional = pos.entry_price * pos.quantity * contract_size
         return_pct = (pnl / notional * 100) if notional > 0 else Decimal("0")
 
