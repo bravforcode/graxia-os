@@ -54,6 +54,17 @@ async def lifespan(app: FastAPI):
     app.state.orchestrator = orchestrator
     print(f"✓ Orchestrator started (mode={config.trading_mode.value})")
 
+    # Initialize Telegram command handler with coordinator for kill-switch sync
+    from .telegram_commands import TelegramCommandHandler
+
+    telegram_handler = TelegramCommandHandler(
+        coordinator=orchestrator.coordinator,
+        state_store=orchestrator.coordinator._state_store,
+        config=config,
+    )
+    app.state.telegram_handler = telegram_handler
+    print("✓ Telegram command handler wired")
+
     # Initialize broker connection
     broker_manager = BrokerManager.from_config()
     app.state.broker_manager = broker_manager
