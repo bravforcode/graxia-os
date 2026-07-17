@@ -45,8 +45,8 @@ def calculate_trade_costs(
     volume = Decimal(str(volume)) if not isinstance(volume, Decimal) else volume
     contract_size = Decimal(str(contract_size)) if not isinstance(contract_size, Decimal) else contract_size
     spread_points = Decimal(str(spread_points)) if not isinstance(spread_points, Decimal) else spread_points
-    # Slippage defaults to spread_points if not provided (backward compat)
-    slip_pts = slippage_points if slippage_points is not None else spread_points
+    # Slippage defaults to 30% of spread if not provided (realistic for liquid instruments)
+    slip_pts = slippage_points if slippage_points is not None else spread_points * Decimal("0.3")
     slip_pts = Decimal(str(slip_pts)) if not isinstance(slip_pts, Decimal) else slip_pts
     spread = spread_points * scenario.spread_mult * contract_size * volume
     slippage = slip_pts * scenario.slippage_mult * contract_size * volume

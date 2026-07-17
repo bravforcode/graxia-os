@@ -7,12 +7,13 @@ If p > 0.05 → cannot reject null (no edge / chance).
 
 Does NOT use sacred holdout.
 """
+
 from __future__ import annotations
 
 import json
 import math
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -23,10 +24,11 @@ if sys.platform == "win32":
 
 ROOT = Path(__file__).resolve().parent.parent
 N_SHUFFLES = 200
+# Corrected costs from config/cost_calibration.json (MEASURED, not assumed)
 COST_RT_BPS = {
-    "XAUUSD": 8.0,   # ~spread+slip approx
-    "NAS100": 10.0,
-    "EURUSD": 3.5,
+    "XAUUSD": 0.30,  # Pepperstone Razor: $0 commission, measured spread+slip
+    "NAS100": 2.60,  # Pepperstone Razor: measured spread+slip
+    "EURUSD": 3.5,   # FX: spread + $7/rt commission (unchanged)
 }
 
 
@@ -214,7 +216,7 @@ def main() -> int:
 
     survives = [r for r in results if r["verdict"] == "EDGE_SURVIVES"]
     payload = {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "n_shuffles": N_SHUFFLES,
         "method": "shuffle log-returns, rebuild OHLC, re-run signals, OOS last 20%",
         "survives": [r["name"] for r in survives],
