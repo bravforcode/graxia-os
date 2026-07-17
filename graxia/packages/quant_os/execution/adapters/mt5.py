@@ -14,6 +14,30 @@ from .base import (
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
+# Module-level kill-switch gate — set by orchestrator, checked before any order
+# This prevents scripts from bypassing the orchestrator/KillSwitch/PreTradeRiskGate
+# by importing MetaTrader5 directly and calling mt5.order_send().
+# ---------------------------------------------------------------------------
+_kill_switch_active = False
+_kill_switch_reason = ""
+
+
+def set_kill_switch(active: bool, reason: str = "") -> None:
+    """Set module-level kill-switch state. Called by orchestrator/coordinator."""
+    global _kill_switch_active, _kill_switch_reason
+    _kill_switch_active = active
+    _kill_switch_reason = reason
+    if active:
+        logger.critical("MT5 adapter kill-switch ACTIVATED: %s", reason)
+    else:
+        logger.info("MT5 adapter kill-switch deactivated")
+
+
+def is_kill_switch_active() -> bool:
+    """Check if kill-switch is active. Used by tests and monitoring."""
+    return _kill_switch_active
+
+# ---------------------------------------------------------------------------
 # Lazy mt5 import – allows the rest of the package to load without mt5
 # installed (e.g. during unit tests that mock this adapter).
 # ---------------------------------------------------------------------------
@@ -174,6 +198,14 @@ class MT5Adapter(BrokerAdapter):
         Filling mode is auto-detected per symbol (FOK vs RETURN) because
         Pepperstone indices do NOT support IOC — only FOK and RETURN.
         """
+        # Module-level kill-switch gate — prevents bypassing orchestrator safety
+        if _kill_switch_active:
+            logger.critical("MT5 submit_order BLOCKED: kill-switch active (%s)", _kill_switch_reason)
+            return OrderResult(
+                status=OrderStatus.FAILED,
+                error=f"Kill-switch active: {_kill_switch_reason}",
+            )
+
         self._ensure_connected()
 
         # Ensure symbol is in Market Watch (required for live ticks)
