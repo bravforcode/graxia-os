@@ -25,6 +25,7 @@ from ..execution.oms import OMS
 from ..risk.kill_switch import KillSwitch
 from ..risk.risk_ledger import RiskLedger
 from ..risk.risk_policy import RiskPolicy
+from ..regime.risk_overlay import RiskOverlay
 from .agents.portfolio_manager import PortfolioManagerAgent
 from .agents.risk_auditor import RiskAuditorAgent
 from .config import QuantConfig
@@ -75,6 +76,12 @@ class TradingOrchestrator:
         self._risk_policy = RiskPolicy()
         self._risk_ledger = RiskLedger()
         self._kill_switch = KillSwitch()
+        self._risk_overlay = RiskOverlay(
+            initial_balance=self._config.paper_initial_capital,
+            max_risk_pct=self._config.max_risk_per_trade_pct / 100,
+            max_daily_loss_pct=self._config.max_daily_loss_pct / 100,
+            max_weekly_loss_pct=self._config.max_weekly_loss_pct / 100,
+        )
         self._state_store = SystemState.default(
             environment=self._config.trading_mode.value,
         )
@@ -91,12 +98,13 @@ class TradingOrchestrator:
             bus=self._bus,
             state_store=self._state_store,
             kill_switch=self._kill_switch,
-            risk_overlay=None,
+            risk_overlay=self._risk_overlay,
             risk_ledger=self._risk_ledger,
             trading_loop=self._trading_loop,
         )
         self._kill_switch.set_coordinator(self._coordinator)
         self._risk_ledger.set_coordinator(self._coordinator)
+        self._risk_overlay.set_coordinator(self._coordinator)
         self._running = False
         self._sync_task: asyncio.Task | None = None
         self._last_heartbeat: float = 0.0
