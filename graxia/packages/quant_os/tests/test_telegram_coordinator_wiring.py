@@ -69,19 +69,12 @@ def test_telegram_handler_coordinator_is_kill_switch_coordinator():
     assert coordinator._kill_switch is mock_kill_switch
 
 
-@pytest.mark.skip(
-    reason="Pre-existing import error: OrderState.UNKNOWN not in OrderStatus (order_state_machine.py)"
-)
 def test_orchestrator_coordinator_property_returns_internal_coordinator():
     """Verify orchestrator.coordinator returns self._coordinator."""
-    import inspect
     from graxia.packages.quant_os.core.orchestrator import TradingOrchestrator
 
-    assert hasattr(TradingOrchestrator, 'coordinator'), "TradingOrchestrator must have coordinator property"
-
-    prop = TradingOrchestrator.__dict__.get('coordinator')
-    if prop and isinstance(prop, property):
-        source = inspect.getsource(prop.fget)
-        assert '_coordinator' in source, (
-            "orchestrator.coordinator property must return self._coordinator"
-        )
+    orch = TradingOrchestrator()
+    assert hasattr(orch, "coordinator"), "TradingOrchestrator must have coordinator property"
+    assert orch.coordinator is orch._coordinator, (
+        "orchestrator.coordinator property must return self._coordinator"
+    )

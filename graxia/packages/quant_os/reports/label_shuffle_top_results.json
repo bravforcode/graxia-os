@@ -1,0 +1,79 @@
+{
+  "generated_at": "2026-07-17T19:33:56.521123+00:00",
+  "n_shuffles": 200,
+  "method": "shuffle log-returns, rebuild OHLC, re-run signals, OOS last 20%",
+  "survives": [],
+  "results": [
+    {
+      "name": "Donchian_10_XAUUSD",
+      "symbol": "XAUUSD",
+      "n_bars": 10547,
+      "cost_rt_bps": 8.0,
+      "full_sharpe": -0.1852,
+      "oos_sharpe": 0.1396,
+      "oos_mean_ret": 7.626e-05,
+      "null_mean_sharpe": 0.0372,
+      "null_p95_sharpe": 0.6139,
+      "p_value": 0.375,
+      "n_shuffles": 200,
+      "verdict": "NO_EDGE"
+    },
+    {
+      "name": "Donchian_55_NAS100",
+      "symbol": "NAS100",
+      "n_bars": 5733,
+      "cost_rt_bps": 10.0,
+      "full_sharpe": -0.0849,
+      "oos_sharpe": -0.1783,
+      "oos_mean_ret": -0.00016475,
+      "null_mean_sharpe": 0.1421,
+      "null_p95_sharpe": 0.9413,
+      "p_value": 0.74,
+      "n_shuffles": 200,
+      "verdict": "NO_EDGE"
+    },
+    {
+      "name": "Momentum126_NAS100",
+      "symbol": "NAS100",
+      "n_bars": 5733,
+      "cost_rt_bps": 10.0,
+      "full_sharpe": 0.1623,
+      "oos_sharpe": 0.4814,
+      "oos_mean_ret": 0.00044498,
+      "null_mean_sharpe": 0.1326,
+      "null_p95_sharpe": 0.9582,
+      "p_value": 0.255,
+      "n_shuffles": 200,
+      "verdict": "NO_EDGE"
+    },
+    {
+      "name": "Hybrid60_NAS100",
+      "symbol": "NAS100",
+      "n_bars": 5733,
+      "cost_rt_bps": 10.0,
+      "full_sharpe": 0.1028,
+      "oos_sharpe": 0.3339,
+      "oos_mean_ret": 0.00030881,
+      "null_mean_sharpe": 0.0765,
+      "null_p95_sharpe": 0.7883,
+      "p_value": 0.295,
+      "n_shuffles": 200,
+      "verdict": "NO_EDGE"
+    },
+    {
+      "name": "Donchian_20_XAUUSD",
+      "symbol": "XAUUSD",
+      "n_bars": 10547,
+      "cost_rt_bps": 8.0,
+      "full_sharpe": -0.092,
+      "oos_sharpe": 0.1814,
+      "oos_mean_ret": 9.891e-05,
+      "null_mean_sharpe": 0.0666,
+      "null_p95_sharpe": 0.6258,
+      "p_value": 0.345,
+      "n_shuffles": 200,
+      "verdict": "NO_EDGE"
+    }
+  ],
+  "honest_note": "EDGE_SURVIVES means p<0.05 on label-shuffle OOS only. Still not live-ready without pooled multi-asset DK + cost stress + paper."
+}

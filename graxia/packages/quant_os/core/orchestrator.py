@@ -22,6 +22,7 @@ from typing import Any
 from ..execution.adapters.base import BrokerAdapter
 from ..execution.adapters.mt5 import MT5Adapter
 from ..execution.oms import OMS
+from ..risk.kill_switch import KillSwitch
 from ..risk.risk_ledger import RiskLedger
 from ..risk.risk_policy import RiskPolicy
 from .agents.portfolio_manager import PortfolioManagerAgent
@@ -35,6 +36,8 @@ from .events import (
     TradeClosedEvent,
 )
 from .position_manager import PositionManager
+from .state_coordinator import StateCoordinator
+from .state_store import SystemState
 from .trading_loop import PaperExecutor, TradingLoop
 
 logger = logging.getLogger(__name__)
@@ -71,6 +74,10 @@ class TradingOrchestrator:
         self._position_manager = PositionManager(bus=self._bus)
         self._risk_policy = RiskPolicy()
         self._risk_ledger = RiskLedger()
+        self._kill_switch = KillSwitch()
+        self._state_store = SystemState.default(
+            environment=self._config.trading_mode.value,
+        )
         self._trading_loop = TradingLoop(
             bus=self._bus,
             oms=self._oms,
@@ -80,6 +87,16 @@ class TradingOrchestrator:
             risk_ledger=self._risk_ledger,
             account_equity=self._config.paper_initial_capital,
         )
+        self._coordinator = StateCoordinator(
+            bus=self._bus,
+            state_store=self._state_store,
+            kill_switch=self._kill_switch,
+            risk_overlay=None,
+            risk_ledger=self._risk_ledger,
+            trading_loop=self._trading_loop,
+        )
+        self._kill_switch.set_coordinator(self._coordinator)
+        self._risk_ledger.set_coordinator(self._coordinator)
         self._running = False
         self._sync_task: asyncio.Task | None = None
         self._last_heartbeat: float = 0.0
@@ -87,6 +104,10 @@ class TradingOrchestrator:
     @property
     def bus(self) -> EventBus:
         return self._bus
+
+    @property
+    def coordinator(self) -> StateCoordinator:
+        return self._coordinator
 
     @property
     def trading_loop(self) -> TradingLoop:
