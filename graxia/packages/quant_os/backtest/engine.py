@@ -1327,11 +1327,15 @@ class BacktestEngine:
             tick_value = getattr(pos, "tick_value", Decimal("1.0"))
             if pos.side == PositionType.LONG:
                 unrealized += float(
-                    self._pnl_from_ticks(current - closing_cost - closing_slip - pos.entry_price, pos.quantity, tick_size, tick_value)
+                    self._pnl_from_ticks(
+                        current - closing_cost - closing_slip - pos.entry_price, pos.quantity, tick_size, tick_value
+                    )
                 )
             else:
                 unrealized += float(
-                    self._pnl_from_ticks(pos.entry_price - current - closing_cost - closing_slip, pos.quantity, tick_size, tick_value)
+                    self._pnl_from_ticks(
+                        pos.entry_price - current - closing_cost - closing_slip, pos.quantity, tick_size, tick_value
+                    )
                 )
         return unrealized
 
@@ -1379,10 +1383,14 @@ class BacktestEngine:
             tick_value = getattr(pos, "tick_value", Decimal("1.0"))
             if pos.side == PositionType.LONG:
                 # Close = sell at bid - slippage (worse than mid)
-                unrealized += self._pnl_from_ticks(current - closing_cost - closing_slip - pos.entry_price, pos.quantity, tick_size, tick_value)
+                unrealized += self._pnl_from_ticks(
+                    current - closing_cost - closing_slip - pos.entry_price, pos.quantity, tick_size, tick_value
+                )
             else:
                 # Close = buy at ask + slippage (worse than mid)
-                unrealized += self._pnl_from_ticks(pos.entry_price - current - closing_cost - closing_slip, pos.quantity, tick_size, tick_value)
+                unrealized += self._pnl_from_ticks(
+                    pos.entry_price - current - closing_cost - closing_slip, pos.quantity, tick_size, tick_value
+                )
 
         self.equity = self.balance + unrealized
 
