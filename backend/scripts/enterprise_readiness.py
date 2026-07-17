@@ -28,7 +28,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--skip-runtime", action="store_true")
     parser.add_argument("--strict", action="store_true")
     parser.add_argument("--env-file", default=str(REPO_ROOT / ".env.production"))
-    parser.add_argument("--compose-file", default=str(REPO_ROOT / "docker-compose.prod.yml"))
+    parser.add_argument("--compose-file", default=str(REPO_ROOT / "config" / "docker-compose.production.yml"))
     parser.add_argument(
         "--frontend-env-file", default=str(REPO_ROOT / "frontend" / ".env.production")
     )

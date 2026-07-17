@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
+COMPOSE_FILE="${COMPOSE_FILE:-config/docker-compose.production.yml}"
 APP_URL="${APP_URL:?APP_URL is required}"
 BACKEND_DIGEST="${BACKEND_DIGEST:?BACKEND_DIGEST is required}"
 FRONTEND_DIGEST="${FRONTEND_DIGEST:?FRONTEND_DIGEST is required}"

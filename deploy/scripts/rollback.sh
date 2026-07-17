@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
+COMPOSE_FILE="${COMPOSE_FILE:-config/docker-compose.production.yml}"
 APP_URL="${APP_URL:?APP_URL is required}"
 HISTORY_FILE="${DEPLOY_HISTORY_FILE:-deploy/deploy_history.jsonl}"
 ROLLBACK_INDEX="${ROLLBACK_INDEX:-1}"
