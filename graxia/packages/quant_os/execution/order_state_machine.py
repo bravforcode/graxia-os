@@ -9,96 +9,147 @@ OrderState = OrderStatus
 TRANSITIONS: dict[OrderState, set[OrderState]] = {
     # --- Core lifecycle ---
     OrderState.CREATED: {
-        OrderState.VALIDATED, OrderState.REJECTED, OrderState.ERROR,
+        OrderState.VALIDATED,
+        OrderState.REJECTED,
+        OrderState.ERROR,
     },
     OrderState.VALIDATED: {
-        OrderState.RISK_APPROVED, OrderState.REJECTED, OrderState.ERROR,
+        OrderState.RISK_APPROVED,
+        OrderState.REJECTED,
+        OrderState.ERROR,
     },
     OrderState.RISK_APPROVED: {
-        OrderState.COMPLIANCE_APPROVED, OrderState.REJECTED, OrderState.ERROR,
+        OrderState.COMPLIANCE_APPROVED,
+        OrderState.REJECTED,
+        OrderState.ERROR,
     },
     OrderState.COMPLIANCE_APPROVED: {
-        OrderState.PENDING_HUMAN, OrderState.SENT_TO_BROKER, OrderState.REJECTED, OrderState.ERROR,
+        OrderState.PENDING_HUMAN,
+        OrderState.SENT_TO_BROKER,
+        OrderState.REJECTED,
+        OrderState.ERROR,
     },
     OrderState.PENDING_HUMAN: {
-        OrderState.SENT_TO_BROKER, OrderState.CANCELLED, OrderState.ERROR,
+        OrderState.SENT_TO_BROKER,
+        OrderState.CANCELLED,
+        OrderState.ERROR,
     },
     OrderState.SENT_TO_BROKER: {
-        OrderState.ACKNOWLEDGED, OrderState.PARTIAL_FILL, OrderState.FILLED,
-        OrderState.REJECTED, OrderState.CANCELLED, OrderState.ERROR,
+        OrderState.ACKNOWLEDGED,
+        OrderState.PARTIAL_FILL,
+        OrderState.FILLED,
+        OrderState.REJECTED,
+        OrderState.CANCELLED,
+        OrderState.ERROR,
     },
     OrderState.ACKNOWLEDGED: {
-        OrderState.PARTIAL_FILL, OrderState.FILLED, OrderState.REJECTED,
-        OrderState.CANCELLED, OrderState.ERROR,
+        OrderState.PARTIAL_FILL,
+        OrderState.FILLED,
+        OrderState.REJECTED,
+        OrderState.CANCELLED,
+        OrderState.ERROR,
     },
     OrderState.PARTIAL_FILL: {
-        OrderState.FILLED, OrderState.CANCELLED, OrderState.ERROR, OrderState.CRITICAL_INCIDENT,
+        OrderState.FILLED,
+        OrderState.CANCELLED,
+        OrderState.ERROR,
+        OrderState.CRITICAL_INCIDENT,
     },
     OrderState.CANCEL_REQUESTED: {
-        OrderState.CANCELLED, OrderState.ERROR,
+        OrderState.CANCELLED,
+        OrderState.ERROR,
     },
     OrderState.CANCELLED: set(),
     OrderState.ERROR: set(),
     # --- Broker adapter states ---
     OrderState.PENDING: {
-        OrderState.SUBMITTED, OrderState.FAILED,
+        OrderState.SUBMITTED,
+        OrderState.FAILED,
     },
     OrderState.SUBMITTED: {
-        OrderState.PARTIALLY_FILLED, OrderState.FILLED,
-        OrderState.CANCELLED, OrderState.FAILED, OrderState.TIMEOUT,
+        OrderState.PARTIALLY_FILLED,
+        OrderState.FILLED,
+        OrderState.CANCELLED,
+        OrderState.FAILED,
+        OrderState.TIMEOUT,
     },
     OrderState.PARTIALLY_FILLED: {
-        OrderState.FILLED, OrderState.CANCELLED, OrderState.FAILED,
+        OrderState.FILLED,
+        OrderState.CANCELLED,
+        OrderState.FAILED,
     },
     OrderState.FAILED: set(),
     OrderState.TIMEOUT: set(),
     OrderState.FILLED: {
-        OrderState.PROTECTIVE_STOPS_PENDING, OrderState.PROTECTIVE_STOPS_VERIFIED,
+        OrderState.PROTECTIVE_STOPS_PENDING,
+        OrderState.PROTECTIVE_STOPS_VERIFIED,
         OrderState.CRITICAL_INCIDENT,
     },
     # --- Execution state machine states ---
     OrderState.SIGNAL_CREATED: {
-        OrderState.RISK_CHECKED, OrderState.REJECTED, OrderState.CRITICAL_INCIDENT,
+        OrderState.RISK_CHECKED,
+        OrderState.REJECTED,
+        OrderState.CRITICAL_INCIDENT,
     },
     OrderState.RISK_CHECKED: {
-        OrderState.ORDER_PRECHECKED, OrderState.REJECTED, OrderState.CRITICAL_INCIDENT,
+        OrderState.ORDER_PRECHECKED,
+        OrderState.REJECTED,
+        OrderState.CRITICAL_INCIDENT,
     },
     OrderState.ORDER_PRECHECKED: {
-        OrderState.ORDER_SUBMITTED, OrderState.REJECTED, OrderState.CRITICAL_INCIDENT,
+        OrderState.ORDER_SUBMITTED,
+        OrderState.REJECTED,
+        OrderState.CRITICAL_INCIDENT,
     },
     OrderState.ORDER_SUBMITTED: {
-        OrderState.ORDER_ACKNOWLEDGED, OrderState.PARTIAL_FILL,
-        OrderState.REJECTED, OrderState.EXPIRED, OrderState.CRITICAL_INCIDENT,
+        OrderState.ORDER_ACKNOWLEDGED,
+        OrderState.PARTIAL_FILL,
+        OrderState.REJECTED,
+        OrderState.EXPIRED,
+        OrderState.CRITICAL_INCIDENT,
     },
     OrderState.ORDER_ACKNOWLEDGED: {
-        OrderState.FILLED, OrderState.PARTIAL_FILL,
-        OrderState.REJECTED, OrderState.EXPIRED, OrderState.CRITICAL_INCIDENT,
+        OrderState.FILLED,
+        OrderState.PARTIAL_FILL,
+        OrderState.REJECTED,
+        OrderState.EXPIRED,
+        OrderState.CRITICAL_INCIDENT,
     },
     OrderState.PROTECTIVE_STOPS_PENDING: {
-        OrderState.PROTECTIVE_STOPS_VERIFIED, OrderState.CRITICAL_INCIDENT,
+        OrderState.PROTECTIVE_STOPS_VERIFIED,
+        OrderState.CRITICAL_INCIDENT,
     },
     OrderState.PROTECTIVE_STOPS_VERIFIED: {
-        OrderState.POSITION_RECONCILED, OrderState.CRITICAL_INCIDENT,
+        OrderState.POSITION_RECONCILED,
+        OrderState.CRITICAL_INCIDENT,
     },
     OrderState.POSITION_RECONCILED: {
-        OrderState.CLOSED, OrderState.CRITICAL_INCIDENT,
+        OrderState.CLOSED,
+        OrderState.CRITICAL_INCIDENT,
     },
     OrderState.CLOSED: {
-        OrderState.DEAL_RECONCILED, OrderState.CRITICAL_INCIDENT,
+        OrderState.DEAL_RECONCILED,
+        OrderState.CRITICAL_INCIDENT,
     },
     OrderState.DEAL_RECONCILED: {
-        OrderState.AUDITED, OrderState.CRITICAL_INCIDENT,
+        OrderState.AUDITED,
+        OrderState.CRITICAL_INCIDENT,
     },
     OrderState.REJECTED: set(),
     OrderState.EXPIRED: set(),
     OrderState.AUDITED: set(),
     OrderState.CRITICAL_INCIDENT: set(),
+    OrderState.UNKNOWN: set(),
 }
 
-TERMINAL_STATES = frozenset({
-    OrderState.REJECTED, OrderState.EXPIRED,
-    OrderState.AUDITED, OrderState.CRITICAL_INCIDENT,
-})
+TERMINAL_STATES = frozenset(
+    {
+        OrderState.REJECTED,
+        OrderState.EXPIRED,
+        OrderState.AUDITED,
+        OrderState.CRITICAL_INCIDENT,
+    }
+)
 
 
 class OrderStateMachine:

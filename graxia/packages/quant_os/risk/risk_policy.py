@@ -9,9 +9,9 @@ class RiskPolicy:
     """Immutable risk policy. All loss limits in basis points (1 bps = 0.01%)."""
 
     risk_per_trade_bps: int = 100  # 1.00% — matches QuantConfig legacy default
-    max_daily_loss_bps: int = 200  # 2.00% — matches QuantConfig legacy default
-    max_weekly_loss_bps: int = 500  # 5.00% — matches QuantConfig legacy default
-    max_total_drawdown_bps: int = 1000  # 10.00% — matches QuantConfig legacy default
+    max_daily_loss_bps: int = 50  # 0.50%
+    max_weekly_loss_bps: int = 150  # 1.50%
+    max_total_drawdown_bps: int = 300  # 3.00%
     max_open_positions: int = 5
     max_orders_per_day: int = 3
     max_symbol_exposure_bps: int = 100  # 1.00%
