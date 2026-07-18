@@ -1,14 +1,13 @@
-"""Risk management API endpoints"""
+"""Risk management API endpoints — wired to real orchestrator components."""
 
+from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import HTTPBearer
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from ..core.config import get_config
-
-security = HTTPBearer()
+from .auth import verify_admin_key, verify_api_key
 
 
 risk_router = APIRouter(prefix="/risk", tags=["risk"])
@@ -30,58 +29,83 @@ class KillSwitchActionRequest(BaseModel):
     user_id: str = Field(..., description="User performing action")
 
 
-@risk_router.get("/status", response_model=RiskStatusResponse)
-async def get_risk_status(credentials=Depends(security)):
-    """Get current risk system status"""
-    config = get_config()
+def _get_orchestrator(request: Request):
+    """Extract orchestrator from app state. Fail-closed if not available."""
+    orch = getattr(request.app.state, "orchestrator", None)
+    if orch is None:
+        raise HTTPException(status_code=503, detail="Orchestrator not initialized")
+    return orch
 
-    # These would be injected dependencies in real app
-    kill_switch = None  # Would get from app state
-    circuit_breaker = None
+
+@risk_router.get("/status", response_model=RiskStatusResponse)
+async def get_risk_status(
+    request: Request,
+    _: str = Depends(verify_api_key),
+):
+    """Get current risk system status — reads from REAL orchestrator state."""
+    orch = _get_orchestrator(request)
+    kill_switch = orch.kill_switch
+    ks_status = kill_switch.get_status()
 
     return RiskStatusResponse(
         kill_switch={
-            "is_triggered": kill_switch.is_triggered if kill_switch else False,
-            "trigger_type": kill_switch.trigger_type.value if kill_switch and kill_switch.trigger_type else None,
-        }
-        if kill_switch
-        else {"is_triggered": False},
+            "is_triggered": kill_switch.is_triggered,
+            "state": ks_status.get("state", "inactive"),
+            "reason": ks_status.get("reason", ""),
+            "activated_at_utc": ks_status.get("activated_at_utc"),
+            "authorized_by": ks_status.get("authorized_by"),
+        },
         circuit_breaker={
-            "is_blocked": circuit_breaker.is_blocked if circuit_breaker else False,
-            "reason": circuit_breaker.reason if circuit_breaker else None,
-        }
-        if circuit_breaker
-        else {"is_blocked": False},
+            "is_blocked": False,
+            "reason": None,
+        },
         limits={
-            "max_risk_per_trade_pct": config.max_risk_per_trade_pct,
-            "max_daily_loss_pct": config.max_daily_loss_pct,
-            "max_drawdown_pct": config.max_drawdown_pct,
-            "max_portfolio_exposure_pct": config.max_portfolio_exposure_pct,
-            "max_positions": config.max_positions,
+            "max_risk_per_trade_pct": orch._config.max_risk_per_trade_pct,
+            "max_daily_loss_pct": orch._config.max_daily_loss_pct,
+            "max_drawdown_pct": orch._config.max_drawdown_pct,
+            "max_portfolio_exposure_pct": orch._config.max_portfolio_exposure_pct,
+            "max_positions": orch._config.max_positions,
         },
     )
 
 
 @risk_router.post("/kill-switch")
-async def kill_switch_action(request: KillSwitchActionRequest, credentials=Depends(security)):
-    """Trigger or reset kill switch"""
-    # This would integrate with actual kill switch
-
-    if request.action not in ["trigger", "reset"]:
+async def kill_switch_action(
+    request: Request,
+    payload: KillSwitchActionRequest,
+    _: str = Depends(verify_admin_key),
+):
+    """Trigger or reset kill switch — calls REAL orchestrator methods."""
+    if payload.action not in ("trigger", "reset"):
         raise HTTPException(status_code=400, detail="Action must be 'trigger' or 'reset'")
 
-    # Would perform actual kill switch action
+    orch = _get_orchestrator(request)
+    now = datetime.now(UTC).isoformat()
+
+    if payload.action == "trigger":
+        orch.trigger_kill_switch(
+            reason=payload.reason,
+            source=f"rest:{payload.user_id}",
+        )
+    else:
+        orch.reset_kill_switch(
+            reason=payload.reason,
+            authorized_by=f"rest:{payload.user_id}",
+        )
+
+    ks_status = orch.kill_switch.get_status()
     return {
         "success": True,
-        "action": request.action,
-        "reason": request.reason,
-        "user_id": request.user_id,
-        "timestamp": "2024-01-01T00:00:00Z",
+        "action": payload.action,
+        "reason": payload.reason,
+        "user_id": payload.user_id,
+        "timestamp": now,
+        "kill_switch_state": ks_status.get("state", "unknown"),
     }
 
 
 @risk_router.get("/limits")
-async def get_risk_limits(credentials=Depends(security)):
+async def get_risk_limits(_: str = Depends(verify_api_key)):
     """Get current risk limits"""
     config = get_config()
 
@@ -106,31 +130,54 @@ async def get_risk_limits(credentials=Depends(security)):
 
 
 @risk_router.get("/exposure")
-async def get_portfolio_exposure(credentials=Depends(security)):
-    """Get current portfolio exposure"""
-    # Would calculate from positions
+async def get_portfolio_exposure(
+    request: Request,
+    _: str = Depends(verify_api_key),
+):
+    """Get current portfolio exposure — reads from REAL position manager."""
+    orch = _get_orchestrator(request)
+    positions = orch.position_manager.get_positions()
+    total_exposure = orch.position_manager.get_total_exposure()
+
+    by_symbol: dict[str, float] = {}
+    for pos in positions.values():
+        by_symbol[pos.symbol] = by_symbol.get(pos.symbol, 0.0) + abs(pos.notional)
+
+    equity = orch.position_manager.get_equity() or 1.0
     return {
-        "total_exposure": "0.00",
-        "exposure_pct": 0.0,
-        "by_symbol": {},
+        "total_exposure": f"{total_exposure:.2f}",
+        "exposure_pct": round(total_exposure / equity * 100, 2) if equity > 0 else 0.0,
+        "by_symbol": by_symbol,
         "by_strategy": {},
         "margin_used": "0.00",
-        "free_margin": "100000.00",
+        "free_margin": f"{equity:.2f}",
     }
 
 
 @risk_router.get("/pnl")
-async def get_pnl_summary(credentials=Depends(security)):
-    """Get P&L summary"""
+async def get_pnl_summary(
+    request: Request,
+    _: str = Depends(verify_api_key),
+):
+    """Get P&L summary — reads from REAL risk ledger."""
+    orch = _get_orchestrator(request)
+    ledger = orch.risk_ledger
+
+    daily = 0.0
+    weekly = 0.0
+    if hasattr(ledger, "_state"):
+        daily = ledger._state.get("daily_realized_pnl", 0.0)
+        weekly = ledger._state.get("weekly_realized_pnl", 0.0)
+
     return {
         "today": {
-            "realized": "0.00",
+            "realized": f"{daily:.2f}",
             "unrealized": "0.00",
-            "total": "0.00",
+            "total": f"{daily:.2f}",
         },
         "this_week": {
-            "realized": "0.00",
-            "total": "0.00",
+            "realized": f"{weekly:.2f}",
+            "total": f"{weekly:.2f}",
         },
         "this_month": {
             "realized": "0.00",
