@@ -78,3 +78,27 @@ chore(dx): add pre-commit config
 4. Open a PR targeting the main branch
 5. Ensure CI passes and all tests are green
 6. Request review from a maintainer
+
+## Git Safety Rules
+
+**After any rebase or force push:**
+
+1. **Verify branch state** before pushing:
+   ```bash
+   git status          # Check for uncommitted changes
+   git log --oneline -5  # Verify commit history looks correct
+   git diff HEAD~1     # Review the last commit's changes
+   ```
+
+2. **Never force push to `main`** — only allowed on feature branches
+3. **Always run tests after rebase** before pushing:
+   ```bash
+   make test
+   make lint
+   ```
+4. **If something looks wrong after push**, do NOT force push again. Create a new commit to fix it.
+
+5. **Before merging PR**, verify:
+   - All CI checks pass
+   - No merge conflicts
+   - Commit history is clean (no "fix fix fix" chains)

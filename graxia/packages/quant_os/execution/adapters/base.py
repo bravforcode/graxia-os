@@ -5,11 +5,32 @@ The legacy module ``execution/broker_adapter.py`` is deprecated and exists
 only for backward compatibility.
 """
 
+import random
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from ...core.enums import OrderStatus
+
+
+def realistic_slippage_pips(max_slippage_pips: float) -> float:
+    """Return a realistic slippage value using half-normal distribution.
+
+    Most fills experience minimal slippage; large slippage is rare.
+    Uses half-normal (abs of normal) to model this: peak at 0, fat tail.
+
+    Args:
+        max_slippage_pips: Maximum slippage in pips (sigma parameter).
+
+    Returns:
+        Slippage in pips (always >= 0).
+    """
+    if max_slippage_pips <= 0:
+        return 0.0
+    # Half-normal: sigma = max_slippage_pips, values in [0, +inf)
+    # Clip at 3*sigma to avoid extreme outliers (99.7% of mass)
+    raw = abs(random.gauss(0, max_slippage_pips))
+    return min(raw, 3.0 * max_slippage_pips)
 
 
 @dataclass
@@ -28,6 +49,7 @@ class Order:
     broker_order_id: str | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     trace_id: str = ""  # correlation ID for distributed tracing
+    commission: float = 0.0
 
 
 @dataclass

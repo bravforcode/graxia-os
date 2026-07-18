@@ -1,0 +1,116 @@
+{
+  "schema_version": "1.0",
+  "lock_date": "2026-07-12",
+  "lock_doc_path": "reports/stopping_rule_2026_07_12.md",
+  "lock_doc_sha256": "e2ba283ac8fdefef026eb17e99e2ecaf4b415d71e3ba43bec7f4bb8682baf39a",
+  "cumulative_trial_count": 1021,
+  "cumulative_trial_cap": 1022,
+  "max_new_hypotheses": 20,
+  "next_available_trial_number": 1022,
+  "new_hypotheses_used": 19,
+  "new_hypotheses_remaining": 1,
+  "sacred_holdout": {
+    "path": "data/sacred_holdout/holdout.csv",
+    "status": "LOCKED",
+    "use_count": 0,
+    "max_use_count": 1,
+    "unlock_phase": "4.5 — final confirmation gate only",
+    "open_policy": "Opening this file and running any backtest against it counts as 1 trial. Cannot be reopened. If a candidate fails on holdout, the hypothesis is REJECTED permanently — no retesting."
+  },
+  "lineage": [
+    {
+      "trial_range": "1-1000",
+      "id": "search_1_indicator_scan",
+      "result": "REJECTED",
+      "date": "pre-2026-07-12",
+      "note": "Bulk indicator scan; PBO ~0.5; documented in RESEARCH_BUNDLE.md."
+    },
+    {
+      "trial_number": 1001,
+      "id": "rydc_arm_a",
+      "result": "REJECTED",
+      "date": "2026-07-12",
+      "p_value": 0.9680,
+      "note": "p=0.968 is strong null result. 0/5 gates pass after bug fix."
+    },
+    {
+      "trial_number": 1002,
+      "id": null,
+      "result": "RESERVED",
+      "date": null,
+      "note": "Cumulative-count alignment. No individual hypothesis."
+    },
+    {
+      "trial_number": 1003,
+      "id": "cross_asset_momentum",
+      "result": "REJECTED",
+      "date": "2026-07-13",
+      "p_value": 0.5976,
+      "note": "CAM: DXY->XAUUSD diffusion lag. p=0.598 null. 1/6 gates pass."
+    },
+    {
+      "trial_number": 1004,
+      "id": "session_pattern",
+      "result": "REJECTED",
+      "date": "2026-07-13",
+      "p_value": 0.9338,
+      "note": "SP: Session-conditional. p=0.934 null. 1/6 gates pass."
+    },
+    {
+      "trial_number": 1005,
+      "id": "macro_regime_mr",
+      "result": "REJECTED",
+      "date": "2026-07-13",
+      "p_value": 0.2441,
+      "note": "MRM: DFII10 regime MR. Sharpe -1.16, negative. 0/6 gates pass."
+    },
+    {
+      "trial_number": 1006,
+      "id": "gold_silver_spread",
+      "result": "REJECTED",
+      "date": "2026-07-13",
+      "p_value": 0.5045,
+      "note": "GSS: XAU/XAG ratio MR. Negative Sharpe. 0/6 gates."
+    },
+    {
+      "trial_number": 1007,
+      "id": "btc_vol_clustering",
+      "result": "REJECTED",
+      "date": "2026-07-13",
+      "p_value": 0.2479,
+      "note": "BVC: BTC vol continuation. 72.4% win rate but 29 trades < 100 target."
+    },
+    {
+      "trial_number": 1008,
+      "id": "cross_asset_vol_rank",
+      "result": "REJECTED",
+      "date": "2026-07-13",
+      "p_value": 0.6101,
+      "note": "CVR: Vol percentile value. Negative Sharpe. 1/6 gates."
+    },
+    {
+      "trial_range": "1009-1021",
+      "id": "gold_ict_batch",
+      "result": "REJECTED",
+      "date": "2026-07-18",
+      "note": "13 gi_* ICT strategies on XAUUSD D1. All fail label-shuffle (p>0.05). DK-test dk_t=0.52, pos=5/13 → REJECT. ML filter applied to 5 strategies with enough signals: RF accuracy 48-56% (coin flip), filtered OOS Sharpe up to 3.51 but label-shuffle p=0.96 (overfitting). Sacred holdout NOT burned."
+    }
+  ],
+  "consecutive_gate_failures": {
+    "p_value": {"count": 0, "last_hypothesis_id": null, "note": "Reset on Direction B (2026-07-13) — new mechanism/instrument"},
+    "wfa_oos_positive": {"count": 0, "last_hypothesis_id": null, "note": "Reset on Direction B"},
+    "wfe": {"count": 0, "last_hypothesis_id": null, "note": "Reset on Direction B"},
+    "deflated_sharpe_ratio": {"count": 0, "last_hypothesis_id": null, "note": "Reset on Direction B"},
+    "pbo_cscv": {"count": 0, "last_hypothesis_id": null},
+    "bootstrap_ci_lower": {"count": 0, "last_hypothesis_id": null, "note": "Reset on Direction B"},
+    "min_independent_trades": {"count": 0, "last_hypothesis_id": null, "note": "Reset on Direction B"},
+    "trigger_threshold": 3,
+    "trigger_action": "STOP research. Re-examine gate calibration, data quality, and whether the research direction is misframed."
+  },
+  "stopping_rule_triggers": {
+    "trial_cap_1022_reached": {"active": false, "current": 1021, "cap": 1022},
+    "three_months_elapsed": {"active": false, "phase_3_start_date": "2026-07-13", "deadline": "2026-10-13"},
+    "eighty_hours_used": {"active": false, "hours_logged": 0, "cap_hours": 80},
+    "three_in_a_row_same_gate_failed": {"active": false}
+  }
+}
