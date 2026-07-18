@@ -13,12 +13,11 @@ Gap these fill:
 
 from __future__ import annotations
 
-import os
 import logging
+import os
 from unittest.mock import MagicMock, patch, AsyncMock
 
-import pytest
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 # ---------------------------------------------------------------------------
@@ -34,7 +33,6 @@ from graxia.packages.quant_os.core.orchestrator import TradingOrchestrator
 from graxia.packages.quant_os.risk.kill_switch import (
     KillSwitch,
     KillSwitchState,
-    CloseMode,
 )
 
 logger = logging.getLogger("graxia.packages.quant_os.risk.kill_switch")
@@ -43,6 +41,7 @@ logger = logging.getLogger("graxia.packages.quant_os.risk.kill_switch")
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _build_risk_app(orchestrator: TradingOrchestrator) -> FastAPI:
     """Build minimal FastAPI with the REAL risk_router + injected orchestrator."""
@@ -91,6 +90,10 @@ class TestRiskStatusHttpIntegration:
 
     def setup_method(self):
         reset_config()
+        # Clear any persisted kill switch state from prior tests
+        from pathlib import Path
+        for f in Path("data").glob("kill_switch_state*.json"):
+            f.unlink(missing_ok=True)
         self.orch = TradingOrchestrator(config=QuantConfig())
         self.app = _build_risk_app(self.orch)
         self.client = TestClient(self.app, raise_server_exceptions=False)
@@ -201,8 +204,9 @@ class TestClosePositionHttpIntegration:
     def test_close_position_calls_oms(self):
         """close_position endpoint must submit a close order via OMS."""
         # Add a position to the orchestrator's position manager
-        from graxia.packages.quant_os.core.position_manager import Position
         from datetime import UTC, datetime
+
+        from graxia.packages.quant_os.core.position_manager import Position
 
         pos = Position(
             symbol="EURUSD",
@@ -274,8 +278,8 @@ class TestClosePositionHttpIntegration:
 
     def test_close_position_503_without_orchestrator(self):
         """close_position must return 503 if orchestrator not initialized."""
-        from graxia.packages.quant_os.api.positions import positions_router
         from graxia.packages.quant_os.api import auth
+        from graxia.packages.quant_os.api.positions import positions_router
 
         app_no_orch = FastAPI()
         app_no_orch.include_router(positions_router, prefix="/api/v1")
@@ -346,9 +350,7 @@ class TestKillSwitchEnforceEscalation:
         # 4. Escalation must be in history
         history = ks._state.get("history", [])
         escalation_entries = [h for h in history if "ENFORCE_ESCALATION" in h.get("action", "")]
-        assert len(escalation_entries) >= 1, (
-            f"Expected ENFORCE_ESCALATION in history, got: {history}"
-        )
+        assert len(escalation_entries) >= 1, f"Expected ENFORCE_ESCALATION in history, got: {history}"
 
         # 5. Critical log must have been emitted
         mock_critical.assert_called()
@@ -357,6 +359,7 @@ class TestKillSwitchEnforceEscalation:
 
         # Cleanup
         import os
+
         try:
             os.remove("data/test_ks_escalation.json")
         except FileNotFoundError:
@@ -372,12 +375,11 @@ class TestKillSwitchEnforceEscalation:
         assert ks.is_active()
         history = ks._state.get("history", [])
         escalation_entries = [h for h in history if "ENFORCE_ESCALATION" in h.get("action", "")]
-        assert len(escalation_entries) == 0, (
-            f"Should NOT escalate when no broker adapter. History: {history}"
-        )
+        assert len(escalation_entries) == 0, f"Should NOT escalate when no broker adapter. History: {history}"
 
         # Cleanup
         import os
+
         try:
             os.remove("data/test_ks_no_broker.json")
         except FileNotFoundError:
@@ -401,9 +403,7 @@ class TestKillSwitchEnforceEscalation:
         assert ks.is_active()
         history = ks._state.get("history", [])
         escalation_entries = [h for h in history if "ENFORCE_ESCALATION" in h.get("action", "")]
-        assert len(escalation_entries) == 0, (
-            f"Should NOT escalate when all closes succeed. History: {history}"
-        )
+        assert len(escalation_entries) == 0, f"Should NOT escalate when all closes succeed. History: {history}"
 
         # Critical log should NOT have been called for escalation
         for call in mock_critical.call_args_list:
@@ -411,7 +411,240 @@ class TestKillSwitchEnforceEscalation:
 
         # Cleanup
         import os
+
         try:
             os.remove("data/test_ks_success.json")
         except FileNotFoundError:
             pass
+
+
+# ===========================================================================
+# Test 4: Telegram webhook → handler → coordinator → kill switch
+# ===========================================================================
+
+# Note on the Telegram kill flow:
+#   /kill message  → shows confirmation keyboard (does NOT activate)
+#   kill:confirm   → callback_query → _activate_kill() → coordinator.activate()
+#
+# This test proves the FULL webhook entry point works end-to-end, including
+# the auth check (chat_id must match TELEGRAM_CHAT_ID).
+
+
+class TestTelegramWebhookIntegration:
+    """Prove Telegram webhook → handler → coordinator → kill switch via HTTP.
+
+    This is Option B: full webhook simulation, not just handler unit test.
+    Proves the entry point (HTTP POST) reaches the component (coordinator).
+    """
+
+    def setup_method(self):
+        reset_config()
+        os.environ["TELEGRAM_CHAT_ID"] = "999888"
+        os.environ["TELEGRAM_WEBHOOK_SECRET"] = "test-secret-123"
+        os.environ["TELEGRAM_BOT_TOKEN"] = "test-token"
+
+        # Clear any persisted kill switch state from prior tests
+        from pathlib import Path
+        for f in Path("data").glob("kill_switch_state*.json"):
+            f.unlink(missing_ok=True)
+
+        self.orch = TradingOrchestrator(config=QuantConfig())
+
+        # Build app with real telegram_router
+        from graxia.packages.quant_os.api.telegram_server import telegram_router, set_handlers
+        from graxia.packages.quant_os.api.telegram_commands import TelegramCommandHandler
+        from graxia.packages.quant_os.core.telegram_callback import TelegramCallbackHandler
+
+        self.app = FastAPI()
+        self.app.include_router(telegram_router, prefix="/api/v1")
+        self.app.state.orchestrator = self.orch
+
+        # Wire handlers (same as main.py lifespan)
+        callback_handler = TelegramCallbackHandler()
+        command_handler = TelegramCommandHandler(
+            coordinator=self.orch.coordinator,
+            state_store=self.orch.coordinator._state_store,
+            config=self.orch._config,
+        )
+        set_handlers(callback_handler, command_handler)
+
+        self.command_handler = command_handler
+        self.client = TestClient(self.app, raise_server_exceptions=True)
+
+    def test_webhook_activates_kill_via_callback(self):
+        """Full flow: /kill shows keyboard → kill:confirm activates kill switch."""
+        # Step 1: Send /kill message
+        kill_update = {
+            "update_id": 1,
+            "message": {
+                "message_id": 1,
+                "chat": {"id": 999888},
+                "text": "/kill integration-test",
+                "from": {"username": "tester"},
+                "date": 1234567890,
+            },
+        }
+
+        # Mock _send to avoid actual Telegram API calls
+        with patch.object(self.command_handler, "_send", new_callable=AsyncMock) as mock_send:
+            resp = self.client.post(
+                "/api/v1/telegram/webhook",
+                json=kill_update,
+                headers={"X-Telegram-Bot-Api-Secret-Token": "test-secret-123"},
+            )
+            assert resp.status_code == 200
+            assert resp.json()["status"] == "ok"
+
+            # /kill should show confirmation keyboard, NOT activate yet
+            mock_send.assert_called_once()
+            call_args = mock_send.call_args
+            assert call_args[0][0] == "999888"  # chat_id
+            # Should contain confirmation text
+            assert "kill" in call_args[0][1].lower() or "confirm" in call_args[0][1].lower()
+
+        # Kill switch must NOT be active yet (confirmation required)
+        assert not self.orch.kill_switch.is_active(), (
+            "Kill switch should NOT be active after /kill — only after kill:confirm"
+        )
+
+        # Step 2: Send kill:confirm callback
+        confirm_callback = {
+            "update_id": 2,
+            "callback_query": {
+                "id": "cb-001",
+                "chat_instance": "test",
+                "data": "kill:confirm",
+                "message": {
+                    "chat": {"id": 999888},
+                    "message_id": 1,
+                },
+                "from": {"username": "tester"},
+            },
+        }
+
+        with patch.object(self.command_handler, "_send", new_callable=AsyncMock):
+            with patch.object(self.command_handler, "_answer_callback", new_callable=AsyncMock):
+                resp = self.client.post(
+                    "/api/v1/telegram/webhook",
+                    json=confirm_callback,
+                    headers={"X-Telegram-Bot-Api-Secret-Token": "test-secret-123"},
+                )
+                assert resp.status_code == 200
+
+        # NOW kill switch must be active — this is the real proof
+        assert self.orch.kill_switch.is_active(), (
+            "Kill switch must be ACTIVE after kill:confirm callback"
+        )
+
+        # Verify all 5 stores synced (same as E2E test pattern)
+        assert self.orch.coordinator._state_store.kill_switch_active is True
+        assert self.orch.coordinator._state_store.system_state == "HALTED"
+        assert self.orch.coordinator._risk_overlay.state.kill_switch_triggered is True
+        assert self.orch.coordinator._risk_ledger._state["kill_switch_state"] == "active"
+
+    def test_webhook_rejects_wrong_secret(self):
+        """Webhook must reject requests with wrong secret token."""
+        update = {
+            "update_id": 1,
+            "message": {
+                "message_id": 1,
+                "chat": {"id": 999888},
+                "text": "/kill",
+                "from": {"username": "tester"},
+                "date": 1234567890,
+            },
+        }
+
+        resp = self.client.post(
+            "/api/v1/telegram/webhook",
+            json=update,
+            headers={"X-Telegram-Bot-Api-Secret-Token": "wrong-secret"},
+        )
+        assert resp.status_code == 200  # Telegram expects 200 always
+        assert resp.json()["status"] == "unauthorized"
+        assert not self.orch.kill_switch.is_active()
+
+    def test_webhook_rejects_wrong_chat_id(self):
+        """Commands from unauthorized chat_id must be rejected."""
+        update = {
+            "update_id": 1,
+            "message": {
+                "message_id": 1,
+                "chat": {"id": 111111},  # Wrong chat_id
+                "text": "/kill",
+                "from": {"username": "attacker"},
+                "date": 1234567890,
+            },
+        }
+
+        with patch.object(self.command_handler, "_send", new_callable=AsyncMock) as mock_send:
+            resp = self.client.post(
+                "/api/v1/telegram/webhook",
+                json=update,
+                headers={"X-Telegram-Bot-Api-Secret-Token": "test-secret-123"},
+            )
+            assert resp.status_code == 200
+            # Should send unauthorized message
+            mock_send.assert_called_once()
+            assert "unauthorized" in mock_send.call_args[0][1].lower()
+
+        assert not self.orch.kill_switch.is_active()
+
+    def test_webhook_resume_after_kill(self):
+        """Full flow: /kill → kill:confirm → /resume → resume:confirm."""
+        # Activate kill first (mock file writes to avoid PermissionError on Windows)
+        with patch.object(self.orch._risk_ledger, "_save"):
+            with patch.object(self.orch.kill_switch, "_save"):
+                self.orch.trigger_kill_switch(reason="pre-test", source="test")
+        assert self.orch.kill_switch.is_active()
+
+        # Send /resume
+        resume_update = {
+            "update_id": 3,
+            "message": {
+                "message_id": 3,
+                "chat": {"id": 999888},
+                "text": "/resume",
+                "from": {"username": "tester"},
+                "date": 1234567890,
+            },
+        }
+
+        with patch.object(self.command_handler, "_send", new_callable=AsyncMock):
+            resp = self.client.post(
+                "/api/v1/telegram/webhook",
+                json=resume_update,
+                headers={"X-Telegram-Bot-Api-Secret-Token": "test-secret-123"},
+            )
+            assert resp.status_code == 200
+
+        # Still active — needs confirmation
+        assert self.orch.kill_switch.is_active()
+
+        # Send resume:confirm callback
+        confirm_callback = {
+            "update_id": 4,
+            "callback_query": {
+                "id": "cb-002",
+                "chat_instance": "test",
+                "data": "resume:confirm",
+                "message": {
+                    "chat": {"id": 999888},
+                    "message_id": 3,
+                },
+                "from": {"username": "tester"},
+            },
+        }
+
+        with patch.object(self.command_handler, "_send", new_callable=AsyncMock):
+            with patch.object(self.command_handler, "_answer_callback", new_callable=AsyncMock):
+                resp = self.client.post(
+                    "/api/v1/telegram/webhook",
+                    json=confirm_callback,
+                    headers={"X-Telegram-Bot-Api-Secret-Token": "test-secret-123"},
+                )
+                assert resp.status_code == 200
+
+        # Now should be inactive
+        assert not self.orch.kill_switch.is_active()
+        assert self.orch.coordinator._state_store.system_state == "RUNNING"
