@@ -8,7 +8,10 @@ Thread-safe via threading.Lock
 
 from __future__ import annotations
 
+import contextlib
 import json
+import os
+import tempfile
 import threading
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
@@ -107,23 +110,66 @@ class MacroRegimeCache:
         self._save_state()
 
     def _save_state(self) -> None:
+        """Save state atomically using temp file + rename with retry.
+
+        On Windows, file operations can fail with PermissionError when
+        another process has the file open (mandatory file locking).
+        Retried with exponential backoff up to 3 attempts.
+        """
         try:
             self._STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
             with self._lock:
                 data = self._regime.to_dict()
-            self._STATE_PATH.write_text(json.dumps(data, indent=2))
+            payload = json.dumps(data, indent=2)
+
+            max_attempts = 3
+            for attempt in range(max_attempts):
+                fd, tmp_path = tempfile.mkstemp(
+                    dir=str(self._STATE_PATH.parent),
+                    prefix=".macro_regime_",
+                    suffix=".tmp",
+                )
+                try:
+                    with os.fdopen(fd, "w") as f:
+                        f.write(payload)
+                        f.flush()
+                        os.fsync(f.fileno())
+                    os.replace(tmp_path, str(self._STATE_PATH))
+                    return  # Success
+                except PermissionError:
+                    with contextlib.suppress(OSError):
+                        os.unlink(tmp_path)
+                    if attempt < max_attempts - 1:
+                        import time
+                        time.sleep(0.1 * (2 ** attempt))
+                    else:
+                        raise
+                except Exception:
+                    with contextlib.suppress(OSError):
+                        os.unlink(tmp_path)
+                    raise
         except Exception:
             pass  # Best-effort persistence
 
     def _load_state(self) -> None:
         if not self._STATE_PATH.exists():
             return
-        try:
-            regime = MacroRegime.from_dict(json.loads(self._STATE_PATH.read_text()))
-            with self._lock:
-                self._regime = regime
-        except Exception:
-            pass  # Corrupted state — start fresh
+        max_attempts = 3
+        for attempt in range(max_attempts):
+            try:
+                regime = MacroRegime.from_dict(json.loads(self._STATE_PATH.read_text()))
+                with self._lock:
+                    self._regime = regime
+                return
+            except PermissionError:
+                # Windows: file locked by another process, retry with backoff
+                if attempt < max_attempts - 1:
+                    import time
+                    time.sleep(0.1 * (2 ** attempt))
+                else:
+                    pass  # Best-effort: start fresh on persistent lock
+            except Exception:
+                pass  # Corrupted state — start fresh
 
 
 _cache = MacroRegimeCache

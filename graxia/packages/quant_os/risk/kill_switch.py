@@ -358,38 +358,58 @@ class KillSwitch:
 
     def _load(self) -> dict[str, Any]:
         if self._state_file.exists():
-            try:
-                return json.loads(self._state_file.read_text(encoding="utf-8"))
-            except (json.JSONDecodeError, ValueError) as exc:
-                logger.critical(
-                    "kill_switch: state file corrupted — fail-closed default. " "file=%s error=%s",
-                    self._state_file,
-                    exc,
-                )
-                # Best-effort quarantine of the corrupted file for forensics.
-                corrupt_name = f"{self._state_file.stem}.corrupt.{int(time.time())}.json"
-                corrupt_path = self._state_file.with_name(corrupt_name)
+            max_attempts = 3
+            for attempt in range(max_attempts):
                 try:
-                    self._state_file.rename(corrupt_path)
+                    return json.loads(self._state_file.read_text(encoding="utf-8"))
+                except PermissionError:
+                    # Windows: file locked by another process, retry with backoff
+                    if attempt < max_attempts - 1:
+                        time.sleep(0.1 * (2 ** attempt))
+                    else:
+                        # Persistent lock — fail-closed
+                        logger.critical(
+                            "kill_switch: state file locked by another process — fail-closed default. file=%s",
+                            self._state_file,
+                        )
+                        return {
+                            "state": KillSwitchState.ACTIVE.value,
+                            "killed_classes": [],
+                            "reason": "State file locked by another process — fail-closed default",
+                            "activated_at_utc": datetime.now(UTC).isoformat(),
+                            "authorized_by": "system:fail_closed",
+                            "history": [],
+                        }
+                except (json.JSONDecodeError, ValueError) as exc:
                     logger.critical(
-                        "kill_switch: corrupted state file quarantined to %s",
-                        corrupt_path,
+                        "kill_switch: state file corrupted — fail-closed default. " "file=%s error=%s",
+                        self._state_file,
+                        exc,
                     )
-                except OSError as rename_exc:
-                    logger.critical(
-                        "kill_switch: failed to quarantine corrupted state file: %s",
-                        rename_exc,
-                    )
-                # Fail-closed: a corrupted kill-switch state cannot be trusted,
-                # so default to ACTIVE (block all trading) until manually cleared.
-                return {
-                    "state": KillSwitchState.ACTIVE.value,
-                    "killed_classes": [],
-                    "reason": "State file missing or corrupted — fail-closed default",
-                    "activated_at_utc": datetime.now(UTC).isoformat(),
-                    "authorized_by": "system:fail_closed",
-                    "history": [],
-                }
+                    # Best-effort quarantine of the corrupted file for forensics.
+                    corrupt_name = f"{self._state_file.stem}.corrupt.{int(time.time())}.json"
+                    corrupt_path = self._state_file.with_name(corrupt_name)
+                    try:
+                        self._state_file.rename(corrupt_path)
+                        logger.critical(
+                            "kill_switch: corrupted state file quarantined to %s",
+                            corrupt_path,
+                        )
+                    except OSError as rename_exc:
+                        logger.critical(
+                            "kill_switch: failed to quarantine corrupted state file: %s",
+                            rename_exc,
+                        )
+                    # Fail-closed: a corrupted kill-switch state cannot be trusted,
+                    # so default to ACTIVE (block all trading) until manually cleared.
+                    return {
+                        "state": KillSwitchState.ACTIVE.value,
+                        "killed_classes": [],
+                        "reason": "State file missing or corrupted — fail-closed default",
+                        "activated_at_utc": datetime.now(UTC).isoformat(),
+                        "authorized_by": "system:fail_closed",
+                        "history": [],
+                    }
         # Normal first-run case: file missing → INACTIVE.
         return {
             "state": KillSwitchState.INACTIVE.value,
@@ -401,29 +421,43 @@ class KillSwitch:
         }
 
     def _save(self) -> None:
-        """Save state atomically using temp file + rename."""
+        """Save state atomically using temp file + rename with retry.
+
+        On Windows, os.replace() can fail with PermissionError when another
+        process has the file open (mandatory file locking). This is retried
+        with exponential backoff up to 3 attempts.
+        """
+        import contextlib
         import tempfile
 
         path = self._state_file
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Write to temp file first
-        fd, tmp_path = tempfile.mkstemp(
-            dir=str(path.parent),
-            prefix=".kill_switch_",
-            suffix=".tmp",
-        )
-        try:
-            with os.fdopen(fd, "w") as f:
-                json.dump(self._state, f, indent=2)
-                f.flush()
-                os.fsync(f.fileno())
-            # Atomic rename
-            os.replace(tmp_path, str(path))
-        except Exception:
-            # Clean up temp file on failure
-            import contextlib
-
-            with contextlib.suppress(OSError):
-                os.unlink(tmp_path)
-            raise
+        max_attempts = 3
+        for attempt in range(max_attempts):
+            fd, tmp_path = tempfile.mkstemp(
+                dir=str(path.parent),
+                prefix=".kill_switch_",
+                suffix=".tmp",
+            )
+            try:
+                with os.fdopen(fd, "w") as f:
+                    json.dump(self._state, f, indent=2)
+                    f.flush()
+                    os.fsync(f.fileno())
+                os.replace(tmp_path, str(path))
+                return  # Success
+            except PermissionError:
+                # Windows: another process has the file locked.
+                # Clean up temp file and retry with backoff.
+                with contextlib.suppress(OSError):
+                    os.unlink(tmp_path)
+                if attempt < max_attempts - 1:
+                    import time
+                    time.sleep(0.1 * (2 ** attempt))  # 0.1s, 0.2s
+                else:
+                    raise
+            except Exception:
+                with contextlib.suppress(OSError):
+                    os.unlink(tmp_path)
+                raise
