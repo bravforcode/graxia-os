@@ -92,6 +92,7 @@ class TradingOrchestrator:
             paper_executor=self._paper,
             risk_policy=self._risk_policy,
             risk_ledger=self._risk_ledger,
+            risk_overlay=self._risk_overlay,
             account_equity=self._config.paper_initial_capital,
         )
         self._coordinator = StateCoordinator(
@@ -219,8 +220,15 @@ class TradingOrchestrator:
         logger.info("orchestrator.stopped")
 
     def _beat(self) -> None:
-        """Write heartbeat timestamp (called in sync loop)."""
+        """Write heartbeat to in-memory timestamp + data/heartbeat.txt for watchdog."""
         self._last_heartbeat = time.time()
+        try:
+            from pathlib import Path
+            hb = Path("data/heartbeat.txt")
+            hb.parent.mkdir(parents=True, exist_ok=True)
+            hb.write_text(time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
+        except Exception as exc:
+            logger.debug("orchestrator.heartbeat_write_failed error=%s", exc)
 
     async def _sync_loop(self) -> None:
         """Background loop: sync prices and account equity every 5 seconds."""
@@ -304,6 +312,9 @@ class TradingOrchestrator:
         self._kill_switch._set_state(KillSwitchState.ACTIVE, reason=reason, authorized_by=source)
         self._state_store.kill_switch_active = True
         self._state_store.system_state = "HALTED"
+        if self._risk_overlay is not None and hasattr(self._risk_overlay, "trigger_kill_switch"):
+            if not self._risk_overlay.state.kill_switch_triggered:
+                self._risk_overlay.trigger_kill_switch(reason)
         if self._risk_ledger is not None and hasattr(self._risk_ledger, "_state"):
             # Set directly to avoid coordinator cascade that re-publishes on bus
             self._risk_ledger._state["kill_switch_state"] = "active"
