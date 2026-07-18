@@ -102,3 +102,14 @@ chore(dx): add pre-commit config
    - All CI checks pass
    - No merge conflicts
    - Commit history is clean (no "fix fix fix" chains)
+
+## Trial Ledger Edit Rules
+
+**NEVER edit `trial_ledger.json`, `hypothesis_registry.json`, or any trial cap file without explicit sign-off from the user in the same turn.**
+
+This applies to all reasons, including:
+- "Updating to match what was already run" — still requires sign-off
+- "Fixing a count that's off" — still requires sign-off
+- "Bookkeeping catch-up" — still requires sign-off
+
+Rationale: These files control research governance (trial caps, DSR penalties, stopping rules). Edits are governance actions, not bookkeeping. A single unauthorized edit can consume limited trial budget or invalidate multiple-testing corrections.

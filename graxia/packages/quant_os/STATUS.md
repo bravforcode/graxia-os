@@ -18,7 +18,7 @@
 
 | Strategy | Symbol | Status |
 |----------|--------|--------|
-| liquidity_sweep | XAUUSD | CANDIDATE_ONLY |
+| liquidity_sweep | XAUUSD | REJECT (edge_search_all: dk_t=-0.52, sharpe=-0.65, pos=0/7) |
 | - | EURUSD | NOT STARTED |
 | - | GBPUSD | NOT STARTED |
 

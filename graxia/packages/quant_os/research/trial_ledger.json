@@ -7,8 +7,8 @@
   "cumulative_trial_cap": 1022,
   "max_new_hypotheses": 20,
   "next_available_trial_number": 1022,
-  "new_hypotheses_used": 19,
-  "new_hypotheses_remaining": 1,
+  "new_hypotheses_used": 18,
+  "new_hypotheses_remaining": 2,
   "sacred_holdout": {
     "path": "data/sacred_holdout/holdout.csv",
     "status": "LOCKED",
