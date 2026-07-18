@@ -50,9 +50,25 @@ async def lifespan(app: FastAPI):
 
     config = get_config()
     orchestrator = TradingOrchestrator(config=config)
-    orchestrator.start()
+    await orchestrator.start_async()
     app.state.orchestrator = orchestrator
-    print(f"✓ Orchestrator started (mode={config.trading_mode.value})")
+    print(f"✓ Orchestrator started (mode={config.trading_mode.value}, sync_loop=active)")
+
+    # Initialize Telegram handlers with coordinator for kill-switch sync
+    from ..core.telegram_callback import TelegramCallbackHandler
+    from .telegram_commands import TelegramCommandHandler
+    from .telegram_server import set_handlers
+
+    telegram_callback = TelegramCallbackHandler()
+    telegram_command = TelegramCommandHandler(
+        coordinator=orchestrator.coordinator,
+        state_store=orchestrator.coordinator._state_store,
+        config=config,
+    )
+    set_handlers(telegram_callback, telegram_command)
+    app.state.telegram_handler = telegram_command
+    app.state.telegram_callback = telegram_callback
+    print("✓ Telegram handlers wired (callback + command + set_handlers)")
 
     # Initialize broker connection
     broker_manager = BrokerManager.from_config()
@@ -73,7 +89,14 @@ async def lifespan(app: FastAPI):
     # Shutdown
     print("🛑 Quant OS shutting down...")
     if hasattr(app.state, "orchestrator"):
-        app.state.orchestrator.stop()
+        orch = app.state.orchestrator
+        orch.stop()
+        # Await sync task cancellation
+        if orch._sync_task is not None and not orch._sync_task.done():
+            try:
+                await orch._sync_task
+            except (asyncio.CancelledError, Exception):
+                pass
         print("✓ Orchestrator stopped")
     if hasattr(app.state, "broker_manager"):
         try:
@@ -176,9 +199,15 @@ def create_app() -> FastAPI:
     from .tv_routes import tv_router
     from .visual_routes import visual_router
     from .cdp_routes import cdp_router
+
     app.include_router(tv_router, prefix="/api/v1")
     app.include_router(visual_router, prefix="/api/v1")
     app.include_router(cdp_router, prefix="/api/v1")
+
+    # Telegram bot routes (webhook, status, set-webhook)
+    from .telegram_server import telegram_router
+
+    app.include_router(telegram_router, prefix="/api/v1")
 
     # ── Prometheus /metrics endpoint ──────────────────────────────────
     try:

@@ -157,12 +157,20 @@ class RateLimitRule:
 
 
 DEFAULT_RULES: list[RateLimitRule] = [
-    RateLimitRule("/api/signal", max_requests=10, methods=("POST",)),
-    RateLimitRule("/api/webhook", max_requests=20, methods=("POST",)),
-    RateLimitRule("/api/orders", max_requests=30, methods=("GET", "POST")),
-    RateLimitRule("/api/positions", max_requests=30, methods=("GET",)),
-    RateLimitRule("/api/risk", max_requests=30, methods=("GET",)),
+    RateLimitRule("/api/v1/signal", max_requests=10, methods=("POST",)),
+    RateLimitRule("/api/v1/webhook", max_requests=20, methods=("POST",)),
+    RateLimitRule("/api/v1/orders", max_requests=30, methods=("GET", "POST")),
+    RateLimitRule("/api/v1/positions", max_requests=30, methods=("GET",)),
+    RateLimitRule("/api/v1/risk", max_requests=30, methods=("GET",)),
 ]
+
+# Proxy IP allowlist — only trust X-Forwarded-For from these IPs.
+# Empty = trust no proxy (direct connection only).
+_TRUSTED_PROXY_IPS: set[str] = {
+    ip.strip()
+    for ip in os.getenv("TRUSTED_PROXY_IPS", "").split(",")
+    if ip.strip()
+}
 
 
 # ── Middleware ──────────────────────────────────────────────────────────
@@ -179,7 +187,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     def _client_ip(request: Request) -> str:
         forwarded = request.headers.get("x-forwarded-for")
         if forwarded:
-            return forwarded.split(",")[0].strip()
+            # Only trust X-Forwarded-For if client IP is a known proxy
+            client_ip = request.client.host if request.client else ""
+            if _TRUSTED_PROXY_IPS and client_ip in _TRUSTED_PROXY_IPS:
+                return forwarded.split(",")[0].strip()
+            # Untrusted proxy — ignore X-Forwarded-For, use direct client IP
+            return client_ip or "unknown"
         if request.client:
             return request.client.host
         return "unknown"

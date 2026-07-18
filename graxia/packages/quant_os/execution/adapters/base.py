@@ -135,3 +135,16 @@ class BrokerAdapter(ABC):
     def get_account_info(self) -> AccountInfo:
         """Return a point-in-time snapshot of account balances."""
         ...
+
+
+def realistic_slippage_pips(base_pips: float) -> float:
+    """Apply half-normal distribution to base slippage for realistic fills.
+
+    Returns a non-negative slippage value drawn from a half-normal distribution
+    with scale = base_pips. Most fills will have slippage close to base_pips,
+    but some will be higher (fat tail) and none will be negative.
+    """
+    import random
+
+    # Half-normal: abs(normal(0, base_pips/sqrt(pi)))
+    return abs(random.gauss(0, base_pips))

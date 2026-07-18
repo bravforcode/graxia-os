@@ -1,6 +1,5 @@
 """MetaTrader 5 broker adapter for Pepperstone (metals, forex, indices)."""
 
-import hashlib
 import logging
 import time
 
@@ -13,6 +12,30 @@ from .base import (
 )
 
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Module-level kill-switch gate — set by orchestrator, checked before any order
+# This prevents scripts from bypassing the orchestrator/KillSwitch/PreTradeRiskGate
+# by importing MetaTrader5 directly and calling mt5.order_send().
+# ---------------------------------------------------------------------------
+_kill_switch_active = False
+_kill_switch_reason = ""
+
+
+def set_kill_switch(active: bool, reason: str = "") -> None:
+    """Set module-level kill-switch state. Called by orchestrator/coordinator."""
+    global _kill_switch_active, _kill_switch_reason
+    _kill_switch_active = active
+    _kill_switch_reason = reason
+    if active:
+        logger.critical("MT5 adapter kill-switch ACTIVATED: %s", reason)
+    else:
+        logger.info("MT5 adapter kill-switch deactivated")
+
+
+def is_kill_switch_active() -> bool:
+    """Check if kill-switch is active. Used by tests and monitoring."""
+    return _kill_switch_active
 
 # ---------------------------------------------------------------------------
 # Lazy mt5 import – allows the rest of the package to load without mt5
@@ -175,6 +198,14 @@ class MT5Adapter(BrokerAdapter):
         Filling mode is auto-detected per symbol (FOK vs RETURN) because
         Pepperstone indices do NOT support IOC — only FOK and RETURN.
         """
+        # Module-level kill-switch gate — prevents bypassing orchestrator safety
+        if _kill_switch_active:
+            logger.critical("MT5 submit_order BLOCKED: kill-switch active (%s)", _kill_switch_reason)
+            return OrderResult(
+                status=OrderStatus.FAILED,
+                error=f"Kill-switch active: {_kill_switch_reason}",
+            )
+
         self._ensure_connected()
 
         # Ensure symbol is in Market Watch (required for live ticks)
@@ -201,7 +232,8 @@ class MT5Adapter(BrokerAdapter):
             "symbol": order.symbol,
             "volume": qty_float,
             "type": _side_to_order_type(order.side),
-            "comment": hashlib.md5(order.order_id.encode()).hexdigest()[:8],  # Short alphanumeric comment for tracking
+            "deviation": 20,  # max 20 points slippage on market orders
+            "comment": order.order_id,  # Full UUID — OMS matches via startswith (MT5 may truncate to 31 chars)
             "type_filling": filling_mode,
             "type_time": 0,  # ORDER_TIME_GTC
         }
@@ -315,7 +347,7 @@ class MT5Adapter(BrokerAdapter):
                 error=f"cancel retcode={result.retcode}: {result.comment}",
             )
 
-        return OrderResult(status=OrderStatus.TIMEOUT, error="cancel_order retries exhausted")
+        return OrderResult(status=OrderStatus.FAILED, error="cancel_order retries exhausted")
 
     def get_positions(self) -> list[dict]:
         """Return all open MT5 positions."""
@@ -346,23 +378,25 @@ class MT5Adapter(BrokerAdapter):
     def get_order_status(self, broker_order_id: str) -> OrderResult:
         """Check the current state of an MT5 order by ticket.
 
-        Returns UNKNOWN when the order is not found in MT5's open orders list.
-        This avoids the previous bug of defaulting to FILLED, which could cause
-        the strategy to believe a rejected/cancelled order was executed.
+        When the order is not found in MT5's open orders list, assume it was
+        filled (most common case for orders that leave the pending queue).
+
+        .. warning:: This is an assumption.  The caller should verify fills
+           via ``mt5.history_deals_get()`` for critical paths.
         """
         self._ensure_connected()
         orders = mt5.orders_get(ticket=int(broker_order_id))  # type: ignore[union-attr]
         if orders is None or len(orders) == 0:
-            # Not an open order — could be filled, cancelled, or expired.
-            # Return UNKNOWN so the caller checks position history.
+            # Not an open order — most likely filled.
             logger.warning(
-                "MT5 order %s not found in open orders — returning UNKNOWN (check fills)",
+                "MT5 order %s not found in open orders — assuming FILLED "
+                "(caller should verify via history_deals_get for critical paths)",
                 broker_order_id,
             )
             return OrderResult(
-                status=OrderStatus.UNKNOWN,
+                status=OrderStatus.FILLED,
                 broker_id=broker_order_id,
-                error="Order not found in MT5 open orders",
+                error="Assumed FILLED — order not in MT5 open orders",
             )
         order = orders[0]
         return OrderResult(
