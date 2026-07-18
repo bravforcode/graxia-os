@@ -368,11 +368,19 @@ class ValidationRunner:
                     strategy_returns[f"config_{i}"] = periods
 
             if len(strategy_returns) < 2:
-                # Fallback: simple PBO from OOS degradation
-                pbo_val = 0.5  # uncertain
-            else:
-                pbo_result = calculate_pbo_from_matrix(strategy_returns, n_combinations=128)
-                pbo_val = pbo_result.pbo
+                # Cannot compute PBO with fewer than 2 strategy configs.
+                # Previously returned pbo_val=0.5 (threshold boundary) which
+                # was indistinguishable from a real result. Now fails explicitly.
+                return ValidationResult(
+                    name="pbo",
+                    success=False,
+                    error=f"PBO requires >= 2 strategy configs, got {len(strategy_returns)}. "
+                          f"Return series too short for CSCV matrix construction.",
+                    elapsed_sec=time.time() - start,
+                )
+
+            pbo_result = calculate_pbo_from_matrix(strategy_returns, n_combinations=128)
+            pbo_val = pbo_result.pbo
 
             return ValidationResult(
                 name="pbo",
