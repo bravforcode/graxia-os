@@ -324,7 +324,31 @@ class KillSwitch:
 
         # Wire enforce: when transitioning to ACTIVE, automatically close positions
         if state == KillSwitchState.ACTIVE and old_state != KillSwitchState.ACTIVE:
-            self.enforce(self._close_mode, self._broker_adapter)
+            result = self.enforce(self._close_mode, self._broker_adapter)
+            failed = result.get("failed", [])
+            remaining = result.get("remaining", [])
+            if failed or remaining:
+                # Escalate: positions failed to close — record in history + log critical
+                fail_summary = f"enforce_failed={len(failed)} remaining={len(remaining)}"
+                self._append_history(f"ENFORCE_ESCALATION: {fail_summary}", authorized_by)
+                self._save()
+                logger.critical(
+                    "kill_switch.enforce_escalation reason=%s failed=%d remaining=%d",
+                    reason,
+                    len(failed),
+                    len(remaining),
+                )
+                # Notify via Telegram if notifier available
+                try:
+                    from ..monitoring.telegram_notify import TelegramNotifier
+                    notifier = TelegramNotifier()
+                    notifier.risk_alert(
+                        f"KILL SWITCH ENFORCE FAILED: {fail_summary}. "
+                        f"Failed tickets: {[f.get('ticket') for f in failed]}. "
+                        f"MANUAL INTERVENTION REQUIRED."
+                    )
+                except Exception:
+                    pass  # Best-effort notification
 
     def _append_history(self, action: str, user: Any) -> None:
         history: list[dict[str, str]] = self._state.get("history", [])

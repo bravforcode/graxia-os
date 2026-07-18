@@ -2,8 +2,7 @@
 
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import HTTPBearer
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
@@ -13,8 +12,7 @@ from graxia.packages.revenue_os.db import get_db as _get_db
 
 from ..core.enums import CloseReason
 from ..data.models import Position
-
-security = HTTPBearer()
+from .auth import verify_api_key
 
 
 async def get_db():
@@ -58,7 +56,7 @@ async def list_positions(
     is_open: bool | None = True,
     symbol: str | None = None,
     db: AsyncSession = Depends(get_db),
-    credentials=Depends(security),
+    _: str = Depends(verify_api_key),
 ):
     """List positions with filters"""
     query = db.query(Position)
@@ -84,7 +82,7 @@ async def list_positions(
 async def get_position(
     position_id: str,
     db: Session = Depends(get_db),
-    credentials=Depends(security),
+    _: str = Depends(verify_api_key),
 ):
     """Get position by ID"""
     position = db.query(Position).filter(Position.id == position_id).first()
@@ -97,7 +95,7 @@ async def get_position(
 async def get_position_by_symbol(
     symbol: str,
     db: Session = Depends(get_db),
-    credentials=Depends(security),
+    _: str = Depends(verify_api_key),
 ):
     """Get position by symbol"""
     position = db.query(Position).filter(Position.symbol == symbol.upper(), Position.is_open == True).first()
@@ -108,12 +106,13 @@ async def get_position_by_symbol(
 
 @positions_router.post("/{position_id}/close")
 async def close_position(
+    request: Request,
     position_id: str,
     reason: CloseReason = CloseReason.MANUAL,
     db: AsyncSession = Depends(get_db),
-    credentials=Depends(security),
+    _: str = Depends(verify_api_key),
 ):
-    """Close a position"""
+    """Close a position — submits real close order via OMS/broker adapter."""
     position = db.query(Position).filter(Position.id == position_id).first()
     if not position:
         raise HTTPException(status_code=404, detail="Position not found")
@@ -121,8 +120,59 @@ async def close_position(
     if not position.is_open:
         raise HTTPException(status_code=400, detail="Position already closed")
 
-    # Would integrate with OrderManager to submit closing order
-    return {"success": True, "position_id": position_id, "message": "Close order submitted", "reason": reason.value}
+    # Get orchestrator from app state
+    orch = getattr(request.app.state, "orchestrator", None)
+    if orch is None:
+        raise HTTPException(status_code=503, detail="Orchestrator not initialized")
+
+    # Find the position in the orchestrator's position manager by symbol
+    symbol = position.symbol
+    orch_position = orch.position_manager.get_position(symbol)
+    if orch_position is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Position {symbol} not found in orchestrator — may have been closed already",
+        )
+
+    # Submit close order via OMS if broker adapter available
+    if orch._oms is not None and orch._broker_adapter is not None and orch._broker_adapter.is_connected:
+        from ..execution.order_state_machine import OrderSide
+
+        close_side = OrderSide.SELL if orch_position.side == "BUY" else OrderSide.BUY
+        try:
+            result = orch._oms.submit_market_order(
+                symbol=symbol,
+                side=close_side.value,
+                quantity=orch_position.quantity,
+                adapter_name="mt5",
+            )
+            if result and hasattr(result, "status") and result.status == "FILLED":
+                position.is_open = False
+                return {
+                    "success": True,
+                    "position_id": position_id,
+                    "symbol": symbol,
+                    "message": f"Close order FILLED for {symbol}",
+                    "reason": reason.value,
+                }
+            else:
+                status_str = str(result.status) if result else "no result"
+                raise HTTPException(
+                    status_code=502,
+                    detail=f"Broker rejected close order: {status_str}",
+                )
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(
+                status_code=502,
+                detail=f"Broker error closing position: {exc}",
+            )
+    else:
+        raise HTTPException(
+            status_code=503,
+            detail="Broker not connected — cannot close position",
+        )
 
 
 @positions_router.post("/{position_id}/update-stops")
@@ -131,7 +181,7 @@ async def update_stops(
     stop_loss: Decimal | None = None,
     take_profit: Decimal | None = None,
     db: AsyncSession = Depends(get_db),
-    credentials=Depends(security),
+    _: str = Depends(verify_api_key),
 ):
     """Update stop loss and take profit levels"""
     position = db.query(Position).filter(Position.id == position_id).first()
