@@ -1,0 +1,222 @@
+{
+  "experiments": [
+    {
+      "experiment_id": "exp-000",
+      "git_commit": "deadbeef",
+      "strategy_snapshot_hash": "abc123",
+      "parameter_snapshot_hash": "param_hash",
+      "dataset_manifest_ids": [
+        "ds-1"
+      ],
+      "contract_snapshot_id": "contract-1",
+      "execution_model_id": "exec-1",
+      "cost_scenario_id": "cost-1",
+      "risk_policy_id": "risk-1",
+      "trial_number": 1,
+      "trial_budget": 12,
+      "random_seed": 42,
+      "created_at_utc": "2026-07-18T09:57:51.561785+00:00"
+    },
+    {
+      "experiment_id": "exp-001",
+      "git_commit": "deadbeef",
+      "strategy_snapshot_hash": "abc123",
+      "parameter_snapshot_hash": "param_hash",
+      "dataset_manifest_ids": [
+        "ds-1"
+      ],
+      "contract_snapshot_id": "contract-1",
+      "execution_model_id": "exec-1",
+      "cost_scenario_id": "cost-1",
+      "risk_policy_id": "risk-1",
+      "trial_number": 1,
+      "trial_budget": 12,
+      "random_seed": 42,
+      "created_at_utc": "2026-07-18T09:57:51.561785+00:00"
+    },
+    {
+      "experiment_id": "exp-002",
+      "git_commit": "deadbeef",
+      "strategy_snapshot_hash": "abc123",
+      "parameter_snapshot_hash": "param_hash",
+      "dataset_manifest_ids": [
+        "ds-1"
+      ],
+      "contract_snapshot_id": "contract-1",
+      "execution_model_id": "exec-1",
+      "cost_scenario_id": "cost-1",
+      "risk_policy_id": "risk-1",
+      "trial_number": 1,
+      "trial_budget": 12,
+      "random_seed": 42,
+      "created_at_utc": "2026-07-18T09:57:51.561785+00:00"
+    },
+    {
+      "experiment_id": "exp-003",
+      "git_commit": "deadbeef",
+      "strategy_snapshot_hash": "abc123",
+      "parameter_snapshot_hash": "param_hash",
+      "dataset_manifest_ids": [
+        "ds-1"
+      ],
+      "contract_snapshot_id": "contract-1",
+      "execution_model_id": "exec-1",
+      "cost_scenario_id": "cost-1",
+      "risk_policy_id": "risk-1",
+      "trial_number": 1,
+      "trial_budget": 12,
+      "random_seed": 42,
+      "created_at_utc": "2026-07-18T09:57:51.561785+00:00"
+    },
+    {
+      "experiment_id": "exp-004",
+      "git_commit": "deadbeef",
+      "strategy_snapshot_hash": "abc123",
+      "parameter_snapshot_hash": "param_hash",
+      "dataset_manifest_ids": [
+        "ds-1"
+      ],
+      "contract_snapshot_id": "contract-1",
+      "execution_model_id": "exec-1",
+      "cost_scenario_id": "cost-1",
+      "risk_policy_id": "risk-1",
+      "trial_number": 1,
+      "trial_budget": 12,
+      "random_seed": 42,
+      "created_at_utc": "2026-07-18T09:57:51.568838+00:00"
+    },
+    {
+      "experiment_id": "exp-005",
+      "git_commit": "deadbeef",
+      "strategy_snapshot_hash": "abc123",
+      "parameter_snapshot_hash": "param_hash",
+      "dataset_manifest_ids": [
+        "ds-1"
+      ],
+      "contract_snapshot_id": "contract-1",
+      "execution_model_id": "exec-1",
+      "cost_scenario_id": "cost-1",
+      "risk_policy_id": "risk-1",
+      "trial_number": 1,
+      "trial_budget": 12,
+      "random_seed": 42,
+      "created_at_utc": "2026-07-18T09:57:51.568838+00:00"
+    },
+    {
+      "experiment_id": "exp-006",
+      "git_commit": "deadbeef",
+      "strategy_snapshot_hash": "abc123",
+      "parameter_snapshot_hash": "param_hash",
+      "dataset_manifest_ids": [
+        "ds-1"
+      ],
+      "contract_snapshot_id": "contract-1",
+      "execution_model_id": "exec-1",
+      "cost_scenario_id": "cost-1",
+      "risk_policy_id": "risk-1",
+      "trial_number": 1,
+      "trial_budget": 12,
+      "random_seed": 42,
+      "created_at_utc": "2026-07-18T09:57:51.568838+00:00"
+    },
+    {
+      "experiment_id": "exp-007",
+      "git_commit": "deadbeef",
+      "strategy_snapshot_hash": "abc123",
+      "parameter_snapshot_hash": "param_hash",
+      "dataset_manifest_ids": [
+        "ds-1"
+      ],
+      "contract_snapshot_id": "contract-1",
+      "execution_model_id": "exec-1",
+      "cost_scenario_id": "cost-1",
+      "risk_policy_id": "risk-1",
+      "trial_number": 1,
+      "trial_budget": 12,
+      "random_seed": 42,
+      "created_at_utc": "2026-07-18T09:57:51.568838+00:00"
+    },
+    {
+      "experiment_id": "exp-008",
+      "git_commit": "deadbeef",
+      "strategy_snapshot_hash": "abc123",
+      "parameter_snapshot_hash": "param_hash",
+      "dataset_manifest_ids": [
+        "ds-1"
+      ],
+      "contract_snapshot_id": "contract-1",
+      "execution_model_id": "exec-1",
+      "cost_scenario_id": "cost-1",
+      "risk_policy_id": "risk-1",
+      "trial_number": 1,
+      "trial_budget": 12,
+      "random_seed": 42,
+      "created_at_utc": "2026-07-18T09:57:51.568838+00:00"
+    },
+    {
+      "experiment_id": "exp-009",
+      "git_commit": "deadbeef",
+      "strategy_snapshot_hash": "abc123",
+      "parameter_snapshot_hash": "param_hash",
+      "dataset_manifest_ids": [
+        "ds-1"
+      ],
+      "contract_snapshot_id": "contract-1",
+      "execution_model_id": "exec-1",
+      "cost_scenario_id": "cost-1",
+      "risk_policy_id": "risk-1",
+      "trial_number": 1,
+      "trial_budget": 12,
+      "random_seed": 42,
+      "created_at_utc": "2026-07-18T09:57:51.568838+00:00"
+    },
+    {
+      "experiment_id": "exp-010",
+      "git_commit": "deadbeef",
+      "strategy_snapshot_hash": "abc123",
+      "parameter_snapshot_hash": "param_hash",
+      "dataset_manifest_ids": [
+        "ds-1"
+      ],
+      "contract_snapshot_id": "contract-1",
+      "execution_model_id": "exec-1",
+      "cost_scenario_id": "cost-1",
+      "risk_policy_id": "risk-1",
+      "trial_number": 1,
+      "trial_budget": 12,
+      "random_seed": 42,
+      "created_at_utc": "2026-07-18T09:57:51.579874+00:00"
+    },
+    {
+      "experiment_id": "exp-011",
+      "git_commit": "deadbeef",
+      "strategy_snapshot_hash": "abc123",
+      "parameter_snapshot_hash": "param_hash",
+      "dataset_manifest_ids": [
+        "ds-1"
+      ],
+      "contract_snapshot_id": "contract-1",
+      "execution_model_id": "exec-1",
+      "cost_scenario_id": "cost-1",
+      "risk_policy_id": "risk-1",
+      "trial_number": 1,
+      "trial_budget": 12,
+      "random_seed": 42,
+      "created_at_utc": "2026-07-18T09:57:51.584697+00:00"
+    }
+  ],
+  "trial_counts": {
+    "exp-000": 1,
+    "exp-001": 1,
+    "exp-002": 1,
+    "exp-003": 1,
+    "exp-004": 1,
+    "exp-005": 1,
+    "exp-006": 1,
+    "exp-007": 1,
+    "exp-008": 1,
+    "exp-009": 1,
+    "exp-010": 1,
+    "exp-011": 1
+  }
+}

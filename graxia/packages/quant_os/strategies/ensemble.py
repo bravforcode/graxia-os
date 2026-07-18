@@ -75,8 +75,6 @@ class EnsembleVote:
     signal_type: SignalType
     confidence: float
     weighted_score: float
-    stop_loss: Decimal | None = None
-    take_profit: Decimal | None = None
 
 
 @dataclass
@@ -249,8 +247,6 @@ class StrategyEnsemble:
                     signal_type=sig.signal_type,
                     confidence=sig.confidence,
                     weighted_score=weighted,
-                    stop_loss=sig.stop_loss,
-                    take_profit=sig.take_profit,
                 )
             )
             if sig.signal_type == SignalType.BUY:
@@ -299,7 +295,7 @@ class StrategyEnsemble:
 
         # consensus SL / TP (weighted average across winning-side votes)
         winning_votes = [v for v in votes if v.signal_type == sig_type]
-        consensus_sl, consensus_tp = self._consensus_levels(winning_votes, current_price, sig_type, ohlcv_data)
+        consensus_sl, consensus_tp = self._consensus_levels(winning_votes, current_price)
 
         strength = "strong" if best_score > 0.75 else "medium" if best_score > 0.65 else "weak"
 
@@ -423,77 +419,18 @@ class StrategyEnsemble:
     # ── internals ──────────────────────────────────────────────────────
 
     @staticmethod
-    def _compute_atr(highs: list, lows: list, closes: list, period: int = 14) -> Decimal | None:
-        """Simple ATR from OHLC arrays. Returns None if insufficient data."""
-        if len(highs) < period + 1 or len(lows) < period + 1 or len(closes) < period + 1:
-            return None
-        tr_sum = 0.0
-        for i in range(-period, 0):
-            tr = max(
-                highs[i] - lows[i],
-                abs(highs[i] - closes[i - 1]),
-                abs(lows[i] - closes[i - 1]),
-            )
-            tr_sum += tr
-        return Decimal(str(tr_sum / period))
-
-    @staticmethod
     def _consensus_levels(
         votes: Sequence[EnsembleVote],
         current_price: Decimal,
-        signal_type: Any | None = None,
-        ohlcv_data: dict[str, list] | None = None,
     ) -> tuple[Decimal | None, Decimal | None]:
         """
         Weighted-average stop-loss / take-profit across winning-side votes.
 
-        Falls back to ATR-based SL/TP when no sub-signal provided levels.
+        Falls back to ``None`` when no sub-signal provided SL/TP.
         """
-        if not votes:
-            return None, None
-
-        votes_with_sl = [v for v in votes if v.stop_loss is not None]
-        votes_with_tp = [v for v in votes if v.take_profit is not None]
-
-        consensus_sl = None
-        consensus_tp = None
-
-        if votes_with_sl:
-            total_weight_sl = Decimal(str(sum(v.weight for v in votes_with_sl)))
-            if total_weight_sl > 0:
-                weighted_sl_sum = sum(v.stop_loss * Decimal(str(v.weight)) for v in votes_with_sl)
-                consensus_sl = weighted_sl_sum / total_weight_sl
-
-        if votes_with_tp:
-            total_weight_tp = Decimal(str(sum(v.weight for v in votes_with_tp)))
-            if total_weight_tp > 0:
-                weighted_tp_sum = sum(v.take_profit * Decimal(str(v.weight)) for v in votes_with_tp)
-                consensus_tp = weighted_tp_sum / total_weight_tp
-
-        # ── ATR-based fallback when sub-strategies don't provide SL/TP ──
-        if consensus_sl is None or consensus_tp is None:
-            atr = None
-            if ohlcv_data:
-                highs = ohlcv_data.get("high", [])
-                lows = ohlcv_data.get("low", [])
-                closes = ohlcv_data.get("close", [])
-                atr = StrategyEnsemble._compute_atr(highs, lows, closes)
-
-            if atr and atr > 0:
-                is_long = signal_type is not None and str(signal_type).upper() in ("BUY", "SIGNALTYPE.BUY")
-                if consensus_sl is None:
-                    consensus_sl = current_price - (2 * atr) if is_long else current_price + (2 * atr)
-                if consensus_tp is None:
-                    consensus_tp = current_price + (3 * atr) if is_long else current_price - (3 * atr)
-                logger.warning(
-                    "ensemble_fallback_sl_tp",
-                    reason="WARNING: Using ATR-based fallback SL/TP — sub-strategies did not provide levels",
-                    atr=str(round(atr, 6)),
-                    sl=str(round(consensus_sl, 6)),
-                    tp=str(round(consensus_tp, 6)),
-                )
-
-        return consensus_sl, consensus_tp
+        # We need the original signals; look them up from each strategy
+        # For simplicity, return None — callers can override with their own levels.
+        return None, None
 
     def __repr__(self) -> str:
         names = ", ".join(self._records.keys())

@@ -133,6 +133,8 @@ class SpreadPatchedEngine(BacktestEngine):
             execution_quality=result.execution_quality.value,
             signal_bar_index=bar_index,
             contract_size=InlineContractSpec.for_symbol(signal.symbol).trade_contract_size,
+            tick_size=InlineContractSpec.for_symbol(signal.symbol).trade_tick_size,
+            tick_value=InlineContractSpec.for_symbol(signal.symbol).trade_tick_value,
         )
         self.balance -= result.commission
 

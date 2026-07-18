@@ -569,7 +569,8 @@ class TestBrokerChaos:
         broker.active.get_account_info.side_effect = ConnectionError("MT5 connection lost")
         executor = _make_executor(broker)
         account, portfolio = executor._fetch_account_state()
-        assert account.equity == 100000.0
+        # Fail-closed: $0 equity means all risk checks reject
+        assert account.equity == 0.0
 
     @pytest.mark.asyncio
     async def test_broker_submit_order_exception(self) -> None:
@@ -1581,7 +1582,7 @@ class TestNotificationsChaos:
 
     @pytest.mark.asyncio
     async def test_disabled_notifier_no_send(self) -> None:
-        notifier = TradeNotifier(bot_token="", chat_id="")
+        notifier = TradeNotifier(bot_token="", chat_id="", enabled=False)
         await notifier.notify_trade(_make_decision(), MagicMock(success=True))
 
     @pytest.mark.asyncio

@@ -201,9 +201,9 @@ class MeanReversionBollinger(Strategy):
             notes=f"MRB signal: {'Long' if long_signal else 'Short'} - Mean reversion in ranging market",
         )
 
-    def _is_low_liquidity_time(self, current_time: datetime | None = None) -> bool:
+    def _is_low_liquidity_time(self) -> bool:
         """Check if current time is low liquidity period"""
-        now = current_time if current_time is not None else datetime.now(UTC)
+        now = datetime.now(UTC)
         return now.hour in self.avoid_hours
 
     def _calculate_indicators(self, ohlcv_data: dict[str, list]) -> dict[str, Any]:
@@ -266,8 +266,7 @@ class MeanReversionBollinger(Strategy):
         except ImportError:
             return {}
         except Exception as e:
-            import structlog
-            structlog.get_logger(__name__).warning("mrb.indicator_error", error=str(e))
+            print(f"MRB indicator calculation error: {e}")
             return {}
 
     def _calculate_confidence(self, conditions: dict[str, bool], stoch_value: float, direction: str) -> float:

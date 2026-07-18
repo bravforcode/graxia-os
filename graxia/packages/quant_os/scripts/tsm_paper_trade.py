@@ -58,12 +58,12 @@ from quant_os.execution.adapters.mt5 import MT5Adapter
 from quant_os.execution.oms import OMS
 from quant_os.monitoring.metrics_exporter import (
     start_metrics_server,
+    update_data_feed_timestamp,
     update_drawdown,
+    update_heartbeat_timestamp,
     update_kill_switch,
     update_positions,
-    update_heartbeat_timestamp,
     update_rebalance_timestamp,
-    update_data_feed_timestamp,
 )
 from quant_os.risk.pre_trade_gate import PreTradeRiskGate, symbol_to_asset_class
 
@@ -100,19 +100,29 @@ DD_REDUCE_1_SCALE = 0.75  # Position scale at 5% DD
 DD_REDUCE_2_THRESHOLD = 0.10  # 10% drawdown -> reduce by 50%
 DD_REDUCE_2_SCALE = 0.50  # Position scale at 10% DD
 
+# Half-Kelly position sizing parameters
+KELLY_ROLLING_WINDOW: int = 20  # Rolling window of recent trades for Kelly
+KELLY_HALF: bool = True  # Use half-Kelly (conservative)
+KELLY_CAP_PCT: float = 0.25  # Maximum Kelly fraction (25%)
+KELLY_FLOOR_PCT: float = 0.05  # Minimum Kelly fraction (5%)
+
 # Per-asset measured costs (loaded from config/cost_calibration.json)
 COST_CALIBRATION_PATH = BASE / "config" / "cost_calibration.json"
 
 
 def load_cost_calibration() -> dict[str, float]:
-    """Load per-asset round-trip cost in bps from measured calibration."""
+    """Load per-asset round-trip cost in bps from measured calibration.
+
+    Keys are MT5 symbol names (e.g. USOIL, XAUUSD) for direct position sizing use.
+    """
     if not COST_CALIBRATION_PATH.exists():
         log("⚠️ cost_calibration.json not found, falling back to 10bps default")
         return {}
     with open(COST_CALIBRATION_PATH) as f:
         cal = json.load(f)
     costs = {}
-    for mt5_sym, info in cal.get("assets", {}).items():
+    for _asset_name, info in cal.get("assets", {}).items():
+        mt5_sym = info.get("mt5_symbol", _asset_name)
         rt_bps = info.get("round_trip_bps_measured", 10.0)
         costs[mt5_sym] = rt_bps
     return costs
@@ -376,9 +386,11 @@ def detect_regime(daily_ret: pd.DataFrame) -> str:
     """
     if daily_ret.empty:
         return "NORMAL"
+    daily_ret = daily_ret.astype(float)
     short_vol = daily_ret.rolling(REGIME_VOL_SHORT, min_periods=REGIME_VOL_SHORT).std() * np.sqrt(252)
     long_vol = daily_ret.rolling(REGIME_VOL_LONG, min_periods=REGIME_VOL_LONG).std() * np.sqrt(252)
-    ratio = (short_vol / long_vol.replace(0, np.nan)).mean(axis=1)
+    long_vol = long_vol.replace(0, np.nan).astype(float)
+    ratio = (short_vol / long_vol).mean(axis=1, numeric_only=True)
     latest_ratio = ratio.dropna().iloc[-1] if not ratio.dropna().empty else 1.0
     if latest_ratio > REGIME_VOL_HIGH_MULTIPLIER:
         return "HIGH_VOL"
@@ -389,6 +401,7 @@ def detect_regime(daily_ret: pd.DataFrame) -> str:
 
 def detect_trend(close_matrix: pd.DataFrame) -> str:
     """Detect portfolio trend from SMA crossover (50d vs 200d)."""
+    close_matrix = close_matrix.astype(float)
     filled = close_matrix.ffill()
     all_valid = filled.notna().all(axis=1)
     filled = filled[all_valid]
@@ -396,8 +409,9 @@ def detect_trend(close_matrix: pd.DataFrame) -> str:
         return "FLAT"
     sma_fast = filled.rolling(TREND_FAST_SMA, min_periods=TREND_FAST_SMA).mean()
     sma_slow = filled.rolling(TREND_SLOW_SMA, min_periods=TREND_SLOW_SMA).mean()
-    sma_diff = (sma_fast - sma_slow) / sma_slow.replace(0, np.nan)
-    avg_diff = sma_diff.mean(axis=1)
+    sma_slow = sma_slow.replace(0, np.nan).astype(float)
+    sma_diff = (sma_fast - sma_slow) / sma_slow
+    avg_diff = sma_diff.mean(axis=1, numeric_only=True)
     latest_diff = avg_diff.dropna().iloc[-1] if not avg_diff.dropna().empty else 0.0
     if latest_diff > 0.001:
         return "UPTREND"
@@ -477,8 +491,9 @@ def compute_target_weights(
     # Inverse-volatility weights
     ivol_window = 20
     asset_rvol = daily_ret.rolling(ivol_window, min_periods=ivol_window).std() * np.sqrt(252)
-    inv_vol = 1.0 / asset_rvol.replace(0, np.nan)
-    inv_vol_sum = inv_vol.sum(axis=1).replace(0, np.nan)
+    asset_rvol = asset_rvol.replace(0, np.nan).astype(float)
+    inv_vol = 1.0 / asset_rvol
+    inv_vol_sum = inv_vol.sum(axis=1, numeric_only=True).replace(0, np.nan)
     inv_weights = inv_vol.div(inv_vol_sum, axis=0)
 
     # Portfolio-level realized vol for vol-targeting
@@ -497,7 +512,7 @@ def compute_target_weights(
     raw_weights = raw_weights * regime_scale
 
     # Normalize
-    abs_sum = raw_weights.abs().sum(axis=1).replace(0, np.nan)
+    abs_sum = raw_weights.abs().sum(axis=1, numeric_only=True).replace(0, np.nan)
     final_weights = raw_weights.div(abs_sum, axis=0)
 
     # Drawdown scaling (after normalization)
@@ -505,6 +520,63 @@ def compute_target_weights(
     final_weights = final_weights * dd_scale
 
     return final_weights, vol_scale, port_rvol, regime, trend
+
+
+# ═══════════════════════════════════════════════════════════════
+# HALF-KELLY POSITION SIZING
+# ═══════════════════════════════════════════════════════════════
+
+
+def compute_half_kelly(trades: list[dict], min_trades: int = KELLY_ROLLING_WINDOW) -> dict[str, float]:
+    """Compute half-Kelly fraction per asset from recent trade history.
+
+    Kelly formula: f* = (p * b - q) / b
+    where p = win probability, b = avg_win/avg_loss, q = 1 - p
+
+    Args:
+        trades: list of {"asset": str, "pnl": float, "side": str}
+        min_trades: minimum trades per asset before using floor
+
+    Returns:
+        {asset: kelly_fraction} where fraction is between FLOOR and CAP
+    """
+    if not trades:
+        return {}
+
+    # Group by asset
+    by_asset: dict[str, list[float]] = {}
+    for t in trades:
+        asset = t["asset"]
+        by_asset.setdefault(asset, []).append(t["pnl"])
+
+    kelly: dict[str, float] = {}
+    for asset, pnls in by_asset.items():
+        if len(pnls) < min_trades:
+            kelly[asset] = KELLY_FLOOR_PCT
+            continue
+
+        wins = [p for p in pnls if p > 0]
+        losses = [p for p in pnls if p < 0]
+
+        if not wins or not losses:
+            kelly[asset] = KELLY_FLOOR_PCT
+            continue
+
+        p = len(wins) / len(pnls)  # win probability
+        avg_win = sum(wins) / len(wins)
+        avg_loss = abs(sum(losses) / len(losses))
+        b = avg_win / avg_loss  # payoff ratio
+
+        q = 1.0 - p
+        f_star = (p * b - q) / b
+
+        if KELLY_HALF:
+            f_star *= 0.5
+
+        f_star = max(KELLY_FLOOR_PCT, min(KELLY_CAP_PCT, f_star))
+        kelly[asset] = round(f_star, 4)
+
+    return kelly
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -516,17 +588,20 @@ def weights_to_lots(
     weights: dict[str, float],
     prices: dict[str, float],
     account_equity: float,
+    kelly_fractions: dict[str, float] | None = None,
 ) -> dict[str, dict]:
     """
-    Convert portfolio weights to MT5 lot sizes.
+    Convert portfolio weights to MT5 lot sizes, with optional Kelly scaling.
 
     Args:
         weights: {asset_name: weight} where weight is fraction of equity
         prices: {asset_name: latest_price}
         account_equity: MT5 account equity in USD
+        kelly_fractions: optional {asset: fraction} to scale weights
 
     Returns:
-        {asset_name: {"target_lots": float, "notional": float, "mt5_symbol": str}}
+        {asset_name: {"target_lots": float, "notional": float, "mt5_symbol": str,
+                       "weight": float, "raw_weight": float, "kelly_fraction": float|None}}
     """
     positions = {}
     for asset, weight in weights.items():
@@ -540,8 +615,12 @@ def weights_to_lots(
         price = prices[asset]
         contract_size = CONTRACT_SIZES.get(mt5_sym, 100_000)
 
+        # Apply Kelly fraction if provided
+        kelly_frac = kelly_fractions.get(asset) if kelly_fractions else None
+        effective_weight = weight * kelly_frac if kelly_frac is not None else weight
+
         # Target notional in USD
-        target_notional = weight * account_equity
+        target_notional = effective_weight * account_equity
 
         # Convert to lots
         target_lots = target_notional / (price * contract_size)
@@ -550,7 +629,7 @@ def weights_to_lots(
             target_lots = 0.0
 
         # Preserve sign for direction
-        if weight < 0:
+        if effective_weight < 0:
             target_lots = -target_lots
 
         positions[asset] = {
@@ -558,7 +637,9 @@ def weights_to_lots(
             "notional": target_notional,
             "mt5_symbol": mt5_sym,
             "price": price,
-            "weight": weight,
+            "weight": effective_weight,
+            "raw_weight": weight,
+            "kelly_fraction": kelly_frac,
         }
 
     return positions

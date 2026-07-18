@@ -224,6 +224,8 @@ class BacktestPosition:
     execution_quality: str = ""
     signal_bar_index: int = -1
     contract_size: Decimal = Decimal("100")
+    tick_size: Decimal = Decimal("0.01")
+    tick_value: Decimal = Decimal("1.0")
 
 
 @dataclass
@@ -879,17 +881,20 @@ class BacktestEngine:
 
         # Historical sizing — deterministic, no MT5
         entry_price = signal.entry_price or bar_close
+        contract_spec = InlineContractSpec.for_symbol(signal.symbol)
         volume = _historical_size(
             equity=self.equity,
             risk_per_trade_bps=self.config.risk_per_trade_bps,
             entry_price=entry_price,
             stop_loss=signal.stop_loss,
-            contract=InlineContractSpec.for_symbol(signal.symbol),
+            contract=contract_spec,
         )
         if regime_mult != 1.0:
             volume = volume * Decimal(str(regime_mult))
         if volume <= 0:
             return
+
+        pip_size = contract_spec.trade_tick_size  # 0.0001 for 4-decimal FX, 0.01 for JPY/gold
 
         # Build snapshot from current bar — dynamic spread based on time of day
         try:
@@ -897,9 +902,9 @@ class BacktestEngine:
 
             _spread_config = SpreadConfig()
             bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
-            spread = Decimal("0.01") * _spread_config.get_spread(bar_hour)
+            spread = pip_size * _spread_config.get_spread(bar_hour)
         except Exception:
-            spread = Decimal("0.01") * Decimal(str(self.config.spread_pips))
+            spread = pip_size * Decimal(str(self.config.spread_pips))
 
         # Add latency-based slippage from FillTimingConfig
         latency_slippage = Decimal("0")
@@ -908,7 +913,7 @@ class BacktestEngine:
                 atr = float(bar_high - bar_low)
                 latency_ms = self.config.fill_timing.estimate_latency_ms(atr)
                 latency_slippage = self.config.fill_timing.estimate_slippage_pips(latency_ms)
-                latency_slippage = Decimal("0.01") * latency_slippage
+                latency_slippage = pip_size * latency_slippage
             except Exception:
                 latency_slippage = Decimal("0")
 
@@ -997,6 +1002,8 @@ class BacktestEngine:
             execution_quality=result.execution_quality.value,
             signal_bar_index=bar_index,
             contract_size=InlineContractSpec.for_symbol(signal.symbol).trade_contract_size,
+            tick_size=InlineContractSpec.for_symbol(signal.symbol).trade_tick_size,
+            tick_value=InlineContractSpec.for_symbol(signal.symbol).trade_tick_value,
         )
         self.balance -= result.commission
 
@@ -1012,15 +1019,17 @@ class BacktestEngine:
         if not self.positions:
             return
 
-        # Dynamic spread based on time of day
+        # Dynamic spread based on time of day — use first position's tick_size
+        first_pos = next(iter(self.positions.values()), None)
+        pip_size = first_pos.tick_size if first_pos else Decimal("0.01")
         try:
             from backtest.dynamic_spread_model import SpreadConfig
 
             _spread_config = SpreadConfig()
             bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
-            spread = Decimal("0.01") * _spread_config.get_spread(bar_hour)
+            spread = pip_size * _spread_config.get_spread(bar_hour)
         except Exception:
-            spread = Decimal("0.01") * Decimal(str(self.config.spread_pips))
+            spread = pip_size * Decimal(str(self.config.spread_pips))
         bid, ask = estimate_bid_ask_from_bar(Decimal("0"), bar_high, bar_low, bar_close, spread)
         snapshot = MarketSnapshot(
             bid=bid,
@@ -1085,13 +1094,30 @@ class BacktestEngine:
                     _spread_config = SpreadConfig()
                     bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
                     atr = float(bar_high - bar_low)
-                    exit_slippage = Decimal("0.01") * _spread_config.get_slippage(bar_hour, atr=atr)
+                    exit_slippage = pos.tick_size * _spread_config.get_slippage(bar_hour, atr=atr)
                 except Exception:
-                    exit_slippage = Decimal(str(self.config.slippage_pips)) * Decimal("0.01")
+                    exit_slippage = Decimal(str(self.config.slippage_pips)) * pos.tick_size
                 exec_side = FillSide.BUY if pos.side == PositionType.LONG else FillSide.SELL
                 exit_price, exit_slip = fill_simulate_exit(exec_side, bid, ask, exit_slippage)
 
             self._close_position(pos_id, exit_price, current_time, reason, exit_slip)
+
+    @staticmethod
+    def _pnl_from_ticks(
+        price_diff: Decimal,
+        quantity: Decimal,
+        tick_size: Decimal,
+        tick_value: Decimal,
+    ) -> Decimal:
+        """Convert a price difference to PnL using tick_size/tick_value.
+
+        This correctly handles JPY pairs where contract_size (100k) is in
+        quote-currency units but PnL must be in account-currency (USD).
+        For USDJPY: tick_size=0.01, tick_value=6.67 → 1 pip = $6.67/lot.
+        """
+        if tick_size <= 0:
+            return Decimal("0")
+        return (price_diff / tick_size) * tick_value * quantity
 
     def _close_position(
         self,
@@ -1106,12 +1132,13 @@ class BacktestEngine:
         if not pos:
             return
 
-        # Calculate P&L — quantity is in LOTS, convert to UNITS via contract_size
-        contract_size = getattr(pos, "contract_size", Decimal("100"))
+        # Calculate P&L via tick_size/tick_value (correct for JPY pairs)
+        tick_size = getattr(pos, "tick_size", Decimal("0.01"))
+        tick_value = getattr(pos, "tick_value", Decimal("1.0"))
         if pos.side == PositionType.LONG:
-            pnl = (exit_price - pos.entry_price) * pos.quantity * contract_size
+            pnl = self._pnl_from_ticks(exit_price - pos.entry_price, pos.quantity, tick_size, tick_value)
         else:
-            pnl = (pos.entry_price - exit_price) * pos.quantity * contract_size
+            pnl = self._pnl_from_ticks(pos.entry_price - exit_price, pos.quantity, tick_size, tick_value)
 
         # Commission on exit — quantity is already in lots
         exit_commission = pos.quantity * Decimal(str(self.config.commission_per_lot))
@@ -1131,6 +1158,7 @@ class BacktestEngine:
         pnl += swap_cost
         self.balance += pnl
 
+        contract_size = getattr(pos, "contract_size", Decimal("100"))
         notional = pos.entry_price * pos.quantity * contract_size
         return_pct = (pnl / notional * 100) if notional > 0 else Decimal("0")
 
@@ -1166,17 +1194,19 @@ class BacktestEngine:
     def _close_all_positions(self, last_price: float, current_time: datetime) -> None:
         """Close all remaining positions at last price with slippage."""
         last_dec = Decimal(str(last_price))
-        try:
-            from backtest.dynamic_spread_model import SpreadConfig as _SpreadCfg
-
-            _spread_config = _SpreadCfg()
-            bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
-            exit_slippage = Decimal("0.01") * _spread_config.get_slippage(bar_hour)
-        except Exception:
-            exit_slippage = Decimal(str(self.config.slippage_pips)) * Decimal("0.01")
         for pos_id in list(self.positions.keys()):
             pos = self.positions.get(pos_id)
-            if pos and pos.side == PositionType.LONG:
+            if not pos:
+                continue
+            try:
+                from backtest.dynamic_spread_model import SpreadConfig as _SpreadCfg
+
+                _spread_config = _SpreadCfg()
+                bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
+                exit_slippage = pos.tick_size * _spread_config.get_slippage(bar_hour)
+            except Exception:
+                exit_slippage = Decimal(str(self.config.slippage_pips)) * pos.tick_size
+            if pos.side == PositionType.LONG:
                 # Selling: apply slippage (worse price)
                 exit_price = last_dec - exit_slippage
             elif pos:
@@ -1290,25 +1320,30 @@ class BacktestEngine:
         """Calculate unrealized P&L across all open positions."""
         unrealized = 0.0
         current = Decimal(str(current_price))
-        try:
-            from backtest.dynamic_spread_model import SpreadConfig as _SpreadCfg
-
-            _spread_config = _SpreadCfg()
-            bar_hour = 12  # Default for equity calc
-            closing_spread = Decimal("0.01") * _spread_config.get_spread(bar_hour)
-        except Exception:
-            closing_spread = Decimal(str(self.config.spread_pips)) * Decimal("0.01")
-        closing_cost = closing_spread * Decimal("0.5")
-        closing_slip = Decimal("0.01") * Decimal(str(self.config.slippage_pips))
         for pos in self.positions.values():
-            contract_size = getattr(pos, "contract_size", Decimal("100"))
+            tick_size = getattr(pos, "tick_size", Decimal("0.01"))
+            tick_value = getattr(pos, "tick_value", Decimal("1.0"))
+            try:
+                from backtest.dynamic_spread_model import SpreadConfig as _SpreadCfg
+
+                _spread_config = _SpreadCfg()
+                bar_hour = 12  # Default for equity calc
+                closing_spread = tick_size * _spread_config.get_spread(bar_hour)
+            except Exception:
+                closing_spread = Decimal(str(self.config.spread_pips)) * tick_size
+            closing_cost = closing_spread * Decimal("0.5")
+            closing_slip = tick_size * Decimal(str(self.config.slippage_pips))
             if pos.side == PositionType.LONG:
                 unrealized += float(
-                    (current - closing_cost - closing_slip - pos.entry_price) * pos.quantity * contract_size
+                    self._pnl_from_ticks(
+                        current - closing_cost - closing_slip - pos.entry_price, pos.quantity, tick_size, tick_value
+                    )
                 )
             else:
                 unrealized += float(
-                    (pos.entry_price - current - closing_cost - closing_slip) * pos.quantity * contract_size
+                    self._pnl_from_ticks(
+                        pos.entry_price - current - closing_cost - closing_slip, pos.quantity, tick_size, tick_value
+                    )
                 )
         return unrealized
 
@@ -1340,25 +1375,30 @@ class BacktestEngine:
         """Update equity curve point"""
         # Calculate unrealized P&L — use dynamic spread consistent with execution
         unrealized = Decimal("0")
-        try:
-            from backtest.dynamic_spread_model import SpreadConfig as _SpreadCfg
-
-            _spread_config = _SpreadCfg()
-            bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
-            closing_spread = Decimal("0.01") * _spread_config.get_spread(bar_hour)
-        except Exception:
-            closing_spread = Decimal(str(self.config.spread_pips)) * Decimal("0.01")
-        closing_cost = closing_spread * Decimal("0.5")  # half-spread to close
-        closing_slip = Decimal("0.01") * Decimal(str(self.config.slippage_pips))
         for pos in self.positions.values():
             current = Decimal(str(current_price))
-            contract_size = getattr(pos, "contract_size", Decimal("100"))
+            tick_size = getattr(pos, "tick_size", Decimal("0.01"))
+            tick_value = getattr(pos, "tick_value", Decimal("1.0"))
+            try:
+                from backtest.dynamic_spread_model import SpreadConfig as _SpreadCfg
+
+                _spread_config = _SpreadCfg()
+                bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
+                closing_spread = tick_size * _spread_config.get_spread(bar_hour)
+            except Exception:
+                closing_spread = Decimal(str(self.config.spread_pips)) * tick_size
+            closing_cost = closing_spread * Decimal("0.5")  # half-spread to close
+            closing_slip = tick_size * Decimal(str(self.config.slippage_pips))
             if pos.side == PositionType.LONG:
                 # Close = sell at bid - slippage (worse than mid)
-                unrealized += (current - closing_cost - closing_slip - pos.entry_price) * pos.quantity * contract_size
+                unrealized += self._pnl_from_ticks(
+                    current - closing_cost - closing_slip - pos.entry_price, pos.quantity, tick_size, tick_value
+                )
             else:
                 # Close = buy at ask + slippage (worse than mid)
-                unrealized += (pos.entry_price - current - closing_cost - closing_slip) * pos.quantity * contract_size
+                unrealized += self._pnl_from_ticks(
+                    pos.entry_price - current - closing_cost - closing_slip, pos.quantity, tick_size, tick_value
+                )
 
         self.equity = self.balance + unrealized
 
