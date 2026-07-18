@@ -1,0 +1,1402 @@
+[
+  {
+    "campaign_id": "camp_0001",
+    "strategy_id": "tsm",
+    "symbol": "XAUUSD",
+    "timeframe": "D1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "XAUUSD",
+      "D1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0002",
+    "strategy_id": "tsm",
+    "symbol": "XAUUSD",
+    "timeframe": "H4",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "XAUUSD",
+      "H4"
+    ]
+  },
+  {
+    "campaign_id": "camp_0003",
+    "strategy_id": "tsm",
+    "symbol": "XAUUSD",
+    "timeframe": "H1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "XAUUSD",
+      "H1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0004",
+    "strategy_id": "tsm",
+    "symbol": "EURUSD",
+    "timeframe": "D1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "EURUSD",
+      "D1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0005",
+    "strategy_id": "tsm",
+    "symbol": "EURUSD",
+    "timeframe": "H4",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "EURUSD",
+      "H4"
+    ]
+  },
+  {
+    "campaign_id": "camp_0006",
+    "strategy_id": "tsm",
+    "symbol": "EURUSD",
+    "timeframe": "H1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "EURUSD",
+      "H1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0007",
+    "strategy_id": "tsm",
+    "symbol": "GBPUSD",
+    "timeframe": "D1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "GBPUSD",
+      "D1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0008",
+    "strategy_id": "tsm",
+    "symbol": "GBPUSD",
+    "timeframe": "H4",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "GBPUSD",
+      "H4"
+    ]
+  },
+  {
+    "campaign_id": "camp_0009",
+    "strategy_id": "tsm",
+    "symbol": "GBPUSD",
+    "timeframe": "H1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "GBPUSD",
+      "H1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0010",
+    "strategy_id": "tsm",
+    "symbol": "USDJPY",
+    "timeframe": "D1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "USDJPY",
+      "D1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0011",
+    "strategy_id": "tsm",
+    "symbol": "USDJPY",
+    "timeframe": "H4",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "USDJPY",
+      "H4"
+    ]
+  },
+  {
+    "campaign_id": "camp_0012",
+    "strategy_id": "tsm",
+    "symbol": "USDJPY",
+    "timeframe": "H1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "USDJPY",
+      "H1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0013",
+    "strategy_id": "tsm",
+    "symbol": "AUDUSD",
+    "timeframe": "D1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "AUDUSD",
+      "D1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0014",
+    "strategy_id": "tsm",
+    "symbol": "AUDUSD",
+    "timeframe": "H4",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "AUDUSD",
+      "H4"
+    ]
+  },
+  {
+    "campaign_id": "camp_0015",
+    "strategy_id": "tsm",
+    "symbol": "AUDUSD",
+    "timeframe": "H1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "AUDUSD",
+      "H1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0016",
+    "strategy_id": "tsm",
+    "symbol": "BTCUSD",
+    "timeframe": "D1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "BTCUSD",
+      "D1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0017",
+    "strategy_id": "tsm",
+    "symbol": "BTCUSD",
+    "timeframe": "H4",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "BTCUSD",
+      "H4"
+    ]
+  },
+  {
+    "campaign_id": "camp_0018",
+    "strategy_id": "tsm",
+    "symbol": "BTCUSD",
+    "timeframe": "H1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "BTCUSD",
+      "H1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0019",
+    "strategy_id": "tsm",
+    "symbol": "ETHUSD",
+    "timeframe": "D1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "ETHUSD",
+      "D1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0020",
+    "strategy_id": "tsm",
+    "symbol": "ETHUSD",
+    "timeframe": "H4",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "ETHUSD",
+      "H4"
+    ]
+  },
+  {
+    "campaign_id": "camp_0021",
+    "strategy_id": "tsm",
+    "symbol": "ETHUSD",
+    "timeframe": "H1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "ETHUSD",
+      "H1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0022",
+    "strategy_id": "tsm",
+    "symbol": "NAS100",
+    "timeframe": "D1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "NAS100",
+      "D1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0023",
+    "strategy_id": "tsm",
+    "symbol": "NAS100",
+    "timeframe": "H4",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "NAS100",
+      "H4"
+    ]
+  },
+  {
+    "campaign_id": "camp_0024",
+    "strategy_id": "tsm",
+    "symbol": "NAS100",
+    "timeframe": "H1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "NAS100",
+      "H1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0025",
+    "strategy_id": "tsm",
+    "symbol": "US30",
+    "timeframe": "D1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "US30",
+      "D1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0026",
+    "strategy_id": "tsm",
+    "symbol": "US30",
+    "timeframe": "H4",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "US30",
+      "H4"
+    ]
+  },
+  {
+    "campaign_id": "camp_0027",
+    "strategy_id": "tsm",
+    "symbol": "US30",
+    "timeframe": "H1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "US30",
+      "H1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0028",
+    "strategy_id": "tsm",
+    "symbol": "OIL",
+    "timeframe": "D1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "OIL",
+      "D1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0029",
+    "strategy_id": "tsm",
+    "symbol": "OIL",
+    "timeframe": "H4",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "OIL",
+      "H4"
+    ]
+  },
+  {
+    "campaign_id": "camp_0030",
+    "strategy_id": "tsm",
+    "symbol": "OIL",
+    "timeframe": "H1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "OIL",
+      "H1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0031",
+    "strategy_id": "tsm",
+    "symbol": "XAGUSD",
+    "timeframe": "D1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "XAGUSD",
+      "D1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0032",
+    "strategy_id": "tsm",
+    "symbol": "XAGUSD",
+    "timeframe": "H4",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "XAGUSD",
+      "H4"
+    ]
+  },
+  {
+    "campaign_id": "camp_0033",
+    "strategy_id": "tsm",
+    "symbol": "XAGUSD",
+    "timeframe": "H1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        20,
+        40,
+        60,
+        120
+      ],
+      "vol_target": 0.1
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "XAGUSD",
+      "H1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0034",
+    "strategy_id": "tsm",
+    "symbol": "XAUUSD",
+    "timeframe": "D1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        10,
+        30,
+        50,
+        100
+      ],
+      "vol_target": 0.12
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "XAUUSD",
+      "D1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0035",
+    "strategy_id": "tsm",
+    "symbol": "XAUUSD",
+    "timeframe": "H4",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        10,
+        30,
+        50,
+        100
+      ],
+      "vol_target": 0.12
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "XAUUSD",
+      "H4"
+    ]
+  },
+  {
+    "campaign_id": "camp_0036",
+    "strategy_id": "tsm",
+    "symbol": "XAUUSD",
+    "timeframe": "H1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        10,
+        30,
+        50,
+        100
+      ],
+      "vol_target": 0.12
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "XAUUSD",
+      "H1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0037",
+    "strategy_id": "tsm",
+    "symbol": "EURUSD",
+    "timeframe": "D1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        10,
+        30,
+        50,
+        100
+      ],
+      "vol_target": 0.12
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "EURUSD",
+      "D1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0038",
+    "strategy_id": "tsm",
+    "symbol": "EURUSD",
+    "timeframe": "H4",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        10,
+        30,
+        50,
+        100
+      ],
+      "vol_target": 0.12
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "EURUSD",
+      "H4"
+    ]
+  },
+  {
+    "campaign_id": "camp_0039",
+    "strategy_id": "tsm",
+    "symbol": "EURUSD",
+    "timeframe": "H1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        10,
+        30,
+        50,
+        100
+      ],
+      "vol_target": 0.12
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "EURUSD",
+      "H1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0040",
+    "strategy_id": "tsm",
+    "symbol": "GBPUSD",
+    "timeframe": "D1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        10,
+        30,
+        50,
+        100
+      ],
+      "vol_target": 0.12
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "GBPUSD",
+      "D1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0041",
+    "strategy_id": "tsm",
+    "symbol": "GBPUSD",
+    "timeframe": "H4",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        10,
+        30,
+        50,
+        100
+      ],
+      "vol_target": 0.12
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "GBPUSD",
+      "H4"
+    ]
+  },
+  {
+    "campaign_id": "camp_0042",
+    "strategy_id": "tsm",
+    "symbol": "GBPUSD",
+    "timeframe": "H1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        10,
+        30,
+        50,
+        100
+      ],
+      "vol_target": 0.12
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "GBPUSD",
+      "H1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0043",
+    "strategy_id": "tsm",
+    "symbol": "USDJPY",
+    "timeframe": "D1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        10,
+        30,
+        50,
+        100
+      ],
+      "vol_target": 0.12
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "USDJPY",
+      "D1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0044",
+    "strategy_id": "tsm",
+    "symbol": "USDJPY",
+    "timeframe": "H4",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        10,
+        30,
+        50,
+        100
+      ],
+      "vol_target": 0.12
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "USDJPY",
+      "H4"
+    ]
+  },
+  {
+    "campaign_id": "camp_0045",
+    "strategy_id": "tsm",
+    "symbol": "USDJPY",
+    "timeframe": "H1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        10,
+        30,
+        50,
+        100
+      ],
+      "vol_target": 0.12
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "USDJPY",
+      "H1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0046",
+    "strategy_id": "tsm",
+    "symbol": "AUDUSD",
+    "timeframe": "D1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        10,
+        30,
+        50,
+        100
+      ],
+      "vol_target": 0.12
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "AUDUSD",
+      "D1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0047",
+    "strategy_id": "tsm",
+    "symbol": "AUDUSD",
+    "timeframe": "H4",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        10,
+        30,
+        50,
+        100
+      ],
+      "vol_target": 0.12
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "AUDUSD",
+      "H4"
+    ]
+  },
+  {
+    "campaign_id": "camp_0048",
+    "strategy_id": "tsm",
+    "symbol": "AUDUSD",
+    "timeframe": "H1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        10,
+        30,
+        50,
+        100
+      ],
+      "vol_target": 0.12
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "AUDUSD",
+      "H1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0049",
+    "strategy_id": "tsm",
+    "symbol": "BTCUSD",
+    "timeframe": "D1",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        10,
+        30,
+        50,
+        100
+      ],
+      "vol_target": 0.12
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "BTCUSD",
+      "D1"
+    ]
+  },
+  {
+    "campaign_id": "camp_0050",
+    "strategy_id": "tsm",
+    "symbol": "BTCUSD",
+    "timeframe": "H4",
+    "capital": 100000.0,
+    "risk_per_trade_pct": 1.0,
+    "max_positions": 1,
+    "commission_bps": 2.2,
+    "slippage_bps": 0.5,
+    "params": {
+      "lookbacks": [
+        10,
+        30,
+        50,
+        100
+      ],
+      "vol_target": 0.12
+    },
+    "start_date": "",
+    "end_date": "",
+    "mode": "historical",
+    "tags": [
+      "tsm",
+      "BTCUSD",
+      "H4"
+    ]
+  }
+]

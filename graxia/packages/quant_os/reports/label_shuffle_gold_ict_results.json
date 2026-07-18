@@ -1,0 +1,77 @@
+{
+  "generated_at": "2026-07-18T19:27:07.728238+00:00",
+  "symbol": "XAUUSD",
+  "timeframe": "D1",
+  "n_shuffles": 200,
+  "cost_rt_bps": 0.3,
+  "method": "shuffle log-returns, rebuild OHLC, re-run batch signals, OOS last 20%",
+  "survives": [],
+  "results": [
+    {
+      "strategy": "gi_ema_cross",
+      "n_bars": 10547,
+      "cost_rt_bps": 0.3,
+      "full_sharpe": -0.074,
+      "oos_sharpe": -0.0337,
+      "oos_mean_ret": -4.06e-06,
+      "null_mean_sharpe": -0.0726,
+      "null_p95_sharpe": 0.4302,
+      "p_value": 0.48,
+      "n_shuffles": 200,
+      "verdict": "NO_EDGE"
+    },
+    {
+      "strategy": "gi_bos_choch",
+      "n_bars": 10547,
+      "cost_rt_bps": 0.3,
+      "full_sharpe": 1.6645,
+      "oos_sharpe": 1.6967,
+      "oos_mean_ret": 0.00047122,
+      "null_mean_sharpe": 2.4741,
+      "null_p95_sharpe": 2.9037,
+      "p_value": 0.995,
+      "n_shuffles": 200,
+      "verdict": "NO_EDGE"
+    },
+    {
+      "strategy": "gi_london_breakout",
+      "n_bars": 10547,
+      "cost_rt_bps": 0.3,
+      "full_sharpe": 0.0246,
+      "oos_sharpe": 0.2416,
+      "oos_mean_ret": 0.00011084,
+      "null_mean_sharpe": 0.0281,
+      "null_p95_sharpe": 0.6273,
+      "p_value": 0.265,
+      "n_shuffles": 200,
+      "verdict": "NO_EDGE"
+    },
+    {
+      "strategy": "gi_multi_tf_align",
+      "n_bars": 10547,
+      "cost_rt_bps": 0.3,
+      "full_sharpe": 0.1858,
+      "oos_sharpe": 0.5744,
+      "oos_mean_ret": 0.00026496,
+      "null_mean_sharpe": 0.0864,
+      "null_p95_sharpe": 0.6848,
+      "p_value": 0.075,
+      "n_shuffles": 200,
+      "verdict": "NO_EDGE"
+    },
+    {
+      "strategy": "gi_order_block",
+      "n_bars": 10547,
+      "cost_rt_bps": 0.3,
+      "full_sharpe": 0.111,
+      "oos_sharpe": 0.147,
+      "oos_mean_ret": 3.923e-05,
+      "null_mean_sharpe": 0.0271,
+      "null_p95_sharpe": 0.5442,
+      "p_value": 0.355,
+      "n_shuffles": 200,
+      "verdict": "NO_EDGE"
+    }
+  ],
+  "honest_note": "EDGE_SURVIVES means p<0.05 on label-shuffle OOS only. Still not live-ready without pooled multi-asset DK + cost stress + paper."
+}

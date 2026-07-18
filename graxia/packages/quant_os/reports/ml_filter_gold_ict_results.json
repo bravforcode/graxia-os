@@ -1,0 +1,218 @@
+{
+  "generated_at": "2026-07-18T19:35:39.427529+00:00",
+  "symbol": "XAUUSD",
+  "timeframe": "D1",
+  "method": "RandomForest(100, depth=6, balanced) on ICT features",
+  "oos_ratio": 0.2,
+  "forward_bars": 5,
+  "improved_count": 5,
+  "total_valid": 5,
+  "results": [
+    {
+      "strategy": "gi_bos_choch",
+      "n_signals_total": 2824,
+      "n_signals_valid": 2810,
+      "n_labels_positive": 1568,
+      "label_rate": 55.8,
+      "is_split": 2248,
+      "oos_split": 562,
+      "rf_accuracy_oos": 51.8,
+      "rf_precision_oos": 57.3,
+      "rf_f1_oos": 2.24,
+      "unfiltered_sharpe_is": 3.3191,
+      "unfiltered_sharpe_oos": 3.1664,
+      "filtered_sharpe_is": 6.8742,
+      "filtered_sharpe_oos": 3.5078,
+      "n_filtered_is": 1149,
+      "n_filtered_oos": 300,
+      "sharpe_improvement_oos": 0.3413,
+      "top_features": [
+        [
+          "atr_pct",
+          0.1325
+        ],
+        [
+          "vol_ratio",
+          0.1199
+        ],
+        [
+          "ema9_dist",
+          0.1168
+        ],
+        [
+          "ret_5",
+          0.1025
+        ],
+        [
+          "ema21_dist",
+          0.0929
+        ]
+      ]
+    },
+    {
+      "strategy": "gi_fair_value_gap",
+      "n_signals_total": 3795,
+      "n_signals_valid": 3767,
+      "n_labels_positive": 1875,
+      "label_rate": 49.8,
+      "is_split": 3013,
+      "oos_split": 754,
+      "rf_accuracy_oos": 48.9,
+      "rf_precision_oos": 48.8,
+      "rf_f1_oos": 1.67,
+      "unfiltered_sharpe_is": -0.0871,
+      "unfiltered_sharpe_oos": 0.5176,
+      "filtered_sharpe_is": 2.5475,
+      "filtered_sharpe_oos": 1.091,
+      "n_filtered_is": 1210,
+      "n_filtered_oos": 283,
+      "sharpe_improvement_oos": 0.5734,
+      "top_features": [
+        [
+          "ema9_21_spread",
+          0.1148
+        ],
+        [
+          "ema9_dist",
+          0.1083
+        ],
+        [
+          "vol_ratio",
+          0.1042
+        ],
+        [
+          "atr_pct",
+          0.0964
+        ],
+        [
+          "ret_1",
+          0.0963
+        ]
+      ]
+    },
+    {
+      "strategy": "gi_london_breakout",
+      "n_signals_total": 7236,
+      "n_signals_valid": 7204,
+      "n_labels_positive": 3601,
+      "label_rate": 50.0,
+      "is_split": 5763,
+      "oos_split": 1441,
+      "rf_accuracy_oos": 56.3,
+      "rf_precision_oos": 58.2,
+      "rf_f1_oos": 2.4,
+      "unfiltered_sharpe_is": -0.0403,
+      "unfiltered_sharpe_oos": 0.3663,
+      "filtered_sharpe_is": 1.9145,
+      "filtered_sharpe_oos": 1.3807,
+      "n_filtered_is": 2886,
+      "n_filtered_oos": 809,
+      "sharpe_improvement_oos": 1.0144,
+      "top_features": [
+        [
+          "atr_pct",
+          0.1608
+        ],
+        [
+          "ema50_dist",
+          0.1209
+        ],
+        [
+          "ret_20",
+          0.1195
+        ],
+        [
+          "ema9_21_spread",
+          0.1072
+        ],
+        [
+          "ema21_dist",
+          0.0898
+        ]
+      ]
+    },
+    {
+      "strategy": "gi_multi_tf_align",
+      "n_signals_total": 7256,
+      "n_signals_valid": 7251,
+      "n_labels_positive": 3687,
+      "label_rate": 50.8,
+      "is_split": 5800,
+      "oos_split": 1451,
+      "rf_accuracy_oos": 54.8,
+      "rf_precision_oos": 55.9,
+      "rf_f1_oos": 2.58,
+      "unfiltered_sharpe_is": 0.1007,
+      "unfiltered_sharpe_oos": 0.7632,
+      "filtered_sharpe_is": 1.523,
+      "filtered_sharpe_oos": 1.3194,
+      "n_filtered_is": 3735,
+      "n_filtered_oos": 1070,
+      "sharpe_improvement_oos": 0.5561,
+      "top_features": [
+        [
+          "atr_pct",
+          0.1574
+        ],
+        [
+          "ema50_dist",
+          0.1333
+        ],
+        [
+          "ema9_21_spread",
+          0.1148
+        ],
+        [
+          "ret_20",
+          0.1068
+        ],
+        [
+          "ema21_dist",
+          0.1038
+        ]
+      ]
+    },
+    {
+      "strategy": "gi_news_fade",
+      "n_signals_total": 1717,
+      "n_signals_valid": 1714,
+      "n_labels_positive": 799,
+      "label_rate": 46.6,
+      "is_split": 1371,
+      "oos_split": 343,
+      "rf_accuracy_oos": 51.3,
+      "rf_precision_oos": 46.3,
+      "rf_f1_oos": 1.38,
+      "unfiltered_sharpe_is": -0.5412,
+      "unfiltered_sharpe_oos": -0.006,
+      "filtered_sharpe_is": 2.7993,
+      "filtered_sharpe_oos": 0.6724,
+      "n_filtered_is": 466,
+      "n_filtered_oos": 95,
+      "sharpe_improvement_oos": 0.6784,
+      "top_features": [
+        [
+          "atr_pct",
+          0.1453
+        ],
+        [
+          "ema50_dist",
+          0.12
+        ],
+        [
+          "ema9_21_spread",
+          0.1013
+        ],
+        [
+          "ret_20",
+          0.0915
+        ],
+        [
+          "vol_ratio",
+          0.0898
+        ]
+      ]
+    }
+  ],
+  "honest_note": "ML filter improvement does not equal live-ready. Must still pass label-shuffle, cost-stress, and not burn sacred holdout."
+}
