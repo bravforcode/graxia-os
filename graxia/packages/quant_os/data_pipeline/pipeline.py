@@ -1,18 +1,20 @@
 """
 pipeline.py — Main Data Pipeline
 """
-import sys
+
 import logging
-from pathlib import Path
+import sys
 from datetime import datetime
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from sources.market_data import fetch_all_market_data
 from sources.macro_data import fetch_all_macro_data
+from sources.market_data import fetch_all_market_data
 from sources.news_sentiment import fetch_news_with_sentiment
-from storage.duckdb_store import DuckDBStore
 from storage.chroma_store import ChromaStore
+from storage.duckdb_store import DuckDBStore
+
 from config import LOG_DIR
 
 LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -80,18 +82,43 @@ class DataPipeline:
                 if f.name == "Index.md":
                     continue
                 content = f.read_text(encoding="utf-8")
-                strategies.append({
-                    "name": f.stem,
-                    "description": content[:500],
-                    "category": "strategy",
-                    "symbols": "all",
-                })
+                strategies.append(
+                    {
+                        "name": f.stem,
+                        "description": content[:500],
+                        "category": "strategy",
+                        "symbols": "all",
+                    }
+                )
             if strategies:
                 self.chroma.add_strategy(strategies)
                 self.results["strategies"] = len(strategies)
         except Exception as e:
             log.error(f"Vault sync failed: {e}")
             self.errors.append(("vault_sync", str(e)))
+
+    def run_data_bridge(self):
+        """Push pipeline data into MacroRegimeCache for trading logic."""
+        log.info("[5/5] Data Bridge → MacroRegimeCache")
+        try:
+            from data_bridge import DataBridge
+
+            bridge = DataBridge()
+            regime = bridge.update_macro_regime()
+            self.results["data_bridge"] = {
+                "bias": regime.bias.value,
+                "confidence": regime.confidence,
+                "regime": regime.regime_label,
+                "pos_mult": regime.position_multiplier,
+            }
+            log.info(
+                f"  Regime: {regime.bias.value} ({regime.regime_label}) "
+                f"conf={regime.confidence:.2f} pos_mult={regime.position_multiplier:.2f}"
+            )
+            bridge.close()
+        except Exception as e:
+            log.error(f"Data bridge failed: {e}")
+            self.errors.append(("data_bridge", str(e)))
 
     def run_full_pipeline(self):
         start = datetime.now()
@@ -103,6 +130,7 @@ class DataPipeline:
         self.run_macro_data()
         self.run_news_sentiment()
         self.run_vault_sync()
+        self.run_data_bridge()  # pipeline data → MacroRegimeCache → trading
 
         elapsed = (datetime.now() - start).total_seconds()
         status = "OK" if not self.errors else f"ERRORS: {len(self.errors)}"
