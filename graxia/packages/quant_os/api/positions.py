@@ -136,15 +136,19 @@ async def close_position(
 
     # Submit close order via OMS if broker adapter available
     if orch._oms is not None and orch._broker_adapter is not None and orch._broker_adapter.is_connected:
-        from ..execution.order_state_machine import OrderSide
+        from ..core.enums import OrderSide
 
         close_side = OrderSide.SELL if orch_position.side == "BUY" else OrderSide.BUY
         try:
-            result = orch._oms.submit_market_order(
+            import uuid
+            from ..core.trading_loop import _symbol_to_asset_class
+
+            result = orch._oms.submit_order(
+                signal_id=f"close-{position_id}-{uuid.uuid4().hex[:8]}",
                 symbol=symbol,
+                asset_class=_symbol_to_asset_class(symbol),
                 side=close_side.value,
                 quantity=orch_position.quantity,
-                adapter_name="mt5",
             )
             if result and hasattr(result, "status") and result.status == "FILLED":
                 position.is_open = False
