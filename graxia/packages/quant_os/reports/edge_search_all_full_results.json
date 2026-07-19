@@ -1,0 +1,39 @@
+{
+  "run_date": "2026-07-19",
+  "universe": ["XAUUSD", "XAGUSD", "EURUSD", "GBPUSD", "USDJPY", "NAS100", "US30"],
+  "go_rule": "dk_t>2.0 AND pos_sharpe>=5",
+  "strategies": [
+    {"name": "RSI_25_75", "trades": 511, "dk_t": -0.895, "pooled_sharpe": -0.795, "pos_sharpe": "2/7", "verdict": "REJECT"},
+    {"name": "RSI_30_70", "trades": 956, "dk_t": -1.210, "pooled_sharpe": -1.081, "pos_sharpe": "2/7", "verdict": "REJECT"},
+    {"name": "RSI_20_80", "trades": 204, "dk_t": -0.445, "pooled_sharpe": -0.398, "pos_sharpe": "2/7", "verdict": "REJECT"},
+    {"name": "Donchian_20", "trades": 1448, "dk_t": -1.363, "pooled_sharpe": -1.217, "pos_sharpe": "2/7", "verdict": "REJECT"},
+    {"name": "Donchian_55", "trades": 973, "dk_t": -1.260, "pooled_sharpe": -1.126, "pos_sharpe": "2/7", "verdict": "REJECT"},
+    {"name": "Donchian_10", "trades": 1755, "dk_t": -1.360, "pooled_sharpe": -1.215, "pos_sharpe": "2/7", "verdict": "REJECT"},
+    {"name": "DonchianADX_10_25", "trades": 892, "dk_t": -1.300, "pooled_sharpe": -1.163, "pos_sharpe": "2/7", "verdict": "REJECT"},
+    {"name": "BollingerSqueeze_p20", "trades": 693, "dk_t": -1.039, "pooled_sharpe": -0.928, "pos_sharpe": "2/7", "verdict": "REJECT"},
+    {"name": "Momentum12M_252", "trades": 1891, "dk_t": -1.520, "pooled_sharpe": -1.353, "pos_sharpe": "2/7", "verdict": "REJECT"},
+    {"name": "Momentum12M_126", "trades": 1909, "dk_t": -1.211, "pooled_sharpe": -1.078, "pos_sharpe": "1/7", "verdict": "REJECT"},
+    {"name": "HybridMomMR_60", "trades": 1994, "dk_t": -1.269, "pooled_sharpe": -1.129, "pos_sharpe": "1/7", "verdict": "REJECT"},
+    {"name": "HybridMomMR_20", "trades": 2016, "dk_t": -1.443, "pooled_sharpe": -1.289, "pos_sharpe": "1/7", "verdict": "REJECT"},
+    {"name": "VolumeBreakout_1.5", "trades": 93, "dk_t": -0.423, "pooled_sharpe": -0.380, "pos_sharpe": "1/7", "verdict": "REJECT"},
+    {"name": "LiquiditySweep", "trades": 1570, "dk_t": -1.336, "pooled_sharpe": -1.194, "pos_sharpe": "2/7", "verdict": "REJECT"},
+    {"name": "MRB_default", "trades": 0, "dk_t": 0.0, "pooled_sharpe": 0.0, "pos_sharpe": "0/7", "verdict": "REJECT"},
+    {"name": "MTM_default", "trades": 0, "dk_t": 0.0, "pooled_sharpe": 0.0, "pos_sharpe": "0/7", "verdict": "INSUFFICIENT_DATA", "error": "generate_signal() got unexpected keyword argument 'current_time'"},
+    {"name": "TSMOM_default", "trades": 1981, "dk_t": -1.206, "pooled_sharpe": -1.073, "pos_sharpe": "2/7", "verdict": "REJECT"},
+    {"name": "CAM_default", "trades": 0, "dk_t": 0.0, "pooled_sharpe": 0.0, "pos_sharpe": "0/7", "verdict": "REJECT", "note": "Needs DXY close data via indicators dict"},
+    {"name": "FOMC_default", "trades": 0, "dk_t": 0.0, "pooled_sharpe": 0.0, "pos_sharpe": "0/7", "verdict": "REJECT", "note": "Needs DatetimeIndex + FOMC dates; 0 trades on non-XAUUSD"},
+    {"name": "VRP_default", "trades": 0, "dk_t": 0.0, "pooled_sharpe": 0.0, "pos_sharpe": "0/7", "verdict": "REJECT", "note": "Needs GVZ close data via indicators dict"},
+    {"name": "DXYDiv_default", "trades": 2000, "dk_t": -1.310, "pooled_sharpe": -1.166, "pos_sharpe": "2/7", "verdict": "REJECT"}
+  ],
+  "summary": {
+    "total_strategies": 21,
+    "GO": 0,
+    "MARGINAL": 0,
+    "REJECT": 19,
+    "INSUFFICIENT_DATA": 1,
+    "NOT_TESTABLE": 1,
+    "best_dk_t": -0.423,
+    "best_strategy": "VolumeBreakout_1.5",
+    "conclusion": "ALL 21 strategies REJECT. Zero edge found across technical, momentum, mean-reversion, and Path B (carry/vol/cross-asset) strategy classes."
+  }
+}
