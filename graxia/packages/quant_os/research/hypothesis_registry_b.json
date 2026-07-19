@@ -1,0 +1,152 @@
+{
+  "$schema": "research/hypothesis_registry.schema.json",
+  "registry_version": "1.0",
+  "last_updated": "2026-07-19",
+  "cumulative_trial_count_at_creation": 0,
+  "stopping_rule_doc": "trial_ledger_b.json",
+  "sacred_holdout_path": "data/sacred_holdout/holdout.csv",
+  "sacred_holdout_status": "LOCKED",
+  "notes": [
+    "Path B: Carry / Volatility Risk Premium / Cross-Asset hypotheses.",
+    "Separate ledger from main (trial_ledger.json) because economic mechanisms are fundamentally different.",
+    "Trial numbers start at 3001. Cap = 25.",
+    "Stopping rule: 3 consecutive REJECT → stop this edge class.",
+    "Factor-Control rule: R² > 0.30 with DXY/VIX/SPX = reject (confounding factor, not edge).",
+    "Parameters are FROZEN at registration. No tuning after backtests."
+  ],
+  "hypotheses": [
+    {
+      "trial_number": 3001,
+      "id": "PATHB-CARRY-XAUUSD",
+      "name": "Carry Trade — Interest Rate Differential on XAUUSD",
+      "status": "UNTESTED",
+      "registered_at": "2026-07-19",
+      "instrument": "XAUUSD",
+      "hypothesis": "Gold appreciates when US real rates fall relative to global rates. Short US rates = long gold via carry mechanism.",
+      "strategy_file": "strategies/carry.py",
+      "frozen_params": {
+        "vol_target": 0.10
+      },
+      "economic_rationale": "Interest rate differentials drive capital flows. When US rates decline relative to global rates, gold becomes more attractive as a non-yielding asset with negative opportunity cost.",
+      "data_dependencies": ["FRED DGS10", "FRED DGS2", "Global rate proxies"],
+      "validation_plan": "edge_search → dk_test → label_shuffle → ml_filter → factor_control → cost_realistic → bootstrap → stress"
+    },
+    {
+      "trial_number": 3002,
+      "id": "PATHB-VRP-XAUUSD",
+      "name": "Volatility Risk Premium — Implied vs Realized Vol Spread on Gold",
+      "status": "UNTESTED",
+      "registered_at": "2026-07-19",
+      "instrument": "XAUUSD",
+      "hypothesis": "Gold mean-reverts when implied vol (GVZ) exceeds realized vol (VRP > 0). Gold trends when realized vol exceeds implied (VRP < 0).",
+      "strategy_file": "strategies/vol_risk_premium.py",
+      "frozen_params": {
+        "vrp_lookback": 20,
+        "entry_z": 1.5,
+        "exit_z": 0.5,
+        "realized_vol_window": 20,
+        "gvz_smoothing": 5,
+        "regime_threshold": 0.0
+      },
+      "economic_rationale": "Volatility risk premium is compensation for bearing tail risk. When GVZ >> realized, market overpays for insurance → sell premium via mean-reversion. When realized >> GVZ, regime shift → follow trend.",
+      "data_dependencies": ["GVZ (Gold VIX)", "XAUUSD close prices"],
+      "validation_plan": "edge_search → dk_test → label_shuffle → ml_filter → factor_control → cost_realistic → bootstrap → stress"
+    },
+    {
+      "trial_number": 3003,
+      "id": "PATHB-CAM-XAUUSD",
+      "name": "Cross-Asset Momentum — DXY Lead-Lag on XAUUSD",
+      "status": "UNTESTED",
+      "registered_at": "2026-07-19",
+      "instrument": "XAUUSD",
+      "hypothesis": "DXY z-score extremes predict XAUUSD follow-through over 1-5 days. Retail/CTA flow on gold reprices slower than interbank DXY flow.",
+      "strategy_file": "strategies/cross_asset_momentum.py",
+      "frozen_params": {
+        "window": 60,
+        "z_threshold": 1.0,
+        "hold_days": 5
+      },
+      "economic_rationale": "Interbank DXY flow moves first, retail/CTA gold flow follows with delay. The lag is tradeable if persistent across regimes.",
+      "data_dependencies": ["DXY (US Dollar Index)", "XAUUSD close prices"],
+      "validation_plan": "edge_search → dk_test → label_shuffle → ml_filter → factor_control → cost_realistic → bootstrap → stress"
+    },
+    {
+      "trial_number": 3004,
+      "id": "PATHB-DXY-DIV-XAUUSD",
+      "name": "DXY Divergence — Gold-USD Partial Conviction Signal",
+      "status": "UNTESTED",
+      "registered_at": "2026-07-19",
+      "instrument": "XAUUSD",
+      "hypothesis": "Gold and USD divergence with partial conviction (0.5 strength) generates positive risk-adjusted returns via ATR-sized stops.",
+      "strategy_file": "strategies/dxy_divergence.py",
+      "frozen_params": {
+        "lookback": 40,
+        "signal_window": 10,
+        "signal_strength": 0.5,
+        "atr_period": 14,
+        "atr_sl_mult": 2.0,
+        "atr_tp_mult": 3.0
+      },
+      "economic_rationale": "Gold-USD divergence reflects real-rate expectations. Partial conviction reduces false signals while maintaining exposure to the structural relationship.",
+      "data_dependencies": ["XAUUSD close prices", "ATR computation"],
+      "validation_plan": "edge_search → dk_test → label_shuffle → ml_filter → factor_control → cost_realistic → bootstrap → stress"
+    },
+    {
+      "trial_number": 3005,
+      "id": "PATHB-TSMOM-XAUUSD",
+      "name": "Time-Series Momentum — Multi-Timeframe Trend Consensus",
+      "status": "UNTESTED",
+      "registered_at": "2026-07-19",
+      "instrument": "XAUUSD",
+      "hypothesis": "Gold exhibits time-series momentum across 1m/3m/12m horizons. Weighted consensus signal captures persistent trend component.",
+      "strategy_file": "strategies/tsmom.py",
+      "frozen_params": {
+        "lookbacks": [21, 63, 252],
+        "vol_target": 0.10
+      },
+      "economic_rationale": "Moskowitz et al. (2012) documented time-series momentum across asset classes. Gold trends persist due to slow-moving institutional flows and regime persistence.",
+      "data_dependencies": ["XAUUSD close prices", "Volatility estimation"],
+      "validation_plan": "edge_search → dk_test → label_shuffle → ml_filter → factor_control → cost_realistic → bootstrap → stress"
+    },
+    {
+      "trial_number": 3006,
+      "id": "PATHB-FOMC-XAUUSD",
+      "name": "FOMC Drift — Post-Announcement Directional Persistence",
+      "status": "UNTESTED",
+      "registered_at": "2026-07-19",
+      "instrument": "XAUUSD",
+      "hypothesis": "Gold continues moving in the direction of the initial FOMC-day reaction for 1-5 days. Post-FOMC drift is tradeable with fixed hold period.",
+      "strategy_file": "strategies/fomc_drift.py",
+      "frozen_params": {
+        "drift_window_days": 3,
+        "min_fomc_return": 0.002,
+        "max_fomc_return": 0.03,
+        "atr_period": 14,
+        "stop_atr": 2.0
+      },
+      "economic_rationale": "FOMC announcements cause information asymmetry. Slow information diffusion among different investor classes creates predictable drift in the 1-5 day window.",
+      "data_dependencies": ["XAUUSD close prices", "FOMC dates from event_filter.py"],
+      "validation_plan": "edge_search → dk_test → label_shuffle → ml_filter → factor_control → cost_realistic → bootstrap → stress"
+    },
+    {
+      "trial_number": 3007,
+      "id": "PATHB-COT-XAUUSD",
+      "name": "COT Positioning — Managed Money Contrarian Signal",
+      "status": "UNTESTED",
+      "registered_at": "2026-07-19",
+      "instrument": "XAUUSD",
+      "hypothesis": "Extreme Managed Money net positioning in gold futures predicts mean reversion. Crowded positioning = no marginal buyer/seller left.",
+      "strategy_file": "strategies/cot_positioning.py",
+      "frozen_params": {
+        "lookback_weeks": 52,
+        "entry_z": 2.0,
+        "exit_z": 0.5,
+        "min_hold_weeks": 1,
+        "max_hold_weeks": 4
+      },
+      "economic_rationale": "CFTC Disaggregated COT data reveals hedge fund/CTA positioning. Extreme positioning indicates crowded trades with limited remaining capital to push prices further.",
+      "data_dependencies": ["CFTC COT data (Managed Money)", "XAUUSD close prices"],
+      "validation_plan": "edge_search → dk_test → label_shuffle → ml_filter → factor_control → cost_realistic → bootstrap → stress"
+    }
+  ]
+}

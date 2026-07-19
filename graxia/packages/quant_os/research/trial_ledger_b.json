@@ -6,8 +6,8 @@
   "cumulative_trial_count": 0,
   "cumulative_trial_cap": 25,
   "next_available_trial_number": 3001,
-  "new_hypotheses_used": 0,
-  "new_hypotheses_remaining": 20,
+  "new_hypotheses_used": 7,
+  "new_hypotheses_remaining": 13,
   "stopping_rule": {
     "type": "3_consecutive_fail",
     "description": "Stop if 3 hypotheses in a row are REJECTED. Rationale: carry/vol/cross-asset share regime-dependence; 3 consecutive failures suggest the edge class itself is broken, not just individual hypotheses.",
