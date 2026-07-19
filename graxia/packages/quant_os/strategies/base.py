@@ -79,6 +79,7 @@ class Signal:
     entry_price: Decimal | None = None
     stop_loss: Decimal | None = None
     take_profit: Decimal | None = None
+    trailing_stop_distance: Decimal | None = None  # ATR-based trailing stop distance
 
     # Context
     regime: RegimeType | None = None
