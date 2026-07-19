@@ -3,15 +3,15 @@
   "direction": "B",
   "lock_date": "2026-07-19",
   "description": "Path B: Carry / Volatility Risk Premium / Cross-Asset hypotheses. Separate from Direction A+B (technical/statistical) because the economic mechanisms are fundamentally different.",
-  "cumulative_trial_count": 0,
+  "cumulative_trial_count": 2,
   "cumulative_trial_cap": 25,
-  "next_available_trial_number": 3001,
+  "next_available_trial_number": 3003,
   "new_hypotheses_used": 7,
   "new_hypotheses_remaining": 13,
   "stopping_rule": {
     "type": "3_consecutive_fail",
     "description": "Stop if 3 hypotheses in a row are REJECTED. Rationale: carry/vol/cross-asset share regime-dependence; 3 consecutive failures suggest the edge class itself is broken, not just individual hypotheses.",
-    "consecutive_fail_count": 0,
+    "consecutive_fail_count": 2,
     "is_stopped": false
   },
   "sacred_holdout": {
@@ -22,10 +22,37 @@
     "unlock_phase": "4.5 — final confirmation gate only",
     "open_policy": "Opening this file and running any backtest against it counts as 1 trial. Cannot be reopened."
   },
-  "lineage": [],
+  "lineage": [
+    {
+      "trial_number": 3004,
+      "id": "PATHB-DXY-DIV-XAUUSD",
+      "status": "REJECTED",
+      "tested_at": "2026-07-19",
+      "dk_t_stat": -1.310,
+      "pooled_sharpe": -1.166,
+      "positive_sharpe_count": "2/7",
+      "total_trades": 2000,
+      "result_artifact": "reports/path_b_tsmom_dxydiv.json",
+      "conclusion": "Divergence signal generates trades but negative dk_t. Only XAUUSD and NAS100 positive Sharpe; XAGUSD/EUR/GBP/JPY all negative. No edge."
+    },
+    {
+      "trial_number": 3005,
+      "id": "PATHB-TSMOM-XAUUSD",
+      "status": "REJECTED",
+      "tested_at": "2026-07-19",
+      "dk_t_stat": -1.206,
+      "pooled_sharpe": -1.073,
+      "positive_sharpe_count": "2/7",
+      "total_trades": 1981,
+      "result_artifact": "reports/path_b_tsmom_dxydiv.json",
+      "conclusion": "Multi-TF momentum generates trades but negative dk_t. Only XAUUSD and NAS100 positive Sharpe; XAGUSD/EUR/GBP/JPY all negative. No edge."
+    }
+  ],
   "notes": [
-    "Created 2026-07-19. Option B: separate ledger from main (trial_ledger.json) because Path B hypotheses are economically different from technical/statistical strategies.",
+    "Created 2026-07-19. Option B: separate ledger from main (trial_ledger.json) because Path B hypotheses are economically different.",
     "Main ledger has 1 slot left (1021/1022). Path B needs 3+ hypotheses. Expanding main ledger cap would invalidate DSR correction for existing 43 variants.",
-    "Factor-Control rule (R-squared > 0.30 with DXY/VIX/SPX) applies to all Path B hypotheses retroactively and forward."
+    "Factor-Control rule (R-squared > 0.30 with DXY/VIX/SPX) applies to all Path B hypotheses retroactively and forward.",
+    "2026-07-19: TSMOM (3005) and DXYDiv (3004) tested via edge_search_all.py. Both REJECT. Stopping rule at 2/3.",
+    "Remaining 5 hypotheses (3001-Carry, 3002-VRP, 3003-CAM, 3006-FOMC, 3007-COT) need external data (rates/GVZ/DXY/COT) not available in standard OHLCV pipeline. Require XAUUSD-only testing with pre-loaded data."
   ]
 }
