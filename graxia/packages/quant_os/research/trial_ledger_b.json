@@ -10,17 +10,38 @@
   "new_hypotheses_remaining": 13,
   "stopping_rule": {
     "type": "3_consecutive_fail",
-    "description": "Stop if 3 hypotheses in a row are REJECTED. Rationale: carry/vol/cross-asset share regime-dependence; 3 consecutive failures suggest the edge class itself is broken, not just individual hypotheses.",
+    "description": "Stop if 3 mechanisms in a row are REJECTED. Rationale: carry/vol/cross-asset share regime-dependence; 3 consecutive failures suggest the edge class itself is broken, not just individual hypotheses.",
+    "scope": "TESTED_ONLY — stopping rule counts only hypotheses that were actually executed with results. Hypotheses marked UNTESTED due to missing external data (rates, GVZ, DXY, COT) are NOT counted toward the stopping rule. If 3/3 tested mechanisms REJECT, the conclusion is 'tested mechanisms in Path B have no edge', NOT 'all of Path B is dead'. Untested hypotheses remain open questions pending data infrastructure.",
     "consecutive_fail_count": 2,
     "is_stopped": false
   },
   "sacred_holdout": {
-    "path": "data/sacred_holdout/holdout.csv",
+    "path": "data/sacred_holdout/holdout_fresh_20260717.csv",
     "status": "LOCKED",
     "use_count": 0,
     "max_use_count": 1,
     "unlock_phase": "4.5 — final confirmation gate only",
-    "open_policy": "Opening this file and running any backtest against it counts as 1 trial. Cannot be reopened."
+    "open_policy": "Opening this file and running any backtest against it counts as 1 trial. Cannot be reopened.",
+    "asset_universe": "7 assets: XAUUSD, XAGUSD, EURUSD, GBPUSD, USDJPY, NAS100, US30",
+    "date_range": "2025-07-01 to 2026-06-29",
+    "rows": 1799,
+    "note_2026_07_20": "This ledger (authored 2026-07-19) was pointing at the WRONG, already-retired path (data/sacred_holdout/holdout.csv). See burn_history — that lineage was formally retired 2026-07-17 per reports/holdout_retirement_20260717.md, and holdout_fresh_20260717.csv was designated the replacement that same day. No script on disk references holdout_fresh_20260717.csv by name (grepped 2026-07-20), and reports/EDGE_SEARCH_FINAL_20260718.md confirms it was still LOCKED as of 2026-07-18. Path corrected here to match the actual active file; use_count reset to 0 to reflect that THIS file has never been opened.",
+    "burn_history": [
+      {
+        "date": "2026-07-15",
+        "event": "scripts/comprehensive_edge_search.py::prong_holdout() opened data/sacred_holdout/holdout.csv (RYDC-derived, date/xau_close/xau_high/xau_low/dxy_close/dfii10 schema, 260 rows) and backtested 6 strategies against it in one pass, violating the single-use policy.",
+        "result_artifact": "reports/comprehensive_edge_search.json"
+      },
+      {
+        "date": "2026-07-17",
+        "event": "That holdout.csv lineage formally RETIRED per reports/holdout_retirement_20260717.md — official reason on record is toy-simulation contamination in the validation pipeline (donchian_20 tested via toy sim, not the real BacktestEngine), a separate/earlier-discovered issue than the 2026-07-15 multi-strategy peek above. Retirement doc says the file was renamed to holdout_BURNED_toy_sim_20260716.csv; on disk it had simply vanished (see next entry). holdout_fresh_20260717.csv created same day as the designated replacement, LOCKED, never opened.",
+        "result_artifact": "reports/holdout_retirement_20260717.md"
+      },
+      {
+        "date": "2026-07-20",
+        "event": "Audit found data/sacred_holdout/holdout.csv missing entirely (not renamed on disk as the retirement doc described — just gone). Not knowing about the 2026-07-17 retirement yet, regenerated it via scripts/split_sacred_holdout.py from the unchanged rydc_daily.csv source. Resulting hash (5a15961c15b1f4be50022b6c997418b267557beaf221c4b5769a0f9ebc9a9eed) matched the original locked hash in reports/program_closure_2026_07.md exactly — confirming this is the same retired lineage, byte-for-byte (split_sacred_holdout.py is deterministic against an unchanged source). Once the retirement doc was found, the regenerated file was renamed to data/sacred_holdout/holdout_BURNED_toy_sim_20260716.csv to match the official record and stop it from being mistaken for the active holdout again. This path is DEAD — do not use for Phase 4.5."
+      }
+    ]
   },
   "lineage": [
     {
@@ -53,6 +74,7 @@
     "Main ledger has 1 slot left (1021/1022). Path B needs 3+ hypotheses. Expanding main ledger cap would invalidate DSR correction for existing 43 variants.",
     "Factor-Control rule (R-squared > 0.30 with DXY/VIX/SPX) applies to all Path B hypotheses retroactively and forward.",
     "2026-07-19: TSMOM (3005) and DXYDiv (3004) tested via edge_search_all.py. Both REJECT. Stopping rule at 2/3.",
-    "Remaining 5 hypotheses (3001-Carry, 3002-VRP, 3003-CAM, 3006-FOMC, 3007-COT) need external data (rates/GVZ/DXY/COT) not available in standard OHLCV pipeline. Require XAUUSD-only testing with pre-loaded data."
+    "Remaining 5 hypotheses (3001-Carry, 3002-VRP, 3003-CAM, 3006-FOMC, 3007-COT) need external data (rates/GVZ/DXY/COT) not available in standard OHLCV pipeline. Require XAUUSD-only testing with pre-loaded data.",
+    "2026-07-20: PRE-REGISTERED stopping rule scope — '3_consecutive_fail' applies ONLY to mechanisms that were actually tested. If DXYDiv/TSMOM/FOMC REJECT (3/3), conclusion is '3 tested mechanisms have no edge'. Carry/VRP/CAM/COT remain UNTESTED open questions, NOT REJECTED. This prevents conflating 'unable to test' with 'tested and failed'."
   ]
 }
