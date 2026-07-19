@@ -149,6 +149,267 @@ def reconstruct_equity_from_trades(
     return points
 
 
+# ---------------------------------------------------------------------------
+# External data loaders for Path B strategies
+# ---------------------------------------------------------------------------
+
+def _load_fred_series(series_id: str) -> pd.Series:
+    """Load a FRED daily CSV. Returns Series with DatetimeIndex."""
+    path = ROOT / "data" / "fred" / "daily" / f"{series_id}.csv"
+    if not path.exists():
+        return pd.Series(dtype=float, name=series_id)
+    df = pd.read_csv(path, index_col=0, parse_dates=True)
+    df.columns = [series_id]
+    return df[series_id].dropna()
+
+
+def _load_gvz() -> pd.Series:
+    """Load GVZ (Gold VIX) from FRED GVZCLS.csv. Returns Series with DatetimeIndex."""
+    return _load_fred_series("GVZCLS")
+
+
+def _load_dxy() -> pd.DataFrame:
+    """Load DXY daily OHLCV. Returns DataFrame with DatetimeIndex."""
+    path = ROOT / "data" / "DXY_D1.csv"
+    if not path.exists():
+        return pd.DataFrame()
+    df = pd.read_csv(path)
+    ts_col = "time" if "time" in df.columns else "date"
+    df[ts_col] = pd.to_datetime(df[ts_col])
+    df = df.set_index(ts_col).sort_index()
+    return df
+
+
+def _load_interest_rates() -> tuple[pd.Series, pd.Series]:
+    """Load US 10Y (DGS10) and 2Y (DGS2) Treasury yields from FRED.
+
+    Returns (base_rate, quote_rate) as aligned Series.
+    For carry trade: base = USD (high yield proxy), quote = USD (reference).
+    We use DGS10 as the "risk-free" base and DGS2 as short-term reference.
+    """
+    dgs10 = _load_fred_series("DGS10")
+    dgs2 = _load_fred_series("DGS2")
+    if dgs10.empty or dgs2.empty:
+        return pd.Series(dtype=float), pd.Series(dtype=float)
+    # Align on common dates
+    aligned = pd.concat([dgs10, dgs2], axis=1).dropna()
+    aligned.columns = ["base_rate", "quote_rate"]
+    return aligned["base_rate"], aligned["quote_rate"]
+
+
+def _load_cot_data() -> tuple[pd.Series, pd.Series]:
+    """Load CFTC COT parquet files. Returns (cot_dates, net_positioning) as Series.
+
+    Uses Managed Money positions (M_Money_Positions_Long/Short_All) for
+    the contrarian signal. net_positioning = MM_Long - MM_Short.
+    """
+    cot_dir = ROOT / "data" / "cot"
+    if not cot_dir.exists():
+        return pd.Series(dtype=float), pd.Series(dtype=float)
+    frames = []
+    for f in sorted(cot_dir.glob("cot_xauusd_*.parquet")):
+        try:
+            df = pd.read_parquet(f)
+            frames.append(df)
+        except Exception:
+            continue
+    if not frames:
+        return pd.Series(dtype=float), pd.Series(dtype=float)
+    combined = pd.concat(frames)
+    # Find date column — prefer Report_Date_as_YYYY-MM-DD
+    date_col = "Report_Date_as_YYYY-MM-DD" if "Report_Date_as_YYYY-MM-DD" in combined.columns else None
+    if date_col is None:
+        for col in combined.columns:
+            if "date" in col.lower() and "yy" not in col.lower():
+                date_col = col
+                break
+    if date_col is None:
+        return pd.Series(dtype=float), pd.Series(dtype=float)
+    combined[date_col] = pd.to_datetime(combined[date_col], errors="coerce")
+    combined = combined.dropna(subset=[date_col])
+    combined = combined.sort_values(date_col)
+    # Find Managed Money positioning
+    if "M_Money_Positions_Long_All" in combined.columns and "M_Money_Positions_Short_All" in combined.columns:
+        net = combined["M_Money_Positions_Long_All"].astype(float) - combined["M_Money_Positions_Short_All"].astype(float)
+    elif "net_positioning" in combined.columns:
+        net = combined["net_positioning"].astype(float)
+    elif "long" in combined.columns and "short" in combined.columns:
+        net = combined["long"].astype(float) - combined["short"].astype(float)
+    else:
+        return pd.Series(dtype=float), pd.Series(dtype=float)
+    dates = combined[date_col]
+    return dates, net
+
+
+def _load_external_indicators(symbol: str, trading_dates: list) -> dict[str, Any]:
+    """Load all external data needed by Path B strategies.
+
+    Returns dict that can be merged into engine._precomputed_indicators.
+    Data is aligned to trading_dates (forward-filled for non-trading days).
+    """
+    indicators: dict[str, Any] = {}
+
+    # Always inject timestamps for FOMC strategy
+    indicators["_timestamps"] = trading_dates
+
+    # DXY close for CAM strategy
+    dxy_df = _load_dxy()
+    if not dxy_df.empty:
+        dxy_close = dxy_df["close"].reindex(trading_dates, method="ffill")
+        indicators["dxy_close"] = dxy_close
+
+    # GVZ for VRP strategy
+    gvz = _load_gvz()
+    if not gvz.empty:
+        gvz_aligned = gvz.reindex(trading_dates, method="ffill")
+        indicators["gvz_close"] = gvz_aligned
+
+    # Interest rates for Carry strategy
+    base_rate, quote_rate = _load_interest_rates()
+    if not base_rate.empty and not quote_rate.empty:
+        indicators["base_rate"] = base_rate.reindex(trading_dates, method="ffill")
+        indicators["quote_rate"] = quote_rate.reindex(trading_dates, method="ffill")
+
+    # COT data for COT Positioning strategy
+    cot_dates, cot_net = _load_cot_data()
+    if not cot_dates.empty and not cot_net.empty:
+        indicators["cot_dates"] = cot_dates
+        indicators["cot_net_positioning"] = cot_net
+
+    return indicators
+
+
+def _precompute_strategy_signal(strategy, ohlcv: dict, ext: dict, n_bars: int) -> list | None:
+    """Pre-compute the full signal series for a Path B strategy ONCE.
+
+    This avoids O(n²) recomputation where the engine calls generate_signal
+    with progressively longer ohlcv_data per bar.
+    """
+    try:
+        # Import the strategy's signal computation function directly
+        name = type(strategy).__name__
+        if name == "CarryStrategy":
+            from graxia.packages.quant_os.strategies.carry import compute_carry_signal
+            base_rate = ext.get("base_rate")
+            quote_rate = ext.get("quote_rate")
+            if base_rate is None or quote_rate is None:
+                return None
+            result = compute_carry_signal(base_rate, quote_rate, strategy.vol_target)
+            return result.signal.tolist()
+
+        elif name == "TSMOMStrategy":
+            from graxia.packages.quant_os.strategies.tsmom import compute_tsmom_signal
+            close = pd.Series(ohlcv.get("close", []), dtype=float)
+            result = compute_tsmom_signal(close, strategy.lookbacks, strategy.vol_target)
+            return result.signal.tolist()
+
+        elif name == "CrossAssetMomentumStrategy":
+            from graxia.packages.quant_os.strategies.cross_asset_momentum import CAMConfig, compute_cam_signals
+            xau_close = pd.Series(ohlcv.get("close", []), dtype=float)
+            dxy_close = ext.get("dxy_close")
+            if dxy_close is None:
+                return None
+            if isinstance(dxy_close, pd.Series) and len(dxy_close) > len(xau_close):
+                dxy_close = dxy_close.iloc[:len(xau_close)].reset_index(drop=True)
+            if len(dxy_close) == len(xau_close):
+                dxy_close.index = xau_close.index
+            config = CAMConfig(window=strategy.window, z_threshold=strategy.z_threshold, hold_days=strategy.hold_days)
+            result = compute_cam_signals(xau_close, dxy_close, config)
+            return result.signal.tolist()
+
+        elif name == "FOMCDriftStrategy":
+            from graxia.packages.quant_os.strategies.fomc_drift import FOMCDriftConfig, compute_fomc_drift_signals
+            close = pd.Series(ohlcv.get("close", []), dtype=float)
+            high = pd.Series(ohlcv.get("high", []), dtype=float)
+            low = pd.Series(ohlcv.get("low", []), dtype=float)
+            ts = ext.get("_timestamps")
+            if ts is not None and len(ts) == len(close):
+                dt_idx = pd.DatetimeIndex(ts)
+                close.index = dt_idx
+                high.index = dt_idx
+                low.index = dt_idx
+            config = FOMCDriftConfig(
+                drift_window_days=strategy.drift_window_days,
+                min_fomc_return=strategy.min_fomc_return,
+                max_fomc_return=strategy.max_fomc_return,
+                atr_period=strategy.atr_period,
+                stop_atr=strategy.stop_atr,
+            )
+            result = compute_fomc_drift_signals(close, high, low, config)
+            return result.signal.tolist()
+
+        elif name == "COTPositioningStrategy":
+            from graxia.packages.quant_os.strategies.cot_positioning import COTPositioningConfig, compute_cot_positioning_signals
+            cot_dates = ext.get("cot_dates")
+            cot_net = ext.get("cot_net_positioning")
+            if cot_dates is None or cot_net is None:
+                return None
+            if isinstance(cot_dates, list):
+                cot_dates = pd.Series(cot_dates)
+            if isinstance(cot_net, list):
+                cot_net = pd.Series(cot_net, dtype=float)
+            config = COTPositioningConfig(
+                lookback_weeks=strategy.lookback_weeks,
+                entry_z=strategy.entry_z,
+                exit_z=strategy.exit_z,
+                min_hold_weeks=strategy.min_hold_weeks,
+                max_hold_weeks=strategy.max_hold_weeks,
+            )
+            result = compute_cot_positioning_signals(cot_dates, cot_net, config)
+            return result.signal.tolist()
+
+        elif name == "VolRiskPremiumStrategy":
+            # VRP has inline computation — compute full signal once
+            close = pd.Series(ohlcv.get("close", []), dtype=float)
+            gvz = ext.get("gvz_close")
+            if gvz is None:
+                return None
+            if isinstance(gvz, list):
+                gvz = pd.Series(gvz, dtype=float)
+            if isinstance(gvz, pd.Series) and isinstance(close.index, pd.RangeIndex) and not isinstance(gvz.index, pd.RangeIndex):
+                gvz = gvz.iloc[:len(close)].reset_index(drop=True)
+            elif len(gvz) == len(close) and not gvz.index.equals(close.index):
+                gvz.index = close.index
+            log_ret = np.log(close / close.shift(1))
+            realized_vol = log_ret.rolling(strategy.realized_vol_window).std() * np.sqrt(252)
+            gvz_smooth = gvz.rolling(strategy.gvz_smoothing).mean()
+            vrp = gvz_smooth - realized_vol
+            vrp_mean = vrp.rolling(strategy.vrp_lookback).mean()
+            vrp_std = vrp.rolling(strategy.vrp_lookback).std()
+            vrp_z = (vrp - vrp_mean) / vrp_std.replace(0, np.nan)
+            signal = pd.Series(0, index=close.index, dtype=float)
+            mr_entry = vrp_z > strategy.entry_z
+            mr_exit = vrp_z < strategy.exit_z
+            tf_entry = vrp_z < -strategy.entry_z
+            tf_exit = vrp_z > -strategy.exit_z
+            in_position = False
+            position_dir = 0
+            for i in range(len(signal)):
+                if pd.isna(vrp_z.iloc[i]):
+                    continue
+                if not in_position:
+                    if mr_entry.iloc[i]:
+                        in_position = True
+                        position_dir = 1
+                    elif tf_entry.iloc[i]:
+                        ret_20d = (close.iloc[i] / close.iloc[max(0, i - 20)] - 1) if i >= 20 else 0
+                        in_position = True
+                        position_dir = 1 if ret_20d > 0 else -1
+                else:
+                    if position_dir == 1 and mr_exit.iloc[i]:
+                        in_position = False
+                        position_dir = 0
+                    elif position_dir == -1 and tf_exit.iloc[i]:
+                        in_position = False
+                        position_dir = 0
+                signal.iloc[i] = float(position_dir)
+            return signal.tolist()
+
+    except Exception as e:
+        print(f"  [WARN] _precompute failed for {type(strategy).__name__}: {e}", file=sys.stderr)
+    return None
+
+
 def run_engine_for_asset(symbol: str, strategy) -> dict:
     from graxia.packages.quant_os.backtest.engine import BacktestConfig, BacktestEngine
 
@@ -163,7 +424,7 @@ def run_engine_for_asset(symbol: str, strategy) -> dict:
     timestamps = df["time"].tolist()
 
     config = BacktestConfig(
-        initial_capital=Decimal("10000"),
+        initial_capital=Decimal("100000"),
         slippage_pips=0.5,
         spread_pips=SYMBOL_SPREAD_PIPS.get(symbol, 2.0),
         commission_per_lot=Decimal(str(SYMBOL_COMMISSION.get(symbol, 3.5))),
@@ -180,13 +441,44 @@ def run_engine_for_asset(symbol: str, strategy) -> dict:
     # Prefer classic equity path if Phase-4 tracker leaves curve empty
     engine._pnl_tracker = None
 
+    # Inject external data for Path B strategies that need it
+    # Monkey-patch _calculate_indicators to merge external data into precomputed indicators
+    if hasattr(strategy, "set_external_data"):
+        ext = _load_external_indicators(symbol, timestamps)
+        strategy.set_external_data(**ext)
+
+        # Pre-compute the full signal series ONCE (avoids O(n²) recomputation per bar)
+        _precomputed_signal = _precompute_strategy_signal(strategy, ohlcv, ext, len(timestamps))
+
+        # Also inject into engine's precomputed indicators so they get auto-sliced per bar
+        _orig_calc = engine._calculate_indicators
+        _external = {k: v for k, v in ext.items() if k.startswith("_") or k in ("dxy_close", "gvz_close", "base_rate", "quote_rate", "cot_dates", "cot_net_positioning")}
+
+        def _patched_calc(up_to_index):
+            result = _orig_calc(up_to_index)
+            if result is None:
+                result = {}
+            # Inject external indicators (lists for proper slicing)
+            for k, v in _external.items():
+                if isinstance(v, pd.Series):
+                    # Convert Series to list for engine slicing
+                    result[k] = v.tolist()[:up_to_index + 1]
+                elif isinstance(v, list):
+                    result[k] = v[:up_to_index + 1]
+            # Inject pre-computed signal if available
+            if _precomputed_signal is not None:
+                result["_precomputed_signal"] = _precomputed_signal[:up_to_index + 1]
+            return result
+
+        engine._calculate_indicators = _patched_calc
+
     results = engine.run()
     trades = results.get("trades", []) or []
 
     # Prefer live equity_curve; fall back to trade reconstruction
     full_equity = [{"timestamp": p.timestamp, "equity": p.equity, "balance": p.balance} for p in engine.equity_curve]
     if len(full_equity) < 2:
-        full_equity = reconstruct_equity_from_trades(trades, initial_capital=10000.0)
+        full_equity = reconstruct_equity_from_trades(trades, initial_capital=100000.0)
 
     results["_full_equity_curve"] = full_equity
     results["_symbol"] = symbol
@@ -374,6 +666,8 @@ def strategy_registry() -> list[tuple[str, callable]]:
     CrossAssetMomentumStrategy = _try_import("graxia.packages.quant_os.strategies.path_b_wrappers", "CrossAssetMomentumStrategy")
     FOMCDriftStrategy = _try_import("graxia.packages.quant_os.strategies.path_b_wrappers", "FOMCDriftStrategy")
     VolRiskPremiumStrategy = _try_import("graxia.packages.quant_os.strategies.path_b_wrappers", "VolRiskPremiumStrategy")
+    CarryStrategy = _try_import("graxia.packages.quant_os.strategies.path_b_wrappers", "CarryStrategy")
+    COTPositioningStrategy = _try_import("graxia.packages.quant_os.strategies.path_b_wrappers", "COTPositioningStrategy")
     DXYDivergence = _try_import("graxia.packages.quant_os.strategies.dxy_divergence", "DXYDivergence")
 
     _raw = [
@@ -528,6 +822,8 @@ def strategy_registry() -> list[tuple[str, callable]]:
         ("CAM_default", lambda: CrossAssetMomentumStrategy()),
         ("FOMC_default", lambda: FOMCDriftStrategy()),
         ("VRP_default", lambda: VolRiskPremiumStrategy()),
+        ("Carry_default", lambda: CarryStrategy()),
+        ("COT_default", lambda: COTPositioningStrategy()),
         ("DXYDiv_default", lambda: DXYDivergence()),
     ]
 
@@ -547,6 +843,8 @@ def strategy_registry() -> list[tuple[str, callable]]:
         "CrossAssetMomentumStrategy": CrossAssetMomentumStrategy,
         "FOMCDriftStrategy": FOMCDriftStrategy,
         "VolRiskPremiumStrategy": VolRiskPremiumStrategy,
+        "CarryStrategy": CarryStrategy,
+        "COTPositioningStrategy": COTPositioningStrategy,
         "DXYDivergence": DXYDivergence,
     }.items() if cls is None}
 
