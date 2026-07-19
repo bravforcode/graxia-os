@@ -14,6 +14,7 @@ Usage:
   python scripts/edge_search_all.py --only HybridMomMR,VolumeBreakout
   python scripts/edge_search_all.py --no-btc
 """
+
 from __future__ import annotations
 
 import argparse
@@ -21,7 +22,7 @@ import json
 import math
 import sys
 import traceback
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 
@@ -40,8 +41,14 @@ for p in (str(GRAXIA_ROOT), str(ROOT)):
 
 # Pre-registered universe (same as prior pooled tests + liquid extras with D1 data)
 CORE_UNIVERSE = [
-    "XAUUSD", "XAGUSD", "EURUSD", "GBPUSD",
-    "USDJPY", "NAS100", "US30", "BTCUSD",
+    "XAUUSD",
+    "XAGUSD",
+    "EURUSD",
+    "GBPUSD",
+    "USDJPY",
+    "NAS100",
+    "US30",
+    "BTCUSD",
 ]
 EXTRA_UNIVERSE = ["AUDUSD", "USDCHF", "USDCAD", "ETHUSD"]
 
@@ -127,15 +134,18 @@ def reconstruct_equity_from_trades(
         key=_trade_exit_time,
     )
     equity = float(initial_capital)
-    points = [{"timestamp": _trade_exit_time(sorted_trades[0]) - pd.Timedelta(days=1),
-               "equity": equity, "balance": equity}]
+    points = [
+        {"timestamp": _trade_exit_time(sorted_trades[0]) - pd.Timedelta(days=1), "equity": equity, "balance": equity}
+    ]
     for t in sorted_trades:
         equity += _trade_pnl(t)
-        points.append({
-            "timestamp": _trade_exit_time(t),
-            "equity": equity,
-            "balance": equity,
-        })
+        points.append(
+            {
+                "timestamp": _trade_exit_time(t),
+                "equity": equity,
+                "balance": equity,
+            }
+        )
     return points
 
 
@@ -163,6 +173,7 @@ def run_engine_for_asset(symbol: str, strategy) -> dict:
     )
 
     engine = BacktestEngine(config)
+    engine._symbol = symbol  # Fix Bug #1: thread real symbol through engine
     engine.set_strategy(strategy)
     engine.load_data(ohlcv, timestamps)
     engine._check_risk_halt = lambda: False
@@ -173,10 +184,7 @@ def run_engine_for_asset(symbol: str, strategy) -> dict:
     trades = results.get("trades", []) or []
 
     # Prefer live equity_curve; fall back to trade reconstruction
-    full_equity = [
-        {"timestamp": p.timestamp, "equity": p.equity, "balance": p.balance}
-        for p in engine.equity_curve
-    ]
+    full_equity = [{"timestamp": p.timestamp, "equity": p.equity, "balance": p.balance} for p in engine.equity_curve]
     if len(full_equity) < 2:
         full_equity = reconstruct_equity_from_trades(trades, initial_capital=10000.0)
 
@@ -218,8 +226,15 @@ def compute_per_asset_metrics(results: dict) -> dict:
     equity_curve = results.get("_full_equity_curve", [])
     trades = results.get("trades", [])
     if not equity_curve and not trades:
-        return {"n_trades": 0, "n_bars": results.get("_n_bars", 0), "sharpe": 0.0,
-                "win_pct": 0.0, "profit_factor": 0.0, "max_dd_pct": 0.0, "total_return_pct": 0.0}
+        return {
+            "n_trades": 0,
+            "n_bars": results.get("_n_bars", 0),
+            "sharpe": 0.0,
+            "win_pct": 0.0,
+            "profit_factor": 0.0,
+            "max_dd_pct": 0.0,
+            "total_return_pct": 0.0,
+        }
 
     bar_returns = []
     for i in range(1, len(equity_curve)):
@@ -342,57 +357,148 @@ def strategy_registry() -> list[tuple[str, callable]]:
 
     return [
         # --- previously tested (re-run for ranking consistency) ---
-        ("RSI_25_75", lambda: RSIMeanReversion(
-            rsi_period=14, oversold=25, overbought=75, ema_period=0,
-            atr_period=14, atr_sl_mult=2.0, atr_tp_mult=3.0,
-        )),
-        ("RSI_30_70", lambda: RSIMeanReversion(
-            rsi_period=14, oversold=30, overbought=70, ema_period=0,
-            atr_period=14, atr_sl_mult=2.0, atr_tp_mult=3.0,
-        )),
-        ("RSI_20_80", lambda: RSIMeanReversion(
-            rsi_period=14, oversold=20, overbought=80, ema_period=0,
-            atr_period=14, atr_sl_mult=2.0, atr_tp_mult=3.0,
-        )),
-        ("Donchian_20", lambda: DonchianBreakout(
-            period=20, atr_period=14, atr_sl_mult=2.0, atr_tp_mult=3.0,
-            vol_filter=True, vol_filter_pctile=0.7,
-        )),
-        ("Donchian_55", lambda: DonchianBreakout(
-            period=55, atr_period=14, atr_sl_mult=2.0, atr_tp_mult=3.0,
-            vol_filter=True, vol_filter_pctile=0.7,
-        )),
-        ("Donchian_10", lambda: DonchianBreakout(
-            period=10, atr_period=14, atr_sl_mult=2.0, atr_tp_mult=3.0,
-            vol_filter=False,
-        )),
-        ("DonchianADX_10_25", lambda: DonchianADX(
-            period=10, atr_period=14, atr_sl_mult=2.0, atr_tp_mult=3.0,
-            adx_period=14, adx_threshold=25.0,
-        )),
-        ("BollingerSqueeze_p20", lambda: BollingerSqueeze(
-            bb_period=20, bb_std=2.0, squeeze_lookback=120,
-            squeeze_pctile=0.2, atr_period=14, atr_sl_mult=2.0, atr_tp_mult=3.0,
-        )),
+        (
+            "RSI_25_75",
+            lambda: RSIMeanReversion(
+                rsi_period=14,
+                oversold=25,
+                overbought=75,
+                ema_period=0,
+                atr_period=14,
+                atr_sl_mult=2.0,
+                atr_tp_mult=3.0,
+            ),
+        ),
+        (
+            "RSI_30_70",
+            lambda: RSIMeanReversion(
+                rsi_period=14,
+                oversold=30,
+                overbought=70,
+                ema_period=0,
+                atr_period=14,
+                atr_sl_mult=2.0,
+                atr_tp_mult=3.0,
+            ),
+        ),
+        (
+            "RSI_20_80",
+            lambda: RSIMeanReversion(
+                rsi_period=14,
+                oversold=20,
+                overbought=80,
+                ema_period=0,
+                atr_period=14,
+                atr_sl_mult=2.0,
+                atr_tp_mult=3.0,
+            ),
+        ),
+        (
+            "Donchian_20",
+            lambda: DonchianBreakout(
+                period=20,
+                atr_period=14,
+                atr_sl_mult=2.0,
+                atr_tp_mult=3.0,
+                vol_filter=True,
+                vol_filter_pctile=0.7,
+            ),
+        ),
+        (
+            "Donchian_55",
+            lambda: DonchianBreakout(
+                period=55,
+                atr_period=14,
+                atr_sl_mult=2.0,
+                atr_tp_mult=3.0,
+                vol_filter=True,
+                vol_filter_pctile=0.7,
+            ),
+        ),
+        (
+            "Donchian_10",
+            lambda: DonchianBreakout(
+                period=10,
+                atr_period=14,
+                atr_sl_mult=2.0,
+                atr_tp_mult=3.0,
+                vol_filter=False,
+            ),
+        ),
+        (
+            "DonchianADX_10_25",
+            lambda: DonchianADX(
+                period=10,
+                atr_period=14,
+                atr_sl_mult=2.0,
+                atr_tp_mult=3.0,
+                adx_period=14,
+                adx_threshold=25.0,
+            ),
+        ),
+        (
+            "BollingerSqueeze_p20",
+            lambda: BollingerSqueeze(
+                bb_period=20,
+                bb_std=2.0,
+                squeeze_lookback=120,
+                squeeze_pctile=0.2,
+                atr_period=14,
+                atr_sl_mult=2.0,
+                atr_tp_mult=3.0,
+            ),
+        ),
         # --- untested single-asset OHLCV ---
-        ("Momentum12M_252", lambda: Momentum12M(
-            lookback=252, atr_period=14, atr_sl_mult=2.0, atr_tp_mult=3.0,
-        )),
-        ("Momentum12M_126", lambda: Momentum12M(
-            lookback=126, atr_period=14, atr_sl_mult=2.0, atr_tp_mult=3.0,
-        )),
-        ("HybridMomMR_60", lambda: HybridMomMR(
-            lookback=60, atr_period=14, atr_sl_mult=2.0, atr_tp_mult=3.0,
-        )),
-        ("HybridMomMR_20", lambda: HybridMomMR(
-            lookback=20, atr_period=14, atr_sl_mult=2.0, atr_tp_mult=3.0,
-        )),
-        ("VolumeBreakout_2.0", lambda: VolumeBreakout(
-            lookback=20, volume_threshold=2.0,
-        )),
-        ("VolumeBreakout_1.5", lambda: VolumeBreakout(
-            lookback=20, volume_threshold=1.5,
-        )),
+        (
+            "Momentum12M_252",
+            lambda: Momentum12M(
+                lookback=252,
+                atr_period=14,
+                atr_sl_mult=2.0,
+                atr_tp_mult=3.0,
+            ),
+        ),
+        (
+            "Momentum12M_126",
+            lambda: Momentum12M(
+                lookback=126,
+                atr_period=14,
+                atr_sl_mult=2.0,
+                atr_tp_mult=3.0,
+            ),
+        ),
+        (
+            "HybridMomMR_60",
+            lambda: HybridMomMR(
+                lookback=60,
+                atr_period=14,
+                atr_sl_mult=2.0,
+                atr_tp_mult=3.0,
+            ),
+        ),
+        (
+            "HybridMomMR_20",
+            lambda: HybridMomMR(
+                lookback=20,
+                atr_period=14,
+                atr_sl_mult=2.0,
+                atr_tp_mult=3.0,
+            ),
+        ),
+        (
+            "VolumeBreakout_2.0",
+            lambda: VolumeBreakout(
+                lookback=20,
+                volume_threshold=2.0,
+            ),
+        ),
+        (
+            "VolumeBreakout_1.5",
+            lambda: VolumeBreakout(
+                lookback=20,
+                volume_threshold=1.5,
+            ),
+        ),
         ("LiquiditySweep", lambda: LiquiditySweepStrategy()),
         ("MRB_default", lambda: MeanReversionBollinger()),
         ("MTM_default", lambda: MultiTimeframeMomentum()),
@@ -479,10 +585,10 @@ def main() -> int:
             print(f"FATAL: no strategies match --only {wanted}")
             return 1
 
-    print(f"\nEdge search start: {datetime.now(timezone.utc).isoformat()}")
+    print(f"\nEdge search start: {datetime.now(UTC).isoformat()}")
     print(f"Universe ({len(universe)}): {universe}")
     print(f"Strategies: {len(variants)}")
-    print(f"GO rule: dk_t>2.0 AND pos_sharpe>=5")
+    print("GO rule: dk_t>2.0 AND pos_sharpe>=5")
 
     all_results: dict = {}
     for name, factory in variants:
@@ -523,11 +629,13 @@ def main() -> int:
     marginal = [n for n, r in ranked if r.get("verdict") == "MARGINAL"]
     print(f"\n  GO:       {go or 'NONE'}")
     print(f"  MARGINAL: {marginal or 'NONE'}")
-    print(f"  Best:     {ranked[0][0] if ranked else 'NONE'} "
-          f"(dk_t={ranked[0][1].get('dk_t_stat') if ranked else 'n/a'})")
+    print(
+        f"  Best:     {ranked[0][0] if ranked else 'NONE'} "
+        f"(dk_t={ranked[0][1].get('dk_t_stat') if ranked else 'n/a'})"
+    )
 
     payload = {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "universe": universe,
         "go_rule": "dk_t>2.0 AND positive_sharpe_count>=5",
         "marginal_rule": "dk_t>1.5 OR (dk_t>1.0 AND pos>=4)",

@@ -137,6 +137,7 @@ def run_engine_for_asset(symbol: str, period: int) -> dict:
     )
 
     engine = BacktestEngine(config)
+    engine._symbol = symbol  # Fix Bug #1: thread real symbol through engine
     engine.set_strategy(strategy)
     engine.load_data(ohlcv, timestamps)
     engine._check_risk_halt = lambda: False
@@ -148,7 +149,8 @@ def run_engine_for_asset(symbol: str, period: int) -> dict:
         _orig_reset()
         engine._pnl_tracker = None
         engine._regime_detector = None
-        engine._margin_simulator = None
+        # BUG #2 FIX: removed engine._margin_simulator = None
+        # Margin simulation must stay active for liquidation-floor protection.
 
     engine._reset = _patched_reset
 

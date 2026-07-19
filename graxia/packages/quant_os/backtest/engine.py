@@ -398,6 +398,9 @@ class BacktestEngine:
         # Execution simulator
         self._simulator = BacktestExecutionSimulator()
 
+        # Symbol — set via set_symbol() or load_data(); fallback "BACKTEST" for compat
+        self._symbol: str = "BACKTEST"
+
         # State
         self.balance = Decimal(str(self.config.initial_capital))
         self.equity = Decimal(str(self.config.initial_capital))
@@ -553,7 +556,7 @@ class BacktestEngine:
             # B1 — Publish BarEvent if event_bus is attached
             if event_bus is not None:
                 bar_event = BarEvent(
-                    symbol="BACKTEST",
+                    symbol=self._symbol,
                     timeframe="M15",
                     open=float(bar_open),
                     high=float(bar_high),
@@ -591,7 +594,7 @@ class BacktestEngine:
                 self.strategy._set_mtf_cursor(sliced)
 
             signal = self.strategy.generate_signal(
-                symbol="BACKTEST",
+                symbol=self._symbol,
                 ohlcv_data=bar_data,
                 indicators=indicators,
                 regime=self._get_regime_state(),  # Phase 4: Wire regime detection
@@ -952,8 +955,11 @@ class BacktestEngine:
             symbol=signal.symbol,
         )
 
+        _spec_for_costs = InlineContractSpec.for_symbol(signal.symbol)
         contract_spec = ContractSpec(
-            contract_size=InlineContractSpec.for_symbol(signal.symbol).trade_contract_size,
+            # tick_value/tick_size (not raw trade_contract_size) so non-USD-quote
+            # pairs (USDJPY/USDCAD/USDCHF) get currency-converted cost math.
+            contract_size=_spec_for_costs.trade_tick_value / _spec_for_costs.trade_tick_size,
             commission_per_lot=self.config.commission_per_lot,
             spread_points=spread,
         )

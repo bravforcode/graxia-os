@@ -1,26 +1,42 @@
 """
-Pooled Multi-Asset Donchian Breakout Test — Driscoll-Kraay Cluster-Robust Inference
-=====================================================================================
-Same universe/method as pooled_tsmom_test.py, swapping Momentum12M for DonchianBreakout.
-Tests both period=20 and period=55 (the two variants from the toy-sim pipeline).
+Generic Pooled Multi-Asset Strategy Test — Driscoll-Kraay Cluster-Robust Inference
+====================================================================================
+Strategy-agnostic version of pooled_donchian_rsi_test.py. Takes any strategy
+factory (zero-arg callable returning a `Strategy` instance, see strategies/base.py)
+instead of hardcoding DonchianRSI, so the same DK-test harness can be pointed at
+any of the strategies/ files.
 
-Method:
-  1. Run BacktestEngine with DonchianBreakout on each of 8 assets
+Method (unchanged from pooled_donchian_rsi_test.py):
+  1. Run BacktestEngine with the given strategy on each asset in UNIVERSE
   2. Extract bar-level returns from equity curve
   3. Align returns by date into panel (date x asset)
   4. Compute daily cross-sectional means
   5. Apply Newey-West to time series of cross-sectional means (Driscoll-Kraay)
-  6. Report per-asset + pooled results, per period variant
+  6. Report per-asset + pooled results, per variant
+
+CLI usage (any strategy by dotted path):
+  python pooled_strategy_test.py \\
+      --strategy graxia.packages.quant_os.strategies.donchian_rsi.DonchianRSI \\
+      --params '{"atr_period": 14, "atr_sl_mult": 2.0, "atr_tp_mult": 3.0}' \\
+      --variants '{"period_20": {"period": 20}, "period_55": {"period": 55}}'
+
+Programmatic usage (preferred for per-strategy wrapper scripts):
+  from pooled_strategy_test import run_strategy
+  run_strategy("DonchianRSI", {"period_20": lambda: DonchianRSI(period=20, ...)})
 """
 
 from __future__ import annotations
 
+import argparse
+import importlib
 import json
 import math
 import sys
+from collections.abc import Callable
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -36,7 +52,7 @@ if str(GRAXIA_ROOT) not in sys.path:
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-# Pre-registered universe (same as pooled_tsmom_test.py, for comparability)
+# Pre-registered universe (same across all pooled_* tests, for comparability)
 UNIVERSE = [
     "XAUUSD",
     "XAGUSD",
@@ -47,17 +63,6 @@ UNIVERSE = [
     "US30",
     "BTCUSD",
 ]
-
-# Period variants ported from toy-sim configs (donchian_20, donchian_55)
-PERIOD_VARIANTS = [20, 55]
-
-FIXED_PARAMS = {
-    "atr_period": 14,
-    "atr_sl_mult": 2.0,
-    "atr_tp_mult": 3.0,
-    "vol_filter": True,
-    "vol_filter_pctile": 0.7,
-}
 
 # Per-symbol spread_pips (realistic Pepperstone Razor values)
 SYMBOL_SPREAD_PIPS: dict[str, float] = {
@@ -93,10 +98,18 @@ def load_asset_data(symbol: str) -> pd.DataFrame:
     return df
 
 
-def run_engine_for_asset(symbol: str, period: int) -> dict:
-    """Run BacktestEngine with DonchianBreakout on one asset. Returns results dict."""
+def run_engine_for_asset(symbol: str, strategy_factory: Callable[[], Any], cost_mult: float = 1.0) -> dict:
+    """Run BacktestEngine with a strategy (from strategy_factory()) on one asset.
+
+    strategy_factory: zero-arg callable returning a fresh `Strategy` instance
+    (see strategies/base.py). Called once per asset so each run gets an
+    unshared instance.
+
+    cost_mult scales spread/slippage/commission inputs to the engine directly
+    (real cost stress), rather than post-hoc rescaling returns — rescaling
+    returns by a constant is a no-op on the DK t-stat (scale-invariant ratio).
+    """
     from graxia.packages.quant_os.backtest.engine import BacktestConfig, BacktestEngine
-    from graxia.packages.quant_os.strategies.donchian import DonchianBreakout
 
     df = load_asset_data(symbol)
 
@@ -111,22 +124,15 @@ def run_engine_for_asset(symbol: str, period: int) -> dict:
 
     config = BacktestConfig(
         initial_capital=10000,
-        slippage_pips=0.5,
-        spread_pips=SYMBOL_SPREAD_PIPS.get(symbol, 2.0),
-        commission_per_lot=Decimal(str(SYMBOL_COMMISSION.get(symbol, 3.5))),
+        slippage_pips=0.5 * cost_mult,
+        spread_pips=SYMBOL_SPREAD_PIPS.get(symbol, 2.0) * cost_mult,
+        commission_per_lot=Decimal(str(SYMBOL_COMMISSION.get(symbol, 3.5) * cost_mult)),
         risk_per_trade_bps=100,
         max_positions=1,
         strict_mtf=False,
     )
 
-    strategy = DonchianBreakout(
-        period=period,
-        atr_period=FIXED_PARAMS["atr_period"],
-        atr_sl_mult=FIXED_PARAMS["atr_sl_mult"],
-        atr_tp_mult=FIXED_PARAMS["atr_tp_mult"],
-        vol_filter=FIXED_PARAMS["vol_filter"],
-        vol_filter_pctile=FIXED_PARAMS["vol_filter_pctile"],
-    )
+    strategy = strategy_factory()
 
     engine = BacktestEngine(config)
     engine._symbol = symbol  # Fix Bug #1: thread real symbol through engine
@@ -134,6 +140,7 @@ def run_engine_for_asset(symbol: str, period: int) -> dict:
     engine.load_data(ohlcv, timestamps)
     engine._check_risk_halt = lambda: False
     # Force legacy equity path — Phase 4 PnL tracker doesn't populate equity_curve
+    # Monkey-patch _reset to prevent Phase 4 re-initialization during run()
     _orig_reset = engine._reset
 
     def _patched_reset():
@@ -277,23 +284,34 @@ def driscoll_kraay_t_stat(daily_means: np.ndarray) -> tuple[float, float, float]
     return t_stat, mu, nw_se
 
 
-def run_one_period(period: int) -> dict:
+def run_one_variant(
+    variant_label: str,
+    strategy_factory: Callable[[], Any],
+    params: dict | None = None,
+    universe: list[str] | None = None,
+) -> dict:
+    """Run the pooled DK-test for one strategy variant across `universe`.
+
+    params is metadata only (echoed into the report) — the actual strategy
+    construction is entirely owned by strategy_factory.
+    """
+    universe = universe or UNIVERSE
+    params = params or {}
+
     print("=" * 70)
-    print(f"  POOLED MULTI-ASSET DONCHIAN({period}) TEST")
+    print(f"  POOLED MULTI-ASSET TEST: {variant_label}")
     print("  Driscoll-Kraay Cluster-Robust Inference")
-    print(
-        f"  Params: period={period}, atr_sl={FIXED_PARAMS['atr_sl_mult']}, "
-        f"atr_tp={FIXED_PARAMS['atr_tp_mult']}, vol_filter_pctile={FIXED_PARAMS['vol_filter_pctile']}"
-    )
+    if params:
+        print(f"  Params: {params}")
     print("=" * 70)
 
     all_results = {}
     per_asset_returns = {}
 
-    for symbol in UNIVERSE:
+    for symbol in universe:
         print(f"\n  Running {symbol}...", end=" ", flush=True)
         try:
-            results = run_engine_for_asset(symbol, period)
+            results = run_engine_for_asset(symbol, strategy_factory)
             all_results[symbol] = results
             daily_ret = extract_daily_returns(results)
             if not daily_ret.empty:
@@ -307,7 +325,7 @@ def run_one_period(period: int) -> dict:
 
     if len(per_asset_returns) < 3:
         print("  ERROR: Not enough assets with returns. Need >= 3.")
-        return {"period": period, "verdict": "INSUFFICIENT_SAMPLE"}
+        return {"variant": variant_label, "params": params, "verdict": "INSUFFICIENT_SAMPLE"}
 
     panel = pd.concat(per_asset_returns.values(), axis=1, join="outer")
     panel = panel.fillna(0.0)
@@ -325,17 +343,17 @@ def run_one_period(period: int) -> dict:
     print(f"  Pooled Sharpe (annualized): {dk_sharpe:.4f}")
 
     per_asset_metrics = {}
-    for symbol in UNIVERSE:
+    for symbol in universe:
         if symbol in all_results:
             per_asset_metrics[symbol] = compute_per_asset_metrics(all_results[symbol])
 
     header = f"  {'Symbol':<10} {'Trades':>7} {'Sharpe':>8} {'Win%':>6} {'PF':>6} {'NW t':>7} {'MaxDD':>7}"
     print(f"\n{header}")
-    print(f"  {'-'*len(header.strip())}")
+    print(f"  {'-' * len(header.strip())}")
 
     total_trades = 0
     positive_sharpe_count = 0
-    for symbol in UNIVERSE:
+    for symbol in universe:
         if symbol not in per_asset_metrics:
             continue
         m = per_asset_metrics[symbol]
@@ -344,7 +362,7 @@ def run_one_period(period: int) -> dict:
             positive_sharpe_count += 1
         print(
             f"  {symbol:<10} {m.get('n_trades', 0):>7} {m.get('sharpe', 0):>8.4f} "
-            f"{m.get('win_rate', 0)*100:>5.1f}% {m.get('profit_factor', 0):>5.2f} "
+            f"{m.get('win_rate', 0) * 100:>5.1f}% {m.get('profit_factor', 0):>5.2f} "
             f"{m.get('nw_t_stat', 0):>7.3f} {m.get('max_dd_pct', 0):>6.2f}%"
         )
 
@@ -367,16 +385,32 @@ def run_one_period(period: int) -> dict:
 
     print(f"\n  VERDICT: {verdict}  ({reason})")
 
-    cost_sensitivity = {}
-    for haircut in [0.0, 0.3, 0.5]:
-        adjusted_means = daily_means * (1 - haircut)
-        dk_t_adj, _, _ = driscoll_kraay_t_stat(adjusted_means)
-        cost_sensitivity[f"{int(haircut*100)}pct"] = dk_t_adj
+    # Real cost stress: re-run the engine with scaled spread/slippage/commission
+    # inputs, not a post-hoc rescale of daily_means (which is a no-op on the
+    # DK t-stat since it's a scale-invariant ratio of mean to its own std).
+    cost_sensitivity = {"0pct": dk_t}
+    for stress_pct in [30, 50]:
+        cost_mult = 1 + stress_pct / 100
+        stressed_returns = {}
+        for symbol in universe:
+            try:
+                stressed_results = run_engine_for_asset(symbol, strategy_factory, cost_mult=cost_mult)
+                daily_ret = extract_daily_returns(stressed_results)
+                if not daily_ret.empty:
+                    stressed_returns[symbol] = daily_ret
+            except Exception:
+                continue
+        if len(stressed_returns) >= 3:
+            stressed_panel = pd.concat(stressed_returns.values(), axis=1, join="outer").fillna(0.0)
+            stressed_dk_t, _, _ = driscoll_kraay_t_stat(stressed_panel.mean(axis=1).values)
+            cost_sensitivity[f"{stress_pct}pct"] = stressed_dk_t
+        else:
+            cost_sensitivity[f"{stress_pct}pct"] = None
 
     return {
-        "period": period,
-        "params": {**FIXED_PARAMS, "period": period},
-        "universe": UNIVERSE,
+        "variant": variant_label,
+        "params": params,
+        "universe": universe,
         "panel_shape": list(panel.shape),
         "date_range": [str(panel.index.min()), str(panel.index.max())],
         "total_trades": total_trades,
@@ -395,21 +429,40 @@ def run_one_period(period: int) -> dict:
     }
 
 
-def main():
+def run_strategy(
+    strategy_name: str,
+    variants: dict[str, Callable[[], Any]],
+    variant_params: dict[str, dict] | None = None,
+    universe: list[str] | None = None,
+    output_path: Path | str | None = None,
+) -> dict:
+    """Run the pooled DK-test across every variant of one strategy and write a report.
+
+    variants: dict of variant_label -> zero-arg factory producing a fresh
+              `Strategy` instance for that variant.
+    variant_params: optional dict of variant_label -> params dict, echoed
+              into the report for traceability (e.g. the kwargs used to
+              construct the strategy). Purely informational.
+    """
+    variant_params = variant_params or {}
     reports = {}
-    for period in PERIOD_VARIANTS:
-        reports[f"donchian_{period}"] = run_one_period(period)
+    for label, factory in variants.items():
+        reports[label] = run_one_variant(label, factory, params=variant_params.get(label), universe=universe)
         print("\n")
 
     report = {
         "timestamp": datetime.now().isoformat(),
+        "strategy": strategy_name,
         "variants": reports,
     }
 
-    report_path = ROOT / "reports" / "pooled_donchian_results.json"
-    with open(report_path, "w") as f:
+    output_path = (
+        Path(output_path) if output_path else ROOT / "reports" / f"pooled_{strategy_name.lower()}_results.json"
+    )
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, "w") as f:
         json.dump(report, f, indent=2, default=str)
-    print(f"  Report saved: {report_path}")
+    print(f"  Report saved: {output_path}")
 
     print("\n" + "=" * 70)
     print("  SUMMARY")
@@ -419,6 +472,55 @@ def main():
             f"  {key}: {r.get('verdict')} (trades={r.get('total_trades', 0)}, "
             f"dk_t={r.get('pooled', {}).get('dk_t_stat', 0):.3f})"
         )
+
+    return report
+
+
+def _load_strategy_class(dotted_path: str) -> type:
+    """Import a Strategy subclass from a dotted path, e.g.
+    'graxia.packages.quant_os.strategies.donchian_rsi.DonchianRSI'."""
+    module_path, _, class_name = dotted_path.rpartition(".")
+    if not module_path:
+        raise ValueError(f"--strategy must be a dotted module.ClassName path, got: {dotted_path!r}")
+    module = importlib.import_module(module_path)
+    return getattr(module, class_name)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Generic pooled multi-asset strategy DK-test")
+    parser.add_argument(
+        "--strategy",
+        required=True,
+        help="Dotted path to a Strategy subclass, e.g. " "graxia.packages.quant_os.strategies.donchian_rsi.DonchianRSI",
+    )
+    parser.add_argument(
+        "--params",
+        default="{}",
+        help="JSON dict of constructor kwargs applied to every variant (base params)",
+    )
+    parser.add_argument(
+        "--variants",
+        default=None,
+        help="JSON dict of variant_label -> override-kwargs dict, merged over --params. "
+        "Defaults to a single variant named 'default' with no overrides.",
+    )
+    parser.add_argument(
+        "--output", default=None, help="Report output path (defaults to reports/pooled_<strategy>_results.json)"
+    )
+    args = parser.parse_args()
+
+    strategy_cls = _load_strategy_class(args.strategy)
+    base_params = json.loads(args.params)
+    variant_overrides = json.loads(args.variants) if args.variants else {"default": {}}
+
+    variants = {}
+    variant_params = {}
+    for label, overrides in variant_overrides.items():
+        merged = {**base_params, **overrides}
+        variants[label] = lambda cls=strategy_cls, kw=merged: cls(**kw)
+        variant_params[label] = merged
+
+    run_strategy(strategy_cls.__name__, variants, variant_params=variant_params, output_path=args.output)
 
 
 if __name__ == "__main__":

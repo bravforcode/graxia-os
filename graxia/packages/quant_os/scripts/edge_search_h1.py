@@ -2,12 +2,13 @@
 H1 edge scan — single-asset, cost-aware, honest ranking.
 Does NOT burn sacred holdout. GO only if trade-Sharpe > 1.0 AND PF > 1.2 AND n_trades >= 100.
 """
+
 from __future__ import annotations
 
 import json
 import math
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 
@@ -70,6 +71,7 @@ def run_one(symbol: str, strategy, spread: float) -> dict:
         strict_mtf=False,
     )
     eng = BacktestEngine(cfg)
+    eng._symbol = symbol  # Fix Bug #1: thread real symbol through engine
     eng.set_strategy(strategy)
     eng.load_data(ohlcv, df["time"].tolist())
     eng._check_risk_halt = lambda: False
@@ -118,27 +120,68 @@ def strategy_variants():
     from graxia.packages.quant_os.strategies.rsi_mean_reversion import RSIMeanReversion
 
     return [
-        ("Donchian_10", lambda: DonchianBreakout(
-            period=10, atr_period=14, atr_sl_mult=2.0, atr_tp_mult=3.0, vol_filter=False,
-        )),
-        ("Donchian_20", lambda: DonchianBreakout(
-            period=20, atr_period=14, atr_sl_mult=2.0, atr_tp_mult=3.0,
-            vol_filter=True, vol_filter_pctile=0.7,
-        )),
-        ("DonchianADX_10_25", lambda: DonchianADX(
-            period=10, atr_period=14, atr_sl_mult=2.0, atr_tp_mult=3.0,
-            adx_period=14, adx_threshold=25.0,
-        )),
-        ("RSI_20_80", lambda: RSIMeanReversion(
-            rsi_period=14, oversold=20, overbought=80, ema_period=0,
-            atr_period=14, atr_sl_mult=2.0, atr_tp_mult=3.0,
-        )),
-        ("HybridMomMR_60", lambda: HybridMomMR(
-            lookback=60, atr_period=14, atr_sl_mult=2.0, atr_tp_mult=3.0,
-        )),
-        ("Momentum12M_126", lambda: Momentum12M(
-            lookback=126, atr_period=14, atr_sl_mult=2.0, atr_tp_mult=3.0,
-        )),
+        (
+            "Donchian_10",
+            lambda: DonchianBreakout(
+                period=10,
+                atr_period=14,
+                atr_sl_mult=2.0,
+                atr_tp_mult=3.0,
+                vol_filter=False,
+            ),
+        ),
+        (
+            "Donchian_20",
+            lambda: DonchianBreakout(
+                period=20,
+                atr_period=14,
+                atr_sl_mult=2.0,
+                atr_tp_mult=3.0,
+                vol_filter=True,
+                vol_filter_pctile=0.7,
+            ),
+        ),
+        (
+            "DonchianADX_10_25",
+            lambda: DonchianADX(
+                period=10,
+                atr_period=14,
+                atr_sl_mult=2.0,
+                atr_tp_mult=3.0,
+                adx_period=14,
+                adx_threshold=25.0,
+            ),
+        ),
+        (
+            "RSI_20_80",
+            lambda: RSIMeanReversion(
+                rsi_period=14,
+                oversold=20,
+                overbought=80,
+                ema_period=0,
+                atr_period=14,
+                atr_sl_mult=2.0,
+                atr_tp_mult=3.0,
+            ),
+        ),
+        (
+            "HybridMomMR_60",
+            lambda: HybridMomMR(
+                lookback=60,
+                atr_period=14,
+                atr_sl_mult=2.0,
+                atr_tp_mult=3.0,
+            ),
+        ),
+        (
+            "Momentum12M_126",
+            lambda: Momentum12M(
+                lookback=126,
+                atr_period=14,
+                atr_sl_mult=2.0,
+                atr_tp_mult=3.0,
+            ),
+        ),
     ]
 
 
@@ -158,8 +201,7 @@ def main() -> int:
                 out[sym][name] = m
                 ranked.append({"symbol": sym, "strategy": name, **m})
                 print(
-                    f"trades={m['n_trades']} pnl={m['total_pnl']} "
-                    f"pf={m['pf']} sharpe={m['sharpe_trade']}",
+                    f"trades={m['n_trades']} pnl={m['total_pnl']} " f"pf={m['pf']} sharpe={m['sharpe_trade']}",
                     flush=True,
                 )
             except Exception as e:
@@ -168,10 +210,7 @@ def main() -> int:
 
     ranked.sort(key=lambda x: (x.get("sharpe_trade") or -999), reverse=True)
     candidates = [
-        r for r in ranked
-        if r.get("n_trades", 0) >= 100
-        and r.get("pf", 0) > 1.2
-        and r.get("sharpe_trade", 0) > 1.0
+        r for r in ranked if r.get("n_trades", 0) >= 100 and r.get("pf", 0) > 1.2 and r.get("sharpe_trade", 0) > 1.0
     ]
 
     print("\n" + "=" * 72)
@@ -189,7 +228,7 @@ def main() -> int:
         print(f"    {c['symbol']} {c['strategy']} sharpe={c['sharpe_trade']} pf={c['pf']}")
 
     payload = {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "timeframe": "H1",
         "candidate_rule": "n_trades>=100 AND pf>1.2 AND sharpe_trade>1.0",
         "candidates": candidates,

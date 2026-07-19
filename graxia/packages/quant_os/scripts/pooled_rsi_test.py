@@ -1,16 +1,16 @@
 """
-Pooled Multi-Asset Donchian Breakout Test — Driscoll-Kraay Cluster-Robust Inference
-=====================================================================================
-Same universe/method as pooled_tsmom_test.py, swapping Momentum12M for DonchianBreakout.
-Tests both period=20 and period=55 (the two variants from the toy-sim pipeline).
+Pooled Multi-Asset RSI Mean-Reversion Test — Driscoll-Kraay Cluster-Robust Inference
+======================================================================================
+Same universe/method as pooled_donchian_test.py, using RSIMeanReversion.
+Tests multiple RSI threshold pairs: (25/75), (30/70), (20/80).
 
 Method:
-  1. Run BacktestEngine with DonchianBreakout on each of 8 assets
+  1. Run BacktestEngine with RSIMeanReversion on each of 8 assets
   2. Extract bar-level returns from equity curve
   3. Align returns by date into panel (date x asset)
   4. Compute daily cross-sectional means
   5. Apply Newey-West to time series of cross-sectional means (Driscoll-Kraay)
-  6. Report per-asset + pooled results, per period variant
+  6. Report per-asset + pooled results, per threshold variant
 """
 
 from __future__ import annotations
@@ -36,7 +36,7 @@ if str(GRAXIA_ROOT) not in sys.path:
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-# Pre-registered universe (same as pooled_tsmom_test.py, for comparability)
+# Pre-registered universe (same as pooled_donchian_test.py, for comparability)
 UNIVERSE = [
     "XAUUSD",
     "XAGUSD",
@@ -48,38 +48,44 @@ UNIVERSE = [
     "BTCUSD",
 ]
 
-# Period variants ported from toy-sim configs (donchian_20, donchian_55)
-PERIOD_VARIANTS = [20, 55]
+# RSI threshold variants to test
+THRESHOLD_VARIANTS = [
+    (25, 75),
+    (30, 70),
+    (20, 80),
+]
 
 FIXED_PARAMS = {
+    "rsi_period": 14,
+    "ema_period": 0,  # 0 = disabled (pure RSI)
     "atr_period": 14,
     "atr_sl_mult": 2.0,
     "atr_tp_mult": 3.0,
-    "vol_filter": True,
-    "vol_filter_pctile": 0.7,
 }
 
 # Per-symbol spread_pips (realistic Pepperstone Razor values)
+# Indices need much higher spread than FX — pip_size=0.01 means 1.0 pts = 100 pips
 SYMBOL_SPREAD_PIPS: dict[str, float] = {
-    "XAUUSD": 100.0,
-    "XAGUSD": 150.0,
-    "EURUSD": 1.2,
-    "GBPUSD": 1.5,
-    "USDJPY": 1.2,
-    "NAS100": 120.0,
-    "US30": 120.0,
-    "BTCUSD": 5000.0,
+    "XAUUSD": 100.0,  # 1.0 point (pip_size=0.01)
+    "XAGUSD": 150.0,  # 1.5 points
+    "EURUSD": 1.2,  # 0.12 pips (pip_size=0.0001)
+    "GBPUSD": 1.5,  # 0.15 pips
+    "USDJPY": 1.2,  # 0.12 pips (pip_size=0.01 for JPY)
+    "NAS100": 120.0,  # 1.2 points (pip_size=0.01)
+    "US30": 120.0,  # 1.2 points (pip_size=0.01)
+    "BTCUSD": 5000.0,  # 50 points (pip_size=0.01)
 }
 
+# Per-symbol commission_per_lot ( Pepperstone Razor)
 SYMBOL_COMMISSION: dict[str, float] = {
-    "XAUUSD": 0.0,
+    "XAUUSD": 0.0,  # Commission embedded in spread
     "XAGUSD": 0.0,
-    "EURUSD": 7.0,
+    "EURUSD": 7.0,  # $7 round-trip
     "GBPUSD": 7.0,
     "USDJPY": 7.0,
-    "NAS100": 5.0,
+    "NAS100": 5.0,  # $5 round-trip for indices
     "US30": 5.0,
-    "BTCUSD": 0.0,
+    "BTCUSD": 0.0,  # Commission embedded in spread
 }
 
 
@@ -93,10 +99,10 @@ def load_asset_data(symbol: str) -> pd.DataFrame:
     return df
 
 
-def run_engine_for_asset(symbol: str, period: int) -> dict:
-    """Run BacktestEngine with DonchianBreakout on one asset. Returns results dict."""
+def run_engine_for_asset(symbol: str, oversold: float, overbought: float) -> dict:
+    """Run BacktestEngine with RSIMeanReversion on one asset."""
     from graxia.packages.quant_os.backtest.engine import BacktestConfig, BacktestEngine
-    from graxia.packages.quant_os.strategies.donchian import DonchianBreakout
+    from graxia.packages.quant_os.strategies.rsi_mean_reversion import RSIMeanReversion
 
     df = load_asset_data(symbol)
 
@@ -117,15 +123,17 @@ def run_engine_for_asset(symbol: str, period: int) -> dict:
         risk_per_trade_bps=100,
         max_positions=1,
         strict_mtf=False,
+        symbol=symbol,
     )
 
-    strategy = DonchianBreakout(
-        period=period,
+    strategy = RSIMeanReversion(
+        rsi_period=FIXED_PARAMS["rsi_period"],
+        oversold=oversold,
+        overbought=overbought,
+        ema_period=FIXED_PARAMS["ema_period"],
         atr_period=FIXED_PARAMS["atr_period"],
         atr_sl_mult=FIXED_PARAMS["atr_sl_mult"],
         atr_tp_mult=FIXED_PARAMS["atr_tp_mult"],
-        vol_filter=FIXED_PARAMS["vol_filter"],
-        vol_filter_pctile=FIXED_PARAMS["vol_filter_pctile"],
     )
 
     engine = BacktestEngine(config)
@@ -133,17 +141,6 @@ def run_engine_for_asset(symbol: str, period: int) -> dict:
     engine.set_strategy(strategy)
     engine.load_data(ohlcv, timestamps)
     engine._check_risk_halt = lambda: False
-    # Force legacy equity path — Phase 4 PnL tracker doesn't populate equity_curve
-    _orig_reset = engine._reset
-
-    def _patched_reset():
-        _orig_reset()
-        engine._pnl_tracker = None
-        engine._regime_detector = None
-        # BUG #2 FIX: removed engine._margin_simulator = None
-        # Margin simulation must stay active for liquidation-floor protection.
-
-    engine._reset = _patched_reset
 
     results = engine.run()
 
@@ -277,13 +274,14 @@ def driscoll_kraay_t_stat(daily_means: np.ndarray) -> tuple[float, float, float]
     return t_stat, mu, nw_se
 
 
-def run_one_period(period: int) -> dict:
+def run_one_variant(oversold: float, overbought: float) -> dict:
     print("=" * 70)
-    print(f"  POOLED MULTI-ASSET DONCHIAN({period}) TEST")
+    print(f"  POOLED MULTI-ASSET RSI MEAN-REVERSION ({int(oversold)}/{int(overbought)}) TEST")
     print("  Driscoll-Kraay Cluster-Robust Inference")
     print(
-        f"  Params: period={period}, atr_sl={FIXED_PARAMS['atr_sl_mult']}, "
-        f"atr_tp={FIXED_PARAMS['atr_tp_mult']}, vol_filter_pctile={FIXED_PARAMS['vol_filter_pctile']}"
+        f"  Params: rsi_period={FIXED_PARAMS['rsi_period']}, oversold={oversold}, "
+        f"overbought={overbought}, atr_sl={FIXED_PARAMS['atr_sl_mult']}, "
+        f"atr_tp={FIXED_PARAMS['atr_tp_mult']}"
     )
     print("=" * 70)
 
@@ -293,7 +291,7 @@ def run_one_period(period: int) -> dict:
     for symbol in UNIVERSE:
         print(f"\n  Running {symbol}...", end=" ", flush=True)
         try:
-            results = run_engine_for_asset(symbol, period)
+            results = run_engine_for_asset(symbol, oversold, overbought)
             all_results[symbol] = results
             daily_ret = extract_daily_returns(results)
             if not daily_ret.empty:
@@ -307,7 +305,10 @@ def run_one_period(period: int) -> dict:
 
     if len(per_asset_returns) < 3:
         print("  ERROR: Not enough assets with returns. Need >= 3.")
-        return {"period": period, "verdict": "INSUFFICIENT_SAMPLE"}
+        return {
+            "thresholds": f"{int(oversold)}/{int(overbought)}",
+            "verdict": "INSUFFICIENT_SAMPLE",
+        }
 
     panel = pd.concat(per_asset_returns.values(), axis=1, join="outer")
     panel = panel.fillna(0.0)
@@ -363,7 +364,7 @@ def run_one_period(period: int) -> dict:
         reason = "Pooled t 1.5-2.0 OR Sharpe > 0 in 3-4/8 assets"
     else:
         verdict = "REJECT"
-        reason = "Pooled t < 1.5 OR Sharpe > 0 in < 3/8 assets"
+        reason = "Pooled t < 1.5 AND Sharpe > 0 in < 3/8 assets"
 
     print(f"\n  VERDICT: {verdict}  ({reason})")
 
@@ -373,9 +374,29 @@ def run_one_period(period: int) -> dict:
         dk_t_adj, _, _ = driscoll_kraay_t_stat(adjusted_means)
         cost_sensitivity[f"{int(haircut*100)}pct"] = dk_t_adj
 
+    # BTC-exclusion sensitivity: recompute DK t-stat without BTCUSD
+    btc_exclusion = {}
+    if "BTCUSD" in panel.columns and len(panel.columns) > 3:
+        panel_no_btc = panel.drop(columns=["BTCUSD"])
+        means_no_btc = panel_no_btc.mean(axis=1).values
+        dk_t_no_btc, dk_mean_no_btc, dk_se_no_btc = driscoll_kraay_t_stat(means_no_btc)
+        dk_sharpe_no_btc = dk_mean_no_btc / (means_no_btc.std(ddof=1) + 1e-10) * math.sqrt(252)
+        positive_no_btc = sum(
+            1 for s in per_asset_metrics if s != "BTCUSD" and per_asset_metrics[s].get("sharpe", 0) > 0
+        )
+        btc_exclusion = {
+            "dk_t_stat": dk_t_no_btc,
+            "dk_sharpe": dk_sharpe_no_btc,
+            "positive_sharpe_count": positive_no_btc,
+            "n_assets": len(panel_no_btc.columns),
+        }
+        print(f"\n  BTC-excluded DK t-stat: {dk_t_no_btc:.4f}")
+        print(f"  BTC-excluded Sharpe: {dk_sharpe_no_btc:.4f}")
+        print(f"  BTC-excluded positive: {positive_no_btc}/{len(panel_no_btc.columns)}")
+
     return {
-        "period": period,
-        "params": {**FIXED_PARAMS, "period": period},
+        "thresholds": f"{int(oversold)}/{int(overbought)}",
+        "params": {**FIXED_PARAMS, "oversold": oversold, "overbought": overbought},
         "universe": UNIVERSE,
         "panel_shape": list(panel.shape),
         "date_range": [str(panel.index.min()), str(panel.index.max())],
@@ -392,32 +413,38 @@ def run_one_period(period: int) -> dict:
         "reason": reason,
         "positive_sharpe_count": positive_sharpe_count,
         "cost_sensitivity": cost_sensitivity,
+        "btc_exclusion": btc_exclusion,
     }
 
 
 def main():
     reports = {}
-    for period in PERIOD_VARIANTS:
-        reports[f"donchian_{period}"] = run_one_period(period)
+    for oversold, overbought in THRESHOLD_VARIANTS:
+        key = f"rsi_{int(oversold)}_{int(overbought)}"
+        reports[key] = run_one_variant(oversold, overbought)
         print("\n")
 
     report = {
         "timestamp": datetime.now().isoformat(),
+        "strategy": "RSIMeanReversion",
         "variants": reports,
     }
 
-    report_path = ROOT / "reports" / "pooled_donchian_results.json"
+    report_path = ROOT / "reports" / "pooled_rsi_results.json"
+    report_path.parent.mkdir(parents=True, exist_ok=True)
     with open(report_path, "w") as f:
         json.dump(report, f, indent=2, default=str)
     print(f"  Report saved: {report_path}")
 
     print("\n" + "=" * 70)
-    print("  SUMMARY")
+    print("  SUMMARY — RSI Mean-Reversion across threshold variants")
     print("=" * 70)
     for key, r in reports.items():
         print(
-            f"  {key}: {r.get('verdict')} (trades={r.get('total_trades', 0)}, "
-            f"dk_t={r.get('pooled', {}).get('dk_t_stat', 0):.3f})"
+            f"  {key}: {r.get('verdict')} "
+            f"(trades={r.get('total_trades', 0)}, "
+            f"dk_t={r.get('pooled', {}).get('dk_t_stat', 0):.3f}, "
+            f"positive_sharpe={r.get('positive_sharpe_count', 0)}/8)"
         )
 
 
