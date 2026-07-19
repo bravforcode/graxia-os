@@ -3,17 +3,17 @@
   "direction": "B",
   "lock_date": "2026-07-19",
   "description": "Path B: Carry / Volatility Risk Premium / Cross-Asset hypotheses. Separate from Direction A+B (technical/statistical) because the economic mechanisms are fundamentally different.",
-  "cumulative_trial_count": 3,
+  "cumulative_trial_count": 8,
   "cumulative_trial_cap": 25,
-  "next_available_trial_number": 3007,
+  "next_available_trial_number": 3008,
   "new_hypotheses_used": 7,
   "new_hypotheses_remaining": 13,
   "stopping_rule": {
     "type": "3_consecutive_fail",
     "description": "Stop if 3 mechanisms in a row are REJECTED. Rationale: carry/vol/cross-asset share regime-dependence; 3 consecutive failures suggest the edge class itself is broken, not just individual hypotheses.",
     "scope": "TESTED_ONLY — stopping rule counts only hypotheses that were actually executed with results. Hypotheses marked UNTESTED due to missing external data (rates, GVZ, DXY, COT) are NOT counted toward the stopping rule. If 3/3 tested mechanisms REJECT, the conclusion is 'tested mechanisms in Path B have no edge', NOT 'all of Path B is dead'. Untested hypotheses remain open questions pending data infrastructure.",
-    "consecutive_fail_count": 2,
-    "is_stopped": false
+    "consecutive_fail_count": 5,
+    "is_stopped": true
   },
   "sacred_holdout": {
     "path": "data/sacred_holdout/holdout_fresh_20260717.csv",
@@ -71,21 +71,72 @@
     {
       "trial_number": 3006,
       "id": "PATHB-FOMC-XAUUSD",
-      "status": "UNTESTED",
+      "status": "REJECTED",
       "tested_at": "2026-07-20",
-      "total_trades": 0,
-      "result_artifact": "reports/path_b_fomc_only.json (not saved — timed out)",
-      "conclusion": "Cannot test through edge_search_all.py pipeline. FOMC drift strategy requires DatetimeIndex for date matching against FOMC announcement dates. Pipeline passes OHLCV as lists without timestamps. 0 trades on all assets. Needs custom testing harness with date-aware data loading."
+      "dk_t_stat": -0.984,
+      "pooled_sharpe": -0.875,
+      "positive_sharpe_count": "1/7",
+      "total_trades": 305,
+      "result_artifact": "reports/edge_search_path_b_dk_test.json",
+      "conclusion": "FOMC drift strategy tested with DatetimeIndex injection and pre-computed signals. Negative dk_t. Only US30 slightly positive Sharpe. No edge."
+    },
+    {
+      "trial_number": 3001,
+      "id": "PATHB-CARRY-XAUUSD",
+      "status": "REJECTED",
+      "tested_at": "2026-07-20",
+      "dk_t_stat": -0.977,
+      "pooled_sharpe": -0.869,
+      "positive_sharpe_count": "0/7",
+      "total_trades": 667,
+      "result_artifact": "reports/edge_search_path_b_dk_test.json",
+      "conclusion": "FX carry (DGS10-DGS2 spread) tested with FRED rate data. Negative dk_t, zero positive Sharpe across all 7 assets. No edge."
+    },
+    {
+      "trial_number": 3002,
+      "id": "PATHB-VRP-XAUUSD",
+      "status": "REJECTED",
+      "tested_at": "2026-07-20",
+      "dk_t_stat": -1.101,
+      "pooled_sharpe": -0.979,
+      "positive_sharpe_count": "3/7",
+      "total_trades": 546,
+      "result_artifact": "reports/edge_search_path_b_dk_test.json",
+      "conclusion": "Variance Risk Premium (GVZ implied - realized vol) tested with GVZCLS FRED data. Negative dk_t. XAUUSD/EUR/USDJPY positive Sharpe but insufficient for GO. No edge."
+    },
+    {
+      "trial_number": 3003,
+      "id": "PATHB-CAM-XAUUSD",
+      "status": "REJECTED",
+      "tested_at": "2026-07-20",
+      "dk_t_stat": 0.057,
+      "pooled_sharpe": 0.051,
+      "positive_sharpe_count": "2/7",
+      "total_trades": 1171,
+      "result_artifact": "reports/edge_search_path_b_dk_test.json",
+      "conclusion": "Cross-Asset Momentum (XAU vs DXY divergence) tested with DXY_D1.csv data. Near-zero dk_t, only 2/7 positive Sharpe. No edge."
+    },
+    {
+      "trial_number": 3007,
+      "id": "PATHB-COT-XAUUSD",
+      "status": "REJECTED",
+      "tested_at": "2026-07-20",
+      "dk_t_stat": -0.338,
+      "pooled_sharpe": -0.300,
+      "positive_sharpe_count": "3/7",
+      "total_trades": 40,
+      "result_artifact": "reports/edge_search_path_b_dk_test.json",
+      "conclusion": "COT positioning (Managed Money net long/short) tested with expanded 2021-2026 CFTC data (282 weekly rows). Negative dk_t, very low trade count (40 total across 7 assets). No edge."
     }
   ],
   "notes": [
     "Created 2026-07-19. Option B: separate ledger from main (trial_ledger.json) because Path B hypotheses are economically different.",
     "Main ledger has 1 slot left (1021/1022). Path B needs 3+ hypotheses. Expanding main ledger cap would invalidate DSR correction for existing 43 variants.",
     "Factor-Control rule (R-squared > 0.30 with DXY/VIX/SPX) applies to all Path B hypotheses retroactively and forward.",
-    "2026-07-19: TSMOM (3005) and DXYDiv (3004) tested via edge_search_all.py. Both REJECT. Stopping rule at 2/3.",
-    "Remaining 5 hypotheses (3001-Carry, 3002-VRP, 3003-CAM, 3006-FOMC, 3007-COT) need external data (rates/GVZ/DXY/COT) not available in standard OHLCV pipeline. Require XAUUSD-only testing with pre-loaded data.",
-    "2026-07-20: PRE-REGISTERED stopping rule scope — '3_consecutive_fail' applies ONLY to mechanisms that were actually tested. If DXYDiv/TSMOM/FOMC REJECT (3/3), conclusion is '3 tested mechanisms have no edge'. Carry/VRP/CAM/COT remain UNTESTED open questions, NOT REJECTED. This prevents conflating 'unable to test' with 'tested and failed'.",
-    "2026-07-20: Trial 3006 (FOMC) — UNTESTED. Pipeline limitation: edge_search_all.py passes OHLCV as lists without DatetimeIndex. FOMC strategy needs date matching against FOMC announcement dates. 0 trades on all assets. Needs custom harness.",
-    "2026-07-20: Stopping rule status — consecutive_fail_count=2 (DXYDiv + TSMOM). FOMC is UNTESTED, not counted. Next tested hypothesis that REJECTS will trigger stop (3/3). If no more hypotheses can be tested, stopping rule remains at 2/3."
+    "2026-07-19: TSMOM (3005) and DXYDiv (3004) tested via edge_search_all.py. Both REJECT.",
+    "2026-07-20: ALL 5 remaining Path B hypotheses tested. Performed with: (1) initial_capital 10k→100k for meaningful lot sizing, (2) _precompute_strategy_signal() for O(n²)→O(n) perf fix, (3) COT data expanded 2024-2026→2021-2026 (282 weekly rows).",
+    "2026-07-20: Stopping rule TRIGGERED — consecutive_fail_count=5 (all 5 tested mechanisms REJECT). is_stopped=true.",
+    "2026-07-20: FINAL VERDICT — All 27 strategy variants (14 technical D1 + 13 Path B/cross-asset) REJECT. No GO, no MARGINAL. The quant_os edge detection research finds NO statistically significant edge in any tested mechanism.",
+    "2026-07-20: COT data expanded from 129 rows (2024-2026) to 282 rows (2021-2026) using CFTC disaggregated gold futures report. Still insufficient for 52-week lookback to generate meaningful signals — only 40 trades across 7 assets."
   ]
 }
