@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "direction": "B",
+  "lock_date": "2026-07-19",
+  "description": "Path B: Carry / Volatility Risk Premium / Cross-Asset hypotheses. Separate from Direction A+B (technical/statistical) because the economic mechanisms are fundamentally different.",
+  "cumulative_trial_count": 0,
+  "cumulative_trial_cap": 25,
+  "next_available_trial_number": 3001,
+  "new_hypotheses_used": 0,
+  "new_hypotheses_remaining": 20,
+  "stopping_rule": {
+    "type": "3_consecutive_fail",
+    "description": "Stop if 3 hypotheses in a row are REJECTED. Rationale: carry/vol/cross-asset share regime-dependence; 3 consecutive failures suggest the edge class itself is broken, not just individual hypotheses.",
+    "consecutive_fail_count": 0,
+    "is_stopped": false
+  },
+  "sacred_holdout": {
+    "path": "data/sacred_holdout/holdout.csv",
+    "status": "LOCKED",
+    "use_count": 0,
+    "max_use_count": 1,
+    "unlock_phase": "4.5 — final confirmation gate only",
+    "open_policy": "Opening this file and running any backtest against it counts as 1 trial. Cannot be reopened."
+  },
+  "lineage": [],
+  "notes": [
+    "Created 2026-07-19. Option B: separate ledger from main (trial_ledger.json) because Path B hypotheses are economically different from technical/statistical strategies.",
+    "Main ledger has 1 slot left (1021/1022). Path B needs 3+ hypotheses. Expanding main ledger cap would invalidate DSR correction for existing 43 variants.",
+    "Factor-Control rule (R-squared > 0.30 with DXY/VIX/SPX) applies to all Path B hypotheses retroactively and forward."
+  ]
+}

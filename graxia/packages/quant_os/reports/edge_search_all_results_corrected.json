@@ -1,0 +1,347 @@
+{
+  "generated_at": "2026-07-19T08:43:54.134835+00:00",
+  "universe": [
+    "XAUUSD",
+    "XAGUSD",
+    "EURUSD",
+    "GBPUSD",
+    "USDJPY",
+    "NAS100",
+    "US30",
+    "BTCUSD"
+  ],
+  "go_rule": "dk_t>2.0 AND positive_sharpe_count>=5",
+  "marginal_rule": "dk_t>1.5 OR (dk_t>1.0 AND pos>=4)",
+  "n_strategies_tested": 4,
+  "go": [],
+  "marginal": [],
+  "ranked": [
+    {
+      "strategy": "MRB_default",
+      "dk_t_stat": 0.0,
+      "pooled_sharpe": 0.0,
+      "total_trades": 0,
+      "positive_sharpe_count": 0,
+      "total_assets": 8,
+      "verdict": "REJECT"
+    },
+    {
+      "strategy": "MTM_default",
+      "dk_t_stat": 0.0,
+      "pooled_sharpe": 0.0,
+      "total_trades": 0,
+      "positive_sharpe_count": 0,
+      "total_assets": 0,
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    {
+      "strategy": "VolumeBreakout_2.0",
+      "dk_t_stat": -0.25,
+      "pooled_sharpe": -0.207,
+      "total_trades": 76,
+      "positive_sharpe_count": 0,
+      "total_assets": 8,
+      "verdict": "REJECT"
+    },
+    {
+      "strategy": "VolumeBreakout_1.5",
+      "dk_t_stat": -0.4302,
+      "pooled_sharpe": -0.3563,
+      "total_trades": 93,
+      "positive_sharpe_count": 0,
+      "total_assets": 8,
+      "verdict": "REJECT"
+    }
+  ],
+  "results": {
+    "VolumeBreakout_2.0": {
+      "dk_t_stat": -0.25,
+      "pooled_sharpe": -0.207,
+      "positive_sharpe_count": 0,
+      "total_assets": 8,
+      "total_days": 7360,
+      "total_trades": 76,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 70,
+          "n_bars": 10547,
+          "sharpe": -0.1585,
+          "win_pct": 41.43,
+          "profit_factor": 0.7213,
+          "max_dd_pct": 8.16,
+          "total_return_pct": -6.68
+        },
+        "XAGUSD": {
+          "n_trades": 1,
+          "n_bars": 5573,
+          "sharpe": -0.3616,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 1.39,
+          "total_return_pct": -1.33
+        },
+        "EURUSD": {
+          "n_trades": 0,
+          "n_bars": 5581,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "GBPUSD": {
+          "n_trades": 0,
+          "n_bars": 5580,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "USDJPY": {
+          "n_trades": 5,
+          "n_bars": 5821,
+          "sharpe": -0.048,
+          "win_pct": 60.0,
+          "profit_factor": 0.8023,
+          "max_dd_pct": 2.22,
+          "total_return_pct": -0.53
+        },
+        "NAS100": {
+          "n_trades": 0,
+          "n_bars": 5733,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "US30": {
+          "n_trades": 0,
+          "n_bars": 5470,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "BTCUSD": {
+          "n_trades": 0,
+          "n_bars": 5827,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        }
+      },
+      "strategy": "VolumeBreakout_2.0"
+    },
+    "VolumeBreakout_1.5": {
+      "dk_t_stat": -0.4302,
+      "pooled_sharpe": -0.3563,
+      "positive_sharpe_count": 0,
+      "total_assets": 8,
+      "total_days": 7360,
+      "total_trades": 93,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 85,
+          "n_bars": 10547,
+          "sharpe": -0.2632,
+          "win_pct": 38.82,
+          "profit_factor": 0.6294,
+          "max_dd_pct": 12.98,
+          "total_return_pct": -11.52
+        },
+        "XAGUSD": {
+          "n_trades": 1,
+          "n_bars": 5573,
+          "sharpe": -0.3616,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 1.39,
+          "total_return_pct": -1.33
+        },
+        "EURUSD": {
+          "n_trades": 0,
+          "n_bars": 5581,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "GBPUSD": {
+          "n_trades": 0,
+          "n_bars": 5580,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "USDJPY": {
+          "n_trades": 5,
+          "n_bars": 5821,
+          "sharpe": -0.048,
+          "win_pct": 60.0,
+          "profit_factor": 0.8023,
+          "max_dd_pct": 2.22,
+          "total_return_pct": -0.53
+        },
+        "NAS100": {
+          "n_trades": 2,
+          "n_bars": 5733,
+          "sharpe": -0.0084,
+          "win_pct": 50.0,
+          "profit_factor": 0.9406,
+          "max_dd_pct": 1.27,
+          "total_return_pct": -0.07
+        },
+        "US30": {
+          "n_trades": 0,
+          "n_bars": 5470,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "BTCUSD": {
+          "n_trades": 0,
+          "n_bars": 5827,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        }
+      },
+      "strategy": "VolumeBreakout_1.5"
+    },
+    "MRB_default": {
+      "dk_t_stat": 0.0,
+      "pooled_sharpe": 0.0,
+      "positive_sharpe_count": 0,
+      "total_assets": 8,
+      "total_days": 7360,
+      "total_trades": 0,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 0,
+          "n_bars": 10547,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "XAGUSD": {
+          "n_trades": 0,
+          "n_bars": 5573,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "EURUSD": {
+          "n_trades": 0,
+          "n_bars": 5581,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "GBPUSD": {
+          "n_trades": 0,
+          "n_bars": 5580,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "USDJPY": {
+          "n_trades": 0,
+          "n_bars": 5821,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "NAS100": {
+          "n_trades": 0,
+          "n_bars": 5733,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "US30": {
+          "n_trades": 0,
+          "n_bars": 5470,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "BTCUSD": {
+          "n_trades": 0,
+          "n_bars": 5827,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        }
+      },
+      "strategy": "MRB_default"
+    },
+    "MTM_default": {
+      "dk_t_stat": 0.0,
+      "pooled_sharpe": 0.0,
+      "positive_sharpe_count": 0,
+      "total_assets": 0,
+      "total_days": 0,
+      "total_trades": 0,
+      "verdict": "INSUFFICIENT_DATA",
+      "per_asset": {
+        "XAUUSD": {
+          "error": "MultiTimeframeMomentum.generate_signal() got an unexpected keyword argument 'current_time'"
+        },
+        "XAGUSD": {
+          "error": "MultiTimeframeMomentum.generate_signal() got an unexpected keyword argument 'current_time'"
+        },
+        "EURUSD": {
+          "error": "MultiTimeframeMomentum.generate_signal() got an unexpected keyword argument 'current_time'"
+        },
+        "GBPUSD": {
+          "error": "MultiTimeframeMomentum.generate_signal() got an unexpected keyword argument 'current_time'"
+        },
+        "USDJPY": {
+          "error": "MultiTimeframeMomentum.generate_signal() got an unexpected keyword argument 'current_time'"
+        },
+        "NAS100": {
+          "error": "MultiTimeframeMomentum.generate_signal() got an unexpected keyword argument 'current_time'"
+        },
+        "US30": {
+          "error": "MultiTimeframeMomentum.generate_signal() got an unexpected keyword argument 'current_time'"
+        },
+        "BTCUSD": {
+          "error": "MultiTimeframeMomentum.generate_signal() got an unexpected keyword argument 'current_time'"
+        }
+      },
+      "strategy": "MTM_default"
+    }
+  },
+  "honest_note": "GO does not equal live-ready. Must still pass label-shuffle, cost-stress, and not burn sacred holdout until single pre-committed hypothesis."
+}

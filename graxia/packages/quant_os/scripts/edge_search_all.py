@@ -343,19 +343,33 @@ def run_dk_test(all_returns: pd.DataFrame, total_trades: int) -> dict:
 
 
 def strategy_registry() -> list[tuple[str, callable]]:
-    """Pre-registered strategy factories. Params frozen before seeing results."""
-    from graxia.packages.quant_os.strategies.bollinger_squeeze import BollingerSqueeze
-    from graxia.packages.quant_os.strategies.donchian import DonchianBreakout
-    from graxia.packages.quant_os.strategies.donchian_adx import DonchianADX
-    from graxia.packages.quant_os.strategies.hybrid_mom_mr import HybridMomMR
-    from graxia.packages.quant_os.strategies.liquidity_sweep import LiquiditySweepStrategy
-    from graxia.packages.quant_os.strategies.momentum_12m import Momentum12M
-    from graxia.packages.quant_os.strategies.mrb import MeanReversionBollinger
-    from graxia.packages.quant_os.strategies.mtm import MultiTimeframeMomentum
-    from graxia.packages.quant_os.strategies.rsi_mean_reversion import RSIMeanReversion
-    from graxia.packages.quant_os.strategies.volume_breakout import VolumeBreakout
+    """Pre-registered strategy factories. Params frozen before seeing results.
 
-    return [
+    ponytail: each import wrapped in try/except so missing strategy files
+    don't crash the entire search. Skipped strategies logged to stderr.
+    """
+    import importlib
+
+    def _try_import(module_name: str, cls_name: str):
+        try:
+            mod = importlib.import_module(module_name)
+            return getattr(mod, cls_name)
+        except (ImportError, AttributeError) as e:
+            print(f"  [SKIP] {module_name}.{cls_name}: {e}", file=sys.stderr)
+            return None
+
+    BollingerSqueeze = _try_import("graxia.packages.quant_os.strategies.bollinger_squeeze", "BollingerSqueeze")
+    DonchianBreakout = _try_import("graxia.packages.quant_os.strategies.donchian", "DonchianBreakout")
+    DonchianADX = _try_import("graxia.packages.quant_os.strategies.donchian_adx", "DonchianADX")
+    HybridMomMR = _try_import("graxia.packages.quant_os.strategies.hybrid_mom_mr", "HybridMomMR")
+    LiquiditySweepStrategy = _try_import("graxia.packages.quant_os.strategies.liquidity_sweep", "LiquiditySweepStrategy")
+    Momentum12M = _try_import("graxia.packages.quant_os.strategies.momentum_12m", "Momentum12M")
+    MeanReversionBollinger = _try_import("graxia.packages.quant_os.strategies.mrb", "MeanReversionBollinger")
+    MultiTimeframeMomentum = _try_import("graxia.packages.quant_os.strategies.mtm", "MultiTimeframeMomentum")
+    RSIMeanReversion = _try_import("graxia.packages.quant_os.strategies.rsi_mean_reversion", "RSIMeanReversion")
+    VolumeBreakout = _try_import("graxia.packages.quant_os.strategies.volume_breakout", "VolumeBreakout")
+
+    _raw = [
         # --- previously tested (re-run for ranking consistency) ---
         (
             "RSI_25_75",
@@ -503,6 +517,39 @@ def strategy_registry() -> list[tuple[str, callable]]:
         ("MRB_default", lambda: MeanReversionBollinger()),
         ("MTM_default", lambda: MultiTimeframeMomentum()),
     ]
+
+    # ponytail: skip strategies whose import failed (None classes)
+    _null_classes = {name for name, cls in {
+        "RSIMeanReversion": RSIMeanReversion,
+        "DonchianBreakout": DonchianBreakout,
+        "DonchianADX": DonchianADX,
+        "BollingerSqueeze": BollingerSqueeze,
+        "Momentum12M": Momentum12M,
+        "HybridMomMR": HybridMomMR,
+        "VolumeBreakout": VolumeBreakout,
+        "LiquiditySweepStrategy": LiquiditySweepStrategy,
+        "MeanReversionBollinger": MeanReversionBollinger,
+        "MultiTimeframeMomentum": MultiTimeframeMomentum,
+    }.items() if cls is None}
+
+    def _safe_factory(cls, *args, **kwargs):
+        if cls is None:
+            return None
+        return cls(*args, **kwargs)
+
+    result = []
+    for name, factory in _raw:
+        # Check if any null class would be called — skip by wrapping
+        try:
+            # Quick test: call factory in a try to see if it raises ImportError
+            test = factory()
+            if test is not None:
+                result.append((name, factory))
+            else:
+                print(f"  [SKIP] {name}: class is None", file=sys.stderr)
+        except (ImportError, NameError, TypeError) as e:
+            print(f"  [SKIP] {name}: {e}", file=sys.stderr)
+    return result
 
 
 def run_variant(name: str, factory, universe: list[str]) -> dict:
