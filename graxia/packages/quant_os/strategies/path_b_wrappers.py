@@ -46,6 +46,59 @@ def _series_to_signal(signal_value: float, symbol: str, strategy_id: str, **kwar
     )
 
 
+def _compute_atr(high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> float:
+    """Compute ATR from OHLCV series. Returns latest ATR value."""
+    if len(high) < period + 1:
+        return 0.0
+    prev_close = close.shift(1)
+    tr = pd.concat([
+        high - low,
+        (high - prev_close).abs(),
+        (low - prev_close).abs(),
+    ], axis=1).max(axis=1)
+    atr = tr.rolling(window=period, min_periods=period).mean()
+    return float(atr.iloc[-1]) if not pd.isna(atr.iloc[-1]) else 0.0
+
+
+def _signal_with_atr_sl_tp(
+    signal_value: float, symbol: str, strategy_id: str,
+    ohlcv_data: dict[str, list], sl_mult: float = 2.0, tp_mult: float = 3.0,
+    **kwargs,
+) -> Signal | None:
+    """Create Signal with ATR-based SL/TP (fixes MISSING_SL engine rejection)."""
+    if signal_value == 0 or np.isnan(signal_value):
+        return None
+
+    sig_type = SignalType.BUY if signal_value > 0 else SignalType.SELL
+    entry = float(ohlcv_data["close"][-1]) if ohlcv_data.get("close") else None
+
+    atr = _compute_atr(
+        pd.Series(ohlcv_data.get("high", []), dtype=float),
+        pd.Series(ohlcv_data.get("low", []), dtype=float),
+        pd.Series(ohlcv_data.get("close", []), dtype=float),
+    )
+
+    sl = tp = None
+    if entry and atr > 0:
+        if sig_type == SignalType.BUY:
+            sl = Decimal(str(entry - atr * sl_mult))
+            tp = Decimal(str(entry + atr * tp_mult))
+        else:
+            sl = Decimal(str(entry + atr * sl_mult))
+            tp = Decimal(str(entry - atr * tp_mult))
+
+    return Signal.create(
+        strategy_id=strategy_id,
+        symbol=symbol,
+        signal_type=sig_type,
+        confidence=abs(float(signal_value)),
+        entry_price=Decimal(str(entry)) if entry else None,
+        stop_loss=sl,
+        take_profit=tp,
+        **kwargs,
+    )
+
+
 # ---------------------------------------------------------------------------
 # 1. Carry Strategy Wrapper
 # ---------------------------------------------------------------------------
@@ -101,7 +154,7 @@ class CarryStrategy(Strategy):
         if len(signal_series) == 0:
             return None
         current_signal = float(signal_series.iloc[-1])
-        return _series_to_signal(current_signal, symbol, self.id)
+        return _signal_with_atr_sl_tp(current_signal, symbol, self.id, ohlcv_data)
 
 
 # ---------------------------------------------------------------------------
@@ -148,7 +201,7 @@ class TSMOMStrategy(Strategy):
         if len(signal_series) == 0:
             return None
         current_signal = float(signal_series.iloc[-1])
-        return _series_to_signal(current_signal, symbol, self.id)
+        return _signal_with_atr_sl_tp(current_signal, symbol, self.id, ohlcv_data)
 
 
 # ---------------------------------------------------------------------------
@@ -211,7 +264,7 @@ class CrossAssetMomentumStrategy(Strategy):
         if len(signal_series) == 0:
             return None
         current_signal = float(signal_series.iloc[-1])
-        return _series_to_signal(current_signal, symbol, self.id)
+        return _signal_with_atr_sl_tp(current_signal, symbol, self.id, ohlcv_data)
 
 
 # ---------------------------------------------------------------------------
@@ -284,7 +337,7 @@ class FOMCDriftStrategy(Strategy):
         if len(signal_series) == 0:
             return None
         current_signal = float(signal_series.iloc[-1])
-        return _series_to_signal(current_signal, symbol, self.id)
+        return _signal_with_atr_sl_tp(current_signal, symbol, self.id, ohlcv_data)
 
 
 # ---------------------------------------------------------------------------
@@ -356,7 +409,7 @@ class COTPositioningStrategy(Strategy):
         if len(signal_series) == 0:
             return None
         current_signal = float(signal_series.iloc[-1])
-        return _series_to_signal(current_signal, symbol, self.id)
+        return _signal_with_atr_sl_tp(current_signal, symbol, self.id, ohlcv_data)
 
 
 # ---------------------------------------------------------------------------
@@ -474,4 +527,4 @@ class VolRiskPremiumStrategy(Strategy):
         if len(signal) == 0:
             return None
         current_signal = float(signal.iloc[-1])
-        return _series_to_signal(current_signal, symbol, self.id)
+        return _signal_with_atr_sl_tp(current_signal, symbol, self.id, ohlcv_data)
