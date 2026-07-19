@@ -369,6 +369,13 @@ def strategy_registry() -> list[tuple[str, callable]]:
     RSIMeanReversion = _try_import("graxia.packages.quant_os.strategies.rsi_mean_reversion", "RSIMeanReversion")
     VolumeBreakout = _try_import("graxia.packages.quant_os.strategies.volume_breakout", "VolumeBreakout")
 
+    # Path B wrappers (carry/vol/cross-asset)
+    TSMOMStrategy = _try_import("graxia.packages.quant_os.strategies.path_b_wrappers", "TSMOMStrategy")
+    CrossAssetMomentumStrategy = _try_import("graxia.packages.quant_os.strategies.path_b_wrappers", "CrossAssetMomentumStrategy")
+    FOMCDriftStrategy = _try_import("graxia.packages.quant_os.strategies.path_b_wrappers", "FOMCDriftStrategy")
+    VolRiskPremiumStrategy = _try_import("graxia.packages.quant_os.strategies.path_b_wrappers", "VolRiskPremiumStrategy")
+    DXYDivergence = _try_import("graxia.packages.quant_os.strategies.dxy_divergence", "DXYDivergence")
+
     _raw = [
         # --- previously tested (re-run for ranking consistency) ---
         (
@@ -516,6 +523,12 @@ def strategy_registry() -> list[tuple[str, callable]]:
         ("LiquiditySweep", lambda: LiquiditySweepStrategy()),
         ("MRB_default", lambda: MeanReversionBollinger()),
         ("MTM_default", lambda: MultiTimeframeMomentum()),
+        # --- Path B: carry / vol / cross-asset ---
+        ("TSMOM_default", lambda: TSMOMStrategy()),
+        ("CAM_default", lambda: CrossAssetMomentumStrategy()),
+        ("FOMC_default", lambda: FOMCDriftStrategy()),
+        ("VRP_default", lambda: VolRiskPremiumStrategy()),
+        ("DXYDiv_default", lambda: DXYDivergence()),
     ]
 
     # ponytail: skip strategies whose import failed (None classes)
@@ -530,6 +543,11 @@ def strategy_registry() -> list[tuple[str, callable]]:
         "LiquiditySweepStrategy": LiquiditySweepStrategy,
         "MeanReversionBollinger": MeanReversionBollinger,
         "MultiTimeframeMomentum": MultiTimeframeMomentum,
+        "TSMOMStrategy": TSMOMStrategy,
+        "CrossAssetMomentumStrategy": CrossAssetMomentumStrategy,
+        "FOMCDriftStrategy": FOMCDriftStrategy,
+        "VolRiskPremiumStrategy": VolRiskPremiumStrategy,
+        "DXYDivergence": DXYDivergence,
     }.items() if cls is None}
 
     def _safe_factory(cls, *args, **kwargs):
