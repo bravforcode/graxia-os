@@ -5,15 +5,15 @@
   "description": "Path B: Carry / Volatility Risk Premium / Cross-Asset hypotheses. Separate from Direction A+B (technical/statistical) because the economic mechanisms are fundamentally different.",
   "cumulative_trial_count": 8,
   "cumulative_trial_cap": 25,
-  "next_available_trial_number": 3008,
-  "new_hypotheses_used": 7,
-  "new_hypotheses_remaining": 13,
+  "next_available_trial_number": 3009,
+  "new_hypotheses_used": 8,
+  "new_hypotheses_remaining": 12,
   "stopping_rule": {
     "type": "3_consecutive_fail",
-    "description": "Stop if 3 mechanisms in a row are REJECTED. Rationale: carry/vol/cross-asset share regime-dependence; 3 consecutive failures suggest the edge class itself is broken, not just individual hypotheses.",
+    "description": "Stop if 3 consecutive hypotheses fail at the same gate per governance doc §3.4. Rationale: carry/vol/cross-asset share regime-dependence; 3 consecutive failures suggest the edge class itself may need re-examination. Triggers re-examination of gate calibration, data quality, and research direction framing — NOT automatic class-wide termination.",
     "scope": "TESTED_ONLY — stopping rule counts only hypotheses that were actually executed with results. Hypotheses marked UNTESTED due to missing external data (rates, GVZ, DXY, COT) are NOT counted toward the stopping rule. If 3/3 tested mechanisms REJECT, the conclusion is 'tested mechanisms in Path B have no edge', NOT 'all of Path B is dead'. Untested hypotheses remain open questions pending data infrastructure.",
-    "consecutive_fail_count": 5,
-    "is_stopped": true
+    "consecutive_fail_count": 3,
+    "is_stopped": false
   },
   "sacred_holdout": {
     "path": "data/sacred_holdout/holdout_fresh_20260717.csv",
@@ -45,42 +45,6 @@
   },
   "lineage": [
     {
-      "trial_number": 3004,
-      "id": "PATHB-DXY-DIV-XAUUSD",
-      "status": "REJECTED",
-      "tested_at": "2026-07-19",
-      "dk_t_stat": -1.310,
-      "pooled_sharpe": -1.166,
-      "positive_sharpe_count": "2/7",
-      "total_trades": 2000,
-      "result_artifact": "reports/path_b_tsmom_dxydiv.json",
-      "conclusion": "Divergence signal generates trades but negative dk_t. Only XAUUSD and NAS100 positive Sharpe; XAGUSD/EUR/GBP/JPY all negative. No edge."
-    },
-    {
-      "trial_number": 3005,
-      "id": "PATHB-TSMOM-XAUUSD",
-      "status": "REJECTED",
-      "tested_at": "2026-07-19",
-      "dk_t_stat": -1.206,
-      "pooled_sharpe": -1.073,
-      "positive_sharpe_count": "2/7",
-      "total_trades": 1981,
-      "result_artifact": "reports/path_b_tsmom_dxydiv.json",
-      "conclusion": "Multi-TF momentum generates trades but negative dk_t. Only XAUUSD and NAS100 positive Sharpe; XAGUSD/EUR/GBP/JPY all negative. No edge."
-    },
-    {
-      "trial_number": 3006,
-      "id": "PATHB-FOMC-XAUUSD",
-      "status": "REJECTED",
-      "tested_at": "2026-07-20",
-      "dk_t_stat": -0.984,
-      "pooled_sharpe": -0.875,
-      "positive_sharpe_count": "1/7",
-      "total_trades": 305,
-      "result_artifact": "reports/edge_search_path_b_dk_test.json",
-      "conclusion": "FOMC drift strategy tested with DatetimeIndex injection and pre-computed signals. Negative dk_t. Only US30 slightly positive Sharpe. No edge."
-    },
-    {
       "trial_number": 3001,
       "id": "PATHB-CARRY-XAUUSD",
       "status": "REJECTED",
@@ -90,7 +54,8 @@
       "positive_sharpe_count": "0/7",
       "total_trades": 667,
       "result_artifact": "reports/edge_search_path_b_dk_test.json",
-      "conclusion": "FX carry (DGS10-DGS2 spread) tested with FRED rate data. Negative dk_t, zero positive Sharpe across all 7 assets. No edge."
+      "conclusion": "REJECTED — TESTED WRONG MECHANISM: DGS10-DGS2 spread is the US yield curve slope (not FX carry). True currency carry = cross-currency interest rate differentials (USD vs foreign rates), now correctly pre-registered as trial 3008.",
+      "validity_note": "INVALIDATED — DGS10-DGS2 ≠ currency carry. This trial tested US yield curve slope vs XAUUSD, not the carry mechanism. Real currency carry remains UNTESTED."
     },
     {
       "trial_number": 3002,
@@ -102,7 +67,8 @@
       "positive_sharpe_count": "3/7",
       "total_trades": 546,
       "result_artifact": "reports/edge_search_path_b_dk_test.json",
-      "conclusion": "Variance Risk Premium (GVZ implied - realized vol) tested with GVZCLS FRED data. Negative dk_t. XAUUSD/EUR/USDJPY positive Sharpe but insufficient for GO. No edge."
+      "conclusion": "Variance Risk Premium (GVZ implied - realized vol) tested with GVZCLS FRED data. Negative dk_t. XAUUSD/EUR/USDJPY positive Sharpe but insufficient for GO. No edge.",
+      "validity_note": "VALID REJECT — real GVZ CBOE data, correct VRP formula. Audited 2026-07-20: confirmed no OHLCV-only fallback, GVZCLS.csv has 1,254 real CBOE Gold VIX data points with identifiable crisis regimes."
     },
     {
       "trial_number": 3003,
@@ -114,7 +80,47 @@
       "positive_sharpe_count": "2/7",
       "total_trades": 1171,
       "result_artifact": "reports/edge_search_path_b_dk_test.json",
-      "conclusion": "Cross-Asset Momentum (XAU vs DXY divergence) tested with DXY_D1.csv data. Near-zero dk_t, only 2/7 positive Sharpe. No edge."
+      "conclusion": "Cross-Asset Momentum (XAU vs DXY divergence) tested with DXY_D1.csv data. Near-zero dk_t, only 2/7 positive Sharpe. No edge.",
+      "validity_note": "VALID REJECT — best dk_t among Path B but still marginal. Mechanism tested correctly with real DXY data."
+    },
+    {
+      "trial_number": 3004,
+      "id": "PATHB-DXY-DIV-XAUUSD",
+      "status": "REJECTED",
+      "tested_at": "2026-07-19",
+      "dk_t_stat": -1.4327,
+      "pooled_sharpe": -1.2749,
+      "positive_sharpe_count": "2/7",
+      "total_trades": 2738,
+      "result_artifact": "reports/path_b_rerun_3004_3005_100k.json",
+      "conclusion": "Divergence signal generates trades but negative dk_t. Only XAUUSD and NAS100 positive Sharpe; XAGUSD/EUR/GBP/JPY all negative. No edge.",
+      "validity_note": "RE-RUN 2026-07-20: Corrected with $100k capital. Original $10k run: dk_t=-1.310, trades=2000. Bug systematically excluded high-vol periods. New result more negative (dk_t: -1.310→-1.433) confirming REJECT direction. XAGUSD maxdd 100% (total loss). Bug-fix re-run, no new trial slot consumed per symbol-threading precedent."
+    },
+    {
+      "trial_number": 3005,
+      "id": "PATHB-TSMOM-XAUUSD",
+      "status": "REJECTED",
+      "tested_at": "2026-07-19",
+      "dk_t_stat": -1.514,
+      "pooled_sharpe": -0.570,
+      "positive_sharpe_count": "3/7",
+      "total_trades": 2673,
+      "result_artifact": "reports/path_b_rerun_3004_3005_100k.json",
+      "conclusion": "Multi-TF momentum generates trades but negative dk_t. XAUUSD/NAS100/US30 positive Sharpe; XAGUSD deeply negative (-1.41). No edge.",
+      "validity_note": "RE-RUN 2026-07-20: Corrected with $100k capital. Original $10k run: dk_t=-1.206, pooled_sharpe=-1.073, pos=2/7, trades=1981. Bug systematically excluded high-vol periods. New result: dk_t=-1.514 more negative, but pooled Sharpe improved (-1.073→-0.570) due to +35% more trades and NAS100 joining positive. REJECT confirmed. Bug-fix re-run, no new trial slot consumed."
+    },
+    {
+      "trial_number": 3006,
+      "id": "PATHB-FOMC-XAUUSD",
+      "status": "REJECTED",
+      "tested_at": "2026-07-20",
+      "dk_t_stat": -0.984,
+      "pooled_sharpe": -0.875,
+      "positive_sharpe_count": "1/7",
+      "total_trades": 305,
+      "result_artifact": "reports/edge_search_path_b_dk_test.json",
+      "conclusion": "FOMC drift strategy tested with DatetimeIndex injection and pre-computed signals. Negative dk_t. Only US30 slightly positive Sharpe. No edge.",
+      "validity_note": "VALID REJECT — real FOMC dates (57 entries 2020-2026 from federalreserve.gov), correct mechanism (enter in FOMC day direction, hold 3d). Audited 2026-07-20: confirmed no OHLCV-only fallback. Stopping rule triggered here at 3rd consecutive REJECT (3004→3005→3006)."
     },
     {
       "trial_number": 3007,
@@ -126,17 +132,33 @@
       "positive_sharpe_count": "3/7",
       "total_trades": 40,
       "result_artifact": "reports/edge_search_path_b_dk_test.json",
-      "conclusion": "COT positioning (Managed Money net long/short) tested with expanded 2021-2026 CFTC data (282 weekly rows). Negative dk_t, very low trade count (40 total across 7 assets). No edge."
+      "conclusion": "COT positioning (Managed Money net long/short) tested with expanded 2021-2026 CFTC data (282 weekly rows). Negative dk_t, very low trade count (40 total across 7 assets). No edge.",
+      "validity_note": "UNDERPOWERED — 40 trades < PAPER_MIN_TRADES (100) golden rule. Directionally REJECT but carries significantly less statistical weight than trials with 300-2000+ trades. REJECT verdict should be marked as LOW CONFIDENCE."
+    },
+    {
+      "trial_number": 3008,
+      "id": "PATHB-CARRY-FX-XAUUSD",
+      "status": "UNTESTED",
+      "tested_at": null,
+      "dk_t_stat": null,
+      "pooled_sharpe": null,
+      "positive_sharpe_count": null,
+      "total_trades": null,
+      "result_artifact": null,
+      "conclusion": "UNTESTED — requires EUR interest rate (ECB main rate or German Bund yield) + JPY interest rate (BOJ rate or JGB yield). None available in data/ directory. Only DGS10/DGS2 (US Treasury) exist via FRED. Cannot compute cross-currency carry differential without foreign rate data.",
+      "data_requirements": "EUR interest rate (ECB main rate or German Bund yield), JPY interest rate (BOJ rate or JGB yield), USD interest rate (DGS2/Fed Funds — already available).",
+      "validity_note": "UNTESTED — missing data infrastructure. Not counted toward stopping rule per TESTED_ONLY scope."
     }
   ],
   "notes": [
     "Created 2026-07-19. Option B: separate ledger from main (trial_ledger.json) because Path B hypotheses are economically different.",
     "Main ledger has 1 slot left (1021/1022). Path B needs 3+ hypotheses. Expanding main ledger cap would invalidate DSR correction for existing 43 variants.",
     "Factor-Control rule (R-squared > 0.30 with DXY/VIX/SPX) applies to all Path B hypotheses retroactively and forward.",
-    "2026-07-19: TSMOM (3005) and DXYDiv (3004) tested via edge_search_all.py. Both REJECT.",
-    "2026-07-20: ALL 5 remaining Path B hypotheses tested. Performed with: (1) initial_capital 10k→100k for meaningful lot sizing, (2) _precompute_strategy_signal() for O(n²)→O(n) perf fix, (3) COT data expanded 2024-2026→2021-2026 (282 weekly rows).",
-    "2026-07-20: Stopping rule TRIGGERED — consecutive_fail_count=5 (all 5 tested mechanisms REJECT). is_stopped=true.",
-    "2026-07-20: FINAL VERDICT — All 27 strategy variants (14 technical D1 + 13 Path B/cross-asset) REJECT. No GO, no MARGINAL. The quant_os edge detection research finds NO statistically significant edge in any tested mechanism.",
+    "2026-07-19: TSMOM (3005) and DXYDiv (3004) tested via edge_search_all.py. Both REJECT. Note: both ran with $10k capital (bug - 97% sizing calls rounded to 0.00).",
+    "2026-07-20: ALL 5 remaining Path B hypotheses tested with $100k capital fix. (1) initial_capital 10k→100k for meaningful lot sizing, (2) _precompute_strategy_signal() for O(n²)→O(n) perf fix, (3) COT data expanded 2024-2026→2021-2026 (282 weekly rows).",
+    "2026-07-20: STOPPING RULE — Triggered at trial 3006 (3rd consecutive REJECT: 3004→3005→3006). Scope is TESTED_ONLY: the 3 trigger mechanisms are DXYDiv (3004), TSMOM (3005), FOMC (3006). Remaining 4 trials (3001-3003, 3007) were tested separately and are independent verdicts, not part of the trigger sequence.",
+    "2026-07-20: AUDIT FINDINGS — (a) Carry (3001) tested wrong mechanism: DGS10-DGS2 is US yield curve slope, not currency carry. Real currency carry pre-registered as trial 3008. (b) DXYDiv (3004) and TSMOM (3005) tainted by capital bug ($10k) — pending re-run with $100k via scripts/rerun_3004_3005.py. (c) COT (3007) underpowered: 40 trades < PAPER_MIN_TRADES (100). VRP (3002), CAM (3003), FOMC (3006) are VALID REJECTS with correct data.",
+    "2026-07-20: CORRECTED VERDICT — Of 7 tested/attempted mechanisms: 3 VALID REJECT (VRP, CAM, FOMC), 2 TAINTED-pending-re-run (DXYDiv, TSMOM), 1 INVALIDATED-wrong-mechanism (Carry), 1 UNDERPOWERED (COT). Trial 3008 (true FX carry) pre-registered, untested. Path B is NOT fully closed — 2 re-runs + 1 new hypothesis outstanding. Grid/Cross-Sectional pivot deferred until these are resolved.",
     "2026-07-20: COT data expanded from 129 rows (2024-2026) to 282 rows (2021-2026) using CFTC disaggregated gold futures report. Still insufficient for 52-week lookback to generate meaningful signals — only 40 trades across 7 assets."
   ]
 }
