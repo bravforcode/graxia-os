@@ -23,9 +23,9 @@ def bootstrap_history():
 
     # 1. Connect to MT5
     ok = mt5.initialize(
-        login=settings.MT5_LOGIN,
-        password=settings.MT5_PASSWORD,
-        server=settings.MT5_SERVER,
+        login=settings.mt5_login,
+        password=settings.mt5_password,
+        server=settings.mt5_server,
     )
     if not ok:
         print(f"MT5 init failed: {mt5.last_error()}")
@@ -34,7 +34,7 @@ def bootstrap_history():
     info = mt5.account_info()
     print(f"Connected: {info.server} | Balance: {info.balance}")
 
-    db_path = settings.DUCKDB_PATH or "data/market_data.duckdb"
+    db_path = settings.duckdb_path or "data/market_data.duckdb"
     con = duckdb.connect(db_path)
 
     # Create ohlcv table if not exists

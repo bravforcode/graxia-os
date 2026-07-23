@@ -2,6 +2,7 @@
 
 import os
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from ..risk.risk_policy import RiskPolicy
 from .enums import SystemState, TradingMode
@@ -21,10 +22,12 @@ class QuantConfig:
     system_state: SystemState = SystemState.PAPER_TRADING
     live_trading_enabled: bool = False
     log_level: str = "INFO"
+    environment: str = "development"
 
     # ==================== DATABASE ====================
     database_url: str = ""
     redis_url: str = "redis://localhost:6379/0"
+    duckdb_path: str = "data/market_data.duckdb"
 
     # ==================== MT5 BROKER ====================
     mt5_login: int = 0
@@ -42,6 +45,7 @@ class QuantConfig:
     jwt_secret_key: str = ""
     webhook_hmac_secret: str = ""
     admin_api_key: str = ""
+    model_signing_key: str = ""
 
     # ==================== NOTIFICATIONS ====================
     telegram_bot_token: str = ""
@@ -144,18 +148,45 @@ class QuantConfig:
         self._enforce_hard_limits()
         self._validate_mode_consistency()
 
+    def _load_dotenv(self):
+        """Load .env file if present. Existing env vars take precedence."""
+        env_path = Path(".env")
+        if not env_path.exists():
+            return
+        try:
+            with open(env_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#"):
+                        continue
+                    if "=" not in line:
+                        continue
+                    key, _, value = line.partition("=")
+                    key = key.strip()
+                    value = value.strip().strip('"').strip("'")
+                    # Only set if not already in environment (env vars take precedence)
+                    if key not in os.environ:
+                        os.environ[key] = value
+        except Exception:
+            pass  # Silently ignore .env parse errors
+
     def _validate_from_env(self):
-        """Load from environment variables"""
+        """Load from environment variables and .env file"""
+        # Load .env file if present (env vars already set take precedence)
+        self._load_dotenv()
+
         # Trading mode
         mode_str = os.getenv("TRADING_MODE", "PAPER").upper()
         self.trading_mode = TradingMode(mode_str) if mode_str in [m.value for m in TradingMode] else TradingMode.PAPER
 
         self.live_trading_enabled = os.getenv("LIVE_TRADING_ENABLED", "false").lower() == "true"
         self.log_level = os.getenv("LOG_LEVEL", "INFO")
+        self.environment = os.getenv("ENVIRONMENT", self.environment)
 
         # Database
         self.database_url = os.getenv("DATABASE_URL", self.database_url)
         self.redis_url = os.getenv("REDIS_URL", self.redis_url)
+        self.duckdb_path = os.getenv("DUCKDB_PATH", self.duckdb_path)
 
         # MT5
         self.mt5_login = int(os.getenv("MT5_LOGIN", self.mt5_login))
@@ -168,6 +199,7 @@ class QuantConfig:
         self.jwt_secret_key = os.getenv("JWT_SECRET_KEY", self.jwt_secret_key)
         self.webhook_hmac_secret = os.getenv("WEBHOOK_HMAC_SECRET", self.webhook_hmac_secret)
         self.admin_api_key = os.getenv("ADMIN_API_KEY", self.admin_api_key)
+        self.model_signing_key = os.getenv("MODEL_SIGNING_KEY", self.model_signing_key)
 
         # Notifications
         self.telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN", self.telegram_bot_token)
