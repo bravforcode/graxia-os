@@ -154,7 +154,7 @@ class QuantConfig:
         if not env_path.exists():
             return
         try:
-            with open(env_path, "r", encoding="utf-8") as f:
+            with open(env_path, encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
                     if not line or line.startswith("#"):
@@ -175,9 +175,16 @@ class QuantConfig:
         # Load .env file if present (env vars already set take precedence)
         self._load_dotenv()
 
-        # Trading mode
+        # Trading mode — fail-closed: unrecognized modes raise, not silently paper
         mode_str = os.getenv("TRADING_MODE", "PAPER").upper()
-        self.trading_mode = TradingMode(mode_str) if mode_str in [m.value for m in TradingMode] else TradingMode.PAPER
+        valid_modes = [m.value for m in TradingMode]
+        if mode_str in valid_modes:
+            self.trading_mode = TradingMode(mode_str)
+        else:
+            raise ValueError(
+                f"TRADING_MODE='{mode_str}' is not recognized. "
+                f"Valid modes: {valid_modes}"
+            )
 
         self.live_trading_enabled = os.getenv("LIVE_TRADING_ENABLED", "false").lower() == "true"
         self.log_level = os.getenv("LOG_LEVEL", "INFO")

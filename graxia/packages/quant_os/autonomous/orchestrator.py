@@ -87,7 +87,7 @@ class AutonomousOrchestrator:
         self._trading_mode = TradingMode(mode_str)
 
         self._chart_monitor = chart_monitor or ChartMonitor(
-            symbols=self._ymbols,
+            symbols=self._symbols,
             timeframes=self._timeframes,
         )
         self._decision_engine = decision_engine or DecisionEngine()
@@ -98,6 +98,7 @@ class AutonomousOrchestrator:
             kill_switch=self._kill_switch,
             circuit_breaker=self._circuit_breaker,
             news_blackout=self._news_gate,
+            risk_policy=self._build_risk_policy(),
         )
         self._symbol_registry = SymbolRegistry()
         self._notifier = notifier or TradeNotifier()
@@ -128,6 +129,22 @@ class AutonomousOrchestrator:
             "decision_engine": 0,
             "order_executor": 0,
         }
+
+    def _build_risk_policy(self):
+        """Build the risk policy matching the current trading mode.
+
+        LIVE_MICRO mode uses MicroLivePolicy with tighter constraints
+        (0.05% risk per trade, 0.20% daily loss, single position).
+        Other modes use the default RiskPolicy.
+        """
+        from ..core.enums import TradingMode
+        from ..risk.risk_policy import RiskPolicy
+
+        if self._trading_mode == TradingMode.LIVE_MICRO:
+            from ..risk.micro_live_policy import MicroLivePolicy
+
+            return MicroLivePolicy()
+        return RiskPolicy()
 
     def _create_broker_manager(self) -> BrokerManager:
         """Build a BrokerManager with the adapter matching the current mode."""

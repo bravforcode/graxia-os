@@ -129,13 +129,14 @@ class OrderExecutor:
         if self._daily_trades >= auto_config.MAX_DAILY_TRADES:
             return self._reject(f"Max daily trades reached ({self._daily_trades}/{auto_config.MAX_DAILY_TRADES})")
 
-        # Step 5: MAX_DAILY_LOSS_PCT
-        if self._check_daily_loss_breached():
-            return self._reject(
-                f"Daily loss limit breached ({float(self._daily_realized_pnl):.2f} / {auto_config.MAX_DAILY_LOSS_PCT}%)"
-            )
+        # Note: MAX_DAILY_LOSS_PCT gate is handled by RiskEngine.evaluate()
+        # Layer 3 (engine.py:429-485), which checks account.daily_pnl against
+        # MAX_DAILY_LOSS_PCT.  The local _daily_realized_pnl tracker is
+        # informational only — the authoritative gate is the risk engine.
+        # (Previously Step 5: _check_daily_loss_breached() was an
+        #  unreachable duplicate — _daily_realized_pnl was never written.)
 
-        # Step 6: Risk engine pre-trade check
+        # Step 6: Risk engine pre-trade check (includes daily loss check)
         risk_ok, risk_reason = self._check_risk(decision)
         if not risk_ok:
             return self._reject(risk_reason)
