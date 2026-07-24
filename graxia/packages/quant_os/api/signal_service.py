@@ -63,7 +63,12 @@ LOT_SIZE = float(os.getenv("LOT_SIZE", "0.01"))
 B2_STOP_DOLLARS = float(os.getenv("B2_STOP", "3.00"))
 MIN_CONFIDENCE = float(os.getenv("MIN_CONFIDENCE", "0.50"))
 MODEL_SIGNING_KEY = os.getenv("MODEL_SIGNING_KEY", "")
-LOG_DIR = Path(os.getenv("LOG_DIR", "/app/data"))
+
+# Path resolution: env-var-driven with defaults relative to this file's package.
+# Works both in Docker (/app mounts) and local dev (relative to repo root).
+_THIS_DIR = Path(__file__).resolve().parent  # api/
+_PACKAGE_DIR = _THIS_DIR.parent  # quant_os/
+LOG_DIR = Path(os.getenv("LOG_DIR", str(_PACKAGE_DIR / "data")))
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 # ---------------------------------------------------------------------------
@@ -131,7 +136,7 @@ def _retrain_model():
 
     import xgboost as xgb
 
-    features_path = Path("/app/artifacts/features_v2") / f"features_v2_{SYMBOL}_15min.parquet"
+    features_path = Path(os.getenv("FEATURES_DIR", str(_PACKAGE_DIR / "ml" / "models"))) / f"features_v2_{SYMBOL}_15min.parquet"
     if not features_path.exists():
         logger.warning("model.no_features", path=str(features_path))
         return
@@ -243,7 +248,7 @@ def _retrain_model():
     try:
         import pickle
 
-        model_save_dir = Path("/app/artifacts/strategy_model")
+        model_save_dir = Path(os.getenv("MODEL_SAVE_DIR", str(_PACKAGE_DIR / "ml" / "models")))
         model_save_dir.mkdir(parents=True, exist_ok=True)
         save_path = model_save_dir / f"xgboost_{SYMBOL}_live_features.pkl"
         with open(save_path, "wb") as f:
