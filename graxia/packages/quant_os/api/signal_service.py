@@ -22,12 +22,12 @@ import numpy as np
 import pandas as pd
 import structlog
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request, Security
+from fastapi import FastAPI, HTTPException, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, Field
 
-from graxia.packages.quant_os.core.safe_pickle import safe_load_model
+from graxia.packages.quant_os.core.safe_pickle import safe_load_model, sign_model_file
 
 logger = structlog.get_logger(__name__)
 
@@ -62,6 +62,7 @@ SYMBOL = os.getenv("TRADE_SYMBOL", "XAUUSD")
 LOT_SIZE = float(os.getenv("LOT_SIZE", "0.01"))
 B2_STOP_DOLLARS = float(os.getenv("B2_STOP", "3.00"))
 MIN_CONFIDENCE = float(os.getenv("MIN_CONFIDENCE", "0.50"))
+MODEL_SIGNING_KEY = os.getenv("MODEL_SIGNING_KEY", "")
 LOG_DIR = Path(os.getenv("LOG_DIR", "/app/data"))
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -103,7 +104,7 @@ def _load_model():
 
             for path in ordered:
                 try:
-                    raw = safe_load_model(path)
+                    raw = safe_load_model(path, signing_key=MODEL_SIGNING_KEY or None)
                 except Exception as e:
                     logger.warning("model.load_error", path=str(path), error=str(e))
                     continue
@@ -218,7 +219,7 @@ def _retrain_model():
     df_filtered["target"] = df_filtered["target"].replace({-1: 0, 1: 1})
 
     train = df_filtered.iloc[:-1000]
-    X_train = train[live_feature_cols].fillna(0).values
+    X_train = train[live_feature_cols].fillna(0).values  # noqa: N806
     y_train = train["target"].values.astype(int)
 
     if len(X_train) < 100:
@@ -241,6 +242,7 @@ def _retrain_model():
     # Save retrained model to disk for faster restart
     try:
         import pickle
+
         model_save_dir = Path("/app/artifacts/strategy_model")
         model_save_dir.mkdir(parents=True, exist_ok=True)
         save_path = model_save_dir / f"xgboost_{SYMBOL}_live_features.pkl"
@@ -256,6 +258,11 @@ def _retrain_model():
                 f,
             )
         logger.info("model.saved_to_disk", path=str(save_path))
+        if MODEL_SIGNING_KEY:
+            sign_model_file(save_path, MODEL_SIGNING_KEY)
+            logger.info("model.signed", path=str(save_path))
+        else:
+            logger.warning("model.save_unsigned", reason="MODEL_SIGNING_KEY not set")
     except Exception as e:
         logger.warning("model.save_failed", error=str(e))
 
@@ -637,7 +644,7 @@ async def get_signal(req: SignalRequest, _key: str = Security(verify_signal_api_
         raise
     except Exception as e:
         logger.exception("signal.error", error=str(e))
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.post("/api/trade")
