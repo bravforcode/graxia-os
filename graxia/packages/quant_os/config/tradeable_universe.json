@@ -1,0 +1,64 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "created": "2026-07-25",
+    "description": "Single source of truth for which symbols are eligible for live/paper trading. A symbol is TRADEABLE only if it has BOTH sufficient price history AND verified cost calibration data.",
+    "cost_calibration_source": "config/cost_calibration.json (v3.0, 2026-07-05)"
+  },
+  "tradeable": [
+    {
+      "symbol": "XAUUSD",
+      "asset_class": "metals",
+      "cost_status": "SINGLE_SNAPSHOT",
+      "cost_evidence": "cost_calibration.json: spread=0.15bps, commission=0, RT cost=0.30bps, 160 samples",
+      "note": "Single snapshop measurement — adequate for paper, insufficient for live sizing. Needs multi-day re-measurement before live."
+    },
+    {
+      "symbol": "NAS100",
+      "asset_class": "indices",
+      "cost_status": "MEASURED",
+      "cost_evidence": "cost_calibration.json: spread=1.30bps, commission=0, RT cost=2.60bps, 160 samples",
+      "note": "Properly measured multi-day."
+    },
+    {
+      "symbol": "USOIL",
+      "asset_class": "commodities",
+      "cost_status": "MEASURED",
+      "cost_evidence": "cost_calibration.json: spread=5.0bps, commission=0, RT cost=10.0bps, 160 samples. Maps to MT5 symbol: OIL",
+      "note": "Properly measured multi-day. High spread (5bps) — size accordingly."
+    },
+    {
+      "symbol": "USDJPY",
+      "asset_class": "forex",
+      "cost_status": "MEASURED",
+      "cost_evidence": "cost_calibration.json: spread=0.80bps, commission=7, RT cost=7.80bps, 160 samples",
+      "note": "Properly measured multi-day."
+    }
+  ],
+  "excluded": [
+    {"symbol": "EURUSD", "reason": "Removed from cost_calibration.json (explicit). No cost data."},
+    {"symbol": "GBPUSD", "reason": "Removed from cost_calibration.json (explicit). No cost data."},
+    {"symbol": "SILVER", "reason": "Removed from cost_calibration.json (explicit). No cost data."},
+    {"symbol": "BTCUSD", "reason": "Removed from cost_calibration.json (explicit). No cost data."},
+    {"symbol": "ETHUSD", "reason": "Removed from cost_calibration.json (explicit). No cost data."},
+    {"symbol": "XAGUSD", "reason": "In symbol_registry but no cost calibration data."},
+    {"symbol": "SOLUSD", "reason": "In symbol_registry but no cost calibration data."},
+    {"symbol": "US30", "reason": "In symbol_registry but no cost calibration data."},
+    {"symbol": "SPX500", "reason": "In symbol_registry but no cost calibration data."},
+    {"symbol": "XAUJPY", "reason": "In symbol_registry but no cost calibration data."},
+    {"symbol": "XAUEUR", "reason": "In symbol_registry but no cost calibration data."},
+    {"symbol": "USDCAD", "reason": "In symbol_registry but no cost calibration data."},
+    {"symbol": "NZDUSD", "reason": "In symbol_registry but no cost calibration data."},
+    {"symbol": "AUDUSD", "reason": "In symbol_registry but no cost calibration data."},
+    {"symbol": "USDCHF", "reason": "In symbol_registry but no cost calibration data."},
+    {"symbol": "GER40", "reason": "In symbol_registry but no cost calibration data."},
+    {"symbol": "UK100", "reason": "In symbol_registry but no cost calibration data."}
+  ],
+  "summary": {
+    "total_in_registry": 18,
+    "tradeable": 4,
+    "excluded": 17,
+    "tradeable_with_caveat": 1,
+    "next_step": "Extend multi-day cost measurement to remaining 13 symbols using same methodology as NAS100/OIL/USDJPY. For symbols where measurement is not feasible, keep them explicitly excluded with documented reasons."
+  }
+}
