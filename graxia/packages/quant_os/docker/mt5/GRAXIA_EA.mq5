@@ -68,6 +68,13 @@ double JsonGetDouble(string json, string key)
    return StringToDouble(val);
 }
 
+bool JsonGetBool(string json, string key)
+{
+   string val = JsonGetString(json, key);
+   if(val == "true" || val == "1") return true;
+   return false;
+}
+
 //+------------------------------------------------------------------+
 //| HTTP POST with body                                               |
 //+------------------------------------------------------------------+
@@ -354,9 +361,36 @@ void OnTimer()
       return;
    }
 
-   // Place order
-   Print("SIGNAL: ", direction, " conf=", confidence, " sl_dist=", sl_distance);
-   bool placed = PlaceOrder(direction, sl_distance, confidence);
+    // --- Risk Gate: call Python risk engine BEFORE placing order ---
+    // This is the safety boundary — EA blocks on denial.
+    double risk_entry = (direction == "long") ? ask : bid;
+    double risk_sl    = (direction == "long") ? ask - sl_distance : bid + sl_distance;
+
+    string gateBody = StringFormat(
+       "{\"symbol\":\"%s\",\"direction\":\"%s\",\"entry_price\":%.5f,\"stop_loss\":%.5f,\"confidence\":%.4f,\"lot_size\":%.2f}",
+       _Symbol, direction, risk_entry, risk_sl, confidence, LotSize
+    );
+    string gateResp = HttpPost(SignalServiceUrl + "/api/risk-gate", gateBody);
+    if(gateResp == "")
+    {
+       eaStatus += " | GATE_NO_RESP";
+       Print("RISK GATE: no response — BLOCKING trade");
+       return;
+    }
+
+    bool gateAllowed = JsonGetBool(gateResp, "allowed");
+    if(!gateAllowed)
+    {
+       string gateReason = JsonGetString(gateResp, "reason");
+       eaStatus += StringFormat(" | GATE_DENY (%s)", gateReason);
+       Print("RISK GATE: REJECTED — ", gateReason);
+       return;
+    }
+    // --- Risk Gate passed ---
+
+    // Place order
+    Print("SIGNAL: ", direction, " conf=", confidence, " sl_dist=", sl_distance);
+    bool placed = PlaceOrder(direction, sl_distance, confidence);
    if(placed)
       eaStatus += " | ORDER_PLACED";
    else

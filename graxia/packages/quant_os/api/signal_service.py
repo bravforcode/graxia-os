@@ -482,6 +482,7 @@ class SignalRequest(BaseModel):
     bid: float
     ask: float
     hour_utc: int
+    symbol: str = ""  # the trading symbol (e.g. XAUUSD); populated by EA
 
 
 class SignalResponse(BaseModel):
@@ -504,6 +505,23 @@ class TradeRequest(BaseModel):
     confidence: float
     lot_size: float
     timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
+
+
+class RiskGateRequest(BaseModel):
+    """Trade pre-approval request — EA calls this BEFORE OrderSend."""
+
+    symbol: str
+    direction: str  # "long" or "short"
+    entry_price: float
+    stop_loss: float
+    confidence: float
+    lot_size: float = 0.01
+
+
+class RiskGateResponse(BaseModel):
+    allowed: bool
+    reason: str
+    approved_quantity: float = 0.0
 
 
 @app.on_event("startup")
@@ -663,6 +681,82 @@ async def log_trade(req: TradeRequest, _key: str = Security(verify_signal_api_ke
     with open(log_path, "a") as f:
         f.write(json.dumps(req.model_dump()) + "\n")
     return {"status": "logged", "ticket": req.ticket}
+
+
+@app.post("/api/risk-gate")
+async def risk_gate(req: RiskGateRequest, _key: str = Security(verify_signal_api_key)):
+    """
+    Pre-trade risk gate — EA calls this BEFORE OrderSend.
+
+    Wraps risk/engine.py's 4-layer gate. The EA MUST block on denial.
+    This is the single safety boundary between the EA's native OrderSend()
+    and the Python risk system.
+
+    Returns ``{"allowed": bool, "reason": str}`` — EA only places order
+    when ``allowed=true``.
+    """
+    from graxia.packages.quant_os.risk.engine import (
+        AccountState,
+        PortfolioState,
+        RiskEngine,
+        Signal,
+    )
+
+    if req.entry_price <= 0 or req.stop_loss <= 0:
+        return RiskGateResponse(
+            allowed=False,
+            reason=f"Invalid price/sl: entry={req.entry_price}, sl={req.stop_loss}",
+            approved_quantity=0.0,
+        )
+
+    if req.confidence <= 0:
+        return RiskGateResponse(
+            allowed=False,
+            reason=f"Invalid confidence: {req.confidence}",
+            approved_quantity=0.0,
+        )
+
+    risk_signal = Signal(
+        symbol=req.symbol or SYMBOL,
+        conviction=req.confidence,
+        entry_price=req.entry_price,
+        stop_loss=req.stop_loss,
+        direction="BUY" if req.direction == "long" else "SELL",
+        side="BUY" if req.direction == "long" else "SELL",
+        timestamp=datetime.now(UTC),
+        timestamp_epoch=time.time(),
+        venue="paper",
+    )
+
+    engine = RiskEngine()
+    account = AccountState()
+    portfolio = PortfolioState()
+
+    verdict = engine.evaluate(risk_signal, account, portfolio)
+
+    if verdict.approved:
+        logger.info(
+            "risk_gate.approved",
+            symbol=risk_signal.symbol,
+            direction=req.direction,
+            confidence=req.confidence,
+            approved_qty=verdict.approved_quantity,
+        )
+    else:
+        logger.warning(
+            "risk_gate.rejected",
+            symbol=risk_signal.symbol,
+            direction=req.direction,
+            reason=verdict.reason,
+            reason_code=verdict.reason_code.value if verdict.reason_code else None,
+            layer=verdict.layer_failed,
+        )
+
+    return RiskGateResponse(
+        allowed=verdict.approved,
+        reason=verdict.reason,
+        approved_quantity=verdict.approved_quantity,
+    )
 
 
 if __name__ == "__main__":

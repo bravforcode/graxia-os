@@ -296,7 +296,7 @@ services:
     environment:
       TRADING_MODE: ${TRADING_MODE:-PAPER}
       SIGNAL_SERVICE_URL: https://graxia-signal:8752
-      SYMBOL: XAUUSD
+      SYMBOL: ${TRADE_SYMBOL:-XAUUSD}
       LOT_SIZE: "0.01"
       B2_STOP_DOLLARS: "3.00"
       MIN_CONFIDENCE: "0.50"
