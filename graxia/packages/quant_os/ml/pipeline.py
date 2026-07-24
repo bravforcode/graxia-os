@@ -206,13 +206,19 @@ class FeatureEngineer:
         # Store feature names
         self.feature_names = list(features.columns)
 
-        # Generate labels (forward returns classification)
-        forward_return = df["close"].pct_change(10).shift(-10)
-        labels = self._classify_returns(forward_return)
+        # Generate labels using triple-barrier method (López de Prado)
+        # Replace naive ±0.5% threshold with proper TP/SL/timeout labeling.
+        # ATR must already be on df for triple_barrier to use.
+        df["atr_14"] = features["atr_14"] if "atr_14" in features else df["close"].rolling(14).std()
+
+        from .labeling import compute_triple_barrier
+
+        labels = compute_triple_barrier(df, tp_mult=1.5, sl_mult=1.0, max_bars=12, atr_col="atr_14")
+        _barrier_max_bars = 12  # must match compute_triple_barrier's max_bars
 
         # Trim to valid range (remove NaN from both ends)
         valid_start = 300  # Need history for indicators
-        valid_end = len(df) - 10  # Need forward returns
+        valid_end = len(df) - _barrier_max_bars  # Need forward bars for triple barrier
 
         feature_list = features.iloc[valid_start:valid_end].to_dict("records")
         label_list = labels[valid_start:valid_end].tolist()
@@ -226,10 +232,11 @@ class FeatureEngineer:
         )
 
     def _classify_returns(self, forward_returns, buy_threshold: float = 0.005, sell_threshold: float = -0.005):
-        """Classify forward returns into signals (returns pd.Series).
+        """DEPRECATED: Use ``compute_triple_barrier()`` from ``ml.labeling`` instead.
 
-        ponytail: 0.5% threshold for XAUUSD — higher than default 0.2% to avoid
-        noise in high-volatility instruments. Upgrade path: per-symbol calibration.
+        Naive ±0.5% threshold classifier — remains as reference/fallback only.
+        ``generate_features()`` now uses triple-barrier labeling for proper
+        TP/SL/timeout classification (López de Prado method).
         """
         import pandas as pd
 
@@ -273,18 +280,24 @@ class MLTrainer:
         """
         import numpy as np
         from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
-        from sklearn.model_selection import train_test_split
 
         X = np.array([list(f.values()) for f in feature_set.features])
         y = np.array(feature_set.labels)
 
-        # Split
-        X_train, X_test, y_train, y_test = train_test_split(
-            X,
-            y,
-            test_size=test_ratio,
-            shuffle=False,  # Time series - don't shuffle
-        )
+        # Purge/embargo split: reserve a gap of 12 bars between train and test
+        # to prevent label leakage through the triple-barrier forward window.
+        # Without this, the last N training labels peek into the test set's
+        # forward returns (look-ahead bias).
+        _gap = 12  # must match triple_barrier max_bars
+        split_idx = int(len(X) * (1.0 - test_ratio))
+        test_start = split_idx + _gap  # skip the leakage window
+
+        if test_start >= len(X):
+            # Not enough data for purge gap — use standard split as fallback
+            test_start = max(split_idx, int(len(X) * 0.5))
+
+        X_train, y_train = X[:split_idx], y[:split_idx]
+        X_test, y_test = X[test_start:], y[test_start:]
 
         # Train model
         model = self._create_model(model_type)
@@ -365,19 +378,23 @@ class MLTrainer:
 
         results = []
 
+        # Purge gap: must match triple_barrier max_bars (12) to prevent
+        # label leakage through the forward-looking window.
+        _gap = 12
+
         for w in range(n_windows):
             is_end = window_size * (w + 2)
-            oos_start = is_end
+            oos_start = is_end + _gap  # skip the leakage window
             oos_end = min(oos_start + window_size, total)
 
             if oos_end <= oos_start:
                 break
 
-            # IS data
+            # IS data (excludes purge gap)
             is_features = feature_set.features[:is_end]
             is_labels = feature_set.labels[:is_end]
 
-            # OOS data
+            # OOS data (starts after purge gap)
             oos_features = feature_set.features[oos_start:oos_end]
             oos_labels = feature_set.labels[oos_start:oos_end]
 
