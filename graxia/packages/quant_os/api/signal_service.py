@@ -511,7 +511,7 @@ class RiskGateRequest(BaseModel):
     """Trade pre-approval request — EA calls this BEFORE OrderSend."""
 
     symbol: str
-    direction: str  # "long" or "short"
+    direction: str  # MUST be "long" or "short" — validated in endpoint
     entry_price: float
     stop_loss: float
     confidence: float
@@ -702,6 +702,18 @@ async def risk_gate(req: RiskGateRequest, _key: str = Security(verify_signal_api
         Signal,
     )
 
+    # Rate limit: same window as /api/signal (max 30 requests per minute)
+    if not _rate_limiter.allow(client_id="risk_gate"):
+        raise HTTPException(status_code=429, detail="Rate limit exceeded. Max 30 requests/minute.")
+
+    # Validate direction — fail-closed, reject anything not explicitly "long" or "short"
+    if req.direction not in ("long", "short"):
+        return RiskGateResponse(
+            allowed=False,
+            reason=f"Invalid direction '{req.direction}' — must be 'long' or 'short'",
+            approved_quantity=0.0,
+        )
+
     if req.entry_price <= 0 or req.stop_loss <= 0:
         return RiskGateResponse(
             allowed=False,
@@ -721,7 +733,7 @@ async def risk_gate(req: RiskGateRequest, _key: str = Security(verify_signal_api
         conviction=req.confidence,
         entry_price=req.entry_price,
         stop_loss=req.stop_loss,
-        direction="BUY" if req.direction == "long" else "SELL",
+        direction="BUY" if req.direction == "long" else "SELL",  # safe: validated above
         side="BUY" if req.direction == "long" else "SELL",
         timestamp=datetime.now(UTC),
         timestamp_epoch=time.time(),
@@ -732,7 +744,16 @@ async def risk_gate(req: RiskGateRequest, _key: str = Security(verify_signal_api
     account = AccountState()
     portfolio = PortfolioState()
 
-    verdict = engine.evaluate(risk_signal, account, portfolio)
+    try:
+        verdict = engine.evaluate(risk_signal, account, portfolio)
+    except Exception as exc:
+        logger.exception("risk_gate.evaluate_failed", error=str(exc))
+        # Fail-closed: if the risk engine itself errors, do NOT trade
+        return RiskGateResponse(
+            allowed=False,
+            reason=f"Risk engine error: {exc}",
+            approved_quantity=0.0,
+        )
 
     if verdict.approved:
         logger.info(
