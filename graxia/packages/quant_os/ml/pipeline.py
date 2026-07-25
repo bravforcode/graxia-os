@@ -246,6 +246,29 @@ class FeatureEngineer:
         return labels
 
 
+def purge_embargo_split_indices(n: int, test_ratio: float = 0.2, gap: int = 12) -> tuple[int, int]:
+    """Compute the (train_end, test_start) indices for a purge/embargo split.
+
+    Reserves ``gap`` bars between the end of the training window and the
+    start of the test window so the test set can't leak into training via
+    triple-barrier labels that peek forward past the nominal split point
+    (see ml/labeling.py's ``compute_triple_barrier`` ``max_bars``).
+
+    Falls back to a plain ratio split if there isn't enough data left for
+    the gap.
+
+    Extracted from ``MLTrainer.train()`` so any other caller that needs the
+    exact same held-out fold (e.g. a model evaluator) can reuse it instead
+    of re-deriving the split math, which would risk silently drifting out
+    of sync with the split ``train()`` actually used.
+    """
+    split_idx = int(n * (1.0 - test_ratio))
+    test_start = split_idx + gap
+    if test_start >= n:
+        test_start = max(split_idx, int(n * 0.5))
+    return split_idx, test_start
+
+
 class MLTrainer:
     """
     Train ML models for signal prediction.
@@ -299,13 +322,7 @@ class MLTrainer:
         # to prevent label leakage through the triple-barrier forward window.
         # Without this, the last N training labels peek into the test set's
         # forward returns (look-ahead bias).
-        _gap = 12  # must match triple_barrier max_bars
-        split_idx = int(len(X) * (1.0 - test_ratio))
-        test_start = split_idx + _gap  # skip the leakage window
-
-        if test_start >= len(X):
-            # Not enough data for purge gap — use standard split as fallback
-            test_start = max(split_idx, int(len(X) * 0.5))
+        split_idx, test_start = purge_embargo_split_indices(len(X), test_ratio=test_ratio, gap=12)
 
         X_train, y_train = X[:split_idx], y[:split_idx]
         X_test, y_test = X[test_start:], y[test_start:]
