@@ -158,6 +158,7 @@ def safe_load_model(
     *,
     expected_keys: set[str] | None = None,
     signing_key: str | None = None,
+    allow_unsigned: bool = False,
 ) -> Any:
     """Load a pickle file through the RestrictedUnpickler.
 
@@ -171,6 +172,11 @@ def safe_load_model(
         If provided, verify the HMAC signature sidecar (``<path>.sig``).
         Real model objects (sklearn, LGBM, etc.) require a valid signature
         to pass the allowlist.
+    allow_unsigned:
+        RESEARCH/DEV ONLY. When True, permits TrustedUnpickler without
+        HMAC-verified signature. Emits a warning on every load.
+        MUST be False in production entry points (api/signal_service.py,
+        ml/model_registry.py live paths) — model-substitution risk.
 
     Raises
     ------
@@ -208,8 +214,24 @@ def safe_load_model(
                 f"tampered with or the signing key is incorrect"
             )
 
+    # Select unpickler: signed → TrustedUnpickler (allows ML classes),
+    # unsigned + allow_unsigned → TrustedUnpickler with warning,
+    # unsigned + !allow_unsigned → RestrictedUnpickler (rejects ML classes).
+    if signing_key is not None:
+        unpickler = TrustedUnpickler
+    elif allow_unsigned:
+        import logging
+
+        logging.getLogger(__name__).warning(
+            "safe_load_model: loading unsigned model %s — no integrity verification. "
+            "Model-substitution risk. Set MODEL_SIGNING_KEY + sign models for production.",
+            path.name,
+        )
+        unpickler = TrustedUnpickler
+    else:
+        unpickler = RestrictedUnpickler
+
     with open(path, "rb") as f:
-        unpickler = TrustedUnpickler if signing_key is not None else RestrictedUnpickler
         raw = unpickler(f).load()
 
     if expected_keys and isinstance(raw, dict):

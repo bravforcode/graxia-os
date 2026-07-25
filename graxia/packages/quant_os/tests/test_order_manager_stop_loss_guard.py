@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import asyncio
 from decimal import Decimal
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -29,14 +30,22 @@ from graxia.packages.quant_os.execution.manager import OrderManager
 from graxia.packages.quant_os.execution.order import Order, OrderStateMachine
 
 
-def _bare_manager() -> OrderManager:
-    """OrderManager with no db/broker wiring.
+def _bare_manager():
+    """OrderManager with mocked dependencies.
 
-    Fine for this guard clause: _submit_to_broker raises on the missing
-    stop-loss check before it ever touches self.db or self.broker_manager,
-    so a real Session/BrokerManager isn't needed to exercise this path.
+    The stop-loss guard in _submit_to_broker raises before touching any
+    dependency fields, so Mock objects are safe for initialization.
     """
-    return OrderManager.__new__(OrderManager)
+    mocks = patch.multiple(
+        "graxia.packages.quant_os.execution.manager",
+        IdempotencyChecker=MagicMock(),
+        get_config=MagicMock(return_value=MagicMock()),
+    )
+    with mocks:
+        return OrderManager(
+            db_session=MagicMock(),
+            broker_manager=MagicMock(),
+        )
 
 
 def _order(stop_price) -> Order:

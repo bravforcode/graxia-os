@@ -269,7 +269,7 @@ class OrderExecutor:
             broker = self._broker_manager.active
             positions = broker.get_positions()
         except Exception:
-            return True, ""
+            return False, "Cannot verify correlation concentration — broker unavailable"
 
         class_count = 0
         for pos in positions:

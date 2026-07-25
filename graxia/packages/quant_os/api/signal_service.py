@@ -31,6 +31,8 @@ from graxia.packages.quant_os.core.safe_pickle import safe_load_model, sign_mode
 from graxia.packages.quant_os.ml.feature_store import (
     LIVE_FEATURE_COLUMNS,
     compute_feature_list_hash,
+)
+from graxia.packages.quant_os.ml.feature_store import (
     compute_live_features as compute_features_live,
 )
 from graxia.packages.quant_os.ml.model_registry import ModelRegistry
@@ -177,7 +179,9 @@ def _retrain_model():
 
     import xgboost as xgb
 
-    features_path = Path(os.getenv("FEATURES_DIR", str(_PACKAGE_DIR / "ml" / "models"))) / f"features_v2_{SYMBOL}_15min.parquet"
+    features_path = (
+        Path(os.getenv("FEATURES_DIR", str(_PACKAGE_DIR / "ml" / "models"))) / f"features_v2_{SYMBOL}_15min.parquet"
+    )
     if not features_path.exists():
         logger.warning("model.no_features", path=str(features_path))
         return
@@ -680,7 +684,7 @@ async def risk_gate(req: RiskGateRequest, _key: str = Security(verify_signal_api
     )
 
     engine = RiskEngine()
-    account = AccountState()
+    account = AccountState(equity=0.0, balance=0.0)
     portfolio = PortfolioState()
 
     try:

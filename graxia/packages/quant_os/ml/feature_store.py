@@ -3,6 +3,15 @@ Feature Store — Caching and reuse of computed features for ML pipeline.
 
 Features are stored as Parquet files partitioned by symbol/timeframe/date,
 with TTL-based cache invalidation and summary statistics.
+
+⚠️ CANONICAL SOURCE OF TRUTH for live inference features.
+`compute_live_features()` is THE single implementation used by both the
+live inference path (api/signal_service.py /api/signal endpoint) AND the
+live model retrain path (signal_service._retrain_model()).
+
+DO NOT duplicate this logic elsewhere. ml.pipeline.FeatureEngineer.generate_features()
+has a SEPARATE vocabulary (~35 features, different names) and must be unified
+with this function before any cross-system model deployment (see H4 in review).
 """
 
 import hashlib

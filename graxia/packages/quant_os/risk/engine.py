@@ -118,14 +118,14 @@ class Signal:
 
 @dataclass
 class AccountState:
-    equity: float = 100000.0
-    balance: float = 100000.0
+    equity: float = 0.0
+    balance: float = 0.0
     daily_pnl: float = 0.0
     weekly_pnl: float = 0.0
     max_drawdown_pct: float = 0.0
-    margin_level_pct: float = 999.0
-    free_margin: float = 100000.0
-    peak_equity: float = 100000.0
+    margin_level_pct: float = 0.0
+    free_margin: float = 0.0
+    peak_equity: float = 0.0
     current_drawdown_pct: float = 0.0
     open_positions: int = 0
 
@@ -336,8 +336,8 @@ class RiskEngine:
             timestamp_epoch=time.time(),
         )
 
-        # Default account/portfolio state (broker unavailable in this path).
-        account = AccountState(equity=10000.0, balance=10000.0)
+        # Fail-closed: broker unavailable → zero-equity account (Layer 3 rejects).
+        account = AccountState(equity=0.0, balance=0.0)
         portfolio = PortfolioState()
 
         verdict = self.evaluate(signal, account, portfolio)

@@ -61,7 +61,18 @@ class _SafeTimestamp(_original_pd_timestamp):
         return super().__new__(cls, *args, **kwargs)
 
 
-pd.Timestamp = _SafeTimestamp
+@pytest.fixture(scope="module", autouse=True)
+def _patch_pd_timestamp():
+    """Replace pd.Timestamp with utc-tolerant wrapper for this module only.
+
+    Uses a fixture so the monkeypatch is scoped to this module's tests and
+    does not leak into other test files (fixes module-level pd.Timestamp = assignment).
+    """
+    original = pd.Timestamp
+    pd.Timestamp = _SafeTimestamp
+    yield
+    pd.Timestamp = original
+
 
 _API_KEY = "test-api-key-12345"
 
@@ -91,7 +102,14 @@ def _make_bars(n: int = 200, base_price: float = 2300.0) -> list[dict]:
         c = price + delta
         price = c
         bars.append(
-            {"time": ts + i * 900, "open": round(o, 2), "high": round(h, 2), "low": round(l, 2), "close": round(c, 2), "volume": 100.0}
+            {
+                "time": ts + i * 900,
+                "open": round(o, 2),
+                "high": round(h, 2),
+                "low": round(l, 2),
+                "close": round(c, 2),
+                "volume": 100.0,
+            }
         )
         ts += 900
     return bars
@@ -416,9 +434,7 @@ class TestMLTrainerRegistryIntegration:
         rng = np.random.RandomState(0)
         n = 300
         feature_names = ["f1", "f2", "f3"]
-        features = [
-            {name: float(rng.randn()) for name in feature_names} for _ in range(n)
-        ]
+        features = [{name: float(rng.randn()) for name in feature_names} for _ in range(n)]
         labels = [int(rng.randint(0, 2)) for _ in range(n)]
         timestamps = [None] * n
 

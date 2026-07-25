@@ -86,7 +86,7 @@ def load_latest_model():
     if not model_files:
         return None, None
     latest = model_files[-1]
-    data = safe_load_model(latest)
+    data = safe_load_model(latest, allow_unsigned=True)
     return data, latest.name
 
 
@@ -94,7 +94,7 @@ def load_champion():
     """Load the champion model from CHAMPION_PATH. Returns None if not found."""
     if not CHAMPION_PATH.exists():
         return None
-    return safe_load_model(CHAMPION_PATH)
+    return safe_load_model(CHAMPION_PATH, allow_unsigned=True)
 
 
 def save_champion(model_data: dict) -> None:

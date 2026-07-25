@@ -1,6 +1,18 @@
 """
 ML Pipeline - Feature engineering and model training for MLB strategy
 
+⚠️ FEATURE DIVERGENCE WARNING:
+FeatureEngineer.generate_features() and ml.feature_store.compute_live_features()
+produce DIFFERENT feature vocabularies (~35 vs ~40 features, different names and
+periods). A model trained with one CANNOT be used for inference with the other
+without retraining. This is a known architectural split-brain tracked at H4 in
+the Phase 1-3 review.
+
+Canonical live-inference path: compute_live_features() → signal_service.py
+Training/eval path: FeatureEngineer.generate_features() → auto_retrain.py
+
+DO NOT cross-wire these without a full unification plan + model retrain.
+
 Handles:
 - Feature engineering from OHLCV data
 - Label generation (future returns)
@@ -476,9 +488,7 @@ class MLTrainer:
                 import numpy as np
                 from sklearn.metrics import accuracy_score
 
-                model_data = safe_load_model(
-                    result.model_path, signing_key=os.getenv("MODEL_SIGNING_KEY") or None
-                )
+                model_data = safe_load_model(result.model_path, signing_key=os.getenv("MODEL_SIGNING_KEY") or None)
                 model = model_data["model"]
 
                 X_oos = np.array([list(f.values()) for f in oos_features])
