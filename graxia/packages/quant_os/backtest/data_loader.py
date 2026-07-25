@@ -9,12 +9,15 @@ Supports:
 """
 
 import csv
+import logging
 import os
 import re
 import sys
 from datetime import date, datetime, timedelta
 
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 def load_csv_data(
@@ -431,12 +434,62 @@ def _load_ohlcv_duckdb(symbol: str, timeframe: str, **kwargs) -> pd.DataFrame:
     return df
 
 
+def _dedupe_warehouse_ohlcv(df: pd.DataFrame, *, symbol: str, timeframe: str) -> pd.DataFrame:
+    """Drop exact-duplicate rows returned by a hive-partitioned warehouse read.
+
+    Known ingestion bug (out of scope to fix at the source here, per project
+    decision): the same underlying file/rows can land in more than one
+    overlapping hive partition, so a single glob-registered view query can
+    return byte-identical rows several times over (confirmed on real
+    XAUUSD/H1 data: 300,000 rows collapsing to 50,000 unique rows, i.e. each
+    row repeated exactly 6x, all columns identical). Duplicate timestamps
+    straddling a purge/embargo split boundary would leak test-fold
+    information into the training fold, inflating apparent OOS performance.
+
+    This is a defensive load-time fix: drop full-row duplicates (safe --
+    never discards genuinely different data), then, if any duplicate
+    timestamps remain afterward (rows that share a time but disagree on some
+    other column -- a different, not-yet-seen problem), keep the first
+    occurrence and log loudly rather than silently feeding ambiguous rows
+    into training/evaluation.
+    """
+    if "time" not in df.columns:
+        return df
+
+    before = len(df)
+    df = df.drop_duplicates(subset=list(df.columns), keep="first")
+
+    remaining_dupe_ts = int(df.duplicated(subset=["time"], keep=False).sum())
+    if remaining_dupe_ts > 0:
+        logger.warning(
+            "warehouse_ohlcv_non_identical_duplicate_timestamps: symbol=%s timeframe=%s rows=%d",
+            symbol,
+            timeframe,
+            remaining_dupe_ts,
+        )
+        df = df.drop_duplicates(subset=["time"], keep="first")
+
+    df = df.reset_index(drop=True)
+    dropped = before - len(df)
+    if dropped > 0:
+        logger.warning(
+            "warehouse_ohlcv_duplicate_rows_dropped: symbol=%s timeframe=%s dropped=%d kept=%d",
+            symbol,
+            timeframe,
+            dropped,
+            len(df),
+        )
+    return df
+
+
 def _load_ohlcv_warehouse(symbol: str, timeframe: str, **kwargs) -> pd.DataFrame:
     """Query the Parquet-backed warehouse via data.warehouse_loader.Warehouse.
 
     Registers the hive-partitioned glob view for symbol/timeframe, then reads
     it. Accepts optional ``warehouse_db_path``, ``start_date``, ``end_date``
-    kwargs.
+    kwargs. Deduplicates exact-duplicate rows before returning (see
+    ``_dedupe_warehouse_ohlcv`` docstring) -- a partition-ingestion bug can
+    otherwise return the same row several times over.
     """
     root = _graxia_repo_root()
     if root not in sys.path:
@@ -458,6 +511,8 @@ def _load_ohlcv_warehouse(symbol: str, timeframe: str, **kwargs) -> pd.DataFrame
 
     if df.empty:
         raise ValueError(f"no warehouse OHLCV rows for {symbol}/{timeframe} in {db_path}")
+
+    df = _dedupe_warehouse_ohlcv(df, symbol=symbol, timeframe=timeframe)
     return df
 
 

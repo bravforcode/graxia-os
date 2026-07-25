@@ -1,0 +1,15 @@
+{
+  "symbol": "XAUUSD",
+  "n_labeled_rows": 9974,
+  "n_feature_rows": 9662,
+  "split_idx": 7729,
+  "test_start": 7741,
+  "n_train_rows": 7729,
+  "n_oos_rows": 1921,
+  "deflated_sharpe": -0.7778972183080987,
+  "oos_max_drawdown": 47.5,
+  "n_trades": 588,
+  "champion_existed_before": false,
+  "promoted": false,
+  "verdict": "NO-GO"
+}

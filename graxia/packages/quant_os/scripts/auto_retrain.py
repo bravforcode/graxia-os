@@ -62,6 +62,17 @@ if ENV_PATH.exists():
 
 SYMBOL = os.getenv("TRADE_SYMBOL", "XAUUSD")
 
+# Data source decision (2B.5b): "warehouse" (data/warehouse/ohlcv Parquet)
+# was checked and rejected BEFORE any training/evaluation was run — its
+# get_ohlcv() has no DISTINCT/dedup in its SQL, and the underlying hive
+# partitions for XAUUSD/H1 are exactly 6x-duplicated (300,000 raw rows for
+# only 50,000 unique timestamps, byte-identical OHLCV per duplicate,
+# confirmed empirically). "duckdb" (data/market_data.duckdb's flat ohlcv
+# table) has 10,000 real, unique-timestamp XAUUSD/H1 rows and is used
+# instead. Do not switch this back to "warehouse" without first fixing the
+# duplication at the warehouse-loader level (out of scope here).
+RETRAIN_DATA_SOURCE = "duckdb"
+
 DRIFT_THRESHOLD = 0.10  # 10% accuracy drop triggers retrain
 MIN_SAMPLES = 500  # Minimum samples for retrain
 MODEL_DIR = Path(__file__).parent.parent / "ml" / "models"
@@ -136,8 +147,9 @@ def _nan_metrics():
 def evaluate_model(model_data: dict):
     """Evaluate a model's real out-of-sample trading performance.
 
-    Runs the model over a held-out fold of the current warehouse dataset —
-    the SAME purge/embargo split MLTrainer.train() uses
+    Runs the model over a held-out fold of the current duckdb dataset (see
+    RETRAIN_DATA_SOURCE below for why duckdb, not warehouse) — the SAME
+    purge/embargo split MLTrainer.train() uses
     (ml.pipeline.purge_embargo_split_indices, test_ratio=0.2, gap=12 bars;
     called here, not re-derived, so the two can never silently drift out of
     sync) — takes the simulated trade only on bars the model predicts as a
@@ -163,7 +175,7 @@ def evaluate_model(model_data: dict):
         return _nan_metrics()
 
     try:
-        labeled = label_from_source(symbol=SYMBOL, source="warehouse")
+        labeled = label_from_source(symbol=SYMBOL, source=RETRAIN_DATA_SOURCE)
     except Exception as e:
         logger.warning("retrain.evaluate_model.data_error", error=str(e))
         return _nan_metrics()
@@ -307,7 +319,7 @@ def check_drift() -> dict:
 
     # Load labeled data
     try:
-        labeled = label_from_source(symbol=SYMBOL, source="warehouse")
+        labeled = label_from_source(symbol=SYMBOL, source=RETRAIN_DATA_SOURCE)
         if len(labeled) < MIN_SAMPLES:
             return {"drifted": False, "reason": "insufficient_data", "samples": len(labeled)}
     except Exception as e:
@@ -362,7 +374,7 @@ def retrain_model() -> dict:
     trainer = MLTrainer(model_dir=str(MODEL_DIR))
 
     try:
-        labeled = label_from_source(symbol=SYMBOL, source="warehouse")
+        labeled = label_from_source(symbol=SYMBOL, source=RETRAIN_DATA_SOURCE)
         if len(labeled) < MIN_SAMPLES:
             return {"success": False, "reason": f"insufficient_data: {len(labeled)}"}
     except Exception as e:
