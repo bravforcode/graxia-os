@@ -413,8 +413,8 @@ class TestCostCalibration:
             return json.load(f)
 
     def test_version_3(self, cost_data):
-        """Cost calibration must be version 3.0."""
-        assert cost_data["version"] == "3.0"
+        """Cost calibration must be version 3.x (3.1 after the 2026-07-26 data-integrity fix)."""
+        assert cost_data["version"].startswith("3.")
 
     def test_only_4_assets(self, cost_data):
         """Must have exactly 4 assets (NAS100, XAUUSD, OIL, USDJPY)."""
@@ -422,24 +422,47 @@ class TestCostCalibration:
         assert assets == {"XAUUSD", "NAS100", "OIL", "USDJPY"}
 
     def test_xauusd_spread(self, cost_data):
-        """XAUUSD spread must be 0.15 bps (Pepperstone measured)."""
-        xau = cost_data["assets"]["XAUUSD"]
-        assert xau["spread_bps_measured"] == 0.15
+        """XAUUSD spread must match the real tick-derived median (data/ticks/XAUUSD_ticks_24h.parquet).
 
-    def test_nas100_spread(self, cost_data):
-        """NAS100 spread must be 1.30 bps."""
+        2026-07-26: the old 0.15bps value matched no source (its own single-snapshot
+        median was 0.36bps); replaced with the real 733,743-tick measurement.
+        """
+        xau = cost_data["assets"]["XAUUSD"]
+        assert xau["spread_bps_measured"] == pytest.approx(0.3236, abs=1e-4)
+        assert xau["status"] == "FROM_TICKS"
+
+    def test_nas100_no_real_data(self, cost_data):
+        """NAS100 has zero real spread/tick data anywhere in this repo (2026-07-26 finding).
+
+        The 1.30bps figure was fabricated in commit 33b90c31 (2026-07-08) with an
+        invented '2026-07-03 to 2026-07-05' window; NAS100 never appears in
+        data/spread_log.jsonl, data/spread_analysis.json, data/spread_report.json,
+        or data/ticks/. This test locks in the honest status rather than a fabricated
+        'MEASURED' claim.
+        """
         nas = cost_data["assets"]["NAS100"]
-        assert nas["spread_bps_measured"] == 1.30
+        assert nas["status"] == "UNVERIFIED_NO_DATA"
+        assert nas["sample_size"] == 0
 
     def test_oil_spread(self, cost_data):
-        """OIL spread must be 5.0 bps."""
+        """OIL spread must match the real single-snapshot measurement (SpotCrude, data/spread_analysis.json).
+
+        2026-07-26: the old 5.0bps 'USOIL' value was fabricated in commit 33b90c31;
+        restored to the real measured SpotCrude snapshot (4.88bps).
+        """
         oil = cost_data["assets"]["OIL"]
-        assert oil["spread_bps_measured"] == 5.0
+        assert oil["spread_bps_measured"] == 4.88
+        assert oil["status"] == "SINGLE_SNAPSHOT"
 
     def test_usdjpy_spread(self, cost_data):
-        """USDJPY spread must be 0.80 bps."""
+        """USDJPY spread must match the real tick-derived median (data/ticks/USDJPY_ticks_24h.parquet).
+
+        2026-07-26: the old 0.80bps value was fabricated in commit 33b90c31, overwriting
+        a genuinely-measured 0.06bps figure; replaced with the real 386,245-tick measurement.
+        """
         jpy = cost_data["assets"]["USDJPY"]
-        assert jpy["spread_bps_measured"] == 0.80
+        assert jpy["spread_bps_measured"] == pytest.approx(0.1236, abs=1e-4)
+        assert jpy["status"] == "FROM_TICKS"
 
     def test_xauusd_swaps(self, cost_data):
         """XAUUSD swaps: long=-0.50, short=+0.10 bps/day."""
@@ -473,9 +496,19 @@ class TestCostCalibration:
             assert asset not in cost_data["assets"], f"{asset} must not be in assets"
 
     def test_all_assets_measured(self, cost_data):
-        """All assets must have MEASURED status."""
+        """Every asset must carry an honest, non-fabricated status — not a blanket 'MEASURED'.
+
+        2026-07-26: the prior blanket 'MEASURED' claim across all 4 assets was false
+        (NAS100 has zero real data; OIL/USDJPY numbers were fabricated). Each status must
+        be one that actually reflects traceable evidence in this repo.
+        """
+        valid_statuses = {"FROM_TICKS", "SINGLE_SNAPSHOT", "UNVERIFIED_NO_DATA"}
         for symbol, info in cost_data["assets"].items():
-            assert info["status"] == "MEASURED", f"{symbol} status should be MEASURED"
+            assert info["status"] in valid_statuses, (
+                f"{symbol} status {info['status']!r} is not a recognized honest status"
+            )
+        # NAS100 specifically must not claim to be measured — it has no real data.
+        assert cost_data["assets"]["NAS100"]["status"] == "UNVERIFIED_NO_DATA"
 
     def test_round_trip_bps_reasonable(self, cost_data):
         """Round-trip costs must be within reasonable bounds."""
@@ -496,20 +529,28 @@ class TestCostCalibration:
         assert "NAS100_spike" in cost_data["stress_scenarios"]
 
     def test_cost_map_loads_correctly(self):
-        """COST_MAP must load from calibration with correct round-trip costs."""
+        """COST_MAP must load from calibration with correct round-trip costs.
+
+        2026-07-26: XAUUSD/USDJPY updated to real tick-derived round-trip costs;
+        OIL restored to its real single-snapshot round-trip cost (still keyed by
+        'USOIL' — see cost_calibration.json assets.OIL.measurement_caveat for why
+        that key is preserved even though the raw measurement was recorded under
+        MT5 symbol 'SpotCrude'). NAS100 is unchanged (still fabricated placeholder
+        numbers — see assets.NAS100.measurement_caveat).
+        """
         cost_map = _mod.COST_MAP
-        # XAUUSD: RT = 0.30 bps
+        # XAUUSD: RT = 0.65 bps (real, from data/ticks/XAUUSD_ticks_24h.parquet)
         assert "XAUUSD" in cost_map
-        assert cost_map["XAUUSD"] == pytest.approx(0.30, abs=0.01)
-        # NAS100: RT = 2.60 bps
+        assert cost_map["XAUUSD"] == pytest.approx(0.65, abs=0.01)
+        # NAS100: RT = 2.60 bps (fabricated placeholder, unchanged — no real data exists)
         assert "NAS100" in cost_map
         assert cost_map["NAS100"] == pytest.approx(2.60, abs=0.01)
-        # OIL: RT = 10.0 bps
+        # OIL (keyed as USOIL): RT = 9.76 bps (real single-snapshot, restored)
         assert "USOIL" in cost_map
-        assert cost_map["USOIL"] == pytest.approx(10.0, abs=0.1)
-        # USDJPY: RT = 7.80 bps
+        assert cost_map["USOIL"] == pytest.approx(9.76, abs=0.1)
+        # USDJPY: RT = 7.25 bps (real, from data/ticks/USDJPY_ticks_24h.parquet)
         assert "USDJPY" in cost_map
-        assert cost_map["USDJPY"] == pytest.approx(7.80, abs=0.1)
+        assert cost_map["USDJPY"] == pytest.approx(7.25, abs=0.1)
 
 
 # ═══════════════════════════════════════════════════════════════

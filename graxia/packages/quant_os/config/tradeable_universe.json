@@ -1,38 +1,33 @@
 {
   "_meta": {
-    "version": "1.0.0",
+    "version": "1.1.0",
     "created": "2026-07-25",
+    "updated": "2026-07-26",
     "description": "Single source of truth for which symbols are eligible for live/paper trading. A symbol is TRADEABLE only if it has BOTH sufficient price history AND verified cost calibration data.",
-    "cost_calibration_source": "config/cost_calibration.json (v3.0, 2026-07-05)"
+    "cost_calibration_source": "config/cost_calibration.json (v3.1, 2026-07-26)",
+    "data_integrity_fix_20260726": "The v1.0.0 'MEASURED'/'Properly measured multi-day' notes on NAS100/USOIL/USDJPY were false — see config/cost_calibration.json's data_integrity_fix_20260726 field. NAS100 is moved to excluded (zero real data, fails this file's own tradeable bar). XAUUSD/USDJPY upgraded to real tick-derived numbers (FROM_TICKS, ~27h, not multi-day). OIL restored to its real single-snapshot measurement."
   },
   "tradeable": [
     {
       "symbol": "XAUUSD",
       "asset_class": "metals",
-      "cost_status": "SINGLE_SNAPSHOT",
-      "cost_evidence": "cost_calibration.json: spread=0.15bps, commission=0, RT cost=0.30bps, 160 samples",
-      "note": "Single snapshop measurement — adequate for paper, insufficient for live sizing. Needs multi-day re-measurement before live."
-    },
-    {
-      "symbol": "NAS100",
-      "asset_class": "indices",
-      "cost_status": "MEASURED",
-      "cost_evidence": "cost_calibration.json: spread=1.30bps, commission=0, RT cost=2.60bps, 160 samples",
-      "note": "Properly measured multi-day."
+      "cost_status": "FROM_TICKS",
+      "cost_evidence": "cost_calibration.json: spread=0.3236bps (median), p95=0.5211bps, commission=0, RT cost=0.65bps, 733743 real ticks (data/ticks/XAUUSD_ticks_24h.parquet, ~27h, 2026-06-25/26)",
+      "note": "Real tick-derived measurement, session-covering (~27h, all 5 sessions once each) — a substantial upgrade over the prior 3-minute snapshot, but still a single continuous window, not repeated multi-day sampling. Adequate for paper; needs true multi-day re-measurement before live."
     },
     {
       "symbol": "USOIL",
       "asset_class": "commodities",
-      "cost_status": "MEASURED",
-      "cost_evidence": "cost_calibration.json: spread=5.0bps, commission=0, RT cost=10.0bps, 160 samples. Maps to MT5 symbol: OIL",
-      "note": "Properly measured multi-day. High spread (5bps) — size accordingly."
+      "cost_status": "SINGLE_SNAPSHOT",
+      "cost_evidence": "cost_calibration.json: spread=4.88bps, commission=0, RT cost=9.76bps, 20 samples (single ~3-minute snapshot, 2026-07-03). Maps to MT5-reported symbol: SpotCrude",
+      "note": "Real but single-snapshot measurement (restored from data/spread_analysis.json after commit 33b90c31 had overwritten it with fabricated 'USOIL' numbers under a false 3-day window). Adequate for paper, insufficient for live sizing. Needs multi-day re-measurement before live."
     },
     {
       "symbol": "USDJPY",
       "asset_class": "forex",
-      "cost_status": "MEASURED",
-      "cost_evidence": "cost_calibration.json: spread=0.80bps, commission=7, RT cost=7.80bps, 160 samples",
-      "note": "Properly measured multi-day."
+      "cost_status": "FROM_TICKS",
+      "cost_evidence": "cost_calibration.json: spread=0.1236bps (median), p95=0.1856bps, commission=7, RT cost=7.25bps, 386245 real ticks (data/ticks/USDJPY_ticks_24h.parquet, ~27h, 2026-06-25/26)",
+      "note": "Real tick-derived measurement, session-covering (~27h, all 5 sessions once each) — replaces a fabricated 0.80bps figure introduced in commit 33b90c31. Adequate for paper; needs true multi-day re-measurement before live."
     }
   ],
   "excluded": [
@@ -41,9 +36,10 @@
     {"symbol": "SILVER", "reason": "Removed from cost_calibration.json (explicit). No cost data."},
     {"symbol": "BTCUSD", "reason": "Removed from cost_calibration.json (explicit). No cost data."},
     {"symbol": "ETHUSD", "reason": "Removed from cost_calibration.json (explicit). No cost data."},
+    {"symbol": "NAS100", "reason": "2026-07-26 data-integrity fix: previously listed as tradeable with a fabricated 'MEASURED/multi-day' claim (commit 33b90c31, 2026-07-08). Zero real spread or tick data exists anywhere in this repository for NAS100 (absent from data/spread_log.jsonl, data/spread_analysis.json, data/spread_report.json, and data/ticks/). Fails this file's own tradeable bar ('verified cost calibration data'). See config/cost_calibration.json assets.NAS100.measurement_caveat. Re-add only after real measurement exists."},
     {"symbol": "XAGUSD", "reason": "In symbol_registry but no cost calibration data."},
     {"symbol": "SOLUSD", "reason": "In symbol_registry but no cost calibration data."},
-    {"symbol": "US30", "reason": "In symbol_registry but no cost calibration data."},
+    {"symbol": "US30", "reason": "In symbol_registry but no cost calibration data. NOTE: real tick data exists at data/ticks/US30_ticks_24h.parquet (193789 ticks, same ~27h window) — a candidate for a genuine future addition, not evaluated further by this fix (out of scope: this fix corrects existing entries, it does not admit new symbols)."},
     {"symbol": "SPX500", "reason": "In symbol_registry but no cost calibration data."},
     {"symbol": "XAUJPY", "reason": "In symbol_registry but no cost calibration data."},
     {"symbol": "XAUEUR", "reason": "In symbol_registry but no cost calibration data."},
@@ -56,9 +52,9 @@
   ],
   "summary": {
     "total_in_registry": 18,
-    "tradeable": 4,
-    "excluded": 17,
-    "tradeable_with_caveat": 1,
-    "next_step": "Extend multi-day cost measurement to remaining 13 symbols using same methodology as NAS100/OIL/USDJPY. For symbols where measurement is not feasible, keep them explicitly excluded with documented reasons."
+    "tradeable": 3,
+    "excluded": 18,
+    "tradeable_with_caveat": 3,
+    "next_step": "All 3 remaining tradeable symbols (XAUUSD, USOIL, USDJPY) still lack true multi-day (repeated-calendar-day) cost measurement — this is calendar-bound and requires live/paper tick recording to run across multiple real days, not more engineering work. NAS100 requires a real measurement source (tick recording or historical archive) before it can be re-admitted."
   }
 }
