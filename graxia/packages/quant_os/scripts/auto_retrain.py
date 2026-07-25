@@ -60,6 +60,8 @@ if ENV_PATH.exists():
             k, v = line.split("=", 1)
             os.environ.setdefault(k.strip(), v.strip())
 
+SYMBOL = os.getenv("TRADE_SYMBOL", "XAUUSD")
+
 DRIFT_THRESHOLD = 0.10  # 10% accuracy drop triggers retrain
 MIN_SAMPLES = 500  # Minimum samples for retrain
 MODEL_DIR = Path(__file__).parent.parent / "ml" / "models"
@@ -161,7 +163,7 @@ def evaluate_model(model_data: dict):
         return _nan_metrics()
 
     try:
-        labeled = label_from_source("warehouse")
+        labeled = label_from_source(symbol=SYMBOL, source="warehouse")
     except Exception as e:
         logger.warning("retrain.evaluate_model.data_error", error=str(e))
         return _nan_metrics()
@@ -305,7 +307,7 @@ def check_drift() -> dict:
 
     # Load labeled data
     try:
-        labeled = label_from_source("warehouse")
+        labeled = label_from_source(symbol=SYMBOL, source="warehouse")
         if len(labeled) < MIN_SAMPLES:
             return {"drifted": False, "reason": "insufficient_data", "samples": len(labeled)}
     except Exception as e:
@@ -360,7 +362,7 @@ def retrain_model() -> dict:
     trainer = MLTrainer(model_dir=str(MODEL_DIR))
 
     try:
-        labeled = label_from_source("warehouse")
+        labeled = label_from_source(symbol=SYMBOL, source="warehouse")
         if len(labeled) < MIN_SAMPLES:
             return {"success": False, "reason": f"insufficient_data: {len(labeled)}"}
     except Exception as e:

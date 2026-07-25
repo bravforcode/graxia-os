@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
-from graxia.packages.quant_os.core.safe_pickle import safe_load_model
+from graxia.packages.quant_os.core.safe_pickle import safe_load_model, sign_model_file
 
 
 @dataclass
@@ -370,6 +370,19 @@ class MLTrainer:
                 f,
             )
 
+        # Sign so safe_load_model()'s TrustedUnpickler will accept the real
+        # sklearn/xgboost/lightgbm classes inside this pickle — RestrictedUnpickler
+        # (used when unsigned) rejects them (see core/safe_pickle.py). Mirrors
+        # api/signal_service.py's save/load contract. Read at call time (not
+        # module import) so the key can be configured per-environment/per-test.
+        model_signing_key = os.getenv("MODEL_SIGNING_KEY") or None
+        if model_signing_key:
+            sign_model_file(model_path, model_signing_key)
+        else:
+            import logging
+
+            logging.getLogger(__name__).warning("model_save_unsigned: MODEL_SIGNING_KEY not set (%s)", model_path)
+
         if registry is not None:
             try:
                 registry.register_model(
@@ -463,8 +476,9 @@ class MLTrainer:
                 import numpy as np
                 from sklearn.metrics import accuracy_score
 
-                with open(result.model_path, "rb") as f:
-                    model_data = safe_load_model(result.model_path)
+                model_data = safe_load_model(
+                    result.model_path, signing_key=os.getenv("MODEL_SIGNING_KEY") or None
+                )
                 model = model_data["model"]
 
                 X_oos = np.array([list(f.values()) for f in oos_features])
@@ -516,7 +530,7 @@ class MLTrainer:
 
     def load_model(self, model_path: str) -> dict[str, Any]:
         """Load a trained model"""
-        return safe_load_model(model_path)
+        return safe_load_model(model_path, signing_key=os.getenv("MODEL_SIGNING_KEY") or None)
 
     def predict(self, model_path: str, features: dict[str, float]) -> tuple[int, float]:
         """

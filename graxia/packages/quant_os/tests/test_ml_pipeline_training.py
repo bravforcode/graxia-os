@@ -27,6 +27,13 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+# Models saved via ml.pipeline.MLTrainer are only loadable through
+# core.safe_pickle.safe_load_model when signed (see core/safe_pickle.py's
+# RestrictedUnpickler vs TrustedUnpickler) — mirrors production, where
+# MODEL_SIGNING_KEY is set in the environment. setdefault() so a real
+# production value (if ever present) is never clobbered.
+os.environ.setdefault("MODEL_SIGNING_KEY", "test-signing-key")
+
 
 # ---------------------------------------------------------------------------
 # Feature builder (standalone, no pandas_ta dependency)

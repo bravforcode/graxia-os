@@ -17,7 +17,7 @@ from typing import Any
 
 import structlog
 
-from graxia.packages.quant_os.core.safe_pickle import safe_load_model
+from graxia.packages.quant_os.core.safe_pickle import safe_load_model, sign_model_file
 from graxia.packages.quant_os.ml.feature_store import compute_feature_list_hash
 
 logger = structlog.get_logger(__name__)
@@ -136,6 +136,21 @@ class ModelRegistry:
         with open(artifact_path, "wb") as f:
             pickle.dump(model, f)
 
+        # Sign so safe_load_model()'s TrustedUnpickler will accept the real
+        # sklearn/xgboost/lightgbm classes inside this pickle — RestrictedUnpickler
+        # (used when unsigned) rejects them (see core/safe_pickle.py). Mirrors
+        # api/signal_service.py's save/load contract. Read at call time (not
+        # module import) so the key can be configured per-environment/per-test.
+        signing_key = os.getenv("MODEL_SIGNING_KEY") or None
+        if signing_key:
+            sign_model_file(artifact_path, signing_key)
+        else:
+            logger.warning(
+                "model_registry_save_unsigned",
+                reason="MODEL_SIGNING_KEY not set",
+                artifact_path=str(artifact_path),
+            )
+
         # Auto-compute feature_list_hash from feature_list unless the caller
         # explicitly supplied one. This guarantees the hash is always derived
         # via the single canonical algorithm (ml.feature_store.compute_feature_list_hash)
@@ -245,8 +260,7 @@ class ModelRegistry:
         artifact_path = self._index[version_id]["artifact_path"]
         if not os.path.exists(artifact_path):
             raise FileNotFoundError(f"Artifact missing: {artifact_path}")
-        with open(artifact_path, "rb") as f:
-            model = safe_load_model(artifact_path)  # noqa: S301
+        model = safe_load_model(artifact_path, signing_key=os.getenv("MODEL_SIGNING_KEY") or None)  # noqa: S301
         logger.debug("model_loaded", version_id=version_id)
         return model
 
