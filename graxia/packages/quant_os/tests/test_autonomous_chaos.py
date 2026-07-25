@@ -659,11 +659,40 @@ class TestBrokerChaos:
         assert result.success is False
         assert "max open positions" in result.error.lower()
 
+    def test_daily_pnl_populated_in_account_state(self) -> None:
+        """Regression test for the Layer-3 wiring bug: account.daily_pnl (the
+        field RiskEngine._layer3 checks against MAX_DAILY_LOSS_PCT) must
+        reflect real broker equity movement, not stay pinned at 0.0 forever.
+        """
+        broker = MagicMock()
+        executor = _make_executor(broker)
+        broker.active.get_account_info.return_value = AccountInfo(
+            equity=10000.0, cash=10000.0, margin_used=0, margin_available=10000.0
+        )
+        executor._fetch_account_state()  # anchors today's baseline at $10,000
+        broker.active.get_account_info.return_value = AccountInfo(
+            equity=9500.0, cash=9500.0, margin_used=0, margin_available=9500.0
+        )
+        account, _ = executor._fetch_account_state()
+        assert account.daily_pnl == -500.0
+
     @pytest.mark.asyncio
     async def test_daily_loss_breached(self) -> None:
         broker = MagicMock()
         executor = _make_executor(broker)
-        executor._daily_realized_pnl = __import__("decimal").Decimal("-500.0")
+        # Anchor today's starting equity at $10,000 via a real fetch (this is
+        # what production does on the first risk check of the day).
+        broker.active.get_account_info.return_value = AccountInfo(
+            equity=10000.0, cash=10000.0, margin_used=0, margin_available=10000.0
+        )
+        executor._fetch_account_state()
+        # Simulate a realized $500 loss dropping equity to $9,500 (5% > the
+        # configured 3% daily loss limit). This drives the real
+        # RealTimePnLTracker-backed gate via broker-reported equity, not a
+        # hand-set internal counter that nothing else ever writes to.
+        broker.active.get_account_info.return_value = AccountInfo(
+            equity=9500.0, cash=9500.0, margin_used=0, margin_available=9500.0
+        )
         result = await executor.execute(_make_decision())
         assert result.success is False
         assert "daily loss" in result.error.lower()
@@ -1885,13 +1914,23 @@ class TestEdgeCases:
     def test_daily_loss_zero_not_breached(self) -> None:
         broker = MagicMock()
         executor = _make_executor(broker)
-        executor._daily_realized_pnl = __import__("decimal").Decimal("0")
+        broker.active.get_account_info.return_value = AccountInfo(
+            equity=10000.0, cash=10000.0, margin_used=0, margin_available=10000.0
+        )
+        executor._fetch_account_state()  # anchor baseline; equity unchanged -> daily_pnl == 0
         assert executor._check_daily_loss_breached() is False
 
     def test_daily_loss_positive_not_breached(self) -> None:
         broker = MagicMock()
         executor = _make_executor(broker)
-        executor._daily_realized_pnl = __import__("decimal").Decimal("100.0")
+        broker.active.get_account_info.return_value = AccountInfo(
+            equity=10000.0, cash=10000.0, margin_used=0, margin_available=10000.0
+        )
+        executor._fetch_account_state()  # anchor baseline at $10,000
+        broker.active.get_account_info.return_value = AccountInfo(
+            equity=10100.0, cash=10100.0, margin_used=0, margin_available=10100.0
+        )
+        executor._fetch_account_state()  # +$100 -> daily_pnl positive, not a loss
         assert executor._check_daily_loss_breached() is False
 
     @pytest.mark.asyncio
