@@ -32,9 +32,9 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
+from ..execution.adapters.base import realistic_slippage_pips
 from .enums import SignalType, TradingMode
 from .event_bus import EventBus
-from ..execution.adapters.base import realistic_slippage_pips
 from .events import (
     Event,
     FillEvent,
@@ -221,6 +221,7 @@ class TradingLoop:
         self._risk_ledger = risk_ledger
         self._risk_overlay = risk_overlay
         self._account_equity = account_equity
+        self._margin_level_pct: Decimal | None = None
         self._kill_switch_active = False
         self._tracked: dict[str, TrackedOrder] = {}
         self._daily_order_count: int = 0
@@ -377,6 +378,7 @@ class TradingLoop:
                 risk_policy=self._risk_policy,
                 risk_ledger=self._risk_ledger,
                 account_equity=Decimal(str(self._account_equity)),
+                margin_level_pct=self._margin_level_pct,
                 signal_stop_loss=signal.stop_loss,
             )
             if not risk_result.approved:
@@ -391,7 +393,9 @@ class TradingLoop:
 
         # ── Risk gate 2: RiskOverlay (daily/weekly loss, cooldown, max trades)
         if self._risk_overlay is not None:
-            stop_distance = abs(signal.entry_price - signal.stop_loss) if signal.stop_loss and signal.stop_loss > 0 else 0.0
+            stop_distance = (
+                abs(signal.entry_price - signal.stop_loss) if signal.stop_loss and signal.stop_loss > 0 else 0.0
+            )
             risk_amount = quantity * stop_distance if stop_distance > 0 else 0.0
             overlay_result = self._risk_overlay.approve(
                 risk_amount=risk_amount,
@@ -522,9 +526,7 @@ class TradingLoop:
             tracked.status = "filled"
             # Query broker for actual fill price and commission from Order.
             # Order now has: avg_fill_price, commission (populated by OMS).
-            tracked.fill_price = (
-                order.avg_fill_price if order.avg_fill_price > 0 else tracked.entry_price
-            )
+            tracked.fill_price = order.avg_fill_price if order.avg_fill_price > 0 else tracked.entry_price
             # Compute slippage from actual fill vs intended entry
             slippage = abs(tracked.fill_price - tracked.entry_price) if tracked.fill_price else 0.0
             tracked.fill_quantity = order.quantity
@@ -635,8 +637,22 @@ class TradingLoop:
         """Reset kill switch state (called by StateCoordinator on deactivate)."""
         self._kill_switch_active = False
 
-    def update_account_equity(self, equity: float) -> None:
-        """Update account equity for risk gate checks (called on account snapshot)."""
+    def update_account_equity(self, equity: float, margin_level_pct: float | None = None) -> None:
+        """Update account equity (and, if supplied, margin level) for risk gate
+        checks — called on account snapshot.
+
+        margin_level_pct was previously silently dropped here: the broker
+        account snapshot (core/orchestrator.py's ``info.margin_level``) was
+        already being read and forwarded to PositionManager, but never to
+        the pre_trade_check() risk gate — so the margin-level check in
+        risk/pre_trade_risk.py was unreachable on every real order (its
+        `margin_level_pct is not None` guard always saw the parameter
+        default). 0 or None means "unknown" and leaves the margin check
+        skipped, same fail-open-only-when-genuinely-unknown behavior as
+        before.
+        """
         self._account_equity = equity
+        if margin_level_pct is not None and margin_level_pct > 0:
+            self._margin_level_pct = Decimal(str(margin_level_pct))
         if self._risk_ledger is not None:
             self._risk_ledger.update_equity(equity)

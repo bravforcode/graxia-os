@@ -22,10 +22,10 @@ from typing import Any
 from ..execution.adapters.base import BrokerAdapter
 from ..execution.adapters.mt5 import MT5Adapter
 from ..execution.oms import OMS
+from ..regime.risk_overlay import RiskOverlay
 from ..risk.kill_switch import KillSwitch
 from ..risk.risk_ledger import RiskLedger
 from ..risk.risk_policy import RiskPolicy
-from ..regime.risk_overlay import RiskOverlay
 from .agents.portfolio_manager import PortfolioManagerAgent
 from .agents.risk_auditor import RiskAuditorAgent
 from .config import QuantConfig
@@ -224,6 +224,7 @@ class TradingOrchestrator:
         self._last_heartbeat = time.time()
         try:
             from pathlib import Path
+
             hb = Path("data/heartbeat.txt")
             hb.parent.mkdir(parents=True, exist_ok=True)
             hb.write_text(time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
@@ -259,7 +260,9 @@ class TradingOrchestrator:
         try:
             info = self._broker_adapter.get_account_info()
             if info.equity > 0:
-                self._trading_loop.update_account_equity(info.equity)
+                self._trading_loop.update_account_equity(
+                    info.equity, margin_level_pct=getattr(info, "margin_level", None)
+                )
                 self._position_manager.sync_account_state(
                     equity=info.equity,
                     balance=getattr(info, "balance", 0.0),
