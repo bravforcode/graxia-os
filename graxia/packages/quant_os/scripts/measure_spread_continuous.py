@@ -1,22 +1,41 @@
 """
 Continuous Spread Measurement — 7+ Day Session-Separated Baseline
 =================================================================
-Records real MT5 spreads every 5 minutes for the 8-asset universe.
-Separates by session (Asian/London/NY). Outputs summary statistics.
+Records real MT5 spreads every 5 minutes for the tradeable universe
+(XAUUSD, NAS100, USDJPY, OIL). Separates by session (Asian/London/NY).
+Outputs summary statistics.
+
+Each invocation connects fresh (explicit login via core.config.get_config(),
+with reconnect-with-backoff on failure — same 3-attempt/2-4-8s pattern as
+execution/adapters/mt5.py::MT5Adapter._ensure_connected), takes one snapshot,
+appends it to today's day file, and disconnects. This makes --once safe to
+run unattended every 5 minutes from Windows Task Scheduler: a crashed/missed
+run just means one missing sample, not a wedged long-lived process.
 
 Usage:
+    python scripts/measure_spread_continuous.py --once
     python scripts/measure_spread_continuous.py --duration-days 7
     python scripts/measure_spread_continuous.py --duration-days 14 --symbols XAUUSD EURUSD
 
 Output:
     data/spread_measurements/YYYY-MM-DD.json  (one file per day)
     data/spread_measurements/summary.json     (aggregated stats)
+
+Note: the OIL leg trades on this MT5/Pepperstone-Demo account under the
+broker symbol 'SpotCrude', NOT 'USOIL' (mt5.symbol_info('USOIL') returns
+None; mt5.symbol_info('SpotCrude') resolves). config/cost_calibration.json
+and config/tradeable_universe.json still key OIL by the literal 'USOIL'
+string (because scripts/tsm_paper_trade.py's MT5_SYMBOL_MAP hardcodes that
+key) — this script polls the real resolvable symbol 'SpotCrude' and records
+both `mt5_symbol` ("SpotCrude") and `display_symbol` ("OIL") per measurement
+so a future cost_calibration.json update can join on either.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from datetime import datetime, timezone, timedelta
@@ -26,7 +45,84 @@ from typing import Optional
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data" / "spread_measurements"
 
-DEFAULT_SYMBOLS = ["XAUUSD", "XAGUSD", "EURUSD", "GBPUSD", "USDJPY", "NAS100", "US30", "BTCUSD"]
+# Tradeable-universe default (matches config/cost_calibration.json's
+# "4-asset focused portfolio"). OIL is polled under its real MT5 symbol.
+DEFAULT_SYMBOLS = ["XAUUSD", "NAS100", "USDJPY", "SpotCrude"]
+
+# Real MT5 broker symbol -> display/canonical name used elsewhere in the repo.
+SYMBOL_DISPLAY_MAP = {"SpotCrude": "OIL"}
+
+# This script never places orders — it only reads ticks/spreads. Some
+# environments have a stray User/Machine-level TRADING_MODE env var (e.g.
+# "DEMO") that core.config.QuantConfig rejects (fail-closed, valid values
+# are PAPER/LIVE_MICRO/LIVE_LIMITED/LIVE_CONTROLLED). Force a valid value
+# for THIS PROCESS ONLY (does not touch the persistent Windows env var) so
+# get_config() can load MT5 credentials without crashing.
+os.environ.setdefault("_TRADING_MODE_ORIGINAL", os.environ.get("TRADING_MODE", ""))
+if os.environ.get("TRADING_MODE", "").upper() not in {
+    "PAPER",
+    "LIVE_MICRO",
+    "LIVE_LIMITED",
+    "LIVE_CONTROLLED",
+}:
+    os.environ["TRADING_MODE"] = "paper"
+
+
+def _get_mt5_credentials() -> Optional[dict]:
+    """Load MT5 credentials via graxia.packages.quant_os.core.config.get_config().
+
+    Returns None (falls back to anonymous mt5.initialize()) if the config
+    module can't be imported from this invocation context — never raises.
+    """
+    try:
+        graxia_root = ROOT.parent.parent.parent  # .../graxia os (parent of the 'graxia' package dir)
+        if str(graxia_root) not in sys.path:
+            sys.path.insert(0, str(graxia_root))
+        from graxia.packages.quant_os.core.config import get_config
+
+        cfg = get_config()
+        return {
+            "login": cfg.mt5_login,
+            "password": cfg.mt5_password,
+            "server": cfg.mt5_server,
+            "path": cfg.mt5_path,
+            "timeout": cfg.mt5_timeout_ms,
+        }
+    except Exception as e:
+        print(f"  WARNING: could not load MT5 credentials via get_config() ({e}); "
+              f"falling back to anonymous mt5.initialize()")
+        return None
+
+
+def _connect_mt5_with_backoff(mt5_module, max_attempts: int = 3) -> bool:
+    """Connect + authenticate to MT5, retrying with backoff (2s, 4s, 8s).
+
+    Mirrors execution/adapters/mt5.py::MT5Adapter._ensure_connected().
+    """
+    creds = _get_mt5_credentials()
+
+    for attempt in range(1, max_attempts + 1):
+        try:
+            if creds is not None:
+                ok = mt5_module.initialize(path=creds["path"], timeout=creds["timeout"])
+                if ok:
+                    ok = mt5_module.login(
+                        creds["login"], password=creds["password"], server=creds["server"]
+                    )
+            else:
+                ok = mt5_module.initialize()
+
+            if ok:
+                return True
+            print(f"  MT5 connect attempt {attempt}/{max_attempts} failed: "
+                  f"{mt5_module.last_error()}")
+        except Exception as e:
+            print(f"  MT5 connect attempt {attempt}/{max_attempts} raised: {e}")
+
+        if attempt < max_attempts:
+            time.sleep(min(2 ** attempt, 10))
+
+    return False
 
 # Session boundaries (UTC hours)
 SESSIONS = {
@@ -53,8 +149,8 @@ def measure_once(symbols: list[str]) -> list[dict]:
         print("ERROR: MetaTrader5 not installed. Run: pip install MetaTrader5")
         sys.exit(1)
 
-    if not mt5.initialize():
-        print(f"ERROR: MT5 initialize failed: {mt5.last_error()}")
+    if not _connect_mt5_with_backoff(mt5):
+        print(f"ERROR: MT5 connect failed after retries: {mt5.last_error()}")
         return []
 
     now = datetime.now(timezone.utc)
@@ -62,9 +158,15 @@ def measure_once(symbols: list[str]) -> list[dict]:
 
     for sym_name in symbols:
         try:
+            # Make sure the symbol is subscribed so ticks actually flow.
+            info_check = mt5.symbol_info(sym_name)
+            if info_check is not None and not info_check.visible:
+                mt5.symbol_select(sym_name, True)
+
             tick = mt5.symbol_info_tick(sym_name)
             sym_info = mt5.symbol_info(sym_name)
             if tick is None or sym_info is None:
+                print(f"  WARNING: {sym_name} not found/no tick on this account")
                 continue
 
             bid = tick.bid
@@ -78,6 +180,8 @@ def measure_once(symbols: list[str]) -> list[dict]:
 
             measurements.append({
                 "symbol": sym_name,
+                "display_symbol": SYMBOL_DISPLAY_MAP.get(sym_name, sym_name),
+                "mt5_symbol": sym_name,
                 "timestamp_utc": now.isoformat(),
                 "bid": bid,
                 "ask": ask,
@@ -241,14 +345,25 @@ def main():
     parser.add_argument("--symbols", nargs="+", default=DEFAULT_SYMBOLS, help="Symbols to measure")
     parser.add_argument("--interval", type=int, default=300, help="Measurement interval in seconds (default: 300)")
     parser.add_argument("--once", action="store_true", help="Take single snapshot and exit (no loop)")
+    parser.add_argument(
+        "--no-save",
+        action="store_true",
+        help="With --once: print the snapshot instead of appending it to data/spread_measurements/<date>.json "
+             "(default for --once is to persist, so it's safe to schedule as a recurring task)",
+    )
     args = parser.parse_args()
 
     if args.once:
         measurements = measure_once(args.symbols)
-        if measurements:
-            print(json.dumps(measurements, indent=2))
-        else:
+        if not measurements:
             print("No measurements collected.")
+            return
+        if args.no_save:
+            print(json.dumps(measurements, indent=2))
+            return
+        date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        path = save_day(measurements, date_str)
+        print(f"Saved {len(measurements)} measurements -> {path}")
         return
 
     run_measurement(args.duration_days, args.symbols, args.interval)
