@@ -18,6 +18,7 @@ from typing import Any
 import structlog
 
 from graxia.packages.quant_os.core.safe_pickle import safe_load_model
+from graxia.packages.quant_os.ml.feature_store import compute_feature_list_hash
 
 logger = structlog.get_logger(__name__)
 
@@ -134,6 +135,13 @@ class ModelRegistry:
         # Save artifact
         with open(artifact_path, "wb") as f:
             pickle.dump(model, f)
+
+        # Auto-compute feature_list_hash from feature_list unless the caller
+        # explicitly supplied one. This guarantees the hash is always derived
+        # via the single canonical algorithm (ml.feature_store.compute_feature_list_hash)
+        # rather than depending on every caller remembering to hash it themselves.
+        if not feature_list_hash and feature_list:
+            feature_list_hash = compute_feature_list_hash(feature_list)
 
         # Build metadata
         metadata = ModelMetadata(

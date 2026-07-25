@@ -266,6 +266,7 @@ class MLTrainer:
         feature_set: FeatureSet,
         model_type: str = "xgboost",
         test_ratio: float = 0.2,
+        registry: Any | None = None,
     ) -> ModelResult:
         """
         Train a model on the given feature set.
@@ -274,6 +275,16 @@ class MLTrainer:
             feature_set: Features and labels
             model_type: "xgboost", "lightgbm", "random_forest"
             test_ratio: Hold-out test ratio
+            registry: Optional ml.model_registry.ModelRegistry instance. If
+                provided, the trained model is ALSO registered there (in
+                addition to the existing pickle save below, which is left
+                unchanged for backward compatibility). Registration computes
+                a feature_list_hash via the same canonical algorithm used by
+                the live inference path (ml.feature_store.compute_feature_list_hash),
+                so any consumer that loads this model through the registry can
+                fail closed on a feature/model contract mismatch. Registration
+                failures are logged and swallowed — they must never block
+                training from completing.
 
         Returns:
             ModelResult with metrics
@@ -341,6 +352,28 @@ class MLTrainer:
                 },
                 f,
             )
+
+        if registry is not None:
+            try:
+                registry.register_model(
+                    model,
+                    model_name=f"{model_type}_{feature_set.symbol or 'unknown'}",
+                    model_type=model_type,
+                    symbol=feature_set.symbol,
+                    timeframe=feature_set.timeframe,
+                    feature_list=feature_set.feature_names,
+                    metrics={
+                        "accuracy": float(accuracy),
+                        "precision": float(precision),
+                        "recall": float(recall),
+                        "f1_score": float(f1),
+                    },
+                    training_samples=len(X_train),
+                )
+            except Exception as exc:  # noqa: BLE001 — registration is best-effort, never blocks training
+                import logging
+
+                logging.getLogger(__name__).warning("model_registry_registration_failed: %s", exc)
 
         return ModelResult(
             model_name=model_type,

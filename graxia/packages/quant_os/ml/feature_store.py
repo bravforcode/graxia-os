@@ -18,6 +18,241 @@ logger = structlog.get_logger(__name__)
 
 DEFAULT_CACHE_DIR = Path(__file__).parent / ".feature_cache"
 
+# Canonical live-feature vocabulary (~40 features) computed by compute_live_features().
+# This is the single feature-name list shared by the live inference path
+# (api/signal_service.py) and the live-retrain path — both derive their feature
+# columns from this function so the two can never silently diverge by construction.
+LIVE_FEATURE_COLUMNS: list[str] = (
+    [f"ret_{p}bar" for p in (1, 5, 10, 15, 30, 60)]
+    + [f"atr_{w}" for w in (7, 14, 21)]
+    + [f"rvol_{w}" for w in (10, 20, 60)]
+    + [f"rsi_{p}" for p in (7, 14, 21)]
+    + [
+        "stoch_k",
+        "stoch_d",
+        "cci_20",
+        "willr_14",
+        "ema_5_dist",
+        "ema_10_dist",
+        "ema_20_dist",
+        "ema_200_dist",
+        "sma_20_50_cross",
+        "bb_width",
+        "bb_pctb",
+        "bb_squeeze",
+        "obv_slope_20",
+        "vol_ratio_20",
+        "vol_ratio_10",
+        "body_ratio",
+        "upper_shadow",
+        "lower_shadow",
+        "is_doji",
+        "is_hammer",
+        "is_bull_engulf",
+        "is_asian_session",
+        "is_london_session",
+        "is_ny_session",
+        "day_of_week",
+        "day_of_month",
+        "month",
+    ]
+)
+
+
+def compute_feature_list_hash(feature_names: list[str]) -> str:
+    """Compute a deterministic, order-sensitive hash of an ordered feature-name list.
+
+    This is THE canonical hashing algorithm for the ``feature_list_hash`` field on
+    ``ml.model_registry.ModelMetadata``. Any code that needs to verify "does this
+    live feature vector match what a registered model expects" MUST call this same
+    function on both sides of the comparison — a different algorithm computing
+    "the same" hash defeats the purpose of the check.
+
+    Order matters (unlike a set-based hash) because feature order determines
+    column position in the X matrix fed to the model; a reordering of the same
+    names would silently reshuffle a model's inputs.
+
+    Args:
+        feature_names: Ordered list of feature column names.
+
+    Returns:
+        Hex-encoded SHA-256 digest of the pipe-joined, order-preserved names.
+    """
+    raw = "|".join(feature_names)
+    return hashlib.sha256(raw.encode()).hexdigest()
+
+
+def compute_live_features(live_df: Any, feature_cols: list[str]) -> Any:
+    """Compute the canonical ~40 live features on OHLCV data.
+
+    This is the single feature-computation implementation used by BOTH the live
+    inference path (api/signal_service.py's /api/signal endpoint) and the live
+    model retrain path (api/signal_service.py's _retrain_model()) — previously
+    these two call sites each had their own hand-maintained copy of this logic,
+    which was the "three disconnected feature computations" problem this function
+    resolves for the live-feature vocabulary.
+
+    Args:
+        live_df: DataFrame with open/high/low/close/volume columns and a
+            DatetimeIndex (used for session/calendar features).
+        feature_cols: Ordered list of feature column names to select and return.
+            Any name not producible by this function is filled with 0.0 as a
+            safety fallback (and a warning is logged) — this mirrors the prior
+            behavior in signal_service.py so existing feature-mismatch tests
+            keep passing without silently guessing an unfamiliar feature name.
+
+    Returns:
+        numpy array of shape (1, len(feature_cols)) — the most recent bar's
+        feature vector, in the order of feature_cols.
+    """
+    import numpy as np
+    import pandas as pd
+
+    df = live_df.copy()
+
+    # Input validation — reject NaN/inf/negative prices
+    for col in ["open", "high", "low", "close"]:
+        if col in df.columns:
+            if df[col].isna().any():
+                logger.warning("feature.NaN_input", column=col)
+                df[col] = df[col].fillna(method="ffill").fillna(method="bfill")
+            if np.isinf(df[col]).any():
+                logger.warning("feature.inf_input", column=col)
+                df[col] = df[col].replace([np.inf, -np.inf], np.nan).fillna(method="ffill").fillna(method="bfill")
+    # Ensure high >= low >= 0
+    if "high" in df.columns and "low" in df.columns:
+        df["low"] = df["low"].clip(lower=0)
+        df["high"] = df["high"].clip(lower=df["low"])
+
+    # Returns
+    for p in [1, 5, 10, 15, 30, 60]:
+        df[f"ret_{p}bar"] = df["close"].pct_change(p)
+
+    # ATR
+    tr = pd.concat(
+        [
+            df["high"] - df["low"],
+            (df["high"] - df["close"].shift()).abs(),
+            (df["low"] - df["close"].shift()).abs(),
+        ],
+        axis=1,
+    ).max(axis=1)
+    for w in [7, 14, 21]:
+        df[f"atr_{w}"] = tr.rolling(w).mean()
+
+    # Realized Volatility
+    log_ret = np.log(df["close"] / df["close"].shift(1))
+    for w in [10, 20, 60]:
+        df[f"rvol_{w}"] = log_ret.rolling(w).std() * np.sqrt(252 * 96)
+
+    # RSI
+    delta = df["close"].diff()
+    for p in [7, 14, 21]:
+        gain = delta.clip(lower=0).rolling(p).mean()
+        loss = (-delta.clip(upper=0)).rolling(p).mean()
+        rs = gain / loss.replace(0, np.nan)
+        df[f"rsi_{p}"] = 100 - (100 / (1 + rs))
+
+    # Stochastic
+    low14 = df["low"].rolling(14).min()
+    high14 = df["high"].rolling(14).max()
+    df["stoch_k"] = 100 * (df["close"] - low14) / (high14 - low14).replace(0, np.nan)
+    df["stoch_d"] = df["stoch_k"].rolling(3).mean()
+
+    # CCI
+    tp = (df["high"] + df["low"] + df["close"]) / 3
+    df["cci_20"] = (tp - tp.rolling(20).mean()) / (0.015 * tp.rolling(20).std())
+
+    # Williams %R
+    df["willr_14"] = -100 * (high14 - df["close"]) / (high14 - low14).replace(0, np.nan)
+
+    # EMA distances
+    for p in [5, 10, 20, 200]:
+        ema = df["close"].ewm(span=p, adjust=False).mean()
+        df[f"ema_{p}_dist"] = (df["close"] - ema) / ema
+
+    # SMA cross
+    sma20 = df["close"].rolling(20).mean()
+    sma50 = df["close"].rolling(50).mean()
+    df["sma_20_50_cross"] = (sma20 - sma50) / sma50
+
+    # Bollinger Bands
+    sma20_bb = df["close"].rolling(20).mean()
+    std20 = df["close"].rolling(20).std()
+    upper_bb = sma20_bb + 2 * std20
+    lower_bb = sma20_bb - 2 * std20
+    df["bb_width"] = (upper_bb - lower_bb) / sma20_bb
+    df["bb_pctb"] = (df["close"] - lower_bb) / (upper_bb - lower_bb).replace(0, np.nan)
+    df["bb_squeeze"] = (df["bb_width"] < df["bb_width"].rolling(120).mean()).astype(float)
+
+    # Volume
+    if "volume" not in df.columns and "tick_volume" in df.columns:
+        df["volume"] = df["tick_volume"]
+    elif "volume" not in df.columns:
+        df["volume"] = 0
+    obv = (np.sign(df["close"].diff()) * df["volume"]).fillna(0).cumsum()
+
+    def _safe_slope(x):
+        if len(x) < 2:
+            return 0.0
+        try:
+            slope = np.polyfit(range(len(x)), x, 1)[0]
+            if np.isnan(slope) or np.isinf(slope):
+                return 0.0
+            return slope
+        except (np.linalg.LinAlgError, ValueError):
+            return 0.0
+
+    df["obv_slope_20"] = obv.rolling(20).apply(_safe_slope, raw=True)
+    vol_ma20 = df["volume"].rolling(20).mean()
+    vol_ma10 = df["volume"].rolling(10).mean()
+    df["vol_ratio_20"] = df["volume"] / vol_ma20.replace(0, np.nan)
+    df["vol_ratio_10"] = df["volume"] / vol_ma10.replace(0, np.nan)
+
+    # Candlestick patterns
+    body = (df["close"] - df["open"]).abs()
+    candle_range = (df["high"] - df["low"]).replace(0, np.nan)
+    df["body_ratio"] = body / candle_range
+    df["upper_shadow"] = (df["high"] - df[["open", "close"]].max(axis=1)) / candle_range
+    df["lower_shadow"] = (df[["open", "close"]].min(axis=1) - df["low"]) / candle_range
+    df["is_doji"] = (body / candle_range < 0.10).astype(float)
+    df["is_hammer"] = ((df["lower_shadow"] > 0.6) & (body / candle_range < 0.3)).astype(float)
+    prev_bearish = df["open"].shift(1) > df["close"].shift(1)
+    curr_bullish = df["close"] > df["open"]
+    df["is_bull_engulf"] = (
+        prev_bearish & curr_bullish & (df["close"] > df["open"].shift(1)) & (df["open"] < df["close"].shift(1))
+    ).astype(float)
+
+    # Session flags (UTC) — use bar time from index
+    try:
+        hour = df.index.hour
+    except AttributeError:
+        hour = pd.DatetimeIndex(df.index).hour
+    df["is_asian_session"] = ((hour >= 0) & (hour < 8)).astype(float)
+    df["is_london_session"] = ((hour >= 8) & (hour < 16)).astype(float)
+    df["is_ny_session"] = ((hour >= 13) & (hour < 21)).astype(float)
+
+    # Calendar
+    try:
+        df["day_of_week"] = df.index.dayofweek
+        df["day_of_month"] = df.index.day
+        df["month"] = df.index.month
+    except AttributeError:
+        idx = pd.DatetimeIndex(df.index)
+        df["day_of_week"] = idx.dayofweek
+        df["day_of_month"] = idx.day
+        df["month"] = idx.month
+
+    # Select only model features
+    missing = [c for c in feature_cols if c not in df.columns]
+    if missing:
+        logger.warning("feature.mismatch", missing_count=len(missing), sample=missing[:5])
+        for c in missing:
+            df[c] = 0.0
+
+    result = df[feature_cols].fillna(0).values
+    return result[-1:]
+
 
 @dataclass(frozen=True)
 class FeatureMetadata:
