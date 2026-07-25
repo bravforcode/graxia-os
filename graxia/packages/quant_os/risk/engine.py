@@ -235,6 +235,22 @@ class RiskEngine:
         self._risk_policy = risk_policy
         self._news_blackout = news_blackout
 
+    @property
+    def effective_max_daily_loss_pct(self) -> float:
+        """The daily-loss % that :meth:`_layer3` actually enforces right now.
+
+        Mirrors the exact fallback branch used inside ``_layer3``: the
+        configured ``RiskPolicy``'s threshold if one was supplied at
+        construction, otherwise the engine's built-in ``_Layer3`` default.
+        Exists so external callers (e.g. ``OrderExecutor``'s local
+        daily-loss backstop) can read the *single* number Layer 3 is
+        really gating on, instead of hard-coding a second, independently
+        maintained copy of the same threshold that can drift out of sync.
+        """
+        if self._risk_policy is not None:
+            return float(self._risk_policy.max_daily_loss_pct)
+        return _Layer3.MAX_DAILY_LOSS_PCT * 100
+
     def _pre_checks(self, signal: Signal) -> RiskVerdict | None:
         if self._kill_switch is not None and self._kill_switch.is_active():
             return self._reject(RejectReason.KILL_SWITCH_ACTIVE, "Kill switch active", layer=0)

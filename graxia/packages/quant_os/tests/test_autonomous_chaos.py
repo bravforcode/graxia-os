@@ -42,6 +42,8 @@ from graxia.packages.quant_os.autonomous.reconciler import TradeReconciler
 from graxia.packages.quant_os.autonomous.symbol_registry import SymbolInfo, SymbolRegistry
 from graxia.packages.quant_os.core.enums import SignalType
 from graxia.packages.quant_os.execution.adapters.base import AccountInfo
+from graxia.packages.quant_os.risk.engine import RiskEngine
+from graxia.packages.quant_os.risk.risk_policy import RiskPolicy
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Fixtures
@@ -703,6 +705,19 @@ class TestBrokerChaos:
         d = _make_decision(confidence=0.01)
         size = executor._calculate_position_size(d)
         assert size >= 0.01
+
+    def test_position_size_broker_unreachable_fails_to_zero(self) -> None:
+        """Regression test: if the broker is unreachable while sizing, the
+        executor must fail toward zero size (rejecting the trade), not
+        fabricate a mid-size equity guess (e.g. the old $10,000 fallback)
+        and size a real order off invented numbers.
+        """
+        broker = MagicMock()
+        executor = _make_executor(broker)
+        broker.active.get_account_info.side_effect = RuntimeError("broker unreachable")
+        d = _make_decision()
+        size = executor._calculate_position_size(d)
+        assert size == 0.0
 
     def test_broker_get_positions_exception(self) -> None:
         broker = MagicMock()
@@ -1932,6 +1947,41 @@ class TestEdgeCases:
         )
         executor._fetch_account_state()  # +$100 -> daily_pnl positive, not a loss
         assert executor._check_daily_loss_breached() is False
+
+    def test_daily_loss_threshold_reads_real_risk_policy(self) -> None:
+        """Regression test for the auto_config vs RiskEngine threshold
+        mismatch: when a *real* RiskEngine (backed by a RiskPolicy) is
+        wired in, the local daily-loss backstop must gate on that
+        RiskPolicy's threshold -- the same number Layer 3 enforces --
+        not on the independent ``auto_config.MAX_DAILY_LOSS_PCT`` (3%)
+        constant.
+        """
+        broker = MagicMock()
+        broker.active = MagicMock()
+        broker.active.get_account_info.return_value = AccountInfo(
+            equity=10000.0, cash=10000.0, margin_used=0, margin_available=10000.0
+        )
+        broker.active.get_positions.return_value = []
+        ks = MagicMock()
+        ks.is_active.return_value = False
+        ks.is_triggered = False
+        ks.get_status.return_value = {}
+
+        # Tight custom policy: 1.0% daily loss limit (vs auto_config's 3.0%).
+        policy = RiskPolicy(max_daily_loss_bps=100)
+        risk_engine = RiskEngine(risk_policy=policy)
+        executor = OrderExecutor(broker_manager=broker, risk_engine=risk_engine, kill_switch=ks, mode="paper")
+
+        assert executor._effective_max_daily_loss_pct() == pytest.approx(1.0)
+
+        executor._fetch_account_state()  # anchor baseline at $10,000
+        # -2% loss: breaches the 1% RiskPolicy limit but NOT the 3%
+        # auto_config constant this code used to read independently.
+        broker.active.get_account_info.return_value = AccountInfo(
+            equity=9800.0, cash=9800.0, margin_used=0, margin_available=9800.0
+        )
+        executor._fetch_account_state()  # sync tracker to the new equity reading
+        assert executor._check_daily_loss_breached() is True
 
     @pytest.mark.asyncio
     async def test_max_positions_zero_blocks(self) -> None:

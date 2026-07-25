@@ -33,6 +33,7 @@ from ..execution.adapters.base import AccountInfo, Order, OrderResult
 from ..execution.adapters.manager import BrokerManager
 from ..risk.engine import AccountState, PortfolioState, RiskEngine, RiskVerdict, Signal
 from ..risk.kill_switch import KillSwitch
+from ..risk.position_sizer import FixedFractionalSizer
 from ..risk.realtime_pnl import RealTimePnLTracker
 from . import config as auto_config
 from .decision_engine import TradeDecision
@@ -147,7 +148,7 @@ class OrderExecutor:
         if self._check_daily_loss_breached():
             return self._reject(
                 f"Daily loss limit breached (daily P&L ${float(self._pnl_tracker.daily_pnl):.2f} "
-                f"vs {auto_config.MAX_DAILY_LOSS_PCT:.1f}% max)"
+                f"vs {self._effective_max_daily_loss_pct():.1f}% max)"
             )
 
         # Step 6: Risk engine pre-trade check (includes daily loss check)
@@ -179,7 +180,7 @@ class OrderExecutor:
             "trades_today": self._daily_trades,
             "max_daily_trades": auto_config.MAX_DAILY_TRADES,
             "realized_pnl": float(self._pnl_tracker.daily_pnl),
-            "max_daily_loss_pct": auto_config.MAX_DAILY_LOSS_PCT,
+            "max_daily_loss_pct": self._effective_max_daily_loss_pct(),
             "open_positions": self._open_positions,
             "max_open_positions": auto_config.MAX_OPEN_POSITIONS,
             "mode": self._mode,
@@ -360,33 +361,41 @@ class OrderExecutor:
     def _calculate_position_size(self, decision: TradeDecision) -> float:
         """Derive position size from confidence and real account equity.
 
-        Risk is expressed as a % of equity per trade, then converted to lots
-        using SL distance and contract size for the asset class.
+        Delegates the actual lot-size math to
+        ``risk.position_sizer.FixedFractionalSizer`` (per-symbol contract
+        sizes + portfolio-exposure/max-position caps from config), scaled
+        by a confidence-derived risk percentage that reproduces this
+        method's original floor/cap (0.01%-0.5% of equity per trade).
+
+        Fails toward zero size (not a fabricated equity guess) if the
+        broker is unreachable -- sizing a real order off a made-up equity
+        number is a fail-open-adjacent pattern; zero size is safe because
+        ``execute()`` rejects orders with ``size <= 0``.
         """
         try:
             broker = self._broker_manager.active
             info = broker.get_account_info()
             equity = info.equity
-        except Exception:
-            equity = 10000.0  # fallback
-
-        risk_pct = max(0.01, min(decision.confidence * 0.5, 1.0)) / 100.0
-        risk_amount = equity * risk_pct
+        except Exception as exc:
+            logger.warning("order_executor.size_equity_fetch_failed", error=str(exc))
+            return 0.0
 
         sl_distance = abs(decision.entry - decision.stop_loss) if decision.stop_loss else 0
         if sl_distance <= 0:
             return 0.0
 
-        asset_class = self._symbol_registry.get_asset_class(decision.symbol)
-        if asset_class == "forex":
-            size = risk_amount / (sl_distance * 100000)
-        elif asset_class == "metals":
-            size = risk_amount / (sl_distance * 100)
-        elif asset_class == "crypto":
-            size = risk_amount / sl_distance
-        else:
-            size = risk_amount / sl_distance
+        # Same confidence-scaled risk% as before: floor 0.01%, cap 0.5% of equity.
+        risk_pct = max(0.01, min(decision.confidence * 0.5, 1.0))
 
+        sizer = FixedFractionalSizer(risk_pct=risk_pct)
+        result = sizer.calculate(
+            account_balance=Decimal(str(equity)),
+            entry_price=Decimal(str(decision.entry)),
+            stop_loss=Decimal(str(decision.stop_loss)),
+            symbol=decision.symbol,
+        )
+
+        size = float(result.lots)
         return round(max(0.01, min(size, 1.0)), 4)
 
     def _submit_order(self, decision: TradeDecision, size: float) -> ExecutionResult:
@@ -514,6 +523,27 @@ class OrderExecutor:
         self._log_execution(decision, exec_result)
         return exec_result
 
+    def _effective_max_daily_loss_pct(self) -> float:
+        """Single source of truth for the daily-loss % threshold.
+
+        Reads ``RiskEngine.effective_max_daily_loss_pct`` -- the *same*
+        number Layer 3 (``risk/engine.py::_layer3``) actually enforces --
+        so this local backstop can never silently disagree with the real
+        gate (previously this read ``auto_config.MAX_DAILY_LOSS_PCT`` (3%)
+        independently of Layer 3's threshold, which defaults to 2% or
+        whatever ``RiskPolicy`` the engine was built with -- two numbers
+        for one real-world limit).
+
+        Falls back to ``auto_config.MAX_DAILY_LOSS_PCT`` only when
+        ``self._risk_engine`` doesn't expose a real, numeric
+        ``effective_max_daily_loss_pct`` (e.g. a test double / mock risk
+        engine) -- there is nothing else to read in that case.
+        """
+        threshold = getattr(self._risk_engine, "effective_max_daily_loss_pct", None)
+        if isinstance(threshold, (int, float)):
+            return float(threshold)
+        return auto_config.MAX_DAILY_LOSS_PCT
+
     def _check_daily_loss_breached(self) -> bool:
         """Check if today's real P&L exceeds the loss limit (as % of equity).
 
@@ -528,7 +558,7 @@ class OrderExecutor:
         if equity <= 0:
             return True
         loss_pct = abs(float(daily_pnl)) / equity * 100.0
-        return loss_pct >= auto_config.MAX_DAILY_LOSS_PCT
+        return loss_pct >= self._effective_max_daily_loss_pct()
 
     def _maybe_reset_daily_stats(self) -> None:
         """Reset daily counters at midnight UTC."""
