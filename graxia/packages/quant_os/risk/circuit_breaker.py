@@ -216,6 +216,8 @@ class CircuitBreaker:
     def _load(self) -> None:
         import time
 
+        if self._state_file is None:
+            return
         try:
             text = self._state_file.read_text(encoding="utf-8")
             if not text.strip():

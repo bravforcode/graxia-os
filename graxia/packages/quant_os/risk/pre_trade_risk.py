@@ -30,8 +30,8 @@ def pre_trade_check(
     risk_policy: RiskPolicy,
     risk_ledger: RiskLedger,
     account_equity: Decimal,
-    kill_switch: KillSwitch = None,
-    circuit_breaker: CircuitBreaker = None,
+    kill_switch: KillSwitch | None = None,
+    circuit_breaker: CircuitBreaker | None = None,
     asset_class: str = "",
     margin_level_pct: Decimal | None = None,
     signal_stop_loss: Any = _UNSET_STOP_LOSS,
@@ -51,9 +51,8 @@ def pre_trade_check(
         reasons.append("Kill switch is active")
 
     # Circuit breaker check
-    if circuit_breaker and asset_class:
-        if circuit_breaker.is_open(asset_class):
-            reasons.append(f"Circuit breaker open for {asset_class}: {circuit_breaker.reason}")
+    if circuit_breaker and asset_class and circuit_breaker.is_open(asset_class):
+        reasons.append(f"Circuit breaker open for {asset_class}: {circuit_breaker.reason}")
 
     # Stop-loss requirement (only checked when signal stop-loss is explicitly provided)
     if (
@@ -94,9 +93,8 @@ def pre_trade_check(
         reasons.append(f"Max orders/day reached: {risk_ledger.orders_today} >= {risk_policy.max_orders_per_day}")
 
     # Margin level check
-    if margin_level_pct is not None and margin_level_pct > 0:
-        if margin_level_pct < risk_policy.min_margin_level_pct:
-            reasons.append(f"Margin level too low: {margin_level_pct:.0f}% < {risk_policy.min_margin_level_pct:.0f}%")
+    if margin_level_pct is not None and margin_level_pct > 0 and margin_level_pct < risk_policy.min_margin_level_pct:
+        reasons.append(f"Margin level too low: {margin_level_pct:.0f}% < {risk_policy.min_margin_level_pct:.0f}%")
 
     return RiskCheckResult(
         approved=len(reasons) == 0,

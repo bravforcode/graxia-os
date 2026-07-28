@@ -221,8 +221,6 @@ def run_quality_gate(
     columns = list(rows[0].keys()) if rows else []
     ds_type = _infer_dataset_type(columns)
 
-    gate = DataQualityGate()
-
     if "schema" in selected:
         results["schema"] = _check_schema_gate(columns, ds_type, rows)
     if "range" in selected:
@@ -303,6 +301,7 @@ def _read_data_safe(filepath: str, ext: str) -> list[dict] | None:
                         break
                     rows.append(row)
             return rows
+        return None  # unknown extension — treated as no data
     except Exception as e:
         logger.error(f"Failed to read {filepath}: {e}")
         return None
@@ -350,7 +349,7 @@ def _check_schema_gate(columns: list[str], ds_type: str, data: list[dict]) -> di
 def _check_range_gate(data: list[dict], ds_type: str) -> dict:
     """Verify bid/ask/price ranges."""
     violations = 0
-    violation_sample = []
+    violation_sample: list[dict] = []
     for i, row in enumerate(data):
         bid = _to_float(row.get("bid"))
         ask = _to_float(row.get("ask"))
@@ -471,7 +470,7 @@ def _check_staleness_gate(data: list[dict], columns: list[str]) -> dict:
     if ds_type == "ohlcv":
         interval = _infer_bar_interval_sec(timestamps)
         if interval and interval > 0:
-            base_threshold = interval * 3
+            base_threshold = int(interval * 3)
 
     max_gap = 0
     for i in range(1, len(timestamps)):
@@ -553,7 +552,7 @@ def _check_distribution_gate(data: list[dict], ds_type: str) -> dict:
     except ImportError:
         has_np = False
 
-    results = {}
+    results: dict[str, dict] = {}
     for col in price_cols:
         values = []
         for row in data[:sample_size]:

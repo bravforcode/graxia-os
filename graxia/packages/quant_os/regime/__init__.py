@@ -2,8 +2,8 @@
 
 Output: TREND_UP, TREND_DOWN, RANGE, or UNCLEAR with confidence score.
 """
+
 from dataclasses import dataclass
-from typing import List, Optional
 
 
 @dataclass
@@ -15,6 +15,23 @@ class RegimeResult:
     atr_state: str  # EXPANDING | CONTRACTING | NORMAL
     spread_state: str  # NORMAL | SPIKE
     reason_code: str  # debug summary
+
+
+def compute_atr(highs: list[float], lows: list[float], closes: list[float], period: int = 14) -> list[float]:
+    """Average True Range — standalone helper for callers that need ATR outside RegimeDetector."""
+    tr = []
+    for i in range(1, len(closes)):
+        hl = highs[i] - lows[i]
+        hc = abs(highs[i] - closes[i - 1])
+        lc = abs(lows[i] - closes[i - 1])
+        tr.append(max(hl, hc, lc))
+    # Wilder's smoothing
+    if not tr or period <= 1:
+        return tr
+    smooth = [sum(tr[:period]) / period]
+    for v in tr[period:]:
+        smooth.append((smooth[-1] * (period - 1) + v) / period)
+    return smooth
 
 
 class RegimeDetector:
@@ -36,22 +53,22 @@ class RegimeDetector:
     def __init__(self):
         pass
 
-    def detect(self, closes: List[float], highs: List[float], lows: List[float],
-               spreads: Optional[List[float]] = None) -> RegimeResult:
+    def detect(
+        self, closes: list[float], highs: list[float], lows: list[float], spreads: list[float] | None = None
+    ) -> RegimeResult:
         """Detect regime from OHLCV data.
-        
+
         Args:
             closes: Close prices (need >= 50 bars)
             highs: High prices
             lows: Low prices
             spreads: Optional bid/ask spread data
-        
+
         Returns:
             RegimeResult with regime classification and confidence
         """
         if len(closes) < 50:
-            return RegimeResult("UNCLEAR", 0.0, 0, 0, "NORMAL", "NORMAL",
-                                "insufficient data")
+            return RegimeResult("UNCLEAR", 0.0, 0, 0, "NORMAL", "NORMAL", "insufficient data")
 
         # --- ADX(14) ---
         adx = self._calc_adx(highs, lows, closes, 14)
@@ -81,7 +98,6 @@ class RegimeDetector:
 
         # --- Decision logic ---
         adx_current = adx[-1]
-        reasons = []
         codes = []
         votes = {"trend": 0, "range": 0, "unclear": 0}
 
@@ -119,9 +135,9 @@ class RegimeDetector:
 
         # Spread spike override
         if spread_state == "SPIKE":
-            return RegimeResult("UNCLEAR", 0.6, adx_current,
-                                round(ema_slope, 8), atr_state, spread_state,
-                                "SPREAD_SPIKE")
+            return RegimeResult(
+                "UNCLEAR", 0.6, adx_current, round(ema_slope, 8), atr_state, spread_state, "SPREAD_SPIKE"
+            )
 
         # Determine regime
         total = votes["trend"] + votes["range"] + votes["unclear"]
@@ -140,13 +156,13 @@ class RegimeDetector:
             regime = "UNCLEAR"
 
         reason = " | ".join(codes)
-        return RegimeResult(regime, round(confidence, 3), adx_current,
-                            round(ema_slope, 8), atr_state, spread_state, reason)
+        return RegimeResult(
+            regime, round(confidence, 3), adx_current, round(ema_slope, 8), atr_state, spread_state, reason
+        )
 
     # --- Internal helpers ---
 
-    def _calc_adx(self, highs: List[float], lows: List[float],
-                  closes: List[float], period: int) -> List[float]:
+    def _calc_adx(self, highs: list[float], lows: list[float], closes: list[float], period: int) -> list[float]:
         """Wilder's ADX"""
         tr = []
         for i in range(1, len(closes)):
@@ -184,7 +200,7 @@ class RegimeDetector:
 
         return self._wilder_smooth(dx, period)
 
-    def _wilder_smooth(self, values: List[float], period: int) -> List[float]:
+    def _wilder_smooth(self, values: list[float], period: int) -> list[float]:
         """Wilder's smoothing (modified EMA)"""
         if not values or period <= 1:
             return []
@@ -193,7 +209,7 @@ class RegimeDetector:
             smooth.append((smooth[-1] * (period - 1) + v) / period)
         return smooth
 
-    def _calc_ema(self, values: List[float], period: int) -> List[float]:
+    def _calc_ema(self, values: list[float], period: int) -> list[float]:
         """Exponential Moving Average"""
         if len(values) < period:
             return []
@@ -203,21 +219,20 @@ class RegimeDetector:
             ema.append((v - ema[-1]) * multiplier + ema[-1])
         return ema
 
-    def _calc_sma(self, values: List[float], period: int) -> float:
+    def _calc_sma(self, values: list[float], period: int) -> float:
         """Simple Moving Average of last N values"""
         if len(values) < period:
             return sum(values) / len(values)
         return sum(values[-period:]) / period
 
-    def _calc_slope(self, values: List[float], lookback: int) -> float:
+    def _calc_slope(self, values: list[float], lookback: int) -> float:
         """Normalized slope: (last - first) / first over lookback bars"""
         if len(values) < lookback + 1:
             return 0.0
-        recent = values[-(lookback + 1):]
+        recent = values[-(lookback + 1) :]
         return (recent[-1] - recent[0]) / recent[0] if recent[0] != 0 else 0.0
 
-    def _calc_atr(self, highs: List[float], lows: List[float],
-                  closes: List[float], period: int) -> List[float]:
+    def _calc_atr(self, highs: list[float], lows: list[float], closes: list[float], period: int) -> list[float]:
         """Average True Range"""
         tr = []
         for i in range(1, len(closes)):

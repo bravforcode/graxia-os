@@ -30,8 +30,8 @@ def size_position(
     risk_policy: RiskPolicy,
     calc_profit_fn: Callable | None = None,
     calc_margin_fn: Callable | None = None,
-    calc_profit_fn_kwargs: dict = None,
-    calc_margin_fn_kwargs: dict = None,
+    calc_profit_fn_kwargs: dict | None = None,
+    calc_margin_fn_kwargs: dict | None = None,
     current_exposure_pct: Decimal = Decimal("0"),
     max_portfolio_exposure_pct: Decimal = Decimal("0"),
 ) -> SizingResult:
@@ -163,7 +163,7 @@ def size_position(
         reasons.append("One-lot loss is zero — cannot size")
 
     # --- Step 3: Derive raw volume ---
-    if one_lot_loss > 0:
+    if one_lot_loss is not None and one_lot_loss > 0:
         raw_volume = risk_budget / one_lot_loss
     else:
         raw_volume = Decimal("0")

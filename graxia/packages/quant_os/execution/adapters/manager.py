@@ -8,13 +8,13 @@ is deprecated.
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
-from .base import BrokerAdapter
-from .mt5 import MT5Adapter
-from .paper import PaperAdapter
 from ...core.config import QuantConfig, get_config
 from ...core.exceptions import BrokerError
+from .base import BrokerAdapter
+from .mt5 import MT5Adapter
+from .myfxbook import MyfxbookAdapter
+from .paper import PaperAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -29,24 +29,44 @@ class BrokerManager:
 
     def __init__(
         self,
-        primary: Optional[BrokerAdapter] = None,
-        fallbacks: Optional[list[BrokerAdapter]] = None,
+        primary: BrokerAdapter | None = None,
+        fallbacks: list[BrokerAdapter] | None = None,
     ) -> None:
         self.primary = primary
         self.fallbacks = list(fallbacks or [])
-        self._active: Optional[BrokerAdapter] = None
+        self._active: BrokerAdapter | None = None
 
     # ------------------------------------------------------------------
     # Factory
     # ------------------------------------------------------------------
 
     @classmethod
-    def from_config(cls, config: Optional[QuantConfig] = None) -> "BrokerManager":
-        """Build a BrokerManager from QuantConfig defaults."""
+    def from_config(cls, config: QuantConfig | None = None) -> BrokerManager:
+        """Build a BrokerManager from QuantConfig defaults.
+
+        The ``account_data_source`` field selects which adapter feeds account
+        state. Myfxbook is read-only and refuses trading operations, so it is
+        safe to use as a data source but will fail closed if live trading is
+        attempted through it.
+        """
         config = config or get_config()
 
-        if config.live_trading_enabled:
-            primary: BrokerAdapter = MT5Adapter(
+        source = (config.account_data_source or "mt5").lower()  # type: ignore[attr-defined]
+
+        if source == "myfxbook":
+            primary: BrokerAdapter = MyfxbookAdapter(
+                email=config.myfxbook_email,  # type: ignore[attr-defined]
+                password=config.myfxbook_password,  # type: ignore[attr-defined]
+            )
+            fallbacks = []
+            if config.live_trading_enabled:
+                logger.warning(
+                    "account_data_source=myfxbook is READ-ONLY; live trading via "
+                    "MyfxbookAdapter will be refused (fail-closed). Keep source=mt5 "
+                    "for live execution."
+                )
+        elif config.live_trading_enabled:
+            primary = MT5Adapter(
                 login=config.mt5_login,
                 password=config.mt5_password,
                 server=config.mt5_server,
@@ -57,7 +77,7 @@ class BrokerManager:
             primary = PaperAdapter()
             fallbacks = []
 
-        return cls(primary=primary, fallbacks=fallbacks)
+        return cls(primary=primary, fallbacks=fallbacks)  # type: ignore[arg-type]
 
     # ------------------------------------------------------------------
     # Lifecycle
@@ -102,7 +122,7 @@ class BrokerManager:
                     previous = self._active
                     self._active = fallback
                     if previous is not None:
-                        try:
+                        try:  # noqa: SIM105
                             previous.disconnect()
                         except Exception:
                             pass

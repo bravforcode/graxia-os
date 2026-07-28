@@ -20,6 +20,7 @@ from graxia.packages.quant_os.core.events import (
     SignalEvent,
     TradeClosedEvent,
 )
+from graxia.packages.quant_os.core.exceptions import OrderStateError
 from graxia.packages.quant_os.core.position_manager import Position, PositionManager
 from graxia.packages.quant_os.core.trading_loop import (
     PaperExecutor,
@@ -426,7 +427,7 @@ class TestOrderStateMachineIntegration:
 
     def test_invalid_transition_raises(self):
         sm = OrderStateMachine(order_id="test-002", initial=OrderStatus.SIGNAL_CREATED)
-        with pytest.raises(Exception):
+        with pytest.raises(OrderStateError):
             sm.advance(OrderStatus.FILLED)  # skip中间 steps
 
     def test_terminal_states_have_no_outgoing(self):
@@ -557,6 +558,30 @@ class TestRiskGate:
 
         assert loop.get_stats()["total_filled"] == 1
         assert loop.get_stats()["total_rejected"] == 0
+
+    def test_risk_gate_rejects_when_dollar_risk_exceeds_budget(self, tmp_path):
+        """Regression for the dummy-SizingResult defect: an approved quantity whose
+        implied dollar risk (qty * |entry - sl|) exceeds the per-trade budget must be
+        rejected by the risk gate, not silently passed with a fake zero risk."""
+        from graxia.packages.quant_os.risk.risk_ledger import RiskLedger
+        from graxia.packages.quant_os.risk.risk_policy import RiskPolicy
+
+        bus = EventBus()
+        policy = RiskPolicy()  # default 1% of $10k = $100 budget
+        ledger = RiskLedger(state_file=str(tmp_path / "risk.json"))
+
+        loop = TradingLoop(
+            bus=bus,
+            risk_policy=policy,
+            risk_ledger=ledger,
+            account_equity=10000.0,
+        )
+        # XAUUSD entry=2400 sl=2390 -> stop distance $10/unit; qty=20 -> $200 risk > $100 budget
+        signal = _make_signal(approved_quantity=20.0)
+        loop.observe(signal)
+
+        assert loop.get_stats()["total_rejected"] == 1
+        assert loop.get_stats()["total_filled"] == 0
 
     def test_update_account_equity_ignores_zero_or_none_margin(self, tmp_path):
         """0 or None margin_level_pct means 'unknown' (e.g. paper adapter

@@ -129,9 +129,7 @@ class CentaurTelegramAgent(Agent):
         self._chat_id = chat_id or _get_chat_id()
         self._pending: list[SignalEvent] = []
         self._client: httpx.AsyncClient | None = None
-        self._queue: asyncio.Queue[SignalEvent] = asyncio.Queue(
-            maxsize=self.QUEUE_MAXSIZE
-        )
+        self._queue: asyncio.Queue[SignalEvent] = asyncio.Queue(maxsize=self.QUEUE_MAXSIZE)
         self._drain_task: asyncio.Task[None] | None = None
 
     # ── Lifecycle ──────────────────────────────────────────────────
@@ -146,7 +144,7 @@ class CentaurTelegramAgent(Agent):
         """Close TCP connection and cancel drain task. Call on SIGTERM."""
         if self._drain_task and not self._drain_task.done():
             self._drain_task.cancel()
-            try:
+            try:  # noqa: SIM105
                 await self._drain_task
             except asyncio.CancelledError:
                 pass
@@ -168,7 +166,7 @@ class CentaurTelegramAgent(Agent):
             return
         self._pending.append(event)
 
-    async def act(self) -> None:
+    async def act(self) -> None:  # type: ignore[override]
         """
         Move pending signals into the async queue and start drain.
 
@@ -178,9 +176,7 @@ class CentaurTelegramAgent(Agent):
         if not self._pending:
             return
         if not self._token or not self._chat_id:
-            logger.warning(
-                "centaur_telegram.skip_no_config", pending=len(self._pending)
-            )
+            logger.warning("centaur_telegram.skip_no_config", pending=len(self._pending))
             self._pending.clear()
             return
 
@@ -198,9 +194,7 @@ class CentaurTelegramAgent(Agent):
 
         # Start drain if not already running
         if self._drain_task is None or self._drain_task.done():
-            self._drain_task = asyncio.create_task(
-                self._drain_queue(), name="telegram_drain"
-            )
+            self._drain_task = asyncio.create_task(self._drain_queue(), name="telegram_drain")
 
     async def _drain_queue(self) -> None:
         """
@@ -222,11 +216,7 @@ class CentaurTelegramAgent(Agent):
 
             payload = CentaurPayload(
                 asset=sig.symbol,
-                direction=(
-                    sig.signal_type.value
-                    if isinstance(sig.signal_type, SignalType)
-                    else str(sig.signal_type)
-                ),
+                direction=(sig.signal_type.value if isinstance(sig.signal_type, SignalType) else str(sig.signal_type)),
                 confidence=sig.confidence,
                 entry=sig.entry_price,
                 stop_loss=sig.stop_loss,
@@ -248,9 +238,7 @@ class CentaurTelegramAgent(Agent):
                     },
                 )
                 if resp.status_code == 429:
-                    retry_after = resp.json().get("parameters", {}).get(
-                        "retry_after", 30
-                    )
+                    retry_after = resp.json().get("parameters", {}).get("retry_after", 30)
                     logger.warning(
                         "centaur_telegram.rate_limited",
                         retry_after=retry_after,

@@ -45,21 +45,21 @@ from .events import (
 )
 from .golden_rules import GOLDEN_RULES
 
+logger = logging.getLogger(__name__)
+
 # Risk gate — pre_trade_check
 # FAIL-CLOSED: if risk module is missing, we MUST refuse to trade in live mode.
 try:
     from ..risk.position_sizer_v2 import SizingResult
-    from ..risk.pre_trade_risk import RiskCheckResult, pre_trade_check
-    from ..risk.risk_ledger import RiskLedger
-    from ..risk.risk_policy import RiskPolicy
+    from ..risk.pre_trade_risk import RiskCheckResult, pre_trade_check  # noqa: F401
+    from ..risk.risk_ledger import RiskLedger  # noqa: F401
+    from ..risk.risk_policy import RiskPolicy  # noqa: F401
 except ImportError:
-    pre_trade_check = None
+    pre_trade_check = None  # type: ignore[assignment]
     logger.critical(
         "trading_loop.risk_module_missing — live trading DISABLED. "
         "Risk module failed to import. All live orders will be rejected."
     )
-
-logger = logging.getLogger(__name__)
 
 
 # ── Symbol → Asset Class mapping ──────────────────────────────────────────
@@ -282,7 +282,7 @@ class TradingLoop:
 
         # Golden Rule: micro mode daily order limit
         mode = self._get_trading_mode()
-        if mode == TradingMode.LIVE_MICRO:
+        if mode == TradingMode.LIVE_MICRO:  # noqa: SIM102
             if self._daily_order_count >= GOLDEN_RULES.MICRO_DAILY_ORDER_LIMIT:
                 logger.warning(
                     "trading_loop.rejected_daily_limit symbol=%s count=%d",
@@ -293,7 +293,7 @@ class TradingLoop:
                 return
 
         # Golden Rule: limited mode daily trade limit
-        if mode == TradingMode.LIVE_LIMITED:
+        if mode == TradingMode.LIVE_LIMITED:  # noqa: SIM102
             if self._daily_order_count >= GOLDEN_RULES.LIMITED_MAX_DAILY_TRADES:
                 logger.warning(
                     "trading_loop.rejected_daily_limit_limited symbol=%s count=%d",
@@ -353,7 +353,7 @@ class TradingLoop:
         # ── Risk gate: pre_trade_check (P0 safety) ──────────────────────
         # FAIL-CLOSED: In live modes with real money, risk gate is MANDATORY.
         # LIVE_MICRO uses PaperExecutor (simulated) so risk gate is optional.
-        if mode in (TradingMode.LIVE_LIMITED, TradingMode.LIVE_CONTROLLED):
+        if mode in (TradingMode.LIVE_LIMITED, TradingMode.LIVE_CONTROLLED):  # noqa: SIM102
             if pre_trade_check is None or self._risk_policy is None or self._risk_ledger is None:
                 logger.critical(
                     "trading_loop.risk_gate_unavailable mode=%s symbol=%s — REJECTING (fail-closed)",
@@ -364,14 +364,32 @@ class TradingLoop:
                 return
 
         if pre_trade_check is not None and self._risk_policy is not None and self._risk_ledger is not None:
+            # Real risk_amount/risk_budget from the actual approved_quantity and
+            # stop distance -- NOT hardcoded zeros. A dummy always-zero,
+            # always-rejected=False SizingResult here means pre_trade_check's
+            # budget/rejection logic is a no-op regardless of order size (P0
+            # finding 2026-07-28: reports/live_sizing_units_lots_gap_20260728.md
+            # covers the separate units-vs-lots gap; this is the risk-gate
+            # input itself being fake).
+            stop_distance_dec = Decimal(str(abs(signal.entry_price - signal.stop_loss)))
+            quantity_dec = Decimal(str(quantity))
+            risk_amount = quantity_dec * stop_distance_dec
+            risk_budget = Decimal(str(self._account_equity)) * (
+                Decimal(self._risk_policy.risk_per_trade_bps) / Decimal("10000")
+            )
             sizing = SizingResult(
-                volume=Decimal(str(quantity)),
-                volume_before_round=Decimal(str(quantity)),
-                risk_amount=Decimal("0"),
-                risk_budget=Decimal("0"),
-                loss_at_stop=Decimal("0"),
+                volume=quantity_dec,
+                volume_before_round=quantity_dec,
+                risk_amount=risk_amount,
+                risk_budget=risk_budget,
+                loss_at_stop=risk_amount,
                 margin_estimate=Decimal("0"),
-                rejected=False,
+                rejected=risk_amount > risk_budget,
+                rejection_reasons=(
+                    [f"risk_amount {risk_amount} exceeds risk_budget {risk_budget}"]
+                    if risk_amount > risk_budget
+                    else []
+                ),
             )
             risk_result = pre_trade_check(
                 sizing_result=sizing,
@@ -396,7 +414,7 @@ class TradingLoop:
             stop_distance = (
                 abs(signal.entry_price - signal.stop_loss) if signal.stop_loss and signal.stop_loss > 0 else 0.0
             )
-            risk_amount = quantity * stop_distance if stop_distance > 0 else 0.0
+            risk_amount = Decimal(str(quantity * stop_distance)) if stop_distance > 0 else Decimal("0")
             overlay_result = self._risk_overlay.approve(
                 risk_amount=risk_amount,
                 stop_distance=stop_distance,

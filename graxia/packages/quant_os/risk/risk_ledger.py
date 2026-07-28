@@ -111,7 +111,7 @@ class RiskLedger:
         self._state["orders_today"] += 1
         self._save()
 
-    def set_open_positions(self, count: int, gross_exposure: float = 0.0, symbol_exposure: dict = None) -> None:
+    def set_open_positions(self, count: int, gross_exposure: float = 0.0, symbol_exposure: dict | None = None) -> None:
         """Update open position metrics."""
         self._state["open_positions"] = count
         self._state["gross_exposure"] = gross_exposure

@@ -161,7 +161,7 @@ class OMS:
             for evt in events:
                 target = OrderStatus(evt["status"])
                 # Map legacy status names to execution state machine chain
-                _LEGACY_CHAINS = {
+                _LEGACY_CHAINS = {  # noqa: N806
                     OrderStatus.SUBMITTED: [
                         OrderStatus.RISK_CHECKED,
                         OrderStatus.ORDER_PRECHECKED,
@@ -206,7 +206,7 @@ class OMS:
             "created_at": order.created_at.isoformat(),
             "updated_at": datetime.now(UTC).isoformat(),
         }
-        with self._lock:
+        with self._lock:  # noqa: SIM117
             with open(self._ledger_path, "a", encoding="utf-8") as fh:
                 fh.write(json.dumps(record) + "\n")
 
@@ -511,7 +511,7 @@ class OMS:
                     sm.advance(OrderStatus.REJECTED, f"poll result: {status.status.value}")
                 order.status = status.status
                 return order
-            if status.status == OrderStatus.UNKNOWN:
+            if status.status == OrderStatus.UNKNOWN:  # type: ignore[attr-defined]
                 logger.warning("Order %s status UNKNOWN (not in broker open orders) — continuing poll", order.order_id)
         # Timeout – mark as TIMEOUT
         if sm is not None:
@@ -664,7 +664,7 @@ class OMS:
             )
             order.status = OrderStatus.FAILED
             sm = OrderStateMachine(order_id=order.order_id, initial=OrderStatus.SIGNAL_CREATED)
-            try:
+            try:  # noqa: SIM105
                 sm.advance(OrderStatus.REJECTED, f"close_position error: {exc}")
             except Exception:
                 pass
