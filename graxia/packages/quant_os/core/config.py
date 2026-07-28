@@ -21,6 +21,7 @@ class QuantConfig:
     trading_mode: TradingMode = TradingMode.PAPER
     system_state: SystemState = SystemState.PAPER_TRADING
     live_trading_enabled: bool = False
+    shadow_mode: bool = False  # Read-only MT5 data + PaperAdapter execution (no real orders)
     log_level: str = "INFO"
     environment: str = "development"
 
@@ -40,6 +41,13 @@ class QuantConfig:
     primary_broker: str = "ic_markets"
     fallback_broker_1: str = "pepperstone"
     fallback_broker_2: str = "xm"
+
+    # ==================== ACCOUNT DATA SOURCE ====================
+    # Selects which adapter feeds account state. Values: "mt5" | "myfxbook" | "binance".
+    # Myfxbook is a READ-ONLY analytics source and refuses trading operations.
+    account_data_source: str = "mt5"
+    myfxbook_email: str = ""
+    myfxbook_password: str = ""
 
     # ==================== SECURITY ====================
     jwt_secret_key: str = ""
@@ -181,12 +189,10 @@ class QuantConfig:
         if mode_str in valid_modes:
             self.trading_mode = TradingMode(mode_str)
         else:
-            raise ValueError(
-                f"TRADING_MODE='{mode_str}' is not recognized. "
-                f"Valid modes: {valid_modes}"
-            )
+            raise ValueError(f"TRADING_MODE='{mode_str}' is not recognized. " f"Valid modes: {valid_modes}")
 
         self.live_trading_enabled = os.getenv("LIVE_TRADING_ENABLED", "false").lower() == "true"
+        self.shadow_mode = os.getenv("SHADOW_MODE", "false").lower() == "true"
         self.log_level = os.getenv("LOG_LEVEL", "INFO")
         self.environment = os.getenv("ENVIRONMENT", self.environment)
 
@@ -201,6 +207,11 @@ class QuantConfig:
         self.mt5_server = os.getenv("MT5_SERVER", self.mt5_server)
         self.mt5_path = os.getenv("MT5_PATH", self.mt5_path)
         self.mt5_timeout_ms = int(os.getenv("MT5_TIMEOUT_MS", self.mt5_timeout_ms))
+
+        # Account data source + Myfxbook credentials (read from env; never hard-coded)
+        self.account_data_source = os.getenv("ACCOUNT_DATA_SOURCE", self.account_data_source).lower()
+        self.myfxbook_email = os.getenv("MYFXBOOK_EMAIL", self.myfxbook_email)
+        self.myfxbook_password = os.getenv("MYFXBOOK_PASSWORD", self.myfxbook_password)
 
         # Security
         self.jwt_secret_key = os.getenv("JWT_SECRET_KEY", self.jwt_secret_key)
@@ -313,6 +324,10 @@ class QuantConfig:
             TradingMode.LIVE_CONTROLLED,
         ]:
             raise ValueError("Live trading only allowed in LIVE_MICRO, LIVE_LIMITED, or LIVE_CONTROLLED mode")
+
+        # Shadow mode: read-only MT5 data + paper execution. Incompatible with live trading.
+        if self.shadow_mode and self.live_trading_enabled:
+            raise ValueError("Cannot enable shadow_mode and live_trading_enabled simultaneously")
 
         # Validate secrets when live trading is enabled
         if self.live_trading_enabled:

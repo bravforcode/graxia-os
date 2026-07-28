@@ -65,6 +65,20 @@ class BrokerManager:
                     "MyfxbookAdapter will be refused (fail-closed). Keep source=mt5 "
                     "for live execution."
                 )
+        elif getattr(config, "shadow_mode", False):
+            # Shadow mode: read-only MT5 for real market data, PaperAdapter for execution.
+            # live_trading_enabled stays False — orchestrator kill-switch wiring unchanged.
+            primary = MT5Adapter(
+                login=config.mt5_login,
+                password=config.mt5_password,
+                server=config.mt5_server,
+                timeout=config.mt5_timeout_ms,
+                read_only=True,
+            )
+            fallbacks = [PaperAdapter()]
+            logger.info(
+                "Shadow mode: MT5 read-only (data) + PaperAdapter (execution). " "No real orders will be submitted."
+            )
         elif config.live_trading_enabled:
             primary = MT5Adapter(
                 login=config.mt5_login,

@@ -3,6 +3,7 @@
 import logging
 import time
 
+from ...core.contract_specs import get_spec as get_contract_spec
 from .base import (
     AccountInfo,
     BrokerAdapter,
@@ -37,12 +38,13 @@ def is_kill_switch_active() -> bool:
     """Check if kill-switch is active. Used by tests and monitoring."""
     return _kill_switch_active
 
+
 # ---------------------------------------------------------------------------
 # Lazy mt5 import – allows the rest of the package to load without mt5
 # installed (e.g. during unit tests that mock this adapter).
 # ---------------------------------------------------------------------------
 try:
-    import MetaTrader5 as mt5
+    import MetaTrader5 as mt5  # noqa: N813
 except ImportError:  # pragma: no cover
     mt5 = None  # type: ignore[assignment]
 
@@ -129,6 +131,7 @@ class MT5Adapter(BrokerAdapter):
         server: str = "Pepperstone-Live",
         timeout: int = 10_000,
         path: str = r"C:\Program Files\Pepperstone MetaTrader 5\terminal64.exe",
+        read_only: bool = False,
     ) -> None:
         super().__init__("MT5")
         self._login = login
@@ -136,6 +139,7 @@ class MT5Adapter(BrokerAdapter):
         self._server = server
         self._timeout = timeout
         self._path = path
+        self._read_only = read_only
 
     # ------------------------------------------------------------------
     # Connection helpers
@@ -206,7 +210,19 @@ class MT5Adapter(BrokerAdapter):
                 error=f"Kill-switch active: {_kill_switch_reason}",
             )
 
-        self._ensure_connected()
+        # Read-only mode guard — shadow mode uses MT5 for data only
+        if self._read_only:
+            logger.warning("MT5 submit_order BLOCKED: read-only mode (shadow)")
+            return OrderResult(
+                status=OrderStatus.FAILED,
+                error="MT5 adapter is in read-only mode (shadow_mode) — no orders submitted",
+            )
+
+        try:
+            self._ensure_connected()
+        except ConnectionError as exc:
+            logger.error("MT5 submit_order: connection unavailable: %s", exc)
+            return OrderResult(status=OrderStatus.TIMEOUT, error=str(exc))
 
         # Ensure symbol is in Market Watch (required for live ticks)
         if not _ensure_symbol_visible(order.symbol):
@@ -224,13 +240,32 @@ class MT5Adapter(BrokerAdapter):
                 error=f"Invalid quantity {order.quantity!r}: {exc}",
             )
 
+        # Units -> lots conversion (single conversion point — see
+        # reports/live_sizing_units_lots_gap_20260728.md). Upstream sizers
+        # (risk/engine.py, core/agents/portfolio_manager.py) compute
+        # approved_quantity in raw underlying units (e.g. troy oz), not
+        # MT5 lots. Fail closed if the symbol has no canonical contract
+        # spec rather than guessing and risking a ~100x-100,000x oversized
+        # order.
+        spec = get_contract_spec(order.symbol)
+        if spec is None:
+            return OrderResult(
+                status=OrderStatus.FAILED,
+                error=(
+                    f"No contract spec for {order.symbol} — refusing to submit "
+                    "order without a verified units-to-lots conversion "
+                    "(core/contract_specs.py)"
+                ),
+            )
+        lots_float = qty_float / float(spec.contract_size)
+
         # Auto-detect filling mode (FOK vs RETURN — Pepperstone indices need RETURN)
         filling_mode = _get_filling_mode(order.symbol)
 
         request: dict = {
             "action": _TRADE_ACTION_DEAL,
             "symbol": order.symbol,
-            "volume": qty_float,
+            "volume": lots_float,
             "type": _side_to_order_type(order.side),
             "deviation": 20,  # max 20 points slippage on market orders
             "comment": order.order_id,  # Full UUID — OMS matches via startswith (MT5 may truncate to 31 chars)
@@ -244,10 +279,11 @@ class MT5Adapter(BrokerAdapter):
             request["tp"] = order.take_profit
 
         logger.info(
-            "MT5 submit_order: symbol=%s side=%s qty=%.2f filling=%d",
+            "MT5 submit_order: symbol=%s side=%s units=%.4f lots=%.4f filling=%d",
             order.symbol,
             order.side,
             qty_float,
+            lots_float,
             filling_mode,
         )
 
@@ -257,7 +293,11 @@ class MT5Adapter(BrokerAdapter):
                 error = mt5.last_error()  # type: ignore[union-attr]
                 logger.error("MT5 order_send returned None (attempt %d): %s", attempt, error)
                 self._connected = False
-                self._ensure_connected()
+                try:
+                    self._ensure_connected()
+                except ConnectionError as exc:
+                    logger.error("MT5 submit_order: reconnect failed mid-retry: %s", exc)
+                    return OrderResult(status=OrderStatus.TIMEOUT, error=str(exc))
                 time.sleep(_RETRY_DELAY)
                 continue
 
@@ -276,30 +316,35 @@ class MT5Adapter(BrokerAdapter):
                         status=OrderStatus.FAILED,
                         error=f"Invalid fill volume: {result.volume}",
                     )
+                # result.volume is in MT5 lots; convert back to the same raw-unit
+                # domain order.quantity/TrackedOrder use, so downstream code never
+                # has to know about the lots conversion.
+                filled_units = result.volume * float(spec.contract_size)
                 # Detect partial fills: filled_volume < requested
-                if result.volume < qty_float:
+                if result.volume < lots_float:
                     logger.warning(
-                        "MT5 partial fill: ticket=%s filled=%.2f requested=%.2f",
+                        "MT5 partial fill: ticket=%s filled_lots=%.4f requested_lots=%.4f",
                         result.order,
                         result.volume,
-                        order.quantity,
+                        lots_float,
                     )
                     return OrderResult(
                         status=OrderStatus.PARTIALLY_FILLED,
                         broker_id=str(result.order),
-                        filled_quantity=result.volume,
+                        filled_quantity=filled_units,
                         avg_price=result.price,
                     )
                 logger.info(
-                    "MT5 order filled: ticket=%s price=%.5f vol=%.2f",
+                    "MT5 order filled: ticket=%s price=%.5f lots=%.4f units=%.4f",
                     result.order,
                     result.price,
                     result.volume,
+                    filled_units,
                 )
                 return OrderResult(
                     status=OrderStatus.FILLED,
                     broker_id=str(result.order),
-                    filled_quantity=result.volume,
+                    filled_quantity=filled_units,
                     avg_price=result.price,
                 )
             if ret_code == 10014:  # TRADE_RETCODE_INVALID_PRICE – retry
@@ -322,6 +367,12 @@ class MT5Adapter(BrokerAdapter):
 
     def cancel_order(self, broker_order_id: str) -> OrderResult:
         """Cancel a pending order by its MT5 ticket. Retries on transient failures."""
+        if self._read_only:
+            logger.warning("MT5 cancel_order BLOCKED: read-only mode (shadow)")
+            return OrderResult(
+                status=OrderStatus.FAILED,
+                error="MT5 adapter is in read-only mode (shadow_mode) — no orders cancelled",
+            )
         self._ensure_connected()
         request: dict = {
             "action": 2,  # mt5.TRADE_ACTION_REMOVE (pending orders)
@@ -360,12 +411,30 @@ class MT5Adapter(BrokerAdapter):
             if p is None:
                 logger.warning("MT5 positions_get returned None item — skipping")
                 continue
+            # MT5 reports position volume in lots; convert to the same raw-unit
+            # domain as order.quantity/TrackedOrder so callers (e.g.
+            # RealtimeReconciler comparing broker vs internal quantity) never
+            # mix units and lots. Fail-open here (unlike submit_order) since
+            # hiding a position because its symbol is unmapped is worse than
+            # reporting it in raw lots with a warning.
+            spec = get_contract_spec(p.symbol)
+            if spec is not None:
+                volume_units = p.volume * float(spec.contract_size)
+            else:
+                logger.warning(
+                    "MT5 get_positions: no contract spec for %s — reporting raw lots (%.4f), "
+                    "not converted to units. Reconciliation qty-drift comparison will be wrong "
+                    "until core/contract_specs.py has an entry for this symbol.",
+                    p.symbol,
+                    p.volume,
+                )
+                volume_units = p.volume
             result.append(
                 {
                     "ticket": p.ticket,
                     "symbol": p.symbol,
                     "type": "BUY" if p.type == 0 else "SELL",
-                    "volume": p.volume,
+                    "volume": volume_units,
                     "price_open": p.price_open,
                     "profit": p.profit,
                     "sl": p.sl,
@@ -409,7 +478,18 @@ class MT5Adapter(BrokerAdapter):
 
         Sends a ``TRADE_ACTION_DEAL`` in the opposite direction of the
         existing position to flatten it.
+
+        ``volume`` is in the same raw-unit domain as ``submit_order``'s
+        ``order.quantity`` and ``get_positions``'s returned ``"volume"``
+        (e.g. troy oz for XAUUSD) — this method converts to MT5 lots
+        internally, so callers never need to know about the conversion.
         """
+        if self._read_only:
+            logger.warning("MT5 close_position BLOCKED: read-only mode (shadow)")
+            return OrderResult(
+                status=OrderStatus.FAILED,
+                error="MT5 adapter is in read-only mode (shadow_mode) — no positions closed",
+            )
         self._ensure_connected()
         # Determine position type to send opposite order
         positions = mt5.positions_get(ticket=int(broker_position_id))  # type: ignore[union-attr]
@@ -422,13 +502,24 @@ class MT5Adapter(BrokerAdapter):
         close_type = _ORDER_TYPE_SELL if pos.type == _ORDER_TYPE_BUY else _ORDER_TYPE_BUY
         close_symbol = symbol or pos.symbol
 
+        spec = get_contract_spec(close_symbol)
+        if spec is None:
+            return OrderResult(
+                status=OrderStatus.FAILED,
+                error=(
+                    f"No contract spec for {close_symbol} — refusing to close "
+                    "without a verified units-to-lots conversion (core/contract_specs.py)"
+                ),
+            )
+        close_lots = volume / float(spec.contract_size)
+
         # Auto-detect filling mode for the symbol
         filling_mode = _get_filling_mode(close_symbol)
 
         request: dict = {
             "action": _TRADE_ACTION_DEAL,
             "symbol": close_symbol,
-            "volume": volume,
+            "volume": close_lots,
             "type": close_type,
             "position": int(broker_position_id),
             "type_filling": filling_mode,
@@ -448,7 +539,7 @@ class MT5Adapter(BrokerAdapter):
                 return OrderResult(
                     status=OrderStatus.FILLED,
                     broker_id=str(result.order),
-                    filled_quantity=result.volume,
+                    filled_quantity=result.volume * float(spec.contract_size),
                     avg_price=result.price,
                 )
             if result.retcode == 10014:
@@ -492,6 +583,9 @@ class MT5Adapter(BrokerAdapter):
         Returns ``True`` on success, ``False`` on permanent failure or
         exhausted retries.
         """
+        if self._read_only:
+            logger.warning("MT5 set_stop_loss BLOCKED: read-only mode (shadow)")
+            return False
         self._ensure_connected()
 
         request: dict = {
