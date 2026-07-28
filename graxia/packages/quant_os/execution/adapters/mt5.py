@@ -373,7 +373,12 @@ class MT5Adapter(BrokerAdapter):
                 status=OrderStatus.FAILED,
                 error="MT5 adapter is in read-only mode (shadow_mode) — no orders cancelled",
             )
-        self._ensure_connected()
+        # WS-D (KNOWN_LIMITATIONS #8): guard _ensure_connected with a fallback
+        try:
+            self._ensure_connected()
+        except ConnectionError as exc:
+            logger.error("MT5 cancel_order: connection unavailable — %s", exc)
+            return OrderResult(status=OrderStatus.FAILED, error=f"MT5 connection unavailable: {exc}")
         request: dict = {
             "action": 2,  # mt5.TRADE_ACTION_REMOVE (pending orders)
             "order": int(broker_order_id),
@@ -402,7 +407,12 @@ class MT5Adapter(BrokerAdapter):
 
     def get_positions(self) -> list[dict]:
         """Return all open MT5 positions."""
-        self._ensure_connected()
+        # WS-D (KNOWN_LIMITATIONS #8): guard _ensure_connected with a fallback
+        try:
+            self._ensure_connected()
+        except ConnectionError as exc:
+            logger.error("MT5 get_positions: connection unavailable — returning empty list: %s", exc)
+            return []
         positions = mt5.positions_get()  # type: ignore[union-attr]
         if positions is None:
             return []
@@ -490,7 +500,12 @@ class MT5Adapter(BrokerAdapter):
                 status=OrderStatus.FAILED,
                 error="MT5 adapter is in read-only mode (shadow_mode) — no positions closed",
             )
-        self._ensure_connected()
+        # WS-D (KNOWN_LIMITATIONS #8): guard _ensure_connected with a fallback
+        try:
+            self._ensure_connected()
+        except ConnectionError as exc:
+            logger.error("MT5 close_position: connection unavailable — %s", exc)
+            return OrderResult(status=OrderStatus.FAILED, error=f"MT5 connection unavailable: {exc}")
         # Determine position type to send opposite order
         positions = mt5.positions_get(ticket=int(broker_position_id))  # type: ignore[union-attr]
         if positions is None or len(positions) == 0:
@@ -554,7 +569,12 @@ class MT5Adapter(BrokerAdapter):
 
     def get_account_info(self) -> AccountInfo:
         """Return a snapshot of the MT5 account."""
-        self._ensure_connected()
+        # WS-D (KNOWN_LIMITATIONS #8): guard _ensure_connected with a fallback
+        try:
+            self._ensure_connected()
+        except ConnectionError as exc:
+            logger.error("MT5 get_account_info: connection unavailable — returning degraded info: %s", exc)
+            return AccountInfo(equity=0.0, cash=0.0, margin_used=0.0, margin_available=0.0)
         info = mt5.account_info()  # type: ignore[union-attr]
         if info is None:
             raise RuntimeError(f"MT5 account_info failed: {mt5.last_error()}")  # type: ignore[union-attr]
@@ -586,7 +606,12 @@ class MT5Adapter(BrokerAdapter):
         if self._read_only:
             logger.warning("MT5 set_stop_loss BLOCKED: read-only mode (shadow)")
             return False
-        self._ensure_connected()
+        # WS-D (KNOWN_LIMITATIONS #8): guard _ensure_connected with a fallback
+        try:
+            self._ensure_connected()
+        except ConnectionError as exc:
+            logger.error("MT5 set_stop_loss: connection unavailable — %s", exc)
+            return False
 
         request: dict = {
             "action": _TRADE_ACTION_SLTP,
