@@ -10,11 +10,13 @@ Orchestrates all anti-overfitting tools into a single evaluation:
   7. Search budget tracking — how many trials were tried?
 
 Usage:
+    from validation.n_trials import get_reconciled_n_trials
+
     detector = OverfittingDetector()
     report = detector.evaluate(
         strategy_id="xau_mean_revert_v1",
         returns=bar_returns,
-        n_trials=150,
+        n_trials=get_reconciled_n_trials(),  # WS-C: central cumulative N
         n_observations=5000,
         oos_returns_per_fold=wf_folds,
         cost_pnl=10000,

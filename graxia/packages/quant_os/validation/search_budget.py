@@ -91,13 +91,27 @@ class SearchBudgetTracker:
         kurtosis: float = 3.0,
         confidence_level: float = 0.95,
     ) -> DeflatedSharpeResult:
-        """Compute DSR using the actual recorded trial count as n_trials.
+        """Compute DSR using the central reconciled cumulative N.
 
-        This is the key integration point — the user doesn't need to manually
-        track how many configurations were tried.
+        WS-C: Uses the authoritative cumulative trial count (currently 1050)
+        from validation.n_trials.  The per-strategy in-session count tracked
+        by this class is a LOCAL budget counter — using it for DSR would
+        under-deflate by ~1000x, producing false significance claims.
+
+        The per-strategy count is kept as a floor so the DSR is never LESS
+        conservative than the locally-known trial count.
         """
-        # Get trial count for this strategy, fall back to 1 if no trials recorded
-        n_trials = max(self.get_trial_count(strategy_id), 1)
+        from .n_trials import get_reconciled_n_trials
+
+        # Central cumulative N (authoritative for DSR multiple-testing correction)
+        n_global = get_reconciled_n_trials(minimum=1)
+
+        # Per-strategy local count (floor — never under-deflate)
+        n_local = max(self.get_trial_count(strategy_id), 1)
+
+        # Use the larger of the two: global cumulative N is usually >> local
+        n_trials = max(n_global, n_local)
+
         return deflated_sharpe_ratio(
             observed_sharpe=observed_sharpe,
             n_trials=n_trials,

@@ -13,6 +13,7 @@ class GateStatus(Enum):
     FAIL = "FAIL"
     WARN = "WARN"
     SKIP = "SKIP"
+    ERRORED = "ERRORED"  # WS-C: workstream did not complete successfully
 
 
 @dataclass
@@ -67,38 +68,69 @@ class GateEngine:
         stress_result: dict | None = None,
         bootstrap_result: dict | None = None,
     ) -> GateSummary:
-        """Evaluate all gates from pipeline results."""
+        """Evaluate all gates from pipeline results.
+
+        WS-C: Each result dict may be a sentinel with ``_error=True``
+        indicating the workstream errored (not simply skipped).  Errored
+        workstreams produce explicit ERRORED gates so a partial pipeline
+        crash cannot silently produce a PASS.
+        """
         gates = []
 
+        # Helper: if result is an error sentinel, add ERRORED gate and return
+        def _handle(result: dict | None, label: str) -> dict | None:
+            if result is None:
+                return None
+            if result.get("_error"):
+                gates.append(GateResult(
+                    name=label,
+                    status=GateStatus.ERRORED,
+                    metric=0.0,
+                    threshold=0.0,
+                    details=f"ERRORED: {result.get('_message', 'unknown error')}",
+                ))
+                return None
+            return result
+
         # Walk-Forward Analysis gates
-        if wfa_result:
-            gates.extend(self._eval_wfa(wfa_result))
+        wfa = _handle(wfa_result, "wfa")
+        if wfa:
+            gates.extend(self._eval_wfa(wfa))
 
         # Monte Carlo gates
-        if mc_result:
-            gates.extend(self._eval_mc(mc_result))
+        mc = _handle(mc_result, "monte_carlo")
+        if mc:
+            gates.extend(self._eval_mc(mc))
 
         # DSR gate
-        if dsr_result:
-            gates.append(self._eval_dsr(dsr_result))
+        dsr = _handle(dsr_result, "dsr")
+        if dsr:
+            gates.append(self._eval_dsr(dsr))
 
         # PBO gate
-        if pbo_result:
-            gates.append(self._eval_pbo(pbo_result))
+        pbo = _handle(pbo_result, "pbo")
+        if pbo:
+            gates.append(self._eval_pbo(pbo))
 
         # Stress test gate
-        if stress_result:
-            gates.append(self._eval_stress(stress_result))
+        stress = _handle(stress_result, "stress")
+        if stress:
+            gates.append(self._eval_stress(stress))
 
         # Bootstrap gate
-        if bootstrap_result:
-            gates.extend(self._eval_bootstrap(bootstrap_result))
+        boot = _handle(bootstrap_result, "bootstrap")
+        if boot:
+            gates.extend(self._eval_bootstrap(boot))
 
-        # Overall: PASS if all pass, FAIL if any fail, WARN otherwise
+        # Overall verdict
+        # WS-C: ERRORED workstreams prevent PASS (even if all ran workstreams pass).
+        # FAIL still dominates.  If nothing ran at all → SKIP.
         if not gates:
             overall = GateStatus.SKIP
         elif any(g.status == GateStatus.FAIL for g in gates):
             overall = GateStatus.FAIL
+        elif any(g.status == GateStatus.ERRORED for g in gates):
+            overall = GateStatus.ERRORED
         elif any(g.status == GateStatus.WARN for g in gates):
             overall = GateStatus.WARN
         else:

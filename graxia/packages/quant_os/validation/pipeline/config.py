@@ -29,7 +29,7 @@ class PipelineConfig:
     mc_kill_switch_balance: float = 4500.0
 
     # DSR
-    dsr_n_trials: int = 50  # Number of strategy configs tested
+    dsr_n_trials: int | None = None  # None = use central reconciled N (validation.n_trials)
 
     # PBO
     pbo_n_combinations: int | None = None  # None = all, cap 512

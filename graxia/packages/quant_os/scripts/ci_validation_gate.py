@@ -69,17 +69,20 @@ def main():
     # Check gates
     if result.gate_summary:
         for gate in result.gate_summary.gates:
-            icon = {"PASS": "[PASS]", "FAIL": "[FAIL]", "WARN": "[WARN]"}.get(gate.status.value, "")
+            icon = {"PASS": "[PASS]", "FAIL": "[FAIL]", "WARN": "[WARN]", "ERRORED": "[ERR]", "SKIP": "[SKIP]"}.get(gate.status.value, "")
             print(f"  {icon} {gate.name}: {gate.details}")
 
         print(f"\nOverall: {result.gate_summary.overall.value}")
         print(f"Reports: {md_path}")
 
-        # Exit code
+        # Exit code (WS-C: ERRORED → exit 2 = pipeline error)
+        overall = result.gate_summary.overall.value
+        if overall == "ERRORED":
+            print("Pipeline error: one or more workstreams did not complete", file=sys.stderr)
+            sys.exit(2)
         if (
-            result.gate_summary.overall.value == "PASS"
-            or result.gate_summary.overall.value == "WARN"
-            and not args.strict
+            overall == "PASS"
+            or (overall == "WARN" and not args.strict)
         ):
             sys.exit(0)
         else:

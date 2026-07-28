@@ -6,12 +6,15 @@ Each campaign = 1 strategy × 1 symbol × 1 timeframe × 1 param set.
 from __future__ import annotations
 
 import json
+import logging
 import math
 import os
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Literal
+
+logger = logging.getLogger(__name__)
 
 BASE = Path(__file__).resolve().parent.parent
 CAMPAIGNS_DIR = BASE / "paper_engine" / "campaigns"
@@ -33,10 +36,32 @@ _SYMBOL_TO_CAL_KEY = {
 }
 
 
+def _warn_unverified_cost(symbol: str, asset_data: dict) -> None:
+    """WS-C: Emit a prominent warning when an UNVERIFIED_NO_DATA cost is used.
+
+    cost_calibration.json v3.1 marks NAS100 as UNVERIFIED_NO_DATA with
+    sample_size=0 — its numbers are placeholders, not measured.  Any
+    trade/backtest/validation result that depends on these numbers must
+    carry the same caveat.
+    """
+    status = asset_data.get("status", "")
+    if status == "UNVERIFIED_NO_DATA":
+        sample_size = asset_data.get("sample_size", 0)
+        caveat = asset_data.get("measurement_caveat", "")
+        logger.warning(
+            "UNVERIFIED COST for %s: status=%s, sample_size=%s, "
+            "measurement_caveat=%s — DO NOT trust this cost for live sizing "
+            "or go-live decisions.  Closure requires live/paper tick recording "
+            "across multiple real calendar days.",
+            symbol, status, sample_size, caveat,
+        )
+
+
 def get_spread_bps(symbol: str) -> float:
     """Get measured spread in bps for a symbol from cost_calibration.json.
 
     Returns 0.0 if symbol not found (safe default).
+    WS-C: Logs a WARNING if the asset's status is UNVERIFIED_NO_DATA.
     """
     try:
         with open(COST_CALIBRATION_PATH, encoding="utf-8") as f:
@@ -46,16 +71,19 @@ def get_spread_bps(symbol: str) -> float:
 
         # 1. Try exact match
         if sym in assets:
+            _warn_unverified_cost(sym, assets[sym])
             return assets[sym].get("spread_bps_measured", 0.0)
 
         # 2. Try known mapping
         cal_key = _SYMBOL_TO_CAL_KEY.get(sym)
         if cal_key and cal_key in assets:
+            _warn_unverified_cost(cal_key, assets[cal_key])
             return assets[cal_key].get("spread_bps_measured", 0.0)
 
         # 3. Partial match: check if any asset key is contained in symbol or vice versa
         for asset_sym, asset_data in assets.items():
             if asset_sym in sym or sym in asset_sym:
+                _warn_unverified_cost(asset_sym, asset_data)
                 return asset_data.get("spread_bps_measured", 0.0)
 
         # 4. Fallback to estimates

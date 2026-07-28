@@ -131,18 +131,25 @@ def test_full_pipeline_imports():
 
 
 def test_detector_with_tracker():
-    """OverfittingDetector works with SearchBudgetTracker trial counts."""
+    """OverfittingDetector works with SearchBudgetTracker trial counts.
+
+    WS-C: The tracker now uses the central cumulative N (1050) for DSR
+    instead of the per-strategy in-session count.  When the tracker's
+    local count is 150 but the global N is 1050, the DSR uses the
+    global N — so the tracker's result is MORE conservative (larger
+    multiple_testing_adjustment) than the detector's explicit n_trials=150.
+    """
     tracker = SearchBudgetTracker(max_trials=500)
 
     # Simulate 150 trials
     for i in range(150):
         tracker.record_trial("xau_v1", {"lookback": 10 + i}, is_sharpe=1.0 + i * 0.005)
 
-    # Get the DSR from tracker
+    # Get the DSR from tracker (now uses global N=1050, not local 150)
     dsr = tracker.get_deflated_sharpe("xau_v1", observed_sharpe=2.0, n_observations=5000)
     assert dsr.observed_sharpe == 2.0
 
-    # Now run full detector with same trial count
+    # Now run full detector with explicit n_trials=150 (local only)
     rng = random.Random(42)
     returns = [rng.gauss(0.001, 0.008) for _ in range(5000)]
     folds = [[rng.gauss(0.001, 0.008) for _ in range(500)] for _ in range(6)]
@@ -151,7 +158,7 @@ def test_detector_with_tracker():
     report = detector.evaluate(
         strategy_id="xau_v1",
         returns=returns,
-        n_trials=150,  # match tracker count
+        n_trials=150,  # explicit local count (detector doesn't auto-resolve)
         n_observations=5000,
         oos_returns_per_fold=folds,
         cost_pnl=10000,
@@ -164,8 +171,12 @@ def test_detector_with_tracker():
     # Detector auto-computes Sharpe from returns; both should be positive
     assert report.dsr_result.observed_sharpe > 0
     assert dsr.observed_sharpe > 0
-    # Both used 150 trials → same multiple_testing_adjustment
-    assert abs(report.dsr_result.multiple_testing_adjustment - dsr.multiple_testing_adjustment) < 0.01
+    # WS-C: Tracker uses global N=1050, detector uses explicit N=150
+    # → tracker's adjustment should be LARGER (more conservative)
+    assert report.dsr_result.multiple_testing_adjustment < dsr.multiple_testing_adjustment, (
+        f"Tracker DSR ({dsr.multiple_testing_adjustment:.4f}, global N) must be more conservative "
+        f"than detector DSR ({report.dsr_result.multiple_testing_adjustment:.4f}, N=150)"
+    )
 
 
 def test_pipeline_overfitted_vs_clean():

@@ -119,8 +119,19 @@ class ValidationRunner:
         return result
 
     def _get_data(self, result: PipelineResult, name: str) -> dict | None:
+        """Return workstream data dict, or None if workstream was never run.
+
+        WS-C: Differentiates between 'never run' (None) and 'ran but errored'
+        (returns sentinel dict with _error=True) so the gate engine does not
+        silently skip crashed workstreams.
+        """
         ws = result.results.get(name)
-        return ws.data if ws and ws.success else None
+        if ws is None:
+            return None  # workstream was never scheduled/run
+        if ws.success:
+            return ws.data
+        # Workstream ran but errored — return sentinel for gate engine
+        return {"_error": True, "_name": name, "_message": ws.error}
 
     # ── Workstream implementations ──────────────────────────────────────────
 
@@ -300,19 +311,22 @@ class ValidationRunner:
             sharpe = self._calc_sharpe(all_returns)
             n_bars = len(all_returns)
 
+            # Resolve n_trials: use config override if set, else central reconciled N
+            n_trials = self._resolve_n_trials()
+
             # Use existing DSR check
             from ...governance.validation_stack import DeflatedSharpeRatio
 
             dsr_check = DeflatedSharpeRatio().run(
                 sharpe=sharpe,
-                n_trials=self.config.dsr_n_trials,
+                n_trials=n_trials,
                 n_bars=n_bars,
             )
 
             # Also compute using strategies.walk_forward._deflated_sharpe
             from ...strategies.walk_forward import _deflated_sharpe
 
-            dsr_value = _deflated_sharpe(sharpe, self.config.dsr_n_trials)
+            dsr_value = _deflated_sharpe(sharpe, n_trials)
 
             return ValidationResult(
                 name="dsr",
@@ -320,7 +334,7 @@ class ValidationRunner:
                 data={
                     "observed_sharpe": round(sharpe, 4),
                     "deflated_sharpe": round(dsr_value, 4),
-                    "n_trials": self.config.dsr_n_trials,
+                    "n_trials": n_trials,
                     "n_bars": n_bars,
                     "check_passed": dsr_check.passed,
                     "check_details": dsr_check.details,
@@ -581,6 +595,18 @@ class ValidationRunner:
                 except (ValueError, KeyError):
                     continue
         return rows
+
+    def _resolve_n_trials(self) -> int:
+        """Resolve the n_trials for DSR: config override or central reconciled N.
+
+        WS-C: If the config explicitly sets dsr_n_trials, use it.
+        Otherwise, fall back to the authoritative reconciled cumulative N
+        from validation.n_trials.
+        """
+        if self.config.dsr_n_trials is not None:
+            return self.config.dsr_n_trials
+        from ...validation.n_trials import get_reconciled_n_trials
+        return get_reconciled_n_trials()
 
     def _calc_sharpe(self, returns: list[float]) -> float:
         """Calculate annualized Sharpe ratio."""
