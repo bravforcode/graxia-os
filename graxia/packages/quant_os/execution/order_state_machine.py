@@ -139,7 +139,7 @@ TRANSITIONS: dict[OrderState, set[OrderState]] = {
     OrderState.EXPIRED: set(),
     OrderState.AUDITED: set(),
     OrderState.CRITICAL_INCIDENT: set(),
-}  # type: ignore[attr-defined]
+}
 
 TERMINAL_STATES = frozenset(
     {

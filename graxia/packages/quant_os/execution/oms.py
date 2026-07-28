@@ -511,7 +511,7 @@ class OMS:
                     sm.advance(OrderStatus.REJECTED, f"poll result: {status.status.value}")
                 order.status = status.status
                 return order
-            if status.status == OrderStatus.UNKNOWN:  # type: ignore[attr-defined]
+            if status.status == OrderStatus.UNKNOWN:
                 logger.warning("Order %s status UNKNOWN (not in broker open orders) — continuing poll", order.order_id)
         # Timeout – mark as TIMEOUT
         if sm is not None:
