@@ -13,6 +13,7 @@ import uuid
 from datetime import UTC, datetime
 
 from ...core.config import get_config
+from ...core.contract_specs import get_spec
 from .base import AccountInfo, BrokerAdapter, Order, OrderResult, OrderStatus
 
 logger = logging.getLogger(__name__)
@@ -93,8 +94,15 @@ class PaperAdapter(BrokerAdapter):
             slippage = slippage_pips * pip
             fill_price = market_price + slippage if order.side.upper() == "BUY" else market_price - slippage
 
-            lot_size = float(getattr(config, "units_per_lot", 100000.0))
-            lots = float(order.quantity) / lot_size
+            # Per-symbol contract size (mirrors MT5Adapter). Falls back to the
+            # global units_per_lot only for symbols with no canonical spec —
+            # e.g. XAUUSD must use 100 (1 lot = 100 oz), not the FX default
+            # 100000, or the simulated commission/fee is wrong by ~1000x.
+            spec = get_spec(order.symbol)
+            contract_size = (
+                float(spec.contract_size) if spec is not None else float(getattr(config, "units_per_lot", 100000.0))
+            )
+            lots = float(order.quantity) / contract_size
             fee = lots * float(config.paper_commission_per_lot)
 
             broker_id = f"PAPER_{uuid.uuid4().hex[:12]}"

@@ -157,3 +157,14 @@ class BrokerAdapter(ABC):
     def get_account_info(self) -> AccountInfo:
         """Return a point-in-time snapshot of account balances."""
         ...
+
+    def get_price(self, symbol: str) -> dict[str, float]:
+        """Return the live bid/ask for ``symbol``.
+
+        Optional capability: adapters that provide market data (MT5, Paper)
+        override this. Adapters that only execute or only expose account state
+        may leave the base implementation, which raises — callers that need
+        prices (e.g. ``ShadowAdapter``) must be paired with a data-capable
+        adapter.
+        """
+        raise NotImplementedError(f"{self.name} does not provide market prices")

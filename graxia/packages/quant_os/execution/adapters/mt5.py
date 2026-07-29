@@ -593,6 +593,20 @@ class MT5Adapter(BrokerAdapter):
             margin_available=info.margin_free,
         )
 
+    def get_price(self, symbol: str) -> dict[str, float]:
+        """Return the live bid/ask for ``symbol`` (read-only, no order sent).
+
+        Safe in shadow/read-only mode — only reads the market tick. Used by
+        ``ShadowAdapter`` to feed real prices into the paper simulator.
+        """
+        if mt5 is None:
+            raise RuntimeError("MetaTrader5 package is not installed")
+        self._ensure_connected()
+        tick = mt5.symbol_info_tick(symbol)  # type: ignore[union-attr]
+        if tick is None:
+            raise ValueError(f"No tick data for {symbol}")
+        return {"bid": float(tick.bid), "ask": float(tick.ask)}
+
     # ------------------------------------------------------------------
     # Stop-loss management
     # ------------------------------------------------------------------

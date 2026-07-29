@@ -15,6 +15,7 @@ from .base import BrokerAdapter
 from .mt5 import MT5Adapter
 from .myfxbook import MyfxbookAdapter
 from .paper import PaperAdapter
+from .shadow import ShadowAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -66,15 +67,23 @@ class BrokerManager:
                     "for live execution."
                 )
         elif getattr(config, "shadow_mode", False):
-            # Shadow mode: read-only MT5 for real market data, PaperAdapter for execution.
-            # live_trading_enabled stays False — orchestrator kill-switch wiring unchanged.
-            primary = MT5Adapter(
-                login=config.mt5_login,
-                password=config.mt5_password,
-                server=config.mt5_server,
-                timeout=config.mt5_timeout_ms,
-                read_only=True,
+            # Shadow mode: read-only MT5 for real market data, PaperAdapter for
+            # execution. The ShadowAdapter composites the two so the rest of the
+            # system sees one adapter: data calls hit MT5 (read-only), order
+            # calls hit PaperAdapter (no real orders). live_trading_enabled
+            # stays False — orchestrator kill-switch wiring unchanged.
+            primary = ShadowAdapter(
+                data_adapter=MT5Adapter(
+                    login=config.mt5_login,
+                    password=config.mt5_password,
+                    server=config.mt5_server,
+                    timeout=config.mt5_timeout_ms,
+                    read_only=True,
+                ),
+                exec_adapter=PaperAdapter(),
             )
+            # If the live data source is unavailable, degrade to pure paper
+            # (simulated prices) rather than failing entirely.
             fallbacks = [PaperAdapter()]
             logger.info(
                 "Shadow mode: MT5 read-only (data) + PaperAdapter (execution). " "No real orders will be submitted."
