@@ -177,6 +177,7 @@ class SpreadPatchedEngine(BacktestEngine):
             snapshot,
             bar_high,
             bar_low,
+            max_bars_open=self.config.max_bars_open,
             current_bar_index=bar_index,
         )
 
@@ -191,7 +192,7 @@ class SpreadPatchedEngine(BacktestEngine):
             elif event.event_type.value == "AMBIGUOUS":
                 reason = CloseReason.AMBIGUOUS
             elif event.event_type.value == "TIME_STOP":
-                reason = CloseReason.MANUAL
+                reason = CloseReason.TIME_STOP
             else:
                 continue
 
