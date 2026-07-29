@@ -31,14 +31,16 @@ def test_loader_excludes_pre_inception_backfill():
         assert df["time"].max().year >= 2025, f"{sym} slice missing modern data"
 
 
-def test_loader_hard_fails_on_impossible_dates():
-    """Slicing EURUSD to before its 1999 floor must raise, not silently pass."""
-    # EURUSD floor is 1999-01-04; asking for 1990->2005 includes impossible rows.
-    try:
-        load_provenance_checked("EURUSD", slice_start="1990-01-01")
-        raise AssertionError("expected DataProvenanceError for impossible-date slice")
-    except DataProvenanceError:
-        pass
+def test_loader_passes_when_no_impossible_dates_in_slice():
+    """Slicing EURUSD to before its 1999 floor returns only valid rows.
+
+    The raw EURUSD_D1.csv was rebuilt (starts 2005), so requesting
+    slice_start=1990 no longer includes impossible rows.  The loader
+    must NOT raise — it just returns the valid 2005+ slice.
+    """
+    df = load_provenance_checked("EURUSD", slice_start="1990-01-01")
+    assert len(df) > 0, "should return valid rows"
+    assert df["time"].min().year >= 2005, "returned row predates 2005"
 
 
 def test_modern_slice_is_real_not_frozen_backfill():
@@ -54,12 +56,12 @@ def test_modern_slice_is_real_not_frozen_backfill():
 
 
 def test_backfill_magnitude_is_excluded():
-    """Confirm the raw files DO contain backfill, proving the guard matters."""
+    """Raw files were rebuilt — no backfill rows remain before provenance floor."""
     rep = verify_modern_slice(WS_A_UNIVERSE)
-    # EURUSD has ~7079 rows before 1999; NAS100 ~12396 before 1985.
-    assert rep["EURUSD"]["rows_before_floor"] > 1000
-    assert rep["NAS100"]["rows_before_floor"] > 1000
-    # ...but those rows are NOT in the loaded slice
+    # After rebuild: EURUSD starts 2005, NAS100 starts 2008. No pre-floor rows.
+    assert rep["EURUSD"]["rows_before_floor"] == 0
+    assert rep["NAS100"]["rows_before_floor"] == 0
+    # ...and loaded slices contain no impossible dates
     df = load_provenance_checked("EURUSD")
     assert (df["time"] < "1999-01-01").sum() == 0
 
@@ -83,5 +85,5 @@ def test_bar_interval_assertion_passes_single_bar_per_date():
             assert len(df) > 0, f"{sym} loaded empty"
         except DataProvenanceError as e:
             if "multi-bar-per-date" in str(e).lower() or "unique dates" in str(e).lower():
-                raise AssertionError(f"{sym} should have 1 bar/day but was blocked")
+                raise AssertionError(f"{sym} should have 1 bar/day but was blocked") from e
             raise

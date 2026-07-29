@@ -199,7 +199,13 @@ class SpreadPatchedEngine(BacktestEngine):
                 exit_price = event.exit_price
                 exit_slip = Decimal("0")
             else:
-                exit_slippage = Decimal(str(self.config.slippage_pips)) * Decimal("0.01")
+                # P0.1: was `slippage_pips * Decimal("0.01")` — a hardcoded
+                # gold tick_size applied to every symbol. Use the inherited
+                # symbol-aware lookup instead.
+                _mid = (bid + ask) / Decimal("2")
+                _, exit_slippage = self._cost_offsets(
+                    pos.symbol, _mid, getattr(pos, "tick_size", Decimal("0.01"))
+                )
                 exec_side = FillSide.BUY if pos.side == PositionType.LONG else FillSide.SELL
                 exit_price, exit_slip = fill_simulate_exit(exec_side, bid, ask, exit_slippage)
             self._close_position(event.trade_id, exit_price, current_time, reason, exit_slip)

@@ -12,35 +12,35 @@ Pre-registration: research/pre_registration/trial_1028_ws_a_tsmom_mop2012.md
 
 from __future__ import annotations
 
-import json
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-# Add parent dir to path for imports
+# Add parent dir AND scripts dir to path for imports
 _ROOT = Path(__file__).resolve().parent.parent
+_SCRIPTS = Path(__file__).resolve().parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
-
-from provenance import load_provenance_checked  # noqa: E402
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
 
 # Import the verified DK test from edge_search_all (Newey-West HAC, Bartlett kernel, T^(1/3) bandwidth)
 from edge_search_all import run_dk_test as _verified_dk_test  # noqa: E402
 
+from provenance import load_provenance_checked  # noqa: E402
+
 # ---------------------------------------------------------------------------
 # Constants (FROZEN per pre-registration §3)
 # ---------------------------------------------------------------------------
-LOOKBACK = 252          # 12-month momentum
-REBALANCE_FREQ = 21     # Monthly rebalance (D1 bars)
-VOL_TARGET = 0.10       # Annualized vol target
-VOL_CLIP_UPPER = 2.0    # Cap vol_scale
-VOL_CLIP_LOWER = 0.01   # Floor for realized vol
-UNIVERSE = [
-    "XAUUSD", "XAGUSD", "EURUSD", "GBPUSD", "USDJPY", "NAS100", "US30"
-]
+LOOKBACK = 252  # 12-month momentum
+REBALANCE_FREQ = 21  # Monthly rebalance (D1 bars)
+VOL_TARGET = 0.10  # Annualized vol target
+VOL_CLIP_UPPER = 2.0  # Cap vol_scale
+VOL_CLIP_LOWER = 0.01  # Floor for realized vol
+UNIVERSE = ["XAUUSD", "XAGUSD", "EURUSD", "GBPUSD", "USDJPY", "NAS100", "US30"]
 
 # Cost calibration (from config/cost_calibration.json)
 _COST_CALIBRATION = {
@@ -50,7 +50,7 @@ _COST_CALIBRATION = {
     "GBPUSD": {"spread_bps": 0.12, "commission_bps": 7, "tick_size": 0.0001},
     "USDJPY": {"spread_bps": 0.12, "commission_bps": 7, "tick_size": 0.001},
     "NAS100": {"spread_bps": 1.30, "commission_bps": 0, "tick_size": 0.01},
-    "US30":   {"spread_bps": 0.80, "commission_bps": 0, "tick_size": 0.01},
+    "US30": {"spread_bps": 0.80, "commission_bps": 0, "tick_size": 0.01},
 }
 
 
@@ -140,10 +140,10 @@ def run_backtest(
         vol_scales[sym] = vs
 
     # Find common rebalance dates (every REBALANCE_FREQ bars from start)
-    all_dates = set()
+    all_dates_set: set = set()
     for df in data.values():
-        all_dates.update(df["time"].tolist())
-    all_dates = sorted(all_dates)
+        all_dates_set.update(df["time"].tolist())
+    all_dates = sorted(all_dates_set)
 
     # Rebalance dates: every REBALANCE_FREQ bars from the first date
     rebal_indices = list(range(LOOKBACK, len(all_dates), REBALANCE_FREQ))
@@ -197,13 +197,13 @@ def run_backtest(
 
                 # Close existing position if side changed or going flat
                 old_pos = positions[sym]
-                if old_pos is not None:
-                    if old_pos.side != target_side or target_side == 0:
-                        # Close position
-                        close_price = df["close"].iloc[idx]
-                        cost = _compute_cost(sym, old_pos.entry_price, close_price, old_pos.quantity, cost_multiplier)
-                        pnl = old_pos.side * (close_price - old_pos.entry_price) * old_pos.quantity - cost
-                        trades.append(Trade(
+                if old_pos is not None and (old_pos.side != target_side or target_side == 0):
+                    # Close position
+                    close_price = df["close"].iloc[idx]
+                    cost = _compute_cost(sym, old_pos.entry_price, close_price, old_pos.quantity, cost_multiplier)
+                    pnl = old_pos.side * (close_price - old_pos.entry_price) * old_pos.quantity - cost
+                    trades.append(
+                        Trade(
                             symbol=sym,
                             side=old_pos.side,
                             entry_price=old_pos.entry_price,
@@ -214,9 +214,10 @@ def run_backtest(
                             pnl=pnl,
                             cost=cost,
                             bars_held=idx - old_pos.entry_bar,
-                        ))
-                        daily_cost += cost
-                        positions[sym] = None
+                        )
+                    )
+                    daily_cost += cost
+                    positions[sym] = None
 
                 # Open new position if we have a signal
                 if target_side != 0 and target_qty > 0:
@@ -242,18 +243,20 @@ def run_backtest(
             close_price = df["close"].iloc[last_idx]
             cost = _compute_cost(sym, pos.entry_price, close_price, pos.quantity, cost_multiplier)
             pnl = pos.side * (close_price - pos.entry_price) * pos.quantity - cost
-            trades.append(Trade(
-                symbol=sym,
-                side=pos.side,
-                entry_price=pos.entry_price,
-                exit_price=close_price,
-                entry_bar=pos.entry_bar,
-                exit_bar=last_idx,
-                quantity=pos.quantity,
-                pnl=pnl,
-                cost=cost,
-                bars_held=last_idx - pos.entry_bar,
-            ))
+            trades.append(
+                Trade(
+                    symbol=sym,
+                    side=pos.side,
+                    entry_price=pos.entry_price,
+                    exit_price=close_price,
+                    entry_bar=pos.entry_bar,
+                    exit_bar=last_idx,
+                    quantity=pos.quantity,
+                    pnl=pnl,
+                    cost=cost,
+                    bars_held=last_idx - pos.entry_bar,
+                )
+            )
 
     # Compute metrics
     port_df = pd.DataFrame(portfolio_returns)
@@ -356,7 +359,7 @@ def cluster_jackknife(
       - us_indices: NAS100, US30
       - fx: EURUSD, GBPUSD, USDJPY
     """
-    CLUSTERS = {
+    clusters = {
         "precious_metals": ["XAUUSD", "XAGUSD"],
         "us_indices": ["NAS100", "US30"],
         "fx": ["EURUSD", "GBPUSD", "USDJPY"],
@@ -366,7 +369,7 @@ def cluster_jackknife(
     full_sharpe = full_ret.mean() / full_ret.std() * np.sqrt(252) if full_ret.std() > 0 else 0.0
 
     results = {"full_sharpe": full_sharpe}
-    for cluster_name, syms in CLUSTERS.items():
+    for cluster_name, syms in clusters.items():
         remaining = {s: r for s, r in returns_by_symbol.items() if s not in syms}
         if remaining:
             jack_ret = pd.concat(remaining.values(), axis=1).mean(axis=1)
@@ -453,7 +456,9 @@ def main():
         stress_result = run_backtest(data, cost_multiplier=mult)
         stress_sharpe = stress_result["metrics"]["sharpe"]
         stress_total_cost = sum(t.cost for t in stress_result["trades"])
-        print(f"  {mult}x costs: Sharpe = {stress_sharpe:.3f} (PASS: {stress_sharpe > 0}), total_cost = {stress_total_cost:.6f} (expected {base_total_cost * mult:.6f})")
+        print(
+            f"  {mult}x costs: Sharpe = {stress_sharpe:.3f} (PASS: {stress_sharpe > 0}), total_cost = {stress_total_cost:.6f} (expected {base_total_cost * mult:.6f})"
+        )
 
     # DSR — bypass validation/__init__.py (which imports heavy deps) via importlib
     print("\nDeflated Sharpe Ratio...")
@@ -461,9 +466,7 @@ def main():
         import importlib.util
 
         # Load n_trials directly (only depends on pathlib + logging)
-        _nt_spec = importlib.util.spec_from_file_location(
-            "n_trials", str(_ROOT / "validation" / "n_trials.py")
-        )
+        _nt_spec = importlib.util.spec_from_file_location("n_trials", str(_ROOT / "validation" / "n_trials.py"))
         _nt_mod = importlib.util.module_from_spec(_nt_spec)
         _nt_spec.loader.exec_module(_nt_mod)
         n_trials = _nt_mod.get_reconciled_n_trials()
@@ -508,7 +511,7 @@ def main():
     dk_pass = dk_t > 2.0
     trades_pass = m["total_trades"] >= 50
     dsr_pass = dsr_result is not None and dsr_result.passes_threshold
-    print(f"\nPre-registration gates:")
+    print("\nPre-registration gates:")
     print(f"  DK t > 2.0: {'PASS' if dk_pass else 'FAIL'} ({dk_t:.3f})")
     print(f"  Trades >= 50: {'PASS' if trades_pass else 'FAIL'} ({m['total_trades']})")
     dsr_alpha_str = f"{dsr_result.probability_alpha:.4f}" if dsr_result else "N/A"
