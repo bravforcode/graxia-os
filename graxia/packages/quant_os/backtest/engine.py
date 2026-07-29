@@ -77,8 +77,14 @@ except ImportError:
     _MARKET_IMPACT_AVAILABLE = False
 
 # Swap cost model
+from .dynamic_spread_model import UnmeasuredCostError
+
 try:
-    from ..core.risk.swap_cost import get_live_swap_rates, get_swap_cost_for_trade
+    from ..core.risk.swap_cost import (
+        get_live_swap_rates,
+        get_swap_cost_for_trade,
+        swap_cost_from_bps,
+    )
 
     _SWAP_COST_AVAILABLE = True
 except ImportError:
@@ -1183,6 +1189,8 @@ class BacktestEngine:
             symbol=pos.symbol,
             side=pos.side,
             quantity=pos.quantity,
+            price=exit_price,
+            contract_size=getattr(pos, "contract_size", Decimal("1")),
             entry_time=pos.entry_time
             or self._deterministic_timestamp(pos.signal_bar_index if hasattr(pos, "signal_bar_index") else 0),
             exit_time=exit_time,
@@ -1250,6 +1258,8 @@ class BacktestEngine:
         quantity: Decimal,
         entry_time: datetime,
         exit_time: datetime,
+        price: Decimal = Decimal("0"),
+        contract_size: Decimal = Decimal("1"),
     ) -> Decimal:
         """
         Calculate swap cost for a position held across rollover.
@@ -1263,10 +1273,33 @@ class BacktestEngine:
             # Get live swap rates — fail loudly if unavailable (no silent XAUUSD defaults)
             swap_rates = get_live_swap_rates(symbol)
             if not swap_rates:
-                # P0.1 FIX: removed hardcoded XAUUSD swap defaults.
-                # Each symbol must provide its own swap rates from MT5.
-                # Silent XAUUSD fallback was corrupting non-XAUUSD P&L.
-                return Decimal("0")
+                # No MT5 terminal (every offline backtest). Fall back to the
+                # MEASURED per-asset daily swap in config/cost_calibration.json
+                # rather than to zero: charging no swap understates the cost of
+                # any overnight position, which is the same class of error as
+                # the hardcoded XAUUSD rates this replaced.
+                from backtest.dynamic_spread_model import SymbolCostProfile
+
+                profile = SymbolCostProfile.for_symbol(symbol)
+                if profile.swap_long_bps is None or profile.swap_short_bps is None:
+                    raise UnmeasuredCostError(
+                        f"No swap data for '{symbol}': MT5 is unavailable and "
+                        f"cost_calibration.json has no swap_long_bps/swap_short_bps. "
+                        f"Measure it or set BacktestConfig.enable_swap=False explicitly."
+                    )
+                notional = float(quantity) * float(contract_size) * float(price)
+                return Decimal(
+                    str(
+                        swap_cost_from_bps(
+                            entry_time=entry_time,
+                            exit_time=exit_time,
+                            side="BUY" if side == PositionType.LONG else "SELL",
+                            notional=notional,
+                            swap_long_bps=float(profile.swap_long_bps),
+                            swap_short_bps=float(profile.swap_short_bps),
+                        )
+                    )
+                )
 
             # Convert position side to string
             side_str = "BUY" if side == PositionType.LONG else "SELL"
@@ -1288,8 +1321,13 @@ class BacktestEngine:
             )
 
             return Decimal(str(swap_cost))
+        except UnmeasuredCostError:
+            # Never silently zero a missing cost input -- that is the defect
+            # this whole change set exists to remove.
+            raise
         except Exception:
-            # If swap calculation fails, return 0
+            # Any other failure (bad timestamps, odd broker payload) is not a
+            # cost-integrity problem; keep the previous tolerant behaviour.
             return Decimal("0")
 
     def _check_risk_halt(self) -> bool:

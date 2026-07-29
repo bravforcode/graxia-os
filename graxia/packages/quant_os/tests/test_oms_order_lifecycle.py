@@ -10,23 +10,18 @@ Tests the full order lifecycle through the OMS:
 """
 
 import json
-import tempfile
-from datetime import datetime, UTC
-from pathlib import Path
-from typing import Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from graxia.packages.quant_os.core.enums import OrderStatus
-from graxia.packages.quant_os.execution.oms import OMS, VENUE_MAP
 from graxia.packages.quant_os.execution.adapters.base import (
-    Order,
-    OrderResult,
     AccountInfo,
     BrokerAdapter,
+    Order,
+    OrderResult,
 )
-
+from graxia.packages.quant_os.execution.oms import OMS, VENUE_MAP
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -39,9 +34,10 @@ class MockBrokerAdapter(BrokerAdapter):
     def __init__(self, name: str = "mock_mt5"):
         super().__init__(name)
         self._connected = True
-        self._submit_result: Optional[OrderResult] = None
-        self._cancel_result: Optional[OrderResult] = None
+        self._submit_result: OrderResult | None = None
+        self._cancel_result: OrderResult | None = None
         self._positions: list[dict] = []
+        self.stop_loss_calls: list[tuple] = []
         self._account_info = AccountInfo(
             equity=10000.0,
             cash=10000.0,
@@ -74,6 +70,21 @@ class MockBrokerAdapter(BrokerAdapter):
 
     def get_positions(self) -> list[dict]:
         return self._positions
+
+    def set_stop_loss(
+        self,
+        position_ticket: int,
+        symbol: str,
+        stop_loss_price: float,
+        take_profit: float | None = None,
+    ) -> bool:
+        """Record the request and report success.
+
+        BrokerAdapter declares this abstract; without it MockBrokerAdapter
+        cannot be instantiated and every test in this module errors at setup.
+        """
+        self.stop_loss_calls.append((position_ticket, symbol, stop_loss_price, take_profit))
+        return True
 
     def get_order_status(self, broker_order_id: str) -> OrderResult:
         return OrderResult(

@@ -1,9 +1,11 @@
 """Order state machine — 16 states, enforced transitions, no MT5 dependency."""
 
+from typing import TypeAlias
+
 from ..core.enums import OrderStatus
 from ..core.exceptions import OrderStateError
 
-OrderState = OrderStatus
+OrderState: TypeAlias = OrderStatus
 
 
 TRANSITIONS: dict[OrderState, set[OrderState]] = {
@@ -80,6 +82,23 @@ TRANSITIONS: dict[OrderState, set[OrderState]] = {
     },
     OrderState.FAILED: set(),
     OrderState.TIMEOUT: set(),
+    # UNKNOWN was the one OrderStatus member with no TRANSITIONS entry.
+    # It is a broker-report value, not a state the machine enters:
+    # execution/oms.py:514 logs a warning and keeps polling rather than calling
+    # advance(UNKNOWN). The entry below exists so the table is total, and is
+    # deliberately restricted to determinate outcomes plus escalation -- an
+    # order whose state the broker could not report must never be advanced
+    # into a mid-pipeline approval state on the strength of a guess.
+    OrderState.UNKNOWN: {
+        OrderState.FILLED,
+        OrderState.PARTIAL_FILL,
+        OrderState.CANCELLED,
+        OrderState.REJECTED,
+        OrderState.FAILED,
+        OrderState.TIMEOUT,
+        OrderState.ERROR,
+        OrderState.CRITICAL_INCIDENT,
+    },
     OrderState.FILLED: {
         OrderState.PROTECTIVE_STOPS_PENDING,
         OrderState.PROTECTIVE_STOPS_VERIFIED,
