@@ -466,8 +466,18 @@ class MT5Adapter(BrokerAdapter):
 
         .. warning:: This is an assumption.  The caller should verify fills
            via ``mt5.history_deals_get()`` for critical paths.
+
+        WS-D (KNOWN_LIMITATIONS #8): ``_ensure_connected()`` is guarded with
+        ``OrderStatus.TIMEOUT`` (transient, matches ``submit_order()`` /
+        ``cancel_order()`` / ``close_position()``) so the OMS/recovery retry
+        logic can re-check later instead of crashing or falling through to the
+        "assume FILLED" fallback on a connection failure.
         """
-        self._ensure_connected()
+        try:
+            self._ensure_connected()
+        except ConnectionError as exc:
+            logger.error("MT5 get_order_status: connection unavailable — %s", exc)
+            return OrderResult(status=OrderStatus.TIMEOUT, error=f"MT5 connection unavailable: {exc}")
         orders = mt5.orders_get(ticket=int(broker_order_id))  # type: ignore[union-attr]
         if orders is None or len(orders) == 0:
             # Not an open order — most likely filled.
