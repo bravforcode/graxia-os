@@ -32,18 +32,18 @@ security = HTTPBearer(auto_error=False)
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     # Startup
-    print("🚀 Quant OS starting up...")
+    print("[STARTUP] Quant OS starting up...")
 
     # Validate golden rules
     rules_check = validate_golden_rules()
     if not rules_check["all_checks_passed"]:
-        print("⚠️  Golden rules validation failed:")
+        print("[WARN] Golden rules validation failed:")
         for check, passed in rules_check.items():
             if check != "all_checks_passed":
-                status = "✓" if passed else "✗"
+                status = "[OK]" if passed else "[FAIL]"
                 print(f"  {status} {check}")
     else:
-        print("✓ Golden rules validated")
+        print("[OK] Golden rules validated")
 
     # Initialize orchestrator (wires EventBus → Agents → TradingLoop → PositionManager)
     from ..core.orchestrator import TradingOrchestrator
@@ -52,7 +52,7 @@ async def lifespan(app: FastAPI):
     orchestrator = TradingOrchestrator(config=config)
     await orchestrator.start_async()
     app.state.orchestrator = orchestrator
-    print(f"✓ Orchestrator started (mode={config.trading_mode.value}, sync_loop=active)")
+    print(f"[OK] Orchestrator started (mode={config.trading_mode.value}, sync_loop=active)")
 
     # Initialize Telegram handlers with coordinator for kill-switch sync
     from ..core.telegram_callback import TelegramCallbackHandler
@@ -68,7 +68,7 @@ async def lifespan(app: FastAPI):
     set_handlers(telegram_callback, telegram_command)
     app.state.telegram_handler = telegram_command
     app.state.telegram_callback = telegram_callback
-    print("✓ Telegram handlers wired (callback + command + set_handlers)")
+    print("[OK] Telegram handlers wired (callback + command + set_handlers)")
 
     # Initialize broker connection
     broker_manager = BrokerManager.from_config()
@@ -77,17 +77,17 @@ async def lifespan(app: FastAPI):
     try:
         connected = await broker_manager.initialize()
         if connected:
-            print(f"✓ Broker connected: {broker_manager.active.name}")
+            print(f"[OK] Broker connected: {broker_manager.active.name}")
         else:
-            print("⚠️  No broker connection available")
+            print("[WARN] No broker connection available")
     except Exception as e:
-        print(f"⚠️  Broker initialization error: {e}")
+        print(f"[WARN] Broker initialization error: {e}")
 
     # Yield control
     yield
 
     # Shutdown
-    print("🛑 Quant OS shutting down...")
+    print("[SHUTDOWN] Quant OS shutting down...")
     if hasattr(app.state, "orchestrator"):
         orch = app.state.orchestrator
         orch.stop()
@@ -97,11 +97,11 @@ async def lifespan(app: FastAPI):
                 await orch._sync_task
             except (asyncio.CancelledError, Exception):
                 pass
-        print("✓ Orchestrator stopped")
+        print("[OK] Orchestrator stopped")
     if hasattr(app.state, "broker_manager"):
         try:
             app.state.broker_manager.active.disconnect()
-            print("✓ Broker disconnected")
+            print("[OK] Broker disconnected")
         except Exception:
             pass
 
