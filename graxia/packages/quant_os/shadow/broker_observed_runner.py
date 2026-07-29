@@ -13,6 +13,7 @@ import json
 import logging
 import os
 import sys
+from typing import Any
 import time
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
@@ -235,9 +236,9 @@ class SealedLedger:
 class MT5ReadOnly:
     """Read-only MT5 connector. No order_send, no execution API."""
 
-    def __init__(self, path: str | None = None):
+    def __init__(self, path: str | None = None) -> None:
         self._path = path
-        self._mt5 = None
+        self._mt5: Any = None
         self._connected = False
 
     def connect(self, timeout: int = 10000) -> bool:

@@ -102,7 +102,7 @@ class BrokerReconnector:
     def events(self) -> list[ReconnectionEvent]:
         return list(self._events)
 
-    def heartbeat_received(self):
+    def heartbeat_received(self) -> None:
         """Call when a heartbeat is received from broker."""
         self._last_heartbeat = time.time()
         self._bars_since_last_tick = 0
@@ -117,7 +117,7 @@ class BrokerReconnector:
                 message="Broker reconnected successfully",
             ))
 
-    def tick_received(self):
+    def tick_received(self) -> None:
         """Call when a fresh market tick is received."""
         self._bars_since_last_tick = 0
         self._stale_halt = False
@@ -176,7 +176,7 @@ class BrokerReconnector:
         self._events.append(event)
         return event
 
-    def on_bar_close(self):
+    def on_bar_close(self) -> None:
         """Call on each bar close to track staleness."""
         self._bars_since_last_tick += 1
         if self._bars_since_last_tick > self.config.max_stale_bars:
@@ -221,7 +221,7 @@ class BrokerReconnector:
         self._market_data_requests.append(now)
         return True
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset state for a new session."""
         self._state = BrokerState.CONNECTED
         self._last_heartbeat = time.time()

@@ -60,18 +60,23 @@ class BrokerValidator:
         config,
         symbol: str,
         contract_specs: dict,
-        order: dict = None,
+        order: dict | None = None,
         open_positions: int = 0,
         orders_today: int = 0,
     ) -> BrokerValidationReport:
         report = BrokerValidationReport()
-        report.add_check(*self.validate_account_mode(config.account_mode_required))
-        report.add_check(*self.validate_symbol(symbol, contract_specs))
+        am = self.validate_account_mode(config.account_mode_required)
+        report.add_check(am.name, am.passed, am.evidence)
+        sym = self.validate_symbol(symbol, contract_specs)
+        report.add_check(sym.name, sym.passed, sym.evidence)
 
         if order:
-            report.add_check(*self.validate_stop_loss(order))
+            sl = self.validate_stop_loss(order)
+            report.add_check(sl.name, sl.passed, sl.evidence)
 
-        report.add_check(*self.validate_position_limits(open_positions, config.max_open_positions))
-        report.add_check(*self.validate_daily_orders(orders_today, config.max_orders_per_day))
+        pl = self.validate_position_limits(open_positions, config.max_open_positions)
+        report.add_check(pl.name, pl.passed, pl.evidence)
+        do = self.validate_daily_orders(orders_today, config.max_orders_per_day)
+        report.add_check(do.name, do.passed, do.evidence)
 
         return report

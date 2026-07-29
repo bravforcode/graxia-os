@@ -11,9 +11,9 @@ class ArchiveRecord:
     reason: str
     run_id: str = ""
     timestamp_utc: str = ""
-    evidence: dict = None
+    evidence: dict | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.evidence is None:
             self.evidence = {}
 
@@ -25,7 +25,7 @@ class ArchiveRecorder:
         self._records: list[ArchiveRecord] = []
 
     def record(
-        self, strategy_id: str, verdict: str, reason: str, run_id: str = "", evidence: dict = None
+        self, strategy_id: str, verdict: str, reason: str, run_id: str = "", evidence: dict | None = None
     ) -> ArchiveRecord:
         from datetime import datetime
 

@@ -61,7 +61,7 @@ class ShadowTelemetry:
             )
         )
 
-    def record_signal_created(self, session_id: str, signal_id: str, details: dict = None) -> None:
+    def record_signal_created(self, session_id: str, signal_id: str, details: dict | None = None) -> None:
         self._events.append(
             TelemetryEvent(
                 event_type="signal_created",
@@ -72,7 +72,7 @@ class ShadowTelemetry:
             )
         )
 
-    def record_signal_accepted(self, session_id: str, signal_id: str, details: dict = None) -> None:
+    def record_signal_accepted(self, session_id: str, signal_id: str, details: dict | None = None) -> None:
         self._events.append(
             TelemetryEvent(
                 event_type="signal_accepted",
@@ -83,7 +83,7 @@ class ShadowTelemetry:
             )
         )
 
-    def record_signal_rejected(self, session_id: str, signal_id: str, reason: str, details: dict = None) -> None:
+    def record_signal_rejected(self, session_id: str, signal_id: str, reason: str, details: dict | None = None) -> None:
         d = details or {}
         d["rejection_reason"] = reason
         self._events.append(
@@ -96,7 +96,7 @@ class ShadowTelemetry:
             )
         )
 
-    def record_pipeline_error(self, session_id: str, error: str, details: dict = None) -> None:
+    def record_pipeline_error(self, session_id: str, error: str, details: dict | None = None) -> None:
         d = details or {}
         d["error"] = error
         self._events.append(

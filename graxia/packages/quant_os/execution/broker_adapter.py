@@ -26,6 +26,8 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from uuid import uuid4
 
+from typing import Any
+
 from ..core.config import get_config
 from ..core.enums import OrderSide, OrderStatus, OrderType, PositionType
 from ..core.exceptions import BrokerError
@@ -140,7 +142,7 @@ class PaperBroker(BrokerAdapter):
     - Order delays
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("PAPER")
         self.prices: dict[str, dict[str, Decimal]] = {}
         self.orders: dict[str, dict] = {}
@@ -283,7 +285,7 @@ class PaperBroker(BrokerAdapter):
 
         position.unrealized_pnl = price_diff * position.quantity * pip_value
 
-    async def refresh_pnl(self, symbol: str = None):
+    async def refresh_pnl(self, symbol: str | None = None) -> None:
         """Refresh unrealized PnL for positions using current prices.
 
         Args:
@@ -359,9 +361,9 @@ class MT5BrokerAdapter(BrokerAdapter):
     Note: Requires MT5 terminal to be running and accessible.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("MT5")
-        self.mt5 = None
+        self.mt5: Any = None
         self.config = get_config()
 
     async def connect(self) -> bool:
@@ -507,7 +509,7 @@ class MT5BrokerAdapter(BrokerAdapter):
         try:
             request = {"action": self.mt5.TRADE_ACTION_REMOVE, "order": int(broker_order_id)}
             result = self.mt5.order_send(request)
-            return result.retcode == self.mt5.TRADE_RETCODE_DONE
+            return bool(result.retcode == self.mt5.TRADE_RETCODE_DONE)
         except Exception:
             return False
 
@@ -537,7 +539,7 @@ class MT5BrokerAdapter(BrokerAdapter):
 class BrokerManager:
     """Manager for broker failover"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.config = get_config()
         self.primary: BrokerAdapter | None = None
         self.fallbacks: list[BrokerAdapter] = []

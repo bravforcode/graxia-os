@@ -9,7 +9,7 @@ from .market_health import HealthCheck, HealthState, MarketHealthGate
 class EventRiskGate:
     """Unified gate: blocks entries if event OR market health fails."""
 
-    def __init__(self, event_gate: EventGate = None, health_gate: MarketHealthGate = None):
+    def __init__(self, event_gate: EventGate | None = None, health_gate: MarketHealthGate | None = None) -> None:
         self._event_gate = event_gate or EventGate()
         self._health_gate = health_gate or MarketHealthGate()
         self._block_reasons: list[str] = []

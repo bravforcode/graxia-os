@@ -201,4 +201,4 @@ class OrderStateMachine:
         return self._state in TERMINAL_STATES
 
     def needs_protective_stop_verification(self) -> bool:
-        return self._state == OrderState.PROTECTIVE_STOPS_PENDING
+        return bool(self._state == OrderState.PROTECTIVE_STOPS_PENDING)

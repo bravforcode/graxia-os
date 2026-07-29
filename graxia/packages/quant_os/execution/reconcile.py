@@ -66,7 +66,7 @@ class ReconcileAllResult:
 
     @property
     def is_clean(self) -> bool:
-        return self.status == ReconciliationStatus.CLEAN
+        return bool(self.status == ReconciliationStatus.CLEAN)
 
 
 # Type for async alert callback

@@ -185,7 +185,7 @@ class CanonicalTickSource:
 
     @property
     def watermark(self) -> datetime | None:
-        return self._watermark.watermark
+        return self._watermark.watermark  # type: ignore[no-any-return]
 
     @property
     def time_authority(self) -> CanonicalTimeAuthority:

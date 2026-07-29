@@ -78,7 +78,7 @@ class Order:
     # Backward-compat type coercion
     # ------------------------------------------------------------------
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         # Coerce side: adapter code passes plain str ("BUY" / "SELL")
         if isinstance(self.side, str) and not isinstance(self.side, OrderSide):
             try:
@@ -128,7 +128,7 @@ class Order:
 
     @property
     def is_filled(self) -> bool:
-        return self.status == OrderStatus.FILLED
+        return bool(self.status == OrderStatus.FILLED)
 
     @property
     def is_open(self) -> bool:
@@ -241,13 +241,13 @@ class OrderStateMachine:
 
         return True
 
-    def on_transition(self, status: OrderStatus, handler: Callable):
+    def on_transition(self, status: OrderStatus, handler: Callable[..., object]) -> None:
         """Register a handler for a specific status transition"""
         if status not in self._transition_handlers:
             self._transition_handlers[status] = []
         self._transition_handlers[status].append(handler)
 
-    def _call_handlers(self, new_status: OrderStatus, old_status: OrderStatus, reason: str, actor: str):
+    def _call_handlers(self, new_status: OrderStatus, old_status: OrderStatus, reason: str, actor: str) -> None:
         """Call registered handlers for the transition"""
         handlers = self._transition_handlers.get(new_status, [])
         for handler in handlers:

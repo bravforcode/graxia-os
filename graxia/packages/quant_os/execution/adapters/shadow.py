@@ -73,7 +73,7 @@ class ShadowAdapter(BrokerAdapter):
     # Data operations → read-only source
     # ------------------------------------------------------------------
 
-    def get_account_info(self):
+    def get_account_info(self) -> object:
         """Live account snapshot from the read-only data source.
 
         Used by the risk gate (OrderManager) so budget checks run against the

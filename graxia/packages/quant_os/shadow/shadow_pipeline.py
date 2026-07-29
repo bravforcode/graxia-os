@@ -27,7 +27,7 @@ class ShadowLedgerEntry:
     entry_index: int = 0
     previous_hash: str = ""
     record_hash: str = ""
-    signal: ShadowSignal = None
+    signal: ShadowSignal | None = None
     fill_price: float = 0.0
     exit_price: float = 0.0
     pnl_after_costs: float = 0.0
