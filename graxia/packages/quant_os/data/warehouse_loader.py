@@ -137,11 +137,33 @@ class Warehouse:
             self._conn.execute("CREATE SEQUENCE IF NOT EXISTS orders_seq START 1;")
             self._conn.execute("CREATE SEQUENCE IF NOT EXISTS fills_seq START 1;")
 
-    def _execute(self, sql: str, params: list[Any] | None = None) -> duckdb.DuckDBPyConnection:
+    # _execute() used to live here: it took the lock, executed, and returned the
+    # shared connection -- releasing the lock before the caller fetched. Every
+    # read then raced. Deleted rather than documented, so the shape cannot be
+    # reached for again; _query_df / _query_all below hold the lock across
+    # execute AND fetch. Writers keep using self._conn.execute directly inside
+    # their own `with self._lock` blocks, which was always correct.
+
+    def _query_df(self, sql: str, params: list[Any] | None = None) -> pd.DataFrame:
+        """Execute and materialise to a DataFrame with the lock held throughout.
+
+        DuckDB gives every `execute()` on a connection the same cursor, so
+        execute-then-fetch is only atomic if nothing else touches the
+        connection in between. Splitting the two across the lock boundary let
+        four reader threads interleave and read each other's result sets.
+        """
         with self._lock:
-            if params is None:
-                return self._conn.execute(sql)
-            return self._conn.execute(sql, params)
+            cur = self._conn.execute(sql) if params is None else self._conn.execute(sql, params)
+            try:
+                return cur.df()
+            except duckdb.Error:
+                return pd.DataFrame()
+
+    def _query_all(self, sql: str, params: list[Any] | None = None) -> list[Any]:
+        """Execute and fetch all rows with the lock held throughout."""
+        with self._lock:
+            cur = self._conn.execute(sql) if params is None else self._conn.execute(sql, params)
+            return cur.fetchall()
 
     def _view_name(self, kind: str, symbol: str, frequency: str | None = None) -> str:
         """Build a deterministic view name from inputs."""
@@ -222,12 +244,7 @@ class Warehouse:
         where_sql = (" WHERE " + " AND ".join(where)) if where else ""
 
         sql = f"SELECT {col_sql} FROM {view}{where_sql} ORDER BY time"
-        rel = self._execute(sql, params)
-        try:
-            df = rel.df()
-        except duckdb.Error:
-            return pd.DataFrame()
-        return df
+        return self._query_df(sql, params)
 
     # ── Ticks ─────────────────────────────────────────────────────
     def register_ticks_glob(self, symbol: str) -> None:
@@ -272,12 +289,7 @@ class Warehouse:
             limit_sql = f" LIMIT {int(limit)}"
 
         sql = f"SELECT * FROM {view}{where_sql} ORDER BY time{limit_sql}"
-        rel = self._execute(sql, params)
-        try:
-            df = rel.df()
-        except duckdb.Error:
-            return pd.DataFrame()
-        return df
+        return self._query_df(sql, params)
 
     # ── Orders / Fills ────────────────────────────────────────────
     def insert_order(self, order: dict) -> int:
@@ -346,25 +358,21 @@ class Warehouse:
             where = " WHERE symbol = ?"
             params = [symbol]
         sql = f"SELECT * FROM orders{where} ORDER BY created_at DESC LIMIT {int(limit)}"
-        rel = self._execute(sql, params)
-        return rel.df()
+        return self._query_df(sql, params)
 
     # ── Manifests ─────────────────────────────────────────────────
     def list_manifests(self, symbol: str | None = None) -> pd.DataFrame:
         """Return all stored manifests, optionally filtered by symbol."""
         if symbol:
-            rel = self._execute(
+            return self._query_df(
                 "SELECT * FROM manifests WHERE symbol = ? ORDER BY created_at DESC",
                 [symbol],
             )
-        else:
-            rel = self._execute("SELECT * FROM manifests ORDER BY created_at DESC")
-        return rel.df()
+        return self._query_df("SELECT * FROM manifests ORDER BY created_at DESC")
 
     def get_manifest(self, file_path: str) -> dict | None:
         """Return a single manifest dict by ``file_path`` or None if missing."""
-        rel = self._execute("SELECT raw FROM manifests WHERE file_path = ?", [file_path])
-        rows = rel.fetchall()
+        rows = self._query_all("SELECT raw FROM manifests WHERE file_path = ?", [file_path])
         if not rows:
             return None
         raw = rows[0][0]
