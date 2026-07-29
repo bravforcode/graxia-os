@@ -40,11 +40,11 @@ def _make_bars(n=20, base_price=2000.0, step=1.0):
     for i in range(n):
         o = base_price + i * step
         h = o + abs(step) * 0.5
-        l = o - abs(step) * 0.5
+        lo = o - abs(step) * 0.5
         c = o + step * 0.3
         opens.append(o)
         highs.append(h)
-        lows.append(l)
+        lows.append(lo)
         closes.append(c)
         volumes.append(1000)
     return {"open": opens, "high": highs, "low": lows, "close": closes, "volume": volumes}
@@ -106,6 +106,12 @@ def _run_engine(signals, n_bars=50, capital=Decimal("10000"), strict_mtf=False):
         initial_capital=float(capital),
         strict_mtf=strict_mtf,
         max_positions=5,
+        # XAUUSD's spread IS measured (cost_calibration.json, status FROM_TICKS)
+        # but slippage_bps_measured is null, and the engine refuses to invent
+        # one. Override only slippage: _cost_offsets resolves the two terms
+        # independently, so the measured spread is still used. Do not add a
+        # spread_pips here -- that would discard real data for a made-up number.
+        slippage_pips=0.5,
     )
     engine = BacktestEngine(config)
     strategy = MockStrategy(signals)
@@ -132,12 +138,12 @@ def test_engine_calls_strategy_per_bar():
     n = 20
     signals = [None] * (n - 1)  # one call per bar from index 1..n-1
     strategy = MockStrategy(signals)
-    config = BacktestConfig(initial_capital=10000, strict_mtf=False)
+    config = BacktestConfig(initial_capital=10000, strict_mtf=False, slippage_pips=0.5)
     engine = BacktestEngine(config)
     engine.set_strategy(strategy)
     engine.load_data(_make_bars(n), _make_timestamps(n))
     engine.run()
-    assert strategy._call_count == n - 1, f"Expected {n-1} calls, got {strategy._call_count}"
+    assert strategy._call_count == n - 1, f"Expected {n - 1} calls, got {strategy._call_count}"
 
 
 # ===========================================================================
@@ -577,7 +583,7 @@ def test_same_inputs_same_results():
     signals = [None, sig] + [None] * 48
 
     def run_once():
-        config = BacktestConfig(initial_capital=10000, strict_mtf=False)
+        config = BacktestConfig(initial_capital=10000, strict_mtf=False, slippage_pips=0.5)
         engine = BacktestEngine(config)
         engine.set_strategy(MockStrategy(list(signals)))  # copy
         engine.load_data(_make_bars(50), _make_timestamps(50))
@@ -596,7 +602,7 @@ def test_engine_runs_clean_process():
     """Engine backtest completes cleanly with no open handles or leaks."""
     sig = _make_signal(SignalType.BUY, entry=2005, sl=2000, tp=2015)
     signals = [None, sig] + [None] * 48
-    config = BacktestConfig(initial_capital=10000, strict_mtf=False)
+    config = BacktestConfig(initial_capital=10000, strict_mtf=False, slippage_pips=0.5)
     engine = BacktestEngine(config)
     engine.set_strategy(MockStrategy(signals))
     engine.load_data(_make_bars(50), _make_timestamps(50))
@@ -620,9 +626,10 @@ def test_no_mt5_imports_in_engine():
         if isinstance(node, ast.Import):
             for alias in node.names:
                 assert "mt5" not in alias.name.lower(), f"MT5 import: L{node.lineno}"
-        if isinstance(node, ast.ImportFrom):
-            if node.module and "mt5" in node.module.lower():
-                assert False, f"MT5 import: L{node.lineno}"
+        if isinstance(node, ast.ImportFrom) and node.module and "mt5" in node.module.lower():
+            # raise, not `assert False`: `python -O` strips asserts, and this
+            # one guards the engine's isolation from the live broker module.
+            raise AssertionError(f"MT5 import: L{node.lineno}")
 
 
 # ===========================================================================
