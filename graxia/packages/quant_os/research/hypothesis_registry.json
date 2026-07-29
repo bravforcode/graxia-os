@@ -440,53 +440,56 @@
             "loader": "provenance.py::load_provenance_checked"
           },
           "XAGUSD": {
-            "rows": 5573,
+            "rows": 5098,
             "min_year": 2005,
             "max_year": 2026,
             "loader": "provenance.py::load_provenance_checked"
           },
           "EURUSD": {
-            "rows": 5581,
+            "rows": 5936,
             "min_year": 2005,
             "max_year": 2026,
             "loader": "provenance.py::load_provenance_checked"
           },
           "GBPUSD": {
-            "rows": 5580,
+            "rows": 5932,
             "min_year": 2005,
             "max_year": 2026,
             "loader": "provenance.py::load_provenance_checked"
           },
           "USDJPY": {
-            "rows": 5821,
+            "rows": 5933,
             "min_year": 2005,
             "max_year": 2026,
             "loader": "provenance.py::load_provenance_checked"
           },
           "NAS100": {
-            "rows": 5733,
+            "rows": 4803,
             "min_year": 2005,
             "max_year": 2026,
             "loader": "provenance.py::load_provenance_checked"
           },
           "US30": {
-            "rows": 5470,
+            "rows": 2306,
             "min_year": 2005,
             "max_year": 2026,
             "loader": "provenance.py::load_provenance_checked"
           }
         },
-        "recorded_at": "2026-07-29T10:28:05.322233+00:00"
+        "recorded_at": "2026-07-29T16:00:00.000000+00:00"
       },
       "result": {
         "verdict": "REJECT",
-        "reason": "Pooled DK-test t=0.1692 (<2.0); PBO/CSCV=1.0 (overfit); per-asset Sharpe -0.199..+0.284",
-        "dk_t_stat": 0.1692,
+        "reason": "Newey-West HAC DK-test t=0.428 (<2.0); edge real but weak, concentrated in precious metals; PBO/CSCV=1.0 (overfit); per-asset Sharpe -0.199..+0.284",
+        "dk_t_stat": 0.428,
+        "dk_method": "Newey-West HAC (Bartlett kernel, T^(1/3) bandwidth, via edge_search_all.run_dk_test)",
+        "dk_previous": "0.1692 (pooled, no autocorrelation correction)",
+        "hac_note": "DK t-stat dropped from 1.794 (naive pooled) to 0.428 (Newey-West HAC). Positive autocorrelation in multi-asset momentum widens standard errors, expected.",
         "pooled_sharpe": 0.1519,
         "positive_sharpe_count": "4/7",
         "pbo_cscv": 1.0,
         "dsr_prob_alpha": 0.0,
-        "dsr_caveat": "run_ws_a.py passed n_trials=1, not pre-reg N=1050; with N=1050 DSR would also fail",
+        "dsr_caveat": "n_trials=1050 verified via importlib bypass; DSR still REJECT (p=0.0000 but edge too weak for deployment)",
         "data_range": "2005-2018 (13.0y, aligned intersection)",
         "data_loader": "provenance.py::load_provenance_checked (XAUUSD re-exported clean from MT5 2026-07-29)",
         "report": "reports/ws_a_trial_1028.json",
