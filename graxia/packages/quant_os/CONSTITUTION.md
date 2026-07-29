@@ -9,6 +9,7 @@
 - Every phase must end in exactly one verdict: PASS_TO_NEXT_PHASE | CONDITIONAL_PASS | NO_GO | ARCHIVE_NO_EDGE | INSUFFICIENT_SAMPLE
 - **INV-012: Edge Claim Discipline** — Any document, report, or conversation that claims a strategy "has edge," "is an edge amplifier," "showed edge," or similar positive edge assertion MUST cite: (1) trial_number from `research/hypothesis_registry.json`, (2) p-value or dk_t statistic, (3) artifact path (walk-forward result, validation report, or test output). Without these three citations, the claim is an UNTESTED HYPOTHESIS, not a finding. Violations must be corrected before the document is used in any decision.
 - **INV-013: Diff Matches Intent** — Every commit diff must be reviewed to confirm only intended changes are included. Before any commit: (1) run `git diff --staged` and verify every line belongs to the stated purpose, (2) if unintended changes appear (sweep-ins, accidental refactors, untested features), unstage them and fix the commit scope, (3) commit message must match the actual diff content. This prevents accidental inclusion of unverified changes (e.g., trailing stop, cost-math, unrelated refactors). Violations are treated as process failures, not code bugs.
+- **INV-014: No Duplicate Core Logic** — Before writing any new retry/reconnect/risk-check/sizing/contract-spec logic, grep the codebase for existing implementations of the same responsibility. If one exists, extend or fix it rather than adding a parallel copy. This codebase has repeatedly accumulated duplicate implementations that drift and create split-brain failures: `FeatureEngineer` vs `compute_live_features`, dual contract-spec tables (before `core/contract_specs.py`), duplicate `RiskCheckResult` dataclass (M9), and duplicate reconnect logic (`execution/broker_reconnector.py` vs `execution/adapters/mt5.py::_ensure_connected`). Duplicates are a systemic pattern here, not isolated events — grep-first is mandatory.
 
 ## Invariants (INV-001 through INV-012)
 
@@ -27,6 +28,7 @@
 | INV-011 | Every sizing decision bound to immutable contract_snapshot_id | `contract_snapshot_store` |
 | INV-012 | Edge claims require trial_number + p-value/dk_t + artifact path from hypothesis_registry.json | Document review, audit |
 | INV-013 | Commit diff must match stated intent; unintended sweep-ins are process failures | `git diff --staged` review |
+| INV-014 | No duplicate core logic — grep for existing retry/reconnect/risk-check/sizing impl before writing new | `grep` pre-check before new logic |
 
 ## Mandatory Result Labels
 
