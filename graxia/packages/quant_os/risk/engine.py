@@ -23,6 +23,7 @@ from enum import Enum
 from typing import Any, Protocol
 from uuid import uuid4
 
+from ..core.contract_specs import risk_based_units
 from .risk_policy import RiskPolicy
 
 logger = logging.getLogger(__name__)
@@ -101,13 +102,13 @@ class Signal:
 
     def to_signal_event(self):
         """Convert RiskEngine Signal to EventBus SignalEvent."""
-        from ..core.enums import SignalType as ST
-        from ..core.events import SignalEvent as SE
+        from ..core.enums import SignalType
+        from ..core.events import SignalEvent
 
-        type_map = {"BUY": ST.BUY, "SELL": ST.SELL}
-        return SE(
+        type_map = {"BUY": SignalType.BUY, "SELL": SignalType.SELL}
+        return SignalEvent(
             symbol=self.symbol,
-            signal_type=type_map.get(self.direction, ST.NO_TRADE),
+            signal_type=type_map.get(self.direction, SignalType.NO_TRADE),
             confidence=self.conviction,
             entry_price=self.entry_price,
             stop_loss=self.stop_loss,
@@ -534,8 +535,8 @@ class RiskEngine:
             if self._risk_policy is not None
             else _Layer1.MAX_RISK_PCT_EQUITY
         )
-        risk_budget = account.equity * max_risk_pct
-        approved_qty = round(risk_budget / risk_per_unit, 2)
+        # Single-source raw-units formula (mt5.py converts to lots at the boundary)
+        approved_qty = round(risk_based_units(account.equity, max_risk_pct, signal.entry_price, signal.stop_loss), 2)
 
         approved_qty = max(approved_qty * kelly_fraction, 0)
         dollar_value = approved_qty * signal.entry_price if signal.entry_price else 0
@@ -587,7 +588,7 @@ class RiskEngine:
             return CheckResult(passed=True, check_type="VAR_EXPOSURE")
 
         var = self.var_95(returns)
-        order_value = getattr(order, "quantity", 0) * getattr(order, "price", 0)
+
         portfolio_var_pct = var  # simplified: use return-based VaR directly
 
         if portfolio_var_pct > max_var_pct:
