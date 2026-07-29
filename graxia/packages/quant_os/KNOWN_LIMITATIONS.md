@@ -27,11 +27,16 @@
 8. `execution/adapters/mt5.py::_ensure_connected()` raises `ConnectionError` on reconnect exhaustion.
    Fixed (2026-07-29) in `submit_order()` — both call sites now catch it and return
    `OrderResult(status=TIMEOUT)` instead of propagating an uncaught exception (see
-   `tests/test_mt5_live_order_e2e.py::TestMT5E2EErrorRecovery`). Fixed (2026-07-29 WS-D)
-   in the 5 remaining methods: `cancel_order()`, `get_positions()`, `close_position()`,
-   `get_account_info()`, `set_stop_loss()` — each now catches `ConnectionError` and
-   returns a type-appropriate fallback (`OrderResult(FAILED)`, `[]`, degraded
-   `AccountInfo(equity=0,...)`, or `False`).
+   `tests/test_mt5_live_order_e2e.py::TestMT5E2EErrorRecovery`). Revised (2026-07-29 WS-D review):
+   - `cancel_order()` / `close_position()` — catch `ConnectionError`, return
+     `OrderStatus.TIMEOUT` (transient, matches `submit_order()` so retry/reconcile logic behaves).
+   - `get_positions()` / `get_account_info()` — `ConnectionError` is intentionally
+     NOT swallowed; it propagates to callers (`reconcile.py`, `kill_switch.py`,
+     `orchestrator.py`, `oms.py`, `manager.py`) which already wrap these calls in
+     `try/except` and handle the error correctly. Returning `[]` / zeroed
+     `AccountInfo` would route around that handling and make a kill-switch believe
+     there are no positions to close — a safety failure.
+   - `set_stop_loss()` — returns `False` (boolean success indicator; acceptable).
 9. `core/rollover_filter.py::RolloverFilter` — real, complete class, confirmed via grep
    to have zero call sites in `execution/` or `risk/` (only its own docstring example
    and chaos tests reference it). **Deferred, not wired** (2026-07-29): every candidate

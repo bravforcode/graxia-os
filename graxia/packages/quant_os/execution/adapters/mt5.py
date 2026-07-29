@@ -373,12 +373,13 @@ class MT5Adapter(BrokerAdapter):
                 status=OrderStatus.FAILED,
                 error="MT5 adapter is in read-only mode (shadow_mode) — no orders cancelled",
             )
-        # WS-D (KNOWN_LIMITATIONS #8): guard _ensure_connected with a fallback
+        # WS-D (KNOWN_LIMITATIONS #8): guard _ensure_connected - use TIMEOUT
+        # (transient) to match submit_order(), so retry/reconcile logic behaves.
         try:
             self._ensure_connected()
         except ConnectionError as exc:
             logger.error("MT5 cancel_order: connection unavailable — %s", exc)
-            return OrderResult(status=OrderStatus.FAILED, error=f"MT5 connection unavailable: {exc}")
+            return OrderResult(status=OrderStatus.TIMEOUT, error=f"MT5 connection unavailable: {exc}")
         request: dict = {
             "action": 2,  # mt5.TRADE_ACTION_REMOVE (pending orders)
             "order": int(broker_order_id),
@@ -406,13 +407,16 @@ class MT5Adapter(BrokerAdapter):
         return OrderResult(status=OrderStatus.FAILED, error="cancel_order retries exhausted")
 
     def get_positions(self) -> list[dict]:
-        """Return all open MT5 positions."""
-        # WS-D (KNOWN_LIMITATIONS #8): guard _ensure_connected with a fallback
-        try:
-            self._ensure_connected()
-        except ConnectionError as exc:
-            logger.error("MT5 get_positions: connection unavailable — returning empty list: %s", exc)
-            return []
+        """Return all open MT5 positions.
+
+        WS-D (KNOWN_LIMITATIONS #8): _ensure_connected() is intentionally
+        NOT wrapped here.  Callers (reconcile.py, kill_switch.py) already
+        wrap this call in try/except and handle ConnectionError correctly
+        - returning [] on connection failure would route around that handling
+        and make a kill-switch believe there are no positions to close.  Let the
+        exception propagate so the caller's error path runs.
+        """
+        self._ensure_connected()
         positions = mt5.positions_get()  # type: ignore[union-attr]
         if positions is None:
             return []
@@ -500,12 +504,13 @@ class MT5Adapter(BrokerAdapter):
                 status=OrderStatus.FAILED,
                 error="MT5 adapter is in read-only mode (shadow_mode) — no positions closed",
             )
-        # WS-D (KNOWN_LIMITATIONS #8): guard _ensure_connected with a fallback
+        # WS-D (KNOWN_LIMITATIONS #8): guard _ensure_connected - use TIMEOUT
+        # (transient) to match submit_order(), so retry/reconcile logic behaves.
         try:
             self._ensure_connected()
         except ConnectionError as exc:
             logger.error("MT5 close_position: connection unavailable — %s", exc)
-            return OrderResult(status=OrderStatus.FAILED, error=f"MT5 connection unavailable: {exc}")
+            return OrderResult(status=OrderStatus.TIMEOUT, error=f"MT5 connection unavailable: {exc}")
         # Determine position type to send opposite order
         positions = mt5.positions_get(ticket=int(broker_position_id))  # type: ignore[union-attr]
         if positions is None or len(positions) == 0:
@@ -568,13 +573,16 @@ class MT5Adapter(BrokerAdapter):
         return OrderResult(status=OrderStatus.TIMEOUT, error="MT5 close_position retries exhausted")
 
     def get_account_info(self) -> AccountInfo:
-        """Return a snapshot of the MT5 account."""
-        # WS-D (KNOWN_LIMITATIONS #8): guard _ensure_connected with a fallback
-        try:
-            self._ensure_connected()
-        except ConnectionError as exc:
-            logger.error("MT5 get_account_info: connection unavailable — returning degraded info: %s", exc)
-            return AccountInfo(equity=0.0, cash=0.0, margin_used=0.0, margin_available=0.0)
+        """Return a snapshot of the MT5 account.
+
+        WS-D (KNOWN_LIMITATIONS #8): _ensure_connected() is intentionally
+        NOT wrapped here.  Callers (orchestrator.py, oms.py, manager.py)
+        wrap this call in try/except and handle ConnectionError correctly
+        - returning a zeroed AccountInfo on connection failure would make a
+        risk check believe the account is flat/broke.  Let the exception
+        propagate so the caller's error path runs.
+        """
+        self._ensure_connected()
         info = mt5.account_info()  # type: ignore[union-attr]
         if info is None:
             raise RuntimeError(f"MT5 account_info failed: {mt5.last_error()}")  # type: ignore[union-attr]
