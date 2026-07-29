@@ -1,7 +1,7 @@
 {
   "$schema": "research/hypothesis_registry.schema.json",
   "registry_version": "1.0",
-  "last_updated": "2026-07-21",
+  "last_updated": "2026-07-30",
   "cumulative_trial_count_at_creation": 2001,
   "stopping_rule_doc": "reports/stopping_rule_2026_07_12.md",
   "sacred_holdout_path": "data/sacred_holdout/holdout.csv",
@@ -17,7 +17,7 @@
     {
       "trial_number": 1001,
       "id": "RYDC-ARM-A",
-      "name": "Real-Yield Divergence Continuation (RYDC) \u00e2\u20ac\u201d Arm A",
+      "name": "Real-Yield Divergence Continuation (RYDC) â€” Arm A",
       "status": "REJECTED",
       "registered_at": "2026-07-12",
       "result_at": "2026-07-12",
@@ -40,7 +40,7 @@
     {
       "trial_number": 1003,
       "id": "CAM-DXY-XAUUSD",
-      "name": "Cross-Asset Momentum (CAM) \u00e2\u20ac\u201d DXY \u00e2\u2020\u2019 XAUUSD lead-lag",
+      "name": "Cross-Asset Momentum (CAM) â€” DXY â†’ XAUUSD lead-lag",
       "status": "REJECTED",
       "registered_at": "2026-07-13",
       "result_at": "2026-07-13",
@@ -76,7 +76,7 @@
     {
       "trial_number": 1004,
       "id": "SP-SESSION-CONDITIONAL",
-      "name": "Session Pattern (SP) \u00e2\u20ac\u201d Volatility clustering by FX session",
+      "name": "Session Pattern (SP) â€” Volatility clustering by FX session",
       "status": "REJECTED",
       "registered_at": "2026-07-13",
       "result_at": "2026-07-13",
@@ -116,7 +116,7 @@
     {
       "trial_number": 1005,
       "id": "MRM-REGIME-CONDITIONAL",
-      "name": "Macro Regime Mean-Reversion (MRM) \u00e2\u20ac\u201d DFII10 regime-conditional",
+      "name": "Macro Regime Mean-Reversion (MRM) â€” DFII10 regime-conditional",
       "status": "REJECTED",
       "registered_at": "2026-07-13",
       "result_at": "2026-07-13",
@@ -350,12 +350,12 @@
         "verdict": "REJECT"
       },
       "evidence": "reports/edge_search_untested_20260720.json",
-      "notes": "0 trades generated. CRITICAL: MISSING_SL incidents \u00e2\u20ac\u201d signals without stop-loss."
+      "notes": "0 trades generated. CRITICAL: MISSING_SL incidents â€” signals without stop-loss."
     },
     {
       "trial_number": 1028,
       "id": "WS-A-TSMOM-MOP2012",
-      "name": "Time Series Momentum (Moskowitz-Ooi-Pedersen 2012) \u00e2\u20ac\u201d pure time-series replication",
+      "name": "Time Series Momentum (Moskowitz-Ooi-Pedersen 2012) â€” pure time-series replication",
       "category": "replicate_published_edge",
       "status": "REJECTED",
       "registered_at": "2026-07-29",
@@ -406,7 +406,7 @@
       "stopping_rule": "Single hypothesis. If DSR p>=0.05 -> REJECT and stop. No tuning, no holdout peek.",
       "data_hygiene": {
         "status": "RESOLVED 2026-07-29 (BLOCK cleared, pre-reg stays PRE-REGISTERED until run)",
-        "finding": "Raw *_D1.csv contain synthetic pre-inception backfill (EURUSD 1971, NAS100 1938, XAUUSD 1793) \u2014 flat O=H=L=C, placeholder volume. Core load_csv_data reads whole file with no date slice.",
+        "finding": "Raw *_D1.csv contain synthetic pre-inception backfill (EURUSD 1971, NAS100 1938, XAUUSD 1793) — flat O=H=L=C, placeholder volume. Core load_csv_data reads whole file with no date slice.",
         "backfill_rows_excluded": {
           "XAUUSD": 1115,
           "XAGUSD": 2558,
@@ -496,6 +496,34 @@
         "asterisk_note": "First XAUUSD trial on provenance-clean data; earlier XAUUSD REJECTs (1001,1003,Dir A/B) computed pre-guard on contaminated files - re-run advised"
       },
       "result_at": "2026-07-29"
+    },
+    {
+      "trial_number": 1029,
+      "id": "RAM-VOL-REGIME",
+      "name": "Regime-Adaptive Multi-Asset (RAM) - Volatility-Based Regime",
+      "status": "REJECTED",
+      "registered_at": "2026-07-30",
+      "result_at": "2026-07-30",
+      "instrument": "MULTI-ASSET",
+      "pre_registration_doc": "research/pre_registration/trial_1029_regime_adaptive_multi_asset.md",
+      "strategy_file": "strategies/regime_adaptive_multi_asset.py",
+      "validation_runner": "scripts/validate_ram_strategy.py",
+      "mechanism": "Volatility-based regime detection across 7 assets",
+      "result_summary": {
+        "dk_t_stat": 0.3327,
+        "sharpe_ratio": 0.3864,
+        "max_drawdown": -0.0383,
+        "win_rate": 0.506,
+        "profit_factor": 1.351,
+        "n_oos_trades": 300,
+        "wfe": 0.0,
+        "jackknife_sign_flip": true,
+        "jackknife_sign_flip_asset": "NAS100",
+        "overall": "FAIL",
+        "gates_passed": 1,
+        "gates_total": 5,
+        "conclusion": "Single-asset dependency on NAS100. Walk-forward OOS Sharpe=0.0. dk_t=0.33 << 2.0."
+      }
     }
   ]
 }
