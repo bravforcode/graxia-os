@@ -62,3 +62,26 @@ def test_backfill_magnitude_is_excluded():
     # ...but those rows are NOT in the loaded slice
     df = load_provenance_checked("EURUSD")
     assert (df["time"] < "1999-01-01").sum() == 0
+
+
+def test_bar_interval_assertion_passes_for_rebuilt_xauusd():
+    """XAUUSD_D1.csv was rebuilt as true D1 (1 bar/day) — must pass."""
+    df = load_provenance_checked("XAUUSD")
+    assert len(df) > 0
+    # Verify 1 bar per day
+    dates = df["time"].dt.normalize()
+    assert len(dates) == dates.nunique(), "XAUUSD should have 1 bar/day after rebuild"
+
+
+def test_bar_interval_assertion_passes_single_bar_per_date():
+    """Symbols with 1 bar/day must pass the bar-interval assertion."""
+    # Test a few symbols that should have 1 bar/day
+    for sym in ["XAGUSD", "EURUSD", "GBPUSD"]:
+        try:
+            df = load_provenance_checked(sym)
+            # If we get here, the assertion passed
+            assert len(df) > 0, f"{sym} loaded empty"
+        except DataProvenanceError as e:
+            if "multi-bar-per-date" in str(e).lower() or "unique dates" in str(e).lower():
+                raise AssertionError(f"{sym} should have 1 bar/day but was blocked")
+            raise
