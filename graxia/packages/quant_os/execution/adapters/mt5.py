@@ -4,6 +4,7 @@ import logging
 import time
 
 from ...core.contract_specs import get_spec as get_contract_spec
+from ..broker_reconnector import BrokerReconnector  # INV-014: single reconnect authority
 from .base import (
     AccountInfo,
     BrokerAdapter,
@@ -140,6 +141,7 @@ class MT5Adapter(BrokerAdapter):
         self._timeout = timeout
         self._path = path
         self._read_only = read_only
+        self._reconnector = BrokerReconnector()  # INV-014: replaces inline 3-try loop
 
     # ------------------------------------------------------------------
     # Connection helpers
@@ -162,22 +164,35 @@ class MT5Adapter(BrokerAdapter):
         return True
 
     def _ensure_connected(self) -> None:
-        """Reconnect if the terminal connection was lost, with backoff."""
+        """Reconnect if the terminal connection was lost, with backoff.
+
+        Delegates attempt counting + backoff to BrokerReconnector (INV-014:
+        single reconnect authority). After max attempts it enters FAILED state
+        and we raise — the kill-switch on reconnection.
+        """
         if self._connected and mt5 is not None and mt5.terminal_info():
             return
 
         logger.warning("MT5 not connected – attempting reconnect")
-        for attempt in range(1, 4):
+        # ponytail: immediate first attempt, then BrokerReconnector-driven backoff
+        try:
+            if self.connect():
+                self._reconnector.heartbeat_received()
+                return
+        except Exception as exc:
+            logger.error("MT5 initial connect failed: %s", exc)
+
+        while True:
+            event = self._reconnector.attempt_reconnect()
+            if event.event_type == "FAILED":
+                raise ConnectionError("MT5 reconnect failed after max attempts")
+            time.sleep(event.delay_sec)
             try:
                 if self.connect():
+                    self._reconnector.heartbeat_received()
                     return
             except Exception as exc:
-                logger.error("MT5 reconnect attempt %d failed: %s", attempt, exc)
-            import time
-
-            time.sleep(min(2**attempt, 10))  # backoff: 2s, 4s, 8s
-
-        raise ConnectionError("MT5 reconnect failed after 3 attempts")
+                logger.error("MT5 reconnect attempt failed: %s", exc)
 
     def disconnect(self) -> None:
         """Tear down the MT5 terminal connection."""
