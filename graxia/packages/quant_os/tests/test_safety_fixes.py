@@ -12,8 +12,8 @@ from decimal import Decimal
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from risk.circuit_breaker import CircuitBreaker, CircuitBreakerConfig
-from risk.kill_switch import CloseMode, KillSwitch, KillSwitchState
+from graxia.packages.quant_os.risk.circuit_breaker import CircuitBreaker, CircuitBreakerConfig
+from graxia.packages.quant_os.risk.kill_switch import CloseMode, KillSwitch, KillSwitchState
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -300,10 +300,10 @@ class TestIntegrationPreTradeRisk:
 
     def test_killed_switch_blocks_new_orders(self, tmp_path: Path):
         """When kill switch is ACTIVE, pre_trade_check must reject."""
-        from risk.position_sizer_v2 import SizingResult
-        from risk.pre_trade_risk import pre_trade_check
-        from risk.risk_ledger import RiskLedger
-        from risk.risk_policy import RiskPolicy
+        from graxia.packages.quant_os.risk.position_sizer_v2 import SizingResult
+        from graxia.packages.quant_os.risk.pre_trade_risk import pre_trade_check
+        from graxia.packages.quant_os.risk.risk_ledger import RiskLedger
+        from graxia.packages.quant_os.risk.risk_policy import RiskPolicy
 
         ks = KillSwitch(state_file=str(tmp_path / "ks.json"))
         ks.activate(reason="test", source="test")
@@ -331,7 +331,7 @@ class TestIntegrationPreTradeRisk:
             sizing_result=sizing,
             risk_policy=policy,
             risk_ledger=ledger,
-            account_equity=10000,
+            account_equity=Decimal("10000"),
             kill_switch=ks,
         )
 

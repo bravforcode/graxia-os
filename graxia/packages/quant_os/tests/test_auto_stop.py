@@ -14,8 +14,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from risk.auto_stop import AutoStop
-from risk.kill_switch import KillSwitch, KillSwitchState
+from graxia.packages.quant_os.risk.auto_stop import AutoStop
+from graxia.packages.quant_os.risk.kill_switch import KillSwitch, KillSwitchState
 
 
 @pytest.fixture
@@ -134,7 +134,7 @@ class TestKillSwitchActivation:
         broker.close_position.return_value = True
 
         # Enforce CLOSE_ALL
-        from risk.kill_switch import CloseMode
+        from graxia.packages.quant_os.risk.kill_switch import CloseMode
 
         result = kill_switch.enforce(CloseMode.CLOSE_ALL, broker_adapter=broker)
 
@@ -387,7 +387,7 @@ class TestBacktestAlignment:
 
         # Threshold should be less than half of backtest max DD
         assert auto_stop_threshold < backtest_max_dd / 2, (
-            f"Threshold {auto_stop_threshold}% should be < {backtest_max_dd/2:.1f}% "
+            f"Threshold {auto_stop_threshold}% should be < {backtest_max_dd / 2:.1f}% "
             f"(half of backtest max DD {backtest_max_dd}%)"
         )
 

@@ -8,16 +8,12 @@ mock broker adapters to verify:
   - Reconciliation verifies broker state after close
 """
 
-import json
-import tempfile
 from pathlib import Path
-from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
 
-from risk.kill_switch import CloseMode, KillSwitch, KillSwitchState
-
+from graxia.packages.quant_os.risk.kill_switch import CloseMode, KillSwitch
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -38,10 +34,7 @@ def ks(state_file: str) -> KillSwitch:
 
 def _make_positions(n: int = 3) -> list[dict]:
     """Generate *n* mock broker positions."""
-    return [
-        {"ticket": 1000 + i, "symbol": f"SYM{i}", "pnl": float(i - 1), "volume": 0.1}
-        for i in range(n)
-    ]
+    return [{"ticket": 1000 + i, "symbol": f"SYM{i}", "pnl": float(i - 1), "volume": 0.1} for i in range(n)]
 
 
 def _mock_broker(positions: list[dict]) -> MagicMock:

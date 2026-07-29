@@ -3,10 +3,10 @@
   "lock_date": "2026-07-12",
   "lock_doc_path": "reports/stopping_rule_2026_07_12.md",
   "lock_doc_sha256": "e2ba283ac8fdefef026eb17e99e2ecaf4b415d71e3ba43bec7f4bb8682baf39a",
-  "cumulative_trial_count": 1021,
+  "cumulative_trial_count": 1022,
   "cumulative_trial_cap": 1022,
   "max_new_hypotheses": 20,
-  "next_available_trial_number": 1022,
+  "next_available_trial_number": 1029,
   "new_hypotheses_used": 18,
   "new_hypotheses_remaining": 2,
   "sacred_holdout": {
@@ -94,6 +94,14 @@
       "result": "REJECTED",
       "date": "2026-07-18",
       "note": "13 gi_* ICT strategies on XAUUSD D1. All fail label-shuffle (p>0.05). DK-test dk_t=0.52, pos=5/13 → REJECT. ML filter applied to 5 strategies with enough signals: RF accuracy 48-56% (coin flip), filtered OOS Sharpe up to 3.51 but label-shuffle p=0.96 (overfitting). Sacred holdout NOT burned."
+    },
+    {
+      "trial_number": 1028,
+      "id": "WS-A-TSMOM-MOP2012",
+      "result": "REJECTED",
+      "date": "2026-07-29",
+      "note": "Post-cap entry (created after cap=1022). Time Series Momentum replication (Moskowitz-Ooi-Pedersen 2012). 7 assets, monthly rebalance. Newey-West HAC dk_t=0.428 (<2.0), DSR p=0.0000 (N=1050). Edge real but weak, concentrated in precious metals. Hypothesis registered in hypothesis_registry.json. Harness: scripts/run_ws_a_tsmom.py.",
+      "cap_note": "Trial exceeded cumulative_trial_cap=1022. Recorded for audit trail. Multiple-testing correction uses N=1021 (pre-cap) or N=1050 (DSR reconciliation) depending on gate."
     }
   ],
   "consecutive_gate_failures": {
@@ -108,7 +116,7 @@
     "trigger_action": "STOP research. Re-examine gate calibration, data quality, and whether the research direction is misframed."
   },
   "stopping_rule_triggers": {
-    "trial_cap_1022_reached": {"active": false, "current": 1021, "cap": 1022},
+    "trial_cap_1022_reached": {"active": true, "current": 1022, "cap": 1022, "note": "Reached via post-cap trial 1028 (WS-A TSMOM). Cap consumed."},
     "three_months_elapsed": {"active": false, "phase_3_start_date": "2026-07-13", "deadline": "2026-10-13"},
     "eighty_hours_used": {"active": false, "hours_logged": 0, "cap_hours": 80},
     "three_in_a_row_same_gate_failed": {"active": false}
