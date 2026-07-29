@@ -1,0 +1,15 @@
+{
+  "source": "MT5 live terminal (Pepperstone-Demo), copy_rates_range D1",
+  "symbol": "XAUUSD",
+  "timeframe": "D1",
+  "start": "2005-01-01",
+  "end": "2026-07-29 00:00:00",
+  "rows": 5623,
+  "unique_dates": 5623,
+  "duplicate_bars": 0,
+  "min_year": 2005,
+  "generated_at": "2026-07-29T10:23:32.756520+00:00",
+  "script": "scripts/reexport_xauusd_d1.py",
+  "backup": "XAUUSD_D1.csv.bak_20260729_172332",
+  "note": "Replaces 2-bars/day contaminated file with single-convention MT5 D1."
+}

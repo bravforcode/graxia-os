@@ -11,14 +11,17 @@ try:
     from .metrics import BacktestMetrics, calculate_metrics
 except ImportError:
     try:
-        from backtest.data_loader import (
+        from backtest.data_loader import (  # type: ignore[no-redef]
             load_arrow,
             load_csv_data,
             load_mt5_data,
             to_arrow,
         )
-        from backtest.engine import BacktestEngine
-        from backtest.metrics import BacktestMetrics, calculate_metrics
+        from backtest.engine import BacktestEngine  # type: ignore[no-redef]
+        from backtest.metrics import (  # type: ignore[no-redef]
+            BacktestMetrics,
+            calculate_metrics,
+        )
     except ImportError:
         # Last resort: lazy imports
         def __getattr__(name):

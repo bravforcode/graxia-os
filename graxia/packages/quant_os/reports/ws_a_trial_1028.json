@@ -1,0 +1,160 @@
+{
+  "trial_id": 1028,
+  "strategy": "tsmom_pure_sign_252",
+  "parameters": {
+    "lookback": [
+      252
+    ],
+    "vol_target": 0.1,
+    "rebalance": "monthly",
+    "universe": [
+      "XAUUSD",
+      "XAGUSD",
+      "EURUSD",
+      "GBPUSD",
+      "USDJPY",
+      "NAS100",
+      "US30"
+    ],
+    "cost_model": "pepperstone_razor",
+    "cost_multiplier": 1.0
+  },
+  "data_loader": "load_provenance_checked (>=2005-01-01, hard-fail on contamination)",
+  "data_range": {
+    "start": "2005-01-03",
+    "end": "2018-01-01",
+    "years": 12.99
+  },
+  "per_asset": {
+    "XAUUSD": {
+      "trades": 63,
+      "sharpe": 0.1884,
+      "return": 0.102443,
+      "max_dd": -0.081118,
+      "position_changes": 133,
+      "raw_sign_flips": 132
+    },
+    "XAGUSD": {
+      "trades": 60,
+      "sharpe": 0.1823,
+      "return": 0.097446,
+      "max_dd": -0.052126,
+      "position_changes": 135,
+      "raw_sign_flips": 134
+    },
+    "EURUSD": {
+      "trades": 51,
+      "sharpe": 0.2386,
+      "return": 0.126867,
+      "max_dd": -0.049715,
+      "position_changes": 145,
+      "raw_sign_flips": 144
+    },
+    "GBPUSD": {
+      "trades": 56,
+      "sharpe": 0.1393,
+      "return": 0.067985,
+      "max_dd": -0.060353,
+      "position_changes": 141,
+      "raw_sign_flips": 139
+    },
+    "USDJPY": {
+      "trades": 65,
+      "sharpe": -0.0881,
+      "return": -0.056101,
+      "max_dd": -0.103933,
+      "position_changes": 165,
+      "raw_sign_flips": 164
+    },
+    "NAS100": {
+      "trades": 27,
+      "sharpe": 0.2845,
+      "return": 0.156326,
+      "max_dd": -0.052259,
+      "position_changes": 125,
+      "raw_sign_flips": 124
+    },
+    "US30": {
+      "trades": 34,
+      "sharpe": -0.1992,
+      "return": -0.069626,
+      "max_dd": -0.095367,
+      "position_changes": 111,
+      "raw_sign_flips": 110
+    }
+  },
+  "pooled": {
+    "dk_t_stat": 0.1692,
+    "pooled_sharpe": 0.1519,
+    "positive_sharpe_count": 4,
+    "total_assets": 7,
+    "total_days": 5621,
+    "total_trades": 356,
+    "verdict": "REJECT"
+  },
+  "dsr": {
+    "pooled_sharpe": 0.1519,
+    "probability_alpha": 0.0,
+    "n_observations": 1050,
+    "pass": true
+  },
+  "jackknife_leave_one_out_dk_t": {
+    "XAUUSD": 0.0942,
+    "XAGUSD": 0.0976,
+    "EURUSD": 0.1971,
+    "GBPUSD": 0.2403,
+    "USDJPY": 0.182,
+    "NAS100": 0.0521,
+    "US30": 0.2324
+  },
+  "jackknife_deltas": {
+    "XAUUSD": 0.075,
+    "XAGUSD": 0.0716,
+    "EURUSD": -0.0279,
+    "GBPUSD": -0.0711,
+    "USDJPY": -0.0128,
+    "NAS100": 0.1171,
+    "US30": -0.0632
+  },
+  "cost_stress": {
+    "1.5x": {
+      "dk_t": 0.1692,
+      "verdict": "REJECT"
+    },
+    "2.0x": {
+      "dk_t": 0.1692,
+      "verdict": "REJECT"
+    }
+  },
+  "pbo_cscv": {
+    "pbo": 1.0,
+    "ci_95_low": 0.99586,
+    "ci_95_high": 1.0,
+    "n_combinations": 924,
+    "n_overfit": 924,
+    "n_partitions": 12,
+    "n_random_strategies": 50,
+    "n_observations": 5621,
+    "n_assets": 7,
+    "block_size": 468,
+    "usable_observations": 5616,
+    "seed": 42,
+    "real_is_sharpe_mean": 0.169743,
+    "real_is_sharpe_std": 0.316619,
+    "real_oos_sharpe_mean": 0.169743,
+    "real_oos_sharpe_std": 0.316619,
+    "interpretation": "HIGH RISK \u2014 Strong overfitting evidence. Strategy almost certainly overfit.",
+    "timestamp": "2026-07-29T11:43:47.475285+00:00",
+    "input_file": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\reports\\_ws_a_pbo_input.json",
+    "method": "CSCV (Bailey et al. 2017)"
+  },
+  "gates": {
+    "dk_t_gt_2": false,
+    "dsr_pass": true,
+    "pbo_lt_05": false,
+    "pos_changes_ge_50": true
+  },
+  "combined_verdict": "REJECT",
+  "honest_note": "GO does not equal live-ready. No sacred holdout burned. No params tuned.",
+  "timestamp": "2026-07-29T11:43:47.518421+00:00"
+}
