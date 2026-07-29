@@ -29,7 +29,7 @@ from typing import Any
 
 import httpx
 
-from config.pixelrag_config import (
+from ..config.pixelrag_config import (
     PIXELRAG_DEFAULT_N_DOCS,
     PIXELRAG_INDEX_DIR,
     PIXELRAG_INDEX_TIMEOUT,
