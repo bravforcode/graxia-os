@@ -96,7 +96,7 @@ class QuantConfig:
 
     @property
     def max_positions(self) -> int:
-        return self.risk_policy.max_open_positions
+        return int(self.risk_policy.max_open_positions)
 
     max_correlation_threshold: float = 0.7
     max_var_pct: float = 2.0
@@ -150,13 +150,13 @@ class QuantConfig:
     sentry_dsn: str = ""
     health_check_interval_seconds: int = 30
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate config against golden rules and hard limits"""
         self._validate_from_env()
         self._enforce_hard_limits()
         self._validate_mode_consistency()
 
-    def _load_dotenv(self):
+    def _load_dotenv(self) -> None:
         """Load .env file if present. Existing env vars take precedence."""
         env_path = Path(".env")
         if not env_path.exists():
@@ -178,7 +178,7 @@ class QuantConfig:
         except Exception:
             pass  # Silently ignore .env parse errors
 
-    def _validate_from_env(self):
+    def _validate_from_env(self) -> None:
         """Load from environment variables and .env file"""
         # Load .env file if present (env vars already set take precedence)
         self._load_dotenv()
@@ -271,7 +271,7 @@ class QuantConfig:
         # Micro trading
         self.micro_max_position_size = float(os.getenv("MICRO_MAX_POSITION_SIZE", self.micro_max_position_size))
 
-    def _enforce_hard_limits(self):
+    def _enforce_hard_limits(self) -> None:
         """Ensure soft limits don't exceed hard limits"""
         # Enforce via RiskPolicy properties
         risk_pct = float(self.risk_policy.max_risk_per_trade_pct)
@@ -310,10 +310,10 @@ class QuantConfig:
                 max_daily_loss_bps=self.risk_policy.max_daily_loss_bps,
                 max_weekly_loss_bps=self.risk_policy.max_weekly_loss_bps,
                 max_total_drawdown_bps=self.risk_policy.max_total_drawdown_bps,
-                max_open_positions=HARD_LIMITS["max_positions"],
+                max_open_positions=int(HARD_LIMITS["max_positions"]),
             )
 
-    def _validate_mode_consistency(self):
+    def _validate_mode_consistency(self) -> None:
         """Ensure trading mode and live flag are consistent"""
         if self.trading_mode == TradingMode.PAPER and self.live_trading_enabled:
             raise ValueError("Cannot enable live trading in PAPER mode")
@@ -387,7 +387,7 @@ def get_config() -> QuantConfig:
     return _config
 
 
-def reset_config():
+def reset_config() -> None:
     """Reset config (for testing)"""
     global _config
     _config = None

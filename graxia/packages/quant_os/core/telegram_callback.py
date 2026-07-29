@@ -178,7 +178,7 @@ class TelegramCallbackHandler:
 
         return result
 
-    async def _fire_callback(self, fn: Callable, signal: PendingSignal | None, size_mult: float = 1.0):
+    async def _fire_callback(self, fn: Callable, signal: PendingSignal | None, size_mult: float = 1.0) -> None:
         """Fire callback safely."""
         try:
             if asyncio.iscoroutinefunction(fn):
@@ -188,7 +188,7 @@ class TelegramCallbackHandler:
         except Exception as e:
             logger.warning("callback.fire_error", error=str(e))
 
-    async def _answer(self, callback_id: str, text: str = ""):
+    async def _answer(self, callback_id: str, text: str = "") -> None:
         """Answer callback query to remove loading spinner."""
         if not self._token or not callback_id:
             return
@@ -201,7 +201,7 @@ class TelegramCallbackHandler:
         except Exception:
             pass
 
-    async def _edit_message(self, message_id: int | None, text: str, approved: bool = True):
+    async def _edit_message(self, message_id: int | None, text: str, approved: bool = True) -> None:
         """Edit the original message to show status."""
         if not self._token or not message_id:
             return
@@ -241,9 +241,9 @@ class TelegramCallbackHandler:
     def get_results(self) -> list[CallbackResult]:
         return list(self._results)
 
-    def clear_results(self):
+    def clear_results(self) -> None:
         self._results.clear()
 
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         if self._client and not self._client.is_closed:
             await self._client.aclose()

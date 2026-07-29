@@ -39,14 +39,14 @@ class TradeRecords:
         records.to_json("trades.json")
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._records: list[TradeRecord] = []
 
-    def add(self, record: TradeRecord):
+    def add(self, record: TradeRecord) -> None:
         """Add a trade record"""
         self._records.append(record)
 
-    def filter(self, **kwargs) -> list[TradeRecord]:
+    def filter(self, **kwargs: object) -> list[TradeRecord]:
         """Filter records by field values"""
         result = self._records
         for key, value in kwargs.items():
@@ -55,7 +55,7 @@ class TradeRecords:
 
     def group_by(self, field: str) -> dict[str, list[TradeRecord]]:
         """Group records by field value"""
-        groups = {}
+        groups: dict[str, list[TradeRecord]] = {}
         for record in self._records:
             key = str(getattr(record, field, "unknown"))
             if key not in groups:
@@ -83,7 +83,7 @@ class TradeRecords:
             for r in self._records
         ]
 
-    def to_csv(self, filepath: str):
+    def to_csv(self, filepath: str) -> None:
         """Export to CSV"""
         if not self._records:
             return
@@ -95,7 +95,7 @@ class TradeRecords:
                 row = [str(getattr(record, h, "")) for h in headers]
                 f.write(",".join(row) + "\n")
 
-    def to_json(self, filepath: str):
+    def to_json(self, filepath: str) -> None:
         """Export to JSON"""
         with open(filepath, "w") as f:
             json.dump(self.to_list(), f, indent=2)

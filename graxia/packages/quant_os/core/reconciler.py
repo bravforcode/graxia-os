@@ -7,9 +7,11 @@ Detects Ghost Trades (in DuckDB but not MT5) and Orphan Trades (in MT5 but not D
 
 Triggered on: mt5_ingester.reconnected event
 """
+
+from datetime import UTC, datetime
+from typing import Any
+
 import structlog
-from typing import List, Dict, Optional
-from datetime import datetime, UTC
 
 logger = structlog.get_logger()
 
@@ -22,12 +24,12 @@ class StateReconciler:
     Orphan Trade: In MT5 but not in DuckDB → import with SL/TP from MT5
     """
 
-    def __init__(self, duckdb_con, mt5_module=None):
+    def __init__(self, duckdb_con: Any, mt5_module: Any = None) -> None:
         self._con = duckdb_con
         self._mt5 = mt5_module
-        self._reconciliations: List[Dict] = []
+        self._reconciliations: list[dict] = []
 
-    def reconcile(self, mt5_positions: Optional[List[Dict]] = None) -> Dict:
+    def reconcile(self, mt5_positions: list[dict] | None = None) -> dict:
         """
         Run full reconciliation.
 
@@ -44,7 +46,7 @@ class StateReconciler:
         # Get open trades from DuckDB
         db_trades = self._get_db_open_trades()
 
-        mt5_by_symbol = {}
+        mt5_by_symbol: dict[str, list[dict[str, object]]] = {}
         for pos in mt5_positions:
             sym = pos.get("symbol", "")
             if sym not in mt5_by_symbol:
@@ -94,7 +96,7 @@ class StateReconciler:
         self._reconciliations.append(result)
         return result
 
-    def _fetch_mt5_positions(self) -> List[Dict]:
+    def _fetch_mt5_positions(self) -> list[dict]:
         """Fetch current positions from MT5."""
         if self._mt5 is None:
             return []
@@ -119,7 +121,7 @@ class StateReconciler:
             logger.error("mt5_positions_fetch_failed", error=str(e))
             return []
 
-    def _get_db_open_trades(self) -> List[Dict]:
+    def _get_db_open_trades(self) -> list[dict]:
         """Get all OPEN trades from DuckDB shadow_trades."""
         try:
             result = self._con.execute(
@@ -127,8 +129,7 @@ class StateReconciler:
                 "FROM shadow_trades WHERE status = 'OPEN'"
             ).fetchall()
             return [
-                {"trade_id": r[0], "symbol": r[1], "side": r[2],
-                 "entry_price": r[3], "quantity": r[4], "status": r[5]}
+                {"trade_id": r[0], "symbol": r[1], "side": r[2], "entry_price": r[3], "quantity": r[4], "status": r[5]}
                 for r in result
             ]
         except Exception as e:
@@ -146,7 +147,7 @@ class StateReconciler:
         except Exception as e:
             logger.error("ghost_close_failed", trade_id=trade_id, error=str(e))
 
-    def _import_orphan(self, mt5_position: Dict) -> None:
+    def _import_orphan(self, mt5_position: dict) -> None:
         """Import an orphan trade from MT5 into DuckDB."""
         try:
             self._con.execute(
@@ -173,6 +174,6 @@ class StateReconciler:
         except Exception as e:
             logger.error("orphan_import_failed", ticket=mt5_position.get("ticket"), error=str(e))
 
-    def get_reconciliation_history(self) -> List[Dict]:
+    def get_reconciliation_history(self) -> list[dict]:
         """Return history of all reconciliations."""
         return self._reconciliations.copy()

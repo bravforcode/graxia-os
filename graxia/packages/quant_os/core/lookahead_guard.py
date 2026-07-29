@@ -14,19 +14,19 @@ class LookaheadViolation(Exception):
 class LookaheadGuard:
     """Enforces zero look-ahead bias in backtesting"""
 
-    def __init__(self, strict: bool = False):
+    def __init__(self, strict: bool = False) -> None:
         self._current_index: int = 0
         self._data_length: int = 0
         self._violations: list[str] = []
         self._strict = strict
 
-    def initialize(self, data_length: int):
+    def initialize(self, data_length: int) -> None:
         """Initialize with data length"""
         self._data_length = data_length
         self._current_index = 0
         self._violations = []
 
-    def advance(self):
+    def advance(self) -> None:
         """Advance to next bar"""
         if self._current_index < self._data_length:
             self._current_index += 1
@@ -55,6 +55,6 @@ class LookaheadGuard:
     def has_violations(self) -> bool:
         return len(self._violations) > 0
 
-    def reset(self):
+    def reset(self) -> None:
         self._current_index = 0
         self._violations = []

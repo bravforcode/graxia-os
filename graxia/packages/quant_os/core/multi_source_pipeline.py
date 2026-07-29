@@ -29,7 +29,7 @@ class DataSource:
     rate_limit: int = 100  # requests per minute
     _request_times: list[float] = field(default_factory=list, repr=False)
 
-    async def wait_if_needed(self):
+    async def wait_if_needed(self) -> None:
         """Sliding-window rate limiter. Blocks until a slot opens."""
         now = time.monotonic()
         window = 60.0
@@ -52,7 +52,7 @@ class DataPipeline:
         macro = await pipeline.fetch_macro("DFF")  # Fed rate
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.sources = {
             "ccxt": DataSource(name="CCXT", priority=1, rate_limit=20),
             "coingecko": DataSource(name="CoinGecko", priority=2, rate_limit=30),
@@ -193,7 +193,7 @@ class DataPipeline:
             params = {"vs_currency": "usd", "days": days}
 
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, params=params) as resp:
+                async with session.get(url, params=params) as resp:  # type: ignore[arg-type]
                     if resp.status != 200:
                         return None
 
@@ -305,7 +305,7 @@ class DataPipeline:
             }
 
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, params=params) as resp:
+                async with session.get(url, params=params) as resp:  # type: ignore[arg-type]
                     if resp.status != 200:
                         return None
 
@@ -328,7 +328,7 @@ class DataPipeline:
         if key in self._cache:
             entry = self._cache[key]
             if datetime.now(UTC) - entry["time"] < self._cache_ttl:
-                return entry["data"]
+                return dict(entry["data"])
         return None
 
     def _set_cache(self, key: str, data: dict) -> None:

@@ -39,7 +39,7 @@ class WalkForwardViz:
     MIN_ACC = 0.40
     MAX_ACC = 0.70
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._windows: list[WindowResult] = []
 
     def add_window(
@@ -49,7 +49,7 @@ class WalkForwardViz:
         window: int = 0,
         retrained: bool = False,
         drifted: bool = False,
-    ):
+    ) -> None:
         self._windows.append(
             WindowResult(
                 window=window or len(self._windows) + 1,
@@ -93,7 +93,7 @@ class WalkForwardViz:
         accs = [w.accuracy for w in self._windows]
         oos = [w.oos_accuracy for w in self._windows if w.oos_accuracy > 0]
         drifts = sum(1 for w in self._windows if w.drifted)
-        avg_acc = sum(accs)/len(accs) if accs else 0.0
+        avg_acc = sum(accs) / len(accs) if accs else 0.0
         avg_oos = f"{sum(oos)/len(oos):.1%}" if oos else "N/A"
 
         lines.extend(

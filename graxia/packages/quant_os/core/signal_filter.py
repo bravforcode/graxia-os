@@ -63,7 +63,7 @@ class FakeSignalFilter:
         min_os_sharpe: float = 1.5,
         min_profit_factor: float = 1.3,
         min_expectancy: float = 0.0,
-    ):
+    ) -> None:
         self.max_stability_gap = max_stability_gap
         self.max_p_value = max_p_value
         self.max_stress_dd = max_stress_dd
@@ -186,4 +186,4 @@ class FakeSignalFilter:
         exp = metrics.get("expectancy", 0)
         max_dd = metrics.get("max_drawdown_pct", 100)
 
-        return pf > 1.0 and wr > 0.40 and exp > 0 and max_dd < 25
+        return bool(pf > 1.0 and wr > 0.40 and exp > 0 and max_dd < 25)

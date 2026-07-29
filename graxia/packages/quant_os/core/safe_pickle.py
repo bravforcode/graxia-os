@@ -217,6 +217,7 @@ def safe_load_model(
     # Select unpickler: signed → TrustedUnpickler (allows ML classes),
     # unsigned + allow_unsigned → TrustedUnpickler with warning,
     # unsigned + !allow_unsigned → RestrictedUnpickler (rejects ML classes).
+    unpickler: type[TrustedUnpickler | RestrictedUnpickler]
     if signing_key is not None:
         unpickler = TrustedUnpickler
     elif allow_unsigned:

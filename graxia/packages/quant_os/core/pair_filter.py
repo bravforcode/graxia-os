@@ -28,8 +28,8 @@ class MinVolumeFilter(PairFilter):
     def __init__(self, min_volume: float = 1_000_000):
         self.min_volume = min_volume
 
-    def filter(self, pairs, context):
-        tickers = context.get("tickers", {})
+    def filter(self, pairs: list[str], context: dict[str, object]) -> list[str]:
+        tickers: dict[str, dict[str, float]] = context.get("tickers", {})  # type: ignore[assignment]
         return [p for p in pairs if tickers.get(p, {}).get("volume", 0) >= self.min_volume]
 
 
@@ -39,16 +39,16 @@ class SpreadFilter(PairFilter):
     def __init__(self, max_spread_pct: float = 0.5):
         self.max_spread_pct = max_spread_pct
 
-    def filter(self, pairs, context):
-        tickers = context.get("tickers", {})
+    def filter(self, pairs: list[str], context: dict[str, object]) -> list[str]:
+        tickers: dict[str, dict[str, float]] = context.get("tickers", {})  # type: ignore[assignment]
         return [p for p in pairs if tickers.get(p, {}).get("spread_pct", 100) <= self.max_spread_pct]
 
 
 class PairFilterPipeline:
-    def __init__(self, filters: list[PairFilter] = None):
+    def __init__(self, filters: list[PairFilter] | None = None):
         self.filters = filters or []
 
-    def add_filter(self, f: PairFilter):
+    def add_filter(self, f: PairFilter) -> "PairFilterPipeline":
         self.filters.append(f)
         return self
 

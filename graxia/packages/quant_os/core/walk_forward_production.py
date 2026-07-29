@@ -37,7 +37,7 @@ class WindowResult:
 class WalkForwardDashboard:
     """Production HTML dashboard for walk-forward validation."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._windows: list[WindowResult] = []
 
     def add_window(
@@ -47,7 +47,7 @@ class WalkForwardDashboard:
         window: int = 0,
         retrained: bool = False,
         drifted: bool = False,
-    ):
+    ) -> None:
         self._windows.append(
             WindowResult(
                 window=window or len(self._windows) + 1,
@@ -199,7 +199,7 @@ class WalkForwardDashboard:
 </html>"""
         return html
 
-    def save_html(self, path: str = "walk_forward_dashboard.html"):
+    def save_html(self, path: str = "walk_forward_dashboard.html") -> None:
         """Save HTML dashboard to file."""
         html = self.render_html()
         with open(path, "w", encoding="utf-8") as f:

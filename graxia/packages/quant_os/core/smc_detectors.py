@@ -357,7 +357,7 @@ def detect_order_blocks(
                 continue
             if ob.bar_idx < min_bar:
                 break
-            if not ob.mitigated_at(i):
+            if not ob.mitigated_at(i):  # type: ignore[attr-defined]
                 chosen = ob
                 break
         if chosen is not None:
@@ -385,7 +385,7 @@ def _mitigated_at(self: OrderBlock, bar_idx: int) -> bool:
     return self.mitigated and self.mitigation_bar_idx is not None and self.mitigation_bar_idx <= bar_idx
 
 
-OrderBlock.mitigated_at = _mitigated_at  # type: ignore[method-assign]
+OrderBlock.mitigated_at = _mitigated_at  # type: ignore[method-assign,attr-defined]
 
 
 # ── Foundational detector: fair value gap ────────────────────────────────────
@@ -463,7 +463,7 @@ def detect_fvg(
                 continue
             if f.end_bar_idx < min_bar:
                 break
-            if not f.filled_at(i):
+            if not f.filled_at(i):  # type: ignore[attr-defined]
                 chosen = f
                 break
         if chosen is not None:
@@ -489,7 +489,7 @@ def _filled_at(self: FairValueGap, bar_idx: int) -> bool:
     return self.filled and self.fill_bar_idx is not None and self.fill_bar_idx <= bar_idx
 
 
-FairValueGap.filled_at = _filled_at  # type: ignore[method-assign]
+FairValueGap.filled_at = _filled_at  # type: ignore[method-assign,attr-defined]
 
 
 # ── Foundational detector: market structure shift (BOS / CHoCH) ──────────────
@@ -738,7 +738,7 @@ def _atr(df: pd.DataFrame, period: int = 14) -> np.ndarray:
             abs(high[i] - close[i - 1]),
             abs(low[i] - close[i - 1]),
         )
-    atr = pd.Series(tr).rolling(window=period, min_periods=1).mean().to_numpy()
+    atr: np.ndarray = pd.Series(tr).rolling(window=period, min_periods=1).mean().to_numpy()
     return atr
 
 
@@ -966,7 +966,7 @@ def detect_mitigation_and_inversion(
             move_high = ob.top
             end = min(ob.bar_idx + max_age_bars + 1, n)
             for i in range(ob.bar_idx + 1, end):
-                if ob.mitigated_at(i):
+                if ob.mitigated_at(i):  # type: ignore[attr-defined]
                     depth = (move_high - close[i]) / (move_high - move_low) if move_high != move_low else 0.0
                     mitigation_depth[i] = depth
                     break
@@ -975,7 +975,7 @@ def detect_mitigation_and_inversion(
             move_low = ob.bottom
             end = min(ob.bar_idx + max_age_bars + 1, n)
             for i in range(ob.bar_idx + 1, end):
-                if ob.mitigated_at(i):
+                if ob.mitigated_at(i):  # type: ignore[attr-defined]
                     depth = (close[i] - move_low) / (move_high - move_low) if move_high != move_low else 0.0
                     mitigation_depth[i] = depth
                     break

@@ -106,7 +106,7 @@ class SignalValidatorAgent(Agent):
             return
         self._pending.append(event)
 
-    async def act(self) -> AsyncGenerator[SignalValidationEvent, None]:
+    async def act(self) -> AsyncGenerator[SignalValidationEvent, None]:  # type: ignore[override]
         """
         Validate each pending signal through LLM cascade.
 

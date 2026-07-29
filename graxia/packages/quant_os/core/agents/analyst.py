@@ -99,7 +99,7 @@ class TechnicalAnalystAgent(Agent):
             metadata={"reasons": best.reasons, "technical_signal": tech_payload},
         )
 
-    def _evaluate(self, sym, closes, highs, lows):
+    def _evaluate(self, sym: str, closes: list[float], highs: list[float], lows: list[float]) -> TechnicalOpinion:
         reasons = []
         short_sma = sum(closes[-self.SHORT_WINDOW :]) / self.SHORT_WINDOW
         long_sma = sum(closes[-self.LONG_WINDOW :]) / self.LONG_WINDOW

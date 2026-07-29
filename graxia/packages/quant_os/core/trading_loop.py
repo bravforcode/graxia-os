@@ -620,7 +620,7 @@ class TradingLoop:
 
     def _get_trading_mode(self) -> TradingMode:
         if self._config is not None:
-            return self._config.trading_mode
+            return TradingMode(self._config.trading_mode)
         return TradingMode.PAPER
 
     def _reset_daily_counter(self) -> None:

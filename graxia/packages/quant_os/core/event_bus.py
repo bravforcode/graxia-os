@@ -22,11 +22,11 @@ Handler = Callable[[Event], Any]
 class _PublishResult:
     """Dual-mode return: works as sync None or async awaitable."""
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return False
 
-    def __await__(self):
-        async def _noop():
+    def __await__(self) -> object:
+        async def _noop() -> None:
             return None
 
         return _noop().__await__()

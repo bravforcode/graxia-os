@@ -98,7 +98,7 @@ class HoldoutValidator:
         wr_deg = (dev_win_rate - holdout_win_rate) / dev_win_rate if dev_win_rate > 0 else 1.0
 
         # Deflated Sharpe Ratio
-        deflated_sharpe, threshold = self._deflated_sharpe(holdout_sharpe, holdout_trades)
+        deflated_sharpe, threshold = self._deflated_sharpe(holdout_sharpe, int(holdout_trades))
 
         # Warnings
         if sharpe_deg > max_acceptable_degradation:
@@ -124,7 +124,7 @@ class HoldoutValidator:
             holdout_profit_factor=holdout_pf,
             holdout_max_drawdown_pct=holdout_dd,
             holdout_total_pnl=holdout_pnl,
-            holdout_trades=holdout_trades,
+            holdout_trades=int(holdout_trades),
             dev_sharpe=dev_sharpe,
             dev_win_rate=dev_win_rate,
             sharpe_degradation=sharpe_deg,
@@ -140,7 +140,7 @@ class HoldoutValidator:
         self,
         observed_sharpe: float,
         n_trades: int,
-        annualization: float = None,
+        annualization: float | None = None,
     ) -> tuple:
         """
         Deflated Sharpe Ratio (Bailey & López de Prado, 2014)

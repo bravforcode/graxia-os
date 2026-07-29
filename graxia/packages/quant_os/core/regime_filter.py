@@ -39,9 +39,9 @@ class RegimeResult:
     minus_di: float = 0.0
     volatility: float = 0.0
     trend_strength: float = 0.0
-    details: dict = None
+    details: dict | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.details is None:
             self.details = {}
 
