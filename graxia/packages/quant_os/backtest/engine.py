@@ -197,6 +197,7 @@ class BacktestConfig:
     enable_swap: bool = True
     cost_params: Any = None  # Optional[CostParams] from core.cost_model
     fill_timing: Any = None  # Optional[FillTimingConfig] for latency-based slippage
+    max_bars_open: int = 50  # TIME_STOP after N bars (0 = disabled)
 
 
 @dataclass
@@ -575,7 +576,9 @@ class BacktestEngine:
 
             # Risk halt checks (P0-5: enforce daily/weekly/drawdown limits in backtest)
             if self._check_risk_halt():
-                break  # Stop trading, close remaining positions
+                # Close remaining positions at current bar price (not last bar)
+                self._close_all_positions(float(bar_close), current_time)
+                break
 
             # 2. Read pre-computed indicators (sliced to current bar)
             if self._precomputed_indicators:
@@ -657,7 +660,7 @@ class BacktestEngine:
                                     },
                                     Decimal(str(bar_close)),
                                 )
-                                self._close_position(pid, exit_price, current_time, CloseReason.MANUAL, Decimal("0"))
+                                self._close_position(pid, exit_price, current_time, CloseReason.CIRCUIT_BREAKER, Decimal("0"))
                                 break
 
         # Close any remaining positions at last price
@@ -1059,6 +1062,7 @@ class BacktestEngine:
             snapshot,
             bar_high,
             bar_low,
+            max_bars_open=self.config.max_bars_open,
             current_bar_index=bar_index,
         )
 
@@ -1076,7 +1080,7 @@ class BacktestEngine:
             elif event.event_type.value == "AMBIGUOUS":
                 reason = CloseReason.AMBIGUOUS
             elif event.event_type.value == "TIME_STOP":
-                reason = CloseReason.MANUAL
+                reason = CloseReason.TIME_STOP
             else:
                 continue
 
@@ -1249,7 +1253,7 @@ class BacktestEngine:
                 exit_price = last_dec + exit_slippage
             else:
                 exit_price = last_dec
-            self._close_position(pos_id, exit_price, current_time, CloseReason.MANUAL, exit_slippage)
+            self._close_position(pos_id, exit_price, current_time, CloseReason.EXPIRED, exit_slippage)
 
     def _calculate_swap_cost(
         self,

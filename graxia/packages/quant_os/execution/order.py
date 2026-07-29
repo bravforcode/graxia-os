@@ -49,6 +49,7 @@ class Order:
     strategy_id: str = ""
     signal_id: str | None = None
     risk_check_id: str | None = None
+    compliance_check_id: str | None = None
     approved_by: str | None = None
     trading_mode: str = "PAPER"
 
