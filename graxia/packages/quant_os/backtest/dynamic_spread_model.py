@@ -79,8 +79,7 @@ _SYNTHETIC_SYMBOLS: dict[str, dict[str, float]] = {
 def _load_calibration() -> dict:
     if not _CONFIG_PATH.exists():
         raise UnmeasuredCostError(
-            f"Cost calibration file not found: {_CONFIG_PATH}. "
-            "Backtests cannot run without measured costs."
+            f"Cost calibration file not found: {_CONFIG_PATH}. Backtests cannot run without measured costs."
         )
     with open(_CONFIG_PATH, encoding="utf-8") as f:
         return json.load(f)
@@ -95,8 +94,8 @@ class SymbolCostProfile:
     """
 
     symbol: str
-    spread_bps: Decimal          # median/measured, one side
-    spread_bps_p95: Decimal      # for stress scenarios
+    spread_bps: Decimal  # median/measured, one side
+    spread_bps_p95: Decimal  # for stress scenarios
     slippage_bps: Decimal | None  # None when unmeasured — caller must override
     swap_long_bps: Decimal | None
     swap_short_bps: Decimal | None
@@ -104,7 +103,7 @@ class SymbolCostProfile:
     status: str
 
     @classmethod
-    def for_symbol(cls, symbol: str) -> "SymbolCostProfile":
+    def for_symbol(cls, symbol: str) -> SymbolCostProfile:
         """Load the measured profile for `symbol`.
 
         Raises UnmeasuredCostError when the symbol is absent, or its data is
@@ -145,9 +144,7 @@ class SymbolCostProfile:
 
         spread = entry.get("spread_bps_measured")
         if spread is None:
-            raise UnmeasuredCostError(
-                f"Symbol '{symbol}' has no 'spread_bps_measured'."
-            )
+            raise UnmeasuredCostError(f"Symbol '{symbol}' has no 'spread_bps_measured'.")
 
         def _opt(key: str) -> Decimal | None:
             v = entry.get(key)

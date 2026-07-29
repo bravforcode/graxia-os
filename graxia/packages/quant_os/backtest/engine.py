@@ -380,6 +380,15 @@ class BacktestEngine:
         results = engine.run()
     """
 
+    # Attributes assigned in more than one method. Declared here so mypy takes
+    # these as the definition rather than treating a later annotated assignment
+    # as a redefinition of the first bare one.
+    _mtf_cursor: Any
+    _precomputed_indicators: dict[str, Any] | None
+    _cached_bar_dicts: list[dict] | None
+    _risk_policy: Any
+    _shared_indicators: dict[str, Any] | None
+
     def __init__(self, config: BacktestConfig | None = None):
         self.config = config or BacktestConfig()
 
@@ -512,7 +521,7 @@ class BacktestEngine:
         try:
             from ..risk.risk_policy import RiskPolicy as _RiskPolicy
         except ImportError:
-            from risk.risk_policy import RiskPolicy as _RiskPolicy
+            from risk.risk_policy import RiskPolicy as _RiskPolicy  # type: ignore[no-redef]
         self._risk_policy = _RiskPolicy()
 
         # --- P2 FIX: Pre-compute bar dicts once (was O(n × Decimal) per signal) ---
@@ -584,7 +593,7 @@ class BacktestEngine:
                 symbol=self._symbol,
                 ohlcv_data=bar_data,
                 indicators=indicators,
-                regime=self._get_regime_state(),  # Phase 4: Wire regime detection
+                regime=self._get_regime_state(),  # type: ignore[arg-type]  # Phase 4: Wire regime detection
                 current_time=current_time,
             )
 
@@ -665,7 +674,7 @@ class BacktestEngine:
             return []
 
         # Precompute indicators once per unique dataset (preserve C4 optimization)
-        indicator_cache: dict[int, dict[str, Any]] = {}
+        indicator_cache: dict[tuple[int, int], dict[str, Any]] = {}
         prepared: list[tuple[dict[str, Any], dict[str, Any]]] = []
         has_bus = False
         for cfg in configs:
@@ -716,8 +725,8 @@ class BacktestEngine:
         self._shared_indicators = None
         self._day_start_balance = Decimal(str(self.config.initial_capital))
         # P1 perf: pre-computed caches cleared each run
-        self._precomputed_indicators: dict[str, Any] | None = None
-        self._cached_bar_dicts: list[dict] | None = None
+        self._precomputed_indicators = None
+        self._cached_bar_dicts = None
         self._risk_policy = None
         # Phase 4: Initialize regime, margin, P&L trackers
         if _PHASE4_WIRING_AVAILABLE:
@@ -728,8 +737,8 @@ class BacktestEngine:
     def _calculate_indicators(self, up_to_index: int) -> dict[str, Any]:
         """Calculate indicators using Numba JIT (B3) or pandas_ta fallback."""
         # B3 — If batch mode provided precomputed indicators, use them directly
-        if getattr(self, "_shared_indicators", None) is not None:
-            shared = self._shared_indicators
+        shared = getattr(self, "_shared_indicators", None)
+        if shared is not None:
             return {
                 k: v[: up_to_index + 1] if isinstance(v, list) else v for k, v in shared.items() if k not in ("open",)
             }
@@ -807,7 +816,7 @@ class BacktestEngine:
             df["atr_14"] = ta.atr(df["high"], df["low"], df["close"], length=14)
 
             # Bollinger Bands
-            bb = ta.bbands(df["close"], length=20, std=2)
+            bb = ta.bbands(df["close"], length=20, std=2)  # type: ignore[arg-type]
             if bb is not None and len(bb.columns) >= 3:
                 df["bb_upper"] = bb.iloc[:, 2]  # Upper band
                 df["bb_lower"] = bb.iloc[:, 0]  # Lower band
@@ -935,7 +944,7 @@ class BacktestEngine:
         )
 
         _spec_for_costs = InlineContractSpec.for_symbol(signal.symbol)
-        contract_spec = ContractSpec(
+        exec_contract_spec = ContractSpec(
             # tick_value/tick_size (not raw trade_contract_size) so non-USD-quote
             # pairs (USDJPY/USDCAD/USDCHF) get currency-converted cost math.
             contract_size=_spec_for_costs.trade_tick_value / _spec_for_costs.trade_tick_size,
@@ -962,7 +971,7 @@ class BacktestEngine:
             snapshot,
             self._bar_dicts(),
             bar_index,
-            contract_spec=contract_spec,
+            contract_spec=exec_contract_spec,
         )
 
         if result.entry_price <= 0 or volume <= 0:
@@ -1004,11 +1013,11 @@ class BacktestEngine:
         if not self.positions:
             return
 
-        # Dynamic spread based on time of day — use first position's tick_size.
-        # spread_pips_override ensures BacktestConfig.spread_pips actually
-        # affects P&L instead of being dead code.
+        # Measured per-symbol cost, keyed on the first open position's symbol.
         first_pos = next(iter(self.positions.values()), None)
-        pip_size = first_pos.tick_size if first_pos else Decimal("0.01")
+        if first_pos is None:
+            return
+        pip_size = first_pos.tick_size
         spread, _ = self._cost_offsets(first_pos.symbol, bar_close, pip_size)
         bid, ask = estimate_bid_ask_from_bar(Decimal("0"), bar_high, bar_low, bar_close, spread)
         snapshot = MarketSnapshot(
@@ -1049,9 +1058,10 @@ class BacktestEngine:
 
         for event in events:
             pos_id = event.trade_id
-            pos = pos_map.get(pos_id)
-            if not pos:
+            pos_opt = pos_map.get(pos_id)
+            if not pos_opt:
                 continue
+            pos = pos_opt
 
             if event.event_type.value == "STOP_LOSS":
                 reason = CloseReason.STOP_LOSS
@@ -1101,17 +1111,19 @@ class BacktestEngine:
         spread_override = self.config.spread_pips
         slippage_override = self.config.slippage_pips
 
-        # Only load the profile if at least one side actually needs it.
-        profile = None
-        if spread_override is None or slippage_override is None:
-            profile = SymbolCostProfile.for_symbol(symbol)
+        if spread_override is not None and slippage_override is not None:
+            # Both sides explicitly overridden — no measured profile needed.
+            return (
+                tick_size * Decimal(str(spread_override)),
+                tick_size * Decimal(str(slippage_override)),
+            )
+
+        profile = SymbolCostProfile.for_symbol(symbol)
 
         if spread_override is not None:
             spread = tick_size * Decimal(str(spread_override))
         else:
-            spread = bps_to_price(
-                profile.get_spread_bps(stress=self.config.cost_stress), price
-            )
+            spread = bps_to_price(profile.get_spread_bps(stress=self.config.cost_stress), price)
 
         if slippage_override is not None:
             slippage = tick_size * Decimal(str(slippage_override))
@@ -1288,7 +1300,7 @@ class BacktestEngine:
             try:
                 from ..risk.risk_policy import RiskPolicy
             except ImportError:
-                from risk.risk_policy import RiskPolicy
+                from risk.risk_policy import RiskPolicy  # type: ignore[no-redef]
             policy = RiskPolicy()
 
         # Max drawdown check
@@ -1416,7 +1428,7 @@ class BacktestEngine:
 
         metrics = calculate_metrics(
             trades=self.trades,
-            initial_capital=self.config.initial_capital,
+            initial_capital=float(self.config.initial_capital),
             equity_curve=self.equity_curve,
         )
 

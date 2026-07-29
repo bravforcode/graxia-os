@@ -34,7 +34,7 @@ import structlog
 try:
     from ..core.enums import RegimeType
 except ImportError:
-    from core.enums import RegimeType
+    from core.enums import RegimeType  # type: ignore[no-redef]
 
 logger = structlog.get_logger(__name__)
 
@@ -250,7 +250,7 @@ def _evaluate_strategy(
     wins = 0
     losses = 0
     equity = [10_000.0]  # arbitrary starting equity
-    peak = equity[0]
+    _peak = equity[0]
 
     n_bars = min(end, len(ohlcv_data.get("close", [])))
 
@@ -291,7 +291,7 @@ def _evaluate_strategy(
         equity.append(equity[-1] * (1 + pnl_pct / 100))
 
     total = len(trades)
-    avg_pnl = sum(trades) / total if total > 0 else 0.0
+    _avg_pnl = sum(trades) / total if total > 0 else 0.0
 
     return FoldMetrics(
         total_bars=end - start,

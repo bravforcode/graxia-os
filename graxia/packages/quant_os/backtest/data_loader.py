@@ -14,6 +14,7 @@ import os
 import re
 import sys
 from datetime import date, datetime, timedelta
+from typing import Any
 
 import pandas as pd
 
@@ -41,7 +42,7 @@ def load_csv_data(
         Tuple of (ohlcv_dict, timestamps)
     """
     timestamps = []
-    data = {"open": [], "high": [], "low": [], "close": [], "volume": []}
+    data: dict[str, list[Any]] = {"open": [], "high": [], "low": [], "close": [], "volume": []}
 
     with open(file_path, newline="") as f:
         reader = csv.DictReader(f)
@@ -117,7 +118,7 @@ def load_mt5_data(
         Tuple of (ohlcv_dict, timestamps)
     """
     try:
-        import MetaTrader5 as mt5
+        import MetaTrader5 as mt5  # noqa: N813
     except ImportError:
         raise ImportError("MetaTrader5 package not installed. Run: pip install MetaTrader5") from None
 
@@ -185,7 +186,7 @@ def generate_sample_data(
     rng = _random_mod.Random(seed)
 
     timestamps = []
-    data = {"open": [], "high": [], "low": [], "close": [], "volume": []}
+    data: dict[str, list[Any]] = {"open": [], "high": [], "low": [], "close": [], "volume": []}
 
     price = base_price
     start_date = datetime(2020, 1, 1)
@@ -270,7 +271,7 @@ def _require_pyarrow():
         return pyarrow
     except ImportError:
         raise ImportError(
-            "pyarrow is required for Arrow/Feather support. " "Install it with: pip install pyarrow"
+            "pyarrow is required for Arrow/Feather support. Install it with: pip install pyarrow"
         ) from None
 
 
@@ -410,7 +411,7 @@ def _load_ohlcv_duckdb(symbol: str, timeframe: str, **kwargs) -> pd.DataFrame:
             db_path = get_config().duckdb_path
         except Exception:
             db_path = None
-    db_path = db_path or os.getenv("DUCKDB_PATH", "data/market_data.duckdb")
+    db_path = str(db_path or os.getenv("DUCKDB_PATH", "data/market_data.duckdb"))
 
     if not os.path.exists(db_path):
         raise FileNotFoundError(f"duckdb file not found: {db_path}")

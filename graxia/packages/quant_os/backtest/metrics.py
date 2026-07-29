@@ -13,7 +13,8 @@ Phase 3: Added bootstrap confidence intervals (stationary bootstrap).
 
 import math
 import random
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from typing import Any
 
 from ..core.enums import PositionType
 
@@ -125,7 +126,7 @@ def stationary_bootstrap(
 
     resamples = []
     for _ in range(n_resamples):
-        sample = []
+        sample: list[Any] = []
         idx = rng.randint(0, n - 1)
         while len(sample) < n:
             sample.append(returns[idx])
@@ -357,7 +358,7 @@ def _calculate_drawdown(equity_curve: list, initial_capital: float) -> tuple:
     peak = float(initial_capital)
     max_dd = 0.0
     max_dd_pct = 0.0
-    current_dd_start = 0
+    _current_dd_start = 0
     max_dd_duration = 0
     in_drawdown = False
     dd_start_idx = 0
@@ -412,7 +413,7 @@ def _sharpe_ratio(returns: list[float], risk_free_rate: float, bars_per_year: in
     if not returns or len(returns) < 2:
         return 0.0
 
-    avg_return = sum(returns) / len(returns)
+    _avg_return = sum(returns) / len(returns)
     std_return = _std_dev(returns)
 
     if std_return == 0:

@@ -22,7 +22,7 @@ class FillRequest:
     side: Side
     entry_price: Decimal
     stop_loss: Decimal
-    take_profit: Decimal
+    take_profit: Decimal | None
     slippage_entry: Decimal
     slippage_exit: Decimal
 
@@ -64,16 +64,17 @@ def simulate_exit(side: Side, bid: Decimal, ask: Decimal, slippage: Decimal) -> 
 def check_sl_tp_trigger(
     side: Side,
     stop_loss: Decimal,
-    take_profit: Decimal,
+    take_profit: Decimal | None,
     bid: Decimal,
     ask: Decimal,
 ) -> str | None:
+    # take_profit is None when the signal carries no TP: it can never trigger.
     if side.value == "BUY":
         sl_hit = bid <= stop_loss
-        tp_hit = bid >= take_profit
+        tp_hit = take_profit is not None and bid >= take_profit
     else:
         sl_hit = ask >= stop_loss
-        tp_hit = ask <= take_profit
+        tp_hit = take_profit is not None and ask <= take_profit
 
     if sl_hit and tp_hit:
         return "SL"
@@ -101,10 +102,10 @@ def check_sl_tp_trigger_ambiguous(
     """
     if side.value == "BUY":
         sl_hit = bar_low <= stop_loss
-        tp_hit = bar_high >= take_profit
+        tp_hit = take_profit is not None and bar_high >= take_profit
     else:
         sl_hit = bar_high >= stop_loss
-        tp_hit = bar_low <= take_profit
+        tp_hit = take_profit is not None and bar_low <= take_profit
 
     if sl_hit and tp_hit:
         return "SL", True

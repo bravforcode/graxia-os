@@ -8,6 +8,10 @@ Enhanced with jesse-inspired ergonomics (A1):
 - Convenience properties: price, balance, position, available_margin
 """
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..core.events import SignalEvent
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -131,8 +135,8 @@ class Signal:
 
     def to_signal_event(self) -> "SignalEvent":
         """Convert strategy Signal to EventBus SignalEvent."""
-        from ..core.enums import SignalType as ST
-        from ..core.events import SignalEvent as SE
+        from ..core.enums import SignalType as ST  # noqa: N817
+        from ..core.events import SignalEvent as SE  # noqa: N817
 
         type_map = {
             "BUY": ST.BUY,

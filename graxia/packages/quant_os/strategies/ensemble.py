@@ -30,10 +30,10 @@ import structlog
 
 try:
     from ..core.enums import DecisionType, RegimeType, SignalType
-    from .base import Signal, Strategy, StrategyConfig
+    from .base import Signal, Strategy, StrategyConfig  # noqa: F401
 except (ImportError, SystemError):
-    from core.enums import DecisionType, RegimeType, SignalType
-    from strategies.base import Signal, Strategy
+    from core.enums import DecisionType, RegimeType, SignalType  # type: ignore[no-redef]
+    from strategies.base import Signal, Strategy  # type: ignore[no-redef]
 
 logger = structlog.get_logger(__name__)
 
@@ -471,7 +471,7 @@ def get_ensemble_signal(
     for name, sig in signal_map.items():
         if sig is not None:
             weight = STRATEGY_WEIGHTS.get(name, 1.0 / len(signal_map))
-            ensemble.add_strategy(_FakeStrategy(name, sig), weight)
+            ensemble.add_strategy(_FakeStrategy(name, sig), weight)  # type: ignore[arg-type]  # local duck-typed shim
 
     if strategies:
         for s in strategies:

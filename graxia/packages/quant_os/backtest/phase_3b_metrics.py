@@ -174,7 +174,7 @@ def _sharpe_ratio(equity_curve: list[dict]) -> float:
 def calculate_phase_3b_metrics(result: dict, scenario: str) -> Phase3BMetrics:
     """Calculate metrics from engine result."""
     trades = result.get("trades", [])
-    metrics = result.get("metrics", {})
+    _metrics = result.get("metrics", {})
 
     trade_count = len(trades)
     winning = [t for t in trades if t.get("pnl", 0) > 0]
@@ -251,7 +251,7 @@ def format_metrics_table(metrics_list: list[Phase3BMetrics]) -> str:
             if callable(field):
                 val = field(m)
             else:
-                val = getattr(m, field)
+                val = getattr(m, str(field))
             row += f" {val} |"
         lines.append(row)
 

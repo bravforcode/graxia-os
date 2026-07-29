@@ -4,10 +4,13 @@ Gate-based scaling with Monte Carlo integration.
 Each gate defines statistical and risk-of-ruin criteria that must be met
 before a lot increase is permitted.
 """
+
 from __future__ import annotations
 
-import numpy as np
 from dataclasses import dataclass
+from typing import Any
+
+import numpy as np
 
 from .monte_carlo import bootstrap_equity_paths
 
@@ -17,7 +20,7 @@ class GateResult:
     gate_name: str
     passed: bool
     required_criteria: dict[str, float]
-    actual_values: dict[str, float]
+    actual_values: dict[str, Any]
     prob_ruin: float
     decision: str
 
@@ -223,7 +226,7 @@ def evaluate_ladder(
     results = []
     cumulative_pnls: list[float] = []
 
-    for i, (period_pnls, gate) in enumerate(zip(trade_pnls_by_period, gates)):
+    for i, (period_pnls, gate) in enumerate(zip(trade_pnls_by_period, gates, strict=False)):
         cumulative_pnls.extend(period_pnls.tolist())
         cumulative = np.array(cumulative_pnls)
 
