@@ -14,6 +14,7 @@ dependencies = [
     "uvicorn>=0.23",
     "pandas>=2.0",
     "numpy>=1.24",
+    "numba>=0.57",
     "duckdb>=0.10",
     "sqlalchemy>=2.0",
     "redis>=5.0",

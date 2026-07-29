@@ -11,6 +11,8 @@ Simulates strategy execution on historical data with:
 - Batch mode (C4): run multiple configs with shared indicators
 """
 
+import os
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from decimal import ROUND_DOWN, Decimal
@@ -507,9 +509,6 @@ class BacktestEngine:
         self._reset()
 
         close = self.ohlcv_data["close"]
-        high = self.ohlcv_data.get("high", close)
-        low = self.ohlcv_data.get("low", close)
-        open_price = self.ohlcv_data.get("open", close)
         volume = self.ohlcv_data.get("volume", [0] * len(close))
 
         total_bars = len(close)
@@ -525,10 +524,10 @@ class BacktestEngine:
 
         # --- P3 FIX: Hoist RiskPolicy creation (was per-bar instantiation) ---
         try:
-            from ..risk.risk_policy import RiskPolicy as _RP
+            from ..risk.risk_policy import RiskPolicy as _RiskPolicy
         except ImportError:
-            from risk.risk_policy import RiskPolicy as _RP
-        self._risk_policy = _RP()
+            from risk.risk_policy import RiskPolicy as _RiskPolicy
+        self._risk_policy = _RiskPolicy()
 
         # --- P2 FIX: Pre-compute bar dicts once (was O(n × Decimal) per signal) ---
         self._cached_bar_dicts = [
@@ -547,11 +546,13 @@ class BacktestEngine:
             guard.advance()
             current_time = self.timestamps[i] if i < len(self.timestamps) else self._deterministic_timestamp(i)
 
-            # Current bar OHLCV
-            bar_open = Decimal(str(open_price[i]))
-            bar_high = Decimal(str(high[i]))
-            bar_low = Decimal(str(low[i]))
-            bar_close = Decimal(str(close[i]))
+            # ponytail: reuse prebuilt Decimal bar dicts (P2 fix) instead of
+            # rebuilding 4 Decimal(str()) per bar; money precision preserved.
+            _bd = self._cached_bar_dicts[i]
+            bar_open = _bd["open"]
+            bar_high = _bd["high"]
+            bar_low = _bd["low"]
+            bar_close = _bd["close"]
 
             # B1 — Publish BarEvent if event_bus is attached
             if event_bus is not None:
@@ -666,53 +667,50 @@ class BacktestEngine:
         return result
 
     @staticmethod
-    def run_batch(configs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def run_batch(configs: list[dict[str, Any]], max_workers: int | None = None) -> list[dict[str, Any]]:
         """
         Batch mode (C4): run multiple backtest configs sharing precomputed indicators.
 
-        Args:
-            configs: list of dicts, each with keys:
-                'engine_cfg': BacktestConfig (or None for defaults)
-                'strategy': Strategy instance
-                'ohlcv_data': dict with OHLCV arrays
-                'timestamps': list of datetimes (optional)
-                'event_bus': EventBus (optional)
-
-        Returns:
-            List of result dicts (one per config).
+        Independent configs run in parallel via ProcessPoolExecutor. Falls back to
+        sequential when any config carries an event_bus (events can't cross a process
+        boundary) or when pickling/parallelism is unavailable.
         """
-        # Precompute indicators once for identical data across batch items
+        if not configs:
+            return []
+
+        # Precompute indicators once per unique dataset (preserve C4 optimization)
         indicator_cache: dict[int, dict[str, Any]] = {}
-
-        results = []
+        prepared: list[tuple[dict[str, Any], dict[str, Any]]] = []
+        has_bus = False
         for cfg in configs:
-            engine_cfg = cfg.get("engine_cfg")
-            strategy = cfg["strategy"]
             ohlcv_data = cfg["ohlcv_data"]
-            timestamps = cfg.get("timestamps")
-            event_bus = cfg.get("event_bus")
-
-            # Cache key by data identity (id of close list + length)
             data_key = (id(ohlcv_data.get("close", [])), len(ohlcv_data.get("close", [])))
             if data_key not in indicator_cache:
-                engine = BacktestEngine(config=engine_cfg)
-                engine.set_strategy(strategy)
-                engine.load_data(ohlcv_data, timestamps)
-                # Compute full indicator set once
+                engine = BacktestEngine(config=cfg.get("engine_cfg"))
+                engine.set_strategy(cfg["strategy"])
+                engine.load_data(ohlcv_data, cfg.get("timestamps"))
                 indicator_cache[data_key] = engine._calculate_indicators(len(ohlcv_data["close"]) - 1)
+            prepared.append((cfg, indicator_cache[data_key]))
+            if cfg.get("event_bus") is not None:
+                has_bus = True
 
-            # Shared indicators
-            shared_indicators = indicator_cache[data_key]
+        # event_bus can't cross process boundary; <2 configs gains nothing
+        if has_bus or len(prepared) < 2:
+            return [_run_batch_worker(c, ind) for c, ind in prepared]
 
-            # Create engine and run
-            engine = BacktestEngine(config=engine_cfg)
-            engine.set_strategy(strategy)
-            engine.load_data(ohlcv_data, timestamps)
-            engine._shared_indicators = shared_indicators
-            result = engine.run(event_bus=event_bus)
-            results.append(result)
-
-        return results
+        if max_workers is None:
+            max_workers = min(len(prepared), (os.cpu_count() or 1))
+        try:
+            with ProcessPoolExecutor(max_workers=max_workers) as ex:
+                return list(
+                    ex.map(
+                        _run_batch_worker,
+                        (c for c, _ in prepared),
+                        (i for _, i in prepared),
+                    )
+                )
+        except Exception:  # pragma: no cover - env without working multiprocessing
+            return [_run_batch_worker(c, ind) for c, ind in prepared]
 
     def get_overfitting_report(self) -> dict | None:
         """Return the last overfitting report from run(), or None if not yet run."""
@@ -1296,10 +1294,7 @@ class BacktestEngine:
 
         # Daily loss check
         daily_loss = self.balance - self._day_start_balance
-        if daily_loss < 0 and abs(daily_loss) / self._day_start_balance >= policy.max_daily_loss_fraction:
-            return True
-
-        return False
+        return daily_loss < 0 and abs(daily_loss) / self._day_start_balance >= policy.max_daily_loss_fraction
 
     def _log_critical_incident(self, incident_type: str, signal=None):
         """Log critical incident. No silent fallback."""
@@ -1537,3 +1532,12 @@ class BacktestEngine:
                 result["overfitting"] = {"error": str(e), "score": 0, "recommendation": "UNKNOWN"}
 
         return result
+
+
+def _run_batch_worker(cfg: dict[str, Any], shared_indicators: dict[str, Any]) -> dict[str, Any]:
+    """ponytail: process-worker entry; builds engine, reuses precomputed indicators."""
+    engine = BacktestEngine(config=cfg.get("engine_cfg"))
+    engine.set_strategy(cfg["strategy"])
+    engine.load_data(cfg["ohlcv_data"], cfg.get("timestamps"))
+    engine._shared_indicators = shared_indicators
+    return engine.run(event_bus=cfg.get("event_bus"))
