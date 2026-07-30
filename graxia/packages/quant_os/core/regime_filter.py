@@ -1,18 +1,26 @@
 """
-Regime Filter — Detect market conditions
+DEPRECATED — Use ``core.regime`` or ``validation.regime_detector`` instead.
 
-Classifies market into regimes:
-- TRENDING_UP / TRENDING_DOWN
-- RANGING
-- HIGH_VOLATILITY
-- LOW_VOLATILITY
-- CRISIS
+This module's RegimeFilter (MarketRegime enum, Bollinger Band width, ADX+voting)
+is superseded by the canonical RegimeDetector in validation/regime_detector.py,
+which uses volatility + correlation regime detection with position sizing.
 
-Used to:
-- Enable/disable strategies based on regime
-- Adjust position sizing
-- Filter false signals
+Migration:
+    # Old
+    from core.regime_filter import MarketRegime, RegimeFilter, RegimeResult
+
+    # New
+    from core.regime import RegimeDetector, RegimeConfig, RegimeState
+    from validation.regime_detector import VolRegime, CorrelationRegime
 """
+
+import warnings as _warnings
+
+_warnings.warn(
+    "core/regime_filter.py is deprecated. Use core.regime or validation.regime_detector.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 import math
 from dataclasses import dataclass

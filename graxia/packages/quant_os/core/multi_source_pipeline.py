@@ -12,11 +12,14 @@ Priority chain with fallback:
 """
 
 import asyncio
-import os
 import time
 import warnings
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
+
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 
 @dataclass
@@ -174,7 +177,7 @@ class DataPipeline:
             }
 
         except Exception as e:
-            print(f"CCXT error: {e}")
+            logger.warning("ccxt.error", error=str(e))
             return None
 
     async def _fetch_coingecko(self, symbol: str, timeframe: str, limit: int) -> dict | None:
@@ -227,7 +230,7 @@ class DataPipeline:
                     }
 
         except Exception as e:
-            print(f"CoinGecko error: {e}")
+            logger.warning("coingecko.error", error=str(e))
             return None
 
     async def _fetch_yahoo(self, symbol: str, timeframe: str, limit: int) -> dict | None:
@@ -283,12 +286,14 @@ class DataPipeline:
             }
 
         except Exception as e:
-            print(f"Yahoo error: {e}")
+            logger.warning("yahoo.error", error=str(e))
             return None
 
     async def _fetch_fred(self, series_id: str, limit: int) -> dict | None:
         """Fetch from FRED API"""
         try:
+            import os
+
             import aiohttp
 
             api_key = os.getenv("FRED_API_KEY", "")
@@ -320,7 +325,7 @@ class DataPipeline:
                     }
 
         except Exception as e:
-            print(f"FRED error: {e}")
+            logger.warning("fred.error", error=str(e))
             return None
 
     def _get_cached(self, key: str) -> dict | None:
@@ -363,7 +368,7 @@ class SentimentPipeline:
             }
 
         except Exception as e:
-            print(f"Google Trends error: {e}")
+            logger.warning("google_trends.error", error=str(e))
             return None
 
     async def fetch_fear_greed(self) -> dict | None:
@@ -388,5 +393,5 @@ class SentimentPipeline:
                     }
 
         except Exception as e:
-            print(f"Fear & Greed error: {e}")
+            logger.warning("fear_greed.error", error=str(e))
             return None

@@ -1,9 +1,9 @@
 """
 3-Stage Trading Pipeline.
-Stage 1: Volatility Engine â†’ ÏƒÌ‚ per instrument
-Stage 2: Regime Gate â†’ position_scale [0, 1.5]
-Stage 3: Factor Signals â†’ signal âˆˆ {-1, 0, +1}
-Final: position = signal Ã— scale Ã— (Ïƒ_target/ÏƒÌ‚) Ã— capital
+Stage 1: Volatility Engine → σ̂ per instrument
+Stage 2: Regime Gate → position_scale [0, 1.5]
+Stage 3: Factor Signals → signal ∈ {-1, 0, +1}
+Final: position = signal × scale × (σ_target/σ̂) × capital
 """
 
 from dataclasses import dataclass
@@ -43,7 +43,7 @@ class ThreeStagePipeline:
     Stage 1: Volatility Engine (HAR forecast)
     Stage 2: Regime Gate (vol-ratio classification)
     Stage 3: Factor Signals (TSMOM + Carry + Pairs MR)
-    Final:   Position = signal Ã— scale Ã— (Ïƒ_target / ÏƒÌ‚) Ã— capital
+    Final:   Position = signal × scale × (σ_target / σ̂) × capital
     """
 
     def __init__(
@@ -135,7 +135,7 @@ class ThreeStagePipeline:
         # Cap vol ratio at 2x to avoid excessive leverage
         vol_ratio = min(vol_ratio, 2.0)
 
-        # Position = signal Ã— scale Ã— vol_ratio Ã— capital Ã— max_position_pct
+        # Position = signal × scale × vol_ratio × capital × max_position_pct
         position_value = signal * scale * vol_ratio * self.capital * self.max_position_pct
 
         # Cap at max_position_pct of capital

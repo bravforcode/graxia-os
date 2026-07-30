@@ -35,6 +35,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+import structlog
 
 from ..core.enums import RegimeType, SignalType
 from .base import Signal, Strategy, StrategyConfig
@@ -306,7 +307,7 @@ class MLBreakout(Strategy):
         except ImportError:
             return {}
         except Exception as e:
-            print(f"MLB indicator calculation error: {e}")
+            structlog.get_logger(__name__).warning("mlb.indicator_error", error=str(e))
             return {}
 
     def _prepare_features(self, indicators: dict[str, Any], ohlcv_data: dict[str, list], is_long: bool) -> np.ndarray:
@@ -339,7 +340,7 @@ class MLBreakout(Strategy):
             else:
                 return 0.5
         except Exception as e:
-            print(f"ML prediction error: {e}")
+            structlog.get_logger(__name__).warning("mlb.prediction_error", error=str(e))
             return 0.5
 
     def train(self, X_train, y_train, X_val, y_val) -> dict[str, float]:  # noqa: N803

@@ -1,5 +1,5 @@
 """
-Carry signal â€” interest rate differential.
+Carry signal — interest rate differential.
 Profit from holding high-yield currencies vs low-yield.
 """
 
