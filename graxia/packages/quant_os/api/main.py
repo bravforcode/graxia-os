@@ -4,6 +4,7 @@ Quant OS FastAPI Application
 Main FastAPI app that mounts all routers.
 """
 
+import asyncio
 import uuid
 from contextlib import asynccontextmanager
 from datetime import UTC
