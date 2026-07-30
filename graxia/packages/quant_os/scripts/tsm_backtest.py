@@ -22,6 +22,7 @@ PROJECT_ROOT = SCRIPT_DIR.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from core.returns import compute_returns
+from provenance import require_cost_calibrated_tsm_asset  # noqa: E402
 
 BASE = Path(__file__).resolve().parent.parent
 ARTIFACTS = BASE / "artifacts"
@@ -231,6 +232,13 @@ def main():
     print("=== TSM Multi-Asset Backtest ===\n")
 
     data = load_data()
+
+    # 2026-07-30: ASSETS uses YF-suffixed aliases (EURUSD_YF etc); resolve
+    # to canonical symbols before gating so this can't silently run an
+    # uncalibrated asset through the flat COST_BPS=5 assumption below.
+    for _asset in ASSETS:
+        require_cost_calibrated_tsm_asset(_asset)
+
     print(f"Data: {len(data)} rows, {data.index.min()} to {data.index.max()}")
     print(f"Assets: {[a for a in ASSETS if f'{a}_close' in data.columns]}")
     print()

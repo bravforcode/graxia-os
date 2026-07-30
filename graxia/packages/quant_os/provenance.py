@@ -42,6 +42,62 @@ class DataProvenanceError(Exception):
     """Raised when a series fails provenance checks."""
 
 
+class UncalibratedCostError(Exception):
+    """Raised when a trial requests a symbol with no verified cost-calibration data."""
+
+
+# Kept in sync with config/tradeable_universe.json's "tradeable" list.
+# A symbol here has real (if not yet multi-day) cost measurement; anything
+# else has none. Trial #1030 (2026-07-30) traded 16 assets through a
+# bespoke loader that skipped this check and used a flat assumed cost
+# instead of real ones — invalidated after the fact (see invalidation_note
+# on trial 1030 in research/hypothesis_registry.json). This constant is
+# the same category of mistake already caught once in commit 33b90c31.
+COST_CALIBRATED_SYMBOLS = frozenset({"XAUUSD", "USOIL", "USDJPY"})
+
+
+def require_cost_calibrated(symbol: str) -> None:
+    """Refuse a symbol with no verified cost-calibration data.
+
+    This only protects callers that route through this module. A script
+    that defines its own CSV loader (as trial #1030's did) bypasses it
+    entirely — this is a real gap, not full enforcement. See
+    research/trial_ledger.json's trial_cap_1022_reached note for the
+    reconciliation record of that specific bypass.
+    """
+    if symbol not in COST_CALIBRATED_SYMBOLS:
+        raise UncalibratedCostError(
+            f"{symbol!r} has no verified cost-calibration data in "
+            f"config/tradeable_universe.json's 'tradeable' list "
+            f"({sorted(COST_CALIBRATED_SYMBOLS)}). Running a trial against "
+            f"an assumed/synthetic cost model is exactly the fabrication "
+            f"pattern already caught twice (commit 33b90c31, trial #1030). "
+            f"Add real cost data to config/tradeable_universe.json first, "
+            f"or pass require_cost_calibration=False if this call is not "
+            f"informing a trading decision."
+        )
+
+
+# The tsm_*.py scripts (tsm_backtest/tsm_ema/tsm_portfolio/tsm_validate) share
+# one ASSETS list using data-source-suffixed names (e.g. "EURUSD_YF" for a
+# Yahoo Finance column) rather than the canonical symbols this module and
+# tradeable_universe.json use. Maps each to the canonical symbol so all four
+# scripts can share one gate call instead of four bespoke ones.
+TSM_ASSET_ALIASES: dict[str, str] = {
+    "EURUSD_YF": "EURUSD",
+    "GBPUSD_YF": "GBPUSD",
+    "BTC_YF": "BTCUSD",
+    "ETH_YF": "ETHUSD",
+    "SILVER": "XAGUSD",
+    "OIL": "USOIL",
+}
+
+
+def require_cost_calibrated_tsm_asset(asset: str) -> None:
+    """require_cost_calibrated, resolving tsm_*.py's aliased asset names first."""
+    require_cost_calibrated(TSM_ASSET_ALIASES.get(asset, asset))
+
+
 def _read_raw(symbol: str, data_dir: Path = DATA_DIR) -> tuple[pd.DataFrame, str]:
     path = data_dir / f"{symbol}_D1.csv"
     if not path.exists():
@@ -59,10 +115,13 @@ def load_provenance_checked(
     slice_end: str | None = None,
     data_dir: Path = DATA_DIR,
     max_synth_fraction: float = 0.10,
+    require_cost_calibration: bool = True,
 ) -> pd.DataFrame:
     """Load D1 OHLCV sliced to a provenance-checked window.
 
     Hard-fails if:
+      * ``require_cost_calibration`` is True (the default) and the symbol
+        has no verified cost data (see ``require_cost_calibrated``),
       * any row in the slice has date < PROVENANCE_FLOOR[symbol]
         (impossible-date contamination leaked into the slice), or
       * the synthetic-backfill tell (flat O=H=L=C with placeholder volume)
@@ -72,6 +131,8 @@ def load_provenance_checked(
     every WS-A symbol's floor is <= 2005, so all backfill is excluded. The
     synth-tell check is a secondary backstop against modern-window leakage.
     """
+    if require_cost_calibration:
+        require_cost_calibrated(symbol)
     df, ts = _read_raw(symbol, data_dir)
     floor = pd.Timestamp(PROVENANCE_FLOOR[symbol])
     start = pd.Timestamp(slice_start)

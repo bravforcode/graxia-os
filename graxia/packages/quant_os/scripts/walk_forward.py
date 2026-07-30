@@ -7,6 +7,7 @@ Self-contained: trains XGBoost, evaluates with real costs, aggregates across fol
 import argparse
 import json
 import os
+import sys
 import warnings
 
 import numpy as np
@@ -18,6 +19,9 @@ warnings.filterwarnings("ignore")
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_DIR = os.path.join(BASE, "artifacts", "walk_forward")
 FEAT_DIR = os.path.join(BASE, "artifacts", "features_v2")
+
+sys.path.insert(0, BASE)
+from provenance import require_cost_calibrated  # noqa: E402
 
 
 def load_features(symbol: str, freq: str) -> pd.DataFrame:
@@ -391,21 +395,44 @@ def main():
 
     os.makedirs(args.output, exist_ok=True)
 
+    if args.cost_config:
+        # 2026-07-30: this block previously checked `args.symbol in config`
+        # (the JSON's top-level keys are version/date/assets/..., never a
+        # bare symbol) and read spread_cost_recommended/
+        # slippage_p90_recommended, fields that don't exist in either
+        # config/cost_calibration.json or cost_calibration_live.json (real
+        # schema: assets[symbol].spread_bps_measured /
+        # round_trip_bps_measured, in bps). The condition was never true for
+        # any real symbol, so this "calibrated cost" branch never fired --
+        # every run silently used the flat --spread-cost/--slippage-p90 CLI
+        # defaults while claiming (via --cost-config) to be calibrated. See
+        # Finding 2 in reports/bypass_loader_classification_20260730.md.
+        #
+        # Fixed to read the real schema and to fail loudly rather than
+        # silently keep the flat default when the symbol's cost isn't
+        # actually verified -- same skip-not-guess principle used throughout
+        # this session's fixes, just as a hard failure here since this
+        # script has no per-symbol loop to skip within.
+        with open(args.cost_config) as f:
+            config = json.load(f)
+        require_cost_calibrated(args.symbol)
+        sym_cfg = config.get("assets", {})[args.symbol]
+        round_trip_bps = sym_cfg.get("round_trip_bps_measured", sym_cfg.get("spread_bps_measured", 0.0) * 2)
+        args.spread_cost = round_trip_bps / 10000.0
+        args.slippage_p90 = 0.0
+
     print("=" * 70)
     print("WALK-FORWARD VALIDATION")
     print(f"  {args.symbol} @ {args.freq}")
     print(f"  Windows: train={args.train_window} test={args.test_window} step={args.step}")
-    print(f"  Cost: ${args.spread_cost+args.slippage_p90:.3f}/trade  Conf>={args.min_confidence}")
-    print("=" * 70)
-
     if args.cost_config:
-        with open(args.cost_config) as f:
-            config = json.load(f)
-        if args.symbol in config:
-            sym_cfg = config[args.symbol]
-            args.spread_cost = sym_cfg["spread_cost_recommended"]
-            args.slippage_p90 = sym_cfg["slippage_p90_recommended"]
-            print(f"  [Calibrated cost] {args.symbol}: spread={args.spread_cost:.6f}, slippage={args.slippage_p90:.6f}")
+        print(
+            f"  Cost: ${args.spread_cost+args.slippage_p90:.6f}/trade (real, "
+            f"round-trip spread-only, no measured slippage)  Conf>={args.min_confidence}"
+        )
+    else:
+        print(f"  Cost: ${args.spread_cost+args.slippage_p90:.3f}/trade  Conf>={args.min_confidence}")
+    print("=" * 70)
 
     df = load_features(args.symbol, args.freq)
     if "target" not in df.columns or "target_return" not in df.columns:

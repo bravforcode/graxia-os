@@ -509,6 +509,7 @@ class BacktestEngine:
 
         # Reset state
         self._reset()
+        self._reset_strategy_class_state()
 
         close = self.ohlcv_data["close"]
         volume = self.ohlcv_data.get("volume", [0] * len(close))
@@ -660,7 +661,9 @@ class BacktestEngine:
                                     },
                                     Decimal(str(bar_close)),
                                 )
-                                self._close_position(pid, exit_price, current_time, CloseReason.CIRCUIT_BREAKER, Decimal("0"))
+                                self._close_position(
+                                    pid, exit_price, current_time, CloseReason.CIRCUIT_BREAKER, Decimal("0")
+                                )
                                 break
 
         # Close any remaining positions at last price
@@ -742,6 +745,38 @@ class BacktestEngine:
             self._regime_detector = RegimeDetector()
             self._margin_simulator = MarginSimulator()
             self._pnl_tracker = RealTimePnLTracker(initial_equity=Decimal(str(self.config.initial_capital)))
+
+    def _reset_strategy_class_state(self) -> None:
+        """Reset non-empty class-level list/dict/tuple/set attrs on the
+        strategy's class before every run.
+
+        LookaheadGuard.get_slice() (called every bar below, before
+        strategy.generate_signal()) only truncates the ohlcv_data/indicators
+        *arguments* it hands the strategy -- it has no way to stop a
+        strategy that independently holds a reference to the full dataset
+        via a class-level (not instance-level) mutable container, obtained
+        before this engine sliced anything. A strategy that stashes
+        `self.__class__._full_data_ref = ohlcv_data` before run() starts can
+        read arbitrary future bars through that reference regardless of what
+        get_slice() truncates. This closes that specific vector -- and the
+        general footgun of a class-level mutable cache surviving across
+        runs/instances -- by zeroing any such attribute right before every
+        run. It does NOT and cannot stop a strategy that re-reads external
+        state fresh inside generate_signal() on every call (a file, a live
+        cache); that remains architecturally unblockable in-process and
+        needs a code-review-level check instead.
+        See reports/lookahead_guard_reachability_audit_2026_07_30.md.
+        """
+        strategy_cls = type(self.strategy)
+        for name, value in list(vars(strategy_cls).items()):
+            if isinstance(value, list) and value:
+                setattr(strategy_cls, name, [])
+            elif isinstance(value, dict) and value:
+                setattr(strategy_cls, name, {})
+            elif isinstance(value, tuple) and value:
+                setattr(strategy_cls, name, ())
+            elif isinstance(value, set) and value:
+                setattr(strategy_cls, name, set())
 
     def _calculate_indicators(self, up_to_index: int) -> dict[str, Any]:
         """Calculate indicators using Numba JIT (B3) or pandas_ta fallback."""

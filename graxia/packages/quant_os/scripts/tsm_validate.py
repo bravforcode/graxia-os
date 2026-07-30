@@ -15,11 +15,11 @@ Usage:
     python scripts/tsm_validate.py
 """
 
-import json
 import itertools
+import json
 import warnings
+from datetime import UTC, datetime
 from pathlib import Path
-from datetime import datetime, UTC
 
 import numpy as np
 import pandas as pd
@@ -28,6 +28,11 @@ from scipy import stats
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 BASE = Path(__file__).resolve().parent.parent
+import sys  # noqa: E402
+
+sys.path.insert(0, str(BASE))
+from provenance import require_cost_calibrated_tsm_asset  # noqa: E402
+
 ARTIFACTS = BASE / "artifacts" / "portfolio"
 ARTIFACTS.mkdir(parents=True, exist_ok=True)
 
@@ -37,13 +42,20 @@ COST_BPS = 5
 LOOKBACK_WINDOWS = [20, 40, 60, 120]
 REBALANCE_FREQ = "W-FRI"
 ASSETS = [
-    "XAUUSD", "EURUSD_YF", "GBPUSD_YF", "USDJPY",
-    "BTC_YF", "ETH_YF", "SILVER", "OIL",
+    "XAUUSD",
+    "EURUSD_YF",
+    "GBPUSD_YF",
+    "USDJPY",
+    "BTC_YF",
+    "ETH_YF",
+    "SILVER",
+    "OIL",
 ]
 N_CSCV_SUBSETS = 10  # S = 10, use S/2 = 5 for train/test
 
 
 # ── Data Loading ────────────────────────────────────────────────────────
+
 
 def load_data() -> pd.DataFrame:
     path = ARTIFACTS / "d1_multi_asset.parquet"
@@ -54,15 +66,14 @@ def load_data() -> pd.DataFrame:
 
 # ── Signal & Backtest ───────────────────────────────────────────────────
 
+
 def compute_tsm_signal(close: pd.Series, lookback: int) -> pd.Series:
     """TSM signal: sign of lookback-period return."""
     ret = close.pct_change(lookback, fill_method=None)
     return np.sign(ret)
 
 
-def backtest_single_asset(
-    close: pd.Series, lookback: int, target_vol: float, cost_bps: float
-) -> pd.DataFrame:
+def backtest_single_asset(close: pd.Series, lookback: int, target_vol: float, cost_bps: float) -> pd.DataFrame:
     """Backtest TSM on a single asset. Returns daily strategy returns."""
     df = pd.DataFrame({"close": close})
     df["ret"] = df["close"].pct_change(1, fill_method=None)
@@ -91,8 +102,7 @@ def backtest_single_asset(
 
 
 def portfolio_backtest(
-    data: pd.DataFrame, assets: list, lookback: int,
-    target_vol: float, cost_bps: float
+    data: pd.DataFrame, assets: list, lookback: int, target_vol: float, cost_bps: float
 ) -> pd.Series:
     """Multi-asset TSM portfolio with inverse-vol weighting. Returns portfolio daily returns."""
     asset_rets = {}
@@ -122,6 +132,7 @@ def portfolio_backtest(
 
 # ── Metrics ─────────────────────────────────────────────────────────────
 
+
 def sharpe_ratio(ret: pd.Series) -> float:
     """Annualized Sharpe ratio."""
     ret = ret.dropna()
@@ -136,8 +147,14 @@ def compute_metrics(ret: pd.Series) -> dict:
     """Full metrics for a return series."""
     ret = ret.dropna()
     if len(ret) < 30:
-        return {"sharpe": np.nan, "ann_ret": np.nan, "ann_vol": np.nan,
-                "max_dd": np.nan, "win_rate": np.nan, "n_days": len(ret)}
+        return {
+            "sharpe": np.nan,
+            "ann_ret": np.nan,
+            "ann_vol": np.nan,
+            "max_dd": np.nan,
+            "win_rate": np.nan,
+            "n_days": len(ret),
+        }
     ann_ret = ret.mean() * 252
     ann_vol = ret.std() * np.sqrt(252)
     sr = ann_ret / ann_vol if ann_vol > 0 else 0.0
@@ -155,10 +172,15 @@ def compute_metrics(ret: pd.Series) -> dict:
 
 # ── Walk-Forward Validation ────────────────────────────────────────────
 
+
 def expanding_walk_forward(
-    data: pd.DataFrame, assets: list, lookback: int,
-    target_vol: float, cost_bps: float,
-    train_pct: float = 0.6, test_pct: float = 0.2
+    data: pd.DataFrame,
+    assets: list,
+    lookback: int,
+    target_vol: float,
+    cost_bps: float,
+    train_pct: float = 0.6,
+    test_pct: float = 0.2,
 ) -> dict:
     """Expanding-window WF: train on first 60%, test on next 20%, validate on last 20%."""
     n = len(data)
@@ -181,9 +203,13 @@ def expanding_walk_forward(
 
 
 def rolling_walk_forward(
-    data: pd.DataFrame, assets: list, lookback: int,
-    target_vol: float, cost_bps: float,
-    train_window: int = 500, test_window: int = 200
+    data: pd.DataFrame,
+    assets: list,
+    lookback: int,
+    target_vol: float,
+    cost_bps: float,
+    train_window: int = 500,
+    test_window: int = 200,
 ) -> dict:
     """Rolling-window walk-forward: 500-day train, 200-day test, rolling forward."""
     n = len(data)
@@ -192,8 +218,8 @@ def rolling_walk_forward(
     start = 0
 
     while start + train_window + test_window <= n:
-        train_data = data.iloc[start:start + train_window]
-        test_data = data.iloc[start + train_window:start + train_window + test_window]
+        train_data = data.iloc[start : start + train_window]
+        test_data = data.iloc[start + train_window : start + train_window + test_window]
 
         train_ret = portfolio_backtest(train_data, assets, lookback, target_vol, cost_bps)
         test_ret = portfolio_backtest(test_data, assets, lookback, target_vol, cost_bps)
@@ -201,17 +227,19 @@ def rolling_walk_forward(
         train_sr = sharpe_ratio(train_ret)
         test_sr = sharpe_ratio(test_ret)
 
-        folds.append({
-            "fold": fold_idx,
-            "train_start": str(train_data.index[0].date()),
-            "train_end": str(train_data.index[-1].date()),
-            "test_start": str(test_data.index[0].date()),
-            "test_end": str(test_data.index[-1].date()),
-            "train_sharpe": train_sr,
-            "test_sharpe": test_sr,
-            "train_n": len(train_ret),
-            "test_n": len(test_ret),
-        })
+        folds.append(
+            {
+                "fold": fold_idx,
+                "train_start": str(train_data.index[0].date()),
+                "train_end": str(train_data.index[-1].date()),
+                "test_start": str(test_data.index[0].date()),
+                "test_end": str(test_data.index[-1].date()),
+                "train_sharpe": train_sr,
+                "test_sharpe": test_sr,
+                "train_n": len(train_ret),
+                "test_n": len(test_ret),
+            }
+        )
 
         fold_idx += 1
         start += test_window  # step forward by test_window
@@ -230,11 +258,14 @@ def rolling_walk_forward(
         "std_test_sharpe": np.std(test_sharpes) if test_sharpes else np.nan,
         "min_test_sharpe": np.min(test_sharpes) if test_sharpes else np.nan,
         "max_test_sharpe": np.max(test_sharpes) if test_sharpes else np.nan,
-        "stability": (np.mean(test_sharpes) / np.std(test_sharpes)
-                      if test_sharpes and np.std(test_sharpes) > 0 else np.nan),
-        "train_test_corr": (np.corrcoef(train_sharpes, test_sharpes)[0, 1]
-                            if len(train_sharpes) == len(test_sharpes) and len(train_sharpes) > 1
-                            else np.nan),
+        "stability": (
+            np.mean(test_sharpes) / np.std(test_sharpes) if test_sharpes and np.std(test_sharpes) > 0 else np.nan
+        ),
+        "train_test_corr": (
+            np.corrcoef(train_sharpes, test_sharpes)[0, 1]
+            if len(train_sharpes) == len(test_sharpes) and len(train_sharpes) > 1
+            else np.nan
+        ),
     }
 
     return {"folds": folds, "summary": summary}
@@ -242,13 +273,13 @@ def rolling_walk_forward(
 
 # ── PBO via CSCV ───────────────────────────────────────────────────────
 
+
 def pbo_cscv(
-    data: pd.DataFrame, assets: list, lookbacks: list,
-    target_vol: float, cost_bps: float, n_subsets: int = 10
+    data: pd.DataFrame, assets: list, lookbacks: list, target_vol: float, cost_bps: float, n_subsets: int = 10
 ) -> dict:
     """
     Probability of Backtest Overfitting via Combinatorial Symmetric CV.
-    
+
     Bailey, Borwein, Lopez de Prado, Zhu (2014):
     1. Split data into S equal subsets.
     2. For each combination of S/2 subsets as in-sample (C(S, S/2) combos):
@@ -257,7 +288,7 @@ def pbo_cscv(
        c. Find the lookback with highest in-sample Sharpe (best config).
        d. Check if that config is worst out-of-sample.
     3. PBO = fraction of combinations where in-sample best is OOS worst.
-    
+
     Returns PBO and per-combination details.
     """
     n = len(data)
@@ -268,9 +299,11 @@ def pbo_cscv(
 
     # Pre-compute returns for each lookback on each subset
     # subset_returns[lb_idx][subset_idx] = Series of daily returns
-    print(f"  CSCV: {n_subsets} subsets, {subset_size} days each, "
-          f"{len(lookbacks)} lookbacks, C({n_subsets},{n_subsets//2})="
-          f"{len(list(itertools.combinations(range(n_subsets), n_subsets//2)))} combos")
+    print(
+        f"  CSCV: {n_subsets} subsets, {subset_size} days each, "
+        f"{len(lookbacks)} lookbacks, C({n_subsets},{n_subsets//2})="
+        f"{len(list(itertools.combinations(range(n_subsets), n_subsets//2)))} combos"
+    )
 
     subset_returns = {}
     for lb_idx, lb in enumerate(lookbacks):
@@ -299,10 +332,12 @@ def pbo_cscv(
 
         for lb_idx, lb in enumerate(lookbacks):
             # Concatenate in-sample subsets
-            is_ret_parts = [subset_returns[lb_idx][s] for s in sorted(in_sample_subs)
-                           if len(subset_returns[lb_idx][s]) > 0]
-            oos_ret_parts = [subset_returns[lb_idx][s] for s in sorted(out_sample_subs)
-                             if len(subset_returns[lb_idx][s]) > 0]
+            is_ret_parts = [
+                subset_returns[lb_idx][s] for s in sorted(in_sample_subs) if len(subset_returns[lb_idx][s]) > 0
+            ]
+            oos_ret_parts = [
+                subset_returns[lb_idx][s] for s in sorted(out_sample_subs) if len(subset_returns[lb_idx][s]) > 0
+            ]
 
             if is_ret_parts:
                 is_ret = pd.concat(is_ret_parts)
@@ -326,18 +361,20 @@ def pbo_cscv(
         worst_oos = min(valid_lbs, key=lambda lb: oos_sharpes.get(lb, np.nan))
 
         # Check if in-sample best is OOS worst
-        is_overfit = (best_is == worst_oos)
+        is_overfit = best_is == worst_oos
         if is_overfit:
             n_overfit += 1
 
-        combo_details.append({
-            "in_sample": sorted(in_sample_subs),
-            "best_is_lb": lookbacks[best_is],
-            "best_is_sharpe": is_sharpes[best_is],
-            "worst_oos_lb": lookbacks[worst_oos],
-            "worst_oos_sharpe": oos_sharpes.get(worst_oos, np.nan),
-            "overfit": is_overfit,
-        })
+        combo_details.append(
+            {
+                "in_sample": sorted(in_sample_subs),
+                "best_is_lb": lookbacks[best_is],
+                "best_is_sharpe": is_sharpes[best_is],
+                "worst_oos_lb": lookbacks[worst_oos],
+                "worst_oos_sharpe": oos_sharpes.get(worst_oos, np.nan),
+                "overfit": is_overfit,
+            }
+        )
 
     pbo = n_overfit / n_valid if n_valid > 0 else np.nan
 
@@ -354,13 +391,11 @@ def pbo_cscv(
 
 # ── Deflated Sharpe Ratio ──────────────────────────────────────────────
 
-def deflated_sharpe_ratio(
-    sharpe: float, n_obs: int, n_trials: int,
-    skew: float = 0.0, kurtosis: float = 3.0
-) -> dict:
+
+def deflated_sharpe_ratio(sharpe: float, n_obs: int, n_trials: int, skew: float = 0.0, kurtosis: float = 3.0) -> dict:
     """
     Deflated Sharpe Ratio — Bailey & Lopez de Prado (2014).
-    
+
     Accounts for multiple testing / non-normal returns.
     Uses the expected maximum Sharpe under n_trials independent trials.
     """
@@ -368,10 +403,7 @@ def deflated_sharpe_ratio(
         return {"dsr": np.nan, "p_value": np.nan, "significant": False}
 
     # Sharpe standard error (accounting for skew/kurtosis)
-    se = np.sqrt(
-        (1 + 0.5 * sharpe**2 - skew * sharpe + (kurtosis - 3) / 4 * sharpe**2)
-        / (n_obs - 1)
-    )
+    se = np.sqrt((1 + 0.5 * sharpe**2 - skew * sharpe + (kurtosis - 3) / 4 * sharpe**2) / (n_obs - 1))
     if se == 0:
         return {"dsr": np.nan, "p_value": np.nan, "significant": False}
 
@@ -411,11 +443,18 @@ def deflated_sharpe_ratio(
 
 # ── Main ────────────────────────────────────────────────────────────────
 
+
 def main():
     print("=" * 70)
-    print(    "PHASE 3: Statistical Validation - Walk-Forward + PBO")
+    print("PHASE 3: Statistical Validation - Walk-Forward + PBO")
     print("=" * 70)
     print()
+
+    # 2026-07-30: ASSETS uses YF-suffixed aliases (EURUSD_YF etc); resolve
+    # to canonical symbols before gating so this can't silently run an
+    # uncalibrated asset through the flat COST_BPS=5 assumption below.
+    for _asset in ASSETS:
+        require_cost_calibrated_tsm_asset(_asset)
 
     data = load_data()
     print(f"Data: {len(data)} rows, {data.index.min().date()} to {data.index.max().date()}")
@@ -466,15 +505,20 @@ def main():
         if rolling_wf["folds"]:
             print(f"\n    {'Fold':>4} {'Train SR':>10} {'Test SR':>10} {'Test Period':>25}")
             for f in rolling_wf["folds"]:
-                print(f"    {f['fold']:>4} {f['train_sharpe']:>10.3f} "
-                      f"{f['test_sharpe']:>10.3f} "
-                      f"{f['test_start']:>12} → {f['test_end']}")
+                print(
+                    f"    {f['fold']:>4} {f['train_sharpe']:>10.3f} "
+                    f"{f['test_sharpe']:>10.3f} "
+                    f"{f['test_start']:>12} → {f['test_end']}"
+                )
 
         # Deflated Sharpe
         n_configs = len(LOOKBACK_WINDOWS)
         dsr = deflated_sharpe_ratio(
-            full_metrics["sharpe"], full_metrics["n_days"], n_configs,
-            skew=full_ret.skew(), kurtosis=full_ret.kurtosis()
+            full_metrics["sharpe"],
+            full_metrics["n_days"],
+            n_configs,
+            skew=full_ret.skew(),
+            kurtosis=full_ret.kurtosis(),
         )
         lb_result["deflated_sharpe"] = dsr
         print("\n  Deflated Sharpe:")
@@ -494,10 +538,7 @@ def main():
     print("=" * 70)
     print()
 
-    pbo_result = pbo_cscv(
-        data, available, LOOKBACK_WINDOWS, TARGET_VOL, COST_BPS,
-        n_subsets=N_CSCV_SUBSETS
-    )
+    pbo_result = pbo_cscv(data, available, LOOKBACK_WINDOWS, TARGET_VOL, COST_BPS, n_subsets=N_CSCV_SUBSETS)
     all_results["pbo"] = pbo_result
 
     print("\n  PBO Results:")
@@ -524,14 +565,16 @@ def main():
     print()
 
     # Use the best lookback's Sharpe, deflated by number of lookbacks tested
-    best_lb = max(LOOKBACK_WINDOWS,
-                  key=lambda lb: all_results[f"lb{lb}"]["full_period"]["sharpe"])
+    best_lb = max(LOOKBACK_WINDOWS, key=lambda lb: all_results[f"lb{lb}"]["full_period"]["sharpe"])
     best_metrics = all_results[f"lb{best_lb}"]["full_period"]
     best_ret = portfolio_backtest(data, available, best_lb, TARGET_VOL, COST_BPS)
 
     agg_dsr = deflated_sharpe_ratio(
-        best_metrics["sharpe"], best_metrics["n_days"], len(LOOKBACK_WINDOWS),
-        skew=best_ret.skew(), kurtosis=best_ret.kurtosis()
+        best_metrics["sharpe"],
+        best_metrics["n_days"],
+        len(LOOKBACK_WINDOWS),
+        skew=best_ret.skew(),
+        kurtosis=best_ret.kurtosis(),
     )
     all_results["aggregate"] = {
         "best_lookback": best_lb,
@@ -550,10 +593,14 @@ def main():
     print("SUMMARY TABLE")
     print("=" * 70)
     print()
-    print(f"{'LB':>4} {'Sharpe':>8} {'Deflated':>9} {'Exp Train':>10} {'Exp Test':>9} "
-          f"{'Exp Val':>8} {'Roll Train':>11} {'Roll Test':>10} {'Stability':>10}")
-    print(f"{'-'*4:>4} {'-'*8:>8} {'-'*9:>9} {'-'*10:>10} {'-'*9:>9} "
-          f"{'-'*8:>8} {'-'*11:>11} {'-'*10:>10} {'-'*10:>10}")
+    print(
+        f"{'LB':>4} {'Sharpe':>8} {'Deflated':>9} {'Exp Train':>10} {'Exp Test':>9} "
+        f"{'Exp Val':>8} {'Roll Train':>11} {'Roll Test':>10} {'Stability':>10}"
+    )
+    print(
+        f"{'-'*4:>4} {'-'*8:>8} {'-'*9:>9} {'-'*10:>10} {'-'*9:>9} "
+        f"{'-'*8:>8} {'-'*11:>11} {'-'*10:>10} {'-'*10:>10}"
+    )
 
     for lb in LOOKBACK_WINDOWS:
         r = all_results[f"lb{lb}"]
@@ -561,12 +608,14 @@ def main():
         ewf = r["expanding_wf"]
         rwf = r["rolling_wf"]
         dsr = r["deflated_sharpe"]
-        print(f"{lb:>4} {fm['sharpe']:>8.3f} {dsr['deflated_sharpe']:>9.3f} "
-              f"{ewf['train']['sharpe']:>10.3f} {ewf['test']['sharpe']:>9.3f} "
-              f"{ewf['validate']['sharpe']:>8.3f} "
-              f"{rwf.get('mean_train_sharpe', np.nan):>11.3f} "
-              f"{rwf.get('mean_test_sharpe', np.nan):>10.3f} "
-              f"{rwf.get('stability', np.nan):>10.3f}")
+        print(
+            f"{lb:>4} {fm['sharpe']:>8.3f} {dsr['deflated_sharpe']:>9.3f} "
+            f"{ewf['train']['sharpe']:>10.3f} {ewf['test']['sharpe']:>9.3f} "
+            f"{ewf['validate']['sharpe']:>8.3f} "
+            f"{rwf.get('mean_train_sharpe', np.nan):>11.3f} "
+            f"{rwf.get('mean_test_sharpe', np.nan):>10.3f} "
+            f"{rwf.get('stability', np.nan):>10.3f}"
+        )
 
     print()
     print(f"PBO: {pbo_result['pbo']:.4f} ({pbo_result['pbo']:.1%})")
