@@ -31,8 +31,8 @@ from pathlib import Path
 
 # Fix Windows console encoding for Unicode output
 if sys.platform == "win32":
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr,attr-defined]
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr,attr-defined]
 
 import numpy as np
 import pandas as pd
@@ -531,9 +531,9 @@ def run_walk_forward(
     oos_sharpes = [f.oos_sharpe for f in folds]
     is_sharpes = [f.is_sharpe for f in folds]
     total_oos_trades = sum(f.oos_trades for f in folds)
-    avg_oos_wr = np.mean([f.oos_win_rate for f in folds])
-    avg_oos_sharpe = np.mean(oos_sharpes)
-    avg_is_sharpe = np.mean(is_sharpes)
+    avg_oos_wr = float(np.mean([f.oos_win_rate for f in folds]))
+    avg_oos_sharpe = float(np.mean(oos_sharpes))
+    avg_is_sharpe = float(np.mean(is_sharpes))
     total_oos_pnl = sum(f.oos_pnl_pct for f in folds)
     max_oos_dd = max(f.oos_max_dd for f in folds)
 
@@ -699,9 +699,9 @@ def run_pairs_strategy(
     oos_sharpes = [f.oos_sharpe for f in folds]
     is_sharpes = [f.is_sharpe for f in folds]
     total_oos_trades = sum(f.oos_trades for f in folds)
-    avg_oos_wr = np.mean([f.oos_win_rate for f in folds])
-    avg_oos_sharpe = np.mean(oos_sharpes)
-    avg_is_sharpe = np.mean(is_sharpes)
+    avg_oos_wr = float(np.mean([f.oos_win_rate for f in folds]))
+    avg_oos_sharpe = float(np.mean(oos_sharpes))
+    avg_is_sharpe = float(np.mean(is_sharpes))
     total_oos_pnl = sum(f.oos_pnl_pct for f in folds)
     max_oos_dd = max(f.oos_max_dd for f in folds)
     wfe = avg_oos_sharpe / avg_is_sharpe if abs(avg_is_sharpe) > 1e-6 else 0.0
@@ -769,7 +769,6 @@ def run_cot_strategy(n_folds: int = 3, cost_bps: float = 10.0) -> WFResult:
     # Use net_positioning as proxy for "price" (directional P&L)
     n = len(sig)
     fold_size = max(n // n_folds, 10)
-    folds = []
     all_oos_returns = []
     all_is_returns = []
 
@@ -1052,9 +1051,9 @@ def print_result(result: WFResult):
     }
     emoji = status_emoji.get(result.verdict, "❓")
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"  {emoji} {result.strategy.upper()} — {result.symbol} ({result.timeframe})")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"  Verdict:         {result.verdict}")
     print(f"  OOS Sharpe:      {result.oos_sharpe:.4f}")
     print(f"  OOS Win Rate:    {result.oos_win_rate:.1%}")
@@ -1187,9 +1186,9 @@ def main():
             traceback.print_exc()
 
     # Summary
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("  SUMMARY")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     passed = [r for r in results if r.verdict == "PASS_TO_NEXT_PHASE"]
     conditional = [r for r in results if r.verdict == "CONDITIONAL_PASS"]

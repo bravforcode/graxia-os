@@ -26,8 +26,8 @@ import numpy as np
 import pandas as pd
 
 if sys.platform == "win32":
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr,attr-defined]
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr,attr-defined]
 
 warnings.filterwarnings("ignore")
 
@@ -401,7 +401,7 @@ def prong_vrp_tune():
     print("\n  Top 10 VRP configurations:")
     for i, r in enumerate(sorted_results[:10]):
         print(
-            f"    {i+1}. Sharpe={r['sharpe']:.4f} WR={r['win_rate']:.1%} "
+            f"    {i + 1}. Sharpe={r['sharpe']:.4f} WR={r['win_rate']:.1%} "
             f"Trades={r['trades']} entry_z={r['entry_z']} exit_z={r['exit_z']} "
             f"lb={r['vrp_lookback']} regime={r['regime_threshold']}"
         )
@@ -618,12 +618,12 @@ def prong_new_search():
         return np.sign(ret)
 
     strategy_fns = {
-        "tsmom_60": lambda c, h, l: tsmom_signal(c, 60),
-        "tsmom_120": lambda c, h, l: tsmom_signal(c, 120),
-        "donchian_20": lambda c, h, l: donchian_signal(c, h, l, 20),
-        "donchian_55": lambda c, h, l: donchian_signal(c, h, l, 55),
-        "bb_mr": lambda c, h, l: bb_signal(c),
-        "momentum_12m": lambda c, h, l: momentum_signal(c),
+        "tsmom_60": lambda c, h, lo: tsmom_signal(c, 60),
+        "tsmom_120": lambda c, h, lo: tsmom_signal(c, 120),
+        "donchian_20": lambda c, h, lo: donchian_signal(c, h, lo, 20),
+        "donchian_55": lambda c, h, lo: donchian_signal(c, h, lo, 55),
+        "bb_mr": lambda c, h, lo: bb_signal(c),
+        "momentum_12m": lambda c, h, lo: momentum_signal(c),
     }
 
     results = {}

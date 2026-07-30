@@ -32,8 +32,8 @@ import numpy as np
 import pandas as pd
 
 if sys.platform == "win32":
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr,attr-defined]
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr,attr-defined]
 
 warnings.filterwarnings("ignore")
 
@@ -502,17 +502,17 @@ def expanding_wf_validate(
     # Aggregate
     oos_sharpes = [f.oos_sharpe for f in folds]
     is_sharpes = [f.is_sharpe for f in folds]
-    avg_oos = np.mean(oos_sharpes)
-    avg_is = np.mean(is_sharpes)
+    avg_oos = float(np.mean(oos_sharpes))
+    avg_is = float(np.mean(is_sharpes))
     total_trades = len(all_oos)
     wr = sum(1 for t in all_oos if t > 0) / max(total_trades, 1)
-    wfe = avg_oos / avg_is if abs(avg_is) > 1e-6 else 0
+    wfe = avg_oos / avg_is if abs(avg_is) > 1e-6 else 0.0
     pval = p_value(all_oos)
     dsr = deflated_sharpe(avg_oos, n_trials, total_trades)
     ci_lo, ci_hi = bootstrap_ci(all_oos)
 
     # Edge ratio: OOS Sharpe / IS Sharpe (Coulombe 2026)
-    edge_ratio = abs(avg_oos / avg_is) if abs(avg_is) > 1e-6 else 0
+    edge_ratio = abs(avg_oos / avg_is) if abs(avg_is) > 1e-6 else 0.0
 
     # 7 Gates (research-backed thresholds)
     gates = {
@@ -672,7 +672,7 @@ def main():
     # called with symbol="XAUUSD"). cost_bps=10 was a flat guess with no
     # link to measured spread -- same fabrication shape as trial #1030.
     require_cost_calibrated("XAUUSD")
-    XAU_COST_BPS = get_round_trip_cost_bps("XAUUSD")
+    XAU_COST_BPS = get_round_trip_cost_bps("XAUUSD")  # noqa: N806
 
     # Load data
     df = load_csv("XAUUSD", "D1")
@@ -701,16 +701,16 @@ def main():
 
     # ─── Define strategies ────────────────────────────────────────
     strategies = {
-        "momentum_12m": lambda c, h, l: strategy_momentum_12m(c, h, l),
-        "donchian_adaptive": lambda c, h, l: strategy_donchian_adaptive(c, h, l, 55),
-        "donchian_20": lambda c, h, l: strategy_donchian_adaptive(c, h, l, 20),
-        "hybrid_mom_mr": lambda c, h, l: strategy_hybrid_momentum_mr(c, h, l),
-        "mean_reversion_bb": lambda c, h, l: strategy_mean_reversion_bb(c, h, l),
+        "momentum_12m": lambda c, h, lo: strategy_momentum_12m(c, h, lo),
+        "donchian_adaptive": lambda c, h, lo: strategy_donchian_adaptive(c, h, lo, 55),
+        "donchian_20": lambda c, h, lo: strategy_donchian_adaptive(c, h, lo, 20),
+        "hybrid_mom_mr": lambda c, h, lo: strategy_hybrid_momentum_mr(c, h, lo),
+        "mean_reversion_bb": lambda c, h, lo: strategy_mean_reversion_bb(c, h, lo),
     }
 
     # DXY divergence (needs DXY data)
     if dxy is not None:
-        strategies["dxy_divergence"] = lambda c, h, l: strategy_dxy_divergence(c, h, l, dxy)
+        strategies["dxy_divergence"] = lambda c, h, lo: strategy_dxy_divergence(c, h, lo, dxy)
 
     # ─── Step 1: Walk-Forward ─────────────────────────────────────
     print("\n" + "=" * 60)
@@ -829,10 +829,10 @@ def main():
         decision = "NO_GO"
         reason = "No strategy passes both gates"
 
-    print(f"\n  {'='*50}")
+    print(f"\n  {'=' * 50}")
     print(f"  DECISION: {decision}")
     print(f"  {reason}")
-    print(f"  {'='*50}")
+    print(f"  {'=' * 50}")
 
     # Save report
     report = {

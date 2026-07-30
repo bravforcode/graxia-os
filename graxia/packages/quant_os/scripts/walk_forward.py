@@ -203,17 +203,17 @@ def walk_forward(
         if test_end > n:
             break
 
-        X_train = data[train_start:train_end]
+        x_train = data[train_start:train_end]
         y_train_cls = targets[train_start:train_end]
         y_train_reg = y_reg[train_start:train_end]
-        X_test = data[train_end:test_end]
+        x_test = data[train_end:test_end]
         y_test_cls = targets[train_end:test_end]
         ret_test = returns[train_end:test_end]
 
         # Train classifier
         model = xgb.XGBClassifier(**model_params)
-        model.fit(X_train, y_train_cls)
-        train_acc = (model.predict(X_train) == y_train_cls).mean()
+        model.fit(x_train, y_train_cls)
+        train_acc = (model.predict(x_train) == y_train_cls).mean()
 
         # Train magnitude regressor
         mag_model = xgb.XGBRegressor(
@@ -223,23 +223,23 @@ def walk_forward(
             random_state=model_params["random_state"],
             verbosity=0,
         )
-        mag_model.fit(X_train, y_train_reg)
+        mag_model.fit(x_train, y_train_reg)
 
         # Predict
-        preds = model.predict(X_test)
-        proba = model.predict_proba(X_test)
+        preds = model.predict(x_test)
+        proba = model.predict_proba(x_test)
         conf = np.max(proba, axis=1)
         oos_acc = (preds == y_test_cls).mean()
 
         # Magnitude filter
-        mag_pred = mag_model.predict(X_test)
+        mag_pred = mag_model.predict(x_test)
         direction = 2 * preds.astype(float) - 1
         expected_profit = direction * mag_pred * conf
         combined_mask = (conf >= min_confidence) & (expected_profit > min_expected_profit)
 
         # Collect per-trade data for Gate #2 (mag_pred quality) and #3 (conf accuracy)
         test_times = df.index[train_end:test_end]
-        for t_bar in range(len(X_test)):
+        for t_bar in range(len(x_test)):
             per_trade_records.append(
                 {
                     "fold": fold_idx,
@@ -337,7 +337,7 @@ def print_results(agg: dict):
     print("WALK-FORWARD VALIDATION RESULTS")
     print("=" * 70)
     print(f"  Folds: {a['n_folds']}  Windows: train={p['train_window']} test={p['test_window']} step={p['step']}")
-    print(f"  Cost: ${p['spread_cost']+p['slippage_p90']:.3f}/trade  Conf>={p['min_confidence']}")
+    print(f"  Cost: ${p['spread_cost'] + p['slippage_p90']:.3f}/trade  Conf>={p['min_confidence']}")
     print()
     print(
         f"  {'Fold':>4s} | {'TrainAcc':>8s} | {'OOSAcc':>7s} | {'Trades':>6s} | {'Acc':>6s} | {'Gross':>7s} | {'Net':>8s} | {'SR':>6s} |"
@@ -427,11 +427,11 @@ def main():
     print(f"  Windows: train={args.train_window} test={args.test_window} step={args.step}")
     if args.cost_config:
         print(
-            f"  Cost: ${args.spread_cost+args.slippage_p90:.6f}/trade (real, "
+            f"  Cost: ${args.spread_cost + args.slippage_p90:.6f}/trade (real, "
             f"round-trip spread-only, no measured slippage)  Conf>={args.min_confidence}"
         )
     else:
-        print(f"  Cost: ${args.spread_cost+args.slippage_p90:.3f}/trade  Conf>={args.min_confidence}")
+        print(f"  Cost: ${args.spread_cost + args.slippage_p90:.3f}/trade  Conf>={args.min_confidence}")
     print("=" * 70)
 
     df = load_features(args.symbol, args.freq)
@@ -489,11 +489,11 @@ def convert_numpy(obj):
         return {k: convert_numpy(v) for k, v in obj.items()}
     elif isinstance(obj, list):
         return [convert_numpy(v) for v in obj]
-    elif isinstance(obj, (np.bool_,)):
+    elif isinstance(obj, np.bool_):
         return bool(obj)
-    elif isinstance(obj, (np.integer,)):
+    elif isinstance(obj, np.integer):
         return int(obj)
-    elif isinstance(obj, (np.floating,)):
+    elif isinstance(obj, np.floating):
         return float(obj)
     elif isinstance(obj, np.ndarray):
         return obj.tolist()

@@ -237,11 +237,7 @@ class EventFilter:
 
         window = timedelta(hours=self.exclusion_hours)
 
-        for event_dt in self._event_datetimes:
-            if abs((dt - event_dt).total_seconds()) < window.total_seconds():
-                return True
-
-        return False
+        return any(abs((dt - event_dt).total_seconds()) < window.total_seconds() for event_dt in self._event_datetimes)
 
 
 class RollingOLS:
@@ -278,11 +274,11 @@ class RollingOLS:
         x2 = np.array(self._dfii_changes[-(self.window + 1) : -1])
 
         # Design matrix: [1, x1, x2]
-        X = np.column_stack([np.ones(len(y)), x1, x2])
+        design = np.column_stack([np.ones(len(y)), x1, x2])
 
         try:
             # OLS: β = (X'X)^-1 X'y
-            beta = np.linalg.lstsq(X, y, rcond=None)[0]
+            beta = np.linalg.lstsq(design, y, rcond=None)[0]
         except np.linalg.LinAlgError:
             return None
 
@@ -616,8 +612,8 @@ def run_wfa(
     valid_oos = [s for s, r in zip(oos_sharpes, oos_results, strict=False) if r.total_trades >= min_trades_for_sharpe]
 
     if valid_is and valid_oos:
-        avg_is = np.mean(valid_is)
-        avg_oos = np.mean(valid_oos)
+        avg_is = float(np.mean(valid_is))
+        avg_oos = float(np.mean(valid_oos))
         wfe = avg_oos / avg_is if avg_is > 0 else 0.0
     else:
         wfe = float("nan")
@@ -687,7 +683,7 @@ def bootstrap_sharpe_ci(
     sharpes = []
     for _ in range(n_bootstrap):
         # Block bootstrap
-        blocks = []
+        blocks: list[float] = []
         while len(blocks) < n:
             start = np.random.randint(0, n - block_size + 1)
             blocks.extend(returns_arr[start : start + block_size])
@@ -867,7 +863,7 @@ def main():
         print(f"{'Deflated Sharpe':<30} {'NaN':>15} {'> 95%':>15} {validation.gate_dsr:>8}")
     else:
         print(
-            f"{'Deflated Sharpe':<30} {validation.deflated_sharpe*100:>14.2f}% {'> 95%':>15} {validation.gate_dsr:>8}"
+            f"{'Deflated Sharpe':<30} {validation.deflated_sharpe * 100:>14.2f}% {'> 95%':>15} {validation.gate_dsr:>8}"
         )
     # BUG FIX (2026-07-12): PBO is N/A for single frozen config
     if np.isnan(validation.pbo):

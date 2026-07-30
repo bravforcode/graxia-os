@@ -20,6 +20,7 @@ import json
 import warnings
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -213,7 +214,7 @@ def rolling_walk_forward(
 ) -> dict:
     """Rolling-window walk-forward: 500-day train, 200-day test, rolling forward."""
     n = len(data)
-    folds = []
+    folds: list[dict[str, Any]] = []
     fold_idx = 0
     start = 0
 
@@ -301,11 +302,11 @@ def pbo_cscv(
     # subset_returns[lb_idx][subset_idx] = Series of daily returns
     print(
         f"  CSCV: {n_subsets} subsets, {subset_size} days each, "
-        f"{len(lookbacks)} lookbacks, C({n_subsets},{n_subsets//2})="
-        f"{len(list(itertools.combinations(range(n_subsets), n_subsets//2)))} combos"
+        f"{len(lookbacks)} lookbacks, C({n_subsets},{n_subsets // 2})="
+        f"{len(list(itertools.combinations(range(n_subsets), n_subsets // 2)))} combos"
     )
 
-    subset_returns = {}
+    subset_returns: dict[int, dict[int, pd.Series]] = {}
     for lb_idx, lb in enumerate(lookbacks):
         subset_returns[lb_idx] = {}
         for s in range(n_subsets):
@@ -598,8 +599,8 @@ def main():
         f"{'Exp Val':>8} {'Roll Train':>11} {'Roll Test':>10} {'Stability':>10}"
     )
     print(
-        f"{'-'*4:>4} {'-'*8:>8} {'-'*9:>9} {'-'*10:>10} {'-'*9:>9} "
-        f"{'-'*8:>8} {'-'*11:>11} {'-'*10:>10} {'-'*10:>10}"
+        f"{'-' * 4:>4} {'-' * 8:>8} {'-' * 9:>9} {'-' * 10:>10} {'-' * 9:>9} "
+        f"{'-' * 8:>8} {'-' * 11:>11} {'-' * 10:>10} {'-' * 10:>10}"
     )
 
     for lb in LOOKBACK_WINDOWS:
@@ -623,9 +624,9 @@ def main():
     # ── 5. Save results ────────────────────────────────────────────────
     # Convert numpy types for JSON serialization
     def to_serializable(obj):
-        if isinstance(obj, (np.integer,)):
+        if isinstance(obj, np.integer):
             return int(obj)
-        if isinstance(obj, (np.floating,)):
+        if isinstance(obj, np.floating):
             return float(obj)
         if isinstance(obj, np.ndarray):
             return obj.tolist()

@@ -39,7 +39,7 @@ except ImportError:
 try:
     from ..validation.deflated_sharpe import deflated_sharpe_ratio as _canonical_dsr
 except ImportError:
-    from validation.deflated_sharpe import deflated_sharpe_ratio as _canonical_dsr
+    from validation.deflated_sharpe import deflated_sharpe_ratio as _canonical_dsr  # type: ignore[no-redef]
 
 logger = structlog.get_logger(__name__)
 

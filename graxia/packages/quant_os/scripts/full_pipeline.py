@@ -25,8 +25,8 @@ import numpy as np
 import pandas as pd
 
 if sys.platform == "win32":
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr,attr-defined]
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr,attr-defined]
 
 warnings.filterwarnings("ignore")
 
@@ -493,7 +493,7 @@ def main():
     # donchian_20_eurusd (uncalibrated) is skipped below, so use its real
     # measured round-trip spread instead of a guess.
     require_cost_calibrated("XAUUSD")
-    XAU_COST_BPS = get_round_trip_cost_bps("XAUUSD")
+    XAU_COST_BPS = get_round_trip_cost_bps("XAUUSD")  # noqa: N806
 
     donchian_55 = DonchianConfig(period=55, vol_filter_pctile=0.7, cost_bps=XAU_COST_BPS)
     donchian_20 = DonchianConfig(period=20, vol_filter_pctile=0.7, cost_bps=XAU_COST_BPS)
@@ -519,11 +519,11 @@ def main():
     print("=" * 60)
 
     strategies = [
-        ("donchian_55_xauusd", lambda c, h, l: generate_donchian_signal(c, h, l, donchian_55), "XAUUSD"),
-        ("donchian_20_eurusd", lambda c, h, l: generate_donchian_signal(c, h, l, donchian_20), "EURUSD"),
-        ("donchian_20_xauusd", lambda c, h, l: generate_donchian_signal(c, h, l, donchian_20), "XAUUSD"),
-        ("momentum_12m_xauusd", lambda c, h, l: generate_momentum_signal(c, momentum_12m), "XAUUSD"),
-        ("tsom_xauusd", lambda c, h, l: generate_tsmom_signal(c, tsmom), "XAUUSD"),
+        ("donchian_55_xauusd", lambda c, h, lo: generate_donchian_signal(c, h, lo, donchian_55), "XAUUSD"),
+        ("donchian_20_eurusd", lambda c, h, lo: generate_donchian_signal(c, h, lo, donchian_20), "EURUSD"),
+        ("donchian_20_xauusd", lambda c, h, lo: generate_donchian_signal(c, h, lo, donchian_20), "XAUUSD"),
+        ("momentum_12m_xauusd", lambda c, h, lo: generate_momentum_signal(c, momentum_12m), "XAUUSD"),
+        ("tsom_xauusd", lambda c, h, lo: generate_tsmom_signal(c, tsmom), "XAUUSD"),
     ]
 
     wf_results = {}
@@ -681,10 +681,10 @@ def main():
         decision = "NO_GO"
         reason = "No strategy passes both WF gates and holdout validation"
 
-    print(f"\n  {'='*50}")
+    print(f"\n  {'=' * 50}")
     print(f"  DECISION: {decision}")
     print(f"  {reason}")
-    print(f"  {'='*50}")
+    print(f"  {'=' * 50}")
 
     report["steps"]["decision"] = {
         "decision": decision,
@@ -701,11 +701,11 @@ def main():
     def to_json(obj):
         if hasattr(obj, "__dataclass_fields__"):
             return {k: to_json(v) for k, v in obj.__dict__.items()}
-        if isinstance(obj, (np.integer, np.int64, np.int32)):
+        if isinstance(obj, np.integer | np.int64 | np.int32):
             return int(obj)
-        if isinstance(obj, (np.floating, np.float64, np.float32)):
+        if isinstance(obj, np.floating | np.float64 | np.float32):
             return float(obj)
-        if isinstance(obj, (np.bool_,)):
+        if isinstance(obj, np.bool_):
             return bool(obj)
         if isinstance(obj, np.ndarray):
             return obj.tolist()

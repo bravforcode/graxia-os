@@ -379,7 +379,7 @@ def estimate_duration(campaigns: list[CampaignConfig], workers: int = 8) -> dict
     bar_counts = {"D1": avg_d1_bars, "H4": avg_h4_bars, "H1": avg_h1_bars}
     ms_per_bar = 0.05  # ~50μs per bar per strategy
 
-    total_ms = 0
+    total_ms = 0.0
     for c in campaigns:
         bars = bar_counts.get(c.timeframe, 2500)
         total_ms += bars * ms_per_bar

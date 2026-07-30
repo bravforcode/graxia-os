@@ -143,8 +143,7 @@ def load_provenance_checked(
     impossible = sliced[sliced[ts] < floor]
     if len(impossible):
         raise DataProvenanceError(
-            f"{symbol}: {len(impossible)} rows in slice have impossible dates "
-            f"(< {floor.date()}); data contaminated."
+            f"{symbol}: {len(impossible)} rows in slice have impossible dates (< {floor.date()}); data contaminated."
         )
 
     flat = (sliced["open"] == sliced["high"]) & (sliced["high"] == sliced["low"]) & (sliced["low"] == sliced["close"])
@@ -152,7 +151,7 @@ def load_provenance_checked(
     frac = synth.sum() / len(sliced)
     if frac > max_synth_fraction:
         raise DataProvenanceError(
-            f"{symbol}: synthetic tell in {frac:.2%} of slice " f"(> {max_synth_fraction:.2%}); data contaminated."
+            f"{symbol}: synthetic tell in {frac:.2%} of slice (> {max_synth_fraction:.2%}); data contaminated."
         )
     return sliced.reset_index(drop=True)
 

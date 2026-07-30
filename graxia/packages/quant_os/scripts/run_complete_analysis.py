@@ -48,7 +48,7 @@ def load_data(symbol, tf):
             df["time"] = pd.to_datetime(df["time"], utc=True)
             df = df.set_index("time")
         return df
-    except:
+    except Exception:
         return None
 
 
@@ -96,11 +96,11 @@ def run_analysis(symbol, tf):
     features = compute_features(df)
     close_col = "close"
     feature_cols = [c for c in features.columns if c not in ["target", "target_return", close_col]]
-    X = features[feature_cols].values.astype(np.float32)
+    x = features[feature_cols].values.astype(np.float32)
     y = features["target"].values
     close_prices = features[close_col].values
 
-    fold_size = len(X) // N_FOLDS
+    fold_size = len(x) // N_FOLDS
     train_size = int(fold_size * TRAIN_RATIO)
 
     # Buy-and-hold baseline
@@ -113,10 +113,10 @@ def run_analysis(symbol, tf):
             start = fold_idx * fold_size
             train_end = start + train_size
             test_start = train_end
-            test_end = min(start + fold_size, len(X))
+            test_end = min(start + fold_size, len(x))
             if test_start >= test_end or test_end - test_start < MIN_TRADES:
                 continue
-            X_train, X_test = X[start:train_end], X[test_start:test_end]
+            x_train, x_test = x[start:train_end], x[test_start:test_end]
             y_train = y[start:train_end]
             close_test = close_prices[test_start:test_end]
 
@@ -131,8 +131,8 @@ def run_analysis(symbol, tf):
                 verbosity=0,
                 n_jobs=-1,
             )
-            model.fit(X_train, y_train)
-            proba = model.predict_proba(X_test)
+            model.fit(x_train, y_train)
+            proba = model.predict_proba(x_test)
             conf = np.max(proba, axis=1)
 
             trade_mask = conf >= conf_thresh
@@ -177,7 +177,7 @@ def run_analysis(symbol, tf):
             ds = ds_mod.deflated_sharpe_ratio(avg_sharpe, N_FOLDS * len(CONF_THRESHOLDS), total_trades)
             ds_sharpe = ds.deflated_sharpe
             ds_pass = ds.passes_threshold
-        except:
+        except Exception:
             ds_sharpe = avg_sharpe
             ds_pass = False
 
@@ -233,7 +233,9 @@ def main():
             print(
                 f"  {'Conf':>6s} | {'Trades':>7s} | {'Gross':>10s} | {'Cost':>8s} | {'Net':>10s} | {'Sharpe':>7s} | {'DS':>7s} | {'DS?':>4s} | {'vs BH':>10s}"
             )
-            print(f"  {'-'*6}-|-{'-'*7}-|-{'-'*10}-|-{'-'*8}-|-{'-'*10}-|-{'-'*7}-|-{'-'*7}-|-{'-'*4}-|-{'-'*10}")
+            print(
+                f"  {'-' * 6}-|-{'-' * 7}-|-{'-' * 10}-|-{'-' * 8}-|-{'-' * 10}-|-{'-' * 7}-|-{'-' * 7}-|-{'-' * 4}-|-{'-' * 10}"
+            )
 
             for conf in CONF_THRESHOLDS:
                 if conf not in result["results"]:

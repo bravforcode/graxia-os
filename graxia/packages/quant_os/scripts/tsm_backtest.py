@@ -21,7 +21,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from core.returns import compute_returns
+from core.returns import compute_returns  # noqa: E402
 from provenance import require_cost_calibrated_tsm_asset  # noqa: E402
 
 BASE = Path(__file__).resolve().parent.parent

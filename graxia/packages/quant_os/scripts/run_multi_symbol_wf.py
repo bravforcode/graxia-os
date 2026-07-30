@@ -19,7 +19,7 @@ sys.path.insert(0, str(BASE))
 
 from paper_engine.campaign import get_round_trip_cost_bps  # noqa: E402
 from provenance import COST_CALIBRATED_SYMBOLS, require_cost_calibrated  # noqa: E402
-from scripts.backtest_cost import evaluate_backtest
+from scripts.backtest_cost import evaluate_backtest  # noqa: E402
 
 # ── Config ──
 SYMBOLS = ["EURUSD", "GBPUSD", "XAUUSD"]
@@ -102,26 +102,26 @@ def run_walk_forward(df, symbol, tf):
 
     close_col = "close"
     feature_cols = [c for c in features.columns if c not in ["target", "target_return", close_col]]
-    X = features[feature_cols].values.astype(np.float32)
+    x = features[feature_cols].values.astype(np.float32)
     y = features["target"].values
     close_prices = features[close_col].values
     returns = features["target_return"].values
 
-    splits = walk_forward_split(len(X), N_FOLDS, TRAIN_RATIO)
+    splits = walk_forward_split(len(x), N_FOLDS, TRAIN_RATIO)
     if not splits:
         return None
 
     # Only evaluate at confidence thresholds that filter trades
-    CONF_THRESHOLDS = [0.0, 0.55, 0.65, 0.75, 0.85]
+    conf_thresholds = [0.0, 0.55, 0.65, 0.75, 0.85]
 
     fold_results = []
     for fold_idx, (train_start, train_end, test_start, test_end) in enumerate(splits):
-        X_train, X_test = X[train_start:test_start], X[test_start:test_end]
+        x_train, x_test = x[train_start:test_start], x[test_start:test_end]
         y_train, y_test = y[train_start:test_start], y[test_start:test_end]
         close_test = close_prices[test_start:test_end]
         returns_test = returns[test_start:test_end]
 
-        if len(X_train) < 50 or len(X_test) < MIN_TRADES:
+        if len(x_train) < 50 or len(x_test) < MIN_TRADES:
             continue
 
         model = xgb.XGBClassifier(
@@ -135,15 +135,15 @@ def run_walk_forward(df, symbol, tf):
             verbosity=0,
             n_jobs=-1,
         )
-        model.fit(X_train, y_train)
+        model.fit(x_train, y_train)
 
         # Get confidence scores
-        proba = model.predict_proba(X_test)
+        proba = model.predict_proba(x_test)
         conf = np.max(proba, axis=1)
-        preds = model.predict(X_test)
+        preds = model.predict(x_test)
 
         # Evaluate at multiple thresholds
-        for conf_thresh in CONF_THRESHOLDS:
+        for conf_thresh in conf_thresholds:
             trade_mask = conf >= conf_thresh
             n_trades = trade_mask.sum()
             if n_trades < MIN_TRADES:
@@ -176,7 +176,7 @@ def run_walk_forward(df, symbol, tf):
     # Find best threshold across folds
     best_thresh = 0
     best_net = -999
-    for thresh in CONF_THRESHOLDS:
+    for thresh in conf_thresholds:
         thresh_folds = [r for r in fold_results if r["conf_thresh"] == thresh]
         if thresh_folds:
             avg_net = np.mean([r["net_pnl"] for r in thresh_folds])
@@ -202,7 +202,7 @@ def run_walk_forward(df, symbol, tf):
         spec.loader.exec_module(ds_mod)
         ds_result = ds_mod.deflated_sharpe_ratio(
             observed_sharpe=avg_sharpe,
-            n_trials=N_FOLDS * len(CONF_THRESHOLDS),
+            n_trials=N_FOLDS * len(conf_thresholds),
             n_observations=total_trades,
         )
         deflated_sharpe = ds_result.deflated_sharpe

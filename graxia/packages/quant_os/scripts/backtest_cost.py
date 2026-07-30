@@ -51,9 +51,9 @@ def load_slippage_p90(symbol: str, freq: str) -> dict:
                 "session": {"asian": 44, "london": 38, "ny": 34, "overlap": 37},
             }
     df = pd.read_csv(path)
-    result = {"overall": float(df["slippage_points"].quantile(0.9))}
+    result: dict[str, float | dict[str, float]] = {"overall": float(df["slippage_points"].quantile(0.9))}
     for col in ["vol_regime", "spread_bucket", "session"]:
-        sub = {}
+        sub: dict[str, float] = {}
         for bucket in sorted(df[col].unique()):
             vals = df[df[col] == bucket]["slippage_points"]
             sub[bucket] = float(vals.quantile(0.9))
@@ -176,8 +176,8 @@ def evaluate_backtest(
     spread_cost: float = 0.000050,
     slippage_p90: float = 0.000027,
     lot_mult: float = 1.0,
-    regime_scores: pd.Series = None,
-    confidences: np.ndarray = None,
+    regime_scores: pd.Series | None = None,
+    confidences: np.ndarray | None = None,
     min_confidence: float = 0.0,
     min_regime: float = 0.0,
 ) -> dict:
@@ -202,13 +202,13 @@ def evaluate_backtest(
         dict with backtest metrics
     """
     df_test = df.loc[test_mask].copy()
-    X_test = df_test[feature_cols].fillna(0).values
+    x_test = df_test[feature_cols].fillna(0).values
     y_true = df_test["target"].values
 
     # Predict
-    preds = model.predict(X_test)
+    preds = model.predict(x_test)
     if confidences is None:
-        proba = model.predict_proba(X_test)
+        proba = model.predict_proba(x_test)
         conf = np.max(proba, axis=1)
     else:
         conf = confidences[test_mask.values]
@@ -311,7 +311,9 @@ def sweep_thresholds(
     print(
         f"  {'Conf':>6s} | {'Trades':>7s} | {'%Bars':>6s} | {'Acc':>7s} | {'Gross':>7s} | {'Cost':>7s} | {'Net':>8s} | {'WR':>6s} | {'SR':>5s} | {'OK?':>4s}"
     )
-    print(f"  {'-'*6}-|-{'-'*7}-|-{'-'*6}-|-{'-'*7}-|-{'-'*7}-|-{'-'*7}-|-{'-'*8}-|-{'-'*6}-|-{'-'*5}-|-{'-'*4}")
+    print(
+        f"  {'-' * 6}-|-{'-' * 7}-|-{'-' * 6}-|-{'-' * 7}-|-{'-' * 7}-|-{'-' * 7}-|-{'-' * 8}-|-{'-' * 6}-|-{'-' * 5}-|-{'-' * 4}"
+    )
     for s in sweeps:
         ok = "[OK]" if s["net_pnl"] > 0 else "   "
         print(
@@ -428,12 +430,12 @@ def main():
     test_mask = pd.Series(False, index=df.index)
     test_mask.iloc[split:] = True
 
-    X_train = df[feature_cols].fillna(0).values[:split]
+    x_train = df[feature_cols].fillna(0).values[:split]
     if args.label_type == "triple-barrier":
         # Map tb_label (-1/0/+1) to binary: -1=0, 0=excluded, +1=1
         y_train_raw = df["tb_label"].values[:split]
         train_keep = y_train_raw != 0
-        X_train = X_train[train_keep]
+        x_train = x_train[train_keep]
         y_train = (y_train_raw[train_keep] + 1) // 2  # -1→0, +1→1
         print(
             f"  Triple-barrier training: {len(y_train)} samples (excluded {train_keep.size - train_keep.sum()} neutral)"
@@ -441,7 +443,7 @@ def main():
     else:
         y_train = df["target"].values[:split]
 
-    print(f"  Train: {len(X_train)} samples, OOS: {test_mask.sum()} bars")
+    print(f"  Train: {len(x_train)} samples, OOS: {test_mask.sum()} bars")
 
     # 5. Train model
     print("\n--- Training XGBoost ---")
@@ -456,15 +458,15 @@ def main():
         use_label_encoder=False,
         verbosity=0,
     )
-    model.fit(X_train, y_train)
-    train_acc = (model.predict(X_train) == y_train).mean()
+    model.fit(x_train, y_train)
+    train_acc = (model.predict(x_train) == y_train).mean()
     print(f"  Train accuracy: {train_acc:.4f}")
 
     # 6. Get OOS predictions + confidence
-    X_test = df[feature_cols].fillna(0).values[split:]
+    x_test = df[feature_cols].fillna(0).values[split:]
     y_test_all = df["target"].values[split:]
-    preds_test = model.predict(X_test)
-    proba_test = model.predict_proba(X_test)
+    preds_test = model.predict(x_test)
+    proba_test = model.predict_proba(x_test)
     conf_test = np.max(proba_test, axis=1)
     oos_acc = (preds_test == y_test_all).mean()
     print(f"  OOS accuracy (raw): {oos_acc:.4f}")
@@ -547,7 +549,7 @@ def main():
         "cost_per_trade_at_2350": round((args.spread_cost + args.slippage_p90) * 2350, 4),
         "lot_mult": args.lot_mult,
         "oos_bars": int(test_mask.sum()),
-        "train_samples": len(X_train),
+        "train_samples": len(x_train),
         "oos_raw_accuracy": round(float(oos_acc), 4),
         "results": results,
         "positive_at_any": any(r["net_pnl"] > 0 and r["n_trades"] >= 5 for r in results),
@@ -566,11 +568,11 @@ def convert_numpy(obj):
         return {k: convert_numpy(v) for k, v in obj.items()}
     elif isinstance(obj, list):
         return [convert_numpy(v) for v in obj]
-    elif isinstance(obj, (np.bool_,)):
+    elif isinstance(obj, np.bool_):
         return bool(obj)
-    elif isinstance(obj, (np.integer,)):
+    elif isinstance(obj, np.integer):
         return int(obj)
-    elif isinstance(obj, (np.floating,)):
+    elif isinstance(obj, np.floating):
         return float(obj)
     elif isinstance(obj, np.ndarray):
         return obj.tolist()

@@ -20,6 +20,7 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -28,7 +29,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 # Import directly to avoid package __init__.py relative imports
-import importlib.util
+import importlib.util  # noqa: E402
 
 from provenance import require_cost_calibrated  # noqa: E402
 
@@ -37,6 +38,7 @@ spec = importlib.util.spec_from_file_location(
     module_name,
     str(project_root / "strategies" / "regime_adaptive_multi_asset.py"),
 )
+assert spec is not None and spec.loader is not None, f"Could not load spec for {module_name}"
 ram_module = importlib.util.module_from_spec(spec)
 sys.modules[module_name] = ram_module  # Register before exec to avoid dataclass error
 spec.loader.exec_module(ram_module)
@@ -98,7 +100,7 @@ def load_data(data_dir: str, universe: tuple[str, ...]) -> pd.DataFrame:
     return prices_df
 
 
-def run_backtest(prices: pd.DataFrame, config: RAMConfig) -> dict:
+def run_backtest(prices: pd.DataFrame, config: Any) -> dict:
     """Run backtest and compute metrics.
 
     Args:
