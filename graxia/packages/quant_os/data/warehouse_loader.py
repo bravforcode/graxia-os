@@ -379,7 +379,7 @@ class Warehouse:
         if raw is None:
             return None
         try:
-            return json.loads(raw)
+            return json.loads(raw)  # type: ignore[no-any-return]
         except (TypeError, ValueError):
             return {"raw": raw}
 

@@ -16,9 +16,10 @@ from __future__ import annotations
 
 import time
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable
+from typing import Any
 
 import httpx
 import structlog
@@ -28,6 +29,7 @@ logger = structlog.get_logger(__name__)
 
 class AlertSeverity(Enum):
     """Alert severity levels."""
+
     INFO = "info"
     WARNING = "warning"
     CRITICAL = "critical"
@@ -35,6 +37,7 @@ class AlertSeverity(Enum):
 
 class AlertType(Enum):
     """Supported alert types."""
+
     DRAWDOWN = "drawdown"
     KILL_SWITCH = "kill_switch"
     MODEL_DRIFT = "model_drift"
@@ -45,6 +48,7 @@ class AlertType(Enum):
 @dataclass(frozen=True)
 class AlertRule:
     """Configuration for a single alert rule."""
+
     alert_type: AlertType
     severity: AlertSeverity
     threshold: float
@@ -60,6 +64,7 @@ class AlertRule:
 @dataclass
 class Alert:
     """A triggered alert instance."""
+
     alert_id: str
     alert_type: AlertType
     severity: AlertSeverity
@@ -84,6 +89,7 @@ class Alert:
 @dataclass
 class TelegramConfig:
     """Telegram notification configuration."""
+
     bot_token: str
     chat_id: str
     enabled: bool = True
@@ -255,11 +261,9 @@ class AlertEngine:
     # Internal
     # ------------------------------------------------------------------
 
-    def _evaluate_rule(
-        self, rule: AlertRule, state: dict[str, Any]
-    ) -> Alert | None:
+    def _evaluate_rule(self, rule: AlertRule, state: dict[str, Any]) -> Alert | None:
         """Evaluate a single rule against system state."""
-        evaluators: dict[AlertType, Callable[..., bool]] = {
+        evaluators: dict[AlertType, Callable[..., tuple[bool, dict[str, Any]]]] = {
             AlertType.DRAWDOWN: self._check_drawdown,
             AlertType.KILL_SWITCH: self._check_kill_switch,
             AlertType.MODEL_DRIFT: self._check_model_drift,
@@ -312,6 +316,8 @@ class AlertEngine:
 
     def _send_telegram(self, alert: Alert) -> None:
         """Dispatch an alert message to Telegram."""
+        tg = self._telegram
+        assert tg is not None  # caller guarantees non-None
         severity_emoji = {
             AlertSeverity.INFO: "\U0001f4a1",
             AlertSeverity.WARNING: "\u26a0\ufe0f",
@@ -327,11 +333,11 @@ class AlertEngine:
             f"{alert.message}"
         )
 
-        url = f"{self._telegram.base_url}/bot{self._telegram.bot_token}/sendMessage"
+        url = f"{tg.base_url}/bot{tg.bot_token}/sendMessage"
         payload = {
-            "chat_id": self._telegram.chat_id,
+            "chat_id": tg.chat_id,
             "text": text,
-            "parse_mode": self._telegram.parse_mode,
+            "parse_mode": tg.parse_mode,
         }
 
         try:
@@ -340,7 +346,7 @@ class AlertEngine:
             logger.info(
                 "telegram_sent",
                 alert_id=alert.alert_id,
-                chat_id=self._telegram.chat_id,
+                chat_id=tg.chat_id,
             )
         except httpx.HTTPError as exc:
             logger.error(
@@ -354,9 +360,7 @@ class AlertEngine:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _check_drawdown(
-        rule: AlertRule, state: dict[str, Any]
-    ) -> tuple[bool, dict[str, Any]]:
+    def _check_drawdown(rule: AlertRule, state: dict[str, Any]) -> tuple[bool, dict[str, Any]]:
         dd = float(state.get("drawdown_pct", 0.0))
         return dd >= rule.threshold, {
             "current_drawdown": dd,
@@ -365,9 +369,7 @@ class AlertEngine:
         }
 
     @staticmethod
-    def _check_kill_switch(
-        rule: AlertRule, state: dict[str, Any]
-    ) -> tuple[bool, dict[str, Any]]:
+    def _check_kill_switch(rule: AlertRule, state: dict[str, Any]) -> tuple[bool, dict[str, Any]]:
         active = bool(state.get("kill_switch_active", False))
         return active, {
             "kill_switch_active": active,
@@ -375,9 +377,7 @@ class AlertEngine:
         }
 
     @staticmethod
-    def _check_model_drift(
-        rule: AlertRule, state: dict[str, Any]
-    ) -> tuple[bool, dict[str, Any]]:
+    def _check_model_drift(rule: AlertRule, state: dict[str, Any]) -> tuple[bool, dict[str, Any]]:
         drift = float(state.get("drift_score", 0.0))
         threshold = float(state.get("threshold", rule.threshold))
         return drift >= threshold, {
@@ -387,9 +387,7 @@ class AlertEngine:
         }
 
     @staticmethod
-    def _check_position_limit(
-        rule: AlertRule, state: dict[str, Any]
-    ) -> tuple[bool, dict[str, Any]]:
+    def _check_position_limit(rule: AlertRule, state: dict[str, Any]) -> tuple[bool, dict[str, Any]]:
         positions = int(state.get("open_positions", 0))
         max_pos = int(state.get("max_positions", rule.threshold))
         return positions >= max_pos, {
@@ -399,9 +397,7 @@ class AlertEngine:
         }
 
     @staticmethod
-    def _check_daily_loss(
-        rule: AlertRule, state: dict[str, Any]
-    ) -> tuple[bool, dict[str, Any]]:
+    def _check_daily_loss(rule: AlertRule, state: dict[str, Any]) -> tuple[bool, dict[str, Any]]:
         daily_pnl = float(state.get("daily_pnl", 0.0))
         limit = float(state.get("daily_loss_limit", rule.threshold))
         return daily_pnl <= -limit, {
@@ -432,10 +428,7 @@ class AlertEngine:
                 alert_type=AlertType.KILL_SWITCH,
                 severity=AlertSeverity.CRITICAL,
                 threshold=1.0,
-                message_template=(
-                    "Kill switch ACTIVATED on account {account}. "
-                    "All trading has been halted."
-                ),
+                message_template=("Kill switch ACTIVATED on account {account}. " "All trading has been halted."),
                 cooldown_seconds=60,
             ),
             AlertRule(

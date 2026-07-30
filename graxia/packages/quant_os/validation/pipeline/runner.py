@@ -389,7 +389,7 @@ class ValidationRunner:
                     name="pbo",
                     success=False,
                     error=f"PBO requires >= 2 strategy configs, got {len(strategy_returns)}. "
-                          f"Return series too short for CSCV matrix construction.",
+                    f"Return series too short for CSCV matrix construction.",
                     elapsed_sec=time.time() - start,
                 )
 
@@ -606,7 +606,8 @@ class ValidationRunner:
         if self.config.dsr_n_trials is not None:
             return self.config.dsr_n_trials
         from ...validation.n_trials import get_reconciled_n_trials
-        return get_reconciled_n_trials()
+
+        return get_reconciled_n_trials()  # type: ignore[no-any-return]
 
     def _calc_sharpe(self, returns: list[float]) -> float:
         """Calculate annualized Sharpe ratio."""

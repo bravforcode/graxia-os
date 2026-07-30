@@ -379,9 +379,10 @@ class ShadowTrader:
     def _write_trade(self, trade: ShadowTrade) -> None:
         """Enqueue a trade write to the DuckDBWriteQueue."""
         try:
-            asyncio.get_event_loop().run_coroutine_threadsafe(
+            loop = asyncio.get_event_loop()
+            loop.run_coroutine_threadsafe(  # type: ignore[attr-defined]
                 self._write_queue.enqueue("shadow_trades", [trade.to_dict()]),
-                asyncio.get_event_loop(),
+                loop,
             )
         except Exception:
             # Fallback: write directly if no running loop
