@@ -9,6 +9,7 @@ Frozen parameters (PRE-REGISTERED, never tuned after seeing results):
 Data: MANDATED provenance loader (load_provenance_checked) — slices >=2005-01-01
 and HARD-FAILS on synthetic backfill. Does NOT touch sacred holdout.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -30,21 +31,21 @@ for p in (str(GRAXIA_ROOT), str(ROOT)):
         sys.path.insert(0, p)
 
 if sys.platform == "win32":
-    sys.stdout.reconfigure(encoding="utf-8")
-    sys.stderr.reconfigure(encoding="utf-8")
+    sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
+    sys.stderr.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
 
-from graxia.packages.quant_os.provenance import (  # noqa: E402
-    load_provenance_checked,
-    DataProvenanceError,
-)
-from graxia.packages.quant_os.strategies.tsmom import compute_tsmom_signal  # noqa: E402
 from graxia.packages.quant_os.backtest.engine import BacktestConfig, BacktestEngine  # noqa: E402
+from graxia.packages.quant_os.provenance import (  # noqa: E402
+    DataProvenanceError,
+    load_provenance_checked,
+)
 from graxia.packages.quant_os.strategies.base import (  # noqa: E402
-    Strategy,
     Signal,
     SignalType,
+    Strategy,
     StrategyConfig,
 )
+from graxia.packages.quant_os.strategies.tsmom import compute_tsmom_signal  # noqa: E402
 from graxia.packages.quant_os.validation.deflated_sharpe import (  # noqa: E402
     deflated_sharpe_ratio,
 )
@@ -52,12 +53,22 @@ from graxia.packages.quant_os.validation.deflated_sharpe import (  # noqa: E402
 UNIVERSE = ["XAUUSD", "XAGUSD", "EURUSD", "GBPUSD", "USDJPY", "NAS100", "US30"]
 
 SYMBOL_SPREAD_PIPS = {
-    "XAUUSD": 100.0, "XAGUSD": 150.0, "EURUSD": 1.2, "GBPUSD": 1.5,
-    "USDJPY": 1.2, "NAS100": 120.0, "US30": 120.0,
+    "XAUUSD": 100.0,
+    "XAGUSD": 150.0,
+    "EURUSD": 1.2,
+    "GBPUSD": 1.5,
+    "USDJPY": 1.2,
+    "NAS100": 120.0,
+    "US30": 120.0,
 }
 SYMBOL_COMMISSION = {
-    "XAUUSD": 0.0, "XAGUSD": 0.0, "EURUSD": 7.0, "GBPUSD": 7.0,
-    "USDJPY": 7.0, "NAS100": 5.0, "US30": 5.0,
+    "XAUUSD": 0.0,
+    "XAGUSD": 0.0,
+    "EURUSD": 7.0,
+    "GBPUSD": 7.0,
+    "USDJPY": 7.0,
+    "NAS100": 5.0,
+    "US30": 5.0,
 }
 
 
@@ -66,8 +77,13 @@ class _MomentumSignalAdapter(Strategy):
 
     def __init__(self, symbol: str, signal_array: np.ndarray, sl_mult: float = 2.0):
         config = StrategyConfig(
-            name="WSAAdapter", version="1.0", symbols=[symbol], timeframes=["D1"],
-            risk_per_trade_pct=1.0, max_trades_per_day=1, require_trend_confirm=False,
+            name="WSAAdapter",
+            version="1.0",
+            symbols=[symbol],
+            timeframes=["D1"],
+            risk_per_trade_pct=1.0,
+            max_trades_per_day=1,
+            require_trend_confirm=False,
         )
         super().__init__(config)
         self._sym = symbol
@@ -91,18 +107,22 @@ class _MomentumSignalAdapter(Strategy):
         st = SignalType.BUY if cur > 0 else SignalType.SELL
         entry = float(ohlcv_data["close"][-1])
         h = np.array(ohlcv_data.get("high", []), dtype=float)
-        l = np.array(ohlcv_data.get("low", []), dtype=float)
+        lo = np.array(ohlcv_data.get("low", []), dtype=float)
         c = np.array(ohlcv_data.get("close", []), dtype=float)
         atr = 0.0
         if len(h) >= 15:
-            tr = np.maximum.reduce([h[1:] - l[1:], np.abs(h[1:] - c[:-1]), np.abs(l[1:] - c[:-1])])
+            tr = np.maximum.reduce([h[1:] - lo[1:], np.abs(h[1:] - c[:-1]), np.abs(lo[1:] - c[:-1])])
             atr = float(np.mean(tr[-14:])) if len(tr) >= 14 else 0.0
         sl = None
         if entry > 0 and atr > 0:
             sl = Decimal(str(entry - atr * self._sl_mult if st == SignalType.BUY else entry + atr * self._sl_mult))
         return Signal.create(
-            strategy_id=self.id, symbol=symbol, signal_type=st,
-            confidence=abs(cur), entry_price=Decimal(str(entry)), stop_loss=sl,
+            strategy_id=self.id,
+            symbol=symbol,
+            signal_type=st,
+            confidence=abs(cur),
+            entry_price=Decimal(str(entry)),
+            stop_loss=sl,
         )
 
 
@@ -119,23 +139,36 @@ def _calc_max_dd(equity_curve: list) -> float:
 def run_dk_test(all_returns: pd.DataFrame, total_trades: int) -> dict:
     """Pooled Driscoll-Kraay test with Newey-West HAC correction (T^(1/3) lags)."""
     if all_returns.empty or len(all_returns.columns) < 2:
-        return {"dk_t_stat": 0.0, "pooled_sharpe": 0.0, "positive_sharpe_count": 0,
-                "total_assets": 0, "total_days": 0, "total_trades": total_trades, "verdict": "INSUFFICIENT_DATA"}
+        return {
+            "dk_t_stat": 0.0,
+            "pooled_sharpe": 0.0,
+            "positive_sharpe_count": 0,
+            "total_assets": 0,
+            "total_days": 0,
+            "total_trades": total_trades,
+            "verdict": "INSUFFICIENT_DATA",
+        }
     cs_mean = all_returns.mean(axis=1).dropna()
     if len(cs_mean) < 30:
-        return {"dk_t_stat": 0.0, "pooled_sharpe": 0.0, "positive_sharpe_count": 0,
-                "total_assets": len(all_returns.columns), "total_days": len(cs_mean),
-                "total_trades": total_trades, "verdict": "INSUFFICIENT_DATA"}
+        return {
+            "dk_t_stat": 0.0,
+            "pooled_sharpe": 0.0,
+            "positive_sharpe_count": 0,
+            "total_assets": len(all_returns.columns),
+            "total_days": len(cs_mean),
+            "total_trades": total_trades,
+            "verdict": "INSUFFICIENT_DATA",
+        }
     mu = float(cs_mean.mean())
-    T = len(cs_mean)
-    max_lag = max(1, int(T ** (1 / 3)))
+    n_obs = len(cs_mean)
+    max_lag = max(1, int(n_obs ** (1 / 3)))
     gamma_0 = float(cs_mean.var(ddof=1))
     nw_var = gamma_0
     for lag in range(1, max_lag + 1):
         cov = float(cs_mean.iloc[lag:].cov(cs_mean.iloc[:-lag]))
         weight = 1.0 - lag / (max_lag + 1)
         nw_var += 2 * weight * cov
-    nw_se = math.sqrt(nw_var / T) if nw_var > 0 else 1e-10
+    nw_se = math.sqrt(nw_var / n_obs) if nw_var > 0 else 1e-10
     dk_t = mu / nw_se if nw_se > 0 else 0.0
     pooled_sharpe = mu / (math.sqrt(gamma_0) + 1e-10) * math.sqrt(252)
     pos_sharpe = 0
@@ -151,16 +184,24 @@ def run_dk_test(all_returns: pd.DataFrame, total_trades: int) -> dict:
         verdict = "MARGINAL"
     else:
         verdict = "REJECT"
-    return {"dk_t_stat": round(dk_t, 4), "pooled_sharpe": round(pooled_sharpe, 4),
-            "positive_sharpe_count": pos_sharpe, "total_assets": len(all_returns.columns),
-            "total_days": T, "total_trades": total_trades, "verdict": verdict}
+    return {
+        "dk_t_stat": round(dk_t, 4),
+        "pooled_sharpe": round(pooled_sharpe, 4),
+        "positive_sharpe_count": pos_sharpe,
+        "total_assets": len(all_returns.columns),
+        "total_days": n_obs,
+        "total_trades": total_trades,
+        "verdict": verdict,
+    }
 
 
 def _run_engine_for_symbol(sym: str, df: pd.DataFrame, sig_values: np.ndarray, cost_multiplier: float = 1.0) -> dict:
     ts = "time" if "time" in df.columns else "date"
     ohlcv = {
-        "open": df["open"].tolist(), "high": df["high"].tolist(),
-        "low": df["low"].tolist(), "close": df["close"].tolist(),
+        "open": df["open"].tolist(),
+        "high": df["high"].tolist(),
+        "low": df["low"].tolist(),
+        "close": df["close"].tolist(),
         "volume": df["volume"].tolist() if "volume" in df.columns else [0.0] * len(df),
     }
     timestamps = [pd.Timestamp(t).to_pydatetime() for t in df.index]
@@ -179,7 +220,7 @@ def _run_engine_for_symbol(sym: str, df: pd.DataFrame, sig_values: np.ndarray, c
     adapter = _MomentumSignalAdapter(sym, sig_values, sl_mult)
     engine.set_strategy(adapter)
     engine.load_data(ohlcv, timestamps)
-    engine._check_risk_halt = lambda: False
+    engine._check_risk_halt = lambda: False  # type: ignore[method-assign]
     engine._pnl_tracker = None
 
     results = engine.run()
@@ -193,15 +234,19 @@ def _run_engine_for_symbol(sym: str, df: pd.DataFrame, sig_values: np.ndarray, c
         total_ret = float((1 + r).cumprod().iloc[-1] - 1)
     else:
         sharpe, total_ret = 0.0, 0.0
-    return {"daily_ret": daily_ret, "trades": n_trades, "sharpe": round(sharpe, 4),
-            "return": round(total_ret, 6), "max_dd": round(max_dd, 6)}
+    return {
+        "daily_ret": daily_ret,
+        "trades": n_trades,
+        "sharpe": round(sharpe, 4),
+        "return": round(total_ret, 6),
+        "max_dd": round(max_dd, 6),
+    }
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="WS-A TSMOM pure sign(252) backtest")
     parser.add_argument("--cost-multiplier", type=float, default=1.0)
-    parser.add_argument("--output", type=str,
-                        default=str(ROOT / "reports" / "ws_a_trial_1028.json"))
+    parser.add_argument("--output", type=str, default=str(ROOT / "reports" / "ws_a_trial_1028.json"))
     args = parser.parse_args()
 
     print("WS-A (Trial #1028) — MOP2012 pure time-series momentum, sign(252)")
@@ -229,15 +274,16 @@ def main() -> int:
 
         # Verification: signal must be only -1/0/+1 and equal sign(252-return)
         vc = sig.signal.value_counts(dropna=False).to_dict()
-        print(f"  {sym}: {len(df)} bars ({df.index[0].date()}→{df.index[-1].date()}) "
-              f"signal_value_counts={vc}")
+        print(f"  {sym}: {len(df)} bars ({df.index[0].date()}→{df.index[-1].date()}) " f"signal_value_counts={vc}")
 
     # Align close prices on common dates
     close_prices = close_prices.dropna(how="all").ffill().dropna()
     data_start, data_end = close_prices.index[0], close_prices.index[-1]
     years = (data_end - data_start).days / 365.25
-    print(f"  Aligned: {len(close_prices)} bars, {len(close_prices.columns)} assets, "
-          f"{data_start.date()}→{data_end.date()} ({years:.1f}y)")
+    print(
+        f"  Aligned: {len(close_prices)} bars, {len(close_prices.columns)} assets, "
+        f"{data_start.date()}→{data_end.date()} ({years:.1f}y)"
+    )
 
     # Run engine per asset
     all_returns = pd.DataFrame()
@@ -255,13 +301,19 @@ def main() -> int:
         # position changes: transitions to a non-zero signal value
         sv = signals[sym].fillna(0).values
         pos_changes = int(((sv != 0) & (sv != np.roll(sv, 1))).sum())
-        raw_flips = int(((np.sign(sv) != 0) & (np.sign(sv) != np.roll(np.sign(sv), 1)) &
-                         (np.roll(np.sign(sv), 1) != 0)).sum())
-        per_asset[sym] = {**{k: v for k, v in res.items() if k != "daily_ret"},
-                          "position_changes": pos_changes, "raw_sign_flips": raw_flips}
-        print(f"  {sym}: trades={res['trades']:>5} sharpe={res['sharpe']:>+7.3f} "
-              f"ret={res['return']:>+8.4f} max_dd={res['max_dd']:>+8.4f} "
-              f"pos_changes={pos_changes} raw_flips={raw_flips}")
+        raw_flips = int(
+            ((np.sign(sv) != 0) & (np.sign(sv) != np.roll(np.sign(sv), 1)) & (np.roll(np.sign(sv), 1) != 0)).sum()
+        )
+        per_asset[sym] = {
+            **{k: v for k, v in res.items() if k != "daily_ret"},
+            "position_changes": pos_changes,
+            "raw_sign_flips": raw_flips,
+        }
+        print(
+            f"  {sym}: trades={res['trades']:>5} sharpe={res['sharpe']:>+7.3f} "
+            f"ret={res['return']:>+8.4f} max_dd={res['max_dd']:>+8.4f} "
+            f"pos_changes={pos_changes} raw_flips={raw_flips}"
+        )
 
     # Align all_returns on common dates
     all_returns = all_returns.dropna(how="all").ffill().dropna()
@@ -269,17 +321,27 @@ def main() -> int:
     # --- Battery ---
     print("\n--- Pooled DK-test ---")
     dk = run_dk_test(all_returns, total_trades)
-    print(f"  DK t-stat: {dk['dk_t_stat']:.4f}  pooled_sharpe: {dk['pooled_sharpe']:.4f}  "
-          f"pos_sharpe: {dk['positive_sharpe_count']}/{dk['total_assets']}  verdict: {dk['verdict']}")
+    print(
+        f"  DK t-stat: {dk['dk_t_stat']:.4f}  pooled_sharpe: {dk['pooled_sharpe']:.4f}  "
+        f"pos_sharpe: {dk['positive_sharpe_count']}/{dk['total_assets']}  verdict: {dk['verdict']}"
+    )
 
     # DSR @ N=1050
     cs_mean = all_returns.mean(axis=1).dropna()
     pooled_sharpe = float(cs_mean.mean()) / (float(cs_mean.std(ddof=1)) + 1e-10) * math.sqrt(252)
-    dsr = deflated_sharpe_ratio(pooled_sharpe, n_trials=1050, n_observations=1050,
-                                skewness=float(cs_mean.skew()), kurtosis=float(cs_mean.kurt()))
+    dsr = deflated_sharpe_ratio(
+        pooled_sharpe,
+        n_trials=1050,
+        n_observations=1050,
+        sharpe_annualization_factor=1.0,  # TODO(DSR-AUDIT): unaudited call site, factor=1.0 preserves prior (possibly-incorrect) behavior — see MATH_CORRECTNESS_AUDIT.md
+        skewness=float(cs_mean.skew()),
+        kurtosis=float(cs_mean.kurt()),
+    )
     dsr_pass = dsr.probability_alpha < 0.05
-    print(f"  DSR: sharpe={pooled_sharpe:.4f} prob_alpha(P(false pos))={dsr.probability_alpha:.4f} "
-          f"pass(p<0.05)={dsr_pass}")
+    print(
+        f"  DSR: sharpe={pooled_sharpe:.4f} prob_alpha(P(false pos))={dsr.probability_alpha:.4f} "
+        f"pass(p<0.05)={dsr_pass}"
+    )
 
     # Jackknife (leave-one-asset-out)
     jack = {}
@@ -316,13 +378,27 @@ def main() -> int:
     try:
         pbo_in = ROOT / "reports" / "_ws_a_pbo_input.json"
         pbo_out = ROOT / "reports" / "_ws_a_pbo_output.json"
-        pbo_payload = {"per_asset_daily_returns": {sym: all_returns[sym].dropna().tolist() for sym in all_returns.columns}}
+        pbo_payload = {
+            "per_asset_daily_returns": {sym: all_returns[sym].dropna().tolist() for sym in all_returns.columns}
+        }
         pbo_in.write_text(json.dumps(pbo_payload), encoding="utf-8")
         subprocess.run(
-            [sys.executable, str(ROOT / "scripts" / "compute_pbo_cscv.py"),
-             "--backtest-results", str(pbo_in), "--output", str(pbo_out),
-             "--n-partitions", "12", "--n-random-strategies", "50"],
-            check=True, capture_output=True, text=True, cwd=str(ROOT),
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "compute_pbo_cscv.py"),
+                "--backtest-results",
+                str(pbo_in),
+                "--output",
+                str(pbo_out),
+                "--n-partitions",
+                "12",
+                "--n-random-strategies",
+                "50",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            cwd=str(ROOT),
         )
         pbo_result = json.loads(pbo_out.read_text(encoding="utf-8"))
         print(f"  PBO/CSCV: PBO={pbo_result['pbo']:.4f} (<0.5 pass) interp={pbo_result.get('interpretation','')}")
@@ -344,15 +420,24 @@ def main() -> int:
     payload = {
         "trial_id": 1028,
         "strategy": "tsmom_pure_sign_252",
-        "parameters": {"lookback": [252], "vol_target": 0.10, "rebalance": "monthly",
-                       "universe": UNIVERSE, "cost_model": "pepperstone_razor",
-                       "cost_multiplier": args.cost_multiplier},
+        "parameters": {
+            "lookback": [252],
+            "vol_target": 0.10,
+            "rebalance": "monthly",
+            "universe": UNIVERSE,
+            "cost_model": "pepperstone_razor",
+            "cost_multiplier": args.cost_multiplier,
+        },
         "data_loader": "load_provenance_checked (>=2005-01-01, hard-fail on contamination)",
         "data_range": {"start": str(data_start.date()), "end": str(data_end.date()), "years": round(years, 2)},
         "per_asset": per_asset,
         "pooled": dk,
-        "dsr": {"pooled_sharpe": round(pooled_sharpe, 4), "probability_alpha": dsr.probability_alpha,
-                "n_observations": 1050, "pass": dsr_pass},
+        "dsr": {
+            "pooled_sharpe": round(pooled_sharpe, 4),
+            "probability_alpha": dsr.probability_alpha,
+            "n_observations": 1050,
+            "pass": dsr_pass,
+        },
         "jackknife_leave_one_out_dk_t": jack,
         "jackknife_deltas": jack_deltas,
         "cost_stress": cost_stress,

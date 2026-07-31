@@ -485,6 +485,7 @@ def main():
             observed_sharpe=m["sharpe"],
             n_trials=n_trials,
             n_observations=len(_port_df),
+            sharpe_annualization_factor=1.0,  # TODO(DSR-AUDIT): unaudited call site, factor=1.0 preserves prior (possibly-incorrect) behavior — see MATH_CORRECTNESS_AUDIT.md
             skewness=float(_port_df["return"].skew()),
             kurtosis=float(_port_df["return"].kurtosis()),
         )

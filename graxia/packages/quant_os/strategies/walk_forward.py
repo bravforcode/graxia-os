@@ -192,6 +192,7 @@ def _deflated_sharpe(sharpe_obs: float, n_trials: int) -> float:
         observed_sharpe=sharpe_obs,
         n_trials=n_trials,
         n_observations=1000,  # default; walk-forward caller doesn't track this
+        sharpe_annualization_factor=1.0,  # TODO(DSR-AUDIT): unaudited call site, factor=1.0 preserves prior (possibly-incorrect) behavior — see MATH_CORRECTNESS_AUDIT.md — also n_observations=1000 is a placeholder, not a real count
     )
     return result.deflated_sharpe
 

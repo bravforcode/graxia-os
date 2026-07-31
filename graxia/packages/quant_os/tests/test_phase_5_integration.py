@@ -33,7 +33,7 @@ def test_experiment_registry_works():
 def test_walk_forward_split_works():
     splits = walk_forward_split(n_bars=1000, n_folds=5)
     assert len(splits) > 0
-    for (tr_start, tr_end), (te_start, te_end) in splits:
+    for (_tr_start, tr_end), (te_start, te_end) in splits:
         assert te_start >= tr_end
         assert te_end > te_start
 
@@ -43,6 +43,7 @@ def test_deflated_sharpe_works():
         observed_sharpe=1.5,
         n_trials=100,
         n_observations=252,
+        sharpe_annualization_factor=1.0,
     )
     assert result.observed_sharpe == 1.5
     assert result.multiple_testing_adjustment > 0

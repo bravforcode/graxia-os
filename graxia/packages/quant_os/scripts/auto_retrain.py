@@ -244,6 +244,7 @@ def evaluate_model(model_data: dict):
         observed_sharpe=raw_sharpe,
         n_trials=1,
         n_observations=n_trades,
+        sharpe_annualization_factor=1.0,  # TODO(DSR-AUDIT): unaudited call site, factor=1.0 preserves prior (possibly-incorrect) behavior — see MATH_CORRECTNESS_AUDIT.md
     )
     haircut_sharpe = raw_sharpe - dsr.multiple_testing_adjustment
 

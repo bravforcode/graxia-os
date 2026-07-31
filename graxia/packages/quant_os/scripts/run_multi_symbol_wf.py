@@ -204,6 +204,7 @@ def run_walk_forward(df, symbol, tf):
             observed_sharpe=avg_sharpe,
             n_trials=N_FOLDS * len(conf_thresholds),
             n_observations=total_trades,
+            sharpe_annualization_factor=1.0,  # TODO(DSR-AUDIT): unaudited call site, factor=1.0 preserves prior (possibly-incorrect) behavior — see MATH_CORRECTNESS_AUDIT.md
         )
         deflated_sharpe = ds_result.deflated_sharpe
         ds_pass = ds_result.passes_threshold

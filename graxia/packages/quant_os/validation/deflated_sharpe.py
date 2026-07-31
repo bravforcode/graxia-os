@@ -40,16 +40,34 @@ def deflated_sharpe_ratio(
     observed_sharpe: float,
     n_trials: int,
     n_observations: int,
+    *,
+    sharpe_annualization_factor: float,
     skewness: float = 0.0,
     kurtosis: float = 3.0,
     confidence_level: float = 0.95,
 ) -> DeflatedSharpeResult:
     """Calculate deflated Sharpe ratio.
 
+    The Lo (2002) standard-error formula requires observed_sharpe and
+    n_observations to be in matching units: observed_sharpe must be the
+    Sharpe computed directly from a sample of n_observations returns, with
+    no rescaling in between. Most callers report an *annualized* Sharpe
+    (per_period_sharpe * sqrt(periods_per_year)) while n_observations counts
+    the raw per-period sample (e.g. daily bars) that produced it — passing
+    both as-is silently inflates the significance test. sharpe_annualization_factor
+    is the sqrt(periods_per_year)-style factor that was multiplied in to
+    produce observed_sharpe; pass 1.0 if observed_sharpe is already a raw
+    per-observation Sharpe, or if this call site hasn't been audited yet
+    (1.0 preserves prior, possibly-incorrect behavior instead of guessing).
+    See MATH_CORRECTNESS_AUDIT.md for per-call-site audit status.
+
     Args:
-        observed_sharpe: Sharpe ratio from backtest
+        observed_sharpe: Sharpe ratio from backtest (see unit note above)
         n_trials: number of strategy trials (multiple testing)
-        n_observations: number of return observations
+        n_observations: number of return observations backing observed_sharpe
+        sharpe_annualization_factor: factor observed_sharpe was scaled by
+            relative to the per-observation Sharpe over n_observations; use
+            1.0 for an un-annualized Sharpe or an unaudited call site
         skewness: return distribution skewness
         kurtosis: return distribution excess kurtosis
         confidence_level: desired confidence level
@@ -63,16 +81,16 @@ def deflated_sharpe_ratio(
             passes_threshold=False,
         )
 
+    raw_sharpe = observed_sharpe / sharpe_annualization_factor
+
     # Expected max Sharpe under null (no skill)
     euler_mascheroni = 0.5772156649
     expected_max_sharpe = (1 - euler_mascheroni) * _norm_ppf(1 - 1 / n_trials) + euler_mascheroni * _norm_ppf(
         1 - 1 / (n_trials * math.e)
     )
 
-    # Standard error of Sharpe ratio
-    sr_std = math.sqrt(
-        (1 - skewness * observed_sharpe + (kurtosis - 1) / 4 * observed_sharpe**2) / (n_observations - 1)
-    )
+    # Standard error of Sharpe ratio (raw_sharpe/n_observations must be matching units)
+    sr_std = math.sqrt((1 - skewness * raw_sharpe + (kurtosis - 1) / 4 * raw_sharpe**2) / (n_observations - 1))
 
     if sr_std <= 0:
         sr_std = 1e-10
@@ -81,14 +99,14 @@ def deflated_sharpe_ratio(
     # CORRECT formula: z = (SR₀ - σ(SR)·E[max Z]) / σ(SR)
     # E[max SR] under null = sr_std * expected_max_sharpe (standard normal quantile scaled by SR std)
     adjusted_expected = sr_std * expected_max_sharpe
-    z = (observed_sharpe - adjusted_expected) / sr_std
+    z = (raw_sharpe - adjusted_expected) / sr_std
     probability_alpha = 1 - _norm_cdf(z)
 
     # Deflated Sharpe ratio — probability (not raw difference)
     deflated = probability_alpha
-    multiple_testing = adjusted_expected
+    multiple_testing = adjusted_expected * sharpe_annualization_factor
 
-    passes = observed_sharpe > adjusted_expected and probability_alpha < (1 - confidence_level)
+    passes = raw_sharpe > adjusted_expected and probability_alpha < (1 - confidence_level)
 
     return DeflatedSharpeResult(
         observed_sharpe=observed_sharpe,
@@ -169,7 +187,9 @@ def min_backtest_length(
 
     # If observed Sharpe doesn't exceed expected max under null, no T suffices
     # Use a reasonable initial estimate of σ(SR) for the threshold check
-    sr_std_check = math.sqrt(max(1e-20, (1 - skewness * observed_sharpe + (kurtosis - 1) / 4 * observed_sharpe**2) / 99))
+    sr_std_check = math.sqrt(
+        max(1e-20, (1 - skewness * observed_sharpe + (kurtosis - 1) / 4 * observed_sharpe**2) / 99)
+    )
     scaled_expected = sr_std_check * expected_max_sharpe
 
     if observed_sharpe <= scaled_expected:
@@ -191,18 +211,20 @@ def min_backtest_length(
 
     # Denominator: (SR - σ(SR)·E[max SR])²  — iterative solve since σ(SR) depends on T
     # Start with sr_std from T=100, iterate to convergence
-    T_est = 100.0
+    t_est = 100.0
     for _ in range(10):
-        sr_std_est = math.sqrt(max(1e-20, (1 - skewness * observed_sharpe + (kurtosis - 1) / 4 * observed_sharpe**2) / max(T_est - 1, 1)))
+        sr_std_est = math.sqrt(
+            max(1e-20, (1 - skewness * observed_sharpe + (kurtosis - 1) / 4 * observed_sharpe**2) / max(t_est - 1, 1))
+        )
         scaled_exp = sr_std_est * expected_max_sharpe
         denominator = (observed_sharpe - scaled_exp) ** 2
         if denominator <= 0:
-            T_est = 999_999_999
+            t_est = 999_999_999
             break
         min_obs = 1 + numerator / denominator
-        if abs(min_obs - T_est) < 1:
+        if abs(min_obs - t_est) < 1:
             break
-        T_est = min_obs
+        t_est = min_obs
 
     min_obs_int = int(math.ceil(min_obs))
 

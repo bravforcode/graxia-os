@@ -359,6 +359,7 @@ def run_scenario(
         observed_sharpe=m.sharpe,
         n_trials=n_trials,
         n_observations=int(m.n_days),
+        sharpe_annualization_factor=np.sqrt(252),  # m.sharpe is annualized, n_days is raw daily bars
         skewness=m.skew,
         kurtosis=3.0,
         confidence_level=0.95,

@@ -98,7 +98,7 @@ def _compute_trade_returns_sharpe(trades: list[dict], annualization_factor: int 
     returns = []
     for t in trades:
         ret = t.get("return_pct", 0.0)
-        if isinstance(ret, (int, float)):
+        if isinstance(ret, int | float):
             returns.append(ret / 100.0)  # convert percentage to fraction
 
     if len(returns) < 2:
@@ -172,7 +172,7 @@ class ValidationConfig:
         if self.annualization_factor > 0:
             return self.annualization_factor
         tf = self.strategy_timeframe.upper()
-        _ANNUALIZATION_MAP = {
+        annualization_map = {
             "D1": 252,
             "D": 252,
             "H4": 1512,  # 252 * 6
@@ -183,7 +183,7 @@ class ValidationConfig:
             "M5": 19656,  # 252 * 78
             "M1": 118080,  # 252 * 468
         }
-        return _ANNUALIZATION_MAP.get(tf, 252)
+        return annualization_map.get(tf, 252)
 
 
 # ── Validation Result ──────────────────────────────────────────────────
@@ -432,7 +432,7 @@ class StrategyValidator:
         positive_folds = 0
         oos_all_trades = []
 
-        for fold_idx, ((train_start, train_end), (test_start, test_end)) in enumerate(splits):
+        for _fold_idx, ((train_start, train_end), (test_start, test_end)) in enumerate(splits):
             # Slice data for train/test
             train_data = {k: v[train_start:train_end] for k, v in data.items()}
             test_data = {k: v[test_start:test_end] for k, v in data.items()}
@@ -502,6 +502,7 @@ class StrategyValidator:
             observed_sharpe=sharpe,
             n_trials=n_trials,
             n_observations=n_observations,
+            sharpe_annualization_factor=1.0,  # TODO(DSR-AUDIT): unaudited call site, factor=1.0 preserves prior (possibly-incorrect) behavior — see MATH_CORRECTNESS_AUDIT.md
         )
 
     def _run_pbo(self, data: dict[str, list], timestamps: list[datetime]) -> PBOResult:

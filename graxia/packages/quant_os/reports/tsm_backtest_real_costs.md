@@ -12,7 +12,7 @@
 
 ## Verdict
 
-**EDGE_CANDIDATE** — DSR significant at both typical AND stress costs. Proceed to Fix #4.
+**ARCHIVE_NO_EDGE** — DSR not significant even at typical costs. TSM momentum has no edge after real costs.
 
 ---
 
@@ -63,9 +63,9 @@ Assumptions:
 | Metric | Value |
 |--------|-------|
 | Observed Sharpe | 0.960 |
-| Expected Max Sharpe (null) | 0.023 |
-| Deflated Sharpe | 0.000 |
-| P(alpha) | 0.0000 |
+| Expected Max Sharpe (null) | 0.369 |
+| Deflated Sharpe | 0.010 |
+| P(alpha) | 0.0096 |
 | Significant (95%) | YES |
 
 ### Stress
@@ -93,9 +93,9 @@ Assumptions:
 | Metric | Value |
 |--------|-------|
 | Observed Sharpe | 0.960 |
-| Expected Max Sharpe (null) | 0.023 |
-| Deflated Sharpe | 0.000 |
-| P(alpha) | 0.0000 |
+| Expected Max Sharpe (null) | 0.369 |
+| Deflated Sharpe | 0.010 |
+| P(alpha) | 0.0096 |
 | Significant (95%) | YES |
 
 ## Lookback = 40 days
@@ -125,9 +125,9 @@ Assumptions:
 | Metric | Value |
 |--------|-------|
 | Observed Sharpe | 0.832 |
-| Expected Max Sharpe (null) | 0.025 |
-| Deflated Sharpe | 0.000 |
-| P(alpha) | 0.0000 |
+| Expected Max Sharpe (null) | 0.372 |
+| Deflated Sharpe | 0.036 |
+| P(alpha) | 0.0356 |
 | Significant (95%) | YES |
 
 ### Stress
@@ -155,9 +155,9 @@ Assumptions:
 | Metric | Value |
 |--------|-------|
 | Observed Sharpe | 0.832 |
-| Expected Max Sharpe (null) | 0.025 |
-| Deflated Sharpe | 0.000 |
-| P(alpha) | 0.0000 |
+| Expected Max Sharpe (null) | 0.372 |
+| Deflated Sharpe | 0.036 |
+| P(alpha) | 0.0356 |
 | Significant (95%) | YES |
 
 ## Lookback = 60 days
@@ -187,10 +187,10 @@ Assumptions:
 | Metric | Value |
 |--------|-------|
 | Observed Sharpe | 0.711 |
-| Expected Max Sharpe (null) | 0.027 |
-| Deflated Sharpe | 0.000 |
-| P(alpha) | 0.0000 |
-| Significant (95%) | YES |
+| Expected Max Sharpe (null) | 0.375 |
+| Deflated Sharpe | 0.096 |
+| P(alpha) | 0.0958 |
+| Significant (95%) | NO |
 
 ### Stress
 
@@ -217,10 +217,10 @@ Assumptions:
 | Metric | Value |
 |--------|-------|
 | Observed Sharpe | 0.711 |
-| Expected Max Sharpe (null) | 0.027 |
-| Deflated Sharpe | 0.000 |
-| P(alpha) | 0.0000 |
-| Significant (95%) | YES |
+| Expected Max Sharpe (null) | 0.375 |
+| Deflated Sharpe | 0.096 |
+| P(alpha) | 0.0958 |
+| Significant (95%) | NO |
 
 ## Lookback = 120 days
 
@@ -249,9 +249,9 @@ Assumptions:
 | Metric | Value |
 |--------|-------|
 | Observed Sharpe | 1.073 |
-| Expected Max Sharpe (null) | 0.026 |
-| Deflated Sharpe | 0.000 |
-| P(alpha) | 0.0000 |
+| Expected Max Sharpe (null) | 0.371 |
+| Deflated Sharpe | 0.003 |
+| P(alpha) | 0.0029 |
 | Significant (95%) | YES |
 
 ### Stress
@@ -279,9 +279,9 @@ Assumptions:
 | Metric | Value |
 |--------|-------|
 | Observed Sharpe | 1.073 |
-| Expected Max Sharpe (null) | 0.026 |
-| Deflated Sharpe | 0.000 |
-| P(alpha) | 0.0000 |
+| Expected Max Sharpe (null) | 0.371 |
+| Deflated Sharpe | 0.003 |
+| P(alpha) | 0.0029 |
 | Significant (95%) | YES |
 
 ## Summary Comparison
@@ -292,8 +292,8 @@ Assumptions:
 | 20 | Stress | 0.960 | 10.55% | -24.98% | 27 | YES |
 | 40 | Typical | 0.832 | 9.33% | -20.84% | 22 | YES |
 | 40 | Stress | 0.832 | 9.33% | -20.84% | 22 | YES |
-| 60 | Typical | 0.711 | 7.85% | -26.04% | 17 | YES |
-| 60 | Stress | 0.711 | 7.85% | -26.04% | 17 | YES |
+| 60 | Typical | 0.711 | 7.85% | -26.04% | 17 | NO |
+| 60 | Stress | 0.711 | 7.85% | -26.04% | 17 | NO |
 | 120 | Typical | 1.073 | 11.13% | -15.46% | 13 | YES |
 | 120 | Stress | 1.073 | 11.13% | -15.46% | 13 | YES |
 

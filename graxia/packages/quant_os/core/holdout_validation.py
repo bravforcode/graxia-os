@@ -85,7 +85,6 @@ class HoldoutValidator:
         # Extract metrics
         dev_sharpe = dev_results.get("sharpe_ratio", 0)
         dev_win_rate = dev_results.get("win_rate", 0)
-        dev_pf = dev_results.get("profit_factor", 0)
 
         holdout_sharpe = holdout_results.get("sharpe_ratio", 0)
         holdout_win_rate = holdout_results.get("win_rate", 0)
@@ -103,6 +102,7 @@ class HoldoutValidator:
             observed_sharpe=holdout_sharpe,
             n_trials=self.total_tests,
             n_observations=int(holdout_trades),
+            sharpe_annualization_factor=1.0,  # TODO(DSR-AUDIT): unaudited call site, factor=1.0 preserves prior (possibly-incorrect) behavior — see MATH_CORRECTNESS_AUDIT.md
         )
         deflated_sharpe = dsr_result.probability_alpha
         threshold = 1 - 0.95  # 0.05 for 95% confidence
