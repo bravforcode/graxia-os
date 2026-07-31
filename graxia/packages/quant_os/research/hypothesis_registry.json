@@ -526,19 +526,19 @@
       }
     },
     {
-      "trial_number": 1030,
+      "trial_number": 1031,
       "id": "SENTIMENT-PRICE-001",
       "name": "LLM News Sentiment Price Prediction",
       "status": "PRE-REGISTERED",
       "registered_at": "2026-07-31",
       "instrument": "Multi-ticker (US equities, crypto, commodities)",
-      "pre_registration_doc": "reports/preregistration_1030_sentiment_price.md",
+      "pre_registration_doc": "reports/preregistration_1031_sentiment_price.md",
       "model": "qwen3.5:9b",
       "mechanism": "LLM sentiment from news headlines predicts next-day price direction",
-      "hypothesis": "Sentiment direction matches return direction at p < 0.000025 (Bonferroni-corrected)",
+      "hypothesis": "Sentiment direction matches return direction at p < 0.000049 (Bonferroni-corrected)",
       "data_source": "DuckDB llm_news_sentiment table + Yahoo Finance prices",
       "minimum_samples": 100,
-      "significance_bar": 0.000025,
+      "significance_bar": 0.000049,
       "effect_size_threshold": 0.2,
       "result_summary": null
     }
