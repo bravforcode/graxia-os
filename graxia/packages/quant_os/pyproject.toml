@@ -56,6 +56,7 @@ ignore = ["E501", "B008", "SIM108"]
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["F811", "F841"]
 "scripts/*" = ["F841", "B007"]
+"tools/*" = ["F841", "B007", "E402"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -70,6 +71,7 @@ warn_unused_configs = true
 exclude = [
     "tests/",
     "scripts/",
+    "tools/",
     "backtest/",
     "expansion/",
     "demo_campaign/",
