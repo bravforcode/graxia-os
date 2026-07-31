@@ -1,21 +1,29 @@
 """
 storage/duckdb_store.py — DuckDB Storage Layer for Analytics
 """
+
+import contextlib
+import sys
+from datetime import datetime
+from pathlib import Path
+
 import duckdb
 import pandas as pd
-from pathlib import Path
-from datetime import datetime
-import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from config import DUCKDB_PATH, BACKUP_DIR
+from config import (  # type: ignore[attr-defined]  # resolves to data_pipeline/config.py at runtime via the sys.path.insert above; mypy can't follow that and picks a different `config` module
+    BACKUP_DIR,
+    DUCKDB_PATH,
+)
 
 
 class DuckDBStore:
-    def __init__(self, db_path: str = None):
+    def __init__(self, db_path: str | None = None):
         self.db_path = db_path or str(DUCKDB_PATH)
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
         self.conn = duckdb.connect(self.db_path)
         self._init_tables()
+        self._init_llm_tables()
 
     def _init_tables(self):
         self.conn.execute("""
@@ -104,9 +112,20 @@ class DuckDBStore:
     def upsert_news_sentiment(self, df: pd.DataFrame):
         if len(df) == 0:
             return
-        cols = ["title", "description", "source", "url", "published_at", "query",
-                "vader_compound", "vader_pos", "vader_neg", "textblob_polarity",
-                "textblob_subjectivity", "fetched_at"]
+        cols = [
+            "title",
+            "description",
+            "source",
+            "url",
+            "published_at",
+            "query",
+            "vader_compound",
+            "vader_pos",
+            "vader_neg",
+            "textblob_polarity",
+            "textblob_subjectivity",
+            "fetched_at",
+        ]
         for col in cols:
             if col not in df.columns:
                 df[col] = None
@@ -120,16 +139,111 @@ class DuckDBStore:
         return self.conn.execute(sql).fetchdf()
 
     def get_latest_price(self, symbol: str) -> dict:
-        df = self.conn.execute("""
+        df = self.conn.execute(
+            """
             SELECT symbol, close, timestamp
             FROM market_data
             WHERE symbol = ? AND close IS NOT NULL
             ORDER BY timestamp DESC
             LIMIT 1
-        """, [symbol]).fetchdf()
+        """,
+            [symbol],
+        ).fetchdf()
         if len(df) > 0:
             return df.iloc[0].to_dict()
         return {}
+
+    # === LLM News Sentiment Methods ===
+    def _init_llm_tables(self):
+        """Create LLM news sentiment tables if they don't exist."""
+        # Create sequence first
+        with contextlib.suppress(Exception):
+            self.conn.execute("CREATE SEQUENCE IF NOT EXISTS llm_news_sentiment_seq START 1")
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS llm_news_sentiment (
+                id INTEGER DEFAULT (nextval('llm_news_sentiment_seq')),
+                url VARCHAR UNIQUE,
+                title VARCHAR,
+                source VARCHAR,
+                published_at TIMESTAMP,
+                analyzed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                model VARCHAR DEFAULT 'qwen3.5:9b',
+                tickers VARCHAR,
+                sentiment VARCHAR,
+                impact VARCHAR,
+                categories VARCHAR,
+                entities VARCHAR,
+                summary VARCHAR
+            )
+        """)
+
+    def upsert_llm_news_sentiment(self, articles: list) -> int:
+        """Insert/update LLM-analyzed news articles. Returns count written."""
+        if not articles:
+            return 0
+        written = 0
+        for a in articles:
+            try:
+                self.conn.execute(
+                    """
+                    INSERT INTO llm_news_sentiment
+                        (url, title, source, published_at, analyzed_at, model,
+                         tickers, sentiment, impact, categories, entities, summary)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT (url) DO UPDATE SET
+                        tickers = excluded.tickers,
+                        sentiment = excluded.sentiment,
+                        impact = excluded.impact,
+                        summary = excluded.summary,
+                        analyzed_at = excluded.analyzed_at
+                """,
+                    [
+                        a.get("url", ""),
+                        a.get("title", "")[:200],
+                        a.get("source", ""),
+                        a.get("published_at"),
+                        a.get("analyzed_at", datetime.now().isoformat()),
+                        a.get("model", "qwen3.5:9b"),
+                        a.get("tickers", ""),
+                        a.get("sentiment", "neutral"),
+                        a.get("impact", "low"),
+                        a.get("categories", ""),
+                        a.get("entities", "[]"),
+                        a.get("summary", "")[:500],
+                    ],
+                )
+                written += 1
+            except Exception as e:
+                print(f"  DuckDB upsert error: {e}")
+        return written
+
+    def get_llm_sentiment_data(self, days: int = 30) -> pd.DataFrame:
+        """Get LLM sentiment data for backtesting."""
+        return self.conn.execute(f"""
+            SELECT url, title, source, analyzed_at, tickers, sentiment, impact, summary
+            FROM llm_news_sentiment
+            WHERE analyzed_at > CURRENT_TIMESTAMP - INTERVAL '{days} days'
+            ORDER BY analyzed_at DESC
+        """).fetchdf()
+
+    def get_sentiment_by_ticker(self, ticker: str, days: int = 30) -> pd.DataFrame:
+        """Get sentiment data for a specific ticker."""
+        return self.conn.execute(f"""
+            SELECT analyzed_at, sentiment, impact, summary
+            FROM llm_news_sentiment
+            WHERE tickers LIKE '%{ticker}%'
+              AND analyzed_at > CURRENT_TIMESTAMP - INTERVAL '{days} days'
+            ORDER BY analyzed_at DESC
+        """).fetchdf()
+
+    def count_llm_sentiment_pairs(self) -> int:
+        """Count rows with both sentiment and tickers (usable for backtest)."""
+        result = self.conn.execute("""
+            SELECT COUNT(*) FROM llm_news_sentiment
+            WHERE tickers IS NOT NULL AND tickers != ''
+              AND sentiment IN ('positive', 'negative', 'neutral')
+        """).fetchone()
+        return result[0] if result else 0
 
     def get_sentiment_summary(self, days: int = 7) -> pd.DataFrame:
         return self.conn.execute(f"""
