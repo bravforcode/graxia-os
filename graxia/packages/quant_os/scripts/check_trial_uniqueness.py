@@ -99,6 +99,7 @@ def load_registry(path: Path) -> list[dict]:
                     "result": item.get("status", item.get("result")),
                     "date": item.get("tested_date", item.get("verdict_date")),
                     "source": path.name,
+                    "mechanism": item.get("mechanism"),
                 }
             )
     return entries
@@ -170,8 +171,12 @@ def check_trial_number_namespace(ledgers: list[tuple[str, list[dict]]]) -> list[
 def check_mechanism(entries: list[dict]) -> list[str]:
     """Every trial entry should declare a 'mechanism' field distinguishing e.g.
     'single_asset_absolute_momentum' from 'cross_sectional_relative_momentum'.
-    GATED (--mechanism): the schema does not yet carry 'mechanism' on every
-    entry, so this is opt-in until the schema is updated everywhere.
+    GATED (--mechanism): trial_ledger*.json's schema does not carry a
+    'mechanism' field at all (it's registry-only, e.g. hypothesis_registry.json),
+    so every ledger-sourced entry will always fail this check -- that is a real,
+    accurate gap, not a bug. hypothesis_registry_b.json and _e.json currently
+    have zero 'mechanism' entries either; the others (main, _c, _f) do. This is
+    opt-in until the ledger schema is extended to carry 'mechanism' too.
     Returns human-readable errors; [] = pass.
     """
     errors = []
@@ -285,7 +290,8 @@ def main():
 
     if not errors:
         print(
-            f"OK: {len(all_entries)} trial entries, 0 new collisions ({len(BASELINE)} baseline exceptions unchanged)."
+            f"OK: {len(all_entries)} trial entries, 0 new collisions "
+            f"({len(collided_numbers & BASELINE.keys())} baseline exceptions still present)."
         )
         sys.exit(0)
 
