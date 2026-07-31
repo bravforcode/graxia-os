@@ -190,7 +190,9 @@ class OverfittingDetector:
             observed_sharpe=sharpe,
             n_trials=n_trials,
             n_observations=n_observations,
-            sharpe_annualization_factor=1.0,  # TODO(DSR-AUDIT): unaudited call site, factor=1.0 preserves prior (possibly-incorrect) behavior — see MATH_CORRECTNESS_AUDIT.md
+            # sharpe is annualized via _compute_sharpe() (sqrt(252)) when not supplied by the
+            # caller — same factor _check_min_btl() already uses for this identical sharpe value.
+            sharpe_annualization_factor=math.sqrt(252),
             skewness=skewness,
             kurtosis=kurtosis,
         )

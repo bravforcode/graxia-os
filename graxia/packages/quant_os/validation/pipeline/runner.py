@@ -200,7 +200,6 @@ class ValidationRunner:
                 n_windows = self.config.wfa_n_windows
                 window_size = len(returns) // n_windows
                 is_size = int(window_size * self.config.wfa_is_ratio)
-                oos_size = window_size - is_size
 
                 window_results = []
                 for w in range(n_windows):
@@ -259,7 +258,7 @@ class ValidationRunner:
         try:
             # Generate trade PnLs from TSM strategy returns
             all_returns = []
-            for sym, raw in data_cache.items():
+            for _sym, raw in data_cache.items():
                 closes = [bar["close"] for bar in raw[-5000:]]
                 rets = self._compute_tsm_returns(closes, lookback=20)
                 all_returns.extend(rets)
@@ -303,7 +302,7 @@ class ValidationRunner:
         try:
             # Calculate Sharpe from TSM strategy returns
             all_returns = []
-            for sym, raw in data_cache.items():
+            for _sym, raw in data_cache.items():
                 closes = [bar["close"] for bar in raw[-5000:]]
                 rets = self._compute_tsm_returns(closes, lookback=20)
                 all_returns.extend(rets)
@@ -326,7 +325,7 @@ class ValidationRunner:
             # Also compute using strategies.walk_forward._deflated_sharpe
             from ...strategies.walk_forward import _deflated_sharpe
 
-            dsr_value = _deflated_sharpe(sharpe, n_trials)
+            dsr_value = _deflated_sharpe(sharpe, n_trials, n_bars)
 
             return ValidationResult(
                 name="dsr",
@@ -416,7 +415,7 @@ class ValidationRunner:
             from ...backtest.metrics import bootstrap_metric_ci
 
             all_returns = []
-            for sym, raw in data_cache.items():
+            for _sym, raw in data_cache.items():
                 closes = [bar["close"] for bar in raw[-5000:]]
                 rets = self._compute_tsm_returns(closes, lookback=20)
                 all_returns.extend(rets)
@@ -461,7 +460,7 @@ class ValidationRunner:
         start = time.time()
         try:
             all_returns = []
-            for sym, raw in data_cache.items():
+            for _sym, raw in data_cache.items():
                 closes = [bar["close"] for bar in raw[-5000:]]
                 rets = self._compute_tsm_returns(closes, lookback=20)
                 all_returns.extend(rets)
@@ -526,16 +525,13 @@ class ValidationRunner:
         start = time.time()
         try:
             all_returns = []
-            for sym, raw in data_cache.items():
+            for _sym, raw in data_cache.items():
                 closes = [bar["close"] for bar in raw[-5000:]]
                 rets = self._compute_tsm_returns(closes, lookback=20)
                 all_returns.extend(rets)
 
             if not all_returns:
                 return ValidationResult(name="synthetic", success=False, error="No data")
-
-            mu = np.mean(all_returns)
-            sigma = np.std(all_returns)
 
             # Block bootstrap paths
             block_size = self.config.synthetic_block_size

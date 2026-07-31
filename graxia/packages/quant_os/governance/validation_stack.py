@@ -120,10 +120,10 @@ class ParameterStability:
                 passed=False,
                 details=f"INSUFFICIENT_FOLDS:{len(param_sets)}<{min_folds}",
             )
-        numeric_params = {}
+        numeric_params: dict[str, list[float]] = {}
         for ps in param_sets:
             for k, v in ps.items():
-                if isinstance(v, (int, float)):
+                if isinstance(v, int | float):
                     numeric_params.setdefault(k, []).append(v)
         stable_params = []
         unstable_params = []

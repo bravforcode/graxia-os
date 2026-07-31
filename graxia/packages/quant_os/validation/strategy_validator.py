@@ -502,7 +502,10 @@ class StrategyValidator:
             observed_sharpe=sharpe,
             n_trials=n_trials,
             n_observations=n_observations,
-            sharpe_annualization_factor=1.0,  # TODO(DSR-AUDIT): unaudited call site, factor=1.0 preserves prior (possibly-incorrect) behavior — see MATH_CORRECTNESS_AUDIT.md
+            # `sharpe` above is math.sqrt(annualization_factor)-scaled by _compute_trade_returns_sharpe;
+            # pass the same factor here so raw_sharpe = observed_sharpe / factor recovers the
+            # per-trade Sharpe that matches n_observations=len(trades).
+            sharpe_annualization_factor=math.sqrt(self.config.get_annualization_factor()),
         )
 
     def _run_pbo(self, data: dict[str, list], timestamps: list[datetime]) -> PBOResult:

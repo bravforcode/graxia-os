@@ -266,22 +266,22 @@ class TestDeflatedSharpeChaos:
     """Edge cases for _deflated_sharpe helper."""
 
     def test_single_trial(self):
-        assert _deflated_sharpe(1.5, n_trials=1) == 1.5
+        assert _deflated_sharpe(1.5, n_trials=1, n_observations=500) == 1.5
 
     def test_many_trials(self):
-        result = _deflated_sharpe(1.0, n_trials=1000)
+        result = _deflated_sharpe(1.0, n_trials=1000, n_observations=500)
         assert result < 1.0
 
     def test_zero_sharpe(self):
-        result = _deflated_sharpe(0.0, n_trials=100)
+        result = _deflated_sharpe(0.0, n_trials=100, n_observations=500)
         assert result < 0
 
     def test_negative_sharpe(self):
-        result = _deflated_sharpe(-1.0, n_trials=50)
+        result = _deflated_sharpe(-1.0, n_trials=50, n_observations=500)
         assert result < -1.0
 
     def test_two_trials(self):
-        result = _deflated_sharpe(2.0, n_trials=2)
+        result = _deflated_sharpe(2.0, n_trials=2, n_observations=500)
         assert isinstance(result, float)
 
 
@@ -362,7 +362,7 @@ class TestGenerateSplitsChaos:
 
     def test_splits_do_not_overlap(self):
         result = _generate_splits(1000, 5, 0.7, 10)
-        for (tr_s, tr_e), (te_s, te_e) in result:
+        for (_tr_s, tr_e), (te_s, _te_e) in result:
             assert tr_e <= te_s, "Train must end before test starts"
 
 

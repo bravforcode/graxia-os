@@ -1,5 +1,6 @@
 """Integration test — full overfitting detection pipeline end-to-end."""
 
+import math
 import random
 
 import numpy as np
@@ -150,7 +151,12 @@ def test_detector_with_tracker():
         tracker.record_trial("xau_v1", {"lookback": 10 + i}, is_sharpe=1.0 + i * 0.005)
 
     # Get the DSR from tracker (now uses global N=1050, not local 150)
-    dsr = tracker.get_deflated_sharpe("xau_v1", observed_sharpe=2.0, n_observations=5000)
+    # detector.evaluate() below annualizes its Sharpe with sqrt(252) internally (_compute_sharpe);
+    # match that factor here so the comparison isolates n_trials (global vs local N), not a
+    # units mismatch between differently-annualized Sharpes.
+    dsr = tracker.get_deflated_sharpe(
+        "xau_v1", observed_sharpe=2.0, n_observations=5000, sharpe_annualization_factor=math.sqrt(252)
+    )
     assert dsr.observed_sharpe == 2.0
 
     # Now run full detector with explicit n_trials=150 (local only)
