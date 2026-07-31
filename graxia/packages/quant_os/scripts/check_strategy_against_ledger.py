@@ -167,11 +167,12 @@ STRATEGY_MECHANISM_MAP: dict[str, dict] = {
     "strategies/btc_eth_vol_spread.py": {
         "class": "compute_bevs_signals",
         "status": "BLOCKED",
-        "ledger_refs": ["trial_ledger_c.json #3003 BEVS-BTC-ETH-VOL-SPREAD (REJECTED, p=0.1877)"],
+        "ledger_refs": ["trial_ledger_c.json #7003 BEVS-BTC-ETH-VOL-SPREAD (REJECTED, p=0.1877)"],
         "reason": (
-            "Config matches trial 3003 exactly (Sharpe 1.28 but only 68 trades, "
+            "Config matches trial 7003 exactly (Sharpe 1.28 but only 68 trades, "
             "REJECTED as underpowered). File's own docstring cites '#2003' -- stale, "
-            "actual ledger entry is 3003."
+            "actual ledger entry is 7003 (renumbered from 3003 2026-07-31 -- see "
+            "TRIAL_ID_RANGES.md)."
         ),
     },
     "strategies/btc_vol_clustering.py": {
@@ -183,12 +184,13 @@ STRATEGY_MECHANISM_MAP: dict[str, dict] = {
     "strategies/btc_vol_divergence.py": {
         "class": "compute_btcvd_signals",
         "status": "BLOCKED",
-        "ledger_refs": ["trial_ledger_c.json #3001 btc_vol_divergence (REJECTED, p=0.5533)"],
+        "ledger_refs": ["trial_ledger_c.json #7001 btc_vol_divergence (REJECTED, p=0.5533)"],
         "reason": (
-            "Config matches trial 3001 exactly (6 trades, negative Sharpe). File's own "
-            "docstring cites '#2001' -- stale. Ref corrected from stale '3004' to '3001' "
-            "2026-07-31 after trial_ledger_c.json's own internal numbering was fixed "
-            "(see TRIAL_ID_RANGES.md)."
+            "Config matches trial 7001 exactly (6 trades, negative Sharpe). File's own "
+            "docstring cites '#2001' -- stale. Ref corrected 3004 -> 3001 -> 7001 "
+            "2026-07-31: first after trial_ledger_c.json's own internal numbering was "
+            "fixed, then again after Direction C was renumbered off its collision with "
+            "Direction B (see TRIAL_ID_RANGES.md)."
         ),
     },
     "strategies/carry.py": {

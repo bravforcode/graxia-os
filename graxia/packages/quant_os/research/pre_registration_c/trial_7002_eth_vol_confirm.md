@@ -1,7 +1,7 @@
 # Hypothesis Pre-Registration — ETH Volume Confirmation
 
 **Status:** LOCKED — 2026-07-13
-**Trial number:** #3002 (Direction C)
+**Trial number:** #7002 (Direction C) — renumbered from #3002 2026-07-31, see TRIAL_ID_RANGES.md
 
 ## 1. Economic Rationale
 

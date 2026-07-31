@@ -6,7 +6,7 @@
   "description": "Volume-Price Divergence in Crypto — separate research program from Direction A+B",
   "cumulative_trial_count": 3,
   "cumulative_trial_cap": 10,
-  "next_available_trial_number": 3004,
+  "next_available_trial_number": 7004,
   "new_hypotheses_used": 3,
   "new_hypotheses_remaining": 7,
   "dsr_trial_count": 1,
@@ -24,16 +24,16 @@
   },
   "lineage": [
     {
-      "trial_number": 3001,
-      "id": "btc_vol_divergence",
+      "trial_number": 7001,
+      "id": "BTCVD-BTC-VOL-DIVERGENCE",
       "mechanism": "crypto_volume_price_divergence",
       "result": "REJECTED",
       "date": "2026-07-13",
       "p_value": 0.5533,
-      "note": "BTCVD: Only 6 trades. Negative Sharpe. Corrected from a data-entry '3004' to '3001' 2026-07-31 -- hypothesis_registry_c.json, its pre_registration_doc path, and the actual filename research/pre_registration_c/trial_3001_btc_vol_divergence.md all agree on 3001; only this ledger entry said 3004."
+      "note": "BTCVD: Only 6 trades. Negative Sharpe. Corrected from a data-entry '3004' to '3001' 2026-07-31 -- hypothesis_registry_c.json, its pre_registration_doc path, and the actual filename research/pre_registration_c/trial_3001_btc_vol_divergence.md all agreed on 3001. Renumbered 3001->7001 2026-07-31: 3001-3003 collided with Direction B (trial_ledger_b.json occupies 3001-3008); Direction C moved to the free 7000 block -- see TRIAL_ID_RANGES.md."
     },
     {
-      "trial_number": 3002,
+      "trial_number": 7002,
       "id": "ETHVC-ETH-VOL-CONFIRM",
       "mechanism": "crypto_volatility_confirmation",
       "result": "REJECTED",
@@ -42,7 +42,7 @@
       "note": "ETHVC: 28 trades, 60.7% win rate but p=0.59."
     },
     {
-      "trial_number": 3003,
+      "trial_number": 7003,
       "id": "BEVS-BTC-ETH-VOL-SPREAD",
       "mechanism": "crypto_pair_vol_spread",
       "result": "REJECTED",

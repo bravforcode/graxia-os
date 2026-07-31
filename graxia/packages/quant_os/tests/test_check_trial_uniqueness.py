@@ -107,8 +107,81 @@ def test_real_repo_data_has_only_documented_baseline_collisions(monkeypatch):
     assert _run_main(monkeypatch, []) == 0
 
 
-def test_baseline_keys_are_the_known_direction_b_c_range():
-    assert set(ctu.BASELINE.keys()) == {3001, 3002, 3003, 3004}
+def test_baseline_is_empty_after_direction_c_renumber():
+    """Direction C was renumbered off its collision with Direction B
+    (3001-3003 -> 7001-7003, 2026-07-31) -- there is no more documented
+    debt, so BASELINE should be empty. If someone adds an entry back here
+    without a corresponding TRIAL_ID_RANGES.md write-up, this test forces
+    an intentional edit rather than silently accepting new debt.
+    """
+    assert {} == ctu.BASELINE
+
+
+def test_scan_pre_registration_docs_extracts_number_slug_family(tmp_path):
+    doc_dir = tmp_path / "pre_registration_x"
+    doc_dir.mkdir()
+    (doc_dir / "trial_42_foo_bar.md").write_text("body", encoding="utf-8")
+    (doc_dir / "template.md").write_text("not numbered", encoding="utf-8")
+    entries = ctu.scan_pre_registration_docs(tmp_path)
+    assert len(entries) == 1
+    assert entries[0]["trial_number"] == 42
+    assert entries[0]["slug"] == "foo_bar"
+    assert entries[0]["family"] == "_x"
+
+
+def test_check_doc_numbers_exist_flags_real_mismatch():
+    """The #3001-vs-#3004 bug class: a doc's filename claims one number, but
+    its family's ledger already recorded the same trial (matched by
+    id/slug) under a different number.
+    """
+    doc_entries = [
+        {
+            "trial_number": 99,
+            "slug": "alpha_strategy",
+            "family": "_x",
+            "source": "pre_registration_x/trial_99_alpha_strategy.md",
+        }
+    ]
+    ledger_pairs = [("trial_ledger_x.json", [{"trial_number": 100, "id": "ALPHA-STRATEGY"}])]
+    errors = ctu.check_doc_numbers_exist(doc_entries, ledger_pairs)
+    assert len(errors) == 1
+    assert "#99" in errors[0]
+    assert "100" in errors[0]
+
+
+def test_check_doc_numbers_exist_tolerates_pending_trial():
+    """A pre-registered-but-not-yet-resulted trial (status: PENDING, no
+    ledger/registry entry yet) must NOT be flagged -- that is the normal
+    lifecycle, not the #3001-vs-#3004 bug. Regression guard for the real
+    false positive hit during development: research/pre_registration/
+    trial_1030_diversified_tsmom.md (status PENDING) has no ledger entry
+    yet and must pass cleanly.
+    """
+    doc_entries = [
+        {
+            "trial_number": 1030,
+            "slug": "diversified_tsmom",
+            "family": "",
+            "source": "pre_registration/trial_1030_diversified_tsmom.md",
+        }
+    ]
+    ledger_pairs = [("trial_ledger.json", [{"trial_number": 1, "id": "SOMETHING-UNRELATED"}])]
+    assert ctu.check_doc_numbers_exist(doc_entries, ledger_pairs) == []
+
+
+def test_real_pre_registration_docs_pass_doc_number_check():
+    """End-to-end regression guard for the Direction C renumber done in this
+    commit (3001-3003 -> 7001-7003): every real pre_registration*/
+    trial_NNNN_*.md doc must pass against the real ledger/registry data.
+    """
+    doc_entries = ctu.scan_pre_registration_docs(ctu.RESEARCH_DIR)
+    assert len(doc_entries) >= 10  # sanity: docs are actually being found
+    ledger_pairs = []
+    for p in sorted(ctu.RESEARCH_DIR.glob("trial_ledger*.json")):
+        ledger_pairs.append((p.name, ctu.load_ledger(p)))
+    for p in sorted(ctu.RESEARCH_DIR.glob("hypothesis_registry*.json")):
+        ledger_pairs.append((p.name, ctu.load_registry(p)))
+    assert ctu.check_doc_numbers_exist(doc_entries, ledger_pairs) == []
 
 
 def test_load_ledger_extracts_mechanism_field(tmp_path):

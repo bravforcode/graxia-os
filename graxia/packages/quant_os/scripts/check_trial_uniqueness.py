@@ -5,17 +5,18 @@ Checks:
 2. Across ALL trial_ledger*.json + hypothesis_registry*.json (globbed, so
    hypothesis_registry_c.json and any future *registry*/*ledger* file are
    included): no trial_number is reused across different sources
-3. (--mechanism) every entry declares a 'mechanism' field
+3. Every pre_registration*/trial_NNNN_*.md doc's filename-encoded trial
+   number actually exists in a ledger/registry entry within the same family
+   (catches the #3001-vs-#3004 class of bug: a doc's filename disagreeing
+   with the number its own ledger/registry entry actually uses)
+4. (--mechanism) every entry declares a 'mechanism' field
 
-Ratchet (same pattern as check_bypass_loaders.py's BASELINE): trial numbers
-3001-3004 are a known, documented cross-direction collision between
-Direction B (trial_ledger_b.json / hypothesis_registry_b.json) and Direction
-C (trial_ledger_c.json / hypothesis_registry_c.json), recorded as debt in
-TRIAL_ID_RANGES.md pending a real renumbering decision (blocked on Direction
-C's own registry/ledger disagreeing with each other about trial #3001 vs
-#3004 for "BTC vol divergence" -- see TRIAL_ID_RANGES.md). Collisions in
-BASELINE are reported but do not fail the check; any collision NOT in
-BASELINE does.
+Ratchet (same pattern as check_bypass_loaders.py's BASELINE): historically
+trial numbers 3001-3004 were a documented cross-direction collision between
+Direction B and Direction C. That collision was resolved 2026-07-31 by
+renumbering Direction C to the 7000 block (see TRIAL_ID_RANGES.md) -- B is
+now the sole owner of 3001-3008. BASELINE is empty; any collision found is a
+real, new problem, not documented debt.
 
 Usage:
     python scripts/check_trial_uniqueness.py
@@ -41,12 +42,7 @@ RESEARCH_DIR = Path(__file__).resolve().parent.parent / "research"
 # failures. Do not add to this set to silence a check -- add a genuinely
 # new legitimate exception here only with a reason, same discipline as
 # check_bypass_loaders.py's BASELINE.
-BASELINE: dict[int, str] = {
-    3001: "Direction B (PATHB-CARRY-XAUUSD) vs Direction C (BTCVD-BTC-VOL-DIVERGENCE) -- see TRIAL_ID_RANGES.md",
-    3002: "Direction B (PATHB-VRP-XAUUSD) vs Direction C (ETHVC-ETH-VOL-CONFIRM) -- see TRIAL_ID_RANGES.md",
-    3003: "Direction B (PATHB-CAM-XAUUSD) vs Direction C (BEVS-BTC-ETH-VOL-SPREAD) -- see TRIAL_ID_RANGES.md",
-    3004: "Direction B (PATHB-DXY-DIV-XAUUSD) vs Direction C (btc_vol_divergence) -- see TRIAL_ID_RANGES.md",
-}
+BASELINE: dict[int, str] = {}
 
 
 def load_ledger(path: Path) -> list[dict]:
@@ -170,6 +166,81 @@ def check_trial_number_namespace(ledgers: list[tuple[str, list[dict]]]) -> list[
     return errors
 
 
+def _normalize_slug(s: str) -> str:
+    """Collapse a filename slug or ledger id down to bare alphanumerics for fuzzy
+    matching (trial_7001_btc_vol_divergence.md's 'btc_vol_divergence' vs a ledger
+    id of 'BTCVD-BTC-VOL-DIVERGENCE' or 'btc_vol_divergence' should all compare
+    equal)."""
+    return re.sub(r"[^a-z0-9]", "", s.lower())
+
+
+def scan_pre_registration_docs(research_dir: Path) -> list[dict]:
+    """Extract (trial_number, slug, family) from every pre_registration*/trial_NNNN_*.md
+    filename. `family` mirrors trial_family(): '' for research/pre_registration/,
+    '_c' for research/pre_registration_c/, etc. Non-numbered files (e.g. template.md)
+    are skipped."""
+    pattern = re.compile(r"^trial_(\d+)_(.+)\.md$")
+    entries = []
+    for md_path in sorted(research_dir.glob("pre_registration*/trial_*.md")):
+        m = pattern.match(md_path.name)
+        if not m:
+            continue
+        fam_m = re.match(r"pre_registration(_[a-z0-9]+)?$", md_path.parent.name)
+        family = (fam_m.group(1) or "") if fam_m else md_path.parent.name
+        entries.append(
+            {
+                "trial_number": int(m.group(1)),
+                "slug": m.group(2),
+                "family": family,
+                "source": f"{md_path.parent.name}/{md_path.name}",
+            }
+        )
+    return entries
+
+
+def check_doc_numbers_exist(doc_entries: list[dict], ledger_pairs: list[tuple[str, list[dict]]]) -> list[str]:
+    """Flag a pre_registration doc only when its family's ledger/registry already
+    has an entry for the SAME trial (matched by normalized id/slug) under a
+    DIFFERENT number than the doc's filename claims -- this is the #3001-vs-#3004
+    bug class: a doc's filename disagreeing with the number its own ledger entry
+    actually uses. A doc whose slug has no match anywhere in its family is treated
+    as not-yet-resulted (e.g. status: PENDING, registered but no ledger entry yet)
+    and is NOT an error -- that's the normal lifecycle, not a bug."""
+    numbers_by_family: dict[str, set[int]] = defaultdict(set)
+    slugs_by_family: dict[str, dict[str, set[int]]] = defaultdict(lambda: defaultdict(set))
+    for name, entries in ledger_pairs:
+        family = trial_family(name)
+        for entry in entries:
+            num = entry.get("trial_number")
+            if num is None:
+                continue
+            numbers_by_family[family].add(num)
+            entry_id = entry.get("id")
+            if entry_id:
+                slugs_by_family[family][_normalize_slug(str(entry_id))].add(num)
+
+    errors = []
+    for doc in doc_entries:
+        family = doc["family"]
+        if doc["trial_number"] in numbers_by_family.get(family, set()):
+            continue
+        doc_slug = _normalize_slug(doc["slug"])
+        matches = {
+            num
+            for slug, nums in slugs_by_family.get(family, {}).items()
+            for num in nums
+            if doc_slug == slug or doc_slug in slug or slug in doc_slug
+        }
+        if matches:
+            fam_label = family.lstrip("_") or "main"
+            errors.append(
+                f"DOC NUMBER MISMATCH: {doc['source']} filename says #{doc['trial_number']} "
+                f"but family '{fam_label}' ledger/registry has this trial under "
+                f"#{sorted(matches)} instead"
+            )
+    return errors
+
+
 def check_mechanism(entries: list[dict]) -> list[str]:
     """Every trial entry should declare a 'mechanism' field distinguishing e.g.
     'single_asset_absolute_momentum' from 'cross_sectional_relative_momentum'.
@@ -280,6 +351,9 @@ def main():
         if num in collided_numbers:
             continue
         errors.append(f"TRIAL NUMBER REUSE: {num} appears in '{a}' and '{b}'")
+
+    doc_entries = scan_pre_registration_docs(RESEARCH_DIR)
+    errors.extend(check_doc_numbers_exist(doc_entries, ledger_pairs))
 
     # 3) Gated mechanism check
     if args.mechanism:
