@@ -27,7 +27,7 @@
     },
     {
       "trial_number": 1001,
-      "id": "rydc_arm_a",
+      "id": "RYDC-ARM-A",
       "result": "REJECTED",
       "date": "2026-07-12",
       "p_value": 0.9680,
@@ -42,7 +42,7 @@
     },
     {
       "trial_number": 1003,
-      "id": "cross_asset_momentum",
+      "id": "CAM-DXY-XAUUSD",
       "result": "REJECTED",
       "date": "2026-07-13",
       "p_value": 0.5976,
@@ -50,7 +50,7 @@
     },
     {
       "trial_number": 1004,
-      "id": "session_pattern",
+      "id": "SP-SESSION-CONDITIONAL",
       "result": "REJECTED",
       "date": "2026-07-13",
       "p_value": 0.9338,
@@ -58,7 +58,7 @@
     },
     {
       "trial_number": 1005,
-      "id": "macro_regime_mr",
+      "id": "MRM-REGIME-CONDITIONAL",
       "result": "REJECTED",
       "date": "2026-07-13",
       "p_value": 0.2441,
@@ -66,7 +66,7 @@
     },
     {
       "trial_number": 1006,
-      "id": "gold_silver_spread",
+      "id": "GSS-GOLD-SILVER-SPREAD",
       "result": "REJECTED",
       "date": "2026-07-13",
       "p_value": 0.5045,
@@ -74,7 +74,7 @@
     },
     {
       "trial_number": 1007,
-      "id": "btc_vol_clustering",
+      "id": "BVC-BTC-VOL-CLUSTERING",
       "result": "REJECTED",
       "date": "2026-07-13",
       "p_value": 0.2479,
@@ -82,7 +82,7 @@
     },
     {
       "trial_number": 1008,
-      "id": "cross_asset_vol_rank",
+      "id": "CVR-CROSS-ASSET-VOL-RANK",
       "result": "REJECTED",
       "date": "2026-07-13",
       "p_value": 0.6101,

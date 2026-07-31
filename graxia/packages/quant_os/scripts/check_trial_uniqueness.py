@@ -7,14 +7,25 @@ Checks:
    included): no trial_number is reused across different sources
 3. (--mechanism) every entry declares a 'mechanism' field
 
+Ratchet (same pattern as check_bypass_loaders.py's BASELINE): trial numbers
+3001-3004 are a known, documented cross-direction collision between
+Direction B (trial_ledger_b.json / hypothesis_registry_b.json) and Direction
+C (trial_ledger_c.json / hypothesis_registry_c.json), recorded as debt in
+TRIAL_ID_RANGES.md pending a real renumbering decision (blocked on Direction
+C's own registry/ledger disagreeing with each other about trial #3001 vs
+#3004 for "BTC vol divergence" -- see TRIAL_ID_RANGES.md). Collisions in
+BASELINE are reported but do not fail the check; any collision NOT in
+BASELINE does.
+
 Usage:
     python scripts/check_trial_uniqueness.py
+    python scripts/check_trial_uniqueness.py --list        # print baseline collisions, exit 0
     python scripts/check_trial_uniqueness.py --mechanism   # also enforce mechanism field
     python scripts/check_trial_uniqueness.py --fix  # (future: auto-resolve)
 
 Exit codes:
-    0 = no collisions
-    1 = collisions found (details printed to stderr)
+    0 = no collisions, or only known BASELINE collisions
+    1 = new collisions found outside BASELINE (details printed to stderr)
 """
 
 import argparse
@@ -25,6 +36,17 @@ from collections import defaultdict
 from pathlib import Path
 
 RESEARCH_DIR = Path(__file__).resolve().parent.parent / "research"
+
+# Known, documented trial-number collisions treated as debt, not as new
+# failures. Do not add to this set to silence a check -- add a genuinely
+# new legitimate exception here only with a reason, same discipline as
+# check_bypass_loaders.py's BASELINE.
+BASELINE: dict[int, str] = {
+    3001: "Direction B (PATHB-CARRY-XAUUSD) vs Direction C (BTCVD-BTC-VOL-DIVERGENCE) -- see TRIAL_ID_RANGES.md",
+    3002: "Direction B (PATHB-VRP-XAUUSD) vs Direction C (ETHVC-ETH-VOL-CONFIRM) -- see TRIAL_ID_RANGES.md",
+    3003: "Direction B (PATHB-CAM-XAUUSD) vs Direction C (BEVS-BTC-ETH-VOL-SPREAD) -- see TRIAL_ID_RANGES.md",
+    3004: "Direction B (PATHB-DXY-DIV-XAUUSD) vs Direction C (btc_vol_divergence) -- see TRIAL_ID_RANGES.md",
+}
 
 
 def load_ledger(path: Path) -> list[dict]:
@@ -171,7 +193,40 @@ def main():
         help="also enforce that every entry declares a 'mechanism' field "
         "(gated: schema does not yet carry it everywhere)",
     )
+    parser.add_argument(
+        "--list",
+        action="store_true",
+        help="print current BASELINE collisions (documented debt) and exit 0",
+    )
+    parser.add_argument(
+        "--census",
+        action="store_true",
+        help="print every (trial_number, id, source) row across all ledgers/registries, "
+        "sorted by number then source, and exit 0. This is the single source of truth "
+        "for 'what number maps to what trial where' -- generated from the same glob "
+        "load_ledger()/load_registry() use for the checks, so it can't drift out of "
+        "sync with reality the way a hand-maintained doc can.",
+    )
     args = parser.parse_args()
+
+    if args.list:
+        for num, reason in sorted(BASELINE.items()):
+            print(f"[baseline] #{num}: {reason}")
+        return
+
+    if args.census:
+        census_entries = []
+        for p in sorted(RESEARCH_DIR.glob("trial_ledger*.json")):
+            census_entries.extend(load_ledger(p))
+        for p in sorted(RESEARCH_DIR.glob("hypothesis_registry*.json")):
+            census_entries.extend(load_registry(p))
+        census_entries.sort(key=lambda e: (e["trial_number"], e["source"]))
+        print(f"{'number':>7}  {'source':<28}  {'id':<32}  result")
+        print(f"{'-' * 7}  {'-' * 28}  {'-' * 32}  {'-' * 10}")
+        for e in census_entries:
+            print(f"{e['trial_number']:>7}  {e['source']:<28}  {str(e['id']):<32}  {e['result']}")
+        print(f"\n{len(census_entries)} total rows across {len({e['source'] for e in census_entries})} files.")
+        return
 
     all_entries = []
     ledger_pairs: list[tuple[str, list[dict]]] = []
@@ -189,18 +244,28 @@ def main():
         all_entries.extend(entries)
 
     errors: list[str] = []
+    baseline_notes: list[str] = []
 
-    # 1) Cross-source collisions with DIFFERING ids (detailed report)
+    # 1) Cross-source collisions with DIFFERING ids (detailed report).
+    #    Numbers in BASELINE are documented debt -- reported but non-fatal;
+    #    anything else is a new, unreviewed collision and fails the check.
     collisions = check_collisions(all_entries)
     collided_numbers = set()
     for c in collisions:
-        collided_numbers.add(c["trial_number"])
-        errors.append(f"COLLISION: Trial #{c['trial_number']}: conflicting ids = {c['conflicting_ids']}")
+        num = c["trial_number"]
+        collided_numbers.add(num)
+        target = baseline_notes if num in BASELINE else errors
+        label = "KNOWN (baseline)" if num in BASELINE else "COLLISION"
+        target.append(f"{label}: Trial #{num}: conflicting ids = {c['conflicting_ids']}")
         for rec in c["records"]:
-            errors.append(f"    source={rec['source']}  id={rec['id']}  result={rec['result']}  date={rec['date']}")
+            target.append(f"    source={rec['source']}  id={rec['id']}  result={rec['result']}  date={rec['date']}")
+        if num in BASELINE:
+            target.append(f"    baseline reason: {BASELINE[num]}")
 
     # 2) Stricter: any trial_number reused across DIFFERENT sources (incl. same-id).
-    #    Skip numbers already reported above to avoid duplicate lines.
+    #    Skip numbers already reported above to avoid duplicate lines. Never
+    #    baseline-exempt: same-id reuse across families is a different, more
+    #    serious bug class than the differing-id BASELINE collisions above.
     for num, a, b in check_trial_number_namespace(ledger_pairs):
         if num in collided_numbers:
             continue
@@ -209,11 +274,19 @@ def main():
     # 3) Gated mechanism check
     if args.mechanism:
         for name, entries in ledger_pairs:
-            for e in check_mechanism(entries):
-                errors.append(f"[{name}] {e}")
+            for msg in check_mechanism(entries):
+                errors.append(f"[{name}] {msg}")
+
+    if baseline_notes:
+        print(f"BASELINE (documented, non-fatal): {len(baseline_notes)} line(s)")
+        for line in baseline_notes:
+            print(line)
+        print()
 
     if not errors:
-        print(f"OK: {len(all_entries)} trial entries, 0 collisions.")
+        print(
+            f"OK: {len(all_entries)} trial entries, 0 new collisions ({len(BASELINE)} baseline exceptions unchanged)."
+        )
         sys.exit(0)
 
     print(f"PROBLEMS FOUND: {len(errors)} line(s)\n", file=sys.stderr)
