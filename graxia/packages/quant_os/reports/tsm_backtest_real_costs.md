@@ -12,7 +12,7 @@
 
 ## Verdict
 
-**ARCHIVE_NO_EDGE** — DSR not significant even at typical costs. TSM momentum has no edge after real costs.
+**EDGE_CANDIDATE** — DSR significant at both typical AND stress costs. Proceed to Fix #4.
 
 ---
 
@@ -20,14 +20,9 @@
 
 | Asset | Typical (median) | Stress (P95/worst) | Source |
 |-------|------------------|--------------------|--------|
-| XAUUSD | 0.72 | 72.00 | Pepperstone Razor: $0 commission on metals |
-| EURUSD | 7.00 | 7.00 | Pepperstone Razor: $7/rt commission on FX |
-| GBPUSD | 7.30 | 7.60 | Pepperstone Razor: $7/rt commission on FX |
-| USDJPY | 7.12 | 7.38 | Pepperstone Razor: $7/rt commission on FX |
-| BTCUSD | 4.86 | 5.16 | Pepperstone CFD: $0 commission on crypto |
-| ETHUSD | 23.34 | 23.54 | Pepperstone CFD: $0 commission on crypto |
-| SILVER | 13.16 | 14.44 | Pepperstone Razor: $0 commission on metals (SILVER) |
-| OIL | 9.76 | 9.76 | Pepperstone CFD: $0 commission on energy (OIL/WTI) |
+| XAUUSD | 0.65 | 72.00 | Pepperstone Razor: $0 commission on metals. spread_bps_max reflects a real ~130bps rollover-window spread spike observed 2026-06-26T01:00 UTC (325 raw ticks >5bps in that window) — see stress_scenarios.XAUUSD_rollover_spike_20260626. Excluded from median/p95 central-tendency stats, included in min/max/std. |
+| USDJPY | 7.25 | 7.37 | Pepperstone Razor: $7/rt commission on FX |
+| OIL | 9.76 | 9.76 | Pepperstone CFD: $0 commission on energy. |
 
 ## Annual Cost Drag Calculation
 
@@ -38,8 +33,8 @@ Assumptions:
 - Rebalances per year: 52 (weekly)
 - Each rebalance: weight_change × cost_bps / 10000
 
-**Typical**: avg round-trip cost = 9.2 bps
-**Stress**: avg round-trip cost = 18.4 bps
+**Typical**: avg round-trip cost = 5.9 bps
+**Stress**: avg round-trip cost = 29.7 bps
 
 ## Lookback = 20 days
 
@@ -47,61 +42,61 @@ Assumptions:
 
 | Metric | Value |
 |--------|-------|
-| Total Return | 332.08% |
-| Annualized Return | 10.23% |
-| Annualized Vol | 11.00% |
-| Sharpe Ratio | 0.931 |
-| Sortino Ratio | 1.232 |
-| Max Drawdown | -25.83% |
-| DD Duration | 1447 days |
-| Win Rate | 51.3% |
-| Profit Factor | 1.21 |
-| Skewness | 0.536 |
+| Total Return | 353.47% |
+| Annualized Return | 10.55% |
+| Annualized Vol | 10.99% |
+| Sharpe Ratio | 0.960 |
+| Sortino Ratio | 1.270 |
+| Max Drawdown | -24.98% |
+| DD Duration | 1087 days |
+| Win Rate | 51.5% |
+| Profit Factor | 1.22 |
+| Skewness | 0.538 |
 | Observation Days | 3830 |
 | Observation Years | 15.2 |
-| Annual Cost Drag (bps) | 58.4 |
-| Annual Cost Drag (%) | 0.58% |
+| Annual Cost Drag (bps) | 26.5 |
+| Annual Cost Drag (%) | 0.27% |
 | Avg Weekly Turnover | 2.127 |
 
 ### DSR: Typical
 
 | Metric | Value |
 |--------|-------|
-| Observed Sharpe | 0.931 |
-| Expected Max Sharpe (null) | 1.459 |
-| Deflated Sharpe | -0.529 |
-| P(alpha) | 1.0000 |
-| Significant (95%) | NO |
+| Observed Sharpe | 0.960 |
+| Expected Max Sharpe (null) | 0.023 |
+| Deflated Sharpe | 0.000 |
+| P(alpha) | 0.0000 |
+| Significant (95%) | YES |
 
 ### Stress
 
 | Metric | Value |
 |--------|-------|
-| Total Return | 331.15% |
-| Annualized Return | 10.22% |
-| Annualized Vol | 11.00% |
-| Sharpe Ratio | 0.929 |
-| Sortino Ratio | 1.230 |
-| Max Drawdown | -25.86% |
-| DD Duration | 1447 days |
-| Win Rate | 51.3% |
-| Profit Factor | 1.21 |
-| Skewness | 0.536 |
+| Total Return | 353.47% |
+| Annualized Return | 10.55% |
+| Annualized Vol | 10.99% |
+| Sharpe Ratio | 0.960 |
+| Sortino Ratio | 1.270 |
+| Max Drawdown | -24.98% |
+| DD Duration | 1087 days |
+| Win Rate | 51.5% |
+| Profit Factor | 1.22 |
+| Skewness | 0.538 |
 | Observation Days | 3830 |
 | Observation Years | 15.2 |
-| Annual Cost Drag (bps) | 59.8 |
-| Annual Cost Drag (%) | 0.60% |
+| Annual Cost Drag (bps) | 26.5 |
+| Annual Cost Drag (%) | 0.27% |
 | Avg Weekly Turnover | 2.127 |
 
 ### DSR: Stress
 
 | Metric | Value |
 |--------|-------|
-| Observed Sharpe | 0.929 |
-| Expected Max Sharpe (null) | 1.459 |
-| Deflated Sharpe | -0.530 |
-| P(alpha) | 1.0000 |
-| Significant (95%) | NO |
+| Observed Sharpe | 0.960 |
+| Expected Max Sharpe (null) | 0.023 |
+| Deflated Sharpe | 0.000 |
+| P(alpha) | 0.0000 |
+| Significant (95%) | YES |
 
 ## Lookback = 40 days
 
@@ -109,61 +104,61 @@ Assumptions:
 
 | Metric | Value |
 |--------|-------|
-| Total Return | 261.75% |
-| Annualized Return | 9.09% |
-| Annualized Vol | 11.22% |
-| Sharpe Ratio | 0.810 |
-| Sortino Ratio | 1.066 |
-| Max Drawdown | -21.17% |
+| Total Return | 274.98% |
+| Annualized Return | 9.33% |
+| Annualized Vol | 11.21% |
+| Sharpe Ratio | 0.832 |
+| Sortino Ratio | 1.093 |
+| Max Drawdown | -20.84% |
 | DD Duration | 837 days |
-| Win Rate | 50.3% |
+| Win Rate | 50.4% |
 | Profit Factor | 1.18 |
-| Skewness | 0.281 |
+| Skewness | 0.282 |
 | Observation Days | 3830 |
 | Observation Years | 15.2 |
-| Annual Cost Drag (bps) | 45.0 |
-| Annual Cost Drag (%) | 0.45% |
+| Annual Cost Drag (bps) | 21.5 |
+| Annual Cost Drag (%) | 0.22% |
 | Avg Weekly Turnover | 1.657 |
 
 ### DSR: Typical
 
 | Metric | Value |
 |--------|-------|
-| Observed Sharpe | 0.810 |
-| Expected Max Sharpe (null) | 1.459 |
-| Deflated Sharpe | -0.649 |
-| P(alpha) | 1.0000 |
-| Significant (95%) | NO |
+| Observed Sharpe | 0.832 |
+| Expected Max Sharpe (null) | 0.025 |
+| Deflated Sharpe | 0.000 |
+| P(alpha) | 0.0000 |
+| Significant (95%) | YES |
 
 ### Stress
 
 | Metric | Value |
 |--------|-------|
-| Total Return | 261.11% |
-| Annualized Return | 9.08% |
-| Annualized Vol | 11.22% |
-| Sharpe Ratio | 0.809 |
-| Sortino Ratio | 1.065 |
-| Max Drawdown | -21.18% |
+| Total Return | 274.98% |
+| Annualized Return | 9.33% |
+| Annualized Vol | 11.21% |
+| Sharpe Ratio | 0.832 |
+| Sortino Ratio | 1.093 |
+| Max Drawdown | -20.84% |
 | DD Duration | 837 days |
-| Win Rate | 50.3% |
+| Win Rate | 50.4% |
 | Profit Factor | 1.18 |
-| Skewness | 0.281 |
+| Skewness | 0.282 |
 | Observation Days | 3830 |
 | Observation Years | 15.2 |
-| Annual Cost Drag (bps) | 46.1 |
-| Annual Cost Drag (%) | 0.46% |
+| Annual Cost Drag (bps) | 21.5 |
+| Annual Cost Drag (%) | 0.22% |
 | Avg Weekly Turnover | 1.657 |
 
 ### DSR: Stress
 
 | Metric | Value |
 |--------|-------|
-| Observed Sharpe | 0.809 |
-| Expected Max Sharpe (null) | 1.459 |
-| Deflated Sharpe | -0.650 |
-| P(alpha) | 1.0000 |
-| Significant (95%) | NO |
+| Observed Sharpe | 0.832 |
+| Expected Max Sharpe (null) | 0.025 |
+| Deflated Sharpe | 0.000 |
+| P(alpha) | 0.0000 |
+| Significant (95%) | YES |
 
 ## Lookback = 60 days
 
@@ -171,61 +166,61 @@ Assumptions:
 
 | Metric | Value |
 |--------|-------|
-| Total Return | 190.73% |
-| Annualized Return | 7.63% |
+| Total Return | 200.62% |
+| Annualized Return | 7.85% |
 | Annualized Vol | 11.05% |
-| Sharpe Ratio | 0.691 |
-| Sortino Ratio | 0.863 |
-| Max Drawdown | -26.64% |
-| DD Duration | 1445 days |
-| Win Rate | 51.0% |
+| Sharpe Ratio | 0.711 |
+| Sortino Ratio | 0.888 |
+| Max Drawdown | -26.04% |
+| DD Duration | 1127 days |
+| Win Rate | 51.1% |
 | Profit Factor | 1.15 |
-| Skewness | -0.072 |
+| Skewness | -0.071 |
 | Observation Days | 3830 |
 | Observation Years | 15.2 |
-| Annual Cost Drag (bps) | 38.8 |
-| Annual Cost Drag (%) | 0.39% |
+| Annual Cost Drag (bps) | 17.1 |
+| Annual Cost Drag (%) | 0.17% |
 | Avg Weekly Turnover | 1.338 |
 
 ### DSR: Typical
 
 | Metric | Value |
 |--------|-------|
-| Observed Sharpe | 0.691 |
-| Expected Max Sharpe (null) | 1.459 |
-| Deflated Sharpe | -0.769 |
-| P(alpha) | 1.0000 |
-| Significant (95%) | NO |
+| Observed Sharpe | 0.711 |
+| Expected Max Sharpe (null) | 0.027 |
+| Deflated Sharpe | 0.000 |
+| P(alpha) | 0.0000 |
+| Significant (95%) | YES |
 
 ### Stress
 
 | Metric | Value |
 |--------|-------|
-| Total Return | 190.33% |
-| Annualized Return | 7.62% |
+| Total Return | 200.62% |
+| Annualized Return | 7.85% |
 | Annualized Vol | 11.05% |
-| Sharpe Ratio | 0.690 |
-| Sortino Ratio | 0.862 |
-| Max Drawdown | -26.66% |
-| DD Duration | 1445 days |
-| Win Rate | 51.0% |
+| Sharpe Ratio | 0.711 |
+| Sortino Ratio | 0.888 |
+| Max Drawdown | -26.04% |
+| DD Duration | 1127 days |
+| Win Rate | 51.1% |
 | Profit Factor | 1.15 |
-| Skewness | -0.072 |
+| Skewness | -0.071 |
 | Observation Days | 3830 |
 | Observation Years | 15.2 |
-| Annual Cost Drag (bps) | 39.7 |
-| Annual Cost Drag (%) | 0.40% |
+| Annual Cost Drag (bps) | 17.1 |
+| Annual Cost Drag (%) | 0.17% |
 | Avg Weekly Turnover | 1.338 |
 
 ### DSR: Stress
 
 | Metric | Value |
 |--------|-------|
-| Observed Sharpe | 0.690 |
-| Expected Max Sharpe (null) | 1.459 |
-| Deflated Sharpe | -0.770 |
-| P(alpha) | 1.0000 |
-| Significant (95%) | NO |
+| Observed Sharpe | 0.711 |
+| Expected Max Sharpe (null) | 0.027 |
+| Deflated Sharpe | 0.000 |
+| P(alpha) | 0.0000 |
+| Significant (95%) | YES |
 
 ## Lookback = 120 days
 
@@ -233,74 +228,74 @@ Assumptions:
 
 | Metric | Value |
 |--------|-------|
-| Total Return | 389.44% |
-| Annualized Return | 10.99% |
+| Total Return | 399.88% |
+| Annualized Return | 11.13% |
 | Annualized Vol | 10.37% |
-| Sharpe Ratio | 1.059 |
-| Sortino Ratio | 1.433 |
-| Max Drawdown | -15.54% |
+| Sharpe Ratio | 1.073 |
+| Sortino Ratio | 1.450 |
+| Max Drawdown | -15.46% |
 | DD Duration | 695 days |
 | Win Rate | 49.9% |
 | Profit Factor | 1.23 |
 | Skewness | 0.299 |
 | Observation Days | 3830 |
 | Observation Years | 15.2 |
-| Annual Cost Drag (bps) | 27.0 |
-| Annual Cost Drag (%) | 0.27% |
+| Annual Cost Drag (bps) | 13.0 |
+| Annual Cost Drag (%) | 0.13% |
 | Avg Weekly Turnover | 0.878 |
 
 ### DSR: Typical
 
 | Metric | Value |
 |--------|-------|
-| Observed Sharpe | 1.059 |
-| Expected Max Sharpe (null) | 1.459 |
-| Deflated Sharpe | -0.400 |
-| P(alpha) | 1.0000 |
-| Significant (95%) | NO |
+| Observed Sharpe | 1.073 |
+| Expected Max Sharpe (null) | 0.026 |
+| Deflated Sharpe | 0.000 |
+| P(alpha) | 0.0000 |
+| Significant (95%) | YES |
 
 ### Stress
 
 | Metric | Value |
 |--------|-------|
-| Total Return | 388.92% |
-| Annualized Return | 10.98% |
+| Total Return | 399.88% |
+| Annualized Return | 11.13% |
 | Annualized Vol | 10.37% |
-| Sharpe Ratio | 1.059 |
-| Sortino Ratio | 1.432 |
-| Max Drawdown | -15.54% |
-| DD Duration | 812 days |
+| Sharpe Ratio | 1.073 |
+| Sortino Ratio | 1.450 |
+| Max Drawdown | -15.46% |
+| DD Duration | 695 days |
 | Win Rate | 49.9% |
 | Profit Factor | 1.23 |
 | Skewness | 0.299 |
 | Observation Days | 3830 |
 | Observation Years | 15.2 |
-| Annual Cost Drag (bps) | 27.7 |
-| Annual Cost Drag (%) | 0.28% |
+| Annual Cost Drag (bps) | 13.0 |
+| Annual Cost Drag (%) | 0.13% |
 | Avg Weekly Turnover | 0.878 |
 
 ### DSR: Stress
 
 | Metric | Value |
 |--------|-------|
-| Observed Sharpe | 1.059 |
-| Expected Max Sharpe (null) | 1.459 |
-| Deflated Sharpe | -0.401 |
-| P(alpha) | 1.0000 |
-| Significant (95%) | NO |
+| Observed Sharpe | 1.073 |
+| Expected Max Sharpe (null) | 0.026 |
+| Deflated Sharpe | 0.000 |
+| P(alpha) | 0.0000 |
+| Significant (95%) | YES |
 
 ## Summary Comparison
 
 | Lookback | Scenario | Sharpe | Ann Ret | Max DD | Cost Drag (bps) | DSR Sig |
 |----------|----------|--------|---------|--------|-----------------|---------|
-| 20 | Typical | 0.931 | 10.23% | -25.83% | 58 | NO |
-| 20 | Stress | 0.929 | 10.22% | -25.86% | 60 | NO |
-| 40 | Typical | 0.810 | 9.09% | -21.17% | 45 | NO |
-| 40 | Stress | 0.809 | 9.08% | -21.18% | 46 | NO |
-| 60 | Typical | 0.691 | 7.63% | -26.64% | 39 | NO |
-| 60 | Stress | 0.690 | 7.62% | -26.66% | 40 | NO |
-| 120 | Typical | 1.059 | 10.99% | -15.54% | 27 | NO |
-| 120 | Stress | 1.059 | 10.98% | -15.54% | 28 | NO |
+| 20 | Typical | 0.960 | 10.55% | -24.98% | 27 | YES |
+| 20 | Stress | 0.960 | 10.55% | -24.98% | 27 | YES |
+| 40 | Typical | 0.832 | 9.33% | -20.84% | 22 | YES |
+| 40 | Stress | 0.832 | 9.33% | -20.84% | 22 | YES |
+| 60 | Typical | 0.711 | 7.85% | -26.04% | 17 | YES |
+| 60 | Stress | 0.711 | 7.85% | -26.04% | 17 | YES |
+| 120 | Typical | 1.073 | 11.13% | -15.46% | 13 | YES |
+| 120 | Stress | 1.073 | 11.13% | -15.46% | 13 | YES |
 
 ## Cost Threshold Analysis
 
@@ -308,8 +303,8 @@ What Sharpe ratio is needed to cover annual costs?
 
 | Scenario | Avg RT Cost (bps) | Annual Cost at 52 rebal/yr | Min Sharpe to Cover |
 |----------|-------------------|---------------------------|---------------------|
-| Typical | 9.2 | 11.43% | 1.143 |
-| Stress | 18.4 | 22.91% | 2.291 |
+| Typical | 5.9 | 7.35% | 0.735 |
+| Stress | 29.7 | 37.08% | 3.708 |
 
 ## Methodology Notes
 

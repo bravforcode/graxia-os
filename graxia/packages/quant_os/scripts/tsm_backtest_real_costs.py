@@ -30,12 +30,13 @@ PROJECT_ROOT = SCRIPT_DIR.parent
 BASE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-import importlib.util
+import importlib.util  # noqa: E402
 
-from core.returns import compute_returns
+from core.returns import compute_returns  # noqa: E402
 
 # Import deflated_sharpe directly to avoid validation/__init__.py dependency chain
 _spec = importlib.util.spec_from_file_location("deflated_sharpe", BASE / "validation" / "deflated_sharpe.py")
+assert _spec is not None and _spec.loader is not None
 _mod = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_mod)
 deflated_sharpe_ratio = _mod.deflated_sharpe_ratio
@@ -75,8 +76,8 @@ ASSET_COST_MAP = {
 
 def load_costs() -> dict:
     path = BASE / "config" / "cost_calibration.json"
-    with open(path) as f:
-        return json.load(f)
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)  # type: ignore[no-any-return]
 
 
 def build_cost_scenarios(cost_data: dict) -> dict:
@@ -366,7 +367,7 @@ def run_scenario(
     return m, dsr
 
 
-def format_metrics_table(metrics: dict, label: str) -> str:
+def format_metrics_table(metrics: Metrics, label: str) -> str:
     lines = [f"### {label}\n"]
     lines.append("| Metric | Value |")
     lines.append("|--------|-------|")
