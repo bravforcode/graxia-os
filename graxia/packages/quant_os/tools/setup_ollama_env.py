@@ -7,7 +7,7 @@ Then restart Ollama.
 Techniques applied:
   1. OLLAMA_FLASH_ATTENTION=1 — faster attention computation
   2. OLLAMA_KV_CACHE_TYPE=q8_0 — 50% less KV cache memory
-  3. OLLAMA_NUM_PARALLEL=1 — no parallel request overhead
+  3. OLLAMA_NUM_PARALLEL=2 — handle 2 concurrent requests
   4. OLLAMA_MAX_LOADED_MODELS=1 — single model in memory
 
 Usage:
@@ -24,7 +24,7 @@ import subprocess
 ENV_VARS = {
     "OLLAMA_FLASH_ATTENTION": "1",
     "OLLAMA_KV_CACHE_TYPE": "q8_0",
-    "OLLAMA_NUM_PARALLEL": "1",
+    "OLLAMA_NUM_PARALLEL": "2",
     "OLLAMA_MAX_LOADED_MODELS": "1",
 }
 

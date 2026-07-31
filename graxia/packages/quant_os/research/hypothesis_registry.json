@@ -17,7 +17,7 @@
     {
       "trial_number": 1001,
       "id": "RYDC-ARM-A",
-      "name": "Real-Yield Divergence Continuation (RYDC) â€” Arm A",
+      "name": "Real-Yield Divergence Continuation (RYDC) \u00e2\u20ac\u201d Arm A",
       "status": "REJECTED",
       "registered_at": "2026-07-12",
       "result_at": "2026-07-12",
@@ -40,7 +40,7 @@
     {
       "trial_number": 1003,
       "id": "CAM-DXY-XAUUSD",
-      "name": "Cross-Asset Momentum (CAM) â€” DXY â†’ XAUUSD lead-lag",
+      "name": "Cross-Asset Momentum (CAM) \u00e2\u20ac\u201d DXY \u00e2\u2020\u2019 XAUUSD lead-lag",
       "status": "REJECTED",
       "registered_at": "2026-07-13",
       "result_at": "2026-07-13",
@@ -76,7 +76,7 @@
     {
       "trial_number": 1004,
       "id": "SP-SESSION-CONDITIONAL",
-      "name": "Session Pattern (SP) â€” Volatility clustering by FX session",
+      "name": "Session Pattern (SP) \u00e2\u20ac\u201d Volatility clustering by FX session",
       "status": "REJECTED",
       "registered_at": "2026-07-13",
       "result_at": "2026-07-13",
@@ -116,7 +116,7 @@
     {
       "trial_number": 1005,
       "id": "MRM-REGIME-CONDITIONAL",
-      "name": "Macro Regime Mean-Reversion (MRM) â€” DFII10 regime-conditional",
+      "name": "Macro Regime Mean-Reversion (MRM) \u00e2\u20ac\u201d DFII10 regime-conditional",
       "status": "REJECTED",
       "registered_at": "2026-07-13",
       "result_at": "2026-07-13",
@@ -350,12 +350,12 @@
         "verdict": "REJECT"
       },
       "evidence": "reports/edge_search_untested_20260720.json",
-      "notes": "0 trades generated. CRITICAL: MISSING_SL incidents â€” signals without stop-loss."
+      "notes": "0 trades generated. CRITICAL: MISSING_SL incidents \u00e2\u20ac\u201d signals without stop-loss."
     },
     {
       "trial_number": 1028,
       "id": "WS-A-TSMOM-MOP2012",
-      "name": "Time Series Momentum (Moskowitz-Ooi-Pedersen 2012) â€” pure time-series replication",
+      "name": "Time Series Momentum (Moskowitz-Ooi-Pedersen 2012) \u00e2\u20ac\u201d pure time-series replication",
       "category": "replicate_published_edge",
       "status": "REJECTED",
       "registered_at": "2026-07-29",
@@ -406,7 +406,7 @@
       "stopping_rule": "Single hypothesis. If DSR p>=0.05 -> REJECT and stop. No tuning, no holdout peek.",
       "data_hygiene": {
         "status": "RESOLVED 2026-07-29 (BLOCK cleared, pre-reg stays PRE-REGISTERED until run)",
-        "finding": "Raw *_D1.csv contain synthetic pre-inception backfill (EURUSD 1971, NAS100 1938, XAUUSD 1793) — flat O=H=L=C, placeholder volume. Core load_csv_data reads whole file with no date slice.",
+        "finding": "Raw *_D1.csv contain synthetic pre-inception backfill (EURUSD 1971, NAS100 1938, XAUUSD 1793) \u2014 flat O=H=L=C, placeholder volume. Core load_csv_data reads whole file with no date slice.",
         "backfill_rows_excluded": {
           "XAUUSD": 1115,
           "XAGUSD": 2558,
@@ -529,7 +529,7 @@
       "trial_number": 1031,
       "id": "SENTIMENT-PRICE-001",
       "name": "LLM News Sentiment Price Prediction",
-      "status": "PRE-REGISTERED",
+      "status": "EXECUTED_EXPLORATORY",
       "registered_at": "2026-07-31",
       "instrument": "Multi-ticker (US equities, crypto, commodities)",
       "pre_registration_doc": "reports/preregistration_1031_sentiment_price.md",
@@ -538,9 +538,28 @@
       "hypothesis": "Sentiment direction matches return direction at p < 0.000049 (Bonferroni-corrected)",
       "data_source": "DuckDB llm_news_sentiment table + Yahoo Finance prices",
       "minimum_samples": 100,
-      "significance_bar": 0.000049,
+      "significance_bar": 4.9e-05,
       "effect_size_threshold": 0.2,
-      "result_summary": null
+      "result_summary": null,
+      "results": {
+        "total_pairs": 65,
+        "non_neutral_pairs": 53,
+        "hits": 37,
+        "hit_rate": 0.6981,
+        "cohens_d": 1.0736,
+        "z_score": 2.8846,
+        "p_value": 0.00391946,
+        "significant_bonferroni": false,
+        "significant_uncorrected": true,
+        "meets_effect_size": true,
+        "meets_hit_rate": true
+      },
+      "executed_at": "2026-08-01T03:39:22.072130",
+      "report_path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\reports\\sentiment_backtest_20260801_033922.txt",
+      "pre_registration_deviations": [
+        "Only 65 pairs (pre-registration requires >= 100)",
+        "T+0 (same-day) price matching used instead of pre-registered T+1 \u2014 see get_sentiment_price_pairs(); result is exploratory, not confirmatory"
+      ]
     }
   ]
 }

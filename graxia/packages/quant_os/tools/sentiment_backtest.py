@@ -1,6 +1,6 @@
 """
 Sentiment-Price Backtest — Auto-runs when 100+ sentiment-price pairs exist
-Pre-registered as Trial #1030 (Bonferroni-corrected α = 0.000025)
+Pre-registered as Trial #1031 (Bonferroni-corrected α = 0.000049)
 
 Usage:
     python tools/sentiment_backtest.py              # Run if enough data
@@ -12,6 +12,7 @@ import sys
 
 sys.stdout.reconfigure(encoding="utf-8")
 import json
+import math
 from datetime import datetime
 from pathlib import Path
 
@@ -22,11 +23,12 @@ BASE_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(BASE_DIR / "data_pipeline"))
 from storage.duckdb_store import DuckDBStore
 
-# Pre-registered parameters (Trial #1030)
+# Pre-registered parameters (Trial #1031)
 MIN_PAIRS = 100
-ALPHA_BONFERRONI = 0.000025  # 0.05 / 2001 prior trials
+ALPHA_BONFERRONI = 0.000049  # 0.05 / 1029 prior trials (pre-registration doc: 1030 = 1029 prior + current)
 MIN_EFFECT_SIZE = 0.2  # Cohen's d
 MIN_HIT_RATE = 0.55  # Direction consistency
+MAX_PAIR_GAP_DAYS = 5  # reject baseline/outcome pairs further apart than a long weekend
 
 REPORTS_DIR = BASE_DIR / "reports"
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -72,19 +74,45 @@ def get_sentiment_price_pairs(duck: DuckDBStore, days: int = 30) -> pd.DataFrame
 
             # Find the sentiment timestamp
             sentiment_time = pd.to_datetime(row["analyzed_at"])
+            sentiment_date = sentiment_time.date()
 
-            # Find the next price point after sentiment
-            future_prices = price_data[price_data["timestamp"] > sentiment_time]
+            # T+1 matching (pre-registered): baseline = close on or before the
+            # sentiment date; outcome = first close strictly after it (next
+            # trading day). Non-trading days have no rows, so weekend/holiday
+            # sentiment naturally lands on the next bar (e.g., Fri -> Mon).
+            price_data["date"] = pd.to_datetime(price_data["timestamp"]).dt.date
+
+            # Baseline: last price on or before sentiment date (close of T)
+            past_prices = price_data[price_data["date"] <= sentiment_date]
+
+            # Outcome: first price strictly after sentiment date (close of T+1)
+            future_prices = price_data[price_data["date"] > sentiment_date]
             if len(future_prices) == 0:
                 continue
 
-            # Get the price at sentiment time (or closest before)
-            past_prices = price_data[price_data["timestamp"] <= sentiment_time]
-            if len(past_prices) == 0:
+            if len(past_prices) > 0:
+                baseline_row = past_prices.iloc[-1]
+                outcome_row = future_prices.iloc[0]
+            else:
+                # No past prices — use first two prices as baseline/outcome
+                if len(future_prices) < 2:
+                    continue
+                baseline_row = future_prices.iloc[0]
+                outcome_row = future_prices.iloc[1]
+                # Anchor to sentiment date: if price history only starts weeks
+                # later (obscure/typo'd ticker), this pair is disconnected from
+                # the sentiment event even if baseline/outcome are adjacent.
+                if (baseline_row["date"] - sentiment_date).days > MAX_PAIR_GAP_DAYS:
+                    continue
+
+            # Reject pairs where baseline/outcome are far apart (stale price
+            # history, data gaps) — both branches above must stay within this
+            # bound, not just the has-past-price case.
+            if (outcome_row["date"] - baseline_row["date"]).days > MAX_PAIR_GAP_DAYS:
                 continue
 
-            price_at_sentiment = past_prices.iloc[-1]["close"]
-            price_next_day = future_prices.iloc[0]["close"]
+            price_at_sentiment = baseline_row["close"]
+            price_next_day = outcome_row["close"]
 
             # Calculate return
             ret = (price_next_day - price_at_sentiment) / price_at_sentiment
@@ -155,16 +183,9 @@ def compute_hit_rate(pairs_df: pd.DataFrame) -> dict:
     # Simple z-test for hit rate vs 50%
     se = np.sqrt(0.5 * 0.5 / total)
     z_score = (hit_rate - 0.5) / se if se > 0 else 0
-    p_value = 2 * (1 - np.abs(np.random.standard_normal()) if False else 0)  # placeholder
 
-    # Use scipy if available, otherwise approximate
-    try:
-        from scipy import stats
-
-        p_value = 2 * (1 - stats.norm.cdf(abs(z_score)))
-    except ImportError:
-        # Normal approximation
-        p_value = 2 * np.exp(-0.5 * z_score**2) / (np.sqrt(2 * np.pi) * abs(z_score)) if z_score != 0 else 1
+    # Exact two-tailed normal p-value (stdlib, no scipy dependency)
+    p_value = math.erfc(abs(z_score) / math.sqrt(2))
 
     return {
         "total_pairs": len(pairs_df),
@@ -174,10 +195,10 @@ def compute_hit_rate(pairs_df: pd.DataFrame) -> dict:
         "cohens_d": round(cohens_d, 4),
         "z_score": round(z_score, 4),
         "p_value": round(p_value, 8),
-        "significant_bonferroni": p_value < ALPHA_BONFERRONI,
-        "significant_uncorrected": p_value < 0.05,
-        "meets_effect_size": abs(cohens_d) >= MIN_EFFECT_SIZE,
-        "meets_hit_rate": hit_rate >= MIN_HIT_RATE,
+        "significant_bonferroni": bool(p_value < ALPHA_BONFERRONI),
+        "significant_uncorrected": bool(p_value < 0.05),
+        "meets_effect_size": bool(abs(cohens_d) >= MIN_EFFECT_SIZE),
+        "meets_hit_rate": bool(hit_rate >= MIN_HIT_RATE),
     }
 
 
@@ -186,7 +207,7 @@ def generate_report(pairs_df: pd.DataFrame, stats: dict) -> str:
     report = []
     report.append("=" * 60)
     report.append("SENTIMENT-PRICE BACKTEST RESULTS")
-    report.append("Trial #1030 (Pre-registered)")
+    report.append("Trial #1031 (Pre-registered)")
     report.append(f"Generated: {datetime.now().isoformat()}")
     report.append("=" * 60)
     report.append("")
@@ -240,6 +261,25 @@ def generate_report(pairs_df: pd.DataFrame, stats: dict) -> str:
     return "\n".join(report)
 
 
+def build_deviations(pair_count: int, stats: dict) -> list[str]:
+    """Collect pre-registration deviations for the registry record.
+
+    Uses the actual pair count (pair_count), not stats.get("total_pairs") —
+    compute_hit_rate returns an {"error": ...} dict without a "total_pairs"
+    key when non-neutral pairs < 10, which would otherwise misreport "0 pairs".
+
+    T+1 matching is now the pre-registered behavior, so no T+0 deviation is
+    appended here — a compliant run produces an empty list and the registry
+    record is marked "EXECUTED".
+    """
+    deviations = []
+    if pair_count < MIN_PAIRS:
+        deviations.append(f"Only {pair_count} pairs (pre-registration requires >= {MIN_PAIRS})")
+    if "error" in stats:
+        deviations.append(f"compute_hit_rate error: {stats['error']}")
+    return deviations
+
+
 def main():
     import argparse
 
@@ -284,13 +324,19 @@ def main():
     print(f"\nReport saved: {report_path}")
 
     # Update hypothesis registry
+    deviations = build_deviations(len(pairs_df), stats)
+
     try:
         registry_path = BASE_DIR / "research" / "hypothesis_registry.json"
         if registry_path.exists():
             registry = json.loads(registry_path.read_text(encoding="utf-8"))
             for h in registry.get("hypotheses", []):
-                if h.get("trial_number") == 1030:
-                    h["status"] = "EXECUTED"
+                if h.get("trial_number") == 1031:
+                    # T+1 matching is now active (pre-registered); exploratory
+                    # only when genuine deviations exist (pairs < MIN_PAIRS or
+                    # compute_hit_rate error).
+                    h["status"] = "EXECUTED" if not deviations else "EXECUTED_EXPLORATORY"
+                    h["pre_registration_deviations"] = deviations
                     h["results"] = stats
                     h["executed_at"] = datetime.now().isoformat()
                     h["report_path"] = str(report_path)
