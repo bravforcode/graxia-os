@@ -7,7 +7,7 @@ unique across ALL ledgers/registries combined** — see
 
 | Direction / Registry        | Documented range | Actual on-disk range (verified 2026-07-31) | Files                                                      |
 |-----------------------------|-------------------|------------------------------------------------|------------------------------------------------------------|
-| Main                        | 1000–1999         | 1001–1029, **plus a stray 2002** (see below)   | `hypothesis_registry.json`, `trial_ledger.json`            |
+| Main                        | 1000–1999         | 1001–1030                               | `hypothesis_registry.json`, `trial_ledger.json`            |
 | Direction B                 | 2000–2999         | **3001–3008** (never actually used 2000–2999)   | `hypothesis_registry_b.json`, `trial_ledger_b.json`        |
 | Direction C                 | 3000–3999         | 3001–3003 (registry and ledger, reconciled 2026-07-31) | `hypothesis_registry_c.json`, `trial_ledger_c.json`        |
 | Reserved (future directions)| 4000+            | Direction D (funding-rate arb) correctly uses 4001+ | allocate the next free 1000-block and record it here      |
@@ -57,10 +57,8 @@ numbering at 3001 from creation and this was not caught until 2026-07-31.
 
 **2. Main registry has a stray Trial #2002** (`hypothesis_registry.json`,
 `cumulative_trial_count_at_creation: 2002`, the LLM news-sentiment
-pre-registration) sitting inside Main's 1000–1999 block. This is on hold —
-do not renumber or relocate it until the Direction B/C collision above is
-resolved, since any target range for #2002 depends on knowing which ranges
-are actually free.
+pre-registration) sitting inside Main's 1000–1999 block. **FIXED (2026-07-31):**
+renumbered to #1030 (next available in Main's range).
 
 **Superseded (2026-07-31): the note this replaced described Direction C
 reusing 2002/2003/2004 against Main, described as already addressed by a

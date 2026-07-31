@@ -1,8 +1,8 @@
 {
   "$schema": "research/hypothesis_registry.schema.json",
   "registry_version": "1.0",
-  "last_updated": "2026-07-30",
-  "cumulative_trial_count_at_creation": 2001,
+  "last_updated": "2026-07-31",
+  "cumulative_trial_count_at_creation": 2002,
   "stopping_rule_doc": "reports/stopping_rule_2026_07_12.md",
   "sacred_holdout_path": "data/sacred_holdout/holdout.csv",
   "sacred_holdout_status": "LOCKED",
@@ -524,6 +524,23 @@
         "gates_total": 5,
         "conclusion": "Single-asset dependency on NAS100. Walk-forward OOS Sharpe=0.0. dk_t=0.33 << 2.0."
       }
+    },
+    {
+      "trial_number": 1030,
+      "id": "SENTIMENT-PRICE-001",
+      "name": "LLM News Sentiment Price Prediction",
+      "status": "PRE-REGISTERED",
+      "registered_at": "2026-07-31",
+      "instrument": "Multi-ticker (US equities, crypto, commodities)",
+      "pre_registration_doc": "reports/preregistration_1030_sentiment_price.md",
+      "model": "qwen3.5:9b",
+      "mechanism": "LLM sentiment from news headlines predicts next-day price direction",
+      "hypothesis": "Sentiment direction matches return direction at p < 0.000025 (Bonferroni-corrected)",
+      "data_source": "DuckDB llm_news_sentiment table + Yahoo Finance prices",
+      "minimum_samples": 100,
+      "significance_bar": 0.000025,
+      "effect_size_threshold": 0.2,
+      "result_summary": null
     }
   ]
 }

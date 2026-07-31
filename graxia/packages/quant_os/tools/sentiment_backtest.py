@@ -1,6 +1,6 @@
 """
 Sentiment-Price Backtest — Auto-runs when 100+ sentiment-price pairs exist
-Pre-registered as Trial #2002 (Bonferroni-corrected α = 0.000025)
+Pre-registered as Trial #1030 (Bonferroni-corrected α = 0.000025)
 
 Usage:
     python tools/sentiment_backtest.py              # Run if enough data
@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(BASE_DIR / "data_pipeline"))
 from storage.duckdb_store import DuckDBStore
 
-# Pre-registered parameters (Trial #2002)
+# Pre-registered parameters (Trial #1030)
 MIN_PAIRS = 100
 ALPHA_BONFERRONI = 0.000025  # 0.05 / 2001 prior trials
 MIN_EFFECT_SIZE = 0.2  # Cohen's d
@@ -186,7 +186,7 @@ def generate_report(pairs_df: pd.DataFrame, stats: dict) -> str:
     report = []
     report.append("=" * 60)
     report.append("SENTIMENT-PRICE BACKTEST RESULTS")
-    report.append("Trial #2002 (Pre-registered)")
+    report.append("Trial #1030 (Pre-registered)")
     report.append(f"Generated: {datetime.now().isoformat()}")
     report.append("=" * 60)
     report.append("")
@@ -289,7 +289,7 @@ def main():
         if registry_path.exists():
             registry = json.loads(registry_path.read_text(encoding="utf-8"))
             for h in registry.get("hypotheses", []):
-                if h.get("trial_number") == 2002:
+                if h.get("trial_number") == 1030:
                     h["status"] = "EXECUTED"
                     h["results"] = stats
                     h["executed_at"] = datetime.now().isoformat()
