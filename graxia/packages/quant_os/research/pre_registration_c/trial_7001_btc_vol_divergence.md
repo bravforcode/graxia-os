@@ -1,7 +1,7 @@
 # Hypothesis Pre-Registration — BTC Volume-Price Divergence
 
 **Status:** LOCKED — 2026-07-13
-**Trial number:** #2001 (Direction C, fresh family)
+**Trial number:** #7001 (Direction C, fresh family) — renumbered from #3001 2026-07-31, see TRIAL_ID_RANGES.md (also corrects a pre-existing stale "#2001" typo)
 **Direction:** C — Volume-Price Divergence in Crypto
 
 ---
