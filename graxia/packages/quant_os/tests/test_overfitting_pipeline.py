@@ -36,7 +36,9 @@ def test_full_pipeline_clean_strategy():
     assert dsr.observed_sharpe > 0
 
     # 3. MinBTL — should have enough data
-    btl = min_backtest_length(observed_sharpe=observed_sharpe, n_trials=20, current_observations=5000)
+    btl = min_backtest_length(
+        observed_sharpe=observed_sharpe, n_trials=20, sharpe_annualization_factor=1.0, current_observations=5000
+    )
     assert btl.min_observations > 0
 
     # 4. PBO — good OOS folds
@@ -237,9 +239,13 @@ def test_dsr_multiple_testing_adjustment():
 def test_min_btl_sufficient_insufficient():
     """MinBTL correctly identifies sufficient vs insufficient data."""
     # High Sharpe, few trials → should be sufficient with 5000 bars
-    s = min_backtest_length(observed_sharpe=3.0, n_trials=10, current_observations=5000)
+    s = min_backtest_length(
+        observed_sharpe=3.0, n_trials=10, sharpe_annualization_factor=1.0, current_observations=5000
+    )
     assert s.sufficient is True
 
     # Zero observations should always be insufficient
-    ns = min_backtest_length(observed_sharpe=3.0, n_trials=100000, current_observations=0)
+    ns = min_backtest_length(
+        observed_sharpe=3.0, n_trials=100000, sharpe_annualization_factor=1.0, current_observations=0
+    )
     assert ns.sufficient is False

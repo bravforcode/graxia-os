@@ -239,6 +239,9 @@ class OverfittingDetector:
         return min_backtest_length(
             observed_sharpe=sharpe,
             n_trials=n_trials,
+            sharpe_annualization_factor=math.sqrt(
+                252
+            ),  # sharpe is annualized (_compute_sharpe), data_length is raw bars
             skewness=skewness,
             kurtosis=kurtosis,
             current_observations=data_length,

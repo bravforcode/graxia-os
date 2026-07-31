@@ -132,6 +132,8 @@ class MinBTLResult:
 def min_backtest_length(
     observed_sharpe: float,
     n_trials: int,
+    *,
+    sharpe_annualization_factor: float,
     confidence_level: float = 0.95,
     skewness: float = 0.0,
     kurtosis: float = 3.0,
@@ -143,9 +145,22 @@ def min_backtest_length(
     an observed Sharpe ratio, compute the minimum T such that the Sharpe
     is unlikely to arise from selection bias alone.
 
+    Same unit requirement as deflated_sharpe_ratio(): the Lo (2002) sr_std
+    formula this is built on needs observed_sharpe and the resulting
+    min_observations count to be in the SAME units — i.e. the per-period
+    Sharpe computed directly from n_observations returns. Since callers
+    typically hold an annualized Sharpe, sharpe_annualization_factor
+    de-annualizes it internally (raw_sharpe = observed_sharpe / factor)
+    before it enters the sr_std math, so min_observations comes out
+    comparable to a raw (e.g. daily-bar) current_observations count.
+    Pass 1.0 only at unaudited call sites to exactly preserve prior
+    (possibly-incorrect) behavior — see MATH_CORRECTNESS_AUDIT.md.
+
     Args:
         observed_sharpe: Annualized Sharpe ratio from backtest
         n_trials: Number of strategy configurations tested
+        sharpe_annualization_factor: Divides observed_sharpe to recover the
+            raw per-period Sharpe (e.g. sqrt(252) for daily bars -> annual).
         confidence_level: Desired confidence (default 0.95)
         skewness: Return distribution skewness (default 0 = normal)
         kurtosis: Return distribution kurtosis (default 3 = normal)
@@ -168,7 +183,9 @@ def min_backtest_length(
             sufficient=(current_observations is not None and current_observations >= 1),
         )
 
-    if observed_sharpe <= 0:
+    raw_sharpe = observed_sharpe / sharpe_annualization_factor
+
+    if raw_sharpe <= 0:
         z_conf = _norm_ppf(confidence_level)
         return MinBTLResult(
             min_observations=sentinel_inf,
@@ -187,12 +204,10 @@ def min_backtest_length(
 
     # If observed Sharpe doesn't exceed expected max under null, no T suffices
     # Use a reasonable initial estimate of σ(SR) for the threshold check
-    sr_std_check = math.sqrt(
-        max(1e-20, (1 - skewness * observed_sharpe + (kurtosis - 1) / 4 * observed_sharpe**2) / 99)
-    )
+    sr_std_check = math.sqrt(max(1e-20, (1 - skewness * raw_sharpe + (kurtosis - 1) / 4 * raw_sharpe**2) / 99))
     scaled_expected = sr_std_check * expected_max_sharpe
 
-    if observed_sharpe <= scaled_expected:
+    if raw_sharpe <= scaled_expected:
         z_conf = _norm_ppf(confidence_level)
         return MinBTLResult(
             min_observations=sentinel_inf,
@@ -207,17 +222,17 @@ def min_backtest_length(
     z_conf = _norm_ppf(confidence_level)
 
     # Numerator of the MinBTL formula: z² * (1 - skew*SR + (kurt-1)/4 * SR²)
-    numerator = z_conf**2 * (1 - skewness * observed_sharpe + (kurtosis - 1) / 4 * observed_sharpe**2)
+    numerator = z_conf**2 * (1 - skewness * raw_sharpe + (kurtosis - 1) / 4 * raw_sharpe**2)
 
     # Denominator: (SR - σ(SR)·E[max SR])²  — iterative solve since σ(SR) depends on T
     # Start with sr_std from T=100, iterate to convergence
     t_est = 100.0
     for _ in range(10):
         sr_std_est = math.sqrt(
-            max(1e-20, (1 - skewness * observed_sharpe + (kurtosis - 1) / 4 * observed_sharpe**2) / max(t_est - 1, 1))
+            max(1e-20, (1 - skewness * raw_sharpe + (kurtosis - 1) / 4 * raw_sharpe**2) / max(t_est - 1, 1))
         )
         scaled_exp = sr_std_est * expected_max_sharpe
-        denominator = (observed_sharpe - scaled_exp) ** 2
+        denominator = (raw_sharpe - scaled_exp) ** 2
         if denominator <= 0:
             t_est = 999_999_999
             break
