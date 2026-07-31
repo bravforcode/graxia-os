@@ -109,3 +109,41 @@ def test_real_repo_data_has_only_documented_baseline_collisions(monkeypatch):
 
 def test_baseline_keys_are_the_known_direction_b_c_range():
     assert set(ctu.BASELINE.keys()) == {3001, 3002, 3003, 3004}
+
+
+def test_load_ledger_extracts_mechanism_field(tmp_path):
+    """Regression guard for the loader silently dropping a real 'mechanism'
+    value on both the trial_number and trial_range entry shapes.
+    """
+    path = tmp_path / "trial_ledger.json"
+    _write_ledger(
+        path,
+        [
+            {"trial_number": 1, "id": "A", "mechanism": "real mechanism text"},
+            {"trial_range": "2-5", "id": "B", "mechanism": "batch mechanism text"},
+        ],
+    )
+    entries = ctu.load_ledger(path)
+    assert entries[0]["mechanism"] == "real mechanism text"
+    assert entries[1]["mechanism"] == "batch mechanism text"
+
+
+def test_load_ledger_on_real_trial_ledger_c_has_all_three_mechanisms():
+    """trial_ledger_c.json genuinely carries 'mechanism' on all 3 of its
+    entries (crypto_volume_price_divergence, crypto_volatility_confirmation,
+    crypto_pair_vol_spread) -- verified by grep. If the loader regresses to
+    dropping the field again, this must fail.
+    """
+    path = ctu.RESEARCH_DIR / "trial_ledger_c.json"
+    entries = ctu.load_ledger(path)
+    mechanisms = [e["mechanism"] for e in entries if e.get("mechanism")]
+    assert len(mechanisms) == 3
+
+
+def test_mechanism_check_passes_for_entries_that_have_real_data():
+    """check_mechanism() must not flag entries that genuinely have a
+    non-empty 'mechanism' value once the loader passes it through.
+    """
+    entries = ctu.load_ledger(ctu.RESEARCH_DIR / "trial_ledger_c.json")
+    errors = ctu.check_mechanism(entries)
+    assert errors == []

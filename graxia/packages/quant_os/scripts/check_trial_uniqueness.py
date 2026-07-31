@@ -64,6 +64,7 @@ def load_ledger(path: Path) -> list[dict]:
                     "result": item.get("result"),
                     "date": item.get("date"),
                     "source": path.name,
+                    "mechanism": item.get("mechanism"),
                 }
             )
         elif "trial_range" in item:
@@ -78,6 +79,7 @@ def load_ledger(path: Path) -> list[dict]:
                     "source": path.name,
                     "is_range": True,
                     "range": item["trial_range"],
+                    "mechanism": item.get("mechanism"),
                 }
             )
     return entries
@@ -171,12 +173,15 @@ def check_trial_number_namespace(ledgers: list[tuple[str, list[dict]]]) -> list[
 def check_mechanism(entries: list[dict]) -> list[str]:
     """Every trial entry should declare a 'mechanism' field distinguishing e.g.
     'single_asset_absolute_momentum' from 'cross_sectional_relative_momentum'.
-    GATED (--mechanism): trial_ledger*.json's schema does not carry a
-    'mechanism' field at all (it's registry-only, e.g. hypothesis_registry.json),
-    so every ledger-sourced entry will always fail this check -- that is a real,
-    accurate gap, not a bug. hypothesis_registry_b.json and _e.json currently
-    have zero 'mechanism' entries either; the others (main, _c, _f) do. This is
-    opt-in until the ledger schema is extended to carry 'mechanism' too.
+    GATED (--mechanism): not every source file has 'mechanism' data yet.
+    As of this writing (verified by grep, not assumed): trial_ledger.json and
+    trial_ledger_b.json have none; trial_ledger_c.json has it on all 3 of its
+    entries. hypothesis_registry_b.json and _e.json have none; main (9),
+    _c (3), _d (3), and _f (1) do. Entries from files with real 'mechanism'
+    data are correctly checked once loaded (load_ledger/load_registry both
+    extract it); entries from files with none will always fail here until
+    that source file is backfilled -- that's real missing data, not a loader
+    bug. This is opt-in until 'mechanism' data covers every source file.
     Returns human-readable errors; [] = pass.
     """
     errors = []
