@@ -13,6 +13,7 @@ Simulates strategy execution on historical data with:
 
 import os
 from concurrent.futures import ProcessPoolExecutor
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from decimal import ROUND_DOWN, Decimal
@@ -760,22 +761,39 @@ class BacktestEngine:
         read arbitrary future bars through that reference regardless of what
         get_slice() truncates. This closes that specific vector -- and the
         general footgun of a class-level mutable cache surviving across
-        runs/instances -- by zeroing any such attribute right before every
-        run. It does NOT and cannot stop a strategy that re-reads external
-        state fresh inside generate_signal() on every call (a file, a live
+        runs/instances.
+
+        A blanket wipe-to-empty (the original version of this method) is
+        indiscriminate: it also destroys legitimate static config authored
+        directly in a strategy's class body -- e.g. mlmr.MLMeanReversion's
+        SYMBOL_PARAMS dict of tuned per-symbol thresholds, or a strategy's
+        `universe` tuple -- silently degrading every such strategy to
+        generic fallback values on every run, with no error raised. Instead,
+        each non-empty container is restored to the pristine snapshot
+        `Strategy.__init_subclass__` captured at class-definition time
+        (before any instance existed or any external code could run); an
+        attribute absent from that snapshot (added onto the class only
+        after import, like the cheat vector) is still wiped to empty. It
+        does NOT and cannot stop a strategy that re-reads external state
+        fresh inside generate_signal() on every call (a file, a live
         cache); that remains architecturally unblockable in-process and
         needs a code-review-level check instead.
         See reports/lookahead_guard_reachability_audit_2026_07_30.md.
         """
         strategy_cls = type(self.strategy)
+        pristine = getattr(strategy_cls, "_pristine_class_state", {})
         for name, value in list(vars(strategy_cls).items()):
-            if isinstance(value, list) and value:
+            if not isinstance(value, list | dict | tuple | set) or not value:
+                continue
+            if name in pristine:
+                setattr(strategy_cls, name, deepcopy(pristine[name]))
+            elif isinstance(value, list):
                 setattr(strategy_cls, name, [])
-            elif isinstance(value, dict) and value:
+            elif isinstance(value, dict):
                 setattr(strategy_cls, name, {})
-            elif isinstance(value, tuple) and value:
+            elif isinstance(value, tuple):
                 setattr(strategy_cls, name, ())
-            elif isinstance(value, set) and value:
+            elif isinstance(value, set):
                 setattr(strategy_cls, name, set())
 
     def _calculate_indicators(self, up_to_index: int) -> dict[str, Any]:
