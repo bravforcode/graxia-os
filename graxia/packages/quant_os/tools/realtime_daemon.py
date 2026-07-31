@@ -1,12 +1,12 @@
 """
 Real-Time Global News Daemon — Continuous 24/7 Operation
 =========================================================
-Runs forever, fetches news from 50+ global sources, analyzes with LLM, stores in DuckDB.
+Runs forever, fetches news from 64 global sources, analyzes with LLM, stores in DuckDB.
 
 Cycle:
-1. Fetch RSS (tier-based priority)
+1. Fetch RSS (asyncio + aiohttp — all feeds in parallel)
 2. Deduplicate (skip already-seen URLs)
-3. Analyze with qwen3.5:9b (batch mode for speed)
+3. Analyze with qwen3.5:9b (single-headline mode for reliable ticker extraction)
 4. Store in DuckDB
 5. Sleep until next cycle
 
@@ -20,14 +20,18 @@ import sys
 
 sys.stdout.reconfigure(encoding="utf-8")
 import argparse
+import asyncio
 import hashlib
 import json
+import re
 import signal
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 from xml.etree import ElementTree
 
+import aiohttp
 import requests
 
 # === Config ===
@@ -97,50 +101,58 @@ def save_daemon_state(state: dict):
     tmp_file.replace(DAEMON_STATE)  # Atomic rename
 
 
-# === RSS Fetcher ===
-def fetch_rss(feed_url: str, feed_name: str, max_items: int = 5) -> list:
-    """Fetch and parse RSS feed."""
-    import re
-
+# === RSS Fetcher (async) ===
+async def async_fetch_rss(session: aiohttp.ClientSession, feed_url: str, feed_name: str, max_items: int = 5) -> list:
+    """Fetch and parse RSS feed asynchronously."""
     items = []
     try:
-        r = requests.get(
-            feed_url, timeout=8, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) GraxiaDaemon/1.0"}
-        )
-        r.raise_for_status()
-        root = ElementTree.fromstring(r.content)
-        ns = {"atom": "http://www.w3.org/2005/Atom"}
-        entries = root.findall(".//item") or root.findall(".//atom:entry", ns)
+        async with session.get(
+            feed_url,
+            timeout=aiohttp.ClientTimeout(total=10),
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) GraxiaDaemon/2.0"},
+        ) as resp:
+            if resp.status != 200:
+                return []
+            content = await resp.read()
+            root = ElementTree.fromstring(content)
+            ns = {"atom": "http://www.w3.org/2005/Atom"}
+            entries = root.findall(".//item") or root.findall(".//atom:entry", ns)
 
-        for entry in entries[:max_items]:
-            title = entry.findtext("title") or ""
-            link = entry.findtext("link") or ""
-            desc = entry.findtext("description") or ""
-            pub_date = entry.findtext("pubDate") or ""
-            desc_clean = re.sub(r"<[^>]+>", "", desc).strip()
+            for entry in entries[:max_items]:
+                title = entry.findtext("title") or ""
+                link = entry.findtext("link") or ""
+                desc = entry.findtext("description") or ""
+                pub_date = entry.findtext("pubDate") or ""
+                desc_clean = re.sub(r"<[^>]+>", "", desc).strip()
 
-            url_hash = hashlib.md5(link.encode()).hexdigest()[:12]
-            items.append(
-                {
-                    "title": title.strip(),
-                    "url": link.strip(),
-                    "source": feed_name,
-                    "date": pub_date.strip(),
-                    "body": desc_clean[:400],
-                    "hash": url_hash,
-                }
-            )
+                url_hash = hashlib.md5(link.encode()).hexdigest()[:12]
+                items.append(
+                    {
+                        "title": title.strip(),
+                        "url": link.strip(),
+                        "source": feed_name,
+                        "date": pub_date.strip(),
+                        "body": desc_clean[:400],
+                        "hash": url_hash,
+                    }
+                )
     except Exception:
         pass  # Silent fail for background daemon
     return items
 
 
-def fetch_all_feeds(feeds: dict, seen: set, max_per_feed: int = 3) -> list:
-    """Fetch from all feeds, deduplicate."""
+async def async_fetch_all_feeds(feeds: dict, seen: set, max_per_feed: int = 3) -> list:
+    """Fetch all feeds concurrently using asyncio.gather."""
+    connector = aiohttp.TCPConnector(limit=20)
+    async with aiohttp.ClientSession(connector=connector) as session:
+        tasks = [async_fetch_rss(session, url, name, max_per_feed) for name, url in feeds.items()]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
     new_items = []
-    for name, url in feeds.items():
-        items = fetch_rss(url, name, max_per_feed)
-        for item in items:
+    for result in results:
+        if isinstance(result, Exception):
+            continue
+        for item in result:
             if item["hash"] not in seen:
                 new_items.append(item)
                 seen.add(item["hash"])
@@ -206,18 +218,15 @@ def analyze_one(article: dict) -> dict:
         return {**article, "llm_sentiment": "neutral", "llm_ticker": ""}
 
 
+OLLAMA_MAX_PARALLEL = 2  # must match OLLAMA_NUM_PARALLEL in setup_ollama_env.py
+
+
 def analyze_batch(articles: list) -> list:
-    """Analyze articles one at a time for reliable ticker extraction."""
-    results = []
-    total_tokens = 0
+    """Analyze headlines one-per-request (reliable ticker extraction), OLLAMA_MAX_PARALLEL at a time."""
     t0 = time.time()
 
-    for i, article in enumerate(articles):
-        result = analyze_one(article)
-        results.append(result)
-        # Small delay to avoid Ollama overload
-        if i < len(articles) - 1:
-            time.sleep(0.5)
+    with ThreadPoolExecutor(max_workers=OLLAMA_MAX_PARALLEL) as pool:
+        results = list(pool.map(analyze_one, articles))
 
     elapsed = time.time() - t0
     print(f"  [{_ts()}] Analyzed {len(articles)} headlines in {elapsed:.0f}s")
@@ -227,6 +236,7 @@ def analyze_batch(articles: list) -> list:
 # === DuckDB Writer ===
 def write_to_duckdb(articles: list):
     """Write analyzed articles to DuckDB."""
+    duck = None
     try:
         sys.path.insert(0, str(BASE_DIR / "data_pipeline"))
         from storage.duckdb_store import DuckDBStore
@@ -253,11 +263,13 @@ def write_to_duckdb(articles: list):
             )
 
         written = duck.upsert_llm_news_sentiment(llm_articles)
-        duck.close()
         return written
     except Exception as e:
         print(f"  [{_ts()}] DuckDB error: {e}")
         return 0
+    finally:
+        if duck:
+            duck.close()
 
 
 # === Sentiment Snapshot ===
@@ -347,9 +359,11 @@ def run_cycle(cycle_num: int, seen: set, feeds: dict) -> dict:
     print(f"[{_ts()}] CYCLE {cycle_num}")
     print(f"{'='*60}")
 
-    # Fetch new articles from RSS
-    articles = fetch_all_feeds(feeds, seen, max_per_feed=3)
-    print(f"[{_ts()}] New RSS articles: {len(articles)}")
+    # Fetch new articles from RSS (async — all feeds in parallel)
+    t0 = time.time()
+    articles = asyncio.run(async_fetch_all_feeds(feeds, seen, max_per_feed=3))
+    fetch_elapsed = time.time() - t0
+    print(f"[{_ts()}] New RSS articles: {len(articles)} (fetched in {fetch_elapsed:.1f}s)")
 
     # Fetch Twitter sentiment every 3rd cycle
     twitter_articles = []
@@ -385,15 +399,18 @@ def run_cycle(cycle_num: int, seen: set, feeds: dict) -> dict:
 
     # Backup DuckDB every 100 cycles
     if cycle_num % 100 == 0:
+        duck = None
         try:
             sys.path.insert(0, str(BASE_DIR / "data_pipeline"))
             from storage.duckdb_store import DuckDBStore
 
             duck = DuckDBStore()
             duck.backup()
-            duck.close()
         except Exception as e:
             print(f"  [{_ts()}] Backup error: {e}")
+        finally:
+            if duck:
+                duck.close()
 
     return {"articles": len(all_articles), "analyzed": len(analyzed), "written": written}
 
@@ -409,7 +426,7 @@ def main():
     print("REAL-TIME GLOBAL NEWS DAEMON")
     print(f"Model: {MODEL}")
     print(f"Cycle: {args.cycle}s ({args.cycle//60}min)")
-    print("Sources: 50+ feeds worldwide")
+    print("Sources: 64 feeds worldwide (async parallel fetch)")
     print(f"Time: {datetime.now().isoformat()}")
     print("Press Ctrl+C to stop")
     print(f"{'='*60}")

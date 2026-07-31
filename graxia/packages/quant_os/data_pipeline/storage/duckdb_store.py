@@ -4,7 +4,7 @@ storage/duckdb_store.py — DuckDB Storage Layer for Analytics
 
 import contextlib
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import duckdb
@@ -219,22 +219,30 @@ class DuckDBStore:
 
     def get_llm_sentiment_data(self, days: int = 30) -> pd.DataFrame:
         """Get LLM sentiment data for backtesting."""
-        return self.conn.execute(f"""
+        cutoff = (datetime.now() - timedelta(days=days)).isoformat()
+        return self.conn.execute(
+            """
             SELECT url, title, source, analyzed_at, tickers, sentiment, impact, summary
             FROM llm_news_sentiment
-            WHERE analyzed_at > CURRENT_TIMESTAMP - INTERVAL '{days} days'
+            WHERE analyzed_at > ?
             ORDER BY analyzed_at DESC
-        """).fetchdf()
+        """,
+            [cutoff],
+        ).fetchdf()
 
     def get_sentiment_by_ticker(self, ticker: str, days: int = 30) -> pd.DataFrame:
         """Get sentiment data for a specific ticker."""
-        return self.conn.execute(f"""
+        cutoff = (datetime.now() - timedelta(days=days)).isoformat()
+        return self.conn.execute(
+            """
             SELECT analyzed_at, sentiment, impact, summary
             FROM llm_news_sentiment
-            WHERE tickers LIKE '%{ticker}%'
-              AND analyzed_at > CURRENT_TIMESTAMP - INTERVAL '{days} days'
+            WHERE tickers LIKE '%' || ? || '%'
+              AND analyzed_at > ?
             ORDER BY analyzed_at DESC
-        """).fetchdf()
+        """,
+            [ticker, cutoff],
+        ).fetchdf()
 
     def count_llm_sentiment_pairs(self) -> int:
         """Count rows with both sentiment and tickers (usable for backtest)."""
@@ -246,17 +254,21 @@ class DuckDBStore:
         return result[0] if result else 0
 
     def get_sentiment_summary(self, days: int = 7) -> pd.DataFrame:
-        return self.conn.execute(f"""
+        cutoff = (datetime.now() - timedelta(days=days)).isoformat()
+        return self.conn.execute(
+            """
             SELECT
                 query,
                 COUNT(*) as articles,
                 AVG(vader_compound) as avg_sentiment,
                 AVG(textblob_polarity) as avg_polarity
             FROM news_sentiment
-            WHERE fetched_at > CURRENT_TIMESTAMP - INTERVAL '{days} days'
+            WHERE fetched_at > ?
             GROUP BY query
             ORDER BY avg_sentiment DESC
-        """).fetchdf()
+        """,
+            [cutoff],
+        ).fetchdf()
 
     def backup(self):
         """Backup DuckDB to timestamped file"""
