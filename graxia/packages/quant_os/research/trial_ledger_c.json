@@ -1,0 +1,101 @@
+{
+  "schema_version": "1.0",
+  "direction": "C",
+  "lock_date": "2026-07-13",
+  "lock_doc_path": "reports/direction_c_registration.md",
+  "description": "Volume-Price Divergence in Crypto — separate research program from Direction A+B",
+  "cumulative_trial_count": 3,
+  "cumulative_trial_cap": 10,
+  "next_available_trial_number": 3004,
+  "new_hypotheses_used": 3,
+  "new_hypotheses_remaining": 7,
+  "dsr_trial_count": 1,
+  "sacred_holdout": {
+    "path": "data/sacred_holdout/holdout_btc.csv",
+    "status": "LOCKED",
+    "use_count": 0,
+    "max_use_count": 1,
+    "unlock_phase": "4.5 — final confirmation gate only"
+  },
+  "direction_a_b_holdout": {
+    "path": "data/sacred_holdout/holdout_fresh_20260717.csv",
+    "status": "LOCKED",
+    "note": "Direction A+B holdout — separate, do not open. Path corrected 2026-07-20: the old holdout.csv lineage was retired 2026-07-17, see research/trial_ledger_b.json#sacred_holdout.burn_history."
+  },
+  "lineage": [
+    {
+      "trial_number": 3001,
+      "id": "btc_vol_divergence",
+      "mechanism": "crypto_volume_price_divergence",
+      "result": "REJECTED",
+      "date": "2026-07-13",
+      "p_value": 0.5533,
+      "note": "BTCVD: Only 6 trades. Negative Sharpe. Corrected from a data-entry '3004' to '3001' 2026-07-31 -- hypothesis_registry_c.json, its pre_registration_doc path, and the actual filename research/pre_registration_c/trial_3001_btc_vol_divergence.md all agree on 3001; only this ledger entry said 3004."
+    },
+    {
+      "trial_number": 3002,
+      "id": "ETHVC-ETH-VOL-CONFIRM",
+      "mechanism": "crypto_volatility_confirmation",
+      "result": "REJECTED",
+      "date": "2026-07-13",
+      "p_value": 0.5914,
+      "note": "ETHVC: 28 trades, 60.7% win rate but p=0.59."
+    },
+    {
+      "trial_number": 3003,
+      "id": "BEVS-BTC-ETH-VOL-SPREAD",
+      "mechanism": "crypto_pair_vol_spread",
+      "result": "REJECTED",
+      "date": "2026-07-13",
+      "p_value": 0.1877,
+      "note": "BEVS: Sharpe 1.28, DSR passes, but 68 trades < 100 target."
+    }
+  ],
+  "consecutive_gate_failures": {
+    "p_value": {
+      "count": 3,
+      "last_hypothesis_id": "btc_eth_vol_spread"
+    },
+    "wfa_oos_positive": {
+      "count": 3,
+      "last_hypothesis_id": "btc_eth_vol_spread"
+    },
+    "wfe": {
+      "count": 2,
+      "last_hypothesis_id": "btc_eth_vol_spread"
+    },
+    "deflated_sharpe_ratio": {
+      "count": 2,
+      "last_hypothesis_id": "btc_eth_vol_spread"
+    },
+    "bootstrap_ci_lower": {
+      "count": 3,
+      "last_hypothesis_id": "btc_eth_vol_spread"
+    },
+    "min_independent_trades": {
+      "count": 3,
+      "last_hypothesis_id": "btc_eth_vol_spread"
+    },
+    "trigger_threshold": 3
+  },
+  "stopping_rule_triggers": {
+    "trial_cap_reached": {
+      "active": false,
+      "current": 0,
+      "cap": 10
+    },
+    "two_months_elapsed": {
+      "active": false,
+      "start_date": "2026-07-13",
+      "deadline": "2026-09-13"
+    },
+    "forty_hours_used": {
+      "active": false,
+      "hours_logged": 0,
+      "cap_hours": 40
+    },
+    "three_in_a_row": {
+      "active": false
+    }
+  }
+}

@@ -25,3 +25,12 @@ repos:
         args: [--ignore-missing-imports]
         additional_dependencies: [types-requests]
         exclude: ^graxia/packages/quant_os/tools/
+
+  - repo: local
+    hooks:
+      - id: quant-os-trial-uniqueness
+        name: quant_os trial ID uniqueness ratchet
+        entry: python graxia/packages/quant_os/scripts/check_trial_uniqueness.py
+        language: system
+        files: ^graxia/packages/quant_os/research/(trial_ledger|hypothesis_registry).*\.json$
+        pass_filenames: false
