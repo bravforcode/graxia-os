@@ -57,6 +57,8 @@ ignore = ["E501", "B008", "SIM108"]
 "tests/*" = ["F811", "F841"]
 "scripts/*" = ["F841", "B007"]
 "tools/*" = ["F841", "B007", "E402"]
+"ml/ensemble.py" = ["N803"]
+"ml/pipeline.py" = ["N803", "N806"]
 
 [tool.ruff.format]
 quote-style = "double"
