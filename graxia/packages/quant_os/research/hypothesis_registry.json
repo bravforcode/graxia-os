@@ -1,7 +1,7 @@
 {
   "$schema": "research/hypothesis_registry.schema.json",
   "registry_version": "1.0",
-  "last_updated": "2026-07-31",
+  "last_updated": "2026-08-01",
   "cumulative_trial_count_at_creation": 2002,
   "stopping_rule_doc": "reports/stopping_rule_2026_07_12.md",
   "sacred_holdout_path": "data/sacred_holdout/holdout.csv",
@@ -17,7 +17,7 @@
     {
       "trial_number": 1001,
       "id": "RYDC-ARM-A",
-      "name": "Real-Yield Divergence Continuation (RYDC) \u00e2\u20ac\u201d Arm A",
+      "name": "Real-Yield Divergence Continuation (RYDC) â€” Arm A",
       "status": "REJECTED",
       "registered_at": "2026-07-12",
       "result_at": "2026-07-12",
@@ -40,7 +40,7 @@
     {
       "trial_number": 1003,
       "id": "CAM-DXY-XAUUSD",
-      "name": "Cross-Asset Momentum (CAM) \u00e2\u20ac\u201d DXY \u00e2\u2020\u2019 XAUUSD lead-lag",
+      "name": "Cross-Asset Momentum (CAM) â€” DXY â†’ XAUUSD lead-lag",
       "status": "REJECTED",
       "registered_at": "2026-07-13",
       "result_at": "2026-07-13",
@@ -76,7 +76,7 @@
     {
       "trial_number": 1004,
       "id": "SP-SESSION-CONDITIONAL",
-      "name": "Session Pattern (SP) \u00e2\u20ac\u201d Volatility clustering by FX session",
+      "name": "Session Pattern (SP) â€” Volatility clustering by FX session",
       "status": "REJECTED",
       "registered_at": "2026-07-13",
       "result_at": "2026-07-13",
@@ -116,7 +116,7 @@
     {
       "trial_number": 1005,
       "id": "MRM-REGIME-CONDITIONAL",
-      "name": "Macro Regime Mean-Reversion (MRM) \u00e2\u20ac\u201d DFII10 regime-conditional",
+      "name": "Macro Regime Mean-Reversion (MRM) â€” DFII10 regime-conditional",
       "status": "REJECTED",
       "registered_at": "2026-07-13",
       "result_at": "2026-07-13",
@@ -350,12 +350,12 @@
         "verdict": "REJECT"
       },
       "evidence": "reports/edge_search_untested_20260720.json",
-      "notes": "0 trades generated. CRITICAL: MISSING_SL incidents \u00e2\u20ac\u201d signals without stop-loss."
+      "notes": "0 trades generated. CRITICAL: MISSING_SL incidents â€” signals without stop-loss."
     },
     {
       "trial_number": 1028,
       "id": "WS-A-TSMOM-MOP2012",
-      "name": "Time Series Momentum (Moskowitz-Ooi-Pedersen 2012) \u00e2\u20ac\u201d pure time-series replication",
+      "name": "Time Series Momentum (Moskowitz-Ooi-Pedersen 2012) â€” pure time-series replication",
       "category": "replicate_published_edge",
       "status": "REJECTED",
       "registered_at": "2026-07-29",
@@ -406,7 +406,7 @@
       "stopping_rule": "Single hypothesis. If DSR p>=0.05 -> REJECT and stop. No tuning, no holdout peek.",
       "data_hygiene": {
         "status": "RESOLVED 2026-07-29 (BLOCK cleared, pre-reg stays PRE-REGISTERED until run)",
-        "finding": "Raw *_D1.csv contain synthetic pre-inception backfill (EURUSD 1971, NAS100 1938, XAUUSD 1793) \u2014 flat O=H=L=C, placeholder volume. Core load_csv_data reads whole file with no date slice.",
+        "finding": "Raw *_D1.csv contain synthetic pre-inception backfill (EURUSD 1971, NAS100 1938, XAUUSD 1793) — flat O=H=L=C, placeholder volume. Core load_csv_data reads whole file with no date slice.",
         "backfill_rows_excluded": {
           "XAUUSD": 1115,
           "XAGUSD": 2558,
@@ -540,7 +540,7 @@
       "minimum_samples": 100,
       "significance_bar": 4.9e-05,
       "effect_size_threshold": 0.2,
-      "result_summary": null,
+      "result_summary": "Exploratory T+0 run (65 pairs, 53 non-neutral, hit rate 0.698, p=0.0039 uncorrected). Pre-registered T+1 rerun on 2026-08-01 18:39 was DATA-BLOCKED (no T+1 close yet for ~89 symbols); pending rerun after next market close.",
       "results": {
         "total_pairs": 65,
         "non_neutral_pairs": 53,
@@ -558,7 +558,22 @@
       "report_path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\reports\\sentiment_backtest_20260801_033922.txt",
       "pre_registration_deviations": [
         "Only 65 pairs (pre-registration requires >= 100)",
-        "T+0 (same-day) price matching used instead of pre-registered T+1 \u2014 see get_sentiment_price_pairs(); result is exploratory, not confirmatory"
+        "T+0 (same-day) price matching used instead of pre-registered T+1 - see get_sentiment_price_pairs(); result is exploratory, not confirmatory"
+      ],
+      "rerun_attempts": [
+        {
+          "attempted_at": "2026-08-01T18:39:02.014187",
+          "report_path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\reports\\sentiment_backtest_20260801_183901.txt",
+          "method": "T+1 matching as pre-registered (baseline = close on/before sentiment date, outcome = first close strictly after)",
+          "result": {
+            "error": "Too few non-neutral pairs: 0"
+          },
+          "deviations": [
+            "Only 1 pairs (pre-registration requires >= 100)",
+            "compute_hit_rate error: Too few non-neutral pairs: 0"
+          ],
+          "blocked_by": "DATA-BLOCKED: market_data had only 7 symbols with 2026-08-01 bars (^IXIC, GBPUSD=X, ^DJI, ETH-USD, EURUSD=X, USDJPY=X, GC=F); sentiment rows dated 07-31 (74 ticker-rows) had no T+1 close yet. 0 pairs is not evidence against H1 - rerun after the next market close."
+        }
       ]
     }
   ]
