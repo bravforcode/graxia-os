@@ -12,6 +12,8 @@ logs/
 *.duckdb
 *.parquet
 *.pkl
+# Chroma persistent-cache binaries (regenerable via tools/build_embedding_index.py)
+data_pipeline/storage/chroma_db/
 .env
 coverage.xml
 .coverage
