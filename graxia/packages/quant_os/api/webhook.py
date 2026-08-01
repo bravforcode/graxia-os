@@ -207,6 +207,15 @@ async def tradingview_webhook(
     circuit_breaker = CircuitBreaker()
     risk_engine = RiskEngine(kill_switch=kill_switch, circuit_breaker=circuit_breaker)
 
+    # KNOWN BROKEN (unresolved): `db` here is an AsyncSession (see
+    # graxia.packages.revenue_os.db.get_db), but OrderManager and
+    # IdempotencyChecker call self.db.query(...) - the legacy sync
+    # SQLAlchemy Session API, which AsyncSession does not implement.
+    # This handler will raise AttributeError the first time either
+    # class touches the DB. No sync session factory currently exists
+    # in revenue_os.db to substitute here. Not fixed in this pass -
+    # requires either an async rewrite of OrderManager/IdempotencyChecker's
+    # DB access or a dedicated sync session for this webhook path.
     order_manager = OrderManager(
         db_session=db,
         broker_manager=broker_manager,
