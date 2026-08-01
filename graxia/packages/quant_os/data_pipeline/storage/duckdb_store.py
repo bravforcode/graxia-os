@@ -204,13 +204,25 @@ class DuckDBStore:
             [url, embedding_id],
         )
 
-    def upsert_llm_news_sentiment(self, articles: list) -> int:
-        """Insert/update LLM-analyzed news articles. Returns count written."""
+    def upsert_llm_news_sentiment(self, articles: list, overall: dict | None = None, source: str = "") -> int:
+        """Insert/update LLM-analyzed news articles. Returns count written.
+
+        ``overall`` (optional) is a report-level summary dict merged into each
+        article as fallback defaults (e.g. overall_sentiment -> sentiment).
+        ``source`` (optional) is the default source for articles missing one.
+        """
         if not articles:
             return 0
+        overall = overall or {}
         written = 0
         for a in articles:
             try:
+                row = dict(a)
+                row.setdefault("sentiment", overall.get("overall_sentiment", "neutral"))
+                if not row.get("summary") and overall.get("action_items_th"):
+                    row["summary"] = "; ".join(str(x) for x in overall["action_items_th"])[:500]
+                if not row.get("source") and source:
+                    row["source"] = source
                 self.conn.execute(
                     """
                     INSERT INTO llm_news_sentiment
@@ -225,18 +237,18 @@ class DuckDBStore:
                         analyzed_at = excluded.analyzed_at
                 """,
                     [
-                        a.get("url", ""),
-                        a.get("title", "")[:200],
-                        a.get("source", ""),
-                        a.get("published_at"),
-                        a.get("analyzed_at", datetime.now().isoformat()),
-                        a.get("model", "qwen3.5:9b"),
-                        a.get("tickers", ""),
-                        a.get("sentiment", "neutral"),
-                        a.get("impact", "low"),
-                        a.get("categories", ""),
-                        a.get("entities", "[]"),
-                        a.get("summary", "")[:500],
+                        row.get("url", ""),
+                        row.get("title", "")[:200],
+                        row.get("source", ""),
+                        row.get("published_at"),
+                        row.get("analyzed_at", datetime.now().isoformat()),
+                        row.get("model", "qwen3.5:9b"),
+                        row.get("tickers", ""),
+                        row.get("sentiment", "neutral"),
+                        row.get("impact", "low"),
+                        row.get("categories", ""),
+                        row.get("entities", "[]"),
+                        row.get("summary", "")[:500],
                     ],
                 )
                 written += 1
@@ -247,6 +259,19 @@ class DuckDBStore:
     def get_llm_sentiment_data(self, days: int = 30) -> pd.DataFrame:
         """Get LLM sentiment data for backtesting."""
         cutoff = (datetime.now() - timedelta(days=days)).isoformat()
+        return self.conn.execute(
+            """
+            SELECT url, title, source, analyzed_at, tickers, sentiment, impact, summary
+            FROM llm_news_sentiment
+            WHERE analyzed_at > ?
+            ORDER BY analyzed_at DESC
+        """,
+            [cutoff],
+        ).fetchdf()
+
+    def query_llm_sentiment(self, hours: int = 1) -> pd.DataFrame:
+        """Get LLM sentiment rows analyzed within the last ``hours``."""
+        cutoff = (datetime.now() - timedelta(hours=hours)).isoformat()
         return self.conn.execute(
             """
             SELECT url, title, source, analyzed_at, tickers, sentiment, impact, summary
