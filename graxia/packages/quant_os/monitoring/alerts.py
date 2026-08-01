@@ -28,14 +28,11 @@ class AlertManager:
     """
 
     def __init__(self, telegram_notifier: Any | None = None):
+        # No default network client: constructing an AlertManager must never
+        # open an outbound connection on its own. Callers that want real
+        # Telegram dispatch pass telegram_notifier=TelegramNotifier()
+        # explicitly (e.g. the live bot/orchestrator bootstrap).
         self.telegram = telegram_notifier
-        if self.telegram is None:
-            try:
-                from .telegram import TelegramNotifier
-
-                self.telegram = TelegramNotifier()
-            except Exception:
-                self.telegram = None
         self.alert_history: list = []
 
     async def send_alert(self, alert: Alert) -> bool:
