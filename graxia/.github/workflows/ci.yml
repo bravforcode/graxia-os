@@ -1,0 +1,37 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install ruff mypy
+      - name: Lint
+        run: python -m ruff check graxia/pkgs/quant_os
+      - name: Type check
+        run: python -m mypy graxia/pkgs/quant_os --ignore-missing-imports
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          pip install -e ".[dev]"
+      - name: Run tests
+        run: python -m pytest graxia/pkgs/quant_os/tests/ -q --tb=short
+      - name: Run tests with coverage
+        run: python -m pytest graxia/pkgs/quant_os/tests/ --cov=graxia/pkgs/quant_os -q

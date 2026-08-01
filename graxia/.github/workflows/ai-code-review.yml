@@ -1,0 +1,39 @@
+name: 🤖 AI Code Review (OCR)
+
+# Runs on every Pull Request to review code quality, security, and correctness
+# Uses Alibaba Open Code Review with Claude claude-opus-4-5
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'packages/quant_os/**'
+
+jobs:
+  ai-code-review:
+    name: Alibaba OCR — AI Code Review
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write  # Required to post review comments
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for diff analysis
+
+      - name: Run Alibaba Open Code Review
+        uses: alibaba/open-code-review@main
+        with:
+          # LLM Configuration — Claude claude-opus-4-5 via Anthropic
+          llm_url: "https://api.anthropic.com"
+          llm_auth_token: ${{ secrets.ANTHROPIC_API_KEY }}
+          llm_model: "claude-opus-4-5"
+          llm_use_anthropic: "true"
+
+          # GitHub Configuration
+          github_token: ${{ github.token }}
+
+          # Review scope — focus on quant_os critical paths
+          # OCR will auto-detect changed files in the PR

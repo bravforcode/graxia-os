@@ -1,0 +1,16 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Force LF for Python source
+*.py text eol=lf
+
+# Force LF for config files
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.toml text eol=lf
+*.md text eol=lf
+
+# Force CRLF for Windows scripts
+*.bat text eol=crlf
+*.ps1 text eol=crlf

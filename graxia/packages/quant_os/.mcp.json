@@ -1,0 +1,43 @@
+{
+  "mcpServers": {
+    "webull-openapi": {
+      "command": "python",
+      "args": ["-m", "webull_mcp_server"],
+      "env": {
+        "WEBULL_APP_KEY": "${WEBULL_APP_KEY}",
+        "WEBULL_APP_SECRET": "${WEBULL_APP_SECRET}",
+        "WEBULL_TRADE_TOKEN": "${WEBULL_TRADE_TOKEN}",
+        "WEBULL_ACCOUNT_TYPE": "PAPER"
+      },
+      "description": "Webull OpenAPI AI Plugin for order execution and market data"
+    },
+    "opik-tracing": {
+      "command": "python",
+      "args": ["-m", "opik.mcp"],
+      "env": {
+        "OPIK_API_KEY": "${OPIK_API_KEY}",
+        "OPIK_WORKSPACE": "${OPIK_WORKSPACE}",
+        "OPIK_PROJECT_NAME": "quant_os"
+      },
+      "description": "Opik LLM tracing and observability server"
+    },
+    "agentmemory-project": {
+      "command": "npx",
+      "args": ["-y", "@agentmemory/mcp"],
+      "env": {
+        "AGENTMEMORY_URL": "http://localhost:3111",
+        "PROJECT_KEY": "quant_os"
+      },
+      "description": "Persistent memory server scoped for quant_os project"
+    },
+    "second-brain": {
+      "command": "node",
+      "args": ["C:/Users/menum/graxia os/graxia/packages/quant_os/second_brain_worker/mcp_bridge.js"],
+      "env": {
+        "SECOND_BRAIN_API_KEY": "${SECOND_BRAIN_API_KEY}",
+        "SECOND_BRAIN_WORKER_URL": "https://second-brain-worker.quantos-secondbrain.workers.dev"
+      },
+      "description": "Second Brain memory (save_memory/search_memory) — live Cloudflare Worker on D1+Vectorize+Workers AI"
+    }
+  }
+}

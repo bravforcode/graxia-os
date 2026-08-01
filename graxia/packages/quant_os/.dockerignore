@@ -1,0 +1,48 @@
+# Tests
+tests/
+**/test_*.py
+**/chaos/
+
+# Docs
+*.md
+docs/
+Meta/
+reports/
+
+# Dev tools
+.git/
+.github/
+.cursorrules
+.claude*
+.playwright*
+.aider*
+.windsurfrules
+.traerules
+.clawrules
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Data (mount at runtime, not build)
+data/warehouse/
+data/*.csv
+data/*.duckdb
+data_pipeline/storage/chroma_db/
+data/state/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
