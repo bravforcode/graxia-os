@@ -203,6 +203,7 @@ data/state/
 data/risk_ledger.json
 data/risk_overlay_state.json
 data/kill_switch_state.json
+data/circuit_breaker_state.json
 nul
 $null
 

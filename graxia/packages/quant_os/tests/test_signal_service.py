@@ -20,19 +20,20 @@ from __future__ import annotations
 
 import importlib
 import importlib.util
+import json
 import os
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import MagicMock
 
-# Ensure signal_service API key is always available for tests
-os.environ["SIGNAL_SERVICE_API_KEY"] = "test-api-key-12345"
-
 import numpy as np
 import pandas as pd
 import pytest
 from fastapi.testclient import TestClient
+
+# Ensure signal_service API key is always available for tests
+os.environ["SIGNAL_SERVICE_API_KEY"] = "test-api-key-12345"
 
 # ---------------------------------------------------------------------------
 # Direct module loading (bypass api/__init__.py broken import chain)
@@ -55,10 +56,9 @@ svc = _load_signal_service()
 # ---------------------------------------------------------------------------
 # Patch pd.Timestamp to work around pandas 2.3+ utc parameter removal
 # ---------------------------------------------------------------------------
-_original_pd_timestamp = pd.Timestamp
 
 
-class _SafeTimestamp(_original_pd_timestamp):
+class _SafeTimestamp(pd.Timestamp):
     """pd.Timestamp subclass that accepts utc= kwarg (removed in pandas 2.3+)."""
 
     def __new__(cls, *args, **kwargs):
@@ -83,7 +83,7 @@ def _make_bars(n: int = 200, base_price: float = 2300.0) -> list[dict]:
         delta = np.random.uniform(-2, 2)
         o = price
         h = price + abs(delta)
-        l = price - abs(delta)
+        low = price - abs(delta)
         c = price + delta
         price = c
         bars.append(
@@ -91,7 +91,7 @@ def _make_bars(n: int = 200, base_price: float = 2300.0) -> list[dict]:
                 "time": ts + i * 900,
                 "open": round(o, 2),
                 "high": round(h, 2),
-                "low": round(l, 2),
+                "low": round(low, 2),
                 "close": round(c, 2),
                 "volume": 100.0,
             }
@@ -597,3 +597,75 @@ class TestFeatureComputation:
         assert result.shape[0] == 1
         assert not np.any(np.isnan(result)), "Output should not contain NaN"
         assert not np.any(np.isinf(result)), "Output should not contain inf"
+
+
+# ---------------------------------------------------------------------------
+# Risk gate (/api/risk-gate) — circuit breaker persistence
+#
+# Regression for review finding 1: the gate constructed a fresh
+# ``CircuitBreaker()`` with no ``state_file``, so a breaker tripped by another
+# process could never be seen here — ``is_open()`` always returned False and
+# the circuit-breaker half of the risk-gate fix was inert.
+# ---------------------------------------------------------------------------
+
+
+def _risk_gate_payload() -> dict:
+    return {
+        "symbol": "XAUUSD",
+        "direction": "long",
+        "entry_price": 2300.0,
+        "stop_loss": 2290.0,
+        "confidence": 0.65,
+    }
+
+
+def _gate_client():
+    """Risk-gate client with a fresh rate-limiter window."""
+    svc._rate_limiter = svc._RateLimiter(max_requests=300, window_seconds=60)
+    return _AuthClient(svc.app)
+
+
+def _patch_kill_switch_inactive(monkeypatch):
+    """Neutralize the ambient kill-switch (CWD-relative state file) so the
+    risk-gate tests deterministically exercise the circuit-breaker path."""
+    import graxia.packages.quant_os.risk.kill_switch as _ks_mod
+
+    class _InactiveKillSwitch:
+        def is_active(self) -> bool:
+            return False
+
+    monkeypatch.setattr(_ks_mod, "KillSwitch", _InactiveKillSwitch)
+
+
+def test_risk_gate_rejects_when_circuit_breaker_tripped(tmp_path, monkeypatch):
+    """A breaker tripped in another process (persisted state file) blocks the gate."""
+    _patch_kill_switch_inactive(monkeypatch)
+    state_file = tmp_path / "circuit_breaker_state.json"
+    state_file.parent.mkdir(parents=True, exist_ok=True)
+    state_file.write_text(
+        json.dumps({"metals": {"cl": 3, "o": True, "r": "test trip", "tc": 1}}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(svc, "CIRCUIT_BREAKER_STATE_FILE", str(state_file))
+
+    resp = _gate_client().post("/api/risk-gate", json=_risk_gate_payload())
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["allowed"] is False
+    assert body["reason"] == "Circuit breaker open for metals"
+
+
+def test_risk_gate_untripped_reason_is_not_circuit_breaker(tmp_path, monkeypatch):
+    """Control: without a tripped state file the gate still rejects (zero-equity
+    account) but the reason is NOT the breaker message — proving the tripped
+    test above is differential, not a false positive."""
+    _patch_kill_switch_inactive(monkeypatch)
+    monkeypatch.setattr(svc, "CIRCUIT_BREAKER_STATE_FILE", str(tmp_path / "circuit_breaker_state.json"))
+
+    resp = _gate_client().post("/api/risk-gate", json=_risk_gate_payload())
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["allowed"] is False
+    assert "Circuit breaker open" not in body["reason"]

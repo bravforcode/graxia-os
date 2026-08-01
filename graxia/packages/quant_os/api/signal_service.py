@@ -70,6 +70,11 @@ SYMBOL = os.getenv("TRADE_SYMBOL", "XAUUSD")
 LOT_SIZE = float(os.getenv("LOT_SIZE", "0.01"))
 B2_STOP_DOLLARS = float(os.getenv("B2_STOP", "3.00"))
 MIN_CONFIDENCE = float(os.getenv("MIN_CONFIDENCE", "0.50"))
+# Shared circuit-breaker state file — mirrors KillSwitch's CWD-relative
+# data/kill_switch_state.json. Every process that constructs a
+# CircuitBreaker must use the same path so a trip in one process is
+# honored by the others (risk gate, orchestrator, webhook).
+CIRCUIT_BREAKER_STATE_FILE = os.getenv("CIRCUIT_BREAKER_STATE_FILE", "data/circuit_breaker_state.json")
 MODEL_SIGNING_KEY = os.getenv("MODEL_SIGNING_KEY", "")
 
 # Path resolution: env-var-driven with defaults relative to this file's package.
@@ -688,7 +693,10 @@ async def risk_gate(req: RiskGateRequest, _key: str = Security(verify_signal_api
         venue="paper",
     )
 
-    engine = RiskEngine(kill_switch=KillSwitch(), circuit_breaker=CircuitBreaker())
+    engine = RiskEngine(
+        kill_switch=KillSwitch(),
+        circuit_breaker=CircuitBreaker(state_file=CIRCUIT_BREAKER_STATE_FILE),
+    )
     account = AccountState(equity=0.0, balance=0.0)
     portfolio = PortfolioState()
 
