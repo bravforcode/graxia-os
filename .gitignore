@@ -204,3 +204,7 @@ data/risk_ledger.json
 data/risk_overlay_state.json
 nul
 $null
+
+# Tool-vendored skill/hook copies (source of truth lives in ~/.config/opencode)
+.github/skills/
+.github/hooks/

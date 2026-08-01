@@ -70,3 +70,10 @@ data/spread_*
 
 # Test-run output artifacts
 scripts/_test_*_output.txt
+
+# Regenerable/research downloads + runtime snapshots
+data/direction_c/
+data/onchain/
+data/macro_regime_state.json
+logs_*.txt
+_mypy_core.txt
