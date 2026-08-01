@@ -103,6 +103,15 @@ chore(dx): add pre-commit config
    - No merge conflicts
    - Commit history is clean (no "fix fix fix" chains)
 
+## Shell Environment Rules
+
+The development shell on this machine is **cmd.exe** (Windows), not bash. Follow these rules when writing or testing commands:
+
+1. **Use `python -m pytest <path>`** instead of bare `pytest` — the console-script entry may not be on PATH in every shell.
+2. **Avoid `*` globs inside `python -c "..."` strings** — cmd.exe expands `*` before Python sees it and fails with "The term '*' is not recognized". Write a temp script file and run it instead.
+3. **Use absolute paths for cwd-sensitive commands** or set the working directory explicitly; do not rely on `cd` chains.
+4. **In subprocess wrappers**, always pass `encoding='utf-8', errors='replace'` to avoid cp1252 `UnicodeEncodeError` when capturing output.
+
 ## Trial Ledger Edit Rules
 
 **NEVER edit `trial_ledger.json`, `hypothesis_registry.json`, or any trial cap file without explicit sign-off from the user in the same turn.**

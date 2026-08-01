@@ -176,6 +176,33 @@ class DuckDBStore:
                 summary VARCHAR
             )
         """)
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS headline_embeddings (
+                url VARCHAR PRIMARY KEY,
+                embedding_id UBIGINT,
+                indexed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+    def get_unembedded_headlines(self, limit: int = 500) -> pd.DataFrame:
+        """Headlines with sentiment but no embedding yet (for incremental indexing)."""
+        return self.conn.execute(
+            """
+            SELECT s.url, s.title
+            FROM llm_news_sentiment s
+            LEFT JOIN headline_embeddings e ON s.url = e.url
+            WHERE e.url IS NULL AND s.title IS NOT NULL AND s.title != ''
+            ORDER BY s.analyzed_at
+            LIMIT ?
+        """,
+            [limit],
+        ).fetchdf()
+
+    def mark_embedded(self, url: str, embedding_id: int) -> None:
+        self.conn.execute(
+            "INSERT OR REPLACE INTO headline_embeddings (url, embedding_id) VALUES (?, ?)",
+            [url, embedding_id],
+        )
 
     def upsert_llm_news_sentiment(self, articles: list) -> int:
         """Insert/update LLM-analyzed news articles. Returns count written."""
