@@ -43,6 +43,7 @@ class AlertType(Enum):
     MODEL_DRIFT = "model_drift"
     POSITION_LIMIT = "position_limit"
     DAILY_LOSS = "daily_loss"
+    SYSTEM = "system"  # fallback for alerts outside the 5 risk-rule categories
 
 
 @dataclass(frozen=True)
