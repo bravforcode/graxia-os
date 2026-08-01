@@ -16,8 +16,8 @@ ARTIFACT_DIR = REPO_ROOT / "graxia/packages/quant_os/artifacts/release_gate"
 QUARANTINE_PATH = REPO_ROOT / "graxia/packages/quant_os/quarantine_manifest.json"
 
 RELEASE_GATE_CONFIG = {
-    "required_collected_tests": 552,
-    "required_passed_tests": 552,  # all must pass
+    "required_collected_tests": 3605,
+    "required_passed_tests": 3605,  # all must pass (19 tests quarantined: order_flow e2e + MT5 live e2e)
     "allowed_failed_tests": 0,
     "allowed_errors": 0,
     "allowed_xfailed": 0,
@@ -36,6 +36,8 @@ SUITE_CMD = [
     "--tb=short",
     "-q",
     "--ignore=graxia/packages/quant_os/tests/test_vwap.py",
+    "--ignore=graxia/packages/quant_os/tests/e2e/test_order_flow.py",
+    "--ignore=graxia/packages/quant_os/tests/test_mt5_live_order_e2e.py",
 ]
 E2E_SCRIPT = str(Path(__file__).parent / "e2e_release_gate.py")
 E2E_CMD = [sys.executable, E2E_SCRIPT]
@@ -85,7 +87,7 @@ def parse_pytest_output(output):
     #   "-q": "3 failed, 559 passed, 2 warnings in 50.75s"
     #   default: "=== 3 failed, 559 passed ... in 50.75s ==="
     # Grab the last non-empty line as the summary
-    lines = [l for l in output.strip().split("\n") if l.strip()]
+    lines = [ln for ln in output.strip().split("\n") if ln.strip()]
     if lines:
         summary = lines[-1]
         for key in stats:

@@ -13,8 +13,32 @@
       "issue_id": "QOS-VWAP-001",
       "release_impact": "non-blocking",
       "verification": "Covered by test_timing.py which runs all 13 strategies including VWAPRejection"
+    },
+    {
+      "test_file": "tests/e2e/test_order_flow.py",
+      "test_class": null,
+      "test_function": null,
+      "reason": "Hangs in release gate: TradingOrchestrator background sync loop queries broker adapter which attempts MT5 connection and blocks indefinitely (no connection timeout). Requires live MT5 terminal. Quarantined until broker adapter gets a connection timeout and the e2e mark is registered.",
+      "quarantined_at": "2026-08-02",
+      "owner": "quant_os_team",
+      "expiry": "2026-12-31",
+      "issue_id": "QOS-ORDERFLOW-001",
+      "release_impact": "non-blocking",
+      "verification": "Covered by unit tests in tests/test_orchestrator*.py (orchestrator logic without live broker)"
+    },
+    {
+      "test_file": "tests/test_mt5_live_order_e2e.py",
+      "test_class": null,
+      "test_function": null,
+      "reason": "Hangs in release gate: live MT5 order e2e attempts MetaTrader5.connect() which blocks without a running MT5 terminal. Quarantined until MT5 availability is gated by a fixture with timeout + skip.",
+      "quarantined_at": "2026-08-02",
+      "owner": "quant_os_team",
+      "expiry": "2026-12-31",
+      "issue_id": "QOS-MT5E2E-001",
+      "release_impact": "non-blocking",
+      "verification": "Covered by execution adapter unit tests (tests/test_execution_*.py) using mock broker adapters"
     }
   ],
   "quarantined_modules": [],
-  "total_quarantined": 1
+  "total_quarantined": 3
 }
