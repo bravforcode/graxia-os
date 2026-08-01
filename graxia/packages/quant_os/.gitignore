@@ -73,6 +73,7 @@ scripts/_test_*_output.txt
 
 # Regenerable/research downloads + runtime snapshots
 data/direction_c/
+data/sacred_holdout/holdout_btc_h1.csv
 data/onchain/
 data/macro_regime_state.json
 logs_*.txt
