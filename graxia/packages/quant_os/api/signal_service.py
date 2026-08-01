@@ -562,6 +562,9 @@ async def get_signal(req: SignalRequest, _key: str = Security(verify_signal_api_
                 )
 
         # Predict with circuit breaker
+        if _model is None:
+            raise HTTPException(status_code=503, detail="Model not loaded")
+
         try:
             proba = _model.predict_proba(features)
             confidence = float(max(proba[0]))
@@ -638,12 +641,14 @@ async def risk_gate(req: RiskGateRequest, _key: str = Security(verify_signal_api
     Returns ``{"allowed": bool, "reason": str}`` — EA only places order
     when ``allowed=true``.
     """
+    from graxia.packages.quant_os.risk.circuit_breaker import CircuitBreaker
     from graxia.packages.quant_os.risk.engine import (
         AccountState,
         PortfolioState,
         RiskEngine,
         Signal,
     )
+    from graxia.packages.quant_os.risk.kill_switch import KillSwitch
 
     # Rate limit: same window as /api/signal (max 30 requests per minute)
     if not _rate_limiter.allow(client_id="risk_gate"):
@@ -683,7 +688,7 @@ async def risk_gate(req: RiskGateRequest, _key: str = Security(verify_signal_api
         venue="paper",
     )
 
-    engine = RiskEngine()
+    engine = RiskEngine(kill_switch=KillSwitch(), circuit_breaker=CircuitBreaker())
     account = AccountState(equity=0.0, balance=0.0)
     portfolio = PortfolioState()
 
