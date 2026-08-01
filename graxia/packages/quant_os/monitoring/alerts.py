@@ -27,21 +27,33 @@ class AlertManager:
     Routes alerts to appropriate channels (Telegram, email, etc.)
     """
 
-    def __init__(self):
-        self.telegram = None  # Would be TelegramNotifier instance
+    def __init__(self, telegram_notifier: Any | None = None):
+        self.telegram = telegram_notifier
+        if self.telegram is None:
+            try:
+                from .telegram import TelegramNotifier
+
+                self.telegram = TelegramNotifier()
+            except Exception:
+                self.telegram = None
         self.alert_history: list = []
 
     async def send_alert(self, alert: Alert) -> bool:
         """Send alert through all configured channels"""
         self.alert_history.append(alert)
 
-        # Route based on severity
-        if alert.severity == IncidentSeverity.P0:
-            # Critical - send to all channels immediately
-            pass
-        elif alert.severity == IncidentSeverity.P1:
-            # High - send to primary channels
-            pass
+        formatted_text = f"<b>{alert.title}</b>\n{alert.message}"
+        if alert.context:
+            formatted_text += f"\n<i>Context: {alert.context}</i>"
+
+        # Dispatch via Telegram if configured
+        if self.telegram:
+            try:
+                await self.telegram.send_message(formatted_text, severity=alert.severity)
+            except Exception as e:
+                import logging
+
+                logging.getLogger(__name__).error(f"Failed to dispatch alert via Telegram: {e}")
 
         return True
 
