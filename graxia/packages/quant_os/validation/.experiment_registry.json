@@ -1,0 +1,24 @@
+{
+  "experiments": [
+    {
+      "experiment_id": "TEST-001",
+      "git_commit": "abc123",
+      "strategy_snapshot_hash": "def456",
+      "parameter_snapshot_hash": "ghi789",
+      "dataset_manifest_ids": [
+        "d1"
+      ],
+      "contract_snapshot_id": "c1",
+      "execution_model_id": "e1",
+      "cost_scenario_id": "base",
+      "risk_policy_id": "r1",
+      "trial_number": 1,
+      "trial_budget": 12,
+      "random_seed": 42,
+      "created_at_utc": "2026-07-31T17:58:37.310531+00:00"
+    }
+  ],
+  "trial_counts": {
+    "TEST-001": 1
+  }
+}

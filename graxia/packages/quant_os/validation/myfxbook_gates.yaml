@@ -1,0 +1,23 @@
+# Myfxbook external-signal red-flag thresholds.
+#
+# These are SEPARATE from decision_gates.yaml (BE-P6 internal XAU candidate gate).
+# Only `trades_min` is shared with that file; screen() loads it from there
+# directly to prevent silent drift. Do NOT duplicate the 100-trade number here.
+#
+# Every other value below is a screener-local heuristic, NOT derived from
+# decision_gates.yaml. See the PROVENANCE block in myfxbook_screener.py.
+
+gain_abs_divergence_ratio: 3.0
+gain_abs_gap_pp: 200
+dd_high: 40
+dd_elevated: 25
+age_days_min: 180
+leverage_high: 500
+leverage_critical: 1000
+win_rate_high: 70
+win_loss_ratio: 1.5
+timeframe_contradiction_seconds: 3600
+pf_unstable: 2.0
+pf_unstable_trades: 50
+sharpe_low: 0.5
+stale_hours: 48
