@@ -1,0 +1,35 @@
+============================================================
+SENTIMENT-PRICE BACKTEST RESULTS
+Trial #1031 (Pre-registered)
+Generated: 2026-08-01T01:49:05.864327
+============================================================
+
+Total sentiment-price pairs: 65
+Non-neutral pairs analyzed: 53
+Hits (direction match): 37
+
+--- STATISTICAL RESULTS ---
+Hit rate: 69.8% (threshold: 55%)
+Cohen's d: 1.074 (threshold: 0.2)
+Z-score: 2.885
+P-value: 3.92e-03
+
+--- DECISION ---
+Significant at α=0.05: YES
+Significant at Bonferroni α=0.000049: NO
+Effect size ≥ 0.2: YES
+Hit rate ≥ 55%: YES
+
+VERDICT: WEAK EVIDENCE (significant but not Bonferroni-corrected)
+
+--- PER-TICKER BREAKDOWN ---
+  AMZN     |   7 pairs | 86% hit | avg ret: 14.887%
+  AAPL     |   6 pairs | 33% hit | avg ret: -9.864%
+  COIN     |   4 pairs | 100% hit | avg ret: -9.482%
+  NVO      |   3 pairs | 100% hit | avg ret: -9.087%
+  XOM      |   3 pairs | 0% hit | avg ret: -1.720%
+  SHEL     |   2 pairs | 100% hit | avg ret: 1.248%
+  CVX      |   2 pairs | 100% hit | avg ret: 1.708%
+  META     |   2 pairs | 50% hit | avg ret: 1.979%
+  RDDT     |   2 pairs | 100% hit | avg ret: -21.349%
+  NVDA     |   2 pairs | 100% hit | avg ret: 2.236%

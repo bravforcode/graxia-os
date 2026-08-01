@@ -1,0 +1,25 @@
+{
+  "positions": {
+    "BTC/USDT": {
+      "notional_usd": 1000.0,
+      "entry_price": 64853.3,
+      "opened_at": "2026-07-27T21:21:18.381515+00:00",
+      "last_checked_at": "2026-07-27T21:21:30.145371+00:00",
+      "entry_cost_usd": 1.6,
+      "cumulative_funding_usd": 0.0,
+      "n_funding_events_recorded": 0
+    },
+    "ETH/USDT": {
+      "notional_usd": 1000.0,
+      "entry_price": 1946.13,
+      "opened_at": "2026-07-27T21:21:18.381515+00:00",
+      "last_checked_at": "2026-07-27T21:21:30.145371+00:00",
+      "entry_cost_usd": 1.6,
+      "cumulative_funding_usd": 0.0,
+      "n_funding_events_recorded": 0
+    }
+  },
+  "funding_log": [],
+  "created_at": "2026-07-27T21:21:18.381515+00:00",
+  "notional_per_leg": 1000.0
+}

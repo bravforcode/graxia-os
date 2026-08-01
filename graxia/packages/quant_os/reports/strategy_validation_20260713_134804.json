@@ -1,0 +1,28 @@
+[
+  {
+    "name": "BTC Vol Divergence",
+    "trial_number": 2001,
+    "n_trades": 6,
+    "win_rate": 0.3333333333333333,
+    "total_pnl": -0.07824850306537051,
+    "sharpe": -2.057797644269937,
+    "t_stat": -0.6350501401099048,
+    "p_value": 0.5533159701303025,
+    "wfa_oos_ratio": 0.6,
+    "wfe": NaN,
+    "dsr": NaN,
+    "ci_lower": -2.057797644269937,
+    "ci_upper": 3.5348190294952286,
+    "gates": {
+      "p_value": "FAIL",
+      "wfa_oos_positive": "FAIL",
+      "wfe": "INSUFFICIENT_DATA",
+      "dsr": "INSUFFICIENT_DATA",
+      "bootstrap_ci": "FAIL",
+      "min_trades": "FAIL"
+    },
+    "overall": "FAIL",
+    "pass_count": 0,
+    "fail_count": 4
+  }
+]

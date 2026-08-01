@@ -1,0 +1,706 @@
+{
+  "monte_carlo": {
+    "n_simulations": 1000,
+    "path_length": 10000,
+    "elapsed_seconds": 65.8,
+    "sharpe": {
+      "mean": 2.062,
+      "median": 2.085,
+      "std": 0.687,
+      "p5": 0.915,
+      "p25": 1.542,
+      "p75": 2.587,
+      "p95": 3.142,
+      "pct_profitable": 99.8
+    },
+    "total_pnl": {
+      "mean": 297941.7,
+      "median": 191412.8,
+      "p5": 97964.01,
+      "p95": 610716.27,
+      "pct_profitable": 99.8
+    },
+    "win_rate": {
+      "mean": 53.5,
+      "std": 2.2
+    },
+    "max_drawdown": {
+      "mean": 13985.36,
+      "p95": 20608.09,
+      "p99": 38618.17
+    },
+    "trades_per_run": {
+      "mean": 557.6,
+      "std": 17.5
+    }
+  },
+  "multi_asset": {
+    "assets": {
+      "AUDUSD": {
+        "total_trades": 2133,
+        "total_pnl": 894890.79,
+        "win_rate_pct": 49.3,
+        "avg_win": 1794.18,
+        "avg_loss": -915.7,
+        "profit_factor": 1.9,
+        "sharpe": 1.88,
+        "max_drawdown": 15714.01,
+        "max_win_streak": 11,
+        "max_loss_streak": 13,
+        "avg_holding_bars": 3.3,
+        "trades_per_year": 265.5,
+        "symbol": "AUDUSD",
+        "spread_bps": 0.1,
+        "data_bars": 50000
+      },
+      "BTCUSD": {
+        "total_trades": 1829,
+        "total_pnl": 540119.86,
+        "win_rate_pct": 49.2,
+        "avg_win": 1518.84,
+        "avg_loss": -890.02,
+        "profit_factor": 1.65,
+        "sharpe": 2.648,
+        "max_drawdown": 16336.24,
+        "max_win_streak": 11,
+        "max_loss_streak": 10,
+        "avg_holding_bars": 2.8,
+        "trades_per_year": 302.9,
+        "symbol": "BTCUSD",
+        "spread_bps": 2.43,
+        "data_bars": 50000
+      },
+      "ETHUSD": {
+        "total_trades": 1818,
+        "total_pnl": 441067.35,
+        "win_rate_pct": 48.4,
+        "avg_win": 1507.73,
+        "avg_loss": -944.28,
+        "profit_factor": 1.5,
+        "sharpe": 2.056,
+        "max_drawdown": 21445.65,
+        "max_win_streak": 10,
+        "max_loss_streak": 12,
+        "avg_holding_bars": 2.9,
+        "trades_per_year": 301.1,
+        "symbol": "ETHUSD",
+        "spread_bps": 11.67,
+        "data_bars": 50000
+      },
+      "EURUSD": {
+        "total_trades": 1931,
+        "total_pnl": 2470293.07,
+        "win_rate_pct": 50.0,
+        "avg_win": 3458.67,
+        "avg_loss": -898.78,
+        "profit_factor": 3.85,
+        "sharpe": 0.777,
+        "max_drawdown": 13685.9,
+        "max_win_streak": 10,
+        "max_loss_streak": 7,
+        "avg_holding_bars": 2.9,
+        "trades_per_year": 240.2,
+        "symbol": "EURUSD",
+        "spread_bps": 0.0,
+        "data_bars": 50000
+      },
+      "GBPUSD": {
+        "total_trades": 2152,
+        "total_pnl": 715041.73,
+        "win_rate_pct": 50.8,
+        "avg_win": 1614.39,
+        "avg_loss": -993.47,
+        "profit_factor": 1.68,
+        "sharpe": 1.695,
+        "max_drawdown": 94743.53,
+        "max_win_streak": 13,
+        "max_loss_streak": 14,
+        "avg_holding_bars": 3.0,
+        "trades_per_year": 267.6,
+        "symbol": "GBPUSD",
+        "spread_bps": 0.15,
+        "data_bars": 50000
+      },
+      "NAS100": {
+        "total_trades": 1418,
+        "total_pnl": 1906906.4,
+        "win_rate_pct": 50.6,
+        "avg_win": 3655.74,
+        "avg_loss": -1025.6,
+        "profit_factor": 3.66,
+        "sharpe": 0.756,
+        "max_drawdown": 77743.03,
+        "max_win_streak": 9,
+        "max_loss_streak": 9,
+        "avg_holding_bars": 3.3,
+        "trades_per_year": 168.9,
+        "symbol": "NAS100",
+        "spread_bps": 1.0,
+        "data_bars": 50000
+      },
+      "NZDUSD": {
+        "total_trades": 2119,
+        "total_pnl": 605100.78,
+        "win_rate_pct": 49.1,
+        "avg_win": 1516.58,
+        "avg_loss": -900.97,
+        "profit_factor": 1.62,
+        "sharpe": 2.009,
+        "max_drawdown": 13759.02,
+        "max_win_streak": 12,
+        "max_loss_streak": 9,
+        "avg_holding_bars": 3.3,
+        "trades_per_year": 263.7,
+        "symbol": "NZDUSD",
+        "spread_bps": 0.0,
+        "data_bars": 50000
+      },
+      "US30": {
+        "total_trades": 2005,
+        "total_pnl": 890950.19,
+        "win_rate_pct": 50.8,
+        "avg_win": 1764.6,
+        "avg_loss": -920.06,
+        "profit_factor": 1.98,
+        "sharpe": 1.99,
+        "max_drawdown": 13684.27,
+        "max_win_streak": 10,
+        "max_loss_streak": 11,
+        "avg_holding_bars": 3.0,
+        "trades_per_year": 240.9,
+        "symbol": "US30",
+        "spread_bps": 0.5,
+        "data_bars": 50000
+      },
+      "USDCAD": {
+        "total_trades": 2173,
+        "total_pnl": 3110724.42,
+        "win_rate_pct": 50.7,
+        "avg_win": 3694.37,
+        "avg_loss": -896.8,
+        "profit_factor": 4.24,
+        "sharpe": 0.645,
+        "max_drawdown": 13882.51,
+        "max_win_streak": 10,
+        "max_loss_streak": 8,
+        "avg_holding_bars": 3.0,
+        "trades_per_year": 270.5,
+        "symbol": "USDCAD",
+        "spread_bps": 0.0,
+        "data_bars": 50000
+      },
+      "USDCHF": {
+        "total_trades": 1861,
+        "total_pnl": 2335811.83,
+        "win_rate_pct": 51.6,
+        "avg_win": 3272.01,
+        "avg_loss": -898.43,
+        "profit_factor": 3.89,
+        "sharpe": 0.949,
+        "max_drawdown": 17000.0,
+        "max_win_streak": 15,
+        "max_loss_streak": 17,
+        "avg_holding_bars": 3.0,
+        "trades_per_year": 231.7,
+        "symbol": "USDCHF",
+        "spread_bps": 0.0,
+        "data_bars": 50000
+      },
+      "USDJPY": {
+        "total_trades": 2187,
+        "total_pnl": 1041481.32,
+        "win_rate_pct": 53.0,
+        "avg_win": 1686.34,
+        "avg_loss": -888.11,
+        "profit_factor": 2.14,
+        "sharpe": 1.76,
+        "max_drawdown": 11506.04,
+        "max_win_streak": 12,
+        "max_loss_streak": 8,
+        "avg_holding_bars": 3.1,
+        "trades_per_year": 272.2,
+        "symbol": "USDJPY",
+        "spread_bps": 0.06,
+        "data_bars": 50000
+      },
+      "XAGUSD": {
+        "total_trades": 343,
+        "total_pnl": 86874.93,
+        "win_rate_pct": 53.1,
+        "avg_win": 1290.48,
+        "avg_loss": -919.21,
+        "profit_factor": 1.59,
+        "sharpe": 1.017,
+        "max_drawdown": 10841.89,
+        "max_win_streak": 14,
+        "max_loss_streak": 7,
+        "avg_holding_bars": 2.9,
+        "trades_per_year": 49.9,
+        "symbol": "XAGUSD",
+        "spread_bps": 6.58,
+        "data_bars": 50000
+      },
+      "XAUUSD": {
+        "total_trades": 266,
+        "total_pnl": 55399.74,
+        "win_rate_pct": 51.9,
+        "avg_win": 1247.02,
+        "avg_loss": -911.64,
+        "profit_factor": 1.47,
+        "sharpe": 1.012,
+        "max_drawdown": 8363.74,
+        "max_win_streak": 11,
+        "max_loss_streak": 7,
+        "avg_holding_bars": 2.8,
+        "trades_per_year": 38.1,
+        "symbol": "XAUUSD",
+        "spread_bps": 0.36,
+        "data_bars": 50000
+      },
+      "XPDUSD": {
+        "total_trades": 1328,
+        "total_pnl": 1054867.54,
+        "win_rate_pct": 48.9,
+        "avg_win": 2531.01,
+        "avg_loss": -866.9,
+        "profit_factor": 2.79,
+        "sharpe": 1.203,
+        "max_drawdown": 14308.54,
+        "max_win_streak": 8,
+        "max_loss_streak": 9,
+        "avg_holding_bars": 2.8,
+        "trades_per_year": 155.6,
+        "symbol": "XPDUSD",
+        "spread_bps": 0.0,
+        "data_bars": 50000
+      },
+      "XPTUSD": {
+        "total_trades": 677,
+        "total_pnl": 411792.76,
+        "win_rate_pct": 48.0,
+        "avg_win": 2238.36,
+        "avg_loss": -896.8,
+        "profit_factor": 2.3,
+        "sharpe": 1.201,
+        "max_drawdown": 14698.32,
+        "max_win_streak": 15,
+        "max_loss_streak": 11,
+        "avg_holding_bars": 2.9,
+        "trades_per_year": 84.8,
+        "symbol": "XPTUSD",
+        "spread_bps": 0.0,
+        "data_bars": 50000
+      }
+    },
+    "summary": {
+      "total_assets": 15,
+      "profitable": 15,
+      "mean_sharpe": 1.44,
+      "mean_pnl": 1104088.18
+    }
+  },
+  "parameter_sensitivity": {
+    "results": {
+      "p10_vf1": {
+        "total_trades": 2665,
+        "total_pnl": 1932590.28,
+        "win_rate_pct": 46.2,
+        "avg_win": 2496.86,
+        "avg_loss": -793.42,
+        "profit_factor": 2.7,
+        "sharpe": 0.529,
+        "max_drawdown": 24795.91,
+        "max_win_streak": 11,
+        "max_loss_streak": 11,
+        "avg_holding_bars": 2.8,
+        "trades_per_year": 441.2,
+        "params": {
+          "period": 10,
+          "vol_filter": true
+        },
+        "label": "p10_vf1"
+      },
+      "p15_vf1": {
+        "total_trades": 2142,
+        "total_pnl": 541770.11,
+        "win_rate_pct": 47.8,
+        "avg_win": 1468.25,
+        "avg_loss": -858.13,
+        "profit_factor": 1.56,
+        "sharpe": 2.256,
+        "max_drawdown": 20902.86,
+        "max_win_streak": 13,
+        "max_loss_streak": 15,
+        "avg_holding_bars": 2.8,
+        "trades_per_year": 354.7,
+        "params": {
+          "period": 15,
+          "vol_filter": true
+        },
+        "label": "p15_vf1"
+      },
+      "p20_vf1": {
+        "total_trades": 1829,
+        "total_pnl": 540119.86,
+        "win_rate_pct": 49.2,
+        "avg_win": 1518.84,
+        "avg_loss": -890.02,
+        "profit_factor": 1.65,
+        "sharpe": 2.648,
+        "max_drawdown": 16336.24,
+        "max_win_streak": 11,
+        "max_loss_streak": 10,
+        "avg_holding_bars": 2.8,
+        "trades_per_year": 302.9,
+        "params": {
+          "period": 20,
+          "vol_filter": true
+        },
+        "label": "p20_vf1"
+      },
+      "p25_vf1": {
+        "total_trades": 1558,
+        "total_pnl": 597920.63,
+        "win_rate_pct": 52.6,
+        "avg_win": 1550.31,
+        "avg_loss": -909.05,
+        "profit_factor": 1.89,
+        "sharpe": 3.298,
+        "max_drawdown": 12044.06,
+        "max_win_streak": 11,
+        "max_loss_streak": 12,
+        "avg_holding_bars": 2.9,
+        "trades_per_year": 258.4,
+        "params": {
+          "period": 25,
+          "vol_filter": true
+        },
+        "label": "p25_vf1"
+      },
+      "p30_vf1": {
+        "total_trades": 1396,
+        "total_pnl": 642427.7,
+        "win_rate_pct": 55.2,
+        "avg_win": 1583.12,
+        "avg_loss": -925.05,
+        "profit_factor": 2.11,
+        "sharpe": 3.306,
+        "max_drawdown": 15213.15,
+        "max_win_streak": 11,
+        "max_loss_streak": 11,
+        "avg_holding_bars": 2.9,
+        "trades_per_year": 231.5,
+        "params": {
+          "period": 30,
+          "vol_filter": true
+        },
+        "label": "p30_vf1"
+      },
+      "p35_vf1": {
+        "total_trades": 1285,
+        "total_pnl": 707946.7,
+        "win_rate_pct": 58.2,
+        "avg_win": 1612.44,
+        "avg_loss": -927.67,
+        "profit_factor": 2.42,
+        "sharpe": 3.629,
+        "max_drawdown": 13812.27,
+        "max_win_streak": 12,
+        "max_loss_streak": 9,
+        "avg_holding_bars": 2.9,
+        "trades_per_year": 213.1,
+        "params": {
+          "period": 35,
+          "vol_filter": true
+        },
+        "label": "p35_vf1"
+      },
+      "p40_vf1": {
+        "total_trades": 1219,
+        "total_pnl": 711752.99,
+        "win_rate_pct": 58.5,
+        "avg_win": 1668.06,
+        "avg_loss": -943.82,
+        "profit_factor": 2.49,
+        "sharpe": 3.499,
+        "max_drawdown": 11686.92,
+        "max_win_streak": 12,
+        "max_loss_streak": 10,
+        "avg_holding_bars": 2.9,
+        "trades_per_year": 202.3,
+        "params": {
+          "period": 40,
+          "vol_filter": true
+        },
+        "label": "p40_vf1"
+      },
+      "p50_vf1": {
+        "total_trades": 1056,
+        "total_pnl": 1118143.37,
+        "win_rate_pct": 61.2,
+        "avg_win": 2330.7,
+        "avg_loss": -945.1,
+        "profit_factor": 3.89,
+        "sharpe": 1.231,
+        "max_drawdown": 7133.73,
+        "max_win_streak": 13,
+        "max_loss_streak": 5,
+        "avg_holding_bars": 2.9,
+        "trades_per_year": 175.2,
+        "params": {
+          "period": 50,
+          "vol_filter": true
+        },
+        "label": "p50_vf1"
+      },
+      "p60_vf1": {
+        "total_trades": 979,
+        "total_pnl": 1089745.82,
+        "win_rate_pct": 61.5,
+        "avg_win": 2407.69,
+        "avg_loss": -954.06,
+        "profit_factor": 4.03,
+        "sharpe": 1.206,
+        "max_drawdown": 9661.67,
+        "max_win_streak": 13,
+        "max_loss_streak": 8,
+        "avg_holding_bars": 2.9,
+        "trades_per_year": 162.9,
+        "params": {
+          "period": 60,
+          "vol_filter": true
+        },
+        "label": "p60_vf1"
+      },
+      "p10_vf0": {
+        "total_trades": 3525,
+        "total_pnl": 2355700.61,
+        "win_rate_pct": 45.8,
+        "avg_win": 2382.84,
+        "avg_loss": -778.15,
+        "profit_factor": 2.58,
+        "sharpe": 0.633,
+        "max_drawdown": 24795.91,
+        "max_win_streak": 11,
+        "max_loss_streak": 11,
+        "avg_holding_bars": 2.8,
+        "trades_per_year": 583.6,
+        "params": {
+          "period": 10,
+          "vol_filter": false
+        },
+        "label": "p10_vf0"
+      },
+      "p15_vf0": {
+        "total_trades": 2788,
+        "total_pnl": 923686.46,
+        "win_rate_pct": 48.2,
+        "avg_win": 1592.96,
+        "avg_loss": -844.66,
+        "profit_factor": 1.76,
+        "sharpe": 1.225,
+        "max_drawdown": 20902.86,
+        "max_win_streak": 11,
+        "max_loss_streak": 10,
+        "avg_holding_bars": 2.8,
+        "trades_per_year": 461.6,
+        "params": {
+          "period": 15,
+          "vol_filter": false
+        },
+        "label": "p15_vf0"
+      },
+      "p20_vf0": {
+        "total_trades": 2342,
+        "total_pnl": 977064.19,
+        "win_rate_pct": 49.4,
+        "avg_win": 1741.03,
+        "avg_loss": -875.36,
+        "profit_factor": 1.94,
+        "sharpe": 1.293,
+        "max_drawdown": 18916.24,
+        "max_win_streak": 11,
+        "max_loss_streak": 13,
+        "avg_holding_bars": 2.8,
+        "trades_per_year": 387.8,
+        "params": {
+          "period": 20,
+          "vol_filter": false
+        },
+        "label": "p20_vf0"
+      },
+      "p25_vf0": {
+        "total_trades": 1992,
+        "total_pnl": 1040023.44,
+        "win_rate_pct": 52.6,
+        "avg_win": 1802.13,
+        "avg_loss": -898.95,
+        "profit_factor": 2.23,
+        "sharpe": 1.389,
+        "max_drawdown": 17356.25,
+        "max_win_streak": 13,
+        "max_loss_streak": 11,
+        "avg_holding_bars": 2.8,
+        "trades_per_year": 330.4,
+        "params": {
+          "period": 25,
+          "vol_filter": false
+        },
+        "label": "p25_vf0"
+      },
+      "p30_vf0": {
+        "total_trades": 1771,
+        "total_pnl": 1105556.94,
+        "win_rate_pct": 55.1,
+        "avg_win": 1879.13,
+        "avg_loss": -912.81,
+        "profit_factor": 2.52,
+        "sharpe": 1.471,
+        "max_drawdown": 21254.28,
+        "max_win_streak": 11,
+        "max_loss_streak": 11,
+        "avg_holding_bars": 2.8,
+        "trades_per_year": 293.7,
+        "params": {
+          "period": 30,
+          "vol_filter": false
+        },
+        "label": "p30_vf0"
+      },
+      "p35_vf0": {
+        "total_trades": 1628,
+        "total_pnl": 1137809.44,
+        "win_rate_pct": 57.4,
+        "avg_win": 1904.07,
+        "avg_loss": -923.04,
+        "profit_factor": 2.78,
+        "sharpe": 1.517,
+        "max_drawdown": 22535.33,
+        "max_win_streak": 12,
+        "max_loss_streak": 8,
+        "avg_holding_bars": 2.9,
+        "trades_per_year": 270.0,
+        "params": {
+          "period": 35,
+          "vol_filter": false
+        },
+        "label": "p35_vf0"
+      },
+      "p40_vf0": {
+        "total_trades": 1531,
+        "total_pnl": 1113335.79,
+        "win_rate_pct": 57.9,
+        "avg_win": 1941.44,
+        "avg_loss": -940.75,
+        "profit_factor": 2.83,
+        "sharpe": 1.482,
+        "max_drawdown": 18827.68,
+        "max_win_streak": 12,
+        "max_loss_streak": 9,
+        "avg_holding_bars": 2.8,
+        "trades_per_year": 254.0,
+        "params": {
+          "period": 40,
+          "vol_filter": false
+        },
+        "label": "p40_vf0"
+      },
+      "p50_vf0": {
+        "total_trades": 1288,
+        "total_pnl": 1525596.06,
+        "win_rate_pct": 60.5,
+        "avg_win": 2576.28,
+        "avg_loss": -945.64,
+        "profit_factor": 4.17,
+        "sharpe": 1.314,
+        "max_drawdown": 9716.63,
+        "max_win_streak": 13,
+        "max_loss_streak": 8,
+        "avg_holding_bars": 2.9,
+        "trades_per_year": 213.7,
+        "params": {
+          "period": 50,
+          "vol_filter": false
+        },
+        "label": "p50_vf0"
+      },
+      "p60_vf0": {
+        "total_trades": 1159,
+        "total_pnl": 1470985.53,
+        "win_rate_pct": 61.3,
+        "avg_win": 2670.06,
+        "avg_loss": -954.08,
+        "profit_factor": 4.44,
+        "sharpe": 1.273,
+        "max_drawdown": 8390.94,
+        "max_win_streak": 13,
+        "max_loss_streak": 8,
+        "avg_holding_bars": 3.0,
+        "trades_per_year": 192.9,
+        "params": {
+          "period": 60,
+          "vol_filter": false
+        },
+        "label": "p60_vf0"
+      }
+    },
+    "robustness": {
+      "sharpe_range": [
+        0.529,
+        3.629
+      ],
+      "sharpe_std": 0.968,
+      "profitable_pct": 100.0,
+      "best": "p35_vf1"
+    }
+  },
+  "regime_analysis": {
+    "regimes": {
+      "TRENDING": {
+        "total_trades": 2,
+        "total_pnl": -362389.02,
+        "win_rate_pct": 50.0,
+        "avg_win": 812.15,
+        "avg_loss": -363201.17,
+        "profit_factor": 0.0,
+        "sharpe": -0.575,
+        "max_drawdown": 363201.17,
+        "max_win_streak": 1,
+        "max_loss_streak": 1,
+        "avg_holding_bars": 2.0,
+        "trades_per_year": 0.3,
+        "regime": "TRENDING",
+        "n_signals": 5,
+        "regime_pct": 0.1
+      },
+      "RANGING": {
+        "total_trades": 0,
+        "error": "no trades",
+        "regime": "RANGING",
+        "n_signals": 0,
+        "regime_pct": 0.0
+      },
+      "VOLATILE": {
+        "total_trades": 0,
+        "error": "no trades",
+        "regime": "VOLATILE",
+        "n_signals": 0,
+        "regime_pct": 0.0
+      }
+    },
+    "full": {
+      "total_trades": 1829,
+      "total_pnl": 540119.86,
+      "win_rate_pct": 49.2,
+      "avg_win": 1518.84,
+      "avg_loss": -890.02,
+      "profit_factor": 1.65,
+      "sharpe": 2.648,
+      "max_drawdown": 16336.24,
+      "max_win_streak": 11,
+      "max_loss_streak": 10,
+      "avg_holding_bars": 2.8,
+      "trades_per_year": 302.9
+    }
+  }
+}

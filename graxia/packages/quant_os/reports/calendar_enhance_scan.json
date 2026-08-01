@@ -1,0 +1,213 @@
+{
+  "date": "2026-07-23 19:51:54.062305",
+  "results": [
+    {
+      "cat": "Calendar",
+      "name": "January(1)",
+      "oos_sharpe": 4.8454806684256875,
+      "oos_trades": 5,
+      "oos_wr": 60.0,
+      "ann_ret": 130.74819450941513
+    },
+    {
+      "cat": "Calendar",
+      "name": "Dec-Feb(1)",
+      "oos_sharpe": 4.8454806684256875,
+      "oos_trades": 5,
+      "oos_wr": 60.0,
+      "ann_ret": 130.74819450941513
+    },
+    {
+      "cat": "TrailStop",
+      "name": "D25+Trail5ATR",
+      "oos_sharpe": 3.7105767643814493,
+      "oos_trades": 17,
+      "oos_wr": 47.05882352941176,
+      "ann_ret": 216.04871098309926
+    },
+    {
+      "cat": "VolFilter",
+      "name": "D25+Vol>1.00",
+      "oos_sharpe": 3.2215406416455985,
+      "oos_trades": 34,
+      "oos_wr": 52.94117647058824,
+      "ann_ret": 116.16061900833692
+    },
+    {
+      "cat": "TrailStop",
+      "name": "D25+Trail3ATR",
+      "oos_sharpe": 2.486351093967252,
+      "oos_trades": 33,
+      "oos_wr": 42.42424242424242,
+      "ann_ret": 109.70899861972244
+    },
+    {
+      "cat": "VolFilter",
+      "name": "D25+Vol>0.50",
+      "oos_sharpe": 2.388713226991035,
+      "oos_trades": 27,
+      "oos_wr": 44.44444444444444,
+      "ann_ret": 107.52573789465754
+    },
+    {
+      "cat": "VolFilter",
+      "name": "D25+Vol>0.75",
+      "oos_sharpe": 2.153553395316913,
+      "oos_trades": 35,
+      "oos_wr": 34.285714285714285,
+      "ann_ret": 92.90773478575387
+    },
+    {
+      "cat": "Calendar",
+      "name": "MidMonth(10-20)",
+      "oos_sharpe": 1.9251553816242517,
+      "oos_trades": 54,
+      "oos_wr": 55.55555555555556,
+      "ann_ret": 38.217626227860165
+    },
+    {
+      "cat": "TrailStop",
+      "name": "D25+Trail2ATR",
+      "oos_sharpe": 1.20803599895637,
+      "oos_trades": 52,
+      "oos_wr": 42.30769230769231,
+      "ann_ret": 42.77107367659797
+    },
+    {
+      "cat": "TrailStop",
+      "name": "D25+Trail1ATR",
+      "oos_sharpe": 1.0986247323139573,
+      "oos_trades": 110,
+      "oos_wr": 42.72727272727273,
+      "ann_ret": 24.940747598883885
+    },
+    {
+      "cat": "Calendar",
+      "name": "Friday(4)",
+      "oos_sharpe": 0.15222615425593597,
+      "oos_trades": 234,
+      "oos_wr": 50.0,
+      "ann_ret": 1.0162106708580225
+    },
+    {
+      "cat": "VolFilter",
+      "name": "D25+Vol>1.25",
+      "oos_sharpe": 0.06638189354958896,
+      "oos_trades": 30,
+      "oos_wr": 40.0,
+      "ann_ret": 1.578356586989206
+    },
+    {
+      "cat": "Enhance",
+      "name": "D25+NoMidMonth",
+      "oos_sharpe": -0.04835188623430891,
+      "oos_trades": 65,
+      "oos_wr": 43.07692307692308,
+      "ann_ret": -1.1868247465899027
+    },
+    {
+      "cat": "VolFilter",
+      "name": "D25+Vol>1.50",
+      "oos_sharpe": -0.13535574043570908,
+      "oos_trades": 8,
+      "oos_wr": 25.0,
+      "ann_ret": -3.476853657848448
+    },
+    {
+      "cat": "Calendar",
+      "name": "MidWeek(Tue-Thu)(1)",
+      "oos_sharpe": -0.4889404606437565,
+      "oos_trades": 236,
+      "oos_wr": 46.186440677966104,
+      "ann_ret": -3.9808269554774878
+    },
+    {
+      "cat": "Calendar",
+      "name": "MidWeek(Tue-Thu)(2)",
+      "oos_sharpe": -1.0344924994054554,
+      "oos_trades": 235,
+      "oos_wr": 44.25531914893617,
+      "ann_ret": -8.804705417498635
+    },
+    {
+      "cat": "Enhance",
+      "name": "D25+Monday(0)",
+      "oos_sharpe": -1.1049257850951106,
+      "oos_trades": 235,
+      "oos_wr": 44.25531914893617,
+      "ann_ret": -8.23007705084387
+    },
+    {
+      "cat": "Calendar",
+      "name": "TurnOfMonth",
+      "oos_sharpe": -1.1277584585920808,
+      "oos_trades": 55,
+      "oos_wr": 47.27272727272727,
+      "ann_ret": -17.945109093497948
+    },
+    {
+      "cat": "Calendar",
+      "name": "Monday(0)",
+      "oos_sharpe": -1.253187685412397,
+      "oos_trades": 235,
+      "oos_wr": 44.25531914893617,
+      "ann_ret": -9.334252268495984
+    },
+    {
+      "cat": "Enhance",
+      "name": "D25+Friday(4)",
+      "oos_sharpe": -1.7406601231014605,
+      "oos_trades": 234,
+      "oos_wr": 45.72649572649573,
+      "ann_ret": -11.662734464409997
+    },
+    {
+      "cat": "Enhance",
+      "name": "D25+TurnOfMonth",
+      "oos_sharpe": -2.4435151280878546,
+      "oos_trades": 56,
+      "oos_wr": 48.214285714285715,
+      "ann_ret": -39.34932682793401
+    },
+    {
+      "cat": "Calendar",
+      "name": "MidWeek(Tue-Thu)(3)",
+      "oos_sharpe": -2.458401505527887,
+      "oos_trades": 233,
+      "oos_wr": 40.343347639484975,
+      "ann_ret": -19.083563019072063
+    },
+    {
+      "cat": "Enhance",
+      "name": "D25+Jan(1)",
+      "oos_sharpe": -4.254616381973634,
+      "oos_trades": 7,
+      "oos_wr": 28.57142857142857,
+      "ann_ret": -129.11688780183115
+    },
+    {
+      "cat": "Enhance",
+      "name": "D25+DecFeb(1)",
+      "oos_sharpe": -4.254616381973634,
+      "oos_trades": 7,
+      "oos_wr": 28.57142857142857,
+      "ann_ret": -129.11688780183115
+    },
+    {
+      "cat": "Calendar",
+      "name": "Dec-Feb(2)",
+      "oos_sharpe": -7.951670918200387,
+      "oos_trades": 5,
+      "oos_wr": 20.0,
+      "ann_ret": -212.0076871413623
+    },
+    {
+      "cat": "Enhance",
+      "name": "D25+DecFeb(2)",
+      "oos_sharpe": -12.242088526924782,
+      "oos_trades": 7,
+      "oos_wr": 14.285714285714285,
+      "ann_ret": -287.52626762308756
+    }
+  ]
+}

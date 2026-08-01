@@ -1,0 +1,57 @@
+{
+  "trial_number": 4001,
+  "generated_at": "2026-07-27T20:24:44.163929+00:00",
+  "test": "funding_rate_arb_feasibility_pilot",
+  "note": "Structural market-fact measurement, not a directional price-prediction test.",
+  "assumed_costs_bps": {
+    "spot_fee": 10.0,
+    "perp_fee": 4.0,
+    "spread": 2.0,
+    "one_time_round_trip_total": 32.0
+  },
+  "per_symbol": [
+    {
+      "symbol": "BTC/USDT",
+      "n_periods": 1095,
+      "actual_days_observed": 364.7,
+      "positive_periods": 832,
+      "positive_period_pct": 75.98,
+      "mean_rate_per_8h_period": 3.083354337899543e-05,
+      "cumulative_rate_over_window": 0.03376273,
+      "raw_annualized_funding_yield_bps": 337.94,
+      "onetime_roundtrip_cost_bps": 32.0,
+      "onetime_cost_amortized_annual_bps": 32.03,
+      "net_annualized_yield_bps": 305.91,
+      "net_annualized_yield_pct": 3.059,
+      "durably_positive": true,
+      "first_ts": "2025-07-28T00:00:00.005Z",
+      "last_ts": "2026-07-27T16:00:00.001Z"
+    },
+    {
+      "symbol": "ETH/USDT",
+      "n_periods": 1095,
+      "actual_days_observed": 364.7,
+      "positive_periods": 792,
+      "positive_period_pct": 72.33,
+      "mean_rate_per_8h_period": 2.286766210045662e-05,
+      "cumulative_rate_over_window": 0.02504009,
+      "raw_annualized_funding_yield_bps": 250.63,
+      "onetime_roundtrip_cost_bps": 32.0,
+      "onetime_cost_amortized_annual_bps": 32.03,
+      "net_annualized_yield_bps": 218.6,
+      "net_annualized_yield_pct": 2.186,
+      "durably_positive": true,
+      "first_ts": "2025-07-28T00:00:00.005Z",
+      "last_ts": "2026-07-27T16:00:00.001Z"
+    }
+  ],
+  "verdict": "FAIL_RIGOR",
+  "verdict_criterion": ">=2 valid symbols, each net_annualized_yield>0 AND >50% periods positive",
+  "superseded_by": {
+    "trial_number": 4003,
+    "date": "2026-07-28",
+    "finding": "Trial #4001 PASS was feasibility-only. #4003 rigor test: mechanism is real but CURRENT market regime funding yield does NOT beat T-bill risk-free rate after realistic costs.",
+    "final_verdict": "FAIL_RIGOR"
+  },
+  "current_verdict_2026-07-28": "NOT CURRENTLY DEPLOYABLE — funding yield < risk-free rate in current regime"
+}

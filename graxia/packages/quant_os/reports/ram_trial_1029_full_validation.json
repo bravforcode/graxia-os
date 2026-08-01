@@ -1,0 +1,160 @@
+{
+  "trial_id": 1029,
+  "strategy": "Regime-Adaptive Multi-Asset (RAM)",
+  "config": {
+    "universe": [
+      "XAUUSD",
+      "XAGUSD",
+      "EURUSD",
+      "GBPUSD",
+      "USDJPY",
+      "NAS100",
+      "US30"
+    ],
+    "vol_lookback_short": 20,
+    "vol_lookback_long": 200,
+    "vol_low_threshold": 0.7,
+    "vol_high_threshold": 1.3,
+    "mom_lookback": 20,
+    "mom_entry_z": 1.0,
+    "mr_lookback": 20,
+    "mr_entry_z": 2.0
+  },
+  "regime_distribution": {
+    "normal": 1952,
+    "low_vol": 193,
+    "high_vol": 169
+  },
+  "baseline_metrics": {
+    "total_return": 0.08946213289083116,
+    "annual_return": 0.009374871827424025,
+    "annual_vol": 0.02426381031752406,
+    "sharpe": 0.38637261438914267,
+    "max_drawdown": -0.03831287198346295,
+    "win_rate": 0.5059760956175299,
+    "profit_factor": 1.3509166989416574,
+    "trade_count": "300",
+    "n_observations": 2314
+  },
+  "driscoll_kraay": {
+    "t_stat": 0.3327006075840499,
+    "pass": false
+  },
+  "walk_forward": {
+    "windows": [
+      {
+        "window": 1,
+        "is_sharpe": -0.9381911459515477,
+        "oos_sharpe": 0.0,
+        "wfe": -0.0,
+        "is_return": -0.00987680282406811,
+        "oos_return": 0.0
+      },
+      {
+        "window": 2,
+        "is_sharpe": 0.5382722956134808,
+        "oos_sharpe": 0.0,
+        "wfe": 0.0,
+        "is_return": 0.0099353876884678,
+        "oos_return": 0.0
+      },
+      {
+        "window": 3,
+        "is_sharpe": 0.5123498420391537,
+        "oos_sharpe": 0.0,
+        "wfe": 0.0,
+        "is_return": 0.032762943139931,
+        "oos_return": 0.0
+      }
+    ],
+    "avg_wfe": 0.0,
+    "positive_oos_count": 0,
+    "total_windows": 3
+  },
+  "cost_stress": {
+    "1.0x": {
+      "sharpe": 0.38637261438914267,
+      "annual_return": 0.009374871827424025,
+      "max_drawdown": -0.03831287198346295,
+      "profit_factor": 1.3509166989416574
+    },
+    "1.5x": {
+      "sharpe": 0.3657657932239242,
+      "annual_return": 0.008874871827424025,
+      "max_drawdown": -0.03831287198346295,
+      "profit_factor": 1.3509166989416574
+    },
+    "2.0x": {
+      "sharpe": 0.3451589720587058,
+      "annual_return": 0.008374871827424024,
+      "max_drawdown": -0.03831287198346295,
+      "profit_factor": 1.3509166989416574
+    }
+  },
+  "jackknife": {
+    "baseline": {
+      "total_return": 0.08946213289083116,
+      "annual_return": 0.009374871827424025,
+      "annual_vol": 0.02426381031752406,
+      "sharpe": 0.38637261438914267,
+      "max_drawdown": -0.03831287198346295,
+      "win_rate": 0.5059760956175299,
+      "profit_factor": 1.3509166989416574,
+      "trade_count": "300",
+      "n_observations": 2314
+    },
+    "XAUUSD": {
+      "sharpe": 0.47718400712781367,
+      "delta_sharpe": -0.090811392738671,
+      "sharpe_pct_change": -0.2350357902105571,
+      "annual_return": 0.011274302971121086
+    },
+    "XAGUSD": {
+      "sharpe": 0.5699102250107219,
+      "delta_sharpe": -0.1835376106215792,
+      "sharpe_pct_change": -0.4750274832799763,
+      "annual_return": 0.012814525646490438
+    },
+    "EURUSD": {
+      "sharpe": 0.5962659848497099,
+      "delta_sharpe": -0.20989337046056727,
+      "sharpe_pct_change": -0.5432408060090126,
+      "annual_return": 0.014742076298532192
+    },
+    "GBPUSD": {
+      "sharpe": 0.41769029073618447,
+      "delta_sharpe": -0.0313176763470418,
+      "sharpe_pct_change": -0.08105563174179731,
+      "annual_return": 0.010362225665872193
+    },
+    "USDJPY": {
+      "sharpe": 0.6258604945958477,
+      "delta_sharpe": -0.23948788020670503,
+      "sharpe_pct_change": -0.6198365807714834,
+      "annual_return": 0.015220925820995213
+    },
+    "NAS100": {
+      "sharpe": -0.06553253655792556,
+      "delta_sharpe": 0.45190515094706823,
+      "sharpe_pct_change": 1.1696096827709512,
+      "annual_return": -0.0011710310196234586
+    },
+    "US30": {
+      "sharpe": 0.27890249172562676,
+      "delta_sharpe": 0.10747012266351591,
+      "sharpe_pct_change": 0.27815150106698633,
+      "annual_return": 0.004718264114643489
+    }
+  },
+  "gates": {
+    "dk_t_gt_2": false,
+    "wfe_gt_03": "False",
+    "positive_oos_majority": false,
+    "cost_stress_positive": "True",
+    "no_sign_flip": false
+  },
+  "timestamp": "2026-07-30T05:03:19.378795",
+  "gates_passed": "1",
+  "gates_total": 5,
+  "verdict": "REJECT"
+}

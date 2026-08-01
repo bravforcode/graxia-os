@@ -1,0 +1,17 @@
+[
+  {
+    "name": "Cross-Asset Momentum",
+    "status": "ERROR: attempted relative import beyond top-level package",
+    "overall": "FAIL"
+  },
+  {
+    "name": "Session Pattern",
+    "status": "ERROR: attempted relative import beyond top-level package",
+    "overall": "FAIL"
+  },
+  {
+    "name": "Macro Regime MR",
+    "status": "ERROR: attempted relative import beyond top-level package",
+    "overall": "FAIL"
+  }
+]

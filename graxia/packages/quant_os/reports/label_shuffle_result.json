@@ -1,0 +1,13 @@
+{
+  "real_sharpe": -2.7561,
+  "null_mean": 0.0122,
+  "null_95th_percentile": 1.7273,
+  "p_value": 1.0,
+  "survives": false,
+  "n_permutations": 100,
+  "n_bars": 50000,
+  "n_signals": 5231,
+  "data_source": "XAUUSD_H1.csv",
+  "rule": "sweep_detector_lookback20",
+  "verdict": "NO_EDGE"
+}

@@ -1,0 +1,19 @@
+{
+  "trial_id": "1028",
+  "direction": "A",
+  "hypothesis": "Breakout EA: price-breakout-based entry on XAUUSD H1 with volume confirmation and momentum filter. GO: dk_t > 2.0 AND positive_sharpe_count >= 5 AND p_value < 0.05 on label-shuffle.",
+  "symbol": "XAUUSD",
+  "timeframe": "H1",
+  "strategy_file": "strategies/breakout.py",
+  "dk_t_threshold": 2.0,
+  "min_positive_sharpe_count": 5,
+  "label_shuffle_alpha": 0.05,
+  "min_trades": 100,
+  "optuna_param_ranges": null,
+  "optuna_max_trials": 0,
+  "requires_human_gate_step7": true,
+  "requires_human_gate_step10": true,
+  "pre_registered_at": "2026-07-24T16:43:08.897075+00:00",
+  "source_doc": "Meta/CHANGE_REQUEST_SIGN_MODEL_FILE_WIRING.md",
+  "source_path": ""
+}

@@ -1,0 +1,65 @@
+{
+  "XAUUSD": {
+    "n_trades": 543,
+    "n_bars": 10547,
+    "sharpe": 0.2216,
+    "win_pct": 45.12,
+    "profit_factor": 1.1623,
+    "max_dd_pct": 16.74,
+    "total_return_pct": 45.06
+  },
+  "XAGUSD": {
+    "n_trades": 212,
+    "n_bars": 5573,
+    "sharpe": -1.4122,
+    "win_pct": 29.25,
+    "profit_factor": 0.0226,
+    "max_dd_pct": 99.96,
+    "total_return_pct": -99.96
+  },
+  "EURUSD": {
+    "n_trades": 360,
+    "n_bars": 5581,
+    "sharpe": -0.4736,
+    "win_pct": 42.5,
+    "profit_factor": 0.7716,
+    "max_dd_pct": 44.41,
+    "total_return_pct": -42.86
+  },
+  "GBPUSD": {
+    "n_trades": 356,
+    "n_bars": 5580,
+    "sharpe": -0.3821,
+    "win_pct": 42.7,
+    "profit_factor": 0.8138,
+    "max_dd_pct": 37.19,
+    "total_return_pct": -36.15
+  },
+  "USDJPY": {
+    "n_trades": 396,
+    "n_bars": 5821,
+    "sharpe": -0.8926,
+    "win_pct": 38.89,
+    "profit_factor": 0.5888,
+    "max_dd_pct": 70.83,
+    "total_return_pct": -70.09
+  },
+  "NAS100": {
+    "n_trades": 429,
+    "n_bars": 5733,
+    "sharpe": 0.2091,
+    "win_pct": 46.15,
+    "profit_factor": 1.1225,
+    "max_dd_pct": 21.73,
+    "total_return_pct": 24.25
+  },
+  "US30": {
+    "n_trades": 377,
+    "n_bars": 5470,
+    "sharpe": 0.2051,
+    "win_pct": 43.5,
+    "profit_factor": 1.1089,
+    "max_dd_pct": 18.38,
+    "total_return_pct": 19.51
+  }
+}

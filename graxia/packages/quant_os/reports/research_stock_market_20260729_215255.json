@@ -1,0 +1,147 @@
+{
+  "generated_at": "2026-07-29T21:52:55.435579",
+  "query": "stock market",
+  "model": "qwen3.5:4b",
+  "analysis": {
+    "query": "stock market",
+    "analysis_date": "2026-07-29 21:49",
+    "articles_count": 9,
+    "articles": [
+      {
+        "title": "Stocks Fall Before Fed, AI Earnings as Oil Climbs: Markets Wrap",
+        "source": "bloomberg",
+        "sentiment": "negative",
+        "key_facts": [
+          "Wall Street traders preparing for Federal Reserve decision sent stocks lower.",
+          "Oil prices jumped significantly."
+        ],
+        "relevance_to_market": "high",
+        "ticker_impact": [
+          {
+            "TICKER": "SPY: negative"
+          },
+          {
+            "TICKER": "XOM: positive"
+          }
+        ]
+      },
+      {
+        "title": "Semiconductor stocks are going up in smoke. But the S&P 500 is holding strong.",
+        "source": "yahoo_finance",
+        "sentiment": "neutral",
+        "key_facts": [
+          "Semiconductor sector performance described as volatile or exaggerated."
+        ],
+        "relevance_to_market": "medium",
+        "ticker_impact": [
+          {
+            "TICKER": "SMH: mixed"
+          },
+          {
+            "TICKER": "SPY: positive"
+          }
+        ]
+      },
+      {
+        "title": "Exxon Mobil (XOM): President Trump's Top Energy Stock Pick?",
+        "source": "yahoo_finance",
+        "sentiment": "positive",
+        "key_facts": [
+          "Trump identified Exxon Mobil as a top energy stock pick."
+        ],
+        "relevance_to_market": "medium",
+        "ticker_impact": [
+          {
+            "TICKER": "XOM: positive"
+          }
+        ]
+      },
+      {
+        "title": "Stocks Sink in Broad AI Rout Sparked by China's DeepSeek",
+        "source": "wsj_markets",
+        "sentiment": "negative",
+        "key_facts": [
+          "U.S. stocks mostly lower, Nasdaq leading declines.",
+          "AI infrastructure makers suffered steep falls."
+        ],
+        "relevance_to_market": "high",
+        "ticker_impact": [
+          {
+            "TICKER": "NVDA: negative"
+          },
+          {
+            "TICKER": "QQQ: negative"
+          }
+        ]
+      },
+      {
+        "title": "Dow tumbles 800 points as losses mount ahead of Fed decision: Live updates",
+        "source": "cnbc_finance",
+        "sentiment": "negative",
+        "key_facts": [
+          "The Dow dropped significantly before the Federal Reserve announcement."
+        ],
+        "relevance_to_market": "high",
+        "ticker_impact": [
+          {
+            "TICKER": "DIA: negative"
+          }
+        ]
+      },
+      {
+        "title": "Oil prices jump more than 7% after Trump says U.S. will hit Iran hard",
+        "source": "cnbc_finance",
+        "sentiment": "positive",
+        "key_facts": [
+          "Trump announced plans to retaliate against an Iranian attack."
+        ],
+        "relevance_to_market": "medium",
+        "ticker_impact": [
+          {
+            "TICKER": "USO: positive"
+          }
+        ]
+      },
+      {
+        "title": "Trump says U.S. will give Iran a 'beating' after surprise attack",
+        "source": "cnbc_finance",
+        "sentiment": "neutral",
+        "key_facts": [
+          "Centcom confirmed the attack originated from Iran but all missiles were intercepted."
+        ],
+        "relevance_to_market": "low",
+        "ticker_impact": []
+      },
+      {
+        "title": "Oil prices jump more than 7% after Trump says U.S. will hit Iran hard",
+        "source": "cnbc_world",
+        "sentiment": "positive",
+        "key_facts": [
+          "Middle East tensions escalated due to missile attack."
+        ],
+        "relevance_to_market": "medium",
+        "ticker_impact": [
+          {
+            "TICKER": "USO: positive"
+          }
+        ]
+      },
+      {
+        "title": "Ukraine has found a new pressure point in Russia's wartime economy",
+        "source": "cnbc_world",
+        "sentiment": "neutral",
+        "key_facts": [
+          "Ukrainian drone attacks targeted Wildberries, impacting Moscow's economy."
+        ],
+        "relevance_to_market": "low",
+        "ticker_impact": []
+      }
+    ],
+    "overall_sentiment": "mixed",
+    "market_impact_th": "ตลาดหุ้นมีความผันผวนสูงจากปัจจัยหลายด้าน ทั้งความกังวลต่อผลประกาศของ Fed และการพุ่งขึ้นของราคาน้ำมันเนื่องจากตึงเครียดในตะวันออกกลาง ในขณะที่ภาคเทคโนโลยี AI ยังคงเผชิญแรงกดดันจากการเคลื่อนไหวในตลาดจีน แต่ดัชนีหลักอย่าง S&P 500 และ Dow ยังพยายามรักษาเสถียรภาพไว้ได้",
+    "action_items_th": [
+      "(ติดตามการตัดสินใจของ Federal Reserve อย่างใกล้ชิดเพื่อประเมินทิศทางดอกเบี้ยและผลต่อตลาดหุ้น)",
+      "(เฝ้าระวังราคาน้ำมันดิบและการเปลี่ยนแปลงนโยบายพลังงานจากคำประกาศของ Trump)"
+    ]
+  }
+}

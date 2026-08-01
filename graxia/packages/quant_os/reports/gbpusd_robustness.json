@@ -1,0 +1,14 @@
+{
+  "pair": "GBPUSD",
+  "period": 25,
+  "vol_thresh": 1.0,
+  "real_sharpe": 2.7488486129877527,
+  "real_trades": 27,
+  "real_wr": 55.55555555555556,
+  "p_value": 0.01,
+  "z_score": 2.7882460879326985,
+  "verdict": "** SIGNIFICANT p < 0.05 **",
+  "null_mean": -0.22554583157880537,
+  "null_std": 1.066761810286642,
+  "plain_donchian_sharpe": 1.19894934802454
+}

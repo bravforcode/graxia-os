@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-07-30T16:23:19.043078+00:00",
+  "cost_bps_override": null,
+  "results": [
+    {
+      "strategy": "fomc_drift",
+      "symbol": "XAUUSD",
+      "timeframe": "D1",
+      "verdict": "NEGATIVE_EDGE_CONFIRMED",
+      "oos_sharpe": -2.465,
+      "oos_win_rate": 0.1917,
+      "total_trades": 44,
+      "p_value": 0.023166,
+      "wfe": 2.9243,
+      "gates_passed": "1",
+      "gates_total": 7,
+      "gates": {
+        "1_pvalue": true,
+        "2_oos_winrate": "False",
+        "3_wfe": "False",
+        "4_deflated_sharpe": false,
+        "5_pbo": false,
+        "6_bootstrap_ci": false,
+        "7_min_trades": false
+      }
+    }
+  ]
+}

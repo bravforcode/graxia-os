@@ -1,0 +1,306 @@
+{
+  "date": "2026-07-10T17:53:13.237836",
+  "total": 37,
+  "valid": 36,
+  "top_25": [
+    {
+      "strategy": "BBreakout",
+      "params": "p=20,k=1.5",
+      "is_sharpe": 0.7815,
+      "oos_sharpe": 2.0401,
+      "oos_trades": 39,
+      "oos_wr": 41.03,
+      "wf_pct": 261.0
+    },
+    {
+      "strategy": "FixIntMomentum",
+      "params": "lb=63,hold=10",
+      "is_sharpe": 1.9308,
+      "oos_sharpe": 1.461,
+      "oos_trades": 22,
+      "oos_wr": 27.27,
+      "wf_pct": 75.7
+    },
+    {
+      "strategy": "FixIntMomentum",
+      "params": "lb=63,hold=5",
+      "is_sharpe": -0.0479,
+      "oos_sharpe": 1.2697,
+      "oos_trades": 34,
+      "oos_wr": 47.06,
+      "wf_pct": 0
+    },
+    {
+      "strategy": "FixIntMomentum",
+      "params": "lb=21,hold=5",
+      "is_sharpe": -0.8295,
+      "oos_sharpe": 1.259,
+      "oos_trades": 47,
+      "oos_wr": 40.43,
+      "wf_pct": 0
+    },
+    {
+      "strategy": "Donchian",
+      "params": "period=5",
+      "is_sharpe": 0.7286,
+      "oos_sharpe": 0.9395,
+      "oos_trades": 52,
+      "oos_wr": 44.23,
+      "wf_pct": 128.9
+    },
+    {
+      "strategy": "MeanRevZ",
+      "params": "win=5,z=1.5",
+      "is_sharpe": -0.5287,
+      "oos_sharpe": 0.854,
+      "oos_trades": 249,
+      "oos_wr": 50.2,
+      "wf_pct": 0
+    },
+    {
+      "strategy": "BBreakout",
+      "params": "p=30,k=2.0",
+      "is_sharpe": 1.5047,
+      "oos_sharpe": 0.8264,
+      "oos_trades": 23,
+      "oos_wr": 26.09,
+      "wf_pct": 54.9
+    },
+    {
+      "strategy": "MeanRevZ",
+      "params": "win=20,z=2.0",
+      "is_sharpe": 0.1843,
+      "oos_sharpe": 0.6062,
+      "oos_trades": 92,
+      "oos_wr": 47.83,
+      "wf_pct": 328.9
+    },
+    {
+      "strategy": "BBreakout",
+      "params": "p=30,k=1.5",
+      "is_sharpe": 1.4148,
+      "oos_sharpe": 0.5715,
+      "oos_trades": 27,
+      "oos_wr": 25.93,
+      "wf_pct": 40.4
+    },
+    {
+      "strategy": "MeanRevZ",
+      "params": "win=5,z=2.0",
+      "is_sharpe": -0.6355,
+      "oos_sharpe": 0.4378,
+      "oos_trades": 192,
+      "oos_wr": 52.08,
+      "wf_pct": 0
+    },
+    {
+      "strategy": "MeanRevZ",
+      "params": "win=10,z=1.0",
+      "is_sharpe": -0.6158,
+      "oos_sharpe": 0.4232,
+      "oos_trades": 191,
+      "oos_wr": 56.54,
+      "wf_pct": 0
+    },
+    {
+      "strategy": "FixIntMomentum",
+      "params": "lb=42,hold=21",
+      "is_sharpe": 2.5943,
+      "oos_sharpe": 0.4045,
+      "oos_trades": 22,
+      "oos_wr": 22.73,
+      "wf_pct": 15.6
+    },
+    {
+      "strategy": "MeanRevZ",
+      "params": "win=10,z=2.0",
+      "is_sharpe": 0.0357,
+      "oos_sharpe": 0.3324,
+      "oos_trades": 128,
+      "oos_wr": 47.66,
+      "wf_pct": 0
+    },
+    {
+      "strategy": "MeanRevZ",
+      "params": "win=20,z=1.5",
+      "is_sharpe": -0.8122,
+      "oos_sharpe": 0.2624,
+      "oos_trades": 129,
+      "oos_wr": 52.71,
+      "wf_pct": 0
+    },
+    {
+      "strategy": "MeanRevZ",
+      "params": "win=5,z=1.0",
+      "is_sharpe": -1.1971,
+      "oos_sharpe": 0.1874,
+      "oos_trades": 251,
+      "oos_wr": 53.39,
+      "wf_pct": 0
+    },
+    {
+      "strategy": "Donchian",
+      "params": "period=8",
+      "is_sharpe": -0.3448,
+      "oos_sharpe": 0.1158,
+      "oos_trades": 40,
+      "oos_wr": 32.5,
+      "wf_pct": 0
+    },
+    {
+      "strategy": "FixIntMomentum",
+      "params": "lb=21,hold=10",
+      "is_sharpe": 0.9387,
+      "oos_sharpe": 0.0534,
+      "oos_trades": 31,
+      "oos_wr": 35.48,
+      "wf_pct": 5.7
+    },
+    {
+      "strategy": "MeanRevZ",
+      "params": "win=20,z=1.0",
+      "is_sharpe": -0.4682,
+      "oos_sharpe": -0.0475,
+      "oos_trades": 136,
+      "oos_wr": 54.41,
+      "wf_pct": 0
+    },
+    {
+      "strategy": "MeanRevZ",
+      "params": "win=10,z=1.5",
+      "is_sharpe": -0.3521,
+      "oos_sharpe": -0.2297,
+      "oos_trades": 184,
+      "oos_wr": 50.0,
+      "wf_pct": 0
+    },
+    {
+      "strategy": "FixIntMomentum",
+      "params": "lb=5,hold=21",
+      "is_sharpe": 1.1861,
+      "oos_sharpe": -0.66,
+      "oos_trades": 26,
+      "oos_wr": 46.15,
+      "wf_pct": -55.6
+    },
+    {
+      "strategy": "FixIntMomentum",
+      "params": "lb=10,hold=21",
+      "is_sharpe": 1.9547,
+      "oos_sharpe": -0.7861,
+      "oos_trades": 29,
+      "oos_wr": 37.93,
+      "wf_pct": -40.2
+    },
+    {
+      "strategy": "FixIntMomentum",
+      "params": "lb=21,hold=21",
+      "is_sharpe": 2.0676,
+      "oos_sharpe": -0.8569,
+      "oos_trades": 32,
+      "oos_wr": 18.75,
+      "wf_pct": -41.4
+    },
+    {
+      "strategy": "Donchian",
+      "params": "period=3",
+      "is_sharpe": 0.1172,
+      "oos_sharpe": -0.8618,
+      "oos_trades": 80,
+      "oos_wr": 36.25,
+      "wf_pct": -735.3
+    },
+    {
+      "strategy": "BBreakout",
+      "params": "p=10,k=1.5",
+      "is_sharpe": -0.0332,
+      "oos_sharpe": -0.899,
+      "oos_trades": 73,
+      "oos_wr": 42.47,
+      "wf_pct": 0
+    },
+    {
+      "strategy": "BBreakout",
+      "params": "p=20,k=2.0",
+      "is_sharpe": 0.7977,
+      "oos_sharpe": -1.0324,
+      "oos_trades": 33,
+      "oos_wr": 36.36,
+      "wf_pct": -129.4
+    }
+  ],
+  "high_trade_winners": [
+    {
+      "strategy": "Donchian",
+      "params": "period=5",
+      "is_sharpe": 0.7286,
+      "oos_sharpe": 0.9395,
+      "oos_trades": 52,
+      "oos_wr": 44.23,
+      "wf_pct": 128.9
+    },
+    {
+      "strategy": "MeanRevZ",
+      "params": "win=5,z=1.5",
+      "is_sharpe": -0.5287,
+      "oos_sharpe": 0.854,
+      "oos_trades": 249,
+      "oos_wr": 50.2,
+      "wf_pct": 0
+    },
+    {
+      "strategy": "MeanRevZ",
+      "params": "win=20,z=2.0",
+      "is_sharpe": 0.1843,
+      "oos_sharpe": 0.6062,
+      "oos_trades": 92,
+      "oos_wr": 47.83,
+      "wf_pct": 328.9
+    },
+    {
+      "strategy": "MeanRevZ",
+      "params": "win=5,z=2.0",
+      "is_sharpe": -0.6355,
+      "oos_sharpe": 0.4378,
+      "oos_trades": 192,
+      "oos_wr": 52.08,
+      "wf_pct": 0
+    },
+    {
+      "strategy": "MeanRevZ",
+      "params": "win=10,z=1.0",
+      "is_sharpe": -0.6158,
+      "oos_sharpe": 0.4232,
+      "oos_trades": 191,
+      "oos_wr": 56.54,
+      "wf_pct": 0
+    },
+    {
+      "strategy": "MeanRevZ",
+      "params": "win=10,z=2.0",
+      "is_sharpe": 0.0357,
+      "oos_sharpe": 0.3324,
+      "oos_trades": 128,
+      "oos_wr": 47.66,
+      "wf_pct": 0
+    },
+    {
+      "strategy": "MeanRevZ",
+      "params": "win=20,z=1.5",
+      "is_sharpe": -0.8122,
+      "oos_sharpe": 0.2624,
+      "oos_trades": 129,
+      "oos_wr": 52.71,
+      "wf_pct": 0
+    },
+    {
+      "strategy": "MeanRevZ",
+      "params": "win=5,z=1.0",
+      "is_sharpe": -1.1971,
+      "oos_sharpe": 0.1874,
+      "oos_trades": 251,
+      "oos_wr": 53.39,
+      "wf_pct": 0
+    }
+  ]
+}

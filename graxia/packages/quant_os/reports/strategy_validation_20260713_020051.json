@@ -1,0 +1,28 @@
+[
+  {
+    "name": "Gold-Silver Spread",
+    "trial_number": 1006,
+    "n_trades": 31,
+    "win_rate": 0.41935483870967744,
+    "total_pnl": -0.0954570522224906,
+    "sharpe": -0.9631337080887049,
+    "t_stat": -0.675611689089412,
+    "p_value": 0.5044621449023454,
+    "wfa_oos_ratio": 0.2,
+    "wfe": 0.0,
+    "dsr": 7.184594054738589e-18,
+    "ci_lower": -3.426797517621586,
+    "ci_upper": 2.1915979173056384,
+    "gates": {
+      "p_value": "FAIL",
+      "wfa_oos_positive": "FAIL",
+      "wfe": "FAIL",
+      "dsr": "FAIL",
+      "bootstrap_ci": "FAIL",
+      "min_trades": "FAIL"
+    },
+    "overall": "FAIL",
+    "pass_count": 0,
+    "fail_count": 6
+  }
+]

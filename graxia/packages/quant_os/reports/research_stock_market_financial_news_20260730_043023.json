@@ -1,0 +1,88 @@
+{
+  "generated_at": "2026-07-30T04:30:23.886161",
+  "query": "stock market financial news",
+  "model": "qwen3.5:9b",
+  "analysis": {
+    "query": "stock market financial news",
+    "analysis_date": "2026-07-30 04:26",
+    "articles_count": 5,
+    "articles": [
+      {
+        "title": "Meta's stock plunges almost 10% on disappointing guidance, dwindling free cash flow",
+        "source": "cnbc_finance",
+        "sentiment": "negative",
+        "key_facts": [
+          "Revenue forecast weaker than expected",
+          "Capex range narrowed for the year"
+        ],
+        "relevance_to_market": "high",
+        "ticker_impact": [
+          {
+            "ticker": "META",
+            "impact": "negative"
+          }
+        ]
+      },
+      {
+        "title": "Meta's stock plunges almost 10% on disappointing guidance, dwindling free cash flow",
+        "source": "cnbc_world",
+        "sentiment": "negative",
+        "key_facts": [
+          "Revenue forecast weaker than expected",
+          "Capex range narrowed for the year"
+        ],
+        "relevance_to_market": "high",
+        "ticker_impact": [
+          {
+            "ticker": "META",
+            "impact": "negative"
+          }
+        ]
+      },
+      {
+        "title": "Bond market is calling Warsh's bluff on inflation fight as yields surge",
+        "source": "marketwatch",
+        "sentiment": "neutral",
+        "key_facts": [
+          "30-year Treasury yield hit highest level since 2007",
+          "Yields surged during press conference"
+        ],
+        "relevance_to_market": "high",
+        "ticker_impact": []
+      },
+      {
+        "title": "Qualcomm's stock falls as memory woes weigh on earnings",
+        "source": "marketwatch",
+        "sentiment": "negative",
+        "key_facts": [
+          "Chip company missed bottom line expectations",
+          "Memory sector issues impacting results"
+        ],
+        "relevance_to_market": "medium",
+        "ticker_impact": [
+          {
+            "ticker": "QCOM",
+            "impact": "negative"
+          }
+        ]
+      },
+      {
+        "title": "From Food to Football: How Clouse Came to the Commanders",
+        "source": "bloomberg",
+        "sentiment": "neutral",
+        "key_facts": [
+          "Mark Clouse left Campbell's Company as CEO",
+          "Joined Washington Commanders President role"
+        ],
+        "relevance_to_market": "low",
+        "ticker_impact": []
+      }
+    ],
+    "overall_sentiment": "negative",
+    "market_impact_th": "ตลาดหุ้นได้รับผลกระทบเชิงลบจากข่าวการปรับลดคาดการณ์รายได้ของ Meta และปัญหาขาดทุนด้านหน่วยความจำใน Qualcomm ซึ่งกดดันให้ดัชนีปรับตัวลง ส่วนพันธบัตรรัฐบาลสหรัฐฯ ที่อัตราผลตอบแทนพุ่งสูงอาจทำให้ต้นทุนกู้ยืมเพิ่มขึ้นและส่งผลต่อภาคเทคโนโลยีในระยะยาว",
+    "action_items_th": [
+      "[QUANT_OS] ต้องติดตามรายงานผลประกอบการรายไตรมาสของ Meta และ Qualcomm อย่างใกล้ชิดเพื่อประเมินการปรับลดราคาหุ้นต่อไป",
+      "[QUANT_OS] ตรวจสอบความสัมพันธ์ระหว่างอัตราผลตอบแทนพันธบัตรรัฐบาลกับราคาสินทรัพย์เสี่ยง (Risk Assets) เพื่อเตรียมกลยุทธ์ป้องกันความเสี่ยงจากภาวะดอกเบี้ยสูง"
+    ]
+  }
+}

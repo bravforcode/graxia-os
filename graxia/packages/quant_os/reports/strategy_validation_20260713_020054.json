@@ -1,0 +1,28 @@
+[
+  {
+    "name": "Cross-Asset Vol Rank",
+    "trial_number": 1008,
+    "n_trades": 102,
+    "win_rate": 0.5098039215686274,
+    "total_pnl": -0.11184074760971245,
+    "sharpe": -0.40200729181229455,
+    "t_stat": -0.511521322498769,
+    "p_value": 0.610102583503767,
+    "wfa_oos_ratio": 0.4,
+    "wfe": 0.0,
+    "dsr": 1.4657575834168134e-13,
+    "ci_lower": -2.090607706079529,
+    "ci_upper": 1.0284573293412045,
+    "gates": {
+      "p_value": "FAIL",
+      "wfa_oos_positive": "FAIL",
+      "wfe": "FAIL",
+      "dsr": "FAIL",
+      "bootstrap_ci": "FAIL",
+      "min_trades": "PASS"
+    },
+    "overall": "FAIL",
+    "pass_count": 1,
+    "fail_count": 5
+  }
+]

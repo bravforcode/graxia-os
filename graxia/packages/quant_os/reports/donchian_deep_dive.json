@@ -1,0 +1,448 @@
+{
+  "date": "2026-07-10T17:31:15.866973",
+  "strategy": "Donchian Breakout",
+  "cost_models": {
+    "FX": "3.4 bps/RT",
+    "US30": "5.0 bps/RT"
+  },
+  "fine_tune": [
+    {
+      "period": 5,
+      "is": {
+        "n_trades": 253,
+        "sharpe": 0.4253,
+        "winrate": 35.97,
+        "profit_factor": 1.08,
+        "avg_pct": 0.0676,
+        "max_dd_pct": 34.03,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 52,
+        "sharpe": 0.9395,
+        "winrate": 44.23,
+        "profit_factor": 1.1843,
+        "avg_pct": 0.1301,
+        "max_dd_pct": 18.61,
+        "is_valid": true
+      },
+      "wf_pct": 220.9,
+      "total_return_pct": 11.35,
+      "final_equity": 11134.8
+    },
+    {
+      "period": 10,
+      "is": {
+        "n_trades": 160,
+        "sharpe": 0.0164,
+        "winrate": 35.0,
+        "profit_factor": 1.0031,
+        "avg_pct": 0.0034,
+        "max_dd_pct": 48.16,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 36,
+        "sharpe": -1.688,
+        "winrate": 30.56,
+        "profit_factor": 0.7207,
+        "avg_pct": -0.3219,
+        "max_dd_pct": 30.3,
+        "is_valid": true
+      },
+      "wf_pct": 0,
+      "total_return_pct": -18.57,
+      "final_equity": 8143.13
+    },
+    {
+      "period": 15,
+      "is": {
+        "n_trades": 120,
+        "sharpe": -1.23,
+        "winrate": 35.83,
+        "profit_factor": 0.8136,
+        "avg_pct": -0.2539,
+        "max_dd_pct": 33.06,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 30,
+        "sharpe": -2.5195,
+        "winrate": 30.0,
+        "profit_factor": 0.6344,
+        "avg_pct": -0.4878,
+        "max_dd_pct": 27.91,
+        "is_valid": true
+      },
+      "wf_pct": 0,
+      "total_return_pct": -35.89,
+      "final_equity": 6410.78
+    },
+    {
+      "period": 20,
+      "is": {
+        "n_trades": 86,
+        "sharpe": 0.5108,
+        "winrate": 38.37,
+        "profit_factor": 1.0906,
+        "avg_pct": 0.131,
+        "max_dd_pct": 26.53,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 18,
+        "sharpe": 4.3213,
+        "winrate": 44.44,
+        "profit_factor": 2.3453,
+        "avg_pct": 0.9498,
+        "max_dd_pct": 3.67,
+        "is_valid": true
+      },
+      "wf_pct": 846.0,
+      "total_return_pct": 19.24,
+      "final_equity": 11924.32
+    },
+    {
+      "period": 25,
+      "is": {
+        "n_trades": 71,
+        "sharpe": 1.2869,
+        "winrate": 39.44,
+        "profit_factor": 1.2481,
+        "avg_pct": 0.363,
+        "max_dd_pct": 26.37,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 16,
+        "sharpe": 3.9835,
+        "winrate": 43.75,
+        "profit_factor": 2.2046,
+        "avg_pct": 0.9387,
+        "max_dd_pct": 5.44,
+        "is_valid": true
+      },
+      "wf_pct": 309.5,
+      "total_return_pct": 26.37,
+      "final_equity": 12637.34
+    },
+    {
+      "period": 30,
+      "is": {
+        "n_trades": 66,
+        "sharpe": 1.1342,
+        "winrate": 34.85,
+        "profit_factor": 1.2095,
+        "avg_pct": 0.3338,
+        "max_dd_pct": 25.59,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 16,
+        "sharpe": 1.2939,
+        "winrate": 31.25,
+        "profit_factor": 1.2484,
+        "avg_pct": 0.2994,
+        "max_dd_pct": 7.73,
+        "is_valid": true
+      },
+      "wf_pct": 114.1,
+      "total_return_pct": 6.4,
+      "final_equity": 10639.89
+    },
+    {
+      "period": 40,
+      "is": {
+        "n_trades": 54,
+        "sharpe": -0.0873,
+        "winrate": 29.63,
+        "profit_factor": 0.9855,
+        "avg_pct": -0.0276,
+        "max_dd_pct": 28.21,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 8,
+        "sharpe": 7.5179,
+        "winrate": 75.0,
+        "profit_factor": 3.6359,
+        "avg_pct": 1.8852,
+        "max_dd_pct": 5.16,
+        "is_valid": true
+      },
+      "wf_pct": 0,
+      "total_return_pct": 17.58,
+      "final_equity": 11758.41
+    },
+    {
+      "period": 55,
+      "is": {
+        "n_trades": 36,
+        "sharpe": 1.3428,
+        "winrate": 36.11,
+        "profit_factor": 1.2702,
+        "avg_pct": 0.5078,
+        "max_dd_pct": 28.25,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 6,
+        "sharpe": 0,
+        "winrate": 0,
+        "profit_factor": 0,
+        "avg_return": 0,
+        "max_dd": 0,
+        "is_valid": false
+      },
+      "wf_pct": 0.0,
+      "total_return_pct": 44.35,
+      "final_equity": 14435.27
+    },
+    {
+      "period": 80,
+      "is": {
+        "n_trades": 22,
+        "sharpe": 2.3596,
+        "winrate": 50.0,
+        "profit_factor": 1.4823,
+        "avg_pct": 1.0928,
+        "max_dd_pct": 20.35,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 3,
+        "sharpe": 0,
+        "winrate": 0,
+        "profit_factor": 0,
+        "avg_return": 0,
+        "max_dd": 0,
+        "is_valid": false
+      },
+      "wf_pct": 0.0,
+      "total_return_pct": 44.44,
+      "final_equity": 14444.12
+    },
+    {
+      "period": 100,
+      "is": {
+        "n_trades": 16,
+        "sharpe": 5.7684,
+        "winrate": 68.75,
+        "profit_factor": 3.0955,
+        "avg_pct": 2.6407,
+        "max_dd_pct": 14.01,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 3,
+        "sharpe": 0,
+        "winrate": 0,
+        "profit_factor": 0,
+        "avg_return": 0,
+        "max_dd": 0,
+        "is_valid": false
+      },
+      "wf_pct": 0.0,
+      "total_return_pct": 74.08,
+      "final_equity": 17408.04
+    }
+  ],
+  "paper_trade_d20": {
+    "is": {
+      "n_trades": 601,
+      "sharpe": 1.8939,
+      "winrate": 38.94,
+      "profit_factor": 1.4594,
+      "avg_pct": 1.0309,
+      "max_dd_pct": 56.29,
+      "is_valid": true
+    },
+    "oos": {
+      "n_trades": 170,
+      "sharpe": -0.5707,
+      "winrate": 34.12,
+      "profit_factor": 0.9077,
+      "avg_pct": -0.1899,
+      "max_dd_pct": 53.29,
+      "is_valid": true
+    },
+    "total_return_pct": 2656.3287,
+    "final_equity": 275632.87
+  },
+  "cross_timeframe": [
+    {
+      "timeframe": "D1",
+      "bars": 5865,
+      "is": {
+        "n_trades": 86,
+        "sharpe": 0.5108,
+        "winrate": 38.37,
+        "profit_factor": 1.0906,
+        "avg_pct": 0.131,
+        "max_dd_pct": 26.53,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 18,
+        "sharpe": 4.3213,
+        "winrate": 44.44,
+        "profit_factor": 2.3453,
+        "avg_pct": 0.9498,
+        "max_dd_pct": 3.67,
+        "is_valid": true
+      },
+      "wf_pct": 846.0,
+      "total_return_pct": 19.243199999999995
+    },
+    {
+      "timeframe": "H4",
+      "bars": 25000,
+      "is": {
+        "n_trades": 456,
+        "sharpe": -1.2988,
+        "winrate": 35.09,
+        "profit_factor": 0.8026,
+        "avg_pct": -0.1103,
+        "max_dd_pct": 45.18,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 115,
+        "sharpe": -0.5563,
+        "winrate": 34.78,
+        "profit_factor": 0.9126,
+        "avg_pct": -0.0341,
+        "max_dd_pct": 13.07,
+        "is_valid": true
+      },
+      "wf_pct": 0,
+      "total_return_pct": -71.7924
+    },
+    {
+      "timeframe": "H1",
+      "bars": 50000,
+      "is": {
+        "n_trades": 909,
+        "sharpe": -1.1287,
+        "winrate": 35.42,
+        "profit_factor": 0.8238,
+        "avg_pct": -0.0417,
+        "max_dd_pct": 33.28,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 199,
+        "sharpe": 0.6141,
+        "winrate": 39.7,
+        "profit_factor": 1.1173,
+        "avg_pct": 0.0245,
+        "max_dd_pct": 5.8,
+        "is_valid": true
+      },
+      "wf_pct": 0,
+      "total_return_pct": -88.2571
+    }
+  ],
+  "cross_pair": [
+    {
+      "pair": "EURUSD",
+      "bars": 5865,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 86,
+        "sharpe": 0.5108,
+        "winrate": 38.37,
+        "profit_factor": 1.0906,
+        "avg_pct": 0.131,
+        "max_dd_pct": 26.53,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 18,
+        "sharpe": 4.3213,
+        "winrate": 44.44,
+        "profit_factor": 2.3453,
+        "avg_pct": 0.9498,
+        "max_dd_pct": 3.67,
+        "is_valid": true
+      },
+      "wf_pct": 846.0,
+      "total_return_pct": 19.243199999999995
+    },
+    {
+      "pair": "GBPUSD",
+      "bars": 14490,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 267,
+        "sharpe": -0.2491,
+        "winrate": 40.82,
+        "profit_factor": 0.9396,
+        "avg_pct": -0.1137,
+        "max_dd_pct": 92.56,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 81,
+        "sharpe": -3.6673,
+        "winrate": 30.86,
+        "profit_factor": 0.5517,
+        "avg_pct": -0.6221,
+        "max_dd_pct": 42.66,
+        "is_valid": true
+      },
+      "wf_pct": 0,
+      "total_return_pct": 2025.4968999999999
+    },
+    {
+      "pair": "AUDUSD",
+      "bars": 14508,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 293,
+        "sharpe": 0.5345,
+        "winrate": 36.18,
+        "profit_factor": 1.118,
+        "avg_pct": 0.1538,
+        "max_dd_pct": 40.83,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 72,
+        "sharpe": -1.818,
+        "winrate": 38.89,
+        "profit_factor": 0.7532,
+        "avg_pct": -0.3524,
+        "max_dd_pct": 31.66,
+        "is_valid": true
+      },
+      "wf_pct": -340.1,
+      "total_return_pct": 1634.9814999999999
+    },
+    {
+      "pair": "US30",
+      "bars": 33732,
+      "cost_rt_bps": 5.0,
+      "is": {
+        "n_trades": 601,
+        "sharpe": 1.8939,
+        "winrate": 38.94,
+        "profit_factor": 1.4594,
+        "avg_pct": 1.0309,
+        "max_dd_pct": 56.29,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 170,
+        "sharpe": -0.5707,
+        "winrate": 34.12,
+        "profit_factor": 0.9077,
+        "avg_pct": -0.1899,
+        "max_dd_pct": 53.29,
+        "is_valid": true
+      },
+      "wf_pct": -30.1,
+      "total_return_pct": 2656.3287
+    }
+  ]
+}

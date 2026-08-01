@@ -1,0 +1,75 @@
+{
+  "timestamp": "2026-07-16T17:19:33.898191",
+  "strategy": "momentum_12m",
+  "data_source": "XAUUSD_D1.csv (real engine, not toy simulation)",
+  "trades": 500,
+  "bar_returns": 10545,
+  "checks": {
+    "deflated_sharpe": {
+      "status": "PASS",
+      "raw_sharpe": 0.07132295685217449,
+      "skew": -0.6645883413433047,
+      "kurtosis": 12.257400633274521,
+      "deflated_p": 2.578587010582112e-07
+    },
+    "pbo": {
+      "status": "PASS",
+      "pbo": 0.285714
+    },
+    "newey_west": {
+      "status": "FAIL",
+      "t_stat": 0.4957793257526869,
+      "bandwidth": 11,
+      "nw_se": 2.2012775515787454e-05
+    },
+    "win_distribution": {
+      "status": "PASS",
+      "trades": 500,
+      "win_rate": 0.462,
+      "avg_win": 0.031149641454603832,
+      "avg_loss": -0.026047866126615454,
+      "payoff_ratio": 1.1958615459396666,
+      "profit_factor": 1.0269294316433568,
+      "expectancy": 0.00037738237590785595,
+      "max_consec_losses": 7
+    },
+    "capacity": {
+      "status": "INFO",
+      "avg_size": 0.027120000000000005,
+      "max_size": 0.13,
+      "capacity_utilization": 0.00027120000000000003
+    },
+    "outlier_robustness": {
+      "status": "FRAGILE",
+      "sharpes": {
+        "100": 0.0713,
+        "99": 0.1533,
+        "97": 0.2649,
+        "95": 0.3358,
+        "90": 0.4348,
+        "80": 0.5244,
+        "70": 0.5579
+      },
+      "exceptions": 6,
+      "monotonic": false
+    },
+    "sizing_sanity": {
+      "status": "PASS",
+      "median_size": 0.02,
+      "outlier_count": 0,
+      "p10": 0.01,
+      "p50": 0.02,
+      "p90": 0.05,
+      "p99": 0.10009999999999991
+    }
+  },
+  "raw_metrics": {
+    "sharpe": 0.07132295978842593,
+    "win_rate": 0.462,
+    "max_dd_pct": 27.000289802294645,
+    "total_pnl": 875.6590859712059,
+    "profit_factor": 1.0426051551819064
+  },
+  "pass_count": 4,
+  "fail_count": 1
+}

@@ -1,0 +1,91 @@
+{
+  "timestamp": "2026-07-30T16:29:58.011087+00:00",
+  "prongs": {
+    "new_search": {
+      "XAUUSD_tsmom_60": {
+        "symbol": "XAUUSD",
+        "strategy": "tsmom_60",
+        "trades": 269,
+        "sharpe": 1.3742,
+        "win_rate": 0.3271
+      },
+      "XAUUSD_tsmom_120": {
+        "symbol": "XAUUSD",
+        "strategy": "tsmom_120",
+        "trades": 166,
+        "sharpe": 2.1043,
+        "win_rate": 0.3735
+      },
+      "XAUUSD_donchian_20": {
+        "symbol": "XAUUSD",
+        "strategy": "donchian_20",
+        "trades": 129,
+        "sharpe": 0.5468,
+        "win_rate": 0.3721
+      },
+      "XAUUSD_donchian_55": {
+        "symbol": "XAUUSD",
+        "strategy": "donchian_55",
+        "trades": 55,
+        "sharpe": 1.0029,
+        "win_rate": 0.3636
+      },
+      "XAUUSD_bb_mr": {
+        "symbol": "XAUUSD",
+        "strategy": "bb_mr",
+        "trades": 312,
+        "sharpe": -1.3657,
+        "win_rate": 0.5737
+      },
+      "XAUUSD_momentum_12m": {
+        "symbol": "XAUUSD",
+        "strategy": "momentum_12m",
+        "trades": 133,
+        "sharpe": 1.5344,
+        "win_rate": 0.2857
+      },
+      "USDJPY_tsmom_60": {
+        "symbol": "USDJPY",
+        "strategy": "tsmom_60",
+        "trades": 315,
+        "sharpe": 0.4726,
+        "win_rate": 0.2952
+      },
+      "USDJPY_tsmom_120": {
+        "symbol": "USDJPY",
+        "strategy": "tsmom_120",
+        "trades": 209,
+        "sharpe": 0.7675,
+        "win_rate": 0.2679
+      },
+      "USDJPY_donchian_20": {
+        "symbol": "USDJPY",
+        "strategy": "donchian_20",
+        "trades": 141,
+        "sharpe": -1.0247,
+        "win_rate": 0.3617
+      },
+      "USDJPY_donchian_55": {
+        "symbol": "USDJPY",
+        "strategy": "donchian_55",
+        "trades": 45,
+        "sharpe": 2.5919,
+        "win_rate": 0.4222
+      },
+      "USDJPY_bb_mr": {
+        "symbol": "USDJPY",
+        "strategy": "bb_mr",
+        "trades": 337,
+        "sharpe": -0.7097,
+        "win_rate": 0.4926
+      },
+      "USDJPY_momentum_12m": {
+        "symbol": "USDJPY",
+        "strategy": "momentum_12m",
+        "trades": 167,
+        "sharpe": 0.877,
+        "win_rate": 0.2754
+      }
+    }
+  }
+}

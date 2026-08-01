@@ -1,0 +1,17 @@
+[
+  {
+    "name": "Cross-Asset Momentum",
+    "status": "ERROR: 'NoneType' object has no attribute '__dict__'",
+    "overall": "FAIL"
+  },
+  {
+    "name": "Session Pattern",
+    "status": "ERROR: 'NoneType' object has no attribute '__dict__'",
+    "overall": "FAIL"
+  },
+  {
+    "name": "Macro Regime MR",
+    "status": "ERROR: 'NoneType' object has no attribute '__dict__'",
+    "overall": "FAIL"
+  }
+]

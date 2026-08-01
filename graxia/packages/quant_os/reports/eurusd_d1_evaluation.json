@@ -1,0 +1,72 @@
+[
+  {
+    "name": "TrendFollow",
+    "gross_is": -0.1062,
+    "net_is": -0.1464,
+    "net_oos": 0.0336,
+    "trades": 87,
+    "wr_is": 48.3,
+    "wf": 0.62,
+    "passes": false
+  },
+  {
+    "name": "TF+Regime",
+    "gross_is": -0.1602,
+    "net_is": -0.1897,
+    "net_oos": -0.2633,
+    "trades": 83,
+    "wr_is": 45.8,
+    "wf": 0.38,
+    "passes": false
+  },
+  {
+    "name": "TF+Volume",
+    "gross_is": 0.0,
+    "net_is": 0.0,
+    "net_oos": 0.0,
+    "trades": 0,
+    "wr_is": 0.0,
+    "wf": 1.0,
+    "passes": false
+  },
+  {
+    "name": "MA_Cross",
+    "gross_is": 0.1575,
+    "net_is": 0.1396,
+    "net_oos": -0.7944,
+    "trades": 31,
+    "wr_is": 41.9,
+    "wf": 0.62,
+    "passes": false
+  },
+  {
+    "name": "RSI",
+    "gross_is": 0.2179,
+    "net_is": 0.2106,
+    "net_oos": 0.2105,
+    "trades": 25,
+    "wr_is": 56.0,
+    "wf": 0.44,
+    "passes": false
+  },
+  {
+    "name": "BB",
+    "gross_is": 0.1651,
+    "net_is": 0.1503,
+    "net_oos": 0.0941,
+    "trades": 23,
+    "wr_is": 43.5,
+    "wf": 0.69,
+    "passes": false
+  },
+  {
+    "name": "Sweep",
+    "gross_is": -0.7305,
+    "net_is": -0.7471,
+    "net_oos": -4.6776,
+    "trades": 10,
+    "wr_is": 20.0,
+    "wf": 1.0,
+    "passes": false
+  }
+]

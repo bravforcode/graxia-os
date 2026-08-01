@@ -1,0 +1,286 @@
+{
+  "timestamp": "20260707_212833",
+  "symbols": [
+    "XAUUSD",
+    "EURUSD"
+  ],
+  "total_elapsed_sec": 107.1,
+  "gate_summary": {
+    "overall": "FAIL",
+    "gates": [
+      {
+        "name": "wfa_oos_positive",
+        "status": "FAIL",
+        "metric": 0.625,
+        "threshold": 0.7,
+        "details": "62.5% OOS windows positive"
+      },
+      {
+        "name": "wfa_wfe",
+        "status": "FAIL",
+        "metric": -0.004431,
+        "threshold": 0.5,
+        "details": "WFE=-0.0044"
+      },
+      {
+        "name": "wfa_degradation",
+        "status": "PASS",
+        "metric": 0.0,
+        "threshold": 0.3,
+        "details": "Degradation=0.0%"
+      },
+      {
+        "name": "mc_ruin_prob",
+        "status": "PASS",
+        "metric": 0.0436,
+        "threshold": 0.05,
+        "details": "P(Ruin)=4.36%"
+      },
+      {
+        "name": "mc_drawdown_p95",
+        "status": "PASS",
+        "metric": 0.110087,
+        "threshold": 0.25,
+        "details": "95th percentile DD=11.0%"
+      },
+      {
+        "name": "deflated_sharpe",
+        "status": "FAIL",
+        "metric": -2.2781,
+        "threshold": 0.0,
+        "details": "DSR=-2.2781"
+      },
+      {
+        "name": "pbo_overfitting",
+        "status": "FAIL",
+        "metric": 0.5,
+        "threshold": 0.5,
+        "details": "PBO=0.5000"
+      },
+      {
+        "name": "stress_test",
+        "status": "PASS",
+        "metric": 0.9028,
+        "threshold": 0.8,
+        "details": "90.3% scenarios positive"
+      },
+      {
+        "name": "bootstrap_sharpe_ci",
+        "status": "FAIL",
+        "metric": -0.0048,
+        "threshold": 0.0,
+        "details": "Sharpe CI lower=-0.0048"
+      }
+    ],
+    "pass_count": 4,
+    "fail_count": 5,
+    "total": 9
+  },
+  "results": {
+    "wfa": {
+      "success": true,
+      "elapsed_sec": 0.11,
+      "error": "",
+      "data": {
+        "oos_consistency": 0.625,
+        "walk_forward_efficiency": -0.0044307247469491115,
+        "overfitting_score": 0.0,
+        "avg_is_sharpe": 0.0673,
+        "avg_oos_sharpe": 0.2057,
+        "n_windows": 16,
+        "windows": [
+          {
+            "window": 0,
+            "is_sharpe": 0.3688,
+            "oos_sharpe": 0.0055,
+            "wfe": 0.015,
+            "symbol": "XAUUSD"
+          },
+          {
+            "window": 1,
+            "is_sharpe": 1.3852,
+            "oos_sharpe": 0.735,
+            "wfe": 0.5306,
+            "symbol": "XAUUSD"
+          },
+          {
+            "window": 2,
+            "is_sharpe": -0.0921,
+            "oos_sharpe": 0.2638,
+            "wfe": -2.8651,
+            "symbol": "XAUUSD"
+          },
+          {
+            "window": 3,
+            "is_sharpe": -0.3546,
+            "oos_sharpe": -0.0816,
+            "wfe": 0.2302,
+            "symbol": "XAUUSD"
+          },
+          {
+            "window": 4,
+            "is_sharpe": 0.6996,
+            "oos_sharpe": 0.6588,
+            "wfe": 0.9417,
+            "symbol": "XAUUSD"
+          },
+          {
+            "window": 5,
+            "is_sharpe": 0.8288,
+            "oos_sharpe": 0.4331,
+            "wfe": 0.5225,
+            "symbol": "XAUUSD"
+          },
+          {
+            "window": 6,
+            "is_sharpe": -0.1967,
+            "oos_sharpe": -1.4882,
+            "wfe": 7.5648,
+            "symbol": "XAUUSD"
+          },
+          {
+            "window": 7,
+            "is_sharpe": -0.2258,
+            "oos_sharpe": 1.0445,
+            "wfe": -4.6268,
+            "symbol": "XAUUSD"
+          },
+          {
+            "window": 0,
+            "is_sharpe": 0.9131,
+            "oos_sharpe": -0.456,
+            "wfe": -0.4994,
+            "symbol": "EURUSD"
+          },
+          {
+            "window": 1,
+            "is_sharpe": 1.0413,
+            "oos_sharpe": 1.0467,
+            "wfe": 1.0051,
+            "symbol": "EURUSD"
+          },
+          {
+            "window": 2,
+            "is_sharpe": -0.7859,
+            "oos_sharpe": -0.8964,
+            "wfe": 1.1406,
+            "symbol": "EURUSD"
+          },
+          {
+            "window": 3,
+            "is_sharpe": -0.8529,
+            "oos_sharpe": 1.6695,
+            "wfe": -1.9575,
+            "symbol": "EURUSD"
+          },
+          {
+            "window": 4,
+            "is_sharpe": -0.137,
+            "oos_sharpe": 0.4044,
+            "wfe": -2.9508,
+            "symbol": "EURUSD"
+          },
+          {
+            "window": 5,
+            "is_sharpe": 0.1215,
+            "oos_sharpe": 0.0893,
+            "wfe": 0.7348,
+            "symbol": "EURUSD"
+          },
+          {
+            "window": 6,
+            "is_sharpe": -0.6618,
+            "oos_sharpe": -0.0067,
+            "wfe": 0.0101,
+            "symbol": "EURUSD"
+          },
+          {
+            "window": 7,
+            "is_sharpe": -0.9747,
+            "oos_sharpe": -0.1299,
+            "wfe": 0.1333,
+            "symbol": "EURUSD"
+          }
+        ]
+      }
+    },
+    "pbo": {
+      "success": true,
+      "elapsed_sec": 0.05,
+      "error": "",
+      "data": {
+        "pbo": 0.5,
+        "n_configs": 1,
+        "passes_threshold": false
+      }
+    },
+    "dsr": {
+      "success": true,
+      "elapsed_sec": 0.41,
+      "error": "",
+      "data": {
+        "observed_sharpe": 0.2112,
+        "deflated_sharpe": -2.2781,
+        "n_trials": 50,
+        "n_bars": 9958,
+        "check_passed": false,
+        "check_details": "DSR_NOT_SIGNIFICANT:sharpe=0.2112,expected_max=2.5908"
+      }
+    },
+    "bootstrap": {
+      "success": true,
+      "elapsed_sec": 15.56,
+      "error": "",
+      "data": {
+        "sharpe_ci_lower": -0.0048,
+        "sharpe_ci_upper": 0.0309,
+        "sharpe_point_estimate": 0.0133,
+        "confidence_level": 0.95,
+        "n_resamples": 5000
+      }
+    },
+    "monte_carlo": {
+      "success": true,
+      "elapsed_sec": 43.54,
+      "error": "",
+      "data": {
+        "prob_ruin": 0.0436,
+        "median_ending_balance": 5084.908885013128,
+        "p5_ending_balance": 4613.873605212598,
+        "p95_ending_balance": 5555.925093350522,
+        "median_max_dd_pct": 0.05144672029572525,
+        "p95_max_dd_pct": 0.11008713952459685,
+        "n_sims": 10000
+      }
+    },
+    "synthetic": {
+      "success": true,
+      "elapsed_sec": 104.18,
+      "error": "",
+      "data": {
+        "positive_rate": 0.8977,
+        "n_paths": 3000,
+        "mean_sharpe": 0.2134,
+        "ci_lower": -0.1186,
+        "ci_upper": 0.548,
+        "method": "block_bootstrap"
+      }
+    },
+    "stress": {
+      "success": true,
+      "elapsed_sec": 106.55,
+      "error": "",
+      "data": {
+        "positive_rate": 0.9028,
+        "n_paths": 5000,
+        "avg_return": 0.320827,
+        "avg_max_dd": 0.2079,
+        "scenarios_tested": [
+          "normal",
+          "fat_tail",
+          "crash"
+        ]
+      }
+    }
+  }
+}

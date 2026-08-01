@@ -1,0 +1,72 @@
+{
+  "trial_id": 2001,
+  "strategy": "momentum_factor_rotation",
+  "parameters": {
+    "lookbacks": [
+      21,
+      63,
+      252
+    ],
+    "vol_target": 0.1,
+    "top_n": 2,
+    "bottom_n": 0,
+    "rebalance_freq": 5,
+    "min_signal_strength": 0.3
+  },
+  "universe": [
+    "XAUUSD",
+    "XAGUSD",
+    "EURUSD"
+  ],
+  "cost_model": "pepperstone_razor",
+  "cost_multiplier": 1.0,
+  "data_range": {
+    "start": "2005-01-03",
+    "end": "2025-04-18",
+    "years": 20.29
+  },
+  "regime_coverage": {
+    "crisis": true,
+    "trend": true,
+    "choppy": true
+  },
+  "per_asset": {
+    "XAUUSD": {
+      "sharpe": 0.008,
+      "return": 0.002559,
+      "max_dd": -0.021103253573311775,
+      "days": 20298,
+      "trades": 239
+    },
+    "XAGUSD": {
+      "sharpe": -0.479,
+      "return": -0.208043,
+      "max_dd": -0.2127456271547281,
+      "days": 16669,
+      "trades": 229
+    },
+    "EURUSD": {
+      "sharpe": -0.2188,
+      "return": -0.052657,
+      "max_dd": -0.060457592996664755,
+      "days": 14218,
+      "trades": 138
+    }
+  },
+  "pooled": {
+    "dk_t": -0.4033,
+    "pooled_sharpe": -0.2379,
+    "positive_sharpe_count": 1,
+    "total_trades": 606,
+    "verdict": "REJECT"
+  },
+  "label_shuffle": {
+    "n_shuffles": 0,
+    "observed_sharpe": -0.2379,
+    "p_value": 1.0,
+    "verdict": "FAIL"
+  },
+  "combined_verdict": "REJECT",
+  "honest_note": "GO does not equal live-ready. Must still pass cost-stress (1.5x, 2.0x multiplier), jackknife robustness, and not burn sacred holdout until single pre-committed hypothesis.",
+  "timestamp": "2026-07-21T16:13:03.023267+00:00"
+}

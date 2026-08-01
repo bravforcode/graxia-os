@@ -1,0 +1,50 @@
+================================================================================
+EDGE VERIFICATION REPORT: Donchian(25)+VolFilter(1.0x median ATR) (GBPUSD)
+Symbol: GBPUSD D1
+Data: 14490 bars
+Date: 2026-07-21T12:39:07.713002+00:00
+================================================================================
+
+BASELINE METRICS
+----------------------------------------
+Total Trades: 5
+Win Rate: 60.0%
+Sharpe Ratio: -5.1962
+Sharpe Ratio (bar-level):   0.0000
+Profit Factor: 0.17
+Max Drawdown Pct: 0.0
+Total PnL: -2659.92
+
+WALK-FORWARD ANALYSIS
+----------------------------------------
+  0/5 positive, 5 trades, Sharpe=-14.8137
+  FAIL
+
+DEFLATED SHARPE RATIO
+----------------------------------------
+  DSR: Sharpe=-5.1962, P(alpha)=1.0000
+  Observations: 5
+  *** LOW POWER: DSR statistical power drops sharply below ~10 observations
+      (only 5 trades — interpret P(alpha) with caution)
+  FAIL
+
+PROBABILITY OF BACKTEST OVERFITTING
+----------------------------------------
+  PBO: 0.3000
+  FAIL
+
+BOOTSTRAP CONFIDENCE INTERVAL
+----------------------------------------
+  BOOTSTRAP: Sharpe=-5.1962, CI=[-1.0565, 0.2087]
+  FAIL
+
+COST STRESS TEST
+----------------------------------------
+  COST STRESS: Base PnL=-2659.92, 2x PnL=-2727.09, Degradation=2.5%
+  FAIL
+
+================================================================================
+FINAL: 0/5 gates passed
+VERDICT: NO EDGE
+RECOMMENDATION: Reject strategy
+================================================================================

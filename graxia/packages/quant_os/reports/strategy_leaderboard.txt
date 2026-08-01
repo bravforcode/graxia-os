@@ -1,0 +1,253 @@
+====================================================================================================
+STRATEGY LEADERBOARD — EDGE QUALITY RANKINGS
+Generated: 2026-07-19T01:08:59.198309
+Strategies Evaluated: 13
+====================================================================================================
+
+----------------------------------------------------------------------------------------------------
+Rank   Tier     Strategy                            Symbol     TF    Gates   Score   Verdict
+----------------------------------------------------------------------------------------------------
+1      C-TIER   Liquidity Sweep                     XAUUSD     D1    1/5     32.9    FAIL
+2      C-TIER   Mean Reversion Bollinger (MRB)      EURUSD     M15   1/5     28.0    MARGINAL EDGE
+3      C-TIER   Volume Breakout BTCUSD H1           XAUUSD     D1    1/5     23.0    FAIL
+4      D-TIER   Donchian Breakout                   XAUUSD     D1    0/5     15.0    NO EDGE
+5      D-TIER   COT Positioning XAUUSD D1           XAUUSD     D1    0/5     10.0    FAIL
+6      D-TIER   Liquidity Sweep Optimized XAUUSD D1 XAUUSD     D1    0/5     10.0    FAIL
+7      D-TIER   Liquidity Sweep V2                  XAUUSD     D1    0/5     10.0    NO EDGE
+8      D-TIER   Volume Breakout                     XAUUSD     D1    0/5     10.0    FAIL
+9      D-TIER   Bollinger Squeeze Breakout          XAUUSD     D1    0/5     5.0     FAIL
+10     D-TIER   Bollinger Squeeze EURUSD M15        XAUUSD     D1    0/5     5.0     FAIL
+11     D-TIER   RSI Mean Reversion                  XAUUSD     D1    0/5     5.0     FAIL
+12     D-TIER   Liquidity Sweep EURUSD H1           XAUUSD     D1    0/5     0.0     FAIL
+13     D-TIER   Session Pattern XAUUSD D1           XAUUSD     D1    0/5     0.0     FAIL
+----------------------------------------------------------------------------------------------------
+
+====================================================================================================
+DETAILED BREAKDOWN
+====================================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+#1 Liquidity Sweep (XAUUSD D1)
+   Edge Score: 32.9/100 | Tier: C-TIER
+   Data: 11063 bars | Trades: 648 | Win Rate: 42.6%
+   Sharpe: 0.0000 | PF: 1.00 | MaxDD: 0.0%
+
+   Gate Results:
+     Walk-Forward:  FAIL (1/5 positive, Sharpe=0.4909)
+     DSR:           FAIL (P(alpha)=0.1925)
+     PBO:           PASS (Score=0.0000)
+     Bootstrap:     FAIL (CI=[-0.1223, 0.4155])
+     Cost Stress:   FAIL (Degradation=100.0%)
+
+   Verdict: FAIL
+   Recommendation: REJECT - do not trade this strategy
+
+────────────────────────────────────────────────────────────────────────────────
+#2 Mean Reversion Bollinger (MRB) (EURUSD M15)
+   Edge Score: 28.0/100 | Tier: C-TIER
+   Data: 15000 bars | Trades: 0 | Win Rate: 0.0%
+   Sharpe: 0.0000 | PF: 0.00 | MaxDD: 0.0%
+
+   Gate Results:
+     Walk-Forward:  FAIL (0/0 positive, Sharpe=0.0000)
+     DSR:           FAIL (P(alpha)=1.0000)
+     PBO:           PASS (Score=0.0000)
+     Bootstrap:     FAIL (CI=[0.0000, 0.0000])
+     Cost Stress:   FAIL (Degradation=0.0%)
+
+   Verdict: MARGINAL EDGE
+   Recommendation: Do not trade
+
+────────────────────────────────────────────────────────────────────────────────
+#3 Volume Breakout BTCUSD H1 (XAUUSD D1)
+   Edge Score: 23.0/100 | Tier: C-TIER
+   Data: 50000 bars | Trades: 1 | Win Rate: 0.0%
+   Sharpe: 0.0000 | PF: 0.00 | MaxDD: 0.0%
+
+   Gate Results:
+     Walk-Forward:  FAIL (0/5 positive, Sharpe=0.0000)
+     DSR:           FAIL (P(alpha)=1.0000)
+     PBO:           PASS (Score=0.0000)
+     Bootstrap:     FAIL (CI=[0.0000, 0.0000])
+     Cost Stress:   FAIL (Degradation=100.0%)
+
+   Verdict: FAIL
+   Recommendation: REJECT - do not trade this strategy
+
+────────────────────────────────────────────────────────────────────────────────
+#4 Donchian Breakout (XAUUSD D1)
+   Edge Score: 15.0/100 | Tier: D-TIER
+   Data: 11063 bars | Trades: 1 | Win Rate: 0.0%
+   Sharpe: 0.0000 | PF: 0.00 | MaxDD: 0.0%
+
+   Gate Results:
+     Walk-Forward:  FAIL (0/0 positive, Sharpe=0.0000)
+     DSR:           FAIL (P(alpha)=1.0000)
+     PBO:           FAIL (Score=0.1000)
+     Bootstrap:     FAIL (CI=[0.0000, 0.0000])
+     Cost Stress:   FAIL (Degradation=1.0%)
+
+   Verdict: NO EDGE
+   Recommendation: Reject strategy
+
+────────────────────────────────────────────────────────────────────────────────
+#5 COT Positioning XAUUSD D1 (XAUUSD D1)
+   Edge Score: 10.0/100 | Tier: D-TIER
+   Data: 11063 bars | Trades: 623 | Win Rate: 61.8%
+   Sharpe: 0.0000 | PF: 1.01 | MaxDD: 0.0%
+
+   Gate Results:
+     Walk-Forward:  FAIL (2/5 positive, Sharpe=0.0000)
+     DSR:           FAIL (P(alpha)=1.0000)
+     PBO:           FAIL (Score=0.3429)
+     Bootstrap:     FAIL (CI=[-0.4120, 0.3554])
+     Cost Stress:   FAIL (Degradation=100.0%)
+
+   Verdict: FAIL
+   Recommendation: REJECT - do not trade this strategy
+
+────────────────────────────────────────────────────────────────────────────────
+#6 Liquidity Sweep Optimized XAUUSD D1 (XAUUSD D1)
+   Edge Score: 10.0/100 | Tier: D-TIER
+   Data: 11063 bars | Trades: 158 | Win Rate: 38.0%
+   Sharpe: 0.0000 | PF: 0.99 | MaxDD: 0.0%
+
+   Gate Results:
+     Walk-Forward:  FAIL (1/5 positive, Sharpe=0.0000)
+     DSR:           FAIL (P(alpha)=0.9910)
+     PBO:           FAIL (Score=0.2857)
+     Bootstrap:     FAIL (CI=[-0.1690, 0.2175])
+     Cost Stress:   FAIL (Degradation=100.0%)
+
+   Verdict: FAIL
+   Recommendation: REJECT - do not trade this strategy
+
+────────────────────────────────────────────────────────────────────────────────
+#7 Liquidity Sweep V2 (XAUUSD D1)
+   Edge Score: 10.0/100 | Tier: D-TIER
+   Data: 11063 bars | Trades: 23 | Win Rate: 39.1%
+   Sharpe: -2.1901 | PF: 0.90 | MaxDD: 0.0%
+
+   Gate Results:
+     Walk-Forward:  FAIL (0/0 positive, Sharpe=0.0000)
+     DSR:           FAIL (P(alpha)=1.0000)
+     PBO:           FAIL (Score=0.6000)
+     Bootstrap:     FAIL (CI=[-0.0114, 0.0055])
+     Cost Stress:   FAIL (Degradation=6.3%)
+
+   Verdict: NO EDGE
+   Recommendation: Reject strategy
+
+────────────────────────────────────────────────────────────────────────────────
+#8 Volume Breakout (XAUUSD D1)
+   Edge Score: 10.0/100 | Tier: D-TIER
+   Data: 11063 bars | Trades: 1 | Win Rate: 0.0%
+   Sharpe: 0.0000 | PF: 0.00 | MaxDD: 0.0%
+
+   Gate Results:
+     Walk-Forward:  FAIL (0/5 positive, Sharpe=0.0000)
+     DSR:           FAIL (P(alpha)=1.0000)
+     PBO:           FAIL (Score=0.0714)
+     Bootstrap:     FAIL (CI=[0.0000, 0.0000])
+     Cost Stress:   FAIL (Degradation=100.0%)
+
+   Verdict: FAIL
+   Recommendation: REJECT - do not trade this strategy
+
+────────────────────────────────────────────────────────────────────────────────
+#9 Bollinger Squeeze Breakout (XAUUSD D1)
+   Edge Score: 5.0/100 | Tier: D-TIER
+   Data: 11063 bars | Trades: 1 | Win Rate: 0.0%
+   Sharpe: 0.0000 | PF: 0.00 | MaxDD: 0.0%
+
+   Gate Results:
+     Walk-Forward:  FAIL (1/5 positive, Sharpe=0.0000)
+     DSR:           FAIL (P(alpha)=1.0000)
+     PBO:           FAIL (Score=0.4143)
+     Bootstrap:     FAIL (CI=[0.0000, 0.0000])
+     Cost Stress:   FAIL (Degradation=100.0%)
+
+   Verdict: FAIL
+   Recommendation: REJECT - do not trade this strategy
+
+────────────────────────────────────────────────────────────────────────────────
+#10 Bollinger Squeeze EURUSD M15 (XAUUSD D1)
+   Edge Score: 5.0/100 | Tier: D-TIER
+   Data: 50000 bars | Trades: 1 | Win Rate: 0.0%
+   Sharpe: 0.0000 | PF: 0.00 | MaxDD: 0.0%
+
+   Gate Results:
+     Walk-Forward:  FAIL (0/5 positive, Sharpe=0.0000)
+     DSR:           FAIL (P(alpha)=1.0000)
+     PBO:           FAIL (Score=0.3286)
+     Bootstrap:     FAIL (CI=[0.0000, 0.0000])
+     Cost Stress:   FAIL (Degradation=100.0%)
+
+   Verdict: FAIL
+   Recommendation: REJECT - do not trade this strategy
+
+────────────────────────────────────────────────────────────────────────────────
+#11 RSI Mean Reversion (XAUUSD D1)
+   Edge Score: 5.0/100 | Tier: D-TIER
+   Data: 11063 bars | Trades: 95 | Win Rate: 40.0%
+   Sharpe: 0.0000 | PF: 0.97 | MaxDD: 0.0%
+
+   Gate Results:
+     Walk-Forward:  FAIL (2/5 positive, Sharpe=0.0000)
+     DSR:           FAIL (P(alpha)=0.9999)
+     PBO:           FAIL (Score=0.7429)
+     Bootstrap:     FAIL (CI=[-0.3598, 0.1081])
+     Cost Stress:   FAIL (Degradation=100.0%)
+
+   Verdict: FAIL
+   Recommendation: REJECT - do not trade this strategy
+
+────────────────────────────────────────────────────────────────────────────────
+#12 Liquidity Sweep EURUSD H1 (XAUUSD D1)
+   Edge Score: 0.0/100 | Tier: D-TIER
+   Data: 50000 bars | Trades: 1 | Win Rate: 0.0%
+   Sharpe: 0.0000 | PF: 0.00 | MaxDD: 0.0%
+
+   Gate Results:
+     Walk-Forward:  FAIL (0/5 positive, Sharpe=0.0000)
+     DSR:           FAIL (P(alpha)=1.0000)
+     PBO:           FAIL (Score=1.0000)
+     Bootstrap:     FAIL (CI=[0.0000, 0.0000])
+     Cost Stress:   FAIL (Degradation=100.0%)
+
+   Verdict: FAIL
+   Recommendation: REJECT - do not trade this strategy
+
+────────────────────────────────────────────────────────────────────────────────
+#13 Session Pattern XAUUSD D1 (XAUUSD D1)
+   Edge Score: 0.0/100 | Tier: D-TIER
+   Data: 11063 bars | Trades: 1 | Win Rate: 0.0%
+   Sharpe: 0.0000 | PF: 0.00 | MaxDD: 0.0%
+
+   Gate Results:
+     Walk-Forward:  FAIL (2/5 positive, Sharpe=0.0000)
+     DSR:           FAIL (P(alpha)=1.0000)
+     PBO:           FAIL (Score=0.5714)
+     Bootstrap:     FAIL (CI=[0.0000, 0.0000])
+     Cost Stress:   FAIL (Degradation=100.0%)
+
+   Verdict: FAIL
+   Recommendation: REJECT - do not trade this strategy
+
+====================================================================================================
+SCORING METHODOLOGY
+====================================================================================================
+
+    Edge Score (0-100) is computed from:
+    • Gates Passed (40%): Walk-Forward, DSR, PBO, Bootstrap, Cost Stress
+    • Walk-Forward Sharpe (20%): Normalized to 0-2.0 range
+    • PBO Score (15%): <0.05 = full, <0.2 = partial, <0.5 = minimal
+    • Bootstrap CI (15%): Pass = full, includes zero = partial
+    • Cost Resilience (10%): Pass = full, <75% degradation = partial
+
+    Tier Rankings:
+    • S-TIER (80+): Strong edge, ready for paper trading
+    • A-TIER (60-79): Promising edge, needs more validation
+    • B-TIER (40-59): Mixed signals, investigate further
+    • C-TIER (20-39): Weak edge, not recommended
+    • D-TIER (<20): No edge detected, reject

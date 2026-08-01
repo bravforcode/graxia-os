@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0",
+  "direction": "E",
+  "description": "Cointegration Pairs Trading. Structural/statistical-arbitrage mechanism: test whether pairs of related assets (BTC/ETH, Gold/gold-miner-equity) have a long-run stable price relationship (cointegration), which a mean-reverting spread trade can exploit without predicting either asset's absolute direction. Distinct from Direction A/B's directional prediction and Direction D's funding-rate carry -- this is a third, separate mechanism (statistical arbitrage on the SPREAD between two assets, not either asset's own price).",
+  "last_updated": "2026-07-28",
+  "cumulative_trial_count_at_creation": 0,
+  "stopping_rule_doc": "Stop testing a given pair if the Engle-Granger cointegration test fails (p >= 0.05) on the full available history -- no cointegration relationship means no valid basis for a pairs trade, regardless of how the spread looks visually.",
+  "sacred_holdout_path": "N/A at the cointegration-existence-test stage (this is a structural/statistical test on the full historical relationship, not a fitted predictive model). A holdout would apply to a later stage (spread-trading strategy backtest), not this existence check.",
+  "sacred_holdout_status": "N/A",
+  "notes": [
+    "Registered 2026-07-28, per user's own pre-authorized redirect plan (see MEGA_PLAN_v2_Quant_OS_Live_Readiness.md's stopping-rule closure section): after Trial #2001 (directional momentum) REJECTED, redirect remaining effort to funding-arb + basis/carry + cointegration pairs.",
+    "Pre-registered BEFORE running the cointegration test, per the pre-registration discipline established this session (F27's lesson).",
+    "Stage 1 (this registry): does a cointegration relationship exist at all? Stage 2 (future, separate registration): if yes, backtest an actual spread-trading strategy with proper DK-test/label-shuffle/cost modeling -- do NOT skip straight from 'cointegrated' to 'tradeable' without that second stage."
+  ],
+  "hypotheses": [
+    {
+      "trial_number": 5001,
+      "id": "COINT-BTC-ETH",
+      "name": "BTC/ETH Cointegration Existence Test",
+      "status": "REJECTED",
+      "registered_at": "2026-07-28",
+      "result_at": "2026-07-28",
+      "result_summary": {
+        "n_days": 3980,
+        "date_range": ["2015-08-07", "2026-06-29"],
+        "hedge_ratio": 0.7397,
+        "statsmodels_coint_pvalue": 0.1328,
+        "verdict": "NOT_COINTEGRATED",
+        "result_artifact": "reports/cointegration_btc_eth_20260728.json"
+      },
+      "methodology_note": "A naive manual Engle-Granger (ADF on the OLS residual using STANDARD adfuller critical values) gave p=0.0441, which would have been misread as 'cointegrated' at the 0.05 threshold. This is a known trap: standard ADF critical values are wrong for a residual series whose generating regression was itself estimated (the cointegrating vector) -- the correct critical values (MacKinnon, used internally by statsmodels.tsa.stattools.coint()) are more stringent. Used the properly-adjusted test (p=0.1328) as the frozen, pre-registered verdict, not the naive one. REJECTED -- no valid statistical basis for a BTC/ETH pairs trade found.",
+      "instrument": "BTCUSD, ETHUSD (D1, full available history)",
+      "hypothesis": "log(BTCUSD) and log(ETHUSD) are cointegrated -- i.e. a linear combination of the two is stationary (mean-reverting), even though each individually is a non-stationary random walk. If true, the spread between them (properly hedge-ratio-weighted) can be traded as a mean-reversion strategy without taking a view on whether crypto broadly goes up or down.",
+      "frozen_params": {"test": "Engle-Granger two-step (statsmodels.tsa.stattools.coint)", "significance_threshold": 0.05, "price_transform": "log"},
+      "economic_rationale": "BTC and ETH are both large-cap crypto assets sharing overlapping investor base, correlated risk-on/risk-off flows, and (historically) high pairwise correlation -- a common a priori reason to expect a cointegrating relationship, though correlation alone does not imply cointegration.",
+      "data_dependencies": ["data/BTCUSD_D1.csv", "data/ETHUSD_D1.csv (already in repo, real historical data)"],
+      "validation_plan": "Engle-Granger test on full overlapping history -> if p<0.05, proceed to Stage 2 (spread-trading strategy backtest, separately registered). If p>=0.05, REJECT and do not proceed to Stage 2."
+    },
+    {
+      "trial_number": 5002,
+      "id": "COINT-GOLD-MINERS",
+      "name": "Gold Spot / Gold-Miner-Equity Cointegration Existence Test",
+      "status": "REJECTED",
+      "registered_at": "2026-07-28",
+      "result_at": "2026-07-28",
+      "result_summary": {
+        "n_days": 5059,
+        "date_range": ["2006-05-22", "2026-07-01"],
+        "hedge_ratio": 0.4817,
+        "statsmodels_coint_pvalue": 0.5455,
+        "verdict": "NOT_COINTEGRATED",
+        "result_artifact": "reports/cointegration_gold_gdx_20260728.json"
+      },
+      "methodology_note": "GDX fetched live via yfinance (data/GDX_D1_yfinance.csv, 5076 rows, 2006-2026) since no local data existed. p=0.5455 -- not close to the 0.05 threshold, unlike BTC/ETH's borderline-but-still-failing 0.13. The a priori economic rationale (miners' revenue tied to spot) does NOT translate into a statistically detectable stationary spread over this 20-year window -- plausibly because miners carry substantial idiosyncratic risk (operating costs, hedging policy, jurisdiction/political risk, equity-market beta) that swamps the shared gold-price component over the long run, consistent with well-documented miner-vs-spot performance divergence in the literature.",
+      "instrument": "XAUUSD vs. GDX (VanEck Gold Miners ETF)",
+      "hypothesis": "Gold spot price and gold-miner-equity (GDX) are cointegrated -- miners' revenue is directly tied to the gold price, so a long-run equilibrium relationship is economically expected, with GDX carrying additional operating-leverage and equity-market beta that can temporarily de-couple it from spot before reverting.",
+      "frozen_params": {"test": "Engle-Granger two-step (statsmodels.tsa.stattools.coint)", "significance_threshold": 0.05, "price_transform": "log"},
+      "economic_rationale": "Gold miners are a leveraged play on gold price (fixed costs, variable revenue tied to spot) -- textbook cointegration candidate distinct from a funding-rate or momentum mechanism.",
+      "data_dependencies": ["XAUUSD (already in repo)", "data/GDX_D1_yfinance.csv (fetched live 2026-07-28)"],
+      "validation_plan": "Engle-Granger test on full overlapping history -> if p<0.05, proceed to Stage 2. REJECTED, no Stage 2."
+    }
+  ]
+}
