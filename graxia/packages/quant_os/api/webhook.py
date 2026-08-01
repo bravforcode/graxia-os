@@ -289,6 +289,26 @@ async def tradingview_webhook(
                 error=str(e),
             )
 
+        except Exception as e:
+            # Fail closed: OrderManager/IdempotencyChecker use the sync
+            # SQLAlchemy Session API (self.db.query(...)) but `db` here is
+            # an AsyncSession, so any DB touch inside submit_order() raises
+            # (typically AttributeError). No order was placed. Rather than
+            # let this crash the request (raw 500 to TradingView, signal
+            # left uncommitted/unmarked), record it as a rejection and
+            # respond cleanly. Root cause unresolved: see note above.
+            logger.critical("webhook.order_submission_failed: %s", e, exc_info=True)
+            signal.rejection_reason = f"Order submission failed: {e}"
+            await db.commit()
+
+            return WebhookResponse(
+                success=False,
+                signal_id=str(signal.id),
+                status="error",
+                message="Signal recorded but order submission failed",
+                error=str(e),
+            )
+
     # Signal recorded but not auto-traded
     return WebhookResponse(
         success=True, signal_id=str(signal.id), status="recorded", message="Signal recorded for manual review"
