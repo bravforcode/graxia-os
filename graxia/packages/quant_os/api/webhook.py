@@ -27,8 +27,6 @@ import time
 from datetime import UTC, datetime
 from decimal import Decimal
 
-logger = logging.getLogger(__name__)
-
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -41,8 +39,11 @@ from ..core.exceptions import KillSwitchTriggeredError, ValidationError
 from ..data.models import Signal as SignalModel
 from ..execution.adapters.manager import BrokerManager
 from ..execution.manager import OrderManager
+from ..risk.circuit_breaker import CircuitBreaker
 from ..risk.engine import RiskEngine
 from ..risk.kill_switch import KillSwitch
+
+logger = logging.getLogger(__name__)
 
 webhook_router = APIRouter(prefix="/webhook", tags=["webhook"])
 
@@ -159,7 +160,7 @@ async def tradingview_webhook(
         data = json.loads(body)
         payload = TradingViewPayload(**data)
     except (json.JSONDecodeError, ValidationError) as e:
-        raise HTTPException(status_code=400, detail=f"Invalid payload: {e}")
+        raise HTTPException(status_code=400, detail=f"Invalid payload: {e}") from e
 
     # Deduplicate by event_id (if provided) or by hash of payload
     dedup_key = payload.event_id or hashlib.sha256(body).hexdigest()
@@ -175,7 +176,7 @@ async def tradingview_webhook(
     try:
         signal_type = SignalType.BUY if payload.action.lower() == "buy" else SignalType.SELL
     except ValueError:
-        raise HTTPException(status_code=400, detail=f"Invalid action: {payload.action}")
+        raise HTTPException(status_code=400, detail=f"Invalid action: {payload.action}") from None
 
     # Record signal in database
     signal = SignalModel(
@@ -202,8 +203,9 @@ async def tradingview_webhook(
     broker_manager = BrokerManager.from_config()
     await broker_manager.initialize()
 
-    risk_engine = RiskEngine(db_session=db)
     kill_switch = KillSwitch()
+    circuit_breaker = CircuitBreaker()
+    risk_engine = RiskEngine(kill_switch=kill_switch, circuit_breaker=circuit_breaker)
 
     order_manager = OrderManager(
         db_session=db,

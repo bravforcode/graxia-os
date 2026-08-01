@@ -23,7 +23,7 @@ repos:
     hooks:
       - id: mypy
         args: [--ignore-missing-imports]
-        additional_dependencies: [types-requests]
+        additional_dependencies: [types-requests, types-redis]
         exclude: ^graxia/packages/quant_os/tools/
 
   - repo: local
