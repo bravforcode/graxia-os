@@ -20,9 +20,8 @@ class TestOrderFlow:
         assert orchestrator.kill_switch is not None
         assert orchestrator.trading_loop is not None
         assert orchestrator.position_manager is not None
-        assert orchestrator.strategy_runner is not None
-        assert orchestrator.order_processor is not None
-        assert orchestrator.portfolio_service is not None
+        assert orchestrator.portfolio_manager is not None
+        assert orchestrator.risk_ledger is not None
 
     def test_orchestrator_wiring(self, orchestrator: TradingOrchestrator) -> None:
         """Test orchestrator wires event bus correctly."""

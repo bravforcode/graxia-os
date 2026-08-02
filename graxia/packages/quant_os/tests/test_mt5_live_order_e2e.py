@@ -22,9 +22,10 @@ _QOS = str(__import__("pathlib").Path(__file__).resolve().parent.parent)
 if _QOS not in sys.path:
     sys.path.insert(0, _QOS)
 
-from graxia.packages.quant_os.core.enums import OrderStatus
-from graxia.packages.quant_os.execution.adapters.mt5 import MT5Adapter
-from graxia.packages.quant_os.execution.oms import OMS
+from graxia.packages.quant_os.core.enums import OrderStatus  # noqa: E402
+from graxia.packages.quant_os.execution.adapters.mt5 import MT5Adapter  # noqa: E402
+from graxia.packages.quant_os.execution.broker_reconnector import BrokerConfig, BrokerReconnector  # noqa: E402
+from graxia.packages.quant_os.execution.oms import OMS  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -132,7 +133,12 @@ def mock_mt5():
 @pytest.fixture
 def mt5_adapter(mock_mt5):
     """Provide an MT5Adapter with mocked MT5."""
-    adapter = MT5Adapter(login=12345, password="test", server="Pepperstone-Live")
+    # Fast reconnector so reconnect-exhaustion tests (TIMEOUT path) run in
+    # milliseconds instead of the production 5s x2^n backoff (~135s).
+    fast_reconnector = BrokerReconnector(
+        BrokerConfig(max_reconnect_attempts=2, reconnect_delay_sec=0.01, reconnect_backoff_mult=1.0)
+    )
+    adapter = MT5Adapter(login=12345, password="test", server="Pepperstone-Live", reconnector=fast_reconnector)
     adapter._connected = True  # skip connect for most tests
     return adapter
 
@@ -233,7 +239,7 @@ class TestMT5E2EFill:
 
         ledger = tmp_path / "e2e_ledger.jsonl"
         assert ledger.exists()
-        lines = [l.strip() for l in ledger.read_text().strip().split("\n") if l.strip()]
+        lines = [ln.strip() for ln in ledger.read_text().strip().split("\n") if ln.strip()]
         assert len(lines) >= 1
 
         # Last event should be FILLED
