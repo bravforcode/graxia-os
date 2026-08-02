@@ -85,6 +85,8 @@ class TradeNotifier:
 
     async def notify_kill_switch(self, reason: str) -> None:
         """Send kill switch activation alert."""
+        if not self._enabled:
+            return
         text = (
             f"KILL SWITCH ACTIVATED\n"
             f"{'━' * 28}\n"
@@ -97,6 +99,8 @@ class TradeNotifier:
 
     async def notify_daily_summary(self, stats: dict) -> None:
         """Send daily trading summary."""
+        if not self._enabled:
+            return
         trades = stats.get("trades_today", 0)
         pnl = stats.get("realized_pnl", 0.0)
         max_trades = stats.get("max_daily_trades", 0)
@@ -118,6 +122,8 @@ class TradeNotifier:
 
     async def notify_error(self, component: str, error: str) -> None:
         """Send error alert when consecutive errors exceed threshold."""
+        if not self._enabled:
+            return
         text = (
             f"ERROR ALERT\n"
             f"{'━' * 28}\n"
@@ -130,22 +136,27 @@ class TradeNotifier:
 
     async def _send(self, text: str) -> None:
         """Send a message via Telegram Bot API."""
-        if self._chat_id is None:
+        # Defense in depth: _enabled is False whenever the token or chat id is
+        # missing (or the notifier was explicitly disabled) — never POST then.
+        if not self._enabled:
+            return
+        chat_id = self._chat_id
+        if chat_id is None:
             return
         try:
             import httpx
 
-            await self._rate_limit(self._chat_id)
+            await self._rate_limit(chat_id)
             url = _TELEGRAM_API.format(token=self._token)
             payload = {
-                "chat_id": self._chat_id,
+                "chat_id": chat_id,
                 "text": text,
                 "parse_mode": "HTML",
             }
             async with httpx.AsyncClient(timeout=10.0) as client:
                 resp = await client.post(url, json=payload)
                 if resp.status_code == 200:
-                    self._last_send_time[self._chat_id] = time.monotonic()
+                    self._last_send_time[chat_id] = time.monotonic()
                 else:
                     logger.warning(
                         "trade_notifier_send_failed",

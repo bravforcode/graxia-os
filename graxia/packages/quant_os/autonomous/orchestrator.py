@@ -256,6 +256,11 @@ class AutonomousOrchestrator:
 
         self._health.last_snapshot_time = datetime.now(tz=UTC)
 
+        # Re-read the shared state file so trips made through API entry
+        # points (fresh per-call breakers) are honored by this long-running
+        # process, which built its breaker once at startup.
+        self._circuit_breaker.reload()
+
         if self._circuit_breaker.is_blocked:
             logger.warning(
                 "orchestrator_circuit_breaker_open",

@@ -12,6 +12,7 @@ Covers:
 """
 
 import json
+import os
 import time
 from pathlib import Path
 
@@ -83,8 +84,73 @@ def test_legacy_untripped_file_loads_clean(tmp_path):
 
 
 def test_default_state_file_is_shared_canonical_path():
-    """DEFAULT_STATE_FILE is the CWD-relative path mirroring KillSwitch."""
-    assert DEFAULT_STATE_FILE == "data/circuit_breaker_state.json"
+    """DEFAULT_STATE_FILE resolves to ONE canonical absolute path.
+
+    With no CIRCUIT_BREAKER_STATE_FILE override the default is anchored to
+    the package root (not the process CWD), so every production process
+    shares the same state file regardless of where it was launched.  The
+    env override, when present, wins verbatim.
+    """
+    override = os.getenv("CIRCUIT_BREAKER_STATE_FILE")
+    path = Path(DEFAULT_STATE_FILE)
+    if override:
+        assert str(path) == override
+        return
+    assert path.is_absolute()
+    assert path.name == "circuit_breaker_state.json"
+    assert path.parent.name == "data"
+
+
+def test_reload_sees_other_process_trip(tmp_path):
+    """A breaker that loads once sees trips written by another process after reload()."""
+    state_file = tmp_path / "circuit_breaker_state.json"
+    breaker = CircuitBreaker(state_file=str(state_file))
+    assert breaker.is_open("metals") is False
+
+    # Simulate a separate process tripping metals via its own breaker.
+    other = CircuitBreaker(state_file=str(state_file))
+    other.trip("metals", reason="api trip")
+
+    assert breaker.is_open("metals") is False  # stale in-memory view
+    breaker.reload()
+    assert breaker.is_open("metals") is True
+
+
+def test_save_does_not_clobber_other_process_trip(tmp_path):
+    """Saving one class preserves trips another process wrote for other classes."""
+    state_file = tmp_path / "circuit_breaker_state.json"
+    other = CircuitBreaker(state_file=str(state_file))
+    other.trip("metals", reason="api trip")
+
+    # This process loads the file, then records a trade on a different class.
+    breaker = CircuitBreaker(
+        state_file=str(state_file),
+        config=CircuitBreakerConfig(threshold=1, cooldown_minutes=30),
+    )
+    breaker.record_trade("crypto", pnl=-10.0)
+
+    fresh = CircuitBreaker(state_file=str(state_file))
+    assert fresh.is_open("metals") is True  # other process's trip survived
+    assert fresh.get_status()["metals"]["reason"] == "api trip"
+    assert fresh.get_status()["metals"]["trip_count"] == 1
+    assert fresh.is_open("crypto") is True  # this process's trip persisted
+
+
+def test_reset_clears_opened_at(tmp_path):
+    """A manual reset clears opened_at so the cooldown clock restarts."""
+    state_file = tmp_path / "circuit_breaker_state.json"
+    cb = CircuitBreaker(state_file=str(state_file))
+    cb.trip("forex", reason="manual trip")
+    assert cb.get_status()["forex"]["opened_at"] > 0.0
+
+    cb.reset("forex", authorized_by="tester", reason="recovered")
+    status = cb.get_status()
+    assert status["forex"]["open"] is False
+    assert status["forex"]["opened_at"] == 0.0
+
+    # Persisted too: a reloaded breaker sees opened_at cleared.
+    reloaded = CircuitBreaker(state_file=str(state_file))
+    assert reloaded.get_status()["forex"]["opened_at"] == 0.0
 
 
 def test_status_includes_opened_at(tmp_path):
