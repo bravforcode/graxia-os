@@ -17,6 +17,7 @@ error handling, stress scenarios.
 
 from __future__ import annotations
 
+import contextlib
 import os
 import tempfile
 from datetime import UTC, datetime, timedelta
@@ -82,10 +83,8 @@ def tmp_db():
     fd, path = tempfile.mkstemp(suffix=".db")
     os.close(fd)
     yield path
-    try:
+    with contextlib.suppress(OSError):
         os.unlink(path)
-    except OSError:
-        pass
 
 
 @pytest.fixture
@@ -1238,14 +1237,14 @@ class TestBinanceAdapterChaos:
 
         fake_ccxt = types.ModuleType("ccxt")
 
-        class _BaseExc(Exception):
+        class _BaseError(Exception):
             pass
 
-        fake_ccxt.InvalidOrder = type("InvalidOrder", (_BaseExc,), {})
-        fake_ccxt.InsufficientFunds = type("InsufficientFunds", (_BaseExc,), {})
-        fake_ccxt.RateLimitExceeded = type("RateLimitExceeded", (_BaseExc,), {})
-        fake_ccxt.NetworkError = type("NetworkError", (_BaseExc,), {})
-        fake_ccxt.ExchangeError = type("ExchangeError", (_BaseExc,), {})
+        fake_ccxt.InvalidOrder = type("InvalidOrder", (_BaseError,), {})
+        fake_ccxt.InsufficientFunds = type("InsufficientFunds", (_BaseError,), {})
+        fake_ccxt.RateLimitExceeded = type("RateLimitExceeded", (_BaseError,), {})
+        fake_ccxt.NetworkError = type("NetworkError", (_BaseError,), {})
+        fake_ccxt.ExchangeError = type("ExchangeError", (_BaseError,), {})
         fake_ccxt.binance = MagicMock(return_value=mock_exchange)
 
         ctx.fake_ccxt = fake_ccxt
@@ -1529,7 +1528,11 @@ class TestMT5AdapterChaos:
         assert result.broker_id == "99999"
 
     def test_submit_order_none_result_reconnect_fails(self):
-        """order_send returns None → reconnect fails → ConnectionError."""
+        """order_send returns None → reconnect fails → TIMEOUT OrderResult.
+
+        Contract per 8a61b2f3 (WS-D revision): read methods propagate
+        ConnectionError, order methods convert it to a TIMEOUT result.
+        """
         c = self.ctx
         c.adapter._connected = True
         c.mt5.order_send.return_value = None
@@ -1537,8 +1540,9 @@ class TestMT5AdapterChaos:
         c.mt5.terminal_info.return_value = None
         c.mt5.initialize.return_value = False
         with patch("time.sleep"):
-            with pytest.raises(ConnectionError, match="reconnect failed"):
-                c.adapter.submit_order(self._order())
+            result = c.adapter.submit_order(self._order())
+        assert result.status == OrderStatus.TIMEOUT
+        assert "reconnect failed" in result.error
 
     def test_submit_order_none_result_reconnect_succeeds(self):
         """order_send returns None → reconnect succeeds → retries → TIMEOUT."""
@@ -1658,9 +1662,8 @@ class TestMT5AdapterChaos:
         c = self.ctx
         c.adapter._connected = False
         c.mt5.initialize.return_value = False
-        with patch("time.sleep"):
-            with pytest.raises(ConnectionError, match="reconnect failed"):
-                c.adapter._ensure_connected()
+        with patch("time.sleep"), pytest.raises(ConnectionError, match="reconnect failed"):
+            c.adapter._ensure_connected()
 
     def test_no_mt5_import_raises(self):
         import quant_os.execution.adapters.mt5 as mt5_mod

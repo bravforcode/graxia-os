@@ -601,9 +601,9 @@ class TestDuplicateIdempotency:
 class TestVenueMap:
     """Test venue routing table."""
 
-    def test_crypto_routes_to_mt5(self):
-        """Crypto should route to mt5 (not binance)."""
-        assert VENUE_MAP["crypto"] == "mt5"
+    def test_crypto_routes_to_binance(self):
+        """Crypto should route to binance (mt5 has no crypto venue)."""
+        assert VENUE_MAP["crypto"] == "binance"
 
     def test_metals_routes_to_mt5(self):
         """Metals should route to mt5."""

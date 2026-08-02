@@ -28,7 +28,7 @@ class _RedisBackend:
     def __init__(self, url: str):
         import redis.asyncio as aioredis
 
-        self._pool = aioredis.ConnectionPool.from_url(url, decode_responses=True)
+        self._pool: aioredis.ConnectionPool = aioredis.ConnectionPool.from_url(url, decode_responses=True)
         self._client = aioredis.Redis(connection_pool=self._pool)
 
     async def allow(self, key: str, max_requests: int, window_seconds: int) -> bool:
@@ -166,11 +166,7 @@ DEFAULT_RULES: list[RateLimitRule] = [
 
 # Proxy IP allowlist — only trust X-Forwarded-For from these IPs.
 # Empty = trust no proxy (direct connection only).
-_TRUSTED_PROXY_IPS: set[str] = {
-    ip.strip()
-    for ip in os.getenv("TRUSTED_PROXY_IPS", "").split(",")
-    if ip.strip()
-}
+_TRUSTED_PROXY_IPS: set[str] = {ip.strip() for ip in os.getenv("TRUSTED_PROXY_IPS", "").split(",") if ip.strip()}
 
 
 # ── Middleware ──────────────────────────────────────────────────────────

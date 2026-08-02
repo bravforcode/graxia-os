@@ -4,6 +4,7 @@ Imports from risk.engine -- no inline class definitions.
 """
 
 import time
+from typing import Any
 
 import pytest
 
@@ -37,7 +38,7 @@ def engine():
 
 def _fresh_signal(**overrides) -> Signal:
     """Build a Signal with timestamp_epoch=now so it passes the staleness check."""
-    defaults = dict(
+    defaults: dict[str, Any] = dict(
         symbol="XAUUSD",
         conviction=0.8,
         entry_price=2400.0,
@@ -93,7 +94,7 @@ class TestMaxPositions:
 
     def test_under_max_positions_approved(self, engine):
         signal = _fresh_signal()
-        account = AccountState()
+        account = AccountState(equity=100_000)
         portfolio = PortfolioState(position_symbols=["SYM1", "SYM2", "SYM3"])
         verdict = engine.evaluate(signal, account, portfolio)
         assert verdict.approved is True

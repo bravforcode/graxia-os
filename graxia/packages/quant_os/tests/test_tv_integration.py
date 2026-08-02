@@ -120,6 +120,7 @@ def _import_orchestrator():
     import importlib
     import importlib.util
     import sys
+    import types
 
     mod_name = "graxia.packages.quant_os.core.tv_integration"
 
@@ -128,19 +129,34 @@ def _import_orchestrator():
         mod = sys.modules[mod_name]
         return mod.TradingOrchestrator
 
-    # Find the file directly
+    # Prefer the real dotted chain: relative imports inside the module
+    # (from ..analysis.visual_search, from ..api.tv_cdp, ...) then resolve
+    # exactly as they would in the installed package.
+    try:
+        return importlib.import_module(mod_name).TradingOrchestrator
+    except ImportError:
+        pass
+
+    # Fallback when the dotted chain is not on sys.path (e.g. pytest run from
+    # the package dir): load the file directly and register the parent chain
+    # as namespace packages so relative imports still resolve one level up.
     tv_int_path = Path(__file__).resolve().parent.parent / "core" / "tv_integration.py"
     if not tv_int_path.exists():
         raise FileNotFoundError(f"Cannot find {tv_int_path}")
 
-    # Ensure parent package is importable without triggering __init__ chain
-    core_pkg_path = tv_int_path.parent
+    root = tv_int_path.parent.parent
+    for pkg_name, pkg_dir in (
+        ("graxia", root.parent.parent),
+        ("graxia.packages", root.parent),
+        ("graxia.packages.quant_os", root),
+        ("graxia.packages.quant_os.core", root / "core"),
+    ):
+        if pkg_name not in sys.modules:
+            pkg = types.ModuleType(pkg_name)
+            pkg.__path__ = [str(pkg_dir)]
+            sys.modules[pkg_name] = pkg
 
-    spec = importlib.util.spec_from_file_location(
-        mod_name,
-        str(tv_int_path),
-        submodule_search_locations=[str(core_pkg_path)],
-    )
+    spec = importlib.util.spec_from_file_location(mod_name, str(tv_int_path))
     mod = importlib.util.module_from_spec(spec)
     sys.modules[mod_name] = mod
     spec.loader.exec_module(mod)
