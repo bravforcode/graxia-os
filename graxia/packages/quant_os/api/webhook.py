@@ -39,7 +39,7 @@ from ..core.exceptions import KillSwitchTriggeredError, ValidationError
 from ..data.models import Signal as SignalModel
 from ..execution.adapters.manager import BrokerManager
 from ..execution.manager import OrderManager
-from ..risk.circuit_breaker import CircuitBreaker
+from ..risk.circuit_breaker import DEFAULT_STATE_FILE, CircuitBreaker
 from ..risk.engine import RiskEngine
 from ..risk.kill_switch import KillSwitch
 
@@ -204,7 +204,7 @@ async def tradingview_webhook(
     await broker_manager.initialize()
 
     kill_switch = KillSwitch()
-    circuit_breaker = CircuitBreaker()
+    circuit_breaker = CircuitBreaker(state_file=DEFAULT_STATE_FILE)
     risk_engine = RiskEngine(kill_switch=kill_switch, circuit_breaker=circuit_breaker)
 
     # KNOWN BROKEN (unresolved): `db` here is an AsyncSession (see

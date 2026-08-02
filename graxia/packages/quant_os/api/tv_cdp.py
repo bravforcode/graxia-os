@@ -43,7 +43,7 @@ try:
         TV_SCREENSHOT_DIR,
     )
 except ImportError:
-    from config.tv_cdp_config import (
+    from config.tv_cdp_config import (  # type: ignore[no-redef]  # noqa: F811
         TV_CDP_CHROME_PATH,
         TV_CDP_TIMEOUT,
         TV_CDP_URL,

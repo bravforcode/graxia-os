@@ -36,6 +36,7 @@ from graxia.packages.quant_os.ml.feature_store import (
     compute_live_features as compute_features_live,
 )
 from graxia.packages.quant_os.ml.model_registry import ModelRegistry
+from graxia.packages.quant_os.risk.circuit_breaker import DEFAULT_STATE_FILE
 
 logger = structlog.get_logger(__name__)
 
@@ -74,9 +75,8 @@ MIN_CONFIDENCE = float(os.getenv("MIN_CONFIDENCE", "0.50"))
 # data/kill_switch_state.json. Every process that constructs a
 # CircuitBreaker must use the same path so a trip in one process is
 # honored by the others (risk gate, orchestrator, webhook).
-CIRCUIT_BREAKER_STATE_FILE = os.getenv("CIRCUIT_BREAKER_STATE_FILE", "data/circuit_breaker_state.json")
+CIRCUIT_BREAKER_STATE_FILE = DEFAULT_STATE_FILE
 MODEL_SIGNING_KEY = os.getenv("MODEL_SIGNING_KEY", "")
-
 # Path resolution: env-var-driven with defaults relative to this file's package.
 # Works both in Docker (/app mounts) and local dev (relative to repo root).
 _THIS_DIR = Path(__file__).resolve().parent  # api/

@@ -34,7 +34,7 @@ try:
         TV_SCREEN_EXCHANGE,
     )
 except ImportError:
-    from config.tv_config import (
+    from config.tv_config import (  # type: ignore[no-redef]  # noqa: F811
         TV_DEFAULT_TIMEFRAME,
         TV_MAX_RETRIES,
         TV_MCP_URL,
@@ -144,7 +144,7 @@ class FullAnalysis:
 
 def _parse_timestamp(raw: Any) -> datetime:
     """Parse epoch seconds or ISO string into timezone-aware UTC datetime."""
-    if isinstance(raw, (int, float)):
+    if isinstance(raw, int | float):
         return datetime.fromtimestamp(raw, tz=UTC)
     if isinstance(raw, str):
         dt = datetime.fromisoformat(raw)

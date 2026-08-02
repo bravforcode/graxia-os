@@ -17,6 +17,11 @@ logger = logging.getLogger(__name__)
 
 ASSET_CLASSES = ("metals", "crypto", "forex", "indices")
 
+# Canonical shared state path — mirrors KillSwitch's data/kill_switch_state.json.
+# Every production process that constructs a CircuitBreaker must use this path
+# (or an explicit state_file) so a trip in one process is honored by the others.
+DEFAULT_STATE_FILE = os.getenv("CIRCUIT_BREAKER_STATE_FILE", "data/circuit_breaker_state.json")
+
 
 @dataclass
 class CircuitBreakerConfig:
@@ -180,6 +185,7 @@ class CircuitBreaker:
                 "consecutive_losses": s.consecutive_losses,
                 "trip_count": s.trip_count,
                 "reason": s.reason,
+                "opened_at": s.opened_at,
             }
         return status
 
@@ -189,7 +195,13 @@ class CircuitBreaker:
             return
         data = {}
         for cls, s in self._classes.items():
-            data[cls] = {"cl": s.consecutive_losses, "o": s.open, "r": s.reason, "tc": s.trip_count}
+            data[cls] = {
+                "cl": s.consecutive_losses,
+                "o": s.open,
+                "r": s.reason,
+                "tc": s.trip_count,
+                "oa": s.opened_at,
+            }
         self._state_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Write to temp file first
@@ -238,6 +250,7 @@ class CircuitBreaker:
                 s.open = d.get("o", False)
                 s.reason = d.get("r", "")
                 s.trip_count = d.get("tc", 0)
+                s.opened_at = d.get("oa", 0.0)
         except (json.JSONDecodeError, ValueError) as exc:
             # Fail-closed: corrupted circuit breaker state → trip all classes
             logger.critical(

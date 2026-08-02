@@ -43,7 +43,10 @@ class TradeNotifier:
 
         symbol = getattr(decision, "symbol", "?")
         direction = getattr(decision, "direction", None)
-        direction_str = direction.value if hasattr(direction, "value") else str(direction)
+        if direction is not None and hasattr(direction, "value"):
+            direction_str = direction.value
+        else:
+            direction_str = str(direction)
         confidence = getattr(decision, "confidence", 0.0)
         entry = getattr(decision, "entry", 0.0)
         sl = getattr(decision, "stop_loss", 0.0)
@@ -54,7 +57,6 @@ class TradeNotifier:
         error = getattr(result, "error", "")
 
         mode_label = "PAPER" if not getattr(result, "approval_required", False) else "LIVE"
-        status = "EXECUTED" if success else "FAILED"
 
         if not success:
             text = (
@@ -128,6 +130,8 @@ class TradeNotifier:
 
     async def _send(self, text: str) -> None:
         """Send a message via Telegram Bot API."""
+        if self._chat_id is None:
+            return
         try:
             import httpx
 
