@@ -198,7 +198,15 @@ class TestBrokerManager:
 
     @pytest.mark.asyncio
     async def test_from_config_defaults_to_paper(self):
-        manager = BrokerManager.from_config()
+        # Hermetic: build an explicit clean config instead of relying on the
+        # ambient QuantConfig singleton. The suite loads quant_os/.env, which
+        # sets SHADOW_MODE=true, so a bare from_config() picks ShadowAdapter.
+        from graxia.packages.quant_os.core.config import QuantConfig
+
+        config = QuantConfig()
+        config.shadow_mode = False
+        config.live_trading_enabled = False
+        manager = BrokerManager.from_config(config=config)
         connected = await manager.initialize()
         assert connected is True
         assert manager.active.name == "PAPER"
