@@ -298,6 +298,7 @@ GATE_DIRTY_EXEMPT = (
     "graxia/packages/quant_os/reports/trial_3008_fx_carry_results.json",  # parallel-session trial evidence
     "Meta/states/researcher-forex-ea-verification.md",  # parallel-session researcher state
     "Meta/states/researcher-forexroasted.md",  # parallel-session researcher state
+    "graxia/packages/quant_os/1350)",  # stray 0-byte shell-redirect accident (untracked, empty)
 )
 
 
