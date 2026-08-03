@@ -562,13 +562,13 @@ def main():
     # Deflated Sharpe for ensemble (multiple-testing correction)
     try:
         sys.path.insert(0, os.path.join(BASE, "..", "quant_os"))
-        from validation.deflated_sharpe import deflated_sharpe_ratio
+        from validation.deflated_sharpe import dsr_from_annualized
 
-        ds_result = deflated_sharpe_ratio(
+        ds_result = dsr_from_annualized(
             observed_sharpe=ens_metrics.get("sharpe_ratio", 0),
             n_trials=N_TRIALS,
             n_observations=len(y_test),
-            sharpe_annualization_factor=1.0,  # TODO(DSR-AUDIT): unaudited call site, factor=1.0 preserves prior (possibly-incorrect) behavior — see MATH_CORRECTNESS_AUDIT.md
+            annualization_factor=252,  # SP1: unit-correct DSR (annualized Sharpe, daily bars)
         )
         all_metrics["Ensemble"]["deflated_sharpe"] = round(ds_result.deflated_sharpe, 4)
         all_metrics["Ensemble"]["deflated_sharpe_pass"] = ds_result.passes_threshold

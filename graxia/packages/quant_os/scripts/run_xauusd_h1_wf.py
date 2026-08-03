@@ -130,9 +130,9 @@ for thresh in CONF_THRESHOLDS:
     sharpes = [r["sharpe_ratio"] for r in folds if r["n_trades"] > 0 and r["sharpe_ratio"] != 0]
     avg_sharpe = np.mean(sharpes) if sharpes else 0
     fold_nets = [round(r["net_pnl"], 2) for r in folds]
-    ds = ds_mod.deflated_sharpe_ratio(
-        avg_sharpe, N_FOLDS * len(CONF_THRESHOLDS), total_trades, sharpe_annualization_factor=1.0
-    )  # TODO(DSR-AUDIT): unaudited call site, factor=1.0 preserves prior (possibly-incorrect) behavior — see MATH_CORRECTNESS_AUDIT.md
+    ds = ds_mod.dsr_from_annualized(
+        avg_sharpe, N_FOLDS * len(CONF_THRESHOLDS), total_trades, annualization_factor=252
+    )  # SP1: sharpe annualized per-trade by backtest_cost.evaluate_backtest (sqrt(min(trades,252))); NOT 6096 despite H1 data
     ds_sharpe = ds.deflated_sharpe
     ds_pass = ds.passes_threshold
     status = "PASS" if ds_pass else "FAIL"

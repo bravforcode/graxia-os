@@ -332,10 +332,10 @@ def main() -> int:
     dsr = deflated_sharpe_ratio(
         pooled_sharpe,
         n_trials=1050,
-        n_observations=1050,
-        sharpe_annualization_factor=1.0,  # TODO(DSR-AUDIT): unaudited call site, factor=1.0 preserves prior (possibly-incorrect) behavior — see MATH_CORRECTNESS_AUDIT.md
+        n_observations=len(cs_mean),  # SP1: was 1050 (= n_trials) — n_observations must be raw bars
+        sharpe_annualization_factor=math.sqrt(252),  # SP1: pooled_sharpe is annualized
         skewness=float(cs_mean.skew()),
-        kurtosis=float(cs_mean.kurt()),
+        kurtosis=float(cs_mean.kurt()) + 3.0,  # SP1: pandas kurtosis() is EXCESS; module expects RAW
     )
     dsr_pass = dsr.probability_alpha < 0.05
     print(

@@ -1,5 +1,6 @@
 """Sanity check: empirical skew/kurtosis from trades_json vs DSR default."""
 import json
+import math
 import duckdb
 import numpy as np
 import importlib.util as _ilu
@@ -41,18 +42,17 @@ for row in rows:
     if std > 1e-10 and len(pnls) > 3:
         z = (pnls - mu) / std
         skew = float(np.mean(z ** 3))
-        kurt = float(np.mean(z ** 4) - 3)  # excess kurtosis
+        kurt = float(np.mean(z ** 4))  # RAW kurtosis (3=normal) — matches deflated_sharpe module
     else:
-        skew, kurt = 0.0, 0.0
+        skew, kurt = 0.0, 3.0
 
-    # DSR with defaults (skew=0, kurt=3)
-    dsr_default = deflated_sharpe_ratio(sharpe, 500, trades, sharpe_annualization_factor=1.0)  # TODO(DSR-AUDIT): unaudited call site, factor=1.0 preserves prior (possibly-incorrect) behavior — see MATH_CORRECTNESS_AUDIT.md
+    # DSR with defaults (skew=0, kurt=3) — SP1: sharpe from campaign table is annualized (D1)
+    dsr_default = deflated_sharpe_ratio(sharpe, 500, trades, sharpe_annualization_factor=math.sqrt(252))  # SP1: unit-correct
     dsr_def_val = 1.0 - dsr_default.probability_alpha
 
-    # DSR with empirical moments (clamp kurtosis to avoid math domain error)
-    kurt_clamped = max(kurt, -2.0)  # kurtosis < -2 can cause sqrt of negative
+    # DSR with empirical moments
     try:
-        dsr_empirical = deflated_sharpe_ratio(sharpe, 500, trades, sharpe_annualization_factor=1.0, skewness=skew, kurtosis=kurt_clamped)  # TODO(DSR-AUDIT): unaudited call site, factor=1.0 preserves prior (possibly-incorrect) behavior — see MATH_CORRECTNESS_AUDIT.md
+        dsr_empirical = deflated_sharpe_ratio(sharpe, 500, trades, sharpe_annualization_factor=math.sqrt(252), skewness=skew, kurtosis=kurt)  # SP1: unit-correct, raw kurt
         dsr_emp_val = 1.0 - dsr_empirical.probability_alpha
     except (ValueError, ZeroDivisionError):
         dsr_emp_val = float("nan")

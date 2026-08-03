@@ -88,7 +88,7 @@ def compute_dsr(returns: np.ndarray, n_trials: int, annualization: float) -> dic
         observed_sharpe=sr_hat,
         n_trials=n_trials,
         n_observations=n_obs,
-        sharpe_annualization_factor=1.0,  # TODO(DSR-AUDIT): unaudited call site, factor=1.0 preserves prior (possibly-incorrect) behavior — see MATH_CORRECTNESS_AUDIT.md
+        sharpe_annualization_factor=annualization ** 0.5,  # SP1: sr_hat was scaled by annualization**0.5 above — de-annualize with the same factor
         skewness=skew,
         kurtosis=kurt,
     )

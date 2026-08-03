@@ -75,7 +75,7 @@ def check1_skewness_kurtosis(
             observed_sharpe=ann_sharpe,
             n_trials=n_trials,
             n_observations=len(arr),
-            sharpe_annualization_factor=1.0,  # TODO(DSR-AUDIT): unaudited call site, factor=1.0 preserves prior (possibly-incorrect) behavior — see MATH_CORRECTNESS_AUDIT.md
+            sharpe_annualization_factor=math.sqrt(252),  # SP1: ann_sharpe is annualized (line 71)
             skewness=skew,
             kurtosis=kurt,
         )
@@ -85,7 +85,7 @@ def check1_skewness_kurtosis(
             observed_sharpe=ann_sharpe,
             n_trials=n_trials,
             n_observations=len(arr),
-            sharpe_annualization_factor=1.0,  # TODO(DSR-AUDIT): unaudited call site, factor=1.0 preserves prior (possibly-incorrect) behavior — see MATH_CORRECTNESS_AUDIT.md
+            sharpe_annualization_factor=math.sqrt(252),  # SP1: ann_sharpe is annualized (line 71)
             skewness=0.0,
             kurtosis=3.0,
         )

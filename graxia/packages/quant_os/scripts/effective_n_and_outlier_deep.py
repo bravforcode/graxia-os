@@ -304,7 +304,7 @@ def count_effective_n(
             observed_sharpe=sharpe_12m,
             n_trials=N,
             n_observations=len(aligned["momentum_12m"]),
-            sharpe_annualization_factor=1.0,  # TODO(DSR-AUDIT): unaudited call site, factor=1.0 preserves prior (possibly-incorrect) behavior — see MATH_CORRECTNESS_AUDIT.md
+            sharpe_annualization_factor=math.sqrt(252),  # SP1: sharpe_12m is annualized (line 294)
             skewness=skew_12m,
             kurtosis=kurt_12m,
         )
