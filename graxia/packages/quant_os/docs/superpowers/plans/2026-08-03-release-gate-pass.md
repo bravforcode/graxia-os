@@ -59,6 +59,7 @@ Python 3.x + pytest (run via `python -m pytest ... -q --tb=short`), git (convent
    data/manifests/XAUUSD_D1.manifest.json
    tests/.test_tmp/
    ```
+   NOTE: churn paths may relocate (observed: `data/heartbeat.txt` appeared at workspace ROOT `C:\Users\menum\graxia os\data\`). For ANY churn file discovered at a new location in step 1, apply the same treatment (add root `.gitignore` pattern if at workspace root; untrack via `git rm --cached` if tracked).
 3. [ ] Untrack the 3 tracked churn files (files stay on disk):
    `git rm --cached graxia/packages/quant_os/tests/.test_tmp/list.json graxia/packages/quant_os/data/visual_index/quant_meta.json graxia/packages/quant_os/data/manifests/XAUUSD_D1.manifest.json`
 4. [ ] Verify ignore rule matches: `git check-ignore -v graxia/packages/quant_os/data/heartbeat.txt` → prints a matching pattern line.
