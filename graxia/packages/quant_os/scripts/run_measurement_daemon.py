@@ -19,10 +19,15 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+# Scheduled-task environments don't carry PYTHONPATH: ensure the package
+# root is importable regardless of how this script is launched.
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 DEFAULT_COVERAGE_DIR = ROOT / "data" / "coverage"
 DEFAULT_TICKS_DIR = ROOT / "data" / "ticks"
