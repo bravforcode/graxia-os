@@ -39,8 +39,7 @@ batches 1-3. Two structural defects:
 ### Tier A — Untrack + gitignore (root-cause fix, GitHub practice)
 
 Files the gate/other sessions regenerate at runtime should NOT be tracked.
-Remove them from the index and rely on existing `.gitignore` rules
-(already present for `artifacts/`, `state/`, `data/`):
+Remove them from the index and rely on existing `.gitignore` rules:
 
 ```
 git rm --cached -r graxia/packages/quant_os/artifacts/release_gate/   # 15 files
@@ -48,7 +47,22 @@ git rm --cached graxia/packages/quant_os/state/audit_log.jsonl
 git rm --cached graxia/packages/quant_os/state/autonomous_state.json
 git rm --cached graxia/packages/quant_os/state/system_state.json
 git rm --cached graxia/packages/quant_os/validation/.experiment_registry.json
+rm -f graxia/packages/quant_os/1350)   # stray 0-byte fat-finger redirect accident — DELETE, never whitelist
 ```
+
+`.gitignore` coverage verified (2026-08-04):
+- `artifacts/` — covered (root + quant_os .gitignore)
+- `state/` — covered
+- `Meta/states/` — covered (both root + quant_os)
+- `tests/.test_tmp/` — covered
+- `1350)` — NOT covered by design: the file is deleted, not ignored (see below)
+
+**Review fix: `1350)` is deleted, NOT whitelisted.** A stray file from a
+fat-finger redirect must never appear in a security whitelist — deleting it
+from disk + index removes the class of problem entirely. The gate must also
+contain a stale-entry guard: if an entry in `ALLOWED_DIRTY_FILES` refers to a
+path that no longer exists, the gate warns (drift detection) instead of
+silently carrying dead config.
 
 Result: `git status` no longer reports these → `check_git_clean()` passes
 without any exemption entry. Files remain on disk (untracked, ignored).
@@ -66,15 +80,19 @@ Keep a small, explicit allowlist in the gate script. Rules:
 3. Directory-wide exemption is forbidden for any directory containing `.py`.
 
 ```python
-ALLOWED_DIRTY_FILES = frozenset({
+import os
+import re
+from typing import FrozenSet, Tuple
+
+ALLOWED_DIRTY_FILES: FrozenSet[str] = frozenset({
     "data/heartbeat.txt",
     "graxia/packages/quant_os/data/heartbeat.txt",
     "graxia/packages/quant_os/tests/.test_tmp/list.json",
-    "graxia/packages/quant_os/1350)",  # stray 0-byte redirect accident
     "graxia/packages/quant_os/quarantine_manifest.json",  # gate itself writes it
+    # NOTE: 1350) is NOT whitelisted — deleted in Tier A (review fix)
 })
 
-ALLOWED_DIRTY_PATTERNS = (
+ALLOWED_DIRTY_PATTERNS: Tuple[re.Pattern, ...] = (
     re.compile(r"^graxia/packages/quant_os/research/trial_ledger.*\.json$"),
     re.compile(r"^graxia/packages/quant_os/research/hypothesis_registry.*\.json$"),
     re.compile(r"^graxia/packages/quant_os/reports/.*\.(json|md)$"),
@@ -84,14 +102,40 @@ ALLOWED_DIRTY_PATTERNS = (
 )
 
 def is_file_exempted(filepath: str) -> bool:
-    if filepath.endswith(".py"):
+    """Return True if a dirty file is an allowed runtime artifact.
+
+    Cross-platform: git status --porcelain may emit backslash separators on
+    Windows; normalize before matching so Linux CI and Windows dev agree.
+    """
+    # 1. Normalize OS path separators (Windows \\ vs POSIX /)
+    normalized_path = filepath.replace("\\", "/")
+
+    # 2. Hard security rule: source code is NEVER exempted
+    if normalized_path.endswith(".py"):
         return False
-    if filepath in ALLOWED_DIRTY_FILES:
+
+    # 3. Exact file match
+    if normalized_path in ALLOWED_DIRTY_FILES:
         return True
-    return any(p.match(filepath) for p in ALLOWED_DIRTY_PATTERNS)
+
+    # 4. Pattern match
+    return any(p.match(normalized_path) for p in ALLOWED_DIRTY_PATTERNS)
 ```
 
 Replaces the current `GATE_DIRTY_EXEMPT` tuple + prefix `startswith` logic.
+
+**Review fixes applied here:**
+1. **OS path normalization** — `filepath.replace("\\", "/")` before matching;
+   `git status --porcelain` on Windows can emit `\` separators, which would
+   make POSIX regexes fail to match → false gate failures. Normalization makes
+   behavior identical on Linux (CI/worktree) and Windows (local dev).
+2. **`1350)` removed from the whitelist** — the file is deleted in Tier A; a
+   fat-finger accident must not become permanent security config.
+3. **Future guardrail (not in v1 scope, noted for follow-up)**: size check on
+   exempted files — warn when an exempted `.json`/`.md` exceeds a threshold
+   (e.g. 50 MB) to catch accidental dumps / credential blobs in artifact dirs.
+   Implementation: in `check_git_clean()`, after `is_file_exempted()` returns
+   True, stat the file and emit a warning (not a failure) above the threshold.
 
 ### Tier C (process, not code) — massive_sentiment → approved_runtime_skips
 
@@ -116,15 +160,19 @@ Write `docs/superpowers/playbooks/gate-verification.md`:
 
 ## 4. Implementation Steps
 
-1. **Tier A**: run `git rm --cached` for the 5 tracked runtime paths; verify
-   `git status` clean for those paths; commit.
+1. **Tier A**: delete `1350)` from disk; run `git rm --cached` for the 5
+   tracked runtime paths; verify `git status --porcelain` shows zero entries
+   for those paths (files remain on disk but untracked+ignored); commit.
 2. **Tier B**: replace `GATE_DIRTY_EXEMPT` with `ALLOWED_DIRTY_FILES` +
-   `ALLOWED_DIRTY_PATTERNS` + `is_file_exempted()` in `run_release_gate.py`;
-   unit-verify the function against known dirty-path samples (incl. a `.py`
-   in reports/ must be REJECTED); ruff/mypy via pre-commit; commit.
-3. **Tier C**: edit `test_massive_sentiment.py` (skipif), SUITE_CMD, manifest;
-   standalone verify skip; commit.
-4. **Tier D**: write playbook; commit.
+   `ALLOWED_DIRTY_PATTERNS` + `is_file_exempted()` (path-normalized, `.py`-hard-
+   rejection) in `run_release_gate.py`; add stale-entry drift warning; verify
+   function against known dirty-path samples (incl. backslash variants);
+   ruff/mypy via pre-commit; commit.
+3. **Tier C**: edit `test_massive_sentiment.py` (skipif), SUITE_CMD, manifest
+   (QOS-RB-017 → approved_runtime_skips count=1); standalone verify skip;
+   commit.
+4. **Tier D**: write playbook `docs/superpowers/playbooks/gate-verification.md`;
+   commit.
 5. **Verification**: run gate once on live tree AND once in pinned worktree;
    both must be GREEN with zero failures and identical A==B stats.
 
@@ -132,15 +180,23 @@ Write `docs/superpowers/playbooks/gate-verification.md`:
 
 - `is_file_exempted("graxia/packages/quant_os/reports/capacity_ceiling.py") == False`
 - `is_file_exempted("graxia/packages/quant_os/research/pipeline.py") == False`
+- `is_file_exempted("graxia\\packages\\quant_os\\reports\\research_backed_pipeline.json") == True`  (backslash Windows form)
 - `is_file_exempted("graxia/packages/quant_os/reports/research_backed_pipeline.json") == True`
 - `is_file_exempted("Meta/states/researcher-forexroasted.md") == True`
-- `git status --porcelain` shows zero entries for the Tier-A paths after untrack
+- `is_file_exempted("graxia/packages/quant_os/1350)") == False`  (no longer whitelisted; file deleted)
+- `git status --porcelain` shows zero entries for Tier-A paths after untrack
 - Full gate: verdict PASS, all 10 checks true, run_a == run_b
 - massive_sentiment: collected + skipped in suite (not ignored, not failed)
 
-## 6. Out of Scope
+## 6. Out of Scope / Future
 
 - Flaky-test auto-quarantine tooling (Google-style 3-strike) — future.
 - Test-size reduction (Google's biggest flakiness lever) — future.
+- **Exempted-file size guardrail** — warn (not fail) when an exempted
+  `.json`/`.md` exceeds ~50 MB, to surface accidental dumps / credential
+  blobs in artifact dirs — future follow-up.
+- **Automated clean-checkout runner** — move gate execution to an isolated
+  container / temp worktree automatically (100% hermetic), eliminating local
+  dirty-tree issues entirely — future.
 - Changing gate pass thresholds (required_collected/passed stay).
 - Touching `.py` exemption for ANY path — permanently forbidden.
