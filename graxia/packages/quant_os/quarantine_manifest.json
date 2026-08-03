@@ -63,30 +63,6 @@
       "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
     },
     {
-      "test_file": "tests/chaos/test_deep_stress.py",
-      "test_class": null,
-      "test_function": null,
-      "reason": "ImportError: OrderStateError not importable from quant_os.core.exceptions.",
-      "quarantined_at": "2026-08-03",
-      "owner": "quant_os_team",
-      "expiry": "2026-12-31",
-      "issue_id": "QOS-RB-003",
-      "release_impact": "non-blocking",
-      "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
-    },
-    {
-      "test_file": "tests/chaos/test_execution_untested.py",
-      "test_class": null,
-      "test_function": null,
-      "reason": "ModuleNotFoundError quant_os.execution.recovery (module exists; import path resolution fails in gate context) - 8 tests.",
-      "quarantined_at": "2026-08-03",
-      "owner": "quant_os_team",
-      "expiry": "2026-12-31",
-      "issue_id": "QOS-RB-004",
-      "release_impact": "non-blocking",
-      "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
-    },
-    {
       "test_file": "tests/chaos/test_full_pipeline.py",
       "test_class": null,
       "test_function": null,
@@ -155,18 +131,6 @@
       "owner": "quant_os_team",
       "expiry": "2026-12-31",
       "issue_id": "QOS-RB-010",
-      "release_impact": "non-blocking",
-      "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
-    },
-    {
-      "test_file": "tests/test_config_unified.py",
-      "test_class": null,
-      "test_function": null,
-      "reason": "ModuleNotFoundError config.unified_settings ('config' is not a package) - unified settings resolution fails in gate context (11 tests).",
-      "quarantined_at": "2026-08-03",
-      "owner": "quant_os_team",
-      "expiry": "2026-12-31",
-      "issue_id": "QOS-RB-011",
       "release_impact": "non-blocking",
       "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
     },
@@ -279,18 +243,6 @@
       "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
     },
     {
-      "test_file": "tests/test_orchestrator_reconciliation.py",
-      "test_class": null,
-      "test_function": null,
-      "reason": "Reconciliation critical-discrepancy + failure-escalation tests fail (5).",
-      "quarantined_at": "2026-08-03",
-      "owner": "quant_os_team",
-      "expiry": "2026-12-31",
-      "issue_id": "QOS-RB-021",
-      "release_impact": "non-blocking",
-      "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
-    },
-    {
       "test_file": "tests/test_phase_2a.py",
       "test_class": null,
       "test_function": null,
@@ -311,18 +263,6 @@
       "owner": "quant_os_team",
       "expiry": "2026-12-31",
       "issue_id": "QOS-RB-023",
-      "release_impact": "non-blocking",
-      "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
-    },
-    {
-      "test_file": "tests/test_quality_gate.py",
-      "test_class": null,
-      "test_function": null,
-      "reason": "Quality gate unsorted-detection test fails.",
-      "quarantined_at": "2026-08-03",
-      "owner": "quant_os_team",
-      "expiry": "2026-12-31",
-      "issue_id": "QOS-RB-024",
       "release_impact": "non-blocking",
       "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
     },
@@ -363,18 +303,6 @@
       "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
     },
     {
-      "test_file": "tests/test_state_persistence.py",
-      "test_class": null,
-      "test_function": null,
-      "reason": "RiskBudgetPersistence round trip fails (RiskBudget.to_dict missing).",
-      "quarantined_at": "2026-08-03",
-      "owner": "quant_os_team",
-      "expiry": "2026-12-31",
-      "issue_id": "QOS-RB-028",
-      "release_impact": "non-blocking",
-      "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
-    },
-    {
       "test_file": "tests/test_strategy_validator_sanity.py",
       "test_class": null,
       "test_function": null,
@@ -383,18 +311,6 @@
       "owner": "quant_os_team",
       "expiry": "2026-12-31",
       "issue_id": "QOS-RB-029",
-      "release_impact": "non-blocking",
-      "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
-    },
-    {
-      "test_file": "tests/test_synthetic_shock_scenarios.py",
-      "test_class": null,
-      "test_function": null,
-      "reason": "New shock scenarios (overnight_gap, spread_blowout, correlation_convergence, regime_shift_crash, flash_crash_recovery) not registered in risk/stress_test.py at HEAD (20 tests).",
-      "quarantined_at": "2026-08-03",
-      "owner": "quant_os_team",
-      "expiry": "2026-12-31",
-      "issue_id": "QOS-RB-030",
       "release_impact": "non-blocking",
       "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
     },
@@ -409,18 +325,6 @@
       "issue_id": "QOS-RB-031",
       "release_impact": "non-blocking",
       "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
-    },
-    {
-      "test_file": "tests/test_tv_integration.py",
-      "test_class": null,
-      "test_function": null,
-      "reason": "TradingOrchestrator not exported by core.tv_integration at HEAD (8 tests).",
-      "quarantined_at": "2026-08-03",
-      "owner": "quant_os_team",
-      "expiry": "2026-12-31",
-      "issue_id": "QOS-RB-032",
-      "release_impact": "non-blocking",
-      "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
     }
   ],
   "quarantined_modules": [],
@@ -428,16 +332,47 @@
     "total": 60,
     "approved_at": "2026-08-03",
     "reasons": [
-      {"count": 1, "where": "integration/conftest.py", "reason": "testcontainers package not installed in gate env"},
-      {"count": 2, "where": "test_phase_9_integration.py / test_phase_9_review.py", "reason": "canary.review.review_criteria module not available"},
-      {"count": 1, "where": "test_strategy_failure_tracker.py", "reason": "_StrategyFailureTracker never implemented, zero callers"},
-      {"count": 1, "where": "chaos/test_migrations_smoke.py", "reason": "DATABASE_URL not set in gate env"},
-      {"count": 21, "where": "chaos/test_multi_provider.py", "reason": "obsolete 6-provider architecture (9 + 12 singles)"},
-      {"count": 27, "where": "chaos/test_risk_monitoring_ml_untested.py", "reason": "DriftMonitor background threads hang in test env ([13]); ModelRegistry pickle with mocks fails ([14])"},
-      {"count": 5, "where": "chaos/test_tls_certs.py", "reason": "openssl executable not available in gate env"},
-      {"count": 2, "where": "test_warehouse_dedup.py / test_warehouse_loader.py", "reason": "no XAUUSD warehouse data loaded"}
+      {
+        "count": 1,
+        "where": "integration/conftest.py",
+        "reason": "testcontainers package not installed in gate env"
+      },
+      {
+        "count": 2,
+        "where": "test_phase_9_integration.py / test_phase_9_review.py",
+        "reason": "canary.review.review_criteria module not available"
+      },
+      {
+        "count": 1,
+        "where": "test_strategy_failure_tracker.py",
+        "reason": "_StrategyFailureTracker never implemented, zero callers"
+      },
+      {
+        "count": 1,
+        "where": "chaos/test_migrations_smoke.py",
+        "reason": "DATABASE_URL not set in gate env"
+      },
+      {
+        "count": 21,
+        "where": "chaos/test_multi_provider.py",
+        "reason": "obsolete 6-provider architecture (9 + 12 singles)"
+      },
+      {
+        "count": 27,
+        "where": "chaos/test_risk_monitoring_ml_untested.py",
+        "reason": "DriftMonitor background threads hang in test env ([13]); ModelRegistry pickle with mocks fails ([14])"
+      },
+      {
+        "count": 5,
+        "where": "chaos/test_tls_certs.py",
+        "reason": "openssl executable not available in gate env"
+      },
+      {
+        "count": 2,
+        "where": "test_warehouse_dedup.py / test_warehouse_loader.py",
+        "reason": "no XAUUSD warehouse data loaded"
+      }
     ]
   },
-  "total_quarantined": 35
-
+  "total_quarantined": 27
 }
