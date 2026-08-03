@@ -2834,6 +2834,15 @@ Expected: all new task tests green; all pre-existing contract tests green; the f
 
 Spec §5's raw-parquet retention (prune `data/ticks/{symbol}_{date}.parquet` 30 days after a symbol reaches `tradeable`) is a scheduled-maintenance policy, not pipeline code. It is deliberately NOT implemented in this plan (the spec itself marks 30 days as "not load-bearing"). Track it as a follow-up operational task once the daemon has been running and producing parquet.
 
+## Execution Notes (Tasks 5–12, verified 2026-08-03)
+
+1. **Dotted imports required for `risk.*` and `research.*` in tests**: `risk/__init__.py` and `research/__init__.py` import submodules that use relative imports, so top-level `from risk.kill_switch import ...` / `from research.ledger_invalidation import ...` raise `ImportError: attempted relative import beyond top-level package`. Use `from graxia.packages.quant_os.risk.kill_switch import ...` (the pattern already used by `tests/test_kill_switch_close.py`).
+2. **TickRecorder staleness trap in daemon tests**: `TickRecorder.record_tick` marks any tick older than `STALE_THRESHOLD_SECONDS` (5s) as STALE, so simulated ticks must carry timestamps >= now. The daemon tests derive tick time from a `_next_asian_window()` helper (next future 02:00 UTC weekday) — never stale, always asian-session.
+3. **Zero-variance PSI explosion**: `cost_drift_psi` (and the shared `psi()`) explode on degenerate constant samples (1e-10 std floor). Demote tests must use realistic-variance samples (verified: 0.5-sigma shift → PSI ≈ 0.13 < 0.25 → no demotion).
+4. **Hook-gate lint debt** (pre-existing, fixed minimally to land commits): `tests/test_universe_discovery.py` nested `with` (SIM117) flattened; `research/ledger_invalidation.py` nested `if`s (SIM102) flattened; `broker/mt5_gateway.py` pre-existing N813/B904/SIM105 fixed (behavior-preserving).
+5. **Full-suite test-order pollution**: `tests/test_measurement_daemon.py`'s two parquet tests fail inside the full suite (`module 'pyarrow' has no attribute 'parquet'`) but pass in isolation and in paired runs with `tests/test_data_quality.py` (19/19). The identical pyarrow corruption breaks 10+ pre-existing tests (`test_data_quality`, `test_macro_data`, `test_safe_pickle`, `test_trading_loop`, `test_new_modules_*`...). This is the repo's documented cross-file order pollution, NOT a Phase 1 regression. The other ~60 full-suite failures are pre-existing (risk API signature drift, missing stress scenarios — WIP from the concurrent session, slippage randomness, etc.) and none of the Phase 1 task tests (psi / schema / gate / coverage / discovery / daemon / promotion / kill-switch-symbol / demote / ledger) fail in the full suite.
+6. **Commit-race procedure** (concurrent session shares the repo): before every commit, `git diff --cached --name-only`; if foreign files are staged, `git restore --staged <foreign paths>` immediately before `git commit`. Ruff/ruff-format auto-fixes require re-`git add` + a second commit attempt; pre-commit's stash cycle can abort on concurrent file writes — retry. Never use `--no-verify`.
+
 ## Execution Handoff
 
 Execution approach choices, per the writing-plans skill:
