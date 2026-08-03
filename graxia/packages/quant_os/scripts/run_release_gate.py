@@ -294,6 +294,10 @@ GATE_DIRTY_EXEMPT = (
     "graxia/packages/quant_os/data/sacred_holdout/holdout.csv",  # holdout dataset (regenerable)
     "graxia/packages/quant_os/reports/deep_research_institutional_gates_20260803.md",  # research report
     "graxia/packages/quant_os/docs/superpowers/specs/2026-08-03-sp1-dsr-unit-correctness-design.md",  # parallel-session design doc (untracked)
+    "graxia/packages/quant_os/reports/trial_1032_52week_high_results.json",  # parallel-session trial evidence
+    "graxia/packages/quant_os/reports/trial_3008_fx_carry_results.json",  # parallel-session trial evidence
+    "Meta/states/researcher-forex-ea-verification.md",  # parallel-session researcher state
+    "Meta/states/researcher-forexroasted.md",  # parallel-session researcher state
 )
 
 
