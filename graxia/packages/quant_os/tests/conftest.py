@@ -27,6 +27,14 @@ os.environ.setdefault("APP_ENV", "testing")
 # mode should monkeypatch it for its own scope.
 os.environ["TRADING_MODE"] = "PAPER"
 
+# docker/paper_executor.py raises RuntimeError at import time when
+# DATABASE_URL is unset, and tests/test_paper_executor.py imports pure
+# helpers from it (RISK_PER_TRADE, _calculate_lot_size, ...). Without a
+# default here, collection of the entire suite aborts. The tests never touch
+# the engine, so a throwaway sqlite URL is sufficient and hermetic; a
+# developer who explicitly exported DATABASE_URL keeps theirs.
+os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
+
 
 @pytest.fixture(scope="session")
 def repo_root() -> Path:

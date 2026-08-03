@@ -337,6 +337,72 @@ def check_ledger_seal(a_result, b_result):
     return []
 
 
+def compute_baseline_diff(current_stats, previous_summary):
+    """Compute passed/skipped delta vs the previous gate run's summary.json.
+
+    Returns (baseline_diff, message): dict with passed/skipped deltas (or
+    None when no previous run exists) and a human-readable message.
+    Additive guardrail only: never blocks the gate, never modifies stats.
+    """
+    if not previous_summary:
+        return None, None
+    prev_a = (previous_summary.get("run_a") or {}).get("stats") or {}
+    prev_passed = prev_a.get("passed", 0)
+    prev_skipped = prev_a.get("skipped", 0)
+    diff = {
+        "passed_delta": current_stats["passed"] - prev_passed,
+        "skipped_delta": current_stats["skipped"] - prev_skipped,
+        "previous_passed": prev_passed,
+        "previous_skipped": prev_skipped,
+    }
+    if diff["passed_delta"] == 0 and diff["skipped_delta"] == 0:
+        msg = None  # no re-baseline
+    else:
+        msg = (
+            f"RE-BASELINE DETECTED: passed {diff['passed_delta']:+d} "
+            f"/ skipped {diff['skipped_delta']:+d} vs previous run "
+            f"(was {prev_passed} passed / {prev_skipped} skipped)"
+        )
+    return diff, msg
+
+
+def load_previous_summary():
+    """Load the previous gate run's summary.json if it exists."""
+    path = ARTIFACT_DIR / "summary.json"
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def check_writer_lock():
+    """Fail-closed pre-flight: refuse to run while another session holds .writer.lock.
+
+    Returns a list of error strings (empty = clear). A stale lock (older
+    than 24h) is reported with owner info; it is never cleared silently —
+    the human must remove it or clear via acquire_writer_lock.py --force.
+    """
+    lock_path = REPO_ROOT / ".writer.lock"
+    if not lock_path.exists():
+        return []
+    try:
+        data = json.loads(lock_path.read_text(encoding="utf-8"))
+        owner = data.get("owner", "unknown")
+        pid = data.get("pid", -1)
+        ts = data.get("timestamp", 0.0)
+    except (json.JSONDecodeError, OSError):
+        return [f".writer.lock present but unreadable at {lock_path} — remove manually before running the gate"]
+    import time as _time
+
+    age_h = (_time.time() - ts) / 3600.0 if ts else 0.0
+    stale_note = (
+        f" (STALE, age {age_h:.1f}h — clear manually or via acquire_writer_lock.py --force)" if age_h > 24 else ""
+    )
+    return [f"Single-writer lock held by owner={owner}, pid={pid}{stale_note}. Refusing to run (fail-closed)."]
+
+
 def main():
     print("Phase 3.1A.1 Release Gate — Fail-Closed, Two Clean-Process Runs")
     print("=" * 60)
@@ -355,6 +421,19 @@ def main():
     print("\n--- Quarantine Check ---")
     quarantine_data, quarantine_exists = load_quarantine_manifest()
     print(f"quarantine_manifest exists: {quarantine_exists}")
+
+    # --- Single-writer lock (fail-closed) ---
+    print("\n--- Single-Writer Lock Check ---")
+    lock_errors = check_writer_lock()
+    checks["writer_lock_free"] = len(lock_errors) == 0
+    all_failures.extend(lock_errors)
+    for e in lock_errors:
+        print(f"  {e}")
+    print(f"  writer_lock_free: {checks['writer_lock_free']}")
+    if lock_errors:
+        print("\nVERDICT: FAIL (single-writer lock held by another session)")
+        print("Release it via scripts/release_writer_lock.py or clear after manual review.")
+        return 1
 
     # --- Run A ---
     ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
@@ -420,15 +499,22 @@ def main():
             print(f"  - {f}")
 
     # --- Write summary ---
+    previous_summary = load_previous_summary()
+    baseline_diff, baseline_msg = compute_baseline_diff(a_result["stats"], previous_summary)
+
     summary = {
         "run_a": a_result,
         "run_b": b_result,
         "checks": checks,
         "verdict": verdict,
         "failures": all_failures,
+        "baseline_diff": baseline_diff,
     }
     (ARTIFACT_DIR / "summary.json").write_text(json.dumps(summary, indent=2))
     print(f"\nSummary written to {ARTIFACT_DIR / 'summary.json'}")
+
+    if baseline_msg:
+        print(f"\n{baseline_msg}")
 
     return 0 if verdict == "PASS" else 1
 

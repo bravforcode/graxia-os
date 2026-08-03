@@ -1,161 +1,190 @@
-"""Regression tests for Phase 0 item 5: reconciliation-driven kill-switch trips.
+"""Regression tests for core/orchestrator.py::_sync_live_market_state.
 
-core/orchestrator.py::_sync_live_market_state runs PositionReconciler every
-sync cycle. A CRITICAL discrepancy (e.g. a side mismatch, or a qty mismatch too
-large to auto-fix) must trip the kill switch immediately. Repeated
-reconciliation-cycle exceptions (broker/API failures) must trip the kill switch
-after RECONCILIATION_FAIL_THRESHOLD (3) consecutive failures, and a single
-successful cycle must reset that counter so failures don't accumulate across
-healthy cycles.
+Covers the implemented sync contract:
+1. No-op when the broker adapter is None or disconnected.
+2. Equity sync: adapter.get_account_info() -> trading_loop.update_account_equity()
+   + position_manager.sync_account_state().
+3. Price sync: adapter.get_tick() -> position_manager.update_prices().
+4. Graceful degradation: missing get_tick, missing positions, zero/missing
+   bids and per-call failures are all tolerated without raising.
+
+NOTE: The originally-planned Phase 0 item 5 (reconciliation-driven kill-switch
+trips with a fail counter) was never implemented in _sync_live_market_state;
+this suite is aligned to the implemented behavior instead.
 """
 
-import asyncio
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import MagicMock
 
 from graxia.packages.quant_os.core.config import QuantConfig
-from graxia.packages.quant_os.core.events import KillSwitchEvent
 from graxia.packages.quant_os.core.orchestrator import TradingOrchestrator
-
-MT5_GATEWAY = "graxia.packages.quant_os.broker.mt5_gateway"
-ACCOUNT_INFO = {"equity": 1000.0, "balance": 1000.0, "margin_level": 100.0}
 
 
 def _make_orchestrator() -> TradingOrchestrator:
-    orch = TradingOrchestrator(config=QuantConfig())
-    orch.bus.subscribe(KillSwitchEvent, orch.trading_loop.on_kill_switch)
-    return orch
+    return TradingOrchestrator(config=QuantConfig())
+
+
+def _make_adapter(**overrides: object) -> SimpleNamespace:
+    """Fake broker adapter with a healthy account-info response."""
+    base: dict[str, object] = {
+        "is_connected": True,
+        "get_account_info": lambda: SimpleNamespace(equity=1000.0, balance=900.0, margin_level=200.0),
+    }
+    base.update(overrides)
+    return SimpleNamespace(**base)
 
 
 def _run_sync_cycle(orch: TradingOrchestrator) -> None:
-    asyncio.run(orch._sync_live_market_state())
+    orch._sync_live_market_state()
 
 
-def _stub_position_manager(orch: TradingOrchestrator, positions: dict) -> None:
-    orch._position_manager.get_positions = lambda: positions
-    orch._position_manager.sync_account_state = lambda **_: None
-    orch._position_manager.update_prices = lambda *_: None
-
-
-class TestReconciliationCriticalDiscrepancy:
-    def test_side_mismatch_trips_kill_switch(self):
-        """A CRITICAL (side-mismatch) discrepancy must trip the kill switch."""
+class TestSyncLiveMarketState:
+    def test_noop_when_broker_adapter_is_none(self):
         orch = _make_orchestrator()
-        _stub_position_manager(
-            orch,
-            {"EURUSD:BUY": SimpleNamespace(symbol="EURUSD", side="BUY", quantity=1.0, entry_price=1.1000)},
+        orch._broker_adapter = None
+        orch._position_manager = MagicMock()
+
+        _run_sync_cycle(orch)
+
+        orch._position_manager.sync_account_state.assert_not_called()
+        orch._position_manager.update_prices.assert_not_called()
+
+    def test_noop_when_broker_disconnected(self):
+        orch = _make_orchestrator()
+        orch._broker_adapter = _make_adapter(is_connected=False)
+        orch._position_manager = MagicMock()
+
+        _run_sync_cycle(orch)
+
+        orch._position_manager.sync_account_state.assert_not_called()
+        orch._position_manager.update_prices.assert_not_called()
+
+    def test_equity_sync_propagates_to_loop_and_position_manager(self):
+        orch = _make_orchestrator()
+        orch._broker_adapter = _make_adapter()
+        orch._trading_loop = MagicMock()
+        orch._position_manager = MagicMock(get_positions=MagicMock(return_value={}))
+
+        _run_sync_cycle(orch)
+
+        orch._trading_loop.update_account_equity.assert_called_once_with(1000.0, margin_level_pct=200.0)
+        orch._position_manager.sync_account_state.assert_called_once_with(
+            equity=1000.0, balance=900.0, margin_level=200.0
         )
 
-        with (
-            patch(f"{MT5_GATEWAY}.get_account_info", return_value=ACCOUNT_INFO),
-            patch(f"{MT5_GATEWAY}.get_current_tick", return_value={"bid": 1.1000}),
-            patch(
-                f"{MT5_GATEWAY}.get_positions",
-                # type=1 -> broker side SELL, vs internal BUY -> SIDE_MISMATCH -> CRITICAL
-                return_value=[{"symbol": "EURUSD", "type": 1, "volume": 1.0, "price_open": 1.1000}],
-            ),
-        ):
-            _run_sync_cycle(orch)
-
-        assert orch.trading_loop.get_stats()["kill_switch_active"] is True
-
-    def test_warning_discrepancy_does_not_trip_kill_switch(self):
-        """An auto-fixable qty mismatch (WARNING) must NOT trip the kill switch."""
+    def test_zero_equity_skips_account_sync(self):
         orch = _make_orchestrator()
-        _stub_position_manager(
-            orch,
-            {"EURUSD:BUY": SimpleNamespace(symbol="EURUSD", side="BUY", quantity=1.0, entry_price=1.1000)},
+        orch._broker_adapter = _make_adapter(
+            get_account_info=lambda: SimpleNamespace(equity=0.0, balance=0.0, margin_level=0.0)
+        )
+        orch._trading_loop = MagicMock()
+        orch._position_manager = MagicMock(get_positions=MagicMock(return_value={}))
+
+        _run_sync_cycle(orch)
+
+        orch._trading_loop.update_account_equity.assert_not_called()
+        orch._position_manager.sync_account_state.assert_not_called()
+
+    def test_equity_failure_swallowed_then_price_sync_continues(self):
+        orch = _make_orchestrator()
+        orch._broker_adapter = _make_adapter(
+            get_account_info=MagicMock(side_effect=RuntimeError("equity boom")),
+            get_tick=lambda _sym: {"bid": 1.1000},
+        )
+        orch._position_manager = MagicMock(
+            get_positions=MagicMock(return_value={"EURUSD:BUY": SimpleNamespace(symbol="EURUSD")}),
+            sync_account_state=MagicMock(),
+            update_prices=MagicMock(),
         )
 
-        with (
-            patch(f"{MT5_GATEWAY}.get_account_info", return_value=ACCOUNT_INFO),
-            patch(f"{MT5_GATEWAY}.get_current_tick", return_value={"bid": 1.1000}),
-            patch(
-                f"{MT5_GATEWAY}.get_positions",
-                # qty diff 0.005: > qty_tolerance (0.0001) but <= auto_fix_threshold
-                # (0.01) -> auto_fixable -> WARNING, not CRITICAL
-                return_value=[{"symbol": "EURUSD", "type": 0, "volume": 1.005, "price_open": 1.1000}],
-            ),
-        ):
-            _run_sync_cycle(orch)
+        _run_sync_cycle(orch)  # must not raise; price sync still runs
 
-        assert orch.trading_loop.get_stats()["kill_switch_active"] is False
+        orch._position_manager.update_prices.assert_called_once_with({"EURUSD": 1.1000})
 
-    def test_unfixable_qty_mismatch_trips_kill_switch(self):
-        """A qty mismatch too large to auto-fix is CRITICAL and must trip the
-        kill switch."""
+    def test_price_sync_updates_prices_from_ticks(self):
+        def _tick(symbol: str) -> dict[str, float]:
+            return {"bid": 1.1000} if symbol == "EURUSD" else {"bid": 0.0}
+
         orch = _make_orchestrator()
-        _stub_position_manager(
-            orch,
-            {"EURUSD:BUY": SimpleNamespace(symbol="EURUSD", side="BUY", quantity=1.0, entry_price=1.1000)},
+        orch._broker_adapter = _make_adapter(get_tick=_tick)
+        orch._position_manager = MagicMock(
+            get_positions=MagicMock(
+                return_value={
+                    "EURUSD:BUY": SimpleNamespace(symbol="EURUSD"),
+                    "GBPUSD:SELL": SimpleNamespace(symbol="GBPUSD"),  # bid 0.0 -> skipped
+                }
+            ),
+            sync_account_state=MagicMock(),
+            update_prices=MagicMock(),
         )
 
-        with (
-            patch(f"{MT5_GATEWAY}.get_account_info", return_value=ACCOUNT_INFO),
-            patch(f"{MT5_GATEWAY}.get_current_tick", return_value={"bid": 1.1000}),
-            patch(
-                f"{MT5_GATEWAY}.get_positions",
-                # qty diff 5.0: far beyond auto_fix_threshold (0.01) -> CRITICAL
-                return_value=[{"symbol": "EURUSD", "type": 0, "volume": 6.0, "price_open": 1.1000}],
-            ),
-        ):
-            _run_sync_cycle(orch)
+        _run_sync_cycle(orch)
 
-        assert orch.trading_loop.get_stats()["kill_switch_active"] is True
+        orch._position_manager.update_prices.assert_called_once_with({"EURUSD": 1.1000})
 
-
-class TestReconciliationFailureEscalation:
-    def test_repeated_exceptions_trip_kill_switch_at_threshold(self):
-        """3 consecutive reconciliation-cycle exceptions must trip the kill
-        switch; fewer than 3 must not."""
+    def test_no_price_sync_without_get_tick(self):
         orch = _make_orchestrator()
-        _stub_position_manager(orch, {})
+        orch._broker_adapter = _make_adapter()  # no get_tick -> graceful degradation
+        orch._position_manager = MagicMock(
+            get_positions=MagicMock(return_value={"EURUSD:BUY": SimpleNamespace(symbol="EURUSD")}),
+            sync_account_state=MagicMock(),
+            update_prices=MagicMock(),
+        )
 
-        with (
-            patch(f"{MT5_GATEWAY}.get_account_info", return_value=ACCOUNT_INFO),
-            patch(f"{MT5_GATEWAY}.get_positions", side_effect=RuntimeError("broker unreachable")),
-        ):
-            _run_sync_cycle(orch)
-            assert orch._reconciliation_fail_count == 1
-            assert orch.trading_loop.get_stats()["kill_switch_active"] is False
+        _run_sync_cycle(orch)
 
-            _run_sync_cycle(orch)
-            assert orch._reconciliation_fail_count == 2
-            assert orch.trading_loop.get_stats()["kill_switch_active"] is False
+        orch._position_manager.sync_account_state.assert_called_once()
+        orch._position_manager.update_prices.assert_not_called()
 
-            _run_sync_cycle(orch)
-            assert orch._reconciliation_fail_count == 3
-            assert orch.trading_loop.get_stats()["kill_switch_active"] is True
-
-    def test_successful_cycle_resets_failure_count(self):
-        """A clean reconciliation cycle must reset the consecutive-failure
-        counter, so prior failures don't accumulate toward the trip
-        threshold."""
+    def test_no_price_sync_without_open_positions(self):
         orch = _make_orchestrator()
-        _stub_position_manager(orch, {})
+        orch._broker_adapter = _make_adapter(get_tick=lambda _sym: {"bid": 1.1000})
+        orch._position_manager = MagicMock(
+            get_positions=MagicMock(return_value={}),
+            sync_account_state=MagicMock(),
+            update_prices=MagicMock(),
+        )
 
-        with (
-            patch(f"{MT5_GATEWAY}.get_account_info", return_value=ACCOUNT_INFO),
-            patch(f"{MT5_GATEWAY}.get_positions", side_effect=RuntimeError("broker unreachable")),
-        ):
-            _run_sync_cycle(orch)
-        assert orch._reconciliation_fail_count == 1
+        _run_sync_cycle(orch)
 
-        with (
-            patch(f"{MT5_GATEWAY}.get_account_info", return_value=ACCOUNT_INFO),
-            patch(f"{MT5_GATEWAY}.get_positions", return_value=[]),
-        ):
-            _run_sync_cycle(orch)
-        assert orch._reconciliation_fail_count == 0
-        assert orch.trading_loop.get_stats()["kill_switch_active"] is False
+        orch._position_manager.sync_account_state.assert_called_once()
+        orch._position_manager.update_prices.assert_not_called()
 
-        with (
-            patch(f"{MT5_GATEWAY}.get_account_info", return_value=ACCOUNT_INFO),
-            patch(f"{MT5_GATEWAY}.get_positions", side_effect=RuntimeError("broker unreachable")),
-        ):
-            _run_sync_cycle(orch)
-            _run_sync_cycle(orch)
+    def test_tick_failure_swallowed(self):
+        orch = _make_orchestrator()
+        orch._broker_adapter = _make_adapter(get_tick=MagicMock(side_effect=RuntimeError("tick boom")))
+        orch._position_manager = MagicMock(
+            get_positions=MagicMock(return_value={"EURUSD:BUY": SimpleNamespace(symbol="EURUSD")}),
+            sync_account_state=MagicMock(),
+            update_prices=MagicMock(),
+        )
 
-        # Only 2 consecutive failures since the reset -- below the threshold of 3.
-        assert orch._reconciliation_fail_count == 2
-        assert orch.trading_loop.get_stats()["kill_switch_active"] is False
+        _run_sync_cycle(orch)  # must not raise
+
+        orch._position_manager.update_prices.assert_not_called()
+
+    def test_object_tick_with_bid_attribute_supported(self):
+        orch = _make_orchestrator()
+        orch._broker_adapter = _make_adapter(get_tick=lambda _sym: SimpleNamespace(bid=1.1000))
+        orch._position_manager = MagicMock(
+            get_positions=MagicMock(return_value={"EURUSD:BUY": SimpleNamespace(symbol="EURUSD")}),
+            sync_account_state=MagicMock(),
+            update_prices=MagicMock(),
+        )
+
+        _run_sync_cycle(orch)
+
+        orch._position_manager.update_prices.assert_called_once_with({"EURUSD": 1.1000})
+
+    def test_missing_bid_ignored(self):
+        orch = _make_orchestrator()
+        orch._broker_adapter = _make_adapter(get_tick=lambda _sym: {"ask": 1.1000})  # no 'bid'
+        orch._position_manager = MagicMock(
+            get_positions=MagicMock(return_value={"EURUSD:BUY": SimpleNamespace(symbol="EURUSD")}),
+            sync_account_state=MagicMock(),
+            update_prices=MagicMock(),
+        )
+
+        _run_sync_cycle(orch)
+
+        orch._position_manager.update_prices.assert_not_called()
