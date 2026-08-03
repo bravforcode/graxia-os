@@ -279,12 +279,15 @@ def run_layer2(
         rets = np.array(strategy_returns[s])
         vol_current = float(rets.std() * math.sqrt(252)) if len(rets) > 1 else 0.15
         kr = kelly_sizer.compute_kelly(
-            win_rate=wr, avg_rr=rr,
-            vol_current=vol_current, vol_target=0.15,
-            regime="normal", spread_cost=0.001,
+            win_rate=wr,
+            win_loss_ratio=rr,      # SP2: avg_rr → win_loss_ratio (real signature)
+            avg_loss=1.0,           # SP2: required param; only used as >0 guard in formula
+            current_vol=vol_current,
+            regime="normal",
+            # SP2: removed vol_target/spread_cost — not in compute_kelly signature
         )
         kelly_fracs[s] = round(kr.fraction, 4)
-        print(f"    {s}: kelly={kr.fraction:.4f} (base={kr.base_kelly:.4f}, vol_scale={kr.vol_scale:.2f})")
+        print(f"    {s}: kelly={kr.fraction:.4f} (raw={kr.raw_fraction:.4f}, vol_scale={kr.vol_mult:.2f})")
 
     result.kelly_fractions = kelly_fracs
 
