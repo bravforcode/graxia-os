@@ -14,7 +14,9 @@ slice still contains impossible dates or an egregious synthetic tell.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
+from typing import Literal
 
 import pandas as pd
 
@@ -46,36 +48,72 @@ class UncalibratedCostError(Exception):
     """Raised when a trial requests a symbol with no verified cost-calibration data."""
 
 
-# Kept in sync with config/tradeable_universe.json's "tradeable" list.
-# A symbol here has real (if not yet multi-day) cost measurement; anything
-# else has none. Trial #1030 (2026-07-30) traded 16 assets through a
-# bespoke loader that skipped this check and used a flat assumed cost
-# instead of real ones — invalidated after the fact (see invalidation_note
-# on trial 1030 in research/hypothesis_registry.json). This constant is
-# the same category of mistake already caught once in commit 33b90c31.
-COST_CALIBRATED_SYMBOLS = frozenset({"XAUUSD", "USOIL", "USDJPY"})
+# Single source of truth: config/tradeable_universe.json, read at call time.
+# The frozenset this replaced was "kept in sync manually" and caused two
+# fabrication incidents (commit 33b90c31, trial #1030). The daemon writes
+# this JSON; the gate reads the same JSON.
+UNIVERSE_PATH = Path(__file__).resolve().parent / "config" / "tradeable_universe.json"
 
 
-def require_cost_calibrated(symbol: str) -> None:
-    """Refuse a symbol with no verified cost-calibration data.
+def cost_calibrated_symbols(mode: Literal["paper", "live"] = "live") -> frozenset[str]:
+    """Read the tradeable universe JSON at call time (single source of truth).
 
-    This only protects callers that route through this module. A script
-    that defines its own CSV loader (as trial #1030's did) bypasses it
-    entirely — this is a real gap, not full enforcement. See
-    research/trial_ledger.json's trial_cap_1022_reached note for the
-    reconciliation record of that specific bypass.
+    mode="live": only symbols in the "tradeable" array.
+    mode="paper": tradeable + measuring + verifying (symbols that have
+    last-known measured cost numbers, possibly provisional).
     """
-    if symbol not in COST_CALIBRATED_SYMBOLS:
+    universe = json.loads(UNIVERSE_PATH.read_text(encoding="utf-8"))
+    tradeable = {entry["symbol"] for entry in universe.get("tradeable", [])}
+    if mode == "live":
+        return frozenset(tradeable)
+    provisional = {entry["symbol"] for entry in universe.get("measuring", [])} | {
+        entry["symbol"] for entry in universe.get("verifying", [])
+    }
+    return frozenset(tradeable | provisional)
+
+
+def cost_calibrated_status(symbol: str) -> str | None:
+    """Return the symbol's universe status ("tradeable"|"measuring"|"verifying")
+    or None when the symbol is in no status array (unknown/never measured)."""
+    universe = json.loads(UNIVERSE_PATH.read_text(encoding="utf-8"))
+    for status in ("tradeable", "measuring", "verifying"):
+        for entry in universe.get(status, []):
+            if entry.get("symbol") == symbol:
+                return status
+    return None
+
+
+def require_cost_calibrated(
+    symbol: str,
+    mode: Literal["paper", "live"] = "live",
+) -> str:
+    """Refuse a symbol with no verified cost-calibration data for ``mode``.
+
+    Returns the symbol's current status ("tradeable" | "measuring" |
+    "verifying") so paper callers can tag P&L with a staleness flag
+    (measuring/verifying = provisional cost basis).
+
+    Raises UncalibratedCostError when:
+      * the symbol is unknown (in no status array), or
+      * mode="live" and the symbol is not yet "tradeable".
+
+    Callers making live-money decisions must pass mode="live" explicitly;
+    the "live" default protects call sites that forget to specify. Paper
+    call sites must pass mode="paper" explicitly.
+    """
+    status = cost_calibrated_status(symbol)
+    if status is None or (mode == "live" and status != "tradeable"):
         raise UncalibratedCostError(
-            f"{symbol!r} has no verified cost-calibration data in "
-            f"config/tradeable_universe.json's 'tradeable' list "
-            f"({sorted(COST_CALIBRATED_SYMBOLS)}). Running a trial against "
-            f"an assumed/synthetic cost model is exactly the fabrication "
-            f"pattern already caught twice (commit 33b90c31, trial #1030). "
-            f"Add real cost data to config/tradeable_universe.json first, "
+            f"{symbol!r} has no verified cost-calibration data for mode={mode!r}. "
+            f"tradeable={sorted(cost_calibrated_symbols('live'))}; "
+            f"paper-eligible={sorted(cost_calibrated_symbols('paper'))}. Running a "
+            f"trial against an assumed/synthetic cost model is exactly the "
+            f"fabrication pattern already caught twice (commit 33b90c31, trial "
+            f"#1030). Add real cost data to config/tradeable_universe.json first, "
             f"or pass require_cost_calibration=False if this call is not "
             f"informing a trading decision."
         )
+    return status
 
 
 # The tsm_*.py scripts (tsm_backtest/tsm_ema/tsm_portfolio/tsm_validate) share
@@ -93,9 +131,12 @@ TSM_ASSET_ALIASES: dict[str, str] = {
 }
 
 
-def require_cost_calibrated_tsm_asset(asset: str) -> None:
+def require_cost_calibrated_tsm_asset(
+    asset: str,
+    mode: Literal["paper", "live"] = "live",
+) -> str:
     """require_cost_calibrated, resolving tsm_*.py's aliased asset names first."""
-    require_cost_calibrated(TSM_ASSET_ALIASES.get(asset, asset))
+    return require_cost_calibrated(TSM_ASSET_ALIASES.get(asset, asset), mode=mode)
 
 
 def _read_raw(symbol: str, data_dir: Path = DATA_DIR) -> tuple[pd.DataFrame, str]:
@@ -116,6 +157,7 @@ def load_provenance_checked(
     data_dir: Path = DATA_DIR,
     max_synth_fraction: float = 0.10,
     require_cost_calibration: bool = True,
+    mode: Literal["paper", "live"] = "paper",
 ) -> pd.DataFrame:
     """Load D1 OHLCV sliced to a provenance-checked window.
 
@@ -132,7 +174,7 @@ def load_provenance_checked(
     synth-tell check is a secondary backstop against modern-window leakage.
     """
     if require_cost_calibration:
-        require_cost_calibrated(symbol)
+        require_cost_calibrated(symbol, mode=mode)
     df, ts = _read_raw(symbol, data_dir)
     floor = pd.Timestamp(PROVENANCE_FLOOR[symbol])
     start = pd.Timestamp(slice_start)
