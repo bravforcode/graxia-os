@@ -408,8 +408,29 @@ def main() -> int:
         print(f"  Multiple testing adjustment: {dsr_result.multiple_testing_adjustment:.4f}")
         print(f"  Probability alpha: {dsr_result.probability_alpha:.4f}")
         print(f"  DSR passes (alpha < 0.05): {'PASS' if dsr_result.passes_threshold else 'FAIL'}")
+
+        # ── Institutional gates (SP2): WFA + Bootstrap CI + MinBTL ──────
+        _tg_spec = importlib.util.spec_from_file_location(
+            "_trial_gates", str(_ROOT / "scripts" / "_trial_gates.py")
+        )
+        assert _tg_spec is not None and _tg_spec.loader is not None
+        _tg_mod = importlib.util.module_from_spec(_tg_spec)
+        _tg_spec.loader.exec_module(_tg_mod)
+        gates = _tg_mod.run_institutional_gates(
+            portfolio_returns=_port_df["return"],
+            returns_by_symbol=returns_by_symbol,
+            observed_sharpe=m["sharpe"],
+            n_trials=n_trials,
+            n_bars=len(_port_df),
+        )
+        print(f"  WFA (purged-CV): folds={gates['wfa']['n_folds']} mean={gates['wfa']['oos_sharpe_mean']:.3f} pass={gates['wfa']['pass']}")
+        print(f"  Bootstrap CI: [{gates['bootstrap_ci']['lower']:.3f}, {gates['bootstrap_ci']['upper']:.3f}] pass={gates['bootstrap_ci']['pass']}")
+        print(f"  MinBTL: min_obs={gates['min_btl']['min_observations']} sufficient={gates['min_btl']['sufficient']}")
+        print(f"  PBO: N/A — {gates['pbo_na']['reason'][:80]}...")
+        _gates = gates
     except Exception as e:
         print(f"  DSR computation failed: {e}")
+        _gates = None
 
     # Gates
     dk_pass = dk_t > 2.0
@@ -476,6 +497,7 @@ def main() -> int:
             "jackknife_pass": jk_pass,
             "label_shuffle_pass": ls_pass,
         },
+        "institutional_gates": _gates,  # SP2: WFA/bootstrap/MinBTL (PBO=N/A single frozen config)
         "combined_verdict": "PASS"
         if (dk_pass and dsr_pass and trades_pass and stress_pass and jk_pass and ls_pass)
         else "REJECT",

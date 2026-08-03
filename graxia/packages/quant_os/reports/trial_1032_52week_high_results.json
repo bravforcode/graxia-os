@@ -4,7 +4,7 @@
   "strategy": "52_week_high_proximity",
   "source": "George & Hwang (2004), Journal of Finance 59(5)",
   "registered_at": "2026-08-03",
-  "executed_at": "2026-08-03T12:33:19.472624+00:00",
+  "executed_at": "2026-08-03T20:44:56.317313+00:00",
   "universe": [
     "XAUUSD",
     "XAGUSD",
@@ -70,18 +70,49 @@
   },
   "dsr": {
     "observed_sharpe": 0.34002245215713983,
-    "multiple_testing_adjustment": 0.05096796874336411,
-    "probability_alpha": 0.0,
-    "passes_threshold": true,
+    "multiple_testing_adjustment": 0.6636667968640168,
+    "probability_alpha": 0.94456175079794,
+    "passes_threshold": "False",
     "n_trials": 1050
   },
   "gates": {
     "dk_pass": false,
-    "dsr_pass": true,
+    "dsr_pass": "False",
     "trades_pass": false,
     "stress_pass": true,
     "jackknife_pass": true,
     "label_shuffle_pass": true
+  },
+  "institutional_gates": {
+    "wfa": {
+      "n_folds": 4,
+      "fold_sharpes": [
+        -0.4633,
+        0.6304,
+        0.0471,
+        0.1326
+      ],
+      "oos_sharpe_mean": 0.0867,
+      "oos_sharpe_std": 0.4479,
+      "pass": true
+    },
+    "bootstrap_ci": {
+      "lower": -7e-05,
+      "upper": 0.000746,
+      "pass": false
+    },
+    "min_btl": {
+      "min_observations": 999999999,
+      "sufficient": false,
+      "pass": false
+    },
+    "pbo_na": {
+      "value": null,
+      "pass": null,
+      "reason": "PBO not applicable: WS-A trials are single frozen-config pre-registrations (no parameter search space). PBO measures search bias which does not exist; fabricating variants post-hoc would introduce selection bias."
+    },
+    "combined_pass": false,
+    "status": "OK"
   },
   "combined_verdict": "REJECT"
 }
