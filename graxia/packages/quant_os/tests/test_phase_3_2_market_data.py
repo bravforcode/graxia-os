@@ -293,8 +293,11 @@ class TestSpreadMonitor:
 
     def test_ask_less_than_bid_returns_current_state(self):
         mon = SpreadMonitor("XAUUSD")
-        state1 = mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), datetime.now(UTC))
-        state2 = mon.on_tick(Decimal("2330.0"), Decimal("2329.0"), datetime.now(UTC))
+        # Same timestamp for both ticks: SpreadState.last_update_utc is part of
+        # equality, so distinct datetime.now() calls would make this flaky (~1ms race).
+        ts = datetime.now(UTC)
+        state1 = mon.on_tick(Decimal("2330.0"), Decimal("2331.0"), ts)
+        state2 = mon.on_tick(Decimal("2330.0"), Decimal("2329.0"), ts)
         assert state2 == state1
 
     def test_z_score_calculation(self):

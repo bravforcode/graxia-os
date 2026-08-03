@@ -218,7 +218,7 @@ class MarketHealthMachine:
         if feed_health is None:
             return True  # No feed = disconnected
         level = getattr(feed_health, "level", None)
-        if hasattr(level, "value"):
+        if level is not None and hasattr(level, "value"):
             level = level.value
         return level == "DISCONNECTED"
 
@@ -279,6 +279,6 @@ class MarketHealthMachine:
         if obj is None:
             return None
         val = getattr(obj, attr, None)
-        if hasattr(val, "value"):
+        if val is not None and hasattr(val, "value"):
             return val.value
         return val
