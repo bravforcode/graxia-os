@@ -1,0 +1,1253 @@
+{
+  "generated_utc": "2026-08-03T16:20:52.643901+00:00",
+  "lookback_days": 7,
+  "screened": 123,
+  "with_tick_history": 123,
+  "top_cheapest": [
+    {
+      "symbol": "EURGBP",
+      "ticks": 76705,
+      "ticks_per_day": 10957.9,
+      "spread_median_bps": 0.1168,
+      "spread_p95_bps": 0.3506,
+      "first_ts": "1785528190",
+      "last_ts": "1785774039"
+    },
+    {
+      "symbol": "USDJPY",
+      "ticks": 157178,
+      "ticks_per_day": 22454.0,
+      "spread_median_bps": 0.1885,
+      "spread_p95_bps": 0.569,
+      "first_ts": "1785528190",
+      "last_ts": "1785774038"
+    },
+    {
+      "symbol": "USDAED",
+      "ticks": 1731,
+      "ticks_per_day": 247.3,
+      "spread_median_bps": 0.2723,
+      "spread_p95_bps": 0.9257,
+      "first_ts": "1785529410",
+      "last_ts": "1785774012"
+    },
+    {
+      "symbol": "GBPJPY",
+      "ticks": 195145,
+      "ticks_per_day": 27877.9,
+      "spread_median_bps": 0.2846,
+      "spread_p95_bps": 0.9849,
+      "first_ts": "1785528790",
+      "last_ts": "1785774041"
+    },
+    {
+      "symbol": "EURAUD",
+      "ticks": 149461,
+      "ticks_per_day": 21351.6,
+      "spread_median_bps": 0.305,
+      "spread_p95_bps": 0.5489,
+      "first_ts": "1785528190",
+      "last_ts": "1785774039"
+    },
+    {
+      "symbol": "GBPAUD",
+      "ticks": 124322,
+      "ticks_per_day": 17760.3,
+      "spread_median_bps": 0.3133,
+      "spread_p95_bps": 0.835,
+      "first_ts": "1785528190",
+      "last_ts": "1785774038"
+    },
+    {
+      "symbol": "XAUUSD",
+      "ticks": 281104,
+      "ticks_per_day": 40157.7,
+      "spread_median_bps": 0.3935,
+      "spread_p95_bps": 0.5171,
+      "first_ts": "1785531387",
+      "last_ts": "1785774038"
+    },
+    {
+      "symbol": "USDSGD",
+      "ticks": 63395,
+      "ticks_per_day": 9056.4,
+      "spread_median_bps": 0.4683,
+      "spread_p95_bps": 3.6665,
+      "first_ts": "1785536180",
+      "last_ts": "1785774045"
+    },
+    {
+      "symbol": "EURJPY",
+      "ticks": 171186,
+      "ticks_per_day": 24455.1,
+      "spread_median_bps": 0.4981,
+      "spread_p95_bps": 1.0432,
+      "first_ts": "1785528190",
+      "last_ts": "1785774040"
+    },
+    {
+      "symbol": "GBPCAD",
+      "ticks": 153651,
+      "ticks_per_day": 21950.1,
+      "spread_median_bps": 0.5293,
+      "spread_p95_bps": 0.8468,
+      "first_ts": "1785528190",
+      "last_ts": "1785774040"
+    },
+    {
+      "symbol": "US500",
+      "ticks": 55951,
+      "ticks_per_day": 7993.0,
+      "spread_median_bps": 0.5318,
+      "spread_p95_bps": 0.6649,
+      "first_ts": "1785529390",
+      "last_ts": "1785774051"
+    },
+    {
+      "symbol": "EURCHF",
+      "ticks": 78099,
+      "ticks_per_day": 11157.0,
+      "spread_median_bps": 0.5366,
+      "spread_p95_bps": 0.6443,
+      "first_ts": "1785528190",
+      "last_ts": "1785774039"
+    },
+    {
+      "symbol": "AUDJPY",
+      "ticks": 177364,
+      "ticks_per_day": 25337.7,
+      "spread_median_bps": 0.5456,
+      "spread_p95_bps": 1.2555,
+      "first_ts": "1785528190",
+      "last_ts": "1785774039"
+    },
+    {
+      "symbol": "AUDNZD",
+      "ticks": 130744,
+      "ticks_per_day": 18677.7,
+      "spread_median_bps": 0.5863,
+      "spread_p95_bps": 0.9207,
+      "first_ts": "1785528190",
+      "last_ts": "1785774039"
+    },
+    {
+      "symbol": "USDHKD",
+      "ticks": 13895,
+      "ticks_per_day": 1985.0,
+      "spread_median_bps": 0.5993,
+      "spread_p95_bps": 3.6086,
+      "first_ts": "1785528792",
+      "last_ts": "1785774045"
+    }
+  ],
+  "all": [
+    {
+      "symbol": "XAUUSD",
+      "ticks": 281104,
+      "ticks_per_day": 40157.7,
+      "spread_median_bps": 0.3935,
+      "spread_p95_bps": 0.5171,
+      "first_ts": "1785531387",
+      "last_ts": "1785774038"
+    },
+    {
+      "symbol": "USOIL",
+      "ticks": 81142,
+      "ticks_per_day": 11591.7,
+      "spread_median_bps": 3.9934,
+      "spread_p95_bps": 5.4794,
+      "first_ts": "1785529390",
+      "last_ts": "1785774038",
+      "broker_symbol": "SpotCrude"
+    },
+    {
+      "symbol": "USDJPY",
+      "ticks": 157178,
+      "ticks_per_day": 22454.0,
+      "spread_median_bps": 0.1885,
+      "spread_p95_bps": 0.569,
+      "first_ts": "1785528190",
+      "last_ts": "1785774038"
+    },
+    {
+      "symbol": "AUDCAD",
+      "ticks": 117761,
+      "ticks_per_day": 16823.0,
+      "spread_median_bps": 0.6077,
+      "spread_p95_bps": 0.8138,
+      "first_ts": "1785528191",
+      "last_ts": "1785774038"
+    },
+    {
+      "symbol": "AUDCHF",
+      "ticks": 91953,
+      "ticks_per_day": 13136.1,
+      "spread_median_bps": 0.8788,
+      "spread_p95_bps": 1.2316,
+      "first_ts": "1785528190",
+      "last_ts": "1785774039"
+    },
+    {
+      "symbol": "AUDNZD",
+      "ticks": 130744,
+      "ticks_per_day": 18677.7,
+      "spread_median_bps": 0.5863,
+      "spread_p95_bps": 0.9207,
+      "first_ts": "1785528190",
+      "last_ts": "1785774039"
+    },
+    {
+      "symbol": "AUDSGD",
+      "ticks": 97134,
+      "ticks_per_day": 13876.3,
+      "spread_median_bps": 1.5546,
+      "spread_p95_bps": 4.6763,
+      "first_ts": "1785528191",
+      "last_ts": "1785774039"
+    },
+    {
+      "symbol": "EURAUD",
+      "ticks": 149461,
+      "ticks_per_day": 21351.6,
+      "spread_median_bps": 0.305,
+      "spread_p95_bps": 0.5489,
+      "first_ts": "1785528190",
+      "last_ts": "1785774039"
+    },
+    {
+      "symbol": "EURCHF",
+      "ticks": 78099,
+      "ticks_per_day": 11157.0,
+      "spread_median_bps": 0.5366,
+      "spread_p95_bps": 0.6443,
+      "first_ts": "1785528190",
+      "last_ts": "1785774039"
+    },
+    {
+      "symbol": "EURGBP",
+      "ticks": 76705,
+      "ticks_per_day": 10957.9,
+      "spread_median_bps": 0.1168,
+      "spread_p95_bps": 0.3506,
+      "first_ts": "1785528190",
+      "last_ts": "1785774039"
+    },
+    {
+      "symbol": "GBPAUD",
+      "ticks": 124322,
+      "ticks_per_day": 17760.3,
+      "spread_median_bps": 0.3133,
+      "spread_p95_bps": 0.835,
+      "first_ts": "1785528190",
+      "last_ts": "1785774038"
+    },
+    {
+      "symbol": "GBPCHF",
+      "ticks": 124312,
+      "ticks_per_day": 17758.9,
+      "spread_median_bps": 0.8264,
+      "spread_p95_bps": 1.1937,
+      "first_ts": "1785528190",
+      "last_ts": "1785774039"
+    },
+    {
+      "symbol": "AUDJPY",
+      "ticks": 177364,
+      "ticks_per_day": 25337.7,
+      "spread_median_bps": 0.5456,
+      "spread_p95_bps": 1.2555,
+      "first_ts": "1785528190",
+      "last_ts": "1785774039"
+    },
+    {
+      "symbol": "CADCHF",
+      "ticks": 74335,
+      "ticks_per_day": 10619.3,
+      "spread_median_bps": 1.908,
+      "spread_p95_bps": 2.4332,
+      "first_ts": "1785528190",
+      "last_ts": "1785774040"
+    },
+    {
+      "symbol": "CADJPY",
+      "ticks": 109804,
+      "ticks_per_day": 15686.3,
+      "spread_median_bps": 0.897,
+      "spread_p95_bps": 1.4357,
+      "first_ts": "1785715260",
+      "last_ts": "1785774040"
+    },
+    {
+      "symbol": "CHFJPY",
+      "ticks": 128824,
+      "ticks_per_day": 18403.4,
+      "spread_median_bps": 0.7736,
+      "spread_p95_bps": 1.2894,
+      "first_ts": "1785718805",
+      "last_ts": "1785774040"
+    },
+    {
+      "symbol": "EURCAD",
+      "ticks": 177592,
+      "ticks_per_day": 25370.3,
+      "spread_median_bps": 0.7421,
+      "spread_p95_bps": 1.1741,
+      "first_ts": "1785528190",
+      "last_ts": "1785774040"
+    },
+    {
+      "symbol": "EURJPY",
+      "ticks": 171186,
+      "ticks_per_day": 24455.1,
+      "spread_median_bps": 0.4981,
+      "spread_p95_bps": 1.0432,
+      "first_ts": "1785528190",
+      "last_ts": "1785774040"
+    },
+    {
+      "symbol": "EURNZD",
+      "ticks": 106848,
+      "ticks_per_day": 15264.0,
+      "spread_median_bps": 0.7649,
+      "spread_p95_bps": 1.1228,
+      "first_ts": "1785715500",
+      "last_ts": "1785774040"
+    },
+    {
+      "symbol": "GBPCAD",
+      "ticks": 153651,
+      "ticks_per_day": 21950.1,
+      "spread_median_bps": 0.5293,
+      "spread_p95_bps": 0.8468,
+      "first_ts": "1785528190",
+      "last_ts": "1785774040"
+    },
+    {
+      "symbol": "GBPJPY",
+      "ticks": 195145,
+      "ticks_per_day": 27877.9,
+      "spread_median_bps": 0.2846,
+      "spread_p95_bps": 0.9849,
+      "first_ts": "1785528790",
+      "last_ts": "1785774041"
+    },
+    {
+      "symbol": "GBPNZD",
+      "ticks": 175396,
+      "ticks_per_day": 25056.6,
+      "spread_median_bps": 0.7868,
+      "spread_p95_bps": 1.1354,
+      "first_ts": "1785528790",
+      "last_ts": "1785774041"
+    },
+    {
+      "symbol": "NZDJPY",
+      "ticks": 103380,
+      "ticks_per_day": 14768.6,
+      "spread_median_bps": 1.2899,
+      "spread_p95_bps": 1.9408,
+      "first_ts": "1785715500",
+      "last_ts": "1785774041"
+    },
+    {
+      "symbol": "CHFSGD",
+      "ticks": 106904,
+      "ticks_per_day": 15272.0,
+      "spread_median_bps": 1.2609,
+      "spread_p95_bps": 4.2262,
+      "first_ts": "1785528790",
+      "last_ts": "1785774041"
+    },
+    {
+      "symbol": "EURCZK",
+      "ticks": 22200,
+      "ticks_per_day": 3171.4,
+      "spread_median_bps": 3.1235,
+      "spread_p95_bps": 6.1816,
+      "first_ts": "1785528793",
+      "last_ts": "1785774032"
+    },
+    {
+      "symbol": "EURHUF",
+      "ticks": 47643,
+      "ticks_per_day": 6806.1,
+      "spread_median_bps": 8.5305,
+      "spread_p95_bps": 23.3193,
+      "first_ts": "1785528793",
+      "last_ts": "1785774040"
+    },
+    {
+      "symbol": "EURMXN",
+      "ticks": 172289,
+      "ticks_per_day": 24612.7,
+      "spread_median_bps": 3.0108,
+      "spread_p95_bps": 5.613,
+      "first_ts": "1785528790",
+      "last_ts": "1785774041"
+    },
+    {
+      "symbol": "EURNOK",
+      "ticks": 142875,
+      "ticks_per_day": 20410.7,
+      "spread_median_bps": 4.1296,
+      "spread_p95_bps": 9.5324,
+      "first_ts": "1785528790",
+      "last_ts": "1785774041"
+    },
+    {
+      "symbol": "EURPLN",
+      "ticks": 33279,
+      "ticks_per_day": 4754.1,
+      "spread_median_bps": 5.246,
+      "spread_p95_bps": 13.9718,
+      "first_ts": "1785528793",
+      "last_ts": "1785774042"
+    },
+    {
+      "symbol": "EURSEK",
+      "ticks": 126828,
+      "ticks_per_day": 18118.3,
+      "spread_median_bps": 4.6824,
+      "spread_p95_bps": 10.1185,
+      "first_ts": "1785528790",
+      "last_ts": "1785774042"
+    },
+    {
+      "symbol": "EURSGD",
+      "ticks": 111538,
+      "ticks_per_day": 15934.0,
+      "spread_median_bps": 1.0151,
+      "spread_p95_bps": 4.06,
+      "first_ts": "1785528790",
+      "last_ts": "1785774042"
+    },
+    {
+      "symbol": "EURTRY",
+      "ticks": 126814,
+      "ticks_per_day": 18116.3,
+      "spread_median_bps": 8.4808,
+      "spread_p95_bps": 16.6817,
+      "first_ts": "1785528790",
+      "last_ts": "1785774040"
+    },
+    {
+      "symbol": "EURZAR",
+      "ticks": 179370,
+      "ticks_per_day": 25624.3,
+      "spread_median_bps": 4.1864,
+      "spread_p95_bps": 6.1451,
+      "first_ts": "1785528791",
+      "last_ts": "1785774042"
+    },
+    {
+      "symbol": "GBPMXN",
+      "ticks": 195288,
+      "ticks_per_day": 27898.3,
+      "spread_median_bps": 3.6728,
+      "spread_p95_bps": 6.0409,
+      "first_ts": "1785528790",
+      "last_ts": "1785774042"
+    },
+    {
+      "symbol": "GBPNOK",
+      "ticks": 225156,
+      "ticks_per_day": 32165.1,
+      "spread_median_bps": 5.4001,
+      "spread_p95_bps": 8.3427,
+      "first_ts": "1785528790",
+      "last_ts": "1785774040"
+    },
+    {
+      "symbol": "GBPSEK",
+      "ticks": 238833,
+      "ticks_per_day": 34119.0,
+      "spread_median_bps": 5.3626,
+      "spread_p95_bps": 12.5781,
+      "first_ts": "1785528790",
+      "last_ts": "1785774043"
+    },
+    {
+      "symbol": "GBPSGD",
+      "ticks": 139103,
+      "ticks_per_day": 19871.9,
+      "spread_median_bps": 1.101,
+      "spread_p95_bps": 4.1135,
+      "first_ts": "1785528790",
+      "last_ts": "1785774042"
+    },
+    {
+      "symbol": "GBPTRY",
+      "ticks": 96358,
+      "ticks_per_day": 13765.4,
+      "spread_median_bps": 9.836,
+      "spread_p95_bps": 18.0493,
+      "first_ts": "1785528790",
+      "last_ts": "1785774041"
+    },
+    {
+      "symbol": "NOKJPY",
+      "ticks": 95922,
+      "ticks_per_day": 13703.1,
+      "spread_median_bps": 18.1851,
+      "spread_p95_bps": 23.4438,
+      "first_ts": "1785528790",
+      "last_ts": "1785774040"
+    },
+    {
+      "symbol": "NOKSEK",
+      "ticks": 161462,
+      "ticks_per_day": 23066.0,
+      "spread_median_bps": 13.0699,
+      "spread_p95_bps": 24.2688,
+      "first_ts": "1785528790",
+      "last_ts": "1785774043"
+    },
+    {
+      "symbol": "NZDCAD",
+      "ticks": 99506,
+      "ticks_per_day": 14215.1,
+      "spread_median_bps": 1.0913,
+      "spread_p95_bps": 1.5735,
+      "first_ts": "1785528790",
+      "last_ts": "1785774044"
+    },
+    {
+      "symbol": "NZDCHF",
+      "ticks": 73696,
+      "ticks_per_day": 10528.0,
+      "spread_median_bps": 1.8936,
+      "spread_p95_bps": 2.5213,
+      "first_ts": "1785528790",
+      "last_ts": "1785774043"
+    },
+    {
+      "symbol": "SEKJPY",
+      "ticks": 62468,
+      "ticks_per_day": 8924.0,
+      "spread_median_bps": 44.9985,
+      "spread_p95_bps": 51.8666,
+      "first_ts": "1785528792",
+      "last_ts": "1785774044"
+    },
+    {
+      "symbol": "SGDJPY",
+      "ticks": 145555,
+      "ticks_per_day": 20793.6,
+      "spread_median_bps": 1.3883,
+      "spread_p95_bps": 4.4169,
+      "first_ts": "1785528790",
+      "last_ts": "1785774044"
+    },
+    {
+      "symbol": "USDCNH",
+      "ticks": 85184,
+      "ticks_per_day": 12169.1,
+      "spread_median_bps": 0.7704,
+      "spread_p95_bps": 3.7913,
+      "first_ts": "1785715260",
+      "last_ts": "1785774044"
+    },
+    {
+      "symbol": "USDCZK",
+      "ticks": 83791,
+      "ticks_per_day": 11970.1,
+      "spread_median_bps": 4.5261,
+      "spread_p95_bps": 7.573,
+      "first_ts": "1785528790",
+      "last_ts": "1785774044"
+    },
+    {
+      "symbol": "USDHUF",
+      "ticks": 117572,
+      "ticks_per_day": 16796.0,
+      "spread_median_bps": 9.6973,
+      "spread_p95_bps": 17.2639,
+      "first_ts": "1785528790",
+      "last_ts": "1785774043"
+    },
+    {
+      "symbol": "USDMXN",
+      "ticks": 129201,
+      "ticks_per_day": 18457.3,
+      "spread_median_bps": 1.8759,
+      "spread_p95_bps": 4.7767,
+      "first_ts": "1785528790",
+      "last_ts": "1785774044"
+    },
+    {
+      "symbol": "USDNOK",
+      "ticks": 199454,
+      "ticks_per_day": 28493.4,
+      "spread_median_bps": 3.879,
+      "spread_p95_bps": 7.6956,
+      "first_ts": "1785528790",
+      "last_ts": "1785774044"
+    },
+    {
+      "symbol": "USDPLN",
+      "ticks": 122293,
+      "ticks_per_day": 17470.4,
+      "spread_median_bps": 8.9965,
+      "spread_p95_bps": 12.2779,
+      "first_ts": "1785528793",
+      "last_ts": "1785774045"
+    },
+    {
+      "symbol": "USDSEK",
+      "ticks": 194828,
+      "ticks_per_day": 27832.6,
+      "spread_median_bps": 4.898,
+      "spread_p95_bps": 11.573,
+      "first_ts": "1785534322",
+      "last_ts": "1785774045"
+    },
+    {
+      "symbol": "USDSGD",
+      "ticks": 63395,
+      "ticks_per_day": 9056.4,
+      "spread_median_bps": 0.4683,
+      "spread_p95_bps": 3.6665,
+      "first_ts": "1785536180",
+      "last_ts": "1785774045"
+    },
+    {
+      "symbol": "USDTHB",
+      "ticks": 21756,
+      "ticks_per_day": 3108.0,
+      "spread_median_bps": 2.0275,
+      "spread_p95_bps": 6.2243,
+      "first_ts": "1785528792",
+      "last_ts": "1785774044"
+    },
+    {
+      "symbol": "USDTRY",
+      "ticks": 20069,
+      "ticks_per_day": 2867.0,
+      "spread_median_bps": 4.2952,
+      "spread_p95_bps": 7.1863,
+      "first_ts": "1785528793",
+      "last_ts": "1785774045"
+    },
+    {
+      "symbol": "USDZAR",
+      "ticks": 104137,
+      "ticks_per_day": 14876.7,
+      "spread_median_bps": 2.6678,
+      "spread_p95_bps": 5.2652,
+      "first_ts": "1785528793",
+      "last_ts": "1785774045"
+    },
+    {
+      "symbol": "ZARJPY",
+      "ticks": 46761,
+      "ticks_per_day": 6680.1,
+      "spread_median_bps": 17.7222,
+      "spread_p95_bps": 23.0874,
+      "first_ts": "1785528792",
+      "last_ts": "1785774045"
+    },
+    {
+      "symbol": "USDHKD",
+      "ticks": 13895,
+      "ticks_per_day": 1985.0,
+      "spread_median_bps": 0.5993,
+      "spread_p95_bps": 3.6086,
+      "first_ts": "1785528792",
+      "last_ts": "1785774045"
+    },
+    {
+      "symbol": "USDBRL",
+      "ticks": 9346,
+      "ticks_per_day": 1335.1,
+      "spread_median_bps": 5.9836,
+      "spread_p95_bps": 6.5069,
+      "first_ts": "1785530593",
+      "last_ts": "1785774039"
+    },
+    {
+      "symbol": "USDIDR",
+      "ticks": 9771,
+      "ticks_per_day": 1395.9,
+      "spread_median_bps": 7.4307,
+      "spread_p95_bps": 18.9668,
+      "first_ts": "1785530592",
+      "last_ts": "1785774045"
+    },
+    {
+      "symbol": "USDINR",
+      "ticks": 16840,
+      "ticks_per_day": 2405.7,
+      "spread_median_bps": 10.5846,
+      "spread_p95_bps": 15.3979,
+      "first_ts": "1785530600",
+      "last_ts": "1785774042"
+    },
+    {
+      "symbol": "USDKRW",
+      "ticks": 67069,
+      "ticks_per_day": 9581.3,
+      "spread_median_bps": 3.561,
+      "spread_p95_bps": 5.2654,
+      "first_ts": "1785530590",
+      "last_ts": "1785774042"
+    },
+    {
+      "symbol": "USDCLP",
+      "ticks": 11745,
+      "ticks_per_day": 1677.9,
+      "spread_median_bps": 5.8046,
+      "spread_p95_bps": 6.0209,
+      "first_ts": "1785530591",
+      "last_ts": "1785774042"
+    },
+    {
+      "symbol": "USDCOP",
+      "ticks": 14,
+      "ticks_per_day": 2.0,
+      "spread_median_bps": 16.0543,
+      "spread_p95_bps": 16.8095,
+      "first_ts": "1785530635",
+      "last_ts": "1785530697"
+    },
+    {
+      "symbol": "USDTWD",
+      "ticks": 8165,
+      "ticks_per_day": 1166.4,
+      "spread_median_bps": 8.379,
+      "spread_p95_bps": 10.2559,
+      "first_ts": "1785530620",
+      "last_ts": "1785774045"
+    },
+    {
+      "symbol": "AUDDKK",
+      "ticks": 165428,
+      "ticks_per_day": 23632.6,
+      "spread_median_bps": 7.4346,
+      "spread_p95_bps": 9.1832,
+      "first_ts": "1785530590",
+      "last_ts": "1785774045"
+    },
+    {
+      "symbol": "AUDHUF",
+      "ticks": 157751,
+      "ticks_per_day": 22535.9,
+      "spread_median_bps": 15.077,
+      "spread_p95_bps": 32.8171,
+      "first_ts": "1785530591",
+      "last_ts": "1785774046"
+    },
+    {
+      "symbol": "AUDNOK",
+      "ticks": 136434,
+      "ticks_per_day": 19490.6,
+      "spread_median_bps": 7.6154,
+      "spread_p95_bps": 11.9278,
+      "first_ts": "1785530590",
+      "last_ts": "1785774046"
+    },
+    {
+      "symbol": "AUDPLN",
+      "ticks": 167134,
+      "ticks_per_day": 23876.3,
+      "spread_median_bps": 6.9301,
+      "spread_p95_bps": 10.0215,
+      "first_ts": "1785530590",
+      "last_ts": "1785774046"
+    },
+    {
+      "symbol": "CADMXN",
+      "ticks": 158927,
+      "ticks_per_day": 22703.9,
+      "spread_median_bps": 4.3702,
+      "spread_p95_bps": 6.8657,
+      "first_ts": "1785530590",
+      "last_ts": "1785774046"
+    },
+    {
+      "symbol": "CADSGD",
+      "ticks": 77747,
+      "ticks_per_day": 11106.7,
+      "spread_median_bps": 1.4235,
+      "spread_p95_bps": 4.5971,
+      "first_ts": "1785530594",
+      "last_ts": "1785774045"
+    },
+    {
+      "symbol": "CHFDKK",
+      "ticks": 86702,
+      "ticks_per_day": 12386.0,
+      "spread_median_bps": 8.1308,
+      "spread_p95_bps": 8.8196,
+      "first_ts": "1785530590",
+      "last_ts": "1785774046"
+    },
+    {
+      "symbol": "CHFHUF",
+      "ticks": 129018,
+      "ticks_per_day": 18431.1,
+      "spread_median_bps": 13.6567,
+      "spread_p95_bps": 30.2214,
+      "first_ts": "1785530591",
+      "last_ts": "1785774046"
+    },
+    {
+      "symbol": "CHFNOK",
+      "ticks": 147612,
+      "ticks_per_day": 21087.4,
+      "spread_median_bps": 7.0229,
+      "spread_p95_bps": 13.6851,
+      "first_ts": "1785530592",
+      "last_ts": "1785774046"
+    },
+    {
+      "symbol": "CHFPLN",
+      "ticks": 33672,
+      "ticks_per_day": 4810.3,
+      "spread_median_bps": 8.0442,
+      "spread_p95_bps": 50.7436,
+      "first_ts": "1785530593",
+      "last_ts": "1785774045"
+    },
+    {
+      "symbol": "CHFSEK",
+      "ticks": 168151,
+      "ticks_per_day": 24021.6,
+      "spread_median_bps": 9.7587,
+      "spread_p95_bps": 18.518,
+      "first_ts": "1785530591",
+      "last_ts": "1785774047"
+    },
+    {
+      "symbol": "EURCNH",
+      "ticks": 141040,
+      "ticks_per_day": 20148.6,
+      "spread_median_bps": 1.259,
+      "spread_p95_bps": 4.2781,
+      "first_ts": "1785530592",
+      "last_ts": "1785774047"
+    },
+    {
+      "symbol": "EURDKK",
+      "ticks": 8041,
+      "ticks_per_day": 1148.7,
+      "spread_median_bps": 4.7358,
+      "spread_p95_bps": 7.7593,
+      "first_ts": "1785530599",
+      "last_ts": "1785774003"
+    },
+    {
+      "symbol": "GBPCNH",
+      "ticks": 180729,
+      "ticks_per_day": 25818.4,
+      "spread_median_bps": 1.1976,
+      "spread_p95_bps": 4.1613,
+      "first_ts": "1785530590",
+      "last_ts": "1785774047"
+    },
+    {
+      "symbol": "GBPDKK",
+      "ticks": 93799,
+      "ticks_per_day": 13399.9,
+      "spread_median_bps": 10.0989,
+      "spread_p95_bps": 10.2652,
+      "first_ts": "1785530591",
+      "last_ts": "1785774045"
+    },
+    {
+      "symbol": "GBPHUF",
+      "ticks": 133509,
+      "ticks_per_day": 19072.7,
+      "spread_median_bps": 13.5253,
+      "spread_p95_bps": 30.8659,
+      "first_ts": "1785530591",
+      "last_ts": "1785774046"
+    },
+    {
+      "symbol": "MXNJPY",
+      "ticks": 29055,
+      "ticks_per_day": 4150.7,
+      "spread_median_bps": 8.4153,
+      "spread_p95_bps": 11.8304,
+      "first_ts": "1785530592",
+      "last_ts": "1785774047"
+    },
+    {
+      "symbol": "NZDCNH",
+      "ticks": 118823,
+      "ticks_per_day": 16974.7,
+      "spread_median_bps": 1.716,
+      "spread_p95_bps": 4.6716,
+      "first_ts": "1785530594",
+      "last_ts": "1785774047"
+    },
+    {
+      "symbol": "NZDHUF",
+      "ticks": 158307,
+      "ticks_per_day": 22615.3,
+      "spread_median_bps": 15.8538,
+      "spread_p95_bps": 33.0787,
+      "first_ts": "1785530591",
+      "last_ts": "1785774048"
+    },
+    {
+      "symbol": "NZDSGD",
+      "ticks": 80062,
+      "ticks_per_day": 11437.4,
+      "spread_median_bps": 1.9855,
+      "spread_p95_bps": 5.1859,
+      "first_ts": "1785530594",
+      "last_ts": "1785774048"
+    },
+    {
+      "symbol": "USDDKK",
+      "ticks": 97385,
+      "ticks_per_day": 13912.1,
+      "spread_median_bps": 8.8169,
+      "spread_p95_bps": 9.517,
+      "first_ts": "1785530590",
+      "last_ts": "1785774048"
+    },
+    {
+      "symbol": "EURILS",
+      "ticks": 145264,
+      "ticks_per_day": 20752.0,
+      "spread_median_bps": 15.6242,
+      "spread_p95_bps": 45.4558,
+      "first_ts": "1785530590",
+      "last_ts": "1785774047"
+    },
+    {
+      "symbol": "USDILS",
+      "ticks": 64329,
+      "ticks_per_day": 9189.9,
+      "spread_median_bps": 17.6914,
+      "spread_p95_bps": 75.4265,
+      "first_ts": "1785530592",
+      "last_ts": "1785774046"
+    },
+    {
+      "symbol": "USDRON",
+      "ticks": 13595,
+      "ticks_per_day": 1942.1,
+      "spread_median_bps": 19.9347,
+      "spread_p95_bps": 39.5499,
+      "first_ts": "1785530609",
+      "last_ts": "1785774045"
+    },
+    {
+      "symbol": "AUDCNH",
+      "ticks": 135297,
+      "ticks_per_day": 19328.1,
+      "spread_median_bps": 0.6524,
+      "spread_p95_bps": 3.5108,
+      "first_ts": "1785528191",
+      "last_ts": "1785774047"
+    },
+    {
+      "symbol": "CNHJPY",
+      "ticks": 57315,
+      "ticks_per_day": 8187.9,
+      "spread_median_bps": 3.4061,
+      "spread_p95_bps": 6.4648,
+      "first_ts": "1785528195",
+      "last_ts": "1785774047"
+    },
+    {
+      "symbol": "USDAED",
+      "ticks": 1731,
+      "ticks_per_day": 247.3,
+      "spread_median_bps": 0.2723,
+      "spread_p95_bps": 0.9257,
+      "first_ts": "1785529410",
+      "last_ts": "1785774012"
+    },
+    {
+      "symbol": "XAGEUR",
+      "ticks": 140723,
+      "ticks_per_day": 20103.3,
+      "spread_median_bps": 6.133,
+      "spread_p95_bps": 7.3344,
+      "first_ts": "1785718860",
+      "last_ts": "1785774048"
+    },
+    {
+      "symbol": "XAGAUD",
+      "ticks": 160564,
+      "ticks_per_day": 22937.7,
+      "spread_median_bps": 5.3213,
+      "spread_p95_bps": 6.6499,
+      "first_ts": "1785718860",
+      "last_ts": "1785774049"
+    },
+    {
+      "symbol": "XAUAUD",
+      "ticks": 209113,
+      "ticks_per_day": 29873.3,
+      "spread_median_bps": 1.3005,
+      "spread_p95_bps": 1.8572,
+      "first_ts": "1785718860",
+      "last_ts": "1785774049"
+    },
+    {
+      "symbol": "XAUGBP",
+      "ticks": 248215,
+      "ticks_per_day": 35459.3,
+      "spread_median_bps": 1.5598,
+      "spread_p95_bps": 1.7627,
+      "first_ts": "1785529391",
+      "last_ts": "1785774049"
+    },
+    {
+      "symbol": "XAUCHF",
+      "ticks": 231852,
+      "ticks_per_day": 33121.7,
+      "spread_median_bps": 1.6148,
+      "spread_p95_bps": 1.7956,
+      "first_ts": "1785529390",
+      "last_ts": "1785774049"
+    },
+    {
+      "symbol": "XPDUSD",
+      "ticks": 20245,
+      "ticks_per_day": 2892.1,
+      "spread_median_bps": 36.0013,
+      "spread_p95_bps": 45.0551,
+      "first_ts": "1785718860",
+      "last_ts": "1785774045"
+    },
+    {
+      "symbol": "XPTUSD",
+      "ticks": 88828,
+      "ticks_per_day": 12689.7,
+      "spread_median_bps": 22.5686,
+      "spread_p95_bps": 33.3637,
+      "first_ts": "1785718861",
+      "last_ts": "1785774049"
+    },
+    {
+      "symbol": "XAGSGD",
+      "ticks": 166400,
+      "ticks_per_day": 23771.4,
+      "spread_median_bps": 5.2641,
+      "spread_p95_bps": 6.8139,
+      "first_ts": "1785530590",
+      "last_ts": "1785774050"
+    },
+    {
+      "symbol": "XAUCNH",
+      "ticks": 233326,
+      "ticks_per_day": 33332.3,
+      "spread_median_bps": 1.3189,
+      "spread_p95_bps": 1.7361,
+      "first_ts": "1785530590",
+      "last_ts": "1785774050"
+    },
+    {
+      "symbol": "XAUSGD",
+      "ticks": 218232,
+      "ticks_per_day": 31176.0,
+      "spread_median_bps": 1.4273,
+      "spread_p95_bps": 1.5233,
+      "first_ts": "1785530590",
+      "last_ts": "1785774050"
+    },
+    {
+      "symbol": "XAUTHB",
+      "ticks": 209194,
+      "ticks_per_day": 29884.9,
+      "spread_median_bps": 6.9798,
+      "spread_p95_bps": 7.2501,
+      "first_ts": "1785530590",
+      "last_ts": "1785774050"
+    },
+    {
+      "symbol": "AUS200",
+      "ticks": 35198,
+      "ticks_per_day": 5028.3,
+      "spread_median_bps": 2.2213,
+      "spread_p95_bps": 2.4463,
+      "first_ts": "1785725400",
+      "last_ts": "1785774049"
+    },
+    {
+      "symbol": "CN50",
+      "ticks": 91183,
+      "ticks_per_day": 13026.1,
+      "spread_median_bps": 10.1261,
+      "spread_p95_bps": 10.1515,
+      "first_ts": "1785729600",
+      "last_ts": "1785774047"
+    },
+    {
+      "symbol": "HK50",
+      "ticks": 73504,
+      "ticks_per_day": 10500.6,
+      "spread_median_bps": 1.9262,
+      "spread_p95_bps": 1.9329,
+      "first_ts": "1785529391",
+      "last_ts": "1785774051"
+    },
+    {
+      "symbol": "EUSTX50",
+      "ticks": 27426,
+      "ticks_per_day": 3918.0,
+      "spread_median_bps": 2.9629,
+      "spread_p95_bps": 4.0588,
+      "first_ts": "1785726901",
+      "last_ts": "1785774047"
+    },
+    {
+      "symbol": "FRA40",
+      "ticks": 28369,
+      "ticks_per_day": 4052.7,
+      "spread_median_bps": 1.2767,
+      "spread_p95_bps": 1.862,
+      "first_ts": "1785747612",
+      "last_ts": "1785774051"
+    },
+    {
+      "symbol": "JPN225",
+      "ticks": 84511,
+      "ticks_per_day": 12073.0,
+      "spread_median_bps": 1.106,
+      "spread_p95_bps": 1.1188,
+      "first_ts": "1785529390",
+      "last_ts": "1785774051"
+    },
+    {
+      "symbol": "SPA35",
+      "ticks": 7863,
+      "ticks_per_day": 1123.3,
+      "spread_median_bps": 6.5314,
+      "spread_p95_bps": 8.5389,
+      "first_ts": "1785747622",
+      "last_ts": "1785774051"
+    },
+    {
+      "symbol": "US2000",
+      "ticks": 48055,
+      "ticks_per_day": 6865.0,
+      "spread_median_bps": 1.3586,
+      "spread_p95_bps": 1.3665,
+      "first_ts": "1785529390",
+      "last_ts": "1785774051"
+    },
+    {
+      "symbol": "US500",
+      "ticks": 55951,
+      "ticks_per_day": 7993.0,
+      "spread_median_bps": 0.5318,
+      "spread_p95_bps": 0.6649,
+      "first_ts": "1785529390",
+      "last_ts": "1785774051"
+    },
+    {
+      "symbol": "USDX",
+      "ticks": 18314,
+      "ticks_per_day": 2616.3,
+      "spread_median_bps": 5.0242,
+      "spread_p95_bps": 5.4227,
+      "first_ts": "1785539992",
+      "last_ts": "1785774051"
+    },
+    {
+      "symbol": "SCI25",
+      "ticks": 5869,
+      "ticks_per_day": 838.4,
+      "spread_median_bps": 11.4811,
+      "spread_p95_bps": 11.5053,
+      "first_ts": "1785529409",
+      "last_ts": "1785774001"
+    },
+    {
+      "symbol": "VIX",
+      "ticks": 1400,
+      "ticks_per_day": 200.0,
+      "spread_median_bps": 129.1047,
+      "spread_p95_bps": 132.0701,
+      "first_ts": "1785529435",
+      "last_ts": "1785774046"
+    },
+    {
+      "symbol": "JPYX",
+      "ticks": 6091,
+      "ticks_per_day": 870.1,
+      "spread_median_bps": 14.5391,
+      "spread_p95_bps": 14.7471,
+      "first_ts": "1785529401",
+      "last_ts": "1785774049"
+    },
+    {
+      "symbol": "EURX",
+      "ticks": 4158,
+      "ticks_per_day": 594.0,
+      "spread_median_bps": 9.3041,
+      "spread_p95_bps": 9.3127,
+      "first_ts": "1785529403",
+      "last_ts": "1785774047"
+    },
+    {
+      "symbol": "CA60",
+      "ticks": 5702,
+      "ticks_per_day": 814.6,
+      "spread_median_bps": 4.5984,
+      "spread_p95_bps": 4.6094,
+      "first_ts": "1785529991",
+      "last_ts": "1785539390"
+    },
+    {
+      "symbol": "CHINAH",
+      "ticks": 27855,
+      "ticks_per_day": 3979.3,
+      "spread_median_bps": 19.6693,
+      "spread_p95_bps": 19.7515,
+      "first_ts": "1785730500",
+      "last_ts": "1785774051"
+    },
+    {
+      "symbol": "NETH25",
+      "ticks": 22941,
+      "ticks_per_day": 3277.3,
+      "spread_median_bps": 3.1211,
+      "spread_p95_bps": 3.2164,
+      "first_ts": "1785529997",
+      "last_ts": "1785774051"
+    },
+    {
+      "symbol": "SWI20",
+      "ticks": 14408,
+      "ticks_per_day": 2058.3,
+      "spread_median_bps": 4.0289,
+      "spread_p95_bps": 4.043,
+      "first_ts": "1785529997",
+      "last_ts": "1785774047"
+    },
+    {
+      "symbol": "HSTECH",
+      "ticks": 28267,
+      "ticks_per_day": 4038.1,
+      "spread_median_bps": 17.0829,
+      "spread_p95_bps": 19.5166,
+      "first_ts": "1785530003",
+      "last_ts": "1785774051"
+    },
+    {
+      "symbol": "US400",
+      "ticks": 12227,
+      "ticks_per_day": 1746.7,
+      "spread_median_bps": 7.6928,
+      "spread_p95_bps": 19.314,
+      "first_ts": "1785529993",
+      "last_ts": "1785774049"
+    },
+    {
+      "symbol": "TWN",
+      "ticks": 102927,
+      "ticks_per_day": 14703.9,
+      "spread_median_bps": 4.3371,
+      "spread_p95_bps": 18.4974,
+      "first_ts": "1785529991",
+      "last_ts": "1785774051"
+    }
+  ]
+}

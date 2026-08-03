@@ -52,602 +52,255 @@
     {
       "symbol": "AUDCAD",
       "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Crosses\\AUDCAD"
+      "broker_path": "Markets\\Forex\\Crosses\\AUDCAD",
+      "screening_note": {
+        "date": "2026-08-03",
+        "median_spread_bps": 0.6077,
+        "p95_spread_bps": 0.8138,
+        "ticks_7d": 117761
+      }
     },
     {
       "symbol": "AUDCHF",
       "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Crosses\\AUDCHF"
+      "broker_path": "Markets\\Forex\\Crosses\\AUDCHF",
+      "screening_note": {
+        "date": "2026-08-03",
+        "median_spread_bps": 0.8788,
+        "p95_spread_bps": 1.2316,
+        "ticks_7d": 91953
+      }
     },
     {
       "symbol": "AUDNZD",
       "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Minors\\AUDNZD"
-    },
-    {
-      "symbol": "AUDSGD",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\AUDSGD"
+      "broker_path": "Markets\\Forex\\Minors\\AUDNZD",
+      "screening_note": {
+        "date": "2026-08-03",
+        "median_spread_bps": 0.5863,
+        "p95_spread_bps": 0.9207,
+        "ticks_7d": 130744
+      }
     },
     {
       "symbol": "EURAUD",
       "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Crosses\\EURAUD"
+      "broker_path": "Markets\\Forex\\Crosses\\EURAUD",
+      "screening_note": {
+        "date": "2026-08-03",
+        "median_spread_bps": 0.305,
+        "p95_spread_bps": 0.5489,
+        "ticks_7d": 149461
+      }
     },
     {
       "symbol": "EURCHF",
       "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Crosses\\EURCHF"
+      "broker_path": "Markets\\Forex\\Crosses\\EURCHF",
+      "screening_note": {
+        "date": "2026-08-03",
+        "median_spread_bps": 0.5366,
+        "p95_spread_bps": 0.6443,
+        "ticks_7d": 78099
+      }
     },
     {
       "symbol": "EURGBP",
       "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Crosses\\EURGBP"
+      "broker_path": "Markets\\Forex\\Crosses\\EURGBP",
+      "screening_note": {
+        "date": "2026-08-03",
+        "median_spread_bps": 0.1168,
+        "p95_spread_bps": 0.3506,
+        "ticks_7d": 76705
+      }
     },
     {
       "symbol": "GBPAUD",
       "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Crosses\\GBPAUD"
+      "broker_path": "Markets\\Forex\\Crosses\\GBPAUD",
+      "screening_note": {
+        "date": "2026-08-03",
+        "median_spread_bps": 0.3133,
+        "p95_spread_bps": 0.835,
+        "ticks_7d": 124322
+      }
     },
     {
       "symbol": "GBPCHF",
       "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Crosses\\GBPCHF"
+      "broker_path": "Markets\\Forex\\Crosses\\GBPCHF",
+      "screening_note": {
+        "date": "2026-08-03",
+        "median_spread_bps": 0.8264,
+        "p95_spread_bps": 1.1937,
+        "ticks_7d": 124312
+      }
     },
     {
       "symbol": "AUDJPY",
       "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Crosses\\AUDJPY"
-    },
-    {
-      "symbol": "CADCHF",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Crosses\\CADCHF"
+      "broker_path": "Markets\\Forex\\Crosses\\AUDJPY",
+      "screening_note": {
+        "date": "2026-08-03",
+        "median_spread_bps": 0.5456,
+        "p95_spread_bps": 1.2555,
+        "ticks_7d": 177364
+      }
     },
     {
       "symbol": "CADJPY",
       "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Crosses\\CADJPY"
+      "broker_path": "Markets\\Forex\\Crosses\\CADJPY",
+      "screening_note": {
+        "date": "2026-08-03",
+        "median_spread_bps": 0.897,
+        "p95_spread_bps": 1.4357,
+        "ticks_7d": 109804
+      }
     },
     {
       "symbol": "CHFJPY",
       "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Crosses\\CHFJPY"
+      "broker_path": "Markets\\Forex\\Crosses\\CHFJPY",
+      "screening_note": {
+        "date": "2026-08-03",
+        "median_spread_bps": 0.7736,
+        "p95_spread_bps": 1.2894,
+        "ticks_7d": 128824
+      }
     },
     {
       "symbol": "EURCAD",
       "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Crosses\\EURCAD"
+      "broker_path": "Markets\\Forex\\Crosses\\EURCAD",
+      "screening_note": {
+        "date": "2026-08-03",
+        "median_spread_bps": 0.7421,
+        "p95_spread_bps": 1.1741,
+        "ticks_7d": 177592
+      }
     },
     {
       "symbol": "EURJPY",
       "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Crosses\\EURJPY"
+      "broker_path": "Markets\\Forex\\Crosses\\EURJPY",
+      "screening_note": {
+        "date": "2026-08-03",
+        "median_spread_bps": 0.4981,
+        "p95_spread_bps": 1.0432,
+        "ticks_7d": 171186
+      }
     },
     {
       "symbol": "EURNZD",
       "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Minors\\EURNZD"
+      "broker_path": "Markets\\Forex\\Minors\\EURNZD",
+      "screening_note": {
+        "date": "2026-08-03",
+        "median_spread_bps": 0.7649,
+        "p95_spread_bps": 1.1228,
+        "ticks_7d": 106848
+      }
     },
     {
       "symbol": "GBPCAD",
       "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Crosses\\GBPCAD"
+      "broker_path": "Markets\\Forex\\Crosses\\GBPCAD",
+      "screening_note": {
+        "date": "2026-08-03",
+        "median_spread_bps": 0.5293,
+        "p95_spread_bps": 0.8468,
+        "ticks_7d": 153651
+      }
     },
     {
       "symbol": "GBPJPY",
       "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Crosses\\GBPJPY"
+      "broker_path": "Markets\\Forex\\Crosses\\GBPJPY",
+      "screening_note": {
+        "date": "2026-08-03",
+        "median_spread_bps": 0.2846,
+        "p95_spread_bps": 0.9849,
+        "ticks_7d": 195145
+      }
     },
     {
       "symbol": "GBPNZD",
       "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Minors\\GBPNZD"
-    },
-    {
-      "symbol": "NZDJPY",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Minors\\NZDJPY"
-    },
-    {
-      "symbol": "CHFSGD",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\CHFSGD"
-    },
-    {
-      "symbol": "EURCZK",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\EURCZK"
-    },
-    {
-      "symbol": "EURHUF",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\EURHUF"
-    },
-    {
-      "symbol": "EURMXN",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\EURMXN"
-    },
-    {
-      "symbol": "EURNOK",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\EURNOK"
-    },
-    {
-      "symbol": "EURPLN",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\EURPLN"
-    },
-    {
-      "symbol": "EURSEK",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\EURSEK"
-    },
-    {
-      "symbol": "EURSGD",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\EURSGD"
-    },
-    {
-      "symbol": "EURTRY",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\EURTRY"
-    },
-    {
-      "symbol": "EURZAR",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\EURZAR"
-    },
-    {
-      "symbol": "GBPMXN",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\GBPMXN"
-    },
-    {
-      "symbol": "GBPNOK",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\GBPNOK"
-    },
-    {
-      "symbol": "GBPSEK",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\GBPSEK"
-    },
-    {
-      "symbol": "GBPSGD",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\GBPSGD"
-    },
-    {
-      "symbol": "GBPTRY",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\GBPTRY"
-    },
-    {
-      "symbol": "NOKJPY",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\NOKJPY"
-    },
-    {
-      "symbol": "NOKSEK",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\NOKSEK"
-    },
-    {
-      "symbol": "NZDCAD",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Minors\\NZDCAD"
-    },
-    {
-      "symbol": "NZDCHF",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Minors\\NZDCHF"
-    },
-    {
-      "symbol": "SEKJPY",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\SEKJPY"
-    },
-    {
-      "symbol": "SGDJPY",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\SGDJPY"
+      "broker_path": "Markets\\Forex\\Minors\\GBPNZD",
+      "screening_note": {
+        "date": "2026-08-03",
+        "median_spread_bps": 0.7868,
+        "p95_spread_bps": 1.1354,
+        "ticks_7d": 175396
+      }
     },
     {
       "symbol": "USDCNH",
       "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\USDCNH"
-    },
-    {
-      "symbol": "USDCZK",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\USDCZK"
-    },
-    {
-      "symbol": "USDHUF",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\USDHUF"
-    },
-    {
-      "symbol": "USDMXN",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\USDMXN"
-    },
-    {
-      "symbol": "USDNOK",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\USDNOK"
-    },
-    {
-      "symbol": "USDPLN",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\USDPLN"
-    },
-    {
-      "symbol": "USDSEK",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\USDSEK"
+      "broker_path": "Markets\\Forex\\Exotics\\USDCNH",
+      "screening_note": {
+        "date": "2026-08-03",
+        "median_spread_bps": 0.7704,
+        "p95_spread_bps": 3.7913,
+        "ticks_7d": 85184
+      }
     },
     {
       "symbol": "USDSGD",
       "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\USDSGD"
-    },
-    {
-      "symbol": "USDTHB",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\USDTHB"
-    },
-    {
-      "symbol": "USDTRY",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\USDTRY"
-    },
-    {
-      "symbol": "USDZAR",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\USDZAR"
-    },
-    {
-      "symbol": "ZARJPY",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\ZARJPY"
+      "broker_path": "Markets\\Forex\\Exotics\\USDSGD",
+      "screening_note": {
+        "date": "2026-08-03",
+        "median_spread_bps": 0.4683,
+        "p95_spread_bps": 3.6665,
+        "ticks_7d": 63395
+      }
     },
     {
       "symbol": "USDHKD",
       "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\USDHKD"
-    },
-    {
-      "symbol": "USDBRL",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\NDFs\\USDBRL"
-    },
-    {
-      "symbol": "USDIDR",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\NDFs\\USDIDR"
-    },
-    {
-      "symbol": "USDINR",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\NDFs\\USDINR"
-    },
-    {
-      "symbol": "USDKRW",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\NDFs\\USDKRW"
-    },
-    {
-      "symbol": "USDCLP",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\NDFs\\USDCLP"
-    },
-    {
-      "symbol": "USDCOP",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\NDFs\\USDCOP"
-    },
-    {
-      "symbol": "USDTWD",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\NDFs\\USDTWD"
-    },
-    {
-      "symbol": "AUDDKK",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\AUDDKK"
-    },
-    {
-      "symbol": "AUDHUF",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\AUDHUF"
-    },
-    {
-      "symbol": "AUDNOK",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\AUDNOK"
-    },
-    {
-      "symbol": "AUDPLN",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\AUDPLN"
-    },
-    {
-      "symbol": "CADMXN",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\CADMXN"
-    },
-    {
-      "symbol": "CADSGD",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\CADSGD"
-    },
-    {
-      "symbol": "CHFDKK",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\CHFDKK"
-    },
-    {
-      "symbol": "CHFHUF",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\CHFHUF"
-    },
-    {
-      "symbol": "CHFNOK",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\CHFNOK"
-    },
-    {
-      "symbol": "CHFPLN",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\CHFPLN"
-    },
-    {
-      "symbol": "CHFSEK",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\CHFSEK"
-    },
-    {
-      "symbol": "EURCNH",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\EURCNH"
-    },
-    {
-      "symbol": "EURDKK",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\EURDKK"
-    },
-    {
-      "symbol": "GBPCNH",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\GBPCNH"
-    },
-    {
-      "symbol": "GBPDKK",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\GBPDKK"
-    },
-    {
-      "symbol": "GBPHUF",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\GBPHUF"
-    },
-    {
-      "symbol": "MXNJPY",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\MXNJPY"
-    },
-    {
-      "symbol": "NZDCNH",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\NZDCNH"
-    },
-    {
-      "symbol": "NZDHUF",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\NZDHUF"
-    },
-    {
-      "symbol": "NZDSGD",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\NZDSGD"
-    },
-    {
-      "symbol": "USDDKK",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\USDDKK"
-    },
-    {
-      "symbol": "EURILS",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\EURILS"
-    },
-    {
-      "symbol": "USDILS",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\USDILS"
-    },
-    {
-      "symbol": "USDRON",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\USDRON"
+      "broker_path": "Markets\\Forex\\Exotics\\USDHKD",
+      "screening_note": {
+        "date": "2026-08-03",
+        "median_spread_bps": 0.5993,
+        "p95_spread_bps": 3.6086,
+        "ticks_7d": 13895
+      }
     },
     {
       "symbol": "AUDCNH",
       "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Crosses\\AUDCNH"
-    },
-    {
-      "symbol": "CNHJPY",
-      "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Crosses\\CNHJPY"
+      "broker_path": "Markets\\Forex\\Crosses\\AUDCNH",
+      "screening_note": {
+        "date": "2026-08-03",
+        "median_spread_bps": 0.6524,
+        "p95_spread_bps": 3.5108,
+        "ticks_7d": 135297
+      }
     },
     {
       "symbol": "USDAED",
       "asset_class": "forex",
-      "broker_path": "Markets\\Forex\\Exotics\\USDAED"
-    },
-    {
-      "symbol": "XAGEUR",
-      "asset_class": "commodities",
-      "broker_path": "Markets\\Commodities\\Silver\\XAGEUR"
-    },
-    {
-      "symbol": "XAGAUD",
-      "asset_class": "commodities",
-      "broker_path": "Markets\\Commodities\\Silver\\XAGAUD"
-    },
-    {
-      "symbol": "XAUAUD",
-      "asset_class": "commodities",
-      "broker_path": "Markets\\Commodities\\Gold\\XAUAUD"
-    },
-    {
-      "symbol": "XAUGBP",
-      "asset_class": "commodities",
-      "broker_path": "Markets\\Commodities\\Gold\\XAUGBP"
-    },
-    {
-      "symbol": "XAUCHF",
-      "asset_class": "commodities",
-      "broker_path": "Markets\\Commodities\\Gold\\XAUCHF"
-    },
-    {
-      "symbol": "XPDUSD",
-      "asset_class": "metals",
-      "broker_path": "Markets\\Commodities\\Metals\\XPDUSD"
-    },
-    {
-      "symbol": "XPTUSD",
-      "asset_class": "metals",
-      "broker_path": "Markets\\Commodities\\Metals\\XPTUSD"
-    },
-    {
-      "symbol": "XAGSGD",
-      "asset_class": "commodities",
-      "broker_path": "Markets\\Commodities\\Silver\\XAGSGD"
-    },
-    {
-      "symbol": "XAUCNH",
-      "asset_class": "commodities",
-      "broker_path": "Markets\\Commodities\\Gold\\XAUCNH"
-    },
-    {
-      "symbol": "XAUSGD",
-      "asset_class": "commodities",
-      "broker_path": "Markets\\Commodities\\Gold\\XAUSGD"
-    },
-    {
-      "symbol": "XAUTHB",
-      "asset_class": "commodities",
-      "broker_path": "Markets\\Commodities\\Gold\\XAUTHB"
-    },
-    {
-      "symbol": "AUS200",
-      "asset_class": "indices",
-      "broker_path": "Markets\\Indices\\Majors\\AUS200"
-    },
-    {
-      "symbol": "CN50",
-      "asset_class": "indices",
-      "broker_path": "Markets\\Indices\\Minors\\CN50"
-    },
-    {
-      "symbol": "HK50",
-      "asset_class": "indices",
-      "broker_path": "Markets\\Indices\\Minors\\HK50"
-    },
-    {
-      "symbol": "EUSTX50",
-      "asset_class": "indices",
-      "broker_path": "Markets\\Indices\\Majors\\EUSTX50"
-    },
-    {
-      "symbol": "FRA40",
-      "asset_class": "indices",
-      "broker_path": "Markets\\Indices\\Majors\\FRA40"
-    },
-    {
-      "symbol": "JPN225",
-      "asset_class": "indices",
-      "broker_path": "Markets\\Indices\\Majors\\JPN225"
-    },
-    {
-      "symbol": "SPA35",
-      "asset_class": "indices",
-      "broker_path": "Markets\\Indices\\Minors\\SPA35"
-    },
-    {
-      "symbol": "US2000",
-      "asset_class": "indices",
-      "broker_path": "Markets\\Indices\\Minors\\US2000"
+      "broker_path": "Markets\\Forex\\Exotics\\USDAED",
+      "screening_note": {
+        "date": "2026-08-03",
+        "median_spread_bps": 0.2723,
+        "p95_spread_bps": 0.9257,
+        "ticks_7d": 1731
+      }
     },
     {
       "symbol": "US500",
       "asset_class": "indices",
-      "broker_path": "Markets\\Indices\\Majors\\US500"
-    },
-    {
-      "symbol": "USDX",
-      "asset_class": "indices",
-      "broker_path": "Markets\\Indices\\Currency\\USDX"
-    },
-    {
-      "symbol": "SCI25",
-      "asset_class": "indices",
-      "broker_path": "Markets\\Indices\\Minors\\SCI25"
-    },
-    {
-      "symbol": "VIX",
-      "asset_class": "indices",
-      "broker_path": "Markets\\Indices\\Minors\\VIX"
-    },
-    {
-      "symbol": "JPYX",
-      "asset_class": "indices",
-      "broker_path": "Markets\\Indices\\Currency\\JPYX"
-    },
-    {
-      "symbol": "EURX",
-      "asset_class": "indices",
-      "broker_path": "Markets\\Indices\\Currency\\EURX"
-    },
-    {
-      "symbol": "CA60",
-      "asset_class": "indices",
-      "broker_path": "Markets\\Indices\\Minors\\CA60"
-    },
-    {
-      "symbol": "CHINAH",
-      "asset_class": "indices",
-      "broker_path": "Markets\\Indices\\Minors\\CHINAH"
-    },
-    {
-      "symbol": "NETH25",
-      "asset_class": "indices",
-      "broker_path": "Markets\\Indices\\Minors\\NETH25"
-    },
-    {
-      "symbol": "SWI20",
-      "asset_class": "indices",
-      "broker_path": "Markets\\Indices\\Minors\\SWI20"
-    },
-    {
-      "symbol": "HSTECH",
-      "asset_class": "indices",
-      "broker_path": "Markets\\Indices\\Minors\\HSTECH"
-    },
-    {
-      "symbol": "US400",
-      "asset_class": "indices",
-      "broker_path": "Markets\\Indices\\Minors\\US400"
-    },
-    {
-      "symbol": "TWN",
-      "asset_class": "indices",
-      "broker_path": "Markets\\Indices\\Minors\\TWN"
+      "broker_path": "Markets\\Indices\\Majors\\US500",
+      "screening_note": {
+        "date": "2026-08-03",
+        "median_spread_bps": 0.5318,
+        "p95_spread_bps": 0.6649,
+        "ticks_7d": 55951
+      }
     }
   ],
   "excluded": [
@@ -722,15 +375,403 @@
     {
       "symbol": "UK100",
       "reason": "In symbol_registry but no cost calibration data."
+    },
+    {
+      "symbol": "AUDSGD",
+      "reason": "Screened out 2026-08-03: median spread 1.55 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "CADCHF",
+      "reason": "Screened out 2026-08-03: median spread 1.91 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "NZDJPY",
+      "reason": "Screened out 2026-08-03: median spread 1.29 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "CHFSGD",
+      "reason": "Screened out 2026-08-03: median spread 1.26 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "EURCZK",
+      "reason": "Screened out 2026-08-03: median spread 3.12 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "EURHUF",
+      "reason": "Screened out 2026-08-03: median spread 8.53 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "EURMXN",
+      "reason": "Screened out 2026-08-03: median spread 3.01 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "EURNOK",
+      "reason": "Screened out 2026-08-03: median spread 4.13 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "EURPLN",
+      "reason": "Screened out 2026-08-03: median spread 5.25 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "EURSEK",
+      "reason": "Screened out 2026-08-03: median spread 4.68 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "EURSGD",
+      "reason": "Screened out 2026-08-03: median spread 1.02 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "EURTRY",
+      "reason": "Screened out 2026-08-03: median spread 8.48 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "EURZAR",
+      "reason": "Screened out 2026-08-03: median spread 4.19 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "GBPMXN",
+      "reason": "Screened out 2026-08-03: median spread 3.67 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "GBPNOK",
+      "reason": "Screened out 2026-08-03: median spread 5.40 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "GBPSEK",
+      "reason": "Screened out 2026-08-03: median spread 5.36 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "GBPSGD",
+      "reason": "Screened out 2026-08-03: median spread 1.10 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "GBPTRY",
+      "reason": "Screened out 2026-08-03: median spread 9.84 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "NOKJPY",
+      "reason": "Screened out 2026-08-03: median spread 18.19 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "NOKSEK",
+      "reason": "Screened out 2026-08-03: median spread 13.07 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "NZDCAD",
+      "reason": "Screened out 2026-08-03: median spread 1.09 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "NZDCHF",
+      "reason": "Screened out 2026-08-03: median spread 1.89 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "SEKJPY",
+      "reason": "Screened out 2026-08-03: median spread 45.00 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "SGDJPY",
+      "reason": "Screened out 2026-08-03: median spread 1.39 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "USDCZK",
+      "reason": "Screened out 2026-08-03: median spread 4.53 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "USDHUF",
+      "reason": "Screened out 2026-08-03: median spread 9.70 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "USDMXN",
+      "reason": "Screened out 2026-08-03: median spread 1.88 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "USDNOK",
+      "reason": "Screened out 2026-08-03: median spread 3.88 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "USDPLN",
+      "reason": "Screened out 2026-08-03: median spread 9.00 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "USDSEK",
+      "reason": "Screened out 2026-08-03: median spread 4.90 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "USDTHB",
+      "reason": "Screened out 2026-08-03: median spread 2.03 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "USDTRY",
+      "reason": "Screened out 2026-08-03: median spread 4.30 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "USDZAR",
+      "reason": "Screened out 2026-08-03: median spread 2.67 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "ZARJPY",
+      "reason": "Screened out 2026-08-03: median spread 17.72 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "USDBRL",
+      "reason": "Screened out 2026-08-03: median spread 5.98 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "USDIDR",
+      "reason": "Screened out 2026-08-03: median spread 7.43 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "USDINR",
+      "reason": "Screened out 2026-08-03: median spread 10.58 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "USDKRW",
+      "reason": "Screened out 2026-08-03: median spread 3.56 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "USDCLP",
+      "reason": "Screened out 2026-08-03: median spread 5.80 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "USDCOP",
+      "reason": "Screened out 2026-08-03: median spread 16.05 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "USDTWD",
+      "reason": "Screened out 2026-08-03: median spread 8.38 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "AUDDKK",
+      "reason": "Screened out 2026-08-03: median spread 7.43 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "AUDHUF",
+      "reason": "Screened out 2026-08-03: median spread 15.08 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "AUDNOK",
+      "reason": "Screened out 2026-08-03: median spread 7.62 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "AUDPLN",
+      "reason": "Screened out 2026-08-03: median spread 6.93 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "CADMXN",
+      "reason": "Screened out 2026-08-03: median spread 4.37 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "CADSGD",
+      "reason": "Screened out 2026-08-03: median spread 1.42 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "CHFDKK",
+      "reason": "Screened out 2026-08-03: median spread 8.13 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "CHFHUF",
+      "reason": "Screened out 2026-08-03: median spread 13.66 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "CHFNOK",
+      "reason": "Screened out 2026-08-03: median spread 7.02 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "CHFPLN",
+      "reason": "Screened out 2026-08-03: median spread 8.04 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "CHFSEK",
+      "reason": "Screened out 2026-08-03: median spread 9.76 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "EURCNH",
+      "reason": "Screened out 2026-08-03: median spread 1.26 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "EURDKK",
+      "reason": "Screened out 2026-08-03: median spread 4.74 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "GBPCNH",
+      "reason": "Screened out 2026-08-03: median spread 1.20 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "GBPDKK",
+      "reason": "Screened out 2026-08-03: median spread 10.10 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "GBPHUF",
+      "reason": "Screened out 2026-08-03: median spread 13.53 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "MXNJPY",
+      "reason": "Screened out 2026-08-03: median spread 8.42 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "NZDCNH",
+      "reason": "Screened out 2026-08-03: median spread 1.72 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "NZDHUF",
+      "reason": "Screened out 2026-08-03: median spread 15.85 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "NZDSGD",
+      "reason": "Screened out 2026-08-03: median spread 1.99 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "USDDKK",
+      "reason": "Screened out 2026-08-03: median spread 8.82 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "EURILS",
+      "reason": "Screened out 2026-08-03: median spread 15.62 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "USDILS",
+      "reason": "Screened out 2026-08-03: median spread 17.69 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "USDRON",
+      "reason": "Screened out 2026-08-03: median spread 19.93 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "CNHJPY",
+      "reason": "Screened out 2026-08-03: median spread 3.41 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "XAGEUR",
+      "reason": "Screened out 2026-08-03: median spread 6.13 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "XAGAUD",
+      "reason": "Screened out 2026-08-03: median spread 5.32 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "XAUAUD",
+      "reason": "Screened out 2026-08-03: median spread 1.30 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "XAUGBP",
+      "reason": "Screened out 2026-08-03: median spread 1.56 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "XAUCHF",
+      "reason": "Screened out 2026-08-03: median spread 1.61 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "XPDUSD",
+      "reason": "Screened out 2026-08-03: median spread 36.00 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "XPTUSD",
+      "reason": "Screened out 2026-08-03: median spread 22.57 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "XAGSGD",
+      "reason": "Screened out 2026-08-03: median spread 5.26 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "XAUCNH",
+      "reason": "Screened out 2026-08-03: median spread 1.32 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "XAUSGD",
+      "reason": "Screened out 2026-08-03: median spread 1.43 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "XAUTHB",
+      "reason": "Screened out 2026-08-03: median spread 6.98 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "AUS200",
+      "reason": "Screened out 2026-08-03: median spread 2.22 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "CN50",
+      "reason": "Screened out 2026-08-03: median spread 10.13 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "HK50",
+      "reason": "Screened out 2026-08-03: median spread 1.93 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "EUSTX50",
+      "reason": "Screened out 2026-08-03: median spread 2.96 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "FRA40",
+      "reason": "Screened out 2026-08-03: median spread 1.28 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "JPN225",
+      "reason": "Screened out 2026-08-03: median spread 1.11 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "SPA35",
+      "reason": "Screened out 2026-08-03: median spread 6.53 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "US2000",
+      "reason": "Screened out 2026-08-03: median spread 1.36 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "USDX",
+      "reason": "Screened out 2026-08-03: median spread 5.02 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "SCI25",
+      "reason": "Screened out 2026-08-03: median spread 11.48 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "VIX",
+      "reason": "Screened out 2026-08-03: median spread 129.10 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "JPYX",
+      "reason": "Screened out 2026-08-03: median spread 14.54 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "EURX",
+      "reason": "Screened out 2026-08-03: median spread 9.30 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "CA60",
+      "reason": "Screened out 2026-08-03: median spread 4.60 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "CHINAH",
+      "reason": "Screened out 2026-08-03: median spread 19.67 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "NETH25",
+      "reason": "Screened out 2026-08-03: median spread 3.12 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "SWI20",
+      "reason": "Screened out 2026-08-03: median spread 4.03 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "HSTECH",
+      "reason": "Screened out 2026-08-03: median spread 17.08 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "US400",
+      "reason": "Screened out 2026-08-03: median spread 7.69 bps >= 1.0 bps bar"
+    },
+    {
+      "symbol": "TWN",
+      "reason": "Screened out 2026-08-03: median spread 4.34 bps >= 1.0 bps bar"
     }
   ],
   "summary": {
-    "total_in_registry": 18,
+    "total_in_registry": 141,
     "tradeable": 0,
     "measuring": 3,
     "verifying": 0,
-    "candidate": 0,
-    "excluded": 18,
+    "candidate": 23,
+    "excluded": 115,
     "tradeable_with_caveat": 0,
     "next_step": "Phase 1 activation: all 3 previously-tradeable symbols (XAUUSD, USOIL, USDJPY) moved to measuring per spec (no grandfathering). Measurement daemon must re-earn tradeable via the two-pass bar. Until then the universe has zero tradeable symbols \u2014 paper scripts keep running via mode='paper'; live trading is correctly blocked (fail-closed)."
   }
