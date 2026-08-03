@@ -78,7 +78,7 @@ One statistical primitive (`core/stats/psi.py`) serves both the existing ML feat
 | `provenance.py` | Remove `COST_CALIBRATED_SYMBOLS`; add `UNIVERSE_PATH`, `cost_calibrated_symbols()`, `cost_calibrated_status()`, `mode` params |
 | `config/tradeable_universe.json` | Add `candidate`/`measuring`/`verifying` arrays; bump `_meta.version` to `1.2.0` |
 | `scripts/comprehensive_edge_search.py`, `scripts/full_pipeline.py`, `scripts/run_complete_analysis.py`, `scripts/run_multi_symbol_wf.py`, `scripts/run_new_strategies_wf.py` | Gate call + `COST_CALIBRATED_SYMBOLS` usage migration |
-| `scripts/backtest_cost.py`, `scripts/research_backed_pipeline.py`, `scripts/run_rydc_validation.py`, `scripts/test_ram_strategy.py`, `scripts/tsm_backtest.py`, `scripts/tsm_ema.py`, `scripts/tsm_portfolio.py`, `scripts/tsm_validate.py`, `scripts/validate_dtsmom_strategy.py`, `scripts/validate_ram_strategy.py`, `scripts/walk_forward.py` | Gate call migration (`mode="paper"`) |
+| `scripts/backtest_cost.py`, `scripts/research_backed_pipeline.py`, `scripts/run_rydc_validation.py`, `scripts/test_ram_strategy.py`, `scripts/tsm_backtest.py`, `scripts/tsm_ema.py`, `scripts/tsm_portfolio.py`, `scripts/tsm_validate.py`, `scripts/validate_ram_strategy.py`, `scripts/walk_forward.py` | Gate call migration (`mode="paper"`) |
 | `scripts/check_bypass_loaders.py` | Comment-only accuracy updates (3 lines) |
 | `risk/kill_switch.py` | `kill_symbol()` / `is_symbol_killed()` / `killed_symbols` state key |
 
@@ -89,6 +89,7 @@ One statistical primitive (`core/stats/psi.py`) serves both the existing ML feat
 | `core/trading_loop.py` | grep for `provenance|cost_calibrat|require_cost` across `core/` → zero matches (spec §3's claim that activation breaks this file is stale) |
 | `scripts/select_tradeable_instruments.py` | `_load_candidates()` reads only `universe.get("tradeable", [])` (line 57) — backward-compatible with the new arrays; no edit |
 | `scripts/run_ws_a.py`, `scripts/run_ws_a_tsmom.py`, `scripts/ws_a_trial_1028.py`, `scripts/run_ws_a_trial_1028.py` | Call `load_provenance_checked()` directly; auto-covered by its new internal `mode="paper"` default (Task 3); no edit |
+| `scripts/validate_dtsmom_strategy.py` | Zero `require_cost_calibrated` references in HEAD and working tree (fresh grep, 2026-08-03) — the prior 16-file capture conflated it with `validate_ram_strategy.py`; no edit |
 | `tests/test_provenance.py` | Unchanged; its `load_provenance_checked("XAUUSD")` call (line 71) keeps passing in both pre- and post-activation states because `mode="paper"` is a superset that always includes `tradeable` |
 
 ## Spec-Correction Notes (evidence-based)
@@ -709,9 +710,12 @@ def test_load_provenance_checked_paper_mode_allows_measuring_symbol(
 
 ---
 
-## Task 4 — Migrate all 16 gate call sites + 5 `COST_CALIBRATED_SYMBOLS` usages
+## Task 4 — Migrate all 15 gate call sites + 5 `COST_CALIBRATED_SYMBOLS` usages
 
 **Files** (all verified line-exact via grep)
+
+> **Correction (verified 2026-08-03 during execution): the migration is 15 files, not 16.**
+> `scripts/validate_dtsmom_strategy.py` was listed in the prior-session call-site capture (import line 28 + call line 267), but a fresh grep against both HEAD and the working tree finds **zero** `require_cost_calibrated` references there — the earlier capture conflated it with `scripts/validate_ram_strategy.py` (which DOES have import line 28 + call line 268). `validate_dtsmom_strategy.py` = verified NO changes needed (its only uncommitted edits belong to another session's formatting work).
 
 Group A — 5 files importing and using `COST_CALIBRATED_SYMBOLS`:
 - `scripts/comprehensive_edge_search.py`
@@ -720,10 +724,10 @@ Group A — 5 files importing and using `COST_CALIBRATED_SYMBOLS`:
 - `scripts/run_multi_symbol_wf.py`
 - `scripts/run_new_strategies_wf.py`
 
-Group B — 11 files importing only the gate function:
-- `scripts/backtest_cost.py`, `scripts/research_backed_pipeline.py`, `scripts/run_rydc_validation.py`, `scripts/test_ram_strategy.py`, `scripts/tsm_backtest.py`, `scripts/tsm_ema.py`, `scripts/tsm_portfolio.py`, `scripts/tsm_validate.py`, `scripts/validate_dtsmom_strategy.py`, `scripts/validate_ram_strategy.py`, `scripts/walk_forward.py`
+Group B — 10 files importing only the gate function:
+- `scripts/backtest_cost.py`, `scripts/research_backed_pipeline.py`, `scripts/run_rydc_validation.py`, `scripts/test_ram_strategy.py`, `scripts/tsm_backtest.py`, `scripts/tsm_ema.py`, `scripts/tsm_portfolio.py`, `scripts/tsm_validate.py`, `scripts/validate_ram_strategy.py`, `scripts/walk_forward.py`
 
-Comment-only (3 lines): `scripts/check_bypass_loaders.py`
+Comment-only (3 lines + 1 extra): `scripts/check_bypass_loaders.py` (3 lines), plus `scripts/run_multi_symbol_wf.py` line 36 (a comment naming the removed constant, discovered by the final grep).
 
 **Steps**
 
@@ -770,16 +774,27 @@ For every file, the import line changes from `from provenance import COST_CALIBR
 12. `scripts/walk_forward.py`:
     - Line 24 import unchanged.
     - Line 418: `require_cost_calibrated(args.symbol)` → `require_cost_calibrated(args.symbol, mode="paper")`
-13. `scripts/check_bypass_loaders.py` — comment-only accuracy updates:
-    - Line 130: `# scan now skips any symbol not in COST_CALIBRATED_SYMBOLS instead` → `# scan now skips any symbol not in provenance.cost_calibrated_symbols() instead`
-    - Line 153: `# COST_CALIBRATED_SYMBOLS) skipped rather than run on the stale` → `# cost_calibrated_symbols()) skipped rather than run on the stale`
-    - Line 167: `# than cost-guessed since EURUSD isn't in COST_CALIBRATED_SYMBOLS;` → `# than cost-guessed since EURUSD isn't in cost_calibrated_symbols();`
+13. `scripts/check_bypass_loaders.py` — comment-only accuracy updates (verified live line numbers 124/147/161, not 130/153/167 as previously captured):
+    - Line 124: `# scan now skips any symbol not in COST_CALIBRATED_SYMBOLS instead` → `# scan now skips any symbol not in provenance.cost_calibrated_symbols() instead`
+    - Line 147: `# COST_CALIBRATED_SYMBOLS) skipped rather than run on the stale` → `# cost_calibrated_symbols()) skipped rather than run on the stale`
+    - Line 161: `# than cost-guessed since EURUSD isn't in COST_CALIBRATED_SYMBOLS;` → `# than cost-guessed since EURUSD isn't in cost_calibrated_symbols();`
+14. `scripts/run_multi_symbol_wf.py` line 36 (comment, found by the zero-remaining-references grep): `# today). run_walk_forward() below now gates on COST_CALIBRATED_SYMBOLS and` → `# today). run_walk_forward() below now gates on cost_calibrated_symbols() and`
 
-Verification (after all 16 edits):
-1. `python -m py_compile provenance.py scripts/comprehensive_edge_search.py scripts/full_pipeline.py scripts/run_complete_analysis.py scripts/run_multi_symbol_wf.py scripts/run_new_strategies_wf.py scripts/backtest_cost.py scripts/research_backed_pipeline.py scripts/run_rydc_validation.py scripts/test_ram_strategy.py scripts/tsm_backtest.py scripts/tsm_ema.py scripts/tsm_portfolio.py scripts/tsm_validate.py scripts/validate_dtsmom_strategy.py scripts/validate_ram_strategy.py scripts/walk_forward.py scripts/check_bypass_loaders.py` → all succeed.
-2. `python -m pytest tests/test_cost_calibration_gate.py tests/test_provenance.py tests/test_universe_schema.py -q` → green.
-3. No remaining references to the removed constant: grep for `COST_CALIBRATED_SYMBOLS` across `scripts/` and `provenance.py` — expected zero matches (the 3 updated comment lines now say `cost_calibrated_symbols`, not the constant).
-4. Commit: `git add scripts/ provenance.py && git commit -m "feat(quant_os): migrate 16 gate call sites to require_cost_calibrated(mode=paper) and drop COST_CALIBRATED_SYMBOLS usages"`
+Verification (after all edits):
+1. `python -m py_compile` on all 15 migrated files + `provenance.py` + `check_bypass_loaders.py` → all succeed (executed, COMPILE_OK).
+2. `python -m pytest tests/test_cost_calibration_gate.py tests/test_provenance.py tests/test_universe_schema.py -q` → green (19 passed).
+3. Zero remaining `COST_CALIBRATED_SYMBOLS` references across `scripts/` and `provenance.py` (executed: only the 4 comment lines listed above existed, all updated).
+4. Commit — DONE as `15b13e6c` (2026-08-03).
+
+### Execution corrections to this task (verified, applied 2026-08-03)
+
+1. **15 files, not 16** — `validate_dtsmom_strategy.py` has no gate references (see header correction). Do NOT stage it; its working-tree edits belong to another session.
+2. **Pre-existing lint debt in `validate_ram_strategy.py` blocks the commit hook** (ruff E402/B006 + mypy `module_from_spec`/`RAMConfig` errors — all pre-existing, unrelated to the one-line gate edit). The hook gates the whole file, so these minimal debt fixes were required to land the commit:
+   - `import importlib.util  # noqa: E402`
+   - `RAMConfig: Any = ram_module.RAMConfig` (added `from typing import Any`)
+   - `assert spec is not None and spec.loader is not None` before `module_from_spec`/`exec_module`
+   - `cost_stress_test(..., cost_multipliers: list[float] | None = None)` + body default (mirrors the same fix applied to `validate_dtsmom_strategy.py` by the concurrent session)
+3. Commit hook runs on EVERY staged file — the concurrent session's staged files (e.g. `tests/test_walk_forward.py`) fail ruff/mypy and abort unrelated commits. Before committing: `git diff --cached --name-only`, and `git restore --staged <their files>` if foreign files are staged.
 
 ---
 
