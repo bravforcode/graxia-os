@@ -397,48 +397,44 @@ def deflated_sharpe_ratio(sharpe: float, n_obs: int, n_trials: int, skew: float 
     """
     Deflated Sharpe Ratio — Bailey & Lopez de Prado (2014).
 
-    Accounts for multiple testing / non-normal returns.
-    Uses the expected maximum Sharpe under n_trials independent trials.
+    SP1: delegates to the shared validation module (removed the divergent
+    duplicate implementation that used excess-kurt convention and a Lo
+    approximation for E[max]). `sharpe` here is the ANNUALIZED Sharpe;
+    `n_obs` is raw bars — the shared module de-annualizes internally.
     """
+    import importlib.util
+    from pathlib import Path
+
     if np.isnan(sharpe) or n_obs < 30:
         return {"dsr": np.nan, "p_value": np.nan, "significant": False}
 
-    # Sharpe standard error (accounting for skew/kurtosis)
-    se = np.sqrt((1 + 0.5 * sharpe**2 - skew * sharpe + (kurtosis - 3) / 4 * sharpe**2) / (n_obs - 1))
-    if se == 0:
-        return {"dsr": np.nan, "p_value": np.nan, "significant": False}
+    spec = importlib.util.spec_from_file_location(
+        "dsr", str(Path(__file__).resolve().parent.parent / "validation" / "deflated_sharpe.py")
+    )
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    result = mod.dsr_from_annualized(
+        observed_sharpe=sharpe,
+        n_trials=n_trials,
+        n_observations=n_obs,
+        annualization_factor=252,
+        skewness=skew,
+        kurtosis=kurtosis,
+    )
 
-    z = sharpe / se
-
-    # Expected max z-score from n_trials random strategies
-    # Using inverse of E[max of n_trials standard normals]
-    # Approximation: E[max] ≈ sqrt(2 * ln(n_trials)) - (ln(ln(n_trials)) + ln(4π)) / (2 * sqrt(2 * ln(n_trials)))
-    if n_trials > 1:
-        log_n = np.log(n_trials)
-        e_max_z = np.sqrt(2 * log_n) - (np.log(log_n) + np.log(4 * np.pi)) / (2 * np.sqrt(2 * log_n))
-    else:
-        e_max_z = 0
-
-    # Deflated Sharpe = Sharpe - E[max_SR] * SE
-    deflated_sr = sharpe - e_max_z * se
-
-    # P-value: probability that a random strategy would produce Sharpe >= observed
-    p_value = 1 - stats.norm.cdf(z)
-
-    # Probability that observed Sharpe is the true best (not overfit)
-    # Using the deflated test: compare z to expected max
-    p_deflated = 1 - stats.norm.cdf(z - e_max_z)
+    e_max_z = result.multiple_testing_adjustment
+    p_deflated = result.passes_threshold
 
     return {
         "sharpe": sharpe,
-        "deflated_sharpe": deflated_sr,
-        "z_score": z,
-        "se": se,
-        "p_value_single": p_value,
-        "p_value_deflated": p_deflated,
+        "deflated_sharpe": result.deflated_sharpe,
+        "z_score": 0.0,  # legacy — shared module does not expose raw z
+        "se": 0.0,
+        "p_value_single": result.probability_alpha,  # legacy consumers print this
+        "p_value_deflated": result.probability_alpha,
         "e_max_z": e_max_z,
         "n_trials": n_trials,
-        "significant_5pct": p_deflated > 0.05,  # Higher = better (prob of being real)
+        "significant_5pct": result.passes_threshold,  # shared DSR: passes when prob_alpha < 0.05
     }
 
 
