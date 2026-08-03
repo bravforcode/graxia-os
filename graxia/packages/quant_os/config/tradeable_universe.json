@@ -1,9 +1,9 @@
 {
   "_meta": {
-    "version": "1.1.0",
+    "version": "1.2.0",
     "created": "2026-07-25",
-    "updated": "2026-07-26",
-    "description": "Single source of truth for which symbols are eligible for live/paper trading. A symbol is TRADEABLE only if it has BOTH sufficient price history AND verified cost calibration data.",
+    "updated": "2026-08-03",
+    "description": "Single source of truth for which symbols are eligible for live/paper trading. A symbol is TRADEABLE only if it has BOTH sufficient price history AND verified multi-day cost calibration data. Statuses: tradeable (both passes of the Phase 1 bar cleared), verifying (first pass cleared, re-verification pending), measuring (in measurement, pre-pass), candidate (discovered, not yet measuring), excluded (not eligible).",
     "cost_calibration_source": "config/cost_calibration.json (v3.1, 2026-07-26)",
     "data_integrity_fix_20260726": "The v1.0.0 'MEASURED'/'Properly measured multi-day' notes on NAS100/USOIL/USDJPY were false — see config/cost_calibration.json's data_integrity_fix_20260726 field. NAS100 is moved to excluded (zero real data, fails this file's own tradeable bar). XAUUSD/USDJPY upgraded to real tick-derived numbers (FROM_TICKS, ~27h, not multi-day). OIL restored to its real single-snapshot measurement."
   },
@@ -30,6 +30,9 @@
       "note": "Real tick-derived measurement, session-covering (~27h, all 5 sessions once each) — replaces a fabricated 0.80bps figure introduced in commit 33b90c31. Adequate for paper; needs true multi-day re-measurement before live."
     }
   ],
+  "measuring": [],
+  "verifying": [],
+  "candidate": [],
   "excluded": [
     {"symbol": "EURUSD", "reason": "Removed from cost_calibration.json (explicit). No cost data."},
     {"symbol": "GBPUSD", "reason": "Removed from cost_calibration.json (explicit). No cost data."},
@@ -53,6 +56,9 @@
   "summary": {
     "total_in_registry": 18,
     "tradeable": 3,
+    "measuring": 0,
+    "verifying": 0,
+    "candidate": 0,
     "excluded": 18,
     "tradeable_with_caveat": 3,
     "next_step": "All 3 remaining tradeable symbols (XAUUSD, USOIL, USDJPY) still lack true multi-day (repeated-calendar-day) cost measurement — this is calendar-bound and requires live/paper tick recording to run across multiple real days, not more engineering work. NAS100 requires a real measurement source (tick recording or historical archive) before it can be re-admitted."
