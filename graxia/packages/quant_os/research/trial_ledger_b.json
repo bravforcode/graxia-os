@@ -147,6 +147,7 @@
       "result_artifact": "reports/trial_3008_fx_carry_results.json",
       "pre_registration_doc": "research/pre_registration_b/trial_3008_fx_carry.md",
       "conclusion": "True FX carry (cross-currency 3M interbank differential, EURUSD/GBPUSD/USDJPY) tested with real FRED rates (IR3TIB01EEM156N/GBM156N/JPM156N vs DGS3MO), 2005-2026, pepperstone_razor costs. DK t=-0.471, portfolio Sharpe -0.229 (1.0x), label-shuffle p=0.97, DSR p=1.0 (N=1050). Carry sign is extremely sticky (24 total position changes across 3 pairs in 21y — 5/16/3) so the sample is underpowered, but the sign of the result is negative, not positive. REJECT — no carry premium net of cost in this universe/window. Sacred holdout NOT burned.",
+      "sp1_dsr_correction_note": "2026-08-03 SP1: re-run with unit-correct dsr_from_annualized(factor=sqrt(252)): probability_alpha=0.99999 (was 1.0 with factor=1.0 artifact). Verdict unchanged (REJECTED — negative Sharpe and DK t=-0.471).",
       "validity_note": "VALID TEST — correct mechanism (true cross-currency rate differential, not the DGS10-DGS2 error of trial 3001), real FRED rates, frozen pre-registration, provenance-checked prices, realistic costs. Underpowered trade count noted; direction is negative."
     }
   ],

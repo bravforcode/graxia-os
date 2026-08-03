@@ -109,6 +109,7 @@
       "result": "REJECTED",
       "date": "2026-08-03",
       "note": "Post-cap entry (cap consumed). 52-Week High Momentum replication (George-Hwang 2004): level-anchored proximity signal (prox>=0.95 long, prox<=0.80 short), 7 assets, monthly rebalance, 2005-2026, pepperstone_razor costs. Newey-West HAC dk_t=0.461 (<2.0) — FAIL. DSR p=0.0000 (N=1050) PASS, cost-stress PASS (Sharpe 0.34/0.33), label-shuffle p=0.035 PASS, jackknife PASS — but trades 13-39/asset (all < 50 gate) and pooled DK far below 2.0. DSR+label-shuffle signal does not survive pooled cross-sectional test. REJECT per frozen pre-registration (research/pre_registration/trial_1032_52week_high.md); no threshold tuning attempted. Harness: scripts/run_52week_high_1032.py; artifact: reports/trial_1032_52week_high_results.json.",
+      "sp1_dsr_correction_note": "2026-08-03 SP1: original DSR p=0.0000 PASS was an artifact of sharpe_annualization_factor=1.0 (annualized SR passed as raw). Re-run with unit-correct dsr_from_annualized(factor=sqrt(252)): probability_alpha=0.9446 FAIL. Verdict unchanged (REJECTED on DK t=0.461 << 2.0).",
       "cap_note": "Trial exceeded cumulative_trial_cap=1022. Recorded for audit trail per precedent of trials 1028/1031."
     }
   ],
