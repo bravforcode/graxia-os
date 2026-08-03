@@ -83,12 +83,15 @@ Components (7 units, each single-purpose, testable without MT5/network):
 1. `broker/mt5_gateway.py` — add `get_ticks_from(symbol, from_msc, count=10000)`
    module function wrapping `mt5.copy_ticks_from(..., COPY_TICKS_ALL)`. Read-only,
    raises `Mt5UnavailableError` on failure (existing pattern). Returns list of dicts:
-   `time_msc, bid, ask, last, volume (volume_real preferred), flags`.
+   `time_msc, bid, ask, last, volume (volume_real preferred), flags` (raw MT5
+   bitmask; the collector maps it to `TickRecord.mt5_flags`).
    **No class, no is_connected/reconnect here** — the gateway stays a thin read-only
    wrapper; connection recovery is owned by the collector loop.
-2. `market_data/tick_recorder.py` — extend `TickRecord` with `time_msc: int | None`,
-   `volume: float | None`, `flags: int | None` (optional, default None) so existing
-   callers/tests keep working. Quality rules unchanged (2s gap / 5s stale).
+2. `market_data/tick_recorder.py` — extend `TickRecord` with
+   `time_msc: int | None`, `volume: float | None`, `mt5_flags: int | None`
+   (optional, default None) so existing callers/tests keep working. Quality rules
+   unchanged (2s gap / 5s stale). NOTE: `mt5_flags` is the raw MT5 tick bitmask;
+   the existing `flags` field (quality tag string, e.g. "GAP,STALE") is untouched.
 3. `market_data/measurement_daemon.py` — replace polling internals with
    `StreamCollector` while keeping the `MeasurementDaemon` name, `run_once()`
    interface, and `MeasurementBatchProcessor` untouched. `tick_provider` signature
@@ -130,7 +133,8 @@ Existing columns (preserved):
 `timestamp_utc, received_at_utc, symbol, bid, ask, last, spread_points, flags,
 sequence_id, connection_session_id, source, data_quality`
 
-New columns (appended): `time_msc (int64)`, `volume (float64)`, `flags_mt5 (uint32)`.
+New columns (appended): `time_msc (int64)`, `volume (float64)`, `flags_mt5 (uint32)`
+(raw MT5 tick bitmask — distinct from the existing `flags` quality-tag string column).
 
 Renames are forbidden (e.g. `data_quality` → `quality_tag`) — they break readers.
 
@@ -178,7 +182,7 @@ Per cycle (`run_once`), per symbol:
    keys each cycle. Never call `clear()` mid-stream (that reintroduces duplicates
    at the overlap boundary).
 4. Feed each new tick through `TickRecorder.record_tick(..., time_msc=...,
-   volume=..., flags=...)` → `TickRecord`. GAP/STALE/OUT_OF_ORDER tagging stays
+   volume=..., mt5_flags=...)` → `TickRecord`. GAP/STALE/OUT_OF_ORDER tagging stays
    entirely with the existing TickRecorder (2s/5s thresholds) — no separate gap
    logic in the collector. A collector outage followed by resume naturally
    produces GAP tags on the time jump.

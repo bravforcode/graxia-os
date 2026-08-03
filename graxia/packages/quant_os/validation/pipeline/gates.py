@@ -82,13 +82,15 @@ class GateEngine:
             if result is None:
                 return None
             if result.get("_error"):
-                gates.append(GateResult(
-                    name=label,
-                    status=GateStatus.ERRORED,
-                    metric=0.0,
-                    threshold=0.0,
-                    details=f"ERRORED: {result.get('_message', 'unknown error')}",
-                ))
+                gates.append(
+                    GateResult(
+                        name=label,
+                        status=GateStatus.ERRORED,
+                        metric=0.0,
+                        threshold=0.0,
+                        details=f"ERRORED: {result.get('_message', 'unknown error')}",
+                    )
+                )
                 return None
             return result
 
