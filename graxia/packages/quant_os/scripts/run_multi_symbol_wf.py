@@ -200,11 +200,11 @@ def run_walk_forward(df, symbol, tf):
         spec = importlib.util.spec_from_file_location("ds", str(BASE / "validation" / "deflated_sharpe.py"))
         ds_mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(ds_mod)
-        ds_result = ds_mod.deflated_sharpe_ratio(
+        ds_result = ds_mod.dsr_from_annualized(
             observed_sharpe=avg_sharpe,
             n_trials=N_FOLDS * len(conf_thresholds),
             n_observations=total_trades,
-            sharpe_annualization_factor=1.0,  # TODO(DSR-AUDIT): unaudited call site, factor=1.0 preserves prior (possibly-incorrect) behavior — see MATH_CORRECTNESS_AUDIT.md
+            annualization_factor=252,  # SP1: sharpe annualized per-trade (backtest_cost.py); total_trades is trade-level n
         )
         deflated_sharpe = ds_result.deflated_sharpe
         ds_pass = ds_result.passes_threshold

@@ -174,9 +174,9 @@ def run_analysis(symbol, tf):
             spec = importlib.util.spec_from_file_location("ds", "validation/deflated_sharpe.py")
             ds_mod = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(ds_mod)
-            ds = ds_mod.deflated_sharpe_ratio(
-                avg_sharpe, N_FOLDS * len(CONF_THRESHOLDS), total_trades, sharpe_annualization_factor=1.0
-            )  # TODO(DSR-AUDIT): unaudited call site, factor=1.0 preserves prior (possibly-incorrect) behavior — see MATH_CORRECTNESS_AUDIT.md
+            ds = ds_mod.dsr_from_annualized(
+                avg_sharpe, N_FOLDS * len(CONF_THRESHOLDS), total_trades, annualization_factor=252
+            )  # SP1: sharpe is annualized per-trade (backtest_cost.py scales by sqrt(min(n_fold_trades,252))); total_trades is the trade-level n
             ds_sharpe = ds.deflated_sharpe
             ds_pass = ds.passes_threshold
         except Exception:

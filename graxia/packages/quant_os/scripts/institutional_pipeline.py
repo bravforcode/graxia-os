@@ -67,6 +67,7 @@ _ewma_mod = _load_module("ewma_correlation", ROOT / "risk" / "ewma_correlation.p
 _impact_mod = _load_module("market_impact", ROOT / "execution" / "market_impact.py")
 
 deflated_sharpe_ratio = _dsr_mod.deflated_sharpe_ratio
+dsr_from_annualized = _dsr_mod.dsr_from_annualized
 min_backtest_length = _dsr_mod.min_backtest_length
 calculate_pbo_from_matrix = _pbo_mod.calculate_pbo_from_matrix
 benjamini_hochberg = _bh_mod.benjamini_hochberg
@@ -122,11 +123,11 @@ def run_layer1(
         else:
             skew, kurt = 0.0, 3.0
 
-        dsr = deflated_sharpe_ratio(
+        dsr = dsr_from_annualized(
             observed_sharpe=sharpe,
             n_trials=n_total_trials,
             n_observations=n_obs,
-            sharpe_annualization_factor=1.0,  # TODO(DSR-AUDIT): unaudited call site, factor=1.0 preserves prior (possibly-incorrect) behavior — see MATH_CORRECTNESS_AUDIT.md
+            annualization_factor=252,  # SP1: sharpe is annualized (mean*252/std*sqrt(252)), n_obs is daily bars
             skewness=skew,
             kurtosis=kurt,
         )
