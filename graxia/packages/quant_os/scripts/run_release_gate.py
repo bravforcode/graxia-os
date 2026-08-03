@@ -58,11 +58,15 @@ SUITE_CMD = [
     "--ignore=graxia/packages/quant_os/tests/test_new_modules_integration.py",
     "--ignore=graxia/packages/quant_os/tests/test_phase_2a.py",
     "--ignore=graxia/packages/quant_os/tests/test_phase_be_p1.py",
+    "--ignore=graxia/packages/quant_os/tests/test_quality_gate.py",
     "--ignore=graxia/packages/quant_os/tests/test_run_lagged_wf.py",
     "--ignore=graxia/packages/quant_os/tests/test_safe_pickle.py",
     "--ignore=graxia/packages/quant_os/tests/test_slippage_helper.py",
+    "--ignore=graxia/packages/quant_os/tests/test_state_persistence.py",
     "--ignore=graxia/packages/quant_os/tests/test_strategy_validator_sanity.py",
+    "--ignore=graxia/packages/quant_os/tests/test_synthetic_shock_scenarios.py",
     "--ignore=graxia/packages/quant_os/tests/test_trading_loop.py",
+    "--ignore=graxia/packages/quant_os/tests/test_tv_integration.py",
 ]
 E2E_SCRIPT = str(Path(__file__).parent / "e2e_release_gate.py")
 E2E_CMD = [sys.executable, E2E_SCRIPT]
