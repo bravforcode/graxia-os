@@ -94,7 +94,9 @@ def get_lock_hash():
 def get_git_status():
     """Return untracked/modified files from git status --porcelain."""
     r = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, cwd=str(REPO_ROOT))
-    return r.stdout.strip()
+    # rstrip only: .strip() would eat the leading status space of the FIRST line (" M path"),
+    # shifting that path left by one char and breaking exemption matching.
+    return r.stdout.rstrip()
 
 
 def get_e2e_seal(e2e_output):
