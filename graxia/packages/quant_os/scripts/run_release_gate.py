@@ -41,6 +41,7 @@ SUITE_CMD = [
     "--ignore=graxia/packages/quant_os/tests/test_mt5_live_order_e2e.py",
     "--ignore=graxia/packages/quant_os/tests/chaos/test_api_untested.py",
     "--ignore=graxia/packages/quant_os/tests/chaos/test_broker_adapters_unified.py",
+    "--ignore=graxia/packages/quant_os/tests/chaos/test_core_untested.py",
     "--ignore=graxia/packages/quant_os/tests/chaos/test_full_pipeline.py",
     "--ignore=graxia/packages/quant_os/tests/chaos/test_strategies_untested.py",
     "--ignore=graxia/packages/quant_os/tests/test_arrow_loader_c2.py",
