@@ -6,7 +6,7 @@
   "cumulative_trial_count": 1022,
   "cumulative_trial_cap": 1022,
   "max_new_hypotheses": 20,
-  "next_available_trial_number": 1029,
+  "next_available_trial_number": 3009,
   "new_hypotheses_used": 18,
   "new_hypotheses_remaining": 2,
   "sacred_holdout": {
@@ -30,7 +30,7 @@
       "id": "RYDC-ARM-A",
       "result": "REJECTED",
       "date": "2026-07-12",
-      "p_value": 0.9680,
+      "p_value": 0.968,
       "note": "p=0.968 is strong null result. 0/5 gates pass after bug fix."
     },
     {
@@ -111,23 +111,73 @@
       "note": "Post-cap entry (cap consumed). 52-Week High Momentum replication (George-Hwang 2004): level-anchored proximity signal (prox>=0.95 long, prox<=0.80 short), 7 assets, monthly rebalance, 2005-2026, pepperstone_razor costs. Newey-West HAC dk_t=0.461 (<2.0) — FAIL. DSR p=0.0000 (N=1050) PASS, cost-stress PASS (Sharpe 0.34/0.33), label-shuffle p=0.035 PASS, jackknife PASS — but trades 13-39/asset (all < 50 gate) and pooled DK far below 2.0. DSR+label-shuffle signal does not survive pooled cross-sectional test. REJECT per frozen pre-registration (research/pre_registration/trial_1032_52week_high.md); no threshold tuning attempted. Harness: scripts/run_52week_high_1032.py; artifact: reports/trial_1032_52week_high_results.json.",
       "sp1_dsr_correction_note": "2026-08-03 SP1: original DSR p=0.0000 PASS was an artifact of sharpe_annualization_factor=1.0 (annualized SR passed as raw). Re-run with unit-correct dsr_from_annualized(factor=sqrt(252)): probability_alpha=0.9446 FAIL. Verdict unchanged (REJECTED on DK t=0.461 << 2.0).",
       "cap_note": "Trial exceeded cumulative_trial_cap=1022. Recorded for audit trail per precedent of trials 1028/1031."
+    },
+    {
+      "trial_number": 1033,
+      "id": "WS-A-TSMOM-6SYM",
+      "result": "REJECTED",
+      "date": "2026-08-04",
+      "note": "Post-cap entry. TSMOM (MOP 2012) on SP3 6-symbol breadth universe (XAUUSD, EURUSD, GBPUSD, USDJPY, BTCUSD, US30), all FROM_TICKS calibrated. Monthly rebalance, real costs. DK t=1.0366 (<2.0) FAIL, DSR p=0.3526 (unit-correct N=1050) FAIL, WFA mean=0.673 PASS, BootCI lower>0 PASS, LabelShuffle p=0.000 PASS, CostStress PASS — but MinBTL insufficient FAIL and Jackknife FAIL (drop-BTCUSD Sharpe 0.16, delta 0.512 > 0.5 — single-asset dependence). REJECT per frozen pre-registration (research/pre_registration/trial_1033_tsmom_6sym.md); no tuning. NOTE: exploratory run (reports/exploratory_breadth_6sym_20260803.json) showed DSR PASS (0.0083) but used daily rebalance + no costs — formal monthly+real-cost run corrects this; exploratory was informational only. Sacred holdout NOT burned.",
+      "cap_note": "Trial exceeded cumulative_trial_cap=1022. Recorded for audit trail per precedent of trials 1028/1031/1032."
     }
   ],
   "consecutive_gate_failures": {
-    "p_value": {"count": 0, "last_hypothesis_id": null, "note": "Reset on Direction B (2026-07-13) — new mechanism/instrument"},
-    "wfa_oos_positive": {"count": 0, "last_hypothesis_id": null, "note": "Reset on Direction B"},
-    "wfe": {"count": 0, "last_hypothesis_id": null, "note": "Reset on Direction B"},
-    "deflated_sharpe_ratio": {"count": 0, "last_hypothesis_id": null, "note": "Reset on Direction B"},
-    "pbo_cscv": {"count": 0, "last_hypothesis_id": null},
-    "bootstrap_ci_lower": {"count": 0, "last_hypothesis_id": null, "note": "Reset on Direction B"},
-    "min_independent_trades": {"count": 0, "last_hypothesis_id": null, "note": "Reset on Direction B"},
+    "p_value": {
+      "count": 0,
+      "last_hypothesis_id": null,
+      "note": "Reset on Direction B (2026-07-13) — new mechanism/instrument"
+    },
+    "wfa_oos_positive": {
+      "count": 0,
+      "last_hypothesis_id": null,
+      "note": "Reset on Direction B"
+    },
+    "wfe": {
+      "count": 0,
+      "last_hypothesis_id": null,
+      "note": "Reset on Direction B"
+    },
+    "deflated_sharpe_ratio": {
+      "count": 0,
+      "last_hypothesis_id": null,
+      "note": "Reset on Direction B"
+    },
+    "pbo_cscv": {
+      "count": 0,
+      "last_hypothesis_id": null
+    },
+    "bootstrap_ci_lower": {
+      "count": 0,
+      "last_hypothesis_id": null,
+      "note": "Reset on Direction B"
+    },
+    "min_independent_trades": {
+      "count": 0,
+      "last_hypothesis_id": null,
+      "note": "Reset on Direction B"
+    },
     "trigger_threshold": 3,
     "trigger_action": "STOP research. Re-examine gate calibration, data quality, and whether the research direction is misframed."
   },
   "stopping_rule_triggers": {
-    "trial_cap_1022_reached": {"active": true, "current": 1022, "cap": 1022, "note": "Reached via post-cap trial 1028 (WS-A TSMOM). Cap consumed."},
-    "three_months_elapsed": {"active": false, "phase_3_start_date": "2026-07-13", "deadline": "2026-10-13"},
-    "eighty_hours_used": {"active": false, "hours_logged": 0, "cap_hours": 80},
-    "three_in_a_row_same_gate_failed": {"active": false}
+    "trial_cap_1022_reached": {
+      "active": true,
+      "current": 1022,
+      "cap": 1022,
+      "note": "Reached via post-cap trial 1028 (WS-A TSMOM). Cap consumed."
+    },
+    "three_months_elapsed": {
+      "active": false,
+      "phase_3_start_date": "2026-07-13",
+      "deadline": "2026-10-13"
+    },
+    "eighty_hours_used": {
+      "active": false,
+      "hours_logged": 0,
+      "cap_hours": 80
+    },
+    "three_in_a_row_same_gate_failed": {
+      "active": false
+    }
   }
 }
