@@ -52,9 +52,7 @@ def test_single_trial_not_overpenalized():
 
 def test_equivalence_with_direct_call():
     """dsr_from_annualized(f) == deflated_sharpe_ratio(factor=sqrt(f))."""
-    r1 = dsr_from_annualized(1.2, 100, 3000, annualization_factor=252,
-                             skewness=0.1, kurtosis=3.5)
-    r2 = deflated_sharpe_ratio(1.2, 100, 3000, sharpe_annualization_factor=math.sqrt(252),
-                               skewness=0.1, kurtosis=3.5)
+    r1 = dsr_from_annualized(1.2, 100, 3000, annualization_factor=252, skewness=0.1, kurtosis=3.5)
+    r2 = deflated_sharpe_ratio(1.2, 100, 3000, sharpe_annualization_factor=math.sqrt(252), skewness=0.1, kurtosis=3.5)
     assert r1.probability_alpha == r2.probability_alpha
     assert r1.passes_threshold == r2.passes_threshold
