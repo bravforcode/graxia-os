@@ -135,10 +135,11 @@ def mock_adapter():
 
 @pytest.fixture
 def oms(mock_adapter, tmp_ledger):
-    """Provide an OMS with a mock adapter and no risk engine."""
+    """Provide an OMS with a mock adapter and an approving risk engine."""
     return OMS(
         adapters={"mt5": mock_adapter},
         ledger_path=tmp_ledger,
+        risk_engine=MockRiskEngine(approved=True),
     )
 
 
@@ -289,6 +290,7 @@ class TestBrokerReject:
         oms = OMS(
             adapters={"mt5": mock_adapter},
             ledger_path=tmp_ledger,
+            risk_engine=MockRiskEngine(approved=True),
         )
 
         order = oms.submit_order(
@@ -311,6 +313,7 @@ class TestBrokerReject:
         oms = OMS(
             adapters={"mt5": mock_adapter},
             ledger_path=tmp_ledger,
+            risk_engine=MockRiskEngine(approved=True),
         )
 
         order = oms.submit_order(
@@ -333,6 +336,7 @@ class TestBrokerReject:
         oms = OMS(
             adapters={"mt5": mock_adapter},
             ledger_path=tmp_ledger,
+            risk_engine=MockRiskEngine(approved=True),
         )
 
         oms.submit_order(
@@ -384,6 +388,7 @@ class TestPartialFill:
         oms = OMS(
             adapters={"mt5": mock_adapter},
             ledger_path=tmp_ledger,
+            risk_engine=MockRiskEngine(approved=True),
         )
 
         order = oms.submit_order(
@@ -417,6 +422,7 @@ class TestPartialFill:
         oms = OMS(
             adapters={"mt5": mock_adapter},
             ledger_path=tmp_ledger,
+            risk_engine=MockRiskEngine(approved=True),
         )
 
         # Use a short timeout for testing
@@ -621,14 +627,24 @@ class TestVenueMap:
 class TestOMSInitialization:
     """Test OMS initialization and configuration."""
 
-    def test_oms_with_no_risk_engine(self, mock_adapter, tmp_ledger):
-        """OMS should work without a risk engine."""
+    def test_oms_with_no_risk_engine_rejects_fail_closed(self, mock_adapter, tmp_ledger):
+        """OMS without a risk engine must reject orders (fail-closed)."""
         oms = OMS(
             adapters={"mt5": mock_adapter},
             ledger_path=tmp_ledger,
         )
 
         assert oms._risk_engine is None
+
+        order = oms.submit_order(
+            signal_id="fail_closed_sig",
+            symbol="EURUSD",
+            asset_class="forex",
+            side="BUY",
+            quantity=0.01,
+        )
+
+        assert order.status == OrderStatus.REJECTED
 
     def test_oms_with_risk_engine(self, mock_adapter, tmp_ledger):
         """OMS should accept a risk engine."""

@@ -23,7 +23,9 @@ from ..execution.adapters.base import BrokerAdapter
 from ..execution.adapters.mt5 import MT5Adapter
 from ..execution.oms import OMS
 from ..regime.risk_overlay import RiskOverlay
+from ..risk.circuit_breaker import CircuitBreaker
 from ..risk.kill_switch import KillSwitch
+from ..risk.pre_trade_gate import PreTradeRiskGate
 from ..risk.risk_ledger import RiskLedger
 from ..risk.risk_policy import RiskPolicy
 from .agents.portfolio_manager import PortfolioManagerAgent
@@ -58,6 +60,7 @@ class TradingOrchestrator:
         self._bus = EventBus()
         self._oms = oms
         self._broker_adapter: BrokerAdapter | None = None
+        self._kill_switch = KillSwitch()
         if self._oms is None and self._config.live_trading_enabled:
             # Create OMS with MT5 adapter for live trading
             self._broker_adapter = MT5Adapter(
@@ -65,7 +68,14 @@ class TradingOrchestrator:
                 password=self._config.mt5_password,
                 server=self._config.mt5_server,
             )
-            self._oms = OMS(adapters={"mt5": self._broker_adapter})
+            risk_gate = PreTradeRiskGate(
+                kill_switch=self._kill_switch,
+                circuit_breaker=CircuitBreaker(),
+            )
+            self._oms = OMS(
+                adapters={"mt5": self._broker_adapter},
+                risk_engine=risk_gate,
+            )
         elif self._oms is None:
             # Paper mode: OMS not needed (PaperExecutor handles it)
             pass
@@ -75,7 +85,6 @@ class TradingOrchestrator:
         self._position_manager = PositionManager(bus=self._bus)
         self._risk_policy = RiskPolicy()
         self._risk_ledger = RiskLedger()
-        self._kill_switch = KillSwitch()
         self._risk_overlay = RiskOverlay(
             initial_balance=self._config.paper_initial_capital,
             max_risk_pct=self._config.max_risk_per_trade_pct / 100,
