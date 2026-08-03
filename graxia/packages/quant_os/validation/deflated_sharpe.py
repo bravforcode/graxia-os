@@ -117,6 +117,54 @@ def deflated_sharpe_ratio(
     )
 
 
+def dsr_from_annualized(
+    observed_sharpe: float,
+    n_trials: int,
+    n_observations: int,
+    *,
+    annualization_factor: float = 252.0,
+    skewness: float = 0.0,
+    kurtosis: float = 3.0,
+    confidence_level: float = 0.95,
+) -> DeflatedSharpeResult:
+    """DSR for an ANNUALIZED Sharpe ratio.
+
+    Bailey & Lopez de Prado (2014) Eq.(2) requires a per-observation Sharpe:
+    the Lo (2002) sr_std formula breaks when an annualized SR is passed with
+    raw-bar n_observations (z is inflated ~sqrt(periods_per_year)x, producing
+    false PASS verdicts). This helper de-annualizes internally so callers
+    cannot get the units wrong.
+
+    Args:
+        observed_sharpe: Annualized Sharpe ratio from backtest.
+        n_trials: Number of strategy trials (multiple testing correction).
+        n_observations: Raw per-period observation count (e.g. daily bars).
+        annualization_factor: Bars/periods per year (252=D1, 6096=H1, ...).
+        skewness: RAW return skewness (0 for normal).
+        kurtosis: RAW return kurtosis (3 for normal — NOT excess).
+        confidence_level: Confidence for the pass threshold.
+    """
+    if annualization_factor <= 1:
+        import warnings
+
+        warnings.warn(
+            f"dsr_from_annualized: annualization_factor={annualization_factor} <= 1 "
+            "looks like a unit error (expected bars/year like 252, 6096).",
+            stacklevel=2,
+        )
+        annualization_factor = 252.0
+
+    return deflated_sharpe_ratio(
+        observed_sharpe=observed_sharpe,
+        n_trials=n_trials,
+        n_observations=n_observations,
+        sharpe_annualization_factor=math.sqrt(annualization_factor),
+        skewness=skewness,
+        kurtosis=kurtosis,
+        confidence_level=confidence_level,
+    )
+
+
 @dataclass
 class MinBTLResult:
     """Result of minimum backtest length calculation."""
