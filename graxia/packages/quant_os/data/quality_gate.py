@@ -653,10 +653,15 @@ def _parse_ts(val):
     if isinstance(val, datetime):
         return val
     if isinstance(val, str):
+        try:
+            # Handles full ISO 8601 including timezone offsets (e.g. "+00:00")
+            # and the "Z" suffix (Python >= 3.11).
+            return datetime.fromisoformat(val.replace("Z", "+00:00"))
+        except ValueError:
+            pass
         for fmt in [
             "%Y-%m-%d %H:%M:%S",
             "%Y-%m-%dT%H:%M:%S",
-            "%Y-%m-%dT%H:%M:%SZ",
             "%Y-%m-%d %H:%M:%S.%f",
             "%Y-%m-%d",
         ]:
