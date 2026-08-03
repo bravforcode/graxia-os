@@ -396,13 +396,13 @@ def main() -> int:
         _ds_spec.loader.exec_module(_ds_mod)
 
         _port_df = result["portfolio_returns"]
-        dsr_result = _ds_mod.deflated_sharpe_ratio(
+        dsr_result = _ds_mod.dsr_from_annualized(
             observed_sharpe=m["sharpe"],
             n_trials=n_trials,
             n_observations=len(_port_df),
-            sharpe_annualization_factor=1.0,
+            annualization_factor=252,  # D1 bars — SP1: unit-correct DSR
             skewness=float(_port_df["return"].skew()),
-            kurtosis=float(_port_df["return"].kurtosis()),
+            kurtosis=float(_port_df["return"].kurtosis()) + 3.0,  # pandas kurtosis() is EXCESS; module expects RAW
         )
         print(f"  Observed Sharpe: {dsr_result.observed_sharpe:.3f}")
         print(f"  Multiple testing adjustment: {dsr_result.multiple_testing_adjustment:.4f}")

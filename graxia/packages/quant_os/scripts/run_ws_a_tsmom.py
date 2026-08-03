@@ -393,7 +393,9 @@ def main():
     data = {}
     for sym in UNIVERSE:
         try:
-            df = load_provenance_checked(sym)
+            # SP1 note: cost config moved XAGUSD/others to removed_assets (2026-08-03);
+            # pre-reg 1028 locked pepperstone_razor table in harness — same as 3008/1032.
+            df = load_provenance_checked(sym, require_cost_calibration=False)
             data[sym] = df
             print(f"  {sym}: {len(df)} bars, {df['time'].min().date()} to {df['time'].max().date()}")
         except Exception as e:
@@ -479,15 +481,15 @@ def main():
         _ds_mod = importlib.util.module_from_spec(_ds_spec)
         _ds_spec.loader.exec_module(_ds_mod)
 
-        # Compute DSR
+        # Compute DSR — annualized Sharpe, daily bars: de-annualize via helper (SP1)
         _port_df = result["portfolio_returns"]
-        dsr_result = _ds_mod.deflated_sharpe_ratio(
+        dsr_result = _ds_mod.dsr_from_annualized(
             observed_sharpe=m["sharpe"],
             n_trials=n_trials,
             n_observations=len(_port_df),
-            sharpe_annualization_factor=1.0,  # TODO(DSR-AUDIT): unaudited call site, factor=1.0 preserves prior (possibly-incorrect) behavior — see MATH_CORRECTNESS_AUDIT.md
+            annualization_factor=252,  # D1 bars — SP1: unit-correct DSR
             skewness=float(_port_df["return"].skew()),
-            kurtosis=float(_port_df["return"].kurtosis()),
+            kurtosis=float(_port_df["return"].kurtosis()) + 3.0,  # pandas kurtosis() is EXCESS; module expects RAW
         )
         print(f"  Observed Sharpe: {dsr_result.observed_sharpe:.3f}")
         print(f"  Multiple testing adjustment: {dsr_result.multiple_testing_adjustment:.4f}")
