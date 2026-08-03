@@ -83,6 +83,22 @@ class KillSwitch:
             return True
         return asset_class.lower() in self._state.get("killed_classes", [])
 
+    def kill_symbol(self, symbol: str, reason: str, source: str = "system") -> str:
+        """Halt trading for a single symbol. Mirrors _cmd_kill_class but is
+        system-driven (demote pipeline), not Telegram-driven."""
+        killed = self._state.get("killed_symbols", [])
+        if symbol not in killed:
+            killed.append(symbol)
+            self._state["killed_symbols"] = killed
+        self._append_history(f"kill_symbol:{symbol}", source)
+        self._save()
+        return f"KILLED SYMBOL: {symbol} trading halted. Active symbol kills: {killed}"
+
+    def is_symbol_killed(self, symbol: str) -> bool:
+        if self._get_state_enum() == KillSwitchState.ACTIVE:
+            return True
+        return symbol in self._state.get("killed_symbols", [])
+
     @property
     def is_triggered(self) -> bool:
         return self.is_active() or self.is_paused()
@@ -95,6 +111,7 @@ class KillSwitch:
         return {
             "state": self._state.get("state", KillSwitchState.INACTIVE.value),
             "killed_classes": self._state.get("killed_classes", []),
+            "killed_symbols": self._state.get("killed_symbols", []),
             "reason": self._state.get("reason", ""),
             "activated_at_utc": self._state.get("activated_at_utc"),
             "authorized_by": self._state.get("authorized_by"),
@@ -130,6 +147,7 @@ class KillSwitch:
     def deactivate(self, reason: str, authorized_by: str = "system") -> None:
         self._set_state(KillSwitchState.INACTIVE, reason=reason, authorized_by=authorized_by)
         self._state["killed_classes"] = []
+        self._state["killed_symbols"] = []
         self._save()
         self._notify_coordinator(False, reason, authorized_by)
 
@@ -163,6 +181,7 @@ class KillSwitch:
         source = f"telegram:{self._last_user_id}"
         self._set_state(KillSwitchState.INACTIVE, reason="Telegram /resume", authorized_by=source)
         self._state["killed_classes"] = []
+        self._state["killed_symbols"] = []
         self._save()
         self._notify_coordinator(False, "Telegram /resume", source)
         return "RESUMED — normal operation."
@@ -341,6 +360,7 @@ class KillSwitch:
                 # Notify via Telegram if notifier available
                 try:
                     from ..monitoring.telegram_notify import TelegramNotifier
+
                     notifier = TelegramNotifier()
                     notifier.risk_alert(
                         f"KILL SWITCH ENFORCE FAILED: {fail_summary}. "
@@ -365,7 +385,7 @@ class KillSwitch:
                 except PermissionError:
                     # Windows: file locked by another process, retry with backoff
                     if attempt < max_attempts - 1:
-                        time.sleep(0.1 * (2 ** attempt))
+                        time.sleep(0.1 * (2**attempt))
                     else:
                         # Persistent lock — fail-closed
                         logger.critical(
@@ -375,6 +395,7 @@ class KillSwitch:
                         return {
                             "state": KillSwitchState.ACTIVE.value,
                             "killed_classes": [],
+                            "killed_symbols": [],
                             "reason": "State file locked by another process — fail-closed default",
                             "activated_at_utc": datetime.now(UTC).isoformat(),
                             "authorized_by": "system:fail_closed",
@@ -405,6 +426,7 @@ class KillSwitch:
                     return {
                         "state": KillSwitchState.ACTIVE.value,
                         "killed_classes": [],
+                        "killed_symbols": [],
                         "reason": "State file missing or corrupted — fail-closed default",
                         "activated_at_utc": datetime.now(UTC).isoformat(),
                         "authorized_by": "system:fail_closed",
@@ -414,6 +436,7 @@ class KillSwitch:
         return {
             "state": KillSwitchState.INACTIVE.value,
             "killed_classes": [],
+            "killed_symbols": [],
             "reason": "",
             "activated_at_utc": None,
             "authorized_by": "",
@@ -454,7 +477,8 @@ class KillSwitch:
                     os.unlink(tmp_path)
                 if attempt < max_attempts - 1:
                     import time
-                    time.sleep(0.1 * (2 ** attempt))  # 0.1s, 0.2s
+
+                    time.sleep(0.1 * (2**attempt))  # 0.1s, 0.2s
                 else:
                     raise
             except Exception:
