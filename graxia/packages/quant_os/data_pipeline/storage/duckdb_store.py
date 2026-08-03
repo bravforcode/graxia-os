@@ -3,18 +3,19 @@ storage/duckdb_store.py — DuckDB Storage Layer for Analytics
 """
 
 import contextlib
-import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
 import duckdb
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from config import (  # type: ignore[attr-defined]  # resolves to data_pipeline/config.py at runtime via the sys.path.insert above; mypy can't follow that and picks a different `config` module
-    BACKUP_DIR,
-    DUCKDB_PATH,
-)
+try:
+    from data_pipeline.config import BACKUP_DIR, DUCKDB_PATH
+except ImportError:  # standalone tools: data_pipeline dir is on sys.path, so `config` = data_pipeline/config.py
+    from config import (  # type: ignore[attr-defined]  # resolves to data_pipeline/config.py in standalone tool context; mypy can't follow that
+        BACKUP_DIR,
+        DUCKDB_PATH,
+    )
 
 
 class DuckDBStore:

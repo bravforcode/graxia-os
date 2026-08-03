@@ -7,14 +7,11 @@ Covers the signature fix for ``upsert_llm_news_sentiment`` (now accepts
 
 from __future__ import annotations
 
-import sys
 from datetime import datetime, timedelta
-from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "data_pipeline"))
-from storage.duckdb_store import DuckDBStore  # noqa: E402
+from data_pipeline.storage.duckdb_store import DuckDBStore
 
 
 @pytest.fixture()
