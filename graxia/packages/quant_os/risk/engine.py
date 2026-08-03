@@ -19,7 +19,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Protocol
 from uuid import uuid4
 
@@ -62,7 +62,7 @@ class _Layer4:
 # ── Data models ─────────────────────────────────────────────────────────────
 
 
-class RejectReason(str, Enum):
+class RejectReason(StrEnum):
     STALE_SIGNAL = "STALE_SIGNAL"
     LOW_CONVICTION = "LOW_CONVICTION"
     HIGH_RISK = "HIGH_RISK"

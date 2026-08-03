@@ -26,17 +26,20 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 # Import directly to avoid package __init__.py relative imports
-import importlib.util
+import importlib.util  # noqa: E402
+from typing import Any  # noqa: E402
+
 module_name = "diversified_tsmom"
 spec = importlib.util.spec_from_file_location(
     module_name,
     str(project_root / "strategies" / "diversified_tsmom.py"),
 )
+assert spec is not None and spec.loader is not None
 dtsmom_module = importlib.util.module_from_spec(spec)
 sys.modules[module_name] = dtsmom_module
 spec.loader.exec_module(dtsmom_module)
 
-DTSMOMConfig = dtsmom_module.DTSMOMConfig
+DTSMOMConfig: Any = dtsmom_module.DTSMOMConfig
 compute_dtsmom_signals = dtsmom_module.compute_dtsmom_signals
 compute_dtsmom_metrics = dtsmom_module.compute_dtsmom_metrics
 
@@ -90,10 +93,10 @@ def driscoll_kraay_t_stat(
 
     # Newey-West style HAC estimation
     # Simplified: use HAC standard error with bandwidth = n^(1/3)
-    bandwidth = max(1, int(n ** (1/3)))
+    bandwidth = max(1, int(n ** (1 / 3)))
 
     # Newey-West kernel
-    gamma_0 = std_ret ** 2
+    gamma_0 = std_ret**2
     hac_var = gamma_0
 
     for lag in range(1, bandwidth):
@@ -156,20 +159,18 @@ def walk_forward_analysis(
         oos_returns = full_returns.loc[oos_idx]
         oos_metrics = compute_dtsmom_metrics(oos_portfolio, oos_returns, config)
 
-        wfe = (
-            oos_metrics["sharpe"] / is_metrics["sharpe"]
-            if is_metrics["sharpe"] != 0
-            else 0.0
-        )
+        wfe = oos_metrics["sharpe"] / is_metrics["sharpe"] if is_metrics["sharpe"] != 0 else 0.0
 
-        results.append({
-            "window": i + 1,
-            "is_sharpe": is_metrics["sharpe"],
-            "oos_sharpe": oos_metrics["sharpe"],
-            "wfe": wfe,
-            "is_return": is_metrics["total_return"],
-            "oos_return": oos_metrics["total_return"],
-        })
+        results.append(
+            {
+                "window": i + 1,
+                "is_sharpe": is_metrics["sharpe"],
+                "oos_sharpe": oos_metrics["sharpe"],
+                "wfe": wfe,
+                "is_return": is_metrics["total_return"],
+                "oos_return": oos_metrics["total_return"],
+            }
+        )
 
     avg_wfe = np.mean([r["wfe"] for r in results]) if results else 0.0
     positive_oos = sum(1 for r in results if r["oos_sharpe"] > 0)
@@ -185,13 +186,15 @@ def walk_forward_analysis(
 def cost_stress_test(
     prices: pd.DataFrame,
     config: DTSMOMConfig,
-    cost_multipliers: list[float] = [1.0, 1.5, 2.0],
+    cost_multipliers: list[float] | None = None,
 ) -> dict:
     """Run cost stress testing at different cost levels.
 
     Returns:
         Dictionary with metrics at each cost level.
     """
+    if cost_multipliers is None:
+        cost_multipliers = [1.0, 1.5, 2.0]
     results = {}
 
     for mult in cost_multipliers:
@@ -246,7 +249,9 @@ def jackknife_leave_one_out(
         results[asset] = {
             "sharpe": reduced_metrics["sharpe"],
             "delta_sharpe": delta_sharpe,
-            "sharpe_pct_change": delta_sharpe / abs(baseline_metrics["sharpe"]) if baseline_metrics["sharpe"] != 0 else 0,
+            "sharpe_pct_change": delta_sharpe / abs(baseline_metrics["sharpe"])
+            if baseline_metrics["sharpe"] != 0
+            else 0,
             "annual_return": reduced_metrics["annual_return"],
         }
 
@@ -279,7 +284,7 @@ def main():
     # 2. Driscoll-Kraay t-stat
     portfolio_returns = (result.portfolio.shift(1) * returns).sum(axis=1)
     dk_t = driscoll_kraay_t_stat(portfolio_returns, len(prices.columns))
-    print(f"\n--- Driscoll-Kraay t-stat ---")
+    print("\n--- Driscoll-Kraay t-stat ---")
     print(f"  t-stat: {dk_t:.4f}")
     print(f"  PASS (>2.0): {'PASS' if abs(dk_t) > 2.0 else 'FAIL'}")
 
@@ -287,10 +292,14 @@ def main():
     print("\n--- Walk-Forward Analysis ---")
     wf = walk_forward_analysis(prices, config, n_windows=3)
     for w in wf["windows"]:
-        print(f"  Window {w['window']}: IS Sharpe={w['is_sharpe']:.3f}, OOS Sharpe={w['oos_sharpe']:.3f}, WFE={w['wfe']:.3f}")
+        print(
+            f"  Window {w['window']}: IS Sharpe={w['is_sharpe']:.3f}, OOS Sharpe={w['oos_sharpe']:.3f}, WFE={w['wfe']:.3f}"
+        )
     print(f"  Average WFE: {wf['avg_wfe']:.3f}")
     print(f"  Positive OOS: {wf['positive_oos_count']}/{wf['total_windows']}")
-    print(f"  PASS (avg_wfe>0.3 & majority positive): {'PASS' if wf['avg_wfe'] > 0.3 and wf['positive_oos_count'] > wf['total_windows']/2 else 'FAIL'}")
+    print(
+        f"  PASS (avg_wfe>0.3 & majority positive): {'PASS' if wf['avg_wfe'] > 0.3 and wf['positive_oos_count'] > wf['total_windows'] / 2 else 'FAIL'}"
+    )
 
     # 4. Cost stress test
     print("\n--- Cost Stress Test ---")
@@ -305,14 +314,13 @@ def main():
         if asset == "baseline":
             print(f"  Baseline: Sharpe={m['sharpe']:.3f}")
         else:
-            print(f"  Exclude {asset}: Sharpe={m['sharpe']:.3f} (delta={m['delta_sharpe']:.3f}, {m['sharpe_pct_change']:.1%})")
+            print(
+                f"  Exclude {asset}: Sharpe={m['sharpe']:.3f} (delta={m['delta_sharpe']:.3f}, {m['sharpe_pct_change']:.1%})"
+            )
 
     # Check if any single asset exclusion causes Sharpe to flip sign
     baseline_sharpe = jk["baseline"]["sharpe"]
-    sign_flip = any(
-        jk[a]["sharpe"] * baseline_sharpe < 0
-        for a in jk if a != "baseline"
-    )
+    sign_flip = any(jk[a]["sharpe"] * baseline_sharpe < 0 for a in jk if a != "baseline")
     print(f"  Sign flip on exclusion: {'YES (UNROBUST)' if sign_flip else 'NO (ROBUST)'}")
 
     # Compile full report

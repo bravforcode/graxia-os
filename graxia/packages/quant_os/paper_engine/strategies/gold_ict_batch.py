@@ -9,18 +9,21 @@ Plus SL/TP arrays for each bar.
 These replicate the gold_bot strategy logic but compute indicators ONCE,
 making them suitable for WFA/DK-test on large datasets (50K+ bars).
 """
+
 from __future__ import annotations
 
-import numpy as np
 from typing import NamedTuple
+
+import numpy as np
 
 
 class BatchSignals(NamedTuple):
     """Vectorized signal output."""
-    directions: np.ndarray   # (n,) int: 0/1/-1
-    sl: np.ndarray           # (n,) float: stop loss price
-    tp: np.ndarray           # (n,) float: take profit price
-    scores: np.ndarray       # (n,) int: 0-100 score
+
+    directions: np.ndarray  # (n,) int: 0/1/-1
+    sl: np.ndarray  # (n,) float: stop loss price
+    tp: np.ndarray  # (n,) float: take profit price
+    scores: np.ndarray  # (n,) int: 0-100 score
 
 
 def _ema(prices: np.ndarray, period: int) -> np.ndarray:
@@ -78,8 +81,12 @@ def _atr(high: np.ndarray, low: np.ndarray, close: np.ndarray, period: int = 14)
 
 
 def batch_ema_cross(
-    close: np.ndarray, high: np.ndarray, low: np.ndarray,
-    fast: int = 9, slow: int = 21, trend: int = 50,
+    close: np.ndarray,
+    high: np.ndarray,
+    low: np.ndarray,
+    fast: int = 9,
+    slow: int = 21,
+    trend: int = 50,
 ) -> BatchSignals:
     """EMA 9/21 crossover with EMA50 trend filter."""
     n = len(close)
@@ -119,7 +126,9 @@ def batch_ema_cross(
 
 
 def batch_bos_choch(
-    close: np.ndarray, high: np.ndarray, low: np.ndarray,
+    close: np.ndarray,
+    high: np.ndarray,
+    low: np.ndarray,
     swing_lookback: int = 3,
 ) -> BatchSignals:
     """Break of Structure / Change of Character — precompute swings once."""
@@ -180,8 +189,11 @@ def batch_bos_choch(
 
 
 def batch_fvg(
-    close: np.ndarray, high: np.ndarray, low: np.ndarray,
-    lookback: int = 25, buffer: float = 5.0,
+    close: np.ndarray,
+    high: np.ndarray,
+    low: np.ndarray,
+    lookback: int = 25,
+    buffer: float = 5.0,
 ) -> BatchSignals:
     """Fair Value Gap — detect FVG zones and check price proximity."""
     n = len(close)
@@ -221,7 +233,9 @@ def batch_fvg(
 
 
 def batch_rsi(
-    close: np.ndarray, high: np.ndarray, low: np.ndarray,
+    close: np.ndarray,
+    high: np.ndarray,
+    low: np.ndarray,
     period: int = 14,
 ) -> BatchSignals:
     """RSI overbought/oversold signals."""
@@ -263,7 +277,9 @@ def batch_rsi(
 
 
 def batch_supply_demand(
-    close: np.ndarray, high: np.ndarray, low: np.ndarray,
+    close: np.ndarray,
+    high: np.ndarray,
+    low: np.ndarray,
     volume: np.ndarray | None = None,
     zone_pct: float = 0.12,
 ) -> BatchSignals:
@@ -276,8 +292,8 @@ def batch_supply_demand(
     atr = _atr(high, low, close)
 
     for i in range(50, n):
-        recent_lows = low[i - 20:i]
-        recent_highs = high[i - 20:i]
+        recent_lows = low[i - 20 : i]
+        recent_highs = high[i - 20 : i]
         avg_low = np.mean(recent_lows)
         avg_high = np.mean(recent_highs)
         zone_range = avg_high - avg_low
@@ -299,7 +315,7 @@ def batch_supply_demand(
 
         # Volume confirmation
         if volume is not None and i >= 20:
-            avg_vol = np.mean(volume[i - 20:i])
+            avg_vol = np.mean(volume[i - 20 : i])
             if avg_vol > 0 and volume[i] > avg_vol * 1.4:
                 scores[i] += 10
 
@@ -307,7 +323,9 @@ def batch_supply_demand(
 
 
 def batch_london_breakout(
-    close: np.ndarray, high: np.ndarray, low: np.ndarray,
+    close: np.ndarray,
+    high: np.ndarray,
+    low: np.ndarray,
     volume: np.ndarray | None = None,
 ) -> BatchSignals:
     """London session breakout — range of bars [-20:-16] as London range."""
@@ -318,8 +336,8 @@ def batch_london_breakout(
     scores = np.zeros(n, dtype=int)
 
     for i in range(20, n):
-        london_high = np.max(high[i - 20:i - 16])
-        london_low = np.min(low[i - 20:i - 16])
+        london_high = np.max(high[i - 20 : i - 16])
+        london_low = np.min(low[i - 20 : i - 16])
         range_size = london_high - london_low
         if range_size <= 0:
             continue
@@ -336,7 +354,7 @@ def batch_london_breakout(
             tp_arr[i] = close[i] - range_size * 2.5
 
         if volume is not None and i >= 20:
-            avg_vol = np.mean(volume[i - 20:i])
+            avg_vol = np.mean(volume[i - 20 : i])
             if avg_vol > 0 and volume[i] > avg_vol * 1.3:
                 scores[i] += 10
 
@@ -344,7 +362,9 @@ def batch_london_breakout(
 
 
 def batch_vwap_rejection(
-    close: np.ndarray, high: np.ndarray, low: np.ndarray,
+    close: np.ndarray,
+    high: np.ndarray,
+    low: np.ndarray,
     volume: np.ndarray | None = None,
 ) -> BatchSignals:
     """VWAP rejection — price crosses VWAP level."""
@@ -385,7 +405,7 @@ def batch_vwap_rejection(
                 tp_arr[i] = close[i] + a * 2.0
 
         if volume is not None and i >= 20:
-            avg_vol = np.mean(volume[i - 20:i])
+            avg_vol = np.mean(volume[i - 20 : i])
             if avg_vol > 0 and volume[i] > avg_vol * 1.2:
                 scores[i] += 10
 
@@ -393,8 +413,11 @@ def batch_vwap_rejection(
 
 
 def batch_liquidity_sweep(
-    close: np.ndarray, high: np.ndarray, low: np.ndarray,
-    lookback: int = 20, tolerance: float = 0.0005,
+    close: np.ndarray,
+    high: np.ndarray,
+    low: np.ndarray,
+    lookback: int = 20,
+    tolerance: float = 0.0005,
 ) -> BatchSignals:
     """Liquidity sweep — detect equal highs/lows and sweep."""
     n = len(close)
@@ -414,7 +437,7 @@ def batch_liquidity_sweep(
                 continue
             # Equal highs (buy-side liquidity)
             if high[i] > 0 and abs(high[i] - high[j]) / high[i] < tolerance:
-                sweep_high = np.max(high[min(i, j):max(i, j) + 1])
+                sweep_high = np.max(high[min(i, j) : max(i, j) + 1])
                 if sweep_high > high[i] and close[i] < high[i]:
                     dirs[i] = -1
                     scores[i] = 80
@@ -424,7 +447,7 @@ def batch_liquidity_sweep(
 
             # Equal lows (sell-side liquidity)
             if low[i] > 0 and abs(low[i] - low[j]) / low[i] < tolerance:
-                sweep_low = np.min(low[min(i, j):max(i, j) + 1])
+                sweep_low = np.min(low[min(i, j) : max(i, j) + 1])
                 if sweep_low < low[i] and close[i] > low[i]:
                     dirs[i] = 1
                     scores[i] = 80
@@ -439,7 +462,9 @@ def batch_liquidity_sweep(
 
 
 def batch_multi_tf_align(
-    close: np.ndarray, high: np.ndarray, low: np.ndarray,
+    close: np.ndarray,
+    high: np.ndarray,
+    low: np.ndarray,
 ) -> BatchSignals:
     """Multi-timeframe EMA alignment — single TF proxy (EMA20/50 alignment)."""
     n = len(close)
@@ -472,8 +497,11 @@ def batch_multi_tf_align(
 
 
 def batch_fibonacci(
-    close: np.ndarray, high: np.ndarray, low: np.ndarray,
-    lookback: int = 50, proximity_pct: float = 0.003,
+    close: np.ndarray,
+    high: np.ndarray,
+    low: np.ndarray,
+    lookback: int = 50,
+    proximity_pct: float = 0.003,
 ) -> BatchSignals:
     """Fibonacci retracement — 50-bar swing levels."""
     n = len(close)
@@ -484,8 +512,8 @@ def batch_fibonacci(
     atr = _atr(high, low, close)
 
     for i in range(lookback, n):
-        swing_high = np.max(high[i - lookback:i])
-        swing_low = np.min(low[i - lookback:i])
+        swing_high = np.max(high[i - lookback : i])
+        swing_low = np.min(low[i - lookback : i])
         rng = swing_high - swing_low
         if rng <= 0:
             continue
@@ -527,7 +555,9 @@ def batch_fibonacci(
 
 
 def batch_order_block(
-    close: np.ndarray, high: np.ndarray, low: np.ndarray,
+    close: np.ndarray,
+    high: np.ndarray,
+    low: np.ndarray,
     proximity_pct: float = 0.002,
 ) -> BatchSignals:
     """Order Block — last bearish candle before rally (or vice versa)."""
@@ -572,7 +602,9 @@ def batch_order_block(
 
 
 def batch_news_fade(
-    close: np.ndarray, high: np.ndarray, low: np.ndarray,
+    close: np.ndarray,
+    high: np.ndarray,
+    low: np.ndarray,
     spike_threshold: float = 0.4,
 ) -> BatchSignals:
     """News fade — fade sudden spikes with RSI confirmation."""
@@ -614,7 +646,9 @@ def batch_news_fade(
 
 
 def batch_opening_range(
-    close: np.ndarray, high: np.ndarray, low: np.ndarray,
+    close: np.ndarray,
+    high: np.ndarray,
+    low: np.ndarray,
     volume: np.ndarray | None = None,
     opening_bars: int = 12,
 ) -> BatchSignals:
@@ -626,8 +660,8 @@ def batch_opening_range(
     scores = np.zeros(n, dtype=int)
 
     for i in range(max(20, opening_bars + 1), n):
-        or_high = np.max(high[i - opening_bars:i])
-        or_low = np.min(low[i - opening_bars:i])
+        or_high = np.max(high[i - opening_bars : i])
+        or_low = np.min(low[i - opening_bars : i])
         or_range = or_high - or_low
         if or_range <= 0:
             continue
@@ -644,7 +678,7 @@ def batch_opening_range(
             tp_arr[i] = close[i] - or_range * 2.0
 
         if volume is not None and i >= 20:
-            avg_vol = np.mean(volume[i - 20:i])
+            avg_vol = np.mean(volume[i - 20 : i])
             if avg_vol > 0 and volume[i] > avg_vol * 1.3:
                 scores[i] += 10
 
@@ -684,7 +718,8 @@ def run_batch_signals(
         raise ValueError(f"No batch generator for {strategy_id}. Available: {list(BATCH_REGISTRY.keys())}")
 
     import inspect
-    sig = inspect.signature(fn)
+
+    sig = inspect.signature(fn)  # type: ignore[arg-type]
     params = set(sig.parameters.keys()) - {"close", "high", "low"}
     call_kwargs = {}
     if "volume" in params and volume is not None:
@@ -693,4 +728,4 @@ def run_batch_signals(
         if k in params:
             call_kwargs[k] = v
 
-    return fn(close, high, low, **call_kwargs)
+    return fn(close, high, low, **call_kwargs)  # type: ignore[operator]
