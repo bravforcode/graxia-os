@@ -1,4 +1,5 @@
-"""Permutation DSR on BTCUSD H1 donchian candidate with N=1508 cumulative trials.
+"""Permutation DSR on BTCUSD H1 donchian candidate with cumulative N derived
+from the canonical single source (validation/n_trials.py).
 
 This is step 3 from the plan: check if the candidate passes the same
 >0.95 DSR threshold used in RYDC.
@@ -6,14 +7,18 @@ This is step 3 from the plan: check if the candidate passes the same
 STATUS (2026-07-30): this script and its output (reports/paper_engine/
 candidate_dsr_result.json) are UNGOVERNED. Never committed to git, never
 entered into research/hypothesis_registry.json or any trial_ledger*.json.
-The N_TRIALS=1508 constant below is stale relative to the canonical source
-(validation/n_trials.py::get_reconciled_n_trials(), currently 1050) -- it is
-NOT used in the DSR pass/fail computation itself (decorative only), so this
-did not produce a wrong verdict, but do not quote 1508 anywhere. The
-DSR=1.0/PASSES=YES result already on disk is NOT a registered trial verdict;
-see reports/paper_engine/candidate_dsr_result.INVALID.md before using it for
+N is NOT used in the DSR pass/fail computation itself (decorative only),
+so the output verdict is unaffected by N. The DSR=1.0/PASSES=YES result
+already on disk is NOT a registered trial verdict; see
+reports/paper_engine/candidate_dsr_result.INVALID.md before using it for
 anything.
+
+Reconciliation (2026-08-03, Stream C of audit-reconciliation spec):
+N is imported from validation/n_trials.py::get_reconciled_n_trials()
+(single source of truth). The former hardcoded N literal was removed;
+do not reintroduce hardcoded N literals here.
 """
+
 import json
 import os
 import sys
@@ -24,14 +29,15 @@ _project_root = _script_dir.parent
 os.chdir(_project_root)
 sys.path.insert(0, str(_project_root))
 
-import duckdb
-import numpy as np
+import duckdb  # noqa: E402
+import numpy as np  # noqa: E402
 
-from paper_engine.campaign import CampaignConfig, get_spread_bps
-from paper_engine.engine import run_campaign, _trades_per_year, _permutation_dsr
+from paper_engine.campaign import CampaignConfig, get_spread_bps  # noqa: E402
+from paper_engine.engine import _permutation_dsr, _trades_per_year, run_campaign  # noqa: E402
+from validation.n_trials import get_reconciled_n_trials  # noqa: E402
 
 REPORTS = _project_root / "reports" / "paper_engine"
-N_TRIALS = 1508  # cumulative trials from trial_ledger.json
+N_TRIALS = get_reconciled_n_trials()  # single source of truth (validation/n_trials.py)
 
 
 def main():
@@ -108,18 +114,18 @@ def main():
 
     # 5. Check threshold
     threshold = 0.95
-    passes = dsr_result['dsr'] > threshold
-    print(f"=== Decision ===")
+    passes = dsr_result["dsr"] > threshold
+    print("=== Decision ===")
     print(f"  DSR threshold: {threshold}")
     print(f"  Candidate DSR: {dsr_result['dsr']:.4f}")
     print(f"  PASSES: {'YES' if passes else 'NO'}")
     print()
 
-    # 6. Context: N=1508 cumulative trials
-    print(f"=== Cumulative Context ===")
+    # 6. Context: N derived from canonical source
+    print("=== Cumulative Context ===")
     print(f"  Total trials in program (N): {N_TRIALS}")
-    print(f"  Multiple testing correction applied via permutation test")
-    print(f"  DSR = 1 - p_value (probability this is chance)")
+    print("  Multiple testing correction applied via permutation test")
+    print("  DSR = 1 - p_value (probability this is chance)")
     print()
 
     if passes:
@@ -142,10 +148,10 @@ def main():
         "tpy": round(tpy, 1),
         "total_pnl": round(float(np.sum(pnls)), 2),
         "win_rate_pct": round(float(np.mean(pnls > 0) * 100), 1),
-        "dsr": dsr_result['dsr'],
-        "permutation_p": dsr_result['permutation_p'],
-        "null_95": dsr_result['null_95'],
-        "null_99": dsr_result['null_99'],
+        "dsr": dsr_result["dsr"],
+        "permutation_p": dsr_result["permutation_p"],
+        "null_95": dsr_result["null_95"],
+        "null_99": dsr_result["null_99"],
         "threshold": threshold,
         "passes": passes,
         "n_trials_cumulative": N_TRIALS,
