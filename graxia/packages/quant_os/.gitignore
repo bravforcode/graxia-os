@@ -86,3 +86,4 @@ data/kill_switch_state.json
 data/visual_index/quant_meta.json
 data/manifests/XAUUSD_D1.manifest.json
 tests/.test_tmp/
+validation/.experiment_registry.json
