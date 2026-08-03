@@ -1,5 +1,6 @@
 """Phase 5 integration tests — statistical validation."""
 
+import math
 import pytest
 
 from graxia.packages.quant_os.validation.bootstrap_sensitivity import bootstrap_confidence_interval
@@ -43,7 +44,7 @@ def test_deflated_sharpe_works():
         observed_sharpe=1.5,
         n_trials=100,
         n_observations=252,
-        sharpe_annualization_factor=1.0,
+        sharpe_annualization_factor=math.sqrt(252),
     )
     assert result.observed_sharpe == 1.5
     assert result.multiple_testing_adjustment > 0

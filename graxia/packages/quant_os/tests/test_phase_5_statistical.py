@@ -1,12 +1,13 @@
 """Phase 5 — Statistical validation tests."""
 
+import math
 from graxia.packages.quant_os.validation.deflated_sharpe import deflated_sharpe_ratio
 from graxia.packages.quant_os.validation.probability_overfitting import calculate_pbo
 
 
 def test_deflated_sharpe_zero_trials():
     """Zero trials returns full penalty."""
-    result = deflated_sharpe_ratio(observed_sharpe=1.0, n_trials=0, n_observations=100, sharpe_annualization_factor=1.0)
+    result = deflated_sharpe_ratio(observed_sharpe=1.0, n_trials=0, n_observations=100, sharpe_annualization_factor=math.sqrt(252))
     assert result.observed_sharpe == 1.0
     assert result.deflated_sharpe == 1.0
     assert result.probability_alpha == 1.0
@@ -16,7 +17,7 @@ def test_deflated_sharpe_zero_trials():
 def test_deflated_sharpe_high_sharpe():
     """High Sharpe with many observations passes threshold."""
     result = deflated_sharpe_ratio(
-        observed_sharpe=3.0, n_trials=10, n_observations=1000, sharpe_annualization_factor=1.0
+        observed_sharpe=3.0, n_trials=10, n_observations=1000, sharpe_annualization_factor=math.sqrt(252)
     )
     assert result.observed_sharpe == 3.0
     # deflated_sharpe is now probability_alpha (low = good)
@@ -27,10 +28,10 @@ def test_deflated_sharpe_high_sharpe():
 def test_deflated_sharpe_multiple_testing_penalty():
     """More trials increases the adjustment, penalizing false positives."""
     low_trials = deflated_sharpe_ratio(
-        observed_sharpe=1.5, n_trials=5, n_observations=500, sharpe_annualization_factor=1.0
+        observed_sharpe=1.5, n_trials=5, n_observations=500, sharpe_annualization_factor=math.sqrt(252)
     )
     high_trials = deflated_sharpe_ratio(
-        observed_sharpe=1.5, n_trials=500, n_observations=500, sharpe_annualization_factor=1.0
+        observed_sharpe=1.5, n_trials=500, n_observations=500, sharpe_annualization_factor=math.sqrt(252)
     )
     assert high_trials.multiple_testing_adjustment > low_trials.multiple_testing_adjustment
 

@@ -32,13 +32,13 @@ def test_full_pipeline_clean_strategy():
     observed_sharpe = (sr_mean / sr_std) * (252**0.5) if sr_std > 0 else 0
 
     dsr = deflated_sharpe_ratio(
-        observed_sharpe=observed_sharpe, n_trials=20, n_observations=5000, sharpe_annualization_factor=1.0
+        observed_sharpe=observed_sharpe, n_trials=20, n_observations=5000, sharpe_annualization_factor=math.sqrt(252)
     )
     assert dsr.observed_sharpe > 0
 
     # 3. MinBTL — should have enough data
     btl = min_backtest_length(
-        observed_sharpe=observed_sharpe, n_trials=20, sharpe_annualization_factor=1.0, current_observations=5000
+        observed_sharpe=observed_sharpe, n_trials=20, sharpe_annualization_factor=math.sqrt(252), current_observations=5000
     )
     assert btl.min_observations > 0
 
@@ -234,10 +234,10 @@ def test_pipeline_overfitted_vs_clean():
 
 def test_dsr_multiple_testing_adjustment():
     """DSR adjustment increases with more trials."""
-    r1 = deflated_sharpe_ratio(observed_sharpe=2.0, n_trials=10, n_observations=5000, sharpe_annualization_factor=1.0)
-    r10 = deflated_sharpe_ratio(observed_sharpe=2.0, n_trials=100, n_observations=5000, sharpe_annualization_factor=1.0)
+    r1 = deflated_sharpe_ratio(observed_sharpe=2.0, n_trials=10, n_observations=5000, sharpe_annualization_factor=math.sqrt(252))
+    r10 = deflated_sharpe_ratio(observed_sharpe=2.0, n_trials=100, n_observations=5000, sharpe_annualization_factor=math.sqrt(252))
     r100 = deflated_sharpe_ratio(
-        observed_sharpe=2.0, n_trials=1000, n_observations=5000, sharpe_annualization_factor=1.0
+        observed_sharpe=2.0, n_trials=1000, n_observations=5000, sharpe_annualization_factor=math.sqrt(252)
     )
     assert r1.multiple_testing_adjustment < r10.multiple_testing_adjustment < r100.multiple_testing_adjustment
 
@@ -246,12 +246,12 @@ def test_min_btl_sufficient_insufficient():
     """MinBTL correctly identifies sufficient vs insufficient data."""
     # High Sharpe, few trials → should be sufficient with 5000 bars
     s = min_backtest_length(
-        observed_sharpe=3.0, n_trials=10, sharpe_annualization_factor=1.0, current_observations=5000
+        observed_sharpe=3.0, n_trials=10, sharpe_annualization_factor=math.sqrt(252), current_observations=5000
     )
     assert s.sufficient is True
 
     # Zero observations should always be insufficient
     ns = min_backtest_length(
-        observed_sharpe=3.0, n_trials=100000, sharpe_annualization_factor=1.0, current_observations=0
+        observed_sharpe=3.0, n_trials=100000, sharpe_annualization_factor=math.sqrt(252), current_observations=0
     )
     assert ns.sufficient is False
