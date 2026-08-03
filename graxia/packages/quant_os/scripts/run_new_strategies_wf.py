@@ -46,7 +46,7 @@ ARTIFACTS_DIR = ROOT / "artifacts" / "new_strategies_wf"
 REPORT_PATH = ROOT / "reports" / "new_strategies_validation.json"
 
 from paper_engine.campaign import get_round_trip_cost_bps  # noqa: E402
-from provenance import COST_CALIBRATED_SYMBOLS, require_cost_calibrated  # noqa: E402
+from provenance import cost_calibrated_symbols, require_cost_calibrated  # noqa: E402
 
 # ─── Strategy Registry ──────────────────────────────────────────────────
 
@@ -1084,7 +1084,7 @@ def main():
         default=None,
         help="Round-trip cost in bps. If omitted, uses the real measured "
         "XAUUSD spread for calibrated strategies and skips strategies whose "
-        "symbol(s) have no verified cost data (see COST_CALIBRATED_SYMBOLS) "
+        "symbol(s) have no verified cost data (see cost_calibrated_symbols()) "
         "instead of silently defaulting to a flat guess -- that guess is "
         "exactly the fabrication trial #1030 was invalidated for.",
     )
@@ -1111,13 +1111,13 @@ def main():
 
         if args.cost_bps is not None:
             cost_bps = args.cost_bps  # explicit user override, honored as-is
-        elif all(s in COST_CALIBRATED_SYMBOLS for s in info["symbols"]):
-            require_cost_calibrated(info["symbols"][0])
+        elif all(s in cost_calibrated_symbols(mode="paper") for s in info["symbols"]):
+            require_cost_calibrated(info["symbols"][0], mode="paper")
             cost_bps = get_round_trip_cost_bps(info["symbols"][0])
         else:
             print(
                 f"  SKIPPED: {info['symbols']} not fully cost-calibrated "
-                f"({sorted(COST_CALIBRATED_SYMBOLS)}). Pass --cost-bps to "
+                f"({sorted(cost_calibrated_symbols(mode='paper'))}). Pass --cost-bps to "
                 f"override with an explicit assumed value."
             )
             continue

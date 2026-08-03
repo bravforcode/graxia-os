@@ -377,7 +377,7 @@ def main():
         # instead of a silent flat guess.
         with open(args.cost_config) as f:
             cost_cfg = json.load(f)
-        require_cost_calibrated(args.symbol)
+        require_cost_calibrated(args.symbol, mode="paper")
         sym_cfg = cost_cfg.get("assets", {})[args.symbol]
         round_trip_bps = sym_cfg.get("round_trip_bps_measured", sym_cfg.get("spread_bps_measured", 0.0) * 2)
         args.spread_cost = round_trip_bps / 10000.0

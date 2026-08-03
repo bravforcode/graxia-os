@@ -671,7 +671,7 @@ def main():
     # (load_csv("XAUUSD", "D1") below, expanding_wf_validate always
     # called with symbol="XAUUSD"). cost_bps=10 was a flat guess with no
     # link to measured spread -- same fabrication shape as trial #1030.
-    require_cost_calibrated("XAUUSD")
+    require_cost_calibrated("XAUUSD", mode="paper")
     XAU_COST_BPS = get_round_trip_cost_bps("XAUUSD")  # noqa: N806
 
     # Load data

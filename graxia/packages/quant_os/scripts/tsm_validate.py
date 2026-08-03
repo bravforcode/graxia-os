@@ -455,7 +455,7 @@ def main():
     # to canonical symbols before gating so this can't silently run an
     # uncalibrated asset through the flat COST_BPS=5 assumption below.
     for _asset in ASSETS:
-        require_cost_calibrated_tsm_asset(_asset)
+        require_cost_calibrated_tsm_asset(_asset, mode="paper")
 
     data = load_data()
     print(f"Data: {len(data)} rows, {data.index.min().date()} to {data.index.max().date()}")

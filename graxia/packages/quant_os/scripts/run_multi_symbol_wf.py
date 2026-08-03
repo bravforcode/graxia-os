@@ -18,7 +18,7 @@ sys.path.insert(0, str(BASE / "scripts"))
 sys.path.insert(0, str(BASE))
 
 from paper_engine.campaign import get_round_trip_cost_bps  # noqa: E402
-from provenance import COST_CALIBRATED_SYMBOLS, require_cost_calibrated  # noqa: E402
+from provenance import cost_calibrated_symbols, require_cost_calibrated  # noqa: E402
 from scripts.backtest_cost import evaluate_backtest  # noqa: E402
 
 # ── Config ──
@@ -33,7 +33,7 @@ MIN_TRADES = 10
 # config/cost_calibration.json" but never actually re-read from it --
 # classified MEDIUM RISK in reports/bypass_loader_classification_20260730.md
 # (identical pattern to run_complete_analysis.py, fixed the same way earlier
-# today). run_walk_forward() below now gates on COST_CALIBRATED_SYMBOLS and
+# today). run_walk_forward() below now gates on cost_calibrated_symbols() and
 # reads get_round_trip_cost_bps() live instead. No measured slippage exists
 # anywhere in cost_calibration.json (slippage_bps_measured is null for every
 # asset), so slippage_p90 is 0 rather than a guess.
@@ -89,10 +89,10 @@ def compute_features(df, close_col="close"):
 
 def run_walk_forward(df, symbol, tf):
     """Run walk-forward backtest with deflated Sharpe."""
-    if symbol not in COST_CALIBRATED_SYMBOLS:
-        print(f"  SKIPPED: {symbol} not cost-calibrated ({sorted(COST_CALIBRATED_SYMBOLS)})")
+    if symbol not in cost_calibrated_symbols(mode="paper"):
+        print(f"  SKIPPED: {symbol} not cost-calibrated ({sorted(cost_calibrated_symbols(mode='paper'))})")
         return None
-    require_cost_calibrated(symbol)
+    require_cost_calibrated(symbol, mode="paper")
     spread_cost = get_round_trip_cost_bps(symbol) / 10000.0
     slippage_p90 = 0.0
 

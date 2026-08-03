@@ -38,9 +38,9 @@ REPORT_PATH = ROOT / "reports" / "comprehensive_edge_search.json"
 
 sys.path.insert(0, str(ROOT))
 from paper_engine.campaign import get_round_trip_cost_bps  # noqa: E402
-from provenance import COST_CALIBRATED_SYMBOLS, require_cost_calibrated  # noqa: E402
+from provenance import cost_calibrated_symbols, require_cost_calibrated  # noqa: E402
 
-require_cost_calibrated("XAUUSD")
+require_cost_calibrated("XAUUSD", mode="paper")
 XAU_COST_BPS = get_round_trip_cost_bps("XAUUSD")  # real measured round-trip cost, replaces the old flat 10bps guess
 
 # ─── Setup package imports ──────────────────────────────────────────────
@@ -633,7 +633,7 @@ def prong_new_search():
         # flat assumed cost_bps=10 -- the same fabrication shape that
         # invalidated trial #1030, just spread across 10 symbols instead of
         # 16. Skip anything without real calibration instead of guessing.
-        if sym not in COST_CALIBRATED_SYMBOLS:
+        if sym not in cost_calibrated_symbols(mode="paper"):
             print(f"  > {sym}: SKIPPED (no verified cost-calibration data)")
             continue
         sym_cost_bps = get_round_trip_cost_bps(sym)

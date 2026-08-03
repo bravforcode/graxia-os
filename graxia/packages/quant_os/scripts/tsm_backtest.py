@@ -237,7 +237,7 @@ def main():
     # to canonical symbols before gating so this can't silently run an
     # uncalibrated asset through the flat COST_BPS=5 assumption below.
     for _asset in ASSETS:
-        require_cost_calibrated_tsm_asset(_asset)
+        require_cost_calibrated_tsm_asset(_asset, mode="paper")
 
     print(f"Data: {len(data)} rows, {data.index.min()} to {data.index.max()}")
     print(f"Assets: {[a for a in ASSETS if f'{a}_close' in data.columns]}")

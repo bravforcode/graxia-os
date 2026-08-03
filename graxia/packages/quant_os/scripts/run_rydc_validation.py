@@ -438,7 +438,7 @@ def run_rydc_backtest(
     if end_idx is None:
         end_idx = len(data)
 
-    require_cost_calibrated(RYDC_SYMBOL)
+    require_cost_calibrated(RYDC_SYMBOL, mode="paper")
     round_trip_cost_pct = get_round_trip_cost_bps(RYDC_SYMBOL) / 10000.0
 
     ols = RollingOLS(window=config.ols_window, z_window=config.z_window)

@@ -37,7 +37,7 @@ REPORT_PATH = ROOT / "reports" / "full_pipeline_report.json"
 
 sys.path.insert(0, str(ROOT))
 from paper_engine.campaign import get_round_trip_cost_bps  # noqa: E402
-from provenance import COST_CALIBRATED_SYMBOLS, require_cost_calibrated  # noqa: E402
+from provenance import cost_calibrated_symbols, require_cost_calibrated  # noqa: E402
 
 # ─── Setup ──────────────────────────────────────────────────────────────
 
@@ -492,7 +492,7 @@ def main():
     # symbol these frozen configs are actually backtested against once
     # donchian_20_eurusd (uncalibrated) is skipped below, so use its real
     # measured round-trip spread instead of a guess.
-    require_cost_calibrated("XAUUSD")
+    require_cost_calibrated("XAUUSD", mode="paper")
     XAU_COST_BPS = get_round_trip_cost_bps("XAUUSD")  # noqa: N806
 
     donchian_55 = DonchianConfig(period=55, vol_filter_pctile=0.7, cost_bps=XAU_COST_BPS)
@@ -532,7 +532,7 @@ def main():
         # 2026-07-30: run_wf_validation loads real per-symbol data via
         # load_csv(sym, tf) -- unlike the holdout step below, EURUSD here is
         # genuinely EURUSD data. Skip rather than guess its cost.
-        if sym not in COST_CALIBRATED_SYMBOLS:
+        if sym not in cost_calibrated_symbols(mode="paper"):
             print(f"    SKIPPED (no verified cost-calibration data for {sym})")
             wf_results[name] = None
             continue

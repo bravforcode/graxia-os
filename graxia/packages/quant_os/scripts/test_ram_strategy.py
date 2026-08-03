@@ -206,7 +206,7 @@ def main():
     # per-asset cost calibration so this file cannot silently produce a
     # cost-free verdict against an uncalibrated symbol.
     for asset in config.universe:
-        require_cost_calibrated(asset)
+        require_cost_calibrated(asset, mode="paper")
 
     prices = load_data(str(data_dir), config.universe)
 

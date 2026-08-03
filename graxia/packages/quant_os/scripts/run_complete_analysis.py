@@ -17,7 +17,7 @@ sys.path.insert(0, "scripts")
 from backtest_cost import evaluate_backtest
 
 from paper_engine.campaign import get_round_trip_cost_bps  # noqa: E402
-from provenance import COST_CALIBRATED_SYMBOLS, require_cost_calibrated  # noqa: E402
+from provenance import cost_calibrated_symbols, require_cost_calibrated  # noqa: E402
 
 # 2026-07-30: these were a hardcoded snapshot of spread+slippage constants,
 # never re-read from config/cost_calibration.json -- classified MEDIUM RISK
@@ -83,10 +83,10 @@ def buy_and_hold(df, lot_mult=1.0, contract_mult=100):
 
 def run_analysis(symbol, tf):
     """Run walk-forward + deflated sharpe for one symbol/tf."""
-    if symbol not in COST_CALIBRATED_SYMBOLS:
-        print(f"  SKIPPED: {symbol} not cost-calibrated ({sorted(COST_CALIBRATED_SYMBOLS)})")
+    if symbol not in cost_calibrated_symbols(mode="paper"):
+        print(f"  SKIPPED: {symbol} not cost-calibrated ({sorted(cost_calibrated_symbols(mode='paper'))})")
         return None
-    require_cost_calibrated(symbol)
+    require_cost_calibrated(symbol, mode="paper")
     spread_cost = get_round_trip_cost_bps(symbol) / 10000.0  # real measured, no slippage (unmeasured)
     slippage_p90 = 0.0
     df = load_data(symbol, tf)

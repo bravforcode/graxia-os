@@ -121,7 +121,7 @@ BASELINE: frozenset[str] = frozenset(
         # comprehensive_edge_search.py removed 2026-07-30: flat cost_bps=10
         # replaced with real get_round_trip_cost_bps per symbol; XAUUSD-only prongs
         # use a real XAU_COST_BPS constant, the 10-instrument new_search
-        # scan now skips any symbol not in COST_CALIBRATED_SYMBOLS instead
+        # scan now skips any symbol not in provenance.cost_calibrated_symbols() instead
         # of guessing its cost (verified live: XAGUSD/XPTUSD/XPDUSD/EURUSD/
         # GBPUSD/AUDUSD/BTCUSD/ETHUSD skipped, XAUUSD/USDJPY ran for real).
         # See reports/bypass_loader_classification_20260730.md.
@@ -144,7 +144,7 @@ BASELINE: frozenset[str] = frozenset(
         # run_complete_analysis.py removed 2026-07-30: hardcoded SYMBOLS
         # spread/slippage snapshot replaced with a live gate + real
         # get_round_trip_cost_bps read for XAUUSD; EURUSD/GBPUSD (not in
-        # COST_CALIBRATED_SYMBOLS) skipped rather than run on the stale
+        # cost_calibrated_symbols()) skipped rather than run on the stale
         # copy. No slippage figure is measured anywhere in
         # cost_calibration.json, so slippage_p90 is set to 0 instead of
         # keeping a guess. Verified live: XAUUSD M15/H1 ran with real cost
@@ -158,7 +158,7 @@ BASELINE: frozenset[str] = frozenset(
         # all took it as a bare default) replaced with the real measured
         # XAUUSD spread (get_round_trip_cost_bps). The WF step's donchian_20_eurusd
         # entry (real per-symbol data via load_csv) is now skipped rather
-        # than cost-guessed since EURUSD isn't in COST_CALIBRATED_SYMBOLS;
+        # than cost-guessed since EURUSD isn't in cost_calibrated_symbols();
         # the holdout step always reads XAUUSD-only holdout.csv regardless
         # of nominal symbol, so it uses the real XAUUSD spread for all 5
         # entries. Verified live: WF skip message printed for EURUSD,
