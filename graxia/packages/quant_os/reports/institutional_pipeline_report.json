@@ -1,192 +1,159 @@
 {
-  "timestamp": "2026-07-16T09:20:48.253146+00:00",
+  "timestamp": "2026-08-03T21:01:24.423131+00:00",
   "layer1_multiple_testing": {
     "deflated_sharpe": {
       "momentum_12m": {
-        "observed_sharpe": 0.2825,
-        "deflated_sharpe": 0.0,
-        "probability_alpha": 0.0,
-        "multiple_testing_adjustment": 0.0485,
-        "passes": true
-      },
-      "donchian_55": {
-        "observed_sharpe": -0.3978,
+        "observed_sharpe": -1.0945,
         "deflated_sharpe": 1.0,
         "probability_alpha": 1.0,
-        "multiple_testing_adjustment": 0.0556,
+        "multiple_testing_adjustment": 2.0625,
+        "passes": false
+      },
+      "donchian_55": {
+        "observed_sharpe": -2.3125,
+        "deflated_sharpe": 1.0,
+        "probability_alpha": 1.0,
+        "multiple_testing_adjustment": 1.5966,
         "passes": false
       },
       "donchian_20": {
-        "observed_sharpe": -0.3881,
+        "observed_sharpe": -1.9723,
         "deflated_sharpe": 1.0,
         "probability_alpha": 1.0,
-        "multiple_testing_adjustment": 0.0541,
+        "multiple_testing_adjustment": 1.3308,
         "passes": false
       },
       "hybrid_mom_mr": {
-        "observed_sharpe": 0.1042,
-        "deflated_sharpe": 0.0,
-        "probability_alpha": 0.0,
-        "multiple_testing_adjustment": 0.0228,
-        "passes": true
-      },
-      "mean_reversion_bb": {
-        "observed_sharpe": 0.0087,
-        "deflated_sharpe": 0.8016,
-        "probability_alpha": 0.8016,
-        "multiple_testing_adjustment": 0.0146,
+        "observed_sharpe": -1.6725,
+        "deflated_sharpe": 1.0,
+        "probability_alpha": 1.0,
+        "multiple_testing_adjustment": 1.398,
         "passes": false
       },
       "dxy_divergence": {
-        "observed_sharpe": 0.1663,
-        "deflated_sharpe": 0.0,
-        "probability_alpha": 0.0,
-        "multiple_testing_adjustment": 0.0283,
-        "passes": true
+        "observed_sharpe": -1.4204,
+        "deflated_sharpe": 1.0,
+        "probability_alpha": 1.0,
+        "multiple_testing_adjustment": 0.9618,
+        "passes": false
       }
     },
     "pbo": {
-      "pbo": 0.028571,
+      "pbo": 0.642857,
       "n_partitions": 8,
       "n_combinations_tested": 70,
-      "passes": true
+      "passes": false
     },
     "bh_adjusted_pvalues": {
-      "momentum_12m": 0.0,
+      "momentum_12m": 1.0,
       "donchian_55": 1.0,
       "donchian_20": 1.0,
-      "hybrid_mom_mr": 0.0,
-      "mean_reversion_bb": 1.0,
-      "dxy_divergence": 0.0
+      "hybrid_mom_mr": 1.0,
+      "dxy_divergence": 1.0
     },
-    "strategies_passing_deflation": [
-      "momentum_12m",
-      "hybrid_mom_mr",
-      "dxy_divergence"
-    ],
-    "verdict": "3/6 pass deflation, PBO=PASS"
+    "strategies_passing_deflation": [],
+    "verdict": "0/5 pass deflation, PBO=FAIL"
   },
   "layer2_portfolio_construction": {
     "correlation_matrix": {
       "momentum_12m": {
         "momentum_12m": 1.0,
-        "donchian_55": -0.0353,
-        "donchian_20": -0.1102,
-        "hybrid_mom_mr": -0.1299,
-        "mean_reversion_bb": 0.1894,
-        "dxy_divergence": -0.0839
+        "donchian_55": 0.0274,
+        "donchian_20": -0.0314,
+        "hybrid_mom_mr": -0.1086,
+        "dxy_divergence": 0.0381
       },
       "donchian_55": {
-        "momentum_12m": -0.0353,
+        "momentum_12m": 0.0274,
         "donchian_55": 1.0,
-        "donchian_20": -0.0624,
-        "hybrid_mom_mr": -0.1879,
-        "mean_reversion_bb": 0.0579,
-        "dxy_divergence": 0.0695
+        "donchian_20": 0.0078,
+        "hybrid_mom_mr": 0.0891,
+        "dxy_divergence": 0.1177
       },
       "donchian_20": {
-        "momentum_12m": -0.1102,
-        "donchian_55": -0.0624,
+        "momentum_12m": -0.0314,
+        "donchian_55": 0.0078,
         "donchian_20": 1.0,
-        "hybrid_mom_mr": -0.0942,
-        "mean_reversion_bb": -0.4159,
-        "dxy_divergence": 0.1636
+        "hybrid_mom_mr": 0.0789,
+        "dxy_divergence": 0.14
       },
       "hybrid_mom_mr": {
-        "momentum_12m": -0.1299,
-        "donchian_55": -0.1879,
-        "donchian_20": -0.0942,
+        "momentum_12m": -0.1086,
+        "donchian_55": 0.0891,
+        "donchian_20": 0.0789,
         "hybrid_mom_mr": 1.0,
-        "mean_reversion_bb": -0.1532,
-        "dxy_divergence": 0.1175
-      },
-      "mean_reversion_bb": {
-        "momentum_12m": 0.1894,
-        "donchian_55": 0.0579,
-        "donchian_20": -0.4159,
-        "hybrid_mom_mr": -0.1532,
-        "mean_reversion_bb": 1.0,
-        "dxy_divergence": -0.2293
+        "dxy_divergence": -0.0205
       },
       "dxy_divergence": {
-        "momentum_12m": -0.0839,
-        "donchian_55": 0.0695,
-        "donchian_20": 0.1636,
-        "hybrid_mom_mr": 0.1175,
-        "mean_reversion_bb": -0.2293,
+        "momentum_12m": 0.0381,
+        "donchian_55": 0.1177,
+        "donchian_20": 0.14,
+        "hybrid_mom_mr": -0.0205,
         "dxy_divergence": 1.0
       }
     },
-    "avg_correlation": -0.0603,
+    "avg_correlation": 0.0339,
     "weights_kelly": {
-      "momentum_12m": 0.4668,
-      "donchian_55": 0.1276,
-      "donchian_20": 0.1276,
-      "hybrid_mom_mr": 0.1399,
-      "mean_reversion_bb": 0.0769,
-      "dxy_divergence": 0.0612
+      "momentum_12m": 0.2,
+      "donchian_55": 0.2,
+      "donchian_20": 0.2,
+      "hybrid_mom_mr": 0.2,
+      "dxy_divergence": 0.2
     },
     "vol_target_weights": {
-      "momentum_12m": 0.6099,
-      "donchian_55": 0.1667,
-      "donchian_20": 0.1667,
-      "hybrid_mom_mr": 0.1828,
-      "mean_reversion_bb": 0.1005,
-      "dxy_divergence": 0.08
+      "momentum_12m": 0.05,
+      "donchian_55": 0.05,
+      "donchian_20": 0.05,
+      "hybrid_mom_mr": 0.05,
+      "dxy_divergence": 0.05
     },
-    "portfolio_vol": 0.1148,
+    "portfolio_vol": 0.9361,
     "kelly_fractions": {
-      "momentum_12m": 0.0267,
-      "donchian_55": 0.0073,
-      "donchian_20": 0.0073,
-      "hybrid_mom_mr": 0.008,
-      "mean_reversion_bb": 0.0044,
-      "dxy_divergence": 0.0035
+      "momentum_12m": 0.01,
+      "donchian_55": 0.01,
+      "donchian_20": 0.01,
+      "hybrid_mom_mr": 0.01,
+      "dxy_divergence": 0.01
     },
-    "verdict": "Avg corr=-0.060, Port vol=0.115, CPPI=1.000"
+    "verdict": "Avg corr=0.034, Port vol=0.936, CPPI=1.000"
   },
   "layer3_cost_capacity": {
     "raw_sharpes": {
-      "momentum_12m": 0.2825,
-      "donchian_55": -0.3978,
-      "donchian_20": -0.3881,
-      "hybrid_mom_mr": 0.1042,
-      "mean_reversion_bb": 0.0087,
-      "dxy_divergence": 0.1663
+      "momentum_12m": -1.0945,
+      "donchian_55": -2.3125,
+      "donchian_20": -1.9723,
+      "hybrid_mom_mr": -1.6725,
+      "dxy_divergence": -1.4204
     },
     "haircut_sharpes": {
-      "momentum_12m": 0.1695,
-      "donchian_55": -0.2387,
-      "donchian_20": -0.2329,
-      "hybrid_mom_mr": 0.0625,
-      "mean_reversion_bb": 0.0052,
-      "dxy_divergence": 0.0998
+      "momentum_12m": -0.6567,
+      "donchian_55": -1.3875,
+      "donchian_20": -1.1834,
+      "hybrid_mom_mr": -1.0035,
+      "dxy_divergence": -0.8522
     },
     "market_impact_bps": {
       "momentum_12m": 0.01,
       "donchian_55": 0.01,
       "donchian_20": 0.01,
       "hybrid_mom_mr": 0.01,
-      "mean_reversion_bb": 0.01,
       "dxy_divergence": 0.01
     },
     "net_sharpes": {
-      "momentum_12m": 0.1673,
-      "donchian_55": -0.2409,
-      "donchian_20": -0.2351,
-      "hybrid_mom_mr": 0.0603,
-      "mean_reversion_bb": 0.003,
-      "dxy_divergence": 0.0976
+      "momentum_12m": -0.6589,
+      "donchian_55": -1.3897,
+      "donchian_20": -1.1856,
+      "hybrid_mom_mr": -1.0057,
+      "dxy_divergence": -0.8544
     },
     "capacity_lots": {
-      "momentum_12m": 31669.0,
+      "momentum_12m": 0,
       "donchian_55": 0,
       "donchian_20": 0,
-      "hybrid_mom_mr": 4309.0,
-      "mean_reversion_bb": 30.0,
-      "dxy_divergence": 10974.0
+      "hybrid_mom_mr": 0,
+      "dxy_divergence": 0
     },
-    "verdict": "4/6 strategies have positive net Sharpe after costs"
+    "verdict": "0/5 strategies have positive net Sharpe after costs"
   },
   "layer4_risk_overlays": {
     "daily_loss_limit": -2.0,
@@ -200,52 +167,44 @@
   "layer5_execution_quality": {
     "tca_metrics": {
       "momentum_12m": {
-        "avg_return_bps": 2.47,
-        "vol_bps": 138.66,
-        "win_rate": 0.5167,
-        "profit_factor": 1.01,
-        "slippage_estimate_bps": 13.87,
-        "fill_quality_score": -4.6185
+        "avg_return_bps": -59.57,
+        "vol_bps": 863.98,
+        "win_rate": 0.4332,
+        "profit_factor": 0.68,
+        "slippage_estimate_bps": 86.4,
+        "fill_quality_score": -0.4505
       },
       "donchian_55": {
-        "avg_return_bps": -3.49,
-        "vol_bps": 139.39,
-        "win_rate": 0.4732,
-        "profit_factor": 1.0,
-        "slippage_estimate_bps": 13.94,
-        "fill_quality_score": -2.9909
+        "avg_return_bps": -296.56,
+        "vol_bps": 2035.77,
+        "win_rate": 0.4831,
+        "profit_factor": 0.17,
+        "slippage_estimate_bps": 203.58,
+        "fill_quality_score": 0.3135
       },
       "donchian_20": {
-        "avg_return_bps": -3.41,
-        "vol_bps": 139.32,
-        "win_rate": 0.4733,
-        "profit_factor": 1.01,
-        "slippage_estimate_bps": 13.93,
-        "fill_quality_score": -3.0907
+        "avg_return_bps": -61.98,
+        "vol_bps": 498.84,
+        "win_rate": 0.4523,
+        "profit_factor": 0.34,
+        "slippage_estimate_bps": 49.88,
+        "fill_quality_score": 0.1951
       },
       "hybrid_mom_mr": {
-        "avg_return_bps": 0.73,
-        "vol_bps": 111.63,
-        "win_rate": 0.5047,
-        "profit_factor": 1.01,
-        "slippage_estimate_bps": 11.16,
-        "fill_quality_score": -14.2285
-      },
-      "mean_reversion_bb": {
-        "avg_return_bps": 0.05,
-        "vol_bps": 83.65,
-        "win_rate": 0.518,
-        "profit_factor": 0.93,
-        "slippage_estimate_bps": 8.37,
-        "fill_quality_score": -181.2079
+        "avg_return_bps": -34.84,
+        "vol_bps": 330.72,
+        "win_rate": 0.4177,
+        "profit_factor": 0.58,
+        "slippage_estimate_bps": 33.07,
+        "fill_quality_score": 0.0508
       },
       "dxy_divergence": {
-        "avg_return_bps": 0.36,
-        "vol_bps": 33.88,
-        "win_rate": 0.4953,
-        "profit_factor": 1.06,
-        "slippage_estimate_bps": 3.39,
-        "fill_quality_score": -8.5437
+        "avg_return_bps": -52.0,
+        "vol_bps": 581.13,
+        "win_rate": 0.4286,
+        "profit_factor": 0.4,
+        "slippage_estimate_bps": 58.11,
+        "fill_quality_score": -0.1176
       }
     },
     "order_type_recommendations": {
@@ -253,10 +212,9 @@
       "donchian_55": "LIMIT_ORDER_AGGRESSIVE",
       "donchian_20": "LIMIT_ORDER_AGGRESSIVE",
       "hybrid_mom_mr": "LIMIT_ORDER_AGGRESSIVE",
-      "mean_reversion_bb": "LIMIT_ORDER_AGGRESSIVE",
       "dxy_divergence": "LIMIT_ORDER_AGGRESSIVE"
     },
-    "verdict": "6 strategies TCA'd"
+    "verdict": "5 strategies TCA'd"
   },
   "layer6_governance": {
     "hypothesis_registry": {
@@ -284,12 +242,6 @@
         "economic_rationale": "TBD",
         "revalidation_date": null
       },
-      "mean_reversion_bb": {
-        "hypothesis_documented": false,
-        "pre_registered_params": true,
-        "economic_rationale": "TBD",
-        "revalidation_date": null
-      },
       "dxy_divergence": {
         "hypothesis_documented": false,
         "pre_registered_params": true,
@@ -299,6 +251,6 @@
     },
     "revalidation_schedule": "quarterly",
     "sacred_holdout_remaining": 0,
-    "verdict": "GOVERNANCE_INCOMPLETE: 6 strategies need hypothesis docs"
+    "verdict": "GOVERNANCE_INCOMPLETE: 5 strategies need hypothesis docs"
   }
 }

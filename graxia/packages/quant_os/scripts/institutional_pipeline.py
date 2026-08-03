@@ -639,6 +639,7 @@ def main():
     print("=" * 64)
 
     # ── Load data ────────────────────────────────────────────────────────
+    # SP2b: run REAL strategies via edge_search_all engine instead of synthetic simulation.
     data_path = ROOT / "data" / "XAUUSD_D1.csv"
     if not data_path.exists():
         print(f"ERROR: {data_path} not found")
@@ -658,55 +659,62 @@ def main():
     returns = np.diff(np.log(close))
     print(f"\nData: {len(df)} bars, {len(returns)} returns")
 
-    # ── Strategy return simulation ───────────────────────────────────────
-    # In production, these come from walk-forward OOS results
-    # Here we simulate from the strategies' signal logic
-    np.random.seed(42)
+    # ── Real strategy returns (SP2b: replaces synthetic simulation) ──────
+    # Uses edge_search_all.run_engine_for_asset with real strategy classes.
+    _MONO = ROOT.parent.parent.parent  # monorepo root for graxia.packages imports
+    if str(_MONO) not in sys.path:
+        sys.path.insert(0, str(_MONO))
 
-    # Use the 6 strategies from research_backed_pipeline
-    strategy_configs = {
-        "momentum_12m": {"lookback": 252, "vol_mult": 1.0},
-        "donchian_55": {"lookback": 55, "vol_mult": 1.0},
-        "donchian_20": {"lookback": 20, "vol_mult": 1.0},
-        "hybrid_mom_mr": {"lookback": 60, "vol_mult": 0.8},
-        "mean_reversion_bb": {"lookback": 20, "vol_mult": 0.6},
-        "dxy_divergence": {"lookback": 40, "vol_mult": 0.5},
+    from graxia.packages.quant_os.strategies.donchian import DonchianBreakout
+    from graxia.packages.quant_os.strategies.dxy_divergence import DXYDivergence
+    from graxia.packages.quant_os.strategies.hybrid_mom_mr import HybridMomMR
+    from graxia.packages.quant_os.strategies.momentum_12m import Momentum12M
+    from graxia.packages.quant_os.strategies.mrb import MeanReversionBollinger
+
+    _esa_spec = importlib.util.spec_from_file_location(
+        "_esa", str(ROOT / "scripts" / "edge_search_all.py")
+    )
+    _esa_mod = importlib.util.module_from_spec(_esa_spec)
+    _esa_spec.loader.exec_module(_esa_mod)
+
+    # 6 strategies from research_backed_pipeline — real classes (smoke-tested SP2b)
+    strategy_factories = {
+        "momentum_12m": lambda: Momentum12M(lookback=252, atr_period=14, atr_sl_mult=2.0, atr_tp_mult=3.0),
+        "donchian_55": lambda: DonchianBreakout(period=55),
+        "donchian_20": lambda: DonchianBreakout(period=20),
+        "hybrid_mom_mr": lambda: HybridMomMR(lookback=60),
+        "mean_reversion_bb": lambda: MeanReversionBollinger(),
+        "dxy_divergence": lambda: DXYDivergence(lookback=40),
     }
+    PIPELINE_UNIVERSE = ["XAUUSD", "USDJPY"]  # SP2b: cost-calibrated, engine-runnable (CL_F lacks contract spec)
 
     strategy_returns = {}
     strategy_sharpes = {}
     strategy_winrates = {}
     strategy_avg_rr = {}
 
-    for name, cfg in strategy_configs.items():
-        lb = cfg["lookback"]
-        # Simulate signal: momentum/mean-reversion hybrid
-        signal = np.zeros(len(returns))
-        for t in range(lb, len(returns)):
-            hist = returns[t - lb:t]
-            if name.startswith("donchian"):
-                # Donchian: breakout direction
-                signal[t] = 1.0 if returns[t - 1] > 0 else -1.0
-            elif "mean_reversion" in name:
-                # Mean reversion: fade extremes
-                signal[t] = -1.0 if np.sum(hist[-5:]) > 0 else 1.0
-            elif "dxy" in name:
-                # Divergence: partial correlation
-                signal[t] = np.sign(np.mean(hist[-10:])) * 0.5
-            else:
-                # Momentum: trend following
-                signal[t] = 1.0 if np.mean(hist) > 0 else -1.0
+    for name, factory in strategy_factories.items():
+        strat = factory()
+        # Equal-weight cross-asset daily returns from the real engine
+        all_ret = None
+        for sym in PIPELINE_UNIVERSE:
+            try:
+                res = _esa_mod.run_engine_for_asset(sym, strat)
+                daily = _esa_mod.extract_daily_returns(res)
+                if daily is not None and len(daily) > 0:
+                    daily = daily.iloc[:, 0]  # DataFrame -> Series (SP2b fix)
+                    daily.index = pd.RangeIndex(len(daily))
+                    all_ret = daily if all_ret is None else all_ret.add(daily, fill_value=0.0)
+            except Exception as e:
+                print(f"  [WARN] {name}/{sym}: {type(e).__name__}: {str(e)[:70]}")
+        if all_ret is None:
+            continue
+        arr = all_ret.to_numpy() / len(PIPELINE_UNIVERSE)
 
-        strat_returns = signal[lb:] * returns[lb:] * cfg["vol_mult"]
-        # Add realistic noise (slippage, etc.)
-        strat_returns += np.random.normal(0, 0.0005, len(strat_returns))
+        strategy_returns[name] = arr.tolist()
 
-        strategy_returns[name] = strat_returns.tolist()
-
-        # Compute metrics
-        arr = strat_returns
-        vol = float(arr.std())
-        ann_return = float(arr.mean() * 252)
+        vol = float(np.std(arr))
+        ann_return = float(np.mean(arr) * 252)
         ann_vol = vol * math.sqrt(252)
         sharpe = ann_return / ann_vol if ann_vol > 0 else 0
         wr = float(np.mean(arr > 0))
@@ -718,7 +726,13 @@ def main():
         strategy_winrates[name] = round(wr, 4)
         strategy_avg_rr[name] = round(avg_rr, 4)
 
-    n_trials = 31  # Total strategies tested across all research
+    # SP2b: reconciled cumulative trial count (was hardcoded 31)
+    import importlib.util as _nt_ilu
+
+    _nt_spec = _nt_ilu.spec_from_file_location("n_trials", str(ROOT / "validation" / "n_trials.py"))
+    _nt_mod = importlib.util.module_from_spec(_nt_spec)
+    _nt_spec.loader.exec_module(_nt_mod)
+    n_trials = _nt_mod.get_reconciled_n_trials()
 
     print(f"\nStrategies: {list(strategy_returns.keys())}")
     print(f"Total trials (n): {n_trials}")
