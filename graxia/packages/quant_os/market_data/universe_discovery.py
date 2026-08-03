@@ -127,20 +127,28 @@ def main() -> None:
     parser.add_argument("--write", action="store_true", help="Write candidates into the universe file")
     args = parser.parse_args()
 
-    universe_path = Path(args.universe)
-    universe = json.loads(universe_path.read_text(encoding="utf-8"))
+    import MetaTrader5 as mt5  # noqa: N813
 
-    symbols = get_symbols()
-    candidates = discover_new_candidates(symbols, universe)
-    print(f"Broker symbols enumerated: {len(symbols)}; new candidates: {len(candidates)}")
-    for c in candidates:
-        print(f"  candidate: {c['symbol']} ({c['asset_class']})")
+    if not mt5.initialize(timeout=30000):
+        print(f"FAIL_CONNECT: {mt5.last_error()}")
+        raise SystemExit(1)
+    try:
+        universe_path = Path(args.universe)
+        universe = json.loads(universe_path.read_text(encoding="utf-8"))
 
-    if args.write and candidates:
-        added = update_universe(universe_path, candidates)
-        print(f"Wrote {len(added)} candidates to {universe_path}")
-    elif args.write:
-        print("No new candidates to write.")
+        symbols = get_symbols()
+        candidates = discover_new_candidates(symbols, universe)
+        print(f"Broker symbols enumerated: {len(symbols)}; new candidates: {len(candidates)}")
+        for c in candidates:
+            print(f"  candidate: {c['symbol']} ({c['asset_class']})")
+
+        if args.write and candidates:
+            added = update_universe(universe_path, candidates)
+            print(f"Wrote {len(added)} candidates to {universe_path}")
+        elif args.write:
+            print("No new candidates to write.")
+    finally:
+        mt5.shutdown()
 
 
 if __name__ == "__main__":

@@ -123,10 +123,15 @@ class MeasurementDaemon:
         session_id: str,
         tick_provider=None,
         min_valid_ticks: int = MIN_VALID_TICKS_PER_SESSION_DAY,
+        symbol_map: dict[str, str] | None = None,
     ):
         """tick_provider: callable(symbol) -> dict|None (defaults to
-        broker.mt5_gateway.get_current_tick). Tests inject a mock."""
+        broker.mt5_gateway.get_current_tick). Tests inject a mock.
+        symbol_map: universe symbol -> broker symbol (e.g. {"USOIL": "SpotCrude"});
+        ticks are fetched from the broker name while coverage/parquet stay
+        keyed by the universe symbol."""
         self._symbols = symbols
+        self._symbol_map = symbol_map or {}
         self._coverage_dir = Path(coverage_dir)
         self._ticks_dir = Path(ticks_dir)
         self._session_id = session_id
@@ -151,6 +156,15 @@ class MeasurementDaemon:
         except Mt5UnavailableError:
             return None
 
+    def _tick_for(self, symbol: str) -> dict | None:
+        """Fetch a tick for the universe symbol, resolving broker-name mapping.
+        Uses the injected tick_provider (tests inject a mock); the default
+        provider resolves symbol_map before calling the broker."""
+        if self._tick_provider is not self._default_tick_provider:
+            return self._tick_provider(symbol)
+        mt5_name = self._symbol_map.get(symbol, symbol)
+        return self._default_tick_provider(mt5_name)
+
     def _tick_to_record(self, symbol: str, tick: dict) -> TickRecord | None:
         from decimal import Decimal
 
@@ -169,7 +183,7 @@ class MeasurementDaemon:
         today = datetime.now(UTC).date()
         per_symbol: dict[str, dict] = {}
         for symbol in self._symbols:
-            tick = self._tick_provider(symbol)
+            tick = self._tick_for(symbol)
             if tick is not None:
                 self._tick_to_record(symbol, tick)
             recorder = self._recorders[symbol]
