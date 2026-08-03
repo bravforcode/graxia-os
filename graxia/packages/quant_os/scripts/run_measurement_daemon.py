@@ -70,11 +70,25 @@ def main() -> None:
     parser.add_argument("--interval", type=float, default=1.0, help="Poll interval seconds (default 1.0)")
     args = parser.parse_args()
 
+    import os
+
     import MetaTrader5 as mt5  # noqa: N813
 
     from market_data.measurement_daemon import MeasurementDaemon
 
-    if not mt5.initialize(timeout=30000):
+    login = os.environ.get("MT5_LOGIN")
+    password = os.environ.get("MT5_PASSWORD")
+    server = os.environ.get("MT5_SERVER")
+    if login and password:
+        ok = mt5.initialize(
+            timeout=30000,
+            login=int(login),
+            password=password,
+            server=server or "",
+        )
+    else:
+        ok = mt5.initialize(timeout=30000)
+    if not ok:
         print(f"FAIL_CONNECT: {mt5.last_error()}")
         raise SystemExit(1)
 
