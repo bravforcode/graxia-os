@@ -35,6 +35,15 @@ One statistical primitive (`core/stats/psi.py`) serves both the existing ML feat
 
 1. **Test invocation**: every task's verification command runs from the `quant_os` package root with `python -m pytest tests/<file> -q`. Tests rely on cwd being on `sys.path` for top-level imports (evidence: `tests/test_mt5_gateway.py` does `import broker.mt5_gateway as gw`; `tests/conftest.py` adds no sys.path entries).
 2. **Import style for new/changed modules**: top-level absolute imports (`from core.stats.psi import psi`, `from market_data.tick_recorder import TickRecord`). Required because `api/signal_service.py:455` imports `from ml.drift_monitor import DriftMonitor` top-level, and new modules must be importable the same way. Do NOT use relative imports in `ml/drift_monitor.py` (it is imported both top-level and as `graxia.packages.quant_os.ml.drift_monitor`; only a top-level absolute import works in both contexts).
+   - **SHADOW WARNING (verified during Task 1 execution, 2026-08-03)**: `quant_os/conftest.py:8` inserts the MONOREPO root (`C:\Users\menum\graxia os`) at `sys.path[0]`, and a `core` package exists at that root — it shadows `quant_os/core` under pytest. Plain `python -c` from the quant_os dir resolves `core` correctly; pytest does not. EVERY new test file that (transitively) imports `core` must run this preamble BEFORE any `core.*` import:
+   ```python
+   import sys
+   from pathlib import Path
+
+   _QUANT_OS_ROOT = Path(__file__).resolve().parent.parent
+   sys.path.insert(0, str(_QUANT_OS_ROOT))  # UNCONDITIONAL — a guarded insert is a no-op (quant_os is already on sys.path later, and the shadow at position 0 wins)
+   ```
+   The unconditional insert is load-bearing: `if str(...) not in sys.path` does NOT work (verified).
 3. **No new dependencies**. If a test needs a parquet roundtrip, `pd.DataFrame.to_parquet()` uses the repo's existing installed engine (parquet is already a first-class format here — `tests/conftest.py` mentions sample parquet data).
 4. **Fail-closed defaults everywhere** (repo invariant, see `risk/kill_switch.py::_load()` and `run_paper_trading.py:811-818`).
 5. **Atomic JSON writes**: every JSON state write uses tempfile-in-same-dir + `os.replace()`, mirroring `risk/kill_switch.py::_save()` (lines 423-463) — including Windows PermissionError retry. Never write in place.
@@ -286,7 +295,33 @@ def test_drift_monitor_feature_scores_match_shared_psi(tmp_path, monkeypatch):
 ```
 
 6. Verify: `python -m pytest tests/test_psi_shared.py tests/test_provenance.py -q` AND the drift-monitor chaos file still imports cleanly (it is skipped at runtime): `python -m pytest tests/chaos/test_risk_monitoring_ml_untested.py --collect-only -q` (no import error expected; the class is `@pytest.mark.skip`).
-7. Commit: `git add core/stats/__init__.py core/stats/psi.py ml/drift_monitor.py tests/test_psi_shared.py && git commit -m "feat(quant_os): extract shared PSI primitive (core/stats/psi.py) for ML + cost drift"`
+7. **Hook-forced cleanup (verified 2026-08-03)**: the pre-commit ruff hook flags a PRE-EXISTING `F841` in `_save_state` (`mv, sym = parts[0], parts[1]...` assigned but never used) once drift_monitor.py is touched. Delete those two dead lines (the loop only needs `key`):
+   ```python
+            # Clear old predictions and insert current window
+            for key, window in self._predictions.items():
+                for r in window:
+   ```
+8. Commit: `git add core/stats/__init__.py core/stats/psi.py ml/drift_monitor.py tests/test_psi_shared.py && git commit -m "feat(quant_os): extract shared PSI primitive (core/stats/psi.py) for ML + cost drift"` — DONE as `158509a6` (2026-08-03).
+
+### Execution corrections to this task's test file (verified, applied 2026-08-03)
+
+1. Add the Global-Constraint-2 sys.path preamble (unconditional insert) at the top of `tests/test_psi_shared.py` — WITHOUT it the file fails collection (`ModuleNotFoundError: No module named 'core.stats'`) because the monorepo-root `core` shadows.
+2. `test_psi_zero_std_does_not_crash` is WRONG as written: the original `_calculate_psi` has no sigma guard and raises `ZeroDivisionError` for sigma=0 (callers floor at 1e-10 first — `ml/drift_monitor.py` lines 441/450). Replace it with:
+   ```python
+   def test_psi_zero_std_raises_like_original():
+       """Zero std raises ZeroDivisionError — identical to the pre-extraction
+       DriftMonitor._calculate_psi (no sigma guard in the original; callers floor
+       sigma at 1e-10 before calling, see ml/drift_monitor.py lines 441/450)."""
+       with pytest.raises(ZeroDivisionError):
+           psi(baseline_mean=0.0, baseline_std=0.0, current_mean=0.0, current_std=0.0)
+
+
+   def test_psi_floored_sigma_is_finite():
+       """Callers floor sigma at 1e-10; the function must stay finite for it."""
+       value = psi(baseline_mean=0.0, baseline_std=1e-10, current_mean=0.0, current_std=1e-10)
+       assert value == pytest.approx(0.0, abs=1e-9)
+   ```
+3. The delegation test's final assertion tolerance must be `abs=1e-6`, not `1e-9`: `DriftMonitor` rounds scores to 6 decimals (`round(psi, 6)` at `ml/drift_monitor.py:460`), so the monitor's reported value differs from the unrounded recomputation in the 7th decimal. Delegation is exact to 1e-6 (verified: obtained 0.160381 vs expected 0.1603814388).
 
 ---
 
