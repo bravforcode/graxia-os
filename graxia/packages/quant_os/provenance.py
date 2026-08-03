@@ -31,6 +31,7 @@ PROVENANCE_FLOOR: dict[str, str] = {
     "USDJPY": "1971-01-01",
     "NAS100": "1985-01-01",  # Nasdaq-100 launched 1985-01
     "US30": "1896-05-27",  # DJIA continuous history
+    "BTCUSD": "2009-01-03",  # Bitcoin genesis block 2009-01-03 (SP3)
 }
 
 # Default slice start for modern-era studies (WS-A pre-reg window).

@@ -5,7 +5,7 @@
     "updated": "2026-08-03",
     "description": "Single source of truth for which symbols are eligible for live/paper trading. A symbol is TRADEABLE only if it has BOTH sufficient price history AND verified multi-day cost calibration data. Statuses: tradeable (both passes of the Phase 1 bar cleared), verifying (first pass cleared, re-verification pending), measuring (in measurement, pre-pass), candidate (discovered, not yet measuring), excluded (not eligible).",
     "cost_calibration_source": "config/cost_calibration.json (v3.1, 2026-07-26)",
-    "data_integrity_fix_20260726": "The v1.0.0 'MEASURED'/'Properly measured multi-day' notes on NAS100/USOIL/USDJPY were false \u2014 see config/cost_calibration.json's data_integrity_fix_20260726 field. NAS100 is moved to excluded (zero real data, fails this file's own tradeable bar). XAUUSD/USDJPY upgraded to real tick-derived numbers (FROM_TICKS, ~27h, not multi-day). OIL restored to its real single-snapshot measurement."
+    "data_integrity_fix_20260726": "The v1.0.0 'MEASURED'/'Properly measured multi-day' notes on NAS100/USOIL/USDJPY were false — see config/cost_calibration.json's data_integrity_fix_20260726 field. NAS100 is moved to excluded (zero real data, fails this file's own tradeable bar). XAUUSD/USDJPY upgraded to real tick-derived numbers (FROM_TICKS, ~27h, not multi-day). OIL restored to its real single-snapshot measurement."
   },
   "tradeable": [],
   "measuring": [
@@ -14,11 +14,11 @@
       "asset_class": "metals",
       "cost_status": "FROM_TICKS",
       "cost_evidence": "cost_calibration.json: spread=0.3236bps (median), p95=0.5211bps, commission=0, RT cost=0.65bps, 733743 real ticks (data/ticks/XAUUSD_ticks_24h.parquet, ~27h, 2026-06-25/26)",
-      "note": "Real tick-derived measurement, session-covering (~27h, all 5 sessions once each) \u2014 a substantial upgrade over the prior 3-minute snapshot, but still a single continuous window, not repeated multi-day sampling. Adequate for paper; needs true multi-day re-measurement before live.",
+      "note": "Real tick-derived measurement, session-covering (~27h, all 5 sessions once each) — a substantial upgrade over the prior 3-minute snapshot, but still a single continuous window, not repeated multi-day sampling. Adequate for paper; needs true multi-day re-measurement before live.",
       "pipeline": {
         "status": "measuring",
         "activated": "2026-08-03",
-        "pre_pipeline_measurement": "single ~27h window / single snapshot \u2014 must re-earn tradeable via the Phase 1 two-pass bar"
+        "pre_pipeline_measurement": "single ~27h window / single snapshot — must re-earn tradeable via the Phase 1 two-pass bar"
       }
     },
     {
@@ -31,7 +31,7 @@
       "pipeline": {
         "status": "measuring",
         "activated": "2026-08-03",
-        "pre_pipeline_measurement": "single ~3-minute snapshot \u2014 must re-earn tradeable via the Phase 1 two-pass bar"
+        "pre_pipeline_measurement": "single ~3-minute snapshot — must re-earn tradeable via the Phase 1 two-pass bar"
       }
     },
     {
@@ -39,12 +39,36 @@
       "asset_class": "forex",
       "cost_status": "FROM_TICKS",
       "cost_evidence": "cost_calibration.json: spread=0.1236bps (median), p95=0.1856bps, commission=7, RT cost=7.25bps, 386245 real ticks (data/ticks/USDJPY_ticks_24h.parquet, ~27h, 2026-06-25/26)",
-      "note": "Real tick-derived measurement, session-covering (~27h, all 5 sessions once each) \u2014 replaces a fabricated 0.80bps figure introduced in commit 33b90c31. Adequate for paper; needs true multi-day re-measurement before live.",
+      "note": "Real tick-derived measurement, session-covering (~27h, all 5 sessions once each) — replaces a fabricated 0.80bps figure introduced in commit 33b90c31. Adequate for paper; needs true multi-day re-measurement before live.",
       "pipeline": {
         "status": "measuring",
         "activated": "2026-08-03",
-        "pre_pipeline_measurement": "single ~27h window \u2014 must re-earn tradeable via the Phase 1 two-pass bar"
+        "pre_pipeline_measurement": "single ~27h window — must re-earn tradeable via the Phase 1 two-pass bar"
       }
+    },
+    {
+      "symbol": "BTCUSD",
+      "added": "2026-08-03",
+      "source": "tick_parquet_calibration",
+      "reason": "SP3 breadth: FROM_TICKS cost calibration from 24h tick data"
+    },
+    {
+      "symbol": "EURUSD",
+      "added": "2026-08-03",
+      "source": "tick_parquet_calibration",
+      "reason": "SP3 breadth: FROM_TICKS cost calibration from 24h tick data"
+    },
+    {
+      "symbol": "GBPUSD",
+      "added": "2026-08-03",
+      "source": "tick_parquet_calibration",
+      "reason": "SP3 breadth: FROM_TICKS cost calibration from 24h tick data"
+    },
+    {
+      "symbol": "US30",
+      "added": "2026-08-03",
+      "source": "tick_parquet_calibration",
+      "reason": "SP3 breadth: FROM_TICKS cost calibration from 24h tick data"
     }
   ],
   "verifying": [],
@@ -338,7 +362,7 @@
     },
     {
       "symbol": "US30",
-      "reason": "In symbol_registry but no cost calibration data. NOTE: real tick data exists at data/ticks/US30_ticks_24h.parquet (193789 ticks, same ~27h window) \u2014 a candidate for a genuine future addition, not evaluated further by this fix (out of scope: this fix corrects existing entries, it does not admit new symbols)."
+      "reason": "In symbol_registry but no cost calibration data. NOTE: real tick data exists at data/ticks/US30_ticks_24h.parquet (193789 ticks, same ~27h window) — a candidate for a genuine future addition, not evaluated further by this fix (out of scope: this fix corrects existing entries, it does not admit new symbols)."
     },
     {
       "symbol": "SPX500",
@@ -768,11 +792,11 @@
   "summary": {
     "total_in_registry": 141,
     "tradeable": 0,
-    "measuring": 3,
+    "measuring": 7,
     "verifying": 0,
     "candidate": 23,
     "excluded": 115,
     "tradeable_with_caveat": 0,
-    "next_step": "Phase 1 activation: all 3 previously-tradeable symbols (XAUUSD, USOIL, USDJPY) moved to measuring per spec (no grandfathering). Measurement daemon must re-earn tradeable via the two-pass bar. Until then the universe has zero tradeable symbols \u2014 paper scripts keep running via mode='paper'; live trading is correctly blocked (fail-closed)."
+    "next_step": "Phase 1 activation: all 3 previously-tradeable symbols (XAUUSD, USOIL, USDJPY) moved to measuring per spec (no grandfathering). Measurement daemon must re-earn tradeable via the two-pass bar. Until then the universe has zero tradeable symbols — paper scripts keep running via mode='paper'; live trading is correctly blocked (fail-closed)."
   }
 }
