@@ -299,6 +299,11 @@ GATE_DIRTY_EXEMPT = (
     "Meta/states/researcher-forex-ea-verification.md",  # parallel-session researcher state
     "Meta/states/researcher-forexroasted.md",  # parallel-session researcher state
     "graxia/packages/quant_os/1350)",  # stray 0-byte shell-redirect accident (untracked, empty)
+    "graxia/packages/quant_os/research/hypothesis_registry.json",  # trial evidence (ratchet-managed)
+    "graxia/packages/quant_os/research/trial_ledger.json",  # trial evidence (ratchet-managed)
+    "graxia/packages/quant_os/research/trial_ledger_b.json",  # trial evidence (ratchet-managed)
+    "Meta/states/researcher-eatested-ea-ranking.md",  # parallel-session researcher state
+    "graxia/packages/quant_os/reports/research_retail_forex_eas_20260804.md",  # research report
 )
 
 
