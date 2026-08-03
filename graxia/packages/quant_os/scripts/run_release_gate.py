@@ -294,6 +294,10 @@ GATE_DIRTY_EXEMPT = (
     "graxia/packages/quant_os/validation/.experiment_registry.json",
     "graxia/packages/quant_os/data/heartbeat.txt",
     "data/heartbeat.txt",  # stray root-level file; orchestrator/health_check write cwd-relative heartbeat
+    "graxia/packages/quant_os/reports/paper_trading/funding_arb_state.json",  # live funding-arb process state
+    "graxia/packages/quant_os/reports/research_backed_pipeline.json",  # research pipeline output
+    "graxia/packages/quant_os/data/sacred_holdout/holdout.csv",  # holdout dataset (regenerable)
+    "graxia/packages/quant_os/reports/deep_research_institutional_gates_20260803.md",  # research report
 )
 
 
