@@ -47,7 +47,6 @@ SUITE_CMD = [
     "--ignore=graxia/packages/quant_os/tests/test_autonomous_chaos.py",
     "--ignore=graxia/packages/quant_os/tests/test_comprehensive.py",
     "--ignore=graxia/packages/quant_os/tests/test_e2e_signal_flow.py",
-    "--ignore=graxia/packages/quant_os/tests/test_massive_sentiment.py",
     "--ignore=graxia/packages/quant_os/tests/test_phase_2a.py",
     "--ignore=graxia/packages/quant_os/tests/test_phase_be_p1.py",
     "--ignore=graxia/packages/quant_os/tests/test_quality_gate.py",

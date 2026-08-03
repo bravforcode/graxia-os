@@ -296,6 +296,26 @@ async def _delayed_call(delay: float, coro):
 # ═══════════════════════════════════════════════════════════════════
 
 
+# Environment-gated: requires live provider API keys. Skip when none are
+# configured (mirrors the .env loading the test itself performs) so the
+# release gate does not fail on an env-dependent integration test.
+# Tracked in quarantine_manifest.json approved_runtime_skips (count 1).
+def _has_any_provider_key() -> bool:
+    env = dict(os.environ)
+    env_path = Path(__file__).parent.parent / ".env"
+    if env_path.exists():
+        for line in env_path.read_text(encoding="utf-8", errors="ignore").splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                env.setdefault(k.strip(), v.strip())
+    return any(env.get(cfg.env_key) for cfg in PROVIDERS)
+
+
+@pytest.mark.skipif(
+    not _has_any_provider_key(),
+    reason="live provider API keys not configured in gate env",
+)
 @pytest.mark.asyncio
 async def test_massive_sentiment_all_providers():
     """
@@ -307,7 +327,7 @@ async def test_massive_sentiment_all_providers():
     # Load env
     env_path = Path(__file__).parent.parent / ".env"
     if env_path.exists():
-        for line in env_path.read_text().splitlines():
+        for line in env_path.read_text(encoding="utf-8", errors="ignore").splitlines():
             line = line.strip()
             if line and not line.startswith("#") and "=" in line:
                 k, v = line.split("=", 1)
@@ -325,10 +345,10 @@ async def test_massive_sentiment_all_providers():
 
     assert len(available) >= 1, "No providers configured!"
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"  MASSIVE SENTIMENT TEST: {len(available)} providers × {len(HEADLINES)} headlines")
     print(f"  Total API calls: {len(available) * len(HEADLINES)}")
-    print(f"{'='*70}\n")
+    print(f"{'=' * 70}\n")
 
     # Call each provider with ALL headlines in parallel (staggered)
     async with httpx.AsyncClient(timeout=30.0) as client:
@@ -366,7 +386,7 @@ async def test_massive_sentiment_all_providers():
         elapsed = time.time() - start
 
         # Collect results
-        for i, ((provider_name, headline, _), result) in enumerate(zip(tasks, results, strict=False)):
+        for _i, ((provider_name, headline, _), result) in enumerate(zip(tasks, results, strict=False)):
             if provider_name not in all_results:
                 all_results[provider_name] = []
             all_results[provider_name].append(
@@ -383,9 +403,9 @@ async def test_massive_sentiment_all_providers():
     total_success = 0
     total_error = 0
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"  RESULTS — {elapsed:.1f}s total")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     for provider_name, results_list in all_results.items():
         success = sum(1 for r in results_list if r["result"] and "error" not in r["result"])
@@ -412,12 +432,12 @@ async def test_massive_sentiment_all_providers():
     # AGGREGATION TEST
     # ═══════════════════════════════════════════════════════════════
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("  AGGREGATION")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     all_scores = []
-    for provider_name, results_list in all_results.items():
+    for _provider_name, results_list in all_results.items():
         for r in results_list:
             res = r["result"]
             if res and "error" not in res and "sentiment_score" in res:
@@ -429,10 +449,10 @@ async def test_massive_sentiment_all_providers():
         print(f"  Average sentiment: {avg:.4f}")
         print(f"  Min: {min(all_scores):.4f}  Max: {max(all_scores):.4f}")
 
-    print(f"\n{'='*70}")
-    print(f"  SUMMARY: {total_success} success / {total_error} error / {total_success+total_error} total")
+    print(f"\n{'=' * 70}")
+    print(f"  SUMMARY: {total_success} success / {total_error} error / {total_success + total_error} total")
     print(f"  Time: {elapsed:.1f}s")
-    print(f"{'='*70}\n")
+    print(f"{'=' * 70}\n")
 
     # Assert at least 1 provider worked
     assert total_success >= 1, f"No providers succeeded! Errors: {total_error}"

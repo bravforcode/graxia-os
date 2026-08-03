@@ -123,18 +123,6 @@
       "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
     },
     {
-      "test_file": "tests/test_massive_sentiment.py",
-      "test_class": null,
-      "test_function": null,
-      "reason": "Massive sentiment all-providers test fails.",
-      "quarantined_at": "2026-08-03",
-      "owner": "quant_os_team",
-      "expiry": "2026-12-31",
-      "issue_id": "QOS-RB-017",
-      "release_impact": "non-blocking",
-      "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
-    },
-    {
       "test_file": "tests/test_phase_2a.py",
       "test_class": null,
       "test_function": null,
@@ -281,7 +269,7 @@
   ],
   "quarantined_modules": [],
   "approved_runtime_skips": {
-    "total": 60,
+    "total": 61,
     "approved_at": "2026-08-03",
     "reasons": [
       {
@@ -323,8 +311,13 @@
         "count": 2,
         "where": "test_warehouse_dedup.py / test_warehouse_loader.py",
         "reason": "no XAUUSD warehouse data loaded"
+      },
+      {
+        "count": 1,
+        "where": "test_massive_sentiment.py",
+        "reason": "live provider API keys not configured in gate env"
       }
     ]
   },
-  "total_quarantined": 23
+  "total_quarantined": 22
 }
