@@ -15,6 +15,8 @@ from pathlib import Path
 
 import structlog
 
+from core.stats.psi import psi
+
 logger = structlog.get_logger(__name__)
 
 DEFAULT_STATE_DIR = Path(__file__).parent / ".drift_state"
@@ -449,28 +451,28 @@ class DriftMonitor:
             c_std = math.sqrt(sum((v - c_mean) ** 2 for v in current_vals) / len(current_vals))
             c_std = max(c_std, 1e-10)
 
-            # PSI via bin-based approach
-            psi = self._calculate_psi(
+            # PSI via bin-based approach (shared primitive — core/stats/psi.py)
+            psi_score = psi(
                 baseline_mean=b_mean,
                 baseline_std=b_std,
                 current_mean=c_mean,
                 current_std=c_std,
                 n_bins=10,
             )
-            psi_scores[fname] = round(psi, 6)
+            psi_scores[fname] = round(psi_score, 6)
 
-            if psi > self._psi_threshold:
+            if psi_score > self._psi_threshold:
                 parts = key.split("|", 1)
                 mv, sym = parts[0], parts[1] if len(parts) > 1 else "unknown"
-                severity = "critical" if psi > self._psi_threshold * 1.5 else "warning"
+                severity = "critical" if psi_score > self._psi_threshold * 1.5 else "warning"
                 alert = DriftAlert(
                     alert_type="feature_drift",
                     severity=severity,
                     model_version=mv,
                     symbol=sym,
-                    message=f"Feature '{fname}' PSI={psi:.4f} exceeds threshold {self._psi_threshold}",
+                    message=f"Feature '{fname}' PSI={psi_score:.4f} exceeds threshold {self._psi_threshold}",
                     metric_name=f"psi_{fname}",
-                    current_value=round(psi, 6),
+                    current_value=round(psi_score, 6),
                     threshold=self._psi_threshold,
                 )
                 self._alerts.append(alert)
@@ -483,45 +485,6 @@ class DriftMonitor:
                 )
 
         return psi_scores
-
-    @staticmethod
-    def _calculate_psi(
-        *,
-        baseline_mean: float,
-        baseline_std: float,
-        current_mean: float,
-        current_std: float,
-        n_bins: int = 10,
-    ) -> float:
-        """
-        Compute PSI between two normal distributions approximated by bins.
-
-        Uses baseline mean/std to define bins, then computes the divergence
-        between the baseline and current distributions.
-        """
-        # Define bin edges from baseline distribution
-        lo = baseline_mean - 3 * baseline_std
-        hi = baseline_mean + 3 * baseline_std
-        edges = [lo + (hi - lo) * i / n_bins for i in range(n_bins + 1)]
-
-        def _normal_cdf(x: float, mu: float, sigma: float) -> float:
-            """Approximate normal CDF using error function."""
-            return 0.5 * (1 + math.erf((x - mu) / (sigma * math.sqrt(2))))
-
-        def _bin_probs(mu: float, sigma: float) -> list[float]:
-            probs = []
-            for i in range(n_bins):
-                p = _normal_cdf(edges[i + 1], mu, sigma) - _normal_cdf(edges[i], mu, sigma)
-                probs.append(max(p, 1e-10))
-            return probs
-
-        baseline_probs = _bin_probs(baseline_mean, baseline_std)
-        current_probs = _bin_probs(current_mean, current_std)
-
-        psi = 0.0
-        for bp, cp in zip(baseline_probs, current_probs, strict=False):
-            psi += (cp - bp) * math.log(cp / bp)
-        return psi
 
     # -- state persistence ----------------------------------------------------
 
@@ -546,8 +509,6 @@ class DriftMonitor:
             """)
             # Clear old predictions and insert current window
             for key, window in self._predictions.items():
-                parts = key.split("|", 1)
-                mv, sym = parts[0], parts[1] if len(parts) > 1 else "unknown"
                 for r in window:
                     con.execute(
                         "INSERT INTO drift_predictions VALUES (?, ?, ?, ?, ?, ?, ?)",
