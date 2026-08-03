@@ -111,18 +111,6 @@
       "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
     },
     {
-      "test_file": "tests/test_data_quality.py",
-      "test_class": null,
-      "test_function": null,
-      "reason": "Point-in-time store save/load + m15 integrity path tests fail (2).",
-      "quarantined_at": "2026-08-03",
-      "owner": "quant_os_team",
-      "expiry": "2026-12-31",
-      "issue_id": "QOS-RB-012",
-      "release_impact": "non-blocking",
-      "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
-    },
-    {
       "test_file": "tests/test_e2e_signal_flow.py",
       "test_class": null,
       "test_function": null,
@@ -135,18 +123,6 @@
       "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
     },
     {
-      "test_file": "tests/test_macro_data.py",
-      "test_class": null,
-      "test_function": null,
-      "reason": "FredClient cache hit/miss tests fail (2).",
-      "quarantined_at": "2026-08-03",
-      "owner": "quant_os_team",
-      "expiry": "2026-12-31",
-      "issue_id": "QOS-RB-016",
-      "release_impact": "non-blocking",
-      "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
-    },
-    {
       "test_file": "tests/test_massive_sentiment.py",
       "test_class": null,
       "test_function": null,
@@ -155,42 +131,6 @@
       "owner": "quant_os_team",
       "expiry": "2026-12-31",
       "issue_id": "QOS-RB-017",
-      "release_impact": "non-blocking",
-      "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
-    },
-    {
-      "test_file": "tests/test_monitoring_infra.py",
-      "test_class": null,
-      "test_function": null,
-      "reason": "MetricsExporter port bind / counter / gauge tests fail (3).",
-      "quarantined_at": "2026-08-03",
-      "owner": "quant_os_team",
-      "expiry": "2026-12-31",
-      "issue_id": "QOS-RB-018",
-      "release_impact": "non-blocking",
-      "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
-    },
-    {
-      "test_file": "tests/test_new_modules_benchmark.py",
-      "test_class": null,
-      "test_function": null,
-      "reason": "Ensemble predict speed benchmark fails.",
-      "quarantined_at": "2026-08-03",
-      "owner": "quant_os_team",
-      "expiry": "2026-12-31",
-      "issue_id": "QOS-RB-019",
-      "release_impact": "non-blocking",
-      "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
-    },
-    {
-      "test_file": "tests/test_new_modules_integration.py",
-      "test_class": null,
-      "test_function": null,
-      "reason": "Ensemble OMS integration + predict_proba shape fail (2).",
-      "quarantined_at": "2026-08-03",
-      "owner": "quant_os_team",
-      "expiry": "2026-12-31",
-      "issue_id": "QOS-RB-020",
       "release_impact": "non-blocking",
       "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
     },
@@ -386,5 +326,5 @@
       }
     ]
   },
-  "total_quarantined": 28
+  "total_quarantined": 23
 }
