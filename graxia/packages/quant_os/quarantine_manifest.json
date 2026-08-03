@@ -51,18 +51,6 @@
       "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
     },
     {
-      "test_file": "tests/chaos/test_broker_adapters_unified.py",
-      "test_class": null,
-      "test_function": null,
-      "reason": "BrokerManager.from_config defaults to SHADOW, test expects PAPER.",
-      "quarantined_at": "2026-08-03",
-      "owner": "quant_os_team",
-      "expiry": "2026-12-31",
-      "issue_id": "QOS-RB-002",
-      "release_impact": "non-blocking",
-      "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
-    },
-    {
       "test_file": "tests/chaos/test_full_pipeline.py",
       "test_class": null,
       "test_function": null,
@@ -111,18 +99,6 @@
       "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
     },
     {
-      "test_file": "tests/test_backtest_refactor_b1_b3_c4.py",
-      "test_class": null,
-      "test_function": null,
-      "reason": "Event-driven/numba/batch backtest pnl parity + lookahead guard tests fail (6).",
-      "quarantined_at": "2026-08-03",
-      "owner": "quant_os_team",
-      "expiry": "2026-12-31",
-      "issue_id": "QOS-RB-009",
-      "release_impact": "non-blocking",
-      "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
-    },
-    {
       "test_file": "tests/test_comprehensive.py",
       "test_class": null,
       "test_function": null,
@@ -155,30 +131,6 @@
       "owner": "quant_os_team",
       "expiry": "2026-12-31",
       "issue_id": "QOS-RB-013",
-      "release_impact": "non-blocking",
-      "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
-    },
-    {
-      "test_file": "tests/test_ensemble_binarize_adapter.py",
-      "test_class": null,
-      "test_function": null,
-      "reason": "RowwisePredictAdapter predict raises (3 errors) + real-fit round trip fails (4).",
-      "quarantined_at": "2026-08-03",
-      "owner": "quant_os_team",
-      "expiry": "2026-12-31",
-      "issue_id": "QOS-RB-014",
-      "release_impact": "non-blocking",
-      "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
-    },
-    {
-      "test_file": "tests/test_lookahead_regression.py",
-      "test_class": null,
-      "test_function": null,
-      "reason": "Backtest lookahead guard regression test fails.",
-      "quarantined_at": "2026-08-03",
-      "owner": "quant_os_team",
-      "expiry": "2026-12-31",
-      "issue_id": "QOS-RB-015",
       "release_impact": "non-blocking",
       "verification": "Triaged 2026-08-03 on clean HEAD a611516f; tracked for fix in gate re-baseline."
     },
@@ -434,5 +386,5 @@
       }
     ]
   },
-  "total_quarantined": 32
+  "total_quarantined": 28
 }
