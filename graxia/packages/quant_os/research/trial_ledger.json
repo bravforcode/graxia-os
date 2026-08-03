@@ -102,6 +102,14 @@
       "date": "2026-07-29",
       "note": "Post-cap entry (created after cap=1022). Time Series Momentum replication (Moskowitz-Ooi-Pedersen 2012). 7 assets, monthly rebalance. Newey-West HAC dk_t=0.428 (<2.0), DSR p=0.0000 (N=1050). Edge real but weak, concentrated in precious metals. Hypothesis registered in hypothesis_registry.json. Harness: scripts/run_ws_a_tsmom.py.",
       "cap_note": "Trial exceeded cumulative_trial_cap=1022. Recorded for audit trail. Multiple-testing correction uses N=1021 (pre-cap) or N=1050 (DSR reconciliation) depending on gate."
+    },
+    {
+      "trial_number": 1032,
+      "id": "WS-A-52WEEK-HIGH",
+      "result": "REJECTED",
+      "date": "2026-08-03",
+      "note": "Post-cap entry (cap consumed). 52-Week High Momentum replication (George-Hwang 2004): level-anchored proximity signal (prox>=0.95 long, prox<=0.80 short), 7 assets, monthly rebalance, 2005-2026, pepperstone_razor costs. Newey-West HAC dk_t=0.461 (<2.0) — FAIL. DSR p=0.0000 (N=1050) PASS, cost-stress PASS (Sharpe 0.34/0.33), label-shuffle p=0.035 PASS, jackknife PASS — but trades 13-39/asset (all < 50 gate) and pooled DK far below 2.0. DSR+label-shuffle signal does not survive pooled cross-sectional test. REJECT per frozen pre-registration (research/pre_registration/trial_1032_52week_high.md); no threshold tuning attempted. Harness: scripts/run_52week_high_1032.py; artifact: reports/trial_1032_52week_high_results.json.",
+      "cap_note": "Trial exceeded cumulative_trial_cap=1022. Recorded for audit trail per precedent of trials 1028/1031."
     }
   ],
   "consecutive_gate_failures": {

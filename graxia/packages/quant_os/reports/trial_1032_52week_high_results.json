@@ -1,0 +1,87 @@
+{
+  "trial_number": 1032,
+  "id": "WS-A-52WEEK-HIGH",
+  "strategy": "52_week_high_proximity",
+  "source": "George & Hwang (2004), Journal of Finance 59(5)",
+  "registered_at": "2026-08-03",
+  "executed_at": "2026-08-03T12:33:19.472624+00:00",
+  "universe": [
+    "XAUUSD",
+    "XAGUSD",
+    "EURUSD",
+    "GBPUSD",
+    "USDJPY",
+    "NAS100",
+    "US30"
+  ],
+  "params": {
+    "lookback_high": 252,
+    "prox_long": 0.95,
+    "prox_short": 0.8,
+    "rebalance_freq": 21,
+    "vol_target": 0.1
+  },
+  "cost_model": "pepperstone_razor (frozen, per pre-reg \u00a72)",
+  "metrics": {
+    "sharpe": 0.34002245215713983,
+    "annualized_return": 0.08883404458106393,
+    "annualized_vol": 0.26125934925029504,
+    "total_trades": 165,
+    "total_cost": 0.06312638294475356,
+    "total_pnl": -33193.228760722894
+  },
+  "per_asset_trades": {
+    "USDJPY": 17,
+    "XAUUSD": 25,
+    "XAGUSD": 39,
+    "GBPUSD": 22,
+    "EURUSD": 22,
+    "NAS100": 27,
+    "US30": 13
+  },
+  "dk_test": {
+    "dk_t_stat": 0.4607,
+    "pooled_sharpe": 0.4139,
+    "positive_sharpe_count": 5,
+    "total_days": 5935,
+    "total_trades": 165,
+    "verdict": "REJECT"
+  },
+  "jackknife": {
+    "full_sharpe": 0.4139426978468996,
+    "drop_XAUUSD": 0.21315209118844794,
+    "drop_XAGUSD": 0.5238082068656187,
+    "drop_EURUSD": 0.4492726299394158,
+    "drop_GBPUSD": 0.4760782098545986,
+    "drop_USDJPY": 0.3785516919698023,
+    "drop_NAS100": 0.2676449096765889,
+    "drop_US30": 0.4085482297187949
+  },
+  "cluster_jackknife": {
+    "full_sharpe": 0.4139426978468996,
+    "drop_precious_metals": 0.26013539779031497,
+    "drop_us_indices": 0.2658211241461721,
+    "drop_fx": 0.5261033062394042
+  },
+  "label_shuffle": {
+    "n_shuffles": 200,
+    "p_value": 0.035,
+    "verdict": "PASS"
+  },
+  "dsr": {
+    "observed_sharpe": 0.34002245215713983,
+    "multiple_testing_adjustment": 0.05096796874336411,
+    "probability_alpha": 0.0,
+    "passes_threshold": true,
+    "n_trials": 1050
+  },
+  "gates": {
+    "dk_pass": false,
+    "dsr_pass": true,
+    "trades_pass": false,
+    "stress_pass": true,
+    "jackknife_pass": true,
+    "label_shuffle_pass": true
+  },
+  "combined_verdict": "REJECT"
+}

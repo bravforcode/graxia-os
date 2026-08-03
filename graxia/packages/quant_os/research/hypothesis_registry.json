@@ -575,6 +575,34 @@
           "blocked_by": "DATA-BLOCKED: market_data had only 7 symbols with 2026-08-01 bars (^IXIC, GBPUSD=X, ^DJI, ETH-USD, EURUSD=X, USDJPY=X, GC=F); sentiment rows dated 07-31 (74 ticker-rows) had no T+1 close yet. 0 pairs is not evidence against H1 - rerun after the next market close."
         }
       ]
+    },
+    {
+      "trial_number": 1032,
+      "id": "WS-A-52WEEK-HIGH",
+      "name": "52-Week High Momentum (George-Hwang 2004 replication)",
+      "status": "REJECTED",
+      "registered_at": "2026-08-03",
+      "result_at": "2026-08-03",
+      "instrument": "MULTI-ASSET (XAUUSD, XAGUSD, EURUSD, GBPUSD, USDJPY, NAS100, US30)",
+      "pre_registration_doc": "research/pre_registration/trial_1032_52week_high.md",
+      "strategy_file": "scripts/run_52week_high_1032.py",
+      "source": "George & Hwang (2004), Journal of Finance 59(5) — 52-week high proximity",
+      "mechanism": "Level-anchored behavioral: proximity to trailing 52-week high (prox>=0.95 long, prox<=0.80 short) predicts returns via anchoring/disposition effect",
+      "result_summary": {
+        "dk_t_stat": 0.461,
+        "sharpe_ratio": 0.340,
+        "max_drawdown": null,
+        "win_rate": null,
+        "n_oos_trades": 165,
+        "per_asset_trades": {"XAUUSD": 25, "XAGUSD": 39, "EURUSD": 22, "GBPUSD": 22, "USDJPY": 17, "NAS100": 27, "US30": 13},
+        "wfe": null,
+        "dsr_p": 0.0,
+        "label_shuffle_p": 0.035,
+        "overall": "FAIL",
+        "gates_passed": 3,
+        "gates_total": 6,
+        "conclusion": "George-Hwang 52-week-high proximity replication on 7 assets (2005-2026). DK t=0.461 << 2.0 (FAIL). DSR passes (p=0.0000, N=1050) and cost-stress passes (Sharpe 0.34/0.33 at 1.5x/2.0x), label-shuffle p=0.035 passes, jackknife passes — but the level-anchored signal is extremely sticky: only 13-39 position changes per asset (all < 50 gate), and the pooled DK test is far below the 2.0 bar. The apparent DSR/label-shuffle signal does not survive the pooled cross-sectional test. REJECT per frozen pre-registration — no tuning of thresholds (0.95/0.80) attempted. Sacred holdout NOT burned."
+      }
     }
   ]
 }
