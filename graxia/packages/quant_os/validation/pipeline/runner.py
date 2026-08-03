@@ -297,7 +297,16 @@ class ValidationRunner:
             return ValidationResult(name="monte_carlo", success=False, error=str(e), elapsed_sec=time.time() - start)
 
     def _run_dsr(self, data_cache: dict) -> ValidationResult:
-        """Deflated Sharpe Ratio using actual TSM strategy returns."""
+        """Deflated Sharpe Ratio using actual TSM strategy returns.
+
+        SP1 (2026-08-04): replaced the governance/validation_stack pseudo-DSR
+        (no sigma(SR), no z, no probability) and the strategies.walk_forward
+        probability alias with the canonical unit-correct implementation.
+        The annualized Sharpe is de-annualized via dsr_from_annualized using
+        the same bars-per-year factor _calc_sharpe applies, so z and
+        probability_alpha are computed on raw per-bar units. Gate semantics:
+        probability_alpha (P(false positive)) must be < 0.05 to pass.
+        """
         start = time.time()
         try:
             # Calculate Sharpe from TSM strategy returns
@@ -309,34 +318,38 @@ class ValidationRunner:
 
             sharpe = self._calc_sharpe(all_returns)
             n_bars = len(all_returns)
+            bars_per_year = self._bars_per_year()
 
             # Resolve n_trials: use config override if set, else central reconciled N
             n_trials = self._resolve_n_trials()
 
-            # Use existing DSR check
-            from ...governance.validation_stack import DeflatedSharpeRatio
+            # Canonical DSR (Bailey & Lopez de Prado 2014) with unit-correct
+            # de-annualization: sharpe is annualized via sqrt(bars_per_year).
+            from ...validation.deflated_sharpe import dsr_from_annualized
 
-            dsr_check = DeflatedSharpeRatio().run(
-                sharpe=sharpe,
+            dsr = dsr_from_annualized(
+                observed_sharpe=sharpe,
                 n_trials=n_trials,
-                n_bars=n_bars,
+                n_observations=n_bars,
+                annualization_factor=bars_per_year,
             )
-
-            # Also compute using strategies.walk_forward._deflated_sharpe
-            from ...strategies.walk_forward import _deflated_sharpe
-
-            dsr_value = _deflated_sharpe(sharpe, n_trials, n_bars)
 
             return ValidationResult(
                 name="dsr",
                 success=True,
                 data={
                     "observed_sharpe": round(sharpe, 4),
-                    "deflated_sharpe": round(dsr_value, 4),
+                    "deflated_sharpe": round(dsr.probability_alpha, 4),
+                    "probability_alpha": round(dsr.probability_alpha, 4),
                     "n_trials": n_trials,
                     "n_bars": n_bars,
-                    "check_passed": dsr_check.passed,
-                    "check_details": dsr_check.details,
+                    "bars_per_year": bars_per_year,
+                    "check_passed": dsr.passes_threshold,
+                    "check_details": (
+                        f"prob_alpha={dsr.probability_alpha:.4f} "
+                        f"expected_max_adj={dsr.multiple_testing_adjustment:.4f} "
+                        f"annualization_factor={bars_per_year}"
+                    ),
                 },
                 elapsed_sec=time.time() - start,
             )
@@ -606,7 +619,13 @@ class ValidationRunner:
         return get_reconciled_n_trials()  # type: ignore[no-any-return]
 
     def _calc_sharpe(self, returns: list[float]) -> float:
-        """Calculate annualized Sharpe ratio."""
+        """Calculate annualized Sharpe ratio.
+
+        SP1 (2026-08-04): annualization factor now comes from the config's
+        timeframe + asset class via _bars_per_year() instead of a hardcoded
+        sqrt(252). The old factor understated Sharpe for H1 (6048 bars/yr)
+        by ~4.9x (sqrt(252) vs sqrt(6048)).
+        """
         if len(returns) < 2:
             return 0.0
         mean = sum(returns) / len(returns)
@@ -614,7 +633,31 @@ class ValidationRunner:
         std = math.sqrt(var) if var > 0 else 0.0
         if std == 0:
             return 0.0
-        return mean / std * math.sqrt(252)  # annualized
+        return mean / std * math.sqrt(self._bars_per_year())  # annualized
+
+    def _bars_per_year(self) -> int:
+        """Resolve bars-per-year for the configured timeframe/asset class.
+
+        Uses backtest.metrics.BARS_PER_YEAR with per-symbol asset-class
+        detection; falls back to 252 (daily) when unknown.
+        """
+        from ...backtest.metrics import BARS_PER_YEAR
+
+        syms = self.config.symbols
+        asset_class = "_default"
+        for sym in syms:
+            up = sym.upper()
+            if up.startswith(("XAU", "XAG")):
+                asset_class = "metals"
+                break
+            if up.startswith(("BTC", "ETH")):
+                asset_class = "crypto"
+                break
+            if up.startswith(("NAS", "US30", "SPX", "DJI")):
+                asset_class = "indices"
+                break
+            asset_class = "forex"
+        return BARS_PER_YEAR.get((asset_class, self.config.timeframe), BARS_PER_YEAR[("_default", "D1")])
 
     def _calc_max_dd_from_returns(self, returns: list[float]) -> float:
         """Calculate max drawdown from return series."""

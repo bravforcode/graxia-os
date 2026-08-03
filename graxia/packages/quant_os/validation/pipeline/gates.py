@@ -200,13 +200,17 @@ class GateEngine:
         return gates
 
     def _eval_dsr(self, r: dict) -> GateResult:
-        dsr = r.get("deflated_sharpe", 0.0)
+        # SP1 (2026-08-04): deflated_sharpe now carries probability_alpha
+        # (P of false positive from Bailey-LdP DSR). A gate threshold of
+        # dsr_min_value=0.0 previously made every value > 0 pass — a dead
+        # gate. Correct semantics: PASS iff prob_alpha < alpha (0.05 default).
+        prob_alpha = r.get("probability_alpha", r.get("deflated_sharpe", 1.0))
         return GateResult(
             name="deflated_sharpe",
-            status=GateStatus.PASS if dsr > self.config.dsr_min_value else GateStatus.FAIL,
-            metric=dsr,
+            status=GateStatus.PASS if prob_alpha < self.config.dsr_min_value else GateStatus.FAIL,
+            metric=prob_alpha,
             threshold=self.config.dsr_min_value,
-            details=f"DSR={dsr:.4f}",
+            details=f"DSR P(false positive)={prob_alpha:.4f} < {self.config.dsr_min_value}",
         )
 
     def _eval_pbo(self, r: dict) -> GateResult:

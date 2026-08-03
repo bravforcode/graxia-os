@@ -1,13 +1,20 @@
 """
-Unified Edge Search — Pooled DK-test across all single-asset OHLCV strategies
+Unified Edge Search — Pooled HAC t-test across all single-asset OHLCV strategies
 ==============================================================================
-Honest search: same universe, same costs, same DK threshold as prior pooled tests.
+Honest search: same universe, same costs, same threshold as prior pooled tests.
 Does NOT burn sacred holdout. Does NOT claim live edge without GO + label-shuffle.
 
-GO criteria (pre-registered, same as pooled_trend_test.py):
-  dk_t > 2.0 AND positive_sharpe_count >= 5  → GO
-  dk_t > 1.5 OR (dk_t > 1.0 AND pos >= 4)    → MARGINAL
-  else                                        → REJECT
+SP1 (2026-08-04): the statistic previously named "DK test" was a pooled
+one-sample Newey-West HAC t-test (not a Diebold-Mariano test). Renamed to
+run_pooled_hac_test (alias run_dk_test kept). Verdict thresholds are now
+Bonferroni-adjusted for n_trials = strategies x assets (216 default).
+Costs: measured per-symbol calibration used when available; legacy pip
+constants only as explicit fallback for symbols without measured profiles.
+
+GO criteria (pre-registered, Bonferroni-corrected):
+  pooled_t > Phi^-1(1 - 0.05/n_trials) AND positive_sharpe_count >= 5  → GO
+  pooled_t > 1.96 OR (pooled_t > 1.5 AND pos >= 4)                     → MARGINAL
+  else                                                                  → REJECT
 
 Usage:
   python scripts/edge_search_all.py
@@ -84,6 +91,23 @@ SYMBOL_COMMISSION: dict[str, float] = {
 
 # Minimum bars after 2005 filter — skip symbol if data too short
 MIN_BARS = 500
+
+
+def _has_measured_costs(symbol: str) -> bool:
+    """SP1 (2026-08-04): use measured per-symbol costs when a calibrated
+    profile exists; fall back to legacy per-symbol pip constants otherwise.
+
+    Prevents the old engine default (0.5/2.0 pips on every instrument) while
+    also avoiding UnmeasuredCostError crashes for symbols without measured
+    data (XAGUSD, AUDUSD, USDCHF, USDCAD, ETHUSD, NAS100-unverified).
+    """
+    try:
+        from backtest.dynamic_spread_model import SymbolCostProfile
+
+        SymbolCostProfile.for_symbol(symbol)
+        return True
+    except Exception:
+        return False
 
 
 def load_asset_data(symbol: str) -> pd.DataFrame:
@@ -425,12 +449,17 @@ def run_engine_for_asset(symbol: str, strategy) -> dict:
 
     config = BacktestConfig(
         initial_capital=Decimal("100000"),
-        slippage_pips=0.5,
-        spread_pips=SYMBOL_SPREAD_PIPS.get(symbol, 2.0),
+        slippage_pips=None if _has_measured_costs(symbol) else 0.5,
+        spread_pips=None if _has_measured_costs(symbol) else SYMBOL_SPREAD_PIPS.get(symbol, 2.0),
         commission_per_lot=Decimal(str(SYMBOL_COMMISSION.get(symbol, 3.5))),
         risk_per_trade_bps=100,
         max_positions=1,
         strict_mtf=False,
+        # SP1 (2026-08-04): measured-cost path requires swap rates that only
+        # exist for XAUUSD in cost_calibration.json; MT5 is unavailable here.
+        # Edge-search is a signal test, not a swap-cost simulation — disable
+        # swap so unmeasured forex symbols do not hard-fail the whole run.
+        enable_swap=False,
     )
 
     engine = BacktestEngine(config)
@@ -570,27 +599,46 @@ def compute_per_asset_metrics(results: dict) -> dict:
     }
 
 
-def run_dk_test(all_returns: pd.DataFrame, total_trades: int) -> dict:
+def run_pooled_hac_test(all_returns: pd.DataFrame, total_trades: int, n_trials: int = 216) -> dict:
+    """Pooled one-sample HAC t-test on cross-sectional daily returns.
+
+    SP1 (2026-08-04): renamed from `run_dk_test` — this is NOT a
+    Diebold-Mariano test (DM compares two forecasts; this tests whether
+    cross-sectional average daily returns differ from zero). The statistic
+    itself (Newey-West HAC t) was correct; the name and the lack of
+    multiple-testing control were not. n_trials now defaults to 216 =
+    27 strategies x 8 core assets, and the GO threshold is Bonferroni-
+    adjusted: alpha = 0.05 / n_trials, t_go = Phi^-1(1 - alpha).
+
+    The legacy name `run_dk_test` is kept as an alias so existing callers
+    (loop_engineering, run_ws_a_tsmom, test_path_b_wrappers, ...) do not
+    break; the returned dict gains `test_name`, `p_value`, `n_trials_effective`
+    and a Bonferroni-corrected `go_t_threshold`.
+    """
     if all_returns.empty or len(all_returns.columns) < 2:
         return {
+            "test_name": "pooled_hac_t_test",
             "dk_t_stat": 0.0,
             "pooled_sharpe": 0.0,
             "positive_sharpe_count": 0,
             "total_assets": len(all_returns.columns) if not all_returns.empty else 0,
             "total_days": 0,
             "total_trades": total_trades,
+            "n_trials_effective": n_trials,
             "verdict": "INSUFFICIENT_DATA",
         }
 
     cs_mean = all_returns.mean(axis=1).dropna()
     if len(cs_mean) < 30:
         return {
+            "test_name": "pooled_hac_t_test",
             "dk_t_stat": 0.0,
             "pooled_sharpe": 0.0,
             "positive_sharpe_count": 0,
             "total_assets": len(all_returns.columns),
             "total_days": len(cs_mean),
             "total_trades": total_trades,
+            "n_trials_effective": n_trials,
             "verdict": "INSUFFICIENT_DATA",
         }
 
@@ -608,6 +656,9 @@ def run_dk_test(all_returns: pd.DataFrame, total_trades: int) -> dict:
     dk_t = mu / nw_se if nw_se > 0 else 0.0
     pooled_sharpe = mu / (math.sqrt(gamma_0) + 1e-10) * math.sqrt(252)
 
+    # Two-sided p-value from t-stat (large-sample normal approximation).
+    p_value = 2.0 * (1.0 - _norm_cdf_approx(abs(dk_t)))
+
     pos_sharpe = 0
     for col in all_returns.columns:
         r = all_returns[col].dropna()
@@ -616,22 +667,56 @@ def run_dk_test(all_returns: pd.DataFrame, total_trades: int) -> dict:
             if s > 0:
                 pos_sharpe += 1
 
-    if dk_t > 2.0 and pos_sharpe >= 5:
+    # SP1: Bonferroni multiple-testing correction over effective trial count.
+    # Old rule dk_t>2.0 (p~0.023 one-sided) had NO correction for 216 tests.
+    alpha = 0.05 / max(n_trials, 1)
+    go_t = _norm_ppf_approx(1.0 - alpha / 2.0)
+    marginal_t = _norm_ppf_approx(1.0 - 0.05)  # unadjusted 5% two-sided
+
+    if dk_t > go_t and pos_sharpe >= 5:
         verdict = "GO"
-    elif dk_t > 1.5 or (dk_t > 1.0 and pos_sharpe >= 4):
+    elif dk_t > marginal_t or (dk_t > 1.5 and pos_sharpe >= 4):
         verdict = "MARGINAL"
     else:
         verdict = "REJECT"
 
     return {
+        "test_name": "pooled_hac_t_test",
         "dk_t_stat": round(dk_t, 4),
+        "p_value": round(p_value, 6),
         "pooled_sharpe": round(pooled_sharpe, 4),
         "positive_sharpe_count": pos_sharpe,
         "total_assets": len(all_returns.columns),
         "total_days": T,
         "total_trades": total_trades,
+        "n_trials_effective": n_trials,
+        "bonferroni_alpha": round(alpha, 8),
+        "go_t_threshold": round(go_t, 4),
         "verdict": verdict,
     }
+
+
+def _norm_cdf_approx(x: float) -> float:
+    """Standard normal CDF (Abramowitz-Stegun 7.1.26, math.erf-based)."""
+    return 0.5 * (1.0 + math.erf(x / math.sqrt(2.0)))
+
+
+def _norm_ppf_approx(p: float) -> float:
+    """Standard normal inverse CDF (Acklam approximation)."""
+    if p <= 0:
+        return -10.0
+    if p >= 1:
+        return 10.0
+    if p < 0.5:
+        return -_norm_ppf_approx(1.0 - p)
+    t = math.sqrt(-2.0 * math.log(1.0 - p))
+    c0, c1, c2 = 2.515517, 0.802853, 0.010328
+    d1, d2, d3 = 1.432788, 0.189269, 0.001308
+    return t - (c0 + c1 * t + c2 * t * t) / (1.0 + d1 * t + d2 * t * t + d3 * t * t * t)
+
+
+# Backwards-compatible alias (was the pre-SP1 name; callers unchanged).
+run_dk_test = run_pooled_hac_test
 
 
 def strategy_registry() -> list[tuple[str, callable]]:
@@ -868,7 +953,7 @@ def strategy_registry() -> list[tuple[str, callable]]:
     return result
 
 
-def run_variant(name: str, factory, universe: list[str]) -> dict:
+def run_variant(name: str, factory, universe: list[str], n_trials: int = 216) -> dict:
     print(f"\n{'=' * 64}")
     print(f"  Strategy: {name}")
     print(f"{'=' * 64}")
@@ -896,7 +981,7 @@ def run_variant(name: str, factory, universe: list[str]) -> dict:
             print(f"ERROR: {e}")
             per_asset[sym] = {"error": str(e)}
 
-    dk = run_dk_test(all_returns, total_trades)
+    dk = run_dk_test(all_returns, total_trades, n_trials=n_trials)
     dk["per_asset"] = per_asset
     dk["strategy"] = name
 
@@ -951,12 +1036,14 @@ def main() -> int:
     print(f"\nEdge search start: {datetime.now(UTC).isoformat()}")
     print(f"Universe ({len(universe)}): {universe}")
     print(f"Strategies: {len(variants)}")
-    print("GO rule: dk_t>2.0 AND pos_sharpe>=5")
+    n_trials_effective = max(len(variants) * len(universe), 1)
+    print(f"Multiple-testing N (strategies x assets): {n_trials_effective}")
+    print(f"GO rule: pooled HAC t > Phi^-1(1-0.05/{n_trials_effective}) AND pos_sharpe>=5")
 
     all_results: dict = {}
     for name, factory in variants:
         try:
-            all_results[name] = run_variant(name, factory, universe)
+            all_results[name] = run_variant(name, factory, universe, n_trials=n_trials_effective)
         except Exception as e:
             print(f"\n  FATAL on {name}: {e}")
             traceback.print_exc()
@@ -1000,15 +1087,18 @@ def main() -> int:
     payload = {
         "generated_at": datetime.now(UTC).isoformat(),
         "universe": universe,
-        "go_rule": "dk_t>2.0 AND positive_sharpe_count>=5",
-        "marginal_rule": "dk_t>1.5 OR (dk_t>1.0 AND pos>=4)",
+        "go_rule": f"pooled HAC t > Phi^-1(1-0.05/{n_trials_effective}) AND positive_sharpe_count>=5 (Bonferroni N={n_trials_effective})",
+        "marginal_rule": "pooled HAC t > 1.96 OR (t > 1.5 AND pos>=4) (unadjusted)",
+        "n_trials_effective": n_trials_effective,
         "n_strategies_tested": len(all_results),
         "go": go,
         "marginal": marginal,
         "ranked": [
             {
                 "strategy": n,
+                "test_name": r.get("test_name", "pooled_hac_t_test"),
                 "dk_t_stat": r.get("dk_t_stat"),
+                "p_value": r.get("p_value"),
                 "pooled_sharpe": r.get("pooled_sharpe"),
                 "total_trades": r.get("total_trades"),
                 "positive_sharpe_count": r.get("positive_sharpe_count"),
@@ -1019,8 +1109,11 @@ def main() -> int:
         ],
         "results": all_results,
         "honest_note": (
-            "GO does not equal live-ready. Must still pass label-shuffle, "
-            "cost-stress, and not burn sacred holdout until single pre-committed hypothesis."
+            "SP1 2026-08-04: statistic is a pooled one-sample Newey-West HAC "
+            "t-test (renamed from the mislabeled 'DK test'); verdicts are "
+            "Bonferroni-adjusted for n_trials_effective. GO does not equal "
+            "live-ready. Must still pass label-shuffle, cost-stress, and not "
+            "burn sacred holdout until single pre-committed hypothesis."
         ),
     }
 

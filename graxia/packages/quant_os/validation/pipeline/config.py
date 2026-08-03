@@ -54,7 +54,9 @@ class PipelineConfig:
     wfa_max_degradation: float = 0.30
     mc_max_ruin_prob: float = 0.05
     mc_max_dd_p95: float = 0.25
-    dsr_min_value: float = 0.0
+    # SP1 (2026-08-04): alpha for DSR P(false positive). Was 0.0 — a value no
+    # probability can be less than, making the DSR gate a permanent PASS.
+    dsr_min_value: float = 0.05
     pbo_max_value: float = 0.50
     stress_min_positive: float = 0.80
     bootstrap_sharpe_ci_lower_min: float = 0.0
