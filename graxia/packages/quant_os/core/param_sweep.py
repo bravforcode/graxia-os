@@ -1,5 +1,6 @@
 """Parameter sweep from vectorbt pattern — with automatic search-budget tracking."""
 
+import math
 from collections.abc import Callable
 from itertools import product
 
@@ -95,7 +96,7 @@ class ParamSweep:
         observed_sharpe: float,
         n_observations: int,
         *,
-        sharpe_annualization_factor: float = 1.0,
+        sharpe_annualization_factor: float = math.sqrt(252),  # SP1: caller passes ANNUALIZED Sharpe (e.g. best[1]) with raw-bar n; de-annualize by default
         skewness: float = 0.0,
         kurtosis: float = 3.0,
         confidence_level: float = 0.95,
