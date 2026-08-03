@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class LookaheadViolation(Exception):
+class LookaheadViolation(Exception):  # noqa: N818
     """Raised when lookahead bias is detected in strict mode"""
 
     pass
@@ -45,6 +45,13 @@ class LookaheadGuard:
     def get_slice(self, data: dict[str, list], end_index: int | None = None) -> dict[str, list]:
         """Get data slice up to and including current index (no future data)"""
         idx = end_index if end_index is not None else self._current_index
+        if idx > self._current_index:
+            msg = f"LOOKAHEAD VIOLATION: get_slice requested end_index {idx} " f"but current is {self._current_index}"
+            self._violations.append(msg)
+            if self._strict:
+                raise LookaheadViolation(msg)
+            logger.error(msg)
+            idx = self._current_index  # clamp: never leak future bars
         return {k: v[: idx + 1] for k, v in data.items()}
 
     @property
