@@ -281,30 +281,38 @@ def compare_runs(a_result, b_result, a_output, b_output):
     return errors
 
 
-GATE_DIRTY_EXEMPT = (
-    "graxia/packages/quant_os/quarantine_manifest.json",
-    "graxia/packages/quant_os/artifacts/release_gate/",
-    "graxia/packages/quant_os/state/audit_log.jsonl",
-    "graxia/packages/quant_os/tests/.test_tmp/list.json",
-    "graxia/packages/quant_os/validation/.experiment_registry.json",
-    "graxia/packages/quant_os/data/heartbeat.txt",
-    "data/heartbeat.txt",  # stray root-level file; orchestrator/health_check write cwd-relative heartbeat
-    "graxia/packages/quant_os/reports/paper_trading/funding_arb_state.json",  # live funding-arb process state
-    "graxia/packages/quant_os/reports/research_backed_pipeline.json",  # research pipeline output
-    "graxia/packages/quant_os/data/sacred_holdout/holdout.csv",  # holdout dataset (regenerable)
-    "graxia/packages/quant_os/reports/deep_research_institutional_gates_20260803.md",  # research report
-    "graxia/packages/quant_os/docs/superpowers/specs/2026-08-03-sp1-dsr-unit-correctness-design.md",  # parallel-session design doc (untracked)
-    "graxia/packages/quant_os/reports/trial_1032_52week_high_results.json",  # parallel-session trial evidence
-    "graxia/packages/quant_os/reports/trial_3008_fx_carry_results.json",  # parallel-session trial evidence
-    "Meta/states/researcher-forex-ea-verification.md",  # parallel-session researcher state
-    "Meta/states/researcher-forexroasted.md",  # parallel-session researcher state
-    "graxia/packages/quant_os/1350)",  # stray 0-byte shell-redirect accident (untracked, empty)
-    "graxia/packages/quant_os/research/hypothesis_registry.json",  # trial evidence (ratchet-managed)
-    "graxia/packages/quant_os/research/trial_ledger.json",  # trial evidence (ratchet-managed)
-    "graxia/packages/quant_os/research/trial_ledger_b.json",  # trial evidence (ratchet-managed)
-    "Meta/states/researcher-eatested-ea-ranking.md",  # parallel-session researcher state
-    "graxia/packages/quant_os/reports/research_retail_forex_eas_20260804.md",  # research report
+ALLOWED_DIRTY_FILES: frozenset[str] = frozenset(
+    {
+        "data/heartbeat.txt",
+        "graxia/packages/quant_os/data/heartbeat.txt",
+        "graxia/packages/quant_os/tests/.test_tmp/list.json",
+        "graxia/packages/quant_os/quarantine_manifest.json",  # gate itself writes it
+    }
 )
+
+ALLOWED_DIRTY_PATTERNS: tuple[re.Pattern, ...] = (
+    re.compile(r"^graxia/packages/quant_os/research/trial_ledger.*\.json$"),
+    re.compile(r"^graxia/packages/quant_os/research/hypothesis_registry.*\.json$"),
+    re.compile(r"^graxia/packages/quant_os/reports/.*\.(json|md)$"),
+    re.compile(r"^Meta/states/.*\.md$"),
+    re.compile(r"^graxia/packages/quant_os/Meta/states/.*\.md$"),
+    re.compile(r"^graxia/packages/quant_os/state/.*\.jsonl$"),
+)
+
+
+def is_file_exempted(filepath: str) -> bool:
+    """Return True if a dirty file is an allowed runtime artifact.
+
+    Cross-platform: git status --porcelain may emit backslash separators on
+    Windows; normalize before matching so Linux CI and Windows dev agree.
+    """
+    normalized_path = filepath.replace("\\", "/")
+    # Hard security rule: source code is NEVER exempted.
+    if normalized_path.endswith(".py"):
+        return False
+    if normalized_path in ALLOWED_DIRTY_FILES:
+        return True
+    return any(p.match(normalized_path) for p in ALLOWED_DIRTY_PATTERNS)
 
 
 def check_git_clean():
@@ -321,9 +329,16 @@ def check_git_clean():
         # Do NOT strip() first: unstaged entries are " M path" and stripping
         # drops the leading space, shifting the path left by one char.
         filepath = line[3:].strip()
-        if any(filepath == ex or filepath.startswith(ex) for ex in GATE_DIRTY_EXEMPT):
+        if is_file_exempted(filepath):
             continue
         dirty_files.append(filepath)
+
+    # Stale-entry drift guard: warn (not fail) when an allowed entry no longer
+    # exists on disk, so dead exemption config does not accumulate silently.
+    for entry in sorted(ALLOWED_DIRTY_FILES):
+        candidate = REPO_ROOT / entry
+        if not candidate.exists():
+            print(f"[WARNING] stale exemption entry (not on disk): {entry}")
 
     if dirty_files:
         return [f"Uncommitted changes: {', '.join(dirty_files)}"]
