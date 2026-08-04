@@ -827,26 +827,29 @@ def main() -> int:
 
     if args.include_gross:
         print("\nGross diagnostic (DIAGNOSTIC ONLY — verdicts frozen):")
-        calib = json.loads((ROOT / "config" / "cost_calibration.json").read_text(encoding="utf-8"))
-        calib_assets = calib.get("assets", {})
-        measured_bps = {}
-        for sym in assets:
-            entry = calib_assets.get(sym, {})
-            spread = float(entry.get("spread_bps_measured", 0.0))
-            bps = float(entry.get("round_trip_bps_measured", spread * 2.0))
-            measured_bps[sym] = bps
-            print(f"  {sym}: measured_round_trip_bps={bps:.2f}")
-        gross_artifact = build_gross_artifact(asset_results, measured_bps)
-        for sym, g in gross_artifact["per_asset"].items():
-            print(
-                f"  {sym}: gross_PF={g['gross_pf']} net_sharpe={g['net_sharpe_daily']} "
-                f"gross_sharpe={g['gross_sharpe_daily']} break_even_mult={g['break_even_mult']} "
-                f"classification={g['classification']}"
-            )
-        gross_out = ROOT / args.gross_out
-        gross_out.parent.mkdir(parents=True, exist_ok=True)
-        gross_out.write_text(json.dumps(gross_artifact, indent=2, default=str), encoding="utf-8")
-        print(f"Gross artifact written: {gross_out}")
+        try:
+            calib = json.loads((ROOT / "config" / "cost_calibration.json").read_text(encoding="utf-8"))
+            calib_assets = calib.get("assets", {})
+            measured_bps = {}
+            for sym in assets:
+                entry = calib_assets.get(sym, {})
+                spread = float(entry.get("spread_bps_measured", 0.0))
+                bps = float(entry.get("round_trip_bps_measured", spread * 2.0))
+                measured_bps[sym] = bps
+                print(f"  {sym}: measured_round_trip_bps={bps:.2f}")
+            gross_artifact = build_gross_artifact(asset_results, measured_bps)
+            for sym, g in gross_artifact["per_asset"].items():
+                print(
+                    f"  {sym}: gross_PF={g['gross_pf']} net_sharpe={g['net_sharpe_daily']} "
+                    f"gross_sharpe={g['gross_sharpe_daily']} break_even_mult={g['break_even_mult']} "
+                    f"classification={g['classification']}"
+                )
+            gross_out = ROOT / args.gross_out
+            gross_out.parent.mkdir(parents=True, exist_ok=True)
+            gross_out.write_text(json.dumps(gross_artifact, indent=2, default=str), encoding="utf-8")
+            print(f"Gross artifact written: {gross_out}")
+        except Exception as e:  # diagnostic never blocks the frozen core4 output
+            print(f"GROSS DIAGNOSTIC FAILED (continuing with core4): {e}")
 
     out = ROOT / args.out
     out.parent.mkdir(parents=True, exist_ok=True)
