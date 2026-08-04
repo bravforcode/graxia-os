@@ -35,7 +35,14 @@ from .ledger import (
 )
 from .pre_register import PreRegistration
 from .registry import check_provenance, is_zombie
-from .validation import ValidationAdapters, VerificationResult, VerificationThresholds, verify_three_layer
+from .validation import (
+    CandidateGates,
+    ValidationAdapters,
+    VerificationResult,
+    VerificationThresholds,
+    verify_candidate_gates,
+    verify_three_layer,
+)
 
 
 @dataclass
@@ -143,14 +150,15 @@ def run_research_loop(
     # 5. Label-shuffle.
     pvalue = float(adapters.run_label_shuffle(pre_reg, returns))
 
-    # 6. Verify all three layers.
-    vresult = verify_three_layer(dk_result, pvalue, total_trades, thresholds)
+    # 5b. Cost-stress (SP1b): candidate must survive cost increases.
+    #     Holdout may only be opened when dk + label-shuffle + min-trades
+    #     + cost-stress ALL pass.
+    cost_stress = None
+    if adapters.run_cost_stress is not None:
+        cost_stress = adapters.run_cost_stress(backtest_out)
+    vresult = verify_candidate_gates(dk_result, pvalue, total_trades, cost_stress, thresholds)
     if not vresult.is_candidate:
-        failed = [n for n, ok in [
-            ("dk", vresult.dk_pass),
-            ("label_shuffle", vresult.label_shuffle_pass),
-            ("min_trades", vresult.min_trades_pass),
-        ] if not ok]
+        failed = vresult.failed()
         entry = LedgerEntry(
             trial_number=trial_no,
             id=pre_reg.trial_id,

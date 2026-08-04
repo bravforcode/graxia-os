@@ -55,7 +55,7 @@ class CallTracker:
         return None
 
 
-def make_adapters(dk_result, pvalue, total_trades, holdout_pass=True, returns=None):
+def make_adapters(dk_result, pvalue, total_trades, holdout_pass=True, returns=None, cost_stress=None):
     tracker = CallTracker()
 
     def run_backtest(pre_reg):
@@ -64,6 +64,8 @@ def make_adapters(dk_result, pvalue, total_trades, holdout_pass=True, returns=No
             "returns": returns if returns is not None else object(),
             "total_trades": total_trades,
             "trade_log": "reports/fake_20260720_valid.json",  # post-fix date -> VALID
+            "net_pnl": 1000.0,
+            "total_costs": 100.0,
         }
 
     def run_dk_test(r, tt):
@@ -75,10 +77,27 @@ def make_adapters(dk_result, pvalue, total_trades, holdout_pass=True, returns=No
     def run_holdout(pre_reg):
         return holdout_pass
 
+    def run_cost_stress(backtest_out):
+        # SP1b: default injected cost-stress PASSES (LOW sensitivity).
+        # Pass cost_stress={"cost_sensitivity": "HIGH"} to test the fail path.
+        if cost_stress is not None:
+            return cost_stress
+        return {
+            "base_pnl": 1000.0,
+            "stress_1_5x_pnl": 950.0,
+            "stress_2x_pnl": 900.0,
+            "stress_3x_pnl": 800.0,
+            "survives_stress_1": True,
+            "survives_stress_2": True,
+            "survives_stress_3": True,
+            "cost_sensitivity": "LOW",
+        }
+
     adapters = ValidationAdapters(
         run_backtest=run_backtest,
         run_dk_test=run_dk_test,
         run_label_shuffle=run_label_shuffle,
+        run_cost_stress=run_cost_stress,
         run_holdout=run_holdout,
     )
     return adapters, tracker
@@ -221,6 +240,36 @@ def test_dk_failure_is_rejected():
     res = run_research_loop(base_pre_reg(), adapters, ledger, empty_registry(), Path("/nonexistent/prov.md"))
     assert res.status == STATUS_REJECTED
     assert res.gate_reached == "dk"
+
+
+def test_cost_stress_failure_blocks_candidate_and_holdout():
+    """SP1b: cost-stress is a hard candidate gate — holdout must NOT open."""
+    ledger = WorkingLedger(Path(tempfile.mktemp(suffix=".json")), direction="A")
+    adapters, _ = make_adapters(
+        dk_pass_dict(),
+        0.01,
+        200,
+        cost_stress={"cost_sensitivity": "HIGH", "survives_stress_2": False},
+    )
+    res = run_research_loop(base_pre_reg(), adapters, ledger, empty_registry(), Path("/nonexistent/prov.md"))
+    assert res.status == STATUS_REJECTED
+    assert res.gate_reached == "verify"
+    assert res.verification is not None
+    assert res.verification.cost_stress_pass is False
+    assert res.verification.is_candidate is False
+    assert ledger.sacred_holdout.use_count == 0, "holdout must NOT open on cost-stress failure"
+
+
+def test_cost_stress_missing_adapter_is_fail_closed():
+    """SP1b: no run_cost_stress adapter -> fail-closed (not candidate)."""
+    ledger = WorkingLedger(Path(tempfile.mktemp(suffix=".json")), direction="A")
+    adapters, _ = make_adapters(dk_pass_dict(), 0.01, 200)
+    adapters.run_cost_stress = None  # simulate un-wired environment
+    res = run_research_loop(base_pre_reg(), adapters, ledger, empty_registry(), Path("/nonexistent/prov.md"))
+    assert res.status == STATUS_REJECTED
+    assert res.gate_reached == "verify"
+    assert res.verification is not None
+    assert res.verification.cost_stress_pass is False
 
 
 # ---------------------------------------------------------------------------

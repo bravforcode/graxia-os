@@ -533,31 +533,59 @@ def run_engine_for_asset(symbol: str, strategy) -> dict:
     return results
 
 
+def _daily_calendar_returns(equity_curve: list) -> list[float]:
+    """Resample event-based equity curve to calendar-daily returns.
+
+    SP1b (2026-08-04): the equity curve only has points at trade exits.
+    Annualizing those event-to-event returns with sqrt(252) inflates Sharpe
+    (zero-return days are excluded from both mean and std). The correct
+    per-asset Sharpe uses a daily calendar series with forward-filled equity,
+    so no-trade days contribute 0 return and std reflects true daily vol.
+    """
+    if not equity_curve or len(equity_curve) < 2:
+        return []
+    try:
+        ts = [pd.Timestamp(e["timestamp"]) for e in equity_curve]
+        eq = pd.Series([float(e["equity"]) for e in equity_curve], index=ts)
+        eq = eq[~eq.index.duplicated(keep="last")].sort_index()
+        daily = eq.resample("D").last().ffill()
+        rets = daily.pct_change().dropna().values
+        return [float(r) for r in rets]
+    except Exception:
+        # Fallback: event-to-event returns (pre-SP1b behaviour)
+        out = []
+        for i in range(1, len(equity_curve)):
+            prev_eq = float(equity_curve[i - 1]["equity"])
+            curr_eq = float(equity_curve[i]["equity"])
+            if prev_eq > 0:
+                out.append((curr_eq - prev_eq) / prev_eq)
+        return out
+
+
 def extract_daily_returns(results: dict) -> pd.DataFrame:
-    """Daily returns from equity curve (or trade-reconstructed equity)."""
+    """Daily returns from equity curve (or trade-reconstructed equity).
+
+    SP1b (2026-08-04): uses calendar-daily returns (zero on no-trade days)
+    instead of summing event-to-event returns per date — the old groupby-sum
+    produced a sparse, non-calendar series that mis-represented daily P&L.
+    """
     equity_curve = results.get("_full_equity_curve", [])
     symbol = results.get("_symbol", "UNKNOWN")
     if len(equity_curve) < 2:
         return pd.DataFrame()
 
-    rows = []
-    for i in range(1, len(equity_curve)):
-        prev_eq = float(equity_curve[i - 1]["equity"])
-        curr_eq = float(equity_curve[i]["equity"])
-        ts = equity_curve[i]["timestamp"]
-        if isinstance(ts, str):
-            ts = pd.Timestamp(ts)
-        ret = (curr_eq - prev_eq) / prev_eq if prev_eq > 0 else 0.0
-        rows.append({"date": ts.date() if hasattr(ts, "date") else ts, "return": ret})
+    rets = _daily_calendar_returns(equity_curve)
+    if not rets:
+        return pd.DataFrame()
 
-    df = pd.DataFrame(rows)
-    if df.empty:
-        return df
-    df["date"] = pd.to_datetime(df["date"])
-    daily = df.groupby("date")["return"].sum().reset_index()
-    daily = daily.set_index("date")
-    daily.columns = [symbol]
-    return daily
+    dates = pd.date_range(
+        end=pd.Timestamp(equity_curve[-1]["timestamp"]).normalize(),
+        periods=len(rets),
+        freq="D",
+    )
+    df = pd.DataFrame({"date": dates, "return": rets}).set_index("date")
+    df.columns = [symbol]
+    return df
 
 
 def compute_per_asset_metrics(results: dict) -> dict:
@@ -574,18 +602,16 @@ def compute_per_asset_metrics(results: dict) -> dict:
             "total_return_pct": 0.0,
         }
 
-    bar_returns = []
-    for i in range(1, len(equity_curve)):
-        prev_eq = float(equity_curve[i - 1]["equity"])
-        curr_eq = float(equity_curve[i]["equity"])
-        if prev_eq > 0:
-            bar_returns.append((curr_eq - prev_eq) / prev_eq)
+    bar_returns = _daily_calendar_returns(equity_curve)
 
     arr = np.array(bar_returns) if bar_returns else np.array([0.0])
     n_obs = len(arr)
     mu = float(arr.mean()) if n_obs else 0.0
     std = float(arr.std(ddof=1)) if n_obs > 1 else 0.0
-    # Annualize: if trade-based sparse series, use sqrt(n_trades/years) approx via 252
+    # SP1b: arr is now a calendar-daily series (zeros on no-trade days), so
+    # sqrt(252) annualization is unit-correct. Previously this annualized
+    # sparse trade-exit event returns, inflating Sharpe by excluding
+    # zero-return days from both mean and std.
     sharpe = mu / (std + 1e-10) * math.sqrt(252)
 
     equity_vals = [float(e["equity"]) for e in equity_curve] if equity_curve else [10000.0]
