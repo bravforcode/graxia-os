@@ -26,7 +26,7 @@ def _rec(ts, msc, vol):
 
 
 def test_write_batch_atomic_and_schema(tmp_path):
-    recs = [_rec(datetime(2026, 8, 4, 12, 0, tzinfo=UTC), 1764864000000, 1.0)]
+    recs = [_rec(datetime.now(UTC), 1764864000000, 1.0)]
     path = write_batch(recs, tmp_path, "XAUUSD", date(2026, 8, 4))
     assert path == tmp_path / "XAUUSD_2026-08-04.parquet"
     assert path.exists()
@@ -41,9 +41,9 @@ def test_write_batch_atomic_and_schema(tmp_path):
 
 
 def test_write_batch_overwrites_complete_file(tmp_path):
-    a = _rec(datetime(2026, 8, 4, 12, 0, tzinfo=UTC), 1764864000000, 1.0)
+    a = _rec(datetime.now(UTC), 1764864000000, 1.0)
     write_batch([a], tmp_path, "XAUUSD", date(2026, 8, 4))
-    b = _rec(datetime(2026, 8, 4, 12, 1, tzinfo=UTC), 1764864060000, 2.0)
+    b = _rec(datetime.now(UTC), 1764864060000, 2.0)
     write_batch([a, b], tmp_path, "XAUUSD", date(2026, 8, 4))
     df = pd.read_parquet(tmp_path / "XAUUSD_2026-08-04.parquet")
     assert len(df) == 2  # full replacement, never partial append

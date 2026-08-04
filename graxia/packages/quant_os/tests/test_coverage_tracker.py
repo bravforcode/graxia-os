@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import os
 from datetime import UTC, date, datetime, time, timedelta
+
+import pytest
 
 from market_data.coverage_tracker import (
     DEFAULT_SESSION_WINDOWS,
@@ -113,3 +116,40 @@ def test_corrupt_state_file_falls_back_to_empty(tmp_path):
     state_file.write_text("{not json")
     tracker = CoverageTracker("XAUUSD", state_file)
     assert tracker.qualifying_day_count() == 0
+
+
+def test_save_retries_when_replace_blocked(tmp_path, monkeypatch):
+    """Windows file-lock race: os.replace can transiently raise PermissionError
+    (WinError 5). save() must retry instead of failing the daemon tick."""
+    state_file = tmp_path / "cov.json"
+    tracker = CoverageTracker("XAUUSD", state_file)
+    _fill_qualifying_day(tracker, date(2026, 8, 3))
+
+    real_replace = os.replace
+    calls = {"n": 0}
+
+    def flaky_replace(src, dst):
+        calls["n"] += 1
+        if calls["n"] <= 2:
+            raise PermissionError(5, "Access is denied", src, dst)
+        return real_replace(src, dst)
+
+    monkeypatch.setattr(os, "replace", flaky_replace)
+    tracker.save()
+    assert calls["n"] == 3
+    assert CoverageTracker("XAUUSD", state_file).qualifying_day_count() == 1
+
+
+def test_save_raises_after_retries_exhausted(tmp_path, monkeypatch):
+    """If the lock never clears, save() must clean up the tmp file and raise."""
+    state_file = tmp_path / "cov.json"
+    tracker = CoverageTracker("XAUUSD", state_file)
+    _fill_qualifying_day(tracker, date(2026, 8, 3))
+
+    def always_blocked(src, dst):
+        raise PermissionError(5, "Access is denied", src, dst)
+
+    monkeypatch.setattr(os, "replace", always_blocked)
+    with pytest.raises(PermissionError):
+        tracker.save()
+    assert not list(tmp_path.glob(".coverage_*.tmp"))

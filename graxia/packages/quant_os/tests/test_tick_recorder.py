@@ -15,7 +15,7 @@ def test_record_tick_carries_new_fields():
         bid=Decimal("2300.00"),
         ask=Decimal("2300.20"),
         last=Decimal("2300.10"),
-        timestamp_utc=datetime(2026, 8, 4, 12, 0, tzinfo=UTC),
+        timestamp_utc=datetime.now(UTC),
         time_msc=1764864000000,
         volume=1.5,
         mt5_flags=2,
@@ -31,7 +31,7 @@ def test_record_tick_defaults_legacy_fields_none():
         bid=Decimal("1"),
         ask=Decimal("2"),
         last=Decimal("1.5"),
-        timestamp_utc=datetime(2026, 8, 4, 12, 0, tzinfo=UTC),
+        timestamp_utc=datetime.now(UTC),
     )
     assert rec.time_msc is None
     assert rec.volume is None

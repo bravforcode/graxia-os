@@ -13,6 +13,7 @@ import contextlib
 import json
 import os
 import tempfile
+import time as _time
 from dataclasses import dataclass
 from datetime import date, datetime, time
 from pathlib import Path
@@ -200,7 +201,18 @@ class CoverageTracker:
                 json.dump(self._state, fh, indent=2)
                 fh.flush()
                 os.fsync(fh.fileno())
-            os.replace(tmp_path, str(self._state_file))
+            # Windows file-lock race: antivirus/Defender can briefly hold the
+            # tmp file, making os.replace fail with PermissionError (WinError
+            # 5) — observed as a flake in gate runs. Retry briefly before
+            # giving up; the lock clears within milliseconds in practice.
+            for attempt in range(5):
+                try:
+                    os.replace(tmp_path, str(self._state_file))
+                    return
+                except PermissionError:
+                    if attempt == 4:
+                        raise
+                    _time.sleep(0.05 * (attempt + 1))
         except Exception:
             with contextlib.suppress(OSError):
                 os.unlink(tmp_path)
