@@ -132,6 +132,36 @@ def get_current_tick(symbol: str) -> dict:
         raise Mt5UnavailableError(f"Tick error for {symbol}: {e}") from e
 
 
+def get_ticks_from(symbol: str, from_msc: int, count: int = 10000) -> list[dict]:
+    """Fetch up to `count` ticks with time_msc >= from_msc via copy_ticks_from
+    (COPY_TICKS_ALL). Read-only. Returns [] when no ticks exist; raises
+    Mt5UnavailableError on failure."""
+    mt5 = _get_mt5()
+    try:
+        raw = mt5.copy_ticks_from(symbol, from_msc, count, mt5.COPY_TICKS_ALL)
+        if raw is None or len(raw) == 0:
+            return []
+        result = []
+        names = raw.dtype.names
+        has_real = "volume_real" in names
+        for t in raw:
+            result.append(
+                {
+                    "time_msc": int(t["time_msc"]),
+                    "bid": float(t["bid"]),
+                    "ask": float(t["ask"]),
+                    "last": float(t["last"]),
+                    "volume": float(t["volume_real"]) if has_real else float(t["volume"]),
+                    "flags": int(t["flags"]),
+                }
+            )
+        return result
+    except Mt5UnavailableError:
+        raise
+    except Exception as e:
+        raise Mt5UnavailableError(f"copy_ticks_from error for {symbol}: {e}") from e
+
+
 def get_symbols() -> list[dict]:
     """Enumerate all broker symbols via symbols_get() (read-only).
 
