@@ -86,19 +86,30 @@ def fetch_funding(
         with zipfile.ZipFile(dest_zip) as z:
             name = next(n for n in z.namelist() if n.endswith(".csv"))
             df = pd.read_csv(z.open(name))
-        df["calc_time"] = pd.to_datetime(df["calc_time"], utc=True)
+        # Real Binance funding CSVs use snake_case headers, epoch-ms
+        # calc_time and have NO mark_price column. Accept the plan-draft
+        # camelCase format as well.
+        df = df.rename(
+            columns={
+                "last_funding_rate": "funding_rate",
+                "lastFundingRate": "funding_rate",
+                "mark_price": "mark_price",
+                "markPrice": "mark_price",
+            }
+        )
+        if "funding_rate" not in df.columns:
+            raise KeyError(f"funding CSV has no funding-rate column: {list(df.columns)}")
+        if "mark_price" not in df.columns:
+            df["mark_price"] = float("nan")
+        if df["calc_time"].dtype.kind in "iu":
+            df["calc_time"] = pd.to_datetime(df["calc_time"], unit="ms", utc=True)
+        else:
+            df["calc_time"] = pd.to_datetime(df["calc_time"], utc=True)
         for day, group in df.groupby(df["calc_time"].dt.date):
             path = _month_parquet_path(out_dir, symbol, day)
             if path.exists():
                 continue
-            rows = group.sort_values("calc_time")
-            rows = rows.rename(
-                columns={
-                    "calc_time": "timestamp_utc",
-                    "lastFundingRate": "funding_rate",
-                    "markPrice": "mark_price",
-                }
-            )
+            rows = group.sort_values("calc_time").rename(columns={"calc_time": "timestamp_utc"})
             rows["timestamp_utc"] = rows["timestamp_utc"].dt.strftime("%Y-%m-%dT%H:%M:%SZ")
             rows["time_msc"] = pd.to_datetime(rows["timestamp_utc"], utc=True).astype("int64") // 10**6
             rows["symbol"] = symbol

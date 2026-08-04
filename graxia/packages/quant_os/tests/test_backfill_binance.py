@@ -82,6 +82,36 @@ def test_funding_full_month_range(tmp_path, monkeypatch):
     assert "2026-09" in captured[1]
 
 
+def test_funding_real_header_snake_case_epoch_ms(tmp_path, monkeypatch):
+    """Real Binance funding CSVs use snake_case headers and epoch-ms
+    calc_time (no markPrice column) — the plan-draft fixture format
+    (camelCase + datetime string + markPrice) does not exist in the wild."""
+    month_dir = tmp_path / "src"
+    month_dir.mkdir(parents=True)
+    zip_path = month_dir / "BTCUSDT-fundingRate-2026-07.zip"
+    csv_text = (
+        "calc_time,funding_interval_hours,last_funding_rate\n"
+        "1782864000000,8,0.00005532\n"  # 2026-07-01T00:00:00Z
+        "1782867600000,8,0.00006111\n"
+    )  # +1h (test data)
+    with zipfile.ZipFile(zip_path, "w") as z:
+        z.writestr("funding.csv", csv_text)
+
+    monkeypatch.setattr(binance_mod, "_download", lambda url, dest: dest.write_bytes(zip_path.read_bytes()))
+    monkeypatch.setattr(binance_mod, "_sha256_of", lambda p: "h")
+    monkeypatch.setattr(binance_mod, "_download_to_text", lambda url: "h  x.zip\n")
+
+    out = tmp_path / "out"
+    paths = binance_mod.fetch_funding("BTCUSDT", "2026-07-01", "2026-07-01", out)
+    assert len(paths) == 1
+    df = pd.read_parquet(paths[0])
+    assert len(df) == 2
+    assert df.iloc[0]["funding_rate"] == 0.00005532
+    assert df.iloc[0]["time_msc"] == 1782864000000
+    assert df.iloc[0]["source"] == "binance_funding"
+    assert df["mark_price"].isna().all()  # column kept (view projection), value absent
+
+
 def test_trades_csv_to_parquet(tmp_path, monkeypatch):
     src = tmp_path / "src" / "BTCUSDT-trades-2026-08-01.zip"
     src.parent.mkdir(parents=True, exist_ok=True)
