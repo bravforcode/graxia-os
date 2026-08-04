@@ -13,6 +13,8 @@ import datetime
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # package root for `market_data` imports
+
 from market_data.myfxbook import config, fetcher, report, runner_impl
 
 
