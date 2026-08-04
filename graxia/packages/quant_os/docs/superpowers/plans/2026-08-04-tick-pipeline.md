@@ -1080,7 +1080,7 @@ git commit --no-verify -m "feat(quant_os): daemon flush updates INV-005 ticks ma
 - Consumes: `write_batch`-style parquet writer (reuse `market_data.tick_store.write_batch` by constructing TickRecords, or a local `_write_funding_parquet`; keep source=`binance_funding`).
 - Produces: `fetch_funding(symbol: str, start_date: str, end_date: str, out_dir: str | Path, *, progress_file: str | Path | None = None) -> list[Path]` — downloads monthly funding-rate CSVs from `https://data.binance.vision/data/futures/um/monthly/fundingRate/{symbol}/{symbol}-fundingRate-{YYYY-MM}.zip`, verifies the sibling `.CHECKSUM` file, converts to `data/backfill/binance_funding/{sym}_{date}.parquet`, skips existing files (idempotent). Funding row schema: `timestamp_utc, symbol, funding_rate (8h), mark_price, source="binance_funding"`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_backfill_binance.py
@@ -1135,12 +1135,12 @@ def test_funding_idempotent_skips_existing(tmp_path, monkeypatch):
     assert paths == []
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_backfill_binance.py -q`
 Expected: FAIL — `ModuleNotFoundError: No module named 'data_pipeline.backfill'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```python
 # data_pipeline/backfill/binance.py
@@ -1225,12 +1225,12 @@ def _download_to_text(url: str) -> str:
         return resp.read().decode()
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_backfill_binance.py -q`
 Expected: PASS (2 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add data_pipeline/backfill/__init__.py data_pipeline/backfill/binance.py tests/test_backfill_binance.py
