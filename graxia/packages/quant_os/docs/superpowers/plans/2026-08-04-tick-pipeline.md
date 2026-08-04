@@ -870,7 +870,7 @@ git commit --no-verify -m "feat(quant_os): DuckDB tick views, whitelisted parame
   - `update_manifest(dataset_name: str, files: list[Path]) -> Path` — writes `data/manifests/{dataset_name}_manifest.json` (shape per spec 5.4, paths relative to repo root)
   - `verify_manifest(manifest_path: str | Path) -> list[str]` — returns error strings (empty = pass); checks existence, size_bytes, sha256.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_manifest.py
@@ -916,12 +916,12 @@ def test_verify_detects_missing_file(tmp_path, monkeypatch):
     assert mgr.verify_manifest(manifest_path)  # non-empty errors
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_manifest.py -q`
 Expected: FAIL — `ModuleNotFoundError: No module named 'data_pipeline.manifest'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```python
 # data_pipeline/manifest.py
@@ -986,12 +986,12 @@ class DataManifestManager:
         return errors
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_manifest.py -q`
 Expected: PASS (3 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add data_pipeline/manifest.py tests/test_manifest.py
