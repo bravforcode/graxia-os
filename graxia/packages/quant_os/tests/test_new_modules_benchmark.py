@@ -35,7 +35,11 @@ from graxia.packages.quant_os.strategies.volume_breakout import VolumeBreakout
 
 
 def _benchmark(func, iterations=100):
-    """Run func N times and return (avg_ms, p95_ms, total_ms)."""
+    """Run func N times and return (median_ms, p95_ms, total_ms).
+
+    Median (not mean) so a single GC/CPU-contention outlier does not blow the
+    average and make timing benchmarks flaky on loaded machines.
+    """
     times = []
     for _ in range(iterations):
         start = time.perf_counter()
@@ -44,10 +48,10 @@ def _benchmark(func, iterations=100):
         times.append(elapsed)
 
     times.sort()
-    avg = sum(times) / len(times)
+    median = times[len(times) // 2]
     p95 = times[int(len(times) * 0.95)]
     total = sum(times)
-    return avg, p95, total
+    return median, p95, total
 
 
 # ---------------------------------------------------------------------------
@@ -59,17 +63,17 @@ class TestDynamicKellyBenchmark:
     """Benchmark DynamicKellySizer."""
 
     def test_compute_kelly_speed(self):
-        """DynamicKellySizer.compute_kelly < 0.1ms avg."""
+        """DynamicKellySizer.compute_kelly < 0.1ms median."""
         sizer = DynamicKellySizer(base_kelly=0.25, vol_target=0.15)
 
-        avg, p95, total = _benchmark(
+        median, p95, total = _benchmark(
             lambda: sizer.compute_kelly(0.55, 1.5, 1.0, 0.20, "trending", 0.05),
             iterations=1000,
         )
 
-        assert avg < 0.1, f"avg={avg:.3f}ms too slow"
+        assert median < 0.1, f"median={median:.3f}ms too slow"
         # Just print for info
-        print(f"\nDynamicKelly: avg={avg:.4f}ms, p95={p95:.4f}ms")
+        print(f"\nDynamicKelly: median={median:.4f}ms, p95={p95:.4f}ms")
 
 
 class TestCVaRBenchmark:
@@ -81,10 +85,10 @@ class TestCVaRBenchmark:
         returns = np.random.randn(500, 4) * 0.01
 
         opt = CVaROptimizer(alpha=0.05, max_weight=0.40)
-        avg, p95, total = _benchmark(lambda: opt.optimize(returns), iterations=10)
+        median, p95, total = _benchmark(lambda: opt.optimize(returns), iterations=10)
 
-        assert avg < 500, f"avg={avg:.1f}ms too slow"
-        print(f"\nCVaR(4 assets, 500 periods): avg={avg:.1f}ms, p95={p95:.1f}ms")
+        assert median < 500, f"median={median:.1f}ms too slow"
+        print(f"\nCVaR(4 assets, 500 periods): median={median:.1f}ms, p95={p95:.1f}ms")
 
     def test_optimize_speed_large(self):
         """CVaR optimize 10 assets, 2000 periods < 2000ms."""
@@ -92,10 +96,10 @@ class TestCVaRBenchmark:
         returns = np.random.randn(2000, 10) * 0.01
 
         opt = CVaROptimizer(alpha=0.05, max_weight=0.30)
-        avg, p95, total = _benchmark(lambda: opt.optimize(returns), iterations=5)
+        median, p95, total = _benchmark(lambda: opt.optimize(returns), iterations=5)
 
-        assert avg < 2000, f"avg={avg:.1f}ms too slow"
-        print(f"\nCVaR(10 assets, 2000 periods): avg={avg:.1f}ms, p95={p95:.1f}ms")
+        assert median < 2000, f"median={median:.1f}ms too slow"
+        print(f"\nCVaR(10 assets, 2000 periods): median={median:.1f}ms, p95={p95:.1f}ms")
 
 
 class TestOrderBookBenchmark:
@@ -109,10 +113,10 @@ class TestOrderBookBenchmark:
             "asks": [[100.1 + i * 0.01, 8.0 + i] for i in range(20)],
         }
 
-        avg, p95, total = _benchmark(lambda: extractor.extract(orderbook), iterations=10000)
+        median, p95, total = _benchmark(lambda: extractor.extract(orderbook), iterations=10000)
 
-        assert avg < 0.05, f"avg={avg:.4f}ms too slow"
-        print(f"\nOrderBook(20 levels): avg={avg:.4f}ms, p95={p95:.4f}ms")
+        assert median < 0.05, f"median={median:.4f}ms too slow"
+        print(f"\nOrderBook(20 levels): median={median:.4f}ms, p95={p95:.4f}ms")
 
 
 class TestVolumeBreakoutBenchmark:
@@ -129,13 +133,13 @@ class TestVolumeBreakoutBenchmark:
             "volume": [100.0] * 100,
         }
 
-        avg, p95, total = _benchmark(
+        median, p95, total = _benchmark(
             lambda: strategy.generate_signal("XAUUSD", ohlcv),
             iterations=1000,
         )
 
-        assert avg < 0.5, f"avg={avg:.3f}ms too slow"
-        print(f"\nVolumeBreakout(100 bars): avg={avg:.4f}ms, p95={p95:.4f}ms")
+        assert median < 0.5, f"median={median:.3f}ms too slow"
+        print(f"\nVolumeBreakout(100 bars): median={median:.4f}ms, p95={p95:.4f}ms")
 
 
 @pytest.mark.skipif(not HAS_CIRCUIT_BREAKER, reason="CircuitBreaker not implemented")
@@ -146,13 +150,13 @@ class TestCircuitBreakerBenchmark:
         """CircuitBreaker.record_trade < 0.05ms."""
         cb = CircuitBreaker()
 
-        avg, p95, total = _benchmark(
+        median, p95, total = _benchmark(
             lambda: cb.record_trade("forex", -0.01),
             iterations=10000,
         )
 
-        assert avg < 0.05, f"avg={avg:.4f}ms too slow"
-        print(f"\nCircuitBreaker.record_trade: avg={avg:.5f}ms, p95={p95:.5f}ms")
+        assert median < 0.05, f"median={median:.4f}ms too slow"
+        print(f"\nCircuitBreaker.record_trade: median={median:.5f}ms, p95={p95:.5f}ms")
 
 
 class TestEnsembleBenchmark:
@@ -182,9 +186,9 @@ class TestEnsembleBenchmark:
 
         x_test = x[150:]
         ensemble.predict(x_test)  # warm-up: first call includes model dispatch overhead
-        avg, p95, total = _benchmark(lambda: ensemble.predict(x_test), iterations=100)
+        median, p95, total = _benchmark(lambda: ensemble.predict(x_test), iterations=100)
 
         # 10ms flaked on loaded dev machines (11-14ms observed); 25ms keeps a real
         # regression guard (e.g. accidental I/O or re-fit inside predict).
-        assert avg < 25, f"avg={avg:.1f}ms too slow"
-        print(f"\nEnsemble.predict(50 samples): avg={avg:.2f}ms, p95={p95:.2f}ms")
+        assert median < 25, f"median={median:.1f}ms too slow"
+        print(f"\nEnsemble.predict(50 samples): median={median:.2f}ms, p95={p95:.2f}ms")
