@@ -22,6 +22,11 @@ from typing import Any
 from .config import BotConfig, get_bot_config
 from .risk_bridge import RiskBridge
 
+# Mock-only anchor for offline/test data generation (no MT5). NOT a live
+# price: the engine fails loud on real data fetch errors and never trades
+# on synthetic data — see _generate_mock_data.
+MOCK_BASE_PRICE = 2350.0
+
 
 class SignalDirection(str, Enum):
     BUY = "BUY"
@@ -404,7 +409,7 @@ class GoldBotEngine:
         """Generate mock data for testing without MT5"""
         import random
 
-        base_price = 2350.0  # Current gold price approx
+        base_price = MOCK_BASE_PRICE  # arbitrary mock anchor, not a live price
         data = {}
 
         for tf in ["M1", "M5", "M15", "H1", "H4"]:

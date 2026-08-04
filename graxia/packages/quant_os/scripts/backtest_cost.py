@@ -122,18 +122,26 @@ def compute_trade_pnl(
             Must be return-units, NOT dollars. XAUUSD calibrated: 0.000027.
         lot_mult: lot multiplier (1.0 = 0.01 lot)
         close_prices: bar close prices for per-trade dollar conversion.
-            If None, uses fallback 2350.0 (backward compat).
+            If None, derives per-trade price from the dataframe's 'close'
+            column; raises if neither is available (fail-closed, no stale
+            hardcoded anchor).
 
     Returns:
         DataFrame with trade results
     """
     target_return = df["target_return"].values
 
-    # Per-trade price: use actual bar close if available, else fallback
+    # Per-trade price: prefer explicit close_prices, else actual bar closes
+    # from the dataframe. Fail-closed instead of a stale hardcoded anchor.
     if close_prices is not None and len(close_prices) == len(target_return):
         price_arr = close_prices.astype(float)
+    elif "close" in df.columns and len(df) == len(target_return):
+        price_arr = df["close"].values.astype(float)
     else:
-        price_arr = np.full(len(target_return), 2350.0)
+        raise ValueError(
+            "compute_trade_pnl: no close prices available — pass close_prices "
+            "or a dataframe with a 'close' column (refusing stale fallback)"
+        )
 
     # Direction multiplier: pred=1 (up) → +1, pred=0 (down) → -1
     direction = 2 * preds.astype(float) - 1
@@ -283,8 +291,14 @@ def evaluate_backtest(
     else:
         sharpe = 0.0
 
-    # Average close price for move-points calculation
-    avg_price = float(np.mean(close_trades)) if close_trades is not None else 2350.0
+    # Average close price for move-points calculation — derive from actual
+    # data; never a stale hardcoded anchor.
+    if close_trades is not None:
+        avg_price = float(np.mean(close_trades))
+    elif "close" in df_test.columns:
+        avg_price = float(df_test["close"].mean())
+    else:
+        avg_price = 0.0
 
     return {
         "n_trades": int(n_trades),
@@ -399,7 +413,6 @@ def main():
         print(
             f"  Spread cost: {args.spread_cost:.6f} (return units) + Slippage P90: {args.slippage_p90:.6f} (return units)"
         )
-    print(f"  Cost/trade at $2350: ${(args.spread_cost + args.slippage_p90) * 2350:.2f}")
     print(f"  Lot size: {args.lot_mult * 0.01:.2f} lot")
     print("=" * 70)
 
@@ -412,6 +425,13 @@ def main():
     if "target_return" not in df.columns:
         print("  [ERROR] No 'target_return' column — needed for P&L")
         return
+
+    avg_close = float(df["close"].mean()) if "close" in df.columns else None
+    if avg_close:
+        print(
+            f"  Cost/trade at avg close ${avg_close:.2f}: "
+            f"${(args.spread_cost + args.slippage_p90) * avg_close:.2f}"
+        )
 
     # 2. Load slippage P90
     print("\n--- Loading fill simulator ---")
@@ -546,7 +566,9 @@ def main():
         "freq": args.freq,
         "spread_cost_return_units": args.spread_cost,
         "slippage_p90_return_units": args.slippage_p90,
-        "cost_per_trade_at_2350": round((args.spread_cost + args.slippage_p90) * 2350, 4),
+        "cost_per_trade_at_avg_close": (
+            round((args.spread_cost + args.slippage_p90) * avg_close, 4) if avg_close else None
+        ),
         "lot_mult": args.lot_mult,
         "oos_bars": int(test_mask.sum()),
         "train_samples": len(x_train),
