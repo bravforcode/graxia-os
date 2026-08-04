@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "scripts"))
-from research_approaches import test_session_pattern  # noqa: E402
+from research_approaches import test_session_pattern as session_pattern  # noqa: E402
 
 
 def _src():
@@ -28,8 +28,8 @@ def _make_df(level):
 
 
 def test_net_scales_with_price_level():
-    low = test_session_pattern(_make_df(1.10))["london"]
-    high = test_session_pattern(_make_df(2350.0))["london"]
+    low = session_pattern(_make_df(1.10))["london"]
+    high = session_pattern(_make_df(2350.0))["london"]
     assert low["trades"] == high["trades"] > 0
     ratio = high["net"] / low["net"]
     assert abs(ratio - 2350.0 / 1.10) < 1e-3  # net = trades.sum() * price_level
