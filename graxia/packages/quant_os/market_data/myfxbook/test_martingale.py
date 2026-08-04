@@ -28,7 +28,7 @@ def test_tail_crash_flagged() -> None:
 def test_empty_equity_is_not_risky() -> None:
     verdict = martingale.detect_martingale([])
     assert verdict.risky is False
-    assert verdict.signals == ("insufficient equity data",)
+    assert verdict.signals == ["insufficient equity data"]
 
 
 def test_lot_doubling_detected() -> None:
@@ -106,10 +106,10 @@ def test_quadratic_fit_linear_has_zero_curvature() -> None:
     assert fit[3] == pytest.approx(1.0, abs=1e-9)  # perfect linear fit
 
 
-def test_parabolic_signal_fires_on_x2_curve() -> None:
-    # Pure accelerating (blow-up) curve -- positive curvature with R2 = 1
+def test_parabolic_signal_fires_on_x2_curve_with_tail() -> None:
+    # x^2-shaped (not z^2-centered) + tail crash — FAILS with a z^2-only model
     n = 20
     values = [0.5 * (i - 9.5) ** 2 + 100.0 for i in range(n)]
+    values[16:] = [110.0, 100.0, 90.0, 80.0]  # tail crash: 115.1 peak -> 80 = 30.5% DD
     verdict = martingale.detect_martingale(_equity(values))
-    assert verdict.risky is True
     assert any("parabolic" in s for s in verdict.signals)

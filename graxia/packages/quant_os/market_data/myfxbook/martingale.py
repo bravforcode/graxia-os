@@ -1,121 +1,108 @@
-"""Martingale / blow-up risk detection for Myfxbook equity curves and trades.
+"""Heuristic martingale / blow-up detection from equity curves and trade lots.
 
-Signals:
-- Tail drawdown: recent peak-to-trough drop >= TAIL_DRAWDOWN_THRESHOLD.
-- Parabolic blow-up: equity fits y = a*z^2 + b*z + c (z centered) with a > 0
-  and high R^2 -- accelerating growth typical of size-doubling strategies.
-- Lot doubling: consecutive trades on the same symbol doubling in lots.
+Deliberately simple: tail crash, full-quadratic parabolic fit, lot doubling.
+This is a research screen, not a risk-policy gate — live risk never consults it.
 """
 
-from __future__ import annotations
-
-from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
-from .models import EquityPoint, TradeRecord
+from market_data.myfxbook.models import EquityPoint, TradeRecord
 
-if TYPE_CHECKING:
-    pass
-
-TAIL_DRAWDOWN_THRESHOLD: float = 25.0
-MIN_POINTS_FOR_TAIL: int = 6
-MIN_POINTS_FOR_PARABOLA: int = 12
-MIN_R2_FOR_PARABOLA: float = 0.9
-DOUBLING_TOLERANCE: float = 0.05
+TAIL_WINDOW_RATIO = 0.2
+TAIL_DRAWDOWN_THRESHOLD = 30.0
+PARABOLIC_R2_THRESHOLD = 0.95
+LOT_DOUBLING_RATIO = 1.8
+MIN_POINTS_FOR_PARABOLA = 12
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class MartingaleVerdict:
-    """Result of the martingale detector for one account."""
-
     risky: bool
-    signals: tuple[str, ...]
+    signals: list[str]
 
 
-def _tail_drawdown(values: Sequence[float]) -> str | None:
-    """Return a reason string if the recent tail drops >= threshold."""
-    if len(values) < MIN_POINTS_FOR_TAIL:
-        return None
-    tail = values[-MIN_POINTS_FOR_TAIL:]
-    peak = max(tail)
+def tail_drawdown_risk(equity_points: list[EquityPoint]) -> list[str]:
+    if not equity_points:
+        return []
+    values = [p.equity for p in equity_points]
+    n_tail = max(1, int(len(values) * TAIL_WINDOW_RATIO))
+    tail = values[-n_tail:]
+    peak = max(values[:-n_tail]) if len(values) > n_tail else max(values)
     if peak <= 0:
-        return None
+        return []
     drop_pct = (peak - min(tail)) / peak * 100.0
     if drop_pct >= TAIL_DRAWDOWN_THRESHOLD:
-        return f"tail drawdown {drop_pct:.1f}% >= " f"{TAIL_DRAWDOWN_THRESHOLD:.0f}%"
-    return None
+        return [f"tail drawdown {drop_pct:.1f}% >= {TAIL_DRAWDOWN_THRESHOLD:.0f}%"]
+    return []
 
 
-def _quadratic_fit(
-    values: Sequence[float],
-) -> tuple[float, float, float, float] | None:
-    """OLS fit of y = a*z^2 + b*z + c with z = x - mean(x).
+def _quadratic_fit(values: list[float]) -> tuple[float, float, float, float] | None:
+    """OLS fit y = a*z^2 + b*z + c with z = x - mean(x). Returns (a, b, c, r2) or None.
 
-    Returns (a, b, c, r2) or None when the series is too short or contains
-    non-positive equity. z is centered so the linear term decouples:
-    b = sum(z*y) / sum(z^2); a and c follow from the 2x2 normal equations.
+    The linear term b*z is REQUIRED: fitting z^2 alone to an x^2-shaped blow-up
+    curve yields R2 ~ 0.07 (the linear component dominates the variance), so the
+    detector would miss real martingale curves. For equally spaced indices
+    sum(z) = 0 and sum(z^3) = 0, so b decouples: b = sum(z*y) / sum(z^2).
     """
+    if len(values) < MIN_POINTS_FOR_PARABOLA or any(v <= 0 for v in values):
+        return None
     n = len(values)
-    if n < MIN_POINTS_FOR_PARABOLA or any(v <= 0 for v in values):
-        return None
-    x = list(range(n))
-    x_mean = sum(x) / n
+    xs = [float(i) for i in range(n)]
+    x_mean = sum(xs) / n
     y_mean = sum(values) / n
-    z = [xi - x_mean for xi in x]
-    z2 = [zi * zi for zi in z]
-
-    s_zz = sum(z2)
-    s_zy = sum(zi * yi for zi, yi in zip(z, values, strict=False))
-    b = s_zy / s_zz
-
-    w = [yi - b * zi for yi, zi in zip(values, z, strict=False)]
-    s_z2z2 = sum(vi * vi for vi in z2)
-    s_z2w = sum(z2i * wi for z2i, wi in zip(z2, w, strict=False))
-    s_w = sum(w)
-    det = s_z2z2 * n - s_zz * s_zz
-    if det == 0:
+    zs = [x - x_mean for x in xs]
+    z2 = [z * z for z in zs]
+    sum_z2 = sum(z2)
+    sum_z4 = sum(z * z * z * z for z in zs)
+    b = sum(z * y for z, y in zip(zs, values, strict=False)) / sum_z2 if sum_z2 > 0 else 0.0
+    y_prime = [y - b * z for y, z in zip(values, zs, strict=False)]
+    sum_yp = sum(y_prime)
+    sum_z2yp = sum(z_sq * yp for z_sq, yp in zip(z2, y_prime, strict=False))
+    denom = n * sum_z4 - sum_z2 * sum_z2
+    if abs(denom) < 1e-12:
         return None
-    a = (n * s_z2w - s_zz * s_w) / det
-    c = (s_z2z2 * s_w - s_zz * s_z2w) / det
-
-    ss_res = sum((yi - (a * zi * zi + b * zi + c)) ** 2 for yi, zi in zip(values, z, strict=False))
-    ss_tot = sum((yi - y_mean) ** 2 for yi in values)
-    if ss_tot == 0:
-        r2 = 1.0
-    else:
-        r2 = 1.0 - ss_res / ss_tot
+    a = (n * sum_z2yp - sum_z2 * sum_yp) / denom
+    c = (sum_yp - a * sum_z2) / n
+    fitted = [a * z_sq + b * z + c for z_sq, z in zip(z2, zs, strict=False)]
+    ss_res = sum((y - fy) ** 2 for y, fy in zip(values, fitted, strict=False))
+    ss_tot = sum((y - y_mean) ** 2 for y in values)
+    r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else 0.0
     return a, b, c, r2
 
 
-def detect_martingale(equity_points: Sequence[EquityPoint]) -> MartingaleVerdict:
-    """Evaluate an account's monthly equity curve for martingale behavior."""
+def parabolic_growth_risk(equity_points: list[EquityPoint]) -> list[str]:
     values = [p.equity for p in equity_points]
-    if not values:
-        return MartingaleVerdict(risky=False, signals=("insufficient equity data",))
+    # Fit on the PRE-TAIL portion only: the crash itself would drag R2 down
+    # even for a perfect parabola (the crashed tail is not parabolic).
+    n_tail = max(1, int(len(values) * TAIL_WINDOW_RATIO)) if values else 0
+    head = values[:-n_tail] if len(values) > n_tail else values
+    fit = _quadratic_fit(head)
+    if fit is None or fit[0] <= 0:  # a <= 0 = no upward curvature
+        return []
+    a, _b, _c, r2 = fit
+    if r2 > PARABOLIC_R2_THRESHOLD and tail_drawdown_risk(equity_points):
+        return [f"parabolic equity growth (R2={r2:.2f})"]
+    return []
 
+
+def lot_doubling_signals(trades: list[TradeRecord]) -> list[str]:
     signals: list[str] = []
-    tail = _tail_drawdown(values)
-    if tail is not None:
-        signals.append(tail)
-
-    fit = _quadratic_fit(values)
-    if fit is not None:
-        a, _b, _c, r2 = fit
-        if a > 0 and r2 >= MIN_R2_FOR_PARABOLA:
-            signals.append(f"parabolic equity growth (a={a:.3f}, r2={r2:.2f})")
-
-    return MartingaleVerdict(risky=bool(signals), signals=tuple(signals))
-
-
-def lot_doubling_signals(trades: Sequence[TradeRecord]) -> list[str]:
-    """Flag consecutive same-symbol trades where lots approximately double."""
-    signals: list[str] = []
-    ordered = sorted(trades, key=lambda t: (t.open_time, t.trade_id))
-    for prev, nxt in zip(ordered, ordered[1:], strict=False):
-        if prev.symbol != nxt.symbol or prev.lots <= 0:
+    for i in range(len(trades) - 1):
+        prev, curr = trades[i], trades[i + 1]
+        if prev.symbol != curr.symbol or prev.lots <= 0:
             continue
-        ratio = nxt.lots / prev.lots
-        if abs(ratio - 2.0) <= DOUBLING_TOLERANCE:
-            signals.append(f"lot doubling {prev.symbol}: {prev.lots} -> {nxt.lots}")
+        ratio = curr.lots / prev.lots
+        if ratio >= LOT_DOUBLING_RATIO:
+            signals.append(f"lot doubling {curr.symbol} {prev.lots:.2f} -> {curr.lots:.2f}")
     return signals
+
+
+def detect_martingale(equity_points: list[EquityPoint], trades: list[TradeRecord] | None = None) -> MartingaleVerdict:
+    if not equity_points:
+        return MartingaleVerdict(risky=False, signals=["insufficient equity data"])
+    signals: list[str] = []
+    signals.extend(tail_drawdown_risk(equity_points))
+    signals.extend(parabolic_growth_risk(equity_points))
+    if trades:
+        signals.extend(lot_doubling_signals(trades))
+    return MartingaleVerdict(risky=bool(signals), signals=signals)
