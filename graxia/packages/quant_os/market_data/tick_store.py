@@ -5,13 +5,72 @@ Persists TickRecord objects as JSON files, one file per symbol per day.
 No order submission — pure data recording.
 """
 
+import contextlib
 import json
 import os
-from datetime import datetime
+import tempfile
+from datetime import UTC, date, datetime
 from decimal import Decimal
+from pathlib import Path
 from typing import Any, Dict, List
 
+import pandas as pd
+
 from .tick_recorder import TickRecord
+
+# Column order for the parquet tick files (flat layout, extended schema).
+TICK_COLUMNS = [
+    "timestamp_utc", "received_at_utc", "symbol", "bid", "ask", "last",
+    "spread_points", "flags", "sequence_id", "connection_session_id",
+    "source", "data_quality", "time_msc", "volume", "flags_mt5",
+]
+
+
+def write_batch(records: List[TickRecord], out_dir: str | Path, symbol: str, trading_day: date) -> Path:
+    """Atomic write of TickRecords to {out_dir}/{symbol}_{date}.parquet.
+
+    Always replaces the complete file (never a partial append) and never
+    leaves a temp file behind: write to a unique .parquet.tmp, fsync, then
+    os.replace so DuckDB views only ever see complete files.
+    """
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / f"{symbol}_{trading_day.isoformat()}.parquet"
+    df = pd.DataFrame(
+        [
+            {
+                "timestamp_utc": r.timestamp_utc.astimezone(UTC).isoformat(),
+                "received_at_utc": r.received_at_utc.astimezone(UTC).isoformat(),
+                "symbol": r.symbol,
+                "bid": float(r.bid),
+                "ask": float(r.ask),
+                "last": float(r.last),
+                "spread_points": float(r.spread_points),
+                "flags": r.flags,
+                "sequence_id": r.sequence_id,
+                "connection_session_id": r.connection_session_id,
+                "source": r.source,
+                "data_quality": r.data_quality,
+                "time_msc": r.time_msc,
+                "volume": r.volume,
+                "flags_mt5": r.mt5_flags,
+            }
+            for r in records
+        ],
+        columns=TICK_COLUMNS,
+    )
+    fd, tmp_path = tempfile.mkstemp(dir=str(out_dir), prefix=".tick_", suffix=".parquet.tmp")
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            df.to_parquet(fh, index=False)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp_path, str(path))
+    except Exception:
+        with contextlib.suppress(OSError):
+            os.unlink(tmp_path)
+        raise
+    return path
 
 
 class TickStore:
