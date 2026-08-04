@@ -1,0 +1,303 @@
+{
+  "title": "M15 Scalper Benchmark \u2014 EA-BENCH trials 1034/1035",
+  "registered_at": "2026-08-04",
+  "executed_at": "2026-08-04T09:43:33.105686+00:00",
+  "trials": [
+    1034,
+    1035
+  ],
+  "universe": [
+    "XAUUSD",
+    "USDJPY",
+    "EURUSD",
+    "GBPUSD"
+  ],
+  "config": {
+    "engine": "BacktestEngine (measured-cost path, SymbolCostProfile)",
+    "spread_pips": null,
+    "slippage_pips": null,
+    "enable_swap": false,
+    "strict_mtf": false,
+    "max_positions": 1,
+    "max_bars_open": {
+      "XAUUSD": 52,
+      "USDJPY": 32,
+      "EURUSD": 32,
+      "GBPUSD": 32
+    },
+    "commission_per_lot": {
+      "XAUUSD": 0.0,
+      "USDJPY": 7.0,
+      "EURUSD": 7.0,
+      "GBPUSD": 7.0
+    },
+    "risk_per_trade_bps": 100,
+    "initial_capital": 10000.0,
+    "annualization": "daily returns, 252",
+    "risk_halt": "disabled (edge_search_all.py:469 precedent \u2014 engine halt is cumulative 0.5%, no daily reset)"
+  },
+  "per_asset": {
+    "XAUUSD": {
+      "n_trades": 2432,
+      "n_days": 505,
+      "sharpe_daily": -0.6167,
+      "win_pct": 43.91,
+      "profit_factor": 0.9515,
+      "max_dd_pct": 52.88,
+      "total_return_pct": -45.36,
+      "total_pnl": -4536.27,
+      "monthly_pct": -1.777,
+      "avg_hold_hours": 1.57,
+      "trades_pass": true
+    },
+    "USDJPY": {
+      "n_trades": 895,
+      "n_days": 504,
+      "sharpe_daily": -4.7285,
+      "win_pct": 45.25,
+      "profit_factor": 0.68,
+      "max_dd_pct": 89.08,
+      "total_return_pct": -89.08,
+      "total_pnl": -5375.17,
+      "monthly_pct": -3.078,
+      "avg_hold_hours": 0.51,
+      "trades_pass": true
+    },
+    "EURUSD": {
+      "n_trades": 401,
+      "n_days": 505,
+      "sharpe_daily": -2.6051,
+      "win_pct": 49.38,
+      "profit_factor": 0.8502,
+      "max_dd_pct": 60.17,
+      "total_return_pct": -57.83,
+      "total_pnl": -2087.42,
+      "monthly_pct": -2.392,
+      "avg_hold_hours": 0.65,
+      "trades_pass": true
+    },
+    "GBPUSD": {
+      "n_trades": 371,
+      "n_days": 505,
+      "sharpe_daily": -1.7803,
+      "win_pct": 52.56,
+      "profit_factor": 0.9355,
+      "max_dd_pct": 43.82,
+      "total_return_pct": -42.27,
+      "total_pnl": -920.24,
+      "monthly_pct": -1.748,
+      "avg_hold_hours": 0.77,
+      "trades_pass": true
+    }
+  },
+  "pooled": {
+    "test_name": "pooled_hac_t_test",
+    "dk_t_stat": -1.5131,
+    "pooled_sharpe": -2.8409,
+    "positive_sharpe_count": 0,
+    "total_days": 643,
+    "total_trades": 4099,
+    "n_trials_effective": 1050,
+    "verdict_pooled_func": "REJECT"
+  },
+  "dsr": {
+    "observed_sharpe": -2.8409,
+    "probability_alpha": 1.0,
+    "passes_threshold": false,
+    "n_trials": 1050,
+    "n_observations": 643
+  },
+  "institutional_gates": {
+    "wfa": {
+      "n_folds": 4,
+      "fold_sharpes": [
+        -2.1328,
+        -1.4366,
+        -3.1618,
+        -2.8471
+      ],
+      "oos_sharpe_mean": -2.3946,
+      "oos_sharpe_std": 0.7702,
+      "pass": false
+    },
+    "bootstrap_ci": {
+      "lower": -0.002917,
+      "upper": -0.001202,
+      "pass": false
+    },
+    "min_btl": {
+      "min_observations": 999999999,
+      "sufficient": false,
+      "pass": false
+    },
+    "pbo_na": {
+      "value": null,
+      "pass": null,
+      "reason": "PBO not applicable: WS-A trials are single frozen-config pre-registrations (no parameter search space). PBO measures search bias which does not exist; fabricating variants post-hoc would introduce selection bias."
+    },
+    "combined_pass": false,
+    "status": "OK"
+  },
+  "jackknife": {
+    "full_sharpe": -2.8409,
+    "drop_XAUUSD": -4.4485,
+    "delta_XAUUSD": 1.6076,
+    "drop_USDJPY": -1.4231,
+    "delta_USDJPY": 1.4178,
+    "drop_EURUSD": -2.6412,
+    "delta_EURUSD": 0.1997,
+    "drop_GBPUSD": -2.852,
+    "delta_GBPUSD": 0.0111
+  },
+  "label_shuffle": {
+    "n_shuffles": 200,
+    "p_value": 1.0,
+    "verdict": "FAIL"
+  },
+  "cost_stress": {
+    "1.5x": {
+      "per_asset": [
+        -0.8746,
+        -4.8369,
+        -3.4339,
+        -2.0513
+      ],
+      "mean": -2.7992,
+      "pass": false
+    },
+    "2.0x": {
+      "per_asset": [
+        -1.0213,
+        -5.7918,
+        -4.9713,
+        -3.2945
+      ],
+      "mean": -3.7697,
+      "pass": false
+    }
+  },
+  "gates": {
+    "pooled_t_gt_2": false,
+    "dsr_p_lt_0.05": false,
+    "sp2_2_of_3": true,
+    "trades_ge_30_per_asset": true,
+    "cost_stress_15_2x": false,
+    "label_shuffle_p_le_0.05": false,
+    "jackknife_delta_lt_0.5": false,
+    "positive_sharpe_count": 0,
+    "positive_sharpe_ge_5": false
+  },
+  "combined_verdict": "REJECT",
+  "benchmark_table": {
+    "scalpers_measured": {
+      "XAUUSD": {
+        "n_trades": 2432,
+        "n_days": 505,
+        "sharpe_daily": -0.6167,
+        "win_pct": 43.91,
+        "profit_factor": 0.9515,
+        "max_dd_pct": 52.88,
+        "total_return_pct": -45.36,
+        "total_pnl": -4536.27,
+        "monthly_pct": -1.777,
+        "avg_hold_hours": 1.57,
+        "trades_pass": true
+      },
+      "USDJPY": {
+        "n_trades": 895,
+        "n_days": 504,
+        "sharpe_daily": -4.7285,
+        "win_pct": 45.25,
+        "profit_factor": 0.68,
+        "max_dd_pct": 89.08,
+        "total_return_pct": -89.08,
+        "total_pnl": -5375.17,
+        "monthly_pct": -3.078,
+        "avg_hold_hours": 0.51,
+        "trades_pass": true
+      },
+      "EURUSD": {
+        "n_trades": 401,
+        "n_days": 505,
+        "sharpe_daily": -2.6051,
+        "win_pct": 49.38,
+        "profit_factor": 0.8502,
+        "max_dd_pct": 60.17,
+        "total_return_pct": -57.83,
+        "total_pnl": -2087.42,
+        "monthly_pct": -2.392,
+        "avg_hold_hours": 0.65,
+        "trades_pass": true
+      },
+      "GBPUSD": {
+        "n_trades": 371,
+        "n_days": 505,
+        "sharpe_daily": -1.7803,
+        "win_pct": 52.56,
+        "profit_factor": 0.9355,
+        "max_dd_pct": 43.82,
+        "total_return_pct": -42.27,
+        "total_pnl": -920.24,
+        "monthly_pct": -1.748,
+        "avg_hold_hours": 0.77,
+        "trades_pass": true
+      }
+    },
+    "portfolio": {
+      "pooled_t": -1.5131,
+      "portfolio_sharpe_daily": -2.8409,
+      "total_trades": 4099,
+      "monthly_pct_mean": -2.249
+    },
+    "verified_ea_references": {
+      "happy_gold": {
+        "source": "MyFxBook verified family (4 brokers, active)",
+        "monthly_pct": "6.9-8.3",
+        "max_dd_pct": "8-26",
+        "profit_factor": "2.0-3.5"
+      },
+      "wallstreet_robot": {
+        "source": "MyFxBook 10254966 (15+ yrs)",
+        "win_pct": 76.0,
+        "avg_win_pips": 8.3,
+        "profit_factor": 1.37
+      }
+    },
+    "note": "EA references are MyFxBook-verified track records (not directly comparable \u2014 different period/leverage/execution; shown for context)."
+  },
+  "bollinger_squeeze_note": "Existing BollingerSqueeze is D1-only (strategies/bollinger_squeeze.py:38) \u2014 D1 edge-search verdicts REJECTED (edge_search_gold_ict_results.json). Not re-run at M15: not part of trials 1034/1035.",
+  "grid_benchmark": {
+    "XAUUSD": {
+      "grid_fills": 517,
+      "total_pnl": -93.34,
+      "max_dd_pct": 0.17,
+      "return_pct": -0.09,
+      "sharpe_bar": -0.0981,
+      "cost_model": "FEE_RATE=0.1%/fill (NOT engine measured-cost \u2014 not comparable)"
+    },
+    "USDJPY": {
+      "grid_fills": 3931,
+      "total_pnl": -3.44,
+      "max_dd_pct": 0.0,
+      "return_pct": -0.0,
+      "sharpe_bar": -0.1535,
+      "cost_model": "FEE_RATE=0.1%/fill (NOT engine measured-cost \u2014 not comparable)"
+    },
+    "EURUSD": {
+      "grid_fills": 2273,
+      "total_pnl": -0.02,
+      "max_dd_pct": 0.0,
+      "return_pct": -0.0,
+      "sharpe_bar": -0.0124,
+      "cost_model": "FEE_RATE=0.1%/fill (NOT engine measured-cost \u2014 not comparable)"
+    },
+    "GBPUSD": {
+      "grid_fills": 1651,
+      "total_pnl": -0.01,
+      "max_dd_pct": 0.0,
+      "return_pct": -0.0,
+      "sharpe_bar": -0.0074,
+      "cost_model": "FEE_RATE=0.1%/fill (NOT engine measured-cost \u2014 not comparable)"
+    }
+  }
+}
