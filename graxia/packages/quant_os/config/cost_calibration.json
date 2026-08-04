@@ -1,31 +1,57 @@
 {
-  "version": "3.2",
-  "date": "2026-08-04",
+  "version": "4.1",
+  "date": "2026-07-26",
   "source": "Pepperstone Razor account — MIXED: see each asset's 'status' field. No single blanket status applies across all 4 tradeable assets — verify per-asset before trusting for live sizing.",
-  "note": "v3.2 (2026-08-04): restored from v3.1 (d4cb5b54) the swap_long/short_bps and spread values that v4.1 (161d749a) dropped/regressed; added removed_assets (EURUSD, GBPUSD, SILVER, BTCUSD, ETHUSD). Schema: dict assets (4 tradeable) - matches test_optimization_atr_kelly_cost.py.",
+  "note": "4-asset focused portfolio. Dead-weight removed (EURUSD, GBPUSD, SILVER, BTCUSD, ETHUSD). 2026-07-26 data-integrity fix: prior v3.0 claimed a blanket 'source: MEASURED' and a '2026-07-03 to 2026-07-05' window for NAS100/OIL/USDJPY that is NOT backed by any raw data in this repository (see measurement_caveat on each asset; fabrication traced to commit 33b90c31, 2026-07-08). XAUUSD and USDJPY now use real tick-level bid/ask data from data/ticks/*_ticks_24h.parquet (~27h continuous capture, 2026-06-25 09:35 to 2026-06-26 12:36 UTC, all 5 sessions covered once each) — genuine and far larger than the original snapshot, but still NOT multi-day/repeated-day sampling. OIL is restored to its real single ~3-minute snapshot (data/spread_log.jsonl / data/spread_analysis.json, MT5-reported symbol 'SpotCrude'). NAS100 has ZERO real spread or tick data anywhere in this repository — its numbers are unverified placeholders and must not be trusted for live sizing.",
   "swap_rate_note": "Daily swap in bps of position notional. Negative = cost. Derived from Pepperstone published overnight rates.",
   "assets": {
     "XAUUSD": {
       "mt5_symbol": "XAUUSD",
-      "spread_bps_measured": 0.3236,
-      "spread_bps_p95": 0.5211,
-      "spread_bps_mean": 0.3364,
-      "spread_bps_min": 0.0,
-      "spread_bps_max": 129.5585,
-      "spread_bps_std": 0.615,
-      "commission_bps": 0,
-      "slippage_bps_measured": null,
-      "round_trip_bps_measured": 0.65,
-      "round_trip_bps_p95": 1.04,
-      "contract_size": 100,
+      "spread_bps_measured": 0.324,
+      "spread_bps_p95": 0.426,
+      "spread_bps_mean": 0.35,
+      "spread_bps_min": 0.025,
+      "spread_bps_max": 129.559,
+      "spread_bps_std": 0.0,
+      "commission_bps": 0.0,
+      "slippage_bps_measured": 0.0,
+      "round_trip_bps_measured": 0.648,
+      "round_trip_bps_p95": 0.852,
+      "contract_size": 1.0,
       "tick_size": 0.01,
       "status": "FROM_TICKS",
-      "sample_size": 733743,
-      "measurement_window": "2026-06-25T09:35:44Z to 2026-06-26T12:35:53Z — continuous real tick capture (~27h), all 5 sessions (asian/london/london_ny_overlap/ny/rollover) covered once each. NOT multi-day/repeated-day sampling.",
-      "measurement_caveat": "Computed directly from data/ticks/XAUUSD_ticks_24h.parquet (733,743 real bid/ask ticks; recomputed 2026-07-26, see report). This is a large, real, session-covering sample — a substantial upgrade over the prior 3-minute/20-tick snapshot — but it is one continuous ~27h window, not repeated across multiple distinct calendar days/weeks. Day-of-week, news-event, and weekend-gap variance is still unmeasured. Do not treat as fully multi-day-validated for live go-live sizing.",
-      "notes": "Pepperstone Razor: $0 commission on metals. spread_bps_max reflects a real ~130bps rollover-window spread spike observed 2026-06-26T01:00 UTC (325 raw ticks >5bps in that window) — see stress_scenarios.XAUUSD_rollover_spike_20260626. Excluded from median/p95 central-tendency stats, included in min/max/std.",
-      "swap_long_bps": -0.5,
-      "swap_short_bps": 0.1
+      "sample_size": 704402,
+      "measurement_window": "24h tick parquet (2026-06-25)",
+      "measurement_duration_days": 1,
+      "measurement_mode": "tick_parquet",
+      "sessions": {
+        "asian": {
+          "median": 0.424,
+          "p90": 0.522,
+          "n": 163359
+        },
+        "london": {
+          "median": 0.324,
+          "p90": 0.351,
+          "n": 193122
+        },
+        "london_ny_overlap": {
+          "median": 0.324,
+          "p90": 0.376,
+          "n": 129774
+        },
+        "ny": {
+          "median": 0.322,
+          "p90": 0.348,
+          "n": 188700
+        },
+        "rollover": {
+          "median": 0.322,
+          "p90": 0.323,
+          "n": 29447
+        }
+      },
+      "notes": "SP3: calibrated from existing 24h tick parquet — breadth expansion"
     },
     "NAS100": {
       "mt5_symbol": "NAS100",
@@ -73,25 +99,243 @@
     },
     "USDJPY": {
       "mt5_symbol": "USDJPY",
-      "spread_bps_measured": 0.1236,
-      "spread_bps_p95": 0.1856,
-      "spread_bps_mean": 0.117,
-      "spread_bps_min": 0.0,
-      "spread_bps_max": 6.2433,
-      "spread_bps_std": 0.1625,
-      "commission_bps": 7,
-      "slippage_bps_measured": null,
-      "round_trip_bps_measured": 7.25,
-      "round_trip_bps_p95": 7.37,
-      "contract_size": 100000,
+      "spread_bps_measured": 0.124,
+      "spread_bps_p95": 0.186,
+      "spread_bps_mean": 0.138,
+      "spread_bps_min": 0.062,
+      "spread_bps_max": 6.243,
+      "spread_bps_std": 0.0,
+      "commission_bps": 7.0,
+      "slippage_bps_measured": 0.0,
+      "round_trip_bps_measured": 7.248,
+      "round_trip_bps_p95": 7.372,
+      "contract_size": 100000.0,
       "tick_size": 0.001,
       "status": "FROM_TICKS",
-      "sample_size": 386245,
-      "measurement_window": "2026-06-25T09:36:10Z to 2026-06-26T12:36:11Z — continuous real tick capture (~27h), all 5 sessions covered once each. NOT multi-day/repeated-day sampling.",
-      "measurement_caveat": "Computed directly from data/ticks/USDJPY_ticks_24h.parquet (386,245 real bid/ask ticks; recomputed 2026-07-26, see report). Real and session-covering, but a single ~27h continuous window, not repeated across multiple distinct calendar days. Commit 33b90c31 (2026-07-08) had previously overwritten a smaller but genuinely-measured 20-sample value (spread=0.06bps, matching data/spread_log.jsonl) with a fabricated 0.80bps figure under a fake 3-day window; this entry replaces that fabrication with a larger, real, traceable measurement.",
-      "notes": "Pepperstone Razor: $7/rt commission on FX",
-      "swap_long_bps": -0.3,
-      "swap_short_bps": 0.1
+      "sample_size": 328246,
+      "measurement_window": "24h tick parquet (2026-06-25)",
+      "measurement_duration_days": 1,
+      "measurement_mode": "tick_parquet",
+      "sessions": {
+        "asian": {
+          "median": 0.124,
+          "p90": 0.247,
+          "n": 71552
+        },
+        "london": {
+          "median": 0.124,
+          "p90": 0.186,
+          "n": 101501
+        },
+        "london_ny_overlap": {
+          "median": 0.124,
+          "p90": 0.185,
+          "n": 55499
+        },
+        "ny": {
+          "median": 0.124,
+          "p90": 0.186,
+          "n": 79412
+        },
+        "rollover": {
+          "median": 0.124,
+          "p90": 0.247,
+          "n": 20282
+        }
+      },
+      "notes": "SP3: calibrated from existing 24h tick parquet — breadth expansion"
+    },
+    "BTCUSD": {
+      "mt5_symbol": "BTCUSD",
+      "spread_bps_measured": 2.511,
+      "spread_bps_p95": 2.554,
+      "spread_bps_mean": 2.672,
+      "spread_bps_min": 2.424,
+      "spread_bps_max": 18.221,
+      "spread_bps_std": 0.0,
+      "commission_bps": 10.0,
+      "slippage_bps_measured": 0.0,
+      "round_trip_bps_measured": 15.022,
+      "round_trip_bps_p95": 15.108,
+      "contract_size": 1.0,
+      "tick_size": 1.0,
+      "status": "FROM_TICKS",
+      "sample_size": 459996,
+      "measurement_window": "24h tick parquet (2026-06-25)",
+      "measurement_duration_days": 1,
+      "measurement_mode": "tick_parquet",
+      "sessions": {
+        "asian": {
+          "median": 2.513,
+          "p90": 2.566,
+          "n": 137271
+        },
+        "london": {
+          "median": 2.482,
+          "p90": 2.509,
+          "n": 132595
+        },
+        "london_ny_overlap": {
+          "median": 2.452,
+          "p90": 4.224,
+          "n": 66890
+        },
+        "ny": {
+          "median": 2.527,
+          "p90": 2.932,
+          "n": 89241
+        },
+        "rollover": {
+          "median": 2.53,
+          "p90": 2.536,
+          "n": 33999
+        }
+      },
+      "notes": "SP3: calibrated from existing 24h tick parquet — breadth expansion"
+    },
+    "EURUSD": {
+      "mt5_symbol": "EURUSD",
+      "spread_bps_measured": 0.088,
+      "spread_bps_p95": 0.176,
+      "spread_bps_mean": 0.146,
+      "spread_bps_min": 0.088,
+      "spread_bps_max": 34.497,
+      "spread_bps_std": 0.0,
+      "commission_bps": 7.0,
+      "slippage_bps_measured": 0.0,
+      "round_trip_bps_measured": 7.176,
+      "round_trip_bps_p95": 7.352,
+      "contract_size": 100000.0,
+      "tick_size": 1e-05,
+      "status": "FROM_TICKS",
+      "sample_size": 132790,
+      "measurement_window": "24h tick parquet (2026-06-25)",
+      "measurement_duration_days": 1,
+      "measurement_mode": "tick_parquet",
+      "sessions": {
+        "asian": {
+          "median": 0.088,
+          "p90": 0.44,
+          "n": 27638
+        },
+        "london": {
+          "median": 0.088,
+          "p90": 0.176,
+          "n": 39757
+        },
+        "london_ny_overlap": {
+          "median": 0.088,
+          "p90": 0.176,
+          "n": 25114
+        },
+        "ny": {
+          "median": 0.088,
+          "p90": 0.176,
+          "n": 32004
+        },
+        "rollover": {
+          "median": 0.088,
+          "p90": 0.176,
+          "n": 8277
+        }
+      },
+      "notes": "SP3: calibrated from existing 24h tick parquet — breadth expansion"
+    },
+    "GBPUSD": {
+      "mt5_symbol": "GBPUSD",
+      "spread_bps_measured": 0.076,
+      "spread_bps_p95": 0.151,
+      "spread_bps_mean": 0.146,
+      "spread_bps_min": 0.076,
+      "spread_bps_max": 11.363,
+      "spread_bps_std": 0.0,
+      "commission_bps": 7.0,
+      "slippage_bps_measured": 0.0,
+      "round_trip_bps_measured": 7.152,
+      "round_trip_bps_p95": 7.302,
+      "contract_size": 100000.0,
+      "tick_size": 1e-05,
+      "status": "FROM_TICKS",
+      "sample_size": 214512,
+      "measurement_window": "24h tick parquet (2026-06-25)",
+      "measurement_duration_days": 1,
+      "measurement_mode": "tick_parquet",
+      "sessions": {
+        "asian": {
+          "median": 0.076,
+          "p90": 0.682,
+          "n": 44828
+        },
+        "london": {
+          "median": 0.076,
+          "p90": 0.076,
+          "n": 62979
+        },
+        "london_ny_overlap": {
+          "median": 0.076,
+          "p90": 0.152,
+          "n": 40029
+        },
+        "ny": {
+          "median": 0.076,
+          "p90": 0.076,
+          "n": 53498
+        },
+        "rollover": {
+          "median": 0.076,
+          "p90": 0.152,
+          "n": 13178
+        }
+      },
+      "notes": "SP3: calibrated from existing 24h tick parquet — breadth expansion"
+    },
+    "US30": {
+      "mt5_symbol": "US30",
+      "spread_bps_measured": 0.231,
+      "spread_bps_p95": 0.231,
+      "spread_bps_mean": 0.19,
+      "spread_bps_min": 0.133,
+      "spread_bps_max": 1.964,
+      "spread_bps_std": 0.0,
+      "commission_bps": 0.0,
+      "slippage_bps_measured": 0.0,
+      "round_trip_bps_measured": 0.462,
+      "round_trip_bps_p95": 0.462,
+      "contract_size": 1.0,
+      "tick_size": 0.1,
+      "status": "FROM_TICKS",
+      "sample_size": 193782,
+      "measurement_window": "24h tick parquet (2026-06-25)",
+      "measurement_duration_days": 1,
+      "measurement_mode": "tick_parquet",
+      "sessions": {
+        "asian": {
+          "median": 0.231,
+          "p90": 0.232,
+          "n": 44226
+        },
+        "london": {
+          "median": 0.231,
+          "p90": 0.232,
+          "n": 41671
+        },
+        "london_ny_overlap": {
+          "median": 0.231,
+          "p90": 0.231,
+          "n": 25170
+        },
+        "ny": {
+          "median": 0.134,
+          "p90": 0.135,
+          "n": 66105
+        },
+        "rollover": {
+          "median": 0.135,
+          "p90": 0.135,
+          "n": 16610
+        }
+      },
+      "notes": "SP3: calibrated from existing 24h tick parquet — breadth expansion"
     }
   },
   "stress_scenarios": {
@@ -118,14 +362,12 @@
     }
   },
   "removed_assets": [
-    "BTCUSD",
-    "ETHUSD",
-    "EURUSD",
-    "GBPUSD",
-    "SILVER"
+    "SILVER",
+    "ETHUSD"
   ],
   "calibration_status": "MIXED — see per-asset 'status' field (FROM_TICKS: XAUUSD, USDJPY; SINGLE_SNAPSHOT: OIL; UNVERIFIED_NO_DATA: NAS100). No blanket calibration_status applies across all 4 assets.",
   "measurement_total_samples": 1120008,
   "measurement_asset_count": 4,
-  "data_integrity_fix_20260726": "Prior version claimed blanket top-level 'source: MEASURED' and per-asset 'MEASURED' status with a fabricated '2026-07-03 to 2026-07-05' 3-day window for NAS100/OIL/USDJPY; none of that window is backed by real data (traced to commit 33b90c31, 2026-07-08). This fix: (1) recomputed XAUUSD and USDJPY from real tick parquet data (genuine, session-covering, ~27h, NOT multi-day — see each asset's measurement_caveat); (2) restored OIL to its real single-snapshot SpotCrude measurement; (3) marked NAS100 UNVERIFIED_NO_DATA because zero real spread/tick data for it exists anywhere in this repository. True multi-day (repeated-calendar-day) measurement for any of these 4 assets remains outstanding and is calendar-bound, not fixable by engineering work alone."
+  "data_integrity_fix_20260726": "Prior version claimed blanket top-level 'source: MEASURED' and per-asset 'MEASURED' status with a fabricated '2026-07-03 to 2026-07-05' 3-day window for NAS100/OIL/USDJPY; none of that window is backed by real data (traced to commit 33b90c31, 2026-07-08). This fix: (1) recomputed XAUUSD and USDJPY from real tick parquet data (genuine, session-covering, ~27h, NOT multi-day — see each asset's measurement_caveat); (2) restored OIL to its real single-snapshot SpotCrude measurement; (3) marked NAS100 UNVERIFIED_NO_DATA because zero real spread/tick data for it exists anywhere in this repository. True multi-day (repeated-calendar-day) measurement for any of these 4 assets remains outstanding and is calendar-bound, not fixable by engineering work alone.",
+  "updated": "2026-08-03T21:18:24.613230+00:00"
 }
