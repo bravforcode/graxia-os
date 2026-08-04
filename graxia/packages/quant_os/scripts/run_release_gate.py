@@ -4,6 +4,7 @@ Usage: python scripts/run_release_gate.py
 """
 
 import hashlib
+import importlib.util
 import json
 import re
 import subprocess
@@ -16,6 +17,20 @@ REPO_ROOT = (
 )  # C:/Users/menum/graxia os (repo root; parents[2] lands on graxia/packages)
 ARTIFACT_DIR = REPO_ROOT / "graxia/packages/quant_os/artifacts/release_gate"
 QUARANTINE_PATH = REPO_ROOT / "graxia/packages/quant_os/quarantine_manifest.json"
+
+# INV-005 manifests (Task 17). `data` is not importable as a top-level
+# package (data/__init__.py uses `..core.enums`) — same importlib file-load
+# pattern as scripts/generate_manifests.py / run_backfill.py.
+_manifest_spec = importlib.util.spec_from_file_location(
+    "data_manifest_mod", Path(__file__).resolve().parent.parent / "data" / "manifest.py"
+)
+assert _manifest_spec is not None and _manifest_spec.loader is not None
+_data_manifest_mod = importlib.util.module_from_spec(_manifest_spec)
+sys.modules["data_manifest_mod"] = _data_manifest_mod  # dataclass machinery needs it
+_manifest_spec.loader.exec_module(_data_manifest_mod)
+DataManifestManager = _data_manifest_mod.DataManifestManager
+
+MANIFEST_DIR = Path("data/manifests")
 
 RELEASE_GATE_CONFIG = {
     "required_collected_tests": 3522,  # measured 2026-08-03: 3518 collected + 4 collection-time skips
@@ -428,6 +443,24 @@ def check_writer_lock():
     return [f"Single-writer lock held by owner={owner}, pid={pid}{stale_note}. Refusing to run (fail-closed)."]
 
 
+def check_data_integrity_inv005() -> bool:
+    """INV-005: verify every declared manifest; fail-closed on declared datasets."""
+    if not MANIFEST_DIR.exists():
+        print("[INV-005 WARN] No manifests directory — nothing declared, passing.")
+        return True
+    mgr = DataManifestManager(MANIFEST_DIR)
+    ok = True
+    for manifest_path in sorted(MANIFEST_DIR.glob("*_manifest.json")):
+        errors = mgr.verify_manifest(manifest_path)
+        if errors:
+            ok = False
+            for e in errors:
+                print(f"[INV-005 FAIL] {manifest_path.name}: {e}")
+        else:
+            print(f"[INV-005 OK] {manifest_path.name}")
+    return ok
+
+
 def main():
     print("Phase 3.1A.1 Release Gate — Fail-Closed, Two Clean-Process Runs")
     print("=" * 60)
@@ -512,6 +545,14 @@ def main():
     checks["ledger_seal_match"] = len(seal_errors) == 0
     all_failures.extend(seal_errors)
     print(f"  ledger_seal_match: {checks['ledger_seal_match']}")
+
+    # --- Data integrity (INV-005) ---
+    print("\n--- Data Integrity (INV-005) ---")
+    inv005_ok = check_data_integrity_inv005()
+    checks["inv005_data_integrity"] = inv005_ok
+    if not inv005_ok:
+        all_failures.append("INV-005 data integrity check failed")
+    print(f"  inv005_data_integrity: {inv005_ok}")
 
     # --- Final verdict ---
     verdict = "PASS" if not all_failures else "FAIL"

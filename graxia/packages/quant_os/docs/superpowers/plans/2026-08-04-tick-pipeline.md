@@ -2127,7 +2127,7 @@ git commit --no-verify -m "feat(quant_os): Trial 4002 funding-rate arb harness (
 - Consumes: `DataManifestManager.verify_manifest` (Task 7), `data/manifests/`.
 - Produces: `check_data_integrity_inv005() -> bool` — True when no manifests dir (WARN) or all manifests verify clean; False on any missing/size/sha mismatch. `main()` calls it and fails the gate on False.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_release_gate_inv005.py
@@ -2159,12 +2159,12 @@ def test_inv005_fails_on_tamper(tmp_path, monkeypatch):
     assert check_data_integrity_inv005() is False
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_release_gate_inv005.py -q`
 Expected: FAIL — `ImportError: cannot import name 'check_data_integrity_inv005' from 'scripts.run_release_gate'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```python
 # scripts/run_release_gate.py — add imports + function; call from main() gate sequence
@@ -2195,12 +2195,12 @@ def check_data_integrity_inv005() -> bool:
 
 Wire into `main()`: after the existing gate checks, `if not check_data_integrity_inv005(): return 1` (or the gate's established failure path).
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_release_gate_inv005.py -q`
 Expected: PASS (2 tests)
 
-- [ ] **Step 5: Full suite + final commit**
+- [x] **Step 5: Full suite + final commit**
 
 Run: `python -m pytest tests/ -q`
 Expected: FULL SUITE PASS (baseline 70 + all new tests)
