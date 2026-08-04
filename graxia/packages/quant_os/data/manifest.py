@@ -8,12 +8,13 @@ Usage:
     manifest.save(Path("data/warehouse/bronze/ohlcv/XAUUSD_M1.parquet"))
     valid, msg = DataManifest.validate(Path("data/warehouse/bronze/ohlcv/XAUUSD_M1.parquet"))
 """
+
 from __future__ import annotations
 
 import hashlib
 import json
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 MANIFEST_DIR = Path("data/manifests")
@@ -34,7 +35,7 @@ class DataManifest:
 
     def __post_init__(self):
         if not self.created_at:
-            self.created_at = datetime.now(timezone.utc).isoformat()
+            self.created_at = datetime.now(UTC).isoformat()
 
     def save(self, data_path: Path) -> Path:
         """Write manifest.json next to data file. Returns manifest path."""
@@ -48,8 +49,7 @@ class DataManifest:
         manifest_path = data_path.parent / f"{data_path.stem}_manifest.json"
         if not manifest_path.exists():
             raise FileNotFoundError(
-                f"INV-005 violation: missing manifest for {data_path}. "
-                f"Expected at {manifest_path}"
+                f"INV-005 violation: missing manifest for {data_path}. " f"Expected at {manifest_path}"
             )
         data = json.loads(manifest_path.read_text())
         return cls(**data)
@@ -86,8 +86,7 @@ class DataManifest:
         if actual != manifest.checksum:
             return (
                 False,
-                f"CHECKSUM_MISMATCH: manifest={manifest.checksum[:16]}... "
-                f"actual={actual[:16]}...",
+                f"CHECKSUM_MISMATCH: manifest={manifest.checksum[:16]}... " f"actual={actual[:16]}...",
             )
 
         return True, "VALID"
@@ -156,14 +155,16 @@ class DataManifestManager:
             p = Path(file)
             if not p.exists():
                 continue
-            entries.append({
-                "path": self._entry_path(p),
-                "size_bytes": p.stat().st_size,
-                "sha256": self.generate_sha256(p),
-            })
+            entries.append(
+                {
+                    "path": self._entry_path(p),
+                    "size_bytes": p.stat().st_size,
+                    "sha256": self.generate_sha256(p),
+                }
+            )
         manifest_data = {
             "dataset": dataset_name,
-            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "generated_at": datetime.now(UTC).isoformat(),
             "file_count": len(entries),
             "files": entries,
         }
