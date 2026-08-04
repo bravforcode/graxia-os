@@ -102,9 +102,15 @@ def test_unverified_symbol_raises_rather_than_returning_placeholder():
 
 
 def test_unknown_symbol_raises_rather_than_substituting():
-    """The original defect: an unmapped symbol silently got gold's costs."""
+    """The original defect: an unmapped symbol silently got gold's costs.
+
+    AUDUSD is deliberately NOT in cost_calibration.json (v4.1 SP3 calibrates
+    XAUUSD/USDJPY/EURUSD/GBPUSD/BTCUSD/US30 + legacy NAS100/OIL — AUDUSD has
+    never been measured). Kept as the unmapped probe so the guard is tested
+    against a symbol that truly has no profile.
+    """
     with pytest.raises(UnmeasuredCostError):
-        SymbolCostProfile.for_symbol("EURUSD")
+        SymbolCostProfile.for_symbol("AUDUSD")
 
 
 def test_measured_symbol_still_resolves():
