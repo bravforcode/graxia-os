@@ -1338,7 +1338,7 @@ git commit --no-verify -m "feat(quant_os): Binance trade-ticks backfill worker"
 - Produces: `fetch_ticks(symbol: str, start_date: str, end_date: str, out_dir: str | Path) -> list[Path]` — downloads per-hour bi5 (LZMA) files from `https://datafeed.dukascopy.com/datafeed/{SYMBOL}/{Y}/{M}/{D}/{H}h_ticks.bi5`, decompresses with stdlib `lzma`, parses 5×uint32 records (time offset ms, bid, ask, bid_vol, ask_vol) with 12-digit scale, writes `data/backfill/dukascopy/{sym}_{date}.parquet` with `source="dukascopy"`; idempotent. Symbol mapping (Dukascopy uses uppercase like `XAUUSD`, `EURUSD`, `GBPUSD`, `USDJPY`, `US30.ID` — `US30.ID` is used for the index; BTCUSD → skip with a warning and return `[]`).
 - Helper: `_parse_bi5(data: bytes, hour_start_msc: int) -> list[dict]` — pure, tested directly.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_backfill_dukascopy.py
@@ -1372,12 +1372,12 @@ def test_fetch_ticks_skips_unsupported_symbol(tmp_path):
     assert dukascopy.fetch_ticks("BTCUSD", "2026-08-01", "2026-08-01", tmp_path) == []
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_backfill_dukascopy.py -q`
 Expected: FAIL — `ModuleNotFoundError: No module named 'data_pipeline.backfill.dukascopy'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```python
 # data_pipeline/backfill/dukascopy.py
@@ -1451,12 +1451,12 @@ def fetch_ticks(symbol: str, start_date: str, end_date: str, out_dir: str | Path
     return written
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_backfill_dukascopy.py -q`
 Expected: PASS (2 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add data_pipeline/backfill/dukascopy.py tests/test_backfill_dukascopy.py
