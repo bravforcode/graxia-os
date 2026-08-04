@@ -36,7 +36,7 @@
 - Consumes: existing `TickRecorder`, `TickRecord` (unchanged API).
 - Produces: `TickRecord` gains optional fields `time_msc: int | None`, `volume: float | None`, `mt5_flags: int | None` (default None); `record_tick(bid, ask, last, timestamp_utc, source="mt5", *, time_msc=None, volume=None, mt5_flags=None) -> TickRecord`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_tick_recorder.py
@@ -68,12 +68,12 @@ def test_record_tick_defaults_legacy_fields_none():
     assert rec.mt5_flags is None
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_tick_recorder.py -q`
 Expected: FAIL — `TypeError: __init__() got an unexpected keyword argument 'time_msc'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```python
 # market_data/tick_recorder.py — add 3 optional dataclass fields + pass-through kwargs
@@ -88,12 +88,12 @@ class TickRecord:
     # record = TickRecord(..., time_msc=time_msc, volume=volume, mt5_flags=mt5_flags)
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_tick_recorder.py -q`
 Expected: PASS (2 tests)
 
-- [ ] **Step 5: Run related tests + commit**
+- [x] **Step 5: Run related tests + commit**
 
 Run: `python -m pytest tests/test_measurement_daemon.py tests/test_mt5_gateway.py -q`
 Expected: PASS (legacy callers unaffected by defaults)
@@ -113,7 +113,7 @@ git commit --no-verify -m "feat(quant_os): extend TickRecord with time_msc/volum
 - Consumes: lazy `_get_mt5()` helper, `Mt5UnavailableError` (existing).
 - Produces: `get_ticks_from(symbol: str, from_msc: int, count: int = 10000) -> list[dict]` — dicts with keys `time_msc, bid, ask, last, volume, flags`; raises `Mt5UnavailableError` on failure; returns `[]` when no ticks.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_mt5_gateway.py — append inside an existing test class or new class
@@ -167,12 +167,12 @@ def test_get_ticks_from_empty_and_error(monkeypatch):
         mt5_gateway.get_ticks_from("XAUUSD", 1)
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_mt5_gateway.py -q`
 Expected: FAIL — `AttributeError: module 'broker.mt5_gateway' has no attribute 'get_ticks_from'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```python
 # broker/mt5_gateway.py — insert after get_current_tick()
@@ -204,12 +204,12 @@ def get_ticks_from(symbol: str, from_msc: int, count: int = 10000) -> list[dict]
         raise Mt5UnavailableError(f"copy_ticks_from error for {symbol}: {e}") from e
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_mt5_gateway.py -q`
 Expected: PASS (including pre-existing gateway tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add broker/mt5_gateway.py tests/test_mt5_gateway.py
@@ -226,7 +226,7 @@ git commit --no-verify -m "feat(quant_os): add get_ticks_from delta-fetch wrappe
 - Consumes: `TickRecord` (Task 1 fields), pandas/pyarrow.
 - Produces: `write_batch(records: list[TickRecord], out_dir: str | Path, symbol: str, trading_day: date) -> Path` — atomic (`{path}.tmp` → `os.replace`), flat naming `{symbol}_{YYYY-MM-DD}.parquet`, includes the 15 columns from Global Constraints.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_tick_store.py
@@ -271,12 +271,12 @@ def test_write_batch_overwrites_complete_file(tmp_path):
     assert len(df) == 2  # full replacement, never partial append
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_tick_store.py -q`
 Expected: FAIL — `ImportError: cannot import name 'write_batch' from 'market_data.tick_store'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```python
 # market_data/tick_store.py — add imports: from datetime import date, datetime, UTC; from pathlib import Path; import os, tempfile; import pandas as pd
@@ -330,12 +330,12 @@ def write_batch(records, out_dir, symbol, trading_day) -> Path:
     return path
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_tick_store.py -q`
 Expected: PASS (2 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add market_data/tick_store.py tests/test_tick_store.py
@@ -354,7 +354,7 @@ git commit --no-verify -m "feat(quant_os): atomic append-once parquet writer in 
   - `poll(symbol) -> list[dict]` — new unique ticks since last poll (advances cursor, dedups, catches up)
   - `cursor(symbol) -> int` — current last_seen_msc (0 before first poll)
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_stream_collector.py
@@ -408,12 +408,12 @@ def test_no_ticks_is_noop():
     assert c.cursor("XAUUSD") == 0
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_stream_collector.py -q`
 Expected: FAIL — `ModuleNotFoundError: No module named 'market_data.stream_collector'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```python
 # market_data/stream_collector.py
@@ -476,12 +476,12 @@ class StreamCollector:
         self._seen = {k for k in self._seen if k[0] != symbol or k[1] >= floor_msc}
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_stream_collector.py -q`
 Expected: PASS (3 tests). If `test_bounded_dedup_same_ms_ticks` fails on ordering, adjust the fake so boundary ticks appear only as duplicates.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add market_data/stream_collector.py tests/test_stream_collector.py
@@ -499,7 +499,7 @@ git commit --no-verify -m "feat(quant_os): StreamCollector delta-stream core wit
 - Consumes: `StreamCollector` (Task 4), `get_ticks_from` (Task 2), `write_batch` (Task 3), TickRecorder/MeasurementBatchProcessor (existing).
 - Produces: `MeasurementDaemon(symbols, *, coverage_dir, ticks_dir, session_id, tick_provider=None, min_valid_ticks=..., symbol_map=None, flush_cadence_sec=5.0, max_buffer_ticks=50_000)` — `tick_provider(symbol, from_msc) -> list[dict]`; `run_once() -> dict[str, dict]` polls all symbols once (delta), updates coverage, flushes when cadence/buffer/day-rollover triggered, returns per-symbol progress; `run_forever(interval_seconds=1.0)` with exponential backoff (1,2,4,8…30s) on `Mt5UnavailableError`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_measurement_daemon.py — REPLACE TestDaemonRestartResume._make_tick provider shape and add:
@@ -552,12 +552,12 @@ class TestDaemonDeltaStream:
 
 Note: for the backoff test, add a `stop_after` guard: implement `run_forever(interval_seconds=1.0, stop_after=None)` where `stop_after` counts cycles (test-only convenience, default None = run forever). Assert `calls["n"] >= 3` then `daemon.stop()` flag pattern — simplest: `stop_after=3` returns after 3 cycles.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_measurement_daemon.py -q`
 Expected: FAIL — provider signature mismatch / `TypeError` (existing restart-resume tests break because `provider(symbol)` no longer matches).
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```python
 # market_data/measurement_daemon.py — key rewiring inside MeasurementDaemon
@@ -654,12 +654,12 @@ class MeasurementDaemon:
 
 Also update `scripts/run_measurement_daemon.py`: add `--flush-seconds` (default 5.0) passed to the daemon; the default provider needs no change (module function signature matches).
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_measurement_daemon.py tests/test_stream_collector.py -q`
 Expected: PASS (updated + new tests; restart-resume test updated to the new provider shape — its `provider(symbol)` becomes `provider(symbol, from_msc)` returning one delta tick per call)
 
-- [ ] **Step 5: Full suite + commit**
+- [x] **Step 5: Full suite + commit**
 
 Run: `python -m pytest tests/ -q`
 Expected: 70+ PASS (baseline green + new tests)
