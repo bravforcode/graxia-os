@@ -71,8 +71,8 @@ for p in (str(GRAXIA_ROOT), str(ROOT)):
 from graxia.packages.quant_os.backtest.dynamic_spread_model import SymbolCostProfile  # noqa: E402
 from graxia.packages.quant_os.backtest.engine import BacktestConfig, BacktestEngine  # noqa: E402
 from graxia.packages.quant_os.strategies.asian_scalper import AsianScalper  # noqa: E402
-from graxia.packages.quant_os.strategies.grid_strategy import GridConfig  # noqa: E402
 from graxia.packages.quant_os.strategies.grid_backtest import run_grid_backtest  # noqa: E402
+from graxia.packages.quant_os.strategies.grid_strategy import GridConfig  # noqa: E402
 from graxia.packages.quant_os.strategies.happy_gold_scalper import HappyGoldScalper  # noqa: E402
 
 # Pre-registered universe (FROZEN — trials 1034/1035)
@@ -135,8 +135,9 @@ def preflight_costs(symbols: list[str]) -> None:
     """Fail fast: every asset MUST have a measured, usable cost profile."""
     for sym in symbols:
         profile = SymbolCostProfile.for_symbol(sym)  # raises UnmeasuredCostError
-        print(f"  [preflight] {sym}: status={profile.status} "
-              f"spread_bps={profile.spread_bps} p95={profile.spread_bps_p95}")
+        print(
+            f"  [preflight] {sym}: status={profile.status} spread_bps={profile.spread_bps} p95={profile.spread_bps_p95}"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -237,12 +238,7 @@ def daily_returns_from_equity(equity_points: list[dict], first_bar: str) -> pd.S
     """Aggregate per-bar equity to daily returns (last equity of each UTC day)."""
     if not equity_points:
         return pd.Series(dtype=float)
-    df = pd.DataFrame(
-        [
-            {"ts": pd.Timestamp(p["timestamp"], tz="UTC"), "eq": float(p["equity"])}
-            for p in equity_points
-        ]
-    )
+    df = pd.DataFrame([{"ts": pd.Timestamp(p["timestamp"], tz="UTC"), "eq": float(p["equity"])} for p in equity_points])
     df["day"] = df["ts"].dt.date
     daily = df.groupby("day")["eq"].last().sort_index()
     rets = daily.pct_change().dropna()
@@ -293,7 +289,8 @@ def compute_asset_metrics(asset_result: dict) -> dict:
         for t in trades:
             try:
                 holds.append(
-                    (pd.Timestamp(t["exit_time"], tz="UTC") - pd.Timestamp(t["entry_time"], tz="UTC")).total_seconds() / 3600.0
+                    (pd.Timestamp(t["exit_time"], tz="UTC") - pd.Timestamp(t["entry_time"], tz="UTC")).total_seconds()
+                    / 3600.0
                 )
             except Exception:
                 pass
@@ -414,6 +411,163 @@ def cost_stress(asset_results: list[dict]) -> dict:
     return out
 
 
+def gross_reconstruct(asset_result: dict, measured_round_trip_bps: float) -> dict:
+    """Post-hoc gross (zero-cost) reconstruction — DIAGNOSTIC ONLY.
+
+    Re-adds recorded friction costs to net PnL on the SAME trade set
+    (mirrors cost_stress; no engine re-run). Classifies the asset as
+    'structural' (gross PF < 1.0 — no edge even free) or 'cost_driven'
+    (gross PF >= 1.0 but net PF < 1.0 — friction consumed the edge) and
+    binary-searches the break-even cost multiplier m: the maximum
+    m in [0, 1] with PF(m) >= 1 where sim_pnl(m) = gross_pnl - total_cost * m.
+    Never alters the frozen gate verdicts.
+    """
+    trades = asset_result["trades"]
+    if not trades:
+        return {"n_trades": 0, "gross_pf": 0.0, "classification": "no_trades"}
+
+    gross_pnls = []
+    cost_totals = []
+    for t in trades:
+        cost = (
+            float(t.get("entry_spread_cost", 0.0))
+            + float(t.get("entry_slippage_cost", 0.0))
+            + float(t.get("exit_slippage_cost", 0.0))
+            + float(t.get("fees", 0.0))
+        )
+        cost_totals.append(cost)
+        gross_pnls.append(float(t["pnl"]) + cost)
+
+    def pf_of(pnls):
+        wins = sum(p for p in pnls if p > 0)
+        losses = abs(sum(p for p in pnls if p < 0))
+        if losses <= 0:
+            return float("inf")
+        return wins / losses
+
+    net_pf = pf_of([float(t["pnl"]) for t in trades])
+    gross_pf = pf_of(gross_pnls)
+
+    # --- equity -> daily returns for Sharpe (cost_stress aggregation path) ---
+    srt = sorted(
+        ((pd.Timestamp(t["exit_time"], tz="UTC"), p) for t, p in zip(trades, gross_pnls, strict=False)),
+        key=lambda x: x[0],
+    )
+    eq = INITIAL_CAPITAL
+    points = []
+    for ts, pnl in srt:
+        eq += pnl
+        points.append((ts, eq))
+    df = pd.DataFrame(points, columns=["ts", "eq"])
+    df["day"] = df["ts"].dt.date
+    daily = df.groupby("day")["eq"].last()
+    rets = daily.pct_change().dropna()
+    n_days = len(rets)
+    mu = float(rets.mean()) if n_days else 0.0
+    sd = float(rets.std(ddof=1)) if n_days > 1 else 0.0
+    gross_sharpe = mu / (sd + 1e-10) * math.sqrt(252) if n_days else 0.0
+
+    net_pnls = [float(t["pnl"]) for t in trades]
+    # net sharpe on the same daily aggregation for a comparable erosion figure
+    srt_net = sorted(
+        ((pd.Timestamp(t["exit_time"], tz="UTC"), p) for t, p in zip(trades, net_pnls, strict=False)),
+        key=lambda x: x[0],
+    )
+    eq_net = INITIAL_CAPITAL
+    points_net = []
+    for ts, pnl in srt_net:
+        eq_net += pnl
+        points_net.append((ts, eq_net))
+    dfn = pd.DataFrame(points_net, columns=["ts", "eq"])
+    dfn["day"] = dfn["ts"].dt.date
+    daily_net = dfn.groupby("day")["eq"].last()
+    rets_net = daily_net.pct_change().dropna()
+    n_days_net = len(rets_net)
+    mu_net = float(rets_net.mean()) if n_days_net else 0.0
+    sd_net = float(rets_net.std(ddof=1)) if n_days_net > 1 else 0.0
+    net_sharpe = mu_net / (sd_net + 1e-10) * math.sqrt(252) if n_days_net else 0.0
+
+    wins = [p for p in gross_pnls if p > 0]
+    losses = [p for p in gross_pnls if p < 0]
+    gross_win_pct = len(wins) / len(gross_pnls) * 100.0 if gross_pnls else 0.0
+
+    first_eq = INITIAL_CAPITAL
+    last_eq = INITIAL_CAPITAL + sum(gross_pnls)
+    total_return_pct = (last_eq / first_eq - 1.0) * 100.0 if first_eq else 0.0
+    t0 = pd.Timestamp(asset_result["first_bar"], tz="UTC")
+    t1 = pd.Timestamp(asset_result["last_bar"], tz="UTC")
+    span_days = max((t1 - t0).days, 1)
+    monthly_pct = total_return_pct / (span_days / 30.44)
+
+    # --- break-even binary search on multiplier m in [0, 1] ---
+    if gross_pf < 1.0:
+        be_mult = 0.0
+        classification = "structural"
+    else:
+        classification = "cost_driven"
+        low, high = 0.0, 1.0
+        be_mult = 1.0 if net_pf >= 1.0 else 0.0
+        if net_pf < 1.0:
+            for _ in range(20):
+                mid = (low + high) / 2.0
+                sim = [g - c * mid for g, c in zip(gross_pnls, cost_totals, strict=False)]
+                if pf_of(sim) >= 1.0:
+                    be_mult = mid
+                    low = mid
+                else:
+                    high = mid
+
+    return {
+        "n_trades": len(trades),
+        "gross_sharpe_daily": round(gross_sharpe, 4),
+        "gross_pf": round(gross_pf, 4) if gross_pf < 100.0 else 99.99,
+        "gross_win_pct": round(gross_win_pct, 2),
+        "gross_total_return_pct": round(total_return_pct, 2),
+        "gross_monthly_pct": round(monthly_pct, 3),
+        "net_sharpe_daily": round(net_sharpe, 4),
+        "cost_erosion_sharpe": round(net_sharpe - gross_sharpe, 4),
+        "break_even_mult": round(be_mult, 4),
+        "break_even_round_trip_bps": round(measured_round_trip_bps * be_mult, 2),
+        "measured_round_trip_bps": round(measured_round_trip_bps, 2),
+        "classification": classification,
+    }
+
+
+def build_gross_artifact(asset_results: list[dict], measured_bps_map: dict[str, float]) -> dict:
+    """Assemble the diagnostic-only gross artifact (spec §4 schema)."""
+    per_asset = {}
+    break_even = {}
+    n_cost = 0
+    n_struct = 0
+    for ar in asset_results:
+        sym = ar["symbol"]
+        bps = measured_bps_map.get(sym, 0.0)
+        g = gross_reconstruct(ar, bps)
+        per_asset[sym] = g
+        break_even[sym] = {
+            "break_even_mult": g["break_even_mult"],
+            "break_even_round_trip_bps": g["break_even_round_trip_bps"],
+            "measured_round_trip_bps": g["measured_round_trip_bps"],
+            "classification": g["classification"],
+        }
+        if g["classification"] == "cost_driven":
+            n_cost += 1
+        elif g["classification"] == "structural":
+            n_struct += 1
+    return {
+        "meta": {
+            "method": "post-hoc cost reconstruction (mult=0.0), same trade set",
+            "source": "edge_search_m15_scalper_core4.json",
+            "generated": datetime.now(UTC).isoformat(),
+            "diagnostic_only": True,
+            "verdict_unchanged": True,
+        },
+        "per_asset": per_asset,
+        "break_even": break_even,
+        "summary": {"n_assets": len(asset_results), "n_cost_driven": n_cost, "n_structural": n_struct},
+    }
+
+
 def run_grid_benchmark(symbols: list[str]) -> dict:
     """Grid run on M15 with FROZEN baseline params — SEPARATE cost model.
 
@@ -464,8 +618,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="M15 scalper benchmark (EA-BENCH 1034/1035)")
     parser.add_argument("--assets", default=",".join(CORE_ASSETS))
     parser.add_argument("--out", default="reports/edge_search_m15_scalper_core4.json")
-    parser.add_argument("--include-grid", action="store_true", default=False,
-                        help="run grid benchmark section (separate cost model)")
+    parser.add_argument(
+        "--include-grid", action="store_true", default=False, help="run grid benchmark section (separate cost model)"
+    )
     parser.add_argument("--label-shuffle", type=int, default=N_LABEL_SHUFFLES)
     args = parser.parse_args()
 
@@ -490,9 +645,11 @@ def main() -> int:
             asset_results.append(ar)
             sym = ar["symbol"]
             m = compute_asset_metrics(ar)
-            print(f"  {sym}: {m['n_trades']} trades, sharpe={m['sharpe_daily']}, "
-                  f"win={m['win_pct']}%, PF={m['profit_factor']}, "
-                  f"monthly={m['monthly_pct']}%, maxDD={m['max_dd_pct']}%")
+            print(
+                f"  {sym}: {m['n_trades']} trades, sharpe={m['sharpe_daily']}, "
+                f"win={m['win_pct']}%, PF={m['profit_factor']}, "
+                f"monthly={m['monthly_pct']}%, maxDD={m['max_dd_pct']}%"
+            )
     except Exception as e:
         print(f"  FAILED — {e}")
         return 1
@@ -525,8 +682,9 @@ def main() -> int:
         skewness=float(portfolio.skew()),
         kurtosis=float(portfolio.kurtosis()) + 3.0,  # pandas returns EXCESS
     )
-    print(f"  DSR: p={dsr.probability_alpha:.4f} observed_SR={port_sharpe:.3f} "
-          f"pass={dsr.passes_threshold} (N={n_trials})")
+    print(
+        f"  DSR: p={dsr.probability_alpha:.4f} observed_SR={port_sharpe:.3f} pass={dsr.passes_threshold} (N={n_trials})"
+    )
 
     # SP2 institutional gates
     from graxia.packages.quant_os.scripts._trial_gates import run_institutional_gates
@@ -540,7 +698,9 @@ def main() -> int:
         annualization_factor=252,
     )
     print(f"  WFA: {gates['wfa']['oos_sharpe_mean']:.3f} pass={gates['wfa']['pass']}")
-    print(f"  Bootstrap CI: [{gates['bootstrap_ci']['lower']:.4f}, {gates['bootstrap_ci']['upper']:.4f}] pass={gates['bootstrap_ci']['pass']}")
+    print(
+        f"  Bootstrap CI: [{gates['bootstrap_ci']['lower']:.4f}, {gates['bootstrap_ci']['upper']:.4f}] pass={gates['bootstrap_ci']['pass']}"
+    )
     print(f"  MinBTL: min={gates['min_btl']['min_observations']} sufficient={gates['min_btl']['sufficient']}")
 
     # ── Jackknife + label shuffle + cost stress ──────────────────────
@@ -556,9 +716,7 @@ def main() -> int:
     # ── Verdict (frozen gates) ───────────────────────────────────────
     dk_pass = dk_t > 2.0
     dsr_pass = bool(dsr.passes_threshold)
-    sp2_passes = sum(
-        1 for g in (gates["wfa"]["pass"], gates["bootstrap_ci"]["pass"], gates["min_btl"]["pass"])
-    )
+    sp2_passes = sum(1 for g in (gates["wfa"]["pass"], gates["bootstrap_ci"]["pass"], gates["min_btl"]["pass"]))
     sp2_pass = sp2_passes >= 2
     trades_pass = all(per_asset[s]["trades_pass"] for s in assets)
     stress_pass = all(v.get("pass", False) for v in stress.values())
@@ -578,7 +736,9 @@ def main() -> int:
         "positive_sharpe_ge_5": pos_count >= 5,  # REPORTED ONLY — unreachable at 4 assets
     }
     primary = dk_pass and dsr_pass
-    combined_verdict = "PASS" if (primary and sp2_pass and trades_pass and stress_pass and ls_pass and jk_pass) else "REJECT"
+    combined_verdict = (
+        "PASS" if (primary and sp2_pass and trades_pass and stress_pass and ls_pass and jk_pass) else "REJECT"
+    )
 
     print("\n[5/5] GATE SUMMARY (frozen pre-registration):")
     for k, v in gates_summary.items():
@@ -597,7 +757,7 @@ def main() -> int:
         },
         "verified_ea_references": EA_BENCHMARK_REFERENCES,
         "note": "EA references are MyFxBook-verified track records (not directly "
-                "comparable — different period/leverage/execution; shown for context).",
+        "comparable — different period/leverage/execution; shown for context).",
     }
 
     artifact = {
