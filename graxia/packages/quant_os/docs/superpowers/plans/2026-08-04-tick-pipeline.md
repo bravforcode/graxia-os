@@ -1868,7 +1868,7 @@ git commit --no-verify -m "feat(quant_os): real bid/ask tick loader + engine spr
 - Consumes: `DuckDBStore.query_ticks`, `config/cost_calibration.json` (existing shape: `{"assets": {"XAUUSD": {...}}}`), `market_data/promotion.py::_atomic_write_json` pattern.
 - Produces: `recalibrate(symbol: str, ticks: pd.DataFrame) -> dict` — median `spread_bps` and `commission_bps` from tick ask/bid (volume-weighted), and `main()` writing updated `config/cost_calibration.json` (status stays `FROM_TICKS`); refuses to run when no tick data (prints + exit 0, no config change).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_recalibrate_from_ticks.py
@@ -1889,12 +1889,12 @@ def test_recalibrate_median_spread_and_commission():
     assert out["status"] == "FROM_TICKS"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_recalibrate_from_ticks.py -q`
 Expected: FAIL — `ModuleNotFoundError: No module named 'scripts.recalibrate_from_ticks'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```python
 # scripts/recalibrate_from_ticks.py
@@ -1984,12 +1984,12 @@ if __name__ == "__main__":
     raise SystemExit(main())
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_recalibrate_from_ticks.py -q`
 Expected: PASS (1 test)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/recalibrate_from_ticks.py tests/test_recalibrate_from_ticks.py
