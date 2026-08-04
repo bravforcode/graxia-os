@@ -1763,7 +1763,7 @@ git commit --no-verify -m "feat(quant_os): resumable backfill CLI with manifest 
 - Consumes: `DuckDBStore.query_ticks` (Task 6), whitelisted views.
 - Produces: `load_real_ticks(symbol: str, start_iso: str, end_iso: str, *, db: DuckDBStore | None = None, use_backfill: bool = True) -> pd.DataFrame | None` — returns `time_msc, bid, ask, last, volume, source, data_quality` rows (None when no data); engine hook: `real_spread_bps_at(symbol, ts)` used by the cost model when tick data exists (falls back to `config/cost_calibration.json` otherwise).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_data_loader_real_ticks.py
@@ -1799,12 +1799,12 @@ def test_load_real_ticks_reads_seeded_parquet(tmp_path):
     assert df.iloc[0]["bid"] == pytest.approx(2300.00)
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_data_loader_real_ticks.py -q`
 Expected: FAIL — `ImportError: cannot import name 'load_real_ticks' from 'backtest.data_loader'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```python
 # backtest/data_loader.py — add at module level
@@ -1843,12 +1843,12 @@ def load_real_ticks(symbol: str, start_iso: str, end_iso: str, *,
         return None if mid <= 0 else (row["ask"] - row["bid"]) / mid * 10_000.0
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_data_loader_real_ticks.py -q`
 Expected: PASS (2 tests)
 
-- [ ] **Step 5: Related + commit**
+- [x] **Step 5: Related + commit**
 
 Run: `python -m pytest tests/test_phase_3_1_engine_integration.py -q`
 Expected: PASS (existing engine tests unaffected — hook returns None without tick data)
