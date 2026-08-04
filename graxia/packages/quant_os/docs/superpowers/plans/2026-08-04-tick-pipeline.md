@@ -1246,7 +1246,7 @@ git commit --no-verify -m "feat(quant_os): Binance funding-rates backfill worker
 **Interfaces:**
 - Produces: `fetch_trades(symbol: str, start_date: str, end_date: str, out_dir: str | Path) -> list[Path]` — daily trade CSVs from `data.binance.vision/data/futures/um/daily/trades/{symbol}/{symbol}-trades-{YYYY-MM-DD}.zip`, schema: `timestamp_utc, symbol, price, quantity, source="binance_trade"`; idempotent.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_backfill_binance.py — append
@@ -1265,12 +1265,12 @@ def test_trades_csv_to_parquet(tmp_path, monkeypatch):
     assert df.iloc[0]["price"] == 100.0
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_backfill_binance.py -q`
 Expected: FAIL — `AttributeError: 'module' object has no attribute 'fetch_trades'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```python
 # data_pipeline/backfill/binance.py — append
@@ -1316,12 +1316,12 @@ def fetch_trades(symbol: str, start_date: str, end_date: str, out_dir: str | Pat
 
 (Add `from datetime import timedelta` to the imports.)
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_backfill_binance.py -q`
 Expected: PASS (3 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add data_pipeline/backfill/binance.py tests/test_backfill_binance.py

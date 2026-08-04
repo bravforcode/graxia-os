@@ -109,3 +109,58 @@ def fetch_funding(
             )
             written.append(path)
     return written
+
+
+TRADES_BASE_URL = "https://data.binance.vision/data/futures/um/daily/trades"
+
+
+def fetch_trades(symbol: str, start_date: str, end_date: str, out_dir: str | Path) -> list[Path]:
+    """Daily trade CSVs -> per-day parquet. Idempotent per day."""
+    out_dir = Path(out_dir)
+    written: list[Path] = []
+    start, end = date.fromisoformat(start_date), date.fromisoformat(end_date)
+    day = start
+    while day <= end:
+        path = out_dir / f"{symbol}_{day.isoformat()}.parquet"
+        if path.exists():
+            day += timedelta(days=1)
+            continue
+        fname = f"{symbol}-trades-{day.isoformat()}.zip"
+        dest_zip = out_dir / "downloads" / fname
+        dest_zip.parent.mkdir(parents=True, exist_ok=True)
+        if not dest_zip.exists():
+            _download(f"{TRADES_BASE_URL}/{symbol}/{fname}", dest_zip)
+        with zipfile.ZipFile(dest_zip) as z:
+            name = next(n for n in z.namelist() if n.endswith(".csv"))
+            df = pd.read_csv(z.open(name))
+        rows = df.rename(columns={"price": "price", "qty": "quantity", "time": "time_msc"})
+        rows["timestamp_utc"] = pd.to_datetime(rows["time_msc"], unit="ms", utc=True).dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+        rows["symbol"] = symbol
+        rows["source"] = "binance_trade"
+        # Trades are single-price ticks: bid == ask == price so the canonical
+        # tick view projection (time_msc, symbol, bid, ask, last, volume,
+        # source, data_quality) stays UNION-consistent with live ticks.
+        rows["bid"] = rows["price"].astype(float)
+        rows["ask"] = rows["price"].astype(float)
+        rows["last"] = rows["price"].astype(float)
+        rows["volume"] = rows["quantity"].astype(float)
+        rows["data_quality"] = "VALID"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        rows[
+            [
+                "time_msc",
+                "timestamp_utc",
+                "symbol",
+                "bid",
+                "ask",
+                "last",
+                "volume",
+                "price",
+                "quantity",
+                "source",
+                "data_quality",
+            ]
+        ].to_parquet(path, index=False)
+        written.append(path)
+        day += timedelta(days=1)
+    return written

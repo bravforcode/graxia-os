@@ -80,3 +80,42 @@ def test_funding_full_month_range(tmp_path, monkeypatch):
     paths = binance_mod.fetch_funding("BTCUSDT", "2026-08-01", "2026-10-31", tmp_path / "out")
     assert len(paths) == 3  # Aug, Sep, Oct — not just Aug+Oct
     assert "2026-09" in captured[1]
+
+
+def test_trades_csv_to_parquet(tmp_path, monkeypatch):
+    src = tmp_path / "src" / "BTCUSDT-trades-2026-08-01.zip"
+    src.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(src, "w") as z:
+        z.writestr(
+            "trades.csv",
+            "id,price,qty,quoteQty,time,isBuyerMaker,isBestMatch\n" "1,100.0,0.5,50.0,1764864000000,False,True\n",
+        )
+    monkeypatch.setattr(binance_mod, "_download", lambda url, dest: dest.write_bytes(src.read_bytes()))
+    out = tmp_path / "out"
+    paths = binance_mod.fetch_trades("BTCUSDT", "2026-08-01", "2026-08-01", out)
+    assert len(paths) == 1
+    df = pd.read_parquet(paths[0])
+    assert len(df) == 1
+    assert df.iloc[0]["source"] == "binance_trade"
+    assert df.iloc[0]["price"] == 100.0
+
+
+def test_trades_idempotent_skips_existing(tmp_path, monkeypatch):
+    out = tmp_path / "out"
+    existing = out / "BTCUSDT_2026-08-01.parquet"
+    existing.parent.mkdir(parents=True, exist_ok=True)
+    existing.write_bytes(b"done")
+    calls = []
+
+    def fake_download(url, dest):
+        calls.append(url)
+        day = url.rsplit("-", 1)[1].replace(".zip", "")  # "2026-08-02"
+        csv = "id,price,qty,quoteQty,time,isBuyerMaker,isBestMatch\n" "1,100.0,0.5,50.0,1764943200000,False,True\n"
+        with zipfile.ZipFile(dest, "w") as z:
+            z.writestr("trades.csv", csv)
+
+    monkeypatch.setattr(binance_mod, "_download", fake_download)
+    paths = binance_mod.fetch_trades("BTCUSDT", "2026-08-01", "2026-08-02", out)
+    assert len(paths) == 1  # day 2 fetched, day 1 skipped
+    assert (out / "BTCUSDT_2026-08-02.parquet").exists()
+    assert len(calls) == 1 and "2026-08-01" not in calls[0]  # day 1 never downloaded
