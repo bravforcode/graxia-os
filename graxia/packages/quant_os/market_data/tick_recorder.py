@@ -30,6 +30,9 @@ class TickRecord:
     connection_session_id: str
     source: str  # "mt5" | "simulated"
     data_quality: str  # "VALID" | "STALE" | "OUT_OF_ORDER" | "GAP"
+    time_msc: int | None = None  # raw MT5 tick timestamp (ms since epoch)
+    volume: float | None = None  # tick volume (volume_real preferred)
+    mt5_flags: int | None = None  # raw MT5 tick bitmask (distinct from `flags` string)
 
     def __post_init__(self):
         if self.source not in ("mt5", "simulated"):
@@ -59,6 +62,10 @@ class TickRecorder:
         last: Decimal,
         timestamp_utc: datetime,
         source: str = "mt5",
+        *,
+        time_msc: int | None = None,
+        volume: float | None = None,
+        mt5_flags: int | None = None,
     ) -> TickRecord:
         """Record a tick with quality checks.
 
@@ -102,6 +109,9 @@ class TickRecorder:
             connection_session_id=self.session_id,
             source=source,
             data_quality=quality,
+            time_msc=time_msc,
+            volume=volume,
+            mt5_flags=mt5_flags,
         )
 
         self._ticks.append(record)
