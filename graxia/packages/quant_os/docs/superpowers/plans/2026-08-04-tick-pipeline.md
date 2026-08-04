@@ -2007,7 +2007,7 @@ git commit --no-verify -m "feat(quant_os): re-derive FROM_TICKS cost calibration
 - Consumes: `v_backfill_binance_funding` view (Task 6 + Task 9), `DuckDBStore`.
 - Produces: `compute_funding_arb_stats(df: pd.DataFrame) -> dict` — `{n_periods, mean_funding_8h, annualized_yield_bps, positive_share, first_ts, last_ts}`; `main()` runs the trial flow (load funding → stats → append to `research/trial_ledger.json` `lineage` key, following the existing ledger convention — NEVER the `trials` key) and prints a verdict with no live-profit claims.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_funding_arb_4002.py
@@ -2030,12 +2030,12 @@ def test_funding_stats_annualized():
     assert abs(stats["annualized_yield_bps"] - 1095) < 10
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_funding_arb_4002.py -q`
 Expected: FAIL — `ModuleNotFoundError: No module named 'scripts.run_funding_arb_4002'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```python
 # scripts/run_funding_arb_4002.py
@@ -2105,12 +2105,12 @@ if __name__ == "__main__":
     raise SystemExit(main())
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_funding_arb_4002.py -q`
 Expected: PASS (1 test; adjust the annualized assertion to `>= 1000` as noted in the test comment)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/run_funding_arb_4002.py research/pre_registration/trial_4002_funding_arb.md tests/test_funding_arb_4002.py
