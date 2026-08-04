@@ -408,6 +408,21 @@ class ValidationResult:
         self.overall = "PASS" if self.fail_count == 0 and insufficient_count == 0 else "FAIL"
 
 
+def _atr_window(data: list[dict], i: int, atr_period: int) -> tuple[list[float], list[float], list[float]]:
+    """High/low/close slices for the ATR window ending at bar i (inclusive).
+
+    Matches the live strategy's ``close[-atr_period:]`` semantics: the current
+    (signal) bar is included, so the last True Range is bar i's TR.
+    """
+    atr_window = min(atr_period, i + 1)
+    start = max(0, i - atr_window + 1)
+    end = i + 1
+    highs = [data[j]["xau_high"] for j in range(start, end)]
+    lows = [data[j]["xau_low"] for j in range(start, end)]
+    closes = [data[j]["xau_close"] for j in range(start, end)]
+    return highs, lows, closes
+
+
 def load_data(filepath: Path) -> list[dict]:
     """Load RYDC daily data from CSV."""
     rows = []
@@ -518,10 +533,7 @@ def run_rydc_backtest(
             continue
 
         # Compute ATR
-        atr_window = min(config.atr_period, i)
-        highs = [data[j]["xau_high"] for j in range(max(0, i - atr_window), i)]
-        lows = [data[j]["xau_low"] for j in range(max(0, i - atr_window), i)]
-        closes = [data[j]["xau_close"] for j in range(max(0, i - atr_window), i)]
+        highs, lows, closes = _atr_window(data, i, config.atr_period)
 
         if len(closes) < 2:
             continue
