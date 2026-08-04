@@ -12,6 +12,17 @@ class FetchError(RuntimeError):
     """Raised when a page cannot be fetched after all retries."""
 
 
+# myfxbook.com rejects default httpx/python UA with 403; use a browser-like UA.
+DEFAULT_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+}
+
+
 def _is_retryable(exc: BaseException) -> bool:
     if isinstance(exc, httpx.HTTPError):
         return True
@@ -23,7 +34,11 @@ def _is_retryable(exc: BaseException) -> bool:
 
 def make_client(*, timeout: float | None = None) -> httpx.Client:
     """Build an httpx client with sane defaults for public page fetching."""
-    return httpx.Client(follow_redirects=True, timeout=timeout or config.TIMEOUT_SECONDS)
+    return httpx.Client(
+        follow_redirects=True,
+        timeout=timeout or config.TIMEOUT_SECONDS,
+        headers=DEFAULT_HEADERS,
+    )
 
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(2), retry=retry_if_exception(_is_retryable))

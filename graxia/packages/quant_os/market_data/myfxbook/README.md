@@ -21,3 +21,12 @@ Outputs: `data/myfxbook.db` (SQLite) + `reports/myfxbook/YYYY-MM-DD.md`.
 - Follow-up phases (separate plans): trade-history reverse-engineering into
   strategy hypotheses, then wiring PASS accounts into the existing edge-search /
   validation / trial-ledger pipeline, then external account drift monitoring.
+
+## Live validation note (2026-08-05)
+
+All public HTML pages (`www.myfxbook.com/*`, including account pages) are fronted by a
+Cloudflare JS challenge ("Just a moment...") and return 403 to plain httpx — this is a
+site-side bot gate, not a fetcher bug. The fetcher handles it gracefully (retries then
+`FetchError` → `ERROR` row in the report). Only `www.myfxbook.com/api/*` is reachable
+without the challenge; that path requires `MYFXBOOK_EMAIL`/`MYFXBOOK_PASSWORD`
+credentials via `broker/myfxbook_gateway.py` (preferred route for follow-up plans B/C).
