@@ -1614,7 +1614,7 @@ git commit --no-verify -m "feat(quant_os): MT5 history backfill worker via copy_
 - Consumes: all 4 worker functions (Tasks 9-12).
 - Produces: CLI `python scripts/run_backfill.py --source {binance,dukascopy,mt5} --dataset {funding,trades,ticks} --start YYYY-MM-DD --end YYYY-MM-DD [--symbols S1,S2] [--out-dir DIR]`; prints per-symbol results; registers DuckDB views (`v_backfill_{source}`) and writes `data/manifests/{dataset}_manifest.json` after completion.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_run_backfill.py
@@ -1658,12 +1658,12 @@ def test_run_one_source_writes_manifest(tmp_path, monkeypatch):
     assert json.loads(manifest.read_text(encoding="utf-8"))["file_count"] == 1
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_run_backfill.py -q`
 Expected: FAIL — `ModuleNotFoundError: No module named 'scripts.run_backfill'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```python
 # scripts/run_backfill.py
@@ -1733,12 +1733,12 @@ if __name__ == "__main__":
     raise SystemExit(main())
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_run_backfill.py -q`
 Expected: PASS (2 tests)
 
-- [ ] **Step 5: Full suite + commit**
+- [x] **Step 5: Full suite + commit**
 
 Run: `python -m pytest tests/ -q`
 Expected: PASS (baseline + all new)
