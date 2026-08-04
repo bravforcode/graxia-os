@@ -1008,7 +1008,7 @@ git commit --no-verify -m "feat(quant_os): INV-005 DataManifestManager with SHA-
 - Consumes: `DataManifestManager` (Task 7), `write_batch` (Task 3).
 - Produces: after each flush, `data/manifests/ticks_manifest.json` lists every parquet file currently in `self._ticks_dir` (dataset name `"ticks"`).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_measurement_daemon.py — append
@@ -1033,12 +1033,12 @@ class TestDaemonManifest:
         assert data["file_count"] >= 1
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_measurement_daemon.py::TestDaemonManifest -q`
 Expected: FAIL — `FileNotFoundError` (no manifest written)
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```python
 # market_data/measurement_daemon.py — in __init__ add:
@@ -1051,12 +1051,12 @@ self._manifest.update_manifest(
 )
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_measurement_daemon.py -q`
 Expected: PASS
 
-- [ ] **Step 5: Full suite + commit**
+- [x] **Step 5: Full suite + commit**
 
 Run: `python -m pytest tests/ -q`
 Expected: PASS (baseline + new)

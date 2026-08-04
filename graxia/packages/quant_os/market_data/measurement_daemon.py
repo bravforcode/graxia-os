@@ -14,6 +14,13 @@ wraps them with the broker loop and connection-recovery backoff.
 
 from __future__ import annotations
 
+import importlib.util
+
+# INV-005 ticks manifest (Task 8). `data` is not importable as a top-level
+# package (data/__init__.py imports `..core.enums`, which exceeds the
+# top-level package in this layout), so load data/manifest.py directly —
+# same pattern as scripts/generate_manifests.py.
+import sys as _sys
 import time
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
@@ -25,6 +32,17 @@ from market_data.coverage_tracker import MIN_VALID_TICKS_PER_SESSION_DAY, Covera
 from market_data.stream_collector import StreamCollector
 from market_data.tick_recorder import TickRecord, TickRecorder
 from market_data.tick_store import merge_write_batch
+
+_manifest_spec = importlib.util.spec_from_file_location(
+    "data_manifest_mod", Path(__file__).resolve().parent.parent / "data" / "manifest.py"
+)
+assert (
+    _manifest_spec is not None and _manifest_spec.loader is not None
+), "data/manifest.py must be loadable (INV-005 ticks manifest)"
+_data_manifest_mod = importlib.util.module_from_spec(_manifest_spec)
+_sys.modules["data_manifest_mod"] = _data_manifest_mod  # dataclass machinery needs it
+_manifest_spec.loader.exec_module(_data_manifest_mod)
+DataManifestManager = _data_manifest_mod.DataManifestManager
 
 
 def write_daily_parquet(
@@ -169,6 +187,7 @@ class MeasurementDaemon:
         self._last_flush = time.time()
         self._last_processed: dict[str, datetime | None] = {sym: None for sym in symbols}
         self._backoff_base = 1.0
+        self._manifest = DataManifestManager(self._ticks_dir.parent / "manifests")
 
     @staticmethod
     def _default_tick_provider(symbol: str, from_msc: int) -> list[dict]:
@@ -237,6 +256,8 @@ class MeasurementDaemon:
             merge_write_batch(records, self._ticks_dir, records[0].symbol, day)
         self._buffer.clear()
         self._last_flush = time.time()
+        # INV-005: keep the ticks dataset manifest current after every flush.
+        self._manifest.update_manifest("ticks", sorted(self._ticks_dir.glob("*.parquet")))
 
     def run_forever(self, interval_seconds: float = 1.0, stop_after: int | None = None) -> None:
         """Run the delta loop forever (or `stop_after` successful cycles in
