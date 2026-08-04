@@ -1,12 +1,15 @@
-"""Multi-symbol measurement daemon (Phase 1).
+"""Multi-symbol measurement daemon (Phase 1, delta-stream).
 
-One process, one MT5 connection, subscribes ticks for every candidate/measuring
-symbol, classifies each tick with the existing TickRecorder quality rules
-(VALID/STALE/OUT_OF_ORDER/GAP), records per-session-day coverage, and writes
-rolling per-symbol parquet (data/ticks/{symbol}_{date}.parquet).
+One process, one MT5 connection, delta-fetches ticks for every
+candidate/measuring symbol via copy_ticks_from (no polling gaps),
+classifies each tick with the existing TickRecorder quality rules
+(VALID/STALE/OUT_OF_ORDER/GAP), records per-session-day coverage, and
+writes rolling per-symbol parquet (data/ticks/{symbol}_{date}.parquet)
+with atomic writes + INV-005 manifests.
 
-The batch core (MeasurementBatchProcessor) is pure and testable without MT5;
-MeasurementDaemon wraps it with the broker loop.
+The batch core (MeasurementBatchProcessor) and delta core
+(StreamCollector) are pure and testable without MT5; MeasurementDaemon
+wraps them with the broker loop and connection-recovery backoff.
 """
 
 from __future__ import annotations
@@ -19,7 +22,9 @@ from pathlib import Path
 import pandas as pd
 
 from market_data.coverage_tracker import MIN_VALID_TICKS_PER_SESSION_DAY, CoverageTracker
+from market_data.stream_collector import StreamCollector
 from market_data.tick_recorder import TickRecord, TickRecorder
+from market_data.tick_store import merge_write_batch
 
 
 def write_daily_parquet(
@@ -47,6 +52,12 @@ def write_daily_parquet(
                 "connection_session_id": r.connection_session_id,
                 "source": r.source,
                 "data_quality": r.data_quality,
+                # Delta-stream fields — canonical parity with tick_store layout
+                # so DuckDB tick views (v_ticks) can project time_msc/volume
+                # across live and backfill files (union_by_name).
+                "time_msc": r.time_msc,
+                "volume": r.volume,
+                "flags_mt5": r.mt5_flags,
             }
             for r in records
         ]
@@ -111,8 +122,9 @@ class MeasurementBatchProcessor:
 
 
 class MeasurementDaemon:
-    """Broker-facing daemon: polls get_current_tick() per symbol, feeds one
-    TickRecorder per symbol, persists ticks daily, and updates coverage."""
+    """Broker-facing daemon: delta-fetches ticks per symbol via
+    copy_ticks_from, feeds one TickRecorder per symbol, persists ticks
+    daily, and updates coverage."""
 
     def __init__(
         self,
@@ -124,12 +136,16 @@ class MeasurementDaemon:
         tick_provider=None,
         min_valid_ticks: int = MIN_VALID_TICKS_PER_SESSION_DAY,
         symbol_map: dict[str, str] | None = None,
+        flush_cadence_sec: float = 5.0,
+        max_buffer_ticks: int = 50_000,
     ):
-        """tick_provider: callable(symbol) -> dict|None (defaults to
-        broker.mt5_gateway.get_current_tick). Tests inject a mock.
+        """tick_provider: callable(symbol, from_msc) -> list[dict] (defaults to
+        broker.mt5_gateway.get_ticks_from). Tests inject a mock.
         symbol_map: universe symbol -> broker symbol (e.g. {"USOIL": "SpotCrude"});
         ticks are fetched from the broker name while coverage/parquet stay
-        keyed by the universe symbol."""
+        keyed by the universe symbol.
+        flush_cadence_sec: max seconds between parquet flushes (0.0 = every
+        cycle, tests). max_buffer_ticks: flush once the buffer exceeds this."""
         self._symbols = symbols
         self._symbol_map = symbol_map or {}
         self._coverage_dir = Path(coverage_dir)
@@ -137,6 +153,8 @@ class MeasurementDaemon:
         self._session_id = session_id
         self._tick_provider = tick_provider or self._default_tick_provider
         self._min_valid_ticks = min_valid_ticks
+        self._flush_cadence_sec = flush_cadence_sec
+        self._max_buffer_ticks = max_buffer_ticks
         self._recorders = {sym: TickRecorder(sym, session_id) for sym in symbols}
         self._trackers = {
             sym: CoverageTracker(
@@ -146,59 +164,99 @@ class MeasurementDaemon:
             )
             for sym in symbols
         }
+        self._collector = StreamCollector(symbols, self._tick_for_delta)
+        self._buffer: list[TickRecord] = []
+        self._last_flush = time.time()
+        self._last_processed: dict[str, datetime | None] = {sym: None for sym in symbols}
+        self._backoff_base = 1.0
 
     @staticmethod
-    def _default_tick_provider(symbol: str) -> dict | None:
-        from broker.mt5_gateway import Mt5UnavailableError, get_current_tick
+    def _default_tick_provider(symbol: str, from_msc: int) -> list[dict]:
+        from broker.mt5_gateway import get_ticks_from
 
-        try:
-            return get_current_tick(symbol)
-        except Mt5UnavailableError:
-            return None
+        return get_ticks_from(symbol, from_msc)
 
-    def _tick_for(self, symbol: str) -> dict | None:
-        """Fetch a tick for the universe symbol, resolving broker-name mapping.
-        Uses the injected tick_provider (tests inject a mock); the default
-        provider resolves symbol_map before calling the broker."""
+    def _tick_for_delta(self, symbol: str, from_msc: int) -> list[dict]:
+        """Fetch delta ticks for the universe symbol, resolving broker-name
+        mapping. Uses the injected tick_provider (tests inject a mock); the
+        default provider resolves symbol_map before calling the broker."""
         if self._tick_provider is not self._default_tick_provider:
-            return self._tick_provider(symbol)
+            return self._tick_provider(symbol, from_msc)
         mt5_name = self._symbol_map.get(symbol, symbol)
-        return self._default_tick_provider(mt5_name)
+        return self._default_tick_provider(mt5_name, from_msc)
 
-    def _tick_to_record(self, symbol: str, tick: dict) -> TickRecord | None:
+    def _tick_to_record(self, symbol: str, tick: dict) -> TickRecord:
         from decimal import Decimal
 
-        ts = datetime.fromtimestamp(int(tick["time"]), tz=UTC)
+        ts = datetime.fromtimestamp(int(tick["time_msc"]) / 1000.0, tz=UTC)
         return self._recorders[symbol].record_tick(
             bid=Decimal(str(tick["bid"])),
             ask=Decimal(str(tick["ask"])),
             last=Decimal(str(tick["last"])),
             timestamp_utc=ts,
+            time_msc=int(tick["time_msc"]),
+            volume=float(tick["volume"]),
+            mt5_flags=int(tick["flags"]),
             source="mt5",
         )
 
     def run_once(self) -> dict:
-        """Poll all symbols once, persist ticks per day, update coverage.
-        Returns per-symbol progress dicts."""
-        today = datetime.now(UTC).date()
+        """Delta-fetch all symbols once, update coverage, flush parquet on
+        cadence/buffer/day triggers. Returns per-symbol progress dicts."""
         per_symbol: dict[str, dict] = {}
         for symbol in self._symbols:
-            tick = self._tick_for(symbol)
-            if tick is not None:
-                self._tick_to_record(symbol, tick)
-            recorder = self._recorders[symbol]
+            new_ticks = self._collector.poll(symbol)
+            for tick in new_ticks:
+                self._buffer.append(self._tick_to_record(symbol, tick))
             tracker = self._trackers[symbol]
-            if recorder.count() > 0:
-                records = recorder.get_ticks()
-                write_daily_parquet(records, self._ticks_dir, symbol, today)
+            # Coverage only needs the new ticks (tracker takes max(prior, new)).
+            since = self._last_processed[symbol]
+            records = self._recorders[symbol].get_ticks(since)
+            if records:
+                MeasurementBatchProcessor(tracker).process(records)
+                self._last_processed[symbol] = records[-1].timestamp_utc
             tracker.save()
             per_symbol[symbol] = tracker.progress()
+        self._maybe_flush()
         return per_symbol
 
-    def run_forever(self, interval_seconds: float = 1.0) -> None:
+    def _maybe_flush(self) -> None:
+        """Flush the buffer into per-day parquet files.
+
+        Uses merge_write_batch: each flush MERGES the delta buffer into the
+        day's accumulated file (dedupe on time_msc/bid/ask/last/volume), so
+        earlier flushes are never lost and restarts never duplicate."""
+        due = time.time() - self._last_flush >= self._flush_cadence_sec
+        big = len(self._buffer) >= self._max_buffer_ticks
+        if not (due or big) or not self._buffer:
+            return
+        by_day: dict[date, list[TickRecord]] = {}
+        for r in self._buffer:
+            by_day.setdefault(r.timestamp_utc.astimezone(UTC).date(), []).append(r)
+        for day, records in by_day.items():
+            merge_write_batch(records, self._ticks_dir, records[0].symbol, day)
+        self._buffer.clear()
+        self._last_flush = time.time()
+
+    def run_forever(self, interval_seconds: float = 1.0, stop_after: int | None = None) -> None:
+        """Run the delta loop forever (or `stop_after` successful cycles in
+        tests). On gateway errors, backs off exponentially (1,2,4,...30s)
+        from the same cursor — no ticks lost."""
+        from broker.mt5_gateway import Mt5UnavailableError
+
+        cycles = 0
+        backoff = self._backoff_base
         while True:
+            cycles += 1
+            if stop_after is not None and cycles > stop_after:
+                return
             try:
                 self.run_once()
+                backoff = self._backoff_base
+            except Mt5UnavailableError:
+                time.sleep(min(backoff, 30.0))
+                backoff = backoff * 2
+                continue
             except KeyboardInterrupt:
                 return
             time.sleep(interval_seconds)

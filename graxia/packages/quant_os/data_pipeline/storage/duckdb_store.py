@@ -17,12 +17,42 @@ except ImportError:  # standalone tools: data_pipeline dir is on sys.path, so `c
         DUCKDB_PATH,
     )
 
+# ── Task 6: tick query layer — whitelisted views + parameterized access ──
+TICK_VIEW_WHITELIST = {
+    "v_ticks",
+    "v_backfill_binance_trade",
+    "v_backfill_dukascopy",
+    "v_backfill_mt5_history",
+    "v_ticks_combined",
+}
+FUNDING_VIEW_WHITELIST = {"v_backfill_binance_funding"}
+
+# Canonical tick projection — every tick view emits EXACTLY these columns so
+# UNION ALL stays type-consistent (v_ticks.flags is VARCHAR, backfill flags
+# are BIGINT — the projection excludes flags deliberately).
+_TICK_PROJECTION = "time_msc, symbol, bid, ask, last, volume, source, data_quality"
+
+
+def _tick_view_sql(glob: str) -> str:
+    """SELECT projection over a parquet glob. union_by_name=true absorbs
+    mixed-schema files (legacy daemon parquet without the delta fields vs
+    canonical tick_store files) so view registration survives both.
+
+    NOTE: never called with a zero-match glob — register_tick_views defers
+    view creation until a glob actually matches (DuckDB read_parquet raises
+    "No files found" on zero-match globs).
+    """
+    return f"SELECT {_TICK_PROJECTION} FROM read_parquet('{glob}', union_by_name=true)"
+
 
 class DuckDBStore:
     def __init__(self, db_path: str | None = None):
         self.db_path = db_path or str(DUCKDB_PATH)
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
         self.conn = duckdb.connect(self.db_path)
+        self._tick_views_created = False
+        self._ticks_glob: str | None = None
+        self._backfill_globs: dict[str, str] | None = None
         self._init_tables()
         self._init_llm_tables()
 
@@ -334,3 +364,110 @@ class DuckDBStore:
 
     def close(self):
         self.conn.close()
+
+    # ── Task 6: tick query layer ──────────────────────────────────────
+    def register_tick_views(
+        self,
+        ticks_glob: str = "data/ticks/*.parquet",
+        backfill_globs: dict[str, str] | None = None,
+    ) -> None:
+        """Register tick views + tick_coverage_summary table.
+
+        Creates v_ticks, v_backfill_{source} (one per backfill_globs entry),
+        v_ticks_combined (UNION ALL) and tick_coverage_summary (PK
+        (symbol, date, source), transaction-wrapped). View creation is
+        DEFERRED until a glob actually matches (DuckDB read_parquet raises on
+        zero-match globs) — query_ticks/query_funding re-attempt on every call,
+        so a view registered before the first daemon flush still sees the
+        newly written parquet.
+
+        ticks_glob/backfill_globs are controlled config values, never user
+        input — the parameterized query_ticks is where injection is blocked.
+        """
+        self._ticks_glob = ticks_glob
+        self._backfill_globs = backfill_globs
+        with self.conn.cursor() as cur:
+            cur.execute("BEGIN")
+            cur.execute(
+                "CREATE TABLE IF NOT EXISTS tick_coverage_summary ("
+                "symbol VARCHAR, date DATE, source VARCHAR, "
+                "total_ticks BIGINT, valid_ticks BIGINT, stale_ticks BIGINT, "
+                "gap_ticks BIGINT, out_of_order_ticks BIGINT, updated_at TIMESTAMP, "
+                "PRIMARY KEY (symbol, date, source))"
+            )
+            cur.execute("COMMIT")
+        self._ensure_tick_views()
+
+    def _ensure_tick_views(self) -> None:
+        """(Re)create views if any configured glob now matches files."""
+        import glob as pyglob
+
+        if self._ticks_glob is None:
+            return
+        parts: list[str] = []
+        with self.conn.cursor() as cur:
+            cur.execute("BEGIN")
+            if pyglob.glob(self._ticks_glob):
+                cur.execute(f"CREATE OR REPLACE VIEW v_ticks AS {_tick_view_sql(self._ticks_glob)}")
+                parts.append("SELECT * FROM v_ticks")
+            for src, glob in (self._backfill_globs or {}).items():
+                if not pyglob.glob(glob):
+                    continue
+                view = f"v_backfill_{src}"
+                if src == "binance_funding":
+                    # Funding is NOT tick-shaped (no bid/ask) — its own view only.
+                    cur.execute(
+                        f"CREATE OR REPLACE VIEW {view} AS "
+                        f"SELECT time_msc, timestamp_utc, symbol, funding_rate, mark_price, source "
+                        f"FROM read_parquet('{glob}')"
+                    )
+                    continue
+                cur.execute(f"CREATE OR REPLACE VIEW {view} AS {_tick_view_sql(glob)}")
+                parts.append(f"SELECT * FROM {view}")
+            if parts:
+                cur.execute("CREATE OR REPLACE VIEW v_ticks_combined AS " + " UNION ALL ".join(parts))
+                self._tick_views_created = True
+            cur.execute("COMMIT")
+
+    def query_ticks(
+        self,
+        symbol: str,
+        start_msc: int,
+        end_msc: int,
+        view: str = "v_ticks_combined",
+    ) -> pd.DataFrame:
+        if view not in TICK_VIEW_WHITELIST:
+            raise ValueError(f"view not in whitelist: {view}")
+        self._ensure_tick_views()
+        with self.conn.cursor() as cur:
+            return cur.execute(
+                f"SELECT time_msc, symbol, bid, ask, last, volume, source, data_quality "
+                f"FROM {view} WHERE symbol = ? AND time_msc BETWEEN ? AND ? "
+                f"ORDER BY time_msc ASC",
+                [symbol, start_msc, end_msc],
+            ).fetchdf()
+
+    def query_funding(self, symbol: str, start_msc: int, end_msc: int) -> pd.DataFrame:
+        """Funding rows are not tick-shaped — dedicated whitelisted accessor."""
+        self._ensure_tick_views()
+        with self.conn.cursor() as cur:
+            return cur.execute(
+                "SELECT timestamp_utc, symbol, funding_rate, mark_price, source "
+                "FROM v_backfill_binance_funding "
+                "WHERE symbol = ? AND time_msc BETWEEN ? AND ? ORDER BY timestamp_utc ASC",
+                [symbol, start_msc, end_msc],
+            ).fetchdf()
+
+    def upsert_coverage_summary(self, rows: list[dict]) -> None:
+        if not rows:
+            return
+        df = pd.DataFrame(rows)  # noqa: F841 — referenced via DuckDB replacement scan (`FROM df`)
+        with self.conn.cursor() as cur:
+            cur.execute("BEGIN")
+            cur.execute(
+                "DELETE FROM tick_coverage_summary "
+                "WHERE (symbol, date, source) IN "
+                "(SELECT symbol, date::DATE AS date, source FROM df)"
+            )
+            cur.execute("INSERT INTO tick_coverage_summary SELECT * FROM df")
+            cur.execute("COMMIT")

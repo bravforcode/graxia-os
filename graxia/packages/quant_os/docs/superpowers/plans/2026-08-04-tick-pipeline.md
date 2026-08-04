@@ -686,7 +686,7 @@ git commit --no-verify -m "feat(quant_os): rewire measurement daemon to delta-st
   - `query_ticks(symbol: str, start_msc: int, end_msc: int, view: str = "v_ticks_combined") -> pd.DataFrame` — parameterized; `view` must be in a fixed whitelist `{"v_ticks", "v_backfill_binance_funding", "v_backfill_binance_trade", "v_backfill_dukascopy", "v_backfill_mt5_history", "v_ticks_combined"}` else ValueError.
   - `upsert_coverage_summary(rows: list[dict]) -> None` — transactional upsert into `tick_coverage_summary`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_duckdb_store_tick_views.py
@@ -755,12 +755,12 @@ def test_upsert_coverage_summary_pk_and_transaction(tmp_path):
     assert df.iloc[0]["total_ticks"] == 150
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_duckdb_store_tick_views.py -q`
 Expected: FAIL — `AttributeError: 'DuckDBStore' object has no attribute 'register_tick_views'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```python
 # data_pipeline/storage/duckdb_store.py — add to DuckDBStore
@@ -842,12 +842,12 @@ def upsert_coverage_summary(self, rows: list[dict]) -> None:
 
 Note: `ticks_glob`/`backfill_globs` are controlled config values (never user input) — document this; the parameterized `query_ticks` is where injection is blocked.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_duckdb_store_tick_views.py -q`
 Expected: PASS (4 tests)
 
-- [ ] **Step 5: Related tests + commit**
+- [x] **Step 5: Related tests + commit**
 
 Run: `python -m pytest tests/test_duckdb_store_llm.py tests/ -q`
 Expected: PASS (existing duckdb store tests unaffected)
