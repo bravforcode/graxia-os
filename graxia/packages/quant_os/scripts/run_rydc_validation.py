@@ -472,15 +472,35 @@ def run_rydc_backtest(
         if z_score is None:
             continue
 
-        # Check position exit
+        # Check position exit — stop-loss/take-profit take priority over the
+        # time-based exit. Levels are pre-registered: SL = 1.5 × ATR(14),
+        # TP = 2 × SL distance (see RYDCConfig and module docstring).
         if hold_counter > 0:
             hold_counter -= 1
-            if hold_counter == 0:
+            exit_price = None
+
+            # Conservative ordering: stop-loss first (worst case if both
+            # levels are crossed on the same bar).
+            if position_type == "long":
+                if row["xau_low"] <= stop_loss:
+                    exit_price = stop_loss
+                elif row["xau_high"] >= take_profit:
+                    exit_price = take_profit
+            elif position_type == "short":
+                if row["xau_high"] >= stop_loss:
+                    exit_price = stop_loss
+                elif row["xau_low"] <= take_profit:
+                    exit_price = take_profit
+
+            if exit_price is None and hold_counter == 0:
+                exit_price = row["xau_close"]
+
+            if exit_price is not None:
                 # Exit trade
                 if position_type == "long":
-                    pnl_pct = (row["xau_close"] - entry_price) / entry_price
+                    pnl_pct = (exit_price - entry_price) / entry_price
                 else:
-                    pnl_pct = (entry_price - row["xau_close"]) / entry_price
+                    pnl_pct = (entry_price - exit_price) / entry_price
                 pnl_pct -= round_trip_cost_pct
 
                 result.trade_returns.append(pnl_pct)
@@ -494,6 +514,7 @@ def run_rydc_backtest(
                     result.avg_loss_pct += pnl_pct
 
                 position_type = None
+                hold_counter = 0  # SL/TP exit ends the position; no phantom time-exit later
             continue
 
         # Compute ATR
