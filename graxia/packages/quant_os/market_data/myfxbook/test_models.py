@@ -1,4 +1,7 @@
 """Tests for myfxbook models — frozen dataclasses with None defaults."""
+
+from dataclasses import FrozenInstanceError
+
 import pytest
 
 from market_data.myfxbook.models import AccountSummary, EquityPoint, TradeRecord
@@ -15,7 +18,7 @@ def test_account_summary_defaults_are_none() -> None:
 
 def test_account_summary_is_frozen() -> None:
     summary = AccountSummary(account_id=1, member="m", system="s", url="u")
-    with pytest.raises(Exception):
+    with pytest.raises(FrozenInstanceError):
         summary.gain_pct = 1.0  # type: ignore[misc]
 
 
@@ -27,8 +30,16 @@ def test_equity_point_holds_month_and_value() -> None:
 
 def test_trade_record_fields() -> None:
     trade = TradeRecord(
-        account_id=1, trade_id="t1", open_time="2026-07-01 10:00", close_time="2026-07-01 14:00",
-        symbol="XAUUSD", direction="long", lots=0.1, entry=2300.0, exit=2310.0, pnl=10.0,
+        account_id=1,
+        trade_id="t1",
+        open_time="2026-07-01 10:00",
+        close_time="2026-07-01 14:00",
+        symbol="XAUUSD",
+        direction="long",
+        lots=0.1,
+        entry=2300.0,
+        exit=2310.0,
+        pnl=10.0,
     )
     assert trade.symbol == "XAUUSD"
     assert trade.direction == "long"
