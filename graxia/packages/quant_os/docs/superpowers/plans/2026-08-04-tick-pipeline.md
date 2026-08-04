@@ -1474,7 +1474,7 @@ git commit --no-verify -m "feat(quant_os): Dukascopy bi5 tick backfill worker (s
 - Produces (gateway): `get_ticks_range(symbol: str, from_msc: int, to_msc: int, count: int = 100000) -> list[dict]` — same dict shape as `get_ticks_from`, wraps `mt5.copy_ticks_range(..., COPY_TICKS_ALL)`.
 - Produces (worker): `fetch_ticks(symbol: str, from_msc: int, to_msc: int, out_dir: str | Path) -> list[Path]` — writes `data/backfill/mt5_history/{sym}_{date}.parquet` per UTC day in range, `source="mt5_history"`, `data_quality` from TickRecorder rules; idempotent per day file.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_backfill_mt5_history.py
@@ -1521,12 +1521,12 @@ def test_fetch_ticks_groups_by_utc_day_and_is_idempotent(tmp_path, monkeypatch):
     assert mt5_history.fetch_ticks("XAUUSD", day1_msc, day2_msc, tmp_path) == []
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_backfill_mt5_history.py -q`
 Expected: FAIL — `ImportError: cannot import name 'get_ticks_range' from 'broker.mt5_gateway'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```python
 # broker/mt5_gateway.py — append (mirror get_ticks_from)
@@ -1592,12 +1592,12 @@ def fetch_ticks(symbol: str, from_msc: int, to_msc: int, out_dir: str | Path) ->
     return written
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_backfill_mt5_history.py tests/test_mt5_gateway.py -q`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add broker/mt5_gateway.py data_pipeline/backfill/mt5_history.py tests/test_backfill_mt5_history.py
