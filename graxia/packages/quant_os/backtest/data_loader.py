@@ -18,7 +18,10 @@ from typing import Any
 
 import pandas as pd
 
-from ..data_pipeline.storage.duckdb_store import DuckDBStore
+try:
+    from ..data_pipeline.storage.duckdb_store import DuckDBStore
+except ImportError:  # top-level context (tests import backtest.data_loader directly)
+    from data_pipeline.storage.duckdb_store import DuckDBStore  # type: ignore[no-redef]
 
 logger = logging.getLogger(__name__)
 
