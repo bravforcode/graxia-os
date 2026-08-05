@@ -26,3 +26,9 @@ Recent history uses Conventional Commits with scope, e.g. `feat(quant_os): ...` 
 
 ## Safety & Change Control
 Do not overwrite locked experiment outputs. Changes to strategy logic, parameters, datasets, execution models, or risk policy require a change request recorded against the current phase. Keep `CONSTITUTION.md` invariants intact and never present backtest or demo results as live-profit proof.
+
+## Single-Writer Rule (F26 — ADOPTED 2026-08-06)
+The repo historically suffered git-index collisions and unauthorized commits from parallel coding sessions operating on the same working tree (MEGA_PLAN v2 F26). **One active writing session/agent per repo at a time.** Before a long write session or gate lane, acquire the lock:
+- `python scripts/acquire_writer_lock.py --owner "<session-name>"` — exits 0 if acquired, 1 if held by another session (fail-closed, never overwrites a live lock), 2 if stale (needs explicit `--force` after human review).
+- `python scripts/release_writer_lock.py` — release when done.
+Commit and release before starting long-running background tasks. If a foreign lock exists, do not write; report the holder and stop.

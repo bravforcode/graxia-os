@@ -4,6 +4,15 @@
 **Author:** coordinator-agent
 **Status:** ACTIVE
 
+> **⚠️ SUPERSEDED 2026-08-06 (reciprocal note, F25):** This document's linked plan
+> (`Meta/GRAXIA_TSM_UNIFIED_MEGA_REMEDIATION_PLAN_2026-07-01.md`) was declared
+> superseded by `MEGA_PLAN_v2_Quant_OS_Live_Readiness.md` (2026-07-20+), and this
+> file was flagged in that document's F25 as missing its reciprocal supersession
+> note. **The canonical live-readiness plan is `MEGA_PLAN_v2_Quant_OS_Live_Readiness.md`.**
+> This file remains the change-tracking record (locked experiments, wave summaries)
+> but its roadmap/gate structure must not be treated as current. Blocker status is
+> tracked in `reports/master_blocker_inventory.json` (Task 0-Pre.4, reconciled 2026-08-06).
+
 ---
 
 ## Change Request Reference
