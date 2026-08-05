@@ -23,6 +23,7 @@ def _load(mod_name: str, rel: str):
     import sys
 
     spec = importlib.util.spec_from_file_location(mod_name, str(_ROOT / rel))
+    assert spec is not None and spec.loader is not None, f"cannot load {rel}"
     mod = importlib.util.module_from_spec(spec)
     sys.modules[mod_name] = mod  # required: @dataclass fields resolve via sys.modules (Py3.12)
     spec.loader.exec_module(mod)
