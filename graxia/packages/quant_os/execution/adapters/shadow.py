@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import logging
 
-from .base import BrokerAdapter, Order, OrderResult
+from .base import AccountInfo, BrokerAdapter, Order, OrderResult
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,7 @@ class ShadowAdapter(BrokerAdapter):
     # Data operations → read-only source
     # ------------------------------------------------------------------
 
-    def get_account_info(self) -> object:
+    def get_account_info(self) -> AccountInfo:
         """Live account snapshot from the read-only data source.
 
         Used by the risk gate (OrderManager) so budget checks run against the

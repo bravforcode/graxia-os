@@ -1,0 +1,43 @@
+{
+  "phase": 0,
+  "description": "Stopping rule + sacred holdout separation",
+  "lock_timestamp": "2026-07-12T17:35:31.560597+00:00",
+  "artifacts": [
+    {
+      "path": "reports/stopping_rule_2026_07_12.md",
+      "size_bytes": 5192,
+      "sha256": "db3b817961652621f61c9f003c6af4817ac5fdcf3b4f43f03481abcd336494bd",
+      "exists": true
+    },
+    {
+      "path": "reports/hypothesis_02_real_yield_divergence.md",
+      "size_bytes": 10940,
+      "sha256": "d4d6b3fde5caf9cccaa6d9d34c3b0d57c976c0ac4c1ccf9004091e4c64bba852",
+      "exists": true
+    },
+    {
+      "path": "reports/go_live_gate_corrected_sequencing.md",
+      "size_bytes": 8334,
+      "sha256": "f871ef4e10753bc890066e37bc57a091654d2d65a35c7039dee37f4549910fcf",
+      "exists": true
+    },
+    {
+      "path": "scripts/split_sacred_holdout.py",
+      "size_bytes": 2067,
+      "sha256": "ae6a229fd93b6764f23cb4753d73d1cb14df87a36772e7a59397c08724b51044",
+      "exists": true
+    },
+    {
+      "path": "data/rydc/rydc_research.csv",
+      "size_bytes": 91377,
+      "sha256": "85048c0a4a108887f5437ef47456f3923c117101e89a15450908bbd660f7818c",
+      "exists": true
+    },
+    {
+      "path": "data/sacred_holdout/holdout.csv",
+      "size_bytes": 12322,
+      "sha256": "5a15961c15b1f4be50022b6c997418b267557beaf221c4b5769a0f9ebc9a9eed",
+      "exists": true
+    }
+  ]
+}

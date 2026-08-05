@@ -63,7 +63,17 @@ class WalkForwardValidation:
 
 
 class DeflatedSharpeRatio:
-    """Adjust Sharpe ratio for multiple-testing bias."""
+    """Adjust Sharpe ratio for multiple-testing bias.
+
+    SP1 (2026-08-04): the previous implementation was a pseudo-DSR — it
+    computed expected_max_sharpe = sqrt(2*log(N)) * (1 - gamma/(2*log(N)))
+    and returned sharpe - expected_max_sharpe, with no sigma(SR), no z-score
+    and no probability. It also silently treated an annualized Sharpe as raw
+    (unit mismatch) and passed whenever n_trials == 1 (expected_max=0).
+    Replaced with a delegation to the canonical Bailey & Lopez de Prado (2014)
+    implementation in validation/deflated_sharpe.py, de-annualizing with
+    sqrt(252) (D1 convention — this stack does not know the timeframe).
+    """
 
     def run(self, sharpe: float, n_trials: int, n_bars: int) -> CheckResult:
         if n_trials <= 0 or n_bars <= 0:
@@ -72,20 +82,22 @@ class DeflatedSharpeRatio:
                 passed=False,
                 details="INVALID_INPUTS",
             )
-        euler_gamma = 0.5772156649015329
-        log_n = math.log(max(n_trials, 2))
-        expected_max_sharpe = math.sqrt(2 * log_n) * (1 - euler_gamma / (2 * log_n)) if n_trials > 1 else 0
-        variance_adjusted = sharpe - expected_max_sharpe
-        if variance_adjusted <= 0:
-            return CheckResult(
-                name="deflated_sharpe",
-                passed=False,
-                details=f"DSR_NOT_SIGNIFICANT:sharpe={sharpe:.4f},expected_max={expected_max_sharpe:.4f}",
-            )
+        from validation.deflated_sharpe import dsr_from_annualized
+
+        result = dsr_from_annualized(
+            observed_sharpe=sharpe,
+            n_trials=n_trials,
+            n_observations=n_bars,
+            annualization_factor=252,  # D1 convention (stack is timeframe-agnostic)
+        )
         return CheckResult(
             name="deflated_sharpe",
-            passed=True,
-            details=f"DSR_PASS:sharpe={sharpe:.4f},deflated={variance_adjusted:.4f}",
+            passed=result.passes_threshold,
+            details=(
+                f"prob_alpha={result.probability_alpha:.4f},"
+                f"deflated={result.deflated_sharpe:.4f},"
+                f"expected_max_adj={result.multiple_testing_adjustment:.4f}"
+            ),
         )
 
 
@@ -120,10 +132,10 @@ class ParameterStability:
                 passed=False,
                 details=f"INSUFFICIENT_FOLDS:{len(param_sets)}<{min_folds}",
             )
-        numeric_params = {}
+        numeric_params: dict[str, list[float]] = {}
         for ps in param_sets:
             for k, v in ps.items():
-                if isinstance(v, (int, float)):
+                if isinstance(v, int | float):
                     numeric_params.setdefault(k, []).append(v)
         stable_params = []
         unstable_params = []

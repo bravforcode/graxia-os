@@ -1,0 +1,86 @@
+{
+  "schema_version": "1.0",
+  "direction": "F",
+  "description": "Crypto Basis/Carry — Dated (Quarterly) Futures vs Spot. Structurally different mechanism from Direction D's perpetual funding-rate carry: this tests whether the futures-minus-spot basis on a FIXED-EXPIRY (quarterly) contract — which must converge to zero at expiry by construction — offers a collectible, cost-positive, statistically real annualized carry return via long-spot/short-future cash-and-carry. Distinct from Direction E's cointegration pairs (spread between two DIFFERENT assets) and Direction D's funding (a periodic payment stream on a perpetual, no fixed expiry/convergence date).",
+  "last_updated": "2026-07-29",
+  "current_verdict_2026-07-29": "REJECTED. Trial #6001's primary (returns-based, stationary) Newey-West test never distinguishes realized delta-neutral carry from zero (p>0.4 in all 8 symbol/venue/window combinations tested), and the deterministic snapshot-hold-to-expiry basis never clears the assumed T-bill yield net of realistic costs on BTC or ETH via either Binance-native or Deribit dated futures. Weaker result than Direction D's funding-arb (#4003, FAIL_RIGOR): here the mechanism itself is not statistically established, not merely insufficient after costs. Do not deploy real capital to this strategy.",
+  "cumulative_trial_count_at_creation": 0,
+  "stopping_rule_doc": "Same standard as Direction D Trial #4003: net-of-realistic-cost annualized carry must (a) be statistically distinguishable from zero via Newey-West HAC test on the STATIONARY daily delta-neutral return series (spot_return - future_return), NOT on the basis level itself (a dated future's basis is a near-unit-root series that decays deterministically toward zero at expiry — an HAC test on the level series would show spurious significance and must not be used as the deciding test; it is reported only for transparency/comparison), and (b) beat the assumed T-bill yield after costs. Cross-exchange corroboration (Binance-native vs Binance-spot/Deribit-future) required, using the SAME expiry (2026-09-25) on both venues.",
+  "sacred_holdout_path": "N/A — same rationale as Direction D: this is a measurement of a market-structure fact (realized historical basis/carry), not a fitted predictive model being confirmed on a holdout.",
+  "sacred_holdout_status": "N/A",
+  "notes": [
+    "Registered 2026-07-29, BEFORE running scripts/crypto_basis_carry_rigor.py, per the pre-registration discipline established this session (F27's lesson: never run-then-register) and consistent with Direction D/E's registration pattern.",
+    "Continuation of the user-authorized redirect plan referenced in hypothesis_registry_e.json's notes (MEGA_PLAN_v2 stopping-rule closure: after Trial #2001 REJECTED, redirect to funding-arb + basis/carry + cointegration pairs). Funding-arb (Direction D) FAILED rigor on 2026-07-28 (see hypothesis_registry_d.json Trial #4003); this is the basis/carry leg of that same redirect.",
+    "OKX and Bybit confirmed NETWORK-UNREACHABLE from this environment this session (ccxt NetworkError on both). Binance and Deribit confirmed reachable and both list a BTC and ETH quarterly dated future expiring 2026-09-25T08:00:00Z, which allows a genuine same-expiry cross-exchange comparison.",
+    "Deribit has no true spot market (derivatives-only exchange); Binance BTC/USDT and ETH/USDT spot is used as the cash leg for BOTH the Binance-native and the Deribit-future variants, so the only thing that varies across the two variants is the futures leg's venue.",
+    "No API keys, no order execution, no capital at risk. Public ccxt endpoints only (OHLCV history)."
+  ],
+  "hypotheses": [
+    {
+      "trial_number": 6001,
+      "id": "CRYPTO-BASIS-CARRY-RIGOR",
+      "name": "Crypto Quarterly Futures Basis/Carry — Rigor Pass (returns-NW significance, cost-stress, cross-exchange, T-bill)",
+      "status": "REJECTED — realized carry not statistically distinguishable from zero on the valid (returns-based) test; snapshot hold-to-expiry basis never clears T-bill net of cost on any of the 4 symbol/venue combinations tested",
+      "registered_at": "2026-07-29",
+      "result_at": "2026-07-29",
+      "result_summary": {
+        "methodology": "Primary test is Newey-West HAC on the stationary daily return r_t = spot_return_t - future_return_t (long-spot/short-future delta-neutral P&L). A secondary naive test on the raw annualized-basis LEVEL series is also reported to show the expected spurious-significance divergence -- it is NOT used to decide the verdict.",
+        "returns_based_nw_test_all_combos_NOT_significant": {
+          "BTC_binance_native_full_window": {"n_obs": 123, "realized_carry_apy_pct": 2.349, "p_value": 0.6604, "significant_p05": false},
+          "BTC_binance_native_recent_33d": {"n_obs": 33, "realized_carry_apy_pct": 0.538, "p_value": 0.9207, "significant_p05": false},
+          "BTC_deribit_vs_binance_spot_full_window": {"n_obs": 305, "realized_carry_apy_pct": 7.176, "p_value": 0.9362, "significant_p05": false},
+          "BTC_deribit_vs_binance_spot_recent_33d": {"n_obs": 33, "realized_carry_apy_pct": 14.720, "p_value": 0.9175, "significant_p05": false},
+          "ETH_binance_native_full_window": {"n_obs": 123, "realized_carry_apy_pct": 3.245, "p_value": 0.4985, "significant_p05": false},
+          "ETH_binance_native_recent_33d": {"n_obs": 33, "realized_carry_apy_pct": -1.202, "p_value": 0.8660, "significant_p05": false},
+          "ETH_deribit_vs_binance_spot_full_window": {"n_obs": 305, "realized_carry_apy_pct": 5.961, "p_value": 0.9598, "significant_p05": false},
+          "ETH_deribit_vs_binance_spot_recent_33d": {"n_obs": 33, "realized_carry_apy_pct": 8.912, "p_value": 0.9546, "significant_p05": false},
+          "note": "Every p-value is >0.4 (several >0.9) -- the realized daily carry P&L is statistically indistinguishable from noise in all 8 window/venue/symbol combinations. This is a materially WEAKER result than Direction D's funding-arb (Trial #4003), where the mean funding rate WAS Newey-West significant (p<0.05 everywhere) and the failure was purely a cost/T-bill-hurdle issue. Here, the existence of a real edge itself is not statistically established."
+        },
+        "naive_level_based_nw_test_COMPARISON_ONLY": {
+          "note": "As predicted before running: the level series (basis annualized per day) gives spuriously huge t-stats (9.2 to 19.96, p=0.0 in all 4 full-window combos) purely because the basis level is a near-unit-root series decaying toward 0 at expiry -- NOT because there is a real, tradeable edge. This divergence from the returns-based test (t-stats 0.05-0.68, all non-significant) is itself the key methodological finding: a level-based significance test on a dated future's basis would have produced a false-positive 'PASS' if it had been used as the decision test.",
+          "example_divergence_BTC_binance_native": {"level_t_stat": 19.03, "level_p": 0.0, "returns_t_stat": 0.44, "returns_p": 0.6604}
+        },
+        "snapshot_hold_to_expiry_deterministic_number": {
+          "as_of": "2026-07-28",
+          "days_to_expiry": 59,
+          "BTC_binance_native": {"raw_basis_pct": 0.711, "annualized_pct": 4.400, "net_of_cost_1.0x_pct": 2.42, "beats_tbill_4.5pct": false},
+          "BTC_deribit": {"raw_basis_pct": 0.636, "annualized_pct": 3.935, "net_of_cost_1.0x_pct": 1.955, "beats_tbill_4.5pct": false},
+          "ETH_binance_native": {"raw_basis_pct": 0.353, "annualized_pct": 2.186, "net_of_cost_1.0x_pct": 0.207, "beats_tbill_4.5pct": false},
+          "ETH_deribit": {"raw_basis_pct": 0.176, "annualized_pct": 1.092, "net_of_cost_1.0x_pct": -0.888, "beats_tbill_4.5pct": false},
+          "note": "This is the cleanest, most decision-relevant number (a deterministic 'what would I earn if I opened this trade today and held to the 2026-09-25 expiry' projection, no significance test needed since it is not a sample mean). It NEVER clears the assumed 4.5%/yr T-bill yield net of realistic costs, on either symbol or either venue."
+        },
+        "cross_exchange_consistency": {
+          "verdict": "INCONSISTENT / not corroborating",
+          "detail": "Binance-native (clean, same-venue, same-day-boundary) shows a thin, non-significant 2.3-3.2% raw full-window realized carry. Binance-spot-vs-Deribit-future shows a much larger 6-15% realized carry, but this is ALSO non-significant (p=0.92-0.96) and is the pre-registered-as-a-risk cross-venue tracking-noise scenario (inverse-contract quoting, ~8h daily-candle boundary offset between Binance 00:00 UTC and Deribit 08:00 UTC) rather than a real, corroborated basis. The two venues do NOT agree on a real, tradeable number; if anything the larger Deribit figure is evidence of measurement noise, not a bigger edge.",
+          "crash_window_caveat": "Dated futures do not persist back to 2020/2022; no real historical crash-window test was possible (contract history starts 2025-09-26 at the earliest). Trial #4003 (Direction D, funding-rate) remains the best available crypto-derivatives crash-window evidence. An informal 'largest in-window drawdown day' color check (BTC -6.5% to -14% single-day moves within the observed window) showed basis staying positive (0.7-5.9%) on those days -- informal color only, not equivalent to a real crash-window stress test."
+        },
+        "verdict": "REJECTED. The primary, valid (returns-based, stationary) Newey-West test never rejects the null of zero mean carry across 8 symbol/venue/window combinations (all p>0.4). The deterministic snapshot-to-expiry basis, the cleanest available number, never beats the assumed T-bill yield net of realistic costs on any of the 4 symbol/venue combinations. Cross-exchange results do not corroborate each other. This is a WEAKER result than Direction D's funding-arb rigor pass (#4003, FAIL_RIGOR): here the underlying mechanism itself is not statistically distinguishable from noise over the available sample, not merely insufficient after costs.",
+        "result_artifact": "reports/crypto_basis_carry_rigor_20260728.json"
+      },
+      "instrument": "BTC and ETH: Binance spot (BTC/USDT, ETH/USDT) as cash leg vs. (a) Binance quarterly dated future BTC/USDT:USDT-260925 / ETH/USDT:USDT-260925 [native, same venue] and (b) Deribit quarterly dated future BTC/USD:BTC-260925 / ETH/USD:ETH-260925 [cross-venue corroboration], both expiring 2026-09-25T08:00:00Z.",
+      "hypothesis": "The futures-minus-spot basis on a fixed-expiry quarterly BTC/ETH future, captured via a delta-neutral long-spot/short-future cash-and-carry position, produces a realized annualized return that is (1) statistically distinguishable from zero on a stationary daily-P&L basis (Newey-West HAC on spot_return - future_return, not on the raw basis level), (2) durable across two independent venues for the same expiry, and (3) exceeds realistic round-trip trading costs and the assumed T-bill yield.",
+      "mechanism": "Structural: a dated future must converge to spot at expiry (cash/physical settlement). If the future trades above spot (contango, the typical crypto regime), a long-spot/short-future position captures that convergence as the future's price decays toward spot over the contract's remaining life, independent of the direction spot itself moves (delta-neutral). This is DIFFERENT from Direction D's funding-rate mechanism (a periodic payment between long/short perpetual holders with no fixed expiry) even though both are 'carry' in the loose sense — basis/carry here is driven by time-to-expiry convergence, not a funding payment schedule.",
+      "frozen_params": {
+        "symbols": ["BTC", "ETH"],
+        "expiry_used": "2026-09-25",
+        "cash_leg": "Binance spot (BTC/USDT, ETH/USDT)",
+        "future_legs": ["binance_native_quarterly", "deribit_quarterly"],
+        "timeframe": "1d OHLCV close",
+        "significance_test_primary": "Newey-West HAC t-test (Bartlett kernel, T^(1/3) lag truncation — identical function reused from scripts/funding_rate_arb_rigor.py::newey_west_t_test) on the daily stationary return series r_t = spot_return_t - future_return_t",
+        "significance_test_secondary_naive_do_not_decide_on": "Same NW test applied to the raw annualized-basis LEVEL series, reported only to show the (expected) spurious-significance divergence versus the valid returns-based test",
+        "cost_assumption_bps_round_trip": "Reused verbatim from funding_rate_arb_rigor.py: BASE_ROUND_TRIP_COST_BPS (32bps at 1.0x), stressed at 1.0x/1.2x/1.5x",
+        "tbill_assumption": "Reused verbatim from funding_rate_arb_rigor.py: TBILL_ANNUAL_YIELD_PCT_ASSUMED = 4.5%/yr, dated 2026-07-28, NOT live-fetched",
+        "recent_window_days": 33,
+        "note": "Reduced to 'apples-to-apples recent window' logic per the decisive discipline used in Direction D Trial #4003"
+      },
+      "economic_rationale": "Distinct from Path B's FX/XAUUSD interest-rate carry (2001-2008) and Direction D's crypto perpetual funding carry (4001-4003): this is roll/calendar-basis carry on a fixed-expiry contract, a third, separate mechanism within the 'carry' family, closer to traditional futures-basis cash-and-carry (e.g. index futures arb) than to either prior test.",
+      "data_dependencies": [
+        "Binance spot OHLCV (ccxt, public, no auth)",
+        "Binance USDT-M quarterly dated futures OHLCV (ccxt, public, no auth)",
+        "Deribit quarterly dated futures OHLCV (ccxt, public, no auth)"
+      ],
+      "crash_window_caveat": "Dated futures contracts do not persist across years (they are listed ~6-12 months before their own expiry and then cease to exist), so this contract cannot reach back to the 2020 COVID crash or the 2022 LUNA/Celsius/FTX windows the way the perpetual funding-rate series in Trial #4003 could. This trial reports a 'largest in-window single-day drawdown' as informal color only, and defers to Trial #4003's funding-based crash results as the best available crypto-derivatives crash evidence.",
+      "validation_plan": "scripts/crypto_basis_carry_rigor.py -- fetch real spot + quarterly-future OHLCV from Binance and Deribit, compute realized-carry via returns-based NW test (primary) and level-based NW test (naive, comparison-only), cost-stress, cross-exchange comparison, snapshot hold-to-expiry projection, T-bill comparison -> update this entry with result_summary and final status (PASS_RIGOR / FAIL_RIGOR / REJECTED) once run."
+    }
+  ]
+}

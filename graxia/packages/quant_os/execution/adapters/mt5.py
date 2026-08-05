@@ -133,6 +133,7 @@ class MT5Adapter(BrokerAdapter):
         timeout: int = 10_000,
         path: str = r"C:\Program Files\Pepperstone MetaTrader 5\terminal64.exe",
         read_only: bool = False,
+        reconnector: BrokerReconnector | None = None,
     ) -> None:
         super().__init__("MT5")
         self._login = login
@@ -141,7 +142,7 @@ class MT5Adapter(BrokerAdapter):
         self._timeout = timeout
         self._path = path
         self._read_only = read_only
-        self._reconnector = BrokerReconnector()  # INV-014: replaces inline 3-try loop
+        self._reconnector = reconnector if reconnector is not None else BrokerReconnector()  # INV-014
 
     # ------------------------------------------------------------------
     # Connection helpers

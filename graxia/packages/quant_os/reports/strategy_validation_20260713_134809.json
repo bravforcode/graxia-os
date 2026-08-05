@@ -1,0 +1,28 @@
+[
+  {
+    "name": "ETH Vol Confirm",
+    "trial_number": 2002,
+    "n_trades": 28,
+    "win_rate": 0.6071428571428571,
+    "total_pnl": 0.17748750380036069,
+    "sharpe": 0.8148286842863258,
+    "t_stat": 0.5432191228575505,
+    "p_value": 0.5914359342378406,
+    "wfa_oos_ratio": 0.6,
+    "wfe": 0.0,
+    "dsr": NaN,
+    "ci_lower": -2.655207914139248,
+    "ci_upper": 3.897859730085412,
+    "gates": {
+      "p_value": "FAIL",
+      "wfa_oos_positive": "FAIL",
+      "wfe": "FAIL",
+      "dsr": "INSUFFICIENT_DATA",
+      "bootstrap_ci": "FAIL",
+      "min_trades": "FAIL"
+    },
+    "overall": "FAIL",
+    "pass_count": 0,
+    "fail_count": 5
+  }
+]

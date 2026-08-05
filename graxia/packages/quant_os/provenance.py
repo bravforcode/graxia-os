@@ -14,7 +14,9 @@ slice still contains impossible dates or an egregious synthetic tell.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
+from typing import Literal
 
 import pandas as pd
 
@@ -29,6 +31,7 @@ PROVENANCE_FLOOR: dict[str, str] = {
     "USDJPY": "1971-01-01",
     "NAS100": "1985-01-01",  # Nasdaq-100 launched 1985-01
     "US30": "1896-05-27",  # DJIA continuous history
+    "BTCUSD": "2009-01-03",  # Bitcoin genesis block 2009-01-03 (SP3)
 }
 
 # Default slice start for modern-era studies (WS-A pre-reg window).
@@ -40,6 +43,101 @@ SYNTH_VOLUME_PLACEHOLDERS = frozenset({0.0, 1.0})
 
 class DataProvenanceError(Exception):
     """Raised when a series fails provenance checks."""
+
+
+class UncalibratedCostError(Exception):
+    """Raised when a trial requests a symbol with no verified cost-calibration data."""
+
+
+# Single source of truth: config/tradeable_universe.json, read at call time.
+# The frozenset this replaced was "kept in sync manually" and caused two
+# fabrication incidents (commit 33b90c31, trial #1030). The daemon writes
+# this JSON; the gate reads the same JSON.
+UNIVERSE_PATH = Path(__file__).resolve().parent / "config" / "tradeable_universe.json"
+
+
+def cost_calibrated_symbols(mode: Literal["paper", "live"] = "live") -> frozenset[str]:
+    """Read the tradeable universe JSON at call time (single source of truth).
+
+    mode="live": only symbols in the "tradeable" array.
+    mode="paper": tradeable + measuring + verifying (symbols that have
+    last-known measured cost numbers, possibly provisional).
+    """
+    universe = json.loads(UNIVERSE_PATH.read_text(encoding="utf-8"))
+    tradeable = {entry["symbol"] for entry in universe.get("tradeable", [])}
+    if mode == "live":
+        return frozenset(tradeable)
+    provisional = {entry["symbol"] for entry in universe.get("measuring", [])} | {
+        entry["symbol"] for entry in universe.get("verifying", [])
+    }
+    return frozenset(tradeable | provisional)
+
+
+def cost_calibrated_status(symbol: str) -> str | None:
+    """Return the symbol's universe status ("tradeable"|"measuring"|"verifying")
+    or None when the symbol is in no status array (unknown/never measured)."""
+    universe = json.loads(UNIVERSE_PATH.read_text(encoding="utf-8"))
+    for status in ("tradeable", "measuring", "verifying"):
+        for entry in universe.get(status, []):
+            if entry.get("symbol") == symbol:
+                return status
+    return None
+
+
+def require_cost_calibrated(
+    symbol: str,
+    mode: Literal["paper", "live"] = "live",
+) -> str:
+    """Refuse a symbol with no verified cost-calibration data for ``mode``.
+
+    Returns the symbol's current status ("tradeable" | "measuring" |
+    "verifying") so paper callers can tag P&L with a staleness flag
+    (measuring/verifying = provisional cost basis).
+
+    Raises UncalibratedCostError when:
+      * the symbol is unknown (in no status array), or
+      * mode="live" and the symbol is not yet "tradeable".
+
+    Callers making live-money decisions must pass mode="live" explicitly;
+    the "live" default protects call sites that forget to specify. Paper
+    call sites must pass mode="paper" explicitly.
+    """
+    status = cost_calibrated_status(symbol)
+    if status is None or (mode == "live" and status != "tradeable"):
+        raise UncalibratedCostError(
+            f"{symbol!r} has no verified cost-calibration data for mode={mode!r}. "
+            f"tradeable={sorted(cost_calibrated_symbols('live'))}; "
+            f"paper-eligible={sorted(cost_calibrated_symbols('paper'))}. Running a "
+            f"trial against an assumed/synthetic cost model is exactly the "
+            f"fabrication pattern already caught twice (commit 33b90c31, trial "
+            f"#1030). Add real cost data to config/tradeable_universe.json first, "
+            f"or pass require_cost_calibration=False if this call is not "
+            f"informing a trading decision."
+        )
+    return status
+
+
+# The tsm_*.py scripts (tsm_backtest/tsm_ema/tsm_portfolio/tsm_validate) share
+# one ASSETS list using data-source-suffixed names (e.g. "EURUSD_YF" for a
+# Yahoo Finance column) rather than the canonical symbols this module and
+# tradeable_universe.json use. Maps each to the canonical symbol so all four
+# scripts can share one gate call instead of four bespoke ones.
+TSM_ASSET_ALIASES: dict[str, str] = {
+    "EURUSD_YF": "EURUSD",
+    "GBPUSD_YF": "GBPUSD",
+    "BTC_YF": "BTCUSD",
+    "ETH_YF": "ETHUSD",
+    "SILVER": "XAGUSD",
+    "OIL": "USOIL",
+}
+
+
+def require_cost_calibrated_tsm_asset(
+    asset: str,
+    mode: Literal["paper", "live"] = "live",
+) -> str:
+    """require_cost_calibrated, resolving tsm_*.py's aliased asset names first."""
+    return require_cost_calibrated(TSM_ASSET_ALIASES.get(asset, asset), mode=mode)
 
 
 def _read_raw(symbol: str, data_dir: Path = DATA_DIR) -> tuple[pd.DataFrame, str]:
@@ -59,10 +157,14 @@ def load_provenance_checked(
     slice_end: str | None = None,
     data_dir: Path = DATA_DIR,
     max_synth_fraction: float = 0.10,
+    require_cost_calibration: bool = True,
+    mode: Literal["paper", "live"] = "paper",
 ) -> pd.DataFrame:
     """Load D1 OHLCV sliced to a provenance-checked window.
 
     Hard-fails if:
+      * ``require_cost_calibration`` is True (the default) and the symbol
+        has no verified cost data (see ``require_cost_calibrated``),
       * any row in the slice has date < PROVENANCE_FLOOR[symbol]
         (impossible-date contamination leaked into the slice), or
       * the synthetic-backfill tell (flat O=H=L=C with placeholder volume)
@@ -72,6 +174,8 @@ def load_provenance_checked(
     every WS-A symbol's floor is <= 2005, so all backfill is excluded. The
     synth-tell check is a secondary backstop against modern-window leakage.
     """
+    if require_cost_calibration:
+        require_cost_calibrated(symbol, mode=mode)
     df, ts = _read_raw(symbol, data_dir)
     floor = pd.Timestamp(PROVENANCE_FLOOR[symbol])
     start = pd.Timestamp(slice_start)
@@ -82,8 +186,7 @@ def load_provenance_checked(
     impossible = sliced[sliced[ts] < floor]
     if len(impossible):
         raise DataProvenanceError(
-            f"{symbol}: {len(impossible)} rows in slice have impossible dates "
-            f"(< {floor.date()}); data contaminated."
+            f"{symbol}: {len(impossible)} rows in slice have impossible dates (< {floor.date()}); data contaminated."
         )
 
     flat = (sliced["open"] == sliced["high"]) & (sliced["high"] == sliced["low"]) & (sliced["low"] == sliced["close"])
@@ -91,7 +194,7 @@ def load_provenance_checked(
     frac = synth.sum() / len(sliced)
     if frac > max_synth_fraction:
         raise DataProvenanceError(
-            f"{symbol}: synthetic tell in {frac:.2%} of slice " f"(> {max_synth_fraction:.2%}); data contaminated."
+            f"{symbol}: synthetic tell in {frac:.2%} of slice (> {max_synth_fraction:.2%}); data contaminated."
         )
     return sliced.reset_index(drop=True)
 

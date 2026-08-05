@@ -28,27 +28,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from ml.labeling import label_from_source
 from ml.pipeline import FeatureEngineer, FeatureSet, MLTrainer, purge_embargo_split_indices
 
-
-def _load_deflated_sharpe_ratio():
-    """Direct file-import validation/deflated_sharpe.py, bypassing validation/__init__.py.
-
-    That package __init__ eagerly imports native_runner.py, which needs the
-    graxia.packages.quant_os.* dotted path — only resolvable under pytest's
-    conftest.py sys.path setup, not when this script runs standalone
-    (`python scripts/auto_retrain.py`). Same direct-import trick already used
-    by ml.labeling.label_from_source for backtest/data_loader.py.
-    """
-    import importlib.util
-
-    _path = Path(__file__).parent.parent / "validation" / "deflated_sharpe.py"
-    _spec = importlib.util.spec_from_file_location("_deflated_sharpe", _path)
-    _mod = importlib.util.module_from_spec(_spec)
-    _spec.loader.exec_module(_mod)
-    return _mod.deflated_sharpe_ratio
-
-
-deflated_sharpe_ratio = _load_deflated_sharpe_ratio()
-
 logger = structlog.get_logger(__name__)
 
 # Load .env
@@ -117,13 +96,13 @@ MIN_SHARPE_IMPROVEMENT = 0.05
 _MIN_EVAL_TRADES = 10
 
 # Minimum bar the very first model must clear before being promoted to
-# champion when no champion exists yet. `deflated_sharpe` here is a real
-# Sharpe-ratio-space number (raw OOS Sharpe minus the deflated_sharpe_ratio()
-# multiple-testing haircut — see evaluate_model()), so "> 0" means "beats
-# what you'd expect from a lucky null strategy after the haircut" — the
-# same "not obviously terrible" floor the brief for this fix asks for.
-# NaN (evaluation failed — no data, no model, vocabulary drift) also fails
-# this floor since NaN comparisons are always False in Python.
+# champion when no champion exists yet. `deflated_sharpe` here is the real
+# held-out Sharpe from evaluate_model() (no multiple-testing haircut applied —
+# see evaluate_model()'s docstring for why), so "> 0" means "beats a coin
+# flip on genuinely unseen data" — the same "not obviously terrible" floor
+# the brief for this fix asks for. NaN (evaluation failed — no data, no
+# model, vocabulary drift) also fails this floor since NaN comparisons are
+# always False in Python.
 _FIRST_CHAMPION_MIN_SHARPE = 0.0
 
 # Barrier multiples must match FeatureEngineer.generate_features' own
@@ -155,10 +134,12 @@ def evaluate_model(model_data: dict):
     sync) — takes the simulated trade only on bars the model predicts as a
     win (label 1), and realizes P&L from the *actual* triple-barrier
     outcome of that bar (win/loss/timeout, in ATR multiples) — not a
-    fabricated proxy. Returns a deflated Sharpe (haircut for selection bias
-    via validation.deflated_sharpe.deflated_sharpe_ratio, n_trials=1 since
-    this evaluates one model, not a multi-strategy scan) and a real max
-    drawdown from the resulting equity curve.
+    fabricated proxy. Returns the real held-out Sharpe (no multiple-testing
+    haircut — this evaluates exactly one already-trained model on unseen
+    data, so there's no selection bias across candidates to correct for;
+    see the no-haircut comment inline below for the degenerate n_trials=1
+    edge in deflated_sharpe_ratio() that would otherwise apply) and a real
+    max drawdown from the resulting equity curve.
 
     Fails closed to NaN metrics (which can never win a promotion in
     hot_swap's comparisons) on any missing model/data/vocabulary condition
@@ -240,12 +221,17 @@ def evaluate_model(model_data: dict):
     std_r = float(returns_arr.std(ddof=1)) if n_trades > 1 else 0.0
     raw_sharpe = (mean_r / std_r) * math.sqrt(n_trades) if std_r > 0 else 0.0
 
-    dsr = deflated_sharpe_ratio(
-        observed_sharpe=raw_sharpe,
-        n_trials=1,
-        n_observations=n_trades,
-    )
-    haircut_sharpe = raw_sharpe - dsr.multiple_testing_adjustment
+    # deflated_sharpe_ratio() is not called here: this always evaluates exactly one
+    # already-trained model on held-out data (n_trials=1, not a multi-config scan),
+    # so there is no multiple-testing bias to correct for — same n_trials<=1
+    # reasoning as strategies/walk_forward.py's _deflated_sharpe(). Calling it
+    # anyway would hit a degenerate edge: _norm_ppf(1 - 1/n_trials) at n_trials=1
+    # evaluates _norm_ppf(0), which clamps to a sentinel of -10.0, producing a
+    # wildly negative expected_max_sharpe (verified empirically: adjustment swings
+    # from ~+0.03..0.11 at n_trials>=2 to ~-4 at n_trials=1) that, once correctly
+    # unit-scaled by sharpe_annualization_factor, INFLATES rather than penalizes
+    # the Sharpe — the real held-out Sharpe is used as-is instead.
+    haircut_sharpe = raw_sharpe
 
     equity = np.cumsum(returns_arr)
     running_max = np.maximum.accumulate(equity)

@@ -1,0 +1,104 @@
+{
+  "trial_id": 2001,
+  "strategy": "momentum_factor_rotation",
+  "parameters": {
+    "lookbacks": [
+      21,
+      63,
+      252
+    ],
+    "vol_target": 0.1,
+    "top_n": 2,
+    "bottom_n": 0,
+    "rebalance_freq": 5,
+    "min_signal_strength": 0.3
+  },
+  "universe": [
+    "XAUUSD",
+    "XAGUSD",
+    "EURUSD",
+    "GBPUSD",
+    "USDJPY",
+    "NAS100",
+    "US30"
+  ],
+  "cost_model": "pepperstone_razor",
+  "cost_multiplier": 1.0,
+  "data_range": {
+    "start": "2005-01-03",
+    "end": "2018-01-01",
+    "years": 12.99
+  },
+  "regime_coverage": {
+    "crisis": true,
+    "trend": true,
+    "choppy": true
+  },
+  "per_asset": {
+    "XAUUSD": {
+      "sharpe": 0.0059,
+      "return": -0.029858,
+      "max_dd": -0.364786,
+      "days": 11061,
+      "trades": 313
+    },
+    "XAGUSD": {
+      "sharpe": -0.5225,
+      "return": -0.544138,
+      "max_dd": -0.549543,
+      "days": 11061,
+      "trades": 127
+    },
+    "EURUSD": {
+      "sharpe": -0.0476,
+      "return": -0.147138,
+      "max_dd": -0.432816,
+      "days": 11061,
+      "trades": 547
+    },
+    "GBPUSD": {
+      "sharpe": -0.1853,
+      "return": -0.333195,
+      "max_dd": -0.409423,
+      "days": 11061,
+      "trades": 607
+    },
+    "USDJPY": {
+      "sharpe": 0.0174,
+      "return": -0.040675,
+      "max_dd": -0.353677,
+      "days": 11061,
+      "trades": 590
+    },
+    "NAS100": {
+      "sharpe": -1.3986,
+      "return": -0.999998,
+      "max_dd": -0.999997,
+      "days": 11061,
+      "trades": 347
+    },
+    "US30": {
+      "sharpe": -0.8977,
+      "return": -0.956034,
+      "max_dd": -0.955536,
+      "days": 11061,
+      "trades": 469
+    }
+  },
+  "pooled": {
+    "dk_t": -2.1255,
+    "pooled_sharpe": -1.5357,
+    "positive_sharpe_count": 2,
+    "total_trades": 3000,
+    "verdict": "REJECT"
+  },
+  "label_shuffle": {
+    "n_shuffles": 200,
+    "observed_sharpe": -1.5357,
+    "p_value": 0.0,
+    "verdict": "PASS"
+  },
+  "combined_verdict": "REJECT",
+  "honest_note": "GO does not equal live-ready. Must still pass cost-stress (1.5x, 2.0x multiplier), jackknife robustness, and not burn sacred holdout until single pre-committed hypothesis.",
+  "timestamp": "2026-07-20T19:07:00.893583+00:00"
+}

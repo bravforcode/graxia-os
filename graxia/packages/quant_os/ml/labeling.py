@@ -9,7 +9,9 @@ Labels each bar as:
 Intra-bar ambiguity rule: If both TP and SL are touched in the same bar,
 label = -1 (assume worst case — conservative risk management).
 """
+
 import os
+
 import numpy as np
 import pandas as pd
 import structlog
@@ -172,7 +174,7 @@ def prepare_labeled_dataset(
     df = df.dropna(subset=["atr_14"])
 
     # Drop last max_bars rows (incomplete labels)
-    df = df.iloc[: -max_bars] if max_bars > 0 else df
+    df = df.iloc[:-max_bars] if max_bars > 0 else df
 
     logger.info(
         "labeled_dataset_ready",
@@ -212,10 +214,10 @@ def label_from_source(
     import importlib.util
 
     # Direct file import to avoid __init__.py chain with relative imports
-    _loader_path = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)), "backtest", "data_loader.py"
-    )
+    _loader_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "backtest", "data_loader.py")
     _spec = importlib.util.spec_from_file_location("data_loader", _loader_path)
+    if _spec is None or _spec.loader is None:
+        raise ImportError(f"Cannot load data_loader module from {_loader_path}")
     _dl = importlib.util.module_from_spec(_spec)
     _spec.loader.exec_module(_dl)
     load_ohlcv = _dl.load_ohlcv

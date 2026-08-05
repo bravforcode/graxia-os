@@ -8,17 +8,19 @@ Supports:
 """
 
 import asyncio
+import time
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, Dict, Any, List, Callable
-import time
+from typing import Any
 
 
 @dataclass
 class Tick:
     """Real-time tick data"""
+
     symbol: str
     bid: Decimal
     ask: Decimal
@@ -37,6 +39,7 @@ class Tick:
 @dataclass
 class Bar:
     """OHLCV bar"""
+
     symbol: str
     timestamp: datetime
     open: Decimal
@@ -52,7 +55,7 @@ class DataFeed(ABC):
     def __init__(self, name: str):
         self.name = name
         self._connected = False
-        self._callbacks: List[Callable] = []
+        self._callbacks: list[Callable] = []
 
     @abstractmethod
     async def connect(self) -> bool:
@@ -63,13 +66,11 @@ class DataFeed(ABC):
         pass
 
     @abstractmethod
-    async def get_tick(self, symbol: str) -> Optional[Tick]:
+    async def get_tick(self, symbol: str) -> Tick | None:
         pass
 
     @abstractmethod
-    async def get_bars(
-        self, symbol: str, timeframe: str, count: int
-    ) -> List[Bar]:
+    async def get_bars(self, symbol: str, timeframe: str, count: int) -> list[Bar]:
         pass
 
     def on_tick(self, callback: Callable):
@@ -95,6 +96,7 @@ class MT5DataFeed(DataFeed):
         """Connect to MT5 terminal"""
         try:
             import MetaTrader5 as mt5
+
             self._mt5 = mt5
 
             if not mt5.initialize():
@@ -125,7 +127,7 @@ class MT5DataFeed(DataFeed):
             self._mt5.shutdown()
         self._connected = False
 
-    async def get_tick(self, symbol: str) -> Optional[Tick]:
+    async def get_tick(self, symbol: str) -> Tick | None:
         """Get latest tick for symbol"""
         if not self._connected or not self._mt5:
             return None
@@ -140,15 +142,13 @@ class MT5DataFeed(DataFeed):
                 bid=Decimal(str(tick.bid)),
                 ask=Decimal(str(tick.ask)),
                 timestamp=datetime.fromtimestamp(tick.time),
-                volume=tick.volume_real if hasattr(tick, 'volume_real') else 0,
+                volume=tick.volume_real if hasattr(tick, "volume_real") else 0,
             )
         except Exception as e:
             print(f"MT5 tick error for {symbol}: {e}")
             return None
 
-    async def get_bars(
-        self, symbol: str, timeframe: str, count: int
-    ) -> List[Bar]:
+    async def get_bars(self, symbol: str, timeframe: str, count: int) -> list[Bar]:
         """Get historical bars from MT5"""
         if not self._connected or not self._mt5:
             return []
@@ -172,15 +172,17 @@ class MT5DataFeed(DataFeed):
 
             bars = []
             for r in rates:
-                bars.append(Bar(
-                    symbol=symbol,
-                    timestamp=datetime.fromtimestamp(r["time"]),
-                    open=Decimal(str(r["open"])),
-                    high=Decimal(str(r["high"])),
-                    low=Decimal(str(r["low"])),
-                    close=Decimal(str(r["close"])),
-                    volume=float(r["tick_volume"]),
-                ))
+                bars.append(
+                    Bar(
+                        symbol=symbol,
+                        timestamp=datetime.fromtimestamp(r["time"]),
+                        open=Decimal(str(r["open"])),
+                        high=Decimal(str(r["high"])),
+                        low=Decimal(str(r["low"])),
+                        close=Decimal(str(r["close"])),
+                        volume=float(r["tick_volume"]),
+                    )
+                )
 
             return bars
 
@@ -188,7 +190,7 @@ class MT5DataFeed(DataFeed):
             print(f"MT5 bars error for {symbol}: {e}")
             return []
 
-    def start_tick_stream(self, symbols: List[str]) -> None:
+    def start_tick_stream(self, symbols: list[str]) -> None:
         """Start streaming ticks in background"""
         self._subscribed_symbols = set(symbols)
         self._tick_stream_task = asyncio.create_task(self._stream_ticks())
@@ -213,7 +215,7 @@ class YahooDataFeed(DataFeed):
 
     def __init__(self):
         super().__init__("Yahoo")
-        self._cache: Dict[str, List[Bar]] = {}
+        self._cache: dict[str, list[Bar]] = {}
 
     async def connect(self) -> bool:
         """Yahoo doesn't need connection"""
@@ -223,7 +225,7 @@ class YahooDataFeed(DataFeed):
     async def disconnect(self) -> None:
         self._connected = False
 
-    async def get_tick(self, symbol: str) -> Optional[Tick]:
+    async def get_tick(self, symbol: str) -> Tick | None:
         """Yahoo doesn't provide real-time ticks, get last bar"""
         bars = await self.get_bars(symbol, "M1", 1)
         if bars:
@@ -236,9 +238,7 @@ class YahooDataFeed(DataFeed):
             )
         return None
 
-    async def get_bars(
-        self, symbol: str, timeframe: str, count: int
-    ) -> List[Bar]:
+    async def get_bars(self, symbol: str, timeframe: str, count: int) -> list[Bar]:
         """Get bars from Yahoo Finance"""
         try:
             import yfinance as yf
@@ -247,16 +247,25 @@ class YahooDataFeed(DataFeed):
 
         # Map timeframe
         tf_map = {
-            "M1": "1m", "M5": "5m", "M15": "15m", "M30": "30m",
-            "H1": "1h", "H4": "1h", "D1": "1d",
+            "M1": "1m",
+            "M5": "5m",
+            "M15": "15m",
+            "M30": "30m",
+            "H1": "1h",
+            "H4": "1h",
+            "D1": "1d",
         }
 
         interval = tf_map.get(timeframe.upper(), "15m")
 
         # Yahoo limits: 1m=7d, 5m=60d, 15m=60d, 1h=730d, 1d=unlimited
         period_map = {
-            "1m": "7d", "5m": "60d", "15m": "60d",
-            "30m": "60d", "1h": "730d", "1d": "5y",
+            "1m": "7d",
+            "5m": "60d",
+            "15m": "60d",
+            "30m": "60d",
+            "1h": "730d",
+            "1d": "5y",
         }
         period = period_map.get(interval, "60d")
 
@@ -272,15 +281,17 @@ class YahooDataFeed(DataFeed):
 
             bars = []
             for idx, row in df.iterrows():
-                bars.append(Bar(
-                    symbol=symbol,
-                    timestamp=idx.to_pydatetime(),
-                    open=Decimal(str(row["Open"])),
-                    high=Decimal(str(row["High"])),
-                    low=Decimal(str(row["Low"])),
-                    close=Decimal(str(row["Close"])),
-                    volume=float(row["Volume"]),
-                ))
+                bars.append(
+                    Bar(
+                        symbol=symbol,
+                        timestamp=idx.to_pydatetime(),
+                        open=Decimal(str(row["Open"])),
+                        high=Decimal(str(row["High"])),
+                        low=Decimal(str(row["Low"])),
+                        close=Decimal(str(row["Close"])),
+                        volume=float(row["Volume"]),
+                    )
+                )
 
             return bars
 
@@ -297,9 +308,9 @@ class DataFeedManager:
     """
 
     def __init__(self):
-        self.feeds: List[DataFeed] = []
-        self._active_feed: Optional[DataFeed] = None
-        self._health: Dict[str, Dict] = {}
+        self.feeds: list[tuple[int, DataFeed]] = []
+        self._active_feed: DataFeed | None = None
+        self._health: dict[str, dict] = {}
 
     def add_feed(self, feed: DataFeed, priority: int = 0) -> None:
         """Add a data feed with priority (lower = higher priority)"""
@@ -321,7 +332,7 @@ class DataFeedManager:
 
         return False
 
-    async def get_tick(self, symbol: str) -> Optional[Tick]:
+    async def get_tick(self, symbol: str) -> Tick | None:
         """Get tick from active feed — fail-loud if all sources fail"""
         errors = []
         for _, feed in self.feeds:
@@ -343,14 +354,10 @@ class DataFeedManager:
 
         # FAIL-LOUD: all sources failed
         if errors:
-            raise ConnectionError(
-                f"All data feeds failed for {symbol}:\n" + "\n".join(errors)
-            )
+            raise ConnectionError(f"All data feeds failed for {symbol}:\n" + "\n".join(errors))
         return None
 
-    async def get_bars(
-        self, symbol: str, timeframe: str, count: int
-    ) -> List[Bar]:
+    async def get_bars(self, symbol: str, timeframe: str, count: int) -> list[Bar]:
         """Get bars from active feed — fail-loud if all sources fail"""
         errors = []
         for _, feed in self.feeds:
@@ -370,14 +377,12 @@ class DataFeedManager:
 
         # FAIL-LOUD: all sources failed
         if errors:
-            raise ConnectionError(
-                f"All data feeds failed for {symbol} {timeframe}:\n" + "\n".join(errors)
-            )
+            raise ConnectionError(f"All data feeds failed for {symbol} {timeframe}:\n" + "\n".join(errors))
         return []
 
         return []
 
-    async def health_check(self) -> Dict[str, Any]:
+    async def health_check(self) -> dict[str, Any]:
         """Check health of all feeds"""
         result = {}
         for _, feed in self.feeds:
@@ -391,7 +396,7 @@ class DataFeedManager:
             }
         return result
 
-    def start_streaming(self, symbols: List[str]) -> None:
+    def start_streaming(self, symbols: list[str]) -> None:
         """Start tick streaming on active feed"""
-        if self._active_feed and hasattr(self._active_feed, 'start_tick_stream'):
+        if self._active_feed and hasattr(self._active_feed, "start_tick_stream"):
             self._active_feed.start_tick_stream(symbols)

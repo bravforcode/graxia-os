@@ -15,6 +15,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from graxia.packages.quant_os.api import rate_limit as _rate_limit_mod
 from graxia.packages.quant_os.api.rate_limit import (
     InMemoryRateLimiter,
     RateLimitMiddleware,
@@ -199,7 +200,10 @@ class TestRateLimitMiddleware:
         r = client.get("/api/orders")
         assert r.status_code == 200
 
-    def test_forwarded_for_ip_isolation(self):
+    def test_forwarded_for_ip_isolation(self, monkeypatch):
+        # TestClient connects from host "testclient" — treat it as a trusted proxy
+        # so X-Forwarded-For is honored (otherwise all requests share one bucket).
+        monkeypatch.setattr(_rate_limit_mod, "_TRUSTED_PROXY_IPS", {"testclient"})
         app = _app_with_endpoints()
         app.user_middleware.clear()
         app.add_middleware(

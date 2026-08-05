@@ -1,0 +1,28 @@
+[
+  {
+    "name": "Session Pattern",
+    "trial_number": 1004,
+    "n_trades": 141,
+    "win_rate": 0.48936170212765956,
+    "total_pnl": 0.020907234716721505,
+    "sharpe": 0.05561613888887755,
+    "t_stat": 0.08320321666476063,
+    "p_value": 0.9338088030760961,
+    "wfa_oos_ratio": 0.6,
+    "wfe": 0.32683200800272555,
+    "dsr": 0.0046857890891096364,
+    "ci_lower": -1.0004107920430623,
+    "ci_upper": 1.3424692913053804,
+    "gates": {
+      "p_value": "FAIL",
+      "wfa_oos_positive": "FAIL",
+      "wfe": "FAIL",
+      "dsr": "FAIL",
+      "bootstrap_ci": "FAIL",
+      "min_trades": "PASS"
+    },
+    "overall": "FAIL",
+    "pass_count": 1,
+    "fail_count": 5
+  }
+]

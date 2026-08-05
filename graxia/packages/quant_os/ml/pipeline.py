@@ -144,7 +144,7 @@ class FeatureEngineer:
             features["macd_hist"] = macd.iloc[:, 2]
 
         # === Bollinger Bands ===
-        bb = ta.bbands(df["close"], length=20, std=2)
+        bb = ta.bbands(df["close"], length=20, std=2)  # type: ignore[arg-type]
         if bb is not None and len(bb.columns) >= 3:
             bb_upper = bb.iloc[:, 2]
             bb_lower = bb.iloc[:, 0]
@@ -344,12 +344,11 @@ class MLTrainer:
 
         # Configure early stopping at fit-time (avoid constructor/eval_metric conflicts)
         n_classes = len(set(y))
-        if hasattr(model, "set_params"):
-            if model_type == "xgboost":
-                model.set_params(
-                    early_stopping_rounds=10,
-                    eval_metric="mlogloss" if n_classes > 2 else "logloss",
-                )
+        if hasattr(model, "set_params") and model_type == "xgboost":
+            model.set_params(
+                early_stopping_rounds=10,
+                eval_metric="mlogloss" if n_classes > 2 else "logloss",
+            )
         model.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=False)
 
         # Evaluate

@@ -30,7 +30,7 @@ class TestDatasetManifests:
     @pytest.fixture(autouse=True)
     def _load_manifests(self):
         self.manifests = {}
-        for tf, csv_path in CSV_FILES.items():
+        for tf in CSV_FILES:
             manifest_path = MANIFEST_DIR / f"XAUUSD_{tf}.manifest.json"
             if manifest_path.exists():
                 self.manifests[tf] = json.loads(manifest_path.read_text())
@@ -89,8 +89,8 @@ class TestRiskPolicy:
         )
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
-        RiskPolicy = mod.RiskPolicy
-        p = RiskPolicy(risk_per_trade_bps=10)
+        risk_policy_cls = mod.RiskPolicy
+        p = risk_policy_cls(risk_per_trade_bps=10)
         from decimal import Decimal
 
         assert p.risk_per_trade_fraction == Decimal("0.0010")  # 10 bps = 0.10%
@@ -109,8 +109,8 @@ class TestRiskPolicy:
         )
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
-        RiskPolicy = mod.RiskPolicy
-        p = RiskPolicy()
+        risk_policy_cls = mod.RiskPolicy
+        p = risk_policy_cls()
         assert not hasattr(p, "risk_per_trade_pct"), "RiskPolicy must not have risk_per_trade_pct"
 
 
@@ -191,9 +191,8 @@ class TestHardcodeAudit:
                 parent = py_file.parent.name
                 key = (parent, py_file.name)
                 for i, line in enumerate(content.splitlines(), 1):
-                    if "units_per_lot" in line and not line.strip().startswith("#"):
-                        if key not in allowed:
-                            violations.append(f"{parent}/{py_file.name}:{i}: {line.strip()}")
+                    if "units_per_lot" in line and not line.strip().startswith("#") and key not in allowed:
+                        violations.append(f"{parent}/{py_file.name}:{i}: {line.strip()}")
             except Exception:
                 pass
         assert len(violations) == 0, "units_per_lot found in unlisted production code:\n" + "\n".join(violations[:10])

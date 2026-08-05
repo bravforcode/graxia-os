@@ -1,0 +1,193 @@
+{
+  "trial_number": 4003,
+  "generated_at": "2026-07-28T14:16:40.592597+00:00",
+  "test": "funding_rate_arb_rigor_pass",
+  "assumed_costs_bps_1x": 32.0,
+  "tbill_assumption": "Assumed 3-month T-bill yield ~4.5%/yr (approximate, manually entered 2026-07-28 -- NOT fetched live. Re-verify against FRED DGS3MO before using this comparison to make a real capital-allocation decision.",
+  "results": [
+    {
+      "exchange": "binance",
+      "symbol": "BTC/USDT",
+      "n_periods": 99,
+      "actual_days_observed": 32.7,
+      "positive_period_pct": 98.99,
+      "raw_annualized_yield_pct": 6.323,
+      "newey_west_significance": {
+        "mean_rate": 5.7161111111111106e-05,
+        "n_periods": 99,
+        "max_lag": 4,
+        "nw_t_stat": 9.4342,
+        "p_value_two_sided": 0.0,
+        "significant_p05": true
+      },
+      "cost_stress": {
+        "1.0x": {
+          "round_trip_cost_bps": 32.0,
+          "net_annualized_yield_bps": 274.75,
+          "net_annualized_yield_pct": 2.748,
+          "still_positive": true
+        },
+        "1.2x": {
+          "round_trip_cost_bps": 38.4,
+          "net_annualized_yield_bps": 203.24,
+          "net_annualized_yield_pct": 2.032,
+          "still_positive": true
+        },
+        "1.5x": {
+          "round_trip_cost_bps": 48.0,
+          "net_annualized_yield_bps": 95.97,
+          "net_annualized_yield_pct": 0.96,
+          "still_positive": true
+        }
+      },
+      "tbill_comparison": {
+        "net_apy_pct": 2.748,
+        "tbill_apy_pct_assumed": 4.5,
+        "excess_over_tbill_pct": -1.752,
+        "beats_tbill": false,
+        "note": "Assumed 3-month T-bill yield ~4.5%/yr (approximate, manually entered 2026-07-28 -- NOT fetched live. Re-verify against FRED DGS3MO before using this comparison to make a real capital-allocation decision."
+      },
+      "crash_window_results": {},
+      "first_ts": "2026-06-25T16:00:00.000Z",
+      "last_ts": "2026-07-28T08:00:00.000Z"
+    },
+    {
+      "exchange": "binance",
+      "symbol": "ETH/USDT",
+      "n_periods": 99,
+      "actual_days_observed": 32.7,
+      "positive_period_pct": 86.87,
+      "raw_annualized_yield_pct": 3.52,
+      "newey_west_significance": {
+        "mean_rate": 3.181969696969697e-05,
+        "n_periods": 99,
+        "max_lag": 4,
+        "nw_t_stat": 4.5326,
+        "p_value_two_sided": 6e-06,
+        "significant_p05": true
+      },
+      "cost_stress": {
+        "1.0x": {
+          "round_trip_cost_bps": 32.0,
+          "net_annualized_yield_bps": -5.57,
+          "net_annualized_yield_pct": -0.056,
+          "still_positive": false
+        },
+        "1.2x": {
+          "round_trip_cost_bps": 38.4,
+          "net_annualized_yield_bps": -77.08,
+          "net_annualized_yield_pct": -0.771,
+          "still_positive": false
+        },
+        "1.5x": {
+          "round_trip_cost_bps": 48.0,
+          "net_annualized_yield_bps": -184.35,
+          "net_annualized_yield_pct": -1.843,
+          "still_positive": false
+        }
+      },
+      "tbill_comparison": {
+        "net_apy_pct": -0.056,
+        "tbill_apy_pct_assumed": 4.5,
+        "excess_over_tbill_pct": -4.556,
+        "beats_tbill": false,
+        "note": "Assumed 3-month T-bill yield ~4.5%/yr (approximate, manually entered 2026-07-28 -- NOT fetched live. Re-verify against FRED DGS3MO before using this comparison to make a real capital-allocation decision."
+      },
+      "crash_window_results": {},
+      "first_ts": "2026-06-25T16:00:00.000Z",
+      "last_ts": "2026-07-28T08:00:00.000Z"
+    },
+    {
+      "exchange": "bitget",
+      "symbol": "BTC/USDT:USDT",
+      "n_periods": 99,
+      "actual_days_observed": 32.7,
+      "positive_period_pct": 81.82,
+      "raw_annualized_yield_pct": 4.625,
+      "newey_west_significance": {
+        "mean_rate": 4.180808080808082e-05,
+        "n_periods": 99,
+        "max_lag": 4,
+        "nw_t_stat": 3.9483,
+        "p_value_two_sided": 7.9e-05,
+        "significant_p05": true
+      },
+      "cost_stress": {
+        "1.0x": {
+          "round_trip_cost_bps": 32.0,
+          "net_annualized_yield_bps": 104.92,
+          "net_annualized_yield_pct": 1.049,
+          "still_positive": true
+        },
+        "1.2x": {
+          "round_trip_cost_bps": 38.4,
+          "net_annualized_yield_bps": 33.41,
+          "net_annualized_yield_pct": 0.334,
+          "still_positive": true
+        },
+        "1.5x": {
+          "round_trip_cost_bps": 48.0,
+          "net_annualized_yield_bps": -73.86,
+          "net_annualized_yield_pct": -0.739,
+          "still_positive": false
+        }
+      },
+      "tbill_comparison": {
+        "net_apy_pct": 1.049,
+        "tbill_apy_pct_assumed": 4.5,
+        "excess_over_tbill_pct": -3.451,
+        "beats_tbill": false,
+        "note": "Assumed 3-month T-bill yield ~4.5%/yr (approximate, manually entered 2026-07-28 -- NOT fetched live. Re-verify against FRED DGS3MO before using this comparison to make a real capital-allocation decision."
+      },
+      "crash_window_results": {},
+      "first_ts": "2026-06-25T16:00:00.000Z",
+      "last_ts": "2026-07-28T08:00:00.000Z"
+    },
+    {
+      "exchange": "bitget",
+      "symbol": "ETH/USDT:USDT",
+      "n_periods": 99,
+      "actual_days_observed": 32.7,
+      "positive_period_pct": 85.86,
+      "raw_annualized_yield_pct": 3.618,
+      "newey_west_significance": {
+        "mean_rate": 3.270707070707071e-05,
+        "n_periods": 99,
+        "max_lag": 4,
+        "nw_t_stat": 4.6954,
+        "p_value_two_sided": 3e-06,
+        "significant_p05": true
+      },
+      "cost_stress": {
+        "1.0x": {
+          "round_trip_cost_bps": 32.0,
+          "net_annualized_yield_bps": 4.25,
+          "net_annualized_yield_pct": 0.042,
+          "still_positive": true
+        },
+        "1.2x": {
+          "round_trip_cost_bps": 38.4,
+          "net_annualized_yield_bps": -67.26,
+          "net_annualized_yield_pct": -0.673,
+          "still_positive": false
+        },
+        "1.5x": {
+          "round_trip_cost_bps": 48.0,
+          "net_annualized_yield_bps": -174.53,
+          "net_annualized_yield_pct": -1.745,
+          "still_positive": false
+        }
+      },
+      "tbill_comparison": {
+        "net_apy_pct": 0.043,
+        "tbill_apy_pct_assumed": 4.5,
+        "excess_over_tbill_pct": -4.457,
+        "beats_tbill": false,
+        "note": "Assumed 3-month T-bill yield ~4.5%/yr (approximate, manually entered 2026-07-28 -- NOT fetched live. Re-verify against FRED DGS3MO before using this comparison to make a real capital-allocation decision."
+      },
+      "crash_window_results": {},
+      "first_ts": "2026-06-25T16:00:00.000Z",
+      "last_ts": "2026-07-28T08:00:00.000Z"
+    }
+  ]
+}

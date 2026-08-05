@@ -1,0 +1,22 @@
+
+=== PRE-REGISTERED CRITERIA ===
+Strategy: RSI Mean Reversion + Bollinger Breakout
+Instrument: EURUSD
+Timeframes: D1 (primary), H1, M15 (cross-validation)
+
+PASS conditions (ALL must be true):
+1. Net IS Sharpe > 0 on D1
+2. Net OOS Sharpe > 0 on D1
+3. Walk-forward consistency > 50% on D1
+4. Net IS Sharpe > 0 on at least 1 of {H1, M15}
+5. RSI and BB must BOTH have Net IS > 0 on D1 (no cherry-picking)
+6. Total D1 trades > 20 (sufficient sample)
+7. No strategy has Net OOS < -1.0 (no catastrophic failure)
+
+FAIL conditions (ANY = stop):
+1. Net IS < 0 on D1 for BOTH RSI and BB
+2. Net OOS < 0 on D1 for BOTH RSI and BB
+3. WF consistency < 30% on D1
+4. Win rate < 40% on D1
+
+Pre-registered: 2026-07-09

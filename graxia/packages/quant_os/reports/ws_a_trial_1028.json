@@ -95,8 +95,9 @@
   "dsr": {
     "pooled_sharpe": 0.1519,
     "probability_alpha": 0.0,
-    "n_observations": 1050,
-    "pass": true
+    "n_observations": 5621,
+    "pass": true,
+    "honest_note": "SP1 audit 2026-08-03: n_observations was swapped with n_trials (1050). Corrected to total_days=5621. Original run computed DSR with factor=1.0 (annualized SR passed as raw) — probability_alpha=0.0 PASS is unreliable; re-run with unit-correct dsr_from_annualized gives p=0.9277 FAIL. Verdict REJECTED on DK gate regardless (dk_t=0.464 << 2.0)."
   },
   "jackknife_leave_one_out_dk_t": {
     "XAUUSD": 0.0942,
@@ -143,7 +144,7 @@
     "real_is_sharpe_std": 0.316619,
     "real_oos_sharpe_mean": 0.169743,
     "real_oos_sharpe_std": 0.316619,
-    "interpretation": "HIGH RISK \u2014 Strong overfitting evidence. Strategy almost certainly overfit.",
+    "interpretation": "HIGH RISK — Strong overfitting evidence. Strategy almost certainly overfit.",
     "timestamp": "2026-07-29T11:43:47.475285+00:00",
     "input_file": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\reports\\_ws_a_pbo_input.json",
     "method": "CSCV (Bailey et al. 2017)"

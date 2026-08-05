@@ -52,7 +52,8 @@ class DataQualityGate:
     - Zero volume
     """
 
-    def __init__(self):
+    def __init__(self, *, strict: bool = False):
+        self.strict = strict
         self.thresholds = {
             "max_price_spike_pct": 5.0,
             "max_staleness_seconds": 60,
@@ -139,6 +140,44 @@ class DataQualityGate:
     def all_checks_passed(self, results: list[QualityCheckResult]) -> bool:
         """Check if all quality checks passed."""
         return all(r.passed for r in results)
+
+    def run(self, data: list[dict], *, asset_class: str | None = None) -> dict[str, Any]:
+        """Run all quality checks and return summary dict."""
+        results = self.validate_ohlcv(data)
+        passed = self.all_checks_passed(results)
+        failed_records = 0
+        checks: dict[str, dict[str, Any]] = {}
+        for r in results:
+            name = r.check_name.value if hasattr(r.check_name, "value") else str(r.check_name)
+            checks[name] = {
+                "passed": r.passed,
+                "failed_count": r.details.get("missing_count", 0)
+                or r.details.get("duplicate_count", 0)
+                or r.details.get("zero_volume_count", 0),
+            }
+            if not r.passed:
+                failed_records += checks[name]["failed_count"]
+        return {
+            "passed": passed,
+            "failed_records": failed_records,
+            "checks": checks,
+        }
+
+
+def classify_symbol(symbol: str) -> str:
+    """Classify a symbol into an asset class based on its name."""
+    s = symbol.upper()
+    if any(x in s for x in ("BTC", "ETH", "SOL", "DOGE", "XRP", "ADA", "AVAX", "DOT", "LINK", "BNB")):
+        return "crypto"
+    if "/" in s and (
+        "JPY" in s or "USD" in s or "EUR" in s or "GBP" in s or "CHF" in s or "AUD" in s or "NZD" in s or "CAD" in s
+    ):
+        return "forex"
+    if "XAU" in s or "GOLD" in s or "XAG" in s or "SILVER" in s:
+        return "commodity"
+    if "USD" in s:
+        return "forex"
+    return "unknown"
 
 
 def _find_manifest(filepath: str) -> str | None:
@@ -282,14 +321,14 @@ def _read_data_safe(filepath: str, ext: str) -> list[dict] | None:
                 df = pd.read_parquet(filepath)
                 if len(df) > 100000:
                     df = df.head(100000)
-                return df.to_dict("records")
+                return df.to_dict("records")  # type: ignore[no-any-return]
             except ImportError:
                 import pyarrow.parquet as pq
 
                 pf = pq.ParquetFile(filepath)
                 n = min(pf.metadata.num_rows, 100000)
                 table = pf.read_rows(0, n)
-                return table.to_pylist()
+                return table.to_pylist()  # type: ignore[no-any-return]
         elif ext == ".csv":
             import csv
 
@@ -614,10 +653,15 @@ def _parse_ts(val):
     if isinstance(val, datetime):
         return val
     if isinstance(val, str):
+        try:
+            # Handles full ISO 8601 including timezone offsets (e.g. "+00:00")
+            # and the "Z" suffix (Python >= 3.11).
+            return datetime.fromisoformat(val.replace("Z", "+00:00"))
+        except ValueError:
+            pass
         for fmt in [
             "%Y-%m-%d %H:%M:%S",
             "%Y-%m-%dT%H:%M:%S",
-            "%Y-%m-%dT%H:%M:%SZ",
             "%Y-%m-%d %H:%M:%S.%f",
             "%Y-%m-%d",
         ]:

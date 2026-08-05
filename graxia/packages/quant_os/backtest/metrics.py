@@ -22,10 +22,16 @@ from ..core.enums import PositionType
 # Key: (asset_class, timeframe) → bars per calendar year
 # Metals/crypto trade 24/7; forex/indices follow ~252 trading-day calendar.
 BARS_PER_YEAR: dict[tuple[str, str], int] = {
-    ("metals", "M15"): 24_192,  # 24h × 4 bars/h × 365d × ~6.9 for metals session
+    ("metals", "M15"): 35_040,  # 24h × 4 bars/h × 365d (24/7 metals session)
     ("crypto", "M15"): 35_040,  # 24/7/365 × 4 bars/h
     ("forex", "M15"): 24_192,  # 24h × 4 × ~252 (incl. sessions overlap)
     ("indices", "M15"): 16_128,  # ~6.5h × 4 × 252
+    # H1 additions (SP1 2026-08-04): 24/7 sessions × 24 bars/day × 365d;
+    # forex/indices follow ~252 trading-day calendar
+    ("metals", "H1"): 8_760,  # 24h × 365d
+    ("crypto", "H1"): 8_760,  # 24/7/365
+    ("forex", "H1"): 6_048,  # 24h × 252
+    ("indices", "H1"): 1_638,  # ~6.5h × 252
     # Fallback for daily or unknown
     ("_default", "D1"): 252,
 }

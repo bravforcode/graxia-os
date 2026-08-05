@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ..core.events import SignalEvent
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -193,6 +194,32 @@ class Strategy(ABC):
     - required_features(): List required features/indicators
     - is_valid_for_regime(): Check if strategy is valid for current regime
     """
+
+    _PRISTINE_STATE_ATTR = "_pristine_class_state"
+
+    def __init_subclass__(cls, **kwargs):
+        """Snapshot non-empty list/dict/tuple/set class attributes at class-definition
+        time (i.e. at import, before any instance exists or any external code can run).
+
+        BacktestEngine._reset_strategy_class_state() restores each such attribute to this
+        pristine snapshot before every run, rather than wiping it to empty. This
+        distinguishes real strategy config authored in the class body (e.g. a
+        SYMBOL_PARAMS dict of tuned per-symbol thresholds) -- which must survive resets --
+        from state injected onto the class *after* import by external code, which must
+        not (the CheatingStrategy._full_data_ref vector this mechanism was built to
+        close). Attributes absent from this snapshot are still wiped to empty, exactly as
+        before.
+        """
+        super().__init_subclass__(**kwargs)
+        snapshot = {
+            name: deepcopy(value)
+            for name, value in vars(cls).items()
+            if not name.startswith("__")
+            and name != cls._PRISTINE_STATE_ATTR
+            and isinstance(value, list | dict | tuple | set)
+            and value
+        }
+        setattr(cls, cls._PRISTINE_STATE_ATTR, snapshot)
 
     def __init__(self, config: StrategyConfig | None = None):
         self.config = config or StrategyConfig(name=self.__class__.__name__)

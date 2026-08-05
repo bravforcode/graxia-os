@@ -494,6 +494,64 @@ class TestGetContractSpec:
 
 
 # ---------------------------------------------------------------------------
+# Tests: get_ticks_from
+# ---------------------------------------------------------------------------
+
+class TestGetTicksFrom:
+    """Tests for get_ticks_from() delta-fetch wrapper."""
+
+    def setup_method(self):
+        _reset_mt5_globals()
+        self.mock_mt5 = _make_mock_mt5()
+        self.mock_mt5.COPY_TICKS_ALL = 2
+        import broker.mt5_gateway as gw
+        gw._mt5_imported = True
+        gw._mt5 = self.mock_mt5
+
+    def _fake_tick_array(self):
+        import numpy as np
+        arr = np.zeros(
+            2,
+            dtype=[
+                ("time", "i8"), ("time_msc", "i8"), ("bid", "f8"), ("ask", "f8"),
+                ("last", "f8"), ("volume", "f8"), ("volume_real", "f8"), ("flags", "u4"),
+            ],
+        )
+        arr[0] = (1700000000, 1700000000000, 2300.0, 2300.2, 2300.1, 1.0, 1.0, 2)
+        arr[1] = (1700000001000, 1700000001000, 2300.1, 2300.3, 2300.2, 2.0, 2.0, 0)
+        return arr
+
+    def test_get_ticks_from_converts_and_uses_volume_real(self):
+        """Returns dicts with time_msc/bid/ask/last/volume/flags; volume_real wins."""
+        import broker.mt5_gateway as gw
+        self.mock_mt5.copy_ticks_from.return_value = self._fake_tick_array()
+        ticks = gw.get_ticks_from("XAUUSD", 1700000000000)
+        assert len(ticks) == 2
+        assert ticks[0]["time_msc"] == 1700000000000
+        assert ticks[0]["bid"] == 2300.0
+        assert ticks[0]["ask"] == 2300.2
+        assert ticks[0]["volume"] == 1.0
+        assert ticks[0]["flags"] == 2
+        assert ticks[1]["time_msc"] == 1700000001000
+        self.mock_mt5.copy_ticks_from.assert_called_once_with(
+            "XAUUSD", 1700000000000, 10000, 2
+        )
+
+    def test_get_ticks_from_none_returns_empty(self):
+        """copy_ticks_from returning None yields [] (no error)."""
+        import broker.mt5_gateway as gw
+        self.mock_mt5.copy_ticks_from.return_value = None
+        assert gw.get_ticks_from("XAUUSD", 1) == []
+
+    def test_get_ticks_from_exception_wraps(self):
+        """Unexpected exceptions wrapped in Mt5UnavailableError."""
+        import broker.mt5_gateway as gw
+        self.mock_mt5.copy_ticks_from.side_effect = RuntimeError("pipe broke")
+        with pytest.raises(gw.Mt5UnavailableError, match="copy_ticks_from error"):
+            gw.get_ticks_from("XAUUSD", 1)
+
+
+# ---------------------------------------------------------------------------
 # Tests: Safety Assertion
 # ---------------------------------------------------------------------------
 

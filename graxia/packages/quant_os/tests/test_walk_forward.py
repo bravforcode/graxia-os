@@ -19,20 +19,18 @@ from __future__ import annotations
 import importlib
 import importlib.util
 import sys
-import math
-from datetime import datetime, date, timedelta, UTC
+from dataclasses import dataclass
+from datetime import UTC, date, datetime, timedelta
+from pathlib import Path
 from types import ModuleType
-from typing import Dict, List, Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
-from pathlib import Path
-from dataclasses import dataclass, field
-
 
 # ---------------------------------------------------------------------------
 # Mock package hierarchy — install before loading walk_forward
 # ---------------------------------------------------------------------------
+
 
 def _make_mock_module(name: str, attrs: dict | None = None) -> ModuleType:
     """Create a mock module and register it in sys.modules."""
@@ -45,81 +43,138 @@ def _make_mock_module(name: str, attrs: dict | None = None) -> ModuleType:
     return m
 
 
-# Install mock hierarchy so all relative imports resolve
-_make_mock_module("quant_os")
-_make_mock_module("quant_os.core")
-_make_mock_module("quant_os.core.enums", {
-    "CloseReason": MagicMock(),
-    "PositionType": MagicMock(),
-    "SignalType": MagicMock(),
-    "OrderSide": MagicMock(),
-    "RegimeType": MagicMock(),
-    "TradingMode": MagicMock(),
-})
-_make_mock_module("quant_os.core.events", {"BarEvent": MagicMock()})
-_make_mock_module("quant_os.core.exceptions", {"StrictMTFViolation": Exception})
-_make_mock_module("quant_os.core.lookahead_guard", {"LookaheadGuard": MagicMock()})
-_make_mock_module("quant_os.execution")
-_make_mock_module("quant_os.execution.conservative_bar_model", {
-    "estimate_bid_ask_from_bar": MagicMock(),
-})
-_make_mock_module("quant_os.execution.execution_simulator", {
-    "BacktestExecutionSimulator": MagicMock(),
-    "ContractSpec": MagicMock(),
-    "MarketSnapshot": MagicMock(),
-    "OrderIntent": MagicMock(),
-})
-_make_mock_module("quant_os.strategies")
-_make_mock_module("quant_os.strategies.base", {"Strategy": MagicMock})
-
-# Mock backtest sub-modules
-_mock_engine = _make_mock_module("quant_os.backtest.engine", {
-    "BacktestEngine": MagicMock,
-    "BacktestConfig": MagicMock(),
-})
-_mock_metrics = _make_mock_module("quant_os.backtest.metrics", {
-    "BacktestMetrics": MagicMock,
-    "calculate_metrics": MagicMock(),
-})
-_make_mock_module("quant_os.backtest")
-
-# Also register as top-level "backtest.*" for relative imports
-sys.modules["backtest"] = sys.modules["quant_os.backtest"]
-sys.modules["backtest.engine"] = _mock_engine
-sys.modules["backtest.metrics"] = _mock_metrics
-
-# Now load walk_forward.py via importlib
-# It does: from .engine import BacktestEngine, BacktestConfig
-#          from .metrics import BacktestMetrics
-#          from ..strategies.base import Strategy
-# These resolve to the mocks we just installed.
-
-mod_path = Path(__file__).resolve().parent.parent / "backtest" / "walk_forward.py"
-spec = importlib.util.spec_from_file_location(
+_MOCKED_MODULE_NAMES = (
+    "quant_os",
+    "quant_os.core",
+    "quant_os.core.enums",
+    "quant_os.core.events",
+    "quant_os.core.exceptions",
+    "quant_os.core.lookahead_guard",
+    "quant_os.execution",
+    "quant_os.execution.conservative_bar_model",
+    "quant_os.execution.execution_simulator",
+    "quant_os.strategies",
+    "quant_os.strategies.base",
+    "quant_os.backtest.engine",
+    "quant_os.backtest.metrics",
+    "quant_os.backtest",
+    "quant_os.backtest.walk_forward",
+    "backtest",
+    "backtest.engine",
+    "backtest.metrics",
     "backtest.walk_forward",
-    mod_path,
-    submodule_search_locations=[],
 )
-wf_mod = importlib.util.module_from_spec(spec)
-wf_mod.__package__ = "quant_os.backtest"  # critical: makes .engine resolve to quant_os.backtest.engine
-sys.modules["backtest.walk_forward"] = wf_mod
-sys.modules["quant_os.backtest.walk_forward"] = wf_mod
-spec.loader.exec_module(wf_mod)
+# Snapshotted and restored in the finally block below -- these are bare
+# top-level names ("quant_os", "backtest", ...) that other test modules
+# also import for real (e.g. test_lookahead_regression.py's
+# `from quant_os.core.lookahead_guard import LookaheadGuard`). Without the
+# restore, whichever test file pytest collects after this one in the same
+# session gets these mocks instead of the real modules -- this was
+# silently breaking test_lookahead_regression.py's cheating-strategy test
+# in full-suite runs (results["metrics"] came back as a MagicMock).
+_saved_modules = {name: sys.modules.get(name) for name in _MOCKED_MODULE_NAMES}
 
-# Extract the classes we need
-WalkForwardAnalyzer = wf_mod.WalkForwardAnalyzer
-WalkForwardWindow = wf_mod.WalkForwardWindow
-WalkForwardResult = wf_mod.WalkForwardResult
-validate_walk_forward_requirements = wf_mod.validate_walk_forward_requirements
+try:
+    # Install mock hierarchy so all relative imports resolve
+    _make_mock_module("quant_os")
+    _make_mock_module("quant_os.core")
+    _make_mock_module(
+        "quant_os.core.enums",
+        {
+            "CloseReason": MagicMock(),
+            "PositionType": MagicMock(),
+            "SignalType": MagicMock(),
+            "OrderSide": MagicMock(),
+            "RegimeType": MagicMock(),
+            "TradingMode": MagicMock(),
+        },
+    )
+    _make_mock_module("quant_os.core.events", {"BarEvent": MagicMock()})
+    _make_mock_module("quant_os.core.exceptions", {"StrictMTFViolation": Exception})
+    _make_mock_module("quant_os.core.lookahead_guard", {"LookaheadGuard": MagicMock()})
+    _make_mock_module("quant_os.execution")
+    _make_mock_module(
+        "quant_os.execution.conservative_bar_model",
+        {
+            "estimate_bid_ask_from_bar": MagicMock(),
+        },
+    )
+    _make_mock_module(
+        "quant_os.execution.execution_simulator",
+        {
+            "BacktestExecutionSimulator": MagicMock(),
+            "ContractSpec": MagicMock(),
+            "MarketSnapshot": MagicMock(),
+            "OrderIntent": MagicMock(),
+        },
+    )
+    _make_mock_module("quant_os.strategies")
+    _make_mock_module("quant_os.strategies.base", {"Strategy": MagicMock})
+
+    # Mock backtest sub-modules
+    _mock_engine = _make_mock_module(
+        "quant_os.backtest.engine",
+        {
+            "BacktestEngine": MagicMock,
+            "BacktestConfig": MagicMock(),
+        },
+    )
+    _mock_metrics = _make_mock_module(
+        "quant_os.backtest.metrics",
+        {
+            "BacktestMetrics": MagicMock,
+            "calculate_metrics": MagicMock(),
+        },
+    )
+    _make_mock_module("quant_os.backtest")
+
+    # Also register as top-level "backtest.*" for relative imports
+    sys.modules["backtest"] = sys.modules["quant_os.backtest"]
+    sys.modules["backtest.engine"] = _mock_engine
+    sys.modules["backtest.metrics"] = _mock_metrics
+
+    # Now load walk_forward.py via importlib
+    # It does: from .engine import BacktestEngine, BacktestConfig
+    #          from .metrics import BacktestMetrics
+    #          from ..strategies.base import Strategy
+    # These resolve to the mocks we just installed.
+
+    mod_path = Path(__file__).resolve().parent.parent / "backtest" / "walk_forward.py"
+    spec = importlib.util.spec_from_file_location(
+        "backtest.walk_forward",
+        mod_path,
+        submodule_search_locations=[],
+    )
+    assert spec is not None and spec.loader is not None
+    wf_mod = importlib.util.module_from_spec(spec)
+    wf_mod.__package__ = "quant_os.backtest"  # critical: makes .engine resolve to quant_os.backtest.engine
+    sys.modules["backtest.walk_forward"] = wf_mod
+    sys.modules["quant_os.backtest.walk_forward"] = wf_mod
+    spec.loader.exec_module(wf_mod)
+
+    # Extract the classes we need
+    WalkForwardAnalyzer = wf_mod.WalkForwardAnalyzer
+    WalkForwardWindow = wf_mod.WalkForwardWindow
+    WalkForwardResult = wf_mod.WalkForwardResult
+    validate_walk_forward_requirements = wf_mod.validate_walk_forward_requirements
+
+finally:
+    for _name, _mod in _saved_modules.items():
+        if _mod is None:
+            sys.modules.pop(_name, None)
+        else:
+            sys.modules[_name] = _mod
 
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
 
-def _make_ohlcv(n: int) -> Dict[str, List]:
+
+def _make_ohlcv(n: int) -> dict[str, list]:
     """Generate n synthetic OHLCV bars with a price uptrend."""
     import random
+
     random.seed(42)
     closes = [100.0]
     for _ in range(n - 1):
@@ -133,7 +188,7 @@ def _make_ohlcv(n: int) -> Dict[str, List]:
     }
 
 
-def _make_timestamps(n: int) -> List[datetime]:
+def _make_timestamps(n: int) -> list[datetime]:
     """Generate n 15-minute timestamps starting 2024-01-01."""
     base = datetime(2024, 1, 1, tzinfo=UTC)
     return [base + timedelta(minutes=15 * i) for i in range(n)]
@@ -147,6 +202,7 @@ def _make_metrics(
     total_pnl: float = 500.0,
 ):
     """Create a simple metrics-like object (avoids MagicMock truthiness issues)."""
+
     @dataclass
     class _Metrics:
         win_rate: float = 0.0
@@ -155,6 +211,7 @@ def _make_metrics(
         max_drawdown_pct: float = 0.0
         total_pnl: float = 0.0
         total_trades: int = 0
+
     return _Metrics(
         win_rate=win_rate,
         profit_factor=profit_factor,
@@ -179,6 +236,7 @@ def _mock_strategy_factory():
 # Tests: Window Split Logic (Rolling Mode)
 # ---------------------------------------------------------------------------
 
+
 class TestRollingWindowSplit:
     """Tests for the default rolling walk-forward mode."""
 
@@ -187,10 +245,10 @@ class TestRollingWindowSplit:
         mock_metrics = _make_metrics()
         factory = _mock_strategy_factory()
 
-        with patch.object(wf_mod, "BacktestEngine") as MockEngine:
+        with patch.object(wf_mod, "BacktestEngine") as mock_engine:
             engine_inst = MagicMock()
             engine_inst.run.return_value = _make_backtest_result(mock_metrics)
-            MockEngine.return_value = engine_inst
+            mock_engine.return_value = engine_inst
 
             analyzer = WalkForwardAnalyzer(
                 strategy_factory=factory,
@@ -208,10 +266,10 @@ class TestRollingWindowSplit:
         mock_metrics = _make_metrics()
         factory = _mock_strategy_factory()
 
-        with patch.object(wf_mod, "BacktestEngine") as MockEngine:
+        with patch.object(wf_mod, "BacktestEngine") as mock_engine:
             engine_inst = MagicMock()
             engine_inst.run.return_value = _make_backtest_result(mock_metrics)
-            MockEngine.return_value = engine_inst
+            mock_engine.return_value = engine_inst
 
             analyzer = WalkForwardAnalyzer(
                 strategy_factory=factory,
@@ -230,10 +288,10 @@ class TestRollingWindowSplit:
         mock_metrics = _make_metrics()
         factory = _mock_strategy_factory()
 
-        with patch.object(wf_mod, "BacktestEngine") as MockEngine:
+        with patch.object(wf_mod, "BacktestEngine") as mock_engine:
             engine_inst = MagicMock()
             engine_inst.run.return_value = _make_backtest_result(mock_metrics)
-            MockEngine.return_value = engine_inst
+            mock_engine.return_value = engine_inst
 
             analyzer = WalkForwardAnalyzer(
                 strategy_factory=factory,
@@ -247,13 +305,13 @@ class TestRollingWindowSplit:
         for w in result.windows:
             assert w.is_start < w.is_end, "IS window must have valid date range"
             assert w.oos_start < w.oos_end, "OOS window must have valid date range"
-            assert w.is_end <= w.oos_start, \
-                f"IS end ({w.is_end}) must <= OOS start ({w.oos_start}) — data leakage!"
+            assert w.is_end <= w.oos_start, f"IS end ({w.is_end}) must <= OOS start ({w.oos_start}) — data leakage!"
 
 
 # ---------------------------------------------------------------------------
 # Tests: Window Split Logic (Anchored Mode)
 # ---------------------------------------------------------------------------
+
 
 class TestAnchoredWindowSplit:
     """Tests for anchored walk-forward mode (IS grows from start)."""
@@ -263,10 +321,10 @@ class TestAnchoredWindowSplit:
         mock_metrics = _make_metrics()
         factory = _mock_strategy_factory()
 
-        with patch.object(wf_mod, "BacktestEngine") as MockEngine:
+        with patch.object(wf_mod, "BacktestEngine") as mock_engine:
             engine_inst = MagicMock()
             engine_inst.run.return_value = _make_backtest_result(mock_metrics)
-            MockEngine.return_value = engine_inst
+            mock_engine.return_value = engine_inst
 
             analyzer = WalkForwardAnalyzer(
                 strategy_factory=factory,
@@ -279,18 +337,17 @@ class TestAnchoredWindowSplit:
 
         first_date = ts[0].date()
         for w in result.windows:
-            assert w.is_start == first_date, \
-                f"Anchored window {w.window_id} IS should start at {first_date}"
+            assert w.is_start == first_date, f"Anchored window {w.window_id} IS should start at {first_date}"
 
     def test_anchored_is_grows_with_each_window(self):
         """In anchored mode, each subsequent window has a larger IS range."""
         mock_metrics = _make_metrics()
         factory = _mock_strategy_factory()
 
-        with patch.object(wf_mod, "BacktestEngine") as MockEngine:
+        with patch.object(wf_mod, "BacktestEngine") as mock_engine:
             engine_inst = MagicMock()
             engine_inst.run.return_value = _make_backtest_result(mock_metrics)
-            MockEngine.return_value = engine_inst
+            mock_engine.return_value = engine_inst
 
             analyzer = WalkForwardAnalyzer(
                 strategy_factory=factory,
@@ -309,6 +366,7 @@ class TestAnchoredWindowSplit:
 # ---------------------------------------------------------------------------
 # Tests: Data Sufficiency Guards
 # ---------------------------------------------------------------------------
+
 
 class TestDataGuards:
     """Tests for insufficient data error handling."""
@@ -342,10 +400,10 @@ class TestDataGuards:
         mock_metrics = _make_metrics()
         factory = _mock_strategy_factory()
 
-        with patch.object(wf_mod, "BacktestEngine") as MockEngine:
+        with patch.object(wf_mod, "BacktestEngine") as mock_engine:
             engine_inst = MagicMock()
             engine_inst.run.return_value = _make_backtest_result(mock_metrics)
-            MockEngine.return_value = engine_inst
+            mock_engine.return_value = engine_inst
 
             analyzer = WalkForwardAnalyzer(
                 strategy_factory=factory,
@@ -363,6 +421,7 @@ class TestDataGuards:
 # Tests: Metrics Aggregation
 # ---------------------------------------------------------------------------
 
+
 class TestMetricsAggregation:
     """Tests for _aggregate_results() and WalkForwardResult."""
 
@@ -376,15 +435,36 @@ class TestMetricsAggregation:
         m3 = _make_metrics(win_rate=0.7, profit_factor=1.8, sharpe=1.2, max_dd_pct=2.0, total_pnl=200)
 
         windows = [
-            WalkForwardWindow(window_id=0, is_start=date(2024,1,1), is_end=date(2024,3,31),
-                            oos_start=date(2024,4,1), oos_end=date(2024,6,30),
-                            oos_metrics=m1, is_oos_ratio=0.75, is_degradation=25.0),
-            WalkForwardWindow(window_id=1, is_start=date(2024,1,1), is_end=date(2024,6,30),
-                            oos_start=date(2024,7,1), oos_end=date(2024,9,30),
-                            oos_metrics=m2, is_oos_ratio=0.55, is_degradation=45.0),
-            WalkForwardWindow(window_id=2, is_start=date(2024,1,1), is_end=date(2024,9,30),
-                            oos_start=date(2024,10,1), oos_end=date(2024,12,31),
-                            oos_metrics=m3, is_oos_ratio=0.8, is_degradation=20.0),
+            WalkForwardWindow(
+                window_id=0,
+                is_start=date(2024, 1, 1),
+                is_end=date(2024, 3, 31),
+                oos_start=date(2024, 4, 1),
+                oos_end=date(2024, 6, 30),
+                oos_metrics=m1,
+                is_oos_ratio=0.75,
+                is_degradation=25.0,
+            ),
+            WalkForwardWindow(
+                window_id=1,
+                is_start=date(2024, 1, 1),
+                is_end=date(2024, 6, 30),
+                oos_start=date(2024, 7, 1),
+                oos_end=date(2024, 9, 30),
+                oos_metrics=m2,
+                is_oos_ratio=0.55,
+                is_degradation=45.0,
+            ),
+            WalkForwardWindow(
+                window_id=2,
+                is_start=date(2024, 1, 1),
+                is_end=date(2024, 9, 30),
+                oos_start=date(2024, 10, 1),
+                oos_end=date(2024, 12, 31),
+                oos_metrics=m3,
+                is_oos_ratio=0.8,
+                is_degradation=20.0,
+            ),
         ]
 
         result = analyzer._aggregate_results(windows)
@@ -407,15 +487,30 @@ class TestMetricsAggregation:
         m3 = _make_metrics(total_pnl=200)
 
         windows = [
-            WalkForwardWindow(window_id=0, is_start=date(2024,1,1), is_end=date(2024,3,31),
-                            oos_start=date(2024,4,1), oos_end=date(2024,6,30),
-                            oos_metrics=m1),
-            WalkForwardWindow(window_id=1, is_start=date(2024,1,1), is_end=date(2024,6,30),
-                            oos_start=date(2024,7,1), oos_end=date(2024,9,30),
-                            oos_metrics=m2),
-            WalkForwardWindow(window_id=2, is_start=date(2024,1,1), is_end=date(2024,9,30),
-                            oos_start=date(2024,10,1), oos_end=date(2024,12,31),
-                            oos_metrics=m3),
+            WalkForwardWindow(
+                window_id=0,
+                is_start=date(2024, 1, 1),
+                is_end=date(2024, 3, 31),
+                oos_start=date(2024, 4, 1),
+                oos_end=date(2024, 6, 30),
+                oos_metrics=m1,
+            ),
+            WalkForwardWindow(
+                window_id=1,
+                is_start=date(2024, 1, 1),
+                is_end=date(2024, 6, 30),
+                oos_start=date(2024, 7, 1),
+                oos_end=date(2024, 9, 30),
+                oos_metrics=m2,
+            ),
+            WalkForwardWindow(
+                window_id=2,
+                is_start=date(2024, 1, 1),
+                is_end=date(2024, 9, 30),
+                oos_start=date(2024, 10, 1),
+                oos_end=date(2024, 12, 31),
+                oos_metrics=m3,
+            ),
         ]
 
         result = analyzer._aggregate_results(windows)
@@ -430,12 +525,26 @@ class TestMetricsAggregation:
         m2 = _make_metrics(total_pnl=-200, profit_factor=0.6)
 
         windows = [
-            WalkForwardWindow(window_id=0, is_start=date(2024,1,1), is_end=date(2024,3,31),
-                            oos_start=date(2024,4,1), oos_end=date(2024,6,30),
-                            oos_metrics=m1, is_oos_ratio=0.3, is_degradation=70.0),
-            WalkForwardWindow(window_id=1, is_start=date(2024,1,1), is_end=date(2024,6,30),
-                            oos_start=date(2024,7,1), oos_end=date(2024,9,30),
-                            oos_metrics=m2, is_oos_ratio=0.2, is_degradation=80.0),
+            WalkForwardWindow(
+                window_id=0,
+                is_start=date(2024, 1, 1),
+                is_end=date(2024, 3, 31),
+                oos_start=date(2024, 4, 1),
+                oos_end=date(2024, 6, 30),
+                oos_metrics=m1,
+                is_oos_ratio=0.3,
+                is_degradation=70.0,
+            ),
+            WalkForwardWindow(
+                window_id=1,
+                is_start=date(2024, 1, 1),
+                is_end=date(2024, 6, 30),
+                oos_start=date(2024, 7, 1),
+                oos_end=date(2024, 9, 30),
+                oos_metrics=m2,
+                is_oos_ratio=0.2,
+                is_degradation=80.0,
+            ),
         ]
 
         result = analyzer._aggregate_results(windows)
@@ -456,6 +565,7 @@ class TestMetricsAggregation:
 # ---------------------------------------------------------------------------
 # Tests: validate_walk_forward_requirements
 # ---------------------------------------------------------------------------
+
 
 class TestValidateRequirements:
     """Tests for validate_walk_forward_requirements() golden rule checks."""
@@ -489,54 +599,90 @@ class TestValidateRequirements:
 
     def test_fails_min_windows(self):
         """Result with < 3 windows fails min_windows check."""
-        result = WalkForwardResult(total_windows=2, valid_windows=2, oos_consistency=0.8,
-                                   oos_total_pnl=100, oos_win_rate=0.6, overfitting_score=0.2,
-                                   avg_is_oos_ratio=0.7)
+        result = WalkForwardResult(
+            total_windows=2,
+            valid_windows=2,
+            oos_consistency=0.8,
+            oos_total_pnl=100,
+            oos_win_rate=0.6,
+            overfitting_score=0.2,
+            avg_is_oos_ratio=0.7,
+        )
         checks = validate_walk_forward_requirements(result)
         assert checks["min_windows"] is False
         assert checks["all_passed"] is False
 
     def test_fails_profitable_oos(self):
         """Result with < 50% profitable windows fails."""
-        result = WalkForwardResult(total_windows=5, valid_windows=5, oos_consistency=0.3,
-                                   oos_total_pnl=100, oos_win_rate=0.6, overfitting_score=0.2,
-                                   avg_is_oos_ratio=0.7)
+        result = WalkForwardResult(
+            total_windows=5,
+            valid_windows=5,
+            oos_consistency=0.3,
+            oos_total_pnl=100,
+            oos_win_rate=0.6,
+            overfitting_score=0.2,
+            avg_is_oos_ratio=0.7,
+        )
         checks = validate_walk_forward_requirements(result)
         assert checks["profitable_oos"] is False
         assert checks["all_passed"] is False
 
     def test_fails_positive_pnl(self):
         """Negative OOS total PnL fails."""
-        result = WalkForwardResult(total_windows=5, valid_windows=5, oos_consistency=0.8,
-                                   oos_total_pnl=-500, oos_win_rate=0.6, overfitting_score=0.2,
-                                   avg_is_oos_ratio=0.7)
+        result = WalkForwardResult(
+            total_windows=5,
+            valid_windows=5,
+            oos_consistency=0.8,
+            oos_total_pnl=-500,
+            oos_win_rate=0.6,
+            overfitting_score=0.2,
+            avg_is_oos_ratio=0.7,
+        )
         checks = validate_walk_forward_requirements(result)
         assert checks["positive_oos_pnl"] is False
         assert checks["all_passed"] is False
 
     def test_fails_win_rate_sane(self):
         """Win rate below 0.45 fails sanity check."""
-        result = WalkForwardResult(total_windows=5, valid_windows=5, oos_consistency=0.8,
-                                   oos_total_pnl=100, oos_win_rate=0.40, overfitting_score=0.2,
-                                   avg_is_oos_ratio=0.7)
+        result = WalkForwardResult(
+            total_windows=5,
+            valid_windows=5,
+            oos_consistency=0.8,
+            oos_total_pnl=100,
+            oos_win_rate=0.40,
+            overfitting_score=0.2,
+            avg_is_oos_ratio=0.7,
+        )
         checks = validate_walk_forward_requirements(result)
         assert checks["oos_win_rate_sane"] is False
         assert checks["all_passed"] is False
 
     def test_fails_overfitting(self):
         """Overfitting score >= 0.6 fails."""
-        result = WalkForwardResult(total_windows=5, valid_windows=5, oos_consistency=0.8,
-                                   oos_total_pnl=100, oos_win_rate=0.6, overfitting_score=0.7,
-                                   avg_is_oos_ratio=0.7)
+        result = WalkForwardResult(
+            total_windows=5,
+            valid_windows=5,
+            oos_consistency=0.8,
+            oos_total_pnl=100,
+            oos_win_rate=0.6,
+            overfitting_score=0.7,
+            avg_is_oos_ratio=0.7,
+        )
         checks = validate_walk_forward_requirements(result)
         assert checks["overfitting_acceptable"] is False
         assert checks["all_passed"] is False
 
     def test_fails_is_oos_ratio(self):
         """IS/OOS ratio below 0.5 fails."""
-        result = WalkForwardResult(total_windows=5, valid_windows=5, oos_consistency=0.8,
-                                   oos_total_pnl=100, oos_win_rate=0.6, overfitting_score=0.2,
-                                   avg_is_oos_ratio=0.4)
+        result = WalkForwardResult(
+            total_windows=5,
+            valid_windows=5,
+            oos_consistency=0.8,
+            oos_total_pnl=100,
+            oos_win_rate=0.6,
+            overfitting_score=0.2,
+            avg_is_oos_ratio=0.4,
+        )
         checks = validate_walk_forward_requirements(result)
         assert checks["is_oos_ratio_acceptable"] is False
         assert checks["all_passed"] is False
@@ -545,6 +691,7 @@ class TestValidateRequirements:
 # ---------------------------------------------------------------------------
 # Tests: IS/OOS Ratio Calculation
 # ---------------------------------------------------------------------------
+
 
 class TestIsOosRatio:
     """Tests for is_oos_ratio and is_degradation calculation per window."""
@@ -555,12 +702,15 @@ class TestIsOosRatio:
         oos_m = _make_metrics(profit_factor=1.0)
         window = WalkForwardWindow(
             window_id=0,
-            is_start=date(2024, 1, 1), is_end=date(2024, 3, 31),
-            oos_start=date(2024, 4, 1), oos_end=date(2024, 6, 30),
-            is_metrics=is_m, oos_metrics=oos_m,
+            is_start=date(2024, 1, 1),
+            is_end=date(2024, 3, 31),
+            oos_start=date(2024, 4, 1),
+            oos_end=date(2024, 6, 30),
+            is_metrics=is_m,
+            oos_metrics=oos_m,
         )
-        is_pf = is_m.profit_factor if is_m.profit_factor != float('inf') else 10
-        oos_pf = oos_m.profit_factor if oos_m.profit_factor != float('inf') else 10
+        is_pf = is_m.profit_factor if is_m.profit_factor != float("inf") else 10
+        oos_pf = oos_m.profit_factor if oos_m.profit_factor != float("inf") else 10
         window.is_oos_ratio = oos_pf / is_pf if is_pf > 0 else 0
         window.is_degradation = (1 - window.is_oos_ratio) * 100
 
@@ -569,10 +719,10 @@ class TestIsOosRatio:
 
     def test_inf_profit_factor_handled(self):
         """Infinite profit factor is capped at 10 for ratio calculation."""
-        is_pf = float('inf')
+        is_pf = float("inf")
         oos_pf = 2.0
-        is_capped = is_pf if is_pf != float('inf') else 10
-        oos_capped = oos_pf if oos_pf != float('inf') else 10
+        is_capped = is_pf if is_pf != float("inf") else 10
+        oos_capped = oos_pf if oos_pf != float("inf") else 10
         ratio = oos_capped / is_capped if is_capped > 0 else 0
 
         assert ratio == pytest.approx(0.2, abs=0.01)
@@ -581,6 +731,7 @@ class TestIsOosRatio:
 # ---------------------------------------------------------------------------
 # Tests: Window Dataclass
 # ---------------------------------------------------------------------------
+
 
 class TestWindowDataclass:
     """Tests for WalkForwardWindow and WalkForwardResult dataclasses."""
@@ -611,8 +762,10 @@ class TestWindowDataclass:
         """WalkForwardResult accepts windows list."""
         w = WalkForwardWindow(
             window_id=0,
-            is_start=date(2024, 1, 1), is_end=date(2024, 3, 31),
-            oos_start=date(2024, 4, 1), oos_end=date(2024, 6, 30),
+            is_start=date(2024, 1, 1),
+            is_end=date(2024, 3, 31),
+            oos_start=date(2024, 4, 1),
+            oos_end=date(2024, 6, 30),
         )
         r = WalkForwardResult(total_windows=1, valid_windows=0, windows=[w])
         assert len(r.windows) == 1
@@ -623,6 +776,7 @@ class TestWindowDataclass:
 # Tests: Edge Cases
 # ---------------------------------------------------------------------------
 
+
 class TestEdgeCases:
     """Edge cases: no valid OOS metrics, single window, etc."""
 
@@ -632,12 +786,22 @@ class TestEdgeCases:
         analyzer = WalkForwardAnalyzer(strategy_factory=factory)
 
         windows = [
-            WalkForwardWindow(window_id=0, is_start=date(2024,1,1), is_end=date(2024,3,31),
-                            oos_start=date(2024,4,1), oos_end=date(2024,6,30),
-                            oos_metrics=None),
-            WalkForwardWindow(window_id=1, is_start=date(2024,1,1), is_end=date(2024,6,30),
-                            oos_start=date(2024,7,1), oos_end=date(2024,9,30),
-                            oos_metrics=None),
+            WalkForwardWindow(
+                window_id=0,
+                is_start=date(2024, 1, 1),
+                is_end=date(2024, 3, 31),
+                oos_start=date(2024, 4, 1),
+                oos_end=date(2024, 6, 30),
+                oos_metrics=None,
+            ),
+            WalkForwardWindow(
+                window_id=1,
+                is_start=date(2024, 1, 1),
+                is_end=date(2024, 6, 30),
+                oos_start=date(2024, 7, 1),
+                oos_end=date(2024, 9, 30),
+                oos_metrics=None,
+            ),
         ]
 
         result = analyzer._aggregate_results(windows)
@@ -653,9 +817,16 @@ class TestEdgeCases:
 
         m = _make_metrics(total_pnl=500, profit_factor=2.0)
         windows = [
-            WalkForwardWindow(window_id=0, is_start=date(2024,1,1), is_end=date(2024,3,31),
-                            oos_start=date(2024,4,1), oos_end=date(2024,6,30),
-                            oos_metrics=m, is_oos_ratio=0.8, is_degradation=20.0),
+            WalkForwardWindow(
+                window_id=0,
+                is_start=date(2024, 1, 1),
+                is_end=date(2024, 3, 31),
+                oos_start=date(2024, 4, 1),
+                oos_end=date(2024, 6, 30),
+                oos_metrics=m,
+                is_oos_ratio=0.8,
+                is_degradation=20.0,
+            ),
         ]
 
         result = analyzer._aggregate_results(windows)
@@ -670,9 +841,16 @@ class TestEdgeCases:
 
         m = _make_metrics(total_pnl=-100, profit_factor=0.5)
         windows = [
-            WalkForwardWindow(window_id=i, is_start=date(2024,1,1), is_end=date(2024,3,31),
-                            oos_start=date(2024,4,1), oos_end=date(2024,6,30),
-                            oos_metrics=m, is_oos_ratio=0.3, is_degradation=70.0)
+            WalkForwardWindow(
+                window_id=i,
+                is_start=date(2024, 1, 1),
+                is_end=date(2024, 3, 31),
+                oos_start=date(2024, 4, 1),
+                oos_end=date(2024, 6, 30),
+                oos_metrics=m,
+                is_oos_ratio=0.3,
+                is_degradation=70.0,
+            )
             for i in range(3)
         ]
 

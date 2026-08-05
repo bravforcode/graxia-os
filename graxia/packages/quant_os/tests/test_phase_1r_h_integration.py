@@ -1,25 +1,44 @@
 """Phase 1R-H integration tests."""
+
 import ast
 import json
 from pathlib import Path
 
-from graxia.packages.quant_os.repo_intelligence.adapters.vectorbt_oracle import (
-    get_engine_name as vbt_name,
-    validate_input as vbt_validate,
-    normalize_output as vbt_normalize,
-    run_oracle as vbt_run,
-)
 from graxia.packages.quant_os.repo_intelligence.adapters.backtesting_py_oracle import (
     get_engine_name as bt_name,
-    validate_input as bt_validate,
+)
+from graxia.packages.quant_os.repo_intelligence.adapters.backtesting_py_oracle import (
     normalize_output as bt_normalize,
+)
+from graxia.packages.quant_os.repo_intelligence.adapters.backtesting_py_oracle import (
     run_oracle as bt_run,
+)
+from graxia.packages.quant_os.repo_intelligence.adapters.backtesting_py_oracle import (
+    validate_input as bt_validate,
 )
 from graxia.packages.quant_os.repo_intelligence.adapters.backtrader_oracle import (
     get_engine_name as btr_name,
-    validate_input as btr_validate,
+)
+from graxia.packages.quant_os.repo_intelligence.adapters.backtrader_oracle import (
     normalize_output as btr_normalize,
+)
+from graxia.packages.quant_os.repo_intelligence.adapters.backtrader_oracle import (
     run_oracle as btr_run,
+)
+from graxia.packages.quant_os.repo_intelligence.adapters.backtrader_oracle import (
+    validate_input as btr_validate,
+)
+from graxia.packages.quant_os.repo_intelligence.adapters.vectorbt_oracle import (
+    get_engine_name as vbt_name,
+)
+from graxia.packages.quant_os.repo_intelligence.adapters.vectorbt_oracle import (
+    normalize_output as vbt_normalize,
+)
+from graxia.packages.quant_os.repo_intelligence.adapters.vectorbt_oracle import (
+    run_oracle as vbt_run,
+)
+from graxia.packages.quant_os.repo_intelligence.adapters.vectorbt_oracle import (
+    validate_input as vbt_validate,
 )
 
 REPO_ROOT = Path(r"C:\Users\menum\graxia os")
@@ -34,6 +53,7 @@ ADAPTERS = [
 
 
 # --- 1-4: Adapter interface checks ---
+
 
 def test_all_adapters_have_get_engine_name():
     for name, engine_fn, *_ in ADAPTERS:
@@ -71,11 +91,10 @@ def _scan_file_for_oracle_imports(filepath: Path) -> list[str]:
                 root = alias.name.split(".")[0]
                 if root in ORACLE_PACKAGES:
                     bad.append(alias.name)
-        elif isinstance(node, ast.ImportFrom):
-            if node.module:
-                root = node.module.split(".")[0]
-                if root in ORACLE_PACKAGES:
-                    bad.append(node.module)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            root = node.module.split(".")[0]
+            if root in ORACLE_PACKAGES:
+                bad.append(node.module)
     return bad
 
 
@@ -84,7 +103,8 @@ def test_no_oracle_imports_in_canonical():
     bad_files = {}
     for py in CANONICAL_DIR.rglob("*.py"):
         # skip adapters dir — they're allowed to import oracles
-        if ADAPTERS_DIR in py.parents or "tests" in py.parts:
+        # skip hidden worktree/archive dirs (legacy files there fail ast.parse)
+        if ADAPTERS_DIR in py.parents or "tests" in py.parts or ".freebuff" in py.parts or "04-Archive" in py.parts:
             continue
         imports = _scan_file_for_oracle_imports(py)
         if imports:
@@ -94,7 +114,7 @@ def test_no_oracle_imports_in_canonical():
 
 # --- 6: Adapters lazy-import oracle packages ---
 
-ORACLE_IMPORT_NAMES = {"vectorbt", "backtesting", "backtrader", "backtrader"}
+ORACLE_IMPORT_NAMES = {"vectorbt", "backtesting", "backtrader"}
 
 
 def test_adapters_lazy_import():
@@ -107,18 +127,14 @@ def test_adapters_lazy_import():
             if isinstance(node, ast.Import):
                 for alias in node.names:
                     root = alias.name.split(".")[0]
-                    assert root not in ORACLE_IMPORT_NAMES, (
-                        f"{py.name} imports {alias.name} at module level"
-                    )
-            elif isinstance(node, ast.ImportFrom):
-                if node.module:
-                    root = node.module.split(".")[0]
-                    assert root not in ORACLE_IMPORT_NAMES, (
-                        f"{py.name} imports from {node.module} at module level"
-                    )
+                    assert root not in ORACLE_IMPORT_NAMES, f"{py.name} imports {alias.name} at module level"
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                root = node.module.split(".")[0]
+                assert root not in ORACLE_IMPORT_NAMES, f"{py.name} imports from {node.module} at module level"
 
 
 # --- 7-10: File existence checks ---
+
 
 def test_oracle_isolation_dirs_exist():
     envs = REPO_ROOT / ".envs"
@@ -148,12 +164,10 @@ def test_quarantine_manifest_exists():
 
 # --- 11: Canonical runtime map has all oracles ---
 
+
 def test_canonical_runtime_map_has_all_oracles():
     """Check that approved_references.yml lists all three oracle engines."""
-    yml_path = (
-        REPO_ROOT
-        / "graxia/packages/quant_os/repo_intelligence/registry/approved_references.yml"
-    )
+    yml_path = REPO_ROOT / "graxia/packages/quant_os/repo_intelligence/registry/approved_references.yml"
     assert yml_path.exists(), "approved_references.yml missing"
     content = yml_path.read_text()
     for repo_id in ["mementum_backtrader", "kernc_backtesting_py", "polakowo_vectorbt"]:

@@ -1,0 +1,15 @@
+{
+  "strategy": "VWAP+EMA Regime (SSRN adaptation)",
+  "rule": "Long: price>VWAP AND close>EMA50 AND close>EMA200",
+  "data": "XAUUSD_M15 50000 bars",
+  "gross_is": -0.5635,
+  "net_is": -3.7774,
+  "net_oos": 0.0,
+  "cost_drag": 3.2139,
+  "is_trades": 21,
+  "oos_trades": 0,
+  "is_win_rate": 9.5,
+  "oos_win_rate": 0,
+  "wf_consistency": 0,
+  "all_pass": false
+}

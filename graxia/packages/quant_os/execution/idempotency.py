@@ -165,7 +165,7 @@ class IdempotencyChecker:
 
     def get_stats(self) -> dict[str, Any]:
         """Get idempotency checker statistics"""
-        stats = {
+        stats: dict[str, Any] = {
             "redis_connected": self.redis is not None,
             "db_connected": self.db is not None,
         }

@@ -26,7 +26,7 @@ WS_A_UNIVERSE = ["XAUUSD", "XAGUSD", "EURUSD", "GBPUSD", "USDJPY", "NAS100", "US
 def test_loader_excludes_pre_inception_backfill():
     """No row in any WS-A slice may predate 2005 (the pre-reg window)."""
     for sym in WS_A_UNIVERSE:
-        df = load_provenance_checked(sym)
+        df = load_provenance_checked(sym, require_cost_calibration=False)
         assert df["time"].min().year >= 2005, f"{sym} slice starts before 2005"
         assert df["time"].max().year >= 2025, f"{sym} slice missing modern data"
 
@@ -38,7 +38,7 @@ def test_loader_passes_when_no_impossible_dates_in_slice():
     slice_start=1990 no longer includes impossible rows.  The loader
     must NOT raise — it just returns the valid 2005+ slice.
     """
-    df = load_provenance_checked("EURUSD", slice_start="1990-01-01")
+    df = load_provenance_checked("EURUSD", slice_start="1990-01-01", require_cost_calibration=False)
     assert len(df) > 0, "should return valid rows"
     assert df["time"].min().year >= 2005, "returned row predates 2005"
 
@@ -62,7 +62,7 @@ def test_backfill_magnitude_is_excluded():
     assert rep["EURUSD"]["rows_before_floor"] == 0
     assert rep["NAS100"]["rows_before_floor"] == 0
     # ...and loaded slices contain no impossible dates
-    df = load_provenance_checked("EURUSD")
+    df = load_provenance_checked("EURUSD", require_cost_calibration=False)
     assert (df["time"] < "1999-01-01").sum() == 0
 
 
@@ -80,7 +80,7 @@ def test_bar_interval_assertion_passes_single_bar_per_date():
     # Test a few symbols that should have 1 bar/day
     for sym in ["XAGUSD", "EURUSD", "GBPUSD"]:
         try:
-            df = load_provenance_checked(sym)
+            df = load_provenance_checked(sym, require_cost_calibration=False)
             # If we get here, the assertion passed
             assert len(df) > 0, f"{sym} loaded empty"
         except DataProvenanceError as e:

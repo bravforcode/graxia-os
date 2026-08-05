@@ -1,0 +1,70 @@
+[
+  {
+    "strategy": "52week_high",
+    "universe": [
+      "XAUUSD",
+      "EURUSD",
+      "GBPUSD",
+      "USDJPY",
+      "BTCUSD",
+      "US30"
+    ],
+    "n_symbols": 6,
+    "sharpe": 0.2884,
+    "ann_ret": 0.0495,
+    "ann_vol": 0.1718,
+    "dk_t": 0.3481,
+    "dsr_p": 0.9839,
+    "dsr_pass": false,
+    "wfa_mean": 0.2571,
+    "wfa_pass": true,
+    "boot_ci": [
+      -0.000119,
+      0.000467
+    ],
+    "boot_pass": false,
+    "min_btl_sufficient": false,
+    "per_symbol_sharpe": {
+      "XAUUSD": 0.534,
+      "EURUSD": -0.119,
+      "GBPUSD": -0.22,
+      "USDJPY": 0.268,
+      "BTCUSD": 0.232,
+      "US30": 0.048
+    }
+  },
+  {
+    "strategy": "tsmom_252",
+    "universe": [
+      "XAUUSD",
+      "EURUSD",
+      "GBPUSD",
+      "USDJPY",
+      "BTCUSD",
+      "US30"
+    ],
+    "n_symbols": 6,
+    "sharpe": 0.9051,
+    "ann_ret": 0.1593,
+    "ann_vol": 0.176,
+    "dk_t": 1.0366,
+    "dsr_p": 0.0083,
+    "dsr_pass": true,
+    "wfa_mean": 0.943,
+    "wfa_pass": true,
+    "boot_ci": [
+      0.000365,
+      0.000948
+    ],
+    "boot_pass": true,
+    "min_btl_sufficient": false,
+    "per_symbol_sharpe": {
+      "XAUUSD": 0.31,
+      "EURUSD": -0.013,
+      "GBPUSD": -0.009,
+      "USDJPY": 0.194,
+      "BTCUSD": 0.881,
+      "US30": -0.084
+    }
+  }
+]

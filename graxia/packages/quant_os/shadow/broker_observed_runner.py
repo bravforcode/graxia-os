@@ -13,10 +13,10 @@ import json
 import logging
 import os
 import sys
-from typing import Any
 import time
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from graxia.packages.quant_os.markets.eurusd.event_calendar import EURUSDEventCalendar
 from graxia.packages.quant_os.markets.eurusd.session_calendar import EURUSDSessionCalendar
@@ -721,7 +721,7 @@ class BrokerObservedShadowRunner:
         accepted = sum(1 for e in self._evidence if e.outcome == "accepted")
         rejected = total - accepted
 
-        rejection_reasons = {}
+        rejection_reasons: dict[str, int] = {}
         for e in self._evidence:
             if e.outcome.startswith("rejected_"):
                 r = e.rejection_reason or e.outcome

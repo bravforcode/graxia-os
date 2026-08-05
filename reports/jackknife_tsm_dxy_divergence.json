@@ -1,0 +1,70 @@
+{
+  "strategy": "TSMDXYDivergence",
+  "variant": "tsm_dxy_divergence",
+  "params": {
+    "lookbacks": [
+      20,
+      40,
+      60,
+      120
+    ],
+    "atr_sl_mult": 4.0
+  },
+  "universe": [
+    "XAUUSD",
+    "XAGUSD",
+    "EURUSD",
+    "GBPUSD",
+    "USDJPY",
+    "NAS100",
+    "US30",
+    "BTCUSD"
+  ],
+  "pooled_dk_t": 2.0061,
+  "pooled_mean": 7.149961087772356e-06,
+  "pooled_se": 3.564098389134426e-06,
+  "n_days": 7501,
+  "jackknife": {
+    "XAUUSD": {
+      "dk_t_excluded": 2.1886,
+      "delta": 0.1825,
+      "verdict": "GO"
+    },
+    "XAGUSD": {
+      "dk_t_excluded": 2.2467,
+      "delta": 0.2407,
+      "verdict": "GO"
+    },
+    "EURUSD": {
+      "dk_t_excluded": 1.8392,
+      "delta": -0.1669,
+      "verdict": "REJECT"
+    },
+    "GBPUSD": {
+      "dk_t_excluded": 2.1042,
+      "delta": 0.0982,
+      "verdict": "GO"
+    },
+    "USDJPY": {
+      "dk_t_excluded": -0.6505,
+      "delta": -2.6565,
+      "verdict": "REJECT"
+    },
+    "NAS100": {
+      "dk_t_excluded": 2.4683,
+      "delta": 0.4622,
+      "verdict": "GO"
+    },
+    "US30": {
+      "dk_t_excluded": 2.5247,
+      "delta": 0.5186,
+      "verdict": "GO"
+    },
+    "BTCUSD": {
+      "dk_t_excluded": 2.0187,
+      "delta": 0.0126,
+      "verdict": "GO"
+    }
+  },
+  "verdict": "REJECT"
+}

@@ -1,0 +1,19 @@
+name = "second-brain-worker"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "second_brain_db"
+database_id = "67652c6e-16fe-4383-aac6-1804539259ee"
+
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "second_brain_vectors"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "ab41a2a545b842ccb10632cac9fdf38d"
+
+[ai]
+binding = "AI"

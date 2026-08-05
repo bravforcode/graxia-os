@@ -8,9 +8,10 @@ ponytail: Simple weighted average ensemble. Upgrade path: stacking meta-learner.
 
 from __future__ import annotations
 
-import numpy as np
 from dataclasses import dataclass
 from typing import Any
+
+import numpy as np
 
 
 @dataclass
@@ -178,7 +179,7 @@ class TripleBoostEnsemble:
         importance = {}
         for name, model in self.models.items():
             if hasattr(model, "feature_importances_"):
-                importance[name] = dict(enumerate(model.feature_importances_))
+                importance[name] = {str(i): float(v) for i, v in enumerate(model.feature_importances_)}
         return importance
 
 
@@ -221,7 +222,7 @@ class RowwisePredictAdapter:
     TripleBoostEnsemble.predict() uses on its batch mean, per row.
     """
 
-    def __init__(self, ensemble: "TripleBoostEnsemble"):
+    def __init__(self, ensemble: TripleBoostEnsemble):
         self._ensemble = ensemble
 
     def predict(self, X: np.ndarray) -> np.ndarray:

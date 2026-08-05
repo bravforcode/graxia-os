@@ -151,17 +151,17 @@ class CampaignAnalyzer:
         n_boot = 2000
         dsr_rankings = []
         for r in rankings:
-            trades = r.get("trades", 0)
+            _ = r.get("trades", 0)
             campaign_id = r.get("campaign_id", "")
 
             skew, kurt = 0.0, 0.0
-            pnls = campaign_pnls.get(campaign_id)
+            pnls_cur: Any | None = campaign_pnls.get(campaign_id)
             tlist_raw = campaign_trades.get(campaign_id, [])
             tpy = _trades_per_year_from_dicts(tlist_raw) if tlist_raw else 252.0
 
             # Recompute Sharpe from P&Ls with frequency-corrected annualization
-            if pnls is not None and len(pnls) > 1:
-                returns = pnls / 100000
+            if pnls_cur is not None and len(pnls_cur) > 1:
+                returns = pnls_cur / 100000
                 r_std = returns.std()
                 sharpe_corrected = float(returns.mean() / r_std * np.sqrt(tpy)) if r_std > 1e-10 else 0.0
             else:
@@ -169,12 +169,12 @@ class CampaignAnalyzer:
             r["sharpe_raw"] = r.get("sharpe", 0)  # preserve old value for reference
             r["sharpe"] = round(sharpe_corrected, 3)
 
-            if pnls is not None and len(pnls) > 3:
-                std = pnls.std(ddof=1)
+            if pnls_cur is not None and len(pnls_cur) > 3:
+                std = pnls_cur.std(ddof=1)
                 if std > 1e-10:
-                    z = (pnls - pnls.mean()) / std
-                    skew = float(np.mean(z ** 3))
-                    kurt = float(np.mean(z ** 4) - 3)
+                    z = (pnls_cur - pnls_cur.mean()) / std
+                    skew = float(np.mean(z**3))
+                    kurt = float(np.mean(z**4) - 3)
 
             r["empirical_skew"] = round(skew, 2)
             r["empirical_kurt"] = round(kurt, 2)
@@ -201,11 +201,11 @@ class CampaignAnalyzer:
                 for _ in range(n_boot):
                     block_size = max(1, int(np.sqrt(len(pnls))))
                     n_blocks = max(1, len(pnls) // block_size)
-                    indices = []
+                    indices: list[int] = []
                     for _ in range(n_blocks):
                         start = rng.integers(0, max(1, len(pnls) - block_size))
-                        indices.extend(range(start, min(start + block_size, len(pnls))))
-                    indices = indices[:len(pnls)]
+                        indices.extend(range(int(start), min(int(start) + block_size, len(pnls))))
+                    indices = indices[: len(pnls)]
                     if len(indices) < 10:
                         continue
                     sample = pnls[indices]
@@ -293,11 +293,11 @@ class CampaignAnalyzer:
         ]
         for i, r in enumerate(dsr_rankings, 1):
             passes = "YES" if r.get("dsr_passes") else "NO"
-            ci_low = r.get("bootstrap_ci_low")
-            ci_high = r.get("bootstrap_ci_high")
-            ci_str = "[%.2f, %.2f]" % (ci_low, ci_high) if ci_low is not None else "N/A"
+            ci_low_val = r.get("bootstrap_ci_low")
+            ci_high_val = r.get("bootstrap_ci_high")
+            ci_str = f"[{ci_low_val:.2f}, {ci_high_val:.2f}]" if ci_low_val is not None else "N/A"
             null95 = r.get("null_95")
-            null95_str = "%.3f" % null95 if null95 is not None else "N/A"
+            null95_str = f"{null95:.3f}" if null95 is not None else "N/A"
             # TPY for this campaign
             cid = r.get("campaign_id", "")
             tpy_val = _trades_per_year_from_dicts(campaign_trades.get(cid, [])) if cid in campaign_trades else 0
@@ -309,15 +309,17 @@ class CampaignAnalyzer:
                 f"| {r['win_rate']:.1f}% | {r['profit_factor']:.2f} | {r['max_dd']:.1f}% |"
             )
 
-        lines.extend([
-            "",
-            "## Frequency-Corrected Sharpe Ranking",
-            "",
-            "**Annualized by actual trades/year (not hardcoded 252). Same as main table above.**",
-            "",
-            "| Rank | Campaign | Strategy | Symbol | TF | Trades | TPY | Sharpe | P&L | WR% |",
-            "|------|----------|----------|-------|-----|--------|-----|--------|-----|------|",
-        ])
+        lines.extend(
+            [
+                "",
+                "## Frequency-Corrected Sharpe Ranking",
+                "",
+                "**Annualized by actual trades/year (not hardcoded 252). Same as main table above.**",
+                "",
+                "| Rank | Campaign | Strategy | Symbol | TF | Trades | TPY | Sharpe | P&L | WR% |",
+                "|------|----------|----------|-------|-----|--------|-----|--------|-----|------|",
+            ]
+        )
         for i, r in enumerate(dsr_rankings[:20], 1):
             cid = r.get("campaign_id", "")
             tpy_val = _trades_per_year_from_dicts(campaign_trades.get(cid, [])) if cid in campaign_trades else 0
@@ -326,25 +328,31 @@ class CampaignAnalyzer:
                 f"| {r['trades']} | {tpy_val:.0f} | {r['sharpe']:.3f} | ${r['pnl']:+.0f} | {r['win_rate']:.1f}% |"
             )
 
-        lines.extend([
-            "",
-            "## Best by Strategy",
-            "",
-        ])
+        lines.extend(
+            [
+                "",
+                "## Best by Strategy",
+                "",
+            ]
+        )
         for strategy, ranks in by_strategy.items():
             lines.append(f"### {strategy}")
             lines.append("| Symbol | TF | Sharpe | P&L | WR% |")
             lines.append("|--------|-----|--------|-----|------|")
             for r in ranks:
-                lines.append(f"| {r['symbol']} | {r['timeframe']} | {r['sharpe']:.3f} | ${r['pnl']:+.0f} | {r['win_rate']:.1f}% |")
+                lines.append(
+                    f"| {r['symbol']} | {r['timeframe']} | {r['sharpe']:.3f} | ${r['pnl']:+.0f} | {r['win_rate']:.1f}% |"
+                )
             lines.append("")
 
-        lines.extend([
-            "## Average Sharpe by Timeframe",
-            "",
-            "| Timeframe | Avg Sharpe | Max Sharpe | Count |",
-            "|-----------|------------|------------|-------|",
-        ])
+        lines.extend(
+            [
+                "## Average Sharpe by Timeframe",
+                "",
+                "| Timeframe | Avg Sharpe | Max Sharpe | Count |",
+                "|-----------|------------|------------|-------|",
+            ]
+        )
         for tf, data in sorted(by_timeframe.items()):
             lines.append(f"| {tf} | {data['avg_sharpe']} | {data['max_sharpe']} | {data['count']} |")
 

@@ -13,12 +13,38 @@ import logging
 import os
 import re
 import sys
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 import pandas as pd
 
+from data_pipeline.storage.duckdb_store import DuckDBStore
+
 logger = logging.getLogger(__name__)
+
+
+def _iso_to_msc(iso: str) -> int:
+    return int(datetime.fromisoformat(iso).replace(tzinfo=UTC).timestamp() * 1000)
+
+
+def load_real_ticks(
+    symbol: str,
+    start_iso: str,
+    end_iso: str,
+    *,
+    db: DuckDBStore | None = None,
+    use_backfill: bool = True,
+) -> pd.DataFrame | None:
+    """Return real bid/ask tick rows (time_msc, bid, ask, last, volume,
+    source, data_quality) from the DuckDB tick views, or None when no tick
+    data exists (caller falls back to config/cost_calibration.json)."""
+    store = db or DuckDBStore()
+    view = "v_ticks_combined" if use_backfill else "v_ticks"
+    try:
+        df = store.query_ticks(symbol, _iso_to_msc(start_iso), _iso_to_msc(end_iso), view=view)
+    except Exception:
+        return None  # empty glob / missing data — caller falls back to config
+    return None if df is None or len(df) == 0 else df
 
 
 def load_csv_data(

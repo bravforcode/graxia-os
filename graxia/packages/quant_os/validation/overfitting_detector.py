@@ -70,6 +70,11 @@ class OverfittingConfig:
     require_sufficient_data: bool = True
     # Search budget
     max_trials: int = 1000
+    # SP1 (2026-08-04): bars-per-year for Sharpe annualization. Was hardcoded
+    # sqrt(252) in _compute_sharpe/_check_dsr/_check_min_btl, which understated
+    # Sharpe ~4.9x for H1 data. Set 252 for D1, 6048 for forex H1, 8760 for
+    # metals/crypto H1 (see backtest.metrics.BARS_PER_YEAR).
+    bars_per_year: int = 252
 
 
 @dataclass
@@ -183,13 +188,17 @@ class OverfittingDetector:
         if std == 0:
             return 0.0
         excess = mean - risk_free_rate
-        return (excess / std) * math.sqrt(252)  # annualize
+        return (excess / std) * math.sqrt(self.config.bars_per_year)  # annualize
 
     def _check_dsr(self, sharpe, n_trials, n_observations, skewness, kurtosis) -> DeflatedSharpeResult:
         return deflated_sharpe_ratio(
             observed_sharpe=sharpe,
             n_trials=n_trials,
             n_observations=n_observations,
+            # sharpe is annualized via _compute_sharpe() (sqrt(bars_per_year))
+            # when not supplied by the caller — same factor _check_min_btl()
+            # already uses for this identical sharpe value.
+            sharpe_annualization_factor=math.sqrt(self.config.bars_per_year),
             skewness=skewness,
             kurtosis=kurtosis,
         )
@@ -238,6 +247,9 @@ class OverfittingDetector:
         return min_backtest_length(
             observed_sharpe=sharpe,
             n_trials=n_trials,
+            sharpe_annualization_factor=math.sqrt(
+                self.config.bars_per_year
+            ),  # sharpe is annualized (_compute_sharpe), data_length is raw bars
             skewness=skewness,
             kurtosis=kurtosis,
             current_observations=data_length,

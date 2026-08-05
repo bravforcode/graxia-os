@@ -4,15 +4,15 @@ Core paper execution engine — runs one campaign, simulates trades, computes P&
 
 from __future__ import annotations
 
-import importlib.util
-import math
 from datetime import UTC, datetime
+from typing import Any
 
 import numpy as np
 import pandas as pd
 
 # Lazy import: validation.walk_forward has broken __init__.py chain
 _wfa_split = None
+
 
 def _get_wfa_split():
     global _wfa_split
@@ -21,6 +21,7 @@ def _get_wfa_split():
         import importlib.util as _iu
         import os as _os
         import sys as _sys
+
         _wf_path = _os.path.join(_os.path.dirname(_os.path.dirname(__file__)), "validation", "walk_forward.py")
         _spec = _iu.spec_from_file_location("validation.walk_forward", _wf_path)
         if _spec and _spec.origin:
@@ -33,19 +34,21 @@ def _get_wfa_split():
             raise ImportError("Cannot load validation.walk_forward")
     return _wfa_split
 
-from .campaign import CampaignConfig, get_param_grid
-from .price_feed import load_ohlcv
-from .strategies.base import BaseStrategy, Signal, StrategyResult
-from .strategies.donchian import DonchianStrategy
-from .strategies.mrb import MRBStrategy
-from .strategies.rsi_bb import RSIBBStrategy
-from .strategies.tsm import TSMStrategy
-from .strategies.volume_breakout import VolumeBreakoutStrategy
+
+from .campaign import CampaignConfig, get_param_grid  # noqa: E402
+from .price_feed import load_ohlcv  # noqa: E402
+from .strategies.base import BaseStrategy, Signal, StrategyResult  # noqa: E402
+from .strategies.donchian import DonchianStrategy  # noqa: E402
+from .strategies.mrb import MRBStrategy  # noqa: E402
+from .strategies.rsi_bb import RSIBBStrategy  # noqa: E402
+from .strategies.tsm import TSMStrategy  # noqa: E402
+from .strategies.volume_breakout import VolumeBreakoutStrategy  # noqa: E402
 
 # Gold ICT strategies (lazy — may not be available)
 _gold_ict_registry = {}
 try:
     from .strategies.gold_ict import GOLD_ICT_REGISTRY
+
     _gold_ict_registry = GOLD_ICT_REGISTRY
 except ImportError:
     pass
@@ -65,7 +68,7 @@ def _get_strategy(strategy_id: str) -> BaseStrategy:
     cls = registry.get(strategy_id)
     if cls is None:
         raise ValueError(f"Unknown strategy: {strategy_id}. Available: {list(registry.keys())}")
-    return cls()
+    return cls()  # type: ignore[abstract]
 
 
 def _trades_per_year(trades: list) -> float:
@@ -289,7 +292,11 @@ class CampaignResult:
         win_rate = float(np.mean(wins)) * 100 if n > 0 else 0.0
         avg_win = float(np.mean(pnls[wins])) if np.any(wins) else 0.0
         avg_loss = float(np.mean(pnls[losses])) if np.any(losses) else 0.0
-        profit_factor = abs(float(np.sum(pnls[wins]) / np.sum(pnls[losses]))) if np.any(losses) and np.sum(pnls[losses]) != 0 else float("inf")
+        profit_factor = (
+            abs(float(np.sum(pnls[wins]) / np.sum(pnls[losses])))
+            if np.any(losses) and np.sum(pnls[losses]) != 0
+            else float("inf")
+        )
 
         # Sharpe — frequency-corrected annualization
         returns = pnls / 100000  # per-trade return as fraction of capital
@@ -599,13 +606,15 @@ def run_campaign_wfa(
         trades, _ = _simulate_trades(sr, df, config) if sr.signals else ([], [])
         combo_trades.append(trades)
 
-    fold_reports = []
+    fold_reports: list[dict[str, Any]] = []
     oos_trades: list[Trade] = []
 
     for (train_start, train_end), (test_start, test_end) in splits:
         best_idx, best_sharpe = None, -float("inf")
         for combo_idx, trades in enumerate(combo_trades):
-            train_trades = [t for t in trades if t.entry_bar_idx is not None and train_start <= t.entry_bar_idx < train_end]
+            train_trades = [
+                t for t in trades if t.entry_bar_idx is not None and train_start <= t.entry_bar_idx < train_end
+            ]
             if len(train_trades) < min_train_trades:
                 continue
             sharpe = _sharpe_from_trades(train_trades)
@@ -613,23 +622,29 @@ def run_campaign_wfa(
                 best_sharpe, best_idx = sharpe, combo_idx
 
         if best_idx is None:
-            fold_reports.append({
-                "train_range": [train_start, train_end], "test_range": [test_start, test_end],
-                "skipped": f"no combo reached {min_train_trades} train trades",
-            })
+            fold_reports.append(
+                {
+                    "train_range": [train_start, train_end],
+                    "test_range": [test_start, test_end],
+                    "skipped": f"no combo reached {min_train_trades} train trades",
+                }
+            )
             continue
 
         test_trades = [
-            t for t in combo_trades[best_idx]
+            t
+            for t in combo_trades[best_idx]
             if t.entry_bar_idx is not None and test_start <= t.entry_bar_idx < test_end
         ]
-        fold_reports.append({
-            "train_range": [train_start, train_end],
-            "test_range": [test_start, test_end],
-            "chosen_params": grid[best_idx],
-            "train_sharpe": round(best_sharpe, 3),
-            "test_trades": len(test_trades),
-        })
+        fold_reports.append(
+            {
+                "train_range": [train_start, train_end],
+                "test_range": [test_start, test_end],
+                "chosen_params": grid[best_idx],
+                "train_sharpe": round(best_sharpe, 3),
+                "test_trades": len(test_trades),
+            }
+        )
         oos_trades.extend(test_trades)
 
     oos_trades.sort(key=lambda t: t.entry_bar_idx or 0)

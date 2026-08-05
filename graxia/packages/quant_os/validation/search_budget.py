@@ -14,6 +14,7 @@ Usage:
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -87,6 +88,7 @@ class SearchBudgetTracker:
         strategy_id: str,
         observed_sharpe: float,
         n_observations: int,
+        sharpe_annualization_factor: float = math.sqrt(252),  # SP1: callers pass ANNUALIZED Sharpe (1.5-3.0 range) with raw-bar n_observations; de-annualize by default
         skewness: float = 0.0,
         kurtosis: float = 3.0,
         confidence_level: float = 0.95,
@@ -100,6 +102,11 @@ class SearchBudgetTracker:
 
         The per-strategy count is kept as a floor so the DSR is never LESS
         conservative than the locally-known trial count.
+
+        NOTE (SP1): observed_sharpe is expected ANNUALIZED; n_observations is
+        the raw per-period count. The default factor sqrt(252) de-annualizes
+        for daily bars. Pass sharpe_annualization_factor=1.0 for a raw
+        per-observation Sharpe.
         """
         from .n_trials import get_reconciled_n_trials
 
@@ -116,6 +123,7 @@ class SearchBudgetTracker:
             observed_sharpe=observed_sharpe,
             n_trials=n_trials,
             n_observations=n_observations,
+            sharpe_annualization_factor=sharpe_annualization_factor,
             skewness=skewness,
             kurtosis=kurtosis,
             confidence_level=confidence_level,

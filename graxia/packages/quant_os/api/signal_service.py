@@ -36,6 +36,7 @@ from graxia.packages.quant_os.ml.feature_store import (
     compute_live_features as compute_features_live,
 )
 from graxia.packages.quant_os.ml.model_registry import ModelRegistry
+from graxia.packages.quant_os.risk.circuit_breaker import DEFAULT_STATE_FILE
 
 logger = structlog.get_logger(__name__)
 
@@ -70,8 +71,12 @@ SYMBOL = os.getenv("TRADE_SYMBOL", "XAUUSD")
 LOT_SIZE = float(os.getenv("LOT_SIZE", "0.01"))
 B2_STOP_DOLLARS = float(os.getenv("B2_STOP", "3.00"))
 MIN_CONFIDENCE = float(os.getenv("MIN_CONFIDENCE", "0.50"))
+# Shared circuit-breaker state file — mirrors KillSwitch's CWD-relative
+# data/kill_switch_state.json. Every process that constructs a
+# CircuitBreaker must use the same path so a trip in one process is
+# honored by the others (risk gate, orchestrator, webhook).
+CIRCUIT_BREAKER_STATE_FILE = DEFAULT_STATE_FILE
 MODEL_SIGNING_KEY = os.getenv("MODEL_SIGNING_KEY", "")
-
 # Path resolution: env-var-driven with defaults relative to this file's package.
 # Works both in Docker (/app mounts) and local dev (relative to repo root).
 _THIS_DIR = Path(__file__).resolve().parent  # api/
@@ -562,6 +567,9 @@ async def get_signal(req: SignalRequest, _key: str = Security(verify_signal_api_
                 )
 
         # Predict with circuit breaker
+        if _model is None:
+            raise HTTPException(status_code=503, detail="Model not loaded")
+
         try:
             proba = _model.predict_proba(features)
             confidence = float(max(proba[0]))
@@ -638,12 +646,14 @@ async def risk_gate(req: RiskGateRequest, _key: str = Security(verify_signal_api
     Returns ``{"allowed": bool, "reason": str}`` — EA only places order
     when ``allowed=true``.
     """
+    from graxia.packages.quant_os.risk.circuit_breaker import CircuitBreaker
     from graxia.packages.quant_os.risk.engine import (
         AccountState,
         PortfolioState,
         RiskEngine,
         Signal,
     )
+    from graxia.packages.quant_os.risk.kill_switch import KillSwitch
 
     # Rate limit: same window as /api/signal (max 30 requests per minute)
     if not _rate_limiter.allow(client_id="risk_gate"):
@@ -683,7 +693,10 @@ async def risk_gate(req: RiskGateRequest, _key: str = Security(verify_signal_api
         venue="paper",
     )
 
-    engine = RiskEngine()
+    engine = RiskEngine(
+        kill_switch=KillSwitch(),
+        circuit_breaker=CircuitBreaker(state_file=CIRCUIT_BREAKER_STATE_FILE),
+    )
     account = AccountState(equity=0.0, balance=0.0)
     portfolio = PortfolioState()
 

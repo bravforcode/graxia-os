@@ -120,19 +120,19 @@ def test_trade_pnl_uses_per_trade_price():
     )
 
 
-def test_trade_pnl_flat_price_fallback():
-    """Without close_prices, should fall back to 2350.0."""
+def test_trade_pnl_derives_price_from_df_close_without_close_prices():
+    """Without close_prices, derives per-trade price from df['close'] (no stale 2350 anchor)."""
     df, preds = _make_trade_df(n=10, close_price=4000.0)
     result = compute_trade_pnl(
         df, preds,
         spread_cost=0.00005, slippage_p90=0.000027,
         lot_mult=1.0, close_prices=None,
     )
-    # cost_per_trade should be (0.00005+0.000027)*2350 = $0.181
-    expected_cost = (0.00005 + 0.000027) * 2350.0
+    # cost_per_trade should be (0.00005+0.000027)*4000 = $0.308 (df close)
+    expected_cost = (0.00005 + 0.000027) * 4000.0
     actual_cost = result["cost_dollars"].iloc[0]
     assert abs(actual_cost - expected_cost) < 0.001, (
-        f"Fallback cost ${actual_cost:.6f} != expected ${expected_cost:.6f}"
+        f"Derived cost ${actual_cost:.6f} != expected ${expected_cost:.6f}"
     )
 
 

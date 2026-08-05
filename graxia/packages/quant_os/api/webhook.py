@@ -27,8 +27,6 @@ import time
 from datetime import UTC, datetime
 from decimal import Decimal
 
-logger = logging.getLogger(__name__)
-
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -41,8 +39,11 @@ from ..core.exceptions import KillSwitchTriggeredError, ValidationError
 from ..data.models import Signal as SignalModel
 from ..execution.adapters.manager import BrokerManager
 from ..execution.manager import OrderManager
+from ..risk.circuit_breaker import DEFAULT_STATE_FILE, CircuitBreaker
 from ..risk.engine import RiskEngine
 from ..risk.kill_switch import KillSwitch
+
+logger = logging.getLogger(__name__)
 
 webhook_router = APIRouter(prefix="/webhook", tags=["webhook"])
 
@@ -159,7 +160,7 @@ async def tradingview_webhook(
         data = json.loads(body)
         payload = TradingViewPayload(**data)
     except (json.JSONDecodeError, ValidationError) as e:
-        raise HTTPException(status_code=400, detail=f"Invalid payload: {e}")
+        raise HTTPException(status_code=400, detail=f"Invalid payload: {e}") from e
 
     # Deduplicate by event_id (if provided) or by hash of payload
     dedup_key = payload.event_id or hashlib.sha256(body).hexdigest()
@@ -175,7 +176,7 @@ async def tradingview_webhook(
     try:
         signal_type = SignalType.BUY if payload.action.lower() == "buy" else SignalType.SELL
     except ValueError:
-        raise HTTPException(status_code=400, detail=f"Invalid action: {payload.action}")
+        raise HTTPException(status_code=400, detail=f"Invalid action: {payload.action}") from None
 
     # Record signal in database
     signal = SignalModel(
@@ -202,9 +203,19 @@ async def tradingview_webhook(
     broker_manager = BrokerManager.from_config()
     await broker_manager.initialize()
 
-    risk_engine = RiskEngine(db_session=db)
     kill_switch = KillSwitch()
+    circuit_breaker = CircuitBreaker(state_file=DEFAULT_STATE_FILE)
+    risk_engine = RiskEngine(kill_switch=kill_switch, circuit_breaker=circuit_breaker)
 
+    # KNOWN BROKEN (unresolved): `db` here is an AsyncSession (see
+    # graxia.packages.revenue_os.db.get_db), but OrderManager and
+    # IdempotencyChecker call self.db.query(...) - the legacy sync
+    # SQLAlchemy Session API, which AsyncSession does not implement.
+    # This handler will raise AttributeError the first time either
+    # class touches the DB. No sync session factory currently exists
+    # in revenue_os.db to substitute here. Not fixed in this pass -
+    # requires either an async rewrite of OrderManager/IdempotencyChecker's
+    # DB access or a dedicated sync session for this webhook path.
     order_manager = OrderManager(
         db_session=db,
         broker_manager=broker_manager,
@@ -275,6 +286,26 @@ async def tradingview_webhook(
                 signal_id=str(signal.id),
                 status="blocked",
                 message="Signal blocked by kill switch",
+                error=str(e),
+            )
+
+        except Exception as e:
+            # Fail closed: OrderManager/IdempotencyChecker use the sync
+            # SQLAlchemy Session API (self.db.query(...)) but `db` here is
+            # an AsyncSession, so any DB touch inside submit_order() raises
+            # (typically AttributeError). No order was placed. Rather than
+            # let this crash the request (raw 500 to TradingView, signal
+            # left uncommitted/unmarked), record it as a rejection and
+            # respond cleanly. Root cause unresolved: see note above.
+            logger.critical("webhook.order_submission_failed: %s", e, exc_info=True)
+            signal.rejection_reason = f"Order submission failed: {e}"
+            await db.commit()
+
+            return WebhookResponse(
+                success=False,
+                signal_id=str(signal.id),
+                status="error",
+                message="Signal recorded but order submission failed",
                 error=str(e),
             )
 

@@ -1,0 +1,106 @@
+{
+  "schema_version": "1.0",
+  "direction": "C",
+  "description": "Volume-Price Divergence in Crypto — new research program",
+  "last_updated": "2026-07-13",
+  "cumulative_trial_count_at_creation": 0,
+  "stopping_rule_doc": "reports/direction_c_registration.md",
+  "sacred_holdout_path": "data/sacred_holdout/holdout_btc.csv",
+  "sacred_holdout_status": "LOCKED",
+  "hypotheses": [
+    {
+      "trial_number": 7001,
+      "id": "BTCVD-BTC-VOL-DIVERGENCE",
+      "name": "BTC Volume-Price Divergence",
+      "status": "REJECTED",
+      "registered_at": "2026-07-13",
+      "result_at": "2026-07-13",
+      "instrument": "BTCUSD",
+      "pre_registration_doc": "research/pre_registration_c/trial_7001_btc_vol_divergence.md",
+      "strategy_file": "strategies/btc_vol_divergence.py",
+      "mechanism": "New price extreme + low volume = weak move, likely reversal",
+      "pre_registered_parameters": {
+        "price_window": 20,
+        "vol_window": 20,
+        "vol_threshold": 0.8,
+        "hold_days": 5
+      },
+      "result_summary": {
+        "p_value": 0.5533,
+        "win_rate": 0.3333,
+        "sharpe_ratio": -2.058,
+        "n_oos_trades": 6,
+        "overall": "FAIL",
+        "gates_passed": 0,
+        "gates_failed": 4,
+        "conclusion": "Only 6 trades (far below 100 target). Negative Sharpe. Volume divergence on BTC daily does not work."
+      }
+    },
+    {
+      "trial_number": 7002,
+      "id": "ETHVC-ETH-VOL-CONFIRM",
+      "name": "ETH Volume Confirmation",
+      "status": "REJECTED",
+      "registered_at": "2026-07-13",
+      "result_at": "2026-07-13",
+      "instrument": "ETHUSD",
+      "pre_registration_doc": "research/pre_registration_c/trial_7002_eth_vol_confirm.md",
+      "strategy_file": "strategies/eth_vol_confirm.py",
+      "mechanism": "Price + volume confirmation = strong move, continuation",
+      "pre_registered_parameters": {
+        "price_window": 10,
+        "vol_window": 10,
+        "vol_confirm_pct": 80,
+        "hold_days": 3
+      },
+      "result_summary": {
+        "p_value": 0.5914,
+        "win_rate": 0.6071,
+        "sharpe_ratio": 0.815,
+        "n_oos_trades": 28,
+        "overall": "FAIL",
+        "gates_passed": 0,
+        "gates_failed": 5,
+        "conclusion": "Interesting win rate (60.7%) but 28 trades < 100 target, p=0.59 not significant."
+      }
+    },
+    {
+      "trial_number": 7003,
+      "id": "BEVS-BTC-ETH-VOL-SPREAD",
+      "name": "BTC-ETH Volume Divergence Spread",
+      "status": "REJECTED",
+      "registered_at": "2026-07-13",
+      "result_at": "2026-07-13",
+      "instrument": "BTCUSD/ETHUSD",
+      "pre_registration_doc": "research/pre_registration_c/trial_7003_btc_eth_vol_spread.md",
+      "strategy_file": "strategies/btc_eth_vol_spread.py",
+      "mechanism": "Cross-asset volume divergence = relative value trade",
+      "pre_registered_parameters": {
+        "vol_window": 15,
+        "divergence_threshold": 0.3,
+        "hold_days": 5
+      },
+      "result_summary": {
+        "p_value": 0.1877,
+        "win_rate": 0.4853,
+        "sharpe_ratio": 1.281,
+        "n_oos_trades": 68,
+        "overall": "FAIL",
+        "gates_passed": 1,
+        "gates_failed": 5,
+        "conclusion": "Interesting Sharpe (1.28) and DSR passes, but 68 trades < 100 target, p=0.19 not significant."
+      },
+      "hourly_validation": {
+        "date": "2026-07-13",
+        "data_points": 17468,
+        "best_config": "W=24h T=0.2 H=24h",
+        "trades": 646,
+        "win_rate": 0.520,
+        "avg_return_pct": 0.131,
+        "sharpe": 0.85,
+        "p_value": 0.1731,
+        "conclusion": "Sharpe inflated by small sample (1.28 on 68 trades). Converges to 0.85 with 646 trades. Not significant."
+      }
+    }
+  ]
+}

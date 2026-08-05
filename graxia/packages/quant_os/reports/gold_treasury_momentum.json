@@ -1,0 +1,15 @@
+{
+  "strategy": "Gold-Treasury Joint Momentum (monthly)",
+  "rule": "Long GLD when GLD_1m>0 AND IEF_1m>0, Short when both<0",
+  "data": "1637 daily bars GLD+IEF",
+  "gross_is": 0.382,
+  "net_is": -0.216,
+  "net_oos": -0.5893,
+  "cost_drag": 0.598,
+  "is_trades": 55,
+  "oos_trades": 16,
+  "is_win_rate": 41.8,
+  "oos_win_rate": 25.0,
+  "wf_consistency": 0.67,
+  "all_pass": false
+}

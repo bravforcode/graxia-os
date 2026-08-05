@@ -1,0 +1,54 @@
+{
+  "citation_date": "2026-07-27",
+  "generated_by": "scripts/reconcile_trial_ledger.py",
+  "stopping_rule_triggered": true,
+  "direction_a": {
+    "trigger": "4 consecutive p-value failures",
+    "constitution_reference": "CONSTITUTION.md:98",
+    "consecutive_failures": [
+      {
+        "trial_number": 1003,
+        "id": "cross_asset_momentum",
+        "p_value": 0.5976
+      },
+      {
+        "trial_number": 1004,
+        "id": "session_pattern",
+        "p_value": 0.9338
+      },
+      {
+        "trial_number": 1005,
+        "id": "macro_regime_mr",
+        "p_value": 0.2441
+      },
+      {
+        "trial_number": 1006,
+        "id": "gold_silver_spread",
+        "p_value": 0.5045
+      }
+    ],
+    "narrative": "The stopping rule was triggered after trials 1003 (Cross-Asset Momentum, p=0.598), 1004 (Session Pattern, p=0.934), 1005 (Macro Regime MR, p=0.244), and 1006 (Gold-Silver Spread, p=0.505) all returned REJECTED verdicts consecutively. All four p-values exceed 0.05, indicating no statistically significant edge. Per CONSTITUTION.md:98, research should STOP after 4 consecutive p-value failures."
+  },
+  "direction_b": {
+    "trigger": "3 consecutive failures (per trial_ledger_b.json governance §3.4)",
+    "consecutive_failures": [
+      {
+        "trial_number": 3004,
+        "id": "PATHB-DXY-DIV-XAUUSD",
+        "dk_t_stat": -1.4327
+      },
+      {
+        "trial_number": 3005,
+        "id": "PATHB-TSMOM-XAUUSD",
+        "dk_t_stat": -1.514
+      },
+      {
+        "trial_number": 3006,
+        "id": "PATHB-FOMC-XAUUSD",
+        "dk_t_stat": -0.984
+      }
+    ],
+    "narrative": "Direction B stopping rule triggered at trial 3006 (FOMC drift, dk_t=-0.984) after 3 consecutive REJECTED verdicts: 3004 (DXY Divergence, dk_t=-1.433), 3005 (TSMOM, dk_t=-1.514), 3006 (FOMC, dk_t=-0.984). Scope is TESTED_ONLY — trial 3008 (FX Carry) is UNTESTED and excluded from count."
+  },
+  "forex_inconclusive_note": "4 forex trials (USDCAD, USDCHF, AUDUSD, NZDUSD) returned INCONCLUSIVE verdicts with near-zero PnL and marginal t-stats. These are classified as UNDERPOWERED and excluded from the failure count per the stopping-rule scope. They do not contribute to the consecutive failure chain."
+}

@@ -1,0 +1,187 @@
+{
+  "trial_id": 1030,
+  "strategy": "Diversified Time-Series Momentum (DTSMOM)",
+  "config": {
+    "universe": [
+      "XAUUSD",
+      "XAGUSD",
+      "EURUSD",
+      "GBPUSD",
+      "USDJPY",
+      "USDCAD",
+      "USDCHF",
+      "NAS100",
+      "US30",
+      "GER40",
+      "US500",
+      "BTCUSD",
+      "ETHUSD",
+      "BTCJPY",
+      "ETHJPY",
+      "SOLJPY"
+    ],
+    "mom_lookback": 252,
+    "vol_target": 0.1,
+    "vol_lookback": 63,
+    "rebalance_drift": 0.05,
+    "max_position_pct": 0.15
+  },
+  "baseline_metrics": {
+    "total_return": 0.7076243386141323,
+    "annual_return": 0.04237716852660767,
+    "annual_vol": 0.11036991327259628,
+    "sharpe": 0.38395580163176124,
+    "max_drawdown": -0.35404139284870273,
+    "win_rate": 0.5215215215215215,
+    "profit_factor": 1.0872282240992088,
+    "turnover": 0.04687895266465804,
+    "trade_count": "693",
+    "n_observations": 3249
+  },
+  "driscoll_kraay": {
+    "t_stat": 0.4133685182631264,
+    "pass": false
+  },
+  "walk_forward": {
+    "windows": [
+      {
+        "window": 1,
+        "is_sharpe": -0.576059360770223,
+        "oos_sharpe": -0.23117283746427325,
+        "wfe": 0.40130037493910775,
+        "is_return": -0.15229065206910852,
+        "oos_return": -0.036492560895912796
+      },
+      {
+        "window": 2,
+        "is_sharpe": 1.3076907156289543,
+        "oos_sharpe": -0.1985764582725215,
+        "wfe": -0.15185277061251676,
+        "is_return": 0.6324533379047788,
+        "oos_return": -0.031843117694485334
+      },
+      {
+        "window": 3,
+        "is_sharpe": 0.8874450504606527,
+        "oos_sharpe": 0.5669298739633883,
+        "wfe": 0.6388337775607716,
+        "is_return": 0.2554381367005192,
+        "oos_return": 0.07301919075543717
+      }
+    ],
+    "avg_wfe": 0.2960937939624542,
+    "positive_oos_count": 1,
+    "total_windows": 3
+  },
+  "cost_stress": {
+    "1.0x": {
+      "sharpe": 0.38395580163176124,
+      "annual_return": 0.04237716852660767,
+      "max_drawdown": -0.35404139284870273,
+      "profit_factor": 1.0872282240992088
+    },
+    "1.5x": {
+      "sharpe": 0.37942558152761857,
+      "annual_return": 0.04187716852660767,
+      "max_drawdown": -0.35404139284870273,
+      "profit_factor": 1.0872282240992088
+    },
+    "2.0x": {
+      "sharpe": 0.37489536142347585,
+      "annual_return": 0.041377168526607666,
+      "max_drawdown": -0.35404139284870273,
+      "profit_factor": 1.0872282240992088
+    }
+  },
+  "jackknife": {
+    "baseline": {
+      "total_return": 0.7076243386141323,
+      "annual_return": 0.04237716852660767,
+      "annual_vol": 0.11036991327259628,
+      "sharpe": 0.38395580163176124,
+      "max_drawdown": -0.35404139284870273,
+      "win_rate": 0.5215215215215215,
+      "profit_factor": 1.0872282240992088,
+      "turnover": 0.04687895266465804,
+      "trade_count": "693",
+      "n_observations": 3249
+    },
+    "XAUUSD": {
+      "sharpe": 0.3483498513799857,
+      "delta_sharpe": 0.03560595025177554,
+      "sharpe_pct_change": 0.09273450251423465,
+      "annual_return": 0.04115466030982762
+    },
+    "XAGUSD": {
+      "sharpe": 0.3586531983457035,
+      "delta_sharpe": 0.025302603286057712,
+      "sharpe_pct_change": 0.06589978111679783,
+      "annual_return": 0.040440526578979785
+    },
+    "EURUSD": {
+      "sharpe": 0.3725592226388272,
+      "delta_sharpe": 0.011396578992934059,
+      "sharpe_pct_change": 0.029682007524043416,
+      "annual_return": 0.04471859587761284
+    },
+    "GBPUSD": {
+      "sharpe": 0.40810230186392393,
+      "delta_sharpe": -0.024146500232162693,
+      "sharpe_pct_change": -0.06288874951112412,
+      "annual_return": 0.04889512761715187
+    },
+    "USDJPY": {
+      "sharpe": 0.39598851184437617,
+      "delta_sharpe": -0.012032710212614928,
+      "sharpe_pct_change": -0.0313387899374811,
+      "annual_return": 0.0476110992842238
+    },
+    "USDCAD": {
+      "sharpe": 0.39333570397853224,
+      "delta_sharpe": -0.009379902346770996,
+      "sharpe_pct_change": -0.02442964087769388,
+      "annual_return": 0.04737703122219883
+    },
+    "USDCHF": {
+      "sharpe": 0.39155336449229977,
+      "delta_sharpe": -0.0075975628605385315,
+      "sharpe_pct_change": -0.019787597500154696,
+      "annual_return": 0.04700459477651431
+    },
+    "NAS100": {
+      "sharpe": 0.36905413342790144,
+      "delta_sharpe": 0.014901668203859797,
+      "sharpe_pct_change": 0.03881089474499326,
+      "annual_return": 0.0427097846465021
+    },
+    "US30": {
+      "sharpe": 0.41533811949721827,
+      "delta_sharpe": -0.03138231786545703,
+      "sharpe_pct_change": -0.08173419370689632,
+      "annual_return": 0.04852084972706261
+    },
+    "BTCUSD": {
+      "sharpe": 0.2351955020024092,
+      "delta_sharpe": 0.14876029962935203,
+      "sharpe_pct_change": 0.38744120806910715,
+      "annual_return": 0.021145517738380804
+    },
+    "ETHUSD": {
+      "sharpe": 0.41653134900756805,
+      "delta_sharpe": -0.03257554737580681,
+      "sharpe_pct_change": -0.08484191992246258,
+      "annual_return": 0.03356373925347045
+    }
+  },
+  "gates": {
+    "dk_t_gt_2": false,
+    "wfe_gt_03": "False",
+    "positive_oos_majority": false,
+    "cost_stress_positive": "True",
+    "no_sign_flip": true
+  },
+  "timestamp": "2026-07-30T17:44:08.605535",
+  "gates_passed": "2",
+  "gates_total": 5,
+  "verdict": "MARGINAL"
+}

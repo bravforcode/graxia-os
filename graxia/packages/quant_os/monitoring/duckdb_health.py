@@ -10,9 +10,8 @@ import logging
 import os
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -35,25 +34,28 @@ def _get_rss_mb() -> float:
     """Return current process RSS in MB via /proc or psutil fallback."""
     try:
         import resource
+
         # Linux: getrusage returns KB
-        usage = resource.getrusage(resource.RUSAGE_SELF)
-        return usage.ru_maxrss / 1024.0
+        usage = resource.getrusage(resource.RUSAGE_SELF)  # type: ignore[attr-defined]
+        return usage.ru_maxrss / 1024.0  # type: ignore[no-any-return]
     except (ImportError, AttributeError):
         pass
 
     try:
         import psutil
+
         proc = psutil.Process(os.getpid())
-        return proc.memory_info().rss / (1024 * 1024)
+        return proc.memory_info().rss / (1024 * 1024)  # type: ignore[no-any-return]
     except (ImportError, Exception):
         pass
 
     # Windows fallback: use psutil if available
     try:
         import psutil
+
         proc = psutil.Process()
         mem = proc.memory_info()
-        return mem.rss / (1024 * 1024)
+        return mem.rss / (1024 * 1024)  # type: ignore[no-any-return]
     except Exception:
         return 0.0
 
@@ -67,7 +69,7 @@ def _wal_size_mb(db_path: str) -> float:
     return wal_path.stat().st_size / (1024 * 1024)
 
 
-def _file_mtime(path: Path) -> Optional[datetime]:
+def _file_mtime(path: Path) -> datetime | None:
     """Return last-modified time as UTC datetime, or None."""
     if not path.exists():
         return None
@@ -83,6 +85,7 @@ def _file_mtime(path: Path) -> Optional[datetime]:
 @dataclass
 class WALHealth:
     """WAL monitoring result."""
+
     wal_size_mb: float
     checkpoint_needed: bool
     db_path: str
@@ -92,6 +95,7 @@ class WALHealth:
 @dataclass
 class MemoryHealth:
     """Process memory monitoring result."""
+
     process_rss_mb: float
     duckdb_connection_count: int
     baseline_rss_mb: float
@@ -103,9 +107,10 @@ class MemoryHealth:
 @dataclass
 class DataIntegrity:
     """DuckDB data integrity check result."""
+
     table_counts: int
-    row_counts: Dict[str, int]
-    last_write_time: Optional[str]
+    row_counts: dict[str, int]
+    last_write_time: str | None
     db_path: str
     timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
@@ -113,6 +118,7 @@ class DataIntegrity:
 @dataclass
 class HealthCheckLog:
     """Structured log entry for a full health check."""
+
     wal: WALHealth
     memory: MemoryHealth
     integrity: DataIntegrity
@@ -148,9 +154,9 @@ class DuckDBHealth:
         self.warn_mb = warn_mb
         self.critical_mb = critical_mb
         self.leak_multiplier = leak_multiplier
-        self._baseline_rss: Optional[float] = None
+        self._baseline_rss: float | None = None
         self._baseline_ts: float = 0.0
-        self._rss_history: List[float] = []
+        self._rss_history: list[float] = []
 
     # ------------------------------------------------------------------
     # WAL monitoring
@@ -168,9 +174,7 @@ class DuckDBHealth:
         logger.info("WAL size %.2f MB [%s]", size, level)
 
         if need_cp:
-            logger.warning(
-                "WAL exceeds %.0f MB — triggering auto-checkpoint", self.critical_mb
-            )
+            logger.warning("WAL exceeds %.0f MB — triggering auto-checkpoint", self.critical_mb)
             self._force_checkpoint()
 
         return WALHealth(
@@ -183,6 +187,7 @@ class DuckDBHealth:
         """Force a DuckDB WAL checkpoint via PRAGMA force_checkpoint."""
         try:
             import duckdb
+
             conn = duckdb.connect(self.db_path, read_only=False)
             try:
                 conn.execute("PRAGMA force_checkpoint")
@@ -216,17 +221,15 @@ class DuckDBHealth:
             self._baseline_rss = sum(self._rss_history[-window:]) / max(window, 1)
             self._baseline_ts = now
 
-        growth_pct = (
-            ((rss - self._baseline_rss) / self._baseline_rss * 100)
-            if self._baseline_rss > 0
-            else 0.0
-        )
+        growth_pct = ((rss - self._baseline_rss) / self._baseline_rss * 100) if self._baseline_rss > 0 else 0.0
         leak = growth_pct > ((self.leak_multiplier - 1.0) * 100)
 
         if leak:
             logger.critical(
                 "MEMORY LEAK DETECTED: RSS %.1f MB is %.1f%% above baseline %.1f MB",
-                rss, growth_pct, self._baseline_rss,
+                rss,
+                growth_pct,
+                self._baseline_rss,
             )
 
         return MemoryHealth(
@@ -250,7 +253,7 @@ class DuckDBHealth:
     # Data integrity
     # ------------------------------------------------------------------
 
-    def check_data_integrity(self, db_path: Optional[str] = None) -> DataIntegrity:
+    def check_data_integrity(self, db_path: str | None = None) -> DataIntegrity:
         """Validate DuckDB tables exist, have rows, and track last write time.
 
         Args:
@@ -261,21 +264,22 @@ class DuckDBHealth:
         """
         target = db_path or self.db_path
         table_counts = 0
-        row_counts: Dict[str, int] = {}
-        last_write: Optional[datetime] = None
+        row_counts: dict[str, int] = {}
+        last_write: datetime | None = None
 
         try:
             import duckdb
+
             conn = duckdb.connect(target, read_only=True)
             try:
                 tables = conn.execute(
-                    "SELECT table_name FROM information_schema.tables "
-                    "WHERE table_schema = 'main'"
+                    "SELECT table_name FROM information_schema.tables " "WHERE table_schema = 'main'"
                 ).fetchall()
 
                 table_counts = len(tables)
                 for (tbl,) in tables:
-                    cnt = conn.execute(f'SELECT COUNT(*) FROM "{tbl}"').fetchone()[0]
+                    row = conn.execute(f'SELECT COUNT(*) FROM "{tbl}"').fetchone()
+                    cnt = row[0] if row is not None else 0
                     row_counts[tbl] = cnt
 
                 # Estimate last write from the largest table's max row
@@ -283,9 +287,7 @@ class DuckDBHealth:
                 if row_counts:
                     largest = max(row_counts, key=lambda k: row_counts[k])
                     try:
-                        result = conn.execute(
-                            f"SELECT MAX(rowid) FROM \"{largest}\""
-                        ).fetchone()
+                        result = conn.execute(f'SELECT MAX(rowid) FROM "{largest}"').fetchone()
                         if result and result[0] is not None:
                             last_write = datetime.now(UTC)
                     except Exception:

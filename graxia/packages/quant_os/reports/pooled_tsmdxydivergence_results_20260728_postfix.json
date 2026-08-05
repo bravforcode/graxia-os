@@ -1,0 +1,157 @@
+{
+  "timestamp": "2026-07-28T02:11:58.226590",
+  "strategy": "TSMDXYDivergence",
+  "superseded_by": {
+    "type": "jackknife",
+    "date": "2026-07-28",
+    "finding": "Direct jackknife test required. MARGINAL verdict based on positive_sharpe_count=4/8, but 3 assets have 0 trades (NAS100, US30, BTCUSD). Signal concentrates in XAGUSD/EURUSD.",
+    "final_verdict": "REJECTED"
+  },
+  "variants": {
+    "tsm_dxy_divergence": {
+      "variant": "tsm_dxy_divergence",
+      "params": {
+        "lookbacks": [
+          20,
+          40,
+          60,
+          120
+        ],
+        "atr_sl_mult": 4.0
+      },
+      "universe": [
+        "XAUUSD",
+        "XAGUSD",
+        "EURUSD",
+        "GBPUSD",
+        "USDJPY",
+        "NAS100",
+        "US30",
+        "BTCUSD"
+      ],
+      "panel_shape": [
+        7360,
+        8
+      ],
+      "date_range": [
+        "2005-01-05 00:00:00",
+        "2026-07-01 00:00:00"
+      ],
+      "total_trades": 169,
+      "pooled": {
+        "dk_t_stat": 2.9012143848444687,
+        "dk_mean_return": 6.9036698353229665e-06,
+        "dk_se": 2.379479348353833e-06,
+        "dk_sharpe": 0.5043872070277275,
+        "n_dates": 7360
+      },
+      "per_asset": {
+        "XAUUSD": {
+          "symbol": "XAUUSD",
+          "n_bars": 10545,
+          "n_trades": 41,
+          "sharpe": 0.059333904509945856,
+          "win_rate": 0.3170731707317073,
+          "profit_factor": 1.1987399437627069,
+          "max_dd_pct": 1.9627842237542774,
+          "nw_t_stat": 0.42520800466120384,
+          "mean_return": 1.2607894721848624e-06,
+          "std_return": 0.0003373182099841724
+        },
+        "XAGUSD": {
+          "symbol": "XAGUSD",
+          "n_bars": 5571,
+          "n_trades": 33,
+          "sharpe": 0.6303916235748721,
+          "win_rate": 0.5757575757575758,
+          "profit_factor": 9.647713310941008,
+          "max_dd_pct": 2.0142209755705314,
+          "nw_t_stat": 3.1318996579270726,
+          "mean_return": 5.793852315015852e-05,
+          "std_return": 0.0014590065033845854
+        },
+        "EURUSD": {
+          "symbol": "EURUSD",
+          "n_bars": 5579,
+          "n_trades": 36,
+          "sharpe": 0.3264463597165906,
+          "win_rate": 0.3611111111111111,
+          "profit_factor": 2.1242238752422526,
+          "max_dd_pct": 3.451916288914677,
+          "nw_t_stat": 1.5694778690840967,
+          "mean_return": 1.3390990583997964e-05,
+          "std_return": 0.0006511800373706473
+        },
+        "GBPUSD": {
+          "symbol": "GBPUSD",
+          "n_bars": 5578,
+          "n_trades": 33,
+          "sharpe": 0.06423290125349963,
+          "win_rate": 0.3333333333333333,
+          "profit_factor": 0.9144340667702646,
+          "max_dd_pct": 4.081177780780613,
+          "nw_t_stat": 0.2968966366308977,
+          "mean_return": 2.294873933554328e-06,
+          "std_return": 0.0005671546384540889
+        },
+        "USDJPY": {
+          "symbol": "USDJPY",
+          "n_bars": 5819,
+          "n_trades": 26,
+          "sharpe": -0.09591887228389334,
+          "win_rate": 0.23076923076923078,
+          "profit_factor": 0.8002416805723777,
+          "max_dd_pct": 3.356891494569038,
+          "nw_t_stat": -0.5074199713488505,
+          "mean_return": -2.937205846261717e-06,
+          "std_return": 0.0004861054619344541
+        },
+        "NAS100": {
+          "symbol": "NAS100",
+          "n_bars": 5731,
+          "n_trades": 0,
+          "sharpe": 0.0,
+          "win_rate": 0,
+          "profit_factor": Infinity,
+          "max_dd_pct": 0.0,
+          "nw_t_stat": 0.0,
+          "mean_return": 0.0,
+          "std_return": 0.0
+        },
+        "US30": {
+          "symbol": "US30",
+          "n_bars": 5468,
+          "n_trades": 0,
+          "sharpe": 0.0,
+          "win_rate": 0,
+          "profit_factor": Infinity,
+          "max_dd_pct": 0.0,
+          "nw_t_stat": 0.0,
+          "mean_return": 0.0,
+          "std_return": 0.0
+        },
+        "BTCUSD": {
+          "symbol": "BTCUSD",
+          "n_bars": 5825,
+          "n_trades": 0,
+          "sharpe": 0.0,
+          "win_rate": 0,
+          "profit_factor": Infinity,
+          "max_dd_pct": 0.0,
+          "nw_t_stat": 0.0,
+          "mean_return": 0.0,
+          "std_return": 0.0
+        }
+      },
+      "verdict": "REJECTED",
+      "reason": "Pooled t 1.5-2.0 OR Sharpe > 0 in 3-4/8 assets",
+      "positive_sharpe_count": 4,
+      "supersession_note": "MARGINAL verdict superseded: signal concentrates in XAGUSD/EURUSD; 3 assets have 0 trades. Now REJECTED.",
+      "cost_sensitivity": {
+        "0pct": 2.9012143848444687,
+        "30pct": 2.8920460962591306,
+        "50pct": 2.8936020998338803
+      }
+    }
+  }
+}

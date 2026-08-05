@@ -1,0 +1,87 @@
+{
+  "trial_number": 1033,
+  "id": "WS-A-TSMOM-6SYM",
+  "strategy": "tsmom_252_6sym",
+  "pre_registration": "research/pre_registration/trial_1033_tsmom_6sym.md",
+  "executed_at": "2026-08-03T21:41:55.181054+00:00",
+  "universe": [
+    "XAUUSD",
+    "EURUSD",
+    "GBPUSD",
+    "USDJPY",
+    "BTCUSD",
+    "US30"
+  ],
+  "metrics": {
+    "sharpe": 0.672120079705523,
+    "total_trades": 185,
+    "total_cost": 0.13079129162732742
+  },
+  "per_symbol_sharpe": {
+    "XAUUSD": 0.31,
+    "EURUSD": -0.013,
+    "GBPUSD": -0.009,
+    "USDJPY": 0.194,
+    "BTCUSD": 0.881,
+    "US30": -0.084
+  },
+  "dk": {
+    "t": 1.0366,
+    "verdict": "REJECT"
+  },
+  "dsr": {
+    "p": 0.35255597871871813,
+    "pass": false,
+    "n_trials": 1050
+  },
+  "gates": {
+    "wfa": {
+      "n_folds": 4,
+      "fold_sharpes": [
+        -0.001,
+        1.5379,
+        0.1839,
+        0.9714
+      ],
+      "oos_sharpe_mean": 0.673,
+      "oos_sharpe_std": 0.7143,
+      "pass": true
+    },
+    "bootstrap_ci": {
+      "lower": 0.000318,
+      "upper": 0.001115,
+      "pass": true
+    },
+    "min_btl": {
+      "min_observations": 999999999,
+      "sufficient": false,
+      "pass": false
+    },
+    "pbo_na": {
+      "value": null,
+      "pass": null,
+      "reason": "PBO not applicable: WS-A trials are single frozen-config pre-registrations (no parameter search space). PBO measures search bias which does not exist; fabricating variants post-hoc would introduce selection bias."
+    },
+    "combined_pass": true,
+    "status": "OK"
+  },
+  "jackknife": {
+    "XAUUSD": 0.653,
+    "EURUSD": 0.886,
+    "GBPUSD": 0.902,
+    "USDJPY": 0.824,
+    "BTCUSD": 0.16,
+    "US30": 0.672
+  },
+  "jackknife_pass": false,
+  "cost_stress": {
+    "1.5x": 0.664,
+    "2.0x": 0.657
+  },
+  "cost_stress_pass": true,
+  "label_shuffle": {
+    "p": 0.0,
+    "pass": true
+  },
+  "combined_verdict": "REJECT"
+}

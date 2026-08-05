@@ -1,0 +1,63 @@
+{
+  "hypothesis": "RYDC",
+  "trial_number": 1001,
+  "timestamp": "2026-07-12T18:19:33.030123+00:00",
+  "data_path": "data\\rydc\\rydc_research.csv",
+  "config": {
+    "ols_window": 60,
+    "z_entry": 1.5,
+    "hold_days": 4,
+    "atr_multiplier": 1.5,
+    "atr_period": 14,
+    "event_exclusion_hours": 48
+  },
+  "oos_results": {
+    "total_trades": 46,
+    "win_rate": 0.5,
+    "profit_factor": 0.9254498819196082,
+    "sharpe_ratio": -0.24681793894170573,
+    "max_drawdown_pct": 0.21311332589481372,
+    "t_statistic": -0.21090426509561505,
+    "p_value": 0.8339141461419844
+  },
+  "gates": {
+    "p_value": {
+      "value": 0.8339141461419844,
+      "threshold": 0.05,
+      "status": "FAIL"
+    },
+    "wfa_oos_positive": {
+      "value": 0.6,
+      "threshold": 0.7,
+      "status": "FAIL"
+    },
+    "wfe": {
+      "value": 0.7746600151096318,
+      "threshold": ">= 0.5 & < 1.5",
+      "status": "PASS"
+    },
+    "deflated_sharpe": {
+      "value": 5.133463841283391e-07,
+      "threshold": 0.95,
+      "status": "FAIL"
+    },
+    "pbo": {
+      "value": NaN,
+      "threshold": "N/A (single config)",
+      "status": "INSUFFICIENT_DATA"
+    },
+    "bootstrap_ci_lower": {
+      "value": -2.6043532048913596,
+      "threshold": 0.0,
+      "status": "FAIL"
+    },
+    "min_trades": {
+      "value": 46,
+      "threshold": 100,
+      "status": "FAIL"
+    }
+  },
+  "overall": "FAIL",
+  "pass_count": 1,
+  "fail_count": 5
+}

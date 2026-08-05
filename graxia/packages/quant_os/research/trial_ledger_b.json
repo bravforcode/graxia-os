@@ -138,16 +138,17 @@
     {
       "trial_number": 3008,
       "id": "PATHB-CARRY-FX-XAUUSD",
-      "status": "UNTESTED",
-      "tested_at": null,
-      "dk_t_stat": null,
-      "pooled_sharpe": null,
+      "status": "REJECTED",
+      "tested_at": "2026-08-03",
+      "dk_t_stat": -0.471,
+      "pooled_sharpe": -0.423,
       "positive_sharpe_count": null,
-      "total_trades": null,
-      "result_artifact": null,
-      "conclusion": "UNTESTED — requires EUR interest rate (ECB main rate or German Bund yield) + JPY interest rate (BOJ rate or JGB yield). None available in data/ directory. Only DGS10/DGS2 (US Treasury) exist via FRED. Cannot compute cross-currency carry differential without foreign rate data.",
-      "data_requirements": "EUR interest rate (ECB main rate or German Bund yield), JPY interest rate (BOJ rate or JGB yield), USD interest rate (DGS2/Fed Funds — already available).",
-      "validity_note": "UNTESTED — missing data infrastructure. Not counted toward stopping rule per TESTED_ONLY scope."
+      "total_trades": 24,
+      "result_artifact": "reports/trial_3008_fx_carry_results.json",
+      "pre_registration_doc": "research/pre_registration_b/trial_3008_fx_carry.md",
+      "conclusion": "True FX carry (cross-currency 3M interbank differential, EURUSD/GBPUSD/USDJPY) tested with real FRED rates (IR3TIB01EEM156N/GBM156N/JPM156N vs DGS3MO), 2005-2026, pepperstone_razor costs. DK t=-0.471, portfolio Sharpe -0.229 (1.0x), label-shuffle p=0.97, DSR p=1.0 (N=1050). Carry sign is extremely sticky (24 total position changes across 3 pairs in 21y — 5/16/3) so the sample is underpowered, but the sign of the result is negative, not positive. REJECT — no carry premium net of cost in this universe/window. Sacred holdout NOT burned.",
+      "sp1_dsr_correction_note": "2026-08-03 SP1: re-run with unit-correct dsr_from_annualized(factor=sqrt(252)): probability_alpha=0.99999 (was 1.0 with factor=1.0 artifact). Verdict unchanged (REJECTED — negative Sharpe and DK t=-0.471).",
+      "validity_note": "VALID TEST — correct mechanism (true cross-currency rate differential, not the DGS10-DGS2 error of trial 3001), real FRED rates, frozen pre-registration, provenance-checked prices, realistic costs. Underpowered trade count noted; direction is negative."
     }
   ],
   "notes": [

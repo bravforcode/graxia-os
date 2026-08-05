@@ -1,0 +1,15 @@
+{
+  "strategy": "Relaxed Sweep + Regime + Session",
+  "thresholds": "wick=0.5xATR, swing_lb=10, ADX>15, session=L/NY",
+  "data": "XAUUSD_M15 50000 bars",
+  "gross_is": -1.1988,
+  "net_is": -5.457,
+  "net_oos": -8.5132,
+  "cost_drag": 4.2582,
+  "is_trades": 48,
+  "oos_trades": 72,
+  "is_win_rate": 14.6,
+  "oos_win_rate": 16.7,
+  "wf_consistency": 0,
+  "all_pass": false
+}

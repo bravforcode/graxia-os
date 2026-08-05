@@ -8,6 +8,7 @@ integration.  This is the single entry point for autonomous trading.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import signal
 import sys
 from dataclasses import dataclass
@@ -17,7 +18,7 @@ import structlog
 
 from ..core.enums import TradingMode
 from ..execution.adapters.manager import BrokerManager
-from ..risk.circuit_breaker import CircuitBreaker
+from ..risk.circuit_breaker import DEFAULT_STATE_FILE, CircuitBreaker
 from ..risk.engine import RiskEngine
 from ..risk.kill_switch import KillSwitch
 from .chart_monitor import ChartMonitor, ChartSnapshot
@@ -92,7 +93,7 @@ class AutonomousOrchestrator:
         )
         self._decision_engine = decision_engine or DecisionEngine()
         self._kill_switch = kill_switch or KillSwitch()
-        self._circuit_breaker = CircuitBreaker()
+        self._circuit_breaker = CircuitBreaker(state_file=DEFAULT_STATE_FILE)
         self._news_gate = NewsBlackoutGate()
         self._risk_engine = risk_engine or RiskEngine(
             kill_switch=self._kill_switch,
@@ -218,10 +219,8 @@ class AutonomousOrchestrator:
         for task in (self._main_task, self._health_task):
             if task is not None:
                 task.cancel()
-                try:
+                with contextlib.suppress(asyncio.CancelledError):
                     await task
-                except asyncio.CancelledError:
-                    pass
 
         self._main_task = None
         self._health_task = None
@@ -256,6 +255,11 @@ class AutonomousOrchestrator:
             return
 
         self._health.last_snapshot_time = datetime.now(tz=UTC)
+
+        # Re-read the shared state file so trips made through API entry
+        # points (fresh per-call breakers) are honored by this long-running
+        # process, which built its breaker once at startup.
+        self._circuit_breaker.reload()
 
         if self._circuit_breaker.is_blocked:
             logger.warning(

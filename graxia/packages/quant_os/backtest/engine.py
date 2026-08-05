@@ -13,8 +13,9 @@ Simulates strategy execution on historical data with:
 
 import os
 from concurrent.futures import ProcessPoolExecutor
+from copy import deepcopy
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import ROUND_DOWN, Decimal
 from typing import Any
 from uuid import uuid4
@@ -77,6 +78,7 @@ except ImportError:
     _MARKET_IMPACT_AVAILABLE = False
 
 # Swap cost model
+from .data_loader import load_real_ticks
 from .dynamic_spread_model import UnmeasuredCostError
 
 try:
@@ -509,6 +511,7 @@ class BacktestEngine:
 
         # Reset state
         self._reset()
+        self._reset_strategy_class_state()
 
         close = self.ohlcv_data["close"]
         volume = self.ohlcv_data.get("volume", [0] * len(close))
@@ -660,7 +663,9 @@ class BacktestEngine:
                                     },
                                     Decimal(str(bar_close)),
                                 )
-                                self._close_position(pid, exit_price, current_time, CloseReason.CIRCUIT_BREAKER, Decimal("0"))
+                                self._close_position(
+                                    pid, exit_price, current_time, CloseReason.CIRCUIT_BREAKER, Decimal("0")
+                                )
                                 break
 
         # Close any remaining positions at last price
@@ -742,6 +747,55 @@ class BacktestEngine:
             self._regime_detector = RegimeDetector()
             self._margin_simulator = MarginSimulator()
             self._pnl_tracker = RealTimePnLTracker(initial_equity=Decimal(str(self.config.initial_capital)))
+
+    def _reset_strategy_class_state(self) -> None:
+        """Reset non-empty class-level list/dict/tuple/set attrs on the
+        strategy's class before every run.
+
+        LookaheadGuard.get_slice() (called every bar below, before
+        strategy.generate_signal()) only truncates the ohlcv_data/indicators
+        *arguments* it hands the strategy -- it has no way to stop a
+        strategy that independently holds a reference to the full dataset
+        via a class-level (not instance-level) mutable container, obtained
+        before this engine sliced anything. A strategy that stashes
+        `self.__class__._full_data_ref = ohlcv_data` before run() starts can
+        read arbitrary future bars through that reference regardless of what
+        get_slice() truncates. This closes that specific vector -- and the
+        general footgun of a class-level mutable cache surviving across
+        runs/instances.
+
+        A blanket wipe-to-empty (the original version of this method) is
+        indiscriminate: it also destroys legitimate static config authored
+        directly in a strategy's class body -- e.g. mlmr.MLMeanReversion's
+        SYMBOL_PARAMS dict of tuned per-symbol thresholds, or a strategy's
+        `universe` tuple -- silently degrading every such strategy to
+        generic fallback values on every run, with no error raised. Instead,
+        each non-empty container is restored to the pristine snapshot
+        `Strategy.__init_subclass__` captured at class-definition time
+        (before any instance existed or any external code could run); an
+        attribute absent from that snapshot (added onto the class only
+        after import, like the cheat vector) is still wiped to empty. It
+        does NOT and cannot stop a strategy that re-reads external state
+        fresh inside generate_signal() on every call (a file, a live
+        cache); that remains architecturally unblockable in-process and
+        needs a code-review-level check instead.
+        See reports/lookahead_guard_reachability_audit_2026_07_30.md.
+        """
+        strategy_cls = type(self.strategy)
+        pristine = getattr(strategy_cls, "_pristine_class_state", {})
+        for name, value in list(vars(strategy_cls).items()):
+            if not isinstance(value, list | dict | tuple | set) or not value:
+                continue
+            if name in pristine:
+                setattr(strategy_cls, name, deepcopy(pristine[name]))
+            elif isinstance(value, list):
+                setattr(strategy_cls, name, [])
+            elif isinstance(value, dict):
+                setattr(strategy_cls, name, {})
+            elif isinstance(value, tuple):
+                setattr(strategy_cls, name, ())
+            elif isinstance(value, set):
+                setattr(strategy_cls, name, set())
 
     def _calculate_indicators(self, up_to_index: int) -> dict[str, Any]:
         """Calculate indicators using Numba JIT (B3) or pandas_ta fallback."""
@@ -1099,6 +1153,7 @@ class BacktestEngine:
         symbol: str,
         price: Decimal,
         tick_size: Decimal,
+        ts: datetime | None = None,
     ) -> tuple[Decimal, Decimal]:
         """Return (spread, slippage) as absolute price offsets, one side each.
 
@@ -1111,6 +1166,9 @@ class BacktestEngine:
           * explicit override — `config.spread_pips` / `config.slippage_pips`
             set to a float. Legacy pip-denominated behaviour, caller's choice.
           * measured (default) — per-symbol bps from config/cost_calibration.json.
+          * real ticks (P0-B1) — when `ts` is given AND tick data exists for
+            that instant, the measured bid/ask spread replaces the calibrated
+            median (falls back to the calibrated value otherwise).
 
         Raises UnmeasuredCostError for a symbol with no measured data. That is
         deliberate: substituting another instrument's costs is the defect this
@@ -1133,7 +1191,11 @@ class BacktestEngine:
         if spread_override is not None:
             spread = tick_size * Decimal(str(spread_override))
         else:
-            spread = bps_to_price(profile.get_spread_bps(stress=self.config.cost_stress), price)
+            real_bps = self._real_spread_bps(symbol, ts) if ts is not None else None
+            if real_bps is not None:
+                spread = bps_to_price(Decimal(str(real_bps)), price)
+            else:
+                spread = bps_to_price(profile.get_spread_bps(stress=self.config.cost_stress), price)
 
         if slippage_override is not None:
             slippage = tick_size * Decimal(str(slippage_override))
@@ -1145,6 +1207,18 @@ class BacktestEngine:
             slippage = bps_to_price(profile.get_slippage_bps(), price)
 
         return spread, slippage
+
+    def _real_spread_bps(self, symbol: str, ts: datetime) -> float | None:
+        """Real bid/ask spread bps when tick data exists; None → config fallback."""
+        try:
+            ticks = load_real_ticks(symbol, ts.date().isoformat(), (ts + timedelta(seconds=1)).isoformat())
+        except Exception:
+            return None
+        if ticks is None or ticks.empty:
+            return None
+        row = ticks.iloc[0]
+        mid = (row["bid"] + row["ask"]) / 2.0
+        return None if mid <= 0 else (row["ask"] - row["bid"]) / mid * 10_000.0
 
     @staticmethod
     def _pnl_from_ticks(

@@ -1,0 +1,7 @@
+============================================================
+SENTIMENT-PRICE BACKTEST RESULTS
+Trial #1031 (Pre-registered)
+Generated: 2026-08-01T18:39:01.998444
+============================================================
+
+ERROR: Too few non-neutral pairs: 0

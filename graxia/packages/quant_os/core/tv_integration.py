@@ -23,9 +23,9 @@ from typing import Any
 
 import structlog
 
-from analysis.visual_search import VisualChartSearch
-from api.tv_cdp import PineCompileResult, TradingViewCDP
-from api.tv_client import (
+from ..analysis.visual_search import VisualChartSearch
+from ..api.tv_cdp import PineCompileResult, TradingViewCDP
+from ..api.tv_client import (
     FullAnalysis,
     TradingViewClient,
 )

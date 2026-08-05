@@ -1,0 +1,22 @@
+{
+  "pbo": 1.0,
+  "ci_95_low": 0.99586,
+  "ci_95_high": 1.0,
+  "n_combinations": 924,
+  "n_overfit": 924,
+  "n_partitions": 12,
+  "n_random_strategies": 50,
+  "n_observations": 5621,
+  "n_assets": 7,
+  "block_size": 468,
+  "usable_observations": 5616,
+  "seed": 42,
+  "real_is_sharpe_mean": -0.050156,
+  "real_is_sharpe_std": 0.300155,
+  "real_oos_sharpe_mean": -0.050156,
+  "real_oos_sharpe_std": 0.300155,
+  "interpretation": "HIGH RISK \u2014 Strong overfitting evidence. Strategy almost certainly overfit.",
+  "timestamp": "2026-07-29T12:16:49.610069+00:00",
+  "input_file": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\reports\\_ws_a_pbo_input.json",
+  "method": "CSCV (Bailey et al. 2017)"
+}

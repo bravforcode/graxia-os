@@ -202,6 +202,8 @@ class LiveApprovalGate:
 
     async def _send_message(self, text: str, keyboard: dict) -> int | None:
         """Send message with inline keyboard to Telegram. Returns message_id."""
+        if self._chat_id is None:
+            return None
         await self._rate_limit(self._chat_id)
         url = f"{TELEGRAM_API.format(token=self._token)}/sendMessage"
         payload = {

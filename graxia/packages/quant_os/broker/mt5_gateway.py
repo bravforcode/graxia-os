@@ -8,6 +8,7 @@ All MT5 calls are wrapped in try/except and raise Mt5UnavailableError
 if MT5 is not accessible.
 """
 
+import contextlib
 from datetime import UTC, datetime
 from decimal import Decimal
 
@@ -34,13 +35,15 @@ def _get_mt5():
         return _mt5
     _mt5_imported = True
     try:
-        import MetaTrader5 as mt5
+        import MetaTrader5 as mt5  # noqa: N813
 
         _mt5 = mt5
         return mt5
     except ImportError:
         _mt5 = None
-        raise Mt5UnavailableError("MetaTrader5 package not installed. " "Install with: pip install MetaTrader5")
+        raise Mt5UnavailableError(
+            "MetaTrader5 package not installed. " "Install with: pip install MetaTrader5"
+        ) from None
 
 
 def initialize_mt5(path: str, timeout_ms: int = 10000) -> bool:
@@ -129,6 +132,95 @@ def get_current_tick(symbol: str) -> dict:
         raise Mt5UnavailableError(f"Tick error for {symbol}: {e}") from e
 
 
+def get_ticks_from(symbol: str, from_msc: int, count: int = 10000) -> list[dict]:
+    """Fetch up to `count` ticks with time_msc >= from_msc via copy_ticks_from
+    (COPY_TICKS_ALL). Read-only. Returns [] when no ticks exist; raises
+    Mt5UnavailableError on failure."""
+    mt5 = _get_mt5()
+    try:
+        raw = mt5.copy_ticks_from(symbol, from_msc, count, mt5.COPY_TICKS_ALL)
+        if raw is None or len(raw) == 0:
+            return []
+        result = []
+        names = raw.dtype.names
+        has_real = "volume_real" in names
+        for t in raw:
+            result.append(
+                {
+                    "time_msc": int(t["time_msc"]),
+                    "bid": float(t["bid"]),
+                    "ask": float(t["ask"]),
+                    "last": float(t["last"]),
+                    "volume": float(t["volume_real"]) if has_real else float(t["volume"]),
+                    "flags": int(t["flags"]),
+                }
+            )
+        return result
+    except Mt5UnavailableError:
+        raise
+    except Exception as e:
+        raise Mt5UnavailableError(f"copy_ticks_from error for {symbol}: {e}") from e
+
+
+def get_ticks_range(symbol: str, from_msc: int, to_msc: int, count: int = 100000) -> list[dict]:
+    """Fetch up to `count` ticks with from_msc <= time_msc <= to_msc via
+    copy_ticks_range (COPY_TICKS_ALL). Read-only. Returns [] when no ticks
+    exist; raises Mt5UnavailableError on failure. Same dict shape as
+    get_ticks_from (Task 12 backfill)."""
+    mt5 = _get_mt5()
+    try:
+        raw = mt5.copy_ticks_range(symbol, from_msc, to_msc, count, mt5.COPY_TICKS_ALL)
+        if raw is None or len(raw) == 0:
+            return []
+        result = []
+        names = raw.dtype.names
+        has_real = "volume_real" in names
+        for t in raw:
+            result.append(
+                {
+                    "time_msc": int(t["time_msc"]),
+                    "bid": float(t["bid"]),
+                    "ask": float(t["ask"]),
+                    "last": float(t["last"]),
+                    "volume": float(t["volume_real"]) if has_real else float(t["volume"]),
+                    "flags": int(t["flags"]),
+                }
+            )
+        return result
+    except Mt5UnavailableError:
+        raise
+    except Exception as e:
+        raise Mt5UnavailableError(f"copy_ticks_range error for {symbol}: {e}") from e
+
+
+def get_symbols() -> list[dict]:
+    """Enumerate all broker symbols via symbols_get() (read-only).
+
+    Returns a list of dicts with keys: name, path, digits, trade_mode.
+    Raises Mt5UnavailableError if MT5 is unavailable or the call fails.
+    """
+    mt5 = _get_mt5()
+    try:
+        raw = mt5.symbols_get()
+        if raw is None:
+            raise Mt5UnavailableError(f"symbols_get failed: {mt5.last_error()}")
+        result = []
+        for s in raw:
+            result.append(
+                {
+                    "name": s.name,
+                    "path": s.path,
+                    "digits": s.digits,
+                    "trade_mode": s.trade_mode,
+                }
+            )
+        return result
+    except Mt5UnavailableError:
+        raise
+    except Exception as e:
+        raise Mt5UnavailableError(f"symbols_get error: {e}") from e
+
+
 def calc_profit(symbol: str, side: str, volume: float, entry: float, exit_price: float) -> float | None:
     """Wrapper for order_calc_profit(). Returns None on error."""
     mt5 = _get_mt5()
@@ -197,10 +289,8 @@ def get_account_info() -> dict:
 def shutdown_mt5() -> None:
     """Shutdown MT5 connection."""
     mt5 = _get_mt5()
-    try:
-        mt5.shutdown()
-    except Exception:
-        pass  # ponytail: best-effort shutdown, swallow errors
+    with contextlib.suppress(Exception):
+        mt5.shutdown()  # ponytail: best-effort shutdown, swallow errors
 
 
 # === SAFETY ASSERTION ===

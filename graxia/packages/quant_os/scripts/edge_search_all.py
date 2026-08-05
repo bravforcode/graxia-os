@@ -1,13 +1,20 @@
 """
-Unified Edge Search — Pooled DK-test across all single-asset OHLCV strategies
+Unified Edge Search — Pooled HAC t-test across all single-asset OHLCV strategies
 ==============================================================================
-Honest search: same universe, same costs, same DK threshold as prior pooled tests.
+Honest search: same universe, same costs, same threshold as prior pooled tests.
 Does NOT burn sacred holdout. Does NOT claim live edge without GO + label-shuffle.
 
-GO criteria (pre-registered, same as pooled_trend_test.py):
-  dk_t > 2.0 AND positive_sharpe_count >= 5  → GO
-  dk_t > 1.5 OR (dk_t > 1.0 AND pos >= 4)    → MARGINAL
-  else                                        → REJECT
+SP1 (2026-08-04): the statistic previously named "DK test" was a pooled
+one-sample Newey-West HAC t-test (not a Diebold-Mariano test). Renamed to
+run_pooled_hac_test (alias run_dk_test kept). Verdict thresholds are now
+Bonferroni-adjusted for n_trials = strategies x assets (216 default).
+Costs: measured per-symbol calibration used when available; legacy pip
+constants only as explicit fallback for symbols without measured profiles.
+
+GO criteria (pre-registered, Bonferroni-corrected):
+  pooled_t > Phi^-1(1 - 0.05/n_trials) AND positive_sharpe_count >= 5  → GO
+  pooled_t > 1.96 OR (pooled_t > 1.5 AND pos >= 4)                     → MARGINAL
+  else                                                                  → REJECT
 
 Usage:
   python scripts/edge_search_all.py
@@ -86,6 +93,23 @@ SYMBOL_COMMISSION: dict[str, float] = {
 MIN_BARS = 500
 
 
+def _has_measured_costs(symbol: str) -> bool:
+    """SP1 (2026-08-04): use measured per-symbol costs when a calibrated
+    profile exists; fall back to legacy per-symbol pip constants otherwise.
+
+    Prevents the old engine default (0.5/2.0 pips on every instrument) while
+    also avoiding UnmeasuredCostError crashes for symbols without measured
+    data (XAGUSD, AUDUSD, USDCHF, USDCAD, ETHUSD, NAS100-unverified).
+    """
+    try:
+        from backtest.dynamic_spread_model import SymbolCostProfile
+
+        SymbolCostProfile.for_symbol(symbol)
+        return True
+    except Exception:
+        return False
+
+
 def load_asset_data(symbol: str) -> pd.DataFrame:
     path = ROOT / "data" / f"{symbol}_D1.csv"
     if not path.exists():
@@ -152,6 +176,7 @@ def reconstruct_equity_from_trades(
 # ---------------------------------------------------------------------------
 # External data loaders for Path B strategies
 # ---------------------------------------------------------------------------
+
 
 def _load_fred_series(series_id: str) -> pd.Series:
     """Load a FRED daily CSV. Returns Series with DatetimeIndex."""
@@ -230,7 +255,9 @@ def _load_cot_data() -> tuple[pd.Series, pd.Series]:
     combined = combined.sort_values(date_col)
     # Find Managed Money positioning
     if "M_Money_Positions_Long_All" in combined.columns and "M_Money_Positions_Short_All" in combined.columns:
-        net = combined["M_Money_Positions_Long_All"].astype(float) - combined["M_Money_Positions_Short_All"].astype(float)
+        net = combined["M_Money_Positions_Long_All"].astype(float) - combined["M_Money_Positions_Short_All"].astype(
+            float
+        )
     elif "net_positioning" in combined.columns:
         net = combined["net_positioning"].astype(float)
     elif "long" in combined.columns and "short" in combined.columns:
@@ -290,6 +317,7 @@ def _precompute_strategy_signal(strategy, ohlcv: dict, ext: dict, n_bars: int) -
         name = type(strategy).__name__
         if name == "CarryStrategy":
             from graxia.packages.quant_os.strategies.carry import compute_carry_signal
+
             base_rate = ext.get("base_rate")
             quote_rate = ext.get("quote_rate")
             if base_rate is None or quote_rate is None:
@@ -299,18 +327,20 @@ def _precompute_strategy_signal(strategy, ohlcv: dict, ext: dict, n_bars: int) -
 
         elif name == "TSMOMStrategy":
             from graxia.packages.quant_os.strategies.tsmom import compute_tsmom_signal
+
             close = pd.Series(ohlcv.get("close", []), dtype=float)
             result = compute_tsmom_signal(close, strategy.lookbacks, strategy.vol_target)
             return result.signal.tolist()
 
         elif name == "CrossAssetMomentumStrategy":
             from graxia.packages.quant_os.strategies.cross_asset_momentum import CAMConfig, compute_cam_signals
+
             xau_close = pd.Series(ohlcv.get("close", []), dtype=float)
             dxy_close = ext.get("dxy_close")
             if dxy_close is None:
                 return None
             if isinstance(dxy_close, pd.Series) and len(dxy_close) > len(xau_close):
-                dxy_close = dxy_close.iloc[:len(xau_close)].reset_index(drop=True)
+                dxy_close = dxy_close.iloc[: len(xau_close)].reset_index(drop=True)
             if len(dxy_close) == len(xau_close):
                 dxy_close.index = xau_close.index
             config = CAMConfig(window=strategy.window, z_threshold=strategy.z_threshold, hold_days=strategy.hold_days)
@@ -319,6 +349,7 @@ def _precompute_strategy_signal(strategy, ohlcv: dict, ext: dict, n_bars: int) -
 
         elif name == "FOMCDriftStrategy":
             from graxia.packages.quant_os.strategies.fomc_drift import FOMCDriftConfig, compute_fomc_drift_signals
+
             close = pd.Series(ohlcv.get("close", []), dtype=float)
             high = pd.Series(ohlcv.get("high", []), dtype=float)
             low = pd.Series(ohlcv.get("low", []), dtype=float)
@@ -339,7 +370,11 @@ def _precompute_strategy_signal(strategy, ohlcv: dict, ext: dict, n_bars: int) -
             return result.signal.tolist()
 
         elif name == "COTPositioningStrategy":
-            from graxia.packages.quant_os.strategies.cot_positioning import COTPositioningConfig, compute_cot_positioning_signals
+            from graxia.packages.quant_os.strategies.cot_positioning import (
+                COTPositioningConfig,
+                compute_cot_positioning_signals,
+            )
+
             cot_dates = ext.get("cot_dates")
             cot_net = ext.get("cot_net_positioning")
             if cot_dates is None or cot_net is None:
@@ -366,8 +401,12 @@ def _precompute_strategy_signal(strategy, ohlcv: dict, ext: dict, n_bars: int) -
                 return None
             if isinstance(gvz, list):
                 gvz = pd.Series(gvz, dtype=float)
-            if isinstance(gvz, pd.Series) and isinstance(close.index, pd.RangeIndex) and not isinstance(gvz.index, pd.RangeIndex):
-                gvz = gvz.iloc[:len(close)].reset_index(drop=True)
+            if (
+                isinstance(gvz, pd.Series)
+                and isinstance(close.index, pd.RangeIndex)
+                and not isinstance(gvz.index, pd.RangeIndex)
+            ):
+                gvz = gvz.iloc[: len(close)].reset_index(drop=True)
             elif len(gvz) == len(close) and not gvz.index.equals(close.index):
                 gvz.index = close.index
             log_ret = np.log(close / close.shift(1))
@@ -396,10 +435,7 @@ def _precompute_strategy_signal(strategy, ohlcv: dict, ext: dict, n_bars: int) -
                         in_position = True
                         position_dir = 1 if ret_20d > 0 else -1
                 else:
-                    if position_dir == 1 and mr_exit.iloc[i]:
-                        in_position = False
-                        position_dir = 0
-                    elif position_dir == -1 and tf_exit.iloc[i]:
+                    if position_dir == 1 and mr_exit.iloc[i] or position_dir == -1 and tf_exit.iloc[i]:
                         in_position = False
                         position_dir = 0
                 signal.iloc[i] = float(position_dir)
@@ -425,12 +461,17 @@ def run_engine_for_asset(symbol: str, strategy) -> dict:
 
     config = BacktestConfig(
         initial_capital=Decimal("100000"),
-        slippage_pips=0.5,
-        spread_pips=SYMBOL_SPREAD_PIPS.get(symbol, 2.0),
+        slippage_pips=None if _has_measured_costs(symbol) else 0.5,
+        spread_pips=None if _has_measured_costs(symbol) else SYMBOL_SPREAD_PIPS.get(symbol, 2.0),
         commission_per_lot=Decimal(str(SYMBOL_COMMISSION.get(symbol, 3.5))),
         risk_per_trade_bps=100,
         max_positions=1,
         strict_mtf=False,
+        # SP1 (2026-08-04): measured-cost path requires swap rates that only
+        # exist for XAUUSD in cost_calibration.json; MT5 is unavailable here.
+        # Edge-search is a signal test, not a swap-cost simulation — disable
+        # swap so unmeasured forex symbols do not hard-fail the whole run.
+        enable_swap=False,
     )
 
     engine = BacktestEngine(config)
@@ -452,7 +493,12 @@ def run_engine_for_asset(symbol: str, strategy) -> dict:
 
         # Also inject into engine's precomputed indicators so they get auto-sliced per bar
         _orig_calc = engine._calculate_indicators
-        _external = {k: v for k, v in ext.items() if k.startswith("_") or k in ("dxy_close", "gvz_close", "base_rate", "quote_rate", "cot_dates", "cot_net_positioning")}
+        _external = {
+            k: v
+            for k, v in ext.items()
+            if k.startswith("_")
+            or k in ("dxy_close", "gvz_close", "base_rate", "quote_rate", "cot_dates", "cot_net_positioning")
+        }
 
         def _patched_calc(up_to_index):
             result = _orig_calc(up_to_index)
@@ -462,12 +508,12 @@ def run_engine_for_asset(symbol: str, strategy) -> dict:
             for k, v in _external.items():
                 if isinstance(v, pd.Series):
                     # Convert Series to list for engine slicing
-                    result[k] = v.tolist()[:up_to_index + 1]
+                    result[k] = v.tolist()[: up_to_index + 1]
                 elif isinstance(v, list):
-                    result[k] = v[:up_to_index + 1]
+                    result[k] = v[: up_to_index + 1]
             # Inject pre-computed signal if available
             if _precomputed_signal is not None:
-                result["_precomputed_signal"] = _precomputed_signal[:up_to_index + 1]
+                result["_precomputed_signal"] = _precomputed_signal[: up_to_index + 1]
             return result
 
         engine._calculate_indicators = _patched_calc
@@ -487,31 +533,59 @@ def run_engine_for_asset(symbol: str, strategy) -> dict:
     return results
 
 
+def _daily_calendar_returns(equity_curve: list) -> list[float]:
+    """Resample event-based equity curve to calendar-daily returns.
+
+    SP1b (2026-08-04): the equity curve only has points at trade exits.
+    Annualizing those event-to-event returns with sqrt(252) inflates Sharpe
+    (zero-return days are excluded from both mean and std). The correct
+    per-asset Sharpe uses a daily calendar series with forward-filled equity,
+    so no-trade days contribute 0 return and std reflects true daily vol.
+    """
+    if not equity_curve or len(equity_curve) < 2:
+        return []
+    try:
+        ts = [pd.Timestamp(e["timestamp"]) for e in equity_curve]
+        eq = pd.Series([float(e["equity"]) for e in equity_curve], index=ts)
+        eq = eq[~eq.index.duplicated(keep="last")].sort_index()
+        daily = eq.resample("D").last().ffill()
+        rets = daily.pct_change().dropna().values
+        return [float(r) for r in rets]
+    except Exception:
+        # Fallback: event-to-event returns (pre-SP1b behaviour)
+        out = []
+        for i in range(1, len(equity_curve)):
+            prev_eq = float(equity_curve[i - 1]["equity"])
+            curr_eq = float(equity_curve[i]["equity"])
+            if prev_eq > 0:
+                out.append((curr_eq - prev_eq) / prev_eq)
+        return out
+
+
 def extract_daily_returns(results: dict) -> pd.DataFrame:
-    """Daily returns from equity curve (or trade-reconstructed equity)."""
+    """Daily returns from equity curve (or trade-reconstructed equity).
+
+    SP1b (2026-08-04): uses calendar-daily returns (zero on no-trade days)
+    instead of summing event-to-event returns per date — the old groupby-sum
+    produced a sparse, non-calendar series that mis-represented daily P&L.
+    """
     equity_curve = results.get("_full_equity_curve", [])
     symbol = results.get("_symbol", "UNKNOWN")
     if len(equity_curve) < 2:
         return pd.DataFrame()
 
-    rows = []
-    for i in range(1, len(equity_curve)):
-        prev_eq = float(equity_curve[i - 1]["equity"])
-        curr_eq = float(equity_curve[i]["equity"])
-        ts = equity_curve[i]["timestamp"]
-        if isinstance(ts, str):
-            ts = pd.Timestamp(ts)
-        ret = (curr_eq - prev_eq) / prev_eq if prev_eq > 0 else 0.0
-        rows.append({"date": ts.date() if hasattr(ts, "date") else ts, "return": ret})
+    rets = _daily_calendar_returns(equity_curve)
+    if not rets:
+        return pd.DataFrame()
 
-    df = pd.DataFrame(rows)
-    if df.empty:
-        return df
-    df["date"] = pd.to_datetime(df["date"])
-    daily = df.groupby("date")["return"].sum().reset_index()
-    daily = daily.set_index("date")
-    daily.columns = [symbol]
-    return daily
+    dates = pd.date_range(
+        end=pd.Timestamp(equity_curve[-1]["timestamp"]).normalize(),
+        periods=len(rets),
+        freq="D",
+    )
+    df = pd.DataFrame({"date": dates, "return": rets}).set_index("date")
+    df.columns = [symbol]
+    return df
 
 
 def compute_per_asset_metrics(results: dict) -> dict:
@@ -528,18 +602,16 @@ def compute_per_asset_metrics(results: dict) -> dict:
             "total_return_pct": 0.0,
         }
 
-    bar_returns = []
-    for i in range(1, len(equity_curve)):
-        prev_eq = float(equity_curve[i - 1]["equity"])
-        curr_eq = float(equity_curve[i]["equity"])
-        if prev_eq > 0:
-            bar_returns.append((curr_eq - prev_eq) / prev_eq)
+    bar_returns = _daily_calendar_returns(equity_curve)
 
     arr = np.array(bar_returns) if bar_returns else np.array([0.0])
     n_obs = len(arr)
     mu = float(arr.mean()) if n_obs else 0.0
     std = float(arr.std(ddof=1)) if n_obs > 1 else 0.0
-    # Annualize: if trade-based sparse series, use sqrt(n_trades/years) approx via 252
+    # SP1b: arr is now a calendar-daily series (zeros on no-trade days), so
+    # sqrt(252) annualization is unit-correct. Previously this annualized
+    # sparse trade-exit event returns, inflating Sharpe by excluding
+    # zero-return days from both mean and std.
     sharpe = mu / (std + 1e-10) * math.sqrt(252)
 
     equity_vals = [float(e["equity"]) for e in equity_curve] if equity_curve else [10000.0]
@@ -570,27 +642,46 @@ def compute_per_asset_metrics(results: dict) -> dict:
     }
 
 
-def run_dk_test(all_returns: pd.DataFrame, total_trades: int) -> dict:
+def run_pooled_hac_test(all_returns: pd.DataFrame, total_trades: int, n_trials: int = 216) -> dict:
+    """Pooled one-sample HAC t-test on cross-sectional daily returns.
+
+    SP1 (2026-08-04): renamed from `run_dk_test` — this is NOT a
+    Diebold-Mariano test (DM compares two forecasts; this tests whether
+    cross-sectional average daily returns differ from zero). The statistic
+    itself (Newey-West HAC t) was correct; the name and the lack of
+    multiple-testing control were not. n_trials now defaults to 216 =
+    27 strategies x 8 core assets, and the GO threshold is Bonferroni-
+    adjusted: alpha = 0.05 / n_trials, t_go = Phi^-1(1 - alpha).
+
+    The legacy name `run_dk_test` is kept as an alias so existing callers
+    (loop_engineering, run_ws_a_tsmom, test_path_b_wrappers, ...) do not
+    break; the returned dict gains `test_name`, `p_value`, `n_trials_effective`
+    and a Bonferroni-corrected `go_t_threshold`.
+    """
     if all_returns.empty or len(all_returns.columns) < 2:
         return {
+            "test_name": "pooled_hac_t_test",
             "dk_t_stat": 0.0,
             "pooled_sharpe": 0.0,
             "positive_sharpe_count": 0,
             "total_assets": len(all_returns.columns) if not all_returns.empty else 0,
             "total_days": 0,
             "total_trades": total_trades,
+            "n_trials_effective": n_trials,
             "verdict": "INSUFFICIENT_DATA",
         }
 
     cs_mean = all_returns.mean(axis=1).dropna()
     if len(cs_mean) < 30:
         return {
+            "test_name": "pooled_hac_t_test",
             "dk_t_stat": 0.0,
             "pooled_sharpe": 0.0,
             "positive_sharpe_count": 0,
             "total_assets": len(all_returns.columns),
             "total_days": len(cs_mean),
             "total_trades": total_trades,
+            "n_trials_effective": n_trials,
             "verdict": "INSUFFICIENT_DATA",
         }
 
@@ -608,6 +699,9 @@ def run_dk_test(all_returns: pd.DataFrame, total_trades: int) -> dict:
     dk_t = mu / nw_se if nw_se > 0 else 0.0
     pooled_sharpe = mu / (math.sqrt(gamma_0) + 1e-10) * math.sqrt(252)
 
+    # Two-sided p-value from t-stat (large-sample normal approximation).
+    p_value = 2.0 * (1.0 - _norm_cdf_approx(abs(dk_t)))
+
     pos_sharpe = 0
     for col in all_returns.columns:
         r = all_returns[col].dropna()
@@ -616,22 +710,56 @@ def run_dk_test(all_returns: pd.DataFrame, total_trades: int) -> dict:
             if s > 0:
                 pos_sharpe += 1
 
-    if dk_t > 2.0 and pos_sharpe >= 5:
+    # SP1: Bonferroni multiple-testing correction over effective trial count.
+    # Old rule dk_t>2.0 (p~0.023 one-sided) had NO correction for 216 tests.
+    alpha = 0.05 / max(n_trials, 1)
+    go_t = _norm_ppf_approx(1.0 - alpha / 2.0)
+    marginal_t = _norm_ppf_approx(1.0 - 0.05)  # unadjusted 5% two-sided
+
+    if dk_t > go_t and pos_sharpe >= 5:
         verdict = "GO"
-    elif dk_t > 1.5 or (dk_t > 1.0 and pos_sharpe >= 4):
+    elif dk_t > marginal_t or (dk_t > 1.5 and pos_sharpe >= 4):
         verdict = "MARGINAL"
     else:
         verdict = "REJECT"
 
     return {
+        "test_name": "pooled_hac_t_test",
         "dk_t_stat": round(dk_t, 4),
+        "p_value": round(p_value, 6),
         "pooled_sharpe": round(pooled_sharpe, 4),
         "positive_sharpe_count": pos_sharpe,
         "total_assets": len(all_returns.columns),
         "total_days": T,
         "total_trades": total_trades,
+        "n_trials_effective": n_trials,
+        "bonferroni_alpha": round(alpha, 8),
+        "go_t_threshold": round(go_t, 4),
         "verdict": verdict,
     }
+
+
+def _norm_cdf_approx(x: float) -> float:
+    """Standard normal CDF (Abramowitz-Stegun 7.1.26, math.erf-based)."""
+    return 0.5 * (1.0 + math.erf(x / math.sqrt(2.0)))
+
+
+def _norm_ppf_approx(p: float) -> float:
+    """Standard normal inverse CDF (Acklam approximation)."""
+    if p <= 0:
+        return -10.0
+    if p >= 1:
+        return 10.0
+    if p < 0.5:
+        return -_norm_ppf_approx(1.0 - p)
+    t = math.sqrt(-2.0 * math.log(1.0 - p))
+    c0, c1, c2 = 2.515517, 0.802853, 0.010328
+    d1, d2, d3 = 1.432788, 0.189269, 0.001308
+    return t - (c0 + c1 * t + c2 * t * t) / (1.0 + d1 * t + d2 * t * t + d3 * t * t * t)
+
+
+# Backwards-compatible alias (was the pre-SP1 name; callers unchanged).
+run_dk_test = run_pooled_hac_test
 
 
 def strategy_registry() -> list[tuple[str, callable]]:
@@ -654,7 +782,9 @@ def strategy_registry() -> list[tuple[str, callable]]:
     DonchianBreakout = _try_import("graxia.packages.quant_os.strategies.donchian", "DonchianBreakout")
     DonchianADX = _try_import("graxia.packages.quant_os.strategies.donchian_adx", "DonchianADX")
     HybridMomMR = _try_import("graxia.packages.quant_os.strategies.hybrid_mom_mr", "HybridMomMR")
-    LiquiditySweepStrategy = _try_import("graxia.packages.quant_os.strategies.liquidity_sweep", "LiquiditySweepStrategy")
+    LiquiditySweepStrategy = _try_import(
+        "graxia.packages.quant_os.strategies.liquidity_sweep", "LiquiditySweepStrategy"
+    )
     Momentum12M = _try_import("graxia.packages.quant_os.strategies.momentum_12m", "Momentum12M")
     MeanReversionBollinger = _try_import("graxia.packages.quant_os.strategies.mrb", "MeanReversionBollinger")
     MultiTimeframeMomentum = _try_import("graxia.packages.quant_os.strategies.mtm", "MultiTimeframeMomentum")
@@ -663,11 +793,17 @@ def strategy_registry() -> list[tuple[str, callable]]:
 
     # Path B wrappers (carry/vol/cross-asset)
     TSMOMStrategy = _try_import("graxia.packages.quant_os.strategies.path_b_wrappers", "TSMOMStrategy")
-    CrossAssetMomentumStrategy = _try_import("graxia.packages.quant_os.strategies.path_b_wrappers", "CrossAssetMomentumStrategy")
+    CrossAssetMomentumStrategy = _try_import(
+        "graxia.packages.quant_os.strategies.path_b_wrappers", "CrossAssetMomentumStrategy"
+    )
     FOMCDriftStrategy = _try_import("graxia.packages.quant_os.strategies.path_b_wrappers", "FOMCDriftStrategy")
-    VolRiskPremiumStrategy = _try_import("graxia.packages.quant_os.strategies.path_b_wrappers", "VolRiskPremiumStrategy")
+    VolRiskPremiumStrategy = _try_import(
+        "graxia.packages.quant_os.strategies.path_b_wrappers", "VolRiskPremiumStrategy"
+    )
     CarryStrategy = _try_import("graxia.packages.quant_os.strategies.path_b_wrappers", "CarryStrategy")
-    COTPositioningStrategy = _try_import("graxia.packages.quant_os.strategies.path_b_wrappers", "COTPositioningStrategy")
+    COTPositioningStrategy = _try_import(
+        "graxia.packages.quant_os.strategies.path_b_wrappers", "COTPositioningStrategy"
+    )
     DXYDivergence = _try_import("graxia.packages.quant_os.strategies.dxy_divergence", "DXYDivergence")
 
     _raw = [
@@ -828,25 +964,29 @@ def strategy_registry() -> list[tuple[str, callable]]:
     ]
 
     # ponytail: skip strategies whose import failed (None classes)
-    _null_classes = {name for name, cls in {
-        "RSIMeanReversion": RSIMeanReversion,
-        "DonchianBreakout": DonchianBreakout,
-        "DonchianADX": DonchianADX,
-        "BollingerSqueeze": BollingerSqueeze,
-        "Momentum12M": Momentum12M,
-        "HybridMomMR": HybridMomMR,
-        "VolumeBreakout": VolumeBreakout,
-        "LiquiditySweepStrategy": LiquiditySweepStrategy,
-        "MeanReversionBollinger": MeanReversionBollinger,
-        "MultiTimeframeMomentum": MultiTimeframeMomentum,
-        "TSMOMStrategy": TSMOMStrategy,
-        "CrossAssetMomentumStrategy": CrossAssetMomentumStrategy,
-        "FOMCDriftStrategy": FOMCDriftStrategy,
-        "VolRiskPremiumStrategy": VolRiskPremiumStrategy,
-        "CarryStrategy": CarryStrategy,
-        "COTPositioningStrategy": COTPositioningStrategy,
-        "DXYDivergence": DXYDivergence,
-    }.items() if cls is None}
+    _null_classes = {
+        name
+        for name, cls in {
+            "RSIMeanReversion": RSIMeanReversion,
+            "DonchianBreakout": DonchianBreakout,
+            "DonchianADX": DonchianADX,
+            "BollingerSqueeze": BollingerSqueeze,
+            "Momentum12M": Momentum12M,
+            "HybridMomMR": HybridMomMR,
+            "VolumeBreakout": VolumeBreakout,
+            "LiquiditySweepStrategy": LiquiditySweepStrategy,
+            "MeanReversionBollinger": MeanReversionBollinger,
+            "MultiTimeframeMomentum": MultiTimeframeMomentum,
+            "TSMOMStrategy": TSMOMStrategy,
+            "CrossAssetMomentumStrategy": CrossAssetMomentumStrategy,
+            "FOMCDriftStrategy": FOMCDriftStrategy,
+            "VolRiskPremiumStrategy": VolRiskPremiumStrategy,
+            "CarryStrategy": CarryStrategy,
+            "COTPositioningStrategy": COTPositioningStrategy,
+            "DXYDivergence": DXYDivergence,
+        }.items()
+        if cls is None
+    }
 
     def _safe_factory(cls, *args, **kwargs):
         if cls is None:
@@ -868,7 +1008,7 @@ def strategy_registry() -> list[tuple[str, callable]]:
     return result
 
 
-def run_variant(name: str, factory, universe: list[str]) -> dict:
+def run_variant(name: str, factory, universe: list[str], n_trials: int = 216) -> dict:
     print(f"\n{'=' * 64}")
     print(f"  Strategy: {name}")
     print(f"{'=' * 64}")
@@ -896,7 +1036,7 @@ def run_variant(name: str, factory, universe: list[str]) -> dict:
             print(f"ERROR: {e}")
             per_asset[sym] = {"error": str(e)}
 
-    dk = run_dk_test(all_returns, total_trades)
+    dk = run_dk_test(all_returns, total_trades, n_trials=n_trials)
     dk["per_asset"] = per_asset
     dk["strategy"] = name
 
@@ -951,12 +1091,14 @@ def main() -> int:
     print(f"\nEdge search start: {datetime.now(UTC).isoformat()}")
     print(f"Universe ({len(universe)}): {universe}")
     print(f"Strategies: {len(variants)}")
-    print("GO rule: dk_t>2.0 AND pos_sharpe>=5")
+    n_trials_effective = max(len(variants) * len(universe), 1)
+    print(f"Multiple-testing N (strategies x assets): {n_trials_effective}")
+    print(f"GO rule: pooled HAC t > Phi^-1(1-0.05/{n_trials_effective}) AND pos_sharpe>=5")
 
     all_results: dict = {}
     for name, factory in variants:
         try:
-            all_results[name] = run_variant(name, factory, universe)
+            all_results[name] = run_variant(name, factory, universe, n_trials=n_trials_effective)
         except Exception as e:
             print(f"\n  FATAL on {name}: {e}")
             traceback.print_exc()
@@ -1000,15 +1142,18 @@ def main() -> int:
     payload = {
         "generated_at": datetime.now(UTC).isoformat(),
         "universe": universe,
-        "go_rule": "dk_t>2.0 AND positive_sharpe_count>=5",
-        "marginal_rule": "dk_t>1.5 OR (dk_t>1.0 AND pos>=4)",
+        "go_rule": f"pooled HAC t > Phi^-1(1-0.05/{n_trials_effective}) AND positive_sharpe_count>=5 (Bonferroni N={n_trials_effective})",
+        "marginal_rule": "pooled HAC t > 1.96 OR (t > 1.5 AND pos>=4) (unadjusted)",
+        "n_trials_effective": n_trials_effective,
         "n_strategies_tested": len(all_results),
         "go": go,
         "marginal": marginal,
         "ranked": [
             {
                 "strategy": n,
+                "test_name": r.get("test_name", "pooled_hac_t_test"),
                 "dk_t_stat": r.get("dk_t_stat"),
+                "p_value": r.get("p_value"),
                 "pooled_sharpe": r.get("pooled_sharpe"),
                 "total_trades": r.get("total_trades"),
                 "positive_sharpe_count": r.get("positive_sharpe_count"),
@@ -1019,8 +1164,11 @@ def main() -> int:
         ],
         "results": all_results,
         "honest_note": (
-            "GO does not equal live-ready. Must still pass label-shuffle, "
-            "cost-stress, and not burn sacred holdout until single pre-committed hypothesis."
+            "SP1 2026-08-04: statistic is a pooled one-sample Newey-West HAC "
+            "t-test (renamed from the mislabeled 'DK test'); verdicts are "
+            "Bonferroni-adjusted for n_trials_effective. GO does not equal "
+            "live-ready. Must still pass label-shuffle, cost-stress, and not "
+            "burn sacred holdout until single pre-committed hypothesis."
         ),
     }
 

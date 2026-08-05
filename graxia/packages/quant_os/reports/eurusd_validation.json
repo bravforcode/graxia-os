@@ -1,0 +1,49 @@
+{
+  "pre_registered": "2026-07-09",
+  "strategy": "RSI + BB on EURUSD D1",
+  "d1": {
+    "RSI": {
+      "gross_is": 0.2179,
+      "net_is": 0.2106,
+      "net_oos": 0.2105,
+      "trades": 25,
+      "wr": 56.0,
+      "wf": 0.44
+    },
+    "BB": {
+      "gross_is": 0.1651,
+      "net_is": 0.1503,
+      "net_oos": 0.0941,
+      "trades": 23,
+      "wr": 43.5,
+      "wf": 0.69
+    }
+  },
+  "criteria": [
+    {
+      "desc": "1. Net IS > 0 on D1",
+      "passed": true
+    },
+    {
+      "desc": "2. Net OOS > 0 on D1",
+      "passed": true
+    },
+    {
+      "desc": "3. WF > 50%% on D1",
+      "passed": false
+    },
+    {
+      "desc": "4. BOTH RSI+BB Net IS > 0",
+      "passed": true
+    },
+    {
+      "desc": "5. Trades > 20",
+      "passed": true
+    },
+    {
+      "desc": "6. No catastrophic OOS",
+      "passed": true
+    }
+  ],
+  "all_pass": false
+}

@@ -4,8 +4,9 @@ These tests assert that all canonical adapters expose the same interface and
 that the OMS/OrderManager callers use that interface.
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch
 
 from graxia.packages.quant_os.execution.adapters.base import (
     AccountInfo,
@@ -19,6 +20,16 @@ from graxia.packages.quant_os.execution.adapters.manager import BrokerManager
 from graxia.packages.quant_os.execution.adapters.mt5 import MT5Adapter
 from graxia.packages.quant_os.execution.adapters.paper import PaperAdapter
 from graxia.packages.quant_os.execution.oms import OMS
+
+
+class _ApprovingRiskEngine:
+    """Risk engine stub that approves every order (keeps OMS fail-closed satisfied)."""
+
+    def check_order_sync(self, order):
+        result = MagicMock()
+        result.passed = True
+        result.reason = ""
+        return result
 
 
 class TestUnifiedBrokerInterface:
@@ -187,7 +198,15 @@ class TestBrokerManager:
 
     @pytest.mark.asyncio
     async def test_from_config_defaults_to_paper(self):
-        manager = BrokerManager.from_config()
+        # Hermetic: build an explicit clean config instead of relying on the
+        # ambient QuantConfig singleton. The suite loads quant_os/.env, which
+        # sets SHADOW_MODE=true, so a bare from_config() picks ShadowAdapter.
+        from graxia.packages.quant_os.core.config import QuantConfig
+
+        config = QuantConfig()
+        config.shadow_mode = False
+        config.live_trading_enabled = False
+        manager = BrokerManager.from_config(config=config)
         connected = await manager.initialize()
         assert connected is True
         assert manager.active.name == "PAPER"
@@ -218,6 +237,7 @@ class TestOMSUsesUnifiedInterface:
         oms = OMS(
             adapters={"mt5": adapter},
             ledger_path=tmp_path / "ledger.jsonl",
+            risk_engine=_ApprovingRiskEngine(),
         )
         order = oms.submit_order(
             signal_id="sig1",
@@ -234,6 +254,7 @@ class TestOMSUsesUnifiedInterface:
         oms = OMS(
             adapters={"mt5": adapter},
             ledger_path=tmp_path / "ledger.jsonl",
+            risk_engine=_ApprovingRiskEngine(),
         )
         oms.submit_order(
             signal_id="sig2",

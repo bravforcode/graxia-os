@@ -1,0 +1,67 @@
+{
+  "trial_number": 3008,
+  "id": "PATHB-CARRY-FX",
+  "strategy": "true_fx_carry",
+  "registered_at": "2026-07-20",
+  "executed_at": "2026-08-03T12:31:16.304386+00:00",
+  "universe": [
+    "EURUSD",
+    "GBPUSD",
+    "USDJPY"
+  ],
+  "rates": {
+    "EURUSD": "IR3TIB01EEM156N",
+    "GBPUSD": "IR3TIB01GBM156N",
+    "USDJPY": "IR3TIB01JPM156N",
+    "usd": "DGS3MO"
+  },
+  "cost_model": "pepperstone_razor (frozen, per pre-reg \u00a73)",
+  "metrics": {
+    "sharpe": -0.22908658134979448,
+    "annualized_return": -0.0406648280383903,
+    "annualized_vol": 0.17750855505717633,
+    "total_trades": 24,
+    "total_cost": 0.025743942434886653,
+    "total_pnl": 5.241393809195734
+  },
+  "per_pair_trades": {
+    "GBPUSD": 16,
+    "EURUSD": 5,
+    "USDJPY": 3
+  },
+  "dk_test": {
+    "dk_t_stat": -0.471,
+    "pooled_sharpe": -0.4233,
+    "positive_sharpe_count": 0,
+    "total_days": 5935,
+    "total_trades": 24,
+    "verdict": "REJECT"
+  },
+  "jackknife": {
+    "full_sharpe": -0.42331442292747923,
+    "drop_EURUSD": -0.4048821940804977,
+    "drop_GBPUSD": -0.16137190091142942,
+    "drop_USDJPY": -0.4778505034654483
+  },
+  "label_shuffle": {
+    "n_shuffles": 200,
+    "p_value": 0.97,
+    "verdict": "FAIL"
+  },
+  "dsr": {
+    "observed_sharpe": -0.22908658134979448,
+    "multiple_testing_adjustment": 0.042812994813927904,
+    "probability_alpha": 1.0,
+    "passes_threshold": "False",
+    "n_trials": 1050
+  },
+  "gates": {
+    "dk_pass": false,
+    "dsr_pass": "False",
+    "trades_pass": false,
+    "stress_pass": false,
+    "jackknife_pass": true,
+    "label_shuffle_pass": false
+  },
+  "combined_verdict": "REJECT"
+}

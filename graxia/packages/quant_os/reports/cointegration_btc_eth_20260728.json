@@ -1,0 +1,27 @@
+{
+  "trial_number": 5001,
+  "generated_at": "2026-07-27T21:30:42.468700+00:00",
+  "test": "engle_granger_cointegration",
+  "pair": [
+    "BTCUSD",
+    "ETHUSD"
+  ],
+  "n_days": 3980,
+  "date_range": [
+    "2015-08-07 00:00:00",
+    "2026-06-29 00:00:00"
+  ],
+  "hedge_ratio": 0.7397,
+  "intercept": 4.93237,
+  "manual_adf_stat": -2.9105,
+  "manual_adf_pvalue": 0.044138,
+  "statsmodels_coint_stat": -2.9115,
+  "statsmodels_coint_pvalue": 0.132782,
+  "critical_values_1_5_10_pct": [
+    -3.8992,
+    -3.3377,
+    -3.0455
+  ],
+  "verdict": "NOT_COINTEGRATED",
+  "verdict_threshold": "p < 0.05"
+}

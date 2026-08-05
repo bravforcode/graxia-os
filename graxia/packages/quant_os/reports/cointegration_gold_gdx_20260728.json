@@ -1,0 +1,25 @@
+{
+  "trial_number": 5002,
+  "generated_at": "2026-07-27T21:31:52.405932+00:00",
+  "test": "engle_granger_cointegration",
+  "pair": [
+    "XAUUSD",
+    "GDX"
+  ],
+  "n_days": 5059,
+  "date_range": [
+    "2006-05-22 00:00:00",
+    "2026-07-01 00:00:00"
+  ],
+  "hedge_ratio": 0.48173,
+  "intercept": 5.625298,
+  "manual_adf_pvalue": 0.276107,
+  "statsmodels_coint_pvalue": 0.54551,
+  "critical_values_1_5_10_pct": [
+    -3.8986,
+    -3.3373,
+    -3.0453
+  ],
+  "verdict": "NOT_COINTEGRATED",
+  "verdict_threshold": "p < 0.05"
+}

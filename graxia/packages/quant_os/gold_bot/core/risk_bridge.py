@@ -6,19 +6,18 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
+from ...risk.circuit_breaker import DEFAULT_STATE_FILE, CircuitBreaker
 from ...risk.engine import (
-    RiskEngine,
-    Signal,
     AccountState,
     PortfolioState,
-    RiskVerdict,
     RejectReason,
+    RiskEngine,
+    RiskVerdict,
+    Signal,
 )
 from ...risk.kill_switch import KillSwitch
-from ...risk.circuit_breaker import CircuitBreaker
 from .config import BotConfig
 
 logger = logging.getLogger(__name__)
@@ -29,24 +28,31 @@ class RiskCheckResult:
     approved: bool
     quantity: float = 0.0
     reason: str = ""
-    reject_reason: Optional[RejectReason] = None
+    reject_reason: RejectReason | None = None
 
 
 class RiskBridge:
     def __init__(self, config: BotConfig):
         self.config = config
         self.kill_switch = KillSwitch()
-        self.circuit_breaker = CircuitBreaker()
+        self.circuit_breaker = CircuitBreaker(state_file=DEFAULT_STATE_FILE)
         self.engine = RiskEngine(kill_switch=self.kill_switch, circuit_breaker=self.circuit_breaker)
         self.peak_equity: float = config.initial_capital
         self.daily_pnl: float = 0.0
         self.weekly_pnl: float = 0.0
-        self._last_reset_day: Optional[str] = None
+        self._last_reset_day: str | None = None
         self._initialized_balance: float = config.initial_capital
 
-    def check(self, signal, open_trades: list, daily_pnl: float,
-              balance: float = 0.0, equity: float = 0.0,
-              free_margin: float = 0.0, margin_level_pct: float = 999.0) -> RiskCheckResult:
+    def check(
+        self,
+        signal,
+        open_trades: list,
+        daily_pnl: float,
+        balance: float = 0.0,
+        equity: float = 0.0,
+        free_margin: float = 0.0,
+        margin_level_pct: float = 999.0,
+    ) -> RiskCheckResult:
         direction = "BUY" if signal.direction.value == "BUY" else "SELL"
         conviction = min(signal.total_score / 500.0, 1.0)
 
@@ -55,12 +61,18 @@ class RiskBridge:
         take_profit = signal.consensus_tp or 0.0
 
         risk_signal = Signal(
-            symbol=self.config.symbol, conviction=conviction,
-            entry_price=entry_price, stop_loss=stop_loss, take_profit=take_profit,
-            direction=direction, side=direction,
-            timestamp=datetime.now(timezone.utc),
-            timestamp_epoch=datetime.now(timezone.utc).timestamp(),
-            asset_class="metals", venue="mt5", strategy_id="gold_bot_ensemble",
+            symbol=self.config.symbol,
+            conviction=conviction,
+            entry_price=entry_price,
+            stop_loss=stop_loss,
+            take_profit=take_profit,
+            direction=direction,
+            side=direction,
+            timestamp=datetime.now(UTC),
+            timestamp_epoch=datetime.now(UTC).timestamp(),
+            asset_class="metals",
+            venue="mt5",
+            strategy_id="gold_bot_ensemble",
         )
 
         if equity <= 0:
@@ -68,18 +80,26 @@ class RiskBridge:
         if balance <= 0:
             balance = equity
 
-        if self.peak_equity <= 0 or self.peak_equity == self.config.initial_capital and equity < self.config.initial_capital:
+        if (
+            self.peak_equity <= 0
+            or self.peak_equity == self.config.initial_capital
+            and equity < self.config.initial_capital
+        ):
             self.peak_equity = equity
         if equity > self.peak_equity:
             self.peak_equity = equity
         current_dd = (self.peak_equity - equity) / self.peak_equity if self.peak_equity > 0 else 0.0
 
         account = AccountState(
-            equity=equity, balance=balance, daily_pnl=daily_pnl,
-            weekly_pnl=self.weekly_pnl, max_drawdown_pct=current_dd,
+            equity=equity,
+            balance=balance,
+            daily_pnl=daily_pnl,
+            weekly_pnl=self.weekly_pnl,
+            max_drawdown_pct=current_dd,
             margin_level_pct=margin_level_pct,
             free_margin=free_margin if free_margin > 0 else equity,
-            peak_equity=self.peak_equity, current_drawdown_pct=current_dd,
+            peak_equity=self.peak_equity,
+            current_drawdown_pct=current_dd,
             open_positions=len(open_trades),
         )
 
@@ -96,7 +116,9 @@ class RiskBridge:
             qty = self._calculate_gold_position_size(balance, entry_price, stop_loss, verdict.approved_quantity)
             return RiskCheckResult(approved=True, quantity=qty, reason="Approved by 4-layer risk engine")
         else:
-            return RiskCheckResult(approved=False, quantity=0.0, reason=verdict.reason, reject_reason=verdict.reason_code)
+            return RiskCheckResult(
+                approved=False, quantity=0.0, reason=verdict.reason, reject_reason=verdict.reason_code
+            )
 
     def _calculate_gold_position_size(self, balance, entry_price, stop_loss, approved_quantity):
         if balance <= 0 or entry_price <= 0 or stop_loss <= 0:
@@ -127,7 +149,7 @@ class RiskBridge:
     def reset_weekly(self):
         self.weekly_pnl = 0.0
 
-    def update_pnl(self, daily_pnl: float, weekly_pnl: float = None):
+    def update_pnl(self, daily_pnl: float, weekly_pnl: float | None = None):
         self.daily_pnl = daily_pnl
         if weekly_pnl is not None:
             self.weekly_pnl = weekly_pnl

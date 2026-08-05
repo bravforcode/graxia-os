@@ -1,0 +1,63 @@
+{
+  "hypothesis": "RYDC",
+  "trial_number": 1001,
+  "timestamp": "2026-07-12T13:38:46.971795+00:00",
+  "data_path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\rydc\\rydc_daily.csv",
+  "config": {
+    "ols_window": 60,
+    "z_entry": 1.5,
+    "hold_days": 4,
+    "atr_multiplier": 1.5,
+    "atr_period": 14,
+    "event_exclusion_hours": 48
+  },
+  "oos_results": {
+    "total_trades": 52,
+    "win_rate": 0.5192307692307693,
+    "profit_factor": 1.0140639179090467,
+    "sharpe_ratio": 0.04439134885536684,
+    "max_drawdown_pct": 0.22909550385102376,
+    "t_statistic": 0.04033014083515208,
+    "p_value": 0.9679873949661079
+  },
+  "gates": {
+    "p_value": {
+      "value": 0.9679873949661079,
+      "threshold": 0.05,
+      "status": "FAIL"
+    },
+    "wfa_oos_positive": {
+      "value": 0.0,
+      "threshold": 0.7,
+      "status": "FAIL"
+    },
+    "wfe": {
+      "value": 1.9810939403190861,
+      "threshold": 0.5,
+      "status": "PASS"
+    },
+    "deflated_sharpe": {
+      "value": 1.47096909173305e-116,
+      "threshold": 0.0,
+      "status": "PASS"
+    },
+    "pbo": {
+      "value": 0.0,
+      "threshold": 0.5,
+      "status": "PASS"
+    },
+    "bootstrap_ci_lower": {
+      "value": -2.4231165777269768,
+      "threshold": 0.0,
+      "status": "FAIL"
+    },
+    "min_trades": {
+      "value": 52,
+      "threshold": 100,
+      "status": "FAIL"
+    }
+  },
+  "overall": "FAIL",
+  "pass_count": 3,
+  "fail_count": 4
+}

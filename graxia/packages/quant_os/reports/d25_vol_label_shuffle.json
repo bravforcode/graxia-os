@@ -1,0 +1,12 @@
+{
+  "strategy": "D25+Vol>1.0",
+  "n_shuffles": 100,
+  "real_sharpe": 3.8692064036618805,
+  "real_trades": 26,
+  "p_value": 0.0,
+  "z_score": 3.2051482773100317,
+  "null_mean": -0.11015535313966832,
+  "null_std": 1.241553092770102,
+  "verdict": "*** SIGNIFICANT p < 0.01 *** GENUINE EDGE",
+  "percentile": 100.0
+}

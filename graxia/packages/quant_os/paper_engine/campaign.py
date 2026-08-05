@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import json
 import logging
-import math
 import os
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
@@ -23,9 +22,9 @@ COST_CALIBRATION_PATH = BASE / "config" / "cost_calibration.json"
 # Spread bps lookup from cost_calibration.json (Pepperstone Razor, MEASURED)
 # Fallback estimates for assets not in calibration file
 _SPREAD_BPS_ESTIMATES = {
-    "AUDUSD": 0.1,   # forex Razor, similar to GBPUSD
-    "NAS100": 1.0,   # index CFD, not measured
-    "US30": 0.5,     # index CFD, not measured
+    "AUDUSD": 0.1,  # forex Razor, similar to GBPUSD
+    "NAS100": 1.0,  # index CFD, not measured
+    "US30": 0.5,  # index CFD, not measured
 }
 
 # Symbol → calibration key mapping (cost_calibration.json uses different names)
@@ -53,7 +52,10 @@ def _warn_unverified_cost(symbol: str, asset_data: dict) -> None:
             "measurement_caveat=%s — DO NOT trust this cost for live sizing "
             "or go-live decisions.  Closure requires live/paper tick recording "
             "across multiple real calendar days.",
-            symbol, status, sample_size, caveat,
+            symbol,
+            status,
+            sample_size,
+            caveat,
         )
 
 
@@ -90,6 +92,51 @@ def get_spread_bps(symbol: str) -> float:
         return _SPREAD_BPS_ESTIMATES.get(sym, 0.0)
     except Exception:
         return _SPREAD_BPS_ESTIMATES.get(symbol.upper(), 0.0)
+
+
+def get_round_trip_cost_bps(symbol: str) -> float:
+    """Get measured ROUND-TRIP cost (spread + commission) in bps.
+
+    2026-07-30: get_spread_bps() returns the ONE-WAY spread
+    (spread_bps_measured). Trial pnl formulas apply their cost term once per
+    closed round-trip trade, so using get_spread_bps() there understates
+    real cost -- 2x for XAUUSD (0.3236 one-way vs 0.65 round-trip) and ~59x
+    for USDJPY (0.1236 one-way vs 7.25 round-trip, where a real 7bps
+    commission dominates the near-zero spread). This reads
+    round_trip_bps_measured instead, which already folds in commission_bps
+    where measured. Falls back to 2x the one-way spread if the round-trip
+    field is missing (never observed in the current file, but the one-way
+    helper's estimate/lookup fallbacks make no such promise either).
+    """
+    try:
+        with open(COST_CALIBRATION_PATH, encoding="utf-8") as f:
+            cal = json.load(f)
+        assets = cal.get("assets", {})
+        sym = symbol.upper()
+
+        def _round_trip(asset_data: dict) -> float:
+            if "round_trip_bps_measured" in asset_data:
+                return asset_data["round_trip_bps_measured"]
+            return asset_data.get("spread_bps_measured", 0.0) * 2
+
+        if sym in assets:
+            _warn_unverified_cost(sym, assets[sym])
+            return _round_trip(assets[sym])
+
+        cal_key = _SYMBOL_TO_CAL_KEY.get(sym)
+        if cal_key and cal_key in assets:
+            _warn_unverified_cost(cal_key, assets[cal_key])
+            return _round_trip(assets[cal_key])
+
+        for asset_sym, asset_data in assets.items():
+            if asset_sym in sym or sym in asset_sym:
+                _warn_unverified_cost(asset_sym, asset_data)
+                return _round_trip(asset_data)
+
+        return _SPREAD_BPS_ESTIMATES.get(sym, 0.0) * 2
+    except Exception:
+        return _SPREAD_BPS_ESTIMATES.get(symbol.upper(), 0.0) * 2
+
 
 StrategyId = Literal[
     "tsm",
@@ -147,52 +194,84 @@ def get_param_grid(strategy_id: str, param_variations: bool = True) -> list[dict
     campaign's params at generation time. Reused by walk-forward validation so
     per-fold param selection searches the identical space (no new optimizer)."""
     param_grids: dict[str, list[dict]] = {}
-    param_grids["tsm"] = [
-        {"lookbacks": [20, 40, 60, 120], "vol_target": 0.10},
-        {"lookbacks": [10, 30, 50, 100], "vol_target": 0.12},
-        {"lookbacks": [40, 80, 120, 200], "vol_target": 0.08},
-    ] if param_variations else [{}]
+    param_grids["tsm"] = (
+        [
+            {"lookbacks": [20, 40, 60, 120], "vol_target": 0.10},
+            {"lookbacks": [10, 30, 50, 100], "vol_target": 0.12},
+            {"lookbacks": [40, 80, 120, 200], "vol_target": 0.08},
+        ]
+        if param_variations
+        else [{}]
+    )
 
-    param_grids["rsi_bb"] = [
-        {"rsi_period": 14, "rsi_oversold": 30, "rsi_overbought": 70, "bb_period": 20, "bb_std": 2.0},
-        {"rsi_period": 7, "rsi_oversold": 25, "rsi_overbought": 75, "bb_period": 10, "bb_std": 1.5},
-        {"rsi_period": 21, "rsi_oversold": 35, "rsi_overbought": 65, "bb_period": 30, "bb_std": 2.5},
-    ] if param_variations else [{"rsi_period": 14, "rsi_oversold": 30, "rsi_overbought": 70, "bb_period": 20, "bb_std": 2.0}]
+    param_grids["rsi_bb"] = (
+        [
+            {"rsi_period": 14, "rsi_oversold": 30, "rsi_overbought": 70, "bb_period": 20, "bb_std": 2.0},
+            {"rsi_period": 7, "rsi_oversold": 25, "rsi_overbought": 75, "bb_period": 10, "bb_std": 1.5},
+            {"rsi_period": 21, "rsi_oversold": 35, "rsi_overbought": 65, "bb_period": 30, "bb_std": 2.5},
+        ]
+        if param_variations
+        else [{"rsi_period": 14, "rsi_oversold": 30, "rsi_overbought": 70, "bb_period": 20, "bb_std": 2.0}]
+    )
 
-    param_grids["donchian"] = [
-        {"period": 20, "vol_filter": True},
-        {"period": 10, "vol_filter": True},
-        {"period": 40, "vol_filter": True},
-        {"period": 20, "vol_filter": False},
-    ] if param_variations else [{"period": 20, "vol_filter": True}]
+    param_grids["donchian"] = (
+        [
+            {"period": 20, "vol_filter": True},
+            {"period": 10, "vol_filter": True},
+            {"period": 40, "vol_filter": True},
+            {"period": 20, "vol_filter": False},
+        ]
+        if param_variations
+        else [{"period": 20, "vol_filter": True}]
+    )
 
-    param_grids["volume_breakout"] = [
-        {"vol_period": 20, "vol_mult": 2.0, "lookback": 20},
-        {"vol_period": 10, "vol_mult": 1.5, "lookback": 10},
-        {"vol_period": 30, "vol_mult": 2.5, "lookback": 30},
-    ] if param_variations else [{"vol_period": 20, "vol_mult": 2.0, "lookback": 20}]
+    param_grids["volume_breakout"] = (
+        [
+            {"vol_period": 20, "vol_mult": 2.0, "lookback": 20},
+            {"vol_period": 10, "vol_mult": 1.5, "lookback": 10},
+            {"vol_period": 30, "vol_mult": 2.5, "lookback": 30},
+        ]
+        if param_variations
+        else [{"vol_period": 20, "vol_mult": 2.0, "lookback": 20}]
+    )
 
-    param_grids["mrb"] = [
-        {"lookback": 20, "entry_z": 2.0, "exit_z": 0.5},
-        {"lookback": 10, "entry_z": 1.5, "exit_z": 0.3},
-        {"lookback": 30, "entry_z": 2.5, "exit_z": 0.7},
-    ] if param_variations else [{"lookback": 20, "entry_z": 2.0, "exit_z": 0.5}]
+    param_grids["mrb"] = (
+        [
+            {"lookback": 20, "entry_z": 2.0, "exit_z": 0.5},
+            {"lookback": 10, "entry_z": 1.5, "exit_z": 0.3},
+            {"lookback": 30, "entry_z": 2.5, "exit_z": 0.7},
+        ]
+        if param_variations
+        else [{"lookback": 20, "entry_z": 2.0, "exit_z": 0.5}]
+    )
 
     # ── Gold ICT strategies (wrapped from gold_bot/) ──────────────────────
     # Minimal param variation — gold_bot strategies are already tuned.
     # Only vary min_bars to test warmup sensitivity.
 
-    _gold_ict_defaults = [
-        {"min_bars": 50},
-        {"min_bars": 60},
-        {"min_bars": 40},
-    ] if param_variations else [{"min_bars": 50}]
+    _gold_ict_defaults = (
+        [
+            {"min_bars": 50},
+            {"min_bars": 60},
+            {"min_bars": 40},
+        ]
+        if param_variations
+        else [{"min_bars": 50}]
+    )
 
     for sid in [
-        "gi_order_block", "gi_fair_value_gap", "gi_liquidity_sweep",
-        "gi_bos_choch", "gi_multi_tf_align", "gi_london_breakout",
-        "gi_news_fade", "gi_vwap_rejection", "gi_fibonacci",
-        "gi_rsi_divergence", "gi_ema_cross", "gi_supply_demand",
+        "gi_order_block",
+        "gi_fair_value_gap",
+        "gi_liquidity_sweep",
+        "gi_bos_choch",
+        "gi_multi_tf_align",
+        "gi_london_breakout",
+        "gi_news_fade",
+        "gi_vwap_rejection",
+        "gi_fibonacci",
+        "gi_rsi_divergence",
+        "gi_ema_cross",
+        "gi_supply_demand",
         "gi_opening_range",
     ]:
         param_grids[sid] = _gold_ict_defaults
@@ -212,18 +291,39 @@ def generate_campaigns(
     """
     if strategies is None:
         strategies = [
-            "tsm", "rsi_bb", "donchian", "volume_breakout", "mrb",
-            "gi_order_block", "gi_fair_value_gap", "gi_liquidity_sweep",
-            "gi_bos_choch", "gi_multi_tf_align", "gi_london_breakout",
-            "gi_news_fade", "gi_vwap_rejection", "gi_fibonacci",
-            "gi_rsi_divergence", "gi_ema_cross", "gi_supply_demand",
+            "tsm",
+            "rsi_bb",
+            "donchian",
+            "volume_breakout",
+            "mrb",
+            "gi_order_block",
+            "gi_fair_value_gap",
+            "gi_liquidity_sweep",
+            "gi_bos_choch",
+            "gi_multi_tf_align",
+            "gi_london_breakout",
+            "gi_news_fade",
+            "gi_vwap_rejection",
+            "gi_fibonacci",
+            "gi_rsi_divergence",
+            "gi_ema_cross",
+            "gi_supply_demand",
             "gi_opening_range",
         ]
 
     if symbols is None:
         symbols = [
-            "XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "AUDUSD",
-            "BTCUSD", "ETHUSD", "NAS100", "US30", "OIL", "XAGUSD",
+            "XAUUSD",
+            "EURUSD",
+            "GBPUSD",
+            "USDJPY",
+            "AUDUSD",
+            "BTCUSD",
+            "ETHUSD",
+            "NAS100",
+            "US30",
+            "OIL",
+            "XAGUSD",
         ]
 
     if timeframes is None:
@@ -237,14 +337,16 @@ def generate_campaigns(
             for sym in symbols:
                 for tf in timeframes:
                     cid += 1
-                    campaigns.append(CampaignConfig(
-                        campaign_id=f"camp_{cid:04d}",
-                        strategy_id=sid,
-                        symbol=sym,
-                        timeframe=tf,
-                        params=params,
-                        tags=[sid, sym, tf],
-                    ))
+                    campaigns.append(
+                        CampaignConfig(
+                            campaign_id=f"camp_{cid:04d}",
+                            strategy_id=sid,
+                            symbol=sym,
+                            timeframe=tf,
+                            params=params,
+                            tags=[sid, sym, tf],
+                        )
+                    )
 
     return campaigns
 
@@ -277,7 +379,7 @@ def estimate_duration(campaigns: list[CampaignConfig], workers: int = 8) -> dict
     bar_counts = {"D1": avg_d1_bars, "H4": avg_h4_bars, "H1": avg_h1_bars}
     ms_per_bar = 0.05  # ~50μs per bar per strategy
 
-    total_ms = 0
+    total_ms = 0.0
     for c in campaigns:
         bars = bar_counts.get(c.timeframe, 2500)
         total_ms += bars * ms_per_bar

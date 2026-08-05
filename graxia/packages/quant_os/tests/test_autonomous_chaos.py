@@ -22,11 +22,13 @@ import os
 import tempfile
 import threading
 import time
+from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+import graxia.packages.quant_os.autonomous.order_executor as _order_executor  # noqa: E402
 from graxia.packages.quant_os.autonomous.chart_monitor import ChartMonitor, ChartSnapshot
 from graxia.packages.quant_os.autonomous.decision_engine import DecisionEngine, TradeDecision
 from graxia.packages.quant_os.autonomous.live_approval import (
@@ -129,7 +131,7 @@ def mock_kill() -> MagicMock:
 
 
 @pytest.fixture
-def trade_store() -> TradeStore:
+def trade_store() -> Iterator[TradeStore]:
     with tempfile.TemporaryDirectory() as tmpdir:
         store = TradeStore(db_path=os.path.join(tmpdir, "chaos_test.db"))
         yield store
@@ -211,19 +213,19 @@ class TestCDPChaos:
 
     def test_cdp_disconnection_recovery(self) -> None:
         monitor = _make_monitor()
-        monitor._tv_cdp.change_symbol.side_effect = ConnectionError("CDP disconnected")
+        monitor._tv_cdp.change_symbol.side_effect = ConnectionError("CDP disconnected")  # type: ignore[union-attr]
         monitor._cdp_available = False
         assert monitor._should_reconnect_cdp() is True
 
     def test_cdp_slow_response(self) -> None:
         monitor = _make_monitor()
-        monitor._tv_cdp.change_symbol.side_effect = asyncio.TimeoutError
+        monitor._tv_cdp.change_symbol.side_effect = asyncio.TimeoutError  # type: ignore[union-attr]
         monitor._cdp_available = False
         assert monitor._cdp_available is False
 
     def test_cdp_invalid_data(self) -> None:
         monitor = _make_monitor()
-        monitor._tv_cdp.get_chart_data = AsyncMock(return_value=None)
+        monitor._tv_cdp.get_chart_data = AsyncMock(return_value=None)  # type: ignore[method-assign, union-attr]
         assert monitor._cdp_available is True
 
     def test_cdp_reconnect_respects_interval(self) -> None:
@@ -778,14 +780,21 @@ class TestBrokerChaos:
         ok, _ = executor._check_correlation(d)
         assert ok is True
 
-    def test_correlation_check_broker_error_graceful(self) -> None:
+    def test_correlation_check_broker_error_fails_closed(self) -> None:
+        """Matches this file's established fail-closed pattern (see
+        test_broker_connection_lost, test_position_size_broker_unreachable_fails_to_zero):
+        if we can't verify correlation exposure, we must not silently let the
+        trade through — that would let real correlated exposure pile up
+        exactly when the broker link is least trustworthy.
+        """
         broker = MagicMock()
         broker.active = MagicMock()
         broker.active.get_positions.side_effect = RuntimeError("broker down")
         executor = _make_executor(broker)
         d = _make_decision()
-        ok, _ = executor._check_correlation(d)
-        assert ok is True
+        ok, reason = executor._check_correlation(d)
+        assert ok is False
+        assert "unavailable" in reason.lower()
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1984,12 +1993,12 @@ class TestEdgeCases:
         assert executor._check_daily_loss_breached() is True
 
     @pytest.mark.asyncio
-    async def test_max_positions_zero_blocks(self) -> None:
+    async def test_max_positions_zero_blocks(self, monkeypatch) -> None:
         broker = MagicMock()
         executor = _make_executor(broker)
         executor._open_positions = 0
         d = _make_decision()
-        executor._max_open_positions = 0
+        monkeypatch.setattr(_order_executor.auto_config, "MAX_OPEN_POSITIONS", 0)
         result = await executor.execute(d)
         assert result.success is False
 
@@ -2003,12 +2012,12 @@ class TestEdgeCases:
             timestamp=datetime.now(UTC),
         )
         with pytest.raises(AttributeError):
-            snap.symbol = "BTCUSD"
+            snap.symbol = "BTCUSD"  # type: ignore[misc]
 
     def test_trade_decision_immutable(self) -> None:
         d = _make_decision()
         with pytest.raises(AttributeError):
-            d.symbol = "BTCUSD"
+            d.symbol = "BTCUSD"  # type: ignore[misc]
 
     @pytest.mark.asyncio
     async def test_empty_string_symbol(self) -> None:

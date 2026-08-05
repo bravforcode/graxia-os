@@ -393,7 +393,9 @@ def main():
     data = {}
     for sym in UNIVERSE:
         try:
-            df = load_provenance_checked(sym)
+            # SP1 note: cost config moved XAGUSD/others to removed_assets (2026-08-03);
+            # pre-reg 1028 locked pepperstone_razor table in harness — same as 3008/1032.
+            df = load_provenance_checked(sym, require_cost_calibration=False)
             data[sym] = df
             print(f"  {sym}: {len(df)} bars, {df['time'].min().date()} to {df['time'].max().date()}")
         except Exception as e:
@@ -479,22 +481,43 @@ def main():
         _ds_mod = importlib.util.module_from_spec(_ds_spec)
         _ds_spec.loader.exec_module(_ds_mod)
 
-        # Compute DSR
+        # Compute DSR — annualized Sharpe, daily bars: de-annualize via helper (SP1)
         _port_df = result["portfolio_returns"]
-        dsr_result = _ds_mod.deflated_sharpe_ratio(
+        dsr_result = _ds_mod.dsr_from_annualized(
             observed_sharpe=m["sharpe"],
             n_trials=n_trials,
             n_observations=len(_port_df),
+            annualization_factor=252,  # D1 bars — SP1: unit-correct DSR
             skewness=float(_port_df["return"].skew()),
-            kurtosis=float(_port_df["return"].kurtosis()),
+            kurtosis=float(_port_df["return"].kurtosis()) + 3.0,  # pandas kurtosis() is EXCESS; module expects RAW
         )
         print(f"  Observed Sharpe: {dsr_result.observed_sharpe:.3f}")
         print(f"  Multiple testing adjustment: {dsr_result.multiple_testing_adjustment:.4f}")
         print(f"  Probability alpha (false positive): {dsr_result.probability_alpha:.4f}")
         print(f"  DSR passes (alpha < 0.05): {'PASS' if dsr_result.passes_threshold else 'FAIL'}")
+
+        # ── Institutional gates (SP2): WFA + Bootstrap CI + MinBTL ──────
+        _tg_spec = importlib.util.spec_from_file_location(
+            "_trial_gates", str(_ROOT / "scripts" / "_trial_gates.py")
+        )
+        _tg_mod = importlib.util.module_from_spec(_tg_spec)
+        _tg_spec.loader.exec_module(_tg_mod)
+        gates = _tg_mod.run_institutional_gates(
+            portfolio_returns=_port_df["return"],
+            returns_by_symbol=returns_by_symbol,
+            observed_sharpe=m["sharpe"],
+            n_trials=n_trials,
+            n_bars=len(_port_df),
+        )
+        print(f"  WFA (purged-CV): folds={gates['wfa']['n_folds']} mean={gates['wfa']['oos_sharpe_mean']:.3f} pass={gates['wfa']['pass']}")
+        print(f"  Bootstrap CI: [{gates['bootstrap_ci']['lower']:.3f}, {gates['bootstrap_ci']['upper']:.3f}] pass={gates['bootstrap_ci']['pass']}")
+        print(f"  MinBTL: min_obs={gates['min_btl']['min_observations']} sufficient={gates['min_btl']['sufficient']}")
+        print(f"  PBO: N/A — {gates['pbo_na']['reason'][:80]}...")
+        _gates = gates
     except Exception as e:
         print(f"  DSR computation failed: {e}")
         dsr_result = None
+        _gates = None
 
     # Summary
     print("\n" + "=" * 60)

@@ -1,0 +1,64 @@
+{
+  "strategies": [
+    {
+      "name": "FundingRateArb",
+      "assets": [
+        "BTCUSD"
+      ],
+      "dk_t": 0.0,
+      "sharpe": 0.0,
+      "trades": 0,
+      "verdict": "REJECT"
+    },
+    {
+      "name": "BTC_ETH_Vol_Spread",
+      "assets": [
+        "BTCUSD",
+        "ETHUSD"
+      ],
+      "dk_t": 0.0,
+      "sharpe": 0.0,
+      "trades": 0,
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    {
+      "name": "COT_Positioning",
+      "assets": [
+        "XAUUSD"
+      ],
+      "dk_t": -0.1185,
+      "sharpe": -0.1073,
+      "trades": 7,
+      "verdict": "REJECT"
+    },
+    {
+      "name": "FOMC_Drift",
+      "assets": [
+        "XAUUSD",
+        "XAGUSD",
+        "EURUSD",
+        "GBPUSD",
+        "USDJPY",
+        "NAS100",
+        "US30",
+        "BTCUSD"
+      ],
+      "dk_t": -0.8255,
+      "sharpe": -0.6834,
+      "trades": 313,
+      "verdict": "REJECT"
+    },
+    {
+      "name": "ETH_Vol_Confirm",
+      "assets": [
+        "ETHUSD"
+      ],
+      "dk_t": -1.3497,
+      "sharpe": -1.36,
+      "trades": 94,
+      "verdict": "REJECT"
+    }
+  ],
+  "timestamp": "2026-07-21T11:27:36.777100+00:00",
+  "honest_note": "GO does not equal live-ready. Must still pass label-shuffle, cost-stress, and not burn sacred holdout until single pre-committed hypothesis."
+}

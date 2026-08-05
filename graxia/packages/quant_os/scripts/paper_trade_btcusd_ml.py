@@ -17,9 +17,9 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import contextlib
 import csv
 import json
-import pickle
 import sys
 import time
 import uuid
@@ -116,10 +116,8 @@ NOTIFIER = get_notifier()
 
 def tg(msg: str) -> None:
     if NOTIFIER:
-        try:
+        with contextlib.suppress(Exception):
             NOTIFIER.send(msg)
-        except Exception:
-            pass
     log(msg)
 
 
@@ -131,7 +129,7 @@ def ensure_mt5():
     global _mt5
     if _mt5 is not None:
         return _mt5
-    import MetaTrader5 as mt5
+    import MetaTrader5 as mt5  # noqa: N813
 
     if not mt5.initialize():
         raise RuntimeError(f"MT5 init failed: {mt5.last_error()}")
@@ -350,9 +348,18 @@ def submit_order_oms(
     try:
         from execution.broker_adapter import MT5BrokerAdapter
         from execution.oms import OMS
+        from risk.circuit_breaker import CircuitBreaker
+        from risk.kill_switch import KillSwitch
+        from risk.pre_trade_gate import PreTradeRiskGate
 
         adapter = MT5BrokerAdapter()
-        oms = OMS(adapters={"mt5": adapter}, risk_engine=None)
+        oms = OMS(
+            adapters={"mt5": adapter},
+            risk_engine=PreTradeRiskGate(
+                kill_switch=KillSwitch(str(BASE / "data" / "kill_switch_state.json")),
+                circuit_breaker=CircuitBreaker(),
+            ),
+        )
         order = oms.submit_order(
             signal_id=signal_id,
             symbol=SYMBOL,
@@ -427,9 +434,18 @@ def close_position_oms(broker_position_id: str, volume: float) -> dict:
     try:
         from execution.broker_adapter import MT5BrokerAdapter
         from execution.oms import OMS
+        from risk.circuit_breaker import CircuitBreaker
+        from risk.kill_switch import KillSwitch
+        from risk.pre_trade_gate import PreTradeRiskGate
 
         adapter = MT5BrokerAdapter()
-        oms = OMS(adapters={"mt5": adapter}, risk_engine=None)
+        oms = OMS(
+            adapters={"mt5": adapter},
+            risk_engine=PreTradeRiskGate(
+                kill_switch=KillSwitch(str(BASE / "data" / "kill_switch_state.json")),
+                circuit_breaker=CircuitBreaker(),
+            ),
+        )
         order = oms.close_position(
             symbol=SYMBOL,
             broker_position_id=broker_position_id,
@@ -566,11 +582,11 @@ def run_loop(
                 time.sleep(60)
                 continue
 
-            X = latest[feature_names].values
-            proba = model.predict_proba(X)[0]
+            x = latest[feature_names].values
+            proba = model.predict_proba(x)[0]
             prob_buy = float(proba[1])  # P(class=1 = buy)
             prob_sell = float(proba[0])  # P(class=0 = sell)
-            pred = int(model.predict(X)[0])
+            pred = int(model.predict(x)[0])
 
             atr_14 = float(latest["atr_14"].iloc[0])
             spread = get_spread()

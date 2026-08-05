@@ -34,8 +34,8 @@ import pandas as pd
 
 # Windows UTF-8
 if sys.platform == "win32":
-    sys.stdout.reconfigure(encoding="utf-8")
-    sys.stderr.reconfigure(encoding="utf-8")
+    sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
+    sys.stderr.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
 
 ROOT = Path(__file__).resolve().parent.parent
 GRAXIA_ROOT = ROOT.parent.parent.parent  # "graxia os" directory
@@ -45,7 +45,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 # ── Load validation modules ─────────────────────────────────────────
-import importlib.util
+import importlib.util  # noqa: E402
 
 
 def _load(name, path):
@@ -176,6 +176,7 @@ def check_1_deflated_sharpe(bar_returns: list[float], n_trials: int = 31) -> dic
         observed_sharpe=sharpe,
         n_trials=n_trials,
         n_observations=len(bar_returns),
+        sharpe_annualization_factor=math.sqrt(252),  # sharpe is annualized, bar_returns are raw daily bars
         skewness=skew,
         kurtosis=kurt,
     )

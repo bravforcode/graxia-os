@@ -1,529 +1,715 @@
 {
-  "$schema": "research/hypothesis_registry.schema.json",
-  "registry_version": "1.0",
-  "last_updated": "2026-07-30",
-  "cumulative_trial_count_at_creation": 2001,
-  "stopping_rule_doc": "reports/stopping_rule_2026_07_12.md",
-  "sacred_holdout_path": "data/sacred_holdout/holdout.csv",
-  "sacred_holdout_status": "LOCKED",
-  "notes": [
-    "All entries below are pre-registered Phase 4 candidate strategies.",
-    "Trial numbers continue from the cumulative count (RYDC Arm A = 1001, total = 1002 at lock).",
-    "Pre-registered parameters are FROZEN and cannot be tuned after backtests are run.",
-    "Each strategy must pass the fixed validation pipeline (scripts/run_rydc_validation.py pattern) with all 7 gates intact.",
-    "Sacred holdout remains physically separated and is NOT to be opened until Phase 4.5."
-  ],
-  "hypotheses": [
-    {
-      "trial_number": 1001,
-      "id": "RYDC-ARM-A",
-      "name": "Real-Yield Divergence Continuation (RYDC) â€” Arm A",
-      "status": "REJECTED",
-      "registered_at": "2026-07-12",
-      "result_at": "2026-07-12",
-      "instrument": "XAUUSD",
-      "pre_registration_doc": "reports/hypothesis_02_real_yield_divergence.md",
-      "strategy_file": "strategies/rydc.py",
-      "validation_runner": "scripts/run_rydc_validation.py",
-      "result_summary": {
-        "p_value": 0.968,
-        "win_rate": 0.5192,
-        "profit_factor": 1.01,
-        "sharpe_ratio": 0.044,
-        "max_drawdown_pct": 0.2291,
-        "deflated_sharpe_pct": 0.16,
-        "overall": "FAIL",
-        "n_oos_trades": 52,
-        "conclusion": "Strong null result. Gold response to DXY/real-yield is contemporaneous, no diffusion lag."
-      }
-    },
-    {
-      "trial_number": 1003,
-      "id": "CAM-DXY-XAUUSD",
-      "name": "Cross-Asset Momentum (CAM) â€” DXY â†’ XAUUSD lead-lag",
-      "status": "REJECTED",
-      "registered_at": "2026-07-13",
-      "result_at": "2026-07-13",
-      "instrument": "XAUUSD",
-      "pre_registration_doc": "research/pre_registration/trial_1003_cross_asset_momentum.md",
-      "strategy_file": "strategies/cross_asset_momentum.py",
-      "validation_runner": "scripts/run_strategy_validation.py",
-      "mechanism": "Diffusion lag: DXY z-score extremes predict XAUUSD follow-through over 1-5 day window",
-      "data_sources": [
-        "data/XAUUSD_D1.csv",
-        "data/DXY_D1.csv"
-      ],
-      "pre_registered_parameters": {
-        "window": 60,
-        "z_threshold": 1.0,
-        "hold_days": 5,
-        "corr_filter": -0.1
-      },
-      "result_summary": {
-        "p_value": 0.5976,
-        "win_rate": 0.563,
-        "sharpe_ratio": 0.361,
-        "n_oos_trades": 135,
-        "wfa_oos_positive": 0.2,
-        "wfe": 0.0,
-        "deflated_sharpe_pct": 82.3,
-        "overall": "FAIL",
-        "gates_passed": 1,
-        "gates_failed": 5,
-        "conclusion": "Diffusion lag hypothesis null on XAUUSD. p=0.598 is coin-flip. WFE=0 means OOS Sharpe is zero."
-      }
-    },
-    {
-      "trial_number": 1004,
-      "id": "SP-SESSION-CONDITIONAL",
-      "name": "Session Pattern (SP) â€” Volatility clustering by FX session",
-      "status": "REJECTED",
-      "registered_at": "2026-07-13",
-      "result_at": "2026-07-13",
-      "instrument": "XAUUSD",
-      "pre_registration_doc": "research/pre_registration/trial_1004_session_pattern.md",
-      "strategy_file": "strategies/session_pattern.py",
-      "validation_runner": "scripts/run_strategy_validation.py",
-      "mechanism": "Volatility-regime-conditional behavior: mean reversion in Asian session, momentum in London/NY session",
-      "data_sources": [
-        "data/XAUUSD_H1.csv (or M15)"
-      ],
-      "pre_registered_parameters": {
-        "session_window": 20,
-        "threshold_atr": 0.5,
-        "atr_period": 14,
-        "session_definitions_utc": {
-          "ASIAN": "00:00-07:00",
-          "LONDON": "07:00-12:00",
-          "NEW_YORK": "12:00-21:00",
-          "LATE_NY_NO_TRADE": "21:00-24:00"
-        }
-      },
-      "result_summary": {
-        "p_value": 0.9338,
-        "win_rate": 0.4894,
-        "sharpe_ratio": 0.056,
-        "n_oos_trades": 141,
-        "wfa_oos_positive": 0.6,
-        "wfe": 0.327,
-        "deflated_sharpe_pct": 0.47,
-        "overall": "FAIL",
-        "gates_passed": 1,
-        "gates_failed": 5,
-        "conclusion": "Session patterns null on XAUUSD daily. p=0.934 is coin-flip. Win rate 48.9% = random."
-      }
-    },
-    {
-      "trial_number": 1005,
-      "id": "MRM-REGIME-CONDITIONAL",
-      "name": "Macro Regime Mean-Reversion (MRM) â€” DFII10 regime-conditional",
-      "status": "REJECTED",
-      "registered_at": "2026-07-13",
-      "result_at": "2026-07-13",
-      "instrument": "XAUUSD",
-      "pre_registration_doc": "research/pre_registration/trial_1005_macro_regime_mr.md",
-      "strategy_file": "strategies/macro_regime_mr.py",
-      "validation_runner": "scripts/run_strategy_validation.py",
-      "mechanism": "Real-yield CV classifies STABLE vs TRENDING regime; mean reversion in STABLE, momentum in TRENDING",
-      "data_sources": [
-        "data/XAUUSD_D1.csv",
-        "data/rydc/rydc_daily.csv (dfii10 column)"
-      ],
-      "pre_registered_parameters": {
-        "regime_window": 30,
-        "regime_threshold": 0.2,
-        "mr_threshold_atr": 2.0,
-        "atr_period": 14,
-        "mean_window": 20
-      },
-      "result_summary": {
-        "p_value": 0.2441,
-        "win_rate": 0.4615,
-        "sharpe_ratio": -1.157,
-        "n_oos_trades": 65,
-        "wfa_oos_positive": 0.4,
-        "wfe": 0.0,
-        "deflated_sharpe_pct": 0.0,
-        "overall": "FAIL",
-        "gates_passed": 0,
-        "gates_failed": 6,
-        "conclusion": "Regime-conditional MR negative on XAUUSD. Sharpe -1.16 = losing money. Under 100 trades target."
-      }
-    },
-    {
-      "trial_number": 1006,
-      "id": "GSS-GOLD-SILVER-SPREAD",
-      "name": "Gold-Silver Spread Mean-Reversion",
-      "status": "REJECTED",
-      "registered_at": "2026-07-13",
-      "result_at": "2026-07-13",
-      "instrument": "XAUUSD/XAGUSD",
-      "pre_registration_doc": "research/pre_registration/trial_1006_gold_silver_spread.md",
-      "strategy_file": "strategies/gold_silver_spread.py",
-      "validation_runner": "scripts/run_strategy_validation.py",
-      "mechanism": "Gold/Silver ratio z-score mean-reversion",
-      "result_summary": {
-        "p_value": 0.5045,
-        "win_rate": 0.4194,
-        "sharpe_ratio": -0.963,
-        "n_oos_trades": 31,
-        "overall": "FAIL",
-        "gates_passed": 0,
-        "gates_failed": 6,
-        "conclusion": "Negative Sharpe. 31 trades < 100 target. Ratio MR does not work."
-      }
-    },
-    {
-      "trial_number": 1007,
-      "id": "BVC-BTC-VOL-CLUSTERING",
-      "name": "BTC Vol Clustering",
-      "status": "REJECTED",
-      "registered_at": "2026-07-13",
-      "result_at": "2026-07-13",
-      "instrument": "BTCUSD",
-      "pre_registration_doc": "research/pre_registration/trial_1007_btc_vol_clustering.md",
-      "strategy_file": "strategies/btc_vol_clustering.py",
-      "validation_runner": "scripts/run_strategy_validation.py",
-      "mechanism": "BTC vol spike continuation",
-      "result_summary": {
-        "p_value": 0.2479,
-        "win_rate": 0.7241,
-        "sharpe_ratio": 1.739,
-        "n_oos_trades": 29,
-        "overall": "FAIL",
-        "gates_passed": 0,
-        "gates_failed": 5,
-        "conclusion": "Interesting win rate (72.4%) and Sharpe (1.74) but 29 trades < 100 target, p=0.25 not significant."
-      }
-    },
-    {
-      "trial_number": 1008,
-      "id": "CVR-CROSS-ASSET-VOL-RANK",
-      "name": "Cross-Asset Vol Rank",
-      "status": "REJECTED",
-      "registered_at": "2026-07-13",
-      "result_at": "2026-07-13",
-      "instrument": "XAUUSD",
-      "pre_registration_doc": "research/pre_registration/trial_1008_cross_asset_vol_rank.md",
-      "strategy_file": "strategies/cross_asset_vol_rank.py",
-      "validation_runner": "scripts/run_strategy_validation.py",
-      "mechanism": "Relative vol percentile value",
-      "result_summary": {
-        "p_value": 0.6101,
-        "win_rate": 0.5098,
-        "sharpe_ratio": -0.402,
-        "n_oos_trades": 102,
-        "overall": "FAIL",
-        "gates_passed": 1,
-        "gates_failed": 5,
-        "conclusion": "Negative Sharpe. 102 trades pass min, but all other gates fail."
-      }
-    },
-    {
-      "trial_id": 1022,
-      "id": "MULTI-ASSET-TSMOM-RANKING",
-      "name": "Multi-Asset TSMOM with Ranking Overlay",
-      "category": "cross_sectional_momentum",
-      "status": "REJECTED",
-      "registered_date": "2026-07-20",
-      "tested_date": "2026-07-20",
-      "verdict_date": "2026-07-20",
-      "parameters": {
-        "lookbacks": [
-          21,
-          63,
-          252
-        ],
-        "vol_target": 0.1,
-        "top_n": 2,
-        "bottom_n": 0,
-        "rebalance_freq": 5,
-        "min_signal_strength": 0.3
-      },
-      "universe": [
-        "XAUUSD",
-        "XAGUSD",
-        "EURUSD",
-        "GBPUSD",
-        "USDJPY",
-        "NAS100",
-        "US30"
-      ],
-      "cost_model": "pepperstone_razor",
-      "results": {
-        "dk_t": -2.1255,
-        "pooled_sharpe": -1.5357,
-        "positive_sharpe_count": 2,
-        "total_trades": 3000,
-        "label_shuffle_p": 0.0,
-        "verdict": "REJECT"
-      },
-      "evidence": "reports/edge_search_cross_sectional_20260720.json",
-      "data_range": {
-        "start": "2005-01-03",
-        "end": "2018-01-01",
-        "years": 12.99
-      },
-      "notes": "All 7 assets negative or near-zero Sharpe. NAS100 lost 99.99%, US30 lost 95.60%. Strategy has no edge."
-    },
-    {
-      "trial_id": 1023,
-      "id": "ETH-VOL-CONFIRM",
-      "name": "ETH Volume Confirmation",
-      "category": "crypto_single_asset",
-      "status": "REJECTED",
-      "registered_date": "2026-07-21",
-      "tested_date": "2026-07-21",
-      "verdict_date": "2026-07-21",
-      "results": {
-        "dk_t": -1.3497,
-        "sharpe": -1.36,
-        "trades": 94,
-        "verdict": "REJECT"
-      },
-      "evidence": "reports/edge_search_untested_20260720.json"
-    },
-    {
-      "trial_id": 1024,
-      "id": "BTC-ETH-VOL-SPREAD",
-      "name": "BTC-ETH Volume Spread",
-      "category": "crypto_relative_value",
-      "status": "INSUFFICIENT_DATA",
-      "registered_date": "2026-07-21",
-      "tested_date": "2026-07-21",
-      "verdict_date": "2026-07-21",
-      "results": {
-        "dk_t": 0.0,
-        "sharpe": 0.0,
-        "trades": 0,
-        "verdict": "INSUFFICIENT_DATA"
-      },
-      "evidence": "reports/edge_search_untested_20260720.json"
-    },
-    {
-      "trial_id": 1025,
-      "id": "COT-POSITIONING",
-      "name": "COT Positioning",
-      "category": "macro_positioning",
-      "status": "REJECTED",
-      "registered_date": "2026-07-21",
-      "tested_date": "2026-07-21",
-      "verdict_date": "2026-07-21",
-      "results": {
-        "dk_t": -0.1185,
-        "sharpe": -0.1073,
-        "trades": 7,
-        "verdict": "REJECT"
-      },
-      "evidence": "reports/edge_search_untested_20260720.json"
-    },
-    {
-      "trial_id": 1026,
-      "id": "FOMC-DRIFT",
-      "name": "FOMC Drift",
-      "category": "event_driven",
-      "status": "REJECTED",
-      "registered_date": "2026-07-21",
-      "tested_date": "2026-07-21",
-      "verdict_date": "2026-07-21",
-      "results": {
-        "dk_t": -0.8255,
-        "sharpe": -0.6834,
-        "trades": 313,
-        "verdict": "REJECT"
-      },
-      "evidence": "reports/edge_search_untested_20260720.json"
-    },
-    {
-      "trial_id": 1027,
-      "id": "FUNDING-RATE-ARB",
-      "name": "Funding Rate Arbitrage",
-      "category": "crypto_funding",
-      "status": "REJECTED",
-      "registered_date": "2026-07-21",
-      "tested_date": "2026-07-21",
-      "verdict_date": "2026-07-21",
-      "results": {
-        "dk_t": 0.0,
-        "sharpe": 0.0,
-        "trades": 0,
-        "verdict": "REJECT"
-      },
-      "evidence": "reports/edge_search_untested_20260720.json",
-      "notes": "0 trades generated. CRITICAL: MISSING_SL incidents â€” signals without stop-loss."
-    },
-    {
-      "trial_number": 1028,
-      "id": "WS-A-TSMOM-MOP2012",
-      "name": "Time Series Momentum (Moskowitz-Ooi-Pedersen 2012) â€” pure time-series replication",
-      "category": "replicate_published_edge",
-      "status": "REJECTED",
-      "registered_at": "2026-07-29",
-      "instrument": "XAUUSD,XAGUSD,EURUSD,GBPUSD,USDJPY,NAS100,US30",
-      "pre_registration_doc": "research/pre_registration/trial_1028_ws_a_tsmom_mop2012.md",
-      "strategy_file": "strategies/tsmom.py",
-      "validation_runner": "scripts/run_strategy_validation.py",
-      "mechanism": "Sign of 12-month trailing return; long positive / short negative; monthly rebalance; vol-target 10%; per-asset independent (time-series, not cross-sectional)",
-      "data_sources": [
-        "data/XAUUSD_D1.csv",
-        "data/XAGUSD_D1.csv",
-        "data/EURUSD_D1.csv",
-        "data/GBPUSD_D1.csv",
-        "data/USDJPY_D1.csv",
-        "data/NAS100_D1.csv",
-        "data/US30_D1.csv"
-      ],
-      "pre_registered_parameters": {
-        "lookback": 252,
-        "rebalance_freq": 21,
-        "vol_target": 0.1,
-        "min_signal_strength": 0.0,
-        "universe": [
-          "XAUUSD",
-          "XAGUSD",
-          "EURUSD",
-          "GBPUSD",
-          "USDJPY",
-          "NAS100",
-          "US30"
-        ]
-      },
-      "success_criteria": {
-        "deflated_sharpe_p": {
-          "value": "< 0.05 (N=1050)",
-          "acknowledged_risk": "N=1050 conservative; may reject a genuine edge. Accepted. Will NOT lower N or relax p after seeing result."
-        },
-        "dk_t": "> 2.0",
-        "jackknife_delta_sharpe": "< 0.5",
-        "cost_stress": "pass at 1.5x and 2.0x",
-        "pbo_cscv": "< 0.5",
-        "min_trades_per_asset": {
-          "definition": "position change at monthly rebalance (target sign differs from prior rebalance target: entry/exit/flip)",
-          "gate": ">= 50 position changes per asset over 2005-2026",
-          "note": "counting monthly rebalances (~252) trivially passes; counting only raw sign-flips may trivially fail; position-change counting is the meaningful middle ground for slow TSMOM."
-        }
-      },
-      "stopping_rule": "Single hypothesis. If DSR p>=0.05 -> REJECT and stop. No tuning, no holdout peek.",
-      "data_hygiene": {
-        "status": "RESOLVED 2026-07-29 (BLOCK cleared, pre-reg stays PRE-REGISTERED until run)",
-        "finding": "Raw *_D1.csv contain synthetic pre-inception backfill (EURUSD 1971, NAS100 1938, XAUUSD 1793) — flat O=H=L=C, placeholder volume. Core load_csv_data reads whole file with no date slice.",
-        "backfill_rows_excluded": {
-          "XAUUSD": 1115,
-          "XAGUSD": 2558,
-          "EURUSD": 7079,
-          "GBPUSD": 284,
-          "USDJPY": 0,
-          "NAS100": 12396,
-          "US30": 0
-        },
-        "mandated_loader": "provenance.py::load_provenance_checked",
-        "slice": "2005-01-01 .. data end",
-        "hard_fails_on": [
-          "impossible dates in slice",
-          "synth tell > 10% of slice"
-        ],
-        "modern_slice_verified_real": true,
-        "volume_caveat": "FX + XAGUSD report ~96-99.7% volume=0 (expected; TSMOM uses returns/realized vol, not volume). XAUUSD 1.37% synth flat (minor, accepted).",
-        "tests": "tests/test_provenance.py (4 tests pin exclusion + hard-fail contract)"
-      },
-      "follow_up_separate": "Re-check prior ~1050 edge-search trials against provenance-checked slices; some REJECTs may be on bad pre-inception data. Separate trial/entry; must not rescue a WS-A rejection.",
-      "data_loading": {
-        "loader": "provenance.py::load_provenance_checked",
-        "slice_start": "2005-01-01",
-        "provenance_checked": true,
-        "asserted_min_year": 2005,
-        "per_symbol": {
-          "XAUUSD": {
-            "rows": 5623,
-            "min_year": 2005,
-            "max_year": 2026,
-            "loader": "provenance.py::load_provenance_checked"
-          },
-          "XAGUSD": {
-            "rows": 5098,
-            "min_year": 2005,
-            "max_year": 2026,
-            "loader": "provenance.py::load_provenance_checked"
-          },
-          "EURUSD": {
-            "rows": 5936,
-            "min_year": 2005,
-            "max_year": 2026,
-            "loader": "provenance.py::load_provenance_checked"
-          },
-          "GBPUSD": {
-            "rows": 5932,
-            "min_year": 2005,
-            "max_year": 2026,
-            "loader": "provenance.py::load_provenance_checked"
-          },
-          "USDJPY": {
-            "rows": 5933,
-            "min_year": 2005,
-            "max_year": 2026,
-            "loader": "provenance.py::load_provenance_checked"
-          },
-          "NAS100": {
-            "rows": 4803,
-            "min_year": 2005,
-            "max_year": 2026,
-            "loader": "provenance.py::load_provenance_checked"
-          },
-          "US30": {
-            "rows": 2306,
-            "min_year": 2005,
-            "max_year": 2026,
-            "loader": "provenance.py::load_provenance_checked"
-          }
-        },
-        "recorded_at": "2026-07-29T16:00:00.000000+00:00"
-      },
-      "result": {
-        "verdict": "REJECT",
-        "reason": "Newey-West HAC DK-test t=0.428 (<2.0); edge real but weak, concentrated in precious metals; PBO/CSCV=1.0 (overfit); per-asset Sharpe -0.199..+0.284",
-        "dk_t_stat": 0.428,
-        "dk_method": "Newey-West HAC (Bartlett kernel, T^(1/3) bandwidth, via edge_search_all.run_dk_test)",
-        "dk_previous": "0.1692 (pooled, no autocorrelation correction)",
-        "hac_note": "DK t-stat dropped from 1.794 (naive pooled) to 0.428 (Newey-West HAC). Positive autocorrelation in multi-asset momentum widens standard errors, expected.",
-        "pooled_sharpe": 0.1519,
-        "positive_sharpe_count": "4/7",
-        "pbo_cscv": 1.0,
-        "dsr_prob_alpha": 0.0,
-        "dsr_caveat": "n_trials=1050 verified via importlib bypass; DSR still REJECT (p=0.0000 but edge too weak for deployment)",
-        "data_range": "2005-2018 (13.0y, aligned intersection)",
-        "data_loader": "provenance.py::load_provenance_checked (XAUUSD re-exported clean from MT5 2026-07-29)",
-        "report": "reports/ws_a_trial_1028.json",
-        "asterisk_note": "First XAUUSD trial on provenance-clean data; earlier XAUUSD REJECTs (1001,1003,Dir A/B) computed pre-guard on contaminated files - re-run advised"
-      },
-      "result_at": "2026-07-29"
-    },
-    {
-      "trial_number": 1029,
-      "id": "RAM-VOL-REGIME",
-      "name": "Regime-Adaptive Multi-Asset (RAM) - Volatility-Based Regime",
-      "status": "REJECTED",
-      "registered_at": "2026-07-30",
-      "result_at": "2026-07-30",
-      "instrument": "MULTI-ASSET",
-      "pre_registration_doc": "research/pre_registration/trial_1029_regime_adaptive_multi_asset.md",
-      "strategy_file": "strategies/regime_adaptive_multi_asset.py",
-      "validation_runner": "scripts/validate_ram_strategy.py",
-      "mechanism": "Volatility-based regime detection across 7 assets",
-      "result_summary": {
-        "dk_t_stat": 0.3327,
-        "sharpe_ratio": 0.3864,
-        "max_drawdown": -0.0383,
-        "win_rate": 0.506,
-        "profit_factor": 1.351,
-        "n_oos_trades": 300,
-        "wfe": 0.0,
-        "jackknife_sign_flip": true,
-        "jackknife_sign_flip_asset": "NAS100",
-        "overall": "FAIL",
-        "gates_passed": 1,
-        "gates_total": 5,
-        "conclusion": "Single-asset dependency on NAS100. Walk-forward OOS Sharpe=0.0. dk_t=0.33 << 2.0."
-      }
+ "$schema": "research/hypothesis_registry.schema.json",
+ "registry_version": "1.0",
+ "last_updated": "2026-08-04T16:00:00+00:00",
+ "cumulative_trial_count_at_creation": 2002,
+ "stopping_rule_doc": "reports/stopping_rule_2026_07_12.md",
+ "sacred_holdout_path": "data/sacred_holdout/holdout.csv",
+ "sacred_holdout_status": "LOCKED",
+ "notes": [
+  "All entries below are pre-registered Phase 4 candidate strategies.",
+  "Trial numbers continue from the cumulative count (RYDC Arm A = 1001, total = 1002 at lock).",
+  "Pre-registered parameters are FROZEN and cannot be tuned after backtests are run.",
+  "Each strategy must pass the fixed validation pipeline (scripts/run_rydc_validation.py pattern) with all 7 gates intact.",
+  "Sacred holdout remains physically separated and is NOT to be opened until Phase 4.5."
+ ],
+ "hypotheses": [
+  {
+   "trial_number": 1001,
+   "id": "RYDC-ARM-A",
+   "name": "Real-Yield Divergence Continuation (RYDC) â€” Arm A",
+   "status": "REJECTED",
+   "registered_at": "2026-07-12",
+   "result_at": "2026-07-12",
+   "instrument": "XAUUSD",
+   "pre_registration_doc": "reports/hypothesis_02_real_yield_divergence.md",
+   "strategy_file": "strategies/rydc.py",
+   "validation_runner": "scripts/run_rydc_validation.py",
+   "result_summary": {
+    "p_value": 0.968,
+    "win_rate": 0.5192,
+    "profit_factor": 1.01,
+    "sharpe_ratio": 0.044,
+    "max_drawdown_pct": 0.2291,
+    "deflated_sharpe_pct": 0.16,
+    "overall": "FAIL",
+    "n_oos_trades": 52,
+    "conclusion": "Strong null result. Gold response to DXY/real-yield is contemporaneous, no diffusion lag."
+   }
+  },
+  {
+   "trial_number": 1003,
+   "id": "CAM-DXY-XAUUSD",
+   "name": "Cross-Asset Momentum (CAM) â€” DXY â†’ XAUUSD lead-lag",
+   "status": "REJECTED",
+   "registered_at": "2026-07-13",
+   "result_at": "2026-07-13",
+   "instrument": "XAUUSD",
+   "pre_registration_doc": "research/pre_registration/trial_1003_cross_asset_momentum.md",
+   "strategy_file": "strategies/cross_asset_momentum.py",
+   "validation_runner": "scripts/run_strategy_validation.py",
+   "mechanism": "Diffusion lag: DXY z-score extremes predict XAUUSD follow-through over 1-5 day window",
+   "data_sources": [
+    "data/XAUUSD_D1.csv",
+    "data/DXY_D1.csv"
+   ],
+   "pre_registered_parameters": {
+    "window": 60,
+    "z_threshold": 1.0,
+    "hold_days": 5,
+    "corr_filter": -0.1
+   },
+   "result_summary": {
+    "p_value": 0.5976,
+    "win_rate": 0.563,
+    "sharpe_ratio": 0.361,
+    "n_oos_trades": 135,
+    "wfa_oos_positive": 0.2,
+    "wfe": 0.0,
+    "deflated_sharpe_pct": 82.3,
+    "overall": "FAIL",
+    "gates_passed": 1,
+    "gates_failed": 5,
+    "conclusion": "Diffusion lag hypothesis null on XAUUSD. p=0.598 is coin-flip. WFE=0 means OOS Sharpe is zero."
+   }
+  },
+  {
+   "trial_number": 1004,
+   "id": "SP-SESSION-CONDITIONAL",
+   "name": "Session Pattern (SP) â€” Volatility clustering by FX session",
+   "status": "REJECTED",
+   "registered_at": "2026-07-13",
+   "result_at": "2026-07-13",
+   "instrument": "XAUUSD",
+   "pre_registration_doc": "research/pre_registration/trial_1004_session_pattern.md",
+   "strategy_file": "strategies/session_pattern.py",
+   "validation_runner": "scripts/run_strategy_validation.py",
+   "mechanism": "Volatility-regime-conditional behavior: mean reversion in Asian session, momentum in London/NY session",
+   "data_sources": [
+    "data/XAUUSD_H1.csv (or M15)"
+   ],
+   "pre_registered_parameters": {
+    "session_window": 20,
+    "threshold_atr": 0.5,
+    "atr_period": 14,
+    "session_definitions_utc": {
+     "ASIAN": "00:00-07:00",
+     "LONDON": "07:00-12:00",
+     "NEW_YORK": "12:00-21:00",
+     "LATE_NY_NO_TRADE": "21:00-24:00"
     }
-  ]
+   },
+   "result_summary": {
+    "p_value": 0.9338,
+    "win_rate": 0.4894,
+    "sharpe_ratio": 0.056,
+    "n_oos_trades": 141,
+    "wfa_oos_positive": 0.6,
+    "wfe": 0.327,
+    "deflated_sharpe_pct": 0.47,
+    "overall": "FAIL",
+    "gates_passed": 1,
+    "gates_failed": 5,
+    "conclusion": "Session patterns null on XAUUSD daily. p=0.934 is coin-flip. Win rate 48.9% = random."
+   }
+  },
+  {
+   "trial_number": 1005,
+   "id": "MRM-REGIME-CONDITIONAL",
+   "name": "Macro Regime Mean-Reversion (MRM) â€” DFII10 regime-conditional",
+   "status": "REJECTED",
+   "registered_at": "2026-07-13",
+   "result_at": "2026-07-13",
+   "instrument": "XAUUSD",
+   "pre_registration_doc": "research/pre_registration/trial_1005_macro_regime_mr.md",
+   "strategy_file": "strategies/macro_regime_mr.py",
+   "validation_runner": "scripts/run_strategy_validation.py",
+   "mechanism": "Real-yield CV classifies STABLE vs TRENDING regime; mean reversion in STABLE, momentum in TRENDING",
+   "data_sources": [
+    "data/XAUUSD_D1.csv",
+    "data/rydc/rydc_daily.csv (dfii10 column)"
+   ],
+   "pre_registered_parameters": {
+    "regime_window": 30,
+    "regime_threshold": 0.2,
+    "mr_threshold_atr": 2.0,
+    "atr_period": 14,
+    "mean_window": 20
+   },
+   "result_summary": {
+    "p_value": 0.2441,
+    "win_rate": 0.4615,
+    "sharpe_ratio": -1.157,
+    "n_oos_trades": 65,
+    "wfa_oos_positive": 0.4,
+    "wfe": 0.0,
+    "deflated_sharpe_pct": 0.0,
+    "overall": "FAIL",
+    "gates_passed": 0,
+    "gates_failed": 6,
+    "conclusion": "Regime-conditional MR negative on XAUUSD. Sharpe -1.16 = losing money. Under 100 trades target."
+   }
+  },
+  {
+   "trial_number": 1006,
+   "id": "GSS-GOLD-SILVER-SPREAD",
+   "name": "Gold-Silver Spread Mean-Reversion",
+   "status": "REJECTED",
+   "registered_at": "2026-07-13",
+   "result_at": "2026-07-13",
+   "instrument": "XAUUSD/XAGUSD",
+   "pre_registration_doc": "research/pre_registration/trial_1006_gold_silver_spread.md",
+   "strategy_file": "strategies/gold_silver_spread.py",
+   "validation_runner": "scripts/run_strategy_validation.py",
+   "mechanism": "Gold/Silver ratio z-score mean-reversion",
+   "result_summary": {
+    "p_value": 0.5045,
+    "win_rate": 0.4194,
+    "sharpe_ratio": -0.963,
+    "n_oos_trades": 31,
+    "overall": "FAIL",
+    "gates_passed": 0,
+    "gates_failed": 6,
+    "conclusion": "Negative Sharpe. 31 trades < 100 target. Ratio MR does not work."
+   }
+  },
+  {
+   "trial_number": 1007,
+   "id": "BVC-BTC-VOL-CLUSTERING",
+   "name": "BTC Vol Clustering",
+   "status": "REJECTED",
+   "registered_at": "2026-07-13",
+   "result_at": "2026-07-13",
+   "instrument": "BTCUSD",
+   "pre_registration_doc": "research/pre_registration/trial_1007_btc_vol_clustering.md",
+   "strategy_file": "strategies/btc_vol_clustering.py",
+   "validation_runner": "scripts/run_strategy_validation.py",
+   "mechanism": "BTC vol spike continuation",
+   "result_summary": {
+    "p_value": 0.2479,
+    "win_rate": 0.7241,
+    "sharpe_ratio": 1.739,
+    "n_oos_trades": 29,
+    "overall": "FAIL",
+    "gates_passed": 0,
+    "gates_failed": 5,
+    "conclusion": "Interesting win rate (72.4%) and Sharpe (1.74) but 29 trades < 100 target, p=0.25 not significant."
+   }
+  },
+  {
+   "trial_number": 1008,
+   "id": "CVR-CROSS-ASSET-VOL-RANK",
+   "name": "Cross-Asset Vol Rank",
+   "status": "REJECTED",
+   "registered_at": "2026-07-13",
+   "result_at": "2026-07-13",
+   "instrument": "XAUUSD",
+   "pre_registration_doc": "research/pre_registration/trial_1008_cross_asset_vol_rank.md",
+   "strategy_file": "strategies/cross_asset_vol_rank.py",
+   "validation_runner": "scripts/run_strategy_validation.py",
+   "mechanism": "Relative vol percentile value",
+   "result_summary": {
+    "p_value": 0.6101,
+    "win_rate": 0.5098,
+    "sharpe_ratio": -0.402,
+    "n_oos_trades": 102,
+    "overall": "FAIL",
+    "gates_passed": 1,
+    "gates_failed": 5,
+    "conclusion": "Negative Sharpe. 102 trades pass min, but all other gates fail."
+   }
+  },
+  {
+   "trial_id": 1022,
+   "id": "MULTI-ASSET-TSMOM-RANKING",
+   "name": "Multi-Asset TSMOM with Ranking Overlay",
+   "category": "cross_sectional_momentum",
+   "status": "REJECTED",
+   "registered_date": "2026-07-20",
+   "tested_date": "2026-07-20",
+   "verdict_date": "2026-07-20",
+   "parameters": {
+    "lookbacks": [
+     21,
+     63,
+     252
+    ],
+    "vol_target": 0.1,
+    "top_n": 2,
+    "bottom_n": 0,
+    "rebalance_freq": 5,
+    "min_signal_strength": 0.3
+   },
+   "universe": [
+    "XAUUSD",
+    "XAGUSD",
+    "EURUSD",
+    "GBPUSD",
+    "USDJPY",
+    "NAS100",
+    "US30"
+   ],
+   "cost_model": "pepperstone_razor",
+   "results": {
+    "dk_t": -2.1255,
+    "pooled_sharpe": -1.5357,
+    "positive_sharpe_count": 2,
+    "total_trades": 3000,
+    "label_shuffle_p": 0.0,
+    "verdict": "REJECT"
+   },
+   "evidence": "reports/edge_search_cross_sectional_20260720.json",
+   "data_range": {
+    "start": "2005-01-03",
+    "end": "2018-01-01",
+    "years": 12.99
+   },
+   "notes": "All 7 assets negative or near-zero Sharpe. NAS100 lost 99.99%, US30 lost 95.60%. Strategy has no edge."
+  },
+  {
+   "trial_id": 1023,
+   "id": "ETH-VOL-CONFIRM",
+   "name": "ETH Volume Confirmation",
+   "category": "crypto_single_asset",
+   "status": "REJECTED",
+   "registered_date": "2026-07-21",
+   "tested_date": "2026-07-21",
+   "verdict_date": "2026-07-21",
+   "results": {
+    "dk_t": -1.3497,
+    "sharpe": -1.36,
+    "trades": 94,
+    "verdict": "REJECT"
+   },
+   "evidence": "reports/edge_search_untested_20260720.json"
+  },
+  {
+   "trial_id": 1024,
+   "id": "BTC-ETH-VOL-SPREAD",
+   "name": "BTC-ETH Volume Spread",
+   "category": "crypto_relative_value",
+   "status": "INSUFFICIENT_DATA",
+   "registered_date": "2026-07-21",
+   "tested_date": "2026-07-21",
+   "verdict_date": "2026-07-21",
+   "results": {
+    "dk_t": 0.0,
+    "sharpe": 0.0,
+    "trades": 0,
+    "verdict": "INSUFFICIENT_DATA"
+   },
+   "evidence": "reports/edge_search_untested_20260720.json"
+  },
+  {
+   "trial_id": 1025,
+   "id": "COT-POSITIONING",
+   "name": "COT Positioning",
+   "category": "macro_positioning",
+   "status": "REJECTED",
+   "registered_date": "2026-07-21",
+   "tested_date": "2026-07-21",
+   "verdict_date": "2026-07-21",
+   "results": {
+    "dk_t": -0.1185,
+    "sharpe": -0.1073,
+    "trades": 7,
+    "verdict": "REJECT"
+   },
+   "evidence": "reports/edge_search_untested_20260720.json"
+  },
+  {
+   "trial_id": 1026,
+   "id": "FOMC-DRIFT",
+   "name": "FOMC Drift",
+   "category": "event_driven",
+   "status": "REJECTED",
+   "registered_date": "2026-07-21",
+   "tested_date": "2026-07-21",
+   "verdict_date": "2026-07-21",
+   "results": {
+    "dk_t": -0.8255,
+    "sharpe": -0.6834,
+    "trades": 313,
+    "verdict": "REJECT"
+   },
+   "evidence": "reports/edge_search_untested_20260720.json"
+  },
+  {
+   "trial_id": 1027,
+   "id": "FUNDING-RATE-ARB",
+   "name": "Funding Rate Arbitrage",
+   "category": "crypto_funding",
+   "status": "REJECTED",
+   "registered_date": "2026-07-21",
+   "tested_date": "2026-07-21",
+   "verdict_date": "2026-07-21",
+   "results": {
+    "dk_t": 0.0,
+    "sharpe": 0.0,
+    "trades": 0,
+    "verdict": "REJECT"
+   },
+   "evidence": "reports/edge_search_untested_20260720.json",
+   "notes": "0 trades generated. CRITICAL: MISSING_SL incidents â€” signals without stop-loss."
+  },
+  {
+   "trial_number": 1028,
+   "id": "WS-A-TSMOM-MOP2012",
+   "name": "Time Series Momentum (Moskowitz-Ooi-Pedersen 2012) â€” pure time-series replication",
+   "category": "replicate_published_edge",
+   "status": "REJECTED",
+   "registered_at": "2026-07-29",
+   "instrument": "XAUUSD,XAGUSD,EURUSD,GBPUSD,USDJPY,NAS100,US30",
+   "pre_registration_doc": "research/pre_registration/trial_1028_ws_a_tsmom_mop2012.md",
+   "strategy_file": "strategies/tsmom.py",
+   "validation_runner": "scripts/run_strategy_validation.py",
+   "mechanism": "Sign of 12-month trailing return; long positive / short negative; monthly rebalance; vol-target 10%; per-asset independent (time-series, not cross-sectional)",
+   "data_sources": [
+    "data/XAUUSD_D1.csv",
+    "data/XAGUSD_D1.csv",
+    "data/EURUSD_D1.csv",
+    "data/GBPUSD_D1.csv",
+    "data/USDJPY_D1.csv",
+    "data/NAS100_D1.csv",
+    "data/US30_D1.csv"
+   ],
+   "pre_registered_parameters": {
+    "lookback": 252,
+    "rebalance_freq": 21,
+    "vol_target": 0.1,
+    "min_signal_strength": 0.0,
+    "universe": [
+     "XAUUSD",
+     "XAGUSD",
+     "EURUSD",
+     "GBPUSD",
+     "USDJPY",
+     "NAS100",
+     "US30"
+    ]
+   },
+   "success_criteria": {
+    "deflated_sharpe_p": {
+     "value": "< 0.05 (N=1050)",
+     "acknowledged_risk": "N=1050 conservative; may reject a genuine edge. Accepted. Will NOT lower N or relax p after seeing result."
+    },
+    "dk_t": "> 2.0",
+    "jackknife_delta_sharpe": "< 0.5",
+    "cost_stress": "pass at 1.5x and 2.0x",
+    "pbo_cscv": "< 0.5",
+    "min_trades_per_asset": {
+     "definition": "position change at monthly rebalance (target sign differs from prior rebalance target: entry/exit/flip)",
+     "gate": ">= 50 position changes per asset over 2005-2026",
+     "note": "counting monthly rebalances (~252) trivially passes; counting only raw sign-flips may trivially fail; position-change counting is the meaningful middle ground for slow TSMOM."
+    }
+   },
+   "stopping_rule": "Single hypothesis. If DSR p>=0.05 -> REJECT and stop. No tuning, no holdout peek.",
+   "data_hygiene": {
+    "status": "RESOLVED 2026-07-29 (BLOCK cleared, pre-reg stays PRE-REGISTERED until run)",
+    "finding": "Raw *_D1.csv contain synthetic pre-inception backfill (EURUSD 1971, NAS100 1938, XAUUSD 1793) — flat O=H=L=C, placeholder volume. Core load_csv_data reads whole file with no date slice.",
+    "backfill_rows_excluded": {
+     "XAUUSD": 1115,
+     "XAGUSD": 2558,
+     "EURUSD": 7079,
+     "GBPUSD": 284,
+     "USDJPY": 0,
+     "NAS100": 12396,
+     "US30": 0
+    },
+    "mandated_loader": "provenance.py::load_provenance_checked",
+    "slice": "2005-01-01 .. data end",
+    "hard_fails_on": [
+     "impossible dates in slice",
+     "synth tell > 10% of slice"
+    ],
+    "modern_slice_verified_real": true,
+    "volume_caveat": "FX + XAGUSD report ~96-99.7% volume=0 (expected; TSMOM uses returns/realized vol, not volume). XAUUSD 1.37% synth flat (minor, accepted).",
+    "tests": "tests/test_provenance.py (4 tests pin exclusion + hard-fail contract)"
+   },
+   "follow_up_separate": "Re-check prior ~1050 edge-search trials against provenance-checked slices; some REJECTs may be on bad pre-inception data. Separate trial/entry; must not rescue a WS-A rejection.",
+   "data_loading": {
+    "loader": "provenance.py::load_provenance_checked",
+    "slice_start": "2005-01-01",
+    "provenance_checked": true,
+    "asserted_min_year": 2005,
+    "per_symbol": {
+     "XAUUSD": {
+      "rows": 5623,
+      "min_year": 2005,
+      "max_year": 2026,
+      "loader": "provenance.py::load_provenance_checked"
+     },
+     "XAGUSD": {
+      "rows": 5098,
+      "min_year": 2005,
+      "max_year": 2026,
+      "loader": "provenance.py::load_provenance_checked"
+     },
+     "EURUSD": {
+      "rows": 5936,
+      "min_year": 2005,
+      "max_year": 2026,
+      "loader": "provenance.py::load_provenance_checked"
+     },
+     "GBPUSD": {
+      "rows": 5932,
+      "min_year": 2005,
+      "max_year": 2026,
+      "loader": "provenance.py::load_provenance_checked"
+     },
+     "USDJPY": {
+      "rows": 5933,
+      "min_year": 2005,
+      "max_year": 2026,
+      "loader": "provenance.py::load_provenance_checked"
+     },
+     "NAS100": {
+      "rows": 4803,
+      "min_year": 2005,
+      "max_year": 2026,
+      "loader": "provenance.py::load_provenance_checked"
+     },
+     "US30": {
+      "rows": 2306,
+      "min_year": 2005,
+      "max_year": 2026,
+      "loader": "provenance.py::load_provenance_checked"
+     }
+    },
+    "recorded_at": "2026-07-29T16:00:00.000000+00:00"
+   },
+   "result": {
+    "verdict": "REJECT",
+    "reason": "Newey-West HAC DK-test t=0.428 (<2.0); edge real but weak, concentrated in precious metals; PBO/CSCV=1.0 (overfit); per-asset Sharpe -0.199..+0.284",
+    "dk_t_stat": 0.428,
+    "dk_method": "Newey-West HAC (Bartlett kernel, T^(1/3) bandwidth, via edge_search_all.run_dk_test)",
+    "dk_previous": "0.1692 (pooled, no autocorrelation correction)",
+    "hac_note": "DK t-stat dropped from 1.794 (naive pooled) to 0.428 (Newey-West HAC). Positive autocorrelation in multi-asset momentum widens standard errors, expected.",
+    "pooled_sharpe": 0.1519,
+    "positive_sharpe_count": "4/7",
+    "pbo_cscv": 1.0,
+    "dsr_prob_alpha": 0.0,
+    "dsr_caveat": "n_trials=1050 verified via importlib bypass; DSR still REJECT (p=0.0000 but edge too weak for deployment)",
+    "data_range": "2005-2018 (13.0y, aligned intersection)",
+    "data_loader": "provenance.py::load_provenance_checked (XAUUSD re-exported clean from MT5 2026-07-29)",
+    "report": "reports/ws_a_trial_1028.json",
+    "asterisk_note": "First XAUUSD trial on provenance-clean data; earlier XAUUSD REJECTs (1001,1003,Dir A/B) computed pre-guard on contaminated files - re-run advised"
+   },
+   "result_at": "2026-07-29"
+  },
+  {
+   "trial_number": 1029,
+   "id": "RAM-VOL-REGIME",
+   "name": "Regime-Adaptive Multi-Asset (RAM) - Volatility-Based Regime",
+   "status": "REJECTED",
+   "registered_at": "2026-07-30",
+   "result_at": "2026-07-30",
+   "instrument": "MULTI-ASSET",
+   "pre_registration_doc": "research/pre_registration/trial_1029_regime_adaptive_multi_asset.md",
+   "strategy_file": "strategies/regime_adaptive_multi_asset.py",
+   "validation_runner": "scripts/validate_ram_strategy.py",
+   "mechanism": "Volatility-based regime detection across 7 assets",
+   "result_summary": {
+    "dk_t_stat": 0.3327,
+    "sharpe_ratio": 0.3864,
+    "max_drawdown": -0.0383,
+    "win_rate": 0.506,
+    "profit_factor": 1.351,
+    "n_oos_trades": 300,
+    "wfe": 0.0,
+    "jackknife_sign_flip": true,
+    "jackknife_sign_flip_asset": "NAS100",
+    "overall": "FAIL",
+    "gates_passed": 1,
+    "gates_total": 5,
+    "conclusion": "Single-asset dependency on NAS100. Walk-forward OOS Sharpe=0.0. dk_t=0.33 << 2.0."
+   }
+  },
+  {
+   "trial_number": 1031,
+   "id": "SENTIMENT-PRICE-001",
+   "name": "LLM News Sentiment Price Prediction",
+   "status": "EXECUTED_EXPLORATORY",
+   "registered_at": "2026-07-31",
+   "instrument": "Multi-ticker (US equities, crypto, commodities)",
+   "pre_registration_doc": "reports/preregistration_1031_sentiment_price.md",
+   "model": "qwen3.5:9b",
+   "mechanism": "LLM sentiment from news headlines predicts next-day price direction",
+   "hypothesis": "Sentiment direction matches return direction at p < 0.000049 (Bonferroni-corrected)",
+   "data_source": "DuckDB llm_news_sentiment table + Yahoo Finance prices",
+   "minimum_samples": 100,
+   "significance_bar": 4.9e-05,
+   "effect_size_threshold": 0.2,
+   "result_summary": "Exploratory T+0 run (65 pairs, 53 non-neutral, hit rate 0.698, p=0.0039 uncorrected). Pre-registered T+1 rerun on 2026-08-01 18:39 was DATA-BLOCKED (no T+1 close yet for ~89 symbols); pending rerun after next market close.",
+   "results": {
+    "total_pairs": 65,
+    "non_neutral_pairs": 53,
+    "hits": 37,
+    "hit_rate": 0.6981,
+    "cohens_d": 1.0736,
+    "z_score": 2.8846,
+    "p_value": 0.00391946,
+    "significant_bonferroni": false,
+    "significant_uncorrected": true,
+    "meets_effect_size": true,
+    "meets_hit_rate": true
+   },
+   "executed_at": "2026-08-01T03:39:22.072130",
+   "report_path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\reports\\sentiment_backtest_20260801_033922.txt",
+   "pre_registration_deviations": [
+    "Only 65 pairs (pre-registration requires >= 100)",
+    "T+0 (same-day) price matching used instead of pre-registered T+1 - see get_sentiment_price_pairs(); result is exploratory, not confirmatory"
+   ],
+   "rerun_attempts": [
+    {
+     "attempted_at": "2026-08-01T18:39:02.014187",
+     "report_path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\reports\\sentiment_backtest_20260801_183901.txt",
+     "method": "T+1 matching as pre-registered (baseline = close on/before sentiment date, outcome = first close strictly after)",
+     "result": {
+      "error": "Too few non-neutral pairs: 0"
+     },
+     "deviations": [
+      "Only 1 pairs (pre-registration requires >= 100)",
+      "compute_hit_rate error: Too few non-neutral pairs: 0"
+     ],
+     "blocked_by": "DATA-BLOCKED: market_data had only 7 symbols with 2026-08-01 bars (^IXIC, GBPUSD=X, ^DJI, ETH-USD, EURUSD=X, USDJPY=X, GC=F); sentiment rows dated 07-31 (74 ticker-rows) had no T+1 close yet. 0 pairs is not evidence against H1 - rerun after the next market close."
+    }
+   ]
+  },
+  {
+   "trial_number": 1032,
+   "id": "WS-A-52WEEK-HIGH",
+   "name": "52-Week High Momentum (George-Hwang 2004 replication)",
+   "status": "REJECTED",
+   "registered_at": "2026-08-03",
+   "result_at": "2026-08-03",
+   "instrument": "MULTI-ASSET (XAUUSD, XAGUSD, EURUSD, GBPUSD, USDJPY, NAS100, US30)",
+   "pre_registration_doc": "research/pre_registration/trial_1032_52week_high.md",
+   "strategy_file": "scripts/run_52week_high_1032.py",
+   "source": "George & Hwang (2004), Journal of Finance 59(5) — 52-week high proximity",
+   "mechanism": "Level-anchored behavioral: proximity to trailing 52-week high (prox>=0.95 long, prox<=0.80 short) predicts returns via anchoring/disposition effect",
+   "result_summary": {
+    "dk_t_stat": 0.461,
+    "sharpe_ratio": 0.34,
+    "max_drawdown": null,
+    "win_rate": null,
+    "n_oos_trades": 165,
+    "per_asset_trades": {
+     "XAUUSD": 25,
+     "XAGUSD": 39,
+     "EURUSD": 22,
+     "GBPUSD": 22,
+     "USDJPY": 17,
+     "NAS100": 27,
+     "US30": 13
+    },
+    "wfe": null,
+    "dsr_p": 0.9446,
+    "label_shuffle_p": 0.035,
+    "overall": "FAIL",
+    "gates_passed": 3,
+    "gates_total": 6,
+    "conclusion": "George-Hwang 52-week-high proximity replication on 7 assets (2005-2026). DK t=0.461 << 2.0 (FAIL). DSR passes (p=0.0000, N=1050) and cost-stress passes (Sharpe 0.34/0.33 at 1.5x/2.0x), label-shuffle p=0.035 passes, jackknife passes — but the level-anchored signal is extremely sticky: only 13-39 position changes per asset (all < 50 gate), and the pooled DK test is far below the 2.0 bar. The apparent DSR/label-shuffle signal does not survive the pooled cross-sectional test. REJECT per frozen pre-registration — no tuning of thresholds (0.95/0.80) attempted. Sacred holdout NOT burned.",
+    "sp1_dsr_correction_note": "2026-08-03 SP1: dsr_p=0.0 was an artifact of sharpe_annualization_factor=1.0 (annualized SR passed as raw, z inflated ~15x). Re-run with unit-correct dsr_from_annualized: dsr_p=0.9446 (FAIL). The DSR PASS in the original record was false; verdict unchanged (REJECTED on DK gate)."
+   }
+  },
+  {
+   "trial_number": 1033,
+   "id": "WS-A-TSMOM-6SYM",
+   "name": "TSMOM (MOP 2012) on SP3 6-symbol breadth universe",
+   "status": "REJECTED",
+   "registered_at": "2026-08-04",
+   "result_at": "2026-08-04",
+   "instrument": "MULTI-ASSET 6-SYM (XAUUSD, EURUSD, GBPUSD, USDJPY, BTCUSD, US30)",
+   "pre_registration_doc": "research/pre_registration/trial_1033_tsmom_6sym.md",
+   "strategy_file": "scripts/run_tsmom_6sym_1033.py",
+   "source": "Moskowitz-Ooi-Pedersen (2012) TSMOM — breadth expansion of trial 1028",
+   "mechanism": "Time-series momentum (risk premium) on 6 cost-calibrated symbols",
+   "result_summary": {
+    "sharpe_ratio": 0.672,
+    "dk_t_stat": 1.0366,
+    "dsr_p": 0.3526,
+    "wfa_oos_mean": 0.673,
+    "bootstrap_ci_lower": 0.000318,
+    "min_btl_sufficient": false,
+    "jackknife_pass": false,
+    "cost_stress_pass": true,
+    "label_shuffle_p": 0.0,
+    "overall": "FAIL",
+    "gates_passed": 4,
+    "gates_total": 8,
+    "conclusion": "TSMOM on 6-symbol breadth universe. DK t=1.0366 < 2.0 FAIL; DSR p=0.3526 FAIL (unit-correct N=1050); MinBTL insufficient FAIL; Jackknife FAIL (drop-BTCUSD delta 0.512 > 0.5 — single-asset dependence). WFA/BootCI/LabelShuffle/CostStress PASS. REJECT per frozen pre-registration — no tuning. Exploratory daily-rebalance no-cost run (0.905 Sharpe DSR-pass) was informational; formal monthly+real-cost corrects it."
+   }
+  },
+  {
+   "trial_number": 1034,
+   "id": "EA-BENCH-HAPPY-GOLD",
+   "name": "Happy Gold-style M15 XAUUSD London/NY breakout scalper (ATR SL/TP)",
+   "status": "REJECTED",
+   "registered_at": "2026-08-04",
+   "result_at": "2026-08-04",
+   "instrument": "XAUUSD (M15)",
+   "pre_registration_doc": "research/pre_registration/trial_1034_happy_gold_scalper.md",
+   "strategy_file": "strategies/happy_gold_scalper.py",
+   "validation_runner": "scripts/edge_search_m15_scalper.py",
+   "source": "EA benchmark (verified MyFxBook research 2026-08-04): Happy Gold family profile (PF 2.0-3.5, DD 8-26%, monthly 6.9-8.3%)",
+   "mechanism": "London/NY-session gold breakout with EMA trend filter and ATR-based SL/TP; non-martingale",
+   "result_summary": {
+    "sharpe_ratio": -0.6167,
+    "pooled_dk_t": -1.5131,
+    "dsr_p": 1.0,
+    "n_trades": 2432,
+    "win_pct": 43.91,
+    "profit_factor": 0.9515,
+    "monthly_pct": -1.777,
+    "max_dd_pct": 52.88,
+    "gates_passed": 2,
+    "gates_total": 7,
+    "overall": "REJECT",
+    "conclusion": "Happy Gold-style M15 gold scalper REJECTED on measured FROM_TICKS costs: PF 0.95, monthly -1.78%, pooled t negative. Verified EA family (PF 2.0-3.5) NOT reproducible by honest non-martingale approximation at measured costs."
+   }
+  },
+  {
+   "trial_number": 1035,
+   "id": "EA-BENCH-ASIAN-SCALPER",
+   "name": "WallStreet-style Asian-session range scalper (EURUSD, GBPUSD, USDJPY)",
+   "status": "REJECTED",
+   "registered_at": "2026-08-04",
+   "result_at": "2026-08-04",
+   "instrument": "MULTI-ASSET 3-SYM (EURUSD, GBPUSD, USDJPY) M15",
+   "pre_registration_doc": "research/pre_registration/trial_1035_asian_scalper.md",
+   "strategy_file": "strategies/asian_scalper.py",
+   "validation_runner": "scripts/edge_search_m15_scalper.py",
+   "source": "EA benchmark (verified MyFxBook research 2026-08-04): WallStreet Robot profile (15+ yrs, win 76%, avg win 8.3 pips, PF 1.37)",
+   "mechanism": "Asian-session (00:00-08:00 UTC) range fade with RSI extremes, tight ATR SL/TP, session-boundary exit; non-martingale",
+   "result_summary": {
+    "per_symbol": {
+     "USDJPY": {
+      "n_trades": 895,
+      "sharpe": -4.7285,
+      "pf": 0.68,
+      "monthly_pct": -3.078
+     },
+     "EURUSD": {
+      "n_trades": 401,
+      "sharpe": -2.6051,
+      "pf": 0.8502,
+      "monthly_pct": -2.392
+     },
+     "GBPUSD": {
+      "n_trades": 371,
+      "sharpe": -1.7803,
+      "pf": 0.9355,
+      "monthly_pct": -1.748
+     }
+    },
+    "pooled_dk_t": -1.5131,
+    "dsr_p": 1.0,
+    "gates_passed": 2,
+    "gates_total": 7,
+    "overall": "REJECT",
+    "conclusion": "WallStreet-style Asian-session range scalper REJECTED on measured costs: PF 0.68-0.94 across 3 FX pairs, negative Sharpe all. Fade-the-range with 7bps commission does not survive honest costs."
+   }
+  }
+ ]
 }

@@ -60,7 +60,8 @@ class MacroRegimeCache:
     """
 
     _instance: MacroRegimeCache | None = None
-    _lock: threading.Lock = threading.Lock()
+    # RLock: __new__ holds the lock while _load_state() re-acquires it (same thread).
+    _lock: threading.RLock = threading.RLock()
     _STATE_PATH: Path = Path(__file__).parent.parent.parent / "data" / "macro_regime_state.json"
 
     def __new__(cls) -> MacroRegimeCache:
@@ -141,7 +142,8 @@ class MacroRegimeCache:
                         os.unlink(tmp_path)
                     if attempt < max_attempts - 1:
                         import time
-                        time.sleep(0.1 * (2 ** attempt))
+
+                        time.sleep(0.1 * (2**attempt))
                     else:
                         raise
                 except Exception:
@@ -165,7 +167,8 @@ class MacroRegimeCache:
                 # Windows: file locked by another process, retry with backoff
                 if attempt < max_attempts - 1:
                     import time
-                    time.sleep(0.1 * (2 ** attempt))
+
+                    time.sleep(0.1 * (2**attempt))
                 else:
                     pass  # Best-effort: start fresh on persistent lock
             except Exception:

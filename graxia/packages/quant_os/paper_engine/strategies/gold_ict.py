@@ -23,35 +23,36 @@ Strategies wrapped:
 
 from __future__ import annotations
 
+import contextlib
+
 import numpy as np
 import pandas as pd
 
 from .base import BaseStrategy, Signal, StrategyResult
 
 # Batch signal generators (O(n) vectorized — 100x faster than bar-by-bar)
-_batch_registry = {}
-try:
-    from .gold_ict_batch import BATCH_REGISTRY as _batch_registry
-except ImportError:
-    pass
+_batch_registry: dict = {}
+with contextlib.suppress(ImportError):
+    from .gold_ict_batch import BATCH_REGISTRY as _batch_registry  # noqa: N811
 
 # Gold bot strategy imports (lazy — may not be installed)
 _gold_bot_available = False
 try:
-    from graxia.packages.quant_os.gold_bot.strategies.order_block import OrderBlockStrategy
-    from graxia.packages.quant_os.gold_bot.strategies.fair_value_gap import FairValueGapStrategy
-    from graxia.packages.quant_os.gold_bot.strategies.liquidity_sweep import LiquiditySweepStrategy
-    from graxia.packages.quant_os.gold_bot.strategies.bos_choch import BOSCHoCHStrategy
-    from graxia.packages.quant_os.gold_bot.strategies.multi_tf_align import MultiTFAlignStrategy
-    from graxia.packages.quant_os.gold_bot.strategies.london_breakout import LondonBreakoutStrategy
-    from graxia.packages.quant_os.gold_bot.strategies.news_fade import NewsFadeStrategy
-    from graxia.packages.quant_os.gold_bot.strategies.vwap_rejection import VWAPRejectionStrategy
-    from graxia.packages.quant_os.gold_bot.strategies.fibonacci import FibonacciStrategy
-    from graxia.packages.quant_os.gold_bot.strategies.rsi_divergence import RSIDivergenceStrategy
-    from graxia.packages.quant_os.gold_bot.strategies.ema_cross import EMACrossStrategy
-    from graxia.packages.quant_os.gold_bot.strategies.supply_demand import SupplyDemandStrategy
-    from graxia.packages.quant_os.gold_bot.strategies.opening_range import OpeningRangeStrategy
     from graxia.packages.quant_os.gold_bot.core.engine import SignalDirection
+    from graxia.packages.quant_os.gold_bot.strategies.bos_choch import BOSCHoCHStrategy
+    from graxia.packages.quant_os.gold_bot.strategies.ema_cross import EMACrossStrategy
+    from graxia.packages.quant_os.gold_bot.strategies.fair_value_gap import FairValueGapStrategy
+    from graxia.packages.quant_os.gold_bot.strategies.fibonacci import FibonacciStrategy
+    from graxia.packages.quant_os.gold_bot.strategies.liquidity_sweep import LiquiditySweepStrategy
+    from graxia.packages.quant_os.gold_bot.strategies.london_breakout import LondonBreakoutStrategy
+    from graxia.packages.quant_os.gold_bot.strategies.multi_tf_align import MultiTFAlignStrategy
+    from graxia.packages.quant_os.gold_bot.strategies.news_fade import NewsFadeStrategy
+    from graxia.packages.quant_os.gold_bot.strategies.opening_range import OpeningRangeStrategy
+    from graxia.packages.quant_os.gold_bot.strategies.order_block import OrderBlockStrategy
+    from graxia.packages.quant_os.gold_bot.strategies.rsi_divergence import RSIDivergenceStrategy
+    from graxia.packages.quant_os.gold_bot.strategies.supply_demand import SupplyDemandStrategy
+    from graxia.packages.quant_os.gold_bot.strategies.vwap_rejection import VWAPRejectionStrategy
+
     _gold_bot_available = True
 except ImportError:
     pass
@@ -82,6 +83,7 @@ class _GoldICTWrapper(BaseStrategy):
     def _generate_signals_batch(self, df: pd.DataFrame, params: dict, batch_fn) -> StrategyResult:
         """Fast O(n) path using vectorized batch signal generator."""
         import inspect
+
         min_bars = params.get("min_bars", self._min_bars)
         close = df["close"].values.astype(float)
         high = df["high"].values.astype(float)
@@ -104,29 +106,36 @@ class _GoldICTWrapper(BaseStrategy):
             confidence = score / 100.0
             if confidence < 0.5:
                 continue
-            signals.append(Signal(
-                timestamp=str(df.index[i]),
-                direction=int(d),
-                confidence=round(confidence, 3),
-                entry_price=round(close[i], 5),
-                stop_loss=round(result.sl[i], 5) if result.sl[i] > 0 else None,
-                take_profit=round(result.tp[i], 5) if result.tp[i] > 0 else None,
-                reason=f"{self._strategy_name} batch signal",
-                bar_index=i,
-            ))
+            signals.append(
+                Signal(
+                    timestamp=str(df.index[i]),
+                    direction=int(d),
+                    confidence=round(confidence, 3),
+                    entry_price=round(close[i], 5),
+                    stop_loss=round(result.sl[i], 5) if result.sl[i] > 0 else None,
+                    take_profit=round(result.tp[i], 5) if result.tp[i] > 0 else None,
+                    reason=f"{self._strategy_name} batch signal",
+                    bar_index=i,
+                )
+            )
 
-        return StrategyResult(signals=signals, metrics={
-            "strategy": self._strategy_name,
-            "min_bars": min_bars,
-            "path": "batch",
-        })
+        return StrategyResult(
+            signals=signals,
+            metrics={
+                "strategy": self._strategy_name,
+                "min_bars": min_bars,
+                "path": "batch",
+            },
+        )
 
     def _generate_signals_bar(self, df: pd.DataFrame, params: dict) -> StrategyResult:
         if not _gold_bot_available:
-            return StrategyResult(signals=[], metrics={"strategy": self._strategy_name, "error": "gold_bot not installed"})
+            return StrategyResult(
+                signals=[], metrics={"strategy": self._strategy_name, "error": "gold_bot not installed"}
+            )
 
         # Lookup strategy class by name from the module-level imports
-        _STRAT_MAP = {
+        strat_map = {
             "OrderBlockStrategy": OrderBlockStrategy,
             "FairValueGapStrategy": FairValueGapStrategy,
             "LiquiditySweepStrategy": LiquiditySweepStrategy,
@@ -141,9 +150,12 @@ class _GoldICTWrapper(BaseStrategy):
             "SupplyDemandStrategy": SupplyDemandStrategy,
             "OpeningRangeStrategy": OpeningRangeStrategy,
         }
-        gold_cls = _STRAT_MAP.get(self._gold_strategy_name)
+        gold_cls = strat_map.get(self._gold_strategy_name)
         if gold_cls is None:
-            return StrategyResult(signals=[], metrics={"strategy": self._strategy_name, "error": f"class {self._gold_strategy_name} not found"})
+            return StrategyResult(
+                signals=[],
+                metrics={"strategy": self._strategy_name, "error": f"class {self._gold_strategy_name} not found"},
+            )
 
         # Configurable minimum bars (allows param search)
         min_bars = params.get("min_bars", self._min_bars)
@@ -196,21 +208,26 @@ class _GoldICTWrapper(BaseStrategy):
             if confidence < 0.5:
                 continue
 
-            signals.append(Signal(
-                timestamp=str(df.index[i]),
-                direction=direction,
-                confidence=round(confidence, 3),
-                entry_price=round(current_price, 5),
-                stop_loss=round(result.stop_loss, 5) if result.stop_loss else None,
-                take_profit=round(result.take_profit, 5) if result.take_profit else None,
-                reason=result.reasoning,
-                bar_index=i,
-            ))
+            signals.append(
+                Signal(
+                    timestamp=str(df.index[i]),
+                    direction=direction,
+                    confidence=round(confidence, 3),
+                    entry_price=round(current_price, 5),
+                    stop_loss=round(result.stop_loss, 5) if result.stop_loss else None,
+                    take_profit=round(result.take_profit, 5) if result.take_profit else None,
+                    reason=result.reasoning,
+                    bar_index=i,
+                )
+            )
 
-        return StrategyResult(signals=signals, metrics={
-            "strategy": self._strategy_name,
-            "min_bars": min_bars,
-        })
+        return StrategyResult(
+            signals=signals,
+            metrics={
+                "strategy": self._strategy_name,
+                "min_bars": min_bars,
+            },
+        )
 
 
 # ── Concrete wrapper classes ──────────────────────────────────────────────
