@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0",
+  "direction": "H",
+  "description": "Forex 4-Pair Walk-Forward Retest. Structural mechanism: XGBoost binary classification of next-bar direction on a FIXED technical feature set (returns, volatility, ATR, RSI, MACD, Bollinger, session flags) — the same mechanism family as the original 2026-07-12 batch (runner scripts/run_multi_instrument_wf.py, artifact wf_batch_H1_20260712_200555.json). The original INCONCLUSIVE verdicts (USDCAD t=-1.69, USDCHF t=-1.12, AUDUSD t=-1.55, NZDUSD t=-0.53) were invalid as evidence: F24 loader-provenance gap (now resolved) and 5/6 pairs ran with UNMEASURED default costs (--allow-default-costs). This retest runs the SAME mechanism with measured FROM_TICKS costs (mandatory) and a pre-registered min_confidence reduction 0.65->0.55 to overcome the ~7-trades/fold underpoweredness.",
+  "last_updated": "2026-08-06",
+  "current_verdict_2026-08-06": "PRE_REGISTERED — verdict pending execution.",
+  "cumulative_trial_count_at_creation": 0,
+  "stopping_rule_doc": "reports/stopping_rule_2026_08_06_direction_h.md",
+  "sacred_holdout_path": "N/A at the walk-forward stage (this is a validation-phase hypothesis, not a fitted-model holdout confirmation; sacred holdout remains LOCKED for Phase 4.5 only).",
+  "sacred_holdout_status": "LOCKED",
+  "notes": [
+    "Registered 2026-08-06 BEFORE running the retest, per pre-registration discipline (F27's lesson: never run-then-register).",
+    "Opened after Direction G stopped (§4.4, 2026-08-06) and after all 4 pairs received FROM_TICKS cost calibration (scripts/calibrate_forex4_from_ticks.py) — the cost-data blocker that excluded them since Direction D (2026-07-30) is resolved.",
+    "GBPUSD/USDJPY deliberately EXCLUDED — conclusively REJECTED in the original batch (t=-8.77 / t=-8.57) and remain closed.",
+    "min_confidence 0.65 -> 0.55 is frozen identically across all 4 pairs (no per-pair tuning, no lookahead at results).",
+    "Per F11 (MEGA_PLAN:37), INCONCLUSIVE is not a formal failure — this is a NEW hypothesis with real costs and a powered design."
+  ],
+  "hypotheses": [
+    {
+      "trial_number": 9001,
+      "id": "DIRH-FOREX4-H1",
+      "name": "Forex 4-Pair Walk-Forward Retest (USDCAD/USDCHF/AUDUSD/NZDUSD H1, measured costs, min_confidence 0.55)",
+      "status": "PRE_REGISTERED",
+      "registered_at": "2026-08-06",
+      "pre_registration_doc": "research/pre_registration/trial_9001_forex4_retest.md",
+      "validation_runner": "scripts/run_multi_instrument_wf.py",
+      "instrument": "USDCAD, USDCHF, AUDUSD, NZDUSD (H1, 50,000 bars, 2018-06 -> 2026-07)",
+      "hypothesis": "XGBoost next-bar-direction classification on the runner's fixed technical feature set produces net-of-measured-cost edge on the 4 underpowered forex pairs. The original INCONCLUSIVE verdicts were artifacts of unmeasured costs + underpowered folds (~7 trades/fold), not evidence of no edge.",
+      "mechanism": "Supervised ML classification (XGBoost) of next-bar direction using returns/volatility/ATR/RSI/MACD/Bollinger/session features, evaluated with walk-forward validation (train=500, test=200, step=200, purge=14, embargo=0).",
+      "frozen_params": {
+        "min_confidence": 0.55,
+        "train_window": 500,
+        "test_window": 200,
+        "step": 200,
+        "purge_bars": 14,
+        "embargo_bars": 0,
+        "n_estimators": 100,
+        "max_depth": 5,
+        "learning_rate": 0.1,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "seed": 42,
+        "min_expected_profit": 0.0005,
+        "cost_mode": "measured_FROM_TICKS_only",
+        "allow_default_costs": false
+      },
+      "economic_rationale": "Forex majors are the deepest, tightest-spread market available; the original batch tested 6 pairs but 4 were inconclusive due to insufficient trades/fold and unmeasured costs. With real costs (7 bps commission + sub-0.4 bps median spreads) and a powered design, any genuine directional signal in the feature set should become detectable.",
+      "data_dependencies": ["data/USDCAD_H1.csv", "data/USDCHF_H1.csv", "data/AUDUSD_H1.csv", "data/NZDUSD_H1.csv", "config/cost_calibration.json (FROM_TICKS entries for all 4)"],
+      "validation_plan": "Run scripts/run_multi_instrument_wf.py --symbols USDCAD USDCHF AUDUSD NZDUSD --timeframe H1 (NO --allow-default-costs). Determine verdict per runner's frozen determine_verdict logic. Stamp result via research/registry_schema.stamp_trial_entry() with provenance (trial_number=9001, id=DIRH-FOREX4-H1)."
+    }
+  ]
+}

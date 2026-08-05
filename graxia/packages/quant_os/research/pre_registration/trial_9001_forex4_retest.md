@@ -1,7 +1,7 @@
 # Pre-Registration — Trial 9001: Forex 4-Pair Directional Retest (Direction H)
 
-**Status:** DRAFT — 2026-08-06 (for human review; becomes FROZEN only after approval + ledger registration)
-**Direction H** (new direction — stopping rule `reports/stopping_rule_2026_08_06_direction_h.md` to be created at freeze time; ledger `research/trial_ledger_h.json` to be created at freeze time)
+**Status:** FROZEN — 2026-08-06 (params below are locked; no tuning after this point)
+**Direction H** (`reports/stopping_rule_2026_08_06_direction_h.md`, ledger `research/trial_ledger_h.json`)
 
 ## Background / motivation (why this trial exists)
 
@@ -33,18 +33,34 @@ verdicts are uninformative (unmeasured costs + underpowered folds), so this tria
 mechanism on these pairs with FROM_TICKS costs and a sample large enough to resolve |t| >= 2
 with power 0.8 at the expected effect size.
 
-## Frozen parameters (no tuning after freeze)
+## Frozen parameters (LOCKED 2026-08-06 — no tuning after this point)
 
-- Mechanism: identical family to the original batch — directional momentum/breakout continuity
-  (exact rule frozen at freeze time from `run_multi_instrument_wf.py` baseline; NO parameter
-  selection after this point)
-- Timeframe: H1 (data already satisfies >= 8 years; M15 rejected — only 2.5y history exists)
-- Instruments: USDCAD, USDCHF, AUDUSD, NZDUSD (the 4 underpowered pairs; GBPUSD/USDJPY already
-  conclusively REJECTED — do not retest)
-- Data: `data/{SYM}_H1.csv` (2018-06 → 2026-07, ~8.1y, meets F12 >= 8y)
-- Sample sufficiency: pre-registered minimum independent trades = 100 (template gate);
-  design targets 40+ trades/fold (raise the 50k-bar cap and/or lower min_confidence from 0.65
-  to a pre-registered level — recorded in the frozen params, not tuned)
+- **Runner**: `scripts/run_multi_instrument_wf.py` (canonical walk-forward, `validation/walk_forward.py`)
+- **Mechanism**: XGBoost binary classification of next-bar direction on the runner's FIXED feature set
+  (return_1/5/10/20, vol_10/20, vol_ratio, atr_14, atr_ratio, rsi_14, rsi_normalized, macd,
+  macd_signal, macd_hist, bb_width, bb_position, session flags) — SAME feature family as the
+  original 2026-07-12 batch (loader provenance resolved: `run_multi_instrument_wf.py`)
+- **Timeframe**: H1 (8.1y, meets F12 >= 8y; M15 rejected — only 2.5y exists)
+- **Instruments**: USDCAD, USDCHF, AUDUSD, NZDUSD (4 underpowered pairs; GBPUSD/USDJPY already
+  conclusively REJECTED — not retested)
+- **Data**: `data/{SYM}_H1.csv` (50,000 bars, 2018-06 → 2026-07)
+- **Model params**: n_estimators=100, max_depth=5, learning_rate=0.1, subsample=0.8,
+  colsample_bytree=0.8, random_state=42, eval_metric=logloss
+- **WF windows**: train=500, test=200, step=200, purge=14, embargo=0 (unchanged from original)
+- **MIN_CONFIDENCE: 0.65 → 0.55** (CHANGED from original — pre-registered to raise
+  trades/fold from ~7 to ~20+; the 0.65 filter produced underpowered folds (1,725-5,599
+  trades over 247 folds ≈ 7/fold). 0.55 is frozen identically across all 4 pairs — NOT
+  per-pair tuning, NO lookahead at results)
+- **min_expected_profit**: 0.0005 (unchanged)
+- **Costs**: measured FROM_TICKS from config/cost_calibration.json (USDCAD 14.14 rt bps,
+  USDCHF 14.25, AUDUSD 14.28, NZDUSD 14.68) — `--allow-default-costs` FORBIDDEN (the original
+  batch ran 5/6 pairs on UNMEASURED defaults spread=1e-05/slippage=3e-05, which invalidated
+  its INCONCLUSIVE verdicts as evidence; retest must use real costs)
+
+## Verdict logic (runner `determine_verdict`, unchanged)
+
+PROMOTE if positive_pct>0.6 & net>0 & |t|>=1.5; CONDITIONAL if positive_pct>0.4 & net>0;
+REJECT if |t|>=2.0 & net<0; INCONCLUSIVE if |t|<2.0.
 
 ## Costs (measured, FROM_TICKS 2026-08-06 — NEW)
 
@@ -67,7 +83,7 @@ bootstrap CI excludes 0, min-independent-trades >= 100 (see reports/stopping_rul
 
 ## Stopping rule (Direction H)
 
-Pre-registered at freeze time in `reports/stopping_rule_2026_08_06_direction_h.md`:
+`reports/stopping_rule_2026_08_06_direction_h.md` (created at freeze time):
 4 consecutive REJECTED trials across the 4 pairs (one per pair) triggers direction stop,
 or early stop if cumulative DSR drops below threshold mid-run.
 
@@ -75,16 +91,15 @@ or early stop if cumulative DSR drops below threshold mid-run.
 
 Stamped at verdict time via `research/registry_schema.stamp_trial_entry()`
 (trial_number=9001, id=DIRH-FOREX4-H1). Pre-registration discipline (F27): this file exists
-BEFORE any backtest runs.
+BEFORE any backtest runs — FROZEN 2026-08-06 prior to execution.
 
 ## Sacred holdout
 
 NOT used (LOCKED, Phase 4.5 only).
 
-## Open items before freeze (human review)
+## Post-freeze record
 
-1. Exact frozen rule parameters (from run_multi_instrument_wf.py baseline, no selection).
-2. Min-confidence / bar-cap change to reach 40+ trades/fold — freeze the number.
-3. Create `reports/stopping_rule_2026_08_06_direction_h.md` + `research/trial_ledger_h.json`.
-4. Add slippage P90 from fill simulator (fill_samples per pair) or record null honestly.
-5. Trial number confirmation via `scripts/auto_increment_trial.py`.
+- FROZEN 2026-08-06 (min_confidence 0.65→0.55 pre-registered; measured costs mandatory).
+- All open items from the DRAFT resolved at freeze: runner identified, costs measured,
+  min_confidence fixed, stopping rule + ledger created, trial 9001 registered via
+  auto_increment.

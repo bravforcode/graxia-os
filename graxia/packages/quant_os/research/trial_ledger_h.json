@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.0",
+  "direction": "H",
+  "lock_date": "2026-08-06",
+  "lock_doc_path": "reports/stopping_rule_2026_08_06_direction_h.md",
+  "lock_doc_sha256": "6b35a1b6feba1578b38a76a610a0b48a5031ed37c39855c5fe3c3b3b6a629afa",
+  "description": "Direction H: Forex 4-pair walk-forward retest (USDCAD/USDCHF/AUDUSD/NZDUSD H1). Opened 2026-08-06 after all 4 pairs got FROM_TICKS cost calibration (previously excluded for lack of cost data). Original 2026-07-12 INCONCLUSIVE verdicts invalidated by unmeasured default costs + underpowered folds (F24 provenance now resolved). Separate ledger per Path-B precedent.",
+  "cumulative_trial_count": 1,
+  "cumulative_trial_cap": 25,
+  "next_available_trial_number": 9002,
+  "new_hypotheses_used": 1,
+  "new_hypotheses_remaining": 24,
+  "trial_range": "9000-9999",
+  "stopping_rule": {
+    "type": "budget_or_time_or_consecutive_fail",
+    "budget": 25,
+    "deadline": "2026-11-06",
+    "hours_cap": 80,
+    "consecutive_fail_gate_threshold": 3,
+    "description": "Stop when any: new hypotheses reach 25, 3 months elapse (2026-11-06), 80 research-hours logged, or 3 consecutive hypotheses fail at the same gate. Per stopping_rule_2026_08_06_direction_h.md §4."
+  },
+  "sacred_holdout": {
+    "path": "data/sacred_holdout/",
+    "status": "LOCKED",
+    "use_count": 0,
+    "max_use_count": 1,
+    "unlock_phase": "4.5 — final confirmation gate only",
+    "open_policy": "Opening this file and running any backtest against it counts as 1 trial. Cannot be reopened."
+  },
+  "cost_basis": {
+    "USDCAD": {
+      "spread_bps_measured": 0.0713,
+      "commission_bps": 7.0,
+      "round_trip_bps": 14.14,
+      "status": "FROM_TICKS",
+      "calibrated_at": "2026-08-06"
+    },
+    "USDCHF": {
+      "spread_bps_measured": 0.1237,
+      "commission_bps": 7.0,
+      "round_trip_bps": 14.25,
+      "status": "FROM_TICKS",
+      "calibrated_at": "2026-08-06"
+    },
+    "AUDUSD": {
+      "spread_bps_measured": 0.1422,
+      "commission_bps": 7.0,
+      "round_trip_bps": 14.28,
+      "status": "FROM_TICKS",
+      "calibrated_at": "2026-08-06"
+    },
+    "NZDUSD": {
+      "spread_bps_measured": 0.3407,
+      "commission_bps": 7.0,
+      "round_trip_bps": 14.68,
+      "status": "FROM_TICKS",
+      "calibrated_at": "2026-08-06"
+    }
+  },
+  "lineage": [
+    {
+      "trial_id": "9001",
+      "status": "PRE_REGISTERED",
+      "registered_at": "2026-08-06",
+      "notes": "DIRH-FOREX4-H1 — frozen params locked; min_confidence 0.65->0.55; measured costs mandatory; pre-registration doc: research/pre_registration/trial_9001_forex4_retest.md"
+    }
+  ],
+  "notes": [
+    "Opened 2026-08-06 per user approval (Direction H, range 9000-9999).",
+    "Pre-registered trial: 9001 (USDCAD/USDCHF/AUDUSD/NZDUSD H1 XGBoost walk-forward retest).",
+    "Verdicts MUST be stamped via research/registry_schema.stamp_trial_entry() (Phase 1 provenance).",
+    "GBPUSD/USDJPY NOT retested (conclusively REJECTED in original batch t=-8.77/-8.57).",
+    "Original 6-pair batch verdicts used --allow-default-costs for 5/6 pairs; retest forbids it."
+  ]
+}
