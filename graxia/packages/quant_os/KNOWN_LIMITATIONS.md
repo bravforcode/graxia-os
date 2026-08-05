@@ -8,7 +8,7 @@
    the live order-placement path. (Corrected 2026-07-29 — this line previously conflated the two and
    could mislead a reader into believing live order placement was not possible.)
 2. Margin estimate from `order_calc_margin()` does not account for existing positions
-3. Swap cost — CLARIFIED 2026-07-29: fully wired into the BACKTEST engine
+3. Swap cost — **FIXED on the paper/live path 2026-08-06** (was: wired into the BACKTEST engine
    (`backtest/engine.py:79-83,1131,1141,1172` calls `core/risk/swap_cost.py`,
    `BacktestConfig.enable_swap=True` by default) but confirmed via grep across
    every live-path file (`execution/oms.py`, `execution/manager.py`,
@@ -16,10 +16,19 @@
    `core/trading_loop.py`, `risk/`) to have ZERO call sites of the swap model —
    0 matches for "swap" in any of them. `execution/ledger.py` has a `swap_cost`
    schema field but nothing on the live path ever writes a nonzero value into
-   it. This means backtest P&L includes swap but live P&L (if this ever traded
-   live) would NOT — a backtest/live cost-accounting mismatch, not merely an
-   "unmodeled" gap. Matches this repo's own `DOC_CODE_CONTRADICTION_AUDIT.md:8`
-   and `MODULE_WIRING_AND_CAPABILITY_AUDIT.md:8` findings.
+   it. This meant backtest P&L includes swap but live P&L would NOT — a
+   backtest/live cost-accounting mismatch.)
+   Fix (2026-08-06, approved combined governance+P0 workstream): `execution/adapters/paper.py`
+   now realizes swap on position close via `execution/swap_model.py::SwapPolicy`, fed by the SAME
+   measured rates the backtest uses (`config/cost_calibration.json`, bps of notional:
+   XAUUSD -0.5/+0.1, USDJPY -0.3/+0.1, OIL -1.5/+0.3; NAS100 still `UNVERIFIED_NO_DATA` →
+   fail-closed NONE). Symbols without swap data get `SwapMode.NONE` (zero swap, never assumed).
+   While wiring, also fixed a REAL pre-existing bug: `PaperAdapter` never credited realized
+   price PnL to cash on close (fees only moved cash) — every realized gain/loss evaporated
+   from equity when the position was deleted. Both verified via
+   `tests/test_paper_adapter_swap.py` (7 tests) + `tests/test_optimization_atr_kelly_cost.py`.
+   Note: the same swap data (XAUUSD/USDJPY entries) was present in the working tree from a
+   prior session but uncommitted — committed together with the wiring.
 4. Backtest engine uses close-price fills — Phase 3.1 addressed bar-level resolution; tick-level fill pending
 5. ContractSpec snapshots have placeholder SHA-256 hashes
 6. No EURUSD or GBPUSD research started

@@ -11,12 +11,35 @@ import logging
 import random
 import uuid
 from datetime import UTC, datetime
+from decimal import Decimal
 
 from ...core.config import get_config
 from ...core.contract_specs import get_spec
+from ..swap_model import SwapMode, SwapPolicy, SwapRates
 from .base import AccountInfo, BrokerAdapter, Order, OrderResult, OrderStatus
 
 logger = logging.getLogger(__name__)
+
+# Swap rates come from the same measured cost calibration the backtest
+# engine uses (config/cost_calibration.json, bps of notional). Symbols
+# without swap data get SwapMode.NONE — swap is NOT silently assumed.
+def _swap_rates_for(symbol: str) -> SwapRates:
+    try:
+        from ...backtest.dynamic_spread_model import SymbolCostProfile
+
+        profile = SymbolCostProfile.for_symbol(symbol)
+    except Exception as exc:  # noqa: BLE001 - any unmeasured/missing profile -> no swap
+        logger.warning("paper.swap_rates: no cost profile for %s (%s) — swap=NONE", symbol, exc)
+        return SwapRates(mode=SwapMode.NONE)
+    if profile.swap_long_bps is None or profile.swap_short_bps is None:
+        return SwapRates(mode=SwapMode.NONE)
+    # bps of notional -> fractional daily rate (same conversion as backtest)
+    return SwapRates(
+        swap_long=Decimal(str(profile.swap_long_bps)) / Decimal("10000"),
+        swap_short=Decimal(str(profile.swap_short_bps)) / Decimal("10000"),
+        rollover_day=3,
+        mode=SwapMode.FIXED,
+    )
 
 
 class PaperAdapter(BrokerAdapter):
@@ -141,6 +164,18 @@ class PaperAdapter(BrokerAdapter):
             existing_side = existing["side"]
             is_close = (existing_side == "BUY" and side == "SELL") or (existing_side == "SELL" and side == "BUY")
             if is_close:
+                closed_qty = min(qty, existing["quantity"])
+                # Realize price PnL into cash on close (previously only fees
+                # moved cash, so every realized gain/loss evaporated from
+                # equity when the position was deleted).
+                multiplier = 10.0 if "JPY" in order.symbol else 1.0
+                if existing_side == "BUY":
+                    realized = (fill_price - existing["avg_price"]) * closed_qty * multiplier
+                else:
+                    realized = (existing["avg_price"] - fill_price) * closed_qty * multiplier
+                self._cash += realized
+                closed_fraction = closed_qty / existing["quantity"]
+                self._apply_swap_on_close(order.symbol, existing, closed_fraction)
                 if qty >= existing["quantity"]:
                     del self._positions[order.symbol]
                 else:
@@ -156,7 +191,37 @@ class PaperAdapter(BrokerAdapter):
                 "side": side,
                 "quantity": qty,
                 "avg_price": fill_price,
+                "opened_at": datetime.now(UTC),
             }
+
+    def _apply_swap_on_close(self, symbol: str, pos: dict, closed_fraction: float) -> None:
+        """Realize swap cost for the closed portion of a position.
+
+        Uses the same measured swap rates as the backtest engine
+        (config/cost_calibration.json, bps of notional). Symbols without
+        swap data or same-day round trips yield zero swap (SwapMode.NONE /
+        no rollover days). Swap is a cash reduction at close — matching the
+        ledger's close-time swap_cost convention.
+        """
+        opened_at = pos.get("opened_at")
+        if opened_at is None:
+            return
+        rates = _swap_rates_for(symbol)
+        if rates.mode == SwapMode.NONE:
+            return
+        policy = SwapPolicy(rates)
+        notional = Decimal(str(pos["avg_price"])) * Decimal(str(pos["quantity"]))
+        result = policy.apply(
+            entry_time=opened_at,
+            exit_time=datetime.now(UTC),
+            side=pos["side"],
+            volume=notional,
+        )
+        swap = result.swap_applied * Decimal(str(closed_fraction))
+        if swap != 0:
+            # swap_applied is already signed (negative = cost, positive = credit)
+            self._cash += float(swap)
+            logger.info("paper.swap: %s %s swap=%s (fraction=%s)", symbol, pos["side"], swap, closed_fraction)
 
     def _refresh_equity(self) -> None:
         """Recalculate equity from cash and open positions."""
