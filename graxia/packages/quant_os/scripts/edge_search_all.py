@@ -37,8 +37,8 @@ import numpy as np
 import pandas as pd
 
 if sys.platform == "win32":
-    sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
-    sys.stderr.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
+    sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[union-attr, attr-defined]
+    sys.stderr.reconfigure(encoding="utf-8")  # type: ignore[union-attr, attr-defined]
 
 ROOT = Path(__file__).resolve().parent.parent
 GRAXIA_ROOT = ROOT.parent.parent.parent
