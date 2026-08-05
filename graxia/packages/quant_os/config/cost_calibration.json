@@ -52,8 +52,8 @@
         }
       },
       "notes": "SP3: calibrated from existing 24h tick parquet — breadth expansion",
-      "swap_long_bps": -0.50,
-      "swap_short_bps": 0.10
+      "swap_long_bps": -0.5,
+      "swap_short_bps": 0.1
     },
     "NAS100": {
       "mt5_symbol": "NAS100",
@@ -146,8 +146,8 @@
         }
       },
       "notes": "SP3: calibrated from existing 24h tick parquet — breadth expansion",
-      "swap_long_bps": -0.30,
-      "swap_short_bps": 0.10
+      "swap_long_bps": -0.3,
+      "swap_short_bps": 0.1
     },
     "BTCUSD": {
       "mt5_symbol": "BTCUSD",
@@ -356,6 +356,206 @@
         }
       },
       "notes": "SP3: calibrated from existing 24h tick parquet — breadth expansion"
+    },
+    "USDCAD": {
+      "mt5_symbol": "USDCAD",
+      "spread_bps_measured": 0.0713126883089513,
+      "spread_bps_p95": 0.2854818219452732,
+      "spread_bps_mean": 0.16973289367180444,
+      "spread_bps_min": 0.07102096183577444,
+      "spread_bps_max": 10.776131226160468,
+      "spread_bps_std": 0.5062599980186056,
+      "commission_bps": 7.0,
+      "slippage_bps_measured": null,
+      "round_trip_bps_measured": 14.142625,
+      "round_trip_bps_p95": 14.570964,
+      "contract_size": 100000.0,
+      "tick_size": 1e-05,
+      "status": "FROM_TICKS",
+      "sample_size": 344241,
+      "measurement_window": "2026-07-31 -> 2026-08-05 (UTC)",
+      "measurement_duration_days": 5.09,
+      "measurement_mode": "mt5_copy_ticks_range_backfill",
+      "sessions": {
+        "asian": {
+          "median": 0.1424,
+          "p90": 0.2852,
+          "n": 86590
+        },
+        "london": {
+          "median": 0.0713,
+          "p90": 0.2136,
+          "n": 76734
+        },
+        "london_ny_overlap": {
+          "median": 0.0712,
+          "p90": 0.2135,
+          "n": 63128
+        },
+        "ny": {
+          "median": 0.0712,
+          "p90": 0.1427,
+          "n": 96592
+        },
+        "rollover": {
+          "median": 0.1427,
+          "p90": 0.3556,
+          "n": 21197
+        }
+      },
+      "broker_source": "Pepperstone Razor (MT5)",
+      "notes": "Direction H retest cost calibration — backfilled via mt5.copy_ticks_range. Filtered to ask>bid quote ticks (MT5 COPY_TICKS_ALL mixes last-trade ticks). slippage: null; fill-simulator P90 is the source when measured.",
+      "recalibrated_at": "2026-08-05T22:18:23.735125+00:00"
+    },
+    "USDCHF": {
+      "mt5_symbol": "USDCHF",
+      "spread_bps_measured": 0.12367283588077334,
+      "spread_bps_p95": 0.4937844877594403,
+      "spread_bps_mean": 0.24444505270777575,
+      "spread_bps_min": 0.12322023769127773,
+      "spread_bps_max": 19.69784252875675,
+      "spread_bps_std": 0.882216858333499,
+      "commission_bps": 7.0,
+      "slippage_bps_measured": null,
+      "round_trip_bps_measured": 14.247346,
+      "round_trip_bps_p95": 14.987569,
+      "contract_size": 100000.0,
+      "tick_size": 1e-05,
+      "status": "FROM_TICKS",
+      "sample_size": 243004,
+      "measurement_window": "2026-07-31 -> 2026-08-05 (UTC)",
+      "measurement_duration_days": 5.09,
+      "measurement_mode": "mt5_copy_ticks_range_backfill",
+      "sessions": {
+        "asian": {
+          "median": 0.1238,
+          "p90": 0.3709,
+          "n": 53135
+        },
+        "london": {
+          "median": 0.1236,
+          "p90": 0.2474,
+          "n": 45781
+        },
+        "london_ny_overlap": {
+          "median": 0.1236,
+          "p90": 0.2475,
+          "n": 43975
+        },
+        "ny": {
+          "median": 0.1237,
+          "p90": 0.2477,
+          "n": 82896
+        },
+        "rollover": {
+          "median": 0.2472,
+          "p90": 0.6192,
+          "n": 17217
+        }
+      },
+      "broker_source": "Pepperstone Razor (MT5)",
+      "notes": "Direction H retest cost calibration — backfilled via mt5.copy_ticks_range. Filtered to ask>bid quote ticks (MT5 COPY_TICKS_ALL mixes last-trade ticks). slippage: null; fill-simulator P90 is the source when measured.",
+      "recalibrated_at": "2026-08-05T22:18:23.735125+00:00"
+    },
+    "AUDUSD": {
+      "mt5_symbol": "AUDUSD",
+      "spread_bps_measured": 0.14221817690612193,
+      "spread_bps_p95": 0.426024411199976,
+      "spread_bps_mean": 0.22292403499032507,
+      "spread_bps_min": 0.14155383646378009,
+      "spread_bps_max": 20.308028772074934,
+      "spread_bps_std": 0.5579551051624724,
+      "commission_bps": 7.0,
+      "slippage_bps_measured": null,
+      "round_trip_bps_measured": 14.284436,
+      "round_trip_bps_p95": 14.852049,
+      "contract_size": 100000.0,
+      "tick_size": 1e-05,
+      "status": "FROM_TICKS",
+      "sample_size": 284510,
+      "measurement_window": "2026-07-31 -> 2026-08-05 (UTC)",
+      "measurement_duration_days": 5.09,
+      "measurement_mode": "mt5_copy_ticks_range_backfill",
+      "sessions": {
+        "asian": {
+          "median": 0.1422,
+          "p90": 0.2858,
+          "n": 61727
+        },
+        "london": {
+          "median": 0.1424,
+          "p90": 0.2839,
+          "n": 57095
+        },
+        "london_ny_overlap": {
+          "median": 0.1423,
+          "p90": 0.2845,
+          "n": 51302
+        },
+        "ny": {
+          "median": 0.1421,
+          "p90": 0.2841,
+          "n": 92401
+        },
+        "rollover": {
+          "median": 0.1422,
+          "p90": 0.4262,
+          "n": 21985
+        }
+      },
+      "broker_source": "Pepperstone Razor (MT5)",
+      "notes": "Direction H retest cost calibration — backfilled via mt5.copy_ticks_range. Filtered to ask>bid quote ticks (MT5 COPY_TICKS_ALL mixes last-trade ticks). slippage: null; fill-simulator P90 is the source when measured.",
+      "recalibrated_at": "2026-08-05T22:18:23.735125+00:00"
+    },
+    "NZDUSD": {
+      "mt5_symbol": "NZDUSD",
+      "spread_bps_measured": 0.3407096983019029,
+      "spread_bps_p95": 0.6813845734539384,
+      "spread_bps_mean": 0.5106434745592913,
+      "spread_bps_min": 0.16935804831896067,
+      "spread_bps_max": 19.676024086168262,
+      "spread_bps_std": 1.0786645429814463,
+      "commission_bps": 7.0,
+      "slippage_bps_measured": null,
+      "round_trip_bps_measured": 14.681419,
+      "round_trip_bps_p95": 15.362769,
+      "contract_size": 100000.0,
+      "tick_size": 1e-05,
+      "status": "FROM_TICKS",
+      "sample_size": 230982,
+      "measurement_window": "2026-07-31 -> 2026-08-05 (UTC)",
+      "measurement_duration_days": 5.09,
+      "measurement_mode": "mt5_copy_ticks_range_backfill",
+      "sessions": {
+        "asian": {
+          "median": 0.3407,
+          "p90": 0.6805,
+          "n": 57626
+        },
+        "london": {
+          "median": 0.3408,
+          "p90": 0.5113,
+          "n": 45636
+        },
+        "london_ny_overlap": {
+          "median": 0.3408,
+          "p90": 0.5116,
+          "n": 39199
+        },
+        "ny": {
+          "median": 0.3402,
+          "p90": 0.511,
+          "n": 74678
+        },
+        "rollover": {
+          "median": 0.3395,
+          "p90": 0.6787,
+          "n": 13843
+        }
+      },
+      "broker_source": "Pepperstone Razor (MT5)",
+      "notes": "Direction H retest cost calibration — backfilled via mt5.copy_ticks_range. Filtered to ask>bid quote ticks (MT5 COPY_TICKS_ALL mixes last-trade ticks). slippage: null; fill-simulator P90 is the source when measured.",
+      "recalibrated_at": "2026-08-05T22:18:23.735125+00:00"
     }
   },
   "stress_scenarios": {

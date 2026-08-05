@@ -416,10 +416,17 @@ class TestCostCalibration:
         """Cost calibration must be version 4.x (4.1 after the 2026-08-04 v4.1 measured-costs restore)."""
         assert cost_data["version"].startswith("4.")
 
-    def test_8_assets(self, cost_data):
-        """Must have exactly 8 assets (4-asset core + Direction G additions)."""
+    def test_12_assets(self, cost_data):
+        """Must have exactly 12 assets (4-asset core + Direction G additions + Direction H forex4).
+
+        2026-08-06: USDCAD/USDCHF/AUDUSD/NZDUSD added as FROM_TICKS entries for the
+        Direction H retest (MT5 copy_ticks_range backfill, see scripts/calibrate_forex4_from_ticks.py).
+        """
         assets = set(cost_data["assets"].keys())
-        assert assets == {"XAUUSD", "NAS100", "OIL", "USDJPY", "BTCUSD", "EURUSD", "GBPUSD", "US30"}
+        assert assets == {
+            "XAUUSD", "NAS100", "OIL", "USDJPY", "BTCUSD", "EURUSD", "GBPUSD", "US30",
+            "USDCAD", "USDCHF", "AUDUSD", "NZDUSD",
+        }
 
     def test_xauusd_spread(self, cost_data):
         """XAUUSD spread must match the real tick-derived median (data/ticks/XAUUSD_ticks_24h.parquet).
