@@ -147,99 +147,107 @@
     },
     "BTCUSD": {
       "mt5_symbol": "BTCUSD",
-      "spread_bps_measured": 2.511,
-      "spread_bps_p95": 2.554,
-      "spread_bps_mean": 2.672,
-      "spread_bps_min": 2.424,
-      "spread_bps_max": 18.221,
-      "spread_bps_std": 0.0,
+      "spread_bps_measured": 2.376175137414208,
+      "spread_bps_p95": 3.110908457339348,
+      "spread_bps_mean": 2.5301336487718067,
+      "spread_bps_min": 1.593405849233532,
+      "spread_bps_max": 11.621071986940342,
+      "spread_bps_std": 0.7141052817951864,
       "commission_bps": 10.0,
-      "slippage_bps_measured": 0.0,
-      "round_trip_bps_measured": 15.022,
-      "round_trip_bps_p95": 15.108,
+      "slippage_bps_measured": null,
+      "round_trip_bps_measured": 24.752350274828416,
+      "round_trip_bps_p95": 26.221816914678698,
       "contract_size": 1.0,
-      "tick_size": 1.0,
+      "tick_size": 0.01,
       "status": "FROM_TICKS",
-      "sample_size": 459996,
-      "measurement_window": "24h tick parquet (2026-06-25)",
-      "measurement_duration_days": 1,
-      "measurement_mode": "tick_parquet",
+      "sample_size": 1295870,
+      "measurement_window": "2026-07-31 -> 2026-08-05 (UTC)",
+      "measurement_duration_days": 4.4,
+      "measurement_mode": "mt5_copy_ticks_range_backfill",
       "sessions": {
         "asian": {
-          "median": 2.513,
-          "p90": 2.566,
-          "n": 137271
+          "median": 2.3698,
+          "p90": 2.391,
+          "n": 422447
         },
         "london": {
-          "median": 2.482,
-          "p90": 2.509,
-          "n": 132595
+          "median": 2.3753,
+          "p90": 2.3992,
+          "n": 224289
         },
         "london_ny_overlap": {
-          "median": 2.452,
-          "p90": 4.224,
-          "n": 66890
+          "median": 2.3789,
+          "p90": 2.3988,
+          "n": 183743
         },
         "ny": {
-          "median": 2.527,
-          "p90": 2.932,
-          "n": 89241
+          "median": 2.3773,
+          "p90": 2.6933,
+          "n": 348045
         },
         "rollover": {
-          "median": 2.53,
-          "p90": 2.536,
-          "n": 33999
+          "median": 2.3697,
+          "p90": 2.4008,
+          "n": 117346
         }
       },
-      "notes": "SP3: calibrated from existing 24h tick parquet — breadth expansion"
+      "notes": "Backfilled via mt5.copy_ticks_range (full tick history served by broker). EURUSD filtered to ask>bid quotes only (MT5 COPY_TICKS_ALL mixes last-trade ticks). Pending live 7-day sampling completion 2026-08-12 for confirmation. | slippage: null in calibration; sourced from fill_samples_BTCUSD_1min.csv P90 (fill_simulator_p90_points).",
+      "spread_bps": 2.376175137414208,
+      "recalibrated_at": "2026-08-05T07:02:12.953367+00:00",
+      "broker_source": "Pepperstone Razor (MT5)",
+      "slippage_source": "fill_simulator_p90_points"
     },
     "EURUSD": {
       "mt5_symbol": "EURUSD",
-      "spread_bps_measured": 0.088,
-      "spread_bps_p95": 0.176,
-      "spread_bps_mean": 0.146,
-      "spread_bps_min": 0.088,
-      "spread_bps_max": 34.497,
-      "spread_bps_std": 0.0,
+      "spread_bps_measured": 0.0868655018008566,
+      "spread_bps_p95": 3.290755574800147,
+      "spread_bps_mean": 0.395876784736667,
+      "spread_bps_min": 0.08651379678830949,
+      "spread_bps_max": 9.975321920988565,
+      "spread_bps_std": 1.0205219816584061,
       "commission_bps": 7.0,
-      "slippage_bps_measured": 0.0,
-      "round_trip_bps_measured": 7.176,
-      "round_trip_bps_p95": 7.352,
+      "slippage_bps_measured": null,
+      "round_trip_bps_measured": 14.173731003601713,
+      "round_trip_bps_p95": 20.581511149600296,
       "contract_size": 100000.0,
       "tick_size": 1e-05,
       "status": "FROM_TICKS",
-      "sample_size": 132790,
-      "measurement_window": "24h tick parquet (2026-06-25)",
-      "measurement_duration_days": 1,
-      "measurement_mode": "tick_parquet",
+      "sample_size": 56115,
+      "measurement_window": "2026-07-31 -> 2026-08-05 (UTC)",
+      "measurement_duration_days": 4.42,
+      "measurement_mode": "mt5_copy_ticks_range_backfill",
       "sessions": {
         "asian": {
-          "median": 0.088,
-          "p90": 0.44,
-          "n": 27638
+          "median": 0.1732,
+          "p90": 3.8228,
+          "n": 18287
         },
         "london": {
-          "median": 0.088,
-          "p90": 0.176,
-          "n": 39757
+          "median": 0.0869,
+          "p90": 0.1738,
+          "n": 6843
         },
         "london_ny_overlap": {
-          "median": 0.088,
-          "p90": 0.176,
-          "n": 25114
+          "median": 0.0868,
+          "p90": 0.2605,
+          "n": 7839
         },
         "ny": {
-          "median": 0.088,
-          "p90": 0.176,
-          "n": 32004
+          "median": 0.0868,
+          "p90": 0.2603,
+          "n": 13645
         },
         "rollover": {
-          "median": 0.088,
-          "p90": 0.176,
-          "n": 8277
+          "median": 0.1733,
+          "p90": 0.2599,
+          "n": 9501
         }
       },
-      "notes": "SP3: calibrated from existing 24h tick parquet — breadth expansion"
+      "notes": "Backfilled via mt5.copy_ticks_range (full tick history served by broker). EURUSD filtered to ask>bid quotes only (MT5 COPY_TICKS_ALL mixes last-trade ticks). Pending live 7-day sampling completion 2026-08-12 for confirmation. | slippage: null in calibration; sourced from fill_samples_EURUSD_1min.csv P90 (fill_simulator_p90_points).",
+      "spread_bps": 0.0868655018008566,
+      "recalibrated_at": "2026-08-05T07:02:12.953367+00:00",
+      "broker_source": "Pepperstone Razor (MT5)",
+      "slippage_source": "fill_simulator_p90_points"
     },
     "GBPUSD": {
       "mt5_symbol": "GBPUSD",

@@ -34,7 +34,12 @@ POINT_VALUE = 0.01  # 1 point = $0.01 for 0.01 lot XAUUSD
 
 # ---------- helpers ----------
 def load_slippage_p90(symbol: str, freq: str) -> dict:
-    """Load fill simulator data and compute P90 slippage by condition."""
+    """Load fill simulator data and compute P90 slippage by condition.
+
+    FAIL-CLOSED: if no fill-simulator CSV exists for the symbol, raise instead
+    of returning hardcoded guesses. The historical fallback dict (39/45/33/42
+    etc.) was fabricated cost data — never silently inherit a guess.
+    """
     path = os.path.join(FILL_DIR, f"fill_samples_{symbol}_{freq}.csv")
     if not os.path.exists(path):
         # Try 1min as fallback
@@ -43,13 +48,10 @@ def load_slippage_p90(symbol: str, freq: str) -> dict:
             path = path_1min
             print("  [FALLBACK] Using 1min fill samples")
         else:
-            print(f"  [WARN] Fill samples not found: {path}")
-            return {
-                "overall": 39.0,
-                "vol_regime": {"high": 45, "low": 33, "med": 42},
-                "spread_bucket": {"med": 40, "tight": 34, "wide": 48},
-                "session": {"asian": 44, "london": 38, "ny": 34, "overlap": 37},
-            }
+            raise FileNotFoundError(
+                f"Fill samples not found for {symbol}@{freq} or {symbol}@1min in {FILL_DIR}. "
+                f"Run scripts/simulate_fills.py first — refusing to use guessed slippage."
+            )
     df = pd.read_csv(path)
     result: dict[str, float | dict[str, float]] = {"overall": float(df["slippage_points"].quantile(0.9))}
     for col in ["vol_regime", "spread_bucket", "session"]:
@@ -429,8 +431,7 @@ def main():
     avg_close = float(df["close"].mean()) if "close" in df.columns else None
     if avg_close:
         print(
-            f"  Cost/trade at avg close ${avg_close:.2f}: "
-            f"${(args.spread_cost + args.slippage_p90) * avg_close:.2f}"
+            f"  Cost/trade at avg close ${avg_close:.2f}: " f"${(args.spread_cost + args.slippage_p90) * avg_close:.2f}"
         )
 
     # 2. Load slippage P90

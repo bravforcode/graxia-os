@@ -38,9 +38,8 @@ import json
 import os
 import sys
 import time
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Optional
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data" / "spread_measurements"
@@ -68,7 +67,7 @@ if os.environ.get("TRADING_MODE", "").upper() not in {
     os.environ["TRADING_MODE"] = "paper"
 
 
-def _get_mt5_credentials() -> Optional[dict]:
+def _get_mt5_credentials() -> dict | None:
     """Load MT5 credentials via graxia.packages.quant_os.core.config.get_config().
 
     Returns None (falls back to anonymous mt5.initialize()) if the config
@@ -89,8 +88,10 @@ def _get_mt5_credentials() -> Optional[dict]:
             "timeout": cfg.mt5_timeout_ms,
         }
     except Exception as e:
-        print(f"  WARNING: could not load MT5 credentials via get_config() ({e}); "
-              f"falling back to anonymous mt5.initialize()")
+        print(
+            f"  WARNING: could not load MT5 credentials via get_config() ({e}); "
+            f"falling back to anonymous mt5.initialize()"
+        )
         return None
 
 
@@ -106,23 +107,21 @@ def _connect_mt5_with_backoff(mt5_module, max_attempts: int = 3) -> bool:
             if creds is not None:
                 ok = mt5_module.initialize(path=creds["path"], timeout=creds["timeout"])
                 if ok:
-                    ok = mt5_module.login(
-                        creds["login"], password=creds["password"], server=creds["server"]
-                    )
+                    ok = mt5_module.login(creds["login"], password=creds["password"], server=creds["server"])
             else:
                 ok = mt5_module.initialize()
 
             if ok:
                 return True
-            print(f"  MT5 connect attempt {attempt}/{max_attempts} failed: "
-                  f"{mt5_module.last_error()}")
+            print(f"  MT5 connect attempt {attempt}/{max_attempts} failed: " f"{mt5_module.last_error()}")
         except Exception as e:
             print(f"  MT5 connect attempt {attempt}/{max_attempts} raised: {e}")
 
         if attempt < max_attempts:
-            time.sleep(min(2 ** attempt, 10))
+            time.sleep(min(2**attempt, 10))
 
     return False
+
 
 # Session boundaries (UTC hours)
 SESSIONS = {
@@ -144,7 +143,7 @@ def get_session(hour_utc: int) -> str:
 def measure_once(symbols: list[str]) -> list[dict]:
     """Take one measurement snapshot for all symbols."""
     try:
-        import MetaTrader5 as mt5
+        import MetaTrader5 as mt5  # noqa: N813 — canonical MT5 alias used across the repo
     except ImportError:
         print("ERROR: MetaTrader5 not installed. Run: pip install MetaTrader5")
         sys.exit(1)
@@ -153,7 +152,7 @@ def measure_once(symbols: list[str]) -> list[dict]:
         print(f"ERROR: MT5 connect failed after retries: {mt5.last_error()}")
         return []
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     measurements = []
 
     for sym_name in symbols:
@@ -178,19 +177,21 @@ def measure_once(symbols: list[str]) -> list[dict]:
             mid = (ask + bid) / 2.0
             spread_bps = (spread_points / mid) * 10000 if mid > 0 else 0
 
-            measurements.append({
-                "symbol": sym_name,
-                "display_symbol": SYMBOL_DISPLAY_MAP.get(sym_name, sym_name),
-                "mt5_symbol": sym_name,
-                "timestamp_utc": now.isoformat(),
-                "bid": bid,
-                "ask": ask,
-                "spread_points": round(spread_points, 6),
-                "spread_bps": round(spread_bps, 4),
-                "session": get_session(now.hour),
-                "point": sym_info.point,
-                "digits": sym_info.digits,
-            })
+            measurements.append(
+                {
+                    "symbol": sym_name,
+                    "display_symbol": SYMBOL_DISPLAY_MAP.get(sym_name, sym_name),
+                    "mt5_symbol": sym_name,
+                    "timestamp_utc": now.isoformat(),
+                    "bid": bid,
+                    "ask": ask,
+                    "spread_points": round(spread_points, 6),
+                    "spread_bps": round(spread_bps, 4),
+                    "session": get_session(now.hour),
+                    "point": sym_info.point,
+                    "digits": sym_info.digits,
+                }
+            )
         except Exception as e:
             print(f"  WARNING: {sym_name} measurement failed: {e}")
             continue
@@ -199,10 +200,16 @@ def measure_once(symbols: list[str]) -> list[dict]:
     return measurements
 
 
-def save_day(day_data: list[dict], date_str: str) -> Path:
-    """Save measurements for one day as JSON."""
+def save_day(day_data: list[dict], date_str: str, output_suffix: str = "") -> Path:
+    """Save measurements for one day as JSON.
+
+    With ``output_suffix`` set (e.g. ``directionG``), writes to
+    ``<date_str>_<output_suffix>.json`` instead of ``<date_str>.json`` so a
+    focused sampling run never collides with the default daily daemon file.
+    """
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    path = DATA_DIR / f"{date_str}.json"
+    fname = f"{date_str}.json" if not output_suffix else f"{date_str}_{output_suffix}.json"
+    path = DATA_DIR / fname
 
     # Merge with existing if file exists
     if path.exists():
@@ -216,13 +223,13 @@ def save_day(day_data: list[dict], date_str: str) -> Path:
 
 def compute_summary(all_measurements: list[dict]) -> dict:
     """Compute per-symbol, per-session summary statistics."""
-    from collections import defaultdict
     import statistics
+    from collections import defaultdict
 
     grouped: dict[tuple[str, str], list[float]] = defaultdict(list)
     for m in all_measurements:
-        key = (m["symbol"], m["session"])
-        grouped[key].append(m["spread_bps"])
+        grp_key = (m["symbol"], m["session"])
+        grouped[grp_key].append(m["spread_bps"])
 
     summary = {}
     for (symbol, session), values in sorted(grouped.items()):
@@ -230,8 +237,8 @@ def compute_summary(all_measurements: list[dict]) -> dict:
             continue
         values_sorted = sorted(values)
         n = len(values_sorted)
-        key = f"{symbol}_{session}"
-        summary[key] = {
+        stat_key = f"{symbol}_{session}"
+        summary[stat_key] = {
             "symbol": symbol,
             "session": session,
             "n_samples": n,
@@ -253,8 +260,8 @@ def compute_summary(all_measurements: list[dict]) -> dict:
             continue
         values_sorted = sorted(values)
         n = len(values_sorted)
-        key = f"{symbol}_ALL"
-        summary[key] = {
+        stat_key = f"{symbol}_ALL"
+        summary[stat_key] = {
             "symbol": symbol,
             "session": "ALL",
             "n_samples": n,
@@ -269,22 +276,24 @@ def compute_summary(all_measurements: list[dict]) -> dict:
     return summary
 
 
-def run_measurement(duration_days: int, symbols: list[str], interval_sec: int = 300):
+def run_measurement(duration_days: int, symbols: list[str], interval_sec: int = 300, output_suffix: str = ""):
     """Main measurement loop."""
-    print(f"=== Continuous Spread Measurement ===")
+    print("=== Continuous Spread Measurement ===")
     print(f"Duration: {duration_days} days")
     print(f"Interval: {interval_sec}s (every {interval_sec // 60} min)")
     print(f"Symbols: {', '.join(symbols)}")
     print(f"Output: {DATA_DIR}")
+    if output_suffix:
+        print(f"Output suffix: _{output_suffix} (separate from daily daemon files)")
     print()
 
-    end_time = datetime.now(timezone.utc) + timedelta(days=duration_days)
+    end_time = datetime.now(UTC) + timedelta(days=duration_days)
     all_measurements = []
     day_buckets: dict[str, list[dict]] = {}
 
     sample_count = 0
-    while datetime.now(timezone.utc) < end_time:
-        now = datetime.now(timezone.utc)
+    while datetime.now(UTC) < end_time:
+        now = datetime.now(UTC)
         date_str = now.strftime("%Y-%m-%d")
 
         measurements = measure_once(symbols)
@@ -298,13 +307,15 @@ def run_measurement(duration_days: int, symbols: list[str], interval_sec: int = 
 
             sample_count += 1
             if sample_count % 12 == 0:  # Every hour (12 x 5min)
-                print(f"  [{now.strftime('%Y-%m-%d %H:%M UTC')}] "
-                      f"Samples: {sample_count}, "
-                      f"Total measurements: {len(all_measurements)}")
+                print(
+                    f"  [{now.strftime('%Y-%m-%d %H:%M UTC')}] "
+                    f"Samples: {sample_count}, "
+                    f"Total measurements: {len(all_measurements)}"
+                )
 
             # Save daily file at end of day or every 100 measurements
             if len(day_buckets[date_str]) >= 100 or now.hour == 23:
-                save_day(day_buckets[date_str], date_str)
+                save_day(day_buckets[date_str], date_str, output_suffix)
                 day_buckets[date_str] = []
 
         # Sleep until next interval
@@ -313,7 +324,7 @@ def run_measurement(duration_days: int, symbols: list[str], interval_sec: int = 
     # Final save for any remaining data
     for date_str, data in day_buckets.items():
         if data:
-            save_day(data, date_str)
+            save_day(data, date_str, output_suffix)
 
     # Generate summary
     if all_measurements:
@@ -323,7 +334,7 @@ def run_measurement(duration_days: int, symbols: list[str], interval_sec: int = 
             json.dumps(summary, indent=2, ensure_ascii=False),
             encoding="utf-8",
         )
-        print(f"\n=== Measurement Complete ===")
+        print("\n=== Measurement Complete ===")
         print(f"Total measurements: {len(all_measurements)}")
         print(f"Summary saved to: {summary_path}")
 
@@ -332,9 +343,11 @@ def run_measurement(duration_days: int, symbols: list[str], interval_sec: int = 
         print("-" * 60)
         for key, stats in sorted(summary.items()):
             if stats["session"] != "ALL":
-                print(f"{stats['symbol']:<10} {stats['session']:<12} "
-                      f"{stats['n_samples']:>5} {stats['mean_bps']:>8.2f} "
-                      f"{stats['p95_bps']:>8.2f} {stats['max_bps']:>8.2f}")
+                print(
+                    f"{stats['symbol']:<10} {stats['session']:<12} "
+                    f"{stats['n_samples']:>5} {stats['mean_bps']:>8.2f} "
+                    f"{stats['p95_bps']:>8.2f} {stats['max_bps']:>8.2f}"
+                )
     else:
         print("\nERROR: No measurements collected. Check MT5 connection.")
 
@@ -346,10 +359,18 @@ def main():
     parser.add_argument("--interval", type=int, default=300, help="Measurement interval in seconds (default: 300)")
     parser.add_argument("--once", action="store_true", help="Take single snapshot and exit (no loop)")
     parser.add_argument(
+        "--output-suffix",
+        type=str,
+        default="",
+        help="Suffix for output filenames (e.g. 'directionG' -> YYYY-MM-DD_directionG.json). "
+        "Use when running alongside the default daily daemon to avoid colliding with "
+        "its YYYY-MM-DD.json files.",
+    )
+    parser.add_argument(
         "--no-save",
         action="store_true",
         help="With --once: print the snapshot instead of appending it to data/spread_measurements/<date>.json "
-             "(default for --once is to persist, so it's safe to schedule as a recurring task)",
+        "(default for --once is to persist, so it's safe to schedule as a recurring task)",
     )
     args = parser.parse_args()
 
@@ -361,12 +382,12 @@ def main():
         if args.no_save:
             print(json.dumps(measurements, indent=2))
             return
-        date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        path = save_day(measurements, date_str)
+        date_str = datetime.now(UTC).strftime("%Y-%m-%d")
+        path = save_day(measurements, date_str, args.output_suffix)
         print(f"Saved {len(measurements)} measurements -> {path}")
         return
 
-    run_measurement(args.duration_days, args.symbols, args.interval)
+    run_measurement(args.duration_days, args.symbols, args.interval, args.output_suffix)
 
 
 if __name__ == "__main__":

@@ -24,6 +24,11 @@ COST_PATH = ROOT / "config" / "cost_calibration.json"
 def recalibrate(symbol: str, ticks: pd.DataFrame) -> dict:
     if ticks is None or len(ticks) == 0:
         raise ValueError(f"no tick data for {symbol}")
+    # Filter to real quotes only: MT5 COPY_TICKS_ALL mixes last-trade ticks
+    # (bid==ask) with quote ticks. Zero-spread rows are NOT quotes — exclude.
+    ticks = ticks[ticks["ask"] > ticks["bid"]]
+    if len(ticks) == 0:
+        raise ValueError(f"no quote ticks (ask>bid) for {symbol}")
     mid = (ticks["bid"] + ticks["ask"]) / 2.0
     spread_bps = ((ticks["ask"] - ticks["bid"]) / mid.replace(0, pd.NA) * 10_000.0).dropna()
     weight = ticks["volume"].fillna(1.0).clip(lower=1e-9)
