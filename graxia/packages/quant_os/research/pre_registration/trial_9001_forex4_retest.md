@@ -1,7 +1,22 @@
 # Pre-Registration — Trial 9001: Forex 4-Pair Directional Retest (Direction H)
 
-**Status:** FROZEN — 2026-08-06 (params below are locked; no tuning after this point)
+**Status:** RESOLVED — REJECTED 2026-08-06 (verdict stamped with provenance)
 **Direction H** (`reports/stopping_rule_2026_08_06_direction_h.md`, ledger `research/trial_ledger_h.json`)
+
+## RESULT (2026-08-06)
+
+| Pair | Trades | Net PnL | t-stat | Verdict |
+|------|--------|---------|--------|---------|
+| USDCAD | 1,901 | -$1.61 | **-8.15** | REJECT |
+| USDCHF | 2,749 | -$1.72 | **-8.94** | REJECT |
+| AUDUSD | 6,012 | -$2.86 | **-16.27** | REJECT |
+| NZDUSD | 6,215 | -$2.78 | **-17.41** | REJECT |
+
+**Original INCONCLUSIVE verdicts RESOLVED → REJECT.** With measured FROM_TICKS
+costs and a powered design (min_confidence 0.55, 1,901-6,215 trades per pair,
+247 folds), every pair loses **significantly** (t = -8.2 to -17.4) — the
+mechanism is a structural failure, not underpowered, not a cost artifact.
+Direction H consecutive-fail count: 1/3 (stopping rule §4.4).
 
 ## Background / motivation (why this trial exists)
 

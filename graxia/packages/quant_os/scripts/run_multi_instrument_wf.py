@@ -322,9 +322,20 @@ def main():
     parser.add_argument("--output-dir", default=str(BASE / "artifacts" / "wf_13_instruments"))
     parser.add_argument("--symbols", nargs="*", default=None)
     parser.add_argument("--verbose", action="store_true")
+    parser.add_argument(
+        "--min-confidence",
+        type=float,
+        default=0.65,
+        help="Model confidence threshold for taking a trade (Trial 9001 Direction H freezes 0.55; original batch used 0.65)",
+    )
     parser.add_argument("--allow-default-costs", action="store_true",
                         help="Allow unmeasured default costs for missing symbols (testing only)")
     args = parser.parse_args()
+
+    # Frozen-parameter override (Trial 9001 pre-registration): min_confidence
+    # is passed explicitly so the runner constant stays backward-compatible.
+    global MIN_CONFIDENCE
+    MIN_CONFIDENCE = args.min_confidence
 
     symbols = args.symbols or ALL_SYMBOLS
     output_dir = Path(args.output_dir)
