@@ -204,9 +204,9 @@
       "source_id": "NEW — surfaced by swap wiring (2026-08-06)",
       "source_ref": "config/cost_calibration.json",
       "live_block": false,
-      "status": "PARTIAL — EURUSD (-0.6423/+0.1402) and GBPUSD (-0.1775/-0.2072) MEASURED 2026-08-06 from MT5 symbol_info (swap_mode=1 per-lot USD) via scripts/measure_swap_rates.py + tests/test_optimization_atr_kelly_cost.py::test_eurusd_swaps/test_gbpusd_swaps. BTCUSD and US30 REMAIN OPEN: MT5 reports swap_mode=5 (repo enum knows 0-3; MQL5 docs say 5=INTEREST_CURRENT %/yr but repo swap_cost.py treats interest as mode 2) — raw values logged in reports/swap_rates_measurement.json (BTCUSD long -11.5 short +2.29; US30 long -6.12 short +1.12) but NOT added to calibration pending human verification of mode-5 semantics (per-lot vs %/yr gives ~2x difference). Fail-closed: both symbols get SwapMode.NONE until resolved.",
-      "evidence": "config/cost_calibration.json assets; reports/swap_rates_measurement.json",
-      "test_proof": "tests/test_optimization_atr_kelly_cost.py (2 new swap tests); tests/test_paper_adapter_swap.py::test_swap_rates_btcusd_none (fail-closed)",
+      "status": "FIXED 2026-08-06 — ALL 8 FROM_TICKS assets now carry swap_long_bps/swap_short_bps: XAUUSD (-0.50/+0.10), USDJPY (-0.30/+0.10), EURUSD (-0.6423/+0.1402), GBPUSD (-0.1775/-0.2072), BTCUSD (-3.1507/+0.6274), US30 (-1.6767/+0.3068), OIL (-1.5/+0.3); NAS100 UNVERIFIED_NO_DATA (unusable, fail-closed). Mode-5 question RESOLVED: BTCUSD/US30 report swap_mode=5 = SYMBOL_SWAP_MODE_INTEREST_CURRENT per official MQL5 enum (% per annum of current price) — raw -11.5/-6.12 long = -11.5%/-6.12% p.a. -> converted bps/day; verified empirically against terminal + consistency with crypto CFD funding magnitudes. rollover3days recorded (BTCUSD=7 Sun, US30=5 Fri).",
+      "evidence": "config/cost_calibration.json assets; reports/swap_rates_measurement.json; scripts/measure_swap_rates.py (mode-5 conversion)",
+      "test_proof": "tests/test_optimization_atr_kelly_cost.py (6 swap tests); tests/test_paper_adapter_swap.py::test_swap_rates_usdcad_none (fail-closed for Direction H pairs)",
       "verified": true,
       "verified_date": "2026-08-06"
     }

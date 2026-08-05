@@ -5,11 +5,17 @@ symbols passed): reads MT5 symbol_info swap_long/swap_short/swap_mode via
 read-only access, converts to the calibration convention ("Daily swap in bps
 of position notional. Negative = cost."), and writes a dated evidence report.
 
-Conversion by swap_mode (MT5):
-  0 SWAP_BY_POINTS        -> bps = swap_points * point / price * 10_000
-  1 SWAP_BY_DOLLARS       -> bps = swap_per_lot / (price * contract_size) * 10_000
-  2 SWAP_BY_INTEREST      -> bps = rate_pct * 100 / 365  (per-day, %/yr)
-  3 SWAP_BY_MARGIN_CURRENCY -> same math as dollars (account currency)
+Conversion by swap_mode (official MQL5 SYMBOL_SWAP_MODE enum):
+  0 SYMBOL_SWAP_MODE_DISABLED      -> bps = 0
+  1 SYMBOL_SWAP_MODE_POINTS        -> bps = swap_points * point_value_per_lot / (price * contract_size) * 10_000
+  2 SYMBOL_SWAP_MODE_CURRENCY_SYMBOL -> bps = swap_per_lot / (price * contract_size) * 10_000
+  3 SYMBOL_SWAP_MODE_CURRENCY_MARGIN -> bps = swap_per_lot / (price * contract_size) * 10_000
+  4 SYMBOL_SWAP_MODE_CURRENCY_DEPOSIT -> bps = swap_per_lot / (price * contract_size) * 10_000
+  5 SYMBOL_SWAP_MODE_INTEREST_CURRENT -> bps = rate_pct * 100 / 365  (% per annum of current price)
+
+NOTE: for FX majors (point x contract_size = 1.0), mode 1 points and mode 2
+currency give the same bps result; mode 5 is what Pepperstone reports for
+BTCUSD/US30 (e.g. BTCUSD long=-11.5 means -11.5% p.a. -> -3.1507 bps/day).
 
 Usage:
     python scripts/measure_swap_rates.py                    # default 4 symbols
@@ -79,22 +85,21 @@ def measure(symbol: str) -> dict:
     def _to_bps(rate: float) -> float:
         if rate == 0.0:
             return 0.0
-        if mode == 0:  # points
-            if point == 0.0 or price == 0.0:
+        if mode == 0:  # disabled
+            return 0.0
+        if mode in (1, 2, 3, 4):  # points or per-lot currency
+            if point == 0.0 or price == 0.0 or contract_size == 0.0:
                 return float("nan")
-            return round(rate * point / price * 10_000.0, 4)
-        if mode == 1:  # dollars per lot
             notional = price * contract_size
+            if mode == 1:  # points: value in points -> per-lot currency via point x contract
+                per_lot = rate * point * contract_size
+            else:  # per-lot currency
+                per_lot = rate
             if notional == 0.0:
                 return float("nan")
-            return round(rate / notional * 10_000.0, 4)
-        if mode == 2:  # % per annum
+            return round(per_lot / notional * 10_000.0, 4)
+        if mode in (5, 6):  # % per annum of current/initial price (official MQL5)
             return round(rate * 100.0 / 365.0, 4)
-        if mode == 3:  # margin currency per lot (same as dollars)
-            notional = price * contract_size
-            if notional == 0.0:
-                return float("nan")
-            return round(rate / notional * 10_000.0, 4)
         return float("nan")
 
     result = {

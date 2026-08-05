@@ -507,6 +507,18 @@ class TestCostCalibration:
         assert gbp["swap_long_bps"] == pytest.approx(-0.1775, abs=1e-4)
         assert gbp["swap_short_bps"] == pytest.approx(-0.2072, abs=1e-4)
 
+    def test_btcusd_swaps(self, cost_data):
+        """BTCUSD swaps measured 2026-08-06 (mode 5 INTEREST_CURRENT %/yr -> bps/day)."""
+        btc = cost_data["assets"]["BTCUSD"]
+        assert btc["swap_long_bps"] == pytest.approx(-3.1507, abs=1e-4)
+        assert btc["swap_short_bps"] == pytest.approx(0.6274, abs=1e-4)
+
+    def test_us30_swaps(self, cost_data):
+        """US30 swaps measured 2026-08-06 (mode 5 INTEREST_CURRENT %/yr -> bps/day)."""
+        us30 = cost_data["assets"]["US30"]
+        assert us30["swap_long_bps"] == pytest.approx(-1.6767, abs=1e-4)
+        assert us30["swap_short_bps"] == pytest.approx(0.3068, abs=1e-4)
+
     def test_dead_weight_removed(self, cost_data):
         """v4.1: only SILVER and ETHUSD remain dead-weight; Direction G assets are live."""
         removed = cost_data.get("removed_assets", [])

@@ -195,7 +195,12 @@
           "n": 117346
         }
       },
-      "notes": "Backfilled via mt5.copy_ticks_range (full tick history served by broker). EURUSD filtered to ask>bid quotes only (MT5 COPY_TICKS_ALL mixes last-trade ticks). Pending live 7-day sampling completion 2026-08-12 for confirmation. | slippage: null in calibration; sourced from fill_samples_BTCUSD_1min.csv P90 (fill_simulator_p90_points).",
+      "notes": "Backfilled via mt5.copy_ticks_range (full tick history served by broker). EURUSD filtered to ask>bid quotes only (MT5 COPY_TICKS_ALL mixes last-trade ticks). Pending live 7-day sampling completion 2026-08-12 for confirmation. | slippage: null in calibration; sourced from fill_samples_BTCUSD_1min.csv P90 (fill_simulator_p90_points). | swaps measured 2026-08-06 via scripts/measure_swap_rates.py (MT5 symbol_info, swap_mode=5 INTEREST_CURRENT %/yr of current price, verified against MQL5 SYMBOL_SWAP_MODE enum): long -11.5%/yr -> -3.1507 bps/day, short +2.29%/yr -> +0.6274 bps/day. rollover3=7 (Sunday).",
+      "swap_long_bps": -3.1507,
+      "swap_short_bps": 0.6274,
+      "swap_measured_at": "2026-08-06",
+      "swap_source": "MT5 symbol_info mode=5 INTEREST_CURRENT (scripts/measure_swap_rates.py)",
+      "swap_rollover3days": 7,
       "spread_bps": 2.376175137414208,
       "recalibrated_at": "2026-08-05T07:02:12.953367+00:00",
       "broker_source": "Pepperstone Razor (MT5)",
@@ -355,7 +360,12 @@
           "n": 16610
         }
       },
-      "notes": "SP3: calibrated from existing 24h tick parquet — breadth expansion"
+      "notes": "SP3: calibrated from existing 24h tick parquet — breadth expansion | swaps measured 2026-08-06 via scripts/measure_swap_rates.py (MT5 symbol_info, swap_mode=5 INTEREST_CURRENT %/yr of current price, verified against MQL5 SYMBOL_SWAP_MODE enum): long -6.12%/yr -> -1.6767 bps/day, short +1.12%/yr -> +0.3068 bps/day. rollover3=5 (Friday).",
+      "swap_long_bps": -1.6767,
+      "swap_short_bps": 0.3068,
+      "swap_measured_at": "2026-08-06",
+      "swap_source": "MT5 symbol_info mode=5 INTEREST_CURRENT (scripts/measure_swap_rates.py)",
+      "swap_rollover3days": 5
     },
     "USDCAD": {
       "mt5_symbol": "USDCAD",
