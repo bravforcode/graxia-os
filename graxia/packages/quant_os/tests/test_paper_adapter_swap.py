@@ -52,9 +52,9 @@ def test_swap_rates_xauusd_fixed():
     assert abs(rates.swap_short - Decimal("0.00001")) < Decimal("1e-12")
 
 
-def test_swap_rates_eurusd_none():
-    """EURUSD has no swap data in calibration -> fail closed, zero swap."""
-    rates = _swap_rates_for("EURUSD")
+def test_swap_rates_btcusd_none():
+    """BTCUSD has no swap keys in calibration (mode-5 pending) -> fail closed."""
+    rates = _swap_rates_for("BTCUSD")
     assert rates.mode == SwapMode.NONE
 
 
@@ -148,18 +148,18 @@ def test_no_swap_same_day_close(monkeypatch):
 
 
 def test_no_swap_for_symbol_without_rates(monkeypatch):
-    """EURUSD (no measured swap) closes with zero swap — fail closed."""
+    """BTCUSD (no measured swap keys) closes with zero swap — fail closed."""
     monkeypatch.setattr(
         "graxia.packages.quant_os.execution.adapters.paper.random.uniform",
         lambda a, b: 0.0,
     )
     adapter = PaperAdapter(initial_capital=10000.0)
-    adapter.set_price("EURUSD", 1.0850, 1.08505)
-    entry = adapter.submit_order(_order("EURUSD", "BUY", 100000.0))
-    adapter._positions["EURUSD"]["opened_at"] = datetime.now(UTC) - timedelta(days=3)
+    adapter.set_price("BTCUSD", 64666.0, 64666.05)
+    entry = adapter.submit_order(_order("BTCUSD", "BUY", 1.0))
+    adapter._positions["BTCUSD"]["opened_at"] = datetime.now(UTC) - timedelta(days=3)
     cash_after_entry = adapter._cash
-    adapter.set_price("EURUSD", 1.0860, 1.08605)
-    exit_res = adapter.submit_order(_order("EURUSD", "SELL", 100000.0))
-    price_pnl = (exit_res.avg_price - entry.avg_price) * 100000.0  # 100k units, multiplier 1.0
+    adapter.set_price("BTCUSD", 64766.0, 64766.05)
+    exit_res = adapter.submit_order(_order("BTCUSD", "SELL", 1.0))
+    price_pnl = (exit_res.avg_price - entry.avg_price) * 1.0  # 1 unit, multiplier 1.0
     expected = cash_after_entry + price_pnl - exit_res.fee
     assert abs(adapter._cash - expected) < 1e-6  # no swap deducted

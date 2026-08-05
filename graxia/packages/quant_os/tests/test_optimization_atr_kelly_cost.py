@@ -488,6 +488,18 @@ class TestCostCalibration:
         assert jpy["swap_long_bps"] == -0.3
         assert jpy["swap_short_bps"] == 0.1
 
+    def test_eurusd_swaps(self, cost_data):
+        """EURUSD swaps measured 2026-08-06 from MT5 symbol_info (mode 1 per-lot USD)."""
+        eur = cost_data["assets"]["EURUSD"]
+        assert eur["swap_long_bps"] == pytest.approx(-0.6423, abs=1e-4)
+        assert eur["swap_short_bps"] == pytest.approx(0.1402, abs=1e-4)
+
+    def test_gbpusd_swaps(self, cost_data):
+        """GBPUSD swaps measured 2026-08-06 from MT5 symbol_info (mode 1 per-lot USD)."""
+        gbp = cost_data["assets"]["GBPUSD"]
+        assert gbp["swap_long_bps"] == pytest.approx(-0.1775, abs=1e-4)
+        assert gbp["swap_short_bps"] == pytest.approx(-0.2072, abs=1e-4)
+
     def test_dead_weight_removed(self, cost_data):
         """v4.1: only SILVER and ETHUSD remain dead-weight; Direction G assets are live."""
         removed = cost_data.get("removed_assets", [])

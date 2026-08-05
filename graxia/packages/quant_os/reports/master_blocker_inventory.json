@@ -202,11 +202,11 @@
       "id": "MB-017",
       "title": "Swap rates missing for FROM_TICKS symbols (data gap, not code gap)",
       "source_id": "NEW — surfaced by swap wiring (2026-08-06)",
-      "source_ref": "config/cost_calibration.json (XAUUSD/USDJPY now have rates in working tree; EURUSD/GBPUSD/BTCUSD/US30 still None)",
+      "source_ref": "config/cost_calibration.json",
       "live_block": false,
-      "status": "PARTIAL — XAUUSD/USDJPY/OIL have rates; EURUSD/GBPUSD/BTCUSD/US30 need measurement (swap_long_bps/swap_short_bps) to get swap on paper path",
-      "evidence": "config/cost_calibration.json assets",
-      "test_proof": "tests/test_paper_adapter_swap.py::test_swap_rates_xauusd_none (fails closed when absent)",
+      "status": "PARTIAL — EURUSD (-0.6423/+0.1402) and GBPUSD (-0.1775/-0.2072) MEASURED 2026-08-06 from MT5 symbol_info (swap_mode=1 per-lot USD) via scripts/measure_swap_rates.py + tests/test_optimization_atr_kelly_cost.py::test_eurusd_swaps/test_gbpusd_swaps. BTCUSD and US30 REMAIN OPEN: MT5 reports swap_mode=5 (repo enum knows 0-3; MQL5 docs say 5=INTEREST_CURRENT %/yr but repo swap_cost.py treats interest as mode 2) — raw values logged in reports/swap_rates_measurement.json (BTCUSD long -11.5 short +2.29; US30 long -6.12 short +1.12) but NOT added to calibration pending human verification of mode-5 semantics (per-lot vs %/yr gives ~2x difference). Fail-closed: both symbols get SwapMode.NONE until resolved.",
+      "evidence": "config/cost_calibration.json assets; reports/swap_rates_measurement.json",
+      "test_proof": "tests/test_optimization_atr_kelly_cost.py (2 new swap tests); tests/test_paper_adapter_swap.py::test_swap_rates_btcusd_none (fail-closed)",
       "verified": true,
       "verified_date": "2026-08-06"
     }

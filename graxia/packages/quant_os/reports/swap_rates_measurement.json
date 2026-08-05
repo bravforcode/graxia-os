@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0",
+  "purpose": "MB-017 swap-rate measurement (bps of notional)",
+  "measured_at": "2026-08-05T22:12:19.486061+00:00",
+  "source": "MT5 symbol_info (read-only)",
+  "symbols": [
+    {
+      "symbol": "EURUSD",
+      "measured_at": "2026-08-05T22:12:19.486061+00:00",
+      "swap_mode": 1,
+      "swap_rollover3days": 3,
+      "price": 1.1553,
+      "contract_size": 100000.0,
+      "point": 1e-05,
+      "swap_long_raw": -7.42,
+      "swap_short_raw": 1.62,
+      "swap_long_bps": -0.6423,
+      "swap_short_bps": 0.1402
+    },
+    {
+      "symbol": "GBPUSD",
+      "measured_at": "2026-08-05T22:12:19.486061+00:00",
+      "swap_mode": 1,
+      "swap_rollover3days": 3,
+      "price": 1.3465500000000001,
+      "contract_size": 100000.0,
+      "point": 1e-05,
+      "swap_long_raw": -2.39,
+      "swap_short_raw": -2.79,
+      "swap_long_bps": -0.1775,
+      "swap_short_bps": -0.2072
+    },
+    {
+      "symbol": "BTCUSD",
+      "measured_at": "2026-08-05T22:12:19.486061+00:00",
+      "swap_mode": 5,
+      "swap_rollover3days": 7,
+      "price": 64666.25,
+      "contract_size": 1.0,
+      "point": 0.01,
+      "swap_long_raw": -11.5,
+      "swap_short_raw": 2.29,
+      "swap_long_bps": NaN,
+      "swap_short_bps": NaN
+    },
+    {
+      "symbol": "US30",
+      "measured_at": "2026-08-05T22:12:19.486061+00:00",
+      "swap_mode": 5,
+      "swap_rollover3days": 5,
+      "price": 54473.0,
+      "contract_size": 1.0,
+      "point": 0.1,
+      "swap_long_raw": -6.12,
+      "swap_short_raw": 1.12,
+      "swap_long_bps": NaN,
+      "swap_short_bps": NaN
+    }
+  ]
+}

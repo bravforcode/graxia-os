@@ -247,7 +247,11 @@
           "n": 9501
         }
       },
-      "notes": "Backfilled via mt5.copy_ticks_range (full tick history served by broker). EURUSD filtered to ask>bid quotes only (MT5 COPY_TICKS_ALL mixes last-trade ticks). Pending live 7-day sampling completion 2026-08-12 for confirmation. | slippage: null in calibration; sourced from fill_samples_EURUSD_1min.csv P90 (fill_simulator_p90_points).",
+      "notes": "Backfilled via mt5.copy_ticks_range (full tick history served by broker). EURUSD filtered to ask>bid quotes only (MT5 COPY_TICKS_ALL mixes last-trade ticks). Pending live 7-day sampling completion 2026-08-12 for confirmation. | slippage: null in calibration; sourced from fill_samples_EURUSD_1min.csv P90 (fill_simulator_p90_points). | swaps measured 2026-08-06 via scripts/measure_swap_rates.py (MT5 symbol_info, swap_mode=1 per-lot USD, price 1.1553): long -7.42/lot -> -0.6423 bps, short +1.62/lot -> +0.1402 bps.",
+      "swap_long_bps": -0.6423,
+      "swap_short_bps": 0.1402,
+      "swap_measured_at": "2026-08-06",
+      "swap_source": "MT5 symbol_info (scripts/measure_swap_rates.py)",
       "spread_bps": 0.0868655018008566,
       "recalibrated_at": "2026-08-05T07:02:12.953367+00:00",
       "broker_source": "Pepperstone Razor (MT5)",
@@ -299,7 +303,11 @@
           "n": 13178
         }
       },
-      "notes": "SP3: calibrated from existing 24h tick parquet — breadth expansion"
+      "notes": "SP3: calibrated from existing 24h tick parquet — breadth expansion | swaps measured 2026-08-06 via scripts/measure_swap_rates.py (MT5 symbol_info, swap_mode=1 per-lot USD, price 1.3466): long -2.39/lot -> -0.1775 bps, short -2.79/lot -> -0.2072 bps.",
+      "swap_long_bps": -0.1775,
+      "swap_short_bps": -0.2072,
+      "swap_measured_at": "2026-08-06",
+      "swap_source": "MT5 symbol_info (scripts/measure_swap_rates.py)"
     },
     "US30": {
       "mt5_symbol": "US30",
