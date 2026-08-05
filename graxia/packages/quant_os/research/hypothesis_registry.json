@@ -677,6 +677,9 @@
       "slippage_bps_used": null,
       "provenance_backfilled_at": null,
       "provenance_note": "INFERRED_FROM_ARTIFACT 2026-08-05: runner artifact (reports/edge_search_m15_scalper_core4.json) records BacktestEngine measured-cost path with slippage_pips=None; cost values taken from config/cost_calibration.json per-symbol entries. NOT re-measured — backfilled for audit completeness.",
+      "post_mortem": "reports/postmortem_1034_1035_m15_scalpers.md",
+      "gross_artifact": "reports/edge_search_m15_scalper_gross.json",
+      "gross_classification": "structural (gross PF 0.9883 < 1.0 even at zero cost — no edge even free)",
       "symbols": [
         "XAUUSD"
       ]
@@ -733,6 +736,9 @@
       "slippage_bps_used": null,
       "provenance_backfilled_at": null,
       "provenance_note": "INFERRED_FROM_ARTIFACT 2026-08-05: runner artifact (reports/edge_search_m15_scalper_core4.json) records BacktestEngine measured-cost path with slippage_pips=None; cost values taken from config/cost_calibration.json per-symbol entries. NOT re-measured — backfilled for audit completeness.",
+      "post_mortem": "reports/postmortem_1034_1035_m15_scalpers.md",
+      "gross_artifact": "reports/edge_search_m15_scalper_gross.json",
+      "gross_classification": "mixed: USDJPY structural (gross PF 0.9182); GBPUSD cost_driven (gross PF 1.2289 -> net 0.94, break-even 5.41 bps < measured 7.15 bps); EURUSD leg BLOCKED in gross diagnostic (no measured slippage — fail-closed). Verdict REJECTED unchanged.",
       "symbols": [
         "EURUSD",
         "GBPUSD",
