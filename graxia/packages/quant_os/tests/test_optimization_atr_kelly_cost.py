@@ -412,14 +412,14 @@ class TestCostCalibration:
         with open(path) as f:
             return json.load(f)
 
-    def test_version_3(self, cost_data):
-        """Cost calibration must be version 3.x (3.1 after the 2026-07-26 data-integrity fix)."""
-        assert cost_data["version"].startswith("3.")
+    def test_version_4(self, cost_data):
+        """Cost calibration must be version 4.x (4.1 after the 2026-08-04 v4.1 measured-costs restore)."""
+        assert cost_data["version"].startswith("4.")
 
-    def test_only_4_assets(self, cost_data):
-        """Must have exactly 4 assets (NAS100, XAUUSD, OIL, USDJPY)."""
+    def test_8_assets(self, cost_data):
+        """Must have exactly 8 assets (4-asset core + Direction G additions)."""
         assets = set(cost_data["assets"].keys())
-        assert assets == {"XAUUSD", "NAS100", "OIL", "USDJPY"}
+        assert assets == {"XAUUSD", "NAS100", "OIL", "USDJPY", "BTCUSD", "EURUSD", "GBPUSD", "US30"}
 
     def test_xauusd_spread(self, cost_data):
         """XAUUSD spread must match the real tick-derived median (data/ticks/XAUUSD_ticks_24h.parquet).
@@ -428,7 +428,7 @@ class TestCostCalibration:
         median was 0.36bps); replaced with the real 733,743-tick measurement.
         """
         xau = cost_data["assets"]["XAUUSD"]
-        assert xau["spread_bps_measured"] == pytest.approx(0.3236, abs=1e-4)
+        assert xau["spread_bps_measured"] == pytest.approx(0.324, abs=1e-4)
         assert xau["status"] == "FROM_TICKS"
 
     def test_nas100_no_real_data(self, cost_data):
@@ -461,7 +461,7 @@ class TestCostCalibration:
         a genuinely-measured 0.06bps figure; replaced with the real 386,245-tick measurement.
         """
         jpy = cost_data["assets"]["USDJPY"]
-        assert jpy["spread_bps_measured"] == pytest.approx(0.1236, abs=1e-4)
+        assert jpy["spread_bps_measured"] == pytest.approx(0.124, abs=1e-4)
         assert jpy["status"] == "FROM_TICKS"
 
     def test_xauusd_swaps(self, cost_data):
@@ -489,11 +489,13 @@ class TestCostCalibration:
         assert jpy["swap_short_bps"] == 0.1
 
     def test_dead_weight_removed(self, cost_data):
-        """EURUSD, GBPUSD, SILVER, BTCUSD, ETHUSD must be removed."""
+        """v4.1: only SILVER and ETHUSD remain dead-weight; Direction G assets are live."""
         removed = cost_data.get("removed_assets", [])
-        for asset in ["EURUSD", "GBPUSD", "SILVER", "BTCUSD", "ETHUSD"]:
-            assert asset in removed, f"{asset} should be in removed_assets list"
-            assert asset not in cost_data["assets"], f"{asset} must not be in assets"
+        assert "SILVER" in removed and "ETHUSD" in removed
+        assert "SILVER" not in cost_data["assets"]
+        assert "ETHUSD" not in cost_data["assets"]
+        for live in ["EURUSD", "GBPUSD", "BTCUSD"]:
+            assert live in cost_data["assets"], f"{live} is a live v4.1 asset"
 
     def test_all_assets_measured(self, cost_data):
         """Every asset must carry an honest, non-fabricated status — not a blanket 'MEASURED'.
@@ -504,9 +506,9 @@ class TestCostCalibration:
         """
         valid_statuses = {"FROM_TICKS", "SINGLE_SNAPSHOT", "UNVERIFIED_NO_DATA"}
         for symbol, info in cost_data["assets"].items():
-            assert info["status"] in valid_statuses, (
-                f"{symbol} status {info['status']!r} is not a recognized honest status"
-            )
+            assert (
+                info["status"] in valid_statuses
+            ), f"{symbol} status {info['status']!r} is not a recognized honest status"
         # NAS100 specifically must not claim to be measured — it has no real data.
         assert cost_data["assets"]["NAS100"]["status"] == "UNVERIFIED_NO_DATA"
 

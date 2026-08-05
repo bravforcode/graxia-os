@@ -17,25 +17,37 @@ from pathlib import Path
 import numpy as np
 
 try:
-    from .grid_strategy import GridConfig, GridOrder
+    from .grid_strategy import GridConfig, GridOrder, OrderSide
 except ImportError:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
-    from grid_strategy import GridConfig, GridOrder  # type: ignore[no-redef]
+    from grid_strategy import GridConfig, GridOrder, OrderSide  # type: ignore[no-redef]
 
 
 # ── Local backtest state (ponytail: self-contained, simpler than strategy GridState) ──
 
+
 class _BacktestState:
     __slots__ = (
-        "levels", "fill_count", "cumulative_pnl", "peak_equity",
-        "max_drawdown", "deactivated", "deactivation_bar",
-        "active_bars", "bars_with_fill", "equity_curve", "fill_events",
-        "open_lots", "avg_entry_price", "total_fees",
+        "levels",
+        "fill_count",
+        "cumulative_pnl",
+        "peak_equity",
+        "max_drawdown",
+        "deactivated",
+        "deactivation_bar",
+        "active_bars",
+        "bars_with_fill",
+        "equity_curve",
+        "fill_events",
+        "open_lots",
+        "avg_entry_price",
+        "total_fees",
     )
+
     def __init__(self):
-        self.levels: list = []           # PENDING orders only (removed on fill)
+        self.levels: list = []  # PENDING orders only (removed on fill)
         self.fill_count = 0
-        self.cumulative_pnl = 0.0        # realized P&L only
+        self.cumulative_pnl = 0.0  # realized P&L only
         self.peak_equity = INITIAL_CAPITAL
         self.max_drawdown = 0.0
         self.deactivated = False
@@ -49,6 +61,7 @@ class _BacktestState:
         self.avg_entry_price: float = 0.0
         self.total_fees: float = 0.0
 
+
 INITIAL_CAPITAL = 100_000.0
 FEE_RATE = 0.001  # 0.1% per fill
 GRID_ACTIVATION_BAR = 20  # need warmup for ATR
@@ -56,13 +69,16 @@ GRID_ACTIVATION_BAR = 20  # need warmup for ATR
 
 # ── ATR (simple numpy, no numba dep) ──────────────────────────────────
 
+
 def _calc_atr(high: list[float], low: list[float], close: list[float], period: int) -> np.ndarray:
     h, l, c = np.array(high), np.array(low), np.array(close)
-    tr = np.maximum.reduce([
-        h[1:] - l[1:],
-        np.abs(h[1:] - c[:-1]),
-        np.abs(l[1:] - c[:-1]),
-    ])
+    tr = np.maximum.reduce(
+        [
+            h[1:] - l[1:],
+            np.abs(h[1:] - c[:-1]),
+            np.abs(l[1:] - c[:-1]),
+        ]
+    )
     atr = np.zeros(len(close), dtype=np.float64)
     atr[period] = np.mean(tr[:period])
     for i in range(period + 1, len(close)):
@@ -72,8 +88,12 @@ def _calc_atr(high: list[float], low: list[float], close: list[float], period: i
 
 # ── Grid helpers ──────────────────────────────────────────────────────
 
+
 def _build_grid_orders(
-    range_low: float, range_high: float, grid_count: int, side_alt: str = "SELL",
+    range_low: float,
+    range_high: float,
+    grid_count: int,
+    side_alt: str = "SELL",
 ) -> list[GridOrder]:
     """Build evenly spaced grid orders. side_alt = starting side at range_high."""
     step = (range_high - range_low) / (grid_count - 1) if grid_count > 1 else 0.0
@@ -81,7 +101,7 @@ def _build_grid_orders(
     for i in range(grid_count):
         price = range_high - i * step
         side = side_alt if i % 2 == 0 else ("BUY" if side_alt == "SELL" else "SELL")
-        orders.append(GridOrder(price=price, side=side, volume=0.01))
+        orders.append(GridOrder(price=price, side=OrderSide(side), volume=0.01))
     # Reverse so index 0 = range_low (bottom)
     orders.reverse()
     return orders
@@ -144,6 +164,7 @@ def _unrealized_pnl(s: _BacktestState, current_price: float) -> float:
 
 
 # ── Main backtest function ────────────────────────────────────────────
+
 
 def run_grid_backtest(
     config: GridConfig,
@@ -217,9 +238,12 @@ def run_grid_backtest(
             if order.status != "PENDING":
                 continue
             filled = False
-            if order.side in ("BUY", "COUNTER_BUY") and bar_low <= order.price:
-                filled = True
-            elif order.side in ("SELL", "COUNTER_SELL") and bar_high >= order.price:
+            if (
+                order.side in ("BUY", "COUNTER_BUY")
+                and bar_low <= order.price
+                or order.side in ("SELL", "COUNTER_SELL")
+                and bar_high >= order.price
+            ):
                 filled = True
 
             if not filled:
@@ -248,18 +272,23 @@ def run_grid_backtest(
 
             if range_low <= counter_price <= range_high and len(s.levels) < 1000:
                 counter = GridOrder(
-                    id="", price=counter_price, side=counter_side, volume=config.order_volume,
+                    id="",
+                    price=counter_price,
+                    side=OrderSide(counter_side),
+                    volume=config.order_volume,
                 )
                 s.levels.append(counter)
 
             # Record fill event
-            s.fill_events.append({
-                "bar": i,
-                "price": order.price,
-                "side": order.side,
-                "fee": round(order.price * config.order_volume * FEE_RATE, 4),
-                "open_lots_after": round(s.open_lots, 4),
-            })
+            s.fill_events.append(
+                {
+                    "bar": i,
+                    "price": order.price,
+                    "side": order.side,
+                    "fee": round(order.price * config.order_volume * FEE_RATE, 4),
+                    "open_lots_after": round(s.open_lots, 4),
+                }
+            )
 
         if bar_had_fill:
             s.bars_with_fill += 1
@@ -348,12 +377,12 @@ if __name__ == "__main__":
     }
 
     configs = [
-        ("Tight_10x1",   10, 1.0, 0.01),
-        ("Tight_10x2",   10, 2.0, 0.01),
-        ("Medium_20x1",  20, 1.0, 0.01),
-        ("Medium_20x2",  20, 2.0, 0.01),
-        ("Wide_30x2",    30, 2.0, 0.01),
-        ("Dense_50x1",   50, 1.0, 0.01),
+        ("Tight_10x1", 10, 1.0, 0.01),
+        ("Tight_10x2", 10, 2.0, 0.01),
+        ("Medium_20x1", 20, 1.0, 0.01),
+        ("Medium_20x2", 20, 2.0, 0.01),
+        ("Wide_30x2", 30, 2.0, 0.01),
+        ("Dense_50x1", 50, 1.0, 0.01),
     ]
 
     n = len(ohlcv["close"])
@@ -362,7 +391,10 @@ if __name__ == "__main__":
     print(f"{'Config':<16} {'Fills':>6} {'Real':>9} {'Unreal':>9} {'Total':>9} {'MaxDD%':>7} {'Lots':>6} {'Eff%':>5}")
     print(f"{'-'*80}")
     for label, gc, am, ov in configs:
-        cfg = GridConfig(symbol="XAUUSD", range_method="atr", atr_period=20,
-                         atr_multiplier=am, grid_count=gc, order_volume=ov)
+        cfg = GridConfig(
+            symbol="XAUUSD", range_method="atr", atr_period=20, atr_multiplier=am, grid_count=gc, order_volume=ov
+        )
         r = run_grid_backtest(cfg, ohlcv)
-        print(f"{label:<16} {r['grid_fills']:>6} {r['realized_pnl']:>9.1f} {r['unrealized_pnl']:>9.1f} {r['total_pnl']:>9.1f} {r['max_drawdown']*100:>6.2f}% {r['open_lots']:>6.2f} {r['range_efficiency']:>4.1f}%")
+        print(
+            f"{label:<16} {r['grid_fills']:>6} {r['realized_pnl']:>9.1f} {r['unrealized_pnl']:>9.1f} {r['total_pnl']:>9.1f} {r['max_drawdown']*100:>6.2f}% {r['open_lots']:>6.2f} {r['range_efficiency']:>4.1f}%"
+        )
