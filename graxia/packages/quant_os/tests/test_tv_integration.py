@@ -124,10 +124,13 @@ def _import_orchestrator():
 
     mod_name = "graxia.packages.quant_os.core.tv_integration"
 
-    # If already importable, use it
+    # If already importable AND complete, use it. A stale partial module can
+    # linger in sys.modules after a failed direct-file load; only trust it when
+    # TradingOrchestrator is actually present, otherwise re-import below.
     if mod_name in sys.modules:
         mod = sys.modules[mod_name]
-        return mod.TradingOrchestrator
+        if hasattr(mod, "TradingOrchestrator"):
+            return mod.TradingOrchestrator
 
     # Prefer the real dotted chain: relative imports inside the module
     # (from ..analysis.visual_search, from ..api.tv_cdp, ...) then resolve

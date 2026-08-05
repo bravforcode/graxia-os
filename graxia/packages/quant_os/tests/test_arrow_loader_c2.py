@@ -10,7 +10,7 @@ _PACKAGES = Path(__file__).resolve().parent.parent.parent
 if str(_PACKAGES) not in sys.path:
     sys.path.insert(0, str(_PACKAGES))
 
-from quant_os.backtest.data_loader import _validate_ohlcv_schema, load_arrow, to_arrow
+from quant_os.backtest.data_loader import _validate_ohlcv_schema, load_arrow, to_arrow  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -152,21 +152,30 @@ class TestOptionalPyarrow:
     """pyarrow import is optional — graceful error when missing."""
 
     def test_import_error_message(self, monkeypatch):
-        import importlib
-        import sys
+        """_require_pyarrow raises a clear ImportError when pyarrow is absent.
 
-        saved = sys.modules.pop("pyarrow", None)
-        monkeypatch.setitem(sys.modules, "pyarrow", None)
+        Patches ``builtins.__import__`` instead of popping ``pyarrow`` from
+        ``sys.modules``: popping + ``importlib.reload(data_loader)`` re-imports
+        pyarrow fresh mid-session, which breaks pyarrow's lazy submodule
+        loading (``pyarrow.parquet``/``pyarrow.fs``) for every later test —
+        pandas' cached parquet engine then fails with ``AttributeError:
+        module 'pyarrow' has no attribute 'parquet'`` across the suite.
+        """
+        import builtins
 
         from quant_os.backtest import data_loader
 
-        importlib.reload(data_loader)
+        real_import = builtins.__import__
+
+        def _fake_import(name, *args, **kwargs):
+            if name == "pyarrow":
+                raise ImportError("No module named 'pyarrow'")
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", _fake_import)
 
         with pytest.raises(ImportError, match="pyarrow"):
             data_loader._require_pyarrow()
-
-        if saved is not None:
-            sys.modules["pyarrow"] = saved
 
 
 # ---------------------------------------------------------------------------
