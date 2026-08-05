@@ -24,6 +24,7 @@ import sys as _sys
 import time
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
+from decimal import Decimal
 from pathlib import Path
 
 import pandas as pd
@@ -31,7 +32,7 @@ import pandas as pd
 from market_data.coverage_tracker import MIN_VALID_TICKS_PER_SESSION_DAY, CoverageTracker
 from market_data.stream_collector import StreamCollector
 from market_data.tick_recorder import TickRecord, TickRecorder
-from market_data.tick_store import merge_write_batch
+from market_data.tick_store import TICK_COLUMNS, write_batch
 
 _manifest_spec = importlib.util.spec_from_file_location(
     "data_manifest_mod", Path(__file__).resolve().parent.parent / "data" / "manifest.py"
@@ -242,22 +243,79 @@ class MeasurementDaemon:
     def _maybe_flush(self) -> None:
         """Flush the buffer into per-day parquet files.
 
-        Uses merge_write_batch: each flush MERGES the delta buffer into the
-        day's accumulated file (dedupe on time_msc/bid/ask/last/volume), so
-        earlier flushes are never lost and restarts never duplicate."""
+        Each flush MERGES the delta buffer into the day's accumulated file
+        (dedupe on time_msc/bid/ask/last/volume), so earlier flushes are
+        never lost and restarts never duplicate. write_batch replaces the
+        whole file atomically, so the merge happens here."""
         due = time.time() - self._last_flush >= self._flush_cadence_sec
         big = len(self._buffer) >= self._max_buffer_ticks
         if not (due or big) or not self._buffer:
             return
-        by_day: dict[date, list[TickRecord]] = {}
+        by_day: dict[tuple[str, date], list[TickRecord]] = {}
         for r in self._buffer:
-            by_day.setdefault(r.timestamp_utc.astimezone(UTC).date(), []).append(r)
-        for day, records in by_day.items():
-            merge_write_batch(records, self._ticks_dir, records[0].symbol, day)
+            by_day.setdefault((r.symbol, r.timestamp_utc.astimezone(UTC).date()), []).append(r)
+        for (symbol, day), records in by_day.items():
+            write_batch(self._merge_day(symbol, day, records), self._ticks_dir, symbol, day)
         self._buffer.clear()
         self._last_flush = time.time()
         # INV-005: keep the ticks dataset manifest current after every flush.
         self._manifest.update_manifest("ticks", sorted(self._ticks_dir.glob("*.parquet")))
+
+    def _merge_day(self, symbol: str, day: date, delta: list[TickRecord]) -> list[TickRecord]:
+        """Merge delta into the day's existing parquet (if any), deduping on
+        time_msc/bid/ask/last/volume — the previous merge_write_batch contract."""
+        path = self._ticks_dir / f"{symbol}_{day.isoformat()}.parquet"
+        if not path.exists():
+            return delta
+        existing = pd.read_parquet(path)
+        new = pd.DataFrame(
+            [
+                {
+                    "timestamp_utc": r.timestamp_utc.astimezone(UTC).isoformat(),
+                    "received_at_utc": r.received_at_utc.astimezone(UTC).isoformat(),
+                    "symbol": r.symbol,
+                    "bid": float(r.bid),
+                    "ask": float(r.ask),
+                    "last": float(r.last),
+                    "spread_points": float(r.spread_points),
+                    "flags": r.flags,
+                    "sequence_id": r.sequence_id,
+                    "connection_session_id": r.connection_session_id,
+                    "source": r.source,
+                    "data_quality": r.data_quality,
+                    "time_msc": r.time_msc,
+                    "volume": r.volume,
+                    "flags_mt5": r.mt5_flags,
+                }
+                for r in delta
+            ],
+            columns=TICK_COLUMNS,
+        )
+        merged = (
+            pd.concat([existing, new], ignore_index=True)
+            .drop_duplicates(subset=["time_msc", "bid", "ask", "last", "volume"])
+            .reset_index(drop=True)
+        )
+        return [
+            TickRecord(
+                timestamp_utc=datetime.fromisoformat(row["timestamp_utc"]),
+                received_at_utc=datetime.fromisoformat(row["received_at_utc"]),
+                symbol=row["symbol"],
+                bid=Decimal(str(row["bid"])),
+                ask=Decimal(str(row["ask"])),
+                last=Decimal(str(row["last"])),
+                spread_points=Decimal(str(row["spread_points"])),
+                flags=row["flags"],
+                sequence_id=int(row["sequence_id"]),
+                connection_session_id=row["connection_session_id"],
+                source=row["source"],
+                data_quality=row["data_quality"],
+                time_msc=None if pd.isna(row["time_msc"]) else int(row["time_msc"]),
+                volume=None if pd.isna(row["volume"]) else float(row["volume"]),
+                mt5_flags=None if pd.isna(row["flags_mt5"]) else int(row["flags_mt5"]),
+            )
+            for _, row in merged.iterrows()
+        ]
 
     def run_forever(self, interval_seconds: float = 1.0, stop_after: int | None = None) -> None:
         """Run the delta loop forever (or `stop_after` successful cycles in
