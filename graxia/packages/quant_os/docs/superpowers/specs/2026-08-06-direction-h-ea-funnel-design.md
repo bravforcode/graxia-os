@@ -41,10 +41,19 @@ Per `reports/stopping_rule_2026_08_05.md` §4.4: research under Direction G STOP
 
 ### 1.5 Existing data & cost infrastructure
 - **Data:** 15 symbols × 9 timeframes (M1,M5,M15,M30,H1,H4,D1,W1,MN1): XAUUSD, XAGUSD, XPDUSD, XPTUSD, EURUSD, GBPUSD, USDJPY, AUDUSD, USDCAD, USDCHF, NZDUSD, US30, NAS100, BTCUSD, ETHUSD
-- **Cost calibration (real):** XAUUSD, USOIL, USDJPY, BTCUSD, EURUSD — FROM_TICKS + fill simulator slippage (P90); 18 symbols pending
+- **Cost calibration (FROM_TICKS, verified 2026-08-06):** 10 symbols — XAUUSD, USDJPY, BTCUSD, EURUSD, GBPUSD, US30, USDCAD, USDCHF, AUDUSD, NZDUSD (USDCAD/USDCHF/AUDUSD/NZDUSD added 2026-08-06 by parallel session commit a88ddc22 via `scripts/calibrate_forex4_from_ticks.py`; slippage P90 for forex4 recorded null honestly — pending fill simulator). OIL = single-snapshot, NAS100 = UNVERIFIED_NO_DATA. 13 symbols pending
 - **N baseline:** 1050 (reconciled, `validation/n_trials.py` → `trial_count_reconciliation_20260720.json`)
-- **Trial ranges:** Main 1000-1999, B 3001-3008, C 7000-7999, D 4001+, E 5001+, F 6001+, G 8000-8999 → **H = 9000-9999** (next free 1000-block per `TRIAL_ID_RANGES.md`)
+- **Trial ranges:** Main 1000-1999, B 3001-3008, C 7000-7999, D 4001+, E 5001+, F 6001+, G 8000-8999 → **H = 9000-9999** (next free 1000-block per `TRIAL_ID_RANGES.md`; NOT yet registered by the parallel session — P0 must add the row)
 - **Uncommitted prior research in working tree (absorb, do not redo):** `reports/research_retail_forex_eas_20260804.md`, `reports/deep_research_institutional_gates_20260803.md`, `Meta/states/researcher-{eatested-ea-ranking,forex-ea-verification,forexroasted}.md`, `data/backfill/` — attributed as prior work (A7)
+
+### 1.6 Committed prior Direction H work (ABSORB — do not duplicate)
+Parallel session committed 2026-08-06 05:20 (+0700), commit a88ddc22 (author bravforcode):
+- **Trial 9001 DRAFT** — `research/pre_registration/trial_9001_forex4_retest.md` — H1 trend-continuity retest on USDCAD/USDCHF/AUDUSD/NZDUSD (4 INCONCLUSIVE-underpowered pairs from original 6-pair batch; root cause: unmeasured costs + underpowered folds). Status: DRAFT — NOT frozen, NOT ledger-registered
+- **Cost calibration** — USDCAD/USDCHF/AUDUSD/NZDUSD FROM_TICKS (344k/243k/285k/231k quote ticks, ask>bid filtered) → `config/cost_calibration.json`
+- **Script** — `scripts/calibrate_forex4_from_ticks.py` (135 lines)
+- **Missing governance (confirmed 2026-08-06):** no `reports/stopping_rule_2026_08_06_direction_h.md` (File Not Found), no `trial_ledger_h.json`/`hypothesis_registry_h.json`, no TRIAL_ID_RANGES.md row — P0 must close all three (draft's own open items 3/4/5)
+- **Trial-counting rule:** trial 9001 = **1 trial** (one mechanism family; 4 pairs = internal diagnostics, not 4 trials). §4.4 counts trial-level fails. The draft's proposed "4 consecutive pair-REJECTs = direction stop" is SUPERSEDED by the funnel's §4.4 (3 trial-level fails) — reconciled in the stopping-rule doc at creation
+- **Freeze prerequisites from draft (open items 1/2):** exact rule parameters from `run_multi_instrument_wf.py` baseline (no selection), min-confidence/bar-cap change frozen at a number (target 40+ trades/fold), slippage P90 from fill simulator or null recorded honestly
 
 ---
 
@@ -72,6 +81,7 @@ No automatic default.
 
 ### 2.2 Trial budget allocation (A2/A3)
 - Single central pool of 40. Every trial (any cycle, any sub-program) pre-registers and **deducts from the pool**
+- **Trial 9001 (forex4 retest, DRAFT a88ddc22) = first pre-registered trial — consumes 1 of 40** → 39 remaining (A8)
 - **Exempt (0 trials):** replication benchmarks (calibration only — Faber/Moreira-Muir/Baltas-Kosowski on our data+costs), H.4 HFT latency analysis (metadata analysis)
 - Sub-programs H.1 (regime), H.2 (cross-exchange arb), H.3 (tick-level), H.5 (factor library) request from the 40 with pre-registration
 
@@ -124,12 +134,14 @@ N_H = 1050 (reconciled baseline)
 ## 5. Funnel Architecture (8 phases)
 
 ### P0 — Governance + Closure
-- Writer lock, ledgers creation (3 files), TRIAL_ID_RANGES.md update, `check_trial_uniqueness.py` pass
-- Stopping-rule doc H written + SHA-256 locked
+- Writer lock, ledgers creation (3 files), TRIAL_ID_RANGES.md update (add Direction H 9000-9999 row — NOT yet registered by parallel session), `check_trial_uniqueness.py` pass
+- Stopping-rule doc H (`reports/stopping_rule_2026_08_06_direction_h.md` — draft's open item #3) written + SHA-256 locked; reconcile trial-9001 pair-stop proposal into funnel §4.4 (trial-level counting)
+- **Absorb committed Direction H work (A8):** freeze trial 9001 DRAFT per its open items (exact params from `run_multi_instrument_wf.py` baseline, min-confidence/bar-cap number, slippage P90 or null) → register into `trial_ledger_h.json` + `hypothesis_registry_h.json` + confirm trial number via `scripts/auto_increment_trial.py`
 - **Closure checklist (all must close before first screening):**
   1. TSM jackknife re-run from current data (verify REJECT holds; close ws_b residual)
   2. Engine attr-scan gap: add `scan_for_data_leaks()`-equivalent (post-run attr scan) + mandatory `assert guard.violations == 0`
   3. Verify 8001/8002 annotations present in registry (verified ✅ 2026-08-06)
+  4. Trial 9001 freeze + governance scaffolding (ledgers, stopping-rule doc, ranges table)
 
 ### P1 — Massive Mining (subagent swarm)
 10-12 research subagents in parallel, one per source:
@@ -266,6 +278,7 @@ p-value (HAC/NW) · WFA-OOS · WFE · DSR(N_H) · cost-stress+multi-broker · PB
 | A5 | 2026-08-06 | §4.4 decision tree — human decision, no auto-continue | Review round 2 |
 | A6 | 2026-08-06 | N hash definition: data_range change = distinct config; confirmatory retests = 0 N | Review round 2 |
 | A7 | 2026-08-06 | P1 absorbs uncommitted prior EA research artifacts with attribution | Lock investigation |
+| A8 | 2026-08-06 | Absorb committed prior Direction H work (a88ddc22): trial 9001 DRAFT = first trial (1 of 40); cost calibration corrected to 10 FROM_TICKS; P0 scaffolding incl. stopping-rule doc, ranges table, ledgers, freeze | Commit investigation |
 
 ---
 
@@ -275,3 +288,5 @@ p-value (HAC/NW) · WFA-OOS · WFE · DSR(N_H) · cost-stress+multi-broker · PB
 - Writer lock was stale (dead PID 21672) — cleared by human-approved force 2026-08-06; released after spec commit
 - TSM jackknife re-run result unknown until Phase 0 executes (closure item 1)
 - MQL5/MyFxBook access friction unknown until P1 probes (Cloudflare risk recorded in project memory)
+- Trial 9001 freeze prerequisites (params, min-confidence, slippage P90) — closed in P0 per draft's open items
+- 13 symbols still need FROM_TICKS calibration (10 done; OIL single-snapshot, NAS100 unverified)
