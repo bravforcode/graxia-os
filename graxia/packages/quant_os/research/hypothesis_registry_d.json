@@ -71,7 +71,8 @@
         "Not yet scheduled to run automatically -- someone/something needs to re-invoke this periodically for the track record to actually accumulate. A cron/scheduled-task wiring was NOT set up this session.",
         "Same caveats as #4001 apply (unleveraged, no margin/liquidation modeling, single exchange).",
         "This is a notional/paper simulation of a 2-leg cash-and-carry position, not routed through execution/adapters/paper.py's PaperAdapter (that adapter has no concept of perpetual funding payments -- it is built for FX/CFD-style single-instrument price P&L). Deliberately kept as a separate, honestly-labeled script rather than forced into an ill-fitting abstraction."
-      ]
+      ],
+      "governance_note_2026_08_06": "Paper phase continues as of 2026-08-06. Reason per current_verdict_2026-07-28: economics (current-regime funding yield does not beat the T-bill risk-free rate after realistic costs) — NOT a signal-integrity failure. Direction D uses a static funding-history carry calculation (no BacktestEngine), so the bar-level lookahead guard is not the applicable control for this verdict. Re-review triggers: 30/90/180 days since 2026-07-28, or cumulative net funding < -1x entry_cost per leg. Live state: reports/paper_trading/funding_arb_state.json (positions opened 2026-07-27T21:21Z, last_checked 2026-08-05T17:00Z; BTC net ≈ -0.02 USD, ETH net ≈ -0.67 USD after 27 funding events)."
     },
     {
       "trial_number": 4003,

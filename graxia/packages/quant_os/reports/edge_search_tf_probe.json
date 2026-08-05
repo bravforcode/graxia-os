@@ -1,0 +1,216 @@
+{
+  "title": "TF probe H1/H4 \u2014 M15 scalper strategy as-is transfer",
+  "method": "as-is M15 parameters on H1/H4 bars; gross post-hoc reconstruction (same trade set)",
+  "caveat": "AS-IS transfer only \u2014 NOT optimal-TF finding; M15-tuned params may underperform untuned at other TFs",
+  "generated": "2026-08-05T06:26:34.559070+00:00",
+  "cost_policy": {
+    "stable_measured": [
+      "USDJPY",
+      "XAUUSD"
+    ],
+    "blocked": {
+      "EURUSD": [
+        "direction_g_step1_completion",
+        "tradeable_universe.json contradiction (measuring AND excluded) unresolved"
+      ],
+      "GBPUSD": [
+        "direction_g_step1_completion",
+        "tradeable_universe.json contradiction (measuring AND excluded) unresolved"
+      ]
+    },
+    "note": "no cost-based numbers emitted for blocked symbols (stale-by-construction guard)"
+  },
+  "selection_rule": "gross_sharpe>0 AND n_trades>=30 AND break_even_mult>=1.2 (where emitted); tiebreak gross_sharpe",
+  "runs": [
+    {
+      "symbol": "XAUUSD",
+      "tf": "H1",
+      "n_trades": 7,
+      "n_days": 12,
+      "net_sharpe_daily": null,
+      "net_pf": 0.9418,
+      "net_win_pct": 42.86,
+      "cost_status": "measuring",
+      "note": "insufficient trades (7 < 30) for Sharpe comparability; values nulled",
+      "gross_sharpe_daily": null,
+      "gross_pf": 0.9678,
+      "gross_win_pct": 42.86,
+      "break_even_mult": 0.0,
+      "break_even_round_trip_bps": 0.0,
+      "measured_round_trip_bps": 0.65,
+      "classification": "structural"
+    },
+    {
+      "symbol": "XAUUSD",
+      "tf": "H4",
+      "n_trades": 3,
+      "n_days": 526,
+      "net_sharpe_daily": null,
+      "net_pf": 0.0,
+      "net_win_pct": 0.0,
+      "cost_status": "measuring",
+      "note": "insufficient trades (3 < 30) for Sharpe comparability; values nulled",
+      "gross_sharpe_daily": null,
+      "gross_pf": 0.0,
+      "gross_win_pct": 0.0,
+      "break_even_mult": 0.0,
+      "break_even_round_trip_bps": 0.0,
+      "measured_round_trip_bps": 0.65,
+      "classification": "structural"
+    },
+    {
+      "symbol": "USDJPY",
+      "tf": "H1",
+      "n_trades": 1,
+      "n_days": 4,
+      "net_sharpe_daily": null,
+      "net_pf": 0.0,
+      "net_win_pct": 0.0,
+      "cost_status": "measuring",
+      "note": "insufficient trades (1 < 30) for Sharpe comparability; values nulled",
+      "gross_sharpe_daily": null,
+      "gross_pf": 0.0,
+      "gross_win_pct": 0.0,
+      "break_even_mult": 0.0,
+      "break_even_round_trip_bps": 0.0,
+      "measured_round_trip_bps": 7.25,
+      "classification": "structural"
+    },
+    {
+      "symbol": "USDJPY",
+      "tf": "H4",
+      "n_trades": 1,
+      "n_days": 61,
+      "net_sharpe_daily": null,
+      "net_pf": 0.0,
+      "net_win_pct": 0.0,
+      "cost_status": "measuring",
+      "note": "insufficient trades (1 < 30) for Sharpe comparability; values nulled",
+      "gross_sharpe_daily": null,
+      "gross_pf": 0.0,
+      "gross_win_pct": 0.0,
+      "break_even_mult": 0.0,
+      "break_even_round_trip_bps": 0.0,
+      "measured_round_trip_bps": 7.25,
+      "classification": "structural"
+    },
+    {
+      "symbol": "EURUSD",
+      "tf": "H1",
+      "n_trades": 14,
+      "n_days": 57,
+      "net_sharpe_daily": null,
+      "net_pf": 1.6338,
+      "net_win_pct": 57.14,
+      "cost_status": "measuring",
+      "note": "insufficient trades (14 < 30) for Sharpe comparability; values nulled",
+      "gross_sharpe_daily": null,
+      "gross_pf": 1.8414,
+      "gross_win_pct": 57.14,
+      "break_even_mult": null,
+      "break_even_round_trip_bps": null,
+      "measured_round_trip_bps": null,
+      "classification": "pending_cost",
+      "blocked_on": [
+        "direction_g_step1_completion",
+        "tradeable_universe.json contradiction (measuring AND excluded) unresolved"
+      ]
+    },
+    {
+      "symbol": "EURUSD",
+      "tf": "H4",
+      "n_trades": 34,
+      "n_days": 302,
+      "net_sharpe_daily": 0.8735,
+      "net_pf": 1.7908,
+      "net_win_pct": 55.88,
+      "cost_status": "measuring",
+      "note": "AS-IS M15 parameter transfer \u2014 NOT optimal-TF finding (tuning deferred)",
+      "gross_sharpe_daily": 3.4558,
+      "gross_pf": 1.9023,
+      "gross_win_pct": 61.76,
+      "break_even_mult": null,
+      "break_even_round_trip_bps": null,
+      "measured_round_trip_bps": null,
+      "classification": "pending_cost",
+      "blocked_on": [
+        "direction_g_step1_completion",
+        "tradeable_universe.json contradiction (measuring AND excluded) unresolved"
+      ]
+    },
+    {
+      "symbol": "GBPUSD",
+      "tf": "H1",
+      "n_trades": 1,
+      "n_days": 10,
+      "net_sharpe_daily": null,
+      "net_pf": 0.0,
+      "net_win_pct": 0.0,
+      "cost_status": "measuring",
+      "note": "insufficient trades (1 < 30) for Sharpe comparability; values nulled",
+      "gross_sharpe_daily": null,
+      "gross_pf": 0.0,
+      "gross_win_pct": 0.0,
+      "break_even_mult": null,
+      "break_even_round_trip_bps": null,
+      "measured_round_trip_bps": null,
+      "classification": "structural",
+      "blocked_on": [
+        "direction_g_step1_completion",
+        "tradeable_universe.json contradiction (measuring AND excluded) unresolved"
+      ]
+    },
+    {
+      "symbol": "GBPUSD",
+      "tf": "H4",
+      "n_trades": 5,
+      "n_days": 97,
+      "net_sharpe_daily": null,
+      "net_pf": 0.3983,
+      "net_win_pct": 60.0,
+      "cost_status": "measuring",
+      "note": "insufficient trades (5 < 30) for Sharpe comparability; values nulled",
+      "gross_sharpe_daily": null,
+      "gross_pf": 0.4544,
+      "gross_win_pct": 60.0,
+      "break_even_mult": null,
+      "break_even_round_trip_bps": null,
+      "measured_round_trip_bps": null,
+      "classification": "structural",
+      "blocked_on": [
+        "direction_g_step1_completion",
+        "tradeable_universe.json contradiction (measuring AND excluded) unresolved"
+      ]
+    }
+  ],
+  "selection": {
+    "rule": "gross_sharpe>0 AND n_trades>=30 AND break_even_mult>=1.2 (where emitted); tiebreak gross_sharpe",
+    "mapping": {
+      "XAUUSD": {
+        "tf": null,
+        "reason": "no TF passed the survival rule"
+      },
+      "USDJPY": {
+        "tf": null,
+        "reason": "no TF passed the survival rule"
+      },
+      "GBPUSD": {
+        "tf": null,
+        "reason": "no TF passed gross_sharpe>0 AND n_trades>=30 (structural at H1/H4)",
+        "classification": "structural"
+      }
+    },
+    "blocked": {
+      "EURUSD": {
+        "reason": "gross edge present but break_even pending",
+        "blocked_on": [
+          "direction_g_step1_completion",
+          "tradeable_universe.json contradiction (measuring AND excluded) unresolved"
+        ],
+        "best_gross_sharpe": 3.4558
+      }
+    }
+  },
+  "n_combos_searched": 8,
+  "multiple_testing_note": "N combos searched must be cited in any follow-up pre-registration DSR methodology"
+}
