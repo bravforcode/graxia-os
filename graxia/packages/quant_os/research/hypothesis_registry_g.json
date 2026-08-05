@@ -52,7 +52,8 @@
         "BTCUSD": 32.0
       },
       "data_manifest_ref": null,
-      "provenance_stamped_at": "2026-08-05T15:31:50.809335+00:00"
+      "provenance_stamped_at": "2026-08-05T15:31:50.809335+00:00",
+      "notes": " | LOOKAHEAD-GAP STATUS 2026-08-05: verdict produced before scan_for_data_leaks() gap was confirmed absent in engine (get_slice + _reset_strategy_class_state active; guard.violations never asserted post-run). REJECT verdict STANDS: both directions are REJECT (Sharpe 0.24 / -0.07, PF 1.14 / 1.04 — far below thresholds), and lookahead-cheating would only inflate results, so it cannot explain a REJECT. No re-run required for this reason. See reports/lookahead_guard_reachability_audit_2026_07_30.md."
     },
     {
       "trial_number": 8002,
@@ -90,7 +91,8 @@
         "EURUSD": 1.0
       },
       "data_manifest_ref": null,
-      "provenance_stamped_at": "2026-08-05T15:35:53.703310+00:00"
+      "provenance_stamped_at": "2026-08-05T15:35:53.703310+00:00",
+      "notes": " | LOOKAHEAD-GAP STATUS 2026-08-05: verdict produced before scan_for_data_leaks() gap was confirmed absent in engine (get_slice + _reset_strategy_class_state active; guard.violations never asserted post-run). REJECT verdict STANDS: both directions are REJECT (Sharpe 0.24 / -0.07, PF 1.14 / 1.04 — far below thresholds), and lookahead-cheating would only inflate results, so it cannot explain a REJECT. No re-run required for this reason. See reports/lookahead_guard_reachability_audit_2026_07_30.md. | UNDERPOWERED: 20 trades < 100 min-trades gate — REJECT lacks statistical weight (cf. BEVS Sharpe 1.28->0.85 lesson). Verdict direction stands (negative Sharpe, PF~1.04), but conclude EUR mechanism as inconclusive-not-dead."
     }
   ]
 }

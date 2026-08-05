@@ -96,4 +96,22 @@ Direction G planning session (this session), during pre-Step-1 governance
 reconciliation of `trial_ledger.json` vs `hypothesis_registry*.json` files.
 
 ## Status
-OPEN — awaiting user decision on resolution A/B/C.
+CLOSED — 2026-08-05 (resolved without intervention)
+
+### Resolution note (2026-08-05)
+Re-verification after user sign-off (option A: move to registry_d) found the
+offending record is **GONE from the working tree and never existed in git
+history** — `git log --all -p -- research/trial_ledger.json` has zero hits for
+`4002`/`funding_arb`/`EXPLORATORY`, and `git diff` is clean. The parallel
+session's working-tree edit was reverted/discarded on its own (unstage, stash
+drop, or branch switch) before any commit.
+
+`research/hypothesis_registry_d.json` remains correct: 4001 (PASS_FEASIBILITY),
+4002 (PAPER_TRADING_STARTED), 4003 (FAIL_RIGOR). `scripts/check_trial_uniqueness.py`
+passes: 63 entries, 0 collisions.
+
+**No data was lost and no renumbering was needed.** The record that had
+collided was exploratory working-tree state, never committed. The incident is
+closed as NO-ACTION-REQUIRED, but the root cause (parallel session writing
+trial-numbered records to the main ledger without checking direction-owned
+ranges) remains a live risk — see Recommended hardener below.
