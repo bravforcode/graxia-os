@@ -5,11 +5,11 @@
   "lock_doc_path": "reports/stopping_rule_2026_08_05.md",
   "lock_doc_sha256": "1eca73ffed6dc2f940689482c56ff8129375586d375eebf0702dc45b65a8f09a",
   "description": "Direction G: Trend following (BTCUSD H1 Donchian) + session-window breakout (EURUSD M15 London). Opened 2026-08-05 after BTCUSD/EURUSD cost calibration became FROM_TICKS (previously excluded for lack of cost data). Separate ledger per Path-B precedent — does not touch main ledger cap.",
-  "cumulative_trial_count": 2,
+  "cumulative_trial_count": 3,
   "cumulative_trial_cap": 25,
   "next_available_trial_number": 8001,
-  "new_hypotheses_used": 2,
-  "new_hypotheses_remaining": 23,
+  "new_hypotheses_used": 3,
+  "new_hypotheses_remaining": 22,
   "trial_range": "8000-8999",
   "stopping_rule": {
     "type": "budget_or_time_or_consecutive_fail",
@@ -59,6 +59,12 @@
       "status": "REJECT",
       "result_at": "2026-08-05T15:35:53.703310+00:00",
       "notes": "DIRG-EUR-SESSION-BREAKOUT-M15 — stamped with provenance per Phase 1"
+    },
+    {
+      "trial_id": "8003",
+      "status": "REJECT",
+      "result_at": "2026-08-05T17:44:02.178204+00:00",
+      "notes": "DIRG-BTC-TSMOM-YZ — stamped with provenance per Phase 1"
     }
   ],
   "notes": [

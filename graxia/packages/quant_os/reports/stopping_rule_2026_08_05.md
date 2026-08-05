@@ -73,6 +73,34 @@ Research under this direction stops when **any** of:
 - **4.3** 80 research-hours are logged against this direction.
 - **4.4** 3 consecutive hypotheses fail at the same gate — stop and re-examine calibration, data quality, or framing.
 
+---
+
+## 7. STOPPING RULE TRIGGERED — 2026-08-06 (§4.4)
+
+**3 consecutive REJECT verdicts:**
+| Trial | Mechanism | n_trades | Sharpe | PF | Verdict |
+|---|---|---|---|---|---|
+| 8001 | BTCUSD H1 Donchian breakout | 1,391 | 0.24 | 1.14 | REJECT |
+| 8002 | EURUSD M15 London session breakout | 20 (UNDERPOWERED) | -0.07 | 1.04 | REJECT |
+| 8003 | BTCUSD D1 TSMOM + Yang-Zhang vol targeting | 3 | 0.18 | 0.32 | REJECT |
+
+**Action per §4.4:** research under Direction G STOPS. No new hypothesis
+(8004+) may be registered under this direction without a new stopping-rule
+document (Direction H or reopening with stated justification).
+
+**Frozen findings:**
+- M15 scalper space closed (1034/1035 post-mortem).
+- Fast H1 breakout on BTCUSD: no edge at measured costs (8001).
+- EURUSD session-breakout: inconclusive (underpowered, 20 trades) — NOT
+  counted as mechanism-death, but direction stands REJECT.
+- Slow TSMOM + vol targeting on BTCUSD: 3 trades in 10 years (SL/TP too wide
+  for the slow signal; strategy effectively never traded) — mechanism not
+  validated, REJECT for insufficient activity (8003).
+
+**Cost + provenance were real for all three** (FROM_TICKS, fill-simulator
+slippage, stamped at verdict time per Phase 1) — the failures are structural,
+not cost artifacts. Broker-switch thesis remains falsified.
+
 ## 5. Preconditions
 
 1. Trials 8001/8002 may be PRE-REGISTERED now (this document + registries).

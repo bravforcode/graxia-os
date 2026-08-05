@@ -42,7 +42,7 @@ for _p in (_MONOREPO_ROOT, _GRAXIA_ROOT, ROOT.parent, ROOT):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
-TF_CONVENTION = {"H1": "1h", "M15": "15m"}
+TF_CONVENTION = {"H1": "1h", "M15": "15m", "D1": "1d"}
 
 TRIALS: dict[int, dict[str, Any]] = {
     8001: {
@@ -67,6 +67,17 @@ TRIALS: dict[int, dict[str, Any]] = {
         "slippage_bps_used": {"EURUSD": 1.0},
         "strategy_name": "EurSessionBreakout",
     },
+    8003: {
+        "id": "DIRG-BTC-TSMOM-YZ",
+        "symbol": "BTCUSD",
+        "tf": "D1",
+        "cost_model_version": "4.1",
+        "cost_source": "FROM_TICKS",
+        "round_trip_bps_used": {"BTCUSD": 24.75},
+        "slippage_source": "fill_simulator_p90_points",
+        "slippage_bps_used": {"BTCUSD": 32.0},
+        "strategy_name": "BtcTsmomYz",
+    },
 }
 
 
@@ -84,12 +95,15 @@ def load_ohlcv(symbol: str, tf: str) -> pd.DataFrame:
 
 def build_strategy(name: str):
     from quant_os.strategies.btc_donchian_trend import BtcDonchianTrend
+    from quant_os.strategies.btc_tsmom_yz import BtcTsmomYz
     from quant_os.strategies.eur_session_breakout import EurSessionBreakout
 
     if name == "BtcDonchianTrend":
         return BtcDonchianTrend()
     if name == "EurSessionBreakout":
         return EurSessionBreakout()
+    if name == "BtcTsmomYz":
+        return BtcTsmomYz()
     raise ValueError(f"unknown strategy {name}")
 
 
@@ -265,7 +279,7 @@ def run_trial(trial_no: int, dry_run: bool = False) -> dict:
 
 def main() -> int:
     p = argparse.ArgumentParser(description="Direction G trial runner (8001/8002)")
-    p.add_argument("--trials", nargs="+", type=int, default=[8001, 8002], choices=[8001, 8002])
+    p.add_argument("--trials", nargs="+", type=int, default=[8001, 8002, 8003], choices=[8001, 8002, 8003])
     p.add_argument("--dry-run", action="store_true", help="run without writing registry")
     args = p.parse_args()
 

@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "direction": "G",
   "description": "Direction G: Trend following + session-window breakout on now-calibrated symbols (BTCUSD, EURUSD). Distinct from Direction D's funding-arb and E/F's cointegration/basis-carry: structural price mechanisms (Donchian breakout, session range breakout) on symbols whose cost data is now FROM_TICKS.",
-  "last_updated": "2026-08-05T15:35:53.703310+00:00",
+  "last_updated": "2026-08-05T17:44:02.176303+00:00",
   "cumulative_trial_count_at_creation": 0,
   "stopping_rule_doc": "reports/stopping_rule_2026_08_05.md — budget 25, deadline 2026-11-05, hours 80, 3-consecutive-fail gate",
   "sacred_holdout_path": "data/sacred_holdout/",
@@ -93,6 +93,45 @@
       "data_manifest_ref": null,
       "provenance_stamped_at": "2026-08-05T15:35:53.703310+00:00",
       "notes": " | LOOKAHEAD-GAP STATUS 2026-08-05: verdict produced before scan_for_data_leaks() gap was confirmed absent in engine (get_slice + _reset_strategy_class_state active; guard.violations never asserted post-run). REJECT verdict STANDS: both directions are REJECT (Sharpe 0.24 / -0.07, PF 1.14 / 1.04 — far below thresholds), and lookahead-cheating would only inflate results, so it cannot explain a REJECT. No re-run required for this reason. See reports/lookahead_guard_reachability_audit_2026_07_30.md. | UNDERPOWERED: 20 trades < 100 min-trades gate — REJECT lacks statistical weight (cf. BEVS Sharpe 1.28->0.85 lesson). Verdict direction stands (negative Sharpe, PF~1.04), but conclude EUR mechanism as inconclusive-not-dead."
+    },
+    {
+      "trial_number": 8003,
+      "id": "DIRG-BTC-TSMOM-YZ",
+      "status": "REJECT",
+      "instrument": "BTCUSD (D1)",
+      "symbols": [
+        "BTCUSD"
+      ],
+      "registered_at": "2026-08-05T17:44:02.176303+00:00",
+      "result_at": "2026-08-05T17:44:02.176303+00:00",
+      "result_summary": {
+        "n_trades": 3,
+        "sharpe_daily": 0.1837,
+        "dsr": 1.0,
+        "dsr_pass": true,
+        "total_return_pct": null,
+        "max_dd_pct": null,
+        "n_bars": 2950,
+        "data_range": "2016-08-08 -> 2026-08-05",
+        "cost": {
+          "spread_bps": 2.376175137414208,
+          "commission_bps": 10.0,
+          "round_trip_bps": 24.75,
+          "slippage_p90_points": 32.0
+        }
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "BTCUSD": 24.75
+      },
+      "slippage_source": "fill_simulator_p90_points",
+      "slippage_bps_used": {
+        "BTCUSD": 32.0
+      },
+      "data_manifest_ref": null,
+      "provenance_stamped_at": "2026-08-05T17:44:02.176303+00:00",
+      "notes": " | METRICS-CAVEAT: total_return/max_dd from engine were nonsense (-3895%/519%) on a 3-trade flat equity curve — set to null. Verdict REJECT stands on n_trades=3 < 30 and PF 0.32 (3 consecutive fails -> Direction G §4.4 stop triggered)."
     }
   ]
 }
