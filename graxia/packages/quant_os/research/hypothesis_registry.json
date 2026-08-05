@@ -667,7 +667,19 @@
         "gates_total": 7,
         "overall": "REJECT",
         "conclusion": "Happy Gold-style M15 gold scalper REJECTED on measured FROM_TICKS costs: PF 0.95, monthly -1.78%, pooled t negative. Verified EA family (PF 2.0-3.5) NOT reproducible by honest non-martingale approximation at measured costs."
-      }
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "XAUUSD": 0.648
+      },
+      "slippage_source": "none",
+      "slippage_bps_used": null,
+      "provenance_backfilled_at": null,
+      "provenance_note": "INFERRED_FROM_ARTIFACT 2026-08-05: runner artifact (reports/edge_search_m15_scalper_core4.json) records BacktestEngine measured-cost path with slippage_pips=None; cost values taken from config/cost_calibration.json per-symbol entries. NOT re-measured — backfilled for audit completeness.",
+      "symbols": [
+        "XAUUSD"
+      ]
     },
     {
       "trial_number": 1035,
@@ -709,7 +721,23 @@
         "gates_total": 7,
         "overall": "REJECT",
         "conclusion": "WallStreet-style Asian-session range scalper REJECTED on measured costs: PF 0.68-0.94 across 3 FX pairs, negative Sharpe all. Fade-the-range with 7bps commission does not survive honest costs."
-      }
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "EURUSD": 14.1737,
+        "GBPUSD": 14.152,
+        "USDJPY": 14.248
+      },
+      "slippage_source": "none",
+      "slippage_bps_used": null,
+      "provenance_backfilled_at": null,
+      "provenance_note": "INFERRED_FROM_ARTIFACT 2026-08-05: runner artifact (reports/edge_search_m15_scalper_core4.json) records BacktestEngine measured-cost path with slippage_pips=None; cost values taken from config/cost_calibration.json per-symbol entries. NOT re-measured — backfilled for audit completeness.",
+      "symbols": [
+        "EURUSD",
+        "GBPUSD",
+        "USDJPY"
+      ]
     },
     {
       "trial_number": 4004,

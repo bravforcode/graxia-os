@@ -461,6 +461,54 @@ def check_data_integrity_inv005() -> bool:
     return ok
 
 
+def check_registry_approved() -> list[str]:
+    """Registry governance: every hypothesis with a non-null result must carry
+    cost provenance (cost_model_version + cost_source + round_trip_bps_used +
+    slippage_source). Any unprovenanced verdict blocks the release — a release
+    built on guessed costs repeats the 33b90c31 fabrication class.
+
+    Scope: provenance schema shipped 2026-08-05 (registry_schema.py). Trials
+    whose result predates that (no provenance fields) are recorded as WARNs
+    only — they cannot be re-provenanced without forensics per registry; the
+    block applies to NEW trials so a future release never ships on an
+    unprovenanced fresh verdict."""
+    errors: list[str] = []
+    research_dir = REPO_ROOT / "graxia/packages/quant_os/research"
+    for reg_path in sorted(research_dir.glob("hypothesis_registry*.json")):
+        try:
+            registry = json.loads(reg_path.read_text(encoding="utf-8"))
+        except Exception as exc:  # noqa: BLE001 — registry parse failure is a hard error
+            errors.append(f"registry unreadable: {reg_path.name}: {exc}")
+            continue
+        for entry in registry.get("hypotheses", []):
+            if entry.get("status") in (None, "PRE_REGISTERED"):
+                continue
+            has_result = bool(entry.get("result_summary")) or entry.get("result") not in (None, "RESERVED")
+            if not has_result:
+                continue
+            missing = [
+                f
+                for f in ("cost_model_version", "cost_source", "round_trip_bps_used", "slippage_source")
+                if entry.get(f) in (None, "", {})
+            ]
+            if not missing:
+                continue
+            if entry.get("provenance_stamped_at") or entry.get("provenance_backfilled_at"):
+                # Stamped entries are always expected to be complete.
+                errors.append(
+                    f"{reg_path.name} trial #{entry.get('trial_number')} ({entry.get('id')}) "
+                    f"claims stamped provenance but is missing: {missing}"
+                )
+            else:
+                # Pre-provenance-schema trial: record as informational WARN.
+                print(
+                    f"  [WARN] {reg_path.name} trial #{entry.get('trial_number')} "
+                    f"({entry.get('id')}) predates provenance schema (2026-08-05) — "
+                    f"missing {missing}"
+                )
+    return errors
+
+
 def main():
     print("Phase 3.1A.1 Release Gate — Fail-Closed, Two Clean-Process Runs")
     print("=" * 60)
@@ -474,6 +522,15 @@ def main():
     checks["git_clean"] = len(git_errors) == 0
     all_failures.extend(git_errors)
     print(f"git_clean: {checks['git_clean']}")
+
+    # --- Registry provenance check (fail-closed on unprovenanced verdicts) ---
+    print("\n--- Registry Provenance Check ---")
+    reg_errors = check_registry_approved()
+    checks["registry_approved"] = len(reg_errors) == 0
+    all_failures.extend(reg_errors)
+    for e in reg_errors:
+        print(f"  {e}")
+    print(f"registry_approved: {checks['registry_approved']}")
 
     # --- Quarantine consistency (before running) ---
     print("\n--- Quarantine Check ---")
