@@ -10,7 +10,11 @@ unique across ALL ledgers/registries combined** — see
 | Main                        | 1000–1999         | 1001–1031                               | `hypothesis_registry.json`, `trial_ledger.json`            |
 | Direction B                 | 2000–2999         | **3001–3008** (never actually used 2000–2999)   | `hypothesis_registry_b.json`, `trial_ledger_b.json`        |
 | Direction C                 | 7000–7999         | **7001–7003** (renumbered 2026-07-31 off collision with Direction B; see below) | `hypothesis_registry_c.json`, `trial_ledger_c.json`        |
-| Reserved (future directions)| 4000+            | Direction D (funding-rate arb) correctly uses 4001+ | allocate the next free 1000-block and record it here      |
+| Direction D                 | 4001+             | 4001–4003 (funding-rate arb)             | `hypothesis_registry_d.json` (ledger: uses MAIN — anomaly, see below) |
+| Direction E                 | 5001+             | 5001–5002 (cointegration pairs)          | `hypothesis_registry_e.json` (no separate ledger)          |
+| Direction F                 | 6001+             | 6001 (crypto basis/carry)                | `hypothesis_registry_f.json` (no separate ledger)          |
+| Direction G                 | 8000–8999         | 8001–8002 (pre-registered 2026-08-05)    | `hypothesis_registry_g.json`, `trial_ledger_g.json`        |
+| Reserved (future directions)| 4000+            | — | allocate the next free 1000-block and record it here      |
 
 The "Documented range" column is what this table asserted before 2026-07-31;
 it does not match what is actually on disk for Main, Direction B, or

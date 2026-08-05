@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.0",
+  "direction": "G",
+  "description": "Direction G: Trend following + session-window breakout on now-calibrated symbols (BTCUSD, EURUSD). Distinct from Direction D's funding-arb and E/F's cointegration/basis-carry: structural price mechanisms (Donchian breakout, session range breakout) on symbols whose cost data is now FROM_TICKS.",
+  "last_updated": "2026-08-05",
+  "cumulative_trial_count_at_creation": 0,
+  "stopping_rule_doc": "reports/stopping_rule_2026_08_05.md — budget 25, deadline 2026-11-05, hours 80, 3-consecutive-fail gate",
+  "sacred_holdout_path": "data/sacred_holdout/",
+  "sacred_holdout_status": "LOCKED (Phase 4.5 only)",
+  "trial_range": "8000-8999",
+  "cost_basis_ref": "config/cost_calibration.json — BTCUSD 2.376 bps + 10 comm, EURUSD 0.087 bps + 7 comm; slippage from fill_simulator_p90_points (fill_samples_BTCUSD_1min.csv P90=32, fill_samples_EURUSD_1min.csv P90=1)",
+  "notes": [
+    "Registered 2026-08-05, per user-approved Direction G plan.",
+    "Pre-registered BEFORE running, per the pre-registration discipline (F27's lesson).",
+    "Verdicts MUST be written via research/registry_schema.stamp_trial_entry() — provenance at registration time (Phase 1).",
+    "Slippage MUST come from fill simulator P90 — never fabricated 0.0 (slippage_source: 'none' only if honestly unmodelled)."
+  ],
+  "hypotheses": [
+    {
+      "trial_number": 8001,
+      "id": "DIRG-BTC-DONCHIAN-H1",
+      "name": "BTCUSD H1 Donchian 20-bar breakout, volume filter, ATR trailing exit",
+      "status": "PRE_REGISTERED",
+      "registered_at": "2026-08-05",
+      "date_pre_registered": "2026-08-05",
+      "instrument": "BTCUSD (H1)",
+      "symbols": ["BTCUSD"],
+      "pre_registration_doc": "research/pre_registration/trial_8001_btc_donchian_h1.md",
+      "validation_runner": "TBD (scripts/pooled_strategy_test.py or per-trial runner)",
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {"BTCUSD": 24.75},
+      "slippage_source": "fill_simulator_p90_points",
+      "slippage_bps_used": {"BTCUSD": 32.0},
+      "result_summary": {},
+      "notes": "Entry: close > Donchian(20) high with volume > 1.5x SMA(vol,20). Exit: chandelier/ATR trailing (2.5x ATR). R:R target >= 1:2. Cost ceiling: avg win >= 3% so 24.75 bps RT + slippage stays < 5% of win."
+    },
+    {
+      "trial_number": 8002,
+      "id": "DIRG-EUR-SESSION-BREAKOUT-M15",
+      "name": "EURUSD M15 London-session breakout of Asian range, volatility-expansion filter",
+      "status": "PRE_REGISTERED",
+      "registered_at": "2026-08-05",
+      "date_pre_registered": "2026-08-05",
+      "instrument": "EURUSD (M15)",
+      "symbols": ["EURUSD"],
+      "pre_registration_doc": "research/pre_registration/trial_8002_eur_session_breakout_m15.md",
+      "validation_runner": "TBD (scripts/pooled_strategy_test.py or per-trial runner)",
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {"EURUSD": 14.17},
+      "slippage_source": "fill_simulator_p90_points",
+      "slippage_bps_used": {"EURUSD": 1.0},
+      "result_summary": {},
+      "notes": "Entry: breakout of Asian range (00:00-06:00 UTC) at London open (07:00 UTC) with ATR(5)/ATR(20) > 1.25. Exit: fixed R:R >= 1:1.5 or NY-session time exit. Filters spread widening during news."
+    }
+  ]
+}
