@@ -18,7 +18,7 @@ from typing import Any
 
 import pandas as pd
 
-from data_pipeline.storage.duckdb_store import DuckDBStore
+from ..data_pipeline.storage.duckdb_store import DuckDBStore
 
 logger = logging.getLogger(__name__)
 

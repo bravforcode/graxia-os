@@ -19,6 +19,9 @@ def _run_scenario(scenario_idx):
 
     strategy = DeterministicStrategy(signals)
     engine = BacktestEngine(config)
+    config.enable_swap = (
+        False  # reproducibility runs: swap cost is not the subject (Direction G symbols pending swap sampling)
+    )
     engine.set_strategy(strategy)
 
     ohlcv = {

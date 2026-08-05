@@ -49,6 +49,7 @@ SUITE_CMD = [
     sys.executable,
     "-m",
     "pytest",
+    "--rootdir=graxia/packages/quant_os",
     "graxia/packages/quant_os/tests/",
     "--tb=short",
     "--ignore=graxia/packages/quant_os/tests/test_vwap.py",

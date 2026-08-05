@@ -10,9 +10,12 @@ import duckdb
 import pandas as pd
 
 try:
-    from data_pipeline.config import BACKUP_DIR, DUCKDB_PATH
+    from ..config import (  # relative: immune to sys.path pollution (scripts/data_pipeline.py shadow)
+        BACKUP_DIR,
+        DUCKDB_PATH,
+    )
 except ImportError:  # standalone tools: data_pipeline dir is on sys.path, so `config` = data_pipeline/config.py
-    from config import (  # type: ignore[attr-defined]  # resolves to data_pipeline/config.py in standalone tool context; mypy can't follow that
+    from config import (  # type: ignore[attr-defined, no-redef]  # resolves to data_pipeline/config.py in standalone tool context; mypy can't follow that
         BACKUP_DIR,
         DUCKDB_PATH,
     )
