@@ -4,7 +4,7 @@
       "notional_usd": 1000.0,
       "entry_price": 64853.3,
       "opened_at": "2026-07-27T21:21:18.381515+00:00",
-      "last_checked_at": "2026-08-05T17:00:03.212971+00:00",
+      "last_checked_at": "2026-08-05T20:32:58.975674+00:00",
       "entry_cost_usd": 1.6,
       "cumulative_funding_usd": 1.57752,
       "n_funding_events_recorded": 27
@@ -13,7 +13,7 @@
       "notional_usd": 1000.0,
       "entry_price": 1946.13,
       "opened_at": "2026-07-27T21:21:18.381515+00:00",
-      "last_checked_at": "2026-08-05T17:00:03.212971+00:00",
+      "last_checked_at": "2026-08-05T20:32:58.975674+00:00",
       "entry_cost_usd": 1.6,
       "cumulative_funding_usd": 0.9338399999999999,
       "n_funding_events_recorded": 27
