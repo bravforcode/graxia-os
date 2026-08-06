@@ -4,6 +4,11 @@
 **Command chain:** `run_mining.py` ×6 → `run_taxonomy.py` → `run_triage.py`
 **Artifacts:** `research/catalog_i/raw/*_wave1.json`, `catalog_wave1.json`, `canonical_wave1.json`, `shortlist_wave1.json`
 
+## ⚠️ CORRECTION (2026-08-06, post-wave-2)
+
+The parallel session's audit `ce4ea68b` (commission_bps unit error 8-29x) corrected `config/cost_calibration.json`:
+**EURUSD round trip 14.17 → 0.78 bps; BTCUSD 24.75 → 6.30 bps** (XAUUSD unchanged 0.648). The wave-1 shortlist (all-XAUUSD) was therefore partly an **artifact of inflated cost data**, not pure reality. The corrected-cost funnel (wave 1 + wave 2 = 2,896 entries) yields **80 shortlist candidates: XAUUSD 35, EURUSD 40, GBPUSD 5**. Wave-1 numbers below are superseded by `shortlist_wave1.json` (regenerated with corrected costs).
+
 ## Wave 1 totals by source
 
 | Source | Entries | Blocked | Mechanism highlights |
