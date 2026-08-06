@@ -3,7 +3,7 @@
   "direction": "K",
   "description": "Crypto pairs / statistical arbitrage. BTC/ETH H1 joint data (50k bars 2020-2026, return corr 0.83). Market-neutral spread trading — structurally different from all directional mechanisms (A-J all failed).",
   "last_updated": "2026-08-06",
-  "current_verdict_2026-08-06": "PRE_REGISTERED — trial 4005 pending.",
+  "current_verdict_2026-08-06": "4005 REJECTED — BTC/ETH pairs trading falsified.",
   "stopping_rule_doc": "reports/stopping_rule_2026_08_06_direction_k.md",
   "sacred_holdout_status": "LOCKED",
   "notes": [
@@ -15,17 +15,41 @@
     {
       "trial_number": 4005,
       "id": "DIRK-BTCETH-PAIRS",
-      "name": "BTC/ETH Pairs Trading (log-ratio z-score + Engle-Granger)",
-      "status": "PRE_REGISTERED",
-      "registered_at": "2026-08-06",
-      "pre_registration_doc": "research/pre_registration/trial_4005_btceth_pairs.md",
+      "status": "REJECTED",
       "instrument": "BTCUSD/ETHUSD (H1, 50k joint bars 2020-2026)",
-      "hypothesis": "Log-price-ratio mean reversion between BTC and ETH (corr 0.83) produces net profit after 14 bps rt costs.",
-      "mechanism": "Statistical arbitrage: long ratio when z <= -2, short when z >= +2, exit |z| <= 0.5. Arms: log-ratio z-score (pairs_mr), Engle-Granger (pgm_pairs).",
-      "frozen_params": {"lookback": 60, "entry_z": 2.0, "exit_z": 0.5, "coint_pval_max": 0.05},
-      "data_dependencies": ["data/BTCUSD_H1.csv", "data/ETHUSD_H1.csv"],
-      "cost_basis": "Binance taker 10 bps rt + slippage 2 bps/leg (~14 bps rt/pair)",
-      "validation_plan": "compute_pairs_mr_signal + compute_pgm_pairs_signals on joint H1; pooled DK t + Sharpe gates; min trades >= 100."
+      "symbols": [
+        "BTCUSD",
+        "ETHUSD"
+      ],
+      "registered_at": "2026-08-06T19:31:33.936174+00:00",
+      "result_at": "2026-08-06T19:31:33.936174+00:00",
+      "result_summary": {
+        "arms": {
+          "pairs_mr": {
+            "dk_t": -4.59,
+            "n_trades": 478,
+            "mean_pnl": -60.3
+          },
+          "pgm_eg": {
+            "n_trades": 0,
+            "note": "Engle-Granger no cointegration (consistent with Trial 5001 BTC/ETH p=0.13); half-life 255 bars"
+          }
+        },
+        "pooled": {
+          "best_dk_t": -4.59
+        },
+        "conclusion": "REJECTED: log-ratio z-score pairs trading loses significantly (dk_t=-4.59, 478 trades, mean -60 USD/pair) at 14 bps rt (Binance taker 10 bps + 4 bps slippage, see notes). BTC/ETH ratio does NOT mean-revert at H1 — beta 0.61 (not 1:1), half-life 255 bars. Engle-Granger arm finds no cointegration (0 trades). Statistical arbitrage hypothesis falsified on this pair."
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "PAIR": 14.0
+      },
+      "slippage_source": "none",
+      "slippage_bps_used": {},
+      "data_manifest_ref": "reports/edge_search_dirk_4005.json",
+      "provenance_stamped_at": "2026-08-06T19:31:33.936174+00:00",
+      "notes": "Direction K trial 4005 — REJECTED. Cost basis: Binance taker 10 bps rt + 4 bps slippage (documented in pre-registration; slippage_source=none because no fill-simulator for crypto spot). Consistent with Trial 5001 (cointegration p=0.13)."
     }
   ]
 }
