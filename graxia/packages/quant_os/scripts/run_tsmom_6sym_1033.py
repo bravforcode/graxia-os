@@ -31,12 +31,14 @@ VOL_TARGET = 0.10
 CLIP = (0.01, 2.0)
 
 # SP3 calibrated FROM_TICKS costs
+# COMMISSION UNIT FIX 2026-08-06: field was USD/rt-lot misread as bps (8-29x
+# overstatement). True bps per reports/audit_trial_9001_9002_cost_model.md.
 _COST = {
     "XAUUSD": {"spread_bps": 0.324, "commission_bps": 0},
-    "EURUSD": {"spread_bps": 0.088, "commission_bps": 7},
-    "GBPUSD": {"spread_bps": 0.076, "commission_bps": 7},
-    "USDJPY": {"spread_bps": 0.124, "commission_bps": 7},
-    "BTCUSD": {"spread_bps": 2.511, "commission_bps": 10},
+    "EURUSD": {"spread_bps": 0.088, "commission_bps": 0.606},
+    "GBPUSD": {"spread_bps": 0.076, "commission_bps": 0.520},
+    "USDJPY": {"spread_bps": 0.124, "commission_bps": 0.700},
+    "BTCUSD": {"spread_bps": 2.511, "commission_bps": 1.546},
     "US30": {"spread_bps": 0.231, "commission_bps": 0},
 }
 N_LABEL_SHUFFLES = 200
