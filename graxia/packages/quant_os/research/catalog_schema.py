@@ -171,14 +171,15 @@ def write_raw(source_id: str, entries: list[dict], catalog_dir: str | Path = CAT
     return path
 
 
-def catalog_stats(catalog_dir: str | Path = CATALOG_DIR) -> dict:
+def catalog_stats(catalog_dir: str | Path = CATALOG_DIR) -> dict[str, object]:
     """Per-source counts + total for progress tracking against the 2,500 target."""
     catalog = Path(catalog_dir)
-    stats: dict = {"total": 0, "per_source": {}}
-    if not catalog.exists():
-        return stats
-    for source in SOURCE_IDS:
-        count = len(load_raw(source, catalog))
-        stats["per_source"][source] = count
-        stats["total"] += count
+    per_source: dict[str, int] = {}
+    if catalog.exists():
+        for source in SOURCE_IDS:
+            per_source[source] = len(load_raw(source, catalog))
+    stats: dict[str, object] = {
+        "total": sum(per_source.values()),
+        "per_source": per_source,
+    }
     return stats
