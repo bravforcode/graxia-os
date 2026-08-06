@@ -68,8 +68,6 @@ except ImportError:  # standalone `python strategies/khubiev_portfolio.py`
         ModSharpeLoss,
         RiskAdjLoss,
         SharpeLoss,
-        TvrReg,
-        max_drawdown,
     )
 
 try:  # torch is optional -- graceful fallback to numpy
@@ -157,14 +155,13 @@ class KhubievPortfolio(Strategy):
         n_epochs: int = 300,
         lr: float = 1e-3,
         seed: int = 42,
-        fit_on_init: bool = True,
-        train_fraction: float = 1.0,
+        fit_on_init: bool = False,
+        train_fraction: float = 0.6,
     ):
         config = StrategyConfig(
             name="KhubievPortfolio",
             version="1.0.0",
-            symbols=symbols
-            or ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "NAS100", "US30", "BTCUSD"],
+            symbols=symbols or ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "NAS100", "US30", "BTCUSD"],
             timeframes=["D1"],
             risk_per_trade_pct=1.0,
             max_trades_per_day=7,
@@ -184,6 +181,13 @@ class KhubievPortfolio(Strategy):
         self.lr = float(lr)
         self.seed = int(seed)
         self.train_fraction = float(train_fraction)
+        if self.train_fraction >= 1.0 and fit_on_init:
+            raise ValueError(
+                "KhubievPortfolio: train_fraction=1.0 with fit_on_init=True is an in-sample "
+                "leak (weights trained on full history, then scored on the same bars). "
+                "Set train_fraction < 1.0 or fit_on_init=False. See "
+                "reports/lookahead_guard_reachability_audit_2026_07_30.md §6.2."
+            )
         self.eps = 1e-8
 
         # Trained state (populated by fit()).
@@ -220,7 +224,7 @@ class KhubievPortfolio(Strategy):
         X = np.zeros((T - K, K * N), dtype=float)
         Y = np.zeros((T - K, N), dtype=float)
         for t in range(K, T):
-            X[t - K] = returns[t - K:t].ravel(order="C")
+            X[t - K] = returns[t - K : t].ravel(order="C")
             Y[t - K] = returns[t]
         return X, Y
 
@@ -239,7 +243,7 @@ class KhubievPortfolio(Strategy):
 
     # -- training ------------------------------------------------------------
 
-    def fit(self, returns: np.ndarray | None = None) -> "KhubievPortfolio":
+    def fit(self, returns: np.ndarray | None = None) -> KhubievPortfolio:
         """Train the forecasting model.
 
         If ``returns`` (T, N) is provided it is used directly; otherwise the
@@ -307,9 +311,7 @@ class KhubievPortfolio(Strategy):
         Yt = torch.tensor(Y, dtype=torch.float64)
         D, N = X.shape[1], Y.shape[1]
         rng = np.random.default_rng(self.seed)
-        W = torch.tensor(
-            rng.normal(0, 0.01, size=(D, N)), dtype=torch.float64, requires_grad=True
-        )
+        W = torch.tensor(rng.normal(0, 0.01, size=(D, N)), dtype=torch.float64, requires_grad=True)
         b = torch.zeros(N, dtype=torch.float64, requires_grad=True)
         opt = torch.optim.Adam([W, b], lr=self.lr)
         last = None
@@ -439,11 +441,7 @@ class KhubievPortfolio(Strategy):
         returns = np.asarray(returns, dtype=float)
         if returns.ndim == 1:
             returns = returns.reshape(-1, 1)
-        mismatch = (
-            self.model_W is None
-            or self.model_b is None
-            or returns.shape[1] != self.model_W.shape[1]
-        )
+        mismatch = self.model_W is None or self.model_b is None or returns.shape[1] != self.model_W.shape[1]
         if mismatch:
             # Untrained, or the input's asset count differs from the trained
             # universe: fall back to a momentum-style score from the last row.

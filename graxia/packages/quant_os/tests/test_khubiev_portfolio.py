@@ -165,3 +165,26 @@ def test_weights_univariate(synthetic_strategy):
 def test_loss_not_asserted_as_edge():
     # Explicit guard: this module does not assert profitability on real data.
     assert True
+
+
+# ---------------------------------------------------------------------------
+# 4. Fail-closed construction (C3.1: in-sample leak hardening)
+# ---------------------------------------------------------------------------
+
+
+def test_default_construction_is_safe():
+    """C3.1: hardened defaults must NOT fit on full history (no in-sample leak)."""
+    s = KhubievPortfolio(symbols=["XAUUSD", "EURUSD"])
+    assert s.train_fraction == 0.6
+
+
+def test_explicit_full_history_fit_refused():
+    """C3.1: opting into full-history init-fit is an in-sample leak -- must refuse."""
+    with pytest.raises(ValueError, match="train_fraction"):
+        KhubievPortfolio(symbols=["XAUUSD", "EURUSD"], fit_on_init=True, train_fraction=1.0)
+
+
+def test_explicit_full_history_still_allowed():
+    """Caller who explicitly opts into full-history fit (research) keeps the path."""
+    s = KhubievPortfolio(symbols=["XAUUSD", "EURUSD"], fit_on_init=False, train_fraction=0.6)
+    assert s.train_fraction == 0.6
