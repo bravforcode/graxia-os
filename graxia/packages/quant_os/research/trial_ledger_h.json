@@ -5,11 +5,11 @@
   "lock_doc_path": "reports/stopping_rule_2026_08_06_direction_h.md",
   "lock_doc_sha256": "6b35a1b6feba1578b38a76a610a0b48a5031ed37c39855c5fe3c3b3b6a629afa",
   "description": "Direction H: Forex 4-pair walk-forward retest (USDCAD/USDCHF/AUDUSD/NZDUSD H1). Opened 2026-08-06 after all 4 pairs got FROM_TICKS cost calibration (previously excluded for lack of cost data). Original 2026-07-12 INCONCLUSIVE verdicts invalidated by unmeasured default costs + underpowered folds (F24 provenance now resolved). Separate ledger per Path-B precedent.",
-  "cumulative_trial_count": 2,
+  "cumulative_trial_count": 3,
   "cumulative_trial_cap": 25,
-  "next_available_trial_number": 9003,
-  "new_hypotheses_used": 2,
-  "new_hypotheses_remaining": 23,
+  "next_available_trial_number": 9004,
+  "new_hypotheses_used": 3,
+  "new_hypotheses_remaining": 22,
   "trial_range": "9000-9999",
   "stopping_rule": {
     "type": "budget_or_time_or_consecutive_fail",
@@ -71,6 +71,12 @@
       "status": "REJECTED",
       "result_at": "2026-08-06T08:45:00+00:00",
       "notes": "DIRH-FX4-RSI-MR-H1 — RSI mean-reversion (fade extremes) REJECT on all 4 pairs at measured costs (PF 0.87-0.92, pooled DK t=-4.549, Sharpe<0 in 0/4, 1,375-1,435 trades each). Both momentum-classifier (9001) and mean-reversion (9002) families lose on these pairs. Stamped with provenance. Consecutive-fail count: 2/3 (§4.4)."
+    },
+    {
+      "trial_id": "9003",
+      "status": "PRE_REGISTERED",
+      "result_at": null,
+      "notes": "DIRH-EURUSD-H4-ASIS — EURUSD H4 as-is TF probe (gross SR 3.46, net PF 1.79 @ old cost). Pre-registered 2026-08-06; break-even re-run with real 14.17bps cost pending."
     }
   ],
   "notes": [

@@ -56,6 +56,8 @@ calibration convention used by the original batch). No fabricated 0.0.
 Registry entries MUST use `research/registry_schema.stamp_trial_entry()` so
 provenance is written at registration time.
 
+**Scope extension (2026-08-06, Sub-project B decision):** Trial 9003 pre-registered for EURUSD H4 (as-is M15 param transfer, gross SR 3.46, n=34 trades). EURUSD previously excluded from Direction D/G for lack of cost data — now has FROM_TICKS calibration (56,115 ticks, 4.42d, RT 14.17bps, config/cost_calibration.json). Break-even re-run at real cost required before any verdict. Same gate stack applies.
+
 ## 2. Scope — methodology
 
 Gate stack carries over unchanged from Direction D (p-value, WFA-OOS, WFE,
