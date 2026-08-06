@@ -1,0 +1,3462 @@
+{
+  "schema_version": "1.0",
+  "direction": "I",
+  "canonical": [
+    {
+      "name": "The Playground Series v1 to V4 - A combination of trading concepts",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/68125",
+      "mechanism": "orderflow",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "e876a639c029",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "orderflow",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "RiskSizer Panel Lite MT5 - Risk Percent Lot Calculator With One Click Buy Sell",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/68458",
+      "mechanism": "other",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "8b4ee4de4bdd",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Pro MA Crossover EA for MT5",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/70916",
+      "mechanism": "trend_following",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "05d1cd57edac",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "trend_following",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "AutoCloseOnProfitLoss Expert - Automatically Close All Positions on Profit/Loss",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/59371",
+      "mechanism": "vol_targeting",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "84f171138f16",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "vol_targeting",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "RSI Grid EA Pro",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/71700",
+      "mechanism": "grid_martingale",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "4e6822c9019a",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "grid_martingale",
+      "requires_martingale_gate": true
+    },
+    {
+      "name": "Viral (1M+ views) 4 Hour Range Strategy coded and tested",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/68082",
+      "mechanism": "mean_reversion",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "f7fd50e4dfe0",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "mean_reversion",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "VR Rsi Robot is a multi-timeframe trading strategy",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/70465",
+      "mechanism": "mean_reversion",
+      "symbol": "ALL",
+      "timeframe": "D1",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "4816926ba641",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "mean_reversion",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "OHLCMTF Scalper EA - Multi-Timeframe Price Action",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/70796",
+      "mechanism": "scalper",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "6034584e0c80",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "scalper",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Triangular Arbitrage",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/57272",
+      "mechanism": "microstructure",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "244a34f3c8c6",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "microstructure",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Price Action Intraday Trading - Expert for MT5",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/68704",
+      "mechanism": "breakout",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "cd2107feb9c2",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "breakout",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "ICE (Impulse Confirmation Engine)",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/69651",
+      "mechanism": "momentum",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "022a348627ef",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "momentum",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "EA Stochastic Bollinger Bands Multi - Timeframe",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/58746",
+      "mechanism": "mean_reversion",
+      "symbol": "ALL",
+      "timeframe": "M15",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "1567248045bf",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "mean_reversion",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "RRS Tangled EA",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/57409",
+      "mechanism": "multi_asset",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "32aa34efd637",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "multi_asset",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Surfing - 2 EMA strategy",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/54396",
+      "mechanism": "trend_following",
+      "symbol": "ALL",
+      "timeframe": "D1",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "e16dbb214d03",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "trend_following",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Donchian Channel Scalping Strategy EA",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/46774",
+      "mechanism": "breakout",
+      "symbol": "ALL",
+      "timeframe": "H1",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "9bf7a45c4aa2",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "breakout",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "KA-Gold Bot",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/45323",
+      "mechanism": "trend_following",
+      "symbol": "GOLD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "587d8073abc1",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "trend_following",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Swap Informer",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/41693",
+      "mechanism": "carry",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "d8d13cd0022c",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "carry",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "GoldScalpBot — Autonomous XAUUSD Scalper with Local App Bridge (IC Markets)",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/75652",
+      "mechanism": "grid_martingale",
+      "symbol": "XAUUSD",
+      "timeframe": "M5",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "6c1d2ae47130",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "grid_martingale",
+      "requires_martingale_gate": true
+    },
+    {
+      "name": "GoldLondonBreakout",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/75586",
+      "mechanism": "grid_martingale",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "2a8b4475497e",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "grid_martingale",
+      "requires_martingale_gate": true
+    },
+    {
+      "name": "Market Miner",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/74818",
+      "mechanism": "multi_asset",
+      "symbol": "GOLD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "ccd7a5f17582",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "multi_asset",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "MSNR v5.31Plus AEU EA",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/73680",
+      "mechanism": "orderflow",
+      "symbol": "XAUUSD",
+      "timeframe": "W1",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "5fabf246c411",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "orderflow",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Quantum XAUUSD Silver Trader",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/73622",
+      "mechanism": "trend_following",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "2ca18b35f783",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "trend_following",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Gold Dust",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/23220",
+      "mechanism": "other",
+      "symbol": "GOLD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "edbebf04add5",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "BITEX.ONE MarketMaker",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/22875",
+      "mechanism": "microstructure",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "475d0a601903",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "microstructure",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Constituents EA",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/22595",
+      "mechanism": "session",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "cc4c0cf0df74",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "session",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Contrarian trade MA",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/22914",
+      "mechanism": "trend_following",
+      "symbol": "ALL",
+      "timeframe": "W1",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "8f5dbab24be0",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "trend_following",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "E-Friday",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/23108",
+      "mechanism": "seasonality",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "f995b4916f67",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "seasonality",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "KSQ Fair Value Gap EA FVG with Regime Detection and Dual SL TP Mode",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/71467",
+      "mechanism": "orderflow",
+      "symbol": "ALL",
+      "timeframe": "D1",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "4f1e1eee9747",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "orderflow",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Liquidity Sweep H4 - M15 (Swing Highs and Lows) / MQL5",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/68951",
+      "mechanism": "orderflow",
+      "symbol": "ALL",
+      "timeframe": "H4",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "06f0391c692b",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "orderflow",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "ExMachina SafeScalping",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/70052",
+      "mechanism": "breakout",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "0813c30ed9fd",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "breakout",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Cincin EA",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/62812",
+      "mechanism": "grid_martingale",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "aca5bbb64a26",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "grid_martingale",
+      "requires_martingale_gate": true
+    },
+    {
+      "name": "Butterfly Strategy Expert Advisor with Multiple TimeFrames",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/59529",
+      "mechanism": "vol_targeting",
+      "symbol": "ALL",
+      "timeframe": "D1",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "175dcdb2e93f",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "vol_targeting",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "ICT\\_conceptsEA by Emil",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/58361",
+      "mechanism": "orderflow",
+      "symbol": "SILVER",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "939d59710347",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "orderflow",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "QuickTrend Scalper",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/52105",
+      "mechanism": "scalper",
+      "symbol": "ALL",
+      "timeframe": "M1",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "b65fad621249",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "scalper",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Simple EA using Bollinger, RSI and MA",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/32695",
+      "mechanism": "mean_reversion",
+      "symbol": "ALL",
+      "timeframe": "H1",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "2841ee3d3c9a",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "mean_reversion",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "GbpChf",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/25774",
+      "mechanism": "other",
+      "symbol": "ALL",
+      "timeframe": "H1",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "66049be735f9",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Lavika EURGBP/EURUSD",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/25249",
+      "mechanism": "grid_martingale",
+      "symbol": "ALL",
+      "timeframe": "H4",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "b188e78b4cbd",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "grid_martingale",
+      "requires_martingale_gate": true
+    },
+    {
+      "name": "Ingrit",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/23499",
+      "mechanism": "other",
+      "symbol": "ALL",
+      "timeframe": "M5",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "ff497b41136b",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "FitFul 13",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/23394",
+      "mechanism": "other",
+      "symbol": "ALL",
+      "timeframe": "W1",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "491a70d958ac",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "BAKOME-Hub/BAKOMEGoldScalper",
+      "source": "github",
+      "source_url": "https://github.com/BAKOME-Hub/BAKOMEGoldScalper",
+      "mechanism": "scalper",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "1033c3b0a4b7",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "scalper",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "codedpro/mt5-trade-split-manager",
+      "source": "github",
+      "source_url": "https://github.com/codedpro/mt5-trade-split-manager",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "desc: profit",
+      "evidence_tier": "practitioner",
+      "catalog_id": "5e40f511ccf4",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "dammajid/Mushashi-EA",
+      "source": "github",
+      "source_url": "https://github.com/dammajid/Mushashi-EA",
+      "mechanism": "scalper",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "4ce6e16a9948",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "scalper",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "definitelyfkd/MultiStrategy-MT5-EA-Swap-Forex-Oil-Indices-Gold-Bitcoin-",
+      "source": "github",
+      "source_url": "https://github.com/definitelyfkd/MultiStrategy-MT5-EA-Swap-Forex-Oil-Indices-Gold-Bitcoin-",
+      "mechanism": "carry",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "0d665a9df3d9",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "carry",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "drmorad/Quantum-Bitcoin-EA-Generator",
+      "source": "github",
+      "source_url": "https://github.com/drmorad/Quantum-Bitcoin-EA-Generator",
+      "mechanism": "grid_martingale",
+      "symbol": "BTCUSD",
+      "timeframe": "H1",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "a50b82634700",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "grid_martingale",
+      "requires_martingale_gate": true
+    },
+    {
+      "name": "EA31337/Strategy-Meta_Limit",
+      "source": "github",
+      "source_url": "https://github.com/EA31337/Strategy-Meta_Limit",
+      "mechanism": "momentum",
+      "symbol": "ALL",
+      "timeframe": "D1",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "957ae3cceff9",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "momentum",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Haohao-end/AI-Agent-Alpha-quantitative-trading-strategy",
+      "source": "github",
+      "source_url": "https://github.com/Haohao-end/AI-Agent-Alpha-quantitative-trading-strategy",
+      "mechanism": "microstructure",
+      "symbol": "ALL",
+      "timeframe": "D1",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "4f5db3fb51e3",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "microstructure",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "ilahuerta-IA/backtrader-pullback-window-usdjpy",
+      "source": "github",
+      "source_url": "https://github.com/ilahuerta-IA/backtrader-pullback-window-usdjpy",
+      "mechanism": "mean_reversion",
+      "symbol": "USDJPY",
+      "timeframe": "M5",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "c34ae52ea658",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "mean_reversion",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "ilahuerta-IA/backtrader-pullback-window-xauusd",
+      "source": "github",
+      "source_url": "https://github.com/ilahuerta-IA/backtrader-pullback-window-xauusd",
+      "mechanism": "mean_reversion",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "desc: Sharpe",
+      "evidence_tier": "practitioner",
+      "catalog_id": "600811f78ae2",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "mean_reversion",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "jblanked/Collinator",
+      "source": "github",
+      "source_url": "https://github.com/jblanked/Collinator",
+      "mechanism": "grid_martingale",
+      "symbol": "DJI",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "desc: profit",
+      "evidence_tier": "practitioner",
+      "catalog_id": "eda9926a9838",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "grid_martingale",
+      "requires_martingale_gate": true
+    },
+    {
+      "name": "KVignesh122/MT5-SMC-trading-bot",
+      "source": "github",
+      "source_url": "https://github.com/KVignesh122/MT5-SMC-trading-bot",
+      "mechanism": "regime",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "b4682f12260a",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "regime",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "n30dyn4m1c/crt-turtlesoup-ea",
+      "source": "github",
+      "source_url": "https://github.com/n30dyn4m1c/crt-turtlesoup-ea",
+      "mechanism": "trend_following",
+      "symbol": "ALL",
+      "timeframe": "M15",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "a97653596b2e",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "trend_following",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "NadirAliOfficial/eurusd-scalper-ea",
+      "source": "github",
+      "source_url": "https://github.com/NadirAliOfficial/eurusd-scalper-ea",
+      "mechanism": "scalper",
+      "symbol": "EURUSD",
+      "timeframe": "M5",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "2aacbdd7714b",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "scalper",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "NadirAliOfficial/MT5-Metatrader",
+      "source": "github",
+      "source_url": "https://github.com/NadirAliOfficial/MT5-Metatrader",
+      "mechanism": "momentum",
+      "symbol": "ALL",
+      "timeframe": "M5",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "bc6c841a16b7",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "momentum",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "naimkatiman/tradeclaw",
+      "source": "github",
+      "source_url": "https://github.com/naimkatiman/tradeclaw",
+      "mechanism": "regime",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "be9b1324bc4c",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "regime",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Sfedfcv/redesigned-pancake",
+      "source": "github",
+      "source_url": "https://github.com/Sfedfcv/redesigned-pancake",
+      "mechanism": "momentum",
+      "symbol": "ALL",
+      "timeframe": "M15",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "d544ae43fb68",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "momentum",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "sjev/trading-with-python",
+      "source": "github",
+      "source_url": "https://github.com/sjev/trading-with-python",
+      "mechanism": "multi_asset",
+      "symbol": "ALL",
+      "timeframe": "D1",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "54ea46e9896d",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "multi_asset",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "syngyn/Metatrader-5-GGTH-Forex-Predictions-with-News-Sentiment",
+      "source": "github",
+      "source_url": "https://github.com/syngyn/Metatrader-5-GGTH-Forex-Predictions-with-News-Sentiment",
+      "mechanism": "momentum",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "8a304aab266f",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "momentum",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "techdeepsm/MT5-ICT-Silverbullet-EA-",
+      "source": "github",
+      "source_url": "https://github.com/techdeepsm/MT5-ICT-Silverbullet-EA-",
+      "mechanism": "trend_following",
+      "symbol": "XAGUSD",
+      "timeframe": "M15",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "df23f713d39b",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "trend_following",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Vanguard-Comercio-inc/vanguard-Comercio-inc",
+      "source": "github",
+      "source_url": "https://github.com/Vanguard-Comercio-inc/vanguard-Comercio-inc",
+      "mechanism": "momentum",
+      "symbol": "ALL",
+      "timeframe": "H4",
+      "params": {},
+      "claimed_perf": "desc: profit",
+      "evidence_tier": "practitioner",
+      "catalog_id": "6acd876d68d6",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "momentum",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "AGI EA V.1.1_REAL ACCOUNT 1",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/leo23/agi-ea-v11-real-account/9794445",
+      "mechanism": "other",
+      "mechanism_basis": "name_inference_detail_page_fetched",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "tracking": "858",
+        "abs_gain": "+239,814.62%",
+        "daily": "+0.99%"
+      },
+      "claimed_perf": "gain +239,814.62%, abs gain +239,814.62%, daily +0.99%, monthly +34.35%, drawdown 5.74% (detail page capture, 2024)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems",
+      "catalog_id": "fc0bf905b9c0",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "CheckMate",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/mr_ForexMaster/checkmate/11202465",
+      "mechanism": "other",
+      "mechanism_basis": "name_inference_detail_page_fetched",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "tracking": "33",
+        "abs_gain": "+48,322.77%",
+        "daily": "+2.08%"
+      },
+      "claimed_perf": "gain +48,322.77%, abs gain +48,322.77%, daily +2.08%, monthly +84.95%, drawdown 18.22% (detail page capture, 2024)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems",
+      "catalog_id": "22ea7f5fd1cf",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Meta EA Gold BCR",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/Suntradingg/meta-ea-gold-bcr/11103502",
+      "mechanism": "other",
+      "mechanism_basis": "name_inference_detail_page_fetched",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {
+        "tracking": "13",
+        "abs_gain": "+1,408.65%",
+        "daily": "+0.58%"
+      },
+      "claimed_perf": "gain +48,261.72%, abs gain +1,408.65%, daily +0.58%, monthly +20.05%, drawdown 28.84% (detail page capture, 2024)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems",
+      "catalog_id": "31027351b3fe",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "KopipesGOLD",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/kopipes/kopipesgold/11153324",
+      "mechanism": "other",
+      "mechanism_basis": "name_inference_detail_page_fetched",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {
+        "tracking": "5",
+        "abs_gain": "+10.75%",
+        "daily": "+3.86%"
+      },
+      "claimed_perf": "gain +28,262.61%, abs gain +10.75%, daily +3.86%, monthly +387.18%, drawdown 7.08% (detail page capture, 2024)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems",
+      "catalog_id": "2f50ab0df493",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "FXStabilizer_EUR - Turbo",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/forexstore/fxstabilizer-eur-turbo/1614052",
+      "mechanism": "other",
+      "mechanism_basis": "name_inference",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "trading_type": "Automated",
+        "system_type": "Technical",
+        "account_type": "Real"
+      },
+      "claimed_perf": "gain +3260.97%, drawdown 13.26% (as of 2024 capture)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/most-popular-forex-systems",
+      "catalog_id": "abdecc6b8c65",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "DHTrade",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/DHTrade/dhtrade/11012700",
+      "mechanism": "other",
+      "mechanism_basis": "name_inference",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "trading_type": "Manual",
+        "system_type": "Technical",
+        "account_type": "Real"
+      },
+      "claimed_perf": "gain +5195.21%, drawdown 28.16% (as of 2024 capture)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/most-popular-forex-systems",
+      "catalog_id": "36f94b206305",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "NetWave (FX & Gold)",
+      "source": "myfxbook",
+      "source_url": "http://www.myfxbook.com/members/autotrade/netwave-fx--gold/645509",
+      "mechanism": "other",
+      "mechanism_basis": "name_inference",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {
+        "trading_type": "Automated",
+        "system_type": "Technical",
+        "account_type": "Real"
+      },
+      "claimed_perf": "gain +150.9%, drawdown 26.70% (as of 2014-05-16 capture)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20140516145630/http://www.myfxbook.com/systems?pt=6&p=3",
+      "catalog_id": "8b9c6250b510",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Forexsurf",
+      "source": "myfxbook",
+      "source_url": "http://www.myfxbook.com/members/autotrade/forexsurf/706886",
+      "mechanism": "other",
+      "mechanism_basis": "name_inference",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "trading_type": "Mixed",
+        "system_type": "Technical",
+        "account_type": "Real"
+      },
+      "claimed_perf": "gain +110.49%, drawdown 30.67% (as of 2014-05-16 capture)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20140516145630/http://www.myfxbook.com/systems?pt=6&p=3",
+      "catalog_id": "7f7976fe7187",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Volatility Factor",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/autotrade/volatility-factor/599539",
+      "mechanism": "vol_targeting",
+      "mechanism_basis": "name_inference",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "trading_type": "Automated",
+        "system_type": "Technical",
+        "account_type": "Real"
+      },
+      "claimed_perf": "gain +110.98%, drawdown 27.75% (as of 2014-10-05 capture)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20141005014000/http://www.myfxbook.com/systems",
+      "catalog_id": "22ce9dfde445",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "vol_targeting",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "SWIT Pro",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/autotrade/swit-pro/796789",
+      "mechanism": "other",
+      "mechanism_basis": "name_inference",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "trading_type": "Manual",
+        "system_type": "Fundamental",
+        "account_type": "Real"
+      },
+      "claimed_perf": "gain +80.74%, drawdown 22.63% (as of 2014-10-05 capture)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20141005014000/http://www.myfxbook.com/systems",
+      "catalog_id": "927322af36a6",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Victory BTC 10K",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/thekaysfx/victory-btc-10k/11267796",
+      "mechanism": "other",
+      "mechanism_basis": "name_inference",
+      "symbol": "BTCUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "gain +82,546.08%, drawdown +31.19%, monthly +7,163.15%, yearly +76,183.22% (as of 2025-01-18 capture)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20250118104951/https://www.myfxbook.com/systems",
+      "catalog_id": "c764af156543",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Happiness",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/happiness/216992",
+      "mechanism": "other",
+      "mechanism_basis": "name_inference",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real"
+      },
+      "claimed_perf": "gain +12971.64%, drawdown 6.54% (as of 2021-07-29 capture)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20210729132144/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "3cdea64f1e44",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Friday Monday",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/friday-monday/66191",
+      "mechanism": "session",
+      "mechanism_basis": "name_inference",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real"
+      },
+      "claimed_perf": "gain +1359.26%, drawdown 43.32% (as of 2021-07-29 capture)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20210729132144/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "559c53eb2cd5",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "session",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Scalp IC Markets",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/scalp-ic-markets/204502?utm_source=myfxbook&utm_content=systems",
+      "mechanism": "scalper",
+      "mechanism_basis": "name_inference",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real"
+      },
+      "claimed_perf": "gain +1712.71%, drawdown 23.22% (as of 2022-04-01 capture)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20220401051739/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "939a7b51142f",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "scalper",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Golden Buffalo Pro",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/golden-buffalo-pro/267625?utm_source=myfxbook&utm_content=systems",
+      "mechanism": "other",
+      "mechanism_basis": "name_inference",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real"
+      },
+      "claimed_perf": "gain +6749.53%, drawdown 12.79% (as of 2024-04-04 capture)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20240404235655/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "f095552d5308",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "eurusdonly",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/eurusdonly/263070?utm_source=myfxbook&utm_content=systems",
+      "mechanism": "other",
+      "mechanism_basis": "name_inference",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real"
+      },
+      "claimed_perf": "gain +2520.0%, drawdown 48.09% (as of 2024-04-04 capture)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20240404235655/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "0852a18c3504",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "R Factor Multi Portfolio",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/r-factor-multi-portfolio/243745?utm_source=myfxbook&utm_content=systems",
+      "mechanism": "multi_asset",
+      "mechanism_basis": "name_inference",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real"
+      },
+      "claimed_perf": "gain +1378.65%, drawdown 13.19% (as of 2024-04-04 capture)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20240404235655/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "23d61c846162",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "multi_asset",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "SFE Night Scalper EURCHF",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/sfe-night-scalper-eurchf/40974",
+      "mechanism": "scalper",
+      "mechanism_basis": "name_inference",
+      "symbol": "EURCHF",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real"
+      },
+      "claimed_perf": "gain +1078.82%, drawdown 47.20% (as of 2020-07-04 capture)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20200704184431/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "b779f9d87d74",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "scalper",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "FURY V6 10K",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/forexfuryreal/fury-v6-10k/10879184",
+      "mechanism": "other",
+      "mechanism_basis": "name_inference_detail_page_fetched",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "tracking": "N/A",
+        "abs_gain": "+9.07%",
+        "daily": "+0.07%"
+      },
+      "claimed_perf": "gain +9.07%, abs gain +9.07%, daily +0.07%, monthly +2.64%, drawdown 0.50% (detail page capture 2024-05-28)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20240528173531/https://www.myfxbook.com/members/forexfuryreal/fury-v6-10k/10879184",
+      "catalog_id": "e20cdc8479e0",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Measuring the engine of a liquidation cascade: subcritical branching inside a first-order transition",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2608.03616v1",
+      "mechanism": "other",
+      "symbol": "crypto",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "We study seven major crypto-perpetual liquidation cascades (2022-2025), and in the largest of them we can watch the mechanism directly. From the on-chain fill log of a fully transparent venue we measure the branching rat...",
+      "evidence_tier": "literature",
+      "published": "2026-08-04",
+      "catalog_id": "70341458fcfa",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "A New Approach to Goodness of Fit for Ergodic Markov Processes",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2608.03088v1",
+      "mechanism": "other",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "We introduce a new density-based goodness of fit test for ergodic Markov processes. Our test compares the data against the class of models specified in the null hypothesis, and rejects if no model in the class yields a s...",
+      "evidence_tier": "literature",
+      "published": "2026-08-04",
+      "catalog_id": "756614ceb56b",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Proper-score observation-driven filters: local geometry, estimation, and continuous-time limits",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2608.02828v1",
+      "mechanism": "microstructure",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "Observation-driven filters update a time-varying parameter with the likelihood score, linking the recursion to the logarithmic scoring rule. We replace this update with the negative parameter derivative of a differentiab...",
+      "evidence_tier": "literature",
+      "published": "2026-08-03",
+      "catalog_id": "878697e23be9",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "microstructure",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "AI and Exchange Rate Predictability",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2608.00761v1",
+      "mechanism": "event",
+      "symbol": "FX",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "A simple trading strategy that goes long currencies with strong fundamentals and short currencies with weak fundamentals generates a Sharpe ratio exceeding 0.",
+      "evidence_tier": "literature",
+      "published": "2026-08-01",
+      "catalog_id": "1b83496ec912",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Bootstrap inference in autoregressive duration models",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.28294v1",
+      "mechanism": "seasonality",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "This paper develops bootstrap inference for autoregressive conditional duration (ACD) models observed over a fixed calendar span, so that the number of durations is random. We study recursive schemes that either fix the...",
+      "evidence_tier": "literature",
+      "published": "2026-07-30",
+      "catalog_id": "c6e7fd16f9ba",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "seasonality",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Boundary-Induced Apparent Risk Aversion in Nonergodic Multiplicative Growth",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.28230v2",
+      "mechanism": "mean_reversion",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "Observed risk-taking behavior is often rationalized through expected-utility curvature, yet the curvature required to fit choices in one context can differ sharply from the curvature required in another, a tension highli...",
+      "evidence_tier": "literature",
+      "published": "2026-07-30",
+      "catalog_id": "c4b41c9a4bad",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "mean_reversion",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Are Three Matrices All You Need To Beat the Market? Observable Matrix Dynamics for Portfolio Optimization",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.27461v1",
+      "mechanism": "momentum",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "A portfolio built on the forecasts, a market-neutral momentum long-short blended with an opportunistic long-only sleeve, beats the market on two non-overlapping out-of-sample test sets, January 2022 to December 2024 and January 2025 to July 2026, at Sharpes of $1.",
+      "evidence_tier": "literature",
+      "published": "2026-07-29",
+      "catalog_id": "2172bde89191",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "momentum",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Where does the criticality live? Early-warning signals are event-heterogeneous across seven crypto-perpetual liquidation cascades",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.27070v1",
+      "mechanism": "carry",
+      "symbol": "BTCUSD",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "Do crypto perpetual-futures crashes carry a reproducible early-warning fingerprint of a critical transition, and in which state variable? We study seven major BTC liquidation cascades (2022-2025, including the record 19B...",
+      "evidence_tier": "literature",
+      "published": "2026-07-29",
+      "catalog_id": "f8a8f0523252",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "carry",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Bitcoin Runs on a Clock: Why Every Price Indicator Dies and the Halving Clock Doesn't",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.26188v1",
+      "mechanism": "other",
+      "symbol": "BTCUSD",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "Every widely followed Bitcoin cycle indicator (Pi Cycle, MVRV, Mayer, Puell) called turns precisely for a decade, then degraded in one sequence: precise, then early, then silent. This is one structural phenomenon. Across...",
+      "evidence_tier": "literature",
+      "published": "2026-07-28",
+      "catalog_id": "7b85c65f3f5d",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Emergent Latent-State Computation under Stochastic Volatility",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.25459v1",
+      "mechanism": "regime",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "In long-cycle regimes, this computation simplifies into an explicit latent-state filter consisting of a learned linear projection followed by $\\ell^2$ normalization.",
+      "evidence_tier": "literature",
+      "published": "2026-07-28",
+      "catalog_id": "6ac29b8f9f1c",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "regime",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Variational Quantum Conditional Boltzmann Machines for Time-Series Forecasting: Architectures, Symmetric Hyperparameter Evaluation, and a Nonlinear Benchmark",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.24065v1",
+      "mechanism": "regime",
+      "symbol": "futures",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "In this study, we developed and evaluated four conditional energy-based forecasting architectures: a classical Gaussian-Bernoulli CRBM, a hybrid quantum-classical QCRBM, a full-register QQRBM, and a lag-feature QFeatureQ...",
+      "evidence_tier": "literature",
+      "published": "2026-07-27",
+      "catalog_id": "22556692a61d",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "regime",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Retail Trader's Ruin: An Anatomy of Popular Signal Failure",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.20093v1",
+      "mechanism": "momentum",
+      "symbol": "ALL",
+      "timeframe": "intraday",
+      "params": {
+        "frequency": "intraday"
+      },
+      "claimed_perf": "We test whether five widely promoted retail signal families - trend, oscillator, candlestick, volume, and calendar rules - deliver a positive, economically meaningful, net-of-cost, and survivable edge. Practical viabilit...",
+      "evidence_tier": "literature",
+      "published": "2026-07-22",
+      "catalog_id": "89e5f528d2ee",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "momentum",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Observable Matrix Dynamics of Stocks",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.19005v2",
+      "mechanism": "carry",
+      "symbol": "equities",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "The Observable Matrix Dynamics (OMD) approach monitors the time development of complex non-linear systems through the trajectory of a fixed-size distance matrix and its spectrum. We apply it to the S\\&P 500 cross section...",
+      "evidence_tier": "literature",
+      "published": "2026-07-21",
+      "catalog_id": "8ed54e84f6c1",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "carry",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Statistical Properties and Power Analysis of Divergence Measures for Credit Risk Model Monitoring",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.12407v1",
+      "mechanism": "other",
+      "symbol": "equities",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "Divergence measures are essential tools for detecting distributional shifts in model monitoring, particularly crucial given the volatility of financial data. While the Population Stability Index is the most widely used m...",
+      "evidence_tier": "literature",
+      "published": "2026-07-14",
+      "catalog_id": "dab5210de921",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "When Directional Accuracy Lies: A Base-Rate-Honest Benchmark for LoRA-Adapted TimesFM on Equity Forecasting",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.12248v2",
+      "mechanism": "microstructure",
+      "symbol": "equities",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "Large pretrained time-series models such as TimesFM are attractive for financial forecasting, but raw directional accuracy is a misleading scoreboard in equity markets.",
+      "evidence_tier": "literature",
+      "published": "2026-07-14",
+      "catalog_id": "8afe01c50807",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "microstructure",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Recovering Structural Organization in Noisy Correlation Networks Using Financial Systems as a Testbed",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.10297v1",
+      "mechanism": "carry",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "As a practical application, portfolios constructed from peripheral assets of the denoised networks consistently outperform portfolios based on unfiltered correlations and standard benchmarks on a risk-adjusted basis, with robustness verified through Monte Carlo subsampling.",
+      "evidence_tier": "literature",
+      "published": "2026-07-11",
+      "catalog_id": "f768922a9de1",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "carry",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Stable Sentiment and Persistent Dynamics in U.S. Economic News over 45 Years",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.06220v1",
+      "mechanism": "mean_reversion",
+      "symbol": "equities",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "Collective emotion is often inferred from the tone of mass media, but such emotion is not directly observed. One approximation is to extract sentiment from text and use sentiment indexes as proxies to study the temporal...",
+      "evidence_tier": "literature",
+      "published": "2026-07-07",
+      "catalog_id": "1d6d8f9b9829",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "mean_reversion",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "A Spectral Generalisation of the Variance Ratio: Eigenstructure of Long-Horizon Portfolio Covariance and a Multi-Memory Factor Model of U.S. Equity Returns",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.03858v1",
+      "mechanism": "momentum",
+      "symbol": "equities",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "We propose a multivariate generalisation of the Lo-MacKinlay (1988) variance ratio that decomposes long-horizon equity-return dynamics into separate return-channel and volatility-channel memory components across the cros...",
+      "evidence_tier": "literature",
+      "published": "2026-07-04",
+      "catalog_id": "9a2b8c54b28a",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "momentum",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Portfolio Optimization and Tail-Risk Analytics of Actively Managed ETFs",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.03082v1",
+      "mechanism": "multi_asset",
+      "symbol": "equities",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "Dynamic allocation does not improve all strategies uniformly: the long-only dynamic CVaR-95 portfolio is consistently attractive across several risk-adjusted criteria, whereas long--short dynamic tangency-CVaR portfolios perform strongly but are more sensitive to turnover and implementation costs.",
+      "evidence_tier": "literature",
+      "published": "2026-07-03",
+      "catalog_id": "fe9b677e56f6",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "multi_asset",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Outcome-Classified Precision Auditing of Filter Rules in Algorithmic DEX Trading: Evidence from 2,400 Rejection Events",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.02830v1",
+      "mechanism": "trend_following",
+      "symbol": "ALL",
+      "timeframe": "D1",
+      "params": {
+        "lookback": 13,
+        "lookback_unit": "days"
+      },
+      "claimed_perf": "This paper reports a precision audit of a production filter stack against a 13-day window of post-rejection forward-market observations on Solana DEX trading (2026-04-10 to 2026-04-23, UTC). The audit yielded 99,510 foll...",
+      "evidence_tier": "literature",
+      "published": "2026-07-02",
+      "catalog_id": "646c699429a3",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "trend_following",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Coordinated Sniper Cohorts on Pump.fun: Detection of 1,012 Persistent Wallet Rings and a Contamination-Adjusted Estimate of Coordination-Specific First-Hour Buyer-Flow Lift",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.02795v3",
+      "mechanism": "orderflow",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "Motivated by Kyle (1985) informed order flow and the Meiklejohn et al. (2013) wallet-clustering tradition, we ask whether persistent coordinated wallets causally raise first-hour buyer flow on the Solana pump.fun bonding...",
+      "evidence_tier": "literature",
+      "published": "2026-07-02",
+      "catalog_id": "9e114701b032",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "orderflow",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Liquidity Premium and Investment Horizons",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.01377v1",
+      "mechanism": "orderflow",
+      "symbol": "equities",
+      "timeframe": "D1",
+      "params": {
+        "frequency": "D1"
+      },
+      "claimed_perf": "We estimate Kyle's (1985) price-impact coefficient $λ$ directly from daily equity order flow and test its ability to forecast the cross-section of subsequent stock returns. Using CRSP data from 2020 to 2025, we construct...",
+      "evidence_tier": "literature",
+      "published": "2026-07-01",
+      "catalog_id": "04a552113e00",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "orderflow",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "End-to-End Parametric Portfolio Policies for Cross-Asset Futures Timing: When Do AI Models Beat Simple Rules?",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.00475v1",
+      "mechanism": "momentum",
+      "symbol": "futures",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "We train these policies on the sixteen most liquid CME futures, where an edge is unlikely to be due to illiquidity, using a differentiable Sharpe ratio loss function, and we benchmark them against equal weighting, risk parity, and time-series momentum.",
+      "evidence_tier": "literature",
+      "published": "2026-07-01",
+      "catalog_id": "875d8e780140",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "momentum",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "CryptoGAT: Are Time Series Models Effective for Cryptocurrency Forecasting?",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2606.27670v1",
+      "mechanism": "multi_asset",
+      "symbol": "crypto",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "Extensive experiments on real cryptocurrency benchmarks demonstrate that our proposed CryptoGAT outperforms various state-of-the-art forecasting methods with a notable margin.",
+      "evidence_tier": "literature",
+      "published": "2026-06-26",
+      "catalog_id": "64e47b324b1a",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "multi_asset",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Empirical Confirmation of the Square-Root Law of Market Impact in a U.S. Large-Cap Equity",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2606.24019v1",
+      "mechanism": "orderflow",
+      "symbol": "equities",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "We test the square-root law (SRL) of market impact on a single U.S. large-capitalisation equity, Apple Inc. (AAPL), using the full Nasdaq TotalView-ITCH market-by-order feed over 178 trading days (2 December 2024 -- 19 A...",
+      "evidence_tier": "literature",
+      "published": "2026-06-22",
+      "catalog_id": "3cfd43b35c6a",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "orderflow",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Continuous Hidden Markov Models for Equity Returns: Heavy-Tail Emission Families and Regime-Conditional Value-at-Risk",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2606.23492v1",
+      "mechanism": "microstructure",
+      "symbol": "equities",
+      "timeframe": "D1",
+      "params": {
+        "frequency": "D1"
+      },
+      "claimed_perf": "Synthetic generators of daily equity returns let practitioners stress test, backtest, and design scenarios that a single realized market history cannot supply, but only if the generator reproduces the stylized facts of r...",
+      "evidence_tier": "literature",
+      "published": "2026-06-22",
+      "catalog_id": "703a10605ba0",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "microstructure",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "When Staking Rewards Compound: Measuring the Impact of Ethereum's Pectra Upgrade",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2606.23337v1",
+      "mechanism": "microstructure",
+      "symbol": "crypto",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "Ethereum's beacon chain hosts over 920,000 active validators, a number inflated by the legacy 32 ETH stake cap. The Pectra upgrade (May 2025) addresses this by introducing 0x02 compounding validators, raising the maximum...",
+      "evidence_tier": "literature",
+      "published": "2026-06-22",
+      "catalog_id": "d8f1d1c9e25d",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "microstructure",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Fitting Accumulated Stock Returns with Tempered Skew t-Distribution",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2606.19318v1",
+      "mechanism": "other",
+      "symbol": "equities",
+      "timeframe": "D1",
+      "params": {
+        "frequency": "D1"
+      },
+      "claimed_perf": "We analyze distributions of historic S&P500 multi-day returns, for the number of days of accumulation from 20 to 120. With the increase of the number of days of accumulation, we observe clear tempering of power-law tails...",
+      "evidence_tier": "literature",
+      "published": "2026-06-17",
+      "catalog_id": "5128748b255d",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Crashing Together, Rallying Apart: Dynamic Conditional Tail Dependence in Cryptocurrency Markets",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2606.16840v1",
+      "mechanism": "regime",
+      "symbol": "crypto",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "Cryptocurrency markets are prone to violent, synchronised drawdowns, challenging the claim that a basket of crypto-assets offers genuine internal diversification. Because standard covariance-based metrics fail to capture...",
+      "evidence_tier": "literature",
+      "published": "2026-06-15",
+      "catalog_id": "f79a7c326f87",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "regime",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Cross-sectional topological anomaly scores and intraday return predictability in the S&P 500: A BallMapper, decoder-conditional VAE, and Function-on-Function regression approach",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2606.08586v1",
+      "mechanism": "mean_reversion",
+      "symbol": "equities",
+      "timeframe": "intraday",
+      "params": {
+        "frequency": "intraday"
+      },
+      "claimed_perf": "Anomaly detection methods in financial time series score statistically unusual observations in observable data, not topologically misexpected persistent deviations in the latent structure of co-movement. This study const...",
+      "evidence_tier": "literature",
+      "published": "2026-06-07",
+      "catalog_id": "3b8955b1638a",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "mean_reversion",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Hour-Aware Adaptive Risk Management for Autonomous Memecoin Trading on Solana DEXs: Evidence, Theory, and Design Lessons from a 15-Day Deployment",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2606.08232v3",
+      "mechanism": "microstructure",
+      "symbol": "ALL",
+      "timeframe": "D1",
+      "params": {
+        "lookback": 15,
+        "lookback_unit": "days"
+      },
+      "claimed_perf": "The three findings connect to Kyle (1985) informed-flow, Precup-Sutton-Singh (2000) off-policy evaluation, and Bailey-Lopez de Prado (2014) deflated-Sharpe predictions.",
+      "evidence_tier": "literature",
+      "published": "2026-06-06",
+      "catalog_id": "3e34bd686a9c",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "microstructure",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Information Networks of Stock Prices",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2606.07450v1",
+      "mechanism": "regime",
+      "symbol": "equities",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "The collective movement of stock prices harbors complex interdependencies that are conventionally simplified only through a linear lens. This paper explores computed structural network representations in the Indonesian c...",
+      "evidence_tier": "literature",
+      "published": "2026-06-05",
+      "catalog_id": "dd1d6272219b",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "regime",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Macro-aware time series forecasting via hierarchical mixed-frequency attention models",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2606.00624v1",
+      "mechanism": "microstructure",
+      "symbol": "futures",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "Empirically, across 55 liquid futures spanning multiple asset classes, HANET consistently outperforms neural forecasters that ignore macroeconomic information, particularly during turbulent periods, improving risk-adjusted returns and mitigating losses.",
+      "evidence_tier": "literature",
+      "published": "2026-05-30",
+      "catalog_id": "1e2a1e366c9d",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "microstructure",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Temporal Coarse-Graining of Latent Default-Probability Paths Generates Effective Default Correlation",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2606.12446v2",
+      "mechanism": "other",
+      "symbol": "ALL",
+      "timeframe": "MN1",
+      "params": {
+        "frequency": "MN1"
+      },
+      "claimed_perf": "We show that persistent dynamics of a latent default-probability path can generate effective default correlation through temporal coarse-graining. In the OU--Binomial baseline, monthly defaults are conditionally independ...",
+      "evidence_tier": "literature",
+      "published": "2026-05-30",
+      "catalog_id": "3b9330d271ba",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Memory, Roughness, and Information Persistence in Financial Markets: A Structural Approach to Volatility Forecasting",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2605.24285v1",
+      "mechanism": "vol_targeting",
+      "symbol": "equities",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "This paper studies the joint role of long-memory dynamics,rough-volatility behavior, and persistence-based forecasting features in equity volatility modeling. We combine semiparametric long-memory estimation, rough-volat...",
+      "evidence_tier": "literature",
+      "published": "2026-05-22",
+      "catalog_id": "f12f0b2fcb2c",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "vol_targeting",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Mining Financial Data using Mixtures of Mirrored Weibull Distributions",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2605.20142v1",
+      "mechanism": "other",
+      "symbol": "ALL",
+      "timeframe": "D1",
+      "params": {
+        "frequency": "D1"
+      },
+      "claimed_perf": "Risk management is an important part of financial practice, essential for protecting assets and investments in modern-day volatile markets. This paper proposes a mixture of mirrored Weibull (MMW) distribution for modelli...",
+      "evidence_tier": "literature",
+      "published": "2026-05-19",
+      "catalog_id": "63ea4a556533",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Sequential Structure in Intraday Futures Data: LSTM vs Gradient Boosting on MNQ",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2605.17724v1",
+      "mechanism": "microstructure",
+      "symbol": "futures",
+      "timeframe": "intraday",
+      "params": {
+        "frequency": "intraday"
+      },
+      "claimed_perf": "No configuration produces statistically significant out-of-sample accuracy above the 51.",
+      "evidence_tier": "literature",
+      "published": "2026-05-18",
+      "catalog_id": "415ef93a4900",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "microstructure",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Neural Network-Driven Volatility Drag Mitigation under Aggressive Leverage",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.23068v1",
+      "mechanism": "trend_following",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "These findings demonstrate that end-to-end variance-minimization architectures can achieve substantial parameter efficiency and robust capital-efficiency gains without sacrificing risk-adjusted performance.",
+      "evidence_tier": "literature",
+      "published": "2026-07-25",
+      "catalog_id": "8af89e0a677a",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "trend_following",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Portfolio Optimization for Commodity ETFs under Heavy-Tailed Returns",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2606.26625v1",
+      "mechanism": "multi_asset",
+      "symbol": "futures",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "Historical optimization indicated that minimum-risk and CVaR-based portfolios provided more stable cumulative performance than tangent portfolios and generally improved Sharpe, Calmar, and STARR$_{0.",
+      "evidence_tier": "literature",
+      "published": "2026-06-25",
+      "catalog_id": "89b0b7309f8b",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "multi_asset",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Hierarchical Graph Learning for Calendar Spread Strategies in Commodity Futures Markets",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2606.25811v1",
+      "mechanism": "seasonality",
+      "symbol": "futures",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "We first establish the efficacy of CS strategies by analytically showing that CS strategies can possess higher risk-adjusted returns, measured by the information ratio, and lower risk, measured by variance and delta, than long-only strategies.",
+      "evidence_tier": "literature",
+      "published": "2026-06-24",
+      "catalog_id": "67369dc643d3",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "seasonality",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Two Sides of Schur Damping: High-Dimensional Pseudo-Likelihoods and Portfolio Allocation",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2606.14798v1",
+      "mechanism": "vol_targeting",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "Two communities that rarely cite each other -- spatial statisticians fitting high-dimensional weather fields, and quantitative investors building portfolios -- have independently arrived at the same mathematical object:...",
+      "evidence_tier": "literature",
+      "published": "2026-06-11",
+      "catalog_id": "6126e2e811ef",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "vol_targeting",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Mean-Variance Optimization in Ambiguous Financial Markets with Learning",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2606.11318v1",
+      "mechanism": "multi_asset",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "We consider a continuous time investment problem in a multi-asset Black-Scholes market with the following features: The assets' drifts are not known and constitute a source of model ambiguity. However, there is a prior d...",
+      "evidence_tier": "literature",
+      "published": "2026-06-09",
+      "catalog_id": "5f7d0f35326e",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "multi_asset",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Macro Economists in the Machine: A Multi-Agent LLM Framework for Commodity-Related ETF Portfolio Construction",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2606.08283v1",
+      "mechanism": "carry",
+      "symbol": "futures",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "rate peak and the 2024-2025 soft landing, all three LLM strategies outperform the Rule Agent in Sharpe terms; the Hawkish and Debate Agents record the largest gains (ΔSharpe = +0.",
+      "evidence_tier": "literature",
+      "published": "2026-06-06",
+      "catalog_id": "d9711fe632ff",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "carry",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Large-Scale Asset Selection via Metric Dependence with Enriched High Frequency Information",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2605.02326v2",
+      "mechanism": "microstructure",
+      "symbol": "ALL",
+      "timeframe": "intraday",
+      "params": {
+        "frequency": "intraday"
+      },
+      "claimed_perf": "Large-scale portfolio choice is highly sensitive to estimation error, making the preliminary asset selection essential in empirical implementation. Existing selection rules typically rely on scalar returns or low dimensi...",
+      "evidence_tier": "literature",
+      "published": "2026-05-04",
+      "catalog_id": "268a02f18171",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "microstructure",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "From Hypotheses to Factors: Constrained LLM Agents in Cryptocurrency Markets",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2604.26747v1",
+      "mechanism": "carry",
+      "symbol": "crypto",
+      "timeframe": "MN1",
+      "params": {
+        "frequency": "MN1"
+      },
+      "claimed_perf": "55% annualized return and Sharpe ratio of 1.",
+      "evidence_tier": "literature",
+      "published": "2026-04-29",
+      "catalog_id": "6be5015c54bc",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "carry",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Probabilistic Forecasting for Day-ahead Electricity Prices, Battery Trading Strategies and the Economic Evaluation of Predictive Accuracy",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2604.19580v1",
+      "mechanism": "event",
+      "symbol": "futures",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "Electricity price forecasting supports decision-making in energy markets and asset operation. Probabilistic forecasts are increasingly adopted to explicitly quantify uncertainty, typically issued as quantile predictions...",
+      "evidence_tier": "literature",
+      "published": "2026-04-21",
+      "catalog_id": "af701aa3328d",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Data-Driven Measures of High-Frequency Trading",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2608.00858v1",
+      "mechanism": "event",
+      "symbol": "ALL",
+      "timeframe": "intraday",
+      "params": {
+        "frequency": "intraday"
+      },
+      "claimed_perf": "Our measures outperform conventional proxies, which struggle to capture the temporal dynamics of HFT.",
+      "evidence_tier": "literature",
+      "published": "2026-08-01",
+      "catalog_id": "6ed9f7791ee6",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Train Often, Deploy Selectively: Forward-Gated Model Replacement in Crypto Markets",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.28577v1",
+      "mechanism": "seasonality",
+      "symbol": "crypto",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "Production forecasting systems retrain models regularly, but a retrained candidate does not necessarily outperform a continuously maintained incumbent that has continued to learn.",
+      "evidence_tier": "literature",
+      "published": "2026-07-30",
+      "catalog_id": "19dc70ed6e57",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "seasonality",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Energy Market and Carbon Emission Spillovers in Critical Minerals Investment: A Dynamic Connectedness Approach",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.27485v1",
+      "mechanism": "event",
+      "symbol": "futures",
+      "timeframe": "D1",
+      "params": {
+        "frequency": "D1"
+      },
+      "claimed_perf": "Design/methodology/approach A time-varying parameter vector autoregression (TVP-VAR) model is employed to quantify dynamic connectedness and directional volatility spillovers using daily data from May 1, 2013, to May 2,...",
+      "evidence_tier": "literature",
+      "published": "2026-07-29",
+      "catalog_id": "3b847976dd74",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "OpenMarket: A Synchronized Polymarket-Binance Dataset for High-Frequency Prediction-Market Research",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.26245v1",
+      "mechanism": "event",
+      "symbol": "BTCUSD",
+      "timeframe": "intraday",
+      "params": {
+        "frequency": "intraday"
+      },
+      "claimed_perf": "OpenMarket began as an attempt to trade Polymarket's BTC 15-minute binary markets against Binance BTC/USDT order flow. The attempt did not produce a tradable edge: out-of-sample, a walk-forward logistic model over 43 mic...",
+      "evidence_tier": "literature",
+      "published": "2026-07-28",
+      "catalog_id": "bff41bbdd738",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "The Quarter-Hour Effect: Periodic Algorithmic Trading and Return Predictability in Cryptocurrency Futures",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.09426v2",
+      "mechanism": "orderflow",
+      "symbol": "crypto",
+      "timeframe": "intraday",
+      "params": {
+        "frequency": "intraday"
+      },
+      "claimed_perf": "Cryptocurrency markets exhibit periodic bursts in volatility and volume at one-minute, five-minute, and quarter-hour marks. Using trade data for six Binance perpetual contracts, we link these bursts to algorithmic partic...",
+      "evidence_tier": "literature",
+      "published": "2026-07-10",
+      "catalog_id": "f9aeeb9fdc7d",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "orderflow",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "When Does Order Flow Matter? State-Dependent L2 Liquidity-State Transitions in Crypto Futures",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.09230v1",
+      "mechanism": "seasonality",
+      "symbol": "BTCUSD",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "Building event-conditioned market models requires separating macro-event labels from persistent microstructure state. We study this distinction in Binance BTCUSDT and ETHUSDT futures from 2023-2026, combining top-20 L2 o...",
+      "evidence_tier": "literature",
+      "published": "2026-07-10",
+      "catalog_id": "ee04dd0bb49d",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "seasonality",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Robustness in Sequential Decision Making under Evolving Uncertainty: Evidence from High-Frequency Market Making",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.08291v1",
+      "mechanism": "orderflow",
+      "symbol": "ALL",
+      "timeframe": "intraday",
+      "params": {
+        "frequency": "intraday"
+      },
+      "claimed_perf": "We study sequential decision making under evolving uncertainty in high-frequency financial markets, where changing market dynamics continually challenge static decision policies. We show that robustness has two economica...",
+      "evidence_tier": "literature",
+      "published": "2026-07-09",
+      "catalog_id": "870ea3b8b3de",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "orderflow",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "A Gabor--Epps uncertainty principle for traders",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2607.04130v1",
+      "mechanism": "seasonality",
+      "symbol": "ALL",
+      "timeframe": "intraday",
+      "params": {
+        "frequency": "intraday"
+      },
+      "claimed_perf": "We propose a Gabor--Epps uncertainty principle for practical trading. The key idea is that high-frequency correlation is not observed in clock time alone, but is resolved through market activity, order-flow overlap, and...",
+      "evidence_tier": "literature",
+      "published": "2026-07-05",
+      "catalog_id": "d0da7a683f20",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "seasonality",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Time-dependent weighted directed networks of cryptocurrency interaction from high-frequency returns",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2606.25466v2",
+      "mechanism": "microstructure",
+      "symbol": "crypto",
+      "timeframe": "intraday",
+      "params": {
+        "frequency": "intraday"
+      },
+      "claimed_perf": "We investigate the evolving structure of interactions in cryptocurrency markets using a network-based framework constructed from high-frequency price data spanning 2020-2025. Directed and weighted networks are constructe...",
+      "evidence_tier": "literature",
+      "published": "2026-06-24",
+      "catalog_id": "f7798d195b4b",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "microstructure",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Do Prediction Markets Match Option Prices? Bitcoin Threshold Evidence from Binance and Polymarket",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2606.19517v1",
+      "mechanism": "mean_reversion",
+      "symbol": "BTCUSD",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "The digitization of financial markets has produced two classes of platforms that price, in principle, the same state - contingent payoffs: centralized crypto-option exchanges and blockchain-based prediction markets. This...",
+      "evidence_tier": "literature",
+      "published": "2026-06-17",
+      "catalog_id": "b0f80db9a189",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "mean_reversion",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Volatility Forecasting and Return Prediction under Market Regimes: Evidence from High-Frequency Chinese Equity Data",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2606.09478v1",
+      "mechanism": "vol_targeting",
+      "symbol": "equities",
+      "timeframe": "intraday",
+      "params": {
+        "frequency": "intraday"
+      },
+      "claimed_perf": "The empirical results demonstrate that regime-aware volatility forecasting consistently outperforms baseline HARQ models across forecast evaluation metrics and is generally supported by formal forecast comparison tests.",
+      "evidence_tier": "literature",
+      "published": "2026-06-08",
+      "catalog_id": "27574c782e60",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "vol_targeting",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Proof of Stake economy under centralized exchanges--a mean field model",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2606.09003v1",
+      "mechanism": "orderflow",
+      "symbol": "crypto",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "We consider the interaction between centralized trading and decentralized Proof of Stake (PoS) blockchain ecosystems. Motivated by the increasing dominance of centralized exchanges and the institutionalization of crypto...",
+      "evidence_tier": "literature",
+      "published": "2026-06-08",
+      "catalog_id": "011f4ebc629f",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "orderflow",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "From Knowing to Doing: A Memory-Controlled Benchmark for LLM Trading Agents on Stock Markets",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2605.28359v1",
+      "mechanism": "seasonality",
+      "symbol": "equities",
+      "timeframe": "ALL",
+      "params": {
+        "frequency": "ALL"
+      },
+      "claimed_perf": "Attribution analysis further shows that LLM agents' cumulative returns under leakage-controlled evaluation are largely explained by passive market and style exposure, with limited evidence of persistent stock-selection alpha.",
+      "evidence_tier": "literature",
+      "published": "2026-05-27",
+      "catalog_id": "d294bd657846",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "seasonality",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Machine Learning-Based Bitcoin Trading Under Transaction Costs: Evidence From Walk-Forward Forecasting",
+      "source": "academic",
+      "source_url": "http://arxiv.org/abs/2606.00060v1",
+      "mechanism": "carry",
+      "symbol": "BTCUSD",
+      "timeframe": "MN1",
+      "params": {
+        "frequency": "MN1"
+      },
+      "claimed_perf": "The strongest long-only XGBoost strategy produces annualised returns above 65% with a Sharpe ratio above one.",
+      "evidence_tier": "literature",
+      "published": "2026-05-19",
+      "catalog_id": "19667bff4a89",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "carry",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "ContingentClaimsAnalysisDefaultPredictionAlpha",
+      "source": "institutional",
+      "source_url": "https://github.com/QuantConnect/Lean/blob/master/Algorithm.Python/Alphas/ContingentClaimsAnalysisDefaultPredictionAlpha.py",
+      "mechanism": "event",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "note": "structural default prediction"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "bdb313b052db",
+      "ingested_at": "2026-08-06T11:27:20+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "GasAndCrudeOilEnergyCorrelationAlpha",
+      "source": "institutional",
+      "source_url": "https://github.com/QuantConnect/Lean/blob/master/Algorithm.Python/Alphas/GasAndCrudeOilEnergyCorrelationAlpha.py",
+      "mechanism": "multi_asset",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "note": "energy correlation"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "7b95572cb8f6",
+      "ingested_at": "2026-08-06T11:27:20+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "multi_asset",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "GlobalEquityMeanReversionIBSAlpha",
+      "source": "institutional",
+      "source_url": "https://github.com/QuantConnect/Lean/blob/master/Algorithm.Python/Alphas/GlobalEquityMeanReversionIBSAlpha.py",
+      "mechanism": "mean_reversion",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "note": "global equity IBS"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "ca627e5cdcb3",
+      "ingested_at": "2026-08-06T11:27:20+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "mean_reversion",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "GreenblattMagicFormulaAlpha",
+      "source": "institutional",
+      "source_url": "https://github.com/QuantConnect/Lean/blob/master/Algorithm.Python/Alphas/GreenblattMagicFormulaAlpha.py",
+      "mechanism": "other",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "note": "value/quality ranking"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "d645be522f0f",
+      "ingested_at": "2026-08-06T11:27:20+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "IntradayReversalCurrencyMarketsAlpha",
+      "source": "institutional",
+      "source_url": "https://github.com/QuantConnect/Lean/blob/master/Algorithm.Python/Alphas/IntradayReversalCurrencyMarketsAlpha.py",
+      "mechanism": "mean_reversion",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "note": "FX futures intraday reversal"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "607964fd21b7",
+      "ingested_at": "2026-08-06T11:27:20+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "mean_reversion",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "MeanReversionLunchBreakAlpha",
+      "source": "institutional",
+      "source_url": "https://github.com/QuantConnect/Lean/blob/master/Algorithm.Python/Alphas/MeanReversionLunchBreakAlpha.py",
+      "mechanism": "mean_reversion",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "note": "SPY lunch break mean reversion"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "00a12a79356e",
+      "ingested_at": "2026-08-06T11:27:20+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "mean_reversion",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "MortgageRateVolatilityAlpha",
+      "source": "institutional",
+      "source_url": "https://github.com/QuantConnect/Lean/blob/master/Algorithm.Python/Alphas/MortgageRateVolatilityAlpha.py",
+      "mechanism": "vol_targeting",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "note": "mortgage rate volatility"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "b79886f9dfc6",
+      "ingested_at": "2026-08-06T11:27:20+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "vol_targeting",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "PriceGapMeanReversionAlpha",
+      "source": "institutional",
+      "source_url": "https://github.com/QuantConnect/Lean/blob/master/Algorithm.Python/Alphas/PriceGapMeanReversionAlpha.py",
+      "mechanism": "mean_reversion",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "note": "price gap mean reversion"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "e560244dff23",
+      "ingested_at": "2026-08-06T11:27:20+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "mean_reversion",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "RebalancingLeveragedETFAlpha",
+      "source": "institutional",
+      "source_url": "https://github.com/QuantConnect/Lean/blob/master/Algorithm.Python/Alphas/RebalancingLeveragedETFAlpha.py",
+      "mechanism": "event",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "note": "leveraged ETF rebalancing"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "c5a97112634a",
+      "ingested_at": "2026-08-06T11:27:20+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "ShareClassMeanReversionAlpha",
+      "source": "institutional",
+      "source_url": "https://github.com/QuantConnect/Lean/blob/master/Algorithm.Python/Alphas/ShareClassMeanReversionAlpha.py",
+      "mechanism": "mean_reversion",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "note": "ETF share class mean reversion"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "c19f801908ad",
+      "ingested_at": "2026-08-06T11:27:20+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "mean_reversion",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "SykesShortMicroCapAlpha",
+      "source": "institutional",
+      "source_url": "https://github.com/QuantConnect/Lean/blob/master/Algorithm.Python/Alphas/SykesShortMicroCapAlpha.py",
+      "mechanism": "other",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "note": "short microcap"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "16ae1aff6177",
+      "ingested_at": "2026-08-06T11:27:20+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "TriangleExchangeRateArbitrageAlpha",
+      "source": "institutional",
+      "source_url": "https://github.com/QuantConnect/Lean/blob/master/Algorithm.Python/Alphas/TriangleExchangeRateArbitrageAlpha.py",
+      "mechanism": "multi_asset",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "note": "FX triangle arbitrage"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "fd2b423f7c0e",
+      "ingested_at": "2026-08-06T11:27:20+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "multi_asset",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "TripleLeverageETFPairVolatilityDecayAlpha",
+      "source": "institutional",
+      "source_url": "https://github.com/QuantConnect/Lean/blob/master/Algorithm.Python/Alphas/TripleLeverageETFPairVolatilityDecayAlpha.py",
+      "mechanism": "mean_reversion",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "note": "3x ETF pair volatility decay"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "7ff81c065a9b",
+      "ingested_at": "2026-08-06T11:27:20+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "mean_reversion",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "VIXDualThrustAlpha",
+      "source": "institutional",
+      "source_url": "https://github.com/QuantConnect/Lean/blob/master/Algorithm.Python/Alphas/VIXDualThrustAlpha.py",
+      "mechanism": "breakout",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "note": "VIX dual thrust"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "3bcb4a71fd73",
+      "ingested_at": "2026-08-06T11:27:20+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "breakout",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Audjpywednesday1500",
+      "source": "obscure",
+      "source_url": "https://www.earnforex.com/metatrader-expert-advisors/AUDJPYWednesday1500/",
+      "mechanism": "seasonality",
+      "symbol": "AUDJPY",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "113c696d3579",
+      "ingested_at": "2026-08-06T11:27:20+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "seasonality",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Lisa EURUSD Breakout",
+      "source": "obscure",
+      "source_url": "https://ctrader.com/products/2131",
+      "mechanism": "breakout",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "be70a4fb79ab",
+      "ingested_at": "2026-08-06T11:27:20+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "breakout",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "SmartTradeOnHoursBreak - XAUUSD",
+      "source": "obscure",
+      "source_url": "https://ctrader.com/products/954",
+      "mechanism": "session",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "26c5ea4e772f",
+      "ingested_at": "2026-08-06T11:27:20+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "session",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "[Fx4U] GBPUSD - Price Action",
+      "source": "obscure",
+      "source_url": "https://ctrader.com/products/346",
+      "mechanism": "other",
+      "symbol": "GBPUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "db5f98691a26",
+      "ingested_at": "2026-08-06T11:27:20+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Trend Following: Cash is King",
+      "source": "institutional",
+      "source_url": "https://www.man.com/insights/trend-following-cash-is-king",
+      "mechanism": "trend_following",
+      "symbol": "ALL",
+      "timeframe": "ALL",
+      "params": {
+        "data_range": "2005-01 to 2026-02",
+        "asset_class": "equity index futures"
+      },
+      "claimed_perf": "not stated (convex return profile vs long-only style benchmark, 2005-2026)",
+      "evidence_tier": "literature",
+      "catalog_id": "33183df3f298",
+      "ingested_at": "2026-08-06T11:27:20+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "trend_following",
+      "requires_martingale_gate": false
+    }
+  ]
+}

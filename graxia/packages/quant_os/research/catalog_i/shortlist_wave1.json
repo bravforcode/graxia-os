@@ -1,0 +1,393 @@
+{
+  "schema_version": "1.0",
+  "direction": "I",
+  "shortlist": [
+    {
+      "name": "Golden Buffalo Pro",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/golden-buffalo-pro/267625?utm_source=myfxbook&utm_content=systems",
+      "mechanism": "other",
+      "mechanism_basis": "name_inference",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real"
+      },
+      "claimed_perf": "gain +6749.53%, drawdown 12.79% (as of 2024-04-04 capture)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20240404235655/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "f095552d5308",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "KopipesGOLD",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/kopipes/kopipesgold/11153324",
+      "mechanism": "other",
+      "mechanism_basis": "name_inference_detail_page_fetched",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {
+        "tracking": "5",
+        "abs_gain": "+10.75%",
+        "daily": "+3.86%"
+      },
+      "claimed_perf": "gain +28,262.61%, abs gain +10.75%, daily +3.86%, monthly +387.18%, drawdown 7.08% (detail page capture, 2024)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems",
+      "catalog_id": "2f50ab0df493",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Meta EA Gold BCR",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/Suntradingg/meta-ea-gold-bcr/11103502",
+      "mechanism": "other",
+      "mechanism_basis": "name_inference_detail_page_fetched",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {
+        "tracking": "13",
+        "abs_gain": "+1,408.65%",
+        "daily": "+0.58%"
+      },
+      "claimed_perf": "gain +48,261.72%, abs gain +1,408.65%, daily +0.58%, monthly +20.05%, drawdown 28.84% (detail page capture, 2024)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems",
+      "catalog_id": "31027351b3fe",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "NetWave (FX & Gold)",
+      "source": "myfxbook",
+      "source_url": "http://www.myfxbook.com/members/autotrade/netwave-fx--gold/645509",
+      "mechanism": "other",
+      "mechanism_basis": "name_inference",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {
+        "trading_type": "Automated",
+        "system_type": "Technical",
+        "account_type": "Real"
+      },
+      "claimed_perf": "gain +150.9%, drawdown 26.70% (as of 2014-05-16 capture)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20140516145630/http://www.myfxbook.com/systems?pt=6&p=3",
+      "catalog_id": "8b9c6250b510",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "BAKOME-Hub/BAKOMEGoldScalper",
+      "source": "github",
+      "source_url": "https://github.com/BAKOME-Hub/BAKOMEGoldScalper",
+      "mechanism": "scalper",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "1033c3b0a4b7",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "scalper",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "ExMachina SafeScalping",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/70052",
+      "mechanism": "breakout",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "0813c30ed9fd",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "breakout",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "MSNR v5.31Plus AEU EA",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/73680",
+      "mechanism": "orderflow",
+      "symbol": "XAUUSD",
+      "timeframe": "W1",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "5fabf246c411",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "orderflow",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Quantum XAUUSD Silver Trader",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/73622",
+      "mechanism": "trend_following",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "2ca18b35f783",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "trend_following",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "SmartTradeOnHoursBreak - XAUUSD",
+      "source": "obscure",
+      "source_url": "https://ctrader.com/products/954",
+      "mechanism": "session",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "26c5ea4e772f",
+      "ingested_at": "2026-08-06T11:27:20+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "session",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "codedpro/mt5-trade-split-manager",
+      "source": "github",
+      "source_url": "https://github.com/codedpro/mt5-trade-split-manager",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "desc: profit",
+      "evidence_tier": "practitioner",
+      "catalog_id": "5e40f511ccf4",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "dammajid/Mushashi-EA",
+      "source": "github",
+      "source_url": "https://github.com/dammajid/Mushashi-EA",
+      "mechanism": "scalper",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "4ce6e16a9948",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "scalper",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "definitelyfkd/MultiStrategy-MT5-EA-Swap-Forex-Oil-Indices-Gold-Bitcoin-",
+      "source": "github",
+      "source_url": "https://github.com/definitelyfkd/MultiStrategy-MT5-EA-Swap-Forex-Oil-Indices-Gold-Bitcoin-",
+      "mechanism": "carry",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "0d665a9df3d9",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "carry",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "ilahuerta-IA/backtrader-pullback-window-xauusd",
+      "source": "github",
+      "source_url": "https://github.com/ilahuerta-IA/backtrader-pullback-window-xauusd",
+      "mechanism": "mean_reversion",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "desc: Sharpe",
+      "evidence_tier": "practitioner",
+      "catalog_id": "600811f78ae2",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "mean_reversion",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "naimkatiman/tradeclaw",
+      "source": "github",
+      "source_url": "https://github.com/naimkatiman/tradeclaw",
+      "mechanism": "regime",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "be9b1324bc4c",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "regime",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    }
+  ]
+}
