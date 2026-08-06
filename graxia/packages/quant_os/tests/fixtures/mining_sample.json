@@ -5,6 +5,7 @@
     {"name": "Grid King", "source": "mql5", "source_url": "https://www.mql5.com/en/code/11111", "mechanism": "grid_martingale", "symbol": "XAUUSD", "timeframe": "M15", "params": {"grid": 50}, "claimed_perf": "Sharpe 2.0", "evidence_tier": "practitioner"},
     {"name": "Breakout B", "source": "forex_factory", "source_url": "https://www.forexfactory.com/thread/22222", "mechanism": "breakout", "symbol": "EURUSD", "timeframe": "H4", "params": {"range": 20}, "claimed_perf": "50% winrate", "evidence_tier": "practitioner"},
     {"name": "FXStabilizer", "source": "myfxbook", "source_url": "https://www.myfxbook.com/systems/fxstabilizer/33333", "mechanism": "scalper", "symbol": "EURUSD", "timeframe": "M5", "params": {}, "claimed_perf": "live verified", "evidence_tier": "myfxbook_verified"},
-    {"name": "Forex4 Trend Clone", "source": "tradingview", "source_url": "https://www.tradingview.com/script/44444/", "mechanism": "trend_continuity", "symbol": "USDCAD", "timeframe": "H1", "params": {}, "claimed_perf": "backtest claim", "evidence_tier": "practitioner"}
+    {"name": "Forex4 Trend Clone", "source": "tradingview", "source_url": "https://www.tradingview.com/script/44444/", "mechanism": "trend_continuity", "symbol": "USDCAD", "timeframe": "H1", "params": {}, "claimed_perf": "backtest claim", "evidence_tier": "practitioner"},
+    {"name": "Gold Trend Paper", "source": "academic", "source_url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=55555", "mechanism": "trend_following", "symbol": "XAUUSD", "timeframe": "D1", "params": {"ma": 100}, "claimed_perf": "Sharpe 0.8", "evidence_tier": "literature"}
   ]
 }
