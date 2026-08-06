@@ -1,4 +1,5 @@
 """raw catalog -> research/catalog_i/canonical_mechanisms.json"""
+
 from __future__ import annotations
 
 import json
@@ -17,7 +18,8 @@ def main() -> int:
     catalog_path, out_path = sys.argv[1], sys.argv[2]
     canon = dedup_to_canonical(load_entries(catalog_path))
     Path(out_path).write_text(
-        json.dumps({"schema_version": "1.0", "direction": "I", "canonical": canon}, indent=2, ensure_ascii=False) + "\n",
+        json.dumps({"schema_version": "1.0", "direction": "I", "canonical": canon}, indent=2, ensure_ascii=False)
+        + "\n",
         encoding="utf-8",
     )
     print(f"canonical {len(canon)} mechanisms -> {out_path}")

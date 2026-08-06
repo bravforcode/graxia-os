@@ -1,4 +1,5 @@
 """Ingest one source's raw JSON batch into the Direction I catalog."""
+
 from __future__ import annotations
 
 import json

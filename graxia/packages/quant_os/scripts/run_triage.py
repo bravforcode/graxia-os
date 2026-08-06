@@ -1,4 +1,5 @@
 """canonical_mechanisms.json -> shortlist.json"""
+
 from __future__ import annotations
 
 import json
