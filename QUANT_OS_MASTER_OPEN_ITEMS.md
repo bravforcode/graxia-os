@@ -28,6 +28,7 @@
   - #46: PARTIALLY ANSWERED — re-audit done (reports/doc18_reaudit_20260806.md 8a1b046b): H1 supported, H2 residual
   - Stash count corrected 13→7 (actual); worktree count 13+→18 (actual)
   - Checklist metadata: HEAD branch moved review/rydc-atr-pnl-honesty → c0175e91 → multiple (concurrent sessions active — verify branch before every commit)
+- **2026-08-06 (Sub-project B decisions):** #2 CLOSED+HARDENED (range-ownership check 8b9c6e20 caught #4004 in MAIN → moved to registry_d, 6d7562f3); #3 RESOLVED (cap 1042 + next 1034, 7b9990e4 — unblocks auto_increment for ALL directions); Direction H opened by parallel session (stopping_rule_2026_08_06_direction_h.md, forex4 scope) + EURUSD H4 pre-registered as 9003 (1b2c1998)
 
 ---
 
@@ -57,7 +58,7 @@
 | 11 | Sizing bug (100x units→lots) — mt5.py fixed; `risk/engine.py::_layer4()` and `position_sizer_v2.py` wiring/single-source-of-truth status | Needs final confirmation all 3 points compute from one shared conversion point |
 | 12 | 5 other MT5 adapter methods with the same unguarded `_ensure_connected()` pattern as the fixed `submit_order()` (cancel_order, get_positions, close_position, get_account_info, set_stop_loss) | Explicitly not patched — each needs its own return-type-appropriate fix |
 | 13 | No shared trial-execution harness — bespoke scripts bypass engine/provenance. **CORRECTED 2026-08-06:** split per evidence — (a) **cost-calibration bypass: RESOLVED for TF probe** (`require_cost_calibrated(mode="paper")` added, commit `03a86dc7`); (b) **engine bypass: TF probe is NOT a bypass** — it calls `BacktestEngine.run()` with the same optimizations as the frozen runner; genuine loader bypasses are `validate_dtsmom_strategy.py` etc. (see `check_bypass_loaders.py` baseline); (c) engine-level protection: class-state CLOSED (2820df99), detection FORMAL-ACCEPT (e518d095), external-state scanner cec6c91c — #14 reclassified accordingly | Structural gap, disclosed honestly, not yet addressed with a systematic lint/CI inventory check |
-| 15 | EURUSD H4 (TF probe) — n_trades=34 barely clears the 30 minimum; net PF 1.79 computed on stale 7.18bps cost (real cost already 14.17bps, 2x) | **GATED** — blocked_on = [direction_h_decision, universe_resolved_2026-08-06]. Universe contradiction (#5) RESOLVED; remaining blocker = Direction H decision (Sub-project B). Gross metrics valid; do NOT use old-cost net PF |
+| 15 | EURUSD H4 (TF probe) — n_trades=34 barely clears the 30 minimum; net PF 1.79 computed on stale 7.18bps cost (real cost already 14.17bps, 2x) | **PRE-REGISTERED 2026-08-06** (9003 DIRH-EURUSD-H4-ASIS in Direction H, commit 1b2c1998): gross SR 3.46 / net PF 1.79 @ old cost — pending break-even re-run at real 14.17bps cost before verdict. blocked_on_previous BOTH RESOLVED (Direction G stopped §4.4; universe fixed C1.1). Next action: break-even re-run |
 
 ---
 
