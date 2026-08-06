@@ -3,7 +3,7 @@
   "direction": "K",
   "description": "Crypto pairs / statistical arbitrage. BTC/ETH H1 joint data (50k bars 2020-2026, return corr 0.83). Market-neutral spread trading — structurally different from all directional mechanisms (A-J all failed).",
   "last_updated": "2026-08-06",
-  "current_verdict_2026-08-06": "4005 REJECTED — BTC/ETH pairs trading falsified.",
+  "current_verdict_2026-08-06": "4005 REJECTED (pairs), 4006 REJECTED (BEVS).",
   "stopping_rule_doc": "reports/stopping_rule_2026_08_06_direction_k.md",
   "sacred_holdout_status": "LOCKED",
   "notes": [
@@ -50,6 +50,35 @@
       "data_manifest_ref": "reports/edge_search_dirk_4005.json",
       "provenance_stamped_at": "2026-08-06T19:31:33.936174+00:00",
       "notes": "Direction K trial 4005 — REJECTED. Cost basis: Binance taker 10 bps rt + 4 bps slippage (documented in pre-registration; slippage_source=none because no fill-simulator for crypto spot). Consistent with Trial 5001 (cointegration p=0.13)."
+    },
+    {
+      "trial_number": 4006,
+      "id": "DIRK-BEVS",
+      "status": "REJECTED",
+      "instrument": "BTCUSD/ETHUSD (H1, 50k joint bars)",
+      "symbols": [
+        "BTCUSD",
+        "ETHUSD"
+      ],
+      "registered_at": "2026-08-06T19:37:17.543623+00:00",
+      "result_at": "2026-08-06T19:37:17.543623+00:00",
+      "result_summary": {
+        "n_trades": 6331,
+        "dk_t": -10.25,
+        "sharpe": -9.66,
+        "mean_pnl": -15.2,
+        "conclusion": "REJECTED: BTC/ETH volume-divergence spread loses massively (dk_t=-10.25, 6331 trades, mean -15 USD/pair) at 14 bps rt. Volume-flow divergence does NOT predict cross-sectional return spread in the hypothesized direction — hypothesis falsified."
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "PAIR": 14.0
+      },
+      "slippage_source": "none",
+      "slippage_bps_used": {},
+      "data_manifest_ref": "reports/edge_search_dirk_4006.json",
+      "provenance_stamped_at": "2026-08-06T19:37:17.543623+00:00",
+      "notes": "Direction K 4006 — REJECTED. Volume divergence (Trial 2003 config) falsified on crypto cross-section."
     }
   ]
 }
