@@ -1,0 +1,67 @@
+{
+  "trial_number": 4001,
+  "generated_at": "2026-08-06T20:32:22.317821+00:00",
+  "test": "funding_rate_arb_feasibility_pilot",
+  "note": "Structural market-fact measurement, not a directional price-prediction test.",
+  "assumed_costs_bps": {
+    "spot_fee": 10.0,
+    "perp_fee": 4.0,
+    "spread": 2.0,
+    "one_time_round_trip_total": 32.0
+  },
+  "per_symbol": [
+    {
+      "symbol": "SOL/USDT",
+      "n_periods": 1095,
+      "actual_days_observed": 364.7,
+      "positive_periods": 600,
+      "positive_period_pct": 54.79,
+      "mean_rate_per_8h_period": -1.3521826484018264e-05,
+      "cumulative_rate_over_window": -0.014806399999999999,
+      "raw_annualized_funding_yield_bps": -148.2,
+      "onetime_roundtrip_cost_bps": 32.0,
+      "onetime_cost_amortized_annual_bps": 32.03,
+      "net_annualized_yield_bps": -180.23,
+      "net_annualized_yield_pct": -1.802,
+      "durably_positive": false,
+      "first_ts": "2025-08-07T00:00:00.003Z",
+      "last_ts": "2026-08-06T16:00:00.000Z"
+    },
+    {
+      "symbol": "BNB/USDT",
+      "n_periods": 1095,
+      "actual_days_observed": 364.7,
+      "positive_periods": 402,
+      "positive_period_pct": 36.71,
+      "mean_rate_per_8h_period": 1.671042922374429e-05,
+      "cumulative_rate_over_window": 0.01829792,
+      "raw_annualized_funding_yield_bps": 183.15,
+      "onetime_roundtrip_cost_bps": 32.0,
+      "onetime_cost_amortized_annual_bps": 32.03,
+      "net_annualized_yield_bps": 151.12,
+      "net_annualized_yield_pct": 1.511,
+      "durably_positive": false,
+      "first_ts": "2025-08-07T00:00:00.003Z",
+      "last_ts": "2026-08-06T16:00:00.000Z"
+    },
+    {
+      "symbol": "XRP/USDT",
+      "n_periods": 1095,
+      "actual_days_observed": 364.7,
+      "positive_periods": 611,
+      "positive_period_pct": 55.8,
+      "mean_rate_per_8h_period": 4.448310502283106e-06,
+      "cumulative_rate_over_window": 0.004870900000000001,
+      "raw_annualized_funding_yield_bps": 48.75,
+      "onetime_roundtrip_cost_bps": 32.0,
+      "onetime_cost_amortized_annual_bps": 32.03,
+      "net_annualized_yield_bps": 16.72,
+      "net_annualized_yield_pct": 0.167,
+      "durably_positive": true,
+      "first_ts": "2025-08-07T00:00:00.003Z",
+      "last_ts": "2026-08-06T16:00:00.000Z"
+    }
+  ],
+  "verdict": "FAIL",
+  "verdict_criterion": ">=2 valid symbols, each net_annualized_yield>0 AND >50% periods positive"
+}
