@@ -57,18 +57,6 @@
       "added": "2026-08-03",
       "source": "tick_parquet_calibration",
       "reason": "SP3 breadth: FROM_TICKS cost calibration from 24h tick data"
-    },
-    {
-      "symbol": "GBPUSD",
-      "added": "2026-08-03",
-      "source": "tick_parquet_calibration",
-      "reason": "SP3 breadth: FROM_TICKS cost calibration from 24h tick data"
-    },
-    {
-      "symbol": "US30",
-      "added": "2026-08-03",
-      "source": "tick_parquet_calibration",
-      "reason": "SP3 breadth: FROM_TICKS cost calibration from 24h tick data"
     }
   ],
   "verifying": [],
@@ -329,19 +317,11 @@
   ],
   "excluded": [
     {
-      "symbol": "EURUSD",
-      "reason": "Removed from cost_calibration.json (explicit). No cost data."
-    },
-    {
       "symbol": "GBPUSD",
-      "reason": "Removed from cost_calibration.json (explicit). No cost data."
+      "reason": "Single-day 2026-06-25 tick parquet only (measurement_duration_days=1, mode=tick_parquet) — does not meet multi-day sampling bar; re-measure required under any future Direction H sampling. See config/cost_calibration.json assets.GBPUSD and docs/superpowers/specs/2026-08-06-tier0-sweep-design.md §5.2."
     },
     {
       "symbol": "SILVER",
-      "reason": "Removed from cost_calibration.json (explicit). No cost data."
-    },
-    {
-      "symbol": "BTCUSD",
       "reason": "Removed from cost_calibration.json (explicit). No cost data."
     },
     {
@@ -362,7 +342,7 @@
     },
     {
       "symbol": "US30",
-      "reason": "In symbol_registry but no cost calibration data. NOTE: real tick data exists at data/ticks/US30_ticks_24h.parquet (193789 ticks, same ~27h window) — a candidate for a genuine future addition, not evaluated further by this fix (out of scope: this fix corrects existing entries, it does not admit new symbols)."
+      "reason": "Single-day 2026-06-25 tick parquet only (measurement_duration_days=1, mode=tick_parquet) — does not meet multi-day sampling bar; re-measure required under any future Direction H sampling. See config/cost_calibration.json assets.US30 and docs/superpowers/specs/2026-08-06-tier0-sweep-design.md §5.2."
     },
     {
       "symbol": "SPX500",
