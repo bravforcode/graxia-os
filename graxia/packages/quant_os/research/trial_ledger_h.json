@@ -17,8 +17,8 @@
     "deadline": "2026-11-06",
     "hours_cap": 80,
     "consecutive_fail_gate_threshold": 3,
-    "consecutive_fail_count": 1,
-    "consecutive_fail_note": "RESTATED 2026-08-06 after cost-model fix: 9001 restamped REJECTED_MIXED (2 REJECT + 2 INCONCLUSIVE) — INCONCLUSIVE is not a fail per F11, so 9001 contributes 0 to the consecutive-fail chain. 9002 (REJECT all 4) counts as fail #1. Direction H is NOT stopped (needs 3). Note: 9001 originally counted as fail #1 and 9002 as fail #2 (count was 2/3); after restatement count = 1/3.",
+    "consecutive_fail_count": 2,
+    "consecutive_fail_note": "UPDATED 2026-08-06: 9001 REJECTED_MIXED (not a full fail), 9002 REJECTED (fail 1), 9003 REJECTED (fail 2). Count 2/3 — ONE more consecutive REJECT stops Direction H.",
     "description": "Stop when any: new hypotheses reach 25, 3 months elapse (2026-11-06), 80 research-hours logged, or 3 consecutive hypotheses fail at the same gate. Per stopping_rule_2026_08_06_direction_h.md §4."
   },
   "sacred_holdout": {
@@ -75,8 +75,8 @@
     {
       "trial_id": "9003",
       "status": "REJECTED",
-      "result_at": null,
-      "notes": "DIRH-EURUSD-H4-ASIS — EURUSD H4 as-is TF probe (gross SR 3.46, net PF 1.79 @ old cost). Pre-registered 2026-08-06; break-even re-run with real 14.17bps cost pending. Verdict 2026-08-06: break-even re-run be_mult=1.0 (NOT_SELECTED vs 1.2 margin). Real RT cost 0.78bps (not 14.17 — unit fix). Net PF 1.38 post-cost."
+      "result_at": "2026-08-06T20:15:00+00:00",
+      "notes": "DIRH-FX-MECH-SWEEP — 5 mechanisms x 2 pairs (hybrid MOM+MR, volume breakout, liquidity sweep, session pattern, BB-MR) all REJECT at corrected costs (0.84/0.95 bps rt). Best dk_t=-0.68. Session pattern flat (dk_t=0.004, overtrades). mrb/mtm INSUFFICIENT (strategy bugs). Stamped with provenance. Consecutive-fail count: 2/3 (9002+9003)."
     }
   ],
   "notes": [

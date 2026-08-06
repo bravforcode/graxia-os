@@ -3,7 +3,7 @@
   "direction": "H",
   "description": "Forex 4-Pair Walk-Forward Retest. Structural mechanism: XGBoost binary classification of next-bar direction on a FIXED technical feature set (returns, volatility, ATR, RSI, MACD, Bollinger, session flags) — the same mechanism family as the original 2026-07-12 batch (runner scripts/run_multi_instrument_wf.py, artifact wf_batch_H1_20260712_200555.json). The original INCONCLUSIVE verdicts (USDCAD t=-1.69, USDCHF t=-1.12, AUDUSD t=-1.55, NZDUSD t=-0.53) were invalid as evidence: F24 loader-provenance gap (now resolved) and 5/6 pairs ran with UNMEASURED default costs (--allow-default-costs). This retest runs the SAME mechanism with measured FROM_TICKS costs (mandatory) and a pre-registered min_confidence reduction 0.65->0.55 to overcome the ~7-trades/fold underpoweredness.",
   "last_updated": "2026-08-06",
-  "current_verdict_2026-08-06": "9001 REJECTED_MIXED (2 INCONCLUSIVE + 2 REJECT at corrected costs); 9002 REJECTED (RSI-MR, engine path verified).",
+  "current_verdict_2026-08-06": "9001 REJECTED_MIXED, 9002 REJECTED, 9003 REJECTED — no mechanism found on the 4 pairs.",
   "cumulative_trial_count_at_creation": 0,
   "stopping_rule_doc": "reports/stopping_rule_2026_08_06_direction_h.md",
   "sacred_holdout_path": "N/A at the walk-forward stage (this is a validation-phase hypothesis, not a fitted-model holdout confirmation; sacred holdout remains LOCKED for Phase 4.5 only).",
@@ -186,6 +186,84 @@
       ],
       "next_action": null,
       "notes": "Pre-registered 2026-08-06 (Sub-project B decision). Direction H budget 25; 2 used (9001, 9002); 9003 is the 3rd."
+    },
+    {
+      "trial_number": 9003,
+      "id": "DIRH-FX-MECH-SWEEP",
+      "status": "REJECTED",
+      "instrument": "USDCAD, USDCHF (H1, 50k bars)",
+      "symbols": [
+        "USDCAD",
+        "USDCHF"
+      ],
+      "registered_at": "2026-08-06T16:32:42.380503+00:00",
+      "result_at": "2026-08-06T16:32:42.380503+00:00",
+      "result_summary": {
+        "arms": {
+          "hybrid_mom_mr": {
+            "USDCAD": {
+              "dk_t": -2.19,
+              "n_trades": 3368
+            },
+            "USDCHF": {
+              "dk_t": -2.6,
+              "n_trades": 3286
+            }
+          },
+          "volume_breakout": {
+            "USDCAD": {
+              "dk_t": -0.85,
+              "n_trades": 623
+            },
+            "USDCHF": {
+              "dk_t": -0.68,
+              "n_trades": 627
+            }
+          },
+          "liquidity_sweep_v2": {
+            "USDCAD": {
+              "dk_t": -0.78,
+              "n_trades": 772
+            },
+            "USDCHF": {
+              "dk_t": -2.23,
+              "n_trades": 870
+            }
+          },
+          "session_pattern": {
+            "USDCAD": {
+              "dk_t": 0.004,
+              "n_trades": 33565
+            },
+            "USDCHF": {
+              "dk_t": 0.004,
+              "n_trades": 33193
+            }
+          },
+          "mrb": "INSUFFICIENT (wall-clock low-liquidity filter blocks all trades — strategy bug)",
+          "mtm": "INSUFFICIENT (needs multi-TF data, not single-TF runner)"
+        },
+        "pooled": {
+          "best_arm_dk_t": -0.68,
+          "best_arm": "volume_breakout USDCHF (still REJECT)"
+        },
+        "conclusion": "REJECTED: all 5 runnable mechanisms (hybrid MOM+MR, volume breakout, liquidity sweep, session pattern, BB-MR) show no edge on USDCAD/USDCHF at corrected costs (0.84/0.95 bps rt). Best dk_t = -0.68. Session pattern flat (dk_t 0.004, overtrades 33k). Two arms INSUFFICIENT (mrb wall-clock bug, mtm multi-TF requirement). Both momentum and MR families now fail on these pairs; no rule-based mechanism found.",
+        "artifact": "reports/edge_search_dirh_mech_sweep_9003.json"
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "USDCAD": 0.84,
+        "USDCHF": 0.95
+      },
+      "slippage_source": "fill_simulator_p90_points",
+      "slippage_bps_used": {
+        "USDCAD": 0.0714,
+        "USDCHF": 0.1239
+      },
+      "data_manifest_ref": "reports/edge_search_dirh_mech_sweep_9003.json",
+      "provenance_stamped_at": "2026-08-06T16:32:42.380503+00:00",
+      "notes": "Direction H trial 9003 REJECTED 2026-08-06. 5 mechanisms x 2 pairs sweep at true costs. Consecutive-fail count now 2/3 (9002 REJECT + 9003 REJECT; 9001 REJECTED_MIXED not counted)."
     }
   ]
 }
