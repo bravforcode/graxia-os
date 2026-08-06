@@ -157,6 +157,14 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     bt_engine.LookaheadGuard = TrackingGuard
+    # ENGINE BUG (audited 2026-08-06): when Phase-4 wiring is available
+    # (_PHASE4_WIRING_AVAILABLE=True), run() re-creates _pnl_tracker on every
+    # run and the per-bar loop takes the tracker branch, which NEVER appends to
+    # equity_curve -> sharpe_ratio/sortino/max_drawdown_pct are silently 0.0.
+    # Disabling the flag forces the _update_equity path so risk-adjusted
+    # metrics are real. Affects ALL engine runs (incl. P6 trials) — engine-side
+    # fix tracked separately.
+    bt_engine._PHASE4_WIRING_AVAILABLE = False
     shortlist = json.loads(Path(args.shortlist).read_text(encoding="utf-8")).get("shortlist", [])
     if args.limit > 0:
         shortlist = shortlist[: args.limit]
