@@ -165,13 +165,21 @@ def main(argv: list[str] | None = None) -> int:
     # metrics are real. Affects ALL engine runs (incl. P6 trials) — engine-side
     # fix tracked separately.
     bt_engine._PHASE4_WIRING_AVAILABLE = False
+
+    out_path = Path(args.out)
+    results: dict = {}
+    if out_path.exists():  # crash-safe resume: keep metrics from a partial run
+        try:
+            results = json.loads(out_path.read_text(encoding="utf-8")).get("results", {})
+        except (json.JSONDecodeError, OSError):
+            results = {}
+
     shortlist = json.loads(Path(args.shortlist).read_text(encoding="utf-8")).get("shortlist", [])
     if args.limit > 0:
         shortlist = shortlist[: args.limit]
 
-    results: dict = {}
     survivors = []
-    for entry in shortlist:
+    for idx, entry in enumerate(shortlist, 1):
         cfg = register_config(
             args.log,
             mechanism=entry.get("mechanism_family", entry.get("mechanism", "other")),
@@ -181,6 +189,11 @@ def main(argv: list[str] | None = None) -> int:
             data_range=("", ""),
         )
         config_id = cfg["config_id"]
+        if config_id in results:
+            print(f"  [{idx}/{len(shortlist)}] RESUME skip {config_id}", flush=True)
+            if results[config_id].get("survivor"):
+                survivors.append({**entry, "screening": results[config_id]})
+            continue
         try:
             res = run_candidate(entry, config_id, years=args.years)
         except Exception as exc:  # noqa: BLE001 — VOID + audit per spec
@@ -189,11 +202,29 @@ def main(argv: list[str] | None = None) -> int:
         res["n_registered"] = True
         results[config_id] = res
         print(
-            f"  [{len(results)}/{len(shortlist)}] {res['status']:<14} {res.get('symbol','?'):<8} {res.get('timeframe','?'):<5} trades={res.get('total_trades','-'):<5} sharpe={res.get('sharpe_ratio','-')}",
+            f"  [{idx}/{len(shortlist)}] {res['status']:<14} {res.get('symbol','?'):<8} "
+            f"{res.get('timeframe','?'):<5} trades={res.get('total_trades','-'):<5} "
+            f"sharpe={res.get('sharpe_ratio','-')}",
             flush=True,
         )
         if res.get("survivor"):
             survivors.append({**entry, "screening": res})
+        # crash-safe: persist after every candidate
+        Path(args.out).write_text(
+            json.dumps(
+                {
+                    "schema_version": "1.0",
+                    "direction": "I",
+                    "configs_tried": len(results),
+                    "survivors": survivors,
+                    "results": results,
+                },
+                indent=2,
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
 
     out = {
         "schema_version": "1.0",
