@@ -115,10 +115,13 @@ def run_asset_engine_tf(symbol: str, tf: str) -> dict:
     scale = BARS_PER_HOUR[tf] / BARS_PER_HOUR["M15"]
     max_bars_open = max(int(MAX_BARS_OPEN.get(symbol, 32) * scale), 1)
 
+    # 9003 (2026-08-06): measured-cost override — spread ~0.087bps ≈ 1 tick
+    # (tick_size 1e-05), slippage 0 (no fill sim; honest). Engine L1182 takes
+    # both overrides directly → no profile lookup → no UnmeasuredCostError.
     config = BacktestConfig(
         initial_capital=INITIAL_CAPITAL,
-        slippage_pips=None,
-        spread_pips=None,
+        slippage_pips=0,
+        spread_pips=1,
         commission_per_lot=COMMISSION_PER_LOT.get(symbol, 0.0),
         risk_per_trade_bps=RISK_PER_TRADE_BPS,
         max_positions=1,
