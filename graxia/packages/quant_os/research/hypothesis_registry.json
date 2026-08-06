@@ -493,7 +493,8 @@
         "data_range": "2005-2018 (13.0y, aligned intersection)",
         "data_loader": "provenance.py::load_provenance_checked (XAUUSD re-exported clean from MT5 2026-07-29)",
         "report": "reports/ws_a_trial_1028.json",
-        "asterisk_note": "First XAUUSD trial on provenance-clean data; earlier XAUUSD REJECTs (1001,1003,Dir A/B) computed pre-guard on contaminated files - re-run advised"
+        "asterisk_note": "First XAUUSD trial on provenance-clean data; earlier XAUUSD REJECTs (1001,1003,Dir A/B) computed pre-guard on contaminated files - re-run advised",
+        "same_bar_fill_note": "Headline Sharpe/trade-count from zero-lag engine (run_ws_a_tsmom.py fills at same-bar close, L202/L224, signal L191). DK t-stat (dk_t=0.428) computed on correctly-lagged series — REJECT verdict conservative and unchanged. Do not quote zero-lag Sharpe as lag-realistic."
       },
       "result_at": "2026-07-29"
     },
