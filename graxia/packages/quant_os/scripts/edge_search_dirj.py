@@ -38,23 +38,33 @@ def load_xauusd_d1() -> pd.DataFrame:
 
 
 def load_cot() -> pd.DataFrame:
-    """Concatenate COT parquet files -> weekly Managed Money net positioning."""
+    """Concatenate COT parquet files -> weekly Managed Money + Swap Dealer net positioning."""
     frames = []
     for f in sorted(glob.glob(str(ROOT / "data" / "cot" / "cot_xauusd_disaggregated_fut_*.parquet"))):
         frames.append(pd.read_parquet(f))
     df = pd.concat(frames, ignore_index=True)
     df["date"] = pd.to_datetime(df["Report_Date_as_YYYY-MM-DD"], utc=True)
     df = df.sort_values("date").reset_index(drop=True)
-    net = df["M_Money_Positions_Long_All"].astype(float) - df["M_Money_Positions_Short_All"].astype(float)
-    return pd.DataFrame({"date": df["date"], "mm_net": net})
+    mm_net = df["M_Money_Positions_Long_All"].astype(float) - df["M_Money_Positions_Short_All"].astype(float)
+    sw_net = df["Swap_Positions_Long_All"].astype(float) - df["Swap__Positions_Short_All"].astype(float)
+    return pd.DataFrame({"date": df["date"], "mm_net": mm_net, "swap_net": sw_net})
 
 
-def cot_signal(daily: pd.DataFrame, cot: pd.DataFrame, lookback_weeks=52, entry_z=2.0, exit_z=0.5) -> pd.Series:
-    """Weekly z-score of Managed-Money net positioning; contrarian entry at z>=entry_z."""
+def cot_signal(daily: pd.DataFrame, cot: pd.DataFrame, lookback_weeks=52, entry_z=2.0, exit_z=0.5,
+               cohort: str = "mm") -> pd.Series:
+    """Weekly z-score of positioning net; contrarian entry at |z|>=entry_z.
+
+    cohort='mm' -> Managed Money; cohort='swap' -> Swap Dealers.
+    """
+    if cohort == "mm":
+        net_col = "mm_net"
+    else:
+        net_col = "swap_net"
     cot = cot.set_index("date").sort_index()
     weekly = cot.resample("W-FRI").last().dropna()
-    roll = weekly["mm_net"].rolling(lookback_weeks)
-    z = (weekly["mm_net"] - roll.mean()) / (roll.std() + 1e-9)
+    net = weekly[net_col]
+    roll = net.rolling(lookback_weeks)
+    z = (net - roll.mean()) / (roll.std() + 1e-9)
     sig = pd.Series(0.0, index=weekly.index)
     pos = 0.0
     for i in range(len(weekly)):
@@ -149,7 +159,7 @@ def main() -> int:
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--trial", required=True, choices=["3007", "3003"])
+    parser.add_argument("--trial", required=True, choices=["3007", "3003", "3008", "3009"])
     parser.add_argument("--out", default=str(OUT))
     args = parser.parse_args()
 
@@ -158,7 +168,13 @@ def main() -> int:
     if args.trial == "3007":
         cot = load_cot()
         print(f"COT: {len(cot)} weekly rows ({cot['date'].min().date()} -> {cot['date'].max().date()})")
-        sig = cot_signal(daily, cot)
+        sig = cot_signal(daily, cot, entry_z=2.0, cohort="mm")
+    elif args.trial == "3008":
+        cot = load_cot()
+        sig = cot_signal(daily, cot, entry_z=1.5, cohort="mm")
+    elif args.trial == "3009":
+        cot = load_cot()
+        sig = cot_signal(daily, cot, entry_z=1.5, cohort="swap")
     else:
         sig = dxy_signal(daily)
 

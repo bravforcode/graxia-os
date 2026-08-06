@@ -3,7 +3,7 @@
   "direction": "J",
   "description": "XAUUSD positioning (COT) + cross-asset (DXY) mechanisms. Data that was previously missing is now available: CFTC COT disaggregated positioning 2021-2026 (data/cot/) and DXY 2018-2026 (data/DXY_D1.csv). XAUUSD costs verified correct (0.65 bps rt, commission=0).",
   "last_updated": "2026-08-06",
-  "current_verdict_2026-08-06": "3007 INCONCLUSIVE (3 trades, underpowered), 3003 REJECTED (dk_t=-15.5).",
+  "current_verdict_2026-08-06": "3007 INCONCLUSIVE (3t), 3003 REJECTED, 3008 INCONCLUSIVE (8t), 3009 INCONCLUSIVE (8t). COT mechanism underpowered at weekly frequency.",
   "stopping_rule_doc": "reports/stopping_rule_2026_08_06_direction_j.md",
   "sacred_holdout_status": "LOCKED",
   "notes": [
@@ -64,6 +64,60 @@
       "data_manifest_ref": "reports/edge_search_dirj.json",
       "provenance_stamped_at": "2026-08-06T18:14:54.587510+00:00",
       "notes": "Direction J trial 3003 — REJECTED. DXY lead-lag hypothesis falsified (contra-direction loses)."
+    },
+    {
+      "trial_number": 3008,
+      "id": "DIRJ-COT-MM-Z15",
+      "status": "INCONCLUSIVE",
+      "instrument": "XAUUSD (D1)",
+      "symbols": [
+        "XAUUSD"
+      ],
+      "registered_at": "2026-08-06T18:27:21.412504+00:00",
+      "result_at": "2026-08-06T18:27:21.412504+00:00",
+      "result_summary": {
+        "n_trades": 8,
+        "cohort": "managed money",
+        "entry_z": 1.5,
+        "conclusion": "z>=1.5 gives 58 extreme weeks but only 8 trades after hold/exit logic (exit z=0.5 + re-entry lag). Underpowered — min-trades gate (30) not met. INCONCLUSIVE per pre-registered gate."
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "XAUUSD": 0.65
+      },
+      "slippage_source": "none",
+      "slippage_bps_used": {},
+      "data_manifest_ref": "reports/edge_search_dirj.json",
+      "provenance_stamped_at": "2026-08-06T18:27:21.412504+00:00",
+      "notes": "Direction J trial 3008 — INCONCLUSIVE (8 trades < 30 gate). COT weekly frequency structurally limits trade count."
+    },
+    {
+      "trial_number": 3009,
+      "id": "DIRJ-COT-SWAP-Z15",
+      "status": "INCONCLUSIVE",
+      "instrument": "XAUUSD (D1)",
+      "symbols": [
+        "XAUUSD"
+      ],
+      "registered_at": "2026-08-06T18:27:21.412504+00:00",
+      "result_at": "2026-08-06T18:27:21.412504+00:00",
+      "result_summary": {
+        "n_trades": 8,
+        "cohort": "swap dealer",
+        "entry_z": 1.5,
+        "conclusion": "Swap-dealer cohort z>=1.5 also yields only 8 trades. Underpowered — gate not met. INCONCLUSIVE per pre-registered gate."
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "XAUUSD": 0.65
+      },
+      "slippage_source": "none",
+      "slippage_bps_used": {},
+      "data_manifest_ref": "reports/edge_search_dirj.json",
+      "provenance_stamped_at": "2026-08-06T18:27:21.412504+00:00",
+      "notes": "Direction J trial 3009 — INCONCLUSIVE (8 trades < 30 gate). COT weekly frequency structurally limits trade count."
     }
   ]
 }

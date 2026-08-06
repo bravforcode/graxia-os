@@ -12,5 +12,15 @@
     "final_cash": -24232.65,
     "verdict": "REJECT",
     "executed_at": "2026-08-06T18:14:35.367149+00:00"
+  },
+  "trial_3008": {
+    "n_trades": 8,
+    "verdict": "INSUFFICIENT",
+    "executed_at": "2026-08-06T18:26:47.251876+00:00"
+  },
+  "trial_3009": {
+    "n_trades": 8,
+    "verdict": "INSUFFICIENT",
+    "executed_at": "2026-08-06T18:27:02.979708+00:00"
   }
 }

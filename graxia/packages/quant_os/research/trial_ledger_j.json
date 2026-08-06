@@ -5,9 +5,9 @@
   "lock_doc_path": "reports/stopping_rule_2026_08_06_direction_j.md",
   "lock_doc_sha256": "3fb9f8ecd6ba786716813bf47dcfcc1188ec3e6ea5bba1d8ed839041fa680d50",
   "description": "Direction J: XAUUSD positioning (COT) + cross-asset (DXY) mechanisms. Opened 2026-08-06 after data became available (COT 2021-2026 parquet, DXY 2018-2026 CSV). XAUUSD costs verified correct (0.65 bps rt).",
-  "cumulative_trial_count": 2,
+  "cumulative_trial_count": 4,
   "cumulative_trial_cap": 10,
-  "next_available_trial_number": 3008,
+  "next_available_trial_number": 3010,
   "trial_range": "3007-3016",
   "stopping_rule": {
     "type": "budget_or_time_or_consecutive_fail",
@@ -30,6 +30,18 @@
       "status": "REJECTED",
       "result_at": "2026-08-06",
       "notes": "DXY lead-lag falsified: dk_t=-15.5, mean -/trade, 245 trades."
+    },
+    {
+      "trial_id": "3008",
+      "status": "INCONCLUSIVE",
+      "result_at": "2026-08-06",
+      "notes": "COT MM z>=1.5: 8 trades < 30 gate. Underpowered."
+    },
+    {
+      "trial_id": "3009",
+      "status": "INCONCLUSIVE",
+      "result_at": "2026-08-06",
+      "notes": "COT Swap z>=1.5: 8 trades < 30 gate. Underpowered."
     }
   ],
   "notes": [
