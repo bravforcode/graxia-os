@@ -376,7 +376,7 @@
       "spread_bps_max": 10.776131226160468,
       "spread_bps_std": 0.5062599980186056,
       "commission_bps": 7.0,
-      "slippage_bps_measured": null,
+      "slippage_bps_measured": 0.0714,
       "round_trip_bps_measured": 14.142625,
       "round_trip_bps_p95": 14.570964,
       "contract_size": 100000.0,
@@ -414,8 +414,10 @@
         }
       },
       "broker_source": "Pepperstone Razor (MT5)",
-      "notes": "Direction H retest cost calibration — backfilled via mt5.copy_ticks_range. Filtered to ask>bid quote ticks (MT5 COPY_TICKS_ALL mixes last-trade ticks). slippage: null; fill-simulator P90 is the source when measured.",
-      "recalibrated_at": "2026-08-05T22:18:23.735125+00:00"
+      "notes": "Direction H retest cost calibration — backfilled via mt5.copy_ticks_range. Filtered to ask>bid quote ticks (MT5 COPY_TICKS_ALL mixes last-trade ticks). slippage: null; fill-simulator P90 is the source when measured. | slippage P90=1.0pts (0.0714 bps) from fill simulator 2026-08-06.",
+      "recalibrated_at": "2026-08-05T22:18:23.735125+00:00",
+      "slippage_source": "fill_simulator_p90_points",
+      "slippage_p90_points": 1.0
     },
     "USDCHF": {
       "mt5_symbol": "USDCHF",
@@ -426,7 +428,7 @@
       "spread_bps_max": 19.69784252875675,
       "spread_bps_std": 0.882216858333499,
       "commission_bps": 7.0,
-      "slippage_bps_measured": null,
+      "slippage_bps_measured": 0.1239,
       "round_trip_bps_measured": 14.247346,
       "round_trip_bps_p95": 14.987569,
       "contract_size": 100000.0,
@@ -464,8 +466,10 @@
         }
       },
       "broker_source": "Pepperstone Razor (MT5)",
-      "notes": "Direction H retest cost calibration — backfilled via mt5.copy_ticks_range. Filtered to ask>bid quote ticks (MT5 COPY_TICKS_ALL mixes last-trade ticks). slippage: null; fill-simulator P90 is the source when measured.",
-      "recalibrated_at": "2026-08-05T22:18:23.735125+00:00"
+      "notes": "Direction H retest cost calibration — backfilled via mt5.copy_ticks_range. Filtered to ask>bid quote ticks (MT5 COPY_TICKS_ALL mixes last-trade ticks). slippage: null; fill-simulator P90 is the source when measured. | slippage P90=1.0pts (0.1239 bps) from fill simulator 2026-08-06.",
+      "recalibrated_at": "2026-08-05T22:18:23.735125+00:00",
+      "slippage_source": "fill_simulator_p90_points",
+      "slippage_p90_points": 1.0
     },
     "AUDUSD": {
       "mt5_symbol": "AUDUSD",
@@ -476,7 +480,7 @@
       "spread_bps_max": 20.308028772074934,
       "spread_bps_std": 0.5579551051624724,
       "commission_bps": 7.0,
-      "slippage_bps_measured": null,
+      "slippage_bps_measured": 0.1417,
       "round_trip_bps_measured": 14.284436,
       "round_trip_bps_p95": 14.852049,
       "contract_size": 100000.0,
@@ -514,8 +518,10 @@
         }
       },
       "broker_source": "Pepperstone Razor (MT5)",
-      "notes": "Direction H retest cost calibration — backfilled via mt5.copy_ticks_range. Filtered to ask>bid quote ticks (MT5 COPY_TICKS_ALL mixes last-trade ticks). slippage: null; fill-simulator P90 is the source when measured.",
-      "recalibrated_at": "2026-08-05T22:18:23.735125+00:00"
+      "notes": "Direction H retest cost calibration — backfilled via mt5.copy_ticks_range. Filtered to ask>bid quote ticks (MT5 COPY_TICKS_ALL mixes last-trade ticks). slippage: null; fill-simulator P90 is the source when measured. | slippage P90=1.0pts (0.1417 bps) from fill simulator 2026-08-06.",
+      "recalibrated_at": "2026-08-05T22:18:23.735125+00:00",
+      "slippage_source": "fill_simulator_p90_points",
+      "slippage_p90_points": 1.0
     },
     "NZDUSD": {
       "mt5_symbol": "NZDUSD",
@@ -526,7 +532,7 @@
       "spread_bps_max": 19.676024086168262,
       "spread_bps_std": 1.0786645429814463,
       "commission_bps": 7.0,
-      "slippage_bps_measured": null,
+      "slippage_bps_measured": 1.3586,
       "round_trip_bps_measured": 14.681419,
       "round_trip_bps_p95": 15.362769,
       "contract_size": 100000.0,
@@ -564,8 +570,10 @@
         }
       },
       "broker_source": "Pepperstone Razor (MT5)",
-      "notes": "Direction H retest cost calibration — backfilled via mt5.copy_ticks_range. Filtered to ask>bid quote ticks (MT5 COPY_TICKS_ALL mixes last-trade ticks). slippage: null; fill-simulator P90 is the source when measured.",
-      "recalibrated_at": "2026-08-05T22:18:23.735125+00:00"
+      "notes": "Direction H retest cost calibration — backfilled via mt5.copy_ticks_range. Filtered to ask>bid quote ticks (MT5 COPY_TICKS_ALL mixes last-trade ticks). slippage: null; fill-simulator P90 is the source when measured. | slippage P90=8.0pts (1.3586 bps) from fill simulator 2026-08-06.",
+      "recalibrated_at": "2026-08-05T22:18:23.735125+00:00",
+      "slippage_source": "fill_simulator_p90_points",
+      "slippage_p90_points": 8.0
     }
   },
   "stress_scenarios": {
