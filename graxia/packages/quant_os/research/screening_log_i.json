@@ -1,7 +1,70 @@
 {
   "schema_version": "1.0",
   "direction": "I",
-  "description": "Screening config log — every executed screening config registered BEFORE run (spec §3, A6). hash = sha256(mechanism|symbol|timeframe|params_json|data_range).",
-  "configs": [],
-  "count": 0
+  "configs": [
+    {
+      "config_id": "eb939b86121f",
+      "hash": "2a067e1fd18d764a3ce584fd87b04dc574a6ef2d4ef785344689c018fd4c6f6a",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20250817162142",
+        "daily": "1.06%",
+        "monthly": "224.14%",
+        "drawdown": "48.11%",
+        "gain": "+5651.84%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:57:27+00:00",
+      "status_updated_at": "2026-08-06T16:58:16+00:00"
+    },
+    {
+      "config_id": "f1bf15884a51",
+      "hash": "3a7b3788f16708a11a67d12218317186e6abd6a714f404332bfc6de364f1d11a",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20250120231505",
+        "daily": "3.48%",
+        "monthly": "1158.23%",
+        "drawdown": "29.10%",
+        "gain": "+22135.59%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:57:27+00:00",
+      "status_updated_at": "2026-08-06T16:58:16+00:00"
+    },
+    {
+      "config_id": "195c62c53990",
+      "hash": "392b435780803b1e53a98551d508278108fc31d5a56d623dbc3601d6558f8564",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20250813200031",
+        "daily": "1.18%",
+        "monthly": "919.91%",
+        "drawdown": "17.94%",
+        "gain": "+6066.79%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:57:27+00:00",
+      "status_updated_at": "2026-08-06T16:58:16+00:00"
+    }
+  ],
+  "count": 3
 }
