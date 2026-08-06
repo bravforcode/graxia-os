@@ -21,8 +21,17 @@
 
 ## 3. External-state scan verdicts (2026-08-06)
 
-- TF probe (edge_search_tf_probe.py): CLEAN — calls engine.run() (L138); strategies AsianScalper/HappyGoldScalper read ONLY engine-passed args (asian_scalper.py L135-137, happy_gold_scalper.py L126-128); load_bars() reads CSV BEFORE run() via engine.load_data() = legitimate data channel
-- Other callers: pending scan (Task C0.3)
+Scanner: `scripts/scan_external_state.py` (Task C0.3, AST-based; flags file-I/O calls + subscript/attribute reads on non-local/non-imported names inside generate_signal).
+
+| Caller | Verdict | Evidence |
+|---|---|---|
+| edge_search_tf_probe.py | CLEAN | all strategies read engine-passed args only |
+| edge_search_m15_scalper.py | CLEAN | all strategies read engine-passed args only |
+| run_ws_a.py | CLEAN | all strategies read engine-passed args only |
+
+TF probe CLEAN detail: calls engine.run() (L138); AsianScalper/HappyGoldScalper generate_signal read ONLY engine-passed args (asian_scalper.py L135-137 close/high/low + current_time L143; happy_gold_scalper.py L126-128 + L134); load_bars() reads CSV BEFORE run() via engine.load_data() = legitimate data channel (engine slices per bar via guard.get_slice() engine L597), NOT the external-state vector.
+
+Tests: tests/test_scan_external_state.py 3/3 (clean → [], file-io → >=1, cache subscript → >=1); verified independently by controller.
 
 ## 4. Knowledge Dump correction status (2026-08-06)
 
