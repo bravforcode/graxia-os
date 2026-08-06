@@ -54,8 +54,29 @@ def load_state() -> dict:
 
 
 def save_state(state: dict) -> None:
+    """Atomic state write — never leave a 0-byte/corrupt file.
+
+    Direct write_text() on a full disk (Errno 28, hit 2026-08-06) truncated
+    the live state file to 0 bytes and killed the hourly task. Write to a
+    temp file in the same dir then os.replace() (atomic on POSIX+Windows).
+    """
+    import os
+    import tempfile
+
     STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    STATE_PATH.write_text(json.dumps(state, indent=2, default=str), encoding="utf-8")
+    fd, tmp = tempfile.mkstemp(dir=str(STATE_PATH.parent), prefix=".funding_state_", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            json.dump(state, fh, indent=2, default=str)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp, str(STATE_PATH))
+    except BaseException:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
 
 
 def init_positions(exchange: ccxt.Exchange, notional_per_leg: float, state: dict) -> None:
