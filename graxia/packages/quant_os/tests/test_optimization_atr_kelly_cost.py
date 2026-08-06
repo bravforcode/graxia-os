@@ -581,9 +581,26 @@ class TestCostCalibration:
         # OIL (keyed as USOIL): RT = 9.76 bps (real single-snapshot, restored)
         assert "USOIL" in cost_map
         assert cost_map["USOIL"] == pytest.approx(9.76, abs=0.1)
-        # USDJPY: RT = 7.25 bps (real, from data/ticks/USDJPY_ticks_24h.parquet)
+        # USDJPY: RT = 0.95 bps (true — commission \$7/rt lot / \$100k notional = 0.7 bps;
+        # FIXED 2026-08-06: was misreported as 7.25 bps by misreading USD/rt-lot as bps.
+        # See reports/audit_trial_9001_9002_cost_model.md)
         assert "USDJPY" in cost_map
-        assert cost_map["USDJPY"] == pytest.approx(7.25, abs=0.1)
+        assert cost_map["USDJPY"] == pytest.approx(0.95, abs=0.1)
+
+    def test_commission_unit_fix_sanity(self, cost_data):
+        """COMMISSION UNIT FIX (2026-08-06): FX round-trip costs must be 0.5-2.5 bps,
+        NOT the 7-25 bps produced when USD/rt-lot was misread as bps.
+        Regression guard: any future re-introduction of the 8-29x overstatement fails here."""
+        assets = cost_data["assets"]
+        for sym in ["USDCAD", "USDCHF", "AUDUSD", "NZDUSD", "EURUSD", "GBPUSD", "USDJPY"]:
+            rt = assets[sym]["round_trip_bps_measured"]
+            assert 0.2 < rt < 2.5, (
+                f"{sym} round_trip_bps_measured={rt} outside sane FX range [0.2, 2.5] "
+                f"— commission unit regression (audit 2026-08-06)"
+            )
+            assert assets[sym].get("commission_usd_per_rt_lot") == 7.0
+        assert assets["BTCUSD"]["round_trip_bps_measured"] == pytest.approx(6.30, abs=0.2)
+        assert assets["BTCUSD"].get("commission_usd_per_rt_lot") == 10.0
 
 
 # ═══════════════════════════════════════════════════════════════
