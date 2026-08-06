@@ -37,6 +37,12 @@ def _known_uuids() -> list[str]:
     ]
 
 
+def _uuids_from_file(path: str) -> list[str]:
+    """Read newline-separated account UUIDs (from sitemap extraction)."""
+    raw = Path(path).read_text(encoding="utf-8")
+    return [line.strip() for line in raw.splitlines() if line.strip()]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Collect Thaifxbook public data")
     parser.add_argument("--dry-run", action="store_true", help="fetch + parse but do not write DB")
@@ -45,10 +51,20 @@ def main() -> int:
     )
     parser.add_argument("--db", default=str(config.DB_PATH), help="duckdb path (default: %(default)s)")
     parser.add_argument("--uuids", nargs="*", default=None, help="explicit account UUIDs (overrides pilot list)")
+    parser.add_argument("--uuids-file", default=None, help="newline-separated UUID list (sitemap backfill)")
     parser.add_argument("--no-outlook", action="store_true", help="skip the /tools/outlook sentiment snapshot")
+    parser.add_argument("--outlook-only", action="store_true", help="fetch only the /tools/outlook sentiment snapshot")
     args = parser.parse_args()
 
-    uuids = args.uuids if args.uuids else _known_uuids()[: args.limit]
+    if args.outlook_only:
+        uuids = []
+        args.no_outlook = False
+    elif args.uuids:
+        uuids = args.uuids
+    elif args.uuids_file:
+        uuids = _uuids_from_file(args.uuids_file)[: args.limit]
+    else:
+        uuids = _known_uuids()[: args.limit]
     result = runner_impl.run(
         db_path=args.db,
         account_uuids=uuids,
