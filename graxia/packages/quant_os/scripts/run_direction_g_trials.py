@@ -51,9 +51,11 @@ TRIALS: dict[int, dict[str, Any]] = {
         "tf": "H1",
         "cost_model_version": "4.1",
         "cost_source": "FROM_TICKS",
-        "round_trip_bps_used": {"BTCUSD": 24.75},
+        # COMMISSION UNIT FIX 2026-08-06: round_trip_bps was USD/rt-lot misread
+        # as bps (24.75 -> true 6.30). Report-only; verdict used engine $/lot path.
+        "round_trip_bps_used": {"BTCUSD": 6.30},
         "slippage_source": "fill_simulator_p90_points",
-        "slippage_bps_used": {"BTCUSD": 32.0},
+        "slippage_bps_used": {"BTCUSD": 0.495},  # 32 pts x 0.01 / 64666 x 1e4
         "strategy_name": "BtcDonchianTrend",
     },
     8002: {
@@ -62,9 +64,10 @@ TRIALS: dict[int, dict[str, Any]] = {
         "tf": "M15",
         "cost_model_version": "4.1",
         "cost_source": "FROM_TICKS",
-        "round_trip_bps_used": {"EURUSD": 14.17},
+        # COMMISSION UNIT FIX 2026-08-06: 14.17 -> true 0.78 bps.
+        "round_trip_bps_used": {"EURUSD": 0.78},
         "slippage_source": "fill_simulator_p90_points",
-        "slippage_bps_used": {"EURUSD": 1.0},
+        "slippage_bps_used": {"EURUSD": 0.087},  # 1 pt x 1e-5 / 1.1553 x 1e4
         "strategy_name": "EurSessionBreakout",
     },
     8003: {
@@ -73,9 +76,9 @@ TRIALS: dict[int, dict[str, Any]] = {
         "tf": "D1",
         "cost_model_version": "4.1",
         "cost_source": "FROM_TICKS",
-        "round_trip_bps_used": {"BTCUSD": 24.75},
+        "round_trip_bps_used": {"BTCUSD": 6.30},
         "slippage_source": "fill_simulator_p90_points",
-        "slippage_bps_used": {"BTCUSD": 32.0},
+        "slippage_bps_used": {"BTCUSD": 0.495},
         "strategy_name": "BtcTsmomYz",
     },
 }
