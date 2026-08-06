@@ -20,14 +20,14 @@ PARTITION_RULES: list[dict] = [
         "note": "Direction H trial 9001 REJECTED (t=-8.2..-17.4, measured costs). No re-test.",
     },
     {
-        "status": "WATCH",
+        "status": "CLOSED",
         "owner": "H",
         "match": {
             "mechanism": {"rsi_mean_reversion", "rsi_mr"},
             "symbols": {"USDCAD", "USDCHF", "AUDUSD", "NZDUSD"},
             "timeframes": {"H1"},
         },
-        "note": "Direction H trial 9002 FROZEN, in-flight. Absorb verdict as citation when resolved.",
+        "note": "Direction H trial 9002 REJECTED (DK t=-4.55, measured costs, commit 28424bff). No re-test.",
     },
     {
         "status": "WATCH",

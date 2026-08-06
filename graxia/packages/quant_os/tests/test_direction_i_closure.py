@@ -21,8 +21,11 @@ def test_closure_items_documented():
 
 
 def test_direction_h_files_untouched():
+    # Ratchet: Direction I work must never modify Direction H files.
+    # Base ref = 28424bff (parallel session's last legitimate H-ledger change,
+    # Trial 9002 REJECTED). Update this ref ONLY when legitimate H work commits.
     out = subprocess.run(
-        ["git", "diff", "--name-only", "7fbe921a..HEAD", "--", "research/trial_ledger_h.json"],
+        ["git", "diff", "--name-only", "28424bff..HEAD", "--", "research/trial_ledger_h.json"],
         capture_output=True,
         text=True,
     )

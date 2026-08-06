@@ -8,9 +8,9 @@ def test_forex4_trend_continuity_closed():
     assert r["owner"] == "H"
 
 
-def test_forex4_rsi_mr_watch():
+def test_forex4_rsi_mr_closed():
     r = check_partition("rsi_mean_reversion", "AUDUSD", "H1")
-    assert r["status"] == "WATCH"
+    assert r["status"] == "CLOSED"  # H trial 9002 REJECTED (DK t=-4.55, 28424bff)
     assert r["owner"] == "H"
 
 
