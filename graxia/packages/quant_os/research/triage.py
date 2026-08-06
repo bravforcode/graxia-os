@@ -56,7 +56,7 @@ def _class_worst_case(asset_class: str) -> float:
     return worst
 
 
-def ROUND_TRIP_BPS(symbol: str) -> float:
+def round_trip_bps(symbol: str) -> float:
     calibrated = _calibrated_round_trip(symbol)
     if calibrated is not None:
         return calibrated
@@ -68,11 +68,11 @@ def cost_viability(entry: dict, trades_per_day: float) -> dict:
     if trades_per_day <= 0:
         return {
             "viable": True,
-            "cost_bps": ROUND_TRIP_BPS(entry.get("symbol", "")),
+            "cost_bps": round_trip_bps(entry.get("symbol", "")),
             "annual_cost_pct": 0.0,
             "reason": "no trades -> no cost",
         }
-    rt = ROUND_TRIP_BPS(entry.get("symbol", ""))
+    rt = round_trip_bps(entry.get("symbol", ""))
     annual_cost = rt * 2 * trades_per_day * 252 / 100  # bps -> % annualized
     budget = ASSUMED_ANNUAL_EDGE * COST_BUDGET_FRACTION * 100
     viable = annual_cost < budget
@@ -94,5 +94,5 @@ def shortlist(entries: list[dict]) -> list[dict]:
         if not v["viable"]:
             continue
         out.append({**e, "triage": v})
-    out.sort(key=lambda e: (tier_rank.get(e.get("evidence_tier"), 9), e.get("name", "")))
+    out.sort(key=lambda e: (tier_rank.get(str(e.get("evidence_tier", "")), 9), e.get("name", "")))
     return out
