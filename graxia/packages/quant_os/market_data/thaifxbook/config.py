@@ -23,3 +23,6 @@ REPORT_DIR = PROJECT_ROOT / "reports" / "thaifxbook"
 
 # Public profiles: full /p/ sitemap is 583+; --limit caps a dry-run/backfill.
 DEFAULT_LIMIT = 30
+
+# Progress log for long backfill runs (scheduled tasks have no visible stdout).
+LOG_PATH = REPORT_DIR / "collect.log"

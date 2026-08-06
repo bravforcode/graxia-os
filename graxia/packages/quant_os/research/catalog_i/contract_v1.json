@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "direction": "I",
+  "required_fields": ["name", "source", "source_url", "mechanism", "symbol", "timeframe", "params", "claimed_perf", "evidence_tier"],
+  "evidence_tiers": ["literature", "myfxbook_verified", "practitioner"],
+  "field_docs": {
+    "name": "EA/strategy name (unique per entry)",
+    "source": "mql5 | github | myfxbook | forex_factory | tradingview | academic | institutional | obscure",
+    "source_url": "ABSOLUTE http(s) URL — mandatory, no fabrication",
+    "mechanism": "lowercase snake_case, e.g. grid_martingale, trend_continuity, rsi_mean_reversion",
+    "symbol": "e.g. EURUSD, BTCUSD, XAUUSD",
+    "timeframe": "M1|M5|M15|M30|H1|H4|D1|W1|MN1",
+    "params": "{} object — key parameters",
+    "claimed_perf": "what the source claims (string)",
+    "evidence_tier": "literature | myfxbook_verified | practitioner"
+  }
+}

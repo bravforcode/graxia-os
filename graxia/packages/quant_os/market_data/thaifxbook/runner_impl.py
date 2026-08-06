@@ -29,6 +29,16 @@ class RunResult:
         return not self.errors
 
 
+def _log_progress(line: str) -> None:
+    """Append a progress line so long scheduled runs are diagnosable."""
+    try:
+        config.REPORT_DIR.mkdir(parents=True, exist_ok=True)
+        with open(config.LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(line + "\n")
+    except OSError:  # pragma: no cover - logging must never break collection
+        pass
+
+
 def prepare_db(db_path: str) -> ThaifxbookStore:
     """Create/connect the DuckDB store once per run."""
     return ThaifxbookStore(db_path)
@@ -71,6 +81,7 @@ def run(
     result = RunResult()
     ts = result.ts
     store = None if dry_run else prepare_db(db_path)
+    _log_progress(f"[{ts:%Y-%m-%d %H:%M:%S}] run start dry_run={dry_run} profiles={len(account_uuids)}")
     with make_client() as client:
         try:
             if with_outlook:
@@ -79,9 +90,10 @@ def run(
                 else:
                     html = fetch_page(client, config.OUTLOOK_URL)
                     result.outlook_rows = len(parse_outlook(html, ts))
+                _log_progress(f"[{ts:%Y-%m-%d %H:%M:%S}] outlook rows={result.outlook_rows}")
                 sleep_between_requests()
 
-            for uuid in account_uuids:
+            for i, uuid in enumerate(account_uuids, start=1):
                 try:
                     if store is not None:
                         p, t = collect_profile(store, client, uuid, ts)
@@ -91,10 +103,17 @@ def run(
                         html = fetch_page(client, config.PROFILE_URL.format(uuid=uuid))
                         result.profiles += 1
                         result.trades += len(parse_trades(html, uuid, ts))
+                    _log_progress(
+                        f"[{ts:%Y-%m-%d %H:%M:%S}] {i}/{len(account_uuids)} {uuid} ok trades={t if store is not None else 'n/a'}"
+                    )
                     sleep_between_requests()
                 except FetchError as exc:
                     result.errors.append(f"{uuid}: {exc}")
+                    _log_progress(f"[{ts:%Y-%m-%d %H:%M:%S}] {i}/{len(account_uuids)} {uuid} ERROR {exc}")
         finally:
             if store is not None:
                 store.close()
+    _log_progress(
+        f"[{ts:%Y-%m-%d %H:%M:%S}] run done profiles={result.profiles} trades={result.trades} errors={len(result.errors)}"
+    )
     return result
