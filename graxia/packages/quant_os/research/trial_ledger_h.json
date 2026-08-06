@@ -74,9 +74,9 @@
     },
     {
       "trial_id": "9003",
-      "status": "PRE_REGISTERED",
+      "status": "REJECTED",
       "result_at": null,
-      "notes": "DIRH-EURUSD-H4-ASIS — EURUSD H4 as-is TF probe (gross SR 3.46, net PF 1.79 @ old cost). Pre-registered 2026-08-06; break-even re-run with real 14.17bps cost pending."
+      "notes": "DIRH-EURUSD-H4-ASIS — EURUSD H4 as-is TF probe (gross SR 3.46, net PF 1.79 @ old cost). Pre-registered 2026-08-06; break-even re-run with real 14.17bps cost pending. Verdict 2026-08-06: break-even re-run be_mult=1.0 (NOT_SELECTED vs 1.2 margin). Real RT cost 0.78bps (not 14.17 — unit fix). Net PF 1.38 post-cost."
     }
   ],
   "notes": [

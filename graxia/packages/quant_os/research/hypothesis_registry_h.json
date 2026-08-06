@@ -151,13 +151,13 @@
     {
       "trial_number": 9003,
       "id": "DIRH-EURUSD-H4-ASIS",
-      "status": "PRE_REGISTERED",
+      "status": "REJECTED",
       "instrument": "EURUSD (H4)",
       "symbols": [
         "EURUSD"
       ],
       "registered_at": "2026-08-06T12:10:00+00:00",
-      "result_at": null,
+      "result_at": "2026-08-06T16:30:00+00:00",
       "result_summary": {
         "source": "reports/edge_search_tf_probe.json L119-140 (as-is M15 param transfer to H4)",
         "n_trades": 34,
@@ -167,7 +167,16 @@
         "gross_pf": 1.9023,
         "cost_status": "measuring",
         "classification": "pending_cost",
-        "caveat": "AS-IS M15 transfer, not optimal-TF finding; net PF uses OLD cost (7.18bps) — real cost 14.17bps (FROM_TICKS, 56,115 ticks, 4.42d). Break-even re-run REQUIRED before verdict."
+        "caveat": "Break-even re-run 2026-08-06 (commit 9176c8bc): measured spread 0.1bps (conservative) + slippage 0 (honest, no fill sim) + commission 7.0/lot. be_mult=1.0 < 1.2 selection margin -> NOT SELECTED. Old 14.17bps cost was 8-29x commission-unit overstatement (audit_trial_9001_9002_cost_model.md); real RT 0.78bps."
+      },
+      "verdict_summary": {
+        "break_even_mult": 1.0,
+        "break_even_round_trip_bps": 0.78,
+        "measured_round_trip_bps": 0.78,
+        "net_pf": 1.3799,
+        "gross_sharpe_daily": 2.2295,
+        "selection_rule_result": "NOT_SELECTED (be_mult 1.0 < 1.2 margin; net edge exists post-cost but fails margin guard)",
+        "cost_path": "spread_pips=1 + slippage_pips=0 + commission 7.0/lot; engine override path (engine.py L1182-1187); market impact + adverse selection active"
       },
       "cost_model_version": "4.1",
       "cost_source": "FROM_TICKS (EURUSD 14.17bps RT)",
@@ -175,7 +184,7 @@
         "direction_g_step1_completion (RESOLVED: G stopped 2026-08-06 §4.4)",
         "tradeable_universe.json contradiction (RESOLVED: C1.1 cd0f4983)"
       ],
-      "next_action": "Re-run break-even with real 14.17bps cost before emitting verdict",
+      "next_action": null,
       "notes": "Pre-registered 2026-08-06 (Sub-project B decision). Direction H budget 25; 2 used (9001, 9002); 9003 is the 3rd."
     }
   ]
