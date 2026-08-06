@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "direction": "K",
+  "description": "Crypto pairs / statistical arbitrage. BTC/ETH H1 joint data (50k bars 2020-2026, return corr 0.83). Market-neutral spread trading — structurally different from all directional mechanisms (A-J all failed).",
+  "last_updated": "2026-08-06",
+  "current_verdict_2026-08-06": "PRE_REGISTERED — trial 4005 pending.",
+  "stopping_rule_doc": "reports/stopping_rule_2026_08_06_direction_k.md",
+  "sacred_holdout_status": "LOCKED",
+  "notes": [
+    "Opened 2026-08-06 after Direction J stopped (3 consecutive REJECTS).",
+    "Market-neutral (long/short spread) — survives regimes; H1 frequency avoids COT-style underpoweredness.",
+    "Costs: Binance taker 10 bps rt + slippage 2 bps/leg = ~14 bps rt per pair trade."
+  ],
+  "hypotheses": [
+    {
+      "trial_number": 4005,
+      "id": "DIRK-BTCETH-PAIRS",
+      "name": "BTC/ETH Pairs Trading (log-ratio z-score + Engle-Granger)",
+      "status": "PRE_REGISTERED",
+      "registered_at": "2026-08-06",
+      "pre_registration_doc": "research/pre_registration/trial_4005_btceth_pairs.md",
+      "instrument": "BTCUSD/ETHUSD (H1, 50k joint bars 2020-2026)",
+      "hypothesis": "Log-price-ratio mean reversion between BTC and ETH (corr 0.83) produces net profit after 14 bps rt costs.",
+      "mechanism": "Statistical arbitrage: long ratio when z <= -2, short when z >= +2, exit |z| <= 0.5. Arms: log-ratio z-score (pairs_mr), Engle-Granger (pgm_pairs).",
+      "frozen_params": {"lookback": 60, "entry_z": 2.0, "exit_z": 0.5, "coint_pval_max": 0.05},
+      "data_dependencies": ["data/BTCUSD_H1.csv", "data/ETHUSD_H1.csv"],
+      "cost_basis": "Binance taker 10 bps rt + slippage 2 bps/leg (~14 bps rt/pair)",
+      "validation_plan": "compute_pairs_mr_signal + compute_pgm_pairs_signals on joint H1; pooled DK t + Sharpe gates; min trades >= 100."
+    }
+  ]
+}
