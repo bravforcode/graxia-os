@@ -416,16 +416,16 @@ class TestCostCalibration:
         """Cost calibration must be version 4.x (4.1 after the 2026-08-04 v4.1 measured-costs restore)."""
         assert cost_data["version"].startswith("4.")
 
-    def test_12_assets(self, cost_data):
-        """Must have exactly 12 assets (4-asset core + Direction G additions + Direction H forex4).
+    def test_15_assets(self, cost_data):
+        """Must have exactly 15 assets (core + Direction G + forex4 + new metals).
 
-        2026-08-06: USDCAD/USDCHF/AUDUSD/NZDUSD added as FROM_TICKS entries for the
-        Direction H retest (MT5 copy_ticks_range backfill, see scripts/calibrate_forex4_from_ticks.py).
+        2026-08-07: XAGUSD/XPDUSD/XPTUSD added as FROM_TICKS entries from new
+        MT5 tick backfills (805k/194k/535k ticks, see data/ticks/).
         """
         assets = set(cost_data["assets"].keys())
         assert assets == {
             "XAUUSD", "NAS100", "OIL", "USDJPY", "BTCUSD", "EURUSD", "GBPUSD", "US30",
-            "USDCAD", "USDCHF", "AUDUSD", "NZDUSD",
+            "USDCAD", "USDCHF", "AUDUSD", "NZDUSD", "XAGUSD", "XPDUSD", "XPTUSD",
         }
 
     def test_xauusd_spread(self, cost_data):
@@ -544,10 +544,14 @@ class TestCostCalibration:
         assert cost_data["assets"]["NAS100"]["status"] == "UNVERIFIED_NO_DATA"
 
     def test_round_trip_bps_reasonable(self, cost_data):
-        """Round-trip costs must be within reasonable bounds."""
+        """Round-trip costs must be within reasonable bounds.
+
+        2026-08-07: upper bound raised 50->75 because XPDUSD rt = 68.2 bps is
+        a REAL measurement (194k ticks, thin palladium market).
+        """
         for symbol, info in cost_data["assets"].items():
             rt = info["round_trip_bps_measured"]
-            assert 0.1 <= rt <= 50.0, f"{symbol} round-trip {rt} bps is out of bounds"
+            assert 0.1 <= rt <= 75.0, f"{symbol} round-trip {rt} bps is out of bounds"
 
     def test_oil_mt5_symbol_is_usoil(self, cost_data):
         """OIL MT5 symbol must be USOIL."""

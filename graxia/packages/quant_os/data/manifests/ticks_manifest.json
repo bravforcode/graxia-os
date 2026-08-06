@@ -1,0 +1,337 @@
+{
+  "dataset": "ticks",
+  "generated_at": "2026-08-06T08:07:25.006350+00:00",
+  "file_count": 66,
+  "files": [
+    {
+      "path": "data/ticks/AUDCAD_2026-08-03.parquet",
+      "size_bytes": 7717,
+      "sha256": "78afab404de706d33a5e2074735c7e73d87202161df19d2e10e48cd7ee3dc9bc"
+    },
+    {
+      "path": "data/ticks/AUDCHF_2026-08-03.parquet",
+      "size_bytes": 7708,
+      "sha256": "2e48c9c1c10425df41b481b0ae4af0e7182e6b269bb8fa269339525f86bfa7ba"
+    },
+    {
+      "path": "data/ticks/AUDCNH_2026-08-03.parquet",
+      "size_bytes": 7675,
+      "sha256": "8e43a253d39f2874cbe466c9da368e152d5a7d246b6b1571c0aaccff4feab7e0"
+    },
+    {
+      "path": "data/ticks/AUDJPY_2026-08-03.parquet",
+      "size_bytes": 7664,
+      "sha256": "ea146937c61bb66c8afc8b84e9dfbfe6975a952331533b6b920771e13505b8ba"
+    },
+    {
+      "path": "data/ticks/AUDNZD_2026-08-03.parquet",
+      "size_bytes": 7663,
+      "sha256": "08428925808824c839a259f2531fe7d68e22073bf4e50266a2aef5044a5c8275"
+    },
+    {
+      "path": "data/ticks/AUDUSD_ticks_backfill.parquet",
+      "size_bytes": 6635478,
+      "sha256": "be6ff16645963871b8600c9822fe5deb8490b36bef631d395a74e5e1809324f9"
+    },
+    {
+      "path": "data/ticks/BTCUSD_2026-08-01.parquet",
+      "size_bytes": 6594118,
+      "sha256": "f86de0e6746ab9009a98e63d518ad835c435e48b8ffccfcee38b24ddc5eb7811"
+    },
+    {
+      "path": "data/ticks/BTCUSD_2026-08-02.parquet",
+      "size_bytes": 7473506,
+      "sha256": "3c0c5b05e9fd6f364f594155eed8caec8bd2a68cbd5820ebb0303679d6d1360f"
+    },
+    {
+      "path": "data/ticks/BTCUSD_2026-08-03.parquet",
+      "size_bytes": 7971189,
+      "sha256": "824d9936709a5d335c2c986669fe34ca3ad69ea02563b93d99d5d9bc3b9c2c0c"
+    },
+    {
+      "path": "data/ticks/BTCUSD_2026-08-04.parquet",
+      "size_bytes": 7456792,
+      "sha256": "a199c52179f52263c1d03fc447035d91c5a6d4ec5852913ee6dd4ac29dab14b8"
+    },
+    {
+      "path": "data/ticks/BTCUSD_2026-08-05.parquet",
+      "size_bytes": 17235,
+      "sha256": "cfbb4deaf1a27345a8c61df4f223fb99e2f5c0bb87ab572b3988579adf5190ea"
+    },
+    {
+      "path": "data/ticks/BTCUSD_2026-08-06.parquet",
+      "size_bytes": 294255,
+      "sha256": "4f01df0094de1b74d79a185707158638ef65f5a139e5c8dd3f7dd7b79cabb696"
+    },
+    {
+      "path": "data/ticks/BTCUSD_ticks_24h.parquet",
+      "size_bytes": 7804411,
+      "sha256": "f09a87bf44ac55f3aa93c11a77121f095142217104b9d2b792e2f5e6e0a3fa85"
+    },
+    {
+      "path": "data/ticks/BTCUSD_ticks_backfill.parquet",
+      "size_bytes": 24249887,
+      "sha256": "0d956b81260142f775bd65bb01a03768f4d10f52118c35175a6ff1aa27f6985c"
+    },
+    {
+      "path": "data/ticks/CADJPY_2026-08-03.parquet",
+      "size_bytes": 7691,
+      "sha256": "cc0f32f21ea7ecfa3594dc5aa13f5a0300349dd8edc713b2f3e2a9602d5a0ba6"
+    },
+    {
+      "path": "data/ticks/CHFJPY_2026-08-03.parquet",
+      "size_bytes": 7664,
+      "sha256": "4256aa2905a2d9c66a6b20f939a6ba6488f555d7a907951761a999b354381f63"
+    },
+    {
+      "path": "data/ticks/EURAUD_2026-08-03.parquet",
+      "size_bytes": 7665,
+      "sha256": "1f08b61e6156ce290c7ea253593885b651a33c64d97efadbcbd0767d9aadb21e"
+    },
+    {
+      "path": "data/ticks/EURCAD_2026-08-03.parquet",
+      "size_bytes": 7691,
+      "sha256": "6e1ebcff7539e160b3fbc352325728f10c121277a6be797c954da0903004cd70"
+    },
+    {
+      "path": "data/ticks/EURCHF_2026-08-03.parquet",
+      "size_bytes": 7664,
+      "sha256": "2d70c9f1b53b534795cc72fd6015969edecd8950a9751dfe49ffb59384e5a334"
+    },
+    {
+      "path": "data/ticks/EURGBP_2026-08-03.parquet",
+      "size_bytes": 7743,
+      "sha256": "71bea04c4adc381c331b2c2ac35208164fae4e3e4edd92191b934b993489b99b"
+    },
+    {
+      "path": "data/ticks/EURJPY_2026-08-03.parquet",
+      "size_bytes": 7676,
+      "sha256": "cec162b5f77adbc62fdb8bedf84e8bef87b151ae6b743289da159a44bdb70afd"
+    },
+    {
+      "path": "data/ticks/EURNZD_2026-08-03.parquet",
+      "size_bytes": 7665,
+      "sha256": "4dcccc3b121c7ff2d577c15b0e4ad4927b20e57bb86f162a32becbc4b3adda71"
+    },
+    {
+      "path": "data/ticks/EURUSD_2026-08-03.parquet",
+      "size_bytes": 54383,
+      "sha256": "ca6d9dd08d8199c71c0402a6d9e28fe8359d7a3179fe9c7abc841798714eb8ab"
+    },
+    {
+      "path": "data/ticks/EURUSD_2026-08-04.parquet",
+      "size_bytes": 350272,
+      "sha256": "24c63b7ad511b5058b942616739c4d84bf011864798e9169803ae9e1f5bd58ee"
+    },
+    {
+      "path": "data/ticks/EURUSD_2026-08-05.parquet",
+      "size_bytes": 10788,
+      "sha256": "28413db346690c8bdd16cf40b9225ddff934d3042803eb30d86fd42fbd4a946f"
+    },
+    {
+      "path": "data/ticks/EURUSD_2026-08-06.parquet",
+      "size_bytes": 41766,
+      "sha256": "e3219801d040446e57a8a59eb8df12c47afbe14c1877d590884be94a7a8b3134"
+    },
+    {
+      "path": "data/ticks/EURUSD_ticks_24h.parquet",
+      "size_bytes": 3877740,
+      "sha256": "6843e321a483317329cc268063d15f667f0a25b6af4cf86cb8ed3e7c1050c188"
+    },
+    {
+      "path": "data/ticks/EURUSD_ticks_backfill.parquet",
+      "size_bytes": 4439474,
+      "sha256": "27414f4098d34ac0c48d394af7d179dedf07c14fe73db60bcf90b20bd8b89ff5"
+    },
+    {
+      "path": "data/ticks/GBPAUD_2026-08-03.parquet",
+      "size_bytes": 7704,
+      "sha256": "eba4d42833785edf6fbfb2ead9aaee401a47ed1148ce2763d9db8eca0989a7c7"
+    },
+    {
+      "path": "data/ticks/GBPCAD_2026-08-03.parquet",
+      "size_bytes": 7693,
+      "sha256": "d7ff87a8e58304fcf16c9d5431c76a3d831ddfefb4919db9dcc6bb7b8019c8d8"
+    },
+    {
+      "path": "data/ticks/GBPCHF_2026-08-03.parquet",
+      "size_bytes": 7688,
+      "sha256": "889059e978f43b7d6f5fc45e6d4955e19898d1bdb561c5ec3415e7865df73463"
+    },
+    {
+      "path": "data/ticks/GBPJPY_2026-08-03.parquet",
+      "size_bytes": 7759,
+      "sha256": "e2e29c93b08d234b44d4066392e9c2f085f4a56e6d67e30e6e06d64c7cf5220f"
+    },
+    {
+      "path": "data/ticks/GBPNZD_2026-08-03.parquet",
+      "size_bytes": 7665,
+      "sha256": "d3b13991d9328a3f1e83024955f8db3f08dbf341766a1e3a2f199248c933cc2b"
+    },
+    {
+      "path": "data/ticks/GBPUSD_2026-08-03.parquet",
+      "size_bytes": 57264,
+      "sha256": "4123adc26ffef47ee80cf89c25f429d9d5405c98a0ea2e4301b5ede10a31afa7"
+    },
+    {
+      "path": "data/ticks/GBPUSD_2026-08-04.parquet",
+      "size_bytes": 358065,
+      "sha256": "20420dfdcad2d3581274ab6042270371a0a69329c592e1e491bf5a2fa18fd92e"
+    },
+    {
+      "path": "data/ticks/GBPUSD_2026-08-05.parquet",
+      "size_bytes": 11981,
+      "sha256": "ae8f9bcdf851007d0f398bdcd0be1d880b4b9d0ffca2bbcdeb3d50e294131e3e"
+    },
+    {
+      "path": "data/ticks/GBPUSD_2026-08-06.parquet",
+      "size_bytes": 29224,
+      "sha256": "79e04bad1d5935fb5374d3e43747a704b04331f920ea7ceeedcd3c068651c7fd"
+    },
+    {
+      "path": "data/ticks/GBPUSD_ticks_24h.parquet",
+      "size_bytes": 5352813,
+      "sha256": "77eec8edae49f4c46064c081bc49c6ecf8f62c27d27784fb20281ba6d5a1cc35"
+    },
+    {
+      "path": "data/ticks/NZDUSD_ticks_backfill.parquet",
+      "size_bytes": 3710374,
+      "sha256": "1137062754a7db2b4111fb75da939b33b2022a888b1cbb137d3f81936d136f12"
+    },
+    {
+      "path": "data/ticks/US30_2026-08-03.parquet",
+      "size_bytes": 51089,
+      "sha256": "fb8a33f624ab07cf513049a57da4392dde9095c39ad9468aa1a594a85467589f"
+    },
+    {
+      "path": "data/ticks/US30_2026-08-04.parquet",
+      "size_bytes": 245188,
+      "sha256": "46405316562f877a4306359f390574b0639ff836a01d53746002a9602d0d15fc"
+    },
+    {
+      "path": "data/ticks/US30_2026-08-05.parquet",
+      "size_bytes": 278745,
+      "sha256": "093771f6a84b5be82aa0c5f921100e7269fee18ab1e9bdde5bf3d5e742a06f38"
+    },
+    {
+      "path": "data/ticks/US30_2026-08-06.parquet",
+      "size_bytes": 9919,
+      "sha256": "60d6fafe744d630d3a9f1749e0312b79b3560bc07114130e76e10969b1956159"
+    },
+    {
+      "path": "data/ticks/US30_ticks_24h.parquet",
+      "size_bytes": 2529528,
+      "sha256": "1d08ab30e3401635fc6753344cc0c01374185669d96ef8c2814d40791318bc7e"
+    },
+    {
+      "path": "data/ticks/US500_2026-08-03.parquet",
+      "size_bytes": 7660,
+      "sha256": "7f07962b831e26ea227c6e158f53ce570131b97c9e0dab6e9e70da2d4019fc7b"
+    },
+    {
+      "path": "data/ticks/USDAED_2026-08-03.parquet",
+      "size_bytes": 7665,
+      "sha256": "a3aff48ddd4a47325437fe1fbd16334f4af52ee24d34d51b4d6721a1a2c250e1"
+    },
+    {
+      "path": "data/ticks/USDCAD_ticks_backfill.parquet",
+      "size_bytes": 6299784,
+      "sha256": "13b80343bb6d30b47b91f1a755413d360661684ecb1b28efb4210a5fc214ad3b"
+    },
+    {
+      "path": "data/ticks/USDCHF_ticks_backfill.parquet",
+      "size_bytes": 5622648,
+      "sha256": "be3c21af564fbaf61b809ce9cdac4dcd2697f6201370d673640ca95f515ca6d5"
+    },
+    {
+      "path": "data/ticks/USDCNH_2026-08-03.parquet",
+      "size_bytes": 7665,
+      "sha256": "e7de681d894daed283762b61c9eb1ee8cbcb75ceba9a2973d8d0ec5187532067"
+    },
+    {
+      "path": "data/ticks/USDHKD_2026-08-03.parquet",
+      "size_bytes": 7692,
+      "sha256": "b1a429d38cccd0dcafebb1cee6e33b17723e7f2e1060ba5266a1ccfde1fc670d"
+    },
+    {
+      "path": "data/ticks/USDJPY_2026-08-03.parquet",
+      "size_bytes": 60011,
+      "sha256": "62e7b6f485ef1a119b4babefc08e3bbd46452017090d74ae334c296e90ce07c6"
+    },
+    {
+      "path": "data/ticks/USDJPY_2026-08-04.parquet",
+      "size_bytes": 2532366,
+      "sha256": "71353c74726c211305643307de7a69aaff95251fb2c25e83a12c4694d58496c7"
+    },
+    {
+      "path": "data/ticks/USDJPY_2026-08-05.parquet",
+      "size_bytes": 24110,
+      "sha256": "c7f1f4f5b50db501959fb766499e0a9c656aba03e502332272011bc138665402"
+    },
+    {
+      "path": "data/ticks/USDJPY_2026-08-06.parquet",
+      "size_bytes": 235693,
+      "sha256": "b340ed1693248aa117bb80d2274cefe91ad4593ce316b0c88a162f8aa47cb14d"
+    },
+    {
+      "path": "data/ticks/USDJPY_ticks_24h.parquet",
+      "size_bytes": 3679695,
+      "sha256": "aa9c4c1e9aa070c4a37bafa103a549d7bc8bf4223dbead910181d1f0495a7e90"
+    },
+    {
+      "path": "data/ticks/USDSGD_2026-08-03.parquet",
+      "size_bytes": 7700,
+      "sha256": "2cbf7804945acfda6eee25e567b15f5564599d1f8ad4f6f10ed5e5a2d978ca03"
+    },
+    {
+      "path": "data/ticks/USOIL_2026-08-03.parquet",
+      "size_bytes": 52192,
+      "sha256": "3e850c52f917123ee4ce5b6897b0e242ddd19811413e1e26f3c7c488983a846d"
+    },
+    {
+      "path": "data/ticks/USOIL_2026-08-04.parquet",
+      "size_bytes": 8563241,
+      "sha256": "94f601195f3ea924ab32f7329221be9f8b5651a77a92355824f2290b73793984"
+    },
+    {
+      "path": "data/ticks/USOIL_2026-08-05.parquet",
+      "size_bytes": 3846359,
+      "sha256": "5b6cbbe1596e8cfa37be24baff6b207af355db58ddd02b9843f3e3d8632de52f"
+    },
+    {
+      "path": "data/ticks/USOIL_2026-08-06.parquet",
+      "size_bytes": 63894,
+      "sha256": "3b5dc39fd969ecf96784bc4f8b7b5293e13b0f0edf255014561fbe88d63f4f94"
+    },
+    {
+      "path": "data/ticks/XAUUSD_2026-07-31.parquet",
+      "size_bytes": 4739025,
+      "sha256": "54d2e5f89c4500b9c6c8d8b4f86bd3848ac40b6876dc5792f7cc664b3a8f6879"
+    },
+    {
+      "path": "data/ticks/XAUUSD_2026-08-03.parquet",
+      "size_bytes": 23816533,
+      "sha256": "a8b4d9dba8fbcfe382af3fa6492958cf379d4041d87c2d9856b34186a80eca15"
+    },
+    {
+      "path": "data/ticks/XAUUSD_2026-08-04.parquet",
+      "size_bytes": 12610643,
+      "sha256": "8571c3bcbaa33f9d48fa9083c1d4063da029721253aac64b5bc91e173e1ee974"
+    },
+    {
+      "path": "data/ticks/XAUUSD_2026-08-05.parquet",
+      "size_bytes": 29202619,
+      "sha256": "e6d47e267c6997e46da28bd482555247036c0e6ac3d8267c107206a3f4ddffed"
+    },
+    {
+      "path": "data/ticks/XAUUSD_2026-08-06.parquet",
+      "size_bytes": 12763550,
+      "sha256": "11322ee88c0ebd3ea5417b520f1b0810f3aa6864548f262146e9bb16c77a25da"
+    },
+    {
+      "path": "data/ticks/XAUUSD_ticks_24h.parquet",
+      "size_bytes": 7247676,
+      "sha256": "8c20ca46d800dfb56b80d6a5374d728f3a3bbb4eaec9f637760829e32b9b83cf"
+    }
+  ]
+}
