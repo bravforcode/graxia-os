@@ -3,7 +3,7 @@
   "direction": "H",
   "description": "Forex 4-Pair Walk-Forward Retest. Structural mechanism: XGBoost binary classification of next-bar direction on a FIXED technical feature set (returns, volatility, ATR, RSI, MACD, Bollinger, session flags) — the same mechanism family as the original 2026-07-12 batch (runner scripts/run_multi_instrument_wf.py, artifact wf_batch_H1_20260712_200555.json). The original INCONCLUSIVE verdicts (USDCAD t=-1.69, USDCHF t=-1.12, AUDUSD t=-1.55, NZDUSD t=-0.53) were invalid as evidence: F24 loader-provenance gap (now resolved) and 5/6 pairs ran with UNMEASURED default costs (--allow-default-costs). This retest runs the SAME mechanism with measured FROM_TICKS costs (mandatory) and a pre-registered min_confidence reduction 0.65->0.55 to overcome the ~7-trades/fold underpoweredness.",
   "last_updated": "2026-08-06",
-  "current_verdict_2026-08-06": "REJECTED x2 — 9001 (ML direction classifier) + 9002 (RSI mean-reversion). Both momentum and mean-reversion families lose on the 4 pairs at measured costs.",
+  "current_verdict_2026-08-06": "REJECTED_MIXED after cost fix — 2 REJECT (AUDUSD/NZDUSD) + 2 INCONCLUSIVE (USDCAD/USDCHF); original all-REJECT invalidated.",
   "cumulative_trial_count_at_creation": 0,
   "stopping_rule_doc": "reports/stopping_rule_2026_08_06_direction_h.md",
   "sacred_holdout_path": "N/A at the walk-forward stage (this is a validation-phase hypothesis, not a fitted-model holdout confirmation; sacred holdout remains LOCKED for Phase 4.5 only).",
@@ -19,7 +19,7 @@
     {
       "trial_number": 9002,
       "id": "DIRH-FX4-RSI-MR-H1",
-      "status": "REJECTED",
+      "status": "REJECTED_MIXED",
       "instrument": "USDCAD, USDCHF, AUDUSD, NZDUSD (H1)",
       "symbols": [
         "USDCAD",
@@ -32,28 +32,28 @@
       "result_summary": {
         "per_symbol": {
           "USDCAD": {
-            "n_trades": 1407,
-            "pf": 0.8977,
-            "trade_nw_t": -1.837,
-            "sharpe_daily": -2.173
+            "n_trades": 1901,
+            "net_pnl": -0.11,
+            "t_stat": -1.82,
+            "verdict": "INCONCLUSIVE"
           },
           "USDCHF": {
-            "n_trades": 1435,
-            "pf": 0.8834,
-            "trade_nw_t": -2.162,
-            "sharpe_daily": -2.148
+            "n_trades": 2749,
+            "net_pnl": -0.06,
+            "t_stat": -0.68,
+            "verdict": "INCONCLUSIVE"
           },
           "AUDUSD": {
-            "n_trades": 1375,
-            "pf": 0.9169,
-            "trade_nw_t": -1.503,
-            "sharpe_daily": -1.481
+            "n_trades": 6012,
+            "net_pnl": -0.34,
+            "t_stat": -4.34,
+            "verdict": "REJECT"
           },
           "NZDUSD": {
-            "n_trades": 1392,
-            "pf": 0.8742,
-            "trade_nw_t": -2.513,
-            "sharpe_daily": -2.542
+            "n_trades": 6215,
+            "net_pnl": -0.24,
+            "t_stat": -3.22,
+            "verdict": "REJECT"
           }
         },
         "pooled": {
@@ -61,8 +61,8 @@
           "positive_sharpe_count": 0,
           "total_trades": 5609
         },
-        "conclusion": "REJECTED: RSI mean-reversion (fade extremes, RSI 14 <30/>70, ATR SL/TP 2/3) loses on all 4 pairs at measured costs (PF 0.87-0.92, pooled DK t=-4.55, Sharpe<0 in 0/4). Opposite mechanism to 9001 also fails — both momentum-classifier and mean-reversion families lose on these pairs.",
-        "artifact": "reports/edge_search_dirh_rsi_mr_9002.json"
+        "conclusion": "RERUN 2026-08-06 at CORRECTED costs (commission unit fix): USDCAD/USDCHF INCONCLUSIVE (t=-1.82/-0.68, was REJECT t=-8/-9 at 22x-inflated costs), AUDUSD/NZDUSD still REJECT (t=-4.34/-3.22). Original all-4-REJECT verdict INVALIDATED by cost model error (reports/audit_trial_9001_9002_cost_model.md).",
+        "artifact": "artifacts/wf_direction_h_9001_RERUN/wf_batch_H1_20260806_184020.json"
       },
       "cost_model_version": "4.1",
       "cost_source": "FROM_TICKS",
@@ -81,7 +81,7 @@
       },
       "data_manifest_ref": "reports/edge_search_dirh_rsi_mr_9002.json",
       "provenance_stamped_at": "2026-08-06T09:48:18.554093+00:00",
-      "notes": "Direction H trial 9002 REJECTED 2026-08-06. Frozen params honored (RSI 14, 30/70, EMA off, ATR 2/3, risk 50bps, measured costs incl. fill-simulator P90 slippage). Consecutive-fail count now 2/3 (9001 REJECT + 9002 REJECT)."
+      "notes": "Direction H trial 9002 REJECTED 2026-08-06. Frozen params honored (RSI 14, 30/70, EMA off, ATR 2/3, risk 50bps, measured costs incl. fill-simulator P90 slippage). Consecutive-fail count now 2/3 (9001 REJECT + 9002 REJECT). | RERUN 2026-08-06 at corrected costs (rt_bps 0.64-1.87 instead of 14.1-14.7): 2/4 REJECT, 2/4 INCONCLUSIVE."
     }
   ]
 }
