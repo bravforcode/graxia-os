@@ -3,7 +3,7 @@
   "direction": "K",
   "description": "Crypto pairs / statistical arbitrage. BTC/ETH H1 joint data (50k bars 2020-2026, return corr 0.83). Market-neutral spread trading — structurally different from all directional mechanisms (A-J all failed).",
   "last_updated": "2026-08-06",
-  "current_verdict_2026-08-06": "4005 REJECTED (pairs), 4006 REJECTED (BEVS).",
+  "current_verdict_2026-08-06": "DIRECTION K STOPPED 2026-08-06 (3/3 consecutive REJECTS: 4005 pairs, 4006 BEVS, 4007 CVR).",
   "stopping_rule_doc": "reports/stopping_rule_2026_08_06_direction_k.md",
   "sacred_holdout_status": "LOCKED",
   "notes": [
@@ -79,6 +79,34 @@
       "data_manifest_ref": "reports/edge_search_dirk_4006.json",
       "provenance_stamped_at": "2026-08-06T19:37:17.543623+00:00",
       "notes": "Direction K 4006 — REJECTED. Volume divergence (Trial 2003 config) falsified on crypto cross-section."
+    },
+    {
+      "trial_number": 4007,
+      "id": "DIRK-CVR-BTC",
+      "status": "REJECTED",
+      "instrument": "BTCUSD (H1, 50k bars)",
+      "symbols": [
+        "BTCUSD"
+      ],
+      "registered_at": "2026-08-06T19:38:48.844562+00:00",
+      "result_at": "2026-08-06T19:38:48.844562+00:00",
+      "result_summary": {
+        "n_trades": 5082,
+        "dk_t": -2.76,
+        "sharpe": -2.98,
+        "mean_pnl": -3.22,
+        "conclusion": "REJECTED: BTCUSD vol-rank signal (low-vol entry) loses at 14 bps rt (dk_t=-2.76, 5082 trades). Vol rank does NOT mean-revert profitably net of costs. FAIL #3 -> Direction K STOPPED per stopping_rule_2026_08_06_direction_k.md."
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "BTCUSD": 14.0
+      },
+      "slippage_source": "none",
+      "slippage_bps_used": {},
+      "data_manifest_ref": "reports/edge_search_dirk_4007.json",
+      "provenance_stamped_at": "2026-08-06T19:38:48.844562+00:00",
+      "notes": "Direction K 4007 — REJECTED. 3/3 consecutive fails (4005, 4006, 4007) -> K STOPPED."
     }
   ]
 }
