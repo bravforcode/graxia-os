@@ -169,11 +169,11 @@ class MLMeanReversion(Strategy):
             return self._model is not None
 
         try:
-            from ..core.safe_pickle import safe_load_ml_model
+            from ..core.safe_pickle import safe_load_model
 
             if self._model_path:
                 # Use explicit path
-                model_data = safe_load_ml_model(self._model_path)
+                model_data = safe_load_model(self._model_path, allow_unsigned=True)
             else:
                 # Find latest model for symbol
                 import glob
@@ -189,7 +189,7 @@ class MLMeanReversion(Strategy):
                     logger.warning("mlmr.no_model_found", symbol=symbol)
                     return False
 
-                model_data = safe_load_ml_model(model_files[0])
+                model_data = safe_load_model(model_files[0], allow_unsigned=True)
 
             self._model = model_data["model"]
             self._feature_names = model_data.get("feature_names", [])
@@ -202,7 +202,13 @@ class MLMeanReversion(Strategy):
             return True
 
         except Exception as e:
-            logger.error("mlmr.model_load_error", error=str(e))
+            logger.warning(
+                "mlmr.model_load_failed_using_constant_fallback",
+                error=str(e),
+                note="MLMR signals will use constant 0.65 confidence, not a model prediction "
+                "(audit §8.1: safe_load_ml_model never existed; fixed to safe_load_model with "
+                "allow_unsigned=True research mode). Do NOT cite ML signals as model-backed.",
+            )
             return False
 
     def required_features(self) -> list[str]:
@@ -280,22 +286,14 @@ class MLMeanReversion(Strategy):
             return None
 
         # Check for mean reversion setup (symbol-specific thresholds)
-        long_setup = (
-            current_price <= bb_lower
-            and rsi < rsi_os
-            and adx < adx_thresh
-        )
-        short_setup = (
-            current_price >= bb_upper
-            and rsi > rsi_ob
-            and adx < adx_thresh
-        )
+        long_setup = current_price <= bb_lower and rsi < rsi_os and adx < adx_thresh
+        short_setup = current_price >= bb_upper and rsi > rsi_ob and adx < adx_thresh
 
         if not (long_setup or short_setup):
             return None
 
         # ML Prediction (symbol-specific threshold)
-        ml_prob = 0.65  # Default when no model
+        ml_prob = 0.65  # Constant fallback when no model loaded — NOT a model prediction (audit §8.1)
         if self._model is not None:
             features = self._prepare_features(indicators, ohlcv_data)
             ml_prob = self._predict(features)
@@ -412,10 +410,7 @@ class MLMeanReversion(Strategy):
             # RSI z-score
             df["rsi_zscore"] = (df["rsi_14"] - 50) / 50
 
-            result_cols = [
-                c for c in df.columns
-                if c not in ["open", "high", "low", "close", "volume"]
-            ]
+            result_cols = [c for c in df.columns if c not in ["open", "high", "low", "close", "volume"]]
             return {col: df[col].tolist() for col in result_cols}
 
         except ImportError:

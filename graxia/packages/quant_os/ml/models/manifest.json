@@ -24,7 +24,8 @@
           0,
           80305
         ]
-      ]
+      ],
+      "audit_note_20260806": "Degenerate classifier: confusion matrix [[0,68115],[0,80305]] predicts one class 100%; z_score 31.8 is NOT evidence of edge (lookahead_guard_reachability_audit_2026_07_30.md §8.1). Do not cite as a clean result."
     },
     {
       "symbol": "EURUSD",
