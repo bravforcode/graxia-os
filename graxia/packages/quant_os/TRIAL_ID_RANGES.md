@@ -14,6 +14,8 @@ unique across ALL ledgers/registries combined** — see
 | Direction E                 | 5001+             | 5001–5002 (cointegration pairs)          | `hypothesis_registry_e.json` (no separate ledger)          |
 | Direction F                 | 6001+             | 6001 (crypto basis/carry)                | `hypothesis_registry_f.json` (no separate ledger)          |
 | Direction G                 | 8000–8999         | 8001–8002 (pre-registered 2026-08-05)    | `hypothesis_registry_g.json`, `trial_ledger_g.json`        |
+| Direction H                 | 9000–9999         | 9001 (REJECTED 2026-08-06), 9002 (FROZEN) | `trial_ledger_h.json`, `hypothesis_registry_h.json`        |
+| Direction I                 | 10000–10999       | (pre-registration starts 2026-08-06)     | `trial_ledger_i.json`, `hypothesis_registry_i.json`, `screening_log_i.json` |
 | Reserved (future directions)| 4000+            | — | allocate the next free 1000-block and record it here      |
 
 The "Documented range" column is what this table asserted before 2026-07-31;
@@ -26,6 +28,9 @@ match a real fix (not just re-asserted).
 - Never reuse a trial number across different directions/registries.
 - When adding a new direction, allocate the next free 1000-block and record it in
   this table.
+- Ranges follow DIRECTION CREATION ORDER, not alphabetical order (e.g., C=7xxx
+  predates D=4xxx). Derive the next block from the highest allocated block,
+  never from the letter.
 - Run `python scripts/check_trial_uniqueness.py` after any ledger/registry edit.
 - This file is referenced from `CONTRIBUTING.md`.
 

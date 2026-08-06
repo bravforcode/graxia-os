@@ -1,0 +1,9 @@
+{
+  "schema_version": "1.0",
+  "direction": "I",
+  "description": "Direction I: EA Deep-Mine Funnel (see docs/superpowers/specs/2026-08-06-direction-i-ea-funnel-design.md).",
+  "last_updated": "2026-08-06T00:00:00+00:00",
+  "cumulative_trial_count_at_creation": 0,
+  "stopping_rule_doc": "reports/stopping_rule_2026_08_06_direction_i.md — budget 40, no deadline, hours 400, 3-consecutive-fail gate",
+  "entries": []
+}

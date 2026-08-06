@@ -1,0 +1,7 @@
+{
+  "schema_version": "1.0",
+  "direction": "I",
+  "description": "Screening config log — every executed screening config registered BEFORE run (spec §3, A6). hash = sha256(mechanism|symbol|timeframe|params_json|data_range).",
+  "configs": [],
+  "count": 0
+}
