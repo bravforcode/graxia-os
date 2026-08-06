@@ -8,6 +8,8 @@ Probe semantics (approved 2026-08-05 design review):
     ALL symbols in this probe.
   * Cost-based classification (break_even_mult, cost_driven verdict) is ONLY
     emitted for symbols with stable measured costs (XAUUSD, USDJPY).
+# 2026-08-06 (9003): EURUSD moved to stable — unit-corrected RT cost 0.78bps
+# (FROM_TICKS, 56,115 ticks, 4.42d). Old 14.17bps was an 8-29x unit overstatement.
   * EURUSD/GBPUSD break_even fields are null with blocked_on reasons:
       - direction_g_step1_completion (EURUSD round-trip moved 7.18->14.17 bps
         during this session; re-measurement in progress)
@@ -63,13 +65,11 @@ TFS = ["H1", "H4"]
 BARS_PER_HOUR = {"M15": 4, "H1": 1, "H4": 0.25}
 
 # Symbols with STABLE measured costs -> full classification emitted.
-COST_STABLE_SYMBOLS = frozenset({"XAUUSD", "USDJPY"})
+COST_STABLE_SYMBOLS = frozenset({"XAUUSD", "USDJPY", "EURUSD"})
 # Symbols blocked from cost-based fields pending Direction G + universe fix.
 COST_BLOCKED = {
-    "EURUSD": [
-        "direction_g_step1_completion",
-        "tradeable_universe.json contradiction (measuring AND excluded) unresolved",
-    ],
+    # EURUSD removed 2026-08-06 (9003 pre-registration): Direction G stopped
+    # §4.4 + universe contradiction resolved C1.1 — break-even now computable.
     "GBPUSD": [
         "direction_g_step1_completion",
         "tradeable_universe.json contradiction (measuring AND excluded) unresolved",
