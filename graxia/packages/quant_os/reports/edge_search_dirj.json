@@ -1,0 +1,16 @@
+{
+  "trial_3007": {
+    "n_trades": 3,
+    "verdict": "INSUFFICIENT",
+    "executed_at": "2026-08-06T18:14:21.384929+00:00"
+  },
+  "trial_3003": {
+    "n_trades": 245,
+    "dk_t": -15.4695,
+    "sharpe": -10.0657,
+    "mean_pnl": -139.7251,
+    "final_cash": -24232.65,
+    "verdict": "REJECT",
+    "executed_at": "2026-08-06T18:14:35.367149+00:00"
+  }
+}

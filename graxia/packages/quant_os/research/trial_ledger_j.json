@@ -5,9 +5,9 @@
   "lock_doc_path": "reports/stopping_rule_2026_08_06_direction_j.md",
   "lock_doc_sha256": "3fb9f8ecd6ba786716813bf47dcfcc1188ec3e6ea5bba1d8ed839041fa680d50",
   "description": "Direction J: XAUUSD positioning (COT) + cross-asset (DXY) mechanisms. Opened 2026-08-06 after data became available (COT 2021-2026 parquet, DXY 2018-2026 CSV). XAUUSD costs verified correct (0.65 bps rt).",
-  "cumulative_trial_count": 0,
+  "cumulative_trial_count": 2,
   "cumulative_trial_cap": 10,
-  "next_available_trial_number": 3007,
+  "next_available_trial_number": 3008,
   "trial_range": "3007-3016",
   "stopping_rule": {
     "type": "budget_or_time_or_consecutive_fail",
@@ -15,10 +15,23 @@
     "deadline": "2026-11-06",
     "hours_cap": 40,
     "consecutive_fail_gate_threshold": 3,
-    "consecutive_fail_count": 0,
+    "consecutive_fail_count": 1,
     "description": "Stop when any: 10 used, 3 months (2026-11-06), 40 research-hours, or 3 consecutive fails at same gate. Per stopping_rule_2026_08_06_direction_j.md."
   },
-  "lineage": [],
+  "lineage": [
+    {
+      "trial_id": "3007",
+      "status": "INCONCLUSIVE",
+      "result_at": "2026-08-06",
+      "notes": "3 trades only (z>=2.0 rare in 5y COT) — underpowered, min-trades gate not met."
+    },
+    {
+      "trial_id": "3003",
+      "status": "REJECTED",
+      "result_at": "2026-08-06",
+      "notes": "DXY lead-lag falsified: dk_t=-15.5, mean -/trade, 245 trades."
+    }
+  ],
   "notes": [
     "Opened 2026-08-06 per user approval (COT + DXY both).",
     "Pre-registered: 3007 COT contrarian, 3003 DXY cross-asset momentum.",

@@ -3,7 +3,7 @@
   "direction": "J",
   "description": "XAUUSD positioning (COT) + cross-asset (DXY) mechanisms. Data that was previously missing is now available: CFTC COT disaggregated positioning 2021-2026 (data/cot/) and DXY 2018-2026 (data/DXY_D1.csv). XAUUSD costs verified correct (0.65 bps rt, commission=0).",
   "last_updated": "2026-08-06",
-  "current_verdict_2026-08-06": "PRE_REGISTERED — 2 trials, verdicts pending.",
+  "current_verdict_2026-08-06": "3007 INCONCLUSIVE (3 trades, underpowered), 3003 REJECTED (dk_t=-15.5).",
   "stopping_rule_doc": "reports/stopping_rule_2026_08_06_direction_j.md",
   "sacred_holdout_status": "LOCKED",
   "notes": [
@@ -15,42 +15,55 @@
     {
       "trial_number": 3007,
       "id": "DIRJ-COT-XAUUSD",
-      "name": "COT Managed-Money Contrarian on XAUUSD (weekly positioning z-score extremes)",
-      "status": "PRE_REGISTERED",
-      "registered_at": "2026-08-06",
-      "pre_registration_doc": "research/pre_registration/trial_3007_cot_xauusd.md",
+      "status": "INCONCLUSIVE",
       "instrument": "XAUUSD (D1)",
-      "hypothesis": "Extreme Managed-Money net positioning (z >= 2.0) on gold futures precedes mean reversion in spot XAUUSD over 1-4 weeks.",
-      "mechanism": "COTPositioningStrategy (path_b_wrappers): contrarian entry at positioning z-score extremes, exit at mean-reversion (z 0.5), hold 1-4 weeks. Weekly COT data merged onto daily XAUUSD.",
-      "frozen_params": {
-        "lookback_weeks": 52,
-        "entry_z": 2.0,
-        "exit_z": 0.5,
-        "min_hold_weeks": 1,
-        "max_hold_weeks": 4
+      "symbols": [
+        "XAUUSD"
+      ],
+      "registered_at": "2026-08-06T18:14:54.587510+00:00",
+      "result_at": "2026-08-06T18:14:54.587510+00:00",
+      "result_summary": {
+        "n_trades": 3,
+        "conclusion": "INCONCLUSIVE: only 3 z>=2.0 positioning-extreme events in 5 years of COT data (2021-2026). Underpowered by construction — min-trades gate (30) not met. Managed Money net positioning rarely reaches 2-sigma extremes on gold. z threshold too strict for 5-year window."
       },
-      "data_dependencies": ["data/cot/cot_xauusd_disaggregated_fut_*.parquet (2021-2026)", "data/XAUUSD_D1.csv"],
-      "cost_basis": "XAUUSD FROM_TICKS 0.65 bps rt (commission=0)",
-      "validation_plan": "BacktestEngine measured-cost path, precomputed cot_positioning_signal feature, pooled DK t + Sharpe gates."
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "XAUUSD": 0.65
+      },
+      "slippage_source": "none",
+      "slippage_bps_used": {},
+      "data_manifest_ref": "reports/edge_search_dirj.json",
+      "provenance_stamped_at": "2026-08-06T18:14:54.587510+00:00",
+      "notes": "Direction J trial 3007 — INCONCLUSIVE (insufficient signal frequency, not loss). No verdict change possible with 3 trades."
     },
     {
       "trial_number": 3003,
       "id": "DIRJ-DXY-XAUUSD",
-      "name": "Cross-Asset Momentum: DXY lead-lag on XAUUSD (60-day window, z>=1.0, 5-day hold)",
-      "status": "PRE_REGISTERED",
-      "registered_at": "2026-08-06",
-      "pre_registration_doc": "research/pre_registration/trial_3003_dxy_xauusd.md",
+      "status": "REJECTED",
       "instrument": "XAUUSD (D1)",
-      "hypothesis": "DXY directional extremes lead gold moves (inverse USD-gold correlation); entering on DXY z-score extremes with 5-day hold captures the lead-lag.",
-      "mechanism": "CrossAssetMomentumStrategy (path_b_wrappers): DXY 60-day momentum z-score >= 1.0 threshold, 5-day hold, gold trades against DXY direction.",
-      "frozen_params": {
-        "window": 60,
-        "z_threshold": 1.0,
-        "hold_days": 5
+      "symbols": [
+        "XAUUSD"
+      ],
+      "registered_at": "2026-08-06T18:14:54.587510+00:00",
+      "result_at": "2026-08-06T18:14:54.587510+00:00",
+      "result_summary": {
+        "n_trades": 245,
+        "dk_t": -15.47,
+        "sharpe": -10.07,
+        "mean_pnl": -139.73,
+        "conclusion": "REJECTED: DXY z>=1.0 momentum lead-lag loses massively (dk_t=-15.5, mean -/trade, 245 trades). Trading gold AGAINST DXY extremes is strongly wrong — gold and USD do NOT lead-lag in the hypothesized direction at 5-day horizon. Hypothesis falsified."
       },
-      "data_dependencies": ["data/DXY_D1.csv (2018-2026)", "data/XAUUSD_D1.csv"],
-      "cost_basis": "XAUUSD FROM_TICKS 0.65 bps rt (commission=0)",
-      "validation_plan": "BacktestEngine measured-cost path, precomputed cross_asset_momentum_signal feature, pooled DK t + Sharpe gates."
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "XAUUSD": 0.65
+      },
+      "slippage_source": "none",
+      "slippage_bps_used": {},
+      "data_manifest_ref": "reports/edge_search_dirj.json",
+      "provenance_stamped_at": "2026-08-06T18:14:54.587510+00:00",
+      "notes": "Direction J trial 3003 — REJECTED. DXY lead-lag hypothesis falsified (contra-direction loses)."
     }
   ]
 }
