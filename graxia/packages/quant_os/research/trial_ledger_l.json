@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "direction": "L",
+  "lock_date": "2026-08-07",
+  "lock_doc_path": "reports/stopping_rule_2026_08_07_direction_l.md",
+  "lock_doc_sha256": "fc2467f7ae6444325d5dc111c295f1b97bdfeaf14e7757f7561a7c8107efc735",
+  "description": "Direction L: Gold Vol Risk Premium (VRP). GVZ data now available via FRED (GVZCLS 2016-2026). Vol-selling mechanism - structurally different from price-directional (A-K failed).",
+  "cumulative_trial_count": 2,
+  "cumulative_trial_cap": 6,
+  "next_available_trial_number": 4009,
+  "trial_range": "4008-4013",
+  "stopping_rule": {
+    "type": "budget_or_time_or_consecutive_fail",
+    "budget": 6,
+    "deadline": "2026-11-07",
+    "hours_cap": 30,
+    "consecutive_fail_gate_threshold": 3,
+    "consecutive_fail_count": 1,
+    "description": "Per stopping_rule_2026_08_07_direction_l.md."
+  },
+  "lineage": [
+    {
+      "trial_id": "4008",
+      "status": "REJECTED",
+      "result_at": "2026-08-07",
+      "notes": "VRP: dk_t=0.32, 264 trades, positive but not significant."
+    },
+    {
+      "trial_id": "3001",
+      "status": "INCONCLUSIVE",
+      "result_at": "2026-08-07",
+      "notes": "Carry: DGS10 always positive -> 1 trade. Data limitation."
+    }
+  ],
+  "notes": [
+    "Opened 2026-08-07 per user approval. GVZCLS data from FRED download (data/market_data/fred/GVZCLS.csv)."
+  ]
+}

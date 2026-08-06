@@ -22,8 +22,20 @@
       "registered_at": "2026-07-28",
       "result_at": "2026-07-28",
       "result_summary": {
-        "BTC/USDT": {"n_periods": 1095, "actual_days": 364.7, "positive_period_pct": 76.0, "raw_annualized_yield_bps": 337.9, "net_annualized_yield_pct": 3.059},
-        "ETH/USDT": {"n_periods": 1095, "actual_days": 364.7, "positive_period_pct": 72.3, "raw_annualized_yield_bps": 250.6, "net_annualized_yield_pct": 2.186},
+        "BTC/USDT": {
+          "n_periods": 1095,
+          "actual_days": 364.7,
+          "positive_period_pct": 76.0,
+          "raw_annualized_yield_bps": 337.9,
+          "net_annualized_yield_pct": 3.059
+        },
+        "ETH/USDT": {
+          "n_periods": 1095,
+          "actual_days": 364.7,
+          "positive_period_pct": 72.3,
+          "raw_annualized_yield_bps": 250.6,
+          "net_annualized_yield_pct": 2.186
+        },
         "overall_verdict": "PASS",
         "result_artifact": "reports/funding_rate_arb_pilot_20260727.json"
       },
@@ -38,7 +50,10 @@
       "hypothesis": "Binance perpetual funding rate (paid periodically between long/short sides to anchor perp price to spot/index) has historically been net-positive-for-the-short-side (i.e. collectible via long-spot + short-perp cash-and-carry) by an amount exceeding realistic round-trip trading costs (spot maker/taker fee + perp maker/taker fee + estimated spread), on a sustained, multi-month basis, for at least BTC/USDT and ETH/USDT.",
       "mechanism": "Structural: perpetual contracts use a periodic funding payment (every 8h on Binance) between long and short positions to keep perp price tethered to the underlying index. A structural, persistent long-side crowding (common in bull-biased retail perp markets) creates a persistent positive funding rate, which a delta-neutral cash-and-carry position (long spot, short equal-notional perp) can collect without taking directional price risk. This is NOT a claim about predicting price direction.",
       "frozen_params": {
-        "symbols": ["BTC/USDT", "ETH/USDT"],
+        "symbols": [
+          "BTC/USDT",
+          "ETH/USDT"
+        ],
         "lookback_days": 365,
         "funding_interval_hours": 8,
         "assumed_spot_fee_bps": 10,
@@ -47,7 +62,10 @@
         "position_rebalance": "none (static cash-and-carry, held for full window)"
       },
       "economic_rationale": "Distinct from Path B's carry trials (2001-2008), which tested FX/XAUUSD interest-rate-differential carry, a completely different funding mechanism, data source, and asset class. Crypto perpetual funding is driven by retail speculative demand imbalance, not central-bank rate differentials.",
-      "data_dependencies": ["Binance funding rate history (ccxt, public endpoint, no auth)", "Binance spot/perp fee schedule (public, documented)"],
+      "data_dependencies": [
+        "Binance funding rate history (ccxt, public endpoint, no auth)",
+        "Binance spot/perp fee schedule (public, documented)"
+      ],
       "validation_plan": "fetch_real_funding_history -> compute_realized_annualized_funding_yield -> net_of_realistic_costs -> check durability across full window and both assets -> PASS/FAIL (not a DK-test/p-value framework; see description field for why)."
     },
     {
@@ -63,8 +81,16 @@
       "state_file": "reports/paper_trading/funding_arb_state.json",
       "frozen_params": {
         "notional_per_leg_usd": 1000,
-        "symbols": ["BTC/USDT", "ETH/USDT"],
-        "assumed_costs_bps": {"spot_fee": 10, "perp_fee": 4, "spread": 2, "round_trip_total": 32}
+        "symbols": [
+          "BTC/USDT",
+          "ETH/USDT"
+        ],
+        "assumed_costs_bps": {
+          "spot_fee": 10,
+          "perp_fee": 4,
+          "spread": 2,
+          "round_trip_total": 32
+        }
       },
       "validation_plan": "Re-run scripts/paper_trade_funding_arb.py periodically (every 8h, matching Binance's funding interval) with no arguments to record real funding events since the last check. Accumulate for >=180 days before drawing any conclusion (per #4001's stopping-rule doc). No action needed between runs beyond re-invoking the script. Not yet automated/scheduled -- currently requires manual re-invocation.",
       "caveats": [
@@ -103,21 +129,44 @@
         "second_exchange_used": "bitget, NOT okx as originally planned",
         "second_exchange_substitution_reason": "OKX and Bybit were both unreachable from this environment (ccxt NetworkError on both -- confirmed not a code bug by successfully reaching Kraken/Deribit/Bitget from the same process). Substituted Bitget. Bitget's public funding-history endpoint only returns ~33 days of retention (100 periods), far short of the requested 1600-day lookback -- a real data-availability limitation of that endpoint, not a bug in this script.",
         "crash_windows_reached": {
-          "LUNA_2022-05": {"binance_BTC_cumulative_bps": 1.43, "binance_ETH_cumulative_bps": 0.64, "note": "funding stayed slightly POSITIVE through the LUNA collapse"},
-          "Celsius_3AC_2022-06": {"binance_BTC_cumulative_bps": -1.36, "binance_ETH_cumulative_bps": -12.1},
-          "FTX_2022-11": {"binance_BTC_cumulative_bps": -25.96, "binance_ETH_cumulative_bps": -22.13},
+          "LUNA_2022-05": {
+            "binance_BTC_cumulative_bps": 1.43,
+            "binance_ETH_cumulative_bps": 0.64,
+            "note": "funding stayed slightly POSITIVE through the LUNA collapse"
+          },
+          "Celsius_3AC_2022-06": {
+            "binance_BTC_cumulative_bps": -1.36,
+            "binance_ETH_cumulative_bps": -12.1
+          },
+          "FTX_2022-11": {
+            "binance_BTC_cumulative_bps": -25.96,
+            "binance_ETH_cumulative_bps": -22.13
+          },
           "COVID_2020-03": "unreachable -- outside available funding-rate-history retention even at 1600-day lookback"
         },
         "verdict": "FAIL_RIGOR for deployment today. The per-period rate IS statistically distinguishable from zero (NW-significant on every exchange/window tested) -- this is a real structural cashflow, not noise -- but the CURRENT, recent-window magnitude does not clear the T-bill hurdle after realistic costs, on either exchange tested. The strong long-run headline number reflects a past regime (2022), not current conditions.",
-        "result_artifacts": ["reports/funding_rate_arb_rigor_20260728.json", "reports/funding_rate_arb_rigor_recent33d_20260728.json"]
+        "result_artifacts": [
+          "reports/funding_rate_arb_rigor_20260728.json",
+          "reports/funding_rate_arb_rigor_recent33d_20260728.json"
+        ]
       },
       "instrument": "BTC/USDT, ETH/USDT on Binance AND a second exchange (OKX)",
       "mechanism": "Same as #4001/#4002. This trial applies the SAME rigor standard already used to reject Direction A/B to the last surviving 'edge': (1) Newey-West HAC significance test on the per-period net rate (identical formula/kernel to edge_search_cross_sectional.py's run_dk_test, reused deliberately for consistency) -- is the mean distinguishable from zero given autocorrelation; (2) cost stress at 1.0x/1.2x/1.5x realistic round-trip fees; (3) a second exchange (OKX) to check whether the mechanism is Binance-specific; (4) yield during 4 historical crypto crash windows (COVID Mar 2020, LUNA May 2022, Celsius/3AC Jun 2022, FTX Nov 2022) if data reaches that far back; (5) direct comparison to an assumed ~4.5%/yr T-bill yield -- explicitly NOT rationalizing past a negative result if net yield fails to beat risk-free.",
       "frozen_params": {
-        "symbols": ["BTC/USDT", "ETH/USDT"],
-        "exchanges": ["binance", "okx"],
+        "symbols": [
+          "BTC/USDT",
+          "ETH/USDT"
+        ],
+        "exchanges": [
+          "binance",
+          "okx"
+        ],
         "lookback_days": 1460,
-        "cost_multipliers": [1.0, 1.2, 1.5],
+        "cost_multipliers": [
+          1.0,
+          1.2,
+          1.5
+        ],
         "tbill_apy_pct_assumed": 4.5,
         "significance_test": "Newey-West HAC t-test, Bartlett kernel, T^(1/3) lag truncation, p<0.05 two-sided"
       },
@@ -134,6 +183,22 @@
       "pre_registration_doc": "research/pre_registration_d/trial_4004_funding_carry.md",
       "validation_runner": "scripts/run_funding_arb_4002.py",
       "notes": "Filed per trial 4002 pre-reg section 5: exploratory signal (666 bps annualized, 98.92% positive) exceeds the cost floor. FROZEN criteria in pre-reg: annualized yield > 2x(round-trip spread+slippage), positive_share > 0.95, sign consistency across symbols. | RENUMBERED 4003->4004 2026-08-05: #4003 collided with Direction D FUNDING-ARB-RIGOR-PASS (hypothesis_registry_d.json). See reports/incident_20260805_trial_4002_collision.md."
+    }
+  ],
+  "findings_2026_08_07": [
+    {
+      "finding_id": "XRP-FUNDING-20260807",
+      "title": "XRP/USDT funding durable-positive but below T-bill baseline",
+      "date": "2026-08-07",
+      "result": {
+        "positive_period_pct": 55.8,
+        "net_annualized_yield_bps": 16.72,
+        "net_annualized_yield_pct": 0.167,
+        "durably_positive": true,
+        "window": "2025-08-07 -> 2026-08-06 (1095 periods)"
+      },
+      "conclusion": "XRP funding is statistically durable-positive (55.8% periods) but net yield +16.7 bps APY is ~27x below the T-bill baseline (~450 bps). Per Trial 4003 economic criterion (mechanism must beat risk-free), XRP does NOT qualify for a paper position. Consistent with 4001/4003 verdicts - mechanism real, economics insufficient.",
+      "data_ref": "reports/funding_rate_arb_pilot_20260806.json"
     }
   ]
 }
