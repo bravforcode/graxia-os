@@ -12,6 +12,7 @@
 > This file remains the change-tracking record (locked experiments, wave summaries)
 > but its roadmap/gate structure must not be treated as current. Blocker status is
 > tracked in `reports/master_blocker_inventory.json` (Task 0-Pre.4, reconciled 2026-08-06).
+> Project-wide open-item tracking lives in the master TRACKER `QUANT_OS_MASTER_OPEN_ITEMS.md` (repo root). See docs/superpowers/specs/2026-08-06-tier0-sweep-design.md §2.8.
 
 ---
 

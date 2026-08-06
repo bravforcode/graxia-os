@@ -13,6 +13,7 @@
 > issues, may still be independently useful evidence), but its own
 > checklist/status should not be treated as the current live-readiness
 > gate. Follow `MEGA_PLAN_v2_Quant_OS_Live_Readiness.md` going forward.
+> Project-wide open-item tracking lives in the master TRACKER `QUANT_OS_MASTER_OPEN_ITEMS.md` (repo root). See docs/superpowers/specs/2026-08-06-tier0-sweep-design.md §2.8.
 
 ---
 
