@@ -1,0 +1,136 @@
+{
+  "schema_version": "1.0",
+  "direction": "I",
+  "canonical": [
+    {
+      "name": "Faber 10mo",
+      "source": "academic",
+      "source_url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=962461",
+      "mechanism": "trend_following",
+      "symbol": "SPY",
+      "timeframe": "D1",
+      "params": {
+        "ma": 200
+      },
+      "claimed_perf": "Sharpe 0.6-0.9",
+      "evidence_tier": "literature",
+      "catalog_id": "c3658bb089e2",
+      "ingested_at": "2026-08-06T10:58:39+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "trend_following",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Moreira-Muir vol targeting",
+      "source": "academic",
+      "source_url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2820922",
+      "mechanism": "vol_targeting",
+      "symbol": "SPY",
+      "timeframe": "D1",
+      "params": {
+        "target_vol": 0.15
+      },
+      "claimed_perf": "Sharpe +0.6",
+      "evidence_tier": "literature",
+      "catalog_id": "475f59dbc0b5",
+      "ingested_at": "2026-08-06T10:58:39+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "vol_targeting",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Grid King",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/11111",
+      "mechanism": "grid_martingale",
+      "symbol": "XAUUSD",
+      "timeframe": "M15",
+      "params": {
+        "grid": 50
+      },
+      "claimed_perf": "Sharpe 2.0",
+      "evidence_tier": "practitioner",
+      "catalog_id": "92893de9a08a",
+      "ingested_at": "2026-08-06T10:58:39+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "grid_martingale",
+      "requires_martingale_gate": true
+    },
+    {
+      "name": "Breakout B",
+      "source": "forex_factory",
+      "source_url": "https://www.forexfactory.com/thread/22222",
+      "mechanism": "breakout",
+      "symbol": "EURUSD",
+      "timeframe": "H4",
+      "params": {
+        "range": 20
+      },
+      "claimed_perf": "50% winrate",
+      "evidence_tier": "practitioner",
+      "catalog_id": "381db0d336e2",
+      "ingested_at": "2026-08-06T10:58:39+00:00",
+      "partition": {
+        "status": "WATCH",
+        "owner": "H",
+        "note": "EURUSD H4 TF-probe gross Sharpe 3.46 — waits for Sub-project B Direction H decision (tier0 spec §11.3)."
+      },
+      "mechanism_family": "breakout",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "FXStabilizer",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/systems/fxstabilizer/33333",
+      "mechanism": "scalper",
+      "symbol": "EURUSD",
+      "timeframe": "M5",
+      "params": {},
+      "claimed_perf": "live verified",
+      "evidence_tier": "myfxbook_verified",
+      "catalog_id": "44baf22ebcc6",
+      "ingested_at": "2026-08-06T10:58:39+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "scalper",
+      "requires_martingale_gate": false
+    },
+    {
+      "name": "Gold Trend Paper",
+      "source": "academic",
+      "source_url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=55555",
+      "mechanism": "trend_following",
+      "symbol": "XAUUSD",
+      "timeframe": "D1",
+      "params": {
+        "ma": 100
+      },
+      "claimed_perf": "Sharpe 0.8",
+      "evidence_tier": "literature",
+      "catalog_id": "ce4636316870",
+      "ingested_at": "2026-08-06T10:58:39+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "trend_following",
+      "requires_martingale_gate": false
+    }
+  ]
+}
