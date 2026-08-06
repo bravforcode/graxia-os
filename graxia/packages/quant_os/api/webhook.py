@@ -379,18 +379,20 @@ def calculate_position_size(payload: TradingViewPayload, equity: float | None = 
     if sl_distance <= 0:
         return Decimal("0.01")  # fallback to minimum
 
-    # Contract size depends on symbol (units per lot)
-    # XAUUSD: 100 oz per lot, EURUSD: 100000 per lot
+    # Single source of truth for per-symbol contract specs (core/contract_specs.py).
+    # Fixed 2026-08-07 (#11 batch): old code fabricated JPY contract_size
+    # (100000/100=1000) and mixed USD-risk with JPY-price distance.
     symbol = payload.symbol.upper()
-    if "XAU" in symbol or "XAG" in symbol:
-        contract_size = 100.0
-    elif "JPY" in symbol:
-        contract_size = 100000.0 / 100.0  # JPY pairs
+    from ..core.contract_specs import get_spec
+    spec = get_spec(symbol)
+    if spec is not None and spec.tick_size > 0 and spec.tick_value > 0:
+        # FX/commodity: risk_usd / (SL-distance-in-ticks × USD-per-tick-per-lot)
+        sl_ticks = sl_distance / float(spec.tick_size)
+        lot_size = risk_amount / (sl_ticks * float(spec.tick_value))
     else:
-        contract_size = 100000.0  # standard forex lot
-
-    # Lot size = risk_amount / (sl_distance * contract_size)
-    lot_size = risk_amount / (sl_distance * contract_size)
+        # Unmapped symbol → conservative fallback (previous default for non-FX)
+        contract_size = 100.0 if ("XAU" in symbol or "XAG" in symbol) else 100000.0
+        lot_size = risk_amount / (sl_distance * contract_size)
 
     # Clamp to sane range
     lot_size = max(0.01, min(lot_size, 1.0))
