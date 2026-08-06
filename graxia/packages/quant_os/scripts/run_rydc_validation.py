@@ -40,6 +40,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from paper_engine.campaign import get_round_trip_cost_bps  # noqa: E402
 from provenance import require_cost_calibrated  # noqa: E402
+from validation.n_trials import get_reconciled_n_trials  # noqa: E402
 
 # 2026-07-30: this backtest previously computed pnl_pct as raw
 # (exit-entry)/entry with NO cost term anywhere in the file -- worse
@@ -824,10 +825,10 @@ def main():
     # Deflated Sharpe Ratio
     print("\n" + "=" * 60)
     print("Computing Deflated Sharpe Ratio...")
-    print(f"  Input: sharpe={oos_result.sharpe_ratio:.4f}, n_trials=1001, n_obs={len(oos_result.trade_returns)}")
+    print(f"  Input: sharpe={oos_result.sharpe_ratio:.4f}, n_trials={get_reconciled_n_trials()}, n_obs={len(oos_result.trade_returns)}")
     dsr = compute_deflated_sharpe(
         sharpe=oos_result.sharpe_ratio,
-        n_trials=1001,  # Cumulative trial count
+        n_trials=get_reconciled_n_trials(),  # authoritative cumulative N (validation/n_trials.py, =1050)
         n_observations=len(oos_result.trade_returns),
     )
     # BUG FIX (2026-07-12): DSR is a CDF value (0-1 probability), not a

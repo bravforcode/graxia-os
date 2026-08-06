@@ -407,7 +407,11 @@ class MT5Adapter(BrokerAdapter):
                 error = mt5.last_error()  # type: ignore[union-attr]
                 logger.error("MT5 cancel_order returned None (attempt %d): %s", attempt, error)
                 self._connected = False
-                self._ensure_connected()
+                try:
+                    self._ensure_connected()
+                except ConnectionError as exc:
+                    logger.error("MT5 cancel_order: reconnect failed mid-retry: %s", exc)
+                    return OrderResult(status=OrderStatus.TIMEOUT, error=f"MT5 connection unavailable: {exc}")
                 time.sleep(_RETRY_DELAY)
                 continue
             if result.retcode == 10009:
@@ -578,7 +582,11 @@ class MT5Adapter(BrokerAdapter):
                 error = mt5.last_error()  # type: ignore[union-attr]
                 logger.error("MT5 close_position returned None (attempt %d): %s", attempt, error)
                 self._connected = False
-                self._ensure_connected()
+                try:
+                    self._ensure_connected()
+                except ConnectionError as exc:
+                    logger.error("MT5 close_position: reconnect failed mid-retry: %s", exc)
+                    return OrderResult(status=OrderStatus.TIMEOUT, error=f"MT5 connection unavailable: {exc}")
                 time.sleep(_RETRY_DELAY)
                 continue
             if result.retcode == 10009:
@@ -627,7 +635,11 @@ class MT5Adapter(BrokerAdapter):
         """
         if mt5 is None:
             raise RuntimeError("MetaTrader5 package is not installed")
-        self._ensure_connected()
+        try:
+            self._ensure_connected()
+        except ConnectionError as exc:
+            logger.error("MT5 get_price: connection unavailable — %s", exc)
+            return None
         tick = mt5.symbol_info_tick(symbol)  # type: ignore[union-attr]
         if tick is None:
             raise ValueError(f"No tick data for {symbol}")
@@ -676,7 +688,11 @@ class MT5Adapter(BrokerAdapter):
                 error = mt5.last_error()  # type: ignore[union-attr]
                 logger.error("MT5 set_stop_loss returned None (attempt %d): %s", attempt, error)
                 self._connected = False
-                self._ensure_connected()
+                try:
+                    self._ensure_connected()
+                except ConnectionError as exc:
+                    logger.error("MT5 set_stop_loss: reconnect failed mid-retry: %s", exc)
+                    return False
                 time.sleep(_RETRY_DELAY)
                 continue
 
@@ -720,7 +736,11 @@ class MT5Adapter(BrokerAdapter):
         if side_upper not in ("BUY", "SELL"):
             return False
 
-        self._ensure_connected()
+        try:
+            self._ensure_connected()
+        except ConnectionError as exc:
+            logger.error("MT5 update_trailing_stop: connection unavailable — %s", exc)
+            return False
 
         # Look up the current position
         positions = mt5.positions_get(ticket=position_ticket)  # type: ignore[union-attr]
