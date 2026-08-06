@@ -44,6 +44,21 @@ RESEARCH_DIR = Path(__file__).resolve().parent.parent / "research"
 # check_bypass_loaders.py's BASELINE.
 BASELINE: dict[int, str] = {}
 
+# Per-direction trial-number ownership (source of truth: TRIAL_ID_RANGES.md).
+# family key (from trial_family(), which returns '_b'/'_c'/'_d'/... for
+# suffixed files and '' for main) -> (low, high) inclusive owned range.
+FAMILY_RANGES: dict[str, tuple[int, int]] = {
+    "": (1000, 1999),  # main
+    "_b": (3001, 3008),  # Direction B actual (documented 2000-2999, actual 3001-3008)
+    "_c": (7000, 7999),
+    "_d": (4000, 4999),
+    "_e": (5000, 5999),
+    "_f": (6000, 6999),
+    "_g": (8000, 8999),
+    "_h": (9000, 9999),
+    "_i": (10000, 10999),
+}
+
 
 def load_ledger(path: Path) -> list[dict]:
     """Extract trial entries from a trial_ledger*.json file."""
@@ -163,6 +178,33 @@ def check_trial_number_namespace(ledgers: list[tuple[str, list[dict]]]) -> list[
                     errors.append((num, seen_name, name))
                 continue
             seen[num] = (family, name)
+    return errors
+
+
+def check_family_range_ownership(ledger_pairs: list[tuple[str, list[dict]]]) -> list[str]:
+    """Flag trial numbers that fall OUTSIDE their file family's owned range.
+
+    Source of truth: TRIAL_ID_RANGES.md. This is the per-direction hardener for
+    the #4002-collision bug class: a session writing trial 4002 into the MAIN
+    ledger (family '') instead of Direction D's registry_d (family 'd').
+    Returns human-readable errors; [] = pass.
+    """
+    errors = []
+    for name, entries in ledger_pairs:
+        family = trial_family(name)
+        rng = FAMILY_RANGES.get(family)
+        if rng is None:
+            continue  # unrecognized family — namespace check still applies
+        low, high = rng
+        for entry in entries:
+            num = entry.get("trial_number")
+            if num is None:
+                continue
+            if not (low <= num <= high):
+                errors.append(
+                    f"RANGE VIOLATION: trial #{num} in '{name}' (family '{family}') "
+                    f"is outside owned range {low}-{high} (TRIAL_ID_RANGES.md)"
+                )
     return errors
 
 
@@ -351,6 +393,8 @@ def main():
         if num in collided_numbers:
             continue
         errors.append(f"TRIAL NUMBER REUSE: {num} appears in '{a}' and '{b}'")
+
+    errors.extend(check_family_range_ownership(ledger_pairs))
 
     doc_entries = scan_pre_registration_docs(RESEARCH_DIR)
     errors.extend(check_doc_numbers_exist(doc_entries, ledger_pairs))

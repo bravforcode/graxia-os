@@ -48,7 +48,7 @@ def _run_main(monkeypatch: pytest.MonkeyPatch, argv: list[str]) -> int:
 def test_no_collisions_exits_zero(tmp_path, monkeypatch):
     _write_ledger(
         tmp_path / "trial_ledger.json",
-        [{"trial_number": 1, "id": "ONLY-ONE", "result": "PASS", "date": "2026-01-01"}],
+        [{"trial_number": 1001, "id": "ONLY-ONE", "result": "PASS", "date": "2026-01-01"}],
     )
     monkeypatch.setattr(ctu, "RESEARCH_DIR", tmp_path)
     monkeypatch.setattr(ctu, "BASELINE", {})
@@ -58,11 +58,11 @@ def test_no_collisions_exits_zero(tmp_path, monkeypatch):
 def test_new_collision_outside_baseline_exits_one(tmp_path, monkeypatch):
     _write_ledger(
         tmp_path / "trial_ledger.json",
-        [{"trial_number": 42, "id": "ALPHA", "result": "PASS", "date": "2026-01-01"}],
+        [{"trial_number": 1042, "id": "ALPHA", "result": "PASS", "date": "2026-01-01"}],
     )
     _write_registry(
         tmp_path / "hypothesis_registry.json",
-        [{"trial_number": 42, "id": "BETA", "status": "REJECTED"}],
+        [{"trial_number": 1042, "id": "BETA", "status": "REJECTED"}],
     )
     monkeypatch.setattr(ctu, "RESEARCH_DIR", tmp_path)
     monkeypatch.setattr(ctu, "BASELINE", {})
@@ -72,14 +72,14 @@ def test_new_collision_outside_baseline_exits_one(tmp_path, monkeypatch):
 def test_collision_inside_baseline_exits_zero(tmp_path, monkeypatch):
     _write_ledger(
         tmp_path / "trial_ledger.json",
-        [{"trial_number": 42, "id": "ALPHA", "result": "PASS", "date": "2026-01-01"}],
+        [{"trial_number": 1042, "id": "ALPHA", "result": "PASS", "date": "2026-01-01"}],
     )
     _write_registry(
         tmp_path / "hypothesis_registry.json",
-        [{"trial_number": 42, "id": "BETA", "status": "REJECTED"}],
+        [{"trial_number": 1042, "id": "BETA", "status": "REJECTED"}],
     )
     monkeypatch.setattr(ctu, "RESEARCH_DIR", tmp_path)
-    monkeypatch.setattr(ctu, "BASELINE", {42: "synthetic known collision for test"})
+    monkeypatch.setattr(ctu, "BASELINE", {1042: "synthetic known collision for test"})
     assert _run_main(monkeypatch, []) == 0
 
 
@@ -220,3 +220,18 @@ def test_mechanism_check_passes_for_entries_that_have_real_data():
     entries = ctu.load_ledger(ctu.RESEARCH_DIR / "trial_ledger_c.json")
     errors = ctu.check_mechanism(entries)
     assert errors == []
+
+
+def test_range_ownership_flag_outside_range(tmp_path, monkeypatch):
+    """B2: a trial_number outside its family's owned range must be flagged."""
+    from quant_os.scripts.check_trial_uniqueness import (
+        FAMILY_RANGES,
+        check_family_range_ownership,
+    )
+
+    # Direction D owns 4000-4999; a 3001 in registry_d is out of range.
+    # Keys follow trial_family()'s output: suffixed files use '_d' (not 'd').
+    assert FAMILY_RANGES["_d"] == (4000, 4999)
+    entries = [{"trial_number": 3001, "id": "SOMETHING", "source": "hypothesis_registry_d.json", "result": "REJECT"}]
+    errors = check_family_range_ownership([("hypothesis_registry_d.json", entries)])
+    assert any("3001" in e and "range" in e for e in errors)
