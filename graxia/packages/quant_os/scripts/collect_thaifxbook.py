@@ -46,9 +46,7 @@ def _uuids_from_file(path: str) -> list[str]:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Collect Thaifxbook public data")
     parser.add_argument("--dry-run", action="store_true", help="fetch + parse but do not write DB")
-    parser.add_argument(
-        "--limit", type=int, default=config.DEFAULT_LIMIT, help="only first N pilot accounts (default: %(default)s)"
-    )
+    parser.add_argument("--limit", type=int, default=None, help="cap on accounts; pilot list only unless --uuids-file")
     parser.add_argument("--db", default=str(config.DB_PATH), help="duckdb path (default: %(default)s)")
     parser.add_argument("--uuids", nargs="*", default=None, help="explicit account UUIDs (overrides pilot list)")
     parser.add_argument("--uuids-file", default=None, help="newline-separated UUID list (sitemap backfill)")
@@ -60,11 +58,13 @@ def main() -> int:
         uuids = []
         args.no_outlook = False
     elif args.uuids:
-        uuids = args.uuids
+        uuids = args.uuids[: args.limit] if args.limit else args.uuids
     elif args.uuids_file:
-        uuids = _uuids_from_file(args.uuids_file)[: args.limit]
+        uuids = _uuids_from_file(args.uuids_file)
+        if args.limit:
+            uuids = uuids[: args.limit]
     else:
-        uuids = _known_uuids()[: args.limit]
+        uuids = _known_uuids()[: args.limit] if args.limit else _known_uuids()[: config.DEFAULT_LIMIT]
     result = runner_impl.run(
         db_path=args.db,
         account_uuids=uuids,
