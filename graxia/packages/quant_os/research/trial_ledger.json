@@ -1,12 +1,12 @@
 {
   "schema_version": "1.0",
-  "lock_date": "2026-07-12",
-  "lock_doc_path": "reports/stopping_rule_2026_07_12.md",
+  "lock_date": "2026-07-30",
+  "lock_doc_path": "reports/stopping_rule_2026_07_30.md",
   "lock_doc_sha256": "e2ba283ac8fdefef026eb17e99e2ecaf4b415d71e3ba43bec7f4bb8682baf39a",
   "cumulative_trial_count": 1022,
-  "cumulative_trial_cap": 1022,
+  "cumulative_trial_cap": 1042,
   "max_new_hypotheses": 20,
-  "next_available_trial_number": 3009,
+  "next_available_trial_number": 1034,
   "new_hypotheses_used": 18,
   "new_hypotheses_remaining": 2,
   "sacred_holdout": {
