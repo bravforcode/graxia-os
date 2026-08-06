@@ -13,8 +13,11 @@
 
 ## 2. check_data_access decision (2026-08-06)
 
-- Decision: PENDING (Task C0.2 — flaky-safe rule per spec §8.1)
-- Tests: test_lookahead_detection_wired.py (2 tests) added in C0.2
+- Decision: **FORMAL-ACCEPT (not wired)** — evidence-based, no ambiguity
+- Timing proof: engine run loop `for i in range(1, total_bars)` (engine.py L549) calls `guard.advance()` (L551) BEFORE the wire point; a `check_data_access(i)` call at the proposed L597 position would always evaluate `i > i` = False → tautology, adds zero protection.
+- Leak vectors covered elsewhere: class-state vector closed by `_reset_strategy_class_state()` (L514); external-state vector handled by C0.3 AST scan (not runtime-checkable in-process — audit §4 L778-781).
+- Consequence: engine.py NOT modified in C0.2. Tests `test_lookahead_detection_wired.py` (2) prove guard API works standalone (strict raise + non-strict allow) — retained as unit tests, not wired into production.
+- No flaky-safe run needed: no production code change.
 
 ## 3. External-state scan verdicts (2026-08-06)
 
