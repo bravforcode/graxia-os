@@ -200,6 +200,8 @@ def check_family_range_ownership(ledger_pairs: list[tuple[str, list[dict]]]) -> 
             num = entry.get("trial_number")
             if num is None:
                 continue
+            if entry.get("is_range"):
+                continue  # batch range marker, not a real trial (e.g. legacy 1-1000)
             if not (low <= num <= high):
                 errors.append(
                     f"RANGE VIOLATION: trial #{num} in '{name}' (family '{family}') "

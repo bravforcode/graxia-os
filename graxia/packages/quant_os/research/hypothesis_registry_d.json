@@ -123,6 +123,17 @@
       },
       "stopping_rule_this_trial": "If net-of-cost annualized yield does not exceed the assumed T-bill yield, OR the Newey-West test is not significant at p<0.05, the mechanism does NOT constitute a deployable edge over simply holding T-bills, regardless of the raw sign of the mean funding rate. This is a valid, informative result if it happens -- not a reason to lower the bar.",
       "validation_plan": "scripts/funding_rate_arb_rigor.py -- fetch real funding history from 2 exchanges, run HAC significance + cost stress + crash-window + T-bill comparison -> update this entry with result_summary and final status (PASS_RIGOR / FAIL_RIGOR) once run."
+    },
+    {
+      "trial_number": 4004,
+      "id": "FUND-CARRY-4004",
+      "name": "Perpetual Funding Carry (BTCUSDT/ETHUSDT) — follow-up to exploratory 4002",
+      "status": "PRE_REGISTERED",
+      "registered_at": "2026-08-05",
+      "instrument": "BTCUSDT, ETHUSDT",
+      "pre_registration_doc": "research/pre_registration_d/trial_4004_funding_carry.md",
+      "validation_runner": "scripts/run_funding_arb_4002.py",
+      "notes": "Filed per trial 4002 pre-reg section 5: exploratory signal (666 bps annualized, 98.92% positive) exceeds the cost floor. FROZEN criteria in pre-reg: annualized yield > 2x(round-trip spread+slippage), positive_share > 0.95, sign consistency across symbols. | RENUMBERED 4003->4004 2026-08-05: #4003 collided with Direction D FUNDING-ARB-RIGOR-PASS (hypothesis_registry_d.json). See reports/incident_20260805_trial_4002_collision.md."
     }
   ]
 }

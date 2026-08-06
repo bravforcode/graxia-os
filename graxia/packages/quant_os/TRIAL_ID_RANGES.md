@@ -73,6 +73,8 @@ pre-registration) sitting inside Main's 1000–1999 block. **FIXED (2026-07-31):
 renumbered to #1031 (next available in Main's range, after discovering #1030
 was already occupied by DTSMOM `trial_1030_diversified_tsmom.md`).
 
+**4. Legacy batch `1-1000` in trial_ledger.json — KNOWN EXCEPTION (2026-08-06).** The entry `{"trial_range": "1-1000", "id": "search_1_indicator_scan", "date": "pre-2026-07-12"}` is a pre-range bulk indicator-scan batch (Search #1, REJECTED pre-2026, see research/meta_learning.md) — NOT a Main trial. Its range start (1) falls outside Main's 1000-1999. Documented as known exception; the range-ownership check is configured to skip batch entries (`is_range=True`) or treat this as BASELINE.
+
 **Superseded (2026-07-31): the note this replaced described Direction C
 reusing 2002/2003/2004 against Main, described as already addressed by a
 2001→2004 renumber. That specific issue is not reproducible against the
