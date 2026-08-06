@@ -52,6 +52,12 @@ def main() -> int:
         return 1
     owner = data.get("owner", "unknown")
     pid = data.get("pid", -1)
+    if not isinstance(pid, int) or isinstance(pid, bool) or pid <= 0:
+        print(
+            f"writer-lock: structurally invalid lock (owner={owner}, pid={pid!r}) — "
+            f"refusing commit; fix or remove {lock_path}"
+        )
+        return 1
     if not pid_alive(pid):
         print(
             f"writer-lock: stale (owner={owner}, pid={pid} dead) — commit allowed; "

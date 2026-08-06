@@ -39,9 +39,10 @@ def main() -> int:
 
     base_ret, _, _ = portfolio_backtest(full_close, LOOKBACKS, TARGET_VOL, COST_BPS)
     base_m = compute_metrics(base_ret, "baseline_all")
+    base_sharpe = base_m.get("sharpe", 0.0)  # short series may lack 'sharpe' (review #7)
     print(
         f"\nBASELINE (all {len(full_close.columns)} assets): "
-        f"Sharpe={base_m['sharpe']:.4f}  AnnRet={base_m['ann_ret']:.2%}  MaxDD={base_m['max_dd']:.2%}"
+        f"Sharpe={base_sharpe:.4f}  AnnRet={base_m.get('ann_ret', 0.0):.2%}  MaxDD={base_m.get('max_dd', 0.0):.2%}"
     )
 
     results: dict = {"baseline": base_m, "jackknife": {}}
@@ -50,18 +51,19 @@ def main() -> int:
         subset = full_close.drop(columns=[asset])
         ret, _, _ = portfolio_backtest(subset, LOOKBACKS, TARGET_VOL, COST_BPS)
         m = compute_metrics(ret, f"excl_{asset}")
-        delta = m["sharpe"] - base_m["sharpe"]
-        print(f"  Exclude {asset:<12} Sharpe={m['sharpe']:.4f}  (delta={delta:+.4f})")
+        m_sharpe = m.get("sharpe", 0.0)
+        delta = m_sharpe - base_sharpe
+        print(f"  Exclude {asset:<12} Sharpe={m_sharpe:.4f}  (delta={delta:+.4f})")
         results["jackknife"][asset] = {**m, "sharpe_delta_from_baseline": round(delta, 4)}
 
     concerning = [
         a
         for a, r in results["jackknife"].items()
-        if (base_m["sharpe"] > 0 and r["sharpe"] < base_m["sharpe"] * 0.5) or (r["sharpe"] <= 0 < base_m["sharpe"])
+        if (base_sharpe > 0 and r.get("sharpe", 0.0) < base_sharpe * 0.5) or (r.get("sharpe", 0.0) <= 0 < base_sharpe)
     ]
     results["concerning_single_asset_dependence"] = concerning
 
-    if base_m["sharpe"] <= 0 or concerning:
+    if base_sharpe <= 0 or concerning:
         verdict = "REJECT_CONFIRMED"
     else:
         verdict = "INCONCLUSIVE"

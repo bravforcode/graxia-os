@@ -58,3 +58,23 @@ def test_main_returns_0_when_own_owner_env_matches(tmp_path, monkeypatch):
         encoding="utf-8",
     )
     assert cwl.main() == 0
+
+
+def test_main_returns_1_for_structurally_incomplete_lock(tmp_path, monkeypatch):
+    # review finding #5: owner without pid (or invalid pid) must refuse, not fail-open
+    monkeypatch.setenv("WRITER_LOCK_ROOT", str(tmp_path))
+    (tmp_path / ".writer.lock").write_text(
+        json.dumps({"owner": "other", "timestamp": 0.0}),
+        encoding="utf-8",
+    )
+    assert cwl.main() == 1
+
+
+def test_main_returns_1_for_invalid_pid_type(tmp_path, monkeypatch):
+    # review finding #5: pid as string must refuse (structural check before liveness)
+    monkeypatch.setenv("WRITER_LOCK_ROOT", str(tmp_path))
+    (tmp_path / ".writer.lock").write_text(
+        json.dumps({"owner": "other", "pid": "not-a-pid", "timestamp": 0.0}),
+        encoding="utf-8",
+    )
+    assert cwl.main() == 1
