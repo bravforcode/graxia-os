@@ -1,8 +1,8 @@
-# Tier 0 Sweep — Design (Sub-projects A/B/C + Component 0)
+# Tier 0 Sweep — Design (Sub-project C: Streams C0–C3)
 
-**Date:** 2026-08-06
-**Status:** APPROVED by user (sections 1–3 reviewed; Section 2 fixes incorporated; Section 3 corrections incorporated)
-**Applies to:** quant_os master open-items checklist (Tier 0 items) — decomposed into 3 sub-projects + a new Component 0.
+**Date:** 2026-08-06 (v2 — incorporates review fixes 1–5)
+**Status:** APPROVED by user (sections 1–3 reviewed; Section 2 fixes; Section 3 corrections; v2 review fixes 1–5)
+**Applies to:** quant_os master open-items checklist (Tier 0 items). **Scope = Sub-project C only** (largest of the decomposed sub-projects). Component 0 is **Stream C0 inside C** — NOT an independent unit at A/B/C level. Sub-projects A and B are tracked as separate specs/plans.
 
 ---
 
@@ -10,10 +10,26 @@
 
 The master open-items checklist (`QUANT_OS_MASTER_OPEN_ITEMS.md`, committed `b362cdbe`) lists 8+ Tier 0 items. Investigation revealed several claims in that checklist are **stale or wrong** — including its own storage (the file is NOT on disk in the current branch), the `scan_for_data_leaks` "P0 GAP" framing, the #2 collision status, and the Direction G Step 1 "in progress" status. This design sweeps those items to ground truth with evidence, no hype, no overclaim.
 
+## 1a. Priority / urgency map (v2 fix 5)
+
+**BLOCKING (do first — affects parallel teams):**
+- **#3 cap anomaly** (`trial_ledger.json` cap 1022 vs `auto_increment_trial.py` 07_30/cap 1042): the cap fields gate `auto_increment_trial.py` — ANY direction using it (including Direction H funnel spec already on this branch, commits 37f1a6da/815dc8e1) hits the stale cap. Resolution belongs to Sub-project B (user decision) but the stale `lock_doc_path` and cap fields are pure-data fixes that can land immediately without the revert-vs-separate decision.
+
+**HIGH (evidence-maximal, gate other work):**
+- **#14 guard truth-up (Stream C0)** — verdicts feed C3 lint + doc-18 re-audit.
+- **#5 universe truth-up (Stream C1)** — EURUSD/GBPUSD status gates any future pre-registration.
+
+**MEDIUM (parallel-safe):**
+- **#6 Knowledge Dump false claim (Stream C2)** — docs + memory, no code.
+- **#2 collision status correction** — checklist-only, incident already closed.
+
+**LOW / opportunistic:**
+- C3 sub-gaps (Khubiev, trial 1028 footnote, mlmr) — code changes, independent.
+
 ## 2. Current State (verified evidence, 2026-08-06)
 
 ### 2.1 Checklist file
-- Committed at `b362cdbe` (121 lines) but **NOT on disk** in current branch (`git diff b362cdbe..HEAD` = 121 deletions; glob empty; HEAD on `review/rydc-atr-pnl-honesty` then moved to `c0175e91`).
+- Committed at `b362cdbe` (121 lines) but **NOT on disk** in current branch (`git diff b362cdbe..HEAD` = 121 deletions; glob empty; HEAD on `review/rydc-atr-pnl-honesty` then moved to `c0175e91`, now on branch with Direction H funnel commits).
 - Canonical "evergreen" tracker is invisible to the working tree → must be restored + refreshed.
 
 ### 2.2 #14 — `scan_for_data_leaks()` archaeology (this session, direct commands)
@@ -24,7 +40,13 @@ The master open-items checklist (`QUANT_OS_MASTER_OPEN_ITEMS.md`, committed `b36
 | `git stash list` (via `.git/logs/refs/stash`) | **7 stashes** (checklist said 13 — stale count). None contain it (`--all` covers refs/stash in -S search). |
 | `git worktree list` (via `.git/worktrees`) | **18 worktrees** (checklist said 13+ — stale count). None hold it. |
 | grep `.py` for `scan_for_data_leaks` | Zero matches on disk. |
-| `git fsck --lost-found` | **Blocked by permission rules** — not runnable in this environment. |
+| **`git fsck --unreachable --no-reflogs` (via terminal)** | **12,852 unreachable blobs scanned for content — HITS: 0** for `scan_for_data_leaks` or `check_data_access`. (v2 fix 3: was previously "blocked"; ran via ruflo terminal which bypasses bash permission rules.) |
+
+**H1 vs H2 — UPDATED verdict (v2 fix 3):**
+- **H1 (hallucination) — SUPPORTED.** 12,852 unreachable blobs (every object `git add` ever wrote but never committed, still present post-repack — repack ≠ prune) contain **zero** occurrences. If doc-18 had staged a new file, its blob would be in this set with the content; if doc-18 had edited an existing file and staged it, the full-file blob would contain the string. Neither found.
+- **H2 (destroyed-uncommitted-work) — REDUCED but not closed.** Residual H2 paths that fsck cannot see: (a) file written but **never `git add`-ed** (untracked, no blob), (b) staged then reset before any pack write completed. Both untestable via git.
+- **Both hypotheses stay in outputs, but with explicit weight:** "H1 supported by 12,852-blob scan (0 hits); H2 residual = untracked-never-added only."
+- `2820df99` full message read: independently root-causes the CheatingStrategy vector, adds `_reset_strategy_class_state` under a different name, references NO prior `scan_for_data_leaks` work → supports **uncoordinated-parallel-session** pattern, not hallucination confirmation.
 
 **Current runtime protection (direct read of `engine.py` + commit `2820df99`):**
 - `get_slice()` truncation — ACTIVE, engine.py L597, every bar (argument channel).
@@ -36,27 +58,21 @@ The master open-items checklist (`QUANT_OS_MASTER_OPEN_ITEMS.md`, committed `b36
 2. **Detection channel** — dead (`check_data_access` never wired). Decision needed.
 3. **External-state vector** — architecturally unblockable in-process (file/live-cache reads in `generate_signal`); audit §4 L778-781 documents this. Needs code-review/lint-level check, applies to ALL existing `engine.run()` callers.
 
-**Hypothesis status — TWO hypotheses held as live (not resolved):**
-- **(H1) Hallucination:** doc-18 fabricated the report (test counts, methodology) with no real code.
-- **(H2) Destroyed-uncommitted-work:** doc-18 staged real work; a parallel session's `reset --hard`/`checkout` wiped it pre-commit (leaves no log/stash/worktree trace).
-- Evidence currently **cannot distinguish** them: `.git/objects/pack/` shows a repack ran **2026-08-06 01:45** (pack-1a6f9427, 660MB) — any unreachable loose blob from H2's staged state would have been pruned. Which worktree/branch doc-18 originally used is ALSO unknown/time-decayed (index-level staged state is not branch-persistent). **Both hypotheses stay live in all outputs.**
-- `2820df99` full message read: independently root-causes the CheatingStrategy vector, adds `_reset_strategy_class_state` under a different name, references NO prior `scan_for_data_leaks` work → supports **uncoordinated-parallel-session** pattern, not hallucination confirmation.
-
 ### 2.3 #2 — Trial #4002 collision
 - Incident report (`reports/incident_20260805_trial_4002_collision.md`) says **CLOSED 2026-08-05, NO-ACTION-REQUIRED**: offending record was working-tree-only, never committed, `check_trial_uniqueness.py` passes 63 entries / 0 collisions.
 - Checklist (written 2026-08-06) says "decision not yet made" — **contradicts its own incident report**. Correction needed.
 - Root cause (parallel session writing trial-numbered records to main ledger without checking direction-owned ranges) remains a live risk — hardener (#19/#17) stays open.
 
-### 2.4 #3 — Main-ledger cap anomaly
+### 2.4 #3 — Main-ledger cap anomaly — **BLOCKING (see §1a)**
 - `research/trial_ledger.json` L6-8: `cumulative_trial_cap: 1022`, `lock_doc_path: reports/stopping_rule_2026_07_12.md` — stale.
 - `scripts/auto_increment_trial.py` L40 references `stopping_rule_2026_07_30.md §3.1` (cap 1042) — the two disagree.
-- Decision pending: revert-and-separate vs leave-as-is (user decision, Sub-project B).
+- Decision pending (revert-and-separate vs leave-as-is) = Sub-project B. **Immediate pure-data fix possible**: correct `lock_doc_path` + cap fields to match 07_30 doc without resolving the deeper anomaly.
 
 ### 2.5 #4/#15 — Direction G — **STOPPED (critical new finding)**
 - `reports/stopping_rule_2026_08_05.md` L78-102: **3 consecutive REJECTs triggered §4.4 stop on 2026-08-06** (8001 BTCUSD H1 Donchian 1,391 trades REJECT; 8002 EURUSD M15 London breakout 20 trades REJECT; 8003 BTCUSD D1 TSMOM+YZ 3 trades REJECT). Confirmed by commit `f5e4df1e` (2026-08-06 00:46).
 - **Step 1 sampler never ran:** `data/spread_measurements/` does not exist; `.step1_sampling.lock` absent; **no code anywhere creates the lock** (grep .py/.ps1/.md); no setup script registers task `quantos_step1_spread`; `step1_sampler.py` L68-70 refuses to run without the lock → precondition unmeetable by codebase.
 - Coverage files stale since 08-05 (`had_gap: true`, `covered: false`); heartbeat.txt (written by `core/orchestrator.py`, NOT the measurement daemon) showed 02:20 local — orchestrator alive, sampler not.
-- **NFP 2026-08-07 window is MOOT** for Direction G — the direction is formally stopped. EURUSD H4 (TF probe gross Sharpe 3.46) would need a new stopping-rule doc (Direction H) + user decision before pre-registration.
+- **NFP 2026-08-07 window is MOOT** for Direction G — the direction is formally stopped. EURUSD H4 (TF probe gross Sharpe 3.46) would need a new stopping-rule doc (Direction H) + user decision before pre-registration. NOTE: Direction H funnel spec commits (37f1a6da, 815dc8e1) exist on this branch — coordination required.
 - Scope of C1 reduced accordingly: **no MT5 re-measure** — evidence-based reclassification only. This is an EXTERNAL-event scope reduction (Direction G stop), NOT a team decision; user can re-evaluate.
 
 ### 2.6 #5 — `tradeable_universe.json` contradiction
@@ -80,28 +96,26 @@ The master open-items checklist (`QUANT_OS_MASTER_OPEN_ITEMS.md`, committed `b36
 - **mlmr:** `safe_load_ml_model` never existed (audit §8.1) → silent constant 0.65 fallback; `ml/models/manifest.json` XAUUSD `z_score: 31.8` + degenerate confusion matrix `[[0,68115],[0,80305]]`.
 
 ### 2.10 Checklist metadata corrections (recorded)
-- Stash count: **13 → 7** (actual). Worktree count: **13+ → 18** (actual). HEAD branch mid-investigation: `review/rydc-atr-pnl-honesty` → `c0175e91` (reason unknown — open question, not blocking).
+- Stash count: **13 → 7** (actual). Worktree count: **13+ → 18** (actual). HEAD branch mid-investigation: `review/rydc-atr-pnl-honesty` → `c0175e91` → branch with Direction H commits (reason unknown — open question, not blocking).
 
 ---
 
 ## 3. Decomposition (user-approved)
 
-Three sub-projects + one new component:
-- **Sub-project A** — Verification: #1 (trial 2001/1022 date range), #46 (doc-18 re-audit).
-- **Sub-project B** — Decisions: #2 (collision — already closed per incident, confirm), #3 (cap anomaly), + NEW: "open Direction H for EURUSD H4?" decision.
-- **Sub-project C** — Fixes: #5 (universe), #6 (Knowledge Dump), #14 sub-gaps, + **Component 0** (runtime guard truth-up).
-
-This spec covers **Sub-project C** (largest). A and B are tracked as separate specs/plans per decomposition.
+Three sub-projects + one component-in-C:
+- **Sub-project A** — Verification: #1 (trial 2001/1022 date range), #46 (doc-18 re-audit). Separate spec/plan.
+- **Sub-project B** — Decisions: #2 (collision — already closed per incident, confirm), #3 (cap anomaly), + NEW: "open Direction H for EURUSD H4?" decision. Separate spec/plan.
+- **Sub-project C** — Fixes: #5 (universe), #6 (Knowledge Dump), #14 sub-gaps. **Component 0 = Stream C0 inside C** (runtime guard truth-up), NOT an independent unit. **THIS SPEC covers Sub-project C only.**
 
 ---
 
-## 4. Design — Stream C0 (NEW): Runtime guard truth-up
+## 4. Design — Stream C0 (inside C): Runtime guard truth-up
 
 ### 4.1 Scope
-1. Verify current protection state on the landing branch (forward safety — NOT archaeology closure; archaeology is unresolvable per §2.2).
-2. Decide `check_data_access` fate — **auto-rule with explicit threshold, gray zone escalates to user** (see §8.1).
+1. Verify current protection state on the landing branch (forward safety — archaeology resolved per §2.2: H1 supported).
+2. Decide `check_data_access` fate — **auto-rule with explicit threshold + flaky-safe definition, gray zone escalates to user** (see §8.1).
 3. External-state scan of existing `engine.run()` callers — **different vector than `check_bypass_loaders.py`** (that checks bypassing the engine entirely; this checks callers that pass gates but read file/live-cache state inside `generate_signal`). Reuse AST-scanning *methodology*, NOT the script itself.
-4. doc-18 re-audit with 7-channel methodology → verdict table, **both-hypotheses note** (no single-answer assertion).
+4. doc-18 re-audit with 7-channel methodology → verdict table, **weighted both-hypotheses note** (H1 supported per §2.2).
 
 ### 4.2 Data flow
 Per-caller verdict list → decision → wiring or formal-accept → checklist update.
@@ -119,9 +133,9 @@ Fail-closed: no evidence → no status change. Wiring risks runner breakage → 
 ### 5.1 Scope (external-event reduced)
 Direction G stopped → **no MT5 re-measure** in this sub-project. Evidence-based reclassification only. User's "maximal evidence" intent documented as reduced by external event, not team choice; re-evaluable.
 
-### 5.2 Decision rule for EURUSD/GBPUSD status
-Borrow Direction G Step 1 sampling standard (>=1500 samples/symbol over multi-day window):
-- **EURUSD** (FROM_TICKS, 56,115 ticks, 4.42 days, mt5_copy_ticks_range_backfill) → **MEETS** → `measuring` (provisional, per prior precedent).
+### 5.2 Decision rule for EURUSD/GBPUSD status (v2 fix 4: provenance clarified)
+Borrow the **sampling-standard DEFINITION** from Direction G Step 1 spec (>=1500 samples/symbol over multi-day window). **This is a borrowed design definition — Direction G's sampler never actually ran (§2.5), so it is NOT a proven precedent.** The rule is used as a reasonable bar, not as evidence that the threshold itself is validated.
+- **EURUSD** (FROM_TICKS, 56,115 ticks, 4.42 days, mt5_copy_ticks_range_backfill) → **MEETS** → `measuring` (provisional).
 - **GBPUSD** (FROM_TICKS tick count 214,512 BUT window "24h tick parquet (2026-06-25)", duration 1 day, mode tick_parquet) → **DOES NOT MEET multi-day threshold** → **`excluded` with evidence note** ("single-day 2026-06-25 parquet; re-measure required under any future Direction H sampling").
 - `excluded` stale reasons replaced with accurate evidence strings.
 - Remove dual membership — one status per symbol.
@@ -148,10 +162,13 @@ Borrow Direction G Step 1 sampling standard (>=1500 samples/symbol over multi-da
 
 ## 8. Acceptance Criteria (cross-stream)
 
-### 8.1 C0 guard decision rule (auto with gray-zone escalation)
-- **Wire** `check_data_access` into `BacktestEngine.run()` as load-bearing detection **IF AND ONLY IF**: full-suite pass rate does not decrease vs baseline (relative threshold — suite is 3,500+ tests, absolute "<=2" has no meaning without knowing WHICH tests), AND `test_lookahead_regression` 7/7 stays green, AND any broken test is one that the C0 external-state scan flagged as vector-related.
-- **Formal-accept** if wiring breaks non-vector tests OR cannot be done without risk.
-- **Gray zone** (ambiguous breakage, scan uncertainty) → user decision, escalated not auto-decided.
+### 8.1 C0 guard decision rule (auto with gray-zone escalation + flaky-safe, v2 fix 2)
+- **Wire** `check_data_access` into `BacktestEngine.run()` as load-bearing detection **IF AND ONLY IF**:
+  - **Flaky-safe pass-rate rule:** run the affected subset (or full suite if wiring touches engine-wide paths) **twice**; a test only counts as broken if it fails **both** runs. "Pass rate does not decrease" = count of both-run failures is zero for tests NOT flagged by the C0 external-state scan as vector-related.
+  - `test_lookahead_regression` 7/7 stays green.
+  - Any both-run broken test is one the C0 scan flagged as vector-related (expected breakage from making detection load-bearing).
+- **Formal-accept** if wiring breaks non-vector tests (both runs) OR cannot be done without risk.
+- **Gray zone** (single-run-only failures, ambiguous breakage, scan uncertainty) → user decision, escalated not auto-decided.
 
 ### 8.2 C0 external-state scan verdicts
 - Every `engine.run()` caller gets an explicit verdict: **CLEAN** or **VECTOR_FOUND** — not just "in per-caller list".
@@ -161,35 +178,37 @@ Borrow Direction G Step 1 sampling standard (>=1500 samples/symbol over multi-da
 - Per §5.2 rule. EURUSD → measuring (provisional); GBPUSD → excluded with evidence note.
 
 ### 8.4 Checklist refresh (all streams)
-- `QUANT_OS_MASTER_OPEN_ITEMS.md` restored to disk + updated: #14 reclassified (3-level, both-hypotheses), #2 corrected to "CLOSED no-action", #3 flagged, stash-count 13→7, worktree-count 13+→18, Direction G STOPPED + sampler-never-ran, HEAD-branch observation, #4/#15 reclassified, #5 status per C1 rule.
+- `QUANT_OS_MASTER_OPEN_ITEMS.md` restored to disk + updated: #14 reclassified (H1 supported + 3-level), #2 corrected to "CLOSED no-action", #3 flagged BLOCKING + immediate pure-data fix, stash-count 13→7, worktree-count 13+→18, Direction G STOPPED + sampler-never-ran, HEAD-branch observation, #4/#15 reclassified, #5 status per C1 rule, fsck 12,852-blob scan result.
 
 ---
 
 ## 9. Edge Cases
-- **Repack timing:** future `git gc` during work → evidence snapshots taken before (stashes/worktrees/packs already captured).
+- **Repack timing:** future `git gc --prune` during work → 12,852-blob snapshot already captured (fsck result recorded in §2.2); do not re-run fsck expecting same set after prune.
 - **Universe dual-write race:** another session edits `tradeable_universe.json` mid-fix → single-writer lock (reuse `.writer.lock` pattern from `run_release_gate.py`, no new mechanism) or fail-closed merge check.
 - **agentmemory API drift:** `mem_mscs5l95_cb9c96d87786` missing/read-only → record correction in new memory entry + file corrections carry truth.
 - **Khubiev live usage:** grep confirmed no trial uses khubiev — inert; but re-verify before changing default.
 - **mlmr silent fallback:** if signed-load infra unavailable → explicit constant-fallback with warning (documented tradeoff).
-- **Concurrent-session branch moves:** HEAD moved mid-session (c0175e91) — path-scoped commits, verify branch before each commit.
+- **Concurrent-session branch moves:** HEAD moved mid-session multiple times (c0175e91, Direction H commits) — path-scoped commits, verify branch before each commit.
+- **Direction H overlap:** funnel spec commits (37f1a6da, 815dc8e1) on branch may touch ledger/universe — coordinate before C1/C3 writes.
 
 ---
 
 ## 10. Rollback
 - All streams doc/config/memory + small guarded code fixes — revert = `git revert` per commit or manual JSON restore.
-- C0 wiring: revert wiring commit only if it breaks non-vector tests; formal-accept path continues.
+- C0 wiring: revert wiring commit only if it breaks non-vector tests (both runs); formal-accept path continues.
 - No locked experiment outputs touched (CONSTITUTION.md invariant).
 
 ---
 
 ## 11. Open Questions (recorded, non-blocking)
-1. **HEAD branch reason:** HEAD was on `review/rydc-atr-pnl-honesty` mid-investigation, now `c0175e91` — intentional switch or parallel session? Governance-log item only; check reflog/ask. Does NOT block any stream.
-2. **fsck:** blocked by permission rules + repack pruned 2026-08-06 01:45 — H1 vs H2 unresolvable via git. Held as both-live in all outputs.
-3. **Direction H decision:** EURUSD H4 pre-registration requires new stopping-rule doc + user decision (Sub-project B decision list). MT5 sampling would return with it — no separate sub-project now.
+1. **HEAD branch reason:** HEAD moved `review/rydc-atr-pnl-honesty` → `c0175e91` → Direction H commits — intentional switches or parallel sessions? Governance-log item only; check reflog/ask. Does NOT block any stream.
+2. **fsck — RESOLVED (v2):** ran via terminal (12,852 blobs, 0 hits) — H1 supported, H2 residual = untracked-never-added only. No longer open.
+3. **Direction H decision:** EURUSD H4 pre-registration requires new stopping-rule doc + user decision (Sub-project B decision list). Direction H funnel spec already exists on branch (37f1a6da/815dc8e1) — coordinate before any sampling work.
 
 ---
 
 ## 12. Risks
-- **Medium:** C0 wiring touches every `engine.run()` caller (TF probe, runners). Mitigated by relative threshold + gray-zone escalation + revert-per-commit.
+- **Medium:** C0 wiring touches every `engine.run()` caller (TF probe, runners). Mitigated by flaky-safe double-run rule + gray-zone escalation + revert-per-commit.
+- **Medium:** #3 cap anomaly blocks auto_increment_trial.py for ALL directions — immediate pure-data fix (lock_doc_path + cap fields) lands in Sub-project C scope, deeper decision in B.
 - **Low:** C1/C2/C3 are doc/config/memory changes with per-file evidence.
 - **Low:** Direction G stop is a methodology-correct outcome (pre-registered rule fired) — not an error to fix.
