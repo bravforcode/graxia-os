@@ -1,0 +1,138 @@
+{
+  "baseline": {
+    "name": "baseline_all",
+    "ann_ret": 0.1267212129055802,
+    "ann_vol": 0.10785260917533891,
+    "sharpe": 1.174948050626815,
+    "sortino": 1.583885902211209,
+    "max_dd": -0.20299112136041783,
+    "calmar": 0.6242697318794661,
+    "skew": 0.030303795152355845,
+    "kurtosis": 2.5692981231884477,
+    "win_rate": 0.5238970588235294,
+    "n_days": 3808
+  },
+  "jackknife": {
+    "XAUUSD": {
+      "name": "excl_XAUUSD",
+      "ann_ret": 0.1267212129055802,
+      "ann_vol": 0.10785260917533891,
+      "sharpe": 1.174948050626815,
+      "sortino": 1.583885902211209,
+      "max_dd": -0.20299112136041783,
+      "calmar": 0.6242697318794661,
+      "skew": 0.030303795152355845,
+      "kurtosis": 2.5692981231884477,
+      "win_rate": 0.5238970588235294,
+      "n_days": 3808,
+      "sharpe_delta_from_baseline": 0.0
+    },
+    "EURUSD_YF": {
+      "name": "excl_EURUSD_YF",
+      "ann_ret": 0.1267212129055802,
+      "ann_vol": 0.10785260917533891,
+      "sharpe": 1.174948050626815,
+      "sortino": 1.583885902211209,
+      "max_dd": -0.20299112136041783,
+      "calmar": 0.6242697318794661,
+      "skew": 0.030303795152355845,
+      "kurtosis": 2.5692981231884477,
+      "win_rate": 0.5238970588235294,
+      "n_days": 3808,
+      "sharpe_delta_from_baseline": 0.0
+    },
+    "GBPUSD_YF": {
+      "name": "excl_GBPUSD_YF",
+      "ann_ret": 0.1267212129055802,
+      "ann_vol": 0.10785260917533891,
+      "sharpe": 1.174948050626815,
+      "sortino": 1.583885902211209,
+      "max_dd": -0.20299112136041783,
+      "calmar": 0.6242697318794661,
+      "skew": 0.030303795152355845,
+      "kurtosis": 2.5692981231884477,
+      "win_rate": 0.5238970588235294,
+      "n_days": 3808,
+      "sharpe_delta_from_baseline": 0.0
+    },
+    "USDJPY": {
+      "name": "excl_USDJPY",
+      "ann_ret": 0.1267212129055802,
+      "ann_vol": 0.10785260917533891,
+      "sharpe": 1.174948050626815,
+      "sortino": 1.583885902211209,
+      "max_dd": -0.20299112136041783,
+      "calmar": 0.6242697318794661,
+      "skew": 0.030303795152355845,
+      "kurtosis": 2.5692981231884477,
+      "win_rate": 0.5238970588235294,
+      "n_days": 3808,
+      "sharpe_delta_from_baseline": 0.0
+    },
+    "BTC_YF": {
+      "name": "excl_BTC_YF",
+      "ann_ret": 0.057297702119907326,
+      "ann_vol": 0.10803530739701386,
+      "sharpe": 0.5303608931230852,
+      "sortino": 0.6680296518567317,
+      "max_dd": -0.3540940367843368,
+      "calmar": 0.16181493097214977,
+      "skew": -0.026219273575481757,
+      "kurtosis": 3.6560318065249855,
+      "win_rate": 0.4873761585170981,
+      "n_days": 3129,
+      "sharpe_delta_from_baseline": -0.6446
+    },
+    "ETH_YF": {
+      "name": "excl_ETH_YF",
+      "ann_ret": 0.11528446870037422,
+      "ann_vol": 0.10812590033048884,
+      "sharpe": 1.0662058613894088,
+      "sortino": 1.3918282649379041,
+      "max_dd": -0.20652520312742392,
+      "calmar": 0.5582101697740246,
+      "skew": 0.1378309627297005,
+      "kurtosis": 3.6904620734734808,
+      "win_rate": 0.4884453781512605,
+      "n_days": 3808,
+      "sharpe_delta_from_baseline": -0.1087
+    },
+    "SILVER": {
+      "name": "excl_SILVER",
+      "ann_ret": 0.1267212129055802,
+      "ann_vol": 0.10785260917533891,
+      "sharpe": 1.174948050626815,
+      "sortino": 1.583885902211209,
+      "max_dd": -0.20299112136041783,
+      "calmar": 0.6242697318794661,
+      "skew": 0.030303795152355845,
+      "kurtosis": 2.5692981231884477,
+      "win_rate": 0.5238970588235294,
+      "n_days": 3808,
+      "sharpe_delta_from_baseline": 0.0
+    },
+    "OIL": {
+      "name": "excl_OIL",
+      "ann_ret": 0.1267212129055802,
+      "ann_vol": 0.10785260917533891,
+      "sharpe": 1.174948050626815,
+      "sortino": 1.583885902211209,
+      "max_dd": -0.20299112136041783,
+      "calmar": 0.6242697318794661,
+      "skew": 0.030303795152355845,
+      "kurtosis": 2.5692981231884477,
+      "win_rate": 0.5238970588235294,
+      "n_days": 3808,
+      "sharpe_delta_from_baseline": 0.0
+    }
+  },
+  "concerning_single_asset_dependence": [
+    "BTC_YF"
+  ],
+  "verdict": "REJECT_CONFIRMED",
+  "data_sources": {
+    "parquet": "artifacts/portfolio/d1_multi_asset.parquet (built by scripts/build_d1_portfolio.py; see mtime for freshness vs current data/)",
+    "generator_reference": "scripts/tsm_portfolio_jackknife.py (commit aff11f71)",
+    "note": "Closure rerun 2026-08-06 \u2014 original 07-28 evidence file untouched."
+  }
+}
