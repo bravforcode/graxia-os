@@ -1,0 +1,35 @@
+{
+  "title": "Direction H Trial 9003 \u2014 mechanism sweep USDCAD/USDCHF",
+  "executed_at": "2026-08-06T19:07:53.971220+00:00",
+  "symbols": [
+    "USDCAD",
+    "USDCHF"
+  ],
+  "arms": {
+    "volume_breakout": {
+      "XAUUSD": {
+        "n_trades": 551,
+        "dk_t": 0.9433,
+        "sharpe": 0.6935,
+        "verdict": "REJECT"
+      }
+    },
+    "hybrid_mom_mr": {
+      "XAUUSD": {
+        "n_trades": 3327,
+        "dk_t": 0.6345,
+        "sharpe": 0.1722,
+        "verdict": "REJECT"
+      }
+    },
+    "liquidity_sweep_v2": {
+      "XAUUSD": {
+        "n_trades": 773,
+        "dk_t": -0.9137,
+        "sharpe": -0.521,
+        "verdict": "REJECT"
+      }
+    }
+  },
+  "verdict": "REJECT"
+}

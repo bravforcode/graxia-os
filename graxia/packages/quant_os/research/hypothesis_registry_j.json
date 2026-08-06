@@ -3,7 +3,7 @@
   "direction": "J",
   "description": "XAUUSD positioning (COT) + cross-asset (DXY) mechanisms. Data that was previously missing is now available: CFTC COT disaggregated positioning 2021-2026 (data/cot/) and DXY 2018-2026 (data/DXY_D1.csv). XAUUSD costs verified correct (0.65 bps rt, commission=0).",
   "last_updated": "2026-08-06",
-  "current_verdict_2026-08-06": "3007 INCONCLUSIVE (3t), 3003 REJECTED, 3008 INCONCLUSIVE (8t), 3009 INCONCLUSIVE (8t). COT mechanism underpowered at weekly frequency.",
+  "current_verdict_2026-08-06": "J: 3003 REJECTED, 3007/3008/3009 INCONCLUSIVE, 3010 REJECTED (FOMC), 3011 REJECTED (XAU H1).",
   "stopping_rule_doc": "reports/stopping_rule_2026_08_06_direction_j.md",
   "sacred_holdout_status": "LOCKED",
   "notes": [
@@ -118,6 +118,77 @@
       "data_manifest_ref": "reports/edge_search_dirj.json",
       "provenance_stamped_at": "2026-08-06T18:27:21.412504+00:00",
       "notes": "Direction J trial 3009 — INCONCLUSIVE (8 trades < 30 gate). COT weekly frequency structurally limits trade count."
+    },
+    {
+      "trial_number": 3010,
+      "id": "DIRJ-FOMC-XAUUSD",
+      "status": "REJECTED",
+      "instrument": "XAUUSD (D1)",
+      "symbols": [
+        "XAUUSD"
+      ],
+      "registered_at": "2026-08-06T19:08:07.787706+00:00",
+      "result_at": "2026-08-06T19:08:07.787706+00:00",
+      "result_summary": {
+        "n_trades": 43,
+        "dk_t": -10.11,
+        "sharpe": -17.7,
+        "mean_pnl": -163.64,
+        "conclusion": "REJECTED: post-FOMC directional drift (3-day hold, 0.2-3.0% event filter) loses massively on gold (dk_t=-10.1, mean -/trade, 43 events 2020-2026). FOMC-day drift direction does NOT persist in gold — hypothesis falsified."
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "XAUUSD": 0.65
+      },
+      "slippage_source": "none",
+      "slippage_bps_used": {},
+      "data_manifest_ref": "reports/edge_search_dirj_fomc.json",
+      "provenance_stamped_at": "2026-08-06T19:08:07.787706+00:00",
+      "notes": "Direction J 3010 — REJECTED. Event-based (43 FOMC events) — powered sample, clean falsification."
+    },
+    {
+      "trial_number": 3011,
+      "id": "DIRJ-XAU-H1-MECH",
+      "status": "REJECTED",
+      "instrument": "XAUUSD (H1, 50k bars)",
+      "symbols": [
+        "XAUUSD"
+      ],
+      "registered_at": "2026-08-06T19:08:07.787706+00:00",
+      "result_at": "2026-08-06T19:08:07.787706+00:00",
+      "result_summary": {
+        "arms": {
+          "volume_breakout": {
+            "dk_t": 0.94,
+            "n_trades": 551
+          },
+          "hybrid_mom_mr": {
+            "dk_t": 0.64,
+            "n_trades": 3327
+          },
+          "liquidity_sweep_v2": {
+            "dk_t": -0.91,
+            "n_trades": 773
+          }
+        },
+        "pooled": {
+          "best_dk_t": 0.94
+        },
+        "conclusion": "REJECTED: 3 intraday mechanisms on XAUUSD H1 at 0.65 bps rt — none reaches significance (best dk_t=0.94). Volume breakout closest (positive but not significant)."
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "XAUUSD": 0.65
+      },
+      "slippage_source": "fill_simulator_p90_points",
+      "slippage_bps_used": {
+        "XAUUSD": 0.056
+      },
+      "data_manifest_ref": "reports/edge_search_dirj_xau_h1.json",
+      "provenance_stamped_at": "2026-08-06T19:08:07.787706+00:00",
+      "notes": "Direction J 3011 — REJECTED. XAU H1 intraday mechanisms underpowered/absent."
     }
   ]
 }
