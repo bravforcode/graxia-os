@@ -30,6 +30,7 @@ Per `reports/stopping_rule_2026_08_05.md` §4.4: research under Direction G STOP
 - **Funding-rate arb (Path B #3005-class):** FAIL_RIGOR; **Crypto basis/carry #6001:** REJECTED (p=0.50-0.96 across 8 combos)
 - **Dual Thrust:** rejected on literature (SPY Sharpe -0.37, QuantConnect tutorial)
 - **Forex4 H1 trend-continuity (USDCAD/USDCHF/AUDUSD/NZDUSD):** CLOSED — absorbed from **Direction H trial 9001** (verdict t=-8.2 to -17.4 at measured costs, commit 7fbe921a) — resolves the 2026-07-12 INCONCLUSIVE verdicts to conclusive REJECT (A17)
+- **Forex4 H1 RSI mean-reversion (USDCAD/USDCHF/AUDUSD/NZDUSD):** CLOSED — absorbed from **Direction H trial 9002** (verdict DK t=-4.55 at measured costs, commit 28424bff) — the RSI-MR family on forex4 H1 is now REJECTED, not WATCH (A19)
 
 ### 1.3 Closed governance items (verified 2026-08-06)
 - **Lookahead-gap 8001/8002:** annotated LOOKAHEAD-GAP STATUS in `research/hypothesis_registry_g.json` (commit f69a0f43). REJECT stands: lookahead-cheating only inflates, cannot explain REJECT. 8002 additionally marked inconclusive-not-dead (UNDERPOWERED)
@@ -53,13 +54,13 @@ Direction H (block 9000-9999) is owned and executed by a parallel session (autho
 - `a88ddc22` — forex4 FROM_TICKS cost calibration + trial 9001 DRAFT
 - `ba467f93` — trial 9001 FROZEN + `reports/stopping_rule_2026_08_06_direction_h.md` + `research/trial_ledger_h.json` + registry (cap=25, deadline 2026-11-06, hours=80, consecutive=3)
 - `7fbe921a` — **trial 9001 REJECTED** (t=-8.2..-17.4, measured costs)
-- `research/pre_registration/trial_9002_forex4_rsi_mr.md` — **FROZEN** (forex4 RSI mean-reversion, in-flight)
+- `research/pre_registration/trial_9002_forex4_rsi_mr.md` — FROZEN, then **REJECTED** (`28424bff`: DK t=-4.55, measured costs; slippage P90 calibration added with it)
 
 **Direction I relationship (C+):**
 - **DO NOT touch their files** — no ledger amendment, no stopping-rule edit, no registry rewrite (single-writer respect; audit trails of valid verdicts stay intact)
 - **DO NOT merge trial counts/ledgers** — different governance (their 25/80h/Nov-6 vs our 40/no-deadline/400h); merging would corrupt N accounting
 - **9001 REJECTED → absorbed as evidence citation** in §1.2 closed-hypothesis list (done above)
-- **9002 (in-flight) → WATCH ITEM:** when it resolves (accept or reject), absorb the result as a citation — do not block Direction I waiting for it
+- **9002 REJECTED → absorbed as evidence citation** in §1.2 (done above — A19); watch item RESOLVED
 
 ### 1.7 EURUSD H4 candidate
 `docs/superpowers/specs/2026-08-06-tier0-sweep-design.md` (committed 2b4d250b): **EURUSD H4 (TF probe gross Sharpe 3.46) is waiting for a Direction H decision** (§2.5, §11.3 — Sub-project B decision list). **Absorbed as Direction I candidate:** structurally distinct from 8002 EURUSD M15 (different timeframe; 8002 was inconclusive-not-dead). Requires pre-registration; consumes 1 of our pool of 40. **Must not pre-register before Sub-project B renders its decision (explicit dependency).**
@@ -70,7 +71,7 @@ Mechanism families owned by Direction H — Direction I's P1/P2 must flag and NO
 | Family | Owner status | Direction I action |
 |---|---|---|
 | forex4 H1 trend-continuity (USDCAD/USDCHF/AUDUSD/NZDUSD) | H trial 9001: **REJECTED** (t=-8.2..-17.4) | CLOSED — no re-test; P2 taxonomy flags "tested elsewhere" |
-| forex4 RSI mean-reversion | H trial 9002: **FROZEN, in-flight** | WATCH — P2 flags; only enter if 9002 resolves REJECT-UNDERPOWERED AND we add structural difference (documented) |
+| forex4 RSI mean-reversion | H trial 9002: **REJECTED** (DK t=-4.55, 28424bff) | CLOSED — no re-test (A19); P2 flags "tested elsewhere" |
 | EURUSD H4 TF-probe family | Sub-project B decision pending | WATCH — candidate (10001+), waits for decision |
 
 P2 fingerprinting MUST check the Direction H ledger/registry before classifying any entry whose mechanism+symbol+TF matches these families.
@@ -337,6 +338,7 @@ p-value (HAC/NW) · WFA-OOS · WFE · DSR(N_I) · cost-stress+multi-broker · PB
 | A16 | 2026-08-06 | **Rename H→I (Option C+):** parallel session owns Direction H (executed, committed); funnel opens as Direction I (10000-10999) with approved params. Rename cost scoped: ledgers, N_I, catalog_i, screening_log_i, stopping-rule doc, TRIAL_ID_RANGES row, deliverables — all updated; citations to their Direction H preserved verbatim | User decision C+ |
 | A17 | 2026-08-06 | **Scope partition + absorption:** 9001 REJECTED → §1.2 closed list; 9002 → WATCH item; no ledger/trial-count merging; P1 ingest + P2 classification tagged OWNED_BY_H | User decision C+ |
 | A18 | 2026-08-06 | **Writer-lock hardening action item:** verified `.writer.lock` is advisory (enforced only by release gate; pre-commit has no lock check). P0 item 0 must close enforcement gap before funnel writes | Root-cause investigation |
+| A19 | 2026-08-06 | **Direction H state update:** trial 9002 REJECTED (DK t=-4.55, commit 28424bff) — forex4 RSI MR moved WATCH→CLOSED in §1.2/§1.6/§1.8/§13 + partition_registry + ratchet base (7fbe921a→28424bff) | Post-Phase-0 state sync |
 
 ---
 
@@ -350,4 +352,4 @@ p-value (HAC/NW) · WFA-OOS · WFE · DSR(N_I) · cost-stress+multi-broker · PB
 - Sub-project B cap decision (1022 vs 1042) unresolved — Direction H/main ledger scope, NOT ours (A10)
 - Sub-project B Direction H decision (EURUSD H4) unresolved — dependency for our candidate #1 pre-registration (A9)
 - Tier0 Sweep C0 output not yet delivered — P0 closure item 2 waits on it (A11)
-- **Direction H watch item:** trial 9002 (forex4 RSI MR, FROZEN, in-flight) — absorb result as citation when resolved (A17); do not block on it
+- ~~Direction H watch item: trial 9002~~ **RESOLVED** — 9002 REJECTED (DK t=-4.55, 28424bff), absorbed into §1.2 closed list + partition registry (A19)

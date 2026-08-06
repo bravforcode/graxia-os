@@ -1049,6 +1049,12 @@ git commit -m "docs(quant_os): Direction I Phase 0 closure report + acceptance"
 
 ---
 
+## Post-Execution Updates (2026-08-06, after plan completion)
+
+- **Direction H trial 9002 resolved:** REJECTED (DK t=-4.55, commit 28424bff) — forex4 RSI MR partition status changed WATCH→CLOSED in `research/partition_registry.py` + `tests/test_partition_registry.py` (deviation from Task 5's written test snippet, which showed WATCH). Spec updated via amendment A19.
+- **Ratchet base updated:** `tests/test_direction_i_closure.py::test_direction_h_files_untouched` base ref 7fbe921a → 28424bff (parallel session's last legitimate H-ledger change).
+- **Review findings R#1-R#7 applied:** fail-closed screening log, status-transition API, fail-closed guard, attr additions scan, structural lock validation, hash normalization, jackknife short-series guard (commit 098ebf99).
+
 ## Follow-on Plans (roadmap — NOT part of this plan)
 
 | Plan | Phases | Blocks on |
