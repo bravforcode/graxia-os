@@ -3,7 +3,7 @@
   "direction": "H",
   "description": "Forex 4-Pair Walk-Forward Retest. Structural mechanism: XGBoost binary classification of next-bar direction on a FIXED technical feature set (returns, volatility, ATR, RSI, MACD, Bollinger, session flags) — the same mechanism family as the original 2026-07-12 batch (runner scripts/run_multi_instrument_wf.py, artifact wf_batch_H1_20260712_200555.json). The original INCONCLUSIVE verdicts (USDCAD t=-1.69, USDCHF t=-1.12, AUDUSD t=-1.55, NZDUSD t=-0.53) were invalid as evidence: F24 loader-provenance gap (now resolved) and 5/6 pairs ran with UNMEASURED default costs (--allow-default-costs). This retest runs the SAME mechanism with measured FROM_TICKS costs (mandatory) and a pre-registered min_confidence reduction 0.65->0.55 to overcome the ~7-trades/fold underpoweredness.",
   "last_updated": "2026-08-06",
-  "current_verdict_2026-08-06": "9001 REJECTED_MIXED, 9002 REJECTED, 9003 REJECTED — no mechanism found on the 4 pairs.",
+  "current_verdict_2026-08-06": "DIRECTION H STOPPED 2026-08-06 (§4.4, 3/3 consecutive fails: 9002/9003/9004). No mechanism profitable on the 4 pairs at true costs.",
   "cumulative_trial_count_at_creation": 0,
   "stopping_rule_doc": "reports/stopping_rule_2026_08_06_direction_h.md",
   "sacred_holdout_path": "N/A at the walk-forward stage (this is a validation-phase hypothesis, not a fitted-model holdout confirmation; sacred holdout remains LOCKED for Phase 4.5 only).",
@@ -264,6 +264,62 @@
       "data_manifest_ref": "reports/edge_search_dirh_mech_sweep_9003.json",
       "provenance_stamped_at": "2026-08-06T16:32:42.380503+00:00",
       "notes": "Direction H trial 9003 REJECTED 2026-08-06. 5 mechanisms x 2 pairs sweep at true costs. Consecutive-fail count now 2/3 (9002 REJECT + 9003 REJECT; 9001 REJECTED_MIXED not counted)."
+    },
+    {
+      "trial_number": 9004,
+      "id": "DIRH-FX-FINAL-ARMS",
+      "status": "REJECTED",
+      "instrument": "USDCAD, USDCHF (H1, 50k bars)",
+      "symbols": [
+        "USDCAD",
+        "USDCHF"
+      ],
+      "registered_at": "2026-08-06T16:59:02.005632+00:00",
+      "result_at": "2026-08-06T16:59:02.005632+00:00",
+      "result_summary": {
+        "arms": {
+          "momentum_12m": {
+            "USDCAD": {
+              "dk_t": -1.955,
+              "n_trades": 3365
+            },
+            "USDCHF": {
+              "dk_t": -2.113,
+              "n_trades": 3355
+            }
+          },
+          "tsm_dxy": {
+            "USDCAD": {
+              "dk_t": -1.928,
+              "n_trades": 789
+            },
+            "USDCHF": {
+              "dk_t": -0.432,
+              "n_trades": 783
+            }
+          }
+        },
+        "pooled": {
+          "best_arm_dk_t": -0.432,
+          "best_arm": "tsm_dxy USDCHF (still REJECT)"
+        },
+        "conclusion": "REJECTED: Momentum12M (t=-1.96/-2.11) and TSMDXYDivergence with real DXY data (t=-1.93/-0.43) both fail on USDCAD/USDCHF at corrected costs. DXY divergence filter — the structurally-most-relevant mechanism for USD pairs — shows no edge. THIS IS FAIL #3 -> Direction H STOPPING RULE 4.4 TRIGGERED.",
+        "artifact": "reports/edge_search_dirh_9004.json"
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "USDCAD": 0.84,
+        "USDCHF": 0.95
+      },
+      "slippage_source": "fill_simulator_p90_points",
+      "slippage_bps_used": {
+        "USDCAD": 0.0714,
+        "USDCHF": 0.1239
+      },
+      "data_manifest_ref": "reports/edge_search_dirh_9004.json",
+      "provenance_stamped_at": "2026-08-06T16:59:02.005632+00:00",
+      "notes": "Direction H trial 9004 REJECTED 2026-08-06. Consecutive-fail 3/3 (9002, 9003, 9004) -> Direction H STOPPED per stopping_rule_2026_08_06_direction_h.md §4.4. All mechanisms tested across 4 trials: ML classifier, RSI-MR, hybrid, breakout, liquidity, session, momentum12m, DXY-divergence — NONE profitable at true costs."
     }
   ]
 }
