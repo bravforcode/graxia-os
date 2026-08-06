@@ -9,6 +9,7 @@ Survivors: sharpe_ratio > 0 AND total_trades >= 30.
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import json
 import sys
 from decimal import Decimal
@@ -57,6 +58,16 @@ class TrackingGuard(bt_engine.LookaheadGuard):
 def load_ohlcv(symbol: str, tf: str) -> pd.DataFrame | None:
     if tf not in TF_CONVENTION:
         return None
+    # CSV first: data/{SYM}_{TF}.csv covers ALL timeframes (duckdb is partial)
+    csv_path = ROOT / "data" / f"{symbol}_{tf}.csv"
+    if csv_path.exists():
+        try:
+            df = pd.read_csv(csv_path)
+            df["time"] = pd.to_datetime(df["time"], utc=True)
+            df = df.sort_values("time")
+            return df
+        except Exception:
+            return None
     con = duckdb.connect(str(DB_PATH), read_only=True)
     try:
         df = con.execute(
@@ -74,7 +85,7 @@ def load_ohlcv(symbol: str, tf: str) -> pd.DataFrame | None:
     return df
 
 
-def run_candidate(entry: dict, config_id: str) -> dict:
+def run_candidate(entry: dict, config_id: str, years: int) -> dict:
     resolved = resolve_candidate(entry)
     if resolved["status"] != "ok":
         return {"config_id": config_id, "status": "no_strategy", "reason": resolved.get("reason", "")}
@@ -87,6 +98,11 @@ def run_candidate(entry: dict, config_id: str) -> dict:
         profile = SymbolCostProfile.for_symbol(symbol)
     except Exception as exc:  # noqa: BLE001 — UnmeasuredCostError etc.
         return {"config_id": config_id, "status": "no_cost_data", "reason": str(exc)}
+    # slippage null check: measured path would raise mid-run — classify honestly
+    try:
+        profile.get_slippage_bps()
+    except Exception as exc:  # noqa: BLE001
+        return {"config_id": config_id, "status": "no_slippage_data", "reason": str(exc)}
     ohlcv = {k: df[k].tolist() for k in ("open", "high", "low", "close", "volume")}
     timestamps = df["time"].dt.to_pydatetime().tolist()
     config = BacktestConfig(
@@ -99,6 +115,7 @@ def run_candidate(entry: dict, config_id: str) -> dict:
         max_positions=1,
         strict_mtf=False,
         enable_swap=False,
+        start_date=dt.date.today() - dt.timedelta(days=365 * years),  # screening window (full history is for trials)
     )
     strategy = resolved["strategy_class"](**resolved["params"]) if resolved["params"] else resolved["strategy_class"]()
     TrackingGuard.instances = []
@@ -130,6 +147,7 @@ def run_candidate(entry: dict, config_id: str) -> dict:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--limit", type=int, default=0)
+    parser.add_argument("--years", type=int, default=5, help="screening window years (trials use full history)")
     parser.add_argument(
         "--shortlist",
         default=str(ROOT / "research" / "catalog_i" / "shortlist_wave1.json"),
@@ -156,12 +174,16 @@ def main(argv: list[str] | None = None) -> int:
         )
         config_id = cfg["config_id"]
         try:
-            res = run_candidate(entry, config_id)
+            res = run_candidate(entry, config_id, years=args.years)
         except Exception as exc:  # noqa: BLE001 — VOID + audit per spec
             res = {"config_id": config_id, "status": "VOID", "reason": str(exc)}
         update_config_status(args.log, config_id, res["status"])
         res["n_registered"] = True
         results[config_id] = res
+        print(
+            f"  [{len(results)}/{len(shortlist)}] {res['status']:<14} {res.get('symbol','?'):<8} {res.get('timeframe','?'):<5} trades={res.get('total_trades','-'):<5} sharpe={res.get('sharpe_ratio','-')}",
+            flush=True,
+        )
         if res.get("survivor"):
             survivors.append({**entry, "screening": res})
 

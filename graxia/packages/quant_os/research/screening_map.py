@@ -7,6 +7,7 @@ a wrong strategy (honesty over coverage).
 
 from __future__ import annotations
 
+import inspect
 import sys
 from pathlib import Path
 
@@ -80,14 +81,27 @@ FAMILY_TO_STRATEGY: dict[str, dict] = {
 DEFAULT_TF_BY_FAMILY: dict[str, str] = {f: v["default_tf"] for f, v in FAMILY_TO_STRATEGY.items()}
 
 
+def _strategy_param_names(strategy_class) -> set[str]:
+    """Params the strategy __init__ actually accepts (account_type etc. filtered)."""
+    try:
+        sig = inspect.signature(strategy_class.__init__)
+    except (TypeError, ValueError):
+        return set()
+    return {name for name in sig.parameters if name != "self"}
+
+
 def resolve_candidate(entry: dict) -> dict:
     family = entry.get("mechanism_family", "other")
     mapping = FAMILY_TO_STRATEGY.get(family)
     if mapping is None:
         return {"status": "no_strategy", "reason": f"family '{family}' has no engine strategy"}
-    params = {
+    accepted = _strategy_param_names(mapping["strategy_class"])
+    merged = {
         **mapping["default_params"],
         **{k: v for k, v in (entry.get("params") or {}).items() if isinstance(v, int | float | str | bool)},
     }
+    # whitelist: entry params are EA metadata (account_type, lot, ...) — only
+    # pass what the strategy constructor accepts (audit: account_type VOIDs)
+    params = {k: v for k, v in merged.items() if k in accepted}
     tf = entry.get("timeframe") if entry.get("timeframe") and entry.get("timeframe") != "ALL" else mapping["default_tf"]
     return {"status": "ok", "strategy_class": mapping["strategy_class"], "params": params, "timeframe": tf}
