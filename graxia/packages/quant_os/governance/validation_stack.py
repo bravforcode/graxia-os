@@ -1,3 +1,11 @@
+"""DEPRECATED (2026-08-07, #18): superseded by `validation/pipeline/gates.py`
+(GateStatus.ERRORED, SP1 2026-08-04). The old pure-boolean `all_passed`
+model had documented false-pass bugs (DEEP_AUDIT_FINDINGS.md L193-194:
+PBOCheck IS=0/OOS<0 -> degradation 0.0 -> passes; DeflatedSharpeRatio
+n_trials==1 -> always passes). Kept only for legacy
+tests/test_phase_5_governance.py compat. Do NOT import in new code.
+"""
+
 import math
 from dataclasses import dataclass, field
 

@@ -129,7 +129,7 @@ def run_pipeline_phase() -> None:
     ponytail: calls existing verified modules (compute_tsmom_signal with
     lookbacks=[252], vol_target=0.10; BacktestEngine per asset; edge_search_cross_sectional
     .run_dk_test; validation/deflated_sharpe.deflated_sharpe_ratio with N=1050;
-    backtest/walk_forward PBO; governance/validation_stack). Module APIs must be
+    backtest/walk_forward PBO; validation/pipeline). Module APIs must be
     confirmed before the trigger-phrase run — run_dk_test signature unverified.
     """
     raise SystemExit("PIPELINE PHASE requires trigger phrase + module-API confirmation. Not run.")
