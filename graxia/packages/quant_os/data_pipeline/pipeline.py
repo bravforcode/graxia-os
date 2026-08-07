@@ -15,7 +15,7 @@ from sources.news_sentiment import fetch_news_with_sentiment
 from storage.chroma_store import ChromaStore
 from storage.duckdb_store import DuckDBStore
 
-from config import LOG_DIR
+from config import LOG_DIR  # type: ignore[attr-defined]  # data_pipeline/config.py via sys.path
 
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 log_file = LOG_DIR / f"pipeline_{datetime.now():%Y%m%d}.log"
@@ -97,6 +97,44 @@ class DataPipeline:
             log.error(f"Vault sync failed: {e}")
             self.errors.append(("vault_sync", str(e)))
 
+    def run_research_sync(self):
+        """Ingest the XAUUSD research report into the research_embeddings collection.
+
+        The report is the input document for Tier-3 deep analysis (see
+        scripts/tier3_cron.py DEFAULT_REPORTS). Pipeline-ingesting it lets
+        downstream code retrieve it semantically via Chroma search_research,
+        so the report is no longer a file-only artifact.
+        """
+        log.info("[5/6] Research Report Sync")
+        try:
+            report_paths = [
+                Path(__file__).parent.parent / "research_xauusd_report.md",
+                Path(__file__).parent.parent / "Meta" / "states" / "researcher_xauusd.md",
+                Path(__file__).parent.parent / "Meta" / "states" / "researcher.md",
+            ]
+            reports = []
+            for p in report_paths:
+                if not p.exists():
+                    continue
+                content = p.read_text(encoding="utf-8", errors="replace")
+                reports.append(
+                    {
+                        "name": p.name,
+                        "content": content,
+                        "source": "pipeline_research_sync",
+                        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    }
+                )
+            if reports:
+                self.chroma.add_research(reports)
+                self.results["research_reports"] = len(reports)
+                log.info(f"  Ingested {len(reports)} research report(s) into research_embeddings")
+            else:
+                log.info("  No research reports found (skipped)")
+        except Exception as e:
+            log.error(f"Research sync failed: {e}")
+            self.errors.append(("research_sync", str(e)))
+
     def run_data_bridge(self):
         """Push pipeline data into MacroRegimeCache for trading logic."""
         log.info("[5/5] Data Bridge → MacroRegimeCache")
@@ -130,6 +168,7 @@ class DataPipeline:
         self.run_macro_data()
         self.run_news_sentiment()
         self.run_vault_sync()
+        self.run_research_sync()  # research report → research_embeddings (searchable)
         self.run_data_bridge()  # pipeline data → MacroRegimeCache → trading
 
         elapsed = (datetime.now() - start).total_seconds()

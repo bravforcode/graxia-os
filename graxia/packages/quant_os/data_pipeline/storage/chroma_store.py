@@ -83,12 +83,38 @@ class ChromaStore:
         self.strategy_collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
         print(f"  ChromaDB: {len(strategies)} strategies upserted")
 
+    def add_research(self, reports: list[dict]):
+        """Add research reports to the research_embeddings collection.
+
+        `reports` items: {"name": str, "content": str, "updated_at": str, "source": str}
+        Uses the collection that was already initialized in `_init_collections`
+        but previously had no writer (research reports were never ingested).
+        """
+        if not reports:
+            return
+        ids = [_make_id("research", r.get("name", "")) for r in reports]
+        documents = [f"{r.get('name', '')} {r.get('content', '')}" for r in reports]
+        metadatas = [
+            {
+                "name": str(r.get("name", "")),
+                "source": str(r.get("source", "")),
+                "updated_at": str(r.get("updated_at", "")),
+            }
+            for r in reports
+        ]
+        self.research_collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
+        print(f"  ChromaDB: {len(reports)} research reports upserted")
+
     def search_news(self, query: str, n_results: int = 5) -> list[dict]:
         results = self.news_collection.query(query_texts=[query], n_results=n_results)
         return results.get("documents", [[]])[0]
 
     def search_strategies(self, query: str, n_results: int = 5) -> list[dict]:
         results = self.strategy_collection.query(query_texts=[query], n_results=n_results)
+        return results.get("documents", [[]])[0]
+
+    def search_research(self, query: str, n_results: int = 5) -> list[dict]:
+        results = self.research_collection.query(query_texts=[query], n_results=n_results)
         return results.get("documents", [[]])[0]
 
     def get_collection_stats(self) -> dict:
