@@ -46,8 +46,17 @@ from tests.factories import OrganizationFactory
 
 
 def _make_stripe_event(event_type: str, session_id: str, product_id: str,
-                       org_id: str, customer_email: str, amount: int = 49900) -> dict:
+                       org_id: str, customer_email: str, amount: int = 49900,
+                       checkout_session_id: str | None = None) -> dict:
     """Build a realistic Stripe checkout.session.completed event payload."""
+    metadata = {
+        "product_id": product_id,
+        "organization_id": org_id,
+    }
+    if checkout_session_id:
+        # Production Stripe returns the metadata the checkout service set,
+        # which always includes funnel_checkout_session_id.
+        metadata["funnel_checkout_session_id"] = checkout_session_id
     return {
         "id": f"evt_{uuid4().hex}",
         "type": event_type,
@@ -59,10 +68,7 @@ def _make_stripe_event(event_type: str, session_id: str, product_id: str,
                 "customer_email": customer_email,
                 "amount_total": amount,
                 "currency": "thb",
-                "metadata": {
-                    "product_id": product_id,
-                    "organization_id": org_id,
-                },
+                "metadata": metadata,
             }
         },
     }
@@ -161,7 +167,7 @@ class TestFunnelE2EFlow:
             "source": "twitter",
             "medium": "social",
         })
-        assert view_res.status_code == 204
+        assert view_res.status_code == 201, f"Event log failed: {view_res.text}"
 
         # ── Step 5: Public retrieval of the product by slug ───────────────────
         slug_res = await public_async_client.get(
@@ -188,6 +194,7 @@ class TestFunnelE2EFlow:
         assert checkout["checkout_url"] == "https://checkout.stripe.com/e2e_test"
         assert checkout["status"] == "pending"
         stripe_session_id = checkout["stripe_session_id"]
+        checkout_id = checkout["id"]
 
         # ── Step 7: Stripe webhook fires ──────────────────────────────────────
         stripe_webhook_secret = "whsec_test_e2e_secret"
@@ -198,6 +205,7 @@ class TestFunnelE2EFlow:
             org_id=org_id,
             customer_email=customer_email,
             amount=49900,
+            checkout_session_id=checkout_id,
         )
         raw_body = json.dumps(event_payload).encode()
         signature = _stripe_signature(raw_body, stripe_webhook_secret)
@@ -239,12 +247,14 @@ class TestFunnelE2EFlow:
 
         access = accesses[0]
         assert access.status == "active"
-        assert access.token is not None
-        delivery_token = access.token
 
         # ── Step 10: Verify delivery email was triggered ───────────────────────
-        # Email mock should have been called
-        assert self._mock_email.called or True  # email is best-effort; webhook may or may not call it
+        # The raw delivery token is only ever passed to the email service (the
+        # DB stores only its SHA-256 hash), so recover it from the mocked call.
+        assert self._mock_email.called, "delivery email should have been triggered"
+        delivery_accesses = self._mock_email.call_args.kwargs.get("delivery_accesses", [])
+        assert delivery_accesses, "email should carry at least one delivery access"
+        _, delivery_token = delivery_accesses[0]
 
         # ── Step 11: Buyer accesses delivery via token ─────────────────────────
         delivery_res = await public_async_client.get(
@@ -299,12 +309,27 @@ class TestFunnelE2EFlow:
         await async_client.post(f"/api/v1/funnel/products/{product_id}/publish")
 
         session_id = f"cs_idem_{uuid4().hex[:12]}"
+        # A real completed checkout requires a local checkout session row;
+        # create one through the public checkout API like a real buyer.
+        checkout_res = await public_async_client.post(
+            f"/api/v1/funnel/public/products/{product_id}/checkout",
+            json={
+                "organization_id": org_id,
+                "customer_email": "idem@example.com",
+                "success_url": "https://app.graxia.ai/checkout/success",
+                "cancel_url": "https://app.graxia.ai/f/cancel",
+            },
+        )
+        assert checkout_res.status_code == 200, f"Checkout failed: {checkout_res.text}"
+        checkout_id = checkout_res.json()["id"]
+
         event_payload = _make_stripe_event(
             event_type="checkout.session.completed",
             session_id=session_id,
             product_id=product_id,
             org_id=org_id,
             customer_email="idem@example.com",
+            checkout_session_id=checkout_id,
         )
         raw_body = json.dumps(event_payload).encode()
 
@@ -359,12 +384,13 @@ class TestFunnelE2EFlow:
         db_session.add(order)
         await db_session.commit()
 
+        expired_raw_token = f"expired_{uuid4().hex}"
         expired_access = DeliveryAccess(
             id=uuid4(),
             organization_id=org.id,
             order_id=order.id,
             product_id=product.id,
-            token=f"expired_{uuid4().hex}",
+            access_token_hash=hashlib.sha256(expired_raw_token.encode()).hexdigest(),
             status="active",
             expires_at=datetime(2020, 1, 1, tzinfo=UTC),  # in the past
         )
@@ -372,7 +398,7 @@ class TestFunnelE2EFlow:
         await db_session.commit()
 
         response = await public_async_client.get(
-            f"/api/v1/funnel/delivery/{expired_access.token}"
+            f"/api/v1/funnel/delivery/{expired_raw_token}"
         )
         assert response.status_code == 404
 
@@ -400,11 +426,17 @@ class TestFunnelE2EFlow:
             "slug": "free-biz-checklist-e2e",
             "promise": "Get our 50-point business checklist free",
             "target_product_id": product_id,
-            "status": "active",
         })
         assert lm_res.status_code == 201, f"Lead magnet create failed: {lm_res.text}"
         lm = lm_res.json()
         lm_slug = lm["slug"]
+
+        # Lead magnets are created as draft; publish before capture (PUT endpoint)
+        pub_res = await async_client.put(
+            f"/api/v1/funnel/lead-magnets/{lm['id']}",
+            json={"status": "published"},
+        )
+        assert pub_res.status_code == 200, f"Lead magnet publish failed: {pub_res.text}"
 
         # Capture a lead
         capture_res = await public_async_client.post(
@@ -416,7 +448,7 @@ class TestFunnelE2EFlow:
                 "source": "blog",
             },
         )
-        assert capture_res.status_code == 200, f"Lead capture failed: {capture_res.text}"
+        assert capture_res.status_code == 201, f"Lead capture failed: {capture_res.text}"
         capture_data = capture_res.json()
         assert "contact_id" in capture_data
 

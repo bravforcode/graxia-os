@@ -46,7 +46,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["organization_id"], ["organizations.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
         sa.CheckConstraint("status IN ('draft', 'published', 'archived')", name="ck_product_status"),
-        sa.CheckConstraint("product_type IN ('ebook', 'template', 'prompt_pack', 'course', 'kit', 'other')", name="ck_product_type"),
+        sa.CheckConstraint("product_type IN ('ebook', 'template', 'prompt_pack', 'course', 'kit', 'lead_magnet', 'other')", name="ck_product_type"),
         sa.CheckConstraint("price_amount >= 0", name="ck_product_price_non_negative"),
     )
     op.create_index("ix_digital_products_org_slug", "digital_products", ["organization_id", "slug"], unique=True)
@@ -70,7 +70,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["organization_id"], ["organizations.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["product_id"], ["digital_products.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
-        sa.CheckConstraint("asset_type IN ('file', 'external_link', 'text', 'private_page')", name="ck_asset_type"),
+        sa.CheckConstraint("asset_type IN ('file', 'external_link', 'text', 'private_page', 'content')", name="ck_asset_type"),
     )
     op.create_index(op.f("ix_delivery_assets_organization_id"), "delivery_assets", ["organization_id"], unique=False)
     op.create_index(op.f("ix_delivery_assets_product_id"), "delivery_assets", ["product_id"], unique=False)

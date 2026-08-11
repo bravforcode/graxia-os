@@ -32,7 +32,7 @@ class DigitalProduct(Base, TenantMixin):
             name="ck_product_status",
         ),
         CheckConstraint(
-            "product_type IN ('ebook', 'template', 'prompt_pack', 'course', 'kit', 'other')",
+            "product_type IN ('ebook', 'template', 'prompt_pack', 'course', 'kit', 'lead_magnet', 'other')",
             name="ck_product_type",
         ),
         CheckConstraint("price_amount >= 0", name="ck_product_price_non_negative"),
@@ -73,7 +73,7 @@ class DeliveryAsset(Base, TenantMixin):
     __tablename__ = "delivery_assets"
     __table_args__ = (
         CheckConstraint(
-            "asset_type IN ('file', 'external_link', 'text', 'private_page')",
+            "asset_type IN ('file', 'external_link', 'text', 'private_page', 'content')",
             name="ck_asset_type",
         ),
     )

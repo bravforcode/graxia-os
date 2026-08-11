@@ -165,11 +165,29 @@ def role_satisfies(required: AuthLevel, actual_role: str) -> bool:
 
 
 def find_route_template(request: Request) -> str | None:
-    for route in request.app.router.routes:
-        match, _ = route.matches(request.scope)
-        if match == Match.FULL:
-            return getattr(route, "path", request.url.path)
-    return None
+    def _scan(routes) -> str | None:
+        for route in routes:
+            try:
+                match, _ = route.matches(request.scope)
+            except Exception:
+                continue
+            if match != Match.FULL:
+                continue
+            # Real route (APIRoute / _EffectiveRouteContext) carries the
+            # template path. Aggregate wrappers (_IncludedRouter, newer
+            # Starlette/FastAPI) report FULL without a path of their own —
+            # recurse into their effective candidates instead.
+            path = getattr(route, "path", None)
+            if path:
+                return path
+            children = getattr(route, "_effective_candidates", None) or getattr(route, "routes", None)
+            if children:
+                found = _scan(children)
+                if found:
+                    return found
+        return None
+
+    return _scan(request.app.router.routes)
 
 
 async def verify_internal_bearer_token(

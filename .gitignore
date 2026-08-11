@@ -110,6 +110,7 @@ output/
 # Virtual environments
 .venv/
 venv/
+venv-test/
 backend/venv/
 
 # Test artifacts
