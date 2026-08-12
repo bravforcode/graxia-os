@@ -38,10 +38,10 @@ def create_engine_with_retry():
         engine_args["connect_args"] = {"check_same_thread": False}
     else:
         engine_args.update({
-            "pool_size": 20,
-            "max_overflow": 10,
-            "pool_timeout": 30,
-            "pool_recycle": 1800,
+            "pool_size": settings.DB_POOL_SIZE,
+            "max_overflow": settings.DB_MAX_OVERFLOW,
+            "pool_timeout": settings.DB_POOL_TIMEOUT_SECONDS,
+            "pool_recycle": settings.DB_POOL_RECYCLE_SECONDS,
             "connect_args": {"server_settings": {"application_name": "brav_os_mas"}}
         })
 

@@ -3,10 +3,15 @@
   "installCommand": "cd frontend && npm install",
   "buildCommand": "cd frontend && npm run build",
   "outputDirectory": "frontend/dist",
+  "functions": {
+    "api/store_main.py": {
+      "maxDuration": 10
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://graxia-backend.onrender.com/api/$1"
+      "destination": "/api/store_main.py"
     },
     {
       "source": "/((?!api/).*)",

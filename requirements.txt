@@ -1,0 +1,24 @@
+# Slim dependency set for the Vercel serverless store API (api/store_main.py).
+# NOTE: This is the Vercel build requirements.txt (repo root). The full stack
+# (scrapers/ML/celery workers) stays in backend/requirements.txt for Render.
+fastapi==0.110.0
+python-multipart==0.0.9
+PyJWT==2.8.0
+sqlalchemy[asyncio]==2.0.27
+asyncpg==0.29.0
+aiosqlite==0.20.0
+pydantic[email]==2.11.7
+pydantic-settings==2.2.1
+email-validator==2.1.0
+stripe>=7,<9
+resend>=0.8.0
+requests>=2.31.0
+httpx>=0.25.2,<0.26
+tenacity==8.2.3
+passlib[bcrypt]==1.7.4
+bcrypt==4.1.2
+cryptography==42.0.5
+apscheduler>=3.10,<4
+python-dateutil==2.9.0
+structlog==24.1.0
+python-dotenv>=1.0.0
