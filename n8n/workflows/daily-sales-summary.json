@@ -1,0 +1,157 @@
+{
+  "name": "Ai Factory - Daily Sales Summary (Line + Email)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "schedule-d1",
+      "name": "Every Day 07:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-500, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graxia-os-funnel.vercel.app/api/v1/auth/login",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"email\":\"{{ $env.ADMIN_EMAIL }}\",\"password\":\"{{ $env.ADMIN_PASSWORD }}\"}",
+        "options": {
+          "timeout": 25000
+        }
+      },
+      "id": "http-d1",
+      "name": "Login",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-300, -100]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://graxia-os-funnel.vercel.app/api/v1/funnel/analytics/summary",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.access_token }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 25000
+        }
+      },
+      "id": "http-d2",
+      "name": "Analytics Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-100, -100]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://notify-api.line.me/api/notify",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.LINE_NOTIFY_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"message\":\"📊 SALES SUMMARY {{ $now.format('yyyy-MM-dd') }}\\nViews: {{ $json.views }}\\nVisitors: {{ $json.unique_visitors }}\\nLeads: {{ $json.leads }}\\nCheckouts: {{ $json.checkout_starts }}\\nPurchases: {{ $json.purchases }}\\nConversion: {{ $json.purchase_conversion_rate }}\"}",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "id": "http-d3",
+      "name": "Line Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [150, -200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.RESEND_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"from\":\"Ai Factory <onboarding@resend.dev>\",\"to\":\"{{ $env.ADMIN_EMAIL }}\",\"subject\":\"Daily sales summary {{ $now.format('yyyy-MM-dd') }}\",\"text\":\"Views: {{ $json.views }}\\nVisitors: {{ $json.unique_visitors }}\\nLeads: {{ $json.leads }}\\nCheckouts: {{ $json.checkout_starts }}\\nPurchases: {{ $json.purchases }}\"}",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "id": "http-d4",
+      "name": "Email Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [150, 0]
+    }
+  ],
+  "connections": {
+    "Every Day 07:00": {
+      "main": [
+        [
+          {
+            "node": "Login",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Login": {
+      "main": [
+        [
+          {
+            "node": "Analytics Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analytics Summary": {
+      "main": [
+        [
+          {
+            "node": "Line Summary",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Email Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,0 +1,120 @@
+{
+  "name": "Ai Factory - Customer Email Auto-Reply (AI)",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "format": "simple",
+        "filters": {
+          "filter": "INBOX"
+        }
+      },
+      "id": "gmail-t1",
+      "name": "Gmail Trigger (new mail)",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.1,
+      "position": [-500, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "cond-a1",
+              "leftValue": "={{ $json.subject }}",
+              "rightValue": "auto-reply",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            }
+          ]
+        }
+      },
+      "id": "if-a1",
+      "name": "Not an auto-reply?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-300, 0]
+    },
+    {
+      "parameters": {
+        "promptType": "defineBelow",
+        "text": "คุณคือทีมบริการลูกค้าของร้าน Ai Factory (ขายสินค้าดิจิทัล AI ภาษาไทย) ตอบอีเมลลูกค้าต่อไปนี้อย่างสุภาพ กระชับ ภาษาไทย ระบุว่าทางร้านจะช่วยเหลือได้ และถ้าเป็นเรื่องการสั่งซื้อ/สินค้า บอกว่าสินค้าส่งผ่านอีเมลแยกต่างหาก อย่าขอข้อมูลบัตรเครดิต\\n\\nอีเมลลูกค้า (subject: {{ $json.subject }}):\\n{{ $json.text }}",
+        "options": {}
+      },
+      "id": "openai-a1",
+      "name": "OpenAI - Draft Reply",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 2,
+      "position": [-100, 0]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "message": {
+          "subject": "=Re: {{ $('Gmail Trigger (new mail)').item.json.subject }} [auto-reply]",
+          "text": "={{ $json.output }}",
+          "to": "={{ $('Gmail Trigger (new mail)').item.json.from }}"
+        },
+        "options": {}
+      },
+      "id": "gmail-s1",
+      "name": "Gmail - Send Reply",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1.2,
+      "position": [150, 0]
+    }
+  ],
+  "connections": {
+    "Gmail Trigger (new mail)": {
+      "main": [
+        [
+          {
+            "node": "Not an auto-reply?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Not an auto-reply?": {
+      "main": [
+        [
+          {
+            "node": "OpenAI - Draft Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "OpenAI - Draft Reply": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Send Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
