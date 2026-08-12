@@ -191,3 +191,5 @@ ci_log.txt
 
 # Local repos (submodules managed separately)
 repos/
+n8n/.n8n-data/
+n8n/n8n-run.log
