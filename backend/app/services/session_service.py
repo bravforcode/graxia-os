@@ -10,7 +10,6 @@ from uuid import uuid4
 
 from app.config import settings
 from app.core.monitoring import metrics_collector
-from app.telegram_bot.bot import send_message
 
 
 @dataclass(slots=True)
@@ -321,6 +320,10 @@ class SessionService:
 
     async def _send_security_alert(self, message: str) -> None:
         try:
+            # Lazy import: keeps the `telegram` package out of the serverless
+            # cold-start path (only needed when an alert is actually sent).
+            from app.telegram_bot.bot import send_message
+
             await send_message(message, parse_mode=None)
         except Exception:
             return
