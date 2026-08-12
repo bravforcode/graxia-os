@@ -14,6 +14,14 @@
       "destination": "/api/store_main.py"
     },
     {
+      "source": "/health",
+      "destination": "/api/store_main.py"
+    },
+    {
+      "source": "/internal/(.*)",
+      "destination": "/api/store_main.py"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
