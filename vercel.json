@@ -1,7 +1,7 @@
 {
   "framework": "vite",
-  "installCommand": "cd frontend && npm install",
-  "buildCommand": "cd frontend && npm run build",
+  "installCommand": "cd frontend && bun install",
+  "buildCommand": "cd frontend && vite build",
   "outputDirectory": "frontend/dist",
   "functions": {
     "api/store_main.py": {

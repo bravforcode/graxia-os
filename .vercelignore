@@ -5,14 +5,27 @@
 .env
 .env.*
 
-backend
+# backend source IS needed by api/store_main.py (Vercel Python function)
+backend/.venv
+backend/venv
+backend/tests
+backend/scripts/backup_*
+backend/*.db
+backend/.state
+
 deploy
+
+venv-test
+04-Archive
+xiarchitect
+docs/superpowers
 
 **/__pycache__
 **/.pytest_cache
 **/.tmp_pytest
 **/.mypy_cache
 **/.ruff_cache
+**/*.db
 
 frontend/node_modules
 frontend/dist
@@ -25,3 +38,5 @@ frontend/.env.production.local
 !frontend/.env.production
 
 *.log
+.lean-ctx-init
+Usersmenum*
