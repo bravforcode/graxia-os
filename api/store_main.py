@@ -150,7 +150,7 @@ async def process_due(request: Request):
     Guarded by X-Internal-Token (settings.INTERNAL_METRICS_TOKEN).
     """
     token = request.headers.get("X-Internal-Token", "")
-    expected = settings.INTERNAL_METRICS_TOKEN
+    expected = settings.INTERNAL_API_KEY
     if not expected or token != expected:
         raise HTTPException(status_code=403, detail="Forbidden")
 

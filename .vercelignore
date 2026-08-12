@@ -20,6 +20,7 @@ venv-test
 04-Archive
 xiarchitect
 docs/superpowers
+pyproject.toml
 
 **/__pycache__
 **/.pytest_cache

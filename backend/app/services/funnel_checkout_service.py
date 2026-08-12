@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.funnel import DigitalProduct, FunnelCheckoutSession
 from app.core.stripe_client import create_stripe_checkout_session
 from app.schemas.funnel import FunnelCheckoutCreate
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -92,13 +93,24 @@ class FunnelCheckoutService:
             checkout_session.status = "pending"
             await self.db.commit()
 
-            # Schedule abandoned cart check (1 hour delay)
+            # Schedule abandoned cart check (1 hour delay).
+            # On serverless (no Celery broker), skip this — the cron bridge
+            # (/internal/funnel/process-due → scan_abandoned_carts) covers it,
+            # and attempting apply_async without a broker costs 5-7s of
+            # connection-retry time (blows the 10s Vercel Hobby limit).
             try:
-                from app.tasks.funnel_automation_tasks import check_and_send_abandoned_cart
-                check_and_send_abandoned_cart.apply_async(
-                    args=[str(organization_id), str(checkout_session.id)],
-                    countdown=3600,  # 1 hour
-                )
+                broker = getattr(settings, "CELERY_BROKER_URL", "") or getattr(settings, "REDIS_URL", "")
+                if broker:
+                    from app.tasks.funnel_automation_tasks import check_and_send_abandoned_cart
+
+                    check_and_send_abandoned_cart.apply_async(
+                        args=[str(organization_id), str(checkout_session.id)],
+                        countdown=3600,  # 1 hour
+                    )
+                else:
+                    logger.info(
+                        "Abandoned-cart scheduling skipped (no Celery broker) — cron bridge will handle it"
+                    )
             except Exception as e:
                 logger.warning(f"Failed to schedule abandoned cart check: {e}")
 
