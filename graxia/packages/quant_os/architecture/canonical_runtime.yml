@@ -1,0 +1,451 @@
+# Canonical Runtime Map — Quant OS
+# Generated: G0.1
+# Rule: Each responsibility has EXACTLY ONE canonical module.
+
+meta:
+  version: "1.0"
+  generated: "2026-06-22"
+  rule: "One canonical module per responsibility. Non-canonical modules get status labels."
+
+# ═══════════════════════════════════════════════════════════════════
+# CANONICAL RESPONSIBILITY → MODULE MAPPING
+# ═══════════════════════════════════════════════════════════════════
+
+responsibilities:
+
+  mtf_slicing:
+    canonical: "backtest/mtf_cursor.py"
+    prohibited:
+      - "core/multi_source_pipeline.py"  # different concern (data ingestion, not MTF slicing)
+    notes: "MultiTimeframeCursor provides point-in-time MTF data slicing for backtests."
+
+  dataset_validation:
+    canonical: "data/manifests/ + data/pipeline.py"
+    prohibited: []
+    notes: "Manifests define expected data shape; pipeline handles ingestion/validation."
+
+  symbol_contract_lookup:
+    canonical: "broker/mt5_gateway.py + broker/contract_spec.py"
+    prohibited: []
+    notes: "MT5 gateway fetches live contract specs; ContractSpec is the immutable data class."
+
+  risk_policy:
+    canonical: "risk/risk_policy.py"
+    prohibited:
+      - "core/golden_rules.py"  # hard limits, not risk policy
+    notes: "RiskPolicy dataclass holds soft risk limits (per-trade, daily, weekly, drawdown)."
+
+  position_sizing:
+    canonical: "risk/position_sizer_v2.py"
+    prohibited:
+      - "risk/position_sizer.py"  # LEGACY — old sizer with hardcoded methods
+    notes: "v2 uses decoupled ContractSpec + RiskPolicy, no direct imports."
+
+  pre_trade_checks:
+    canonical: "risk/pre_trade_risk.py"
+    prohibited:
+      - "risk/engine.py"  # LEGACY_READ_ONLY — 17-check engine, superseded by pre_trade_risk
+    notes: "Checks sizing_result against risk_ledger and kill_switch before order submission."
+
+  backtest_execution:
+    canonical: "backtest/engine.py"
+    prohibited: []
+    notes: "BacktestEngine — Phase 3.1 integrated: HistoricalSizingProvider, ConservativeBarFillModel, CostModel, OrderStateMachine, TradeLedger. strict_mtf=True default."
+
+  cost_model:
+    canonical: "execution/cost_model.py"
+    prohibited: []
+    notes: "TradeCosts calculation with spread, commission, slippage scenarios."
+
+  fill_model:
+    canonical: "execution/fill_model.py"
+    prohibited: []
+    notes: "Simulates entry/exit fills with slippage, SL/TP trigger checks."
+
+  trade_ledger:
+    canonical: "execution/trade_ledger.py"
+    prohibited:
+      - "core/structured_trades.py"  # LEGACY_READ_ONLY — vectorbt-pattern trade storage
+    notes: "JSON-file trade records with full provenance and hash integrity."
+
+  order_state_machine:
+    canonical: "execution/order_state_machine.py"
+    prohibited:
+      - "execution/order.py"  # LEGACY_READ_ONLY — older Order class with inline state
+    notes: "16-state machine with enforced transitions, no MT5 dependency."
+
+  conservative_bar_model:
+    canonical: "execution/conservative_bar_model.py"
+    prohibited: []
+    notes: "Bar high/low → synthetic bid/ask when tick data unavailable."
+
+  historical_sizing:
+    canonical: "risk/historical_sizing_provider.py"
+    notes: "Deterministic sizing for backtest. No MT5 dependency."
+
+  swap_model:
+    canonical: "execution/swap_model.py"
+    notes: "Explicit overnight swap calculation. SwapPolicy wraps rates."
+
+  kill_switch:
+    canonical: "risk/kill_switch.py"
+    prohibited: []
+    notes: "Persistent JSON-file kill switch. Blocks all new orders when active."
+
+  risk_ledger:
+    canonical: "risk/risk_ledger.py"
+    prohibited: []
+    notes: "JSON-file daily/weekly risk tracking. Resets at start of trading day."
+
+  external_repo_registry:
+    canonical: "repo_intelligence/registry/"
+    prohibited: []
+    notes: "YAML registry of external repo references, quarantine decisions, canonical mappings."
+
+  contract_snapshot_store:
+    canonical: "broker/contract_snapshot_store.py"
+    prohibited: []
+    notes: "Immutable JSON-file store for ContractSpec snapshots with hash verification."
+
+  strategy_definition:
+    canonical: "strategies/base.py"
+    prohibited:
+      - "gold_bot/strategies/base.py"  # gold_bot-specific, not the canonical base
+    notes: "Signal dataclass and Strategy ABC. All canonical strategies extend this."
+
+  data_loading:
+    canonical: "data/feed.py"
+    prohibited:
+      - "backtest/data_loader.py"  # backtest-specific CSV loader, subset of feed
+    notes: "Live data feed with MT5, Yahoo Finance, fallback chain."
+
+  quality_gate:
+    canonical: "data/quality_gate.py"
+    prohibited: []
+    notes: "Validates data before trading decisions. Checks freshness, gaps, consistency."
+
+  # ── Live Readiness (Phase 3.2) ─────────────────────────────────
+
+  mt5_readonly_client:
+    canonical: "live_readiness/mt5_readonly_client.py"
+    prohibited: []
+    notes: "Read-only wrapper around MT5 API. Blocks order_send/modify/close at class level."
+
+  account_snapshot_mt5:
+    canonical: "live_readiness/account_snapshot_service.py"
+    prohibited: []
+    notes: "Captures account state from MT5 via Mt5ReadOnlyClient. Decimal precision, SHA-256 hash."
+
+  symbol_snapshot:
+    canonical: "live_readiness/symbol_snapshot_service.py"
+    prohibited: []
+    notes: "Captures symbol state from MT5. Decimal precision, SHA-256 hash."
+
+  broker_profile:
+    canonical: "live_readiness/broker_profile.py"
+    prohibited: []
+    notes: "BrokerProfile dataclass — expected runtime config per broker (server, currency, symbols)."
+
+  mt5_runtime_verifier:
+    canonical: "live_readiness/mt5_runtime_verifier.py"
+    prohibited: []
+    notes: "Full 17-step MT5 verification sequence. Returns RuntimeCapabilities."
+
+  runtime_capabilities:
+    canonical: "live_readiness/runtime_capabilities.py"
+    prohibited: []
+    notes: "RuntimeCapabilities dataclass — snapshot of what MT5 can do right now."
+
+  live_readiness_smoke_report:
+    canonical: "live_readiness/smoke_report.py"
+    prohibited: []
+    notes: "MT5-specific smoke report from BrokerProfile + RuntimeCapabilities."
+
+  # ── Market Data ────────────────────────────────────────────────
+
+  account_snapshot_generic:
+    canonical: "market_data/account_snapshot.py"
+    prohibited: []
+    notes: "Generic account snapshot from raw values (no MT5 dependency). Float precision."
+
+  clock_guard:
+    canonical: "market_data/clock_guard.py"
+    prohibited: []
+    notes: "Clock drift detection — compares MT5 server time vs local UTC."
+
+  data_watermark:
+    canonical: "market_data/data_watermark.py"
+    prohibited: []
+    notes: "Tracks freshest tick per symbol, staleness/gap metrics, SHA-256 watermark hash."
+
+  feed_health:
+    canonical: "market_data/feed_health.py"
+    prohibited: []
+    notes: "Per-symbol feed health monitor. State machine: HEALTHY → STALE_FEED → DISCONNECTED."
+
+  market_health:
+    canonical: "market_data/market_health.py"
+    prohibited: []
+    notes: "Central health state machine. Aggregates all subsystem signals. Only HEALTHY permits orders."
+
+  market_session_guard:
+    canonical: "market_data/market_session_guard.py"
+    prohibited: []
+    notes: "Determines if market is open (weekend, holiday, session hours). Fails closed."
+
+  market_data_smoke_report:
+    canonical: "market_data/smoke_report.py"
+    prohibited: []
+    notes: "Market data subsystem smoke report. Evaluates feed, spread, clock, session, tick, watermark, account."
+
+  spread_monitor:
+    canonical: "market_data/spread_monitor.py"
+    prohibited: []
+    notes: "Rolling baseline spread tracking with wide-spread anomaly detection."
+
+  tick_recorder:
+    canonical: "market_data/tick_recorder.py"
+    prohibited: []
+    notes: "Records raw ticks with quality checks (stale, gap, out-of-order)."
+
+  tick_store:
+    canonical: "market_data/tick_store.py"
+    prohibited: []
+    notes: "Persists TickRecords as JSONL files, one per symbol per day."
+
+# ═══════════════════════════════════════════════════════════════════
+# FILE STATUS CLASSIFICATION
+# ═══════════════════════════════════════════════════════════════════
+
+file_classification:
+
+  # ── ACTIVE — Canonical modules ──────────────────────────────────
+  ACTIVE:
+    - "backtest/mtf_cursor.py"
+    - "backtest/data_loader.py"
+    - "backtest/metrics.py"
+    - "backtest/engine.py"
+    - "backtest/walk_forward.py"
+    - "broker/mt5_gateway.py"
+    - "broker/contract_spec.py"
+    - "broker/contract_snapshot_store.py"
+    - "core/config.py"
+    - "core/enums.py"
+    - "core/exceptions.py"
+    - "core/golden_rules.py"
+    - "core/bias_detector.py"
+    - "core/candle_pipeline.py"
+    - "core/dashboard.py"
+    - "core/holdout_validation.py"
+    - "core/hyperopt.py"
+    - "core/lifecycle.py"
+    - "core/lookahead_guard.py"
+    - "core/ml_pipeline.py"
+    - "core/monte_carlo.py"
+    - "core/multi_source_pipeline.py"
+    - "core/pair_filter.py"
+    - "core/param_sweep.py"
+    - "core/regime_filter.py"
+    - "core/rolling_metrics.py"
+    - "core/signal_filter.py"
+    - "core/stability.py"
+    - "data/feed.py"
+    - "data/pipeline.py"
+    - "data/quality_gate.py"
+    - "data/models.py"
+    - "execution/cost_model.py"
+    - "execution/fill_model.py"
+    - "execution/trade_ledger.py"
+    - "execution/order_state_machine.py"
+    - "execution/conservative_bar_model.py"
+    - "execution/manager.py"
+    - "execution/broker_adapter.py"
+    - "execution/idempotency.py"
+    - "execution/order.py"
+    - "ml/pipeline.py"
+    - "monitoring/alerts.py"
+    - "monitoring/metrics.py"
+    - "monitoring/telegram.py"
+    - "repo_intelligence/registry/__init__.py"
+    - "repo_intelligence/registry/repositories_canonical.yml"
+    - "repo_intelligence/registry/repositories.yml"
+    - "repo_intelligence/registry/quarantined_repositories.yml"
+    - "repo_intelligence/registry/approved_references.yml"
+    - "repo_intelligence/registry/repository_decisions.yml"
+    - "risk/circuit_breaker.py"
+    - "risk/kill_switch.py"
+    - "risk/portfolio.py"
+    - "risk/pre_trade_risk.py"
+    - "risk/position_sizer_v2.py"
+    - "risk/risk_ledger.py"
+    - "risk/risk_policy.py"
+    - "strategies/base.py"
+    - "strategies/ensemble.py"
+    - "strategies/mlb.py"
+    - "strategies/mrb.py"
+    - "strategies/mtm.py"
+    - "gold_bot/__init__.py"
+    - "gold_bot/run.py"
+    - "gold_bot/run_demo.py"
+    - "gold_bot/strategy_adapter.py"
+    - "gold_bot/core/__init__.py"
+    - "gold_bot/core/config.py"
+    - "gold_bot/core/engine.py"
+    - "gold_bot/ai/__init__.py"
+    - "gold_bot/ai/validator.py"
+    - "gold_bot/monitoring/__init__.py"
+    - "gold_bot/monitoring/telegram_bot.py"
+    - "gold_bot/strategies/__init__.py"
+    - "gold_bot/strategies/base.py"
+    - "gold_bot/strategies/bos_choch.py"
+    - "gold_bot/strategies/ema_cross.py"
+    - "gold_bot/strategies/fair_value_gap.py"
+    - "gold_bot/strategies/fibonacci.py"
+    - "gold_bot/strategies/liquidity_sweep.py"
+    - "gold_bot/strategies/london_breakout.py"
+    - "gold_bot/strategies/multi_tf_align.py"
+    - "gold_bot/strategies/news_fade.py"
+    - "gold_bot/strategies/opening_range.py"
+    - "gold_bot/strategies/order_block.py"
+    - "gold_bot/strategies/rsi_divergence.py"
+    - "gold_bot/strategies/supply_demand.py"
+    - "gold_bot/strategies/vwap_rejection.py"
+    - "api/__init__.py"
+    - "api/main.py"
+    - "api/admin.py"
+    - "api/orders.py"
+    - "api/positions.py"
+    - "api/risk.py"
+    - "api/webhook.py"
+    - "tasks.py"
+    - "__init__.py"
+    - "download_d1.py"
+    - "download_mt5.py"
+    - "download_mt5_symbols.py"
+    - "download_xauusd_multi_tf.py"
+    - "run_backtest.py"
+    - "run_backtest_real.py"
+    - "run_ml_train.py"
+    - "run_paper_trading.py"
+    - "pine_script/QuantBot_Ensemble.pine"
+    - "live_readiness/__init__.py"
+    - "live_readiness/mt5_readonly_client.py"
+    - "live_readiness/account_snapshot_service.py"
+    - "live_readiness/symbol_snapshot_service.py"
+    - "live_readiness/broker_profile.py"
+    - "live_readiness/mt5_runtime_verifier.py"
+    - "live_readiness/runtime_capabilities.py"
+    - "live_readiness/smoke_report.py"
+    - "market_data/__init__.py"
+    - "market_data/account_snapshot.py"
+    - "market_data/clock_guard.py"
+    - "market_data/data_watermark.py"
+    - "market_data/feed_health.py"
+    - "market_data/market_health.py"
+    - "market_data/market_session_guard.py"
+    - "market_data/smoke_report.py"
+    - "market_data/spread_monitor.py"
+    - "market_data/tick_recorder.py"
+    - "market_data/tick_store.py"
+
+  # ── LEGACY_READ_ONLY — Kept for reference, not production path ─
+  LEGACY_READ_ONLY:
+    - "risk/position_sizer.py"
+    - "risk/engine.py"
+    - "core/structured_trades.py"
+    - "repo_intelligence/adapters/backtesting_py_oracle.py"
+    - "repo_intelligence/adapters/backtrader_oracle.py"
+    - "repo_intelligence/adapters/vectorbt_oracle.py"
+    - "repo_intelligence/adapters/lean_oracle_contract.py"
+    - "repo_intelligence/adapters/__init__.py"
+    - "repo_intelligence/__init__.py"
+    - "repo_intelligence/manifests/repository_manifest.json"
+
+  # ── TEST_FIXTURE_ONLY — Test utilities ──────────────────────────
+  TEST_FIXTURE_ONLY:
+    - "conftest.py"
+    - "tests/__init__.py"
+    - "tests/test_core.py"
+    - "tests/test_ema_rsi.py"
+    - "tests/test_execution.py"
+    - "tests/test_load.py"
+    - "tests/test_mtf_leak.py"
+    - "tests/test_new_modules.py"
+    - "tests/test_position_sizer_numeric.py"
+    - "tests/test_single.py"
+    - "tests/test_strategies.py"
+    - "tests/test_timing.py"
+    - "tests/test_timing2.py"
+    - "tests/test_timing3.py"
+    - "tests/test_vwap.py"
+    - "tests/test_bias_detection_deterministic.py"
+    - "tests/test_bias_detection_real.py"
+    - "tests/test_lookahead_regression.py"
+    - "tests/test_antimartingale_tiers.py"
+    - "tests/test_phase_2a.py"
+    - "tests/test_phase_2b.py"
+    - "tests/test_phase_3.py"
+    - "tests/test_phase_3_order.py"
+    - "tests/baseline_multi_symbol.py"
+    - "tests/baseline_xauusd.py"
+    - "tests/diagnostic_mrb.py"
+    - "tests/diagnostic_mrb_mlb_real.py"
+    - "tests/diagnostic_mtm.py"
+    - "tests/outofsample_xauusd.py"
+    - "tests/run_all_13_real.py"
+    - "tests/run_all_13_strategies_real.py"
+    - "tests/run_holdout_and_deflated.py"
+    - "gold_bot/tests/__init__.py"
+    - "gold_bot/tests/test_engine.py"
+    - "gold_bot/tests/test_integration.py"
+    - "gold_bot/tests/test_strategies.py"
+    - "repo_intelligence/tests/__init__.py"
+    - "repo_intelligence/tests/test_repo_intelligence.py"
+
+  # ── DEPRECATED_PENDING_DELETE ───────────────────────────────────
+  DEPRECATED_PENDING_DELETE:
+    - "alembic_migration.py"
+
+  # ── QUARANTINED — External repo code ───────────────────────────
+  QUARANTINED:
+    - "lancedb/__manifest/"
+    - "docs/SAFETY_CHECKLIST.md"
+    - "docs/freqtrade_patterns.md"
+    - "docs/jesse_patterns.md"
+    - "docs/vectorbt_patterns.md"
+
+# ═══════════════════════════════════════════════════════════════════
+# AMBIGUITIES
+# ═══════════════════════════════════════════════════════════════════
+
+ambiguities:
+
+  - id: "config_legacy_sizing_fields"
+    files: ["core/config.py"]
+    description: "core/config.py has max_risk_per_trade_pct and similar fields that feed into risk_policy.py. These are config values, not the sizing algorithm itself. position_sizer.py (LEGACY) imports from config; position_sizer_v2.py (CANONICAL) does not."
+    resolution: "config.py is ACTIVE (it's the config source). position_sizer.py is LEGACY."
+
+  - id: "execution_order_vs_state_machine"
+    files: ["execution/order.py", "execution/order_state_machine.py"]
+    description: "order.py contains an older Order class with inline state transitions. order_state_machine.py is the canonical 16-state machine. order.py is still imported by broker_adapter.py and manager.py."
+    resolution: "order.py remains ACTIVE because it's wired into the runtime path. order_state_machine.py is the canonical state definition. Consider deprecating order.py's inline state in favor of the state machine."
+
+  - id: "gold_bot_strategy_base_vs_canonical"
+    files: ["gold_bot/strategies/base.py", "strategies/base.py"]
+    description: "gold_bot has its own GoldStrategy ABC. strategies/base.py is the canonical Strategy ABC used by mtm/mrb/mlb/ensemble."
+    resolution: "Both ACTIVE. gold_bot strategies extend GoldStrategy (gold_bot-specific); canonical strategies extend Strategy (strategies/base.py). Different lineages."
+
+  - id: "data_loader_vs_feed"
+    files: ["backtest/data_loader.py", "data/feed.py"]
+    description: "backtest/data_loader.py loads CSV files for backtests. data/feed.py is the live data feed with MT5/Yahoo/fallback."
+    resolution: "Both ACTIVE. data_loader is backtest-specific; feed is live/paper. Different contexts."
+
+  - id: "risk_engine_vs_pre_trade_risk"
+    files: ["risk/engine.py", "risk/pre_trade_risk.py"]
+    description: "risk/engine.py has 17 pre-trade checks (older). risk/pre_trade_risk.py is the newer, simpler pre-trade check."
+    resolution: "pre_trade_risk.py is CANONICAL. risk/engine.py is LEGACY_READ_ONLY."
+
+  - id: "engine_legacy_fill_path"
+    files: ["backtest/engine.py"]
+    description: "Engine uses inline sizing and close-price fills. Does not call position_sizer_v2, fill_model, cost_model, order_state_machine, or trade_ledger. Phase 3.1 scope."
+    resolution: "Phase 3.1 completed — engine now wires all execution components. RESOLVED."

@@ -1,0 +1,18 @@
+{
+  "lock_id": "XAU_LIQSWEEP_LOCKED_001",
+  "frozen_at": "2026-06-22T07:44:00Z",
+  "contract_artifacts": {
+    "contract_snapshot_store": {
+      "path": "broker/contract_snapshot_store.py",
+      "sha256": "ec7bbcddea8884908285c9a1a6596097cacd947dbd693bcc635ef373eda66ef0"
+    },
+    "contract_spec": {
+      "path": "broker/contract_spec.py",
+      "sha256": "2aeff4ea8b176c1df3c8e60f835223f839cc22487c703bc81cd3b2144a591926"
+    },
+    "contract_snapshot_ref": {
+      "path": "experiments/XAU_LIQSWEEP_LOCKED_001/contract_snapshot_ref.json",
+      "note": "Immutable snapshot reference per CONSTITUTION INV-010/INV-011"
+    }
+  }
+}

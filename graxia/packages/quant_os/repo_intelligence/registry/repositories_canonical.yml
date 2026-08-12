@@ -1,0 +1,1101 @@
+# Repository Intelligence Registry — Canonical
+# Single source of truth for all registered external AND internal repositories.
+# Reconciled: 2026-06-22 (Phase 1R-H: 56 external + 14 internal = 70 total)
+# Replaces: repositories.yml, approved_references.yml, quarantined_repositories.yml, repository_decisions.yml
+# ponytail: merged 4 files into 1 canonical source, old files preserved as-is
+---
+repositories:
+
+  # === A. Differential backtesting and research oracles ===
+
+  - repo_id: mementum_backtrader
+    canonical_url: https://github.com/mementum/backtrader
+    owner: mementum
+    name: backtrader
+    asset_scope: "event-driven independent ledger for Forex/Gold research"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_DIFFERENTIAL_ORACLE
+    execution_permission: true
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: kernc_backtesting_py
+    canonical_url: https://github.com/kernc/backtesting.py
+    owner: kernc
+    name: backtesting.py
+    asset_scope: "rule-level independent backtest for Forex/Gold research"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_DIFFERENTIAL_ORACLE
+    execution_permission: true
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: polakowo_vectorbt
+    canonical_url: https://github.com/polakowo/vectorbt
+    owner: polakowo
+    name: vectorbt
+    asset_scope: "parameter surface, walk-forward, analytics for Forex/Gold research"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_DIFFERENTIAL_ORACLE
+    execution_permission: true
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: quantconnect_lean
+    canonical_url: https://github.com/QuantConnect/Lean
+    owner: QuantConnect
+    name: Lean
+    asset_scope: "optional final oracle, independent event-driven reproduction"
+    language: C#
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_DIFFERENTIAL_ORACLE
+    execution_permission: true
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  # === B. Architecture references ===
+
+  - repo_id: stocksharp_stocksharp
+    canonical_url: https://github.com/StockSharp/StockSharp
+    owner: StockSharp
+    name: StockSharp
+    asset_scope: "architecture and optional C# cross-check, reference only"
+    language: C#
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_ARCHITECTURE_REFERENCE
+    execution_permission: true
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: fasiondog_hikyuu
+    canonical_url: https://github.com/fasiondog/hikyuu
+    owner: fasiondog
+    name: hikyuu
+    asset_scope: "framework comparison, research reference"
+    language: C++
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_ARCHITECTURE_REFERENCE
+    execution_permission: true
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: enzoampil_fastquant
+    canonical_url: https://github.com/enzoampil/fastquant
+    owner: enzoampil
+    name: fastquant
+    asset_scope: "exploratory benchmark, research reference"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_ARCHITECTURE_REFERENCE
+    execution_permission: true
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: lumiwealth_lumibot
+    canonical_url: https://github.com/Lumiwealth/lumibot
+    owner: Lumiwealth
+    name: lumibot
+    asset_scope: "paper/live lifecycle reference, architecture reference"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_ARCHITECTURE_REFERENCE
+    execution_permission: true
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: barter_rs_barter_rs
+    canonical_url: https://github.com/barter-rs/barter-rs
+    owner: barter-rs
+    name: barter-rs
+    asset_scope: "Rust event-driven paper/live architecture, reference only"
+    language: Rust
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_ARCHITECTURE_REFERENCE
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: superalgos_superalgos
+    canonical_url: https://github.com/superalgos/Superalgos
+    owner: superalgos
+    name: Superalgos
+    asset_scope: "dashboard and workflow ideas, monitoring reference"
+    language: JavaScript
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_ARCHITECTURE_REFERENCE
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: nkaz001_hftbacktest
+    canonical_url: https://github.com/nkaz001/hftbacktest
+    owner: nkaz001
+    name: hftbacktest
+    asset_scope: "order-book/latency concepts, reference only, no L2/L3 data"
+    language: Rust
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_ARCHITECTURE_REFERENCE
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  # === C. Hypothesis corpus ===
+
+  - repo_id: edtechre_pybroker
+    canonical_url: https://github.com/edtechre/pybroker
+    owner: edtechre
+    name: pybroker
+    asset_scope: "ML research comparator, research only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: true
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: scottfreellc_alphapy
+    canonical_url: https://github.com/ScottfreeLLC/AlphaPy
+    owner: ScottfreeLLC
+    name: AlphaPy
+    asset_scope: "ML/feature research ideas, offline only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: true
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: jesuistm_quant_trading
+    canonical_url: https://github.com/je-suis-tm/quant-trading
+    owner: je-suis-tm
+    name: quant-trading
+    asset_scope: "strategy hypothesis source, hypothesis only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: true
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: xavierleeeugene_trading_strategies
+    canonical_url: https://github.com/Xavierleeeugene/Trading_Strategies
+    owner: Xavierleeeugene
+    name: Trading_Strategies
+    asset_scope: "strategy hypothesis source, hypothesis only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: true
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: jadelam_algorithmictrading
+    canonical_url: https://github.com/jade-lam/AlgorithmicTrading
+    owner: jade-lam
+    name: AlgorithmicTrading
+    asset_scope: "strategy hypothesis source, hypothesis only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: true
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: asavinov_intelligent_trading_bot
+    canonical_url: https://github.com/asavinov/intelligent-trading-bot
+    owner: asavinov
+    name: intelligent-trading-bot
+    asset_scope: "ML pipeline ideas, offline only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: true
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: tonyma_walk_forward_backtester
+    canonical_url: https://github.com/TonyMa1/walk-forward-backtester
+    owner: TonyMa1
+    name: walk-forward-backtester
+    asset_scope: "protocol comparison, offline only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: true
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: staituned_financial_sentiment
+    canonical_url: https://github.com/stAItuned/financial-sentiment-analysis
+    owner: stAItuned
+    name: financial-sentiment-analysis
+    asset_scope: "sentiment feature ideas, shadow features only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: true
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  # === D. Data reference ===
+
+  - repo_id: alihanucar_fredapi
+    canonical_url: https://github.com/alihanucar/fredapi
+    owner: alihanucar
+    name: fredapi
+    asset_scope: "macro-data adapter reference, macro research"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_DATA_REFERENCE
+    execution_permission: true
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  # === E. Crypto-only references ===
+
+  - repo_id: hummingbot_hummingbot
+    canonical_url: https://github.com/hummingbot/hummingbot
+    owner: hummingbot
+    name: hummingbot
+    asset_scope: "order lifecycle and connector patterns, crypto architecture reference"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: CRYPTO_ONLY_REFERENCE
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: drakkar_software_octobot
+    canonical_url: https://github.com/Drakkar-Software/OctoBot
+    owner: Drakkar-Software
+    name: OctoBot
+    asset_scope: "plugin and bot orchestration patterns, architecture reference"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: CRYPTO_ONLY_REFERENCE
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: whittlem_pycryptobot
+    canonical_url: https://github.com/whittlem/pycryptobot
+    owner: whittlem
+    name: pycryptobot
+    asset_scope: "bot configuration patterns, crypto-only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: CRYPTO_ONLY_REFERENCE
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: cryptognome_tv_webhook
+    canonical_url: https://github.com/CryptoGnome/Tradingview-Webhook-Bot
+    owner: CryptoGnome
+    name: Tradingview-Webhook-Bot
+    asset_scope: "webhook validation patterns, crypto-only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: CRYPTO_ONLY_REFERENCE
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: coinquanta_awesome_crypto_api
+    canonical_url: https://github.com/CoinQuanta/awesome-crypto-api
+    owner: CoinQuanta
+    name: awesome-crypto-api
+    asset_scope: "data source catalog, crypto-only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: CRYPTO_ONLY_REFERENCE
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: stephan_akkerman_crypto_ohlcv
+    canonical_url: https://github.com/StephanAkkerman/crypto-ohlcv
+    owner: StephanAkkerman
+    name: crypto-ohlcv
+    asset_scope: "crypto OHLCV ideas, crypto-only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: CRYPTO_ONLY_REFERENCE
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: sashaflores_crypto_sentiment
+    canonical_url: https://github.com/SashaFlores/Crypto-Sentiment-Analysis
+    owner: SashaFlores
+    name: Crypto-Sentiment-Analysis
+    asset_scope: "crypto sentiment ideas, crypto-only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: CRYPTO_ONLY_REFERENCE
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: john_gee3_newsapi_crypto_sentiment
+    canonical_url: https://github.com/John-Gee3/Using-NewsAPI-to-scrap-data-for-crypto-sentiment-and-NER-analysis
+    owner: John-Gee3
+    name: Using-NewsAPI-to-scrap-data-for-crypto-sentiment-and-NER-analysis
+    asset_scope: "research methodology only, crypto-only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: CRYPTO_ONLY_REFERENCE
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: sajanpoudel_cryptosensei
+    canonical_url: https://github.com/sajanpoudel/CryptoSensei
+    owner: sajanpoudel
+    name: CryptoSensei
+    asset_scope: "crypto news/sentiment ideas, crypto-only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: CRYPTO_ONLY_REFERENCE
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: gazbert_bxbot
+    canonical_url: https://github.com/gazbert/bxbot
+    owner: gazbert
+    name: bxbot
+    asset_scope: "crypto exchange patterns, no MT5 runtime"
+    language: Java
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: CRYPTO_ONLY_REFERENCE
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  # === F. Verify identity only ===
+
+  - repo_id: austin_starks_nexttrade
+    canonical_url: https://github.com/austin-starks/NextTrade
+    owner: austin-starks
+    name: NextTrade
+    asset_scope: "framework idea review, read-only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: VERIFY_IDENTITY_ONLY
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: socktrader_socktrader
+    canonical_url: https://github.com/SockTrader/SockTrader
+    owner: SockTrader
+    name: SockTrader
+    asset_scope: "review source and project identity, verify first"
+    language: TypeScript
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: VERIFY_IDENTITY_ONLY
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: finanzobot_finanzobot
+    canonical_url: https://github.com/finanzobot/finanzobot
+    owner: finanzobot
+    name: finanzobot
+    asset_scope: "review source and project identity, verify first"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: VERIFY_IDENTITY_ONLY
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: quantweb3_nexustrader
+    canonical_url: https://github.com/Quantweb3-com/NexusTrader
+    owner: Quantweb3-com
+    name: NexusTrader
+    asset_scope: "inventory/research only, verify first"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: VERIFY_IDENTITY_ONLY
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: trading_bot_tv_webhook
+    canonical_url: https://github.com/trading-bot/Tradingview-Webhook-Bot
+    owner: trading-bot
+    name: Tradingview-Webhook-Bot
+    asset_scope: "webhook validation patterns, non-execution reference"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: VERIFY_IDENTITY_ONLY
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: elias_aboukhater_trading_bot
+    canonical_url: https://github.com/EliasAbouKhater/trading-bot
+    owner: EliasAbouKhater
+    name: trading-bot
+    asset_scope: "portfolio/rebalancing ideas, future only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: VERIFY_IDENTITY_ONLY
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: backpack455_trading_bot
+    canonical_url: https://github.com/backpack455/trading-bot
+    owner: backpack455
+    name: trading-bot
+    asset_scope: "portfolio/rebalancing ideas, future only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: VERIFY_IDENTITY_ONLY
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: kiploks_walk_forward_validator
+    canonical_url: https://github.com/kiploks/walk-forward-validator
+    owner: kiploks
+    name: walk-forward-validator
+    asset_scope: "verify project validity and WFO ideas, offline only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: VERIFY_IDENTITY_ONLY
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: cluster2600_elvis
+    canonical_url: https://github.com/cluster2600/ELVIS
+    owner: cluster2600
+    name: ELVIS
+    asset_scope: "stress/Monte Carlo ideas, offline only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: VERIFY_IDENTITY_ONLY
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: robert_zag_stockanalysis
+    canonical_url: https://github.com/robert-zag/StockAnalysis
+    owner: robert-zag
+    name: StockAnalysis
+    asset_scope: "analytics reference, offline only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: VERIFY_IDENTITY_ONLY
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: anthonydickson_algotrader
+    canonical_url: https://github.com/AnthonyDickson/AlgoTrader
+    owner: AnthonyDickson
+    name: AlgoTrader
+    asset_scope: "execution/strategy patterns, offline only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: VERIFY_IDENTITY_ONLY
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: elitequant_elitequant
+    canonical_url: https://github.com/EliteQuant/EliteQuant
+    owner: EliteQuant
+    name: EliteQuant
+    asset_scope: "architecture/strategy ideas, offline only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: VERIFY_IDENTITY_ONLY
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: ro234jk_trading_bot
+    canonical_url: https://github.com/ro234jk/Trading-Bot.
+    owner: ro234jk
+    name: Trading-Bot.
+    asset_scope: "source review only, verify first"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: VERIFY_IDENTITY_ONLY
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: mun_min_ml_trading_bot
+    canonical_url: https://github.com/Mun-Min/ML_Trading_Bot
+    owner: Mun-Min
+    name: ML_Trading_Bot
+    asset_scope: "ML experiment ideas, offline only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: VERIFY_IDENTITY_ONLY
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: zeroxemmkty_quantmuse
+    canonical_url: https://github.com/0xemmkty/QuantMuse
+    owner: 0xemmkty
+    name: QuantMuse
+    asset_scope: "ML/quant ideas, offline only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: VERIFY_IDENTITY_ONLY
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: eugeneow_trading
+    canonical_url: https://github.com/EugeneOw/trading
+    owner: EugeneOw
+    name: trading
+    asset_scope: "ML/research ideas, offline only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: VERIFY_IDENTITY_ONLY
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: hamidreza_rhz_ml_strategy
+    canonical_url: https://github.com/hamidreza-rhz/Technical-Analysis-ML-Strategy-Optimization
+    owner: hamidreza-rhz
+    name: Technical-Analysis-ML-Strategy-Optimization
+    asset_scope: "ML pitfalls/ideas, offline only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: VERIFY_IDENTITY_ONLY
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: trading_bot_robo_advisor_stock_bots
+    canonical_url: https://github.com/trading-bot-robo-advisor/Stock-Trading-Bots
+    owner: trading-bot-robo-advisor
+    name: Stock-Trading-Bots
+    asset_scope: "RL ideas, simulator only"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: VERIFY_IDENTITY_ONLY
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: alternative_macro_signals_api_docs
+    canonical_url: https://github.com/alternative-macro-signals/api-docs
+    owner: alternative-macro-signals
+    name: api-docs
+    asset_scope: "macro data catalog, verify first"
+    language: Markdown
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: VERIFY_IDENTITY_ONLY
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: br0ski777_crypto_news_mcp
+    canonical_url: https://claudemarketplaces.com/mcp/io.github.br0ski777/crypto-news
+    owner: br0ski777
+    name: crypto-news
+    asset_scope: "external integration reference, no runtime access"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: VERIFY_IDENTITY_ONLY
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: michaelchu_optopsy
+    canonical_url: https://github.com/michaelchu/optopsy
+    owner: michaelchu
+    name: optopsy
+    asset_scope: "options analytics reference, out of current scope"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: VERIFY_IDENTITY_ONLY
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  - repo_id: algotraders_stock_analysis_engine
+    canonical_url: https://github.com/AlgoTraders/stock-analysis-engine
+    owner: AlgoTraders
+    name: stock-analysis-engine
+    asset_scope: "market data architecture ideas, no broker credentials"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: VERIFY_IDENTITY_ONLY
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+
+  # === H. Internal runtime packages (Phase 1R-H) ===
+
+  - repo_id: internal_backtest
+    canonical_url: "local://quant_os/backtest"
+    owner: quant_os
+    name: backtest
+    asset_scope: "backtest engine, data loader, walk-forward, metrics"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 6
+
+  - repo_id: internal_broker
+    canonical_url: "local://quant_os/broker"
+    owner: quant_os
+    name: broker
+    asset_scope: "MT5 gateway, contract spec, contract snapshot store"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 4
+
+  - repo_id: internal_core
+    canonical_url: "local://quant_os/core"
+    owner: quant_os
+    name: core
+    asset_scope: "config, enums, exceptions, ML pipeline, hyperopt, regime filter, bias detector, monte carlo, stability"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 22
+
+  - repo_id: internal_data
+    canonical_url: "local://quant_os/data"
+    owner: quant_os
+    name: data
+    asset_scope: "data feed, pipeline, quality gate, models, CSV datasets (EURUSD, GBPUSD, XAUUSD multi-timeframe)"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_DATA_REFERENCE
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 5
+
+  - repo_id: internal_execution
+    canonical_url: "local://quant_os/execution"
+    owner: quant_os
+    name: execution
+    asset_scope: "order state machine, broker adapter, fill model, cost model, idempotency, trade ledger, execution simulator"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 13
+
+  - repo_id: internal_live_readiness
+    canonical_url: "local://quant_os/live_readiness"
+    owner: quant_os
+    name: live_readiness
+    asset_scope: "broker profile, MT5 runtime verifier, account snapshot, runtime capabilities, smoke report"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 8
+
+  - repo_id: internal_market_data
+    canonical_url: "local://quant_os/market_data"
+    owner: quant_os
+    name: market_data
+    asset_scope: "market health, spread monitor, tick recorder/store, clock guard, feed health, data watermark"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 11
+
+  - repo_id: internal_ml
+    canonical_url: "local://quant_os/ml"
+    owner: quant_os
+    name: ml
+    asset_scope: "ML pipeline, model definitions"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 2
+
+  - repo_id: internal_monitoring
+    canonical_url: "local://quant_os/monitoring"
+    owner: quant_os
+    name: monitoring
+    asset_scope: "alerts, metrics, telegram notifications"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 4
+
+  - repo_id: internal_news_events
+    canonical_url: "local://quant_os/news_events"
+    owner: quant_os
+    name: news_events
+    asset_scope: "event models, event risk gate, event store, macro policy, stabilization gate"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 7
+
+  - repo_id: internal_risk
+    canonical_url: "local://quant_os/risk"
+    owner: quant_os
+    name: risk
+    asset_scope: "risk engine, circuit breaker, kill switch, position sizer, pre-trade risk, risk policy, risk ledger"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 11
+
+  - repo_id: internal_strategies
+    canonical_url: "local://quant_os/strategies"
+    owner: quant_os
+    name: strategies
+    asset_scope: "strategy base, ensemble, MLB, MRB, MTM"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 6
+
+  - repo_id: internal_api
+    canonical_url: "local://quant_os/api"
+    owner: quant_os
+    name: api
+    asset_scope: "FastAPI endpoints: admin, orders, positions, risk, webhook"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 7
+
+  - repo_id: internal_gold_bot
+    canonical_url: "local://quant_os/gold_bot"
+    owner: quant_os
+    name: gold_bot
+    asset_scope: "XAUUSD trading bot: AI modules, strategy adapter, monitoring, demo runner"
+    language: Python
+    license_spdx: "INTERNAL"
+    pinned_commit: "N/A"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: APPROVED_HYPOTHESIS_CORPUS
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: false
+    internal: true
+    module_count: 30
+
+  # === G. Quarantined (zero trust) ===
+
+  - repo_id: solana_arbitrage_bot
+    canonical_url: https://github.com/solana-arbitrage-bot/solana-arbitrage-bot
+    owner: solana-arbitrage-bot
+    name: solana-arbitrage-bot
+    asset_scope: "MEV/arbitrage taxonomy research only"
+    language: Rust
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: QUARANTINED
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: true
+
+  - repo_id: solana_trading_cli
+    canonical_url: https://github.com/solana-trading-cli/solana-trading-cli
+    owner: solana-trading-cli
+    name: solana-trading-cli
+    asset_scope: "CLI trading tool with direct wallet/RPC integration"
+    language: Rust
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: QUARANTINED
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: true
+
+  - repo_id: solana_mev_bot
+    canonical_url: https://github.com/solana-mev-bot/solana-mev-bot
+    owner: solana-mev-bot
+    name: solana-mev-bot
+    asset_scope: "MEV bot with sandwich/frontrun patterns"
+    language: Rust
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: QUARANTINED
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: true
+
+  - repo_id: bsc_fourmeme_bot
+    canonical_url: https://github.com/bsc-fourmeme-bot/bsc-fourmeme-bot
+    owner: bsc-fourmeme-bot
+    name: bsc-fourmeme-bot
+    asset_scope: "BSC meme token sniper bot"
+    language: Python
+    license_spdx: "UNKNOWN"
+    pinned_commit: "PLACEHOLDER"
+    observed_at_utc: "2026-06-22T00:00:00Z"
+    allowed_role: QUARANTINED
+    execution_permission: false
+    credential_permission: false
+    network_permission: false
+    quarantine_status: true

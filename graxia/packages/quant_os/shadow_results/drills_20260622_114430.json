@@ -1,0 +1,57 @@
+[
+  {
+    "drill": "Kill Switch Activation",
+    "passed": true,
+    "details": "Kill switch prevented order progression"
+  },
+  {
+    "drill": "MT5 Disconnection",
+    "passed": true,
+    "details": "Pipeline handles disconnect gracefully"
+  },
+  {
+    "drill": "Stale Tick Detection",
+    "passed": true,
+    "details": "Healthy after stale: False"
+  },
+  {
+    "drill": "Wide Spread Detection",
+    "passed": false,
+    "details": "Wide spread detected: False"
+  },
+  {
+    "drill": "drill_contract_change",
+    "passed": false,
+    "details": "Exception: name 'Decimal' is not defined"
+  },
+  {
+    "drill": "Broker Rejection",
+    "passed": true,
+    "details": "Order rejected: REJECTED"
+  },
+  {
+    "drill": "Order Timeout",
+    "passed": true,
+    "details": "Order expired: EXPIRED"
+  },
+  {
+    "drill": "Position Mismatch",
+    "passed": true,
+    "details": "Detection: DIRECTION_MISMATCH:expected=BUY,actual=SELL"
+  },
+  {
+    "drill": "Missing SL/TP Verification",
+    "passed": true,
+    "details": "Detection: SL_MISMATCH:broker=0,expected=2340.0"
+  },
+  {
+    "drill": "Restart Recovery",
+    "passed": true,
+    "details": "Pipeline recovered after restart"
+  },
+  {
+    "drill": "Telemetry Outage",
+    "passed": true,
+    "details": "Telemetry survived: True"
+  }
+]

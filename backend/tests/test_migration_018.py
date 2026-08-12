@@ -106,3 +106,150 @@ def test_migration_018_documentation():
     assert "contacts" in content.lower(), "Migration should document contacts table"
     assert "email_threads" in content.lower(), "Migration should document email_threads table"
     assert "assistant_tasks" in content.lower(), "Migration should document assistant_tasks table"
+
+
+# Integration test for index performance
+import pytest
+import time
+from uuid import uuid4
+from datetime import datetime, UTC
+from decimal import Decimal
+
+
+@pytest.mark.asyncio
+async def test_migration_018_index_performance_10k_records(db_session, default_org):
+    """
+    Integration test: Index performance with 10k+ records.
+    
+    **Validates: Requirements 2.8**
+    
+    This test verifies that composite indexes provide adequate query performance
+    when filtering opportunities by organization_id and status with a large dataset.
+    
+    Note: The migration file references user_id but the Opportunity model uses
+    organization_id (from TenantMixin). This test validates the actual schema.
+    
+    Test strategy:
+    1. Seed 10,000 opportunity records with varied organization_id and status values
+    2. Execute a filtered query: WHERE organization_id = ? AND status = ?
+    3. Measure query execution time
+    4. Assert query time < 50ms
+    """
+    from app.models.opportunity import Opportunity
+    from app.models.organization import Organization
+    from sqlalchemy import select, text
+    
+    # Create additional organizations for realistic distribution
+    org_ids = [default_org.id]  # Start with the default org
+    for i in range(9):  # Create 9 more organizations (total 10)
+        org = Organization(
+            id=uuid4(),
+            name=f"Test Org {i}",
+            slug=f"test-org-{i}-{uuid4()}",
+            status="active",
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+        )
+        db_session.add(org)
+        org_ids.append(org.id)
+    
+    await db_session.commit()
+    
+    # Test organization ID to query against (use the default_org)
+    test_org_id = default_org.id
+    
+    # Seed 10,000 opportunities with realistic distribution
+    opportunities = []
+    statuses = ["found", "scored", "decided", "reviewed", "approved", "in_progress", "applied"]
+    
+    print(f"\nSeeding 10,000 opportunities across {len(org_ids)} organizations...")
+    for i in range(10000):
+        # Distribute records across organizations and statuses
+        org_id = org_ids[i % len(org_ids)]
+        status = statuses[i % len(statuses)]
+        
+        opp = Opportunity(
+            id=uuid4(),
+            organization_id=org_id,
+            type="freelance",
+            title=f"Test Opportunity {i}",
+            description=f"Description for opportunity {i}",
+            source_url=f"https://example.com/opp/{i}",
+            source_platform="test_platform",
+            status=status,
+            total_score=Decimal(str(round(i % 10 + 0.5, 2))),
+            is_deleted=False,
+            found_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+            source_hash=f"test-hash-{i}-{uuid4()}",
+        )
+        opportunities.append(opp)
+    
+    # Bulk insert for performance
+    db_session.add_all(opportunities)
+    await db_session.commit()
+    print(f"Seeded {len(opportunities)} opportunities")
+    
+    # Verify data was inserted
+    count_result = await db_session.execute(
+        select(text("COUNT(*)")).select_from(Opportunity)
+    )
+    total_count = count_result.scalar()
+    print(f"Total opportunities in database: {total_count}")
+    assert total_count >= 10000, f"Expected at least 10,000 records, got {total_count}"
+    
+    # Measure query performance for indexed query: WHERE organization_id = ? AND status = ?
+    target_status = "scored"
+    
+    # Warm-up query (not measured)
+    await db_session.execute(
+        select(Opportunity).where(
+            Opportunity.organization_id == test_org_id,
+            Opportunity.status == target_status,
+            Opportunity.is_deleted == False
+        )
+    )
+    
+    # Measured query
+    start_time = time.perf_counter()
+    result = await db_session.execute(
+        select(Opportunity).where(
+            Opportunity.organization_id == test_org_id,
+            Opportunity.status == target_status,
+            Opportunity.is_deleted == False
+        )
+    )
+    end_time = time.perf_counter()
+    
+    query_time_ms = (end_time - start_time) * 1000
+    results = result.scalars().all()
+    
+    print(f"\nQuery performance results:")
+    print(f"  Query: WHERE organization_id = {test_org_id} AND status = '{target_status}' AND is_deleted = false")
+    print(f"  Records returned: {len(results)}")
+    print(f"  Query time: {query_time_ms:.2f}ms")
+    
+    # Assert query time is under 50ms
+    assert query_time_ms < 50, (
+        f"Query took {query_time_ms:.2f}ms, expected < 50ms. "
+        f"Composite index on (organization_id, status) may not be working correctly."
+    )
+    
+    print(f"  ✓ Query performance acceptable ({query_time_ms:.2f}ms < 50ms)")
+    
+    # Optional: Verify the index is being used (PostgreSQL specific)
+    # For SQLite in tests, we skip this check
+    try:
+        explain_result = await db_session.execute(
+            text(
+                "EXPLAIN QUERY PLAN "
+                "SELECT * FROM opportunities "
+                "WHERE organization_id = :org_id AND status = :status AND is_deleted = 0"
+            ).bindparams(org_id=str(test_org_id), status=target_status)
+        )
+        explain_output = explain_result.fetchall()
+        print(f"\nQuery plan:")
+        for row in explain_output:
+            print(f"  {row}")
+    except Exception as e:
+        print(f"\nNote: Could not get query plan (expected in SQLite): {e}")

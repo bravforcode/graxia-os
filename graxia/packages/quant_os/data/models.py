@@ -9,9 +9,8 @@ from uuid import uuid4
 from typing import Optional, List
 
 from sqlalchemy import (
-    Column, String, Integer, Numeric, Text, DateTime, Date, Boolean,
-    ForeignKey, UniqueConstraint, Index, CheckConstraint, JSON, Float,
-    Enum as SAEnum, BigInteger, func, desc
+    String, Integer, Numeric, Text, DateTime, Date, Boolean,
+    ForeignKey, UniqueConstraint, Index, Enum as SAEnum, BigInteger, func
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -23,7 +22,7 @@ from ..core.enums import (
     OrderStatus, OrderSide, OrderType, TimeInForce,
     RegimeType, KillSwitchType, StrategyStatus, ModelStatus,
     SignalType, DecisionType, CloseReason, PositionType,
-    ReconciliationStatus, TradeOutcome, RiskCheckResult,
+    ReconciliationStatus, RiskCheckResult,
     DataQualityCheck, IncidentSeverity
 )
 

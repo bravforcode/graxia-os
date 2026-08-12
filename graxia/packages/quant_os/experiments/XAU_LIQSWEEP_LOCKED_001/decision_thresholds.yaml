@@ -1,0 +1,13 @@
+# Phase 3B — Precommitted decision thresholds
+# Written BEFORE any runs. No tuning allowed.
+candidate_gate:
+  oos_minimum_completed_trades: 100
+  median_fold_expectancy_after_stress_1: "> 0"
+  profit_factor_stress_1_min: 1.10
+  positive_month_share_min: 0.55
+  maximum_single_trade_pnl_share_pct: 20
+  maximum_single_month_pnl_share_pct: 35
+  critical_incidents: 0
+  unexplained_differential_mismatches: 0
+  ledger_integrity_verified: true
+  execution_quality_minimum: CONSERVATIVE_BAR

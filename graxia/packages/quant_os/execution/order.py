@@ -1,64 +1,128 @@
-"""Order entity and state machine for Quant OS"""
+"""Order entity and state machine for Quant OS
 
+Single canonical Order class used across the entire execution layer.
+Broker adapters, the OMS, the OrderManager, and all test code share
+this one definition.
+"""
+
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Optional, Dict, Any, Callable
+from typing import Any
 from uuid import uuid4
 
-from ..core.enums import OrderStatus, OrderSide, OrderType, TimeInForce
+from ..core.enums import OrderSide, OrderStatus, OrderType, TimeInForce
 from ..core.exceptions import OrderStateError, ValidationError
 
 
 @dataclass
 class Order:
-    """Order data class"""
+    """Canonical order entity for Quant OS.
+
+    Used by both the internal order-management layer (OrderManager,
+    trading loop) **and** the broker adapter layer (OMS, MT5/Paper/Binance
+    adapters).  Backward-compatible aliases are provided for the adapter
+    naming convention (``order_id`` → ``id``, ``stop_loss`` → ``stop_price``).
+
+    Type coercion in ``__post_init__`` silently accepts the adapter
+    conventions (``side`` as ``str``, ``quantity`` as ``float``) so that
+    existing callers do not break.
+    """
+
     symbol: str
     side: OrderSide
-    order_type: OrderType
-    quantity: Decimal
-    price: Optional[Decimal] = None
-    stop_price: Optional[Decimal] = None
+    order_type: OrderType = OrderType.MARKET
+    quantity: Decimal = field(default_factory=lambda: Decimal("0"))
+    price: Decimal | None = None
+    stop_price: Decimal | None = None
+    take_profit: Decimal | None = None
     time_in_force: TimeInForce = TimeInForce.DAY
 
     # IDs
     id: str = field(default_factory=lambda: str(uuid4()))
     client_order_id: str = field(default_factory=lambda: str(uuid4()))
     idempotency_key: str = ""
-    broker_order_id: Optional[str] = None
+    broker_order_id: str | None = None
 
     # Context
     strategy_id: str = ""
-    signal_id: Optional[str] = None
-    risk_check_id: Optional[str] = None
-    approved_by: Optional[str] = None
+    signal_id: str | None = None
+    risk_check_id: str | None = None
+    approved_by: str | None = None
     trading_mode: str = "PAPER"
 
     # State
     status: OrderStatus = OrderStatus.CREATED
     fill_quantity: Decimal = field(default_factory=lambda: Decimal("0"))
-    avg_fill_price: Optional[Decimal] = None
-    fee: Optional[Decimal] = None
+    avg_fill_price: Decimal | None = None
+    fee: Decimal | None = None
 
     # Timestamps
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    updated_at: datetime = field(default_factory=datetime.utcnow)
-    expires_at: Optional[datetime] = None
-    sent_at: Optional[datetime] = None
-    filled_at: Optional[datetime] = None
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    expires_at: datetime | None = None
+    sent_at: datetime | None = None
+    filled_at: datetime | None = None
 
     # Metadata
-    rejection_reason: Optional[str] = None
-    raw_broker_response: Optional[Dict[str, Any]] = None
+    rejection_reason: str | None = None
+    raw_broker_response: dict[str, Any] | None = None
+
+    # Adapter-specific fields (backward compatibility)
+    asset_class: str = ""
+    trace_id: str = ""
+
+    # ------------------------------------------------------------------
+    # Backward-compat type coercion
+    # ------------------------------------------------------------------
 
     def __post_init__(self):
+        # Coerce side: adapter code passes plain str ("BUY" / "SELL")
+        if isinstance(self.side, str) and not isinstance(self.side, OrderSide):
+            try:
+                self.side = OrderSide(self.side)
+            except ValueError:
+                pass  # keep as-is; validation will catch it later
+
+        # Coerce quantity: adapter code passes float
+        if isinstance(self.quantity, (int, float)):
+            self.quantity = Decimal(str(self.quantity))
+
+        # Coerce stop_price: adapter code may pass float
+        if isinstance(self.stop_price, (int, float)):
+            self.stop_price = Decimal(str(self.stop_price))
+
+        # Coerce take_profit: adapter code may pass float
+        if isinstance(self.take_profit, (int, float)):
+            self.take_profit = Decimal(str(self.take_profit))
+
+        # Coerce price: adapter code may pass float
+        if isinstance(self.price, (int, float)):
+            self.price = Decimal(str(self.price))
+
         if not self.idempotency_key:
             self.idempotency_key = self._generate_idempotency_key()
+
+    # ------------------------------------------------------------------
+    # Backward-compat aliases (adapter naming convention)
+    # ------------------------------------------------------------------
+
+    @property
+    def order_id(self) -> str:  # noqa: D401 – alias, not new behaviour
+        """Alias for ``id`` — the broker-adapter naming convention."""
+        return self.id
+
+    @property
+    def stop_loss(self) -> Decimal | None:  # noqa: D401
+        """Alias for ``stop_price`` — the broker-adapter naming convention."""
+        return self.stop_price
 
     def _generate_idempotency_key(self) -> str:
         """Generate idempotency key from order attributes"""
         key_data = f"{self.strategy_id}:{self.signal_id}:{self.symbol}:{self.side}:{self.quantity}:{self.created_at.timestamp() // 60}"
         import hashlib
+
         return hashlib.sha256(key_data.encode()).hexdigest()[:32]
 
     @property
@@ -68,9 +132,14 @@ class Order:
     @property
     def is_open(self) -> bool:
         return self.status in [
-            OrderStatus.CREATED, OrderStatus.VALIDATED, OrderStatus.RISK_APPROVED,
-            OrderStatus.COMPLIANCE_APPROVED, OrderStatus.PENDING_HUMAN,
-            OrderStatus.SENT_TO_BROKER, OrderStatus.ACKNOWLEDGED, OrderStatus.PARTIAL_FILL
+            OrderStatus.CREATED,
+            OrderStatus.VALIDATED,
+            OrderStatus.RISK_APPROVED,
+            OrderStatus.COMPLIANCE_APPROVED,
+            OrderStatus.PENDING_HUMAN,
+            OrderStatus.SENT_TO_BROKER,
+            OrderStatus.ACKNOWLEDGED,
+            OrderStatus.PARTIAL_FILL,
         ]
 
     @property
@@ -89,39 +158,51 @@ class OrderStateMachine:
     SENT_TO_BROKER → ACKNOWLEDGED → PARTIAL_FILL/FILLED/REJECTED/CANCELLED/EXPIRED
     """
 
-    VALID_TRANSITIONS: Dict[OrderStatus, list] = {
+    VALID_TRANSITIONS: dict[OrderStatus, list] = {
         OrderStatus.CREATED: [OrderStatus.VALIDATED, OrderStatus.CANCELLED, OrderStatus.REJECTED, OrderStatus.ERROR],
         OrderStatus.VALIDATED: [OrderStatus.RISK_APPROVED, OrderStatus.REJECTED, OrderStatus.ERROR],
         OrderStatus.RISK_APPROVED: [OrderStatus.COMPLIANCE_APPROVED, OrderStatus.REJECTED, OrderStatus.ERROR],
         OrderStatus.COMPLIANCE_APPROVED: [
-            OrderStatus.PENDING_HUMAN, OrderStatus.SENT_TO_BROKER,
-            OrderStatus.REJECTED, OrderStatus.ERROR
+            OrderStatus.PENDING_HUMAN,
+            OrderStatus.SENT_TO_BROKER,
+            OrderStatus.REJECTED,
+            OrderStatus.ERROR,
         ],
         OrderStatus.PENDING_HUMAN: [
-            OrderStatus.SENT_TO_BROKER, OrderStatus.CANCELLED, OrderStatus.EXPIRED, OrderStatus.ERROR
+            OrderStatus.SENT_TO_BROKER,
+            OrderStatus.CANCELLED,
+            OrderStatus.EXPIRED,
+            OrderStatus.ERROR,
         ],
-        OrderStatus.SENT_TO_BROKER: [
-            OrderStatus.ACKNOWLEDGED, OrderStatus.REJECTED, OrderStatus.ERROR
-        ],
+        OrderStatus.SENT_TO_BROKER: [OrderStatus.ACKNOWLEDGED, OrderStatus.REJECTED, OrderStatus.ERROR],
         OrderStatus.ACKNOWLEDGED: [
-            OrderStatus.PARTIAL_FILL, OrderStatus.FILLED, OrderStatus.CANCELLED,
-            OrderStatus.EXPIRED, OrderStatus.ERROR
+            OrderStatus.PARTIAL_FILL,
+            OrderStatus.FILLED,
+            OrderStatus.CANCELLED,
+            OrderStatus.EXPIRED,
+            OrderStatus.ERROR,
         ],
         OrderStatus.PARTIAL_FILL: [
-            OrderStatus.PARTIAL_FILL, OrderStatus.FILLED, OrderStatus.CANCELLED,
-            OrderStatus.EXPIRED, OrderStatus.ERROR
+            OrderStatus.PARTIAL_FILL,
+            OrderStatus.FILLED,
+            OrderStatus.CANCELLED,
+            OrderStatus.EXPIRED,
+            OrderStatus.ERROR,
         ],
         OrderStatus.CANCEL_REQUESTED: [OrderStatus.CANCELLED, OrderStatus.FILLED, OrderStatus.ERROR],
     }
 
     TERMINAL_STATES = [
-        OrderStatus.FILLED, OrderStatus.REJECTED, OrderStatus.CANCELLED,
-        OrderStatus.EXPIRED, OrderStatus.ERROR
+        OrderStatus.FILLED,
+        OrderStatus.REJECTED,
+        OrderStatus.CANCELLED,
+        OrderStatus.EXPIRED,
+        OrderStatus.ERROR,
     ]
 
     def __init__(self, order: Order):
         self.order = order
-        self._transition_handlers: Dict[OrderStatus, list] = {}
+        self._transition_handlers: dict[OrderStatus, list] = {}
 
     def can_transition(self, new_status: OrderStatus) -> bool:
         """Check if transition is valid"""
@@ -141,18 +222,18 @@ class OrderStateMachine:
                 f"Invalid transition: {self.order.status.value} → {new_status.value}",
                 from_state=self.order.status.value,
                 to_state=new_status.value,
-                context={"order_id": self.order.id, "reason": reason}
+                context={"order_id": self.order.id, "reason": reason},
             )
 
         old_status = self.order.status
         self.order.status = new_status
-        self.order.updated_at = datetime.utcnow()
+        self.order.updated_at = datetime.now(UTC)
 
         # Update timestamp for specific states
         if new_status == OrderStatus.SENT_TO_BROKER:
-            self.order.sent_at = datetime.utcnow()
+            self.order.sent_at = datetime.now(UTC)
         elif new_status == OrderStatus.FILLED:
-            self.order.filled_at = datetime.utcnow()
+            self.order.filled_at = datetime.now(UTC)
 
         # Call transition handlers
         self._call_handlers(new_status, old_status, reason, actor)
@@ -200,7 +281,7 @@ class OrderStateMachine:
             raise OrderStateError(
                 "Order not in PENDING_HUMAN state",
                 from_state=self.order.status.value,
-                to_state=OrderStatus.SENT_TO_BROKER.value
+                to_state=OrderStatus.SENT_TO_BROKER.value,
             )
 
         self.order.approved_by = approver
@@ -221,9 +302,7 @@ class OrderStateMachine:
         else:
             total_qty = self.order.fill_quantity
             prev_qty = total_qty - fill_quantity
-            self.order.avg_fill_price = (
-                (self.order.avg_fill_price * prev_qty + fill_price * fill_quantity) / total_qty
-            )
+            self.order.avg_fill_price = (self.order.avg_fill_price * prev_qty + fill_price * fill_quantity) / total_qty
 
         # Update fee
         if self.order.fee is None:
@@ -239,9 +318,13 @@ class OrderStateMachine:
 
     def cancel(self, reason: str = "", actor: str = "system") -> None:
         """Cancel order"""
-        if self.order.status in [OrderStatus.CREATED, OrderStatus.VALIDATED,
-                                  OrderStatus.RISK_APPROVED, OrderStatus.COMPLIANCE_APPROVED,
-                                  OrderStatus.PENDING_HUMAN]:
+        if self.order.status in [
+            OrderStatus.CREATED,
+            OrderStatus.VALIDATED,
+            OrderStatus.RISK_APPROVED,
+            OrderStatus.COMPLIANCE_APPROVED,
+            OrderStatus.PENDING_HUMAN,
+        ]:
             self.transition(OrderStatus.CANCELLED, reason or "Cancelled before submission", actor)
         elif self.order.is_open and self.order.status not in self.TERMINAL_STATES:
             self.transition(OrderStatus.CANCEL_REQUESTED, "Cancellation requested", actor)
@@ -249,7 +332,7 @@ class OrderStateMachine:
             raise OrderStateError(
                 f"Cannot cancel order in {self.order.status.value} state",
                 from_state=self.order.status.value,
-                to_state=OrderStatus.CANCELLED.value
+                to_state=OrderStatus.CANCELLED.value,
             )
 
     def expire(self, reason: str = "Order expired") -> None:
@@ -260,7 +343,7 @@ class OrderStateMachine:
             raise OrderStateError(
                 f"Cannot expire order in {self.order.status.value} state",
                 from_state=self.order.status.value,
-                to_state=OrderStatus.EXPIRED.value
+                to_state=OrderStatus.EXPIRED.value,
             )
 
 
@@ -269,12 +352,12 @@ def create_order(
     side: OrderSide,
     order_type: OrderType,
     quantity: Decimal,
-    price: Optional[Decimal] = None,
-    stop_price: Optional[Decimal] = None,
+    price: Decimal | None = None,
+    stop_price: Decimal | None = None,
     strategy_id: str = "",
-    signal_id: Optional[str] = None,
+    signal_id: str | None = None,
     trading_mode: str = "PAPER",
-    time_in_force: TimeInForce = TimeInForce.DAY
+    time_in_force: TimeInForce = TimeInForce.DAY,
 ) -> Order:
     """Factory function to create a new order"""
     return Order(
@@ -287,5 +370,5 @@ def create_order(
         strategy_id=strategy_id,
         signal_id=signal_id,
         trading_mode=trading_mode,
-        time_in_force=time_in_force
+        time_in_force=time_in_force,
     )

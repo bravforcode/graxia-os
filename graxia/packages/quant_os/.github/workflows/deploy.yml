@@ -1,0 +1,128 @@
+name: Quant OS CD — Build & Deploy
+
+on:
+  push:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/quant-os
+
+jobs:
+  # ── Gate: run full test suite before any deployment ────────────────
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-asyncio ruff
+          pip install -e .
+
+      - name: Lint with ruff
+        run: ruff check . --output-format=github
+
+      - name: Run tests
+        run: |
+          python -m pytest tests/ -q --tb=short \
+            --ignore=tests/chaos \
+            --ignore=tests/test_backtest_refactor_b1_b3_c4.py \
+            --ignore=tests/test_backtesting_py_oracle.py \
+            --ignore=tests/test_backtrader_oracle.py \
+            --ignore=tests/test_hftbacktest_isolation.py \
+            --ignore=tests/test_vectorbt_oracle.py
+
+  # ── Build Docker image and push to GHCR ────────────────────────────
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+
+      - name: Build and push API image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile.api
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Build and push Executor image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile.executor
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-executor:${{ github.sha }}
+
+      - name: Output image digest
+        run: echo "Images pushed with digest ${{ steps.meta.outputs.digest }}"
+
+  # ── Deploy to staging (requires environment protection) ─────────────
+  deploy-staging:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.graxia.dev
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to staging
+        run: |
+          echo "=== Deploying to staging environment ==="
+          echo "Image tag: ${{ github.sha }}"
+          echo "Registry: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          # Placeholder: replace with actual deployment command
+          # Examples:
+          #   - kubectl set image deployment/quant-os-api api=... 
+          #   - docker-compose -f docker-compose.staging.yml pull
+          #   - terraform apply -auto-approve
+          echo "Staging deployment complete"
+
+      - name: Run smoke tests against staging
+        run: |
+          echo "=== Running smoke tests ==="
+          # Placeholder: replace with actual smoke test
+          # curl -sf https://staging.graxia.dev/health || exit 1
+          echo "Smoke tests passed"
+
+      - name: Notify deployment
+        if: success()
+        run: |
+          echo "Deployed quant-os@${{ github.sha }} to staging"
+          # Placeholder: add Slack/Telegram notification

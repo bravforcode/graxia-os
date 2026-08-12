@@ -1,13 +1,6 @@
-/**
- * Unified Dashboard - Graxia OS
- * Production Version (No Fake Data)
- */
-
+import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import {
-  ArrowDownRight,
-  ArrowUpRight,
-  BarChart3,
   Bell,
   Bot,
   Briefcase,
@@ -16,11 +9,9 @@ import {
   Layers,
   LayoutDashboard,
   Mail,
-  RefreshCw,
-  Server,
-  Settings,
   TrendingUp,
   Users,
+  Search,
 } from "lucide-react";
 import { Suspense, lazy, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -29,28 +20,28 @@ import { cn } from "../lib/utils";
 
 const AgentCanvas = lazy(() => import("../components/canvas/AgentCanvas"));
 
-// Navigation items
-const navItems = [
-  { icon: LayoutDashboard, label: "ภาพรวม", id: "overview", href: "/" },
-  { icon: TrendingUp, label: "Revenue OS", id: "revenue", href: "/ceo" },
-  { icon: TrendingUp, label: "Quant OS", id: "trading", href: "/trading" },
-  { icon: Users, label: "Leads & Contacts", id: "leads", href: "/leads" },
-  { icon: Mail, label: "Email", id: "email", href: "/emails" },
-  { icon: Briefcase, label: "Tasks", id: "tasks", href: "/tasks" },
-  {
-    icon: CheckCircle,
-    label: "Approvals",
-    id: "approvals",
-    href: "/approvals",
+// Animation Variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05,
+    },
   },
-  { icon: BarChart3, label: "Analytics", id: "analytics", href: "/metrics" },
-  { icon: Server, label: "System", id: "system", href: "/system" },
-  { icon: Bot, label: "AI Agents", id: "agents", href: "/agents" },
-  { icon: Settings, label: "Settings", id: "settings", href: "/settings" },
-];
+};
 
-// Components
-function Card({
+const itemVariants = {
+  hidden: { y: 10, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+  },
+};
+
+// --- Minimal UI Components ---
+
+function MinimalCard({
   children,
   className,
 }: {
@@ -58,18 +49,19 @@ function Card({
   className?: string;
 }) {
   return (
-    <div
+    <motion.div
+      variants={itemVariants}
       className={cn(
-        "bg-slate-800/50 border border-slate-700/50 rounded-xl p-6",
+        "bg-black border border-zinc-800 rounded-xl p-6",
         className,
       )}
     >
       {children}
-    </div>
+    </motion.div>
   );
 }
 
-function StatCard({
+function StatItem({
   title,
   value,
   subtitle,
@@ -85,82 +77,85 @@ function StatCard({
   trendUp?: boolean;
 }) {
   return (
-    <Card className="hover:border-slate-600/50 transition-colors">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm text-slate-400">{title}</p>
-          <h3 className="text-2xl font-bold text-slate-100 mt-1">{value}</h3>
-          <p className="text-xs text-slate-500 mt-1">{subtitle}</p>
+    <MinimalCard className="group flex flex-col justify-between space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium text-zinc-400">
+          {title}
+        </p>
+        <Icon className="w-4 h-4 text-zinc-500" />
+      </div>
+      <div>
+        <div className="text-2xl font-semibold text-white">
+          {value}
+        </div>
+        <div className="flex items-center gap-2 mt-1">
           {trend && (
-            <div
+            <span
               className={cn(
-                "flex items-center gap-1 mt-2 text-xs",
-                trendUp ? "text-emerald-400" : "text-rose-400",
+                "text-xs font-medium",
+                trendUp
+                  ? "text-zinc-300"
+                  : "text-zinc-500",
               )}
             >
-              {trendUp ? (
-                <ArrowUpRight className="w-3 h-3" />
-              ) : (
-                <ArrowDownRight className="w-3 h-3" />
-              )}
               {trend}
-            </div>
+            </span>
           )}
-        </div>
-        <div className="p-3 bg-slate-700/50 rounded-lg">
-          <Icon className="w-5 h-5 text-slate-400" />
+          <span className="text-xs text-zinc-500 truncate">
+            {subtitle}
+          </span>
         </div>
       </div>
-    </Card>
+    </MinimalCard>
   );
 }
 
-// Main Dashboard Component
+// Navigation items
+const navItems = [
+  { icon: LayoutDashboard, label: "Overview", id: "overview", href: "/" },
+  { icon: TrendingUp, label: "Revenue", id: "revenue", href: "/ceo" },
+  { icon: Users, label: "Leads", id: "leads", href: "/leads" },
+  { icon: Mail, label: "Emails", id: "email", href: "/emails" },
+  { icon: Briefcase, label: "Tasks", id: "tasks", href: "/tasks" },
+  { icon: CheckCircle, label: "Approvals", id: "approvals", href: "/approvals" },
+  { icon: Bot, label: "Agents", id: "agents", href: "/agents" },
+];
+
 export default function UnifiedDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
   const [stats, setStats] = useState<SystemStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [currentTime, setCurrentTime] = useState(new Date());
 
   const fetchStats = async () => {
     try {
-      setLoading(true);
       const data = await api.getSystemStats();
       setStats(data);
     } catch (error) {
       console.error("Failed to fetch system stats", error);
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchStats();
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen bg-black text-zinc-100 font-sans selection:bg-white/30 selection:text-white">
       {/* Header */}
-      <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header className="border-b border-zinc-800 bg-black sticky top-0 z-50">
+        <div className="max-w-[1200px] mx-auto px-6">
           <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <Layers className="w-5 h-5 text-white" />
+            {/* Brand */}
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
+              <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center">
+                <Layers className="w-5 h-5 text-black" />
               </div>
-              <div>
-                <h1 className="font-bold text-lg">Graxia OS</h1>
-                <p className="text-xs text-slate-400">Unified Dashboard</p>
-              </div>
+              <h1 className="font-semibold text-lg tracking-tight">Graxia</h1>
             </div>
 
             {/* Navigation */}
-            <nav className="hidden md:flex items-center gap-1">
-              {navItems.slice(0, 7).map((item) => (
+            <nav className="hidden lg:flex items-center gap-6">
+              {navItems.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => {
@@ -168,113 +163,102 @@ export default function UnifiedDashboard() {
                     navigate(item.href);
                   }}
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors",
+                    "text-sm font-medium transition-colors",
                     activeTab === item.id
-                      ? "bg-slate-800 text-slate-100"
-                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50",
+                      ? "text-white"
+                      : "text-zinc-500 hover:text-zinc-300",
                   )}
                 >
-                  <item.icon className="w-4 h-4" />
-                  <span className="hidden lg:inline">{item.label}</span>
+                  {item.label}
                 </button>
               ))}
             </nav>
 
             {/* Actions */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <button
+                className="text-zinc-400 hover:text-white transition-colors"
                 aria-label="Notifications"
-                className="p-2 text-slate-400 hover:text-slate-200 transition-colors relative"
               >
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full" />
               </button>
-              <button
-                aria-label="Refresh"
-                onClick={fetchStats}
-                className={cn(
-                  "p-2 text-slate-400 hover:text-slate-200 transition-colors",
-                  loading && "animate-spin text-indigo-500",
-                )}
-              >
-                <RefreshCw className="w-5 h-5" />
-              </button>
-              <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium">SYS</span>
+              <div className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xs font-medium text-white">
+                AD
               </div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-slate-100">ระบบพร้อมใช้งาน</h2>
-          <p className="text-slate-400 mt-1">
-            {currentTime.toLocaleDateString("th-TH", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-            {" | Environment: "}
-            {stats?.environment || "Loading..."}
-          </p>
-        </div>
+      {/* Main Grid */}
+      <main className="max-w-[1200px] mx-auto px-6 py-8">
+        <motion.div 
+          initial="hidden"
+          animate="visible"
+          variants={containerVariants}
+          className="space-y-8"
+        >
+          {/* Welcome Header */}
+          <div>
+            <h2 className="text-3xl font-semibold tracking-tight text-white">
+              สวัสดี — Overview
+            </h2>
+            <p className="text-sm text-zinc-400 mt-1">
+              Graxia Intelligence Dashboard
+            </p>
+          </div>
 
-        {/* Stats Grid - Real Data */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <StatCard
-            title="Total AI Actions"
-            value={stats ? stats.ai_actions.toLocaleString() : "..."}
-            subtitle={`${stats?.completed_24h || 0} completed in 24h`}
-            trend={`${stats?.success_rate || 0}% success rate`}
-            trendUp={(stats?.success_rate || 0) > 90}
-            icon={Bot}
-          />
-          <StatCard
-            title="Active Leads"
-            value={stats ? stats.active_leads.toLocaleString() : "..."}
-            subtitle={`${stats?.total_contacts || 0} total contacts`}
-            trend={`${stats?.opportunities_found || 0} opportunities`}
-            trendUp={true}
-            icon={Users}
-          />
-          <StatCard
-            title="Outreach Sent"
-            value={stats ? stats.outreach_sent_24h.toLocaleString() : "..."}
-            subtitle="Last 24 hours"
-            icon={Mail}
-          />
-          <StatCard
-            title="AI Model Status"
-            value={stats?.active_ai_provider || "..."}
-            subtitle={stats?.active_ai_model || "Checking..."}
-            icon={Cpu}
-          />
-        </div>
+          {/* Key Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatItem
+              title="Autonomous Actions"
+              value={stats ? stats.ai_actions.toLocaleString() : "..."}
+              subtitle={`${stats?.completed_24h || 0} Successful (24h)`}
+              trend={`${stats?.success_rate || 0}%`}
+              trendUp={(stats?.success_rate || 0) > 90}
+              icon={Bot}
+            />
+            <StatItem
+              title="Qualified Leads"
+              value={stats ? stats.active_leads.toLocaleString() : "..."}
+              subtitle={`${stats?.total_contacts || 0} Contacts in DB`}
+              trend={`+${stats?.opportunities_found || 0}`}
+              trendUp={true}
+              icon={Users}
+            />
+            <StatItem
+              title="Agent Outreach"
+              value={stats ? stats.outreach_sent_24h.toLocaleString() : "..."}
+              subtitle="Email + Telegram"
+              icon={Mail}
+            />
+            <StatItem
+              title="Compute Engine"
+              value={stats?.active_ai_provider || "..."}
+              subtitle={stats?.active_ai_model || "Scanning..."}
+              icon={Cpu}
+            />
+          </div>
 
-        {/* Agent Orchestration Canvas */}
-        <div className="h-[calc(100vh-400px)] min-h-[500px] border border-slate-800 rounded-2xl overflow-hidden bg-slate-900 shadow-2xl relative">
-          <Suspense
-            fallback={
-              <div className="w-full h-full flex items-center justify-center bg-slate-950">
-                <div className="flex flex-col items-center gap-4">
-                  <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
-                  <p className="text-slate-400 font-medium animate-pulse">
-                    Initializing Agent Canvas...
-                  </p>
-                </div>
-              </div>
-            }
-          >
-            <AgentCanvas />
-          </Suspense>
-        </div>
+          {/* Orchestration Canvas Container */}
+          <MinimalCard className="h-[600px] p-0 overflow-hidden relative">
+             <div className="absolute top-4 left-4 z-10 flex items-center gap-2 px-3 py-1.5 bg-black border border-zinc-800 rounded-md shadow-sm">
+               <Search className="w-3.5 h-3.5 text-zinc-500" />
+               <span className="text-xs font-medium text-zinc-300">Agent Mesh</span>
+             </div>
+              <Suspense
+                fallback={
+                  <div className="w-full h-full flex items-center justify-center bg-black">
+                    <p className="text-zinc-500 text-sm">
+                      Loading...
+                    </p>
+                  </div>
+                }
+              >
+                <AgentCanvas />
+              </Suspense>
+          </MinimalCard>
+        </motion.div>
       </main>
     </div>
   );

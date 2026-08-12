@@ -1,0 +1,359 @@
+{
+  "state": "INACTIVE",
+  "killed_classes": [],
+  "reason": "canary_deactivate",
+  "activated_at_utc": "2026-07-03T12:41:07.137757+00:00",
+  "authorized_by": "system",
+  "history": [
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T09:22:19.157128+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T09:22:19.157128+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "unit_test",
+      "timestamp": "2026-07-03T09:22:19.820221+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T09:22:19.833757+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T09:22:19.834756+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T09:24:47.026839+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T09:24:47.027839+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "unit_test",
+      "timestamp": "2026-07-03T09:24:47.057549+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T09:24:47.073529+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T09:24:47.075534+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T09:25:54.592440+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T09:25:54.592440+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "unit_test",
+      "timestamp": "2026-07-03T09:25:54.622681+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T09:25:54.630628+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T09:25:54.633972+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T11:02:21.200632+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T11:02:21.201526+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "unit_test",
+      "timestamp": "2026-07-03T11:02:21.235054+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T11:02:21.254064+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T11:02:21.255193+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T11:27:21.412418+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T11:27:21.418924+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "unit_test",
+      "timestamp": "2026-07-03T11:27:21.475035+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T11:27:21.501158+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T11:27:21.502154+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T11:36:33.999217+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T11:36:34.001259+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "unit_test",
+      "timestamp": "2026-07-03T11:36:34.037432+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T11:36:34.062021+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T11:36:34.069204+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T11:43:53.891298+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T11:43:53.892248+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "unit_test",
+      "timestamp": "2026-07-03T11:43:53.946197+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T11:43:53.965883+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T11:43:53.967391+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T11:50:52.714815+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T11:50:52.717838+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "unit_test",
+      "timestamp": "2026-07-03T11:50:52.742641+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T11:50:52.756287+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T11:50:52.756287+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T11:56:18.338907+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T11:56:18.338907+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "unit_test",
+      "timestamp": "2026-07-03T11:56:18.358428+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T11:56:18.374077+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T11:56:18.375076+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T12:00:47.155726+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T12:00:47.156740+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "unit_test",
+      "timestamp": "2026-07-03T12:00:47.192541+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T12:00:47.208545+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T12:00:47.211632+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T12:05:41.252749+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T12:05:41.259725+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "unit_test",
+      "timestamp": "2026-07-03T12:05:41.334521+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T12:05:41.364389+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T12:05:41.365406+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T12:10:53.514148+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T12:10:53.517141+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "unit_test",
+      "timestamp": "2026-07-03T12:10:53.551010+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T12:10:53.569878+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T12:10:53.573442+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T12:18:48.456998+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T12:18:48.463292+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "unit_test",
+      "timestamp": "2026-07-03T12:18:48.506681+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T12:18:48.528652+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T12:18:48.532168+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T12:41:07.079962+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T12:41:07.081986+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "unit_test",
+      "timestamp": "2026-07-03T12:41:07.111578+00:00"
+    },
+    {
+      "action": "state=ACTIVE",
+      "user": "manual",
+      "timestamp": "2026-07-03T12:41:07.135762+00:00"
+    },
+    {
+      "action": "state=INACTIVE",
+      "user": "system",
+      "timestamp": "2026-07-03T12:41:07.137757+00:00"
+    }
+  ]
+}

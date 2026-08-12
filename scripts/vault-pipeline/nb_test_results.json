@@ -1,0 +1,5 @@
+{
+  "ask_question": "{\n  \"success\": false,\n  \"error\": \"Notebook URL is required to create a session\"\n}",
+  "stats": "{\n  \"success\": true,\n  \"data\": {\n    \"total_notebooks\": 39,\n    \"active_notebook\": \"strategy-bos-choch\",\n    \"most_used_notebook\": \"strategy-bos-choch\",\n    \"total_queries\": 3,\n    \"last_modified\": \"2026-06-27T09:02:16.561Z\"\n  }\n}",
+  "search": "{\n  \"success\": false,\n  \"error\": \"Cannot read properties of undefined (reading 'some')\"\n}"
+}

@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { BarChart3, Gauge, RefreshCw, TrendingDown, TrendingUp, Wallet } from 'lucide-react'
 
-import { Button } from '@/components/ui/Button'
-import { EmptyState } from '@/components/ui/EmptyState'
-import { MetricCard } from '@/components/ui/MetricCard'
-import { PageHeader } from '@/components/ui/PageHeader'
-import { Panel } from '@/components/ui/Panel'
+import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/empty-state'
+import { MetricCard } from '@/components/ui/metric-card'
+import { PageHeader } from '@/components/ui/page-header'
+import { Panel } from '@/components/ui/panel'
 import { api, type WeeklyMetric } from '@/lib/api'
 import { formatCurrency, formatDate } from '@/lib/utils'
 

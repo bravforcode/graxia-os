@@ -1,0 +1,1 @@
+C:\Users\menum\AppData\Local\Programs\Python\Python312\python.exe -m pytest graxia/packages/quant_os/tests/ --tb=short -q --ignore=graxia/packages/quant_os/tests/test_vwap.py

@@ -1,0 +1,17 @@
+artifacts/
+shadow_results/
+reports/
+experiments/
+node_modules/
+.git/
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+.pytest-tmp/
+*.egg-info/
+dist/
+build/
+.eggs/
+.mypy_cache/
+.ruff_cache/

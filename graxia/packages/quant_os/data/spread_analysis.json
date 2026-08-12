@@ -1,0 +1,90 @@
+{
+  "XAUUSD": {
+    "spread_bps_median": 0.36,
+    "spread_bps_p95": 0.5,
+    "spread_bps_mean": 0.38,
+    "spread_bps_min": 0.24,
+    "spread_bps_max": 0.79,
+    "spread_bps_std": 0.1,
+    "sample_count": 20,
+    "measurement_window_start": "2026-07-03T05:48:07.382050+00:00",
+    "measurement_window_end": "2026-07-03T05:51:17.486522+00:00"
+  },
+  "EURUSD": {
+    "spread_bps_median": 0.0,
+    "spread_bps_p95": 0.0,
+    "spread_bps_mean": 0.0,
+    "spread_bps_min": 0.0,
+    "spread_bps_max": 0.0,
+    "spread_bps_std": 0.0,
+    "sample_count": 20,
+    "measurement_window_start": "2026-07-03T05:48:07.383049+00:00",
+    "measurement_window_end": "2026-07-03T05:51:17.486522+00:00"
+  },
+  "GBPUSD": {
+    "spread_bps_median": 0.15,
+    "spread_bps_p95": 0.3,
+    "spread_bps_mean": 0.14,
+    "spread_bps_min": 0.0,
+    "spread_bps_max": 0.37,
+    "spread_bps_std": 0.08,
+    "sample_count": 20,
+    "measurement_window_start": "2026-07-03T05:48:07.383049+00:00",
+    "measurement_window_end": "2026-07-03T05:51:17.487529+00:00"
+  },
+  "USDJPY": {
+    "spread_bps_median": 0.06,
+    "spread_bps_p95": 0.19,
+    "spread_bps_mean": 0.06,
+    "spread_bps_min": 0.0,
+    "spread_bps_max": 0.25,
+    "spread_bps_std": 0.06,
+    "sample_count": 20,
+    "measurement_window_start": "2026-07-03T05:48:07.385049+00:00",
+    "measurement_window_end": "2026-07-03T05:51:17.487529+00:00"
+  },
+  "BTCUSD": {
+    "spread_bps_median": 2.43,
+    "spread_bps_p95": 2.58,
+    "spread_bps_mean": 2.58,
+    "spread_bps_min": 2.43,
+    "spread_bps_max": 5.43,
+    "spread_bps_std": 0.65,
+    "sample_count": 20,
+    "measurement_window_start": "2026-07-03T05:48:07.385049+00:00",
+    "measurement_window_end": "2026-07-03T05:51:17.488529+00:00"
+  },
+  "ETHUSD": {
+    "spread_bps_median": 11.67,
+    "spread_bps_p95": 11.77,
+    "spread_bps_mean": 11.76,
+    "spread_bps_min": 11.66,
+    "spread_bps_max": 13.53,
+    "spread_bps_std": 0.41,
+    "sample_count": 20,
+    "measurement_window_start": "2026-07-03T05:48:07.386051+00:00",
+    "measurement_window_end": "2026-07-03T05:51:17.489531+00:00"
+  },
+  "XAGUSD": {
+    "spread_bps_median": 6.58,
+    "spread_bps_p95": 7.22,
+    "spread_bps_mean": 6.56,
+    "spread_bps_min": 5.61,
+    "spread_bps_max": 7.22,
+    "spread_bps_std": 0.44,
+    "sample_count": 20,
+    "measurement_window_start": "2026-07-03T05:48:07.387054+00:00",
+    "measurement_window_end": "2026-07-03T05:51:17.490528+00:00"
+  },
+  "SpotCrude": {
+    "spread_bps_median": 4.88,
+    "spread_bps_p95": 4.88,
+    "spread_bps_mean": 4.31,
+    "spread_bps_min": 3.45,
+    "spread_bps_max": 4.88,
+    "spread_bps_std": 0.7,
+    "sample_count": 20,
+    "measurement_window_start": "2026-07-03T05:48:07.388054+00:00",
+    "measurement_window_end": "2026-07-03T05:51:17.490528+00:00"
+  }
+}

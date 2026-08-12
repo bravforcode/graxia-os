@@ -1,0 +1,18 @@
+{
+  "symbol": "EURUSD",
+  "timeframe": "H1",
+  "sha256": "1afe495dd115d0040fa8e08a965f2fec41e9dcec932c6ff83974196926f49847",
+  "file_path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\EURUSD_H1.csv",
+  "rows": 50000,
+  "start_date": "2018-06-01 21:00:00",
+  "end_date": "2026-06-19 23:00:00",
+  "columns": [
+    "time",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume"
+  ],
+  "generated_at": "2026-06-24T21:40:28Z"
+}

@@ -191,31 +191,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () =>
       window.removeEventListener("auth:session-expired", handleSessionExpired);
   }, [markBackendUnavailable, refreshSession, resetAuthState]);
+// Login
+const login = async (email: string, password: string) => {
+  if (backendState === "unavailable") {
+    throw new Error(
+      backendMessage ??
+        "The operator API is not reachable from this deployment.",
+    );
+  }
 
-  // Login
-  const login = async (email: string, password: string) => {
-    if (backendState === "unavailable") {
-      throw new Error(
-        backendMessage ??
-          "The operator API is not reachable from this deployment.",
-      );
+  try {
+    const response = await api.loginRequest(email, password);
+    setUser(response.user);
+    setToken("session");
+    setBackendState("available");
+    setBackendMessage(null);
+  } catch (error: unknown) {
+    if (isBackendUnavailableError(error)) {
+      const message = getBackendUnavailableMessage(error);
+      markBackendUnavailable(message);
+      throw new Error(message);
     }
+    throw new Error(getApiErrorMessage(error, "Login failed"));
+  }
+};
 
-    try {
-      const response = await api.loginRequest(email, password);
-      setUser(response.user);
-      setToken("session");
-      setBackendState("available");
-      setBackendMessage(null);
-    } catch (error: unknown) {
-      if (isBackendUnavailableError(error)) {
-        const message = getBackendUnavailableMessage(error);
-        markBackendUnavailable(message);
-        throw new Error(message);
-      }
-      throw new Error(getApiErrorMessage(error, "Login failed"));
-    }
-  };
 
   // Register
   const register = async (

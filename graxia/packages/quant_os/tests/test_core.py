@@ -1,12 +1,9 @@
 """Tests for Quant OS core module"""
 
-import pytest
-from decimal import Decimal
-
+from graxia.packages.quant_os.core.config import QuantConfig
+from graxia.packages.quant_os.core.enums import OrderStatus, TradingMode
+from graxia.packages.quant_os.core.exceptions import DuplicateOrderError, RiskViolationError
 from graxia.packages.quant_os.core.golden_rules import GOLDEN_RULES, validate_golden_rules
-from graxia.packages.quant_os.core.enums import OrderStatus, OrderSide, TradingMode, KillSwitchType
-from graxia.packages.quant_os.core.config import QuantConfig, get_config
-from graxia.packages.quant_os.core.exceptions import RiskViolationError, DuplicateOrderError
 
 
 class TestGoldenRules:
@@ -25,8 +22,11 @@ class TestGoldenRules:
         assert GOLDEN_RULES.PAPER_MIN_TRADING_DAYS >= 60
 
     def test_max_risk_per_trade(self):
-        """Max 1% risk per trade"""
-        assert GOLDEN_RULES.MAX_RISK_PER_TRADE_PCT == 1.0
+        """Max risk per trade is defined in RiskPolicy (10 bps = 0.10%)"""
+        from risk.risk_policy import RiskPolicy
+
+        rp = RiskPolicy()
+        assert rp.risk_per_trade_bps == 10  # 0.10% risk per trade
 
     def test_hard_stop_drawdown(self):
         """15% hard stop drawdown"""

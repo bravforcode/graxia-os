@@ -29,8 +29,8 @@ celery==5.3.6
 tenacity==8.2.3
 
 # HTTP Clients
-httpx==0.25.2  # python-telegram-bot==20.7 pins httpx~=0.25.2
-requests==2.31.0  # resend==0.8.0 pins requests==2.31.0 exactly
+httpx>=0.25.2
+requests>=2.31.0
 aiohttp==3.9.3
 
 # Data processing
@@ -70,6 +70,10 @@ google-api-python-client==2.95.0
 # Utilities
 python-dateutil==2.9.0
 structlog==24.1.0
+
+# Testing
+hypothesis==6.100.0
+pytest-cov==4.1.0
 
 # Development & Type Checking
 mypy==1.9.0

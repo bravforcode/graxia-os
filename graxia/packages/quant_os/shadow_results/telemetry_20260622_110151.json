@@ -1,0 +1,169 @@
+[
+  {
+    "event_type": "session_started",
+    "timestamp": "2026-06-22T10:57:21.344846",
+    "session_id": "shadow_20260622_105721",
+    "signal_id": null,
+    "details": {}
+  },
+  {
+    "event_type": "signal_created",
+    "timestamp": "2026-06-22T10:57:21.355345",
+    "session_id": "shadow_20260622_105721",
+    "signal_id": "SIG-000001",
+    "details": {}
+  },
+  {
+    "event_type": "signal_rejected",
+    "timestamp": "2026-06-22T10:57:21.355345",
+    "session_id": "shadow_20260622_105721",
+    "signal_id": "SIG-000001",
+    "details": {
+      "rejection_reason": ""
+    }
+  },
+  {
+    "event_type": "signal_created",
+    "timestamp": "2026-06-22T10:57:51.356678",
+    "session_id": "shadow_20260622_105721",
+    "signal_id": "SIG-000002",
+    "details": {}
+  },
+  {
+    "event_type": "signal_rejected",
+    "timestamp": "2026-06-22T10:57:51.356678",
+    "session_id": "shadow_20260622_105721",
+    "signal_id": "SIG-000002",
+    "details": {
+      "rejection_reason": ""
+    }
+  },
+  {
+    "event_type": "signal_created",
+    "timestamp": "2026-06-22T10:58:21.358124",
+    "session_id": "shadow_20260622_105721",
+    "signal_id": "SIG-000003",
+    "details": {}
+  },
+  {
+    "event_type": "signal_rejected",
+    "timestamp": "2026-06-22T10:58:21.358124",
+    "session_id": "shadow_20260622_105721",
+    "signal_id": "SIG-000003",
+    "details": {
+      "rejection_reason": ""
+    }
+  },
+  {
+    "event_type": "signal_created",
+    "timestamp": "2026-06-22T10:58:51.358703",
+    "session_id": "shadow_20260622_105721",
+    "signal_id": "SIG-000004",
+    "details": {}
+  },
+  {
+    "event_type": "signal_rejected",
+    "timestamp": "2026-06-22T10:58:51.358703",
+    "session_id": "shadow_20260622_105721",
+    "signal_id": "SIG-000004",
+    "details": {
+      "rejection_reason": ""
+    }
+  },
+  {
+    "event_type": "signal_created",
+    "timestamp": "2026-06-22T10:59:21.359873",
+    "session_id": "shadow_20260622_105721",
+    "signal_id": "SIG-000005",
+    "details": {}
+  },
+  {
+    "event_type": "signal_rejected",
+    "timestamp": "2026-06-22T10:59:21.359873",
+    "session_id": "shadow_20260622_105721",
+    "signal_id": "SIG-000005",
+    "details": {
+      "rejection_reason": ""
+    }
+  },
+  {
+    "event_type": "signal_created",
+    "timestamp": "2026-06-22T10:59:51.361296",
+    "session_id": "shadow_20260622_105721",
+    "signal_id": "SIG-000006",
+    "details": {}
+  },
+  {
+    "event_type": "signal_rejected",
+    "timestamp": "2026-06-22T10:59:51.361296",
+    "session_id": "shadow_20260622_105721",
+    "signal_id": "SIG-000006",
+    "details": {
+      "rejection_reason": ""
+    }
+  },
+  {
+    "event_type": "signal_created",
+    "timestamp": "2026-06-22T11:00:21.362375",
+    "session_id": "shadow_20260622_105721",
+    "signal_id": "SIG-000007",
+    "details": {}
+  },
+  {
+    "event_type": "signal_rejected",
+    "timestamp": "2026-06-22T11:00:21.362375",
+    "session_id": "shadow_20260622_105721",
+    "signal_id": "SIG-000007",
+    "details": {
+      "rejection_reason": ""
+    }
+  },
+  {
+    "event_type": "signal_created",
+    "timestamp": "2026-06-22T11:00:51.363414",
+    "session_id": "shadow_20260622_105721",
+    "signal_id": "SIG-000008",
+    "details": {}
+  },
+  {
+    "event_type": "signal_rejected",
+    "timestamp": "2026-06-22T11:00:51.363414",
+    "session_id": "shadow_20260622_105721",
+    "signal_id": "SIG-000008",
+    "details": {
+      "rejection_reason": ""
+    }
+  },
+  {
+    "event_type": "signal_created",
+    "timestamp": "2026-06-22T11:01:21.364938",
+    "session_id": "shadow_20260622_105721",
+    "signal_id": "SIG-000009",
+    "details": {}
+  },
+  {
+    "event_type": "signal_rejected",
+    "timestamp": "2026-06-22T11:01:21.364938",
+    "session_id": "shadow_20260622_105721",
+    "signal_id": "SIG-000009",
+    "details": {
+      "rejection_reason": ""
+    }
+  },
+  {
+    "event_type": "signal_created",
+    "timestamp": "2026-06-22T11:01:51.366126",
+    "session_id": "shadow_20260622_105721",
+    "signal_id": "SIG-000010",
+    "details": {}
+  },
+  {
+    "event_type": "signal_rejected",
+    "timestamp": "2026-06-22T11:01:51.366126",
+    "session_id": "shadow_20260622_105721",
+    "signal_id": "SIG-000010",
+    "details": {
+      "rejection_reason": ""
+    }
+  }
+]

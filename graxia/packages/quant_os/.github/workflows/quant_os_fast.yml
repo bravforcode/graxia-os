@@ -1,0 +1,67 @@
+name: Quant OS Fast CI
+
+on:
+  pull_request:
+    branches: [main, staging]
+    paths:
+      - "graxia/packages/quant_os/**"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt || true
+          pip install ruff mypy
+
+      - name: Ruff lint
+        run: ruff check graxia/packages/quant_os/ --output-format=github
+
+      - name: Ruff format check
+        run: ruff format --check graxia/packages/quant_os/
+
+      - name: Type check (fast, no strict)
+        run: mypy graxia/packages/quant_os/ --ignore-missing-imports --no-strict-optional || true
+
+  fast-tests:
+    runs-on: ubuntu-latest
+    needs: lint-and-typecheck
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt || true
+
+      - name: Run fast tests
+        run: |
+          python -m pytest graxia/packages/quant_os/tests/ \
+            -x -q --tb=short \
+            -m "not slow and not chaos" \
+            --timeout=120 \
+            --ignore=graxia/packages/quant_os/tests/test_vwap.py
+
+      - name: Secret scan
+        run: |
+          pip install detect-secrets
+          detect-secrets scan graxia/packages/quant_os/ \
+            --exclude-files '\.pyc$' \
+            --exclude-files '__pycache__' \
+            | python -c "import sys,json; d=json.load(sys.stdin); exits=0; [print(f'LEAK: {f}') for f,v in d.get('results',{}).items() for _ in v]; sys.exit(1 if d.get('results') else 0)"

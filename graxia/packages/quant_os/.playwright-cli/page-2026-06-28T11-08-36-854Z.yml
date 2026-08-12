@@ -1,0 +1,52 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - img "logo" [ref=e4]
+    - button " English" [ref=e6] [cursor=pointer]:
+      - generic [ref=e7]:
+        - generic [ref=e9]: 
+        - generic [ref=e10]: English
+  - generic [ref=e13]:
+    - banner [ref=e14]:
+      - heading "Log in to Pepperstone" [level=1] [ref=e15]
+    - alert [ref=e60]:
+      - generic [ref=e62]:
+        - generic [ref=e63]: 
+        - generic [ref=e64]:
+          - text: There was a problem, try again or if the issue continues
+          - link "contact our support team" [ref=e65] [cursor=pointer]:
+            - /url: mailto:support@pepperstone.com
+    - generic [ref=e17]:
+      - generic [ref=e19]:
+        - generic [ref=e23]: Email address
+        - textbox "Email address" [invalid] [ref=e24]: "471062005"
+        - alert [ref=e68]: A valid email address is required.
+      - generic [ref=e26]:
+        - generic [ref=e30]: Password
+        - generic [ref=e31]:
+          - textbox "Password" [ref=e32]: Graxia-12345Ghr
+          - button "" [ref=e33] [cursor=pointer]:
+            - generic [ref=e34]: 
+      - button "Forgot password?" [ref=e36] [cursor=pointer]
+      - button "Login" [active] [ref=e40] [cursor=pointer]:
+        - generic:
+          - generic: Login
+    - generic [ref=e44]: or continue with
+    - generic [ref=e49]:
+      - button "Apple" [ref=e50] [cursor=pointer]:
+        - generic:
+          - generic: Apple
+      - button "Google" [ref=e51] [cursor=pointer]:
+        - generic:
+          - generic: Google
+      - button "Facebook" [ref=e52] [cursor=pointer]:
+        - generic:
+          - generic: Facebook
+    - generic [ref=e54]:
+      - text: Not a client yet?
+      - link "Join now" [ref=e55] [cursor=pointer]:
+        - /url: https://secure.pepperstone.com/register?locale=en
+    - contentinfo [ref=e56]:
+      - generic [ref=e57]:
+        - text: Need help? Visit our
+        - link "Help & Support" [ref=e58] [cursor=pointer]:
+          - /url: https://www.pepperstone.com/en/support/

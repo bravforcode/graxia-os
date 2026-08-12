@@ -1,0 +1,33 @@
+Bug #8 FIXED — No Swap/Overnight Financing Cost
+
+Files:
+  core/risk/__init__.py (new, 3 lines)
+  core/risk/swap_cost.py (new, 182 lines)
+
+What was broken:
+  Pepperstone charges TomNext-based swap on any position held past
+  NY 5pm rollover (21:00 UTC), with triple charge on one weekday.
+  No swap cost was modeled anywhere in v2.0 — M15 intraday strategies
+  can still hold overnight unintentionally (late NY entries, Friday
+  positions that aren't flat).
+
+What was fixed:
+  - get_live_swap_rates(symbol="XAUUSD"): pulls swap_long, swap_short,
+    swap_mode, swap_rollover3days, point, contract_size from MT5 symbol_info.
+    Returns empty dict if MT5 unavailable.
+  - estimate_overnight_cost(direction, lot, nights_held, triple_swap_weekday,
+    swap_rates, point_value_per_lot): estimates swap cost in account currency.
+    Handles all 4 MT5 swap_mode values:
+      0 = SWAP_BY_POINTS (most common for metals)
+      1 = SWAP_BY_DOLLARS
+      2 = SWAP_BY_INTEREST (% per annum)
+      3 = SWAP_BY_MARGIN_CURRENCY
+  - get_swap_cost_for_trade(entry_time, exit_time, side, lot, swap_rates,
+    triple_swap_weekday): counts actual 21:00 UTC rollover events between
+    entry and exit, applies 3x multiplier on triple-swap weekday.
+
+Key design decisions:
+  - triple_swap_weekday must be verified from MT5 terminal (do not assume Wednesday)
+  - point_value_per_lot for XAUUSD 0.01 lot = $1.0 (1 oz x $1/point) — verify
+  - Separate from execution/swap_model.py (which models D1 strategy swap differently)
+  - Safe for headless/backtest: returns 0 if no swap rates available

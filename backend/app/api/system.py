@@ -616,6 +616,10 @@ async def health_detailed() -> DetailedHealthResponse:
         }
     }
 
+@router.get("/debug-sentry")
+async def debug_sentry():
+    """Trigger a ValueError to verify Sentry error capturing."""
+    raise ValueError("Sentry Verification Error")
 
 @router.post("/health/predictive-test")
 async def predictive_test(request: dict[str, Any]) -> dict[str, Any]:

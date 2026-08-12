@@ -1,0 +1,435 @@
+{
+  "version": "3.0",
+  "feature_version": "v3",
+  "generated": "2026-07-03T13:11:50.808851",
+  "cv_method": "CPCV",
+  "attempt": 4,
+  "models": [
+    {
+      "symbol": "XAUUSD",
+      "train_acc": 0.5385531606497395,
+      "test_acc": 0.5413076784892624,
+      "features": 17,
+      "feature_names": [
+        "rsi_14",
+        "macd",
+        "macd_signal",
+        "macd_hist",
+        "bb_width",
+        "atr_ratio",
+        "adx_14",
+        "dist_ma_20",
+        "dist_ma_50",
+        "dist_ma_200",
+        "ret_1",
+        "ret_5",
+        "ret_10",
+        "atr_14",
+        "volume_ratio",
+        "high_low_pct",
+        "close_open_pct"
+      ],
+      "bars": 29037,
+      "model_file": "xgboost_v3_XAUUSD_20260703_131128.pkl",
+      "cv_method": "CPCV",
+      "n_folds": 15,
+      "n_test": 148420,
+      "z_score": 31.827827631078364,
+      "edge_status": "EDGE_CANDIDATE",
+      "confusion_matrix": [
+        [
+          0,
+          68115
+        ],
+        [
+          0,
+          80305
+        ]
+      ],
+      "feature_importance": [
+        [
+          "atr_14",
+          0.12181415408849716
+        ],
+        [
+          "atr_ratio",
+          0.11827388405799866
+        ],
+        [
+          "macd",
+          0.06699519604444504
+        ],
+        [
+          "dist_ma_20",
+          0.061899181455373764
+        ],
+        [
+          "ret_10",
+          0.0595710352063179
+        ],
+        [
+          "bb_width",
+          0.05938773229718208
+        ],
+        [
+          "dist_ma_50",
+          0.05936204269528389
+        ],
+        [
+          "volume_ratio",
+          0.05881244316697121
+        ],
+        [
+          "macd_signal",
+          0.05741436034440994
+        ],
+        [
+          "dist_ma_200",
+          0.055076245218515396
+        ]
+      ]
+    },
+    {
+      "symbol": "EURUSD",
+      "train_acc": 0.5182846117885185,
+      "test_acc": 0.5025941485453755,
+      "features": 17,
+      "feature_names": [
+        "rsi_14",
+        "macd",
+        "macd_signal",
+        "macd_hist",
+        "bb_width",
+        "atr_ratio",
+        "adx_14",
+        "dist_ma_20",
+        "dist_ma_50",
+        "dist_ma_200",
+        "ret_1",
+        "ret_5",
+        "ret_10",
+        "atr_14",
+        "volume_ratio",
+        "high_low_pct",
+        "close_open_pct"
+      ],
+      "bars": 10467,
+      "model_file": "xgboost_v3_EURUSD_20260703_131130.pkl",
+      "cv_method": "CPCV",
+      "n_folds": 15,
+      "n_test": 52225,
+      "z_score": 1.1856706264838166,
+      "edge_status": "ARCHIVE_NO_EDGE",
+      "confusion_matrix": [
+        [
+          2228,
+          23482
+        ],
+        [
+          2502,
+          24013
+        ]
+      ],
+      "feature_importance": [
+        [
+          "macd_signal",
+          0.08367767930030823
+        ],
+        [
+          "dist_ma_20",
+          0.08094515651464462
+        ],
+        [
+          "bb_width",
+          0.07974708825349808
+        ],
+        [
+          "ret_10",
+          0.0782700702548027
+        ],
+        [
+          "macd_hist",
+          0.07400034368038177
+        ],
+        [
+          "dist_ma_50",
+          0.06945032626390457
+        ],
+        [
+          "atr_ratio",
+          0.06821141391992569
+        ],
+        [
+          "atr_14",
+          0.06568589806556702
+        ],
+        [
+          "adx_14",
+          0.06357880681753159
+        ],
+        [
+          "dist_ma_200",
+          0.06086380407214165
+        ]
+      ]
+    },
+    {
+      "symbol": "US30",
+      "train_acc": 0.5226361533990888,
+      "test_acc": 0.5188464574429983,
+      "features": 17,
+      "feature_names": [
+        "rsi_14",
+        "macd",
+        "macd_signal",
+        "macd_hist",
+        "bb_width",
+        "atr_ratio",
+        "adx_14",
+        "dist_ma_20",
+        "dist_ma_50",
+        "dist_ma_200",
+        "ret_1",
+        "ret_5",
+        "ret_10",
+        "atr_14",
+        "volume_ratio",
+        "high_low_pct",
+        "close_open_pct"
+      ],
+      "bars": 22305,
+      "model_file": "xgboost_v3_US30_20260703_131133.pkl",
+      "cv_method": "CPCV",
+      "n_folds": 15,
+      "n_test": 115905,
+      "z_score": 12.83248630538325,
+      "edge_status": "EDGE_CANDIDATE",
+      "confusion_matrix": [
+        [
+          607,
+          55263
+        ],
+        [
+          501,
+          59534
+        ]
+      ],
+      "feature_importance": [
+        [
+          "adx_14",
+          0.09310103952884674
+        ],
+        [
+          "ret_5",
+          0.07732506841421127
+        ],
+        [
+          "atr_14",
+          0.07556940615177155
+        ],
+        [
+          "dist_ma_200",
+          0.07373728603124619
+        ],
+        [
+          "bb_width",
+          0.06673038005828857
+        ],
+        [
+          "macd_hist",
+          0.06507842987775803
+        ],
+        [
+          "macd_signal",
+          0.0650184378027916
+        ],
+        [
+          "ret_10",
+          0.06457114964723587
+        ],
+        [
+          "atr_ratio",
+          0.056879911571741104
+        ],
+        [
+          "volume_ratio",
+          0.05373821407556534
+        ]
+      ]
+    },
+    {
+      "symbol": "NAS100",
+      "train_acc": 0.5374025901358814,
+      "test_acc": 0.5375837964645627,
+      "features": 17,
+      "feature_names": [
+        "rsi_14",
+        "macd",
+        "macd_signal",
+        "macd_hist",
+        "bb_width",
+        "atr_ratio",
+        "adx_14",
+        "dist_ma_20",
+        "dist_ma_50",
+        "dist_ma_200",
+        "ret_1",
+        "ret_5",
+        "ret_10",
+        "atr_14",
+        "volume_ratio",
+        "high_low_pct",
+        "close_open_pct"
+      ],
+      "bars": 30747,
+      "model_file": "xgboost_v3_NAS100_20260703_131138.pkl",
+      "cv_method": "CPCV",
+      "n_folds": 15,
+      "n_test": 157240,
+      "z_score": 29.806580872141925,
+      "edge_status": "EDGE_CANDIDATE",
+      "confusion_matrix": [
+        [
+          76,
+          72604
+        ],
+        [
+          123,
+          84437
+        ]
+      ],
+      "feature_importance": [
+        [
+          "dist_ma_200",
+          0.07209855318069458
+        ],
+        [
+          "atr_ratio",
+          0.07045918703079224
+        ],
+        [
+          "ret_10",
+          0.06970059126615524
+        ],
+        [
+          "macd_signal",
+          0.06818274408578873
+        ],
+        [
+          "atr_14",
+          0.06520076096057892
+        ],
+        [
+          "dist_ma_50",
+          0.0648069754242897
+        ],
+        [
+          "ret_1",
+          0.059723179787397385
+        ],
+        [
+          "rsi_14",
+          0.059142205864191055
+        ],
+        [
+          "adx_14",
+          0.05812368169426918
+        ],
+        [
+          "macd",
+          0.05708432197570801
+        ]
+      ]
+    },
+    {
+      "symbol": "BTCUSD",
+      "train_acc": 0.5482461244432024,
+      "test_acc": 0.5246283161588923,
+      "features": 17,
+      "feature_names": [
+        "rsi_14",
+        "macd",
+        "macd_signal",
+        "macd_hist",
+        "bb_width",
+        "atr_ratio",
+        "adx_14",
+        "dist_ma_20",
+        "dist_ma_50",
+        "dist_ma_200",
+        "ret_1",
+        "ret_5",
+        "ret_10",
+        "atr_14",
+        "volume_ratio",
+        "high_low_pct",
+        "close_open_pct"
+      ],
+      "bars": 47695,
+      "model_file": "xgboost_v3_BTCUSD_20260703_131150.pkl",
+      "cv_method": "CPCV",
+      "n_folds": 15,
+      "n_test": 229005,
+      "z_score": 23.57149879681843,
+      "edge_status": "EDGE_CANDIDATE",
+      "confusion_matrix": [
+        [
+          45804,
+          66821
+        ],
+        [
+          42031,
+          74349
+        ]
+      ],
+      "feature_importance": [
+        [
+          "dist_ma_20",
+          0.08558963239192963
+        ],
+        [
+          "rsi_14",
+          0.08176658302545547
+        ],
+        [
+          "dist_ma_200",
+          0.07187363505363464
+        ],
+        [
+          "close_open_pct",
+          0.06705781072378159
+        ],
+        [
+          "dist_ma_50",
+          0.06414156407117844
+        ],
+        [
+          "ret_1",
+          0.06134568899869919
+        ],
+        [
+          "ret_10",
+          0.05954449996352196
+        ],
+        [
+          "macd",
+          0.05727018415927887
+        ],
+        [
+          "atr_ratio",
+          0.05625729262828827
+        ],
+        [
+          "volume_ratio",
+          0.05446366220712662
+        ]
+      ]
+    }
+  ],
+  "overall_status": "EDGE_CANDIDATE",
+  "warnings": [
+    "XAUUSD: DEGENERATE \u2014 never predicts class 0 (sell). TN=0, FN=0.",
+    "NAS100: NEAR-DEGENERATE \u2014 TN=76, FN=123 out of 157240.",
+    "2/5 models are degenerate or near-degenerate."
+  ]
+}

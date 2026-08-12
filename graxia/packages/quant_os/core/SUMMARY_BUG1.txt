@@ -1,0 +1,21 @@
+Bug #1 FIXED — Hardcoded PnL Multiplier ($2350.0)
+
+File: scripts/walk_forward.py (modified, ~420 lines)
+
+What was broken:
+  Line 76: raw_pnl_dollars = dir_mask * rets * 2350.0  (hardcoded price)
+  Line 77: cost_per_dollars = (spread_cost + slippage_p90) * 2350.0
+  Line 109: avg_move_points used * 2350 * 100
+
+Impact: All historical PnL figures off by x(live_price/2350). At XAUUSD ~$3340:
+  understated by 1.42x. Cost numbers similarly wrong.
+
+What was fixed:
+  - compute_fold_pnl() new param: close_prices: np.ndarray | None = None
+  - Uses actual bar close prices array for dollar PnL conversion
+  - Falls back to 2350.0 if close_prices not provided (backward compat)
+  - Shape assertion: assert closes_masked.shape == rets.shape
+  - Price sanity: assert min > 1000, max < 5000 (XAUUSD range check)
+  - Cost uses mean close of test fold: (spread + slippage) * np.mean(closes)
+  - avg_move_points uses actual price_mult from test fold
+  - walk_forward() extracts close_array = df["close"].values and passes to fold eval

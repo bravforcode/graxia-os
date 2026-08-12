@@ -1,0 +1,16 @@
+# GRAXIA-OS Telegram Configuration
+# Copy to scripts/telegram_config.toml and fill in your values.
+# NEVER commit scripts/telegram_config.toml to version control.
+
+# Telegram Bot (create via @BotFather on Telegram)
+bot_token = "YOUR_BOT_TOKEN"
+chat_id = "YOUR_CHAT_ID"
+
+# Standby VPS failover endpoint (primary VPS health check calls this on takeover)
+standby_webhook_url = "https://your-standby-vps.example.com:8000/takeover"
+
+# Minimum alert level for notifications
+# info    — all messages (trade opened, closed, heartbeat, risk alerts, failover)
+# warning — only trade closed, risk alerts, failover
+# critical — only risk alerts and failover
+alert_level = "info"

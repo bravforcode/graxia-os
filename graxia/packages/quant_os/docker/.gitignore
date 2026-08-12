@@ -1,0 +1,6 @@
+# Exclude generated cert files (regenerate with: bash docker/generate-certs.sh)
+certs/*.pem
+certs/*.key
+certs/*.crt
+certs/*.csr
+certs/*.srl

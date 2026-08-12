@@ -34,10 +34,7 @@ class SecurityManager:
         """Get or create encryption key."""
         key = settings.ENCRYPTION_KEY
         if not key:
-            # Generate new key
-            key = Fernet.generate_key()
-            logger.warning("Generated new encryption key. Save this to ENCRYPTION_KEY env var!")
-            logger.warning(f"ENCRYPTION_KEY={key.decode()}")
+            raise RuntimeError("ENCRYPTION_KEY is not set. Generate one using: openssl rand -base64 32")
         else:
             key = key.encode() if isinstance(key, str) else key
         

@@ -12,7 +12,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.middleware.auth import get_current_user
+from app.middleware.auth import get_current_user_from_token
 from app.models.analytics import (
     AgentPerformanceAnalytics,
     AnalyticsDashboard,
@@ -85,7 +85,7 @@ class CostBreakdownResponse(BaseModel):
 # Dashboard Endpoints
 @router.get("/dashboards")
 async def list_dashboards(
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_token),
     db: AsyncSession = Depends(get_db),
 ):
     """List available dashboards for the user."""
@@ -113,7 +113,7 @@ async def list_dashboards(
 @router.get("/dashboards/{dashboard_id}")
 async def get_dashboard(
     dashboard_id: str,
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_token),
     db: AsyncSession = Depends(get_db),
 ):
     """Get dashboard details with widgets."""
@@ -160,7 +160,7 @@ async def get_dashboard(
 @router.get("/usage/stats")
 async def get_usage_stats(
     days: int = Query(default=30, ge=1, le=365),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_token),
     db: AsyncSession = Depends(get_db),
 ) -> UsageStatsResponse:
     """Get AI usage statistics for the last N days."""
@@ -244,7 +244,7 @@ async def get_usage_stats(
 @router.get("/usage/cost-breakdown")
 async def get_cost_breakdown(
     days: int = Query(default=30, ge=1, le=365),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_token),
     db: AsyncSession = Depends(get_db),
 ) -> CostBreakdownResponse:
     """Get detailed cost breakdown by model and skill."""
@@ -335,7 +335,7 @@ async def get_cost_breakdown(
 async def get_metric(
     metric_key: str,
     days: int = Query(default=7, ge=1, le=90),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_token),
     db: AsyncSession = Depends(get_db),
 ):
     """Get specific metric over time."""
@@ -375,7 +375,7 @@ async def get_metric(
 @router.get("/skills/performance")
 async def get_skill_performance(
     days: int = Query(default=30, ge=1, le=90),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_token),
     db: AsyncSession = Depends(get_db),
 ):
     """Get skill usage and performance analytics."""
@@ -413,7 +413,7 @@ async def get_skill_performance(
 @router.get("/agents/performance")
 async def get_agent_performance(
     days: int = Query(default=30, ge=1, le=90),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_token),
     db: AsyncSession = Depends(get_db),
 ):
     """Get agent performance analytics."""
@@ -449,7 +449,7 @@ async def get_agent_performance(
 # Real-time Metrics (for dashboard widgets)
 @router.get("/realtime/overview")
 async def get_realtime_overview(
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_token),
     db: AsyncSession = Depends(get_db),
 ):
     """Get real-time overview metrics for dashboard."""

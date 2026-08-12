@@ -1,0 +1,149 @@
+{
+  "system_clock": {
+    "system_utc_now_iso": "2026-06-22T16:36:28.072594+00:00",
+    "system_epoch_s": 1782146188.072594,
+    "system_epoch_ms": 1782146188072,
+    "system_utc_from_epoch": "2026-06-22T16:36:28.072594+00:00",
+    "ntp_source": "UNKNOWN",
+    "time_service_status": "UNKNOWN",
+    "ntp_peers": []
+  },
+  "mt5_data": {
+    "mt5_initialize": true,
+    "mt5_last_error": "",
+    "account_info": {
+      "login": 108629412,
+      "server": "MetaQuotes-Demo",
+      "balance": 100000.0,
+      "currency": "USD"
+    },
+    "terminal_info": {
+      "build": 5836,
+      "connected": true,
+      "trade_allowed": false,
+      "dlls_allowed": false
+    },
+    "symbol_info": {
+      "name": "XAUUSD",
+      "visible": true,
+      "point": 0.01,
+      "digits": 2,
+      "trade_mode": 4,
+      "time": 1782156987
+    },
+    "investigation": {
+      "symbol_info_tick": {
+        "bid": 4185.37,
+        "ask": 4185.46,
+        "last": 0.0,
+        "volume": 0,
+        "time": 1782156987,
+        "time_msc": 1782156987122,
+        "flags": 1026,
+        "datetime_utc_from_time": "2026-06-22T19:36:27+00:00",
+        "datetime_utc_from_time_msc": "2026-06-22T19:36:27.122000+00:00"
+      },
+      "copy_ticks_range_last5": [
+        {
+          "time": 1782120987,
+          "bid": 4197.76,
+          "ask": 4197.89,
+          "last": 0.0,
+          "volume": 0,
+          "time_msc": 1782120987668,
+          "flags": 1030,
+          "datetime_utc": "2026-06-22T09:36:27+00:00"
+        },
+        {
+          "time": 1782120987,
+          "bid": 4197.9,
+          "ask": 4198.01,
+          "last": 0.0,
+          "volume": 0,
+          "time_msc": 1782120987769,
+          "flags": 1030,
+          "datetime_utc": "2026-06-22T09:36:27+00:00"
+        },
+        {
+          "time": 1782120987,
+          "bid": 4197.9,
+          "ask": 4198.03,
+          "last": 0.0,
+          "volume": 0,
+          "time_msc": 1782120987785,
+          "flags": 1028,
+          "datetime_utc": "2026-06-22T09:36:27+00:00"
+        },
+        {
+          "time": 1782120987,
+          "bid": 4197.91,
+          "ask": 4198.04,
+          "last": 0.0,
+          "volume": 0,
+          "time_msc": 1782120987869,
+          "flags": 1030,
+          "datetime_utc": "2026-06-22T09:36:27+00:00"
+        },
+        {
+          "time": 1782120987,
+          "bid": 4197.96,
+          "ask": 4198.09,
+          "last": 0.0,
+          "volume": 0,
+          "time_msc": 1782120987969,
+          "flags": 1030,
+          "datetime_utc": "2026-06-22T09:36:27+00:00"
+        }
+      ],
+      "copy_rates_from_pos_last3_h1": [
+        {
+          "time": 1782147600,
+          "open": 4199.87,
+          "high": 4210.74,
+          "low": 4186.51,
+          "close": 4198.32,
+          "volume": 35730,
+          "datetime_utc": "2026-06-22T17:00:00+00:00"
+        },
+        {
+          "time": 1782151200,
+          "open": 4198.32,
+          "high": 4201.34,
+          "low": 4169.82,
+          "close": 4182.91,
+          "volume": 30787,
+          "datetime_utc": "2026-06-22T18:00:00+00:00"
+        },
+        {
+          "time": 1782154800,
+          "open": 4182.92,
+          "high": 4186.28,
+          "low": 4174.41,
+          "close": 4185.48,
+          "volume": 15051,
+          "datetime_utc": "2026-06-22T19:00:00+00:00"
+        }
+      ],
+      "copy_rates_range_last3_m1": [
+        {
+          "time": 1782120840,
+          "open": 4198.41,
+          "close": 4198.72,
+          "datetime_utc": "2026-06-22T09:34:00+00:00"
+        },
+        {
+          "time": 1782120900,
+          "open": 4198.72,
+          "close": 4199.54,
+          "datetime_utc": "2026-06-22T09:35:00+00:00"
+        },
+        {
+          "time": 1782120960,
+          "open": 4199.57,
+          "close": 4198.69,
+          "datetime_utc": "2026-06-22T09:36:00+00:00"
+        }
+      ]
+    }
+  }
+}

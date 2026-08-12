@@ -1,0 +1,72 @@
+{
+  "timestamp": "2026-06-20T18:20:27.974634",
+  "data_bars": 500,
+  "strategies": {
+    "MTM": {
+      "metrics": {
+        "total_trades": 2,
+        "winning_trades": 1,
+        "losing_trades": 1,
+        "win_rate": 0.5,
+        "total_pnl": 91.71709045935536,
+        "total_return_pct": 0.9171709045935537,
+        "avg_win": 197.1712917448871,
+        "avg_loss": -105.45420128553174,
+        "avg_rr": 1.8697338687438232,
+        "expectancy": 45.85854522967768,
+        "profit_factor": 1.8697338687438232,
+        "max_drawdown": 177.37664705590214,
+        "max_drawdown_pct": 24,
+        "sharpe_ratio": 0.29376901443028874,
+        "sortino_ratio": 0.0849286211309444,
+        "calmar_ratio": 0.018710177871049855,
+        "cagr": 0.44904426890519655
+      },
+      "trade_count": 2
+    },
+    "MRB": {
+      "metrics": {
+        "total_trades": 0,
+        "winning_trades": 0,
+        "losing_trades": 0,
+        "win_rate": 0.0,
+        "total_pnl": 0.0,
+        "total_return_pct": 0.0,
+        "avg_win": 0.0,
+        "avg_loss": 0.0,
+        "avg_rr": 0.0,
+        "expectancy": 0.0,
+        "profit_factor": 0.0,
+        "max_drawdown": 0.0,
+        "max_drawdown_pct": 0.0,
+        "sharpe_ratio": 0.0,
+        "sortino_ratio": 0.0,
+        "calmar_ratio": 0.0,
+        "cagr": 0.0
+      },
+      "trade_count": 0
+    },
+    "MLB": {
+      "metrics": {
+        "total_trades": 0,
+        "winning_trades": 0,
+        "losing_trades": 0,
+        "win_rate": 0.0,
+        "total_pnl": 0.0,
+        "total_return_pct": 0.0,
+        "avg_win": 0.0,
+        "avg_loss": 0.0,
+        "avg_rr": 0.0,
+        "expectancy": 0.0,
+        "profit_factor": 0.0,
+        "max_drawdown": 0.0,
+        "max_drawdown_pct": 0.0,
+        "sharpe_ratio": 0.0,
+        "sortino_ratio": 0.0,
+        "calmar_ratio": 0.0,
+        "cagr": 0.0
+      },
+      "trade_count": 0
+    }
+  }
+}

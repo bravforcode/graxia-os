@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Broker Profile",
+  "type": "object",
+  "required": ["profile_id", "expected_server", "account_mode", "account_currency", "account_login"],
+  "properties": {
+    "profile_id": {"type": "string"},
+    "expected_server": {"type": "string"},
+    "account_mode": {"enum": ["DEMO", "LIVE"]},
+    "account_currency": {"type": "string"},
+    "account_login": {"type": "integer"},
+    "leverage_range": {"type": "array", "items": {"type": "integer"}},
+    "symbol_mappings": {"type": "object"},
+    "required_contract_fields": {"type": "array", "items": {"type": "string"}}
+  }
+}

@@ -1,15 +1,27 @@
 """Order management API endpoints"""
 
-from typing import List, Optional
+from datetime import UTC, datetime
 from decimal import Decimal
-from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, Depends, Query
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.security import HTTPBearer
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
-from ..data.models import Order as OrderModel, OrderStateHistory
-from ..core.enums import OrderStatus, OrderSide, OrderType
+# Database dependency - use shared session from Revenue OS
+from graxia.packages.revenue_os.db import get_db as _get_db
+
+from ..core.enums import OrderSide, OrderStatus, OrderType
+from ..data.models import Order as OrderModel
+
+security = HTTPBearer()
+
+
+async def get_db():
+    """Database session dependency"""
+    async for session in _get_db():
+        yield session
 
 
 orders_router = APIRouter(prefix="/orders", tags=["orders"])
@@ -17,42 +29,45 @@ orders_router = APIRouter(prefix="/orders", tags=["orders"])
 
 class OrderCreateRequest(BaseModel):
     """Create order request"""
-    symbol: str = Field(..., example="EURUSD")
+
+    symbol: str = Field(..., json_schema_extra={"example": "EURUSD"})
     side: OrderSide
     order_type: OrderType = OrderType.MARKET
-    quantity: Decimal = Field(..., gt=0, example=0.01)
-    price: Optional[Decimal] = Field(None, example=1.0850)
-    stop_price: Optional[Decimal] = Field(None, example=1.0820)
-    strategy_id: str = Field(default="manual", example="manual")
+    quantity: Decimal = Field(..., gt=0, json_schema_extra={"example": 0.01})
+    price: Decimal | None = Field(None, json_schema_extra={"example": 1.0850})
+    stop_price: Decimal | None = Field(None, json_schema_extra={"example": 1.0820})
+    strategy_id: str = Field(default="manual", json_schema_extra={"example": "manual"})
 
 
 class OrderResponse(BaseModel):
     """Order response"""
+
     id: str
     symbol: str
     side: str
     status: str
     quantity: str
     fill_quantity: str
-    avg_fill_price: Optional[str]
+    avg_fill_price: str | None
     strategy_id: str
     trading_mode: str
     created_at: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OrderListResponse(BaseModel):
     """List of orders"""
-    orders: List[OrderResponse]
+
+    orders: list[OrderResponse]
     total: int
 
 
 @orders_router.post("/", response_model=OrderResponse)
 async def create_order(
     request: OrderCreateRequest,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    credentials=Depends(security),
 ):
     """Create a new order"""
     # This would integrate with OrderManager
@@ -62,12 +77,13 @@ async def create_order(
 
 @orders_router.get("/", response_model=OrderListResponse)
 async def list_orders(
-    status: Optional[OrderStatus] = None,
-    symbol: Optional[str] = None,
-    strategy_id: Optional[str] = None,
+    status: OrderStatus | None = None,
+    symbol: str | None = None,
+    strategy_id: str | None = None,
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    credentials=Depends(security),
 ):
     """List orders with optional filters"""
     query = db.query(OrderModel)
@@ -82,14 +98,15 @@ async def list_orders(
     total = query.count()
     orders = query.order_by(OrderModel.created_at.desc()).offset(offset).limit(limit).all()
 
-    return OrderListResponse(
-        orders=[_order_to_response(o) for o in orders],
-        total=total
-    )
+    return OrderListResponse(orders=[_order_to_response(o) for o in orders], total=total)
 
 
 @orders_router.get("/{order_id}", response_model=OrderResponse)
-async def get_order(order_id: str, db: Session = Depends(get_db)):
+async def get_order(
+    order_id: str,
+    db: Session = Depends(get_db),
+    credentials=Depends(security),
+):
     """Get order by ID"""
     order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
     if not order:
@@ -98,20 +115,28 @@ async def get_order(order_id: str, db: Session = Depends(get_db)):
 
 
 @orders_router.post("/{order_id}/cancel")
-async def cancel_order(order_id: str, db: Session = Depends(get_db)):
+async def cancel_order(
+    order_id: str,
+    db: Session = Depends(get_db),
+    credentials=Depends(security),
+):
     """Cancel an order"""
     order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
     # Check if cancellable
-    if order.status in [OrderStatus.FILLED.value, OrderStatus.CANCELLED.value,
-                        OrderStatus.REJECTED.value, OrderStatus.EXPIRED.value]:
+    if order.status in [
+        OrderStatus.FILLED.value,
+        OrderStatus.CANCELLED.value,
+        OrderStatus.REJECTED.value,
+        OrderStatus.EXPIRED.value,
+    ]:
         raise HTTPException(status_code=400, detail=f"Order cannot be cancelled (status: {order.status})")
 
     # Would integrate with OrderManager to cancel
     order.status = OrderStatus.CANCEL_REQUESTED.value
-    order.updated_at = datetime.utcnow()
+    order.updated_at = datetime.now(UTC)
     db.commit()
 
     return {"success": True, "order_id": order_id, "status": "cancel_requested"}
@@ -119,9 +144,7 @@ async def cancel_order(order_id: str, db: Session = Depends(get_db)):
 
 @orders_router.post("/{order_id}/approve")
 async def approve_order(
-    order_id: str,
-    approver: str = "admin",
-    db: AsyncSession = Depends(get_db)
+    order_id: str, approver: str = "admin", db: AsyncSession = Depends(get_db), credentials=Depends(security)
 ):
     """Approve a MICRO mode order (human approval)"""
     order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
@@ -143,21 +166,12 @@ def _order_to_response(order: OrderModel) -> OrderResponse:
     return OrderResponse(
         id=str(order.id),
         symbol=order.symbol,
-        side=order.side.value if hasattr(order.side, 'value') else order.side,
-        status=order.status.value if hasattr(order.status, 'value') else order.status,
+        side=order.side.value if hasattr(order.side, "value") else order.side,
+        status=order.status.value if hasattr(order.status, "value") else order.status,
         quantity=str(order.quantity),
         fill_quantity=str(order.fill_quantity),
         avg_fill_price=str(order.avg_fill_price) if order.avg_fill_price else None,
         strategy_id=order.strategy_id,
         trading_mode=order.trading_mode,
-        created_at=order.created_at.isoformat() if order.created_at else None
+        created_at=order.created_at.isoformat() if order.created_at else None,
     )
-
-
-# Database dependency - use shared session from Revenue OS
-from graxia.packages.revenue_os.db import get_db as _get_db
-
-async def get_db():
-    """Database session dependency"""
-    async for session in _get_db():
-        yield session

@@ -1,0 +1,33 @@
+{
+  "strategy_name": "liquidity_sweep",
+  "market": "XAUUSD",
+  "capture_utc": "2026-06-22T00:00:00Z",
+  "parameters": {
+    "lookback_window": 20,
+    "liquidity_threshold_pct": 0.0005,
+    "min_close_bars": 30,
+    "score_threshold": 50,
+    "signal_score": 80,
+    "atr_period": 14,
+    "atr_fallback": 5.0,
+    "sl_buffer_atr_multiplier": 0.5,
+    "tp_rr_ratio": 2.5,
+    "timeframe": "M15",
+    "source": "hardcoded in liquidity_sweep.py"
+  },
+  "strategy_config_defaults": {
+    "risk_per_trade_pct": 1.0,
+    "max_trades_per_day": 5,
+    "min_confidence": 0.60,
+    "min_risk_reward": 1.5,
+    "require_trend_confirm": true,
+    "require_volume_spike": false
+  },
+  "notes": {
+    "liquidity_threshold_pct": "0.05% = 5 pips; filters equal highs/lows within 5 pips",
+    "sl_buffer_atr_multiplier": "0.5x ATR; ponytail comment notes symbol adaptivity",
+    "tp_rr_ratio": "2.5:1 fixed risk:reward",
+    "atr_period": "Default 14 in base.py _calc_atr()",
+    "atr_fallback": "5.0 when ATR calculation fails (len < 15)"
+  }
+}

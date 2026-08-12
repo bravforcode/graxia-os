@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from uuid import uuid4
 
-from scripts.production_env_audit import audit_production_env
+from scripts.ops.production_env_audit import audit_production_env
 
 WRITABLE_TEMP_ROOT = Path("C:/Users/menum/.codex/memories/tmp/bravos-prodready-tests")
 
@@ -13,6 +13,7 @@ def _valid_env_values() -> dict[str, str]:
         "APP_ENV": "production",
         "APP_HOST": "app.bravos.ai",
         "CADDY_EMAIL": "ops@bravos.ai",
+        "ADMIN_DEFAULT_PASSWORD": "Str0ng!Prod#Passw0rd!2024",
         "SECRET_KEY": "prod-secret-A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8S9t0U1v2W3x4Y5z6",
         "ENCRYPTION_KEY": "enc-key-A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8S9t0",
         "JWT_SIGNING_KEYS": '{"v1":"jwt-signing-key-A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8S9t0U1v2W3x4Y5z6"}',

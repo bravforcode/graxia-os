@@ -158,22 +158,21 @@ async def test_shutdown_logs_pending_task_count(caplog):
     bus = EventBus()
     
     async def slow_handler(payload: dict):
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(2.0)  # Longer sleep to ensure tasks are still running at shutdown
     
     bus.subscribe("test_event", slow_handler)
     
-    processing_task = asyncio.create_task(bus.start_processing())
-    await asyncio.sleep(0.1)
-    
-    # Emit events
-    await bus.emit("test_event", {"value": 1})
-    await bus.emit("test_event", {"value": 2})
-    await asyncio.sleep(0.1)
-    
-    # Stop and wait
-    bus.stop()
-    
     with caplog.at_level("INFO"):
+        processing_task = asyncio.create_task(bus.start_processing())
+        await asyncio.sleep(0.1)
+        
+        # Emit events
+        await bus.emit("test_event", {"value": 1})
+        await bus.emit("test_event", {"value": 2})
+        await asyncio.sleep(0.05)  # Shorter wait to ensure tasks are still running
+        
+        # Stop and wait
+        bus.stop()
         await processing_task
     
     # Check that pending task count was logged
@@ -341,3 +340,75 @@ async def test_graceful_shutdown_preserves_event_stats():
     # Stats should be preserved
     stats = bus.get_event_stats()
     assert stats["test_event"] == 10
+
+
+# Property-Based Tests using Hypothesis
+
+from hypothesis import given, settings
+from hypothesis import strategies as st
+
+
+@pytest.mark.asyncio
+@given(event_values=st.lists(st.integers(), min_size=1, max_size=50))
+@settings(max_examples=20, deadline=None)
+async def test_property_zero_event_loss_during_graceful_shutdown(event_values):
+    """
+    **Validates: Requirements 2.3**
+    
+    Property-Based Test: Zero Event Loss Invariant
+    
+    Property: For any sequence of N events emitted before stop(), all N events
+    must be processed when shutdown completes within 30 seconds.
+    
+    This test verifies that the graceful shutdown mechanism:
+    1. Processes all events in the queue before shutdown completes
+    2. Waits for all running handlers to complete
+    3. Does not lose any events during the shutdown process
+    4. Completes within the configured timeout (30 seconds)
+    """
+    bus = EventBus(shutdown_timeout=30)
+    processed_events = []
+    
+    async def handler(payload: dict):
+        # Simulate some processing time
+        await asyncio.sleep(0.01)
+        processed_events.append(payload["value"])
+    
+    bus.subscribe("test_event", handler)
+    
+    # Start processing in background
+    processing_task = asyncio.create_task(bus.start_processing())
+    await asyncio.sleep(0.1)  # Let processing start
+    
+    # Emit N events
+    for value in event_values:
+        await bus.emit("test_event", {"value": value})
+    
+    # Give events time to be picked up by the processing loop
+    await asyncio.sleep(0.1)
+    
+    # Stop and wait for graceful shutdown
+    bus.stop()
+    
+    # Shutdown should complete within 30 seconds
+    start_time = asyncio.get_event_loop().time()
+    await processing_task
+    elapsed = asyncio.get_event_loop().time() - start_time
+    
+    # Verify: All N events were processed (zero event loss)
+    assert len(processed_events) == len(event_values), (
+        f"Event loss detected: emitted {len(event_values)} events, "
+        f"but only {len(processed_events)} were processed"
+    )
+    
+    # Verify: All event values match (no corruption)
+    assert set(processed_events) == set(event_values), (
+        f"Event corruption detected: expected values {set(event_values)}, "
+        f"but got {set(processed_events)}"
+    )
+    
+    # Verify: Shutdown completed within timeout
+    assert elapsed < 30, (
+        f"Graceful shutdown exceeded timeout: took {elapsed:.2f}s, "
+        f"expected < 30s"
+    )

@@ -1,0 +1,15 @@
+{
+  "documents": {
+    "tmpabnthp90": {
+      "source_type": "chart",
+      "original_path": "C:\\Users\\menum\\AppData\\Local\\Temp\\tmpabnthp90.png",
+      "tile_path": "data\\visual_tiles\\tmpabnthp90.png",
+      "indexed_at": "2026-07-06T17:57:33.907252+00:00",
+      "symbol": "AAPL"
+    }
+  },
+  "source_counts": {
+    "chart": 1
+  },
+  "updated_at": "2026-07-06T17:57:33.907252+00:00"
+}

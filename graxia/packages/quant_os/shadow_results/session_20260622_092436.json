@@ -1,0 +1,58 @@
+{
+  "session_id": "shadow_20260622_092426",
+  "started_at": "2026-06-22T09:24:26.444955",
+  "ended_at": "2026-06-22T09:24:36.448404",
+  "signals": [
+    {
+      "signal_id": "SIG-000001",
+      "timestamp": "2026-06-22T09:24:26.444955",
+      "symbol": "XAUUSD",
+      "direction": "SELL",
+      "entry_price": 4206.35,
+      "stop_loss": 4207.649999999992,
+      "take_profit": 4203.750000000016,
+      "outcome": "accepted",
+      "rejection_reason": "",
+      "event_risk_state": "CLEAR",
+      "market_health_state": "HEALTHY",
+      "sized_volume": 0.01,
+      "hypothetical_fill_price": 4206.35,
+      "hypothetical_spread_cost": 0.12999999999919964,
+      "hypothetical_slippage_cost": 0.06499999999959982
+    },
+    {
+      "signal_id": "SIG-000002",
+      "timestamp": "2026-06-22T09:24:31.447004",
+      "symbol": "XAUUSD",
+      "direction": "SELL",
+      "entry_price": 4206.67,
+      "stop_loss": 4207.970000000001,
+      "take_profit": 4204.069999999998,
+      "outcome": "accepted",
+      "rejection_reason": "",
+      "event_risk_state": "CLEAR",
+      "market_health_state": "HEALTHY",
+      "sized_volume": 0.01,
+      "hypothetical_fill_price": 4206.67,
+      "hypothetical_spread_cost": 0.13000000000010914,
+      "hypothetical_slippage_cost": 0.06500000000005457
+    },
+    {
+      "signal_id": "SIG-000003",
+      "timestamp": "2026-06-22T09:24:36.448404",
+      "symbol": "XAUUSD",
+      "direction": "SELL",
+      "entry_price": 4206.38,
+      "stop_loss": 4207.680000000001,
+      "take_profit": 4203.779999999998,
+      "outcome": "accepted",
+      "rejection_reason": "",
+      "event_risk_state": "CLEAR",
+      "market_health_state": "HEALTHY",
+      "sized_volume": 0.01,
+      "hypothetical_fill_price": 4206.38,
+      "hypothetical_spread_cost": 0.13000000000010914,
+      "hypothetical_slippage_cost": 0.06500000000005457
+    }
+  ]
+}

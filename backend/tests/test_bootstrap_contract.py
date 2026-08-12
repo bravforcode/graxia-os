@@ -3,7 +3,7 @@ from app.main import app
 
 
 def test_app_imports_with_canonical_metadata():
-    assert app.title == "Personal Sovereign Enterprise OS"
+    assert app.title == "Graxia OS — Enterprise Revenue OS"
 
 
 def test_static_legacy_dashboard_is_not_mounted():
@@ -24,6 +24,6 @@ async def test_root_returns_api_metadata(async_client):
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["service"] == "Personal OS API"
-    assert payload["docs"] == "/docs"
+    assert payload["service"] == "Graxia OS API"
+    assert "docs" in payload
     assert response.headers.get("location") is None

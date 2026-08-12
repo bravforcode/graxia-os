@@ -1,0 +1,19 @@
+# Broker Profile Template — DO NOT commit real values
+# Copy to broker_profile.yaml and fill in actual values
+profile_id: "broker_account_v1"
+expected_server: "REPLACE_WITH_ACTUAL_SERVER"
+account_mode: "DEMO"  # or "LIVE"
+account_currency: "USD"
+account_login: 0  # Replace with actual login
+leverage_range: [50, 500]
+symbol_mappings:
+  XAUUSD: "XAUUSD"
+  EURUSD: "EURUSD"
+required_contract_fields:
+  - trade_contract_size
+  - volume_min
+  - volume_max
+  - volume_step
+  - trade_tick_size
+  - trade_tick_value
+  - stops_level

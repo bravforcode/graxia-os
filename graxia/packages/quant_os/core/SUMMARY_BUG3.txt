@@ -1,0 +1,29 @@
+Bug #3 FIXED — Data Leakage (train_acc=100%) via CPCV
+
+File: core/cross_validation.py (new, 324 lines)
+
+What was broken:
+  Triple-barrier labels look forward >=12 bars. Standard walk-forward
+  split placed test fold immediately after train — no purge, no embargo.
+  This leaks future information into test folds, causing train_acc=100%
+  (overfitting to leaked data, not true edge).
+
+What was fixed:
+  - combinative_purged_k_fold_cv(): generates C(n_groups, n_test_groups)
+    independent backtest paths with BOTH purged_size AND embargo_size set
+  - purged_size=12: removes bars on BOTH sides of each test fold
+  - embargo_size=12: removes bars AFTER each test fold (serial correlation)
+  - walk_forward_cpcv(): full replacement for scripts/walk_forward.py's
+    walk_forward(), using actual close prices (Bug #1 fix integrated)
+  - CPCVResult: dataclass with .sharpe_distribution and .net_pnl_distribution
+    properties — reports distribution (mean/std/min/max/median/positive_pct),
+    not just single-path summary
+  - CPCVFoldResult: per-fold metrics dataclass
+  - cpcv_groups(): random-border group partitioner, reusable as skfolio input
+  - Shape + price sanity assertions on close_prices (Bug #1 integration)
+
+Key design decisions:
+  - Both purged_size AND embargo_size set to 12 bars (minimum triple-barrier horizon)
+  - Implements CPCV directly (no skfolio dependency needed at runtime)
+  - Default n_groups=6, n_test_groups=2 -> C(6,2)=15 backtest paths
+  - Randomized group borders (+/-10% jitter) per López de Prado

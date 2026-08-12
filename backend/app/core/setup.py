@@ -35,6 +35,11 @@ def before_send_event(event: dict[str, Any], hint: dict[str, Any]) -> dict[str, 
 
 def init_sentry():
     """Enterprise-grade Sentry error tracking initialization."""
+    # Skip Sentry initialization during testing to avoid DNS noise
+    if os.environ.get("TESTING") == "true":
+        logger.info("Sentry error tracking disabled during testing")
+        return
+
     SENTRY_DSN = settings.SENTRY_DSN or os.getenv("SENTRY_DSN", "")
     if SENTRY_DSN and not SENTRY_DSN.startswith("your_"):
         try:

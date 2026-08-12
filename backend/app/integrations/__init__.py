@@ -1,1 +1,1 @@
-# Integrations module
+"""Integrations package."""

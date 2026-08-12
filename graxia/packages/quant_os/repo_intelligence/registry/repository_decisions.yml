@@ -1,0 +1,613 @@
+# Repository Decision Records
+# Each entry records the admission decision for a repository.
+# ponytail: all decisions are PENDING_REVIEW until actual audit runs
+---
+decisions:
+
+  # === A. Differential backtesting ===
+
+  - repo_id: mementum_backtrader
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Event-driven backtesting framework. Intended as APPROVED_DIFFERENTIAL_ORACLE
+      for independent ledger reproduction. Pending license scan and dependency audit.
+    evidence: []
+    conditions:
+      - license_review_required
+      - dependency_scan_required
+      - secret_scan_required
+
+  - repo_id: kernc_backtesting_py
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Rule-level independent backtest. Intended as APPROVED_DIFFERENTIAL_ORACLE
+      for independent strategy reproduction. Pending full audit.
+    evidence: []
+    conditions:
+      - license_review_required
+      - dependency_scan_required
+      - secret_scan_required
+
+  - repo_id: polakowo_vectorbt
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Parameter surface, walk-forward, analytics. Intended as
+      APPROVED_DIFFERENTIAL_ORACLE. Pending full audit.
+    evidence: []
+    conditions:
+      - license_review_required
+      - dependency_scan_required
+      - secret_scan_required
+
+  - repo_id: quantconnect_lean
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      C# event-driven framework. Optional final oracle after adapter work.
+      Intended as APPROVED_DIFFERENTIAL_ORACLE.
+    evidence: []
+    conditions:
+      - license_review_required
+      - dependency_scan_required
+      - secret_scan_required
+      - adapter_contract_required
+
+  - repo_id: stocksharp_stocksharp
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Architecture reference and optional C# cross-check.
+      Intended as APPROVED_ARCHITECTURE_REFERENCE.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  - repo_id: fasiondog_hikyuu
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Framework comparison. Intended as APPROVED_ARCHITECTURE_REFERENCE.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  - repo_id: enzoampil_fastquant
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Exploratory benchmark. Intended as APPROVED_ARCHITECTURE_REFERENCE.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  - repo_id: edtechre_pybroker
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      ML research comparator. Intended as APPROVED_HYPOTHESIS_CORPUS.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  - repo_id: lumiwealth_lumibot
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Paper/live lifecycle reference. Intended as APPROVED_ARCHITECTURE_REFERENCE.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  - repo_id: austin_starks_nexttrade
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Framework idea review. Intended as VERIFY_IDENTITY_ONLY.
+    evidence: []
+    conditions:
+      - identity_verification_required
+
+  - repo_id: scottfreellc_alphapy
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      ML/feature research ideas. Intended as APPROVED_HYPOTHESIS_CORPUS.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  - repo_id: michaelchu_optopsy
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Options analytics reference. Out of current scope but registered.
+      Intended as APPROVED_ARCHITECTURE_REFERENCE.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  # === B. Execution, connector, workflow, monitoring ===
+
+  - repo_id: hummingbot_hummingbot
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Order lifecycle and connector patterns. Crypto-only reference.
+      Intended as CRYPTO_ONLY_REFERENCE.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  - repo_id: drakkar_software_octobot
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Plugin and bot orchestration patterns. Crypto-only reference.
+      Intended as CRYPTO_ONLY_REFERENCE.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  - repo_id: barter_rs_barter_rs
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Rust event-driven paper/live architecture. Reference only.
+      Intended as APPROVED_ARCHITECTURE_REFERENCE.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  - repo_id: whittlem_pycryptobot
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Bot configuration patterns. Crypto-only.
+      Intended as CRYPTO_ONLY_REFERENCE.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  - repo_id: socktrader_socktrader
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Review source and project identity verification.
+      Intended as VERIFY_IDENTITY_ONLY.
+    evidence: []
+    conditions:
+      - identity_verification_required
+
+  - repo_id: finanzobot_finanzobot
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Review source and project identity verification.
+      Intended as VERIFY_IDENTITY_ONLY.
+    evidence: []
+    conditions:
+      - identity_verification_required
+
+  - repo_id: quantweb3_nexustrader
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Inventory/research only. Intended as VERIFY_IDENTITY_ONLY.
+    evidence: []
+    conditions:
+      - identity_verification_required
+
+  - repo_id: superalgos_superalgos
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Dashboard and workflow ideas. Monitoring reference.
+      Intended as APPROVED_ARCHITECTURE_REFERENCE.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  - repo_id: trading_bot_tv_webhook
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Webhook validation patterns. Non-execution reference.
+      Intended as VERIFY_IDENTITY_ONLY.
+    evidence: []
+    conditions:
+      - identity_verification_required
+
+  - repo_id: cryptognome_tv_webhook
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Webhook validation patterns. Crypto-only reference.
+      Intended as CRYPTO_ONLY_REFERENCE.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  - repo_id: elias_aboukhater_trading_bot
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Portfolio/rebalancing ideas. Future only.
+      Intended as VERIFY_IDENTITY_ONLY.
+    evidence: []
+    conditions:
+      - identity_verification_required
+
+  - repo_id: backpack455_trading_bot
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Portfolio/rebalancing ideas. Future only.
+      Intended as VERIFY_IDENTITY_ONLY.
+    evidence: []
+    conditions:
+      - identity_verification_required
+
+  # === C. Walk-forward, Monte Carlo, robustness, analytics ===
+
+  - repo_id: tonyma_walk_forward_backtester
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Protocol comparison. Intended as APPROVED_HYPOTHESIS_CORPUS.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  - repo_id: kiploks_walk_forward_validator
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Verify project validity and WFO ideas. Intended as VERIFY_IDENTITY_ONLY.
+    evidence: []
+    conditions:
+      - identity_verification_required
+
+  - repo_id: cluster2600_elvis
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Stress/Monte Carlo ideas. Intended as VERIFY_IDENTITY_ONLY.
+    evidence: []
+    conditions:
+      - identity_verification_required
+
+  - repo_id: robert_zag_stockanalysis
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Analytics reference. Intended as VERIFY_IDENTITY_ONLY.
+    evidence: []
+    conditions:
+      - identity_verification_required
+
+  - repo_id: anthonydickson_algotrader
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Execution/strategy patterns. Intended as VERIFY_IDENTITY_ONLY.
+    evidence: []
+    conditions:
+      - identity_verification_required
+
+  # === D. Strategy, ML, RL, idea corpus ===
+
+  - repo_id: jesuistm_quant_trading
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Strategy hypothesis source. Intended as APPROVED_HYPOTHESIS_CORPUS.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  - repo_id: xavierleeeugene_trading_strategies
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Strategy hypothesis source. Intended as APPROVED_HYPOTHESIS_CORPUS.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  - repo_id: elitequant_elitequant
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Architecture/strategy ideas. Intended as VERIFY_IDENTITY_ONLY.
+    evidence: []
+    conditions:
+      - identity_verification_required
+
+  - repo_id: jadelam_algorithmictrading
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Strategy hypothesis source. Intended as APPROVED_HYPOTHESIS_CORPUS.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  - repo_id: ro234jk_trading_bot
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Source review only. Intended as VERIFY_IDENTITY_ONLY.
+    evidence: []
+    conditions:
+      - identity_verification_required
+
+  - repo_id: asavinov_intelligent_trading_bot
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      ML pipeline ideas. Intended as APPROVED_HYPOTHESIS_CORPUS.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  - repo_id: mun_min_ml_trading_bot
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      ML experiment ideas. Intended as VERIFY_IDENTITY_ONLY.
+    evidence: []
+    conditions:
+      - identity_verification_required
+
+  - repo_id: zeroxemmkty_quantmuse
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      ML/quant ideas. Intended as VERIFY_IDENTITY_ONLY.
+    evidence: []
+    conditions:
+      - identity_verification_required
+
+  - repo_id: eugeneow_trading
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      ML/research ideas. Intended as VERIFY_IDENTITY_ONLY.
+    evidence: []
+    conditions:
+      - identity_verification_required
+
+  - repo_id: hamidreza_rhz_ml_strategy
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      ML pitfalls/ideas. Intended as VERIFY_IDENTITY_ONLY.
+    evidence: []
+    conditions:
+      - identity_verification_required
+
+  - repo_id: trading_bot_robo_advisor_stock_bots
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      RL ideas. Intended as VERIFY_IDENTITY_ONLY.
+    evidence: []
+    conditions:
+      - identity_verification_required
+
+  # === E. Data, macro, and sentiment ===
+
+  - repo_id: coinquanta_awesome_crypto_api
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Data source catalog. Crypto-only.
+      Intended as CRYPTO_ONLY_REFERENCE.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  - repo_id: stephan_akkerman_crypto_ohlcv
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Crypto OHLCV ideas. Crypto-only.
+      Intended as CRYPTO_ONLY_REFERENCE.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  - repo_id: alihanucar_fredapi
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Macro-data adapter reference. Intended as APPROVED_DATA_REFERENCE.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  - repo_id: alternative_macro_signals_api_docs
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Macro data catalog. Intended as VERIFY_IDENTITY_ONLY.
+    evidence: []
+    conditions:
+      - identity_verification_required
+
+  - repo_id: staituned_financial_sentiment
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Sentiment feature ideas. Shadow features only.
+      Intended as APPROVED_HYPOTHESIS_CORPUS.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  - repo_id: sashaflores_crypto_sentiment
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Crypto sentiment ideas. Crypto-only.
+      Intended as CRYPTO_ONLY_REFERENCE.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  - repo_id: john_gee3_newsapi_crypto_sentiment
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Research methodology only. Crypto-only.
+      Intended as CRYPTO_ONLY_REFERENCE.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  - repo_id: sajanpoudel_cryptosensei
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Crypto news/sentiment ideas. Crypto-only.
+      Intended as CRYPTO_ONLY_REFERENCE.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  - repo_id: br0ski777_crypto_news_mcp
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      External integration reference. No runtime access by default.
+      Intended as VERIFY_IDENTITY_ONLY.
+    evidence: []
+    conditions:
+      - identity_verification_required
+
+  # === F. HFT, arbitrage, MEV ===
+
+  - repo_id: nkaz001_hftbacktest
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Order-book/latency concepts. No use without real L2/L3 data.
+      Intended as APPROVED_ARCHITECTURE_REFERENCE.
+    evidence: []
+    conditions:
+      - license_review_required
+      - requires_l2_data_for_execution
+
+  - repo_id: algotraders_stock_analysis_engine
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Market data architecture ideas. No broker credentials.
+      Intended as VERIFY_IDENTITY_ONLY.
+    evidence: []
+    conditions:
+      - identity_verification_required
+
+  - repo_id: gazbert_bxbot
+    decision: PENDING_REVIEW
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      Crypto exchange patterns. No MT5 runtime.
+      Intended as CRYPTO_ONLY_REFERENCE.
+    evidence: []
+    conditions:
+      - license_review_required
+
+  # === Quarantined ===
+
+  - repo_id: solana_arbitrage_bot
+    decision: QUARANTINED
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      MEV/arbitrage bot with wallet key handling. Quarantined.
+      No execution, no keys, no wallet access, no network.
+    evidence: []
+    conditions: []
+
+  - repo_id: solana_trading_cli
+    decision: QUARANTINED
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      CLI trading tool with direct wallet/RPC integration. Quarantined.
+    evidence: []
+    conditions: []
+
+  - repo_id: solana_mev_bot
+    decision: QUARANTINED
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      MEV bot with sandwich/frontrun patterns. Quarantined.
+    evidence: []
+    conditions: []
+
+  - repo_id: bsc_fourmeme_bot
+    decision: QUARANTINED
+    reviewer: "agent"
+    decision_date_utc: "2026-06-22"
+    rationale: >
+      BSC meme token sniper bot. Quarantined.
+    evidence: []
+    conditions: []

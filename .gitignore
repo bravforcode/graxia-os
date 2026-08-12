@@ -3,9 +3,12 @@ __pycache__/
 *.py[cod]
 *.pyo
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 *.egg-info/
 dist/
 build/
+coverage/
 .eggs/
 
 # xiarchitect cache (keep docs/)
@@ -13,6 +16,13 @@ build/
 
 # Env - ALL env files are gitignored, including frontend
 .env
+.env.*
+!.env.example
+
+# MT5 credentials — NEVER commit
+mt5_connector/config.yaml
+*.secret.yaml
+secret*.yaml
 .env.production
 .env.backup-*
 .env.bak*
@@ -116,16 +126,68 @@ backend/venv/
 # Test artifacts
 backend/.state/
 backend/tests/conftest.py.bak
+backend/tests/*.db
+backend/tests/*.db-journal
+backend/tests/*.sqlite
+backend/tests/*.sqlite3
+backend/tests/*.bak
+backend/*.bak
+*.bak
 test-results-*.md
 test_report.txt
+
+# DB journal files
+*.db-journal
+*.db-wal
+*.db-shm
 
 # Build artifacts
 frontend/dev_log.txt
 *.sqlite3
 
+# Local-only agent and test artifacts
+frontend/storageState.json
+.agents/
+.planning/
+.hypothesis/
+backend/.hypothesis/
+.openclaude-profile.json
+.testsprite.json
+.lean-ctx-init
+backups/
+nul
+backend/nul
+LEAN-CTX.md
+extraterrestrial-escape/
+sites/
+
 # LanceDB vector database
 lancedb/
 
-# Junk files
-nul
-Usersmenumgraxia-os-funnelbackendvenv/
+# Credential files — NEVER commit
+*_creds*
+*config.toml
+honest_web_research_report.md
+
+# Large data files — use Git LFS or external storage
+FUT86_16.txt
+
+# Temporary generated images
+**/data/visual_tiles/tmp*.png
+**/data/visual_tiles/test_chart.png
+**/data/visual_tiles/test/
+data/visual_tiles/
+
+# Scratch job/run logs
+jobs.json
+jobs[0-9].json
+runs.json
+runs[0-9].json
+run[0-9].json
+
+# CI artifacts
+ci_log.txt
+%f
+
+# Local repos (submodules managed separately)
+repos/

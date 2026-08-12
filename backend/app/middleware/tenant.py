@@ -7,7 +7,7 @@ Blocks canceled/suspended accounts.
 import logging
 
 from app.database import get_db
-from app.middleware.auth import get_current_user
+from app.middleware.auth import get_current_user_from_token
 from app.models.organization import Organization
 from app.models.user import User
 from fastapi import Depends, HTTPException, Request, status
@@ -19,7 +19,7 @@ log = logging.getLogger("graxia.tenant")
 async def get_org(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_token),
 ) -> Organization:
     """
     FastAPI dependency: resolves current org, auto-creates if missing.

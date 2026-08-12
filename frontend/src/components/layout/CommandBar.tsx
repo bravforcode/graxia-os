@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Search, Command, Zap, ChevronRight, Hash } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { aiService, SkillInfo } from '../../services/aiService';
 
@@ -9,7 +8,6 @@ export const CommandBar = () => {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [skills, setSkills] = useState<SkillInfo[]>([]);
-  const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Toggle with CMD+K or Ctrl+K
@@ -46,13 +44,13 @@ export const CommandBar = () => {
 
   const allResults = skills.map(s => ({ type: 'skill', ...s }));
 
-  const handleSelect = useCallback((item: any) => {
+  const handleSelect = useCallback((item: { type: string; id?: string }) => {
     if (item.type === 'skill') {
       console.log('Triggering skill:', item.id);
       // Extend here for real skill execution routing
     }
     setIsOpen(false);
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
     const handleNav = (e: KeyboardEvent) => {
@@ -153,7 +151,14 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
   </div>
 );
 
-const Item = ({ icon, label, description, selected, onClick, badge }: any) => (
+const Item = ({ icon, label, description, selected, onClick, badge }: {
+  icon: React.ReactNode;
+  label: string;
+  description?: string;
+  selected: boolean;
+  onClick: () => void;
+  badge?: string;
+}) => (
   <div
     className={cn(
       "px-4 py-3 flex items-center gap-3 cursor-pointer transition-colors",

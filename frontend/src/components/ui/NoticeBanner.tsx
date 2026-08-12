@@ -1,4 +1,4 @@
-import { StatusPill } from '@/components/ui/StatusPill'
+import { StatusPill } from '@/components/ui/status-pill'
 
 export type NoticeTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral'
 

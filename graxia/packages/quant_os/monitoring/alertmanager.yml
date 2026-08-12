@@ -1,0 +1,76 @@
+# Alertmanager configuration — routes alerts to Telegram
+global:
+  resolve_timeout: 5m
+
+# ── Receivers ───────────────────────────────────────────────────
+receivers:
+  - name: "telegram-critical"
+    telegram_configs:
+      - bot_token: "${TELEGRAM_BOT_TOKEN}"
+        chat_id: "${TELEGRAM_CHAT_ID}"
+        parse_mode: "HTML"
+        message: |
+          🚨 <b>{{ .GroupLabels.alertname }}</b>
+
+          <b>Status:</b> {{ .Status }}
+          <b>Severity:</b> {{ .CommonLabels.severity }}
+          {{ range .Alerts }}
+          <b>Summary:</b> {{ .Annotations.summary }}
+          <b>Description:</b> {{ .Annotations.description }}
+          {{ end }}
+
+  - name: "telegram-warning"
+    telegram_configs:
+      - bot_token: "${TELEGRAM_BOT_TOKEN}"
+        chat_id: "${TELEGRAM_CHAT_ID}"
+        parse_mode: "HTML"
+        message: |
+          ⚠️ <b>{{ .GroupLabels.alertname }}</b>
+
+          <b>Status:</b> {{ .Status }}
+          <b>Severity:</b> {{ .CommonLabels.severity }}
+          {{ range .Alerts }}
+          <b>Summary:</b> {{ .Annotations.summary }}
+          <b>Description:</b> {{ .Annotations.description }}
+          {{ end }}
+
+  - name: "telegram-all"
+    telegram_configs:
+      - bot_token: "${TELEGRAM_BOT_TOKEN}"
+        chat_id: "${TELEGRAM_CHAT_ID}"
+        parse_mode: "HTML"
+        message: |
+          <b>{{ .GroupLabels.alertname }}</b> [{{ .Status }}]
+
+          {{ range .Alerts }}
+          <b>Summary:</b> {{ .Annotations.summary }}
+          {{ end }}
+
+# ── Inhibit rules ───────────────────────────────────────────────
+# Silence warning-level alerts when a critical alert is firing
+inhibit_rules:
+  - source_match:
+      severity: "critical"
+    target_match:
+      severity: "warning"
+    equal: ["portfolio"]
+
+# ── Route tree ──────────────────────────────────────────────────
+route:
+  receiver: "telegram-all"
+  group_by: ["alertname", "portfolio"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+  routes:
+    - match:
+        severity: "critical"
+      receiver: "telegram-critical"
+      group_wait: 10s
+      repeat_interval: 1h
+
+    - match:
+        severity: "warning"
+      receiver: "telegram-warning"
+      repeat_interval: 4h

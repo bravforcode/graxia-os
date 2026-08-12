@@ -1,0 +1,2 @@
+timestamp,direction,entry_price,exit_price,exit_reason,stop_filled_at,intended_stop,slippage,pnl_gross,pnl_net,event_flag,notes
+2026-06-26 13:43,long,4060.11,,,,3.0,0.0,,,none,Open conf=0.50 ticket=330453942

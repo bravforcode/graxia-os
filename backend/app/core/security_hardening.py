@@ -17,9 +17,8 @@ import logging
 import re
 import secrets
 from datetime import UTC, datetime, timedelta
-from typing import Any
 
-from fastapi import HTTPException, Request, Response
+from fastapi import HTTPException, Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config import settings
@@ -39,13 +38,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # Strict Transport Security (HSTS)
         # Forces HTTPS for 1 year, includes subdomains
         if settings.APP_ENV == "production":
-            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=31536000; includeSubDomains; preload"
+            )
 
         # Content Security Policy
         # Prevents XSS and data injection attacks
         csp_directives = [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval'",  # Adjust for your needs
+            "script-src 'self'",
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: https:",
             "font-src 'self'",
@@ -84,7 +85,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         # Cache Control for sensitive endpoints
         if request.url.path.startswith("/api/"):
-            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
+            response.headers["Cache-Control"] = (
+                "no-store, no-cache, must-revalidate, private"
+            )
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"
 
@@ -106,8 +109,12 @@ class IPFilterMiddleware(BaseHTTPMiddleware):
         self.blacklist = blacklist or []
 
         # Compile IP networks
-        self.whitelist_networks = [ipaddress.ip_network(ip, strict=False) for ip in self.whitelist]
-        self.blacklist_networks = [ipaddress.ip_network(ip, strict=False) for ip in self.blacklist]
+        self.whitelist_networks = [
+            ipaddress.ip_network(ip, strict=False) for ip in self.whitelist
+        ]
+        self.blacklist_networks = [
+            ipaddress.ip_network(ip, strict=False) for ip in self.blacklist
+        ]
 
     async def dispatch(self, request: Request, call_next):
         client_ip = self._get_client_ip(request)
@@ -129,16 +136,15 @@ class IPFilterMiddleware(BaseHTTPMiddleware):
 
     def _get_client_ip(self, request: Request) -> str:
         """Extract real client IP considering proxies."""
-        # Check X-Forwarded-For header (common for proxies)
-        forwarded_for = request.headers.get("X-Forwarded-For")
-        if forwarded_for:
-            # Get the first IP in the chain (closest to client)
-            return forwarded_for.split(",")[0].strip()
-
-        # Check X-Real-IP header
-        real_ip = request.headers.get("X-Real-IP")
-        if real_ip:
-            return real_ip
+        # Only trust proxy headers if TRUSTED_PROXIES is configured
+        import os
+        if os.environ.get("TRUSTED_PROXIES"):
+            forwarded_for = request.headers.get("X-Forwarded-For")
+            if forwarded_for:
+                return forwarded_for.split(",")[0].strip()
+            real_ip = request.headers.get("X-Real-IP")
+            if real_ip:
+                return real_ip
 
         # Fall back to direct connection
         return request.client.host if request.client else "unknown"
@@ -165,17 +171,11 @@ class RequestSanitizationMiddleware(BaseHTTPMiddleware):
     Sanitizes incoming requests to prevent injection attacks.
     """
 
-    # Patterns for common attacks
+    # Patterns for common attacks — defense-in-depth only, not primary security
     SQL_INJECTION_PATTERNS = [
-        r"(\%27)|(\')|(\-\-)|(\%23)|(#)",  # Basic SQL meta-characters
-        r"((\%3D)|(=))[^\n]*((\%27)|(\')|(\-\-)|(\%3B)|(;))",  # SQL injection attempts
-        r"\w*((\%27)|(\'))((\%6F)|o|(\%4F))((\%72)|r|(\%52))",  # Union select
-        r"((\%27)|(\'))union",  # Union-based injection
-        r"exec(\s|\+)+(s|x)p\w+",  # Stored procedures
-        r"UNION\s+SELECT",  # Union select
-        r"INSERT\s+INTO",  # Insert injection
-        r"DELETE\s+FROM",  # Delete injection
+        r"UNION\s+SELECT",  # Union-based injection
         r"DROP\s+TABLE",  # Drop table
+        r";\s*DROP\s+",  # Semicolon drop
     ]
 
     # Patterns for XSS attempts
@@ -198,24 +198,45 @@ class RequestSanitizationMiddleware(BaseHTTPMiddleware):
 
     def __init__(self, app):
         super().__init__(app)
-        self.sql_pattern = re.compile("|".join(self.SQL_INJECTION_PATTERNS), re.IGNORECASE)
+        self.sql_pattern = re.compile(
+            "|".join(self.SQL_INJECTION_PATTERNS), re.IGNORECASE
+        )
         self.xss_pattern = re.compile("|".join(self.XSS_PATTERNS), re.IGNORECASE)
-        self.path_pattern = re.compile("|".join(self.PATH_TRAVERSAL_PATTERNS), re.IGNORECASE)
+        self.path_pattern = re.compile(
+            "|".join(self.PATH_TRAVERSAL_PATTERNS), re.IGNORECASE
+        )
 
         # Standard HTTP headers that should not be checked for XSS patterns
         self.SAFE_HEADERS = {
-            "cookie", "set-cookie", "authorization", "content-type", "content-length",
-            "accept", "accept-encoding", "accept-language", "host", "user-agent",
-            "referer", "connection", "cache-control", "pragma", "expires",
-            "if-none-match", "if-modified-since", "origin", "x-requested-with",
-            "x-csrf-token"
+            "cookie",
+            "set-cookie",
+            "authorization",
+            "content-type",
+            "content-length",
+            "accept",
+            "accept-encoding",
+            "accept-language",
+            "host",
+            "user-agent",
+            "referer",
+            "connection",
+            "cache-control",
+            "pragma",
+            "expires",
+            "if-none-match",
+            "if-modified-since",
+            "origin",
+            "x-requested-with",
+            "x-csrf-token",
         }
 
     async def dispatch(self, request: Request, call_next):
         # Check query parameters
         query_string = str(request.query_params)
         if self._contains_attack_patterns(query_string):
-            logger.warning(f"Blocked potential attack in query params: {query_string[:100]}")
+            logger.warning(
+                f"Blocked potential attack in query params: {query_string[:100]}"
+            )
             raise HTTPException(status_code=400, detail="Invalid request")
 
         # Check URL path
@@ -236,7 +257,9 @@ class RequestSanitizationMiddleware(BaseHTTPMiddleware):
             # Only check custom/suspicious headers
             header_str = f"{header_name}: {header_value}"
             if self._contains_attack_patterns(header_str):
-                logger.warning(f"Blocked potential attack in custom header: {header_name}")
+                logger.warning(
+                    f"Blocked potential attack in custom header: {header_name}"
+                )
                 raise HTTPException(status_code=400, detail="Invalid request")
 
         return await call_next(request)
@@ -260,13 +283,22 @@ class RequestSanitizationMiddleware(BaseHTTPMiddleware):
 class APIKeyRotationTracker:
     """
     Tracks API key usage and rotation for enterprise security.
+    
+    TODO: In-memory storage only — data lost on restart. For multi-instance
+    deployments, migrate to Redis or database-backed storage.
     """
 
     def __init__(self):
         self._key_metadata: dict[str, dict] = {}
 
-    def register_key(self, key_id: str, key_hash: str, created_by: str,
-                     expires_at: datetime = None, scopes: list[str] = None):
+    def register_key(
+        self,
+        key_id: str,
+        key_hash: str,
+        created_by: str,
+        expires_at: datetime = None,
+        scopes: list[str] = None,
+    ):
         """Register a new API key with metadata."""
         self._key_metadata[key_hash] = {
             "key_id": key_id,
@@ -325,7 +357,9 @@ class APIKeyRotationTracker:
 
         # Return aggregate stats
         total_keys = len(self._key_metadata)
-        active_keys = sum(1 for m in self._key_metadata.values() if not m.get("is_revoked", False))
+        active_keys = sum(
+            1 for m in self._key_metadata.values() if not m.get("is_revoked", False)
+        )
         revoked_keys = total_keys - active_keys
 
         return {
@@ -333,10 +367,11 @@ class APIKeyRotationTracker:
             "active_keys": active_keys,
             "revoked_keys": revoked_keys,
             "keys_expiring_soon": sum(
-                1 for m in self._key_metadata.values()
-                if m.get("expires_at") and
-                m.get("expires_at") < datetime.now(UTC) + timedelta(days=7) and
-                not m.get("is_revoked", False)
+                1
+                for m in self._key_metadata.values()
+                if m.get("expires_at")
+                and m.get("expires_at") < datetime.now(UTC) + timedelta(days=7)
+                and not m.get("is_revoked", False)
             ),
         }
 
@@ -358,11 +393,7 @@ class SecureHeaders:
         Returns:
             Hex-encoded HMAC-SHA256 signature
         """
-        return hmac.new(
-            secret.encode(),
-            payload,
-            hashlib.sha256
-        ).hexdigest()
+        return hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
 
     @staticmethod
     def verify_request_signature(payload: bytes, signature: str, secret: str) -> bool:
@@ -420,9 +451,12 @@ def sanitize_html_input(text: str) -> str:
     return sanitized
 
 
-def validate_file_upload(filename: str, content_type: str,
-                        allowed_extensions: list[str] = None,
-                        max_size_bytes: int = 10 * 1024 * 1024) -> bool:
+def validate_file_upload(
+    filename: str,
+    content_type: str,
+    allowed_extensions: list[str] = None,
+    max_size_bytes: int = 10 * 1024 * 1024,
+) -> bool:
     """
     Validate file upload for security.
 
@@ -477,8 +511,15 @@ def mask_sensitive_data(data: dict, sensitive_fields: list[str] = None) -> dict:
     """
     if sensitive_fields is None:
         sensitive_fields = [
-            "password", "secret", "token", "key", "api_key",
-            "credit_card", "ssn", "ssn_last4", "authorization"
+            "password",
+            "secret",
+            "token",
+            "key",
+            "api_key",
+            "credit_card",
+            "ssn",
+            "ssn_last4",
+            "authorization",
         ]
 
     masked = {}
@@ -492,7 +533,9 @@ def mask_sensitive_data(data: dict, sensitive_fields: list[str] = None) -> dict:
             masked[key] = mask_sensitive_data(value, sensitive_fields)
         elif isinstance(value, list):
             masked[key] = [
-                mask_sensitive_data(item, sensitive_fields) if isinstance(item, dict) else item
+                mask_sensitive_data(item, sensitive_fields)
+                if isinstance(item, dict)
+                else item
                 for item in value
             ]
         else:

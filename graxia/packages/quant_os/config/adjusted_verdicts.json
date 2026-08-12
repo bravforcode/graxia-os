@@ -1,0 +1,47 @@
+{
+  "EURUSD_1min_500w_200t": {
+    "file": "artifacts/walk_forward/wf_EURUSD_1min_500w_200t_conf0.85.json",
+    "old_net": -10.73,
+    "new_net": 11.1,
+    "gross": 13.17,
+    "t_stat": 2.99,
+    "old_verdict": "NEGATIVE_EDGE_CONFIRMED",
+    "new_verdict": "PASS_TO_NEXT_PHASE"
+  },
+  "EURUSD_15min_500w_200t": {
+    "file": "artifacts/walk_forward_v2/wf_EURUSD_15min_500w_200t_conf0.85.json",
+    "old_net": 17.74,
+    "new_net": 118.36,
+    "gross": 127.89,
+    "t_stat": 2.24,
+    "old_verdict": "CONDITIONAL_PASS",
+    "new_verdict": "PASS_TO_NEXT_PHASE"
+  },
+  "EURUSD_15min_200w_100t": {
+    "file": "artifacts/walk_forward_v2/wf_EURUSD_15min_200w_100t_conf0.85.json",
+    "old_net": -151.35,
+    "new_net": 20.58,
+    "gross": 36.96,
+    "t_stat": 0.32,
+    "old_verdict": "NEGATIVE_EDGE_CONFIRMED",
+    "new_verdict": "CONDITIONAL_PASS"
+  },
+  "XAUUSD_M15_200w_100t_sym": {
+    "file": "artifacts/walk_forward_v2/wf_XAUUSD_15min_200w_100t_conf0.85.json",
+    "old_net": -1304.78,
+    "new_net": -969.1,
+    "gross": -646.71,
+    "t_stat": -2.3,
+    "old_verdict": "NEGATIVE_EDGE_CONFIRMED",
+    "new_verdict": "NEGATIVE_EDGE_CONFIRMED"
+  },
+  "XAUUSD_M15_500w_200t_asym": {
+    "file": "artifacts/walk_forward_v3/wf_XAUUSD_15min_500w_200t_conf0.85.json",
+    "old_net": -1284.25,
+    "new_net": -1281.5,
+    "gross": -1280.92,
+    "t_stat": -0.72,
+    "old_verdict": "INSUFFICIENT_SAMPLE",
+    "new_verdict": "INSUFFICIENT_SAMPLE"
+  }
+}

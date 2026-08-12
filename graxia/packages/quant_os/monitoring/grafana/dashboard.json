@@ -1,0 +1,841 @@
+{
+  "_comment": "QuantOS Grafana Dashboard — Import via Dashboards > Import > Upload JSON",
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "QuantOS Trading System — live monitoring dashboard",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "Trade PnL",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisLabel": "USD",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "gradientMode": "opacity",
+            "pointSize": 0,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "id": 1,
+      "options": {
+        "legend": { "calcs": ["lastNotNull", "max", "min"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "title": "Cumulative PnL",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "quant_os_cumulative_pnl{account=\"${ACCOUNT}\"}",
+          "legendFormat": "{{strategy}} — {{symbol}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": -500 },
+              { "color": "yellow", "value": -100 },
+              { "color": "green", "value": 0 }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 1 },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "title": "Daily PnL",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "quant_os_daily_pnl{account=\"${ACCOUNT}\"}",
+          "legendFormat": "Daily PnL",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 8 },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 1 },
+      "id": 3,
+      "title": "Win Rate (rolling 50 trades)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "quant_os_win_rate{account=\"${ACCOUNT}\", window=\"50\"}",
+          "legendFormat": "Win Rate %",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "id": 101,
+      "title": "Open Positions",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": { "align": "auto", "filterable": true },
+          "thresholds": { "mode": "absolute", "steps": [] }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "unrealized_pnl" },
+            "properties": [
+              { "id": "unit", "value": "currencyUSD" },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "red", "value": null },
+                    { "color": "green", "value": 0 }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 14, "x": 0, "y": 10 },
+      "id": 4,
+      "options": { "showHeader": true, "sortBy": [{ "desc": true, "displayName": "unrealized_pnl" }] },
+      "title": "Current Positions",
+      "type": "table",
+      "targets": [
+        {
+          "expr": "quant_os_position{account=\"${ACCOUNT}\"}",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        { "id": "organize", "options": { "excludeByName": { "Time": true, "__name__": true, "instance": true }, "renameByName": { "symbol": "Symbol", "side": "Side", "size": "Size", "entry_price": "Entry", "unrealized_pnl": "Unrealized PnL", "strategy": "Strategy" } } }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 3 },
+              { "color": "red", "value": 6 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 5, "x": 14, "y": 10 },
+      "id": 5,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "vertical",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "title": "Open Position Count",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "quant_os_open_position_count{account=\"${ACCOUNT}\"}",
+          "legendFormat": "Count",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.7 },
+              { "color": "red", "value": 0.9 }
+            ]
+          },
+          "max": 1,
+          "min": 0,
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 5, "x": 19, "y": 10 },
+      "id": 6,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "title": "Margin Utilization",
+      "type": "gauge",
+      "targets": [
+        {
+          "expr": "quant_os_margin_utilization{account=\"${ACCOUNT}\"}",
+          "legendFormat": "Margin %",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
+      "id": 102,
+      "title": "Risk Metrics",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 2.5 },
+              { "color": "orange", "value": 4.0 },
+              { "color": "red", "value": 5.0 }
+            ]
+          },
+          "max": 10,
+          "min": 0,
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 19 },
+      "id": 7,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true
+      },
+      "title": "Max Drawdown %",
+      "type": "gauge",
+      "targets": [
+        {
+          "expr": "quant_os_max_drawdown{account=\"${ACCOUNT}\"}",
+          "legendFormat": "Drawdown",
+          "refId": "A"
+        }
+      ],
+      "alert": {
+        "name": "High Drawdown",
+        "message": "Drawdown exceeds 5% threshold — review positions",
+        "conditions": [
+          {
+            "type": "query",
+        "query": { "params": ["A", "5m", "now"] },
+            "reducer": { "type": "avg", "params": [] },
+            "evaluator": { "type": "gt", "params": [5] },
+            "operator": { "type": "and" }
+          }
+        ],
+        "frequency": "1m",
+        "noDataState": "no_data",
+        "executionErrorState": "alerting",
+        "notifications": []
+      }
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 8 },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 9, "x": 6, "y": 19 },
+      "id": 8,
+      "title": "Drawdown History",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "quant_os_drawdown{account=\"${ACCOUNT}\"}",
+          "legendFormat": "Drawdown %",
+          "refId": "A"
+        },
+        {
+          "expr": "quant_os_risk_limit_drawdown{account=\"${ACCOUNT}\"}",
+          "legendFormat": "Limit (5%)",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 0.5 }
+            ]
+          },
+          "mappings": [
+            { "options": { "0": { "text": "ACTIVE", "color": "red" }, "1": { "text": "ACTIVE", "color": "red" } }, "type": "value" },
+            { "options": { "0": { "text": "OFF" }, "1": { "text": "OFF" } }, "type": "value" }
+          ],
+          "max": 1,
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 4, "x": 15, "y": 19 },
+      "id": 9,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "vertical",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "title": "Kill Switch",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "quant_os_kill_switch_active{account=\"${ACCOUNT}\"}",
+          "legendFormat": "Kill Switch",
+          "refId": "A"
+        }
+      ],
+      "alert": {
+        "name": "Kill Switch Active",
+        "message": "Kill switch has been triggered — all trading halted",
+        "conditions": [
+          {
+            "type": "query",
+            "query": { "params": ["A", "1m", "now"] },
+            "reducer": { "type": "avg", "params": [] },
+            "evaluator": { "type": "gt", "params": [0] },
+            "operator": { "type": "and" }
+          }
+        ],
+        "frequency": "30s",
+        "noDataState": "no_data",
+        "executionErrorState": "alerting",
+        "notifications": []
+      }
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.15 },
+              { "color": "red", "value": 0.25 }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 5, "x": 19, "y": 19 },
+      "id": 10,
+      "title": "Sharpe Ratio (rolling 30d)",
+      "type": "gauge",
+      "targets": [
+        {
+          "expr": "quant_os_sharpe_ratio{account=\"${ACCOUNT}\", window=\"30d\"}",
+          "legendFormat": "Sharpe",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 },
+      "id": 103,
+      "title": "Model Accuracy",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "max": 1,
+          "min": 0,
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 28 },
+      "id": 11,
+      "title": "Model Prediction Accuracy",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "quant_os_model_accuracy{account=\"${ACCOUNT}\"}",
+          "legendFormat": "Accuracy",
+          "refId": "A"
+        },
+        {
+          "expr": "quant_os_model_accuracy_baseline{account=\"${ACCOUNT}\"}",
+          "legendFormat": "Baseline (55%)",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.02 },
+              { "color": "green", "value": 0.05 }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 28 },
+      "id": 12,
+      "title": "Model Drift Score",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "quant_os_model_drift{account=\"${ACCOUNT}\"}",
+          "legendFormat": "Drift",
+          "refId": "A"
+        },
+        {
+          "expr": "quant_os_model_drift_threshold{account=\"${ACCOUNT}\"}",
+          "legendFormat": "Threshold (5%)",
+          "refId": "B"
+        }
+      ],
+      "alert": {
+        "name": "Model Drift Detected",
+        "message": "Model prediction drift exceeds threshold — retrain recommended",
+        "conditions": [
+          {
+            "type": "query",
+            "query": { "params": ["A", "10m", "now"] },
+            "reducer": { "type": "avg", "params": [] },
+            "evaluator": { "type": "gt", "params": [5] },
+            "operator": { "type": "and" }
+          }
+        ],
+        "frequency": "5m",
+        "noDataState": "no_data",
+        "executionErrorState": "alerting",
+        "notifications": []
+      }
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 28 },
+      "id": 13,
+      "title": "Signal Distribution",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "quant_os_signal_long_count{account=\"${ACCOUNT}\"}",
+          "legendFormat": "Long Signals",
+          "refId": "A"
+        },
+        {
+          "expr": "quant_os_signal_short_count{account=\"${ACCOUNT}\"}",
+          "legendFormat": "Short Signals",
+          "refId": "B"
+        },
+        {
+          "expr": "quant_os_signal_hold_count{account=\"${ACCOUNT}\"}",
+          "legendFormat": "Hold",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 },
+      "id": 104,
+      "title": "System Health",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "green", "value": 2 }
+            ]
+          },
+          "mappings": [
+            { "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "DEGRADED", "color": "yellow" }, "2": { "text": "HEALTHY", "color": "green" } }, "type": "value" }
+          ],
+          "max": 2,
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 37 },
+      "id": 14,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "title": "Broker Connection",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "quant_os_broker_status{account=\"${ACCOUNT}\"}",
+          "legendFormat": "Broker",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "green", "value": 2 }
+            ]
+          },
+          "mappings": [
+            { "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "DEGRADED", "color": "yellow" }, "2": { "text": "HEALTHY", "color": "green" } }, "type": "value" }
+          ],
+          "max": 2,
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 37 },
+      "id": 15,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "title": "Market Data Feed",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "quant_os_market_data_status",
+          "legendFormat": "Feed",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "ms",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 200 },
+              { "color": "red", "value": 500 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 37 },
+      "id": 16,
+      "title": "Execution Latency (p95)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "quant_os_execution_latency_p95{account=\"${ACCOUNT}\"}",
+          "legendFormat": "Latency p95",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "bytes",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 524288000 },
+              { "color": "red", "value": 1073741824 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 37 },
+      "id": 17,
+      "title": "Memory Usage",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "quant_os_memory_bytes",
+          "legendFormat": "Memory",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "max": 100,
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 37 },
+      "id": 18,
+      "title": "CPU Usage",
+      "type": "gauge",
+      "targets": [
+        {
+          "expr": "quant_os_cpu_percent",
+          "legendFormat": "CPU",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          },
+          "mappings": [
+            { "options": { "0": { "text": "OK", "color": "green" }, "1": { "text": "ERROR", "color": "red" } }, "type": "value" }
+          ],
+          "max": 1,
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 37 },
+      "id": 19,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "title": "System Errors (last 5m)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "quant_os_error_count{account=\"${ACCOUNT}\"}[5m]",
+          "legendFormat": "Errors",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 1, "fillOpacity": 5 },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 41 },
+      "id": 20,
+      "title": "Trade Flow (last 24h)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "quant_os_trades_total{account=\"${ACCOUNT}\"}",
+          "legendFormat": "Trades",
+          "refId": "A"
+        },
+        {
+          "expr": "quant_os_orders_total{account=\"${ACCOUNT}\"}",
+          "legendFormat": "Orders",
+          "refId": "B"
+        },
+        {
+          "expr": "quant_os_rejections_total{account=\"${ACCOUNT}\"}",
+          "legendFormat": "Rejections",
+          "refId": "C"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["quant-os", "trading", "monitoring"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "default", "value": "default" },
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "current": { "selected": false, "text": "paper", "value": "paper" },
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "definition": "label_values(quant_os_cumulative_pnl, account)",
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "ACCOUNT",
+        "options": [],
+        "query": { "qryType": 1, "query": "label_values(quant_os_cumulative_pnl, account)" },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-24h", "to": "now" },
+  "timepicker": {
+    "refresh_intervals": ["10s", "30s", "1m", "5m"],
+    "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "2d", "7d", "30d"]
+  },
+  "timezone": "browser",
+  "title": "QuantOS Trading Dashboard",
+  "uid": "quant-os-main",
+  "version": 1,
+  "weekStart": ""
+}

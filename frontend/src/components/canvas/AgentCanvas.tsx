@@ -164,6 +164,7 @@ const initialNodes: Node<AgentData>[] = [
   },
 ];
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const initialEdges: Edge[] = [
   {
     id: "e1-2",
@@ -185,7 +186,7 @@ export const initialEdges: Edge[] = [
 
 // --- Main Component ---
 
-export const AgentCanvas = () => {
+const AgentCanvas = () => {
   const navigate = useNavigate();
   const [nodes, setNodes] = useState<Node<AgentData>[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);

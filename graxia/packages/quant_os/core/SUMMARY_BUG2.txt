@@ -1,0 +1,22 @@
+Bug #2 FIXED — XAUUSD Cost Model (Commission Embedded in Spread)
+
+File: core/cost_model.py (new, 119 lines)
+
+What was broken:
+  walk_forward.py treated XAUUSD like an FX pair: spread + flat per-side
+  commission. On Pepperstone Razor, commission on metals (XAUUSD) is
+  EMBEDDED in the quoted spread — charging both double-counts the cost.
+  Also, a single hardcoded constant ignored session-dependent spread
+  variation (XAUUSD spread can be 2-3x wider in Asian session).
+
+What was fixed:
+  - COST_PER_TRADE_BY_SESSION: dict with asian=0.28, london=0.14, ny=0.15, overlap=0.12
+  - get_session(hour_utc): classifies UTC hour into session (asian 0-7, london 7-12, overlap 12-16, ny 16-21)
+  - get_backtest_cost(symbol, timestamp): session-aware backtest cost lookup
+  - get_live_round_trip_cost(symbol): pulls live ask-bid spread from MT5 (commission already inside)
+  - get_live_spread_as_return(symbol): converts spread to return-unit for WF pipeline
+
+Key design decisions:
+  - Separate from execution/cost_model.py (which is for stress/scenario analysis)
+  - Placeholder costs — must be calibrated from paper/live spread logs quarterly
+  - Live functions return None if MT5 unavailable (safe for pure-backtest environments)

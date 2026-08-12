@@ -1,0 +1,12 @@
+{
+  "repo_id": "hftbacktest",
+  "upstream_commit_sha": "5f3ec40b2afb764e0fea112f941ed85523ef4e88",
+  "dirty_diff_sha256": "f4c949035aba2e2490f774b4f6444ca53f87282dc608223b437f469e1ed82a2e",
+  "quarantine_reason": "HFT backtesting framework — not used in canonical quant_os path",
+  "worktree_status": "ALL_FILES_DELETED",
+  "files_changed": 232,
+  "insertions": 0,
+  "deletions": 63104,
+  "verified_no_canonical_import": true,
+  "verified_at": "2026-06-22"
+}

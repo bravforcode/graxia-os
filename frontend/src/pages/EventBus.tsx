@@ -2,14 +2,14 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, CheckCircle2, RefreshCw, RotateCcw, Trash2 } from 'lucide-react'
 
-import { Button } from '@/components/ui/Button'
-import { Dialog } from '@/components/ui/Dialog'
-import { EmptyState } from '@/components/ui/EmptyState'
-import { MetricCard } from '@/components/ui/MetricCard'
-import { NoticeBanner } from '@/components/ui/NoticeBanner'
-import { PageHeader } from '@/components/ui/PageHeader'
-import { Panel } from '@/components/ui/Panel'
-import { StatusPill } from '@/components/ui/StatusPill'
+import { Button } from '@/components/ui/button'
+import { Dialog } from '@/components/ui/dialog'
+import { EmptyState } from '@/components/ui/empty-state'
+import { MetricCard } from '@/components/ui/metric-card'
+import { NoticeBanner } from '@/components/ui/notice-banner'
+import { PageHeader } from '@/components/ui/page-header'
+import { Panel } from '@/components/ui/panel'
+import { StatusPill } from '@/components/ui/status-pill'
 import { api } from '@/lib/api'
 import { formatNumber } from '@/lib/utils'
 
@@ -112,7 +112,7 @@ export default function EventBus() {
               Refresh
             </Button>
             <Button
-              variant="danger"
+              variant="destructive"
               icon={<Trash2 size={16} />}
               loading={clearAllMutation.isPending}
               onClick={() => {
@@ -222,7 +222,7 @@ export default function EventBus() {
                       </Button>
                       <Button
                         size="sm"
-                        variant="danger"
+                        variant="destructive"
                         icon={<Trash2 size={16} />}
                         loading={removeMutation.isPending && removeMutation.variables === event.index}
                         onClick={() => setPendingAction({ kind: 'remove', index: event.index })}
@@ -272,7 +272,7 @@ export default function EventBus() {
               Cancel
             </Button>
             <Button
-              variant={pendingAction?.kind === 'remove' || pendingAction?.kind === 'clear-all' ? 'danger' : 'secondary'}
+              variant={pendingAction?.kind === 'remove' || pendingAction?.kind === 'clear-all' ? 'destructive' : 'secondary'}
               loading={
                 (pendingAction?.kind === 'clear-all' && clearAllMutation.isPending) ||
                 (pendingAction?.kind === 'replay' &&

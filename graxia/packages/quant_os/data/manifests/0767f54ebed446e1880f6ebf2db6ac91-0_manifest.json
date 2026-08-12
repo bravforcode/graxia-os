@@ -1,0 +1,23 @@
+{
+  "sha256": "68cb8a67d73a54ab485f9cc306861a4b533fa5a1952421a4314fd4ac7e7eec9b",
+  "file_path": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\warehouse\\ticks\\source=MT5\\symbol=EURUSD\\year=2026\\month=06\\0767f54ebed446e1880f6ebf2db6ac91-0.parquet",
+  "rows": 3904,
+  "columns": [
+    "time",
+    "bid",
+    "ask",
+    "last",
+    "flags",
+    "volume",
+    "ask_volume",
+    "spread"
+  ],
+  "symbol": "0767f54ebed446e1880f6ebf2db6ac91-0",
+  "schema_hash": "f328088757138855a35ecda06ab3857f60a59f99a1b79f7b54b8c248ce25223a",
+  "generated_at": "2026-06-25T06:31:19Z",
+  "date_range": {
+    "start": "2026-06-24 09:58:15.697464",
+    "end": "2026-06-24 11:04:38.373921"
+  },
+  "source": "MT5"
+}

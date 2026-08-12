@@ -71,13 +71,13 @@ class _FakeSession:
 @pytest.mark.asyncio
 async def test_unit_of_work_rolls_back_on_exception(monkeypatch: pytest.MonkeyPatch) -> None:
     import app.core.unit_of_work as uow_module
-    from app.core.unit_of_work import SQLAlchemyUnitOfWork
+    from app.core.unit_of_work import AsyncUnitOfWork
 
     session = _FakeSession()
     monkeypatch.setattr(uow_module, "AsyncSessionLocal", lambda: session)
 
     with pytest.raises(ValueError):
-        async with SQLAlchemyUnitOfWork():
+        async with AsyncUnitOfWork():
             raise ValueError("boom")
 
     assert session.committed is False
@@ -88,13 +88,13 @@ async def test_unit_of_work_rolls_back_on_exception(monkeypatch: pytest.MonkeyPa
 @pytest.mark.asyncio
 async def test_unit_of_work_rolls_back_on_commit_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     import app.core.unit_of_work as uow_module
-    from app.core.unit_of_work import SQLAlchemyUnitOfWork
+    from app.core.unit_of_work import AsyncUnitOfWork
 
     session = _FakeSession(fail_commit=True)
     monkeypatch.setattr(uow_module, "AsyncSessionLocal", lambda: session)
 
     with pytest.raises(RuntimeError):
-        async with SQLAlchemyUnitOfWork():
+        async with AsyncUnitOfWork():
             pass
 
     assert session.committed is False
@@ -104,18 +104,21 @@ async def test_unit_of_work_rolls_back_on_commit_failure(monkeypatch: pytest.Mon
 
 @pytest.mark.asyncio
 async def test_rate_limit_blocks_excessive_login_attempts(public_async_client) -> None:
-    for _ in range(10):
+    for _ in range(5):
         resp = await public_async_client.post(
             "/api/v1/auth/login",
             data={"username": "someone@example.com", "password": "wrong-password"},
         )
-        assert resp.status_code != 429
+        # First 5 login attempts return 401 (wrong password)
+        # Lockout is set after the 5th failed attempt via record_failed_login
+        assert resp.status_code == 401
 
+    # 6th attempt triggers the lockout set by the 5th failure
     response = await public_async_client.post(
         "/api/v1/auth/login",
         data={"username": "someone@example.com", "password": "wrong-password"},
     )
 
     assert response.status_code == 429
-    assert response.json()["detail"] == "Rate limit exceeded"
+    assert "locked" in response.json()["detail"].lower()
     assert response.headers.get("Retry-After")

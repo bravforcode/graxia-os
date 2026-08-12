@@ -338,17 +338,27 @@ class TestCSRFTokenExpiryIntegration:
         import hashlib
         import hmac
         import secrets
-        
+        from app.core.auth import decode_access_token, extract_bearer_token
+
         # Generate legacy token
-        session_id = getattr(async_client, '_session_id', 'test-session')
+        # Correctly extract session_id from the authenticated client's JWT token
+        auth_header = async_client.headers.get("Authorization")
+        token = extract_bearer_token(auth_header)
+        if token:
+            payload = decode_access_token(token)
+            session_id = str(payload.get("session_id") or "")
+        else:
+            session_id = getattr(async_client, '_session_id', 'test-session')
+
         secret = settings.CSRF_SIGNING_SECRET.encode("utf-8")
         random_part = secrets.token_bytes(32)
         message = random_part + session_id.encode("utf-8")
         signature = hmac.new(secret, message, hashlib.sha256).digest()
         legacy_token = f"{base64.urlsafe_b64encode(random_part).decode()}.{base64.urlsafe_b64encode(signature).decode()}"
-        
+
         # Try to use legacy token
         original_csrf = async_client.headers.get("X-CSRF-Token")
+
         original_cookie = async_client.cookies.get(settings.CSRF_COOKIE_NAME)
         
         try:

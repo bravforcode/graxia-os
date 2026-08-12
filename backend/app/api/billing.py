@@ -18,7 +18,7 @@ from app.core.stripe_client import (
     get_price_id,
 )
 from app.database import get_db
-from app.middleware.auth import get_current_user
+from app.middleware.auth import get_current_user_from_token
 from app.models.organization import PLAN_LIMITS, Organization
 from app.models.usage_log import UsageLog
 from app.models.user import User
@@ -46,7 +46,7 @@ async def list_plans():
 async def start_checkout(
     body: CheckoutIn,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_token),
 ):
     """Start 14-day free trial. No card required during trial."""
     if body.plan not in PLAN_LIMITS or body.plan == "free":
@@ -110,7 +110,7 @@ async def start_checkout(
 @router.post("/portal")
 async def open_portal(
     request: Request,
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_token),
 ):
     """Open Stripe Customer Portal for self-service management."""
     org = user.organization
@@ -127,7 +127,7 @@ async def open_portal(
 @router.get("/usage")
 async def get_usage(
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_token),
 ):
     """Current month usage vs plan limits."""
     org = user.organization
@@ -164,7 +164,7 @@ async def get_usage(
 @router.post("/cancel")
 async def cancel_plan(
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_token),
 ):
     """Cancel at end of billing period. Does not immediately downgrade."""
     org = user.organization

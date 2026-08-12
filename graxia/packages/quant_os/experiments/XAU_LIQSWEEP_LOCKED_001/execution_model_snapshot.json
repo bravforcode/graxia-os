@@ -1,0 +1,27 @@
+{
+  "model_id": "CONSERVATIVE_BAR_V1",
+  "description": "Conservative bar-based execution with AI validation gate",
+  "features": {
+    "execution_type": "MARKET_ORDER",
+    "order_sizing": "fixed_risk_pct",
+    "slippage_model": "none",
+    "latency_assumption_ms": 0,
+    "partial_fills": false,
+    "iceberg_orders": false
+  },
+  "validation_gates": [
+    "strategy_score >= 300",
+    "active_strategies >= 3",
+    "risk_manager_check",
+    "ai_validation (claude-sonnet-4-20250514, confidence >= 0.6)"
+  ],
+  "data_fetch": {
+    "source": "MT5",
+    "timeframes": ["M1", "M5", "M15", "H1", "H4"],
+    "bars_per_fetch": 200,
+    "fail_loud": true,
+    "no_mock_data": true
+  },
+  "cost_scenario": "BASE",
+  "currently_wired": false
+}

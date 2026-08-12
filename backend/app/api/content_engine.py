@@ -10,7 +10,7 @@ from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.middleware.auth import get_current_user
+from app.middleware.auth import get_current_user_from_token
 from app.models.content_engine import (
     AffiliateClick,
     AffiliateProgram,
@@ -42,7 +42,7 @@ from app.schemas.content_engine import (
 
 router = APIRouter(prefix="/content", tags=["content_engine"])
 DbSession = Annotated[AsyncSession, Depends(get_db)]
-CurrentUser = Annotated[User, Depends(get_current_user)]
+CurrentUser = Annotated[User, Depends(get_current_user_from_token)]
 
 
 # =============================================================================

@@ -22,8 +22,8 @@ DATABASE_URL=postgresql+asyncpg://personal_os:changeme@postgres:5432/personal_os
 
 คุณมี Supabase credentials อยู่แล้วใน `.env`:
 ```
-SUPABASE_URL=https://eezrhwiwwsmarkvejeoi.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGci...
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
 **แก้ไข `.env`**:
@@ -32,12 +32,12 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGci...
 # DATABASE_URL=postgresql+asyncpg://personal_os:changeme@postgres:5432/personal_os
 
 # เป็น Supabase PostgreSQL
-DATABASE_URL=postgresql+asyncpg://postgres.eezrhwiwwsmarkvejeoi:YOUR_DB_PASSWORD@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres
-DATABASE_MIGRATION_URL=postgresql://postgres.eezrhwiwwsmarkvejeoi:YOUR_DB_PASSWORD@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres
+DATABASE_URL=postgresql+asyncpg://postgres.your-project-ref:YOUR_DB_PASSWORD@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres
+DATABASE_MIGRATION_URL=postgresql://postgres.your-project-ref:YOUR_DB_PASSWORD@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres
 ```
 
 **หา Database Password**:
-1. ไปที่ https://supabase.com/dashboard/project/eezrhwiwwsmarkvejeoi
+1. ไปที่ https://supabase.com/dashboard/project/your-project-ref
 2. Settings → Database → Connection string
 3. Copy password จาก connection string
 

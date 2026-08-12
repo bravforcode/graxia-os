@@ -1,0 +1,443 @@
+[
+  {
+    "time": "INHoliday",
+    "currency": "IN",
+    "event": "India - Muharram",
+    "importance": "Holiday",
+    "actual": "",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "time": "SG",
+    "currency": "SG",
+    "event": "Industrial Production(YoY)(May)Act:13.0%Cons:17.0%Prev.:16.5%",
+    "importance": "",
+    "actual": "13.0%",
+    "forecast": "17.0%",
+    "previous": "16.5%"
+  },
+  {
+    "time": "SG",
+    "currency": "SG",
+    "event": "Industrial Production(MoM)(May)Act:-0.7%Cons:2.0%Prev.:6.2%",
+    "importance": "",
+    "actual": "-0.7%",
+    "forecast": "2.0%",
+    "previous": "6.2%"
+  },
+  {
+    "time": "DE",
+    "currency": "DE",
+    "event": "German Buba President Nagel SpeaksAct:-Cons:-Prev.:-",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "time": "IT",
+    "currency": "IT",
+    "event": "Italian Business Confidence(Jun)Act:88.4Cons:88.4Prev.:87.9",
+    "importance": "",
+    "actual": "88.4",
+    "forecast": "88.4",
+    "previous": "87.9"
+  },
+  {
+    "time": "IT",
+    "currency": "IT",
+    "event": "Italian Consumer Confidence(Jun)Act:92.4Cons:94.5Prev.:93.4",
+    "importance": "",
+    "actual": "92.4",
+    "forecast": "94.5",
+    "previous": "93.4"
+  },
+  {
+    "time": "IT",
+    "currency": "IT",
+    "event": "Italian 10-Year BTP AuctionAct:3.63%Cons:-Prev.:3.77%",
+    "importance": "",
+    "actual": "3.63%",
+    "forecast": "",
+    "previous": "3.77%"
+  },
+  {
+    "time": "IT",
+    "currency": "IT",
+    "event": "Italian 5-Year BTP AuctionAct:3.03%Cons:-Prev.:3.16%",
+    "importance": "",
+    "actual": "3.03%",
+    "forecast": "",
+    "previous": "3.16%"
+  },
+  {
+    "time": "FR",
+    "currency": "FR",
+    "event": "France Jobseekers Total(May)Act:-Cons:-Prev.:3,100.1K",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "3,100.1K"
+  },
+  {
+    "time": "IT",
+    "currency": "IT",
+    "event": "Italian Trade Balance Non-EU(May)Act:-Cons:-Prev.:3.85B",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "3.85B"
+  },
+  {
+    "time": "BR",
+    "currency": "BR",
+    "event": "Foreign direct investment (USD)(May)Act:-Cons:5.75BPrev.:8.91B",
+    "importance": "",
+    "actual": "",
+    "forecast": "5.75B",
+    "previous": "8.91B"
+  },
+  {
+    "time": "BR",
+    "currency": "BR",
+    "event": "Current Account (USD)(May)Act:-Cons:-4.16BPrev.:-1.77B",
+    "importance": "",
+    "actual": "",
+    "forecast": "-4.16B",
+    "previous": "-1.77B"
+  },
+  {
+    "time": "IN",
+    "currency": "IN",
+    "event": "Bank Loan GrowthAct:-Cons:-Prev.:17.7%",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "17.7%"
+  },
+  {
+    "time": "IN",
+    "currency": "IN",
+    "event": "Deposit GrowthAct:-Cons:-Prev.:12.2%",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "12.2%"
+  },
+  {
+    "time": "IN",
+    "currency": "IN",
+    "event": "FX Reserves, USDAct:-Cons:-Prev.:671.63B",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "671.63B"
+  },
+  {
+    "time": "IN",
+    "currency": "IN",
+    "event": "M3 Money SupplyAct:-Cons:-Prev.:12.0%",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "12.0%"
+  },
+  {
+    "time": "BR",
+    "currency": "BR",
+    "event": "Unemployment Rate(May)Act:-Cons:5.6%Prev.:5.8%",
+    "importance": "",
+    "actual": "",
+    "forecast": "5.6%",
+    "previous": "5.8%"
+  },
+  {
+    "time": "CA",
+    "currency": "CA",
+    "event": "Wholesale Sales(MoM)(May)Act:-Cons:-Prev.:0.6%",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "0.6%"
+  },
+  {
+    "time": "US",
+    "currency": "US",
+    "event": "Retail Inventories Ex Auto(May)Act:-Cons:-Prev.:0.6%",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "0.6%"
+  },
+  {
+    "time": "US",
+    "currency": "US",
+    "event": "Goods Trade Balance(May)Act:-Cons:-85.00BPrev.:-83.01B",
+    "importance": "",
+    "actual": "",
+    "forecast": "-85.00B",
+    "previous": "-83.01B"
+  },
+  {
+    "time": "US",
+    "currency": "US",
+    "event": "Wholesale Inventories(MoM)(May)Act:-Cons:0.3%Prev.:0.6%",
+    "importance": "",
+    "actual": "",
+    "forecast": "0.3%",
+    "previous": "0.6%"
+  },
+  {
+    "time": "US",
+    "currency": "US",
+    "event": "Michigan 1-Year Inflation Expectations(Jun)Act:-Cons:4.6%Prev.:4.8%",
+    "importance": "",
+    "actual": "",
+    "forecast": "4.6%",
+    "previous": "4.8%"
+  },
+  {
+    "time": "US",
+    "currency": "US",
+    "event": "Michigan Consumer Sentiment(Jun)Act:-Cons:48.9Prev.:44.8",
+    "importance": "",
+    "actual": "",
+    "forecast": "48.9",
+    "previous": "44.8"
+  },
+  {
+    "time": "US",
+    "currency": "US",
+    "event": "Michigan 5-Year Inflation Expectations(Jun)Act:-Cons:3.4%Prev.:3.9%",
+    "importance": "",
+    "actual": "",
+    "forecast": "3.4%",
+    "previous": "3.9%"
+  },
+  {
+    "time": "US",
+    "currency": "US",
+    "event": "Michigan Consumer Expectations(Jun)Act:-Cons:49.3Prev.:44.1",
+    "importance": "",
+    "actual": "",
+    "forecast": "49.3",
+    "previous": "44.1"
+  },
+  {
+    "time": "US",
+    "currency": "US",
+    "event": "Michigan Current Conditions(Jun)Act:-Cons:48.4Prev.:45.8",
+    "importance": "",
+    "actual": "",
+    "forecast": "48.4",
+    "previous": "45.8"
+  },
+  {
+    "time": "US",
+    "currency": "US",
+    "event": "FOMC Member Williams SpeaksAct:-Cons:-Prev.:-",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "time": "US",
+    "currency": "US",
+    "event": "FOMC Member Kashkari SpeaksAct:-Cons:-Prev.:-",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "time": "US",
+    "currency": "US",
+    "event": "U.S. Baker Hughes Oil Rig CountAct:-Cons:-Prev.:433",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "433"
+  },
+  {
+    "time": "US",
+    "currency": "US",
+    "event": "U.S. Baker Hughes Total Rig CountAct:-Cons:-Prev.:563",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "563"
+  },
+  {
+    "time": "AU",
+    "currency": "AU",
+    "event": "CFTC AUD speculative net positionsAct:-Cons:-Prev.:-4.1K",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "-4.1K"
+  },
+  {
+    "time": "BR",
+    "currency": "BR",
+    "event": "CFTC BRL speculative net positionsAct:-Cons:-Prev.:41.0K",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "41.0K"
+  },
+  {
+    "time": "EU",
+    "currency": "EU",
+    "event": "CFTC EUR speculative net positionsAct:-Cons:-Prev.:34.4K",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "34.4K"
+  },
+  {
+    "time": "UK",
+    "currency": "UK",
+    "event": "CFTC GBP speculative net positionsAct:-Cons:-Prev.:-71.6K",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "-71.6K"
+  },
+  {
+    "time": "JP",
+    "currency": "JP",
+    "event": "CFTC JPY speculative net positionsAct:-Cons:-Prev.:-150.1K",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "-150.1K"
+  },
+  {
+    "time": "US",
+    "currency": "US",
+    "event": "CFTC S&P 500 speculative net positionsAct:-Cons:-Prev.:-194.0K",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "-194.0K"
+  },
+  {
+    "time": "US",
+    "currency": "US",
+    "event": "CFTC Nasdaq 100 speculative net positionsAct:-Cons:-Prev.:-8.9K",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "-8.9K"
+  },
+  {
+    "time": "US",
+    "currency": "US",
+    "event": "CFTC Gold speculative net positionsAct:-Cons:-Prev.:180.2K",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "180.2K"
+  },
+  {
+    "time": "US",
+    "currency": "US",
+    "event": "CFTC Crude Oil speculative net positionsAct:-Cons:-Prev.:124.5K",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "124.5K"
+  },
+  {
+    "time": "CA",
+    "currency": "CA",
+    "event": "CFTC CAD speculative net positionsAct:-Cons:-Prev.:-132.9K",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "-132.9K"
+  },
+  {
+    "time": "CH",
+    "currency": "CH",
+    "event": "CFTC CHF speculative net positionsAct:-Cons:-Prev.:-40.1K",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "-40.1K"
+  },
+  {
+    "time": "NZ",
+    "currency": "NZ",
+    "event": "CFTC NZD speculative net positionsAct:-Cons:-Prev.:-45.2K",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "-45.2K"
+  },
+  {
+    "time": "US",
+    "currency": "US",
+    "event": "CFTC Aluminium speculative net positionsAct:-Cons:-Prev.:0.1K",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "0.1K"
+  },
+  {
+    "time": "US",
+    "currency": "US",
+    "event": "CFTC Copper speculative net positionsAct:-Cons:-Prev.:75.4K",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "75.4K"
+  },
+  {
+    "time": "US",
+    "currency": "US",
+    "event": "CFTC Silver speculative net positionsAct:-Cons:-Prev.:24.5K",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "24.5K"
+  },
+  {
+    "time": "US",
+    "currency": "US",
+    "event": "CFTC Natural Gas speculative net positionsAct:-Cons:-Prev.:-173.5K",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "-173.5K"
+  },
+  {
+    "time": "US",
+    "currency": "US",
+    "event": "CFTC Wheat speculative net positionsAct:-Cons:-Prev.:-50.8K",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "-50.8K"
+  },
+  {
+    "time": "US",
+    "currency": "US",
+    "event": "CFTC Corn speculative net positionsAct:-Cons:-Prev.:77.8K",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "77.8K"
+  },
+  {
+    "time": "US",
+    "currency": "US",
+    "event": "CFTC Soybeans speculative net positionsAct:-Cons:-Prev.:117.6K",
+    "importance": "",
+    "actual": "",
+    "forecast": "",
+    "previous": "117.6K"
+  }
+]

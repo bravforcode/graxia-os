@@ -1,14 +1,14 @@
 """Tests for Quant OS execution module"""
 
-import pytest
 from decimal import Decimal
-from datetime import datetime
 
-from graxia.packages.quant_os.execution.order import Order, OrderStateMachine, create_order
+import pytest
+
+from graxia.packages.quant_os.core.enums import OrderSide, OrderStatus, OrderType
+from graxia.packages.quant_os.core.exceptions import OrderStateError
+from graxia.packages.quant_os.execution.broker_adapter import BrokerOrderResponse, PaperBroker
 from graxia.packages.quant_os.execution.idempotency import IdempotencyChecker
-from graxia.packages.quant_os.execution.broker_adapter import PaperBroker, BrokerOrderResponse
-from graxia.packages.quant_os.core.enums import OrderStatus, OrderSide, OrderType, TradingMode
-from graxia.packages.quant_os.core.exceptions import OrderStateError, DuplicateOrderError
+from graxia.packages.quant_os.execution.order import OrderStateMachine, create_order
 
 
 class TestOrder:
@@ -21,7 +21,7 @@ class TestOrder:
             side=OrderSide.BUY,
             order_type=OrderType.MARKET,
             quantity=Decimal("0.01"),
-            strategy_id="mtm"
+            strategy_id="mtm",
         )
 
         assert order.symbol == "EURUSD"
@@ -36,7 +36,7 @@ class TestOrder:
             side=OrderSide.BUY,
             order_type=OrderType.MARKET,
             quantity=Decimal("0.01"),
-            strategy_id="mtm"
+            strategy_id="mtm",
         )
 
         order2 = create_order(
@@ -44,7 +44,7 @@ class TestOrder:
             side=OrderSide.BUY,
             order_type=OrderType.MARKET,
             quantity=Decimal("0.01"),
-            strategy_id="mtm"
+            strategy_id="mtm",
         )
 
         # Same parameters should generate same key within time bucket
@@ -57,12 +57,7 @@ class TestOrderStateMachine:
 
     def test_valid_transition(self):
         """Valid state transitions work"""
-        order = create_order(
-            symbol="EURUSD",
-            side=OrderSide.BUY,
-            order_type=OrderType.MARKET,
-            quantity=Decimal("0.01")
-        )
+        order = create_order(symbol="EURUSD", side=OrderSide.BUY, order_type=OrderType.MARKET, quantity=Decimal("0.01"))
 
         sm = OrderStateMachine(order)
         sm.validate_order()
@@ -74,12 +69,7 @@ class TestOrderStateMachine:
 
     def test_invalid_transition_raises(self):
         """Invalid transitions raise exception"""
-        order = create_order(
-            symbol="EURUSD",
-            side=OrderSide.BUY,
-            order_type=OrderType.MARKET,
-            quantity=Decimal("0.01")
-        )
+        order = create_order(symbol="EURUSD", side=OrderSide.BUY, order_type=OrderType.MARKET, quantity=Decimal("0.01"))
 
         sm = OrderStateMachine(order)
 
@@ -89,12 +79,7 @@ class TestOrderStateMachine:
 
     def test_fill_updates_quantities(self):
         """Fill updates order quantities and prices"""
-        order = create_order(
-            symbol="EURUSD",
-            side=OrderSide.BUY,
-            order_type=OrderType.MARKET,
-            quantity=Decimal("0.01")
-        )
+        order = create_order(symbol="EURUSD", side=OrderSide.BUY, order_type=OrderType.MARKET, quantity=Decimal("0.01"))
 
         order.status = OrderStatus.ACKNOWLEDGED
         sm = OrderStateMachine(order)
@@ -108,12 +93,7 @@ class TestOrderStateMachine:
 
     def test_cancel_terminal_state(self):
         """Cancel moves order to terminal state"""
-        order = create_order(
-            symbol="EURUSD",
-            side=OrderSide.BUY,
-            order_type=OrderType.MARKET,
-            quantity=Decimal("0.01")
-        )
+        order = create_order(symbol="EURUSD", side=OrderSide.BUY, order_type=OrderType.MARKET, quantity=Decimal("0.01"))
 
         sm = OrderStateMachine(order)
         sm.cancel("User request")
@@ -181,12 +161,7 @@ class TestPaperBroker:
         broker = PaperBroker()
         await broker.connect()
 
-        order = create_order(
-            symbol="EURUSD",
-            side=OrderSide.BUY,
-            order_type=OrderType.MARKET,
-            quantity=Decimal("0.01")
-        )
+        order = create_order(symbol="EURUSD", side=OrderSide.BUY, order_type=OrderType.MARKET, quantity=Decimal("0.01"))
 
         result = await broker.place_order(order)
 

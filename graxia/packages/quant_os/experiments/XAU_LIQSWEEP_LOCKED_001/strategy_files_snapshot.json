@@ -1,0 +1,11 @@
+{
+  "files": {
+    "gold_bot/strategies/liquidity_sweep.py": {"sha256": "30f815ab60aa03fc51175bc75bde4609e5b14a4ef43aebedc443c9c0e498f3a3", "size_bytes": 2915},
+    "gold_bot/strategies/base.py": {"sha256": "9bf8cb84f57bfdcadde8f4cebca7add6f78adede1313dd48fe1139719f64884f", "size_bytes": 2984},
+    "gold_bot/strategy_adapter.py": {"sha256": "d4d0d0dc6e5a471f7d35c0d88799b1fa234b951502f5e970e7241d75cf7cf9cc", "size_bytes": 2691},
+    "strategies/base.py": {"sha256": "b856ea743cd4741abcf7ce6d19089ef14f852120e0d352a5b7c1c1b491f4aaca", "size_bytes": 6542}
+  },
+  "strategy_name": "liquidity_sweep",
+  "market": "XAUUSD",
+  "capture_utc": "2026-06-22T00:00:00Z"
+}

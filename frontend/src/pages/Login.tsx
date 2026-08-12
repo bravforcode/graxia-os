@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import { AuthShell } from '@/components/AuthShell'
 import { ControlPlaneUnavailable } from '@/components/ControlPlaneUnavailable'
-import { Button } from '@/components/ui/Button'
+import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/AuthContext'
 
 export default function Login() {
@@ -32,8 +32,8 @@ export default function Login() {
   if (backendState === 'unavailable') {
     return (
       <AuthShell
-        title="Sign in"
-        subtitle="Authenticate into the operator console once the control plane backend is online."
+        title="Sign-in locked"
+        subtitle="The operator API is not reachable from this deployment yet."
       >
         <ControlPlaneUnavailable
           message={backendMessage ?? 'The operator API is not reachable from this deployment yet.'}
@@ -45,89 +45,82 @@ export default function Login() {
 
   return (
     <AuthShell
-      title="Sign in"
-      subtitle="Authenticate into the operator console to review drafts, monitor agent health, and control automation."
+      title="Log in to Graxia OS"
+      subtitle="Enter your details to access your workspace."
     >
-      <form className="space-y-5" onSubmit={handleSubmit}>
+      <form className="space-y-4" onSubmit={handleSubmit}>
         {error ? (
           <div
             role="alert"
-            className="rounded-2xl border border-[rgba(239,95,86,0.2)] bg-[rgba(239,95,86,0.08)] px-4 py-3 text-sm text-[var(--color-accent-red)]"
+            className="rounded-md border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-500"
             aria-live="polite"
           >
             {error}
           </div>
         ) : null}
 
-        <label className="block space-y-2 text-sm text-[var(--color-text-secondary)]">
-          <span>Email</span>
+        <div className="space-y-1.5">
+          <label htmlFor="email" className="block text-sm font-medium text-zinc-300">
+            Email
+          </label>
           <input
             id="email"
             name="email"
             type="email"
             autoComplete="email"
             required
-            className="input-field"
-            placeholder="you@example.com"
+            className="w-full rounded-md border border-zinc-800 bg-black px-3 py-2 text-sm text-white placeholder-zinc-500 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+            placeholder="user@example.com"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
           />
-        </label>
+        </div>
 
-        <label className="block space-y-2 text-sm text-[var(--color-text-secondary)]">
-          <span>Password</span>
+        <div className="space-y-1.5">
+          <label htmlFor="password" className="block text-sm font-medium text-zinc-300">
+            Password
+          </label>
           <input
             id="password"
             name="password"
             type="password"
             autoComplete="current-password"
             required
-            className="input-field"
+            className="w-full rounded-md border border-zinc-800 bg-black px-3 py-2 text-sm text-white placeholder-zinc-500 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
             placeholder="Enter your password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
           />
-        </label>
+        </div>
 
-        <Button type="submit" className="w-full" loading={isLoading}>
-          Sign in
+        <Button type="submit" className="w-full bg-white text-black hover:bg-zinc-200" loading={isLoading}>
+          Continue with Email
         </Button>
 
-        
         <div className="relative py-4">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-[var(--color-border)]"></div>
+            <div className="w-full border-t border-zinc-800"></div>
           </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-[var(--color-bg-primary)] px-2 text-[var(--color-text-secondary)]">Or continue with</span>
+          <div className="relative flex justify-center text-xs">
+            <span className="bg-black px-2 text-zinc-500">Or continue with</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full border-[var(--color-border)] hover:bg-[rgba(255,255,255,0.05)]"
-            onClick={() => socialLogin('google')}
-          >
-            Google
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full border-[var(--color-border)] hover:bg-[rgba(255,255,255,0.05)]"
-            onClick={() => socialLogin('facebook')}
-          >
-            Facebook
-          </Button>
-        </div>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full border-zinc-800 bg-black text-white hover:bg-zinc-900 hover:text-white"
+          onClick={() => socialLogin('google')}
+        >
+          Google
+        </Button>
 
-        <div className="text-sm text-[var(--color-text-secondary)]">
-          New operator?{' '}
-          <Link className="font-semibold text-[var(--color-accent-cyan)] hover:text-[var(--color-accent-lime)]" to="/register">
-            Create an account
+        <p className="text-center text-sm text-zinc-500 pt-2">
+          Don't have an account?{' '}
+          <Link className="font-medium text-white hover:underline" to="/register">
+            Sign up
           </Link>
-        </div>
+        </p>
       </form>
     </AuthShell>
   )

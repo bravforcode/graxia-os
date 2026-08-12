@@ -6,12 +6,13 @@ from uuid import UUID as UUIDType
 from sqlalchemy import UUID as SQLUUID
 from sqlalchemy import CheckConstraint, DateTime, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import Base
+from .base import Base, TenantMixin
 
 
-class ApprovalRequest(Base):
+class ApprovalRequest(Base, TenantMixin):
     __tablename__ = "approval_requests"
     __table_args__ = (
         CheckConstraint(

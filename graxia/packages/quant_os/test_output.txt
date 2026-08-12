@@ -1,0 +1,176 @@
+tests/chaos/test_api_untested.py: 88
+tests/chaos/test_autonomous_engine.py: 41
+tests/chaos/test_comprehensive.py: 51
+tests/chaos/test_core_untested.py: 184
+tests/chaos/test_correlation_agent.py: 8
+tests/chaos/test_dashboard.py: 3
+tests/chaos/test_deep_stress.py: 28
+tests/chaos/test_execution_untested.py: 139
+tests/chaos/test_full_pipeline.py: 35
+tests/chaos/test_health_monitor.py: 5
+tests/chaos/test_live_spread.py: 12
+tests/chaos/test_llm_fallback.py: 13
+tests/chaos/test_market_data_validation_untested.py: 34
+tests/chaos/test_memory_leak.py: 7
+tests/chaos/test_metrics.py: 7
+tests/chaos/test_model_versioning.py: 7
+tests/chaos/test_multi_asset.py: 14
+tests/chaos/test_multi_provider.py: 21
+tests/chaos/test_network_disconnect.py: 6
+tests/chaos/test_new_components.py: 31
+tests/chaos/test_news_blackout_integration.py: 5
+tests/chaos/test_provider_chain.py: 13
+tests/chaos/test_risk_agent.py: 8
+tests/chaos/test_risk_budget.py: 14
+tests/chaos/test_risk_monitoring_ml_untested.py: 188
+tests/chaos/test_sentiment_publish.py: 4
+tests/chaos/test_session_filter_integration.py: 7
+tests/chaos/test_strategies_untested.py: 85
+tests/test_agents_c1.py: 30
+tests/test_antimartingale_tiers.py: 5
+tests/test_api_endpoints.py: 27
+tests/test_arrow_loader_c2.py: 11
+tests/test_backtest_isolation.py: 4
+tests/test_backtest_refactor_b1_b3_c4.py: 16
+tests/test_backtesting_py_oracle.py: 6
+tests/test_backtrader_oracle.py: 10
+tests/test_benchmark_baseline.py: 3
+tests/test_benchmark_d2.py: 1
+tests/test_canonical_runtime_import_isolation.py: 4
+tests/test_comprehensive.py: 49
+tests/test_core.py: 12
+tests/test_core_models.py: 66
+tests/test_core_modules.py: 40
+tests/test_cost_unit_regression.py: 11
+tests/test_data_quality.py: 14
+tests/test_differential_comparator.py: 6
+tests/test_dynamic_spread.py: 3
+tests/test_e2e_critical_incident.py: 2
+tests/test_e2e_full_pipeline.py: 6
+tests/test_e2e_next_bar_entry.py: 2
+tests/test_e2e_signal_flow.py: 19
+tests/test_e2e_trade_ledger_provenance.py: 1
+tests/test_engine_ledger_tamper.py: 7
+tests/test_ensemble_c3.py: 27
+tests/test_eurusd_contract_snapshot.py: 5
+tests/test_eurusd_validation_protocol.py: 4
+tests/test_event_bus_integration_b1.py: 11
+tests/test_events_and_bus_a3_a4.py: 17
+tests/test_execution.py: 12
+tests/test_execution_edge_cases.py: 92
+tests/test_exit_price_correctness.py: 2
+tests/test_feature_parity.py: 1
+tests/test_governance.py: 26
+tests/test_hftbacktest_isolation.py: 2
+tests/test_historical_contract_coverage.py: 10
+tests/test_hot_path_latency.py: 11
+tests/test_hyperopt_b4.py: 6
+tests/test_integration_all_phases.py: 69
+tests/test_ledger_tamper_evidence.py: 10
+tests/test_live_monitoring.py: 33
+tests/test_load.py: 3
+tests/test_load_hot_path.py: 7
+tests/test_lookahead_regression.py: 7
+tests/test_macro_data.py: 19
+tests/test_market_data.py: 26
+tests/test_massive_sentiment.py: 1
+tests/test_monitoring.py: 12
+tests/test_mtf_leak.py: 4
+tests/test_new_modules.py: 19
+tests/test_news_events.py: 21
+tests/test_no_legacy_production_path.py: 1
+tests/test_oracle_isolation.py: 2
+tests/test_package_import_clean_process.py: 2
+tests/test_paper_executor.py: 52
+tests/test_phase_10_expansion.py: 18
+tests/test_phase_10_integration.py: 5
+tests/test_phase_10_micro_live.py: 6
+tests/test_phase_11_expansion.py: 5
+tests/test_phase_11_integration.py: 6
+tests/test_phase_1r_h_integration.py: 11
+tests/test_phase_2a.py: 11
+tests/test_phase_2b.py: 23
+tests/test_phase_3.py: 25
+tests/test_phase_3_1_engine_integration.py: 24
+tests/test_phase_3_1_pillars.py: 43
+tests/test_phase_3_2_market_data.py: 97
+tests/test_phase_3_3_news_events.py: 46
+tests/test_phase_3_order.py: 20
+tests/test_phase_3b_exit_gate.py: 6
+tests/test_phase_3b_native.py: 12
+tests/test_phase_3b_regime.py: 8
+tests/test_phase_4_eurusd_restored.py: 22
+tests/test_phase_4_integration_restored.py: 7
+tests/test_phase_5_bootstrap.py: 5
+tests/test_phase_5_cost_stress.py: 6
+tests/test_phase_5_governance.py: 26
+tests/test_phase_5_integration.py: 7
+tests/test_phase_5_statistical.py: 6
+tests/test_phase_5_validation.py: 6
+tests/test_phase_5_verdict.py: 3
+tests/test_phase_6_integration_restored.py: 6
+tests/test_phase_6_shadow.py: 45
+tests/test_phase_6_shadow_runner.py: 11
+tests/test_phase_7_canary_policy_restored.py: 5
+tests/test_phase_7_integration_restored.py: 12
+tests/test_phase_7_reconciliation.py: 4
+tests/test_phase_8_drills.py: 5
+tests/test_phase_8_integration_restored.py: 3
+tests/test_phase_be_p0.py: 7
+tests/test_phase_be_p1.py: 7
+tests/test_position_sizer_numeric.py: 6
+tests/test_quarantine_integrity.py: 5
+tests/test_quarantine_manager.py: 5
+tests/test_release_reproducibility.py: 6
+tests/test_repo_hooks.py: 2
+tests/test_repo_manifest.py: 13
+tests/test_risk_edge_cases.py: 89
+tests/test_risk_engine.py: 14
+tests/test_runtime_startup_clean_process.py: 1
+tests/test_shadow_service.py: 2
+tests/test_signal_service.py: 53
+tests/test_single.py: 1
+tests/test_skipped_items_integration.py: 7
+tests/test_smc_detectors.py: 18
+tests/test_strategies.py: 12
+tests/test_strategy_helpers_a1.py: 28
+tests/test_supply_chain.py: 8
+tests/test_timing.py: 13
+tests/test_trading_loop.py: 33
+tests/test_var_risk_b2.py: 17
+tests/test_vectorbt_oracle.py: 8
+tests/test_vwap.py: 1
+tests/unit/test_position_sizer.py: 9
+tests/unit/test_risk_engine.py: 5
+tests/unit/test_signal_gateway.py: 3
+
+============================== warnings summary ===============================
+api\orders.py:20
+  C:\Users\menum\graxia os\graxia\packages\quant_os\api\orders.py:20: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    symbol: str = Field(..., example="EURUSD")
+
+api\orders.py:23
+  C:\Users\menum\graxia os\graxia\packages\quant_os\api\orders.py:23: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    quantity: Decimal = Field(..., gt=0, example=0.01)
+
+api\orders.py:24
+  C:\Users\menum\graxia os\graxia\packages\quant_os\api\orders.py:24: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    price: Optional[Decimal] = Field(None, example=1.0850)
+
+api\orders.py:25
+  C:\Users\menum\graxia os\graxia\packages\quant_os\api\orders.py:25: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    stop_price: Optional[Decimal] = Field(None, example=1.0820)
+
+api\orders.py:26
+  C:\Users\menum\graxia os\graxia\packages\quant_os\api\orders.py:26: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    strategy_id: str = Field(default="manual", example="manual")
+
+api\orders.py:29
+  C:\Users\menum\graxia os\graxia\packages\quant_os\api\orders.py:29: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    class OrderResponse(BaseModel):
+
+api\positions.py:17
+  C:\Users\menum\graxia os\graxia\packages\quant_os\api\positions.py:17: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    class PositionResponse(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html

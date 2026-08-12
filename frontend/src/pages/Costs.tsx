@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { AlertTriangle, CalendarDays, DollarSign, RefreshCw, TrendingUp, Wallet } from 'lucide-react'
 
-import { Button } from '@/components/ui/Button'
-import { EmptyState } from '@/components/ui/EmptyState'
-import { MetricCard } from '@/components/ui/MetricCard'
-import { PageHeader } from '@/components/ui/PageHeader'
-import { Panel } from '@/components/ui/Panel'
-import { StatusPill } from '@/components/ui/StatusPill'
+import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/empty-state'
+import { MetricCard } from '@/components/ui/metric-card'
+import { PageHeader } from '@/components/ui/page-header'
+import { Panel } from '@/components/ui/panel'
+import { StatusPill } from '@/components/ui/status-pill'
 import { api } from '@/lib/api'
 import { formatCurrency } from '@/lib/utils'
 

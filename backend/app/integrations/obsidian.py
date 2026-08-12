@@ -534,7 +534,11 @@ class ObsidianConnector:
                 "## North Star\n"
                 f"{_stringify(goals.get('north_star')) or 'Not captured yet.'}\n\n"
                 "## Active Projects\n"
-                f"{chr(10).join(f'- {self._project_link(_slugify(_stringify(project.get('name'))), _stringify(project.get('name')))}' for project in projects) if projects else '- No projects defined.'}\n"
+                + chr(10).join(
+                    f"- {self._project_link(_slugify(_stringify(project.get('name'))), _stringify(project.get('name')))}"
+                    for project in projects
+                )
+                + ("\n" if projects else "- No projects defined.\n")
             ),
             frontmatter={"type": "dashboard", "created": _utc_now().isoformat()},
             overwrite=True,

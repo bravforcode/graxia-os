@@ -14,6 +14,7 @@ from app.models.automation_run import AutomationRun
 from app.models.contact import Contact
 from app.models.network_interaction import NetworkInteraction
 from app.models.opportunity import Opportunity
+from app.models.organization import Organization
 from app.models.scraper_health import ScraperHealth
 
 
@@ -329,9 +330,25 @@ async def test_system_api_reports_health_costs_weights_audit_strategy_and_trigge
     assert created_runs[1][1]["task_type"] == "morning_brief"
 
 
+@pytest_asyncio.fixture()
+async def test_org_op(db_session):
+    org = Organization(
+        id=uuid4(),
+        name="Operations Test Org",
+        slug=f"ops-test-org-{uuid4()}",
+        status="active",
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+    )
+    db_session.add(org)
+    await db_session.commit()
+    await db_session.refresh(org)
+    return org
+
+
 @pytest.mark.asyncio
 async def test_system_stats_are_derived_from_real_tables(
-    async_client, db_session, operations_session_factory
+    async_client, db_session, operations_session_factory, test_org_op
 ):
     now = datetime.now(UTC)
     contact = Contact(
@@ -341,6 +358,7 @@ async def test_system_stats_are_derived_from_real_tables(
         value_score=8,
         created_at=now,
         updated_at=now,
+        organization_id=test_org_op.id,
     )
     db_session.add(contact)
     await db_session.flush()
@@ -353,6 +371,7 @@ async def test_system_stats_are_derived_from_real_tables(
                 source_hash="stats-opportunity",
                 found_at=now,
                 updated_at=now,
+                organization_id=test_org_op.id,
             ),
             AutomationRun(
                 name="Daily scan",
@@ -376,6 +395,7 @@ async def test_system_stats_are_derived_from_real_tables(
                 status="completed",
                 priority=8,
                 assigned_to="user",
+                organization_id=test_org_op.id,
                 created_at=now,
                 updated_at=now,
             ),

@@ -194,18 +194,16 @@ async def resolve_approval_batch(
     batch_key: str,
     decision: str,
     note: str | None = None,
+    organization_id: UUID | None = None,
 ) -> int:
     async with AsyncSessionLocal() as db:
-        rows = list(
-            (
-                await db.execute(
-                    select(ApprovalRequest).where(
-                        ApprovalRequest.batch_key == batch_key,
-                        ApprovalRequest.status == "pending",
-                    )
-                )
-            ).scalars()
+        stmt = select(ApprovalRequest).where(
+            ApprovalRequest.batch_key == batch_key,
+            ApprovalRequest.status == "pending",
         )
+        if organization_id is not None:
+            stmt = stmt.where(ApprovalRequest.organization_id == organization_id)
+        rows = list(((await db.execute(stmt)).scalars()))
         approval_ids = [row.id for row in rows]
 
     count = 0

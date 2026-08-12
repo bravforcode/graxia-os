@@ -83,7 +83,7 @@ class TestOnboardingUserModel:
     """Test User model onboarding fields"""
 
     @pytest.mark.asyncio
-    async def test_user_has_onboarding_completed_at(self, db_session):
+    async def test_user_has_onboarding_completed_at(self, db_session, default_org):
         """User model should have onboarding_completed_at field"""
         from app.core.auth import get_password_hash
         from app.models.user import User
@@ -95,6 +95,7 @@ class TestOnboardingUserModel:
             full_name="Onboard Test",
             onboarding_completed_at=None,
             is_active=True,
+            organization_id=default_org.id,
         )
         
         db_session.add(user)
@@ -105,7 +106,7 @@ class TestOnboardingUserModel:
         assert hasattr(user, 'onboarding_completed_at')
 
     @pytest.mark.asyncio
-    async def test_onboarding_complete_property(self, db_session):
+    async def test_onboarding_complete_property(self, db_session, default_org):
         """User should have onboarding_complete property"""
         from app.core.auth import get_password_hash
         from app.models.user import User
@@ -118,6 +119,7 @@ class TestOnboardingUserModel:
             full_name="Incomplete User",
             onboarding_completed_at=None,
             is_active=True,
+            organization_id=default_org.id,
         )
         
         # User with completed onboarding
@@ -128,6 +130,7 @@ class TestOnboardingUserModel:
             full_name="Complete User",
             onboarding_completed_at=datetime.now(UTC),
             is_active=True,
+            organization_id=default_org.id,
         )
         
         db_session.add_all([user_incomplete, user_complete])

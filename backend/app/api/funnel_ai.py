@@ -10,7 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_user, get_db
+from app.api.deps import get_current_user_from_token, get_db
 from app.models.user import User
 from app.services.funnel_ai_recommendation_service import FunnelAIRecommendationService
 
@@ -23,7 +23,7 @@ async def get_funnel_recommendations(
     days_back: int = Query(30, ge=1, le=365, description="Analysis window in days"),
     max_recommendations: int = Query(10, ge=1, le=20, description="Max number of recommendations"),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_from_token),
 ):
     """
     Get AI-powered funnel recommendations for the authenticated organization.
@@ -47,7 +47,7 @@ async def get_product_recommendations(
     product_id: UUID,
     days_back: int = Query(30, ge=1, le=365),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_from_token),
 ):
     """
     Get AI recommendations scoped to a specific product.

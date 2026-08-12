@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Collection Dashboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;background:#0d1117;color:#c9d1d9;padding:20px;min-height:100vh}
+.header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:24px}
+.header h1{font-size:24px;font-weight:600;color:#f0f6fc}
+.header-left{display:flex;align-items:center;gap:12px}
+.header-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.status-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.status-dot.ok{background:#3fb950}
+.status-dot.err{background:#f85149}
+.last-update{font-size:13px;color:#8b949e}
+.btn{padding:8px 20px;border:1px solid #30363d;border-radius:6px;background:#21262d;color:#c9d1d9;font-size:14px;cursor:pointer;transition:.2s;user-select:none}
+.btn:hover{background:#30363d;border-color:#8b949e}
+.btn:active{background:#1c2128}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px}
+.card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:16px}
+.card-label{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#8b949e;margin-bottom:4px}
+.card-value{font-size:28px;font-weight:600;color:#f0f6fc;line-height:1.2}
+.card-unit{font-size:14px;color:#8b949e;margin-left:2px}
+.card-detail{font-size:12px;color:#8b949e;margin-top:4px}
+.section-title{font-size:16px;font-weight:600;color:#f0f6fc;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #21262d}
+.symbol-cards{display:grid;gap:12px;margin-bottom:24px}
+.symbol-card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:16px}
+.symbol-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px}
+.symbol-name{font-size:18px;font-weight:600;color:#f0f6fc}
+.symbol-sides{font-size:13px;color:#8b949e}
+.symbol-sides .buy{color:#3fb950}
+.symbol-sides .sell{color:#f85149}
+.symbol-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.metric-item{background:#0d1117;border-radius:6px;padding:8px 10px}
+.metric-label{font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em}
+.metric-value{font-size:16px;font-weight:600;color:#f0f6fc;margin-top:1px}
+.metric-value.green{color:#3fb950}
+.metric-value.red{color:#f85149}
+.metric-value.yellow{color:#d29922}
+.bar-row{display:flex;align-items:center;gap:8px;margin-top:10px}
+.bar-track{flex:1;height:8px;background:#0d1117;border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .3s}
+.bar-label{font-size:12px;color:#8b949e;min-width:40px;text-align:right}
+.side-bar{display:flex;gap:4px;margin-top:8px}
+.side-bar .seg{height:8px;border-radius:4px}
+.side-bar .seg.buy{background:#3fb950}
+.side-bar .seg.sell{background:#f85149}
+.empty-state{text-align:center;padding:40px 20px;color:#8b949e}
+.empty-state p{font-size:16px;margin-bottom:8px}
+.empty-state .sub{font-size:13px}
+.error-state{text-align:center;padding:40px 20px;color:#f85149}
+.error-state p{font-size:15px}
+.hidden{display:none!important}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid #30363d;border-top-color:#58a6ff;border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading{display:none;justify-content:center;align-items:center;gap:8px;padding:12px 0;font-size:14px;color:#8b949e}
+#loading.visible{display:flex}
+@media(max-width:600px){body{padding:12px}.header{flex-direction:column;align-items:flex-start}.summary-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span class="status-dot ok" id="statusDot"></span>
+    <h1>Data Collection Dashboard</h1>
+  </div>
+  <div class="header-right">
+    <span class="last-update" id="lastUpdate">--</span>
+    <button class="btn" id="loadBtn">⟳ Load Data</button>
+  </div>
+</div>
+
+<div id="loading" class="visible"><span class="spinner"></span> Loading data...</div>
+
+<div id="errorState" class="error-state hidden">
+  <p>⚠ Failed to load data</p>
+  <p class="sub" id="errorMsg"></p>
+</div>
+
+<div id="dashboard" class="hidden">
+
+<div class="summary-grid" id="summaryGrid"></div>
+
+<div class="section-title">Per-Symbol Breakdown</div>
+<div class="symbol-cards" id="symbolCards"></div>
+
+<div class="section-title">Side Distribution</div>
+<div id="sideDist" style="margin-bottom:24px"></div>
+
+</div>
+
+<script>
+const REFRESH_MS = 30000;
+const DATA_ROOT = 'artifacts/mega_data';
+const SUMMARY_URL = DATA_ROOT + '/run_summary.json';
+const DATASET_META_URL = DATA_ROOT + '/dataset/dataset_summary.json';
+
+const el = id => document.getElementById(id);
+const show = (id, v) => el(id).classList.toggle('hidden', !v);
+const loading = v => el('loading').classList.toggle('visible', v);
+
+async function load() {
+  el('statusDot').className = 'status-dot';
+  loading(true);
+  show('errorState', false);
+  show('dashboard', false);
+
+  try {
+    const [summary, dsMeta] = await Promise.all([
+      fetchJSON(SUMMARY_URL),
+      fetchJSON(DATASET_META_URL),
+    ]);
+
+    let trainingRows = [];
+    let trainingCsvName = '';
+    if (dsMeta.csv && typeof dsMeta.csv === 'string') {
+      const parts = dsMeta.csv.replace(/\\/g, '/').split('/');
+      trainingCsvName = parts[parts.length - 1];
+      const csvRel = DATA_ROOT + '/dataset/' + trainingCsvName;
+      trainingRows = await fetchCSV(csvRel);
+    }
+
+    let batchRows = [];
+    const batchTs = trainingCsvName.replace('training_', 'batch_');
+    try {
+      batchRows = await fetchCSV(DATA_ROOT + '/orders/' + batchTs);
+    } catch (_) {
+      try {
+        const altTs = batchTs.replace(/\.csv$/, '') + '.csv';
+        batchRows = await fetchCSV(DATA_ROOT + '/orders/' + altTs);
+      } catch (_2) {}
+    }
+
+    render(summary, dsMeta, trainingRows, batchRows);
+    el('statusDot').className = 'status-dot ok';
+    show('dashboard', true);
+  } catch (err) {
+    el('statusDot').className = 'status-dot err';
+    show('errorState', true);
+    el('errorMsg').textContent = err.message || String(err);
+  } finally {
+    loading(false);
+  }
+}
+
+function render(summary, dsMeta, trainingRows, batchRows) {
+  const now = new Date().toLocaleTimeString();
+  el('lastUpdate').textContent = 'Updated: ' + now;
+
+  const totalOrders = summary.total_orders || 0;
+  const successful = trainingRows.length;
+  const successRate = totalOrders > 0 ? (successful / totalOrders * 100) : 0;
+
+  const balance = typeof summary.balance === 'number' ? summary.balance : null;
+
+  const avgSlippage = typeof dsMeta.avg_slippage_points === 'number' ? dsMeta.avg_slippage_points : null;
+  const avgLatency = typeof dsMeta.avg_latency_ms === 'number' ? dsMeta.avg_latency_ms : null;
+
+  const bySymbol = {};
+  for (const row of trainingRows) {
+    const sym = row.symbol || 'UNKNOWN';
+    if (!bySymbol[sym]) bySymbol[sym] = [];
+    bySymbol[sym].push(row);
+  }
+
+  const sideDist = dsMeta.side_distribution || {};
+  const totalSide = (sideDist.BUY || 0) + (sideDist.SELL || 0);
+
+  // --- summary cards ---
+  const cards = [
+    { label: 'Account Balance', value: balance !== null ? '$' + balance.toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2}) : '--', cls: '' },
+    { label: 'Total Orders', value: String(totalOrders), cls: '' },
+    { label: 'Total Ticks', value: summary.total_ticks ? summary.total_ticks.toLocaleString() : '--', cls: '' },
+    { label: 'Avg Slippage', value: avgSlippage !== null ? avgSlippage.toFixed(1) : '--', cls: '', unit: 'pts' },
+    { label: 'Avg Latency', value: avgLatency !== null ? avgLatency.toFixed(0) : '--', cls: '', unit: 'ms' },
+    { label: 'Success Rate', value: successRate.toFixed(0) + '%', cls: successRate >= 80 ? 'green' : successRate >= 50 ? 'yellow' : 'red', detail: successful + '/' + totalOrders + ' orders' },
+  ];
+
+  el('summaryGrid').innerHTML = cards.map(c => `
+    <div class="card">
+      <div class="card-label">${c.label}</div>
+      <div class="card-value ${c.cls}">${c.value}${c.unit ? '<span class="card-unit">' + c.unit + '</span>' : ''}</div>
+      ${c.detail ? '<div class="card-detail">' + c.detail + '</div>' : ''}
+    </div>
+  `).join('');
+
+  // --- per-symbol cards ---
+  const symbols = dsMeta.symbols || Object.keys(bySymbol);
+  let symbolHtml = '';
+  for (const sym of symbols) {
+    const rows = bySymbol[sym] || [];
+    if (rows.length === 0) continue;
+
+    const slips = rows.map(r => parseFloat(r.slippage_points) || 0);
+    const lats = rows.map(r => parseFloat(r.latency_ms) || 0);
+    const spMeans = rows.map(r => parseFloat(r.hist_spread_mean) || 0);
+    const spStds = rows.map(r => parseFloat(r.hist_spread_std) || 0);
+    const spMaxs = rows.map(r => parseFloat(r.hist_spread_max) || 0);
+
+    const avgSlip = slips.reduce((a,b)=>a+b,0) / slips.length;
+    const avgLat = lats.reduce((a,b)=>a+b,0) / lats.length;
+    const avgSpMean = spMeans.reduce((a,b)=>a+b,0) / spMeans.length;
+    const avgSpStd = spStds.reduce((a,b)=>a+b,0) / spStds.length;
+    const maxSpMax = Math.max(...spMaxs);
+
+    const buys = rows.filter(r => (r.side||'').toUpperCase() === 'BUY').length;
+    const sells = rows.filter(r => (r.side||'').toUpperCase() === 'SELL').length;
+
+    symbolHtml += `
+      <div class="symbol-card">
+        <div class="symbol-header">
+          <span class="symbol-name">${escHtml(sym)}</span>
+          <span class="symbol-sides"><span class="buy">▲ ${buys}</span> <span class="sell">▼ ${sells}</span> &middot; ${rows.length} orders</span>
+        </div>
+        <div class="symbol-metrics">
+          <div class="metric-item">
+            <div class="metric-label">Avg Slippage</div>
+            <div class="metric-value">${avgSlip.toFixed(2)} <span class="card-unit">pts</span></div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-label">Avg Latency</div>
+            <div class="metric-value">${avgLat.toFixed(0)} <span class="card-unit">ms</span></div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-label">Spread Mean</div>
+            <div class="metric-value">${avgSpMean.toFixed(5)}</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-label">Spread Std</div>
+            <div class="metric-value">${avgSpStd.toFixed(5)}</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-label">Spread Max</div>
+            <div class="metric-value">${maxSpMax.toFixed(5)}</div>
+          </div>
+        </div>
+        <div class="side-bar">
+          ${totalSide > 0 ? `<div class="seg buy" style="flex:${buys}"></div><div class="seg sell" style="flex:${sells}"></div>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  el('symbolCards').innerHTML = symbolHtml || '<div class="empty-state"><p>No symbol data available</p></div>';
+
+  // --- side distribution ---
+  const buyPct = totalSide > 0 ? (sideDist.BUY || 0) / totalSide * 100 : 0;
+  const sellPct = totalSide > 0 ? (sideDist.SELL || 0) / totalSide * 100 : 0;
+  el('sideDist').innerHTML = `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:4px">
+        <span style="font-size:14px;font-weight:500;color:#f0f6fc">BUY <span style="color:#3fb950">${sideDist.BUY || 0}</span> (${buyPct.toFixed(0)}%)</span>
+        <span style="font-size:14px;font-weight:500;color:#f0f6fc">SELL <span style="color:#f85149">${sideDist.SELL || 0}</span> (${sellPct.toFixed(0)}%)</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${buyPct}%;background:#3fb950"></div>
+      </div>
+      <div class="bar-track" style="margin-top:4px">
+        <div class="bar-fill" style="width:${sellPct}%;background:#f85149;float:right"></div>
+      </div>
+    </div>
+  `;
+}
+
+async function fetchJSON(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' fetching ' + url);
+  return res.json();
+}
+
+async function fetchCSV(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' fetching ' + url);
+  const text = await res.text();
+  return parseCSV(text);
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(',');
+  return lines.slice(1).map(line => {
+    const vals = line.split(',');
+    const row = {};
+    for (let i = 0; i < headers.length; i++) {
+      row[headers[i].trim()] = i < vals.length ? vals[i].trim() : '';
+    }
+    return row;
+  });
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+el('loadBtn').addEventListener('click', load);
+load();
+setInterval(load, REFRESH_MS);
+</script>
+</body>
+</html>

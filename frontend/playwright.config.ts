@@ -6,6 +6,7 @@ const baseURL = `http://127.0.0.1:${port}`
 export default defineConfig({
   testDir: './e2e',
   timeout: 45_000,
+  globalSetup: './e2e/global-setup',
   expect: {
     timeout: 10_000,
   },
@@ -17,6 +18,8 @@ export default defineConfig({
   outputDir: 'test-results',
   use: {
     baseURL,
+    storageState: 'storageState.json',
+    actionTimeout: 30_000,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',

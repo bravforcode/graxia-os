@@ -1,0 +1,3 @@
+4c77286b5ff31a24dc0b9218cbd5ae110c6c5987bc6764e1c53ed1ed5659c939  gold_bot/core/config.py
+c3b469aafe9244e367d8c5e4b53ed480afa65a9af64a1879ee6b42d901c51e1e  core/config.py
+72302683818dd79cd4ae756b99fdc8fd4de2b195ee216ead11142c19953f8a6e  backtest/engine.py (commission_per_lot=3.5, spread_pips, slippage_pips)

@@ -148,7 +148,15 @@ class EventBus:
         
         while self._running or not self._queue.empty():
             try:
-                event, payload = await asyncio.wait_for(self._queue.get(), timeout=1.0)
+                # If we're stopping and queue is empty, exit immediately
+                if not self._running and self._queue.empty():
+                    break
+
+                # Wait for an item with a timeout to allow checking self._running
+                try:
+                    event, payload = await asyncio.wait_for(self._queue.get(), timeout=0.5)
+                except (asyncio.TimeoutError, TimeoutError):
+                    continue
                 
                 # Create task for processing
                 task = asyncio.create_task(self._process_event(event, payload))
@@ -158,10 +166,16 @@ class EventBus:
                 # Mark queue item as done immediately after creating task
                 self._queue.task_done()
                 
-            except TimeoutError:
-                continue
+            except RuntimeError as e:
+                if "no running event loop" in str(e) or "Event loop is closed" in str(e):
+                    logger.debug("EventBus: loop closing, stopping processing")
+                    break
+                logger.error("EventBus: runtime error: %s", e)
+                break
             except Exception as exc:
                 logger.error("EventBus: processing loop error: %s", exc, exc_info=True)
+                if not self._running:
+                    break
         
         # Wait for all processing tasks to complete
         if self._processing_tasks:
@@ -171,7 +185,7 @@ class EventBus:
                     asyncio.gather(*self._processing_tasks, return_exceptions=True),
                     timeout=self._shutdown_timeout
                 )
-            except asyncio.TimeoutError:
+            except (asyncio.TimeoutError, TimeoutError):
                 logger.warning(
                     f"EventBus: shutdown timeout ({self._shutdown_timeout}s) exceeded, "
                     f"{len(self._processing_tasks)} tasks still running"

@@ -1,0 +1,18 @@
+{
+  "timestamp_utc": "2026-07-03T18:53:51.777230+00:00",
+  "portfolio_status": "ok",
+  "last_signal": {
+    "NAS100": 6.707274270396805,
+    "XAUUSD": -10.204249623306039,
+    "OIL": -7.884781073086662,
+    "USDJPY": 9.960581529012428
+  },
+  "equity": 49844.48,
+  "weights": {
+    "NAS100": 0.038316,
+    "XAUUSD": 0.0,
+    "OIL": 0.0,
+    "USDJPY": 0.461684
+  },
+  "kill_switch_active": false
+}

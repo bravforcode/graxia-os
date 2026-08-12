@@ -1,0 +1,6 @@
+{
+  "note": "No contract snapshots exist yet. Set to null for Phase 3B revalidation baseline.",
+  "contract_snapshot_id": null,
+  "available_snapshots": [],
+  "path_convention": "quant_os/contracts/XAUUSD/v{N}/snapshot.json"
+}

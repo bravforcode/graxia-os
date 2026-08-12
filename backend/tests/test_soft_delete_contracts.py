@@ -1,9 +1,12 @@
 from datetime import UTC, datetime
 from decimal import Decimal
+from uuid import uuid4
 
 import pytest
+import pytest_asyncio
 from app.models.contact import Contact
 from app.models.opportunity import Opportunity
+from app.models.organization import Organization
 from app.models.submission import Submission
 from app.repositories.contact_repository import ContactRepository
 from app.repositories.opportunity_repository import OpportunityRepository
@@ -14,32 +17,48 @@ from sqlalchemy import select
 @pytest.fixture()
 def cqrs_session_factory(session_factory, monkeypatch):
     monkeypatch.setattr("app.database.AsyncSessionLocal", session_factory)
-    monkeypatch.setattr("app.cqrs.submission_handlers.AsyncSessionLocal", session_factory)
-    monkeypatch.setattr("app.cqrs.opportunity_handlers.AsyncSessionLocal", session_factory)
-    monkeypatch.setattr("app.cqrs.contact_handlers.AsyncSessionLocal", session_factory)
-    monkeypatch.setattr("app.cqrs.draft_handlers.AsyncSessionLocal", session_factory)
+    monkeypatch.setattr("app.core.unit_of_work.AsyncSessionLocal", session_factory)
     return session_factory
 
 
+@pytest_asyncio.fixture()
+async def test_org(db_session):
+    org = Organization(
+        id=uuid4(),
+        name="Soft Delete Org",
+        slug=f"soft-delete-org-{uuid4()}",
+        status="active",
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+    )
+    db_session.add(org)
+    await db_session.commit()
+    await db_session.refresh(org)
+    return org
+
+
 @pytest.mark.asyncio
-async def test_repositories_soft_delete_without_removing_rows(db_session):
+async def test_repositories_soft_delete_without_removing_rows(db_session, test_org):
     opportunity = Opportunity(
         type="competition",
         title="Soft Delete Opportunity",
         total_score=Decimal("7.50"),
         status="found",
         found_at=datetime.now(UTC),
+        organization_id=test_org.id,
     )
     contact = Contact(
         name="Soft Delete Contact",
         email="soft-delete@example.com",
         contact_type="lead",
+        organization_id=test_org.id,
     )
     submission = Submission(
         type="proposal",
         title="Soft Delete Submission",
         status="draft",
         content="Draft content",
+        organization_id=test_org.id,
     )
     db_session.add_all([opportunity, contact, submission])
     await db_session.commit()
@@ -82,14 +101,55 @@ async def test_repositories_soft_delete_without_removing_rows(db_session):
 
 @pytest.mark.asyncio
 async def test_canonical_apis_hide_soft_deleted_records(
-    async_client, db_session, cqrs_session_factory
+    db_session, session_factory, public_async_client, cqrs_session_factory
 ):
+    from app.core.auth import get_password_hash
+    from app.models.user import User
+    from app.models.organization import Organization
+
+    # Create an org and user for API auth
+    test_org_api = Organization(
+        id=uuid4(),
+        name="Soft Delete API Test Org",
+        slug=f"soft-del-api-{uuid4()}",
+        status="active",
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+    )
+    db_session.add(test_org_api)
+    await db_session.commit()
+    await db_session.refresh(test_org_api)
+
+    test_email = f"soft-delete-user-{uuid4()}@example.com"
+    test_user = User(
+        id=uuid4(),
+        email=test_email,
+        hashed_password=get_password_hash("testpass123"),
+        full_name="Soft Delete Tester",
+        role="admin",
+        is_active=True,
+        organization_id=test_org_api.id,
+    )
+    db_session.add(test_user)
+    await db_session.commit()
+    await db_session.refresh(test_user)
+
+    # Login to get auth token
+    login_resp = await public_async_client.post(
+        "/api/v1/auth/login",
+        data={"username": test_email, "password": "testpass123"},
+    )
+    assert login_resp.status_code == 200
+    token = login_resp.json().get("access_token")
+    public_async_client.headers["Authorization"] = f"Bearer {token}"
+
     active_opportunity = Opportunity(
         type="competition",
         title="Visible Opportunity",
         total_score=Decimal("8.10"),
         status="found",
         found_at=datetime.now(UTC),
+        organization_id=test_org_api.id,
     )
     deleted_opportunity = Opportunity(
         type="competition",
@@ -97,18 +157,21 @@ async def test_canonical_apis_hide_soft_deleted_records(
         total_score=Decimal("7.90"),
         status="found",
         found_at=datetime.now(UTC),
+        organization_id=test_org_api.id,
     )
     active_contact = Contact(
         name="Visible Contact",
         email="visible@example.com",
         contact_type="lead",
         created_at=datetime.now(UTC),
+        organization_id=test_org_api.id,
     )
     deleted_contact = Contact(
         name="Hidden Contact",
         email="hidden@example.com",
         contact_type="lead",
         created_at=datetime.now(UTC),
+        organization_id=test_org_api.id,
     )
     visible_submission = Submission(
         type="proposal",
@@ -116,6 +179,7 @@ async def test_canonical_apis_hide_soft_deleted_records(
         status="draft",
         content="Visible draft",
         created_at=datetime.now(UTC),
+        organization_id=test_org_api.id,
     )
     hidden_submission = Submission(
         type="proposal",
@@ -123,6 +187,7 @@ async def test_canonical_apis_hide_soft_deleted_records(
         status="draft",
         content="Hidden draft",
         created_at=datetime.now(UTC),
+        organization_id=test_org_api.id,
     )
     db_session.add_all(
         [
@@ -141,29 +206,29 @@ async def test_canonical_apis_hide_soft_deleted_records(
     await SubmissionRepository(db_session).delete(hidden_submission.id)
     await db_session.commit()
 
-    opportunities_response = await async_client.get("/api/v1/opportunities")
+    opportunities_response = await public_async_client.get("/api/v1/opportunities")
     assert opportunities_response.status_code == 200
     opportunities_payload = opportunities_response.json()
     opportunity_titles = {item["title"] for item in opportunities_payload["items"]}
     assert "Visible Opportunity" in opportunity_titles
     assert "Hidden Opportunity" not in opportunity_titles
 
-    deleted_opportunity_response = await async_client.get(
+    deleted_opportunity_response = await public_async_client.get(
         f"/api/v1/opportunities/{deleted_opportunity.id}"
     )
     assert deleted_opportunity_response.status_code == 404
 
-    contacts_response = await async_client.get("/api/v1/contacts")
+    contacts_response = await public_async_client.get("/api/v1/contacts")
     assert contacts_response.status_code == 200
     contacts_payload = contacts_response.json()
     contact_names = {item["name"] for item in contacts_payload["items"]}
     assert "Visible Contact" in contact_names
     assert "Hidden Contact" not in contact_names
 
-    deleted_contact_response = await async_client.get(f"/api/v1/contacts/{deleted_contact.id}")
+    deleted_contact_response = await public_async_client.get(f"/api/v1/contacts/{deleted_contact.id}")
     assert deleted_contact_response.status_code == 404
 
-    submissions_response = await async_client.get("/api/v1/submissions")
+    submissions_response = await public_async_client.get("/api/v1/submissions")
     assert submissions_response.status_code == 200
     submission_titles = {item["title"] for item in submissions_response.json()}
     assert "Visible Submission" in submission_titles

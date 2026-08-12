@@ -19,10 +19,10 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import Base
+from .base import Base, TenantMixin
 
 
-class JobPosting(Base):
+class JobPosting(Base, TenantMixin):
     __tablename__ = "job_postings"
     __table_args__ = (
         CheckConstraint(

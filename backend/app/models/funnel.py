@@ -24,6 +24,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TenantMixin
 
+
 class DigitalProduct(Base, TenantMixin):
     __tablename__ = "digital_products"
     __table_args__ = (
@@ -47,15 +48,19 @@ class DigitalProduct(Base, TenantMixin):
     description: Mapped[str | None] = mapped_column(Text)
     short_description: Mapped[str | None] = mapped_column(String(500))
     status: Mapped[str] = mapped_column(String(50), default="draft", nullable=False)
-    product_type: Mapped[str] = mapped_column(String(50), default="other", nullable=False)
-    price_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0, nullable=False)
+    product_type: Mapped[str] = mapped_column(
+        String(50), default="other", nullable=False
+    )
+    price_amount: Mapped[Decimal] = mapped_column(
+        Numeric(12, 2), default=0, nullable=False
+    )
     currency: Mapped[str] = mapped_column(String(10), default="THB", nullable=False)
     stripe_price_id: Mapped[str | None] = mapped_column(String(100))
     stripe_product_id: Mapped[str | None] = mapped_column(String(100))
     cover_image_url: Mapped[str | None] = mapped_column(Text)
     sales_page_content: Mapped[str | None] = mapped_column(Text)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -65,8 +70,15 @@ class DigitalProduct(Base, TenantMixin):
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
-    assets: Mapped[list["DeliveryAsset"]] = relationship("DeliveryAsset", back_populates="product", cascade="all, delete-orphan", lazy="selectin")
-    order_items: Mapped[list["FunnelOrderItem"]] = relationship("FunnelOrderItem", back_populates="product")
+    assets: Mapped[list["DeliveryAsset"]] = relationship(
+        "DeliveryAsset",
+        back_populates="product",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+    order_items: Mapped[list["FunnelOrderItem"]] = relationship(
+        "FunnelOrderItem", back_populates="product"
+    )
 
 
 class DeliveryAsset(Base, TenantMixin):
@@ -82,7 +94,10 @@ class DeliveryAsset(Base, TenantMixin):
         SQLUUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     product_id: Mapped[UUIDType] = mapped_column(
-        SQLUUID(as_uuid=True), ForeignKey("digital_products.id", ondelete="CASCADE"), nullable=False, index=True
+        SQLUUID(as_uuid=True),
+        ForeignKey("digital_products.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     asset_type: Mapped[str] = mapped_column(String(50), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -91,7 +106,7 @@ class DeliveryAsset(Base, TenantMixin):
     external_url: Mapped[str | None] = mapped_column(Text)
     content_body: Mapped[str | None] = mapped_column(Text)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -99,8 +114,12 @@ class DeliveryAsset(Base, TenantMixin):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
-    product: Mapped["DigitalProduct"] = relationship("DigitalProduct", back_populates="assets")
-    delivery_accesses: Mapped[list["DeliveryAccess"]] = relationship("DeliveryAccess", back_populates="asset")
+    product: Mapped["DigitalProduct"] = relationship(
+        "DigitalProduct", back_populates="assets"
+    )
+    delivery_accesses: Mapped[list["DeliveryAccess"]] = relationship(
+        "DeliveryAccess", back_populates="asset"
+    )
 
 
 class FunnelCheckoutSession(Base, TenantMixin):
@@ -116,7 +135,10 @@ class FunnelCheckoutSession(Base, TenantMixin):
         SQLUUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     product_id: Mapped[UUIDType] = mapped_column(
-        SQLUUID(as_uuid=True), ForeignKey("digital_products.id"), nullable=False, index=True
+        SQLUUID(as_uuid=True),
+        ForeignKey("digital_products.id"),
+        nullable=False,
+        index=True,
     )
     contact_id: Mapped[UUIDType | None] = mapped_column(
         SQLUUID(as_uuid=True), ForeignKey("contacts.id"), index=True
@@ -124,7 +146,9 @@ class FunnelCheckoutSession(Base, TenantMixin):
     user_id: Mapped[UUIDType | None] = mapped_column(
         SQLUUID(as_uuid=True), ForeignKey("users.id"), index=True
     )
-    stripe_session_id: Mapped[str | None] = mapped_column(String(255), unique=True, index=True)
+    stripe_session_id: Mapped[str | None] = mapped_column(
+        String(255), unique=True, index=True
+    )
     status: Mapped[str] = mapped_column(String(50), default="created", nullable=False)
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(10), default="THB", nullable=False)
@@ -132,8 +156,10 @@ class FunnelCheckoutSession(Base, TenantMixin):
     metadata_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, default=dict)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    abandoned_email_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    
+    abandoned_email_sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -164,7 +190,9 @@ class FunnelOrder(Base, TenantMixin):
         SQLUUID(as_uuid=True), ForeignKey("funnel_checkout_sessions.id"), index=True
     )
     stripe_session_id: Mapped[str | None] = mapped_column(String(255), index=True)
-    stripe_payment_intent_id: Mapped[str | None] = mapped_column(String(255), index=True)
+    stripe_payment_intent_id: Mapped[str | None] = mapped_column(
+        String(255), index=True
+    )
     status: Mapped[str] = mapped_column(String(50), default="pending", nullable=False)
     subtotal_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     total_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
@@ -172,7 +200,7 @@ class FunnelOrder(Base, TenantMixin):
     customer_email: Mapped[str | None] = mapped_column(String(255))
     paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     refunded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -180,8 +208,15 @@ class FunnelOrder(Base, TenantMixin):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
-    items: Mapped[list["FunnelOrderItem"]] = relationship("FunnelOrderItem", back_populates="order", cascade="all, delete-orphan", lazy="selectin")
-    delivery_accesses: Mapped[list["DeliveryAccess"]] = relationship("DeliveryAccess", back_populates="order", lazy="selectin")
+    items: Mapped[list["FunnelOrderItem"]] = relationship(
+        "FunnelOrderItem",
+        back_populates="order",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+    delivery_accesses: Mapped[list["DeliveryAccess"]] = relationship(
+        "DeliveryAccess", back_populates="order", lazy="selectin"
+    )
 
 
 class FunnelOrderItem(Base, TenantMixin):
@@ -194,22 +229,30 @@ class FunnelOrderItem(Base, TenantMixin):
         SQLUUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     order_id: Mapped[UUIDType] = mapped_column(
-        SQLUUID(as_uuid=True), ForeignKey("funnel_orders.id", ondelete="CASCADE"), nullable=False, index=True
+        SQLUUID(as_uuid=True),
+        ForeignKey("funnel_orders.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     product_id: Mapped[UUIDType] = mapped_column(
-        SQLUUID(as_uuid=True), ForeignKey("digital_products.id"), nullable=False, index=True
+        SQLUUID(as_uuid=True),
+        ForeignKey("digital_products.id"),
+        nullable=False,
+        index=True,
     )
     quantity: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     unit_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     total_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(10), default="THB", nullable=False)
-    
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
 
     order: Mapped["FunnelOrder"] = relationship("FunnelOrder", back_populates="items")
-    product: Mapped["DigitalProduct"] = relationship("DigitalProduct", back_populates="order_items")
+    product: Mapped["DigitalProduct"] = relationship(
+        "DigitalProduct", back_populates="order_items"
+    )
 
 
 class DeliveryAccess(Base, TenantMixin):
@@ -225,10 +268,16 @@ class DeliveryAccess(Base, TenantMixin):
         SQLUUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     order_id: Mapped[UUIDType] = mapped_column(
-        SQLUUID(as_uuid=True), ForeignKey("funnel_orders.id", ondelete="CASCADE"), nullable=False, index=True
+        SQLUUID(as_uuid=True),
+        ForeignKey("funnel_orders.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     product_id: Mapped[UUIDType] = mapped_column(
-        SQLUUID(as_uuid=True), ForeignKey("digital_products.id"), nullable=False, index=True
+        SQLUUID(as_uuid=True),
+        ForeignKey("digital_products.id"),
+        nullable=False,
+        index=True,
     )
     asset_id: Mapped[UUIDType | None] = mapped_column(
         SQLUUID(as_uuid=True), ForeignKey("delivery_assets.id"), index=True
@@ -243,7 +292,7 @@ class DeliveryAccess(Base, TenantMixin):
     last_accessed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     download_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     max_downloads: Mapped[int | None] = mapped_column(Integer)
-    
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -251,8 +300,12 @@ class DeliveryAccess(Base, TenantMixin):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
-    order: Mapped["FunnelOrder"] = relationship("FunnelOrder", back_populates="delivery_accesses")
-    asset: Mapped["DeliveryAsset"] = relationship("DeliveryAsset", back_populates="delivery_accesses")
+    order: Mapped["FunnelOrder"] = relationship(
+        "FunnelOrder", back_populates="delivery_accesses"
+    )
+    asset: Mapped["DeliveryAsset"] = relationship(
+        "DeliveryAsset", back_populates="delivery_accesses"
+    )
 
 
 class ConversionEvent(Base, TenantMixin):
@@ -263,7 +316,12 @@ class ConversionEvent(Base, TenantMixin):
             name="ck_conversion_event_type",
         ),
         Index("ix_conversion_events_occurred_at", "occurred_at"),
-        Index("ix_conversion_events_org_type_occurred", "organization_id", "event_type", "occurred_at"),
+        Index(
+            "ix_conversion_events_org_type_occurred",
+            "organization_id",
+            "event_type",
+            "occurred_at",
+        ),
     )
 
     id: Mapped[UUIDType] = mapped_column(
@@ -300,8 +358,12 @@ class LeadMagnet(Base, TenantMixin):
             "status IN ('draft', 'published', 'archived')",
             name="ck_lead_magnet_status",
         ),
-        CheckConstraint("opt_in_count >= 0", name="ck_lead_magnet_opt_in_count_non_negative"),
-        Index("ix_funnel_lead_magnets_org_slug", "organization_id", "slug", unique=True),
+        CheckConstraint(
+            "opt_in_count >= 0", name="ck_lead_magnet_opt_in_count_non_negative"
+        ),
+        Index(
+            "ix_funnel_lead_magnets_org_slug", "organization_id", "slug", unique=True
+        ),
     )
 
     id: Mapped[UUIDType] = mapped_column(
@@ -310,14 +372,17 @@ class LeadMagnet(Base, TenantMixin):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     slug: Mapped[str] = mapped_column(String(255), nullable=False)
     target_product_id: Mapped[UUIDType | None] = mapped_column(
-        SQLUUID(as_uuid=True), ForeignKey("digital_products.id", ondelete="SET NULL"), nullable=True, index=True
+        SQLUUID(as_uuid=True),
+        ForeignKey("digital_products.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
     promise: Mapped[str | None] = mapped_column(Text)
     file_url: Mapped[str | None] = mapped_column(String(500))
     landing_page_url: Mapped[str | None] = mapped_column(String(500))
     status: Mapped[str] = mapped_column(String(50), default="draft", nullable=False)
     opt_in_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -325,11 +390,14 @@ class LeadMagnet(Base, TenantMixin):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
-    target_product: Mapped["DigitalProduct"] = relationship("DigitalProduct", lazy="selectin")
+    target_product: Mapped["DigitalProduct"] = relationship(
+        "DigitalProduct", lazy="selectin"
+    )
 
 
 class Coupon(Base, TenantMixin):
     """Automated discount coupons — percentage or fixed amount."""
+
     __tablename__ = "funnel_coupons"
     __table_args__ = (
         CheckConstraint(
@@ -348,14 +416,20 @@ class Coupon(Base, TenantMixin):
         SQLUUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     code: Mapped[str] = mapped_column(String(50), nullable=False)
-    coupon_type: Mapped[str] = mapped_column(String(20), nullable=False)  # percentage | fixed
+    coupon_type: Mapped[str] = mapped_column(
+        String(20), nullable=False
+    )  # percentage | fixed
     discount_value: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(10), default="THB", nullable=False)
-    min_order_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0, nullable=False)
+    min_order_amount: Mapped[Decimal] = mapped_column(
+        Numeric(12, 2), default=0, nullable=False
+    )
     max_uses: Mapped[int | None] = mapped_column(Integer)
     used_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     product_id: Mapped[UUIDType | None] = mapped_column(
-        SQLUUID(as_uuid=True), ForeignKey("digital_products.id", ondelete="SET NULL"), nullable=True
+        SQLUUID(as_uuid=True),
+        ForeignKey("digital_products.id", ondelete="SET NULL"),
+        nullable=True,
     )
     status: Mapped[str] = mapped_column(String(50), default="active", nullable=False)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -371,6 +445,7 @@ class Coupon(Base, TenantMixin):
 
 class ProductReview(Base, TenantMixin):
     """Customer reviews — collected automatically after purchase."""
+
     __tablename__ = "funnel_reviews"
     __table_args__ = (
         CheckConstraint(
@@ -387,13 +462,20 @@ class ProductReview(Base, TenantMixin):
         SQLUUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     product_id: Mapped[UUIDType] = mapped_column(
-        SQLUUID(as_uuid=True), ForeignKey("digital_products.id", ondelete="CASCADE"), nullable=False, index=True
+        SQLUUID(as_uuid=True),
+        ForeignKey("digital_products.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     order_id: Mapped[UUIDType | None] = mapped_column(
-        SQLUUID(as_uuid=True), ForeignKey("funnel_orders.id", ondelete="SET NULL"), nullable=True
+        SQLUUID(as_uuid=True),
+        ForeignKey("funnel_orders.id", ondelete="SET NULL"),
+        nullable=True,
     )
     contact_id: Mapped[UUIDType | None] = mapped_column(
-        SQLUUID(as_uuid=True), ForeignKey("contacts.id", ondelete="SET NULL"), nullable=True
+        SQLUUID(as_uuid=True),
+        ForeignKey("contacts.id", ondelete="SET NULL"),
+        nullable=True,
     )
     customer_name: Mapped[str] = mapped_column(String(255), nullable=False)
     customer_email: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -401,7 +483,9 @@ class ProductReview(Base, TenantMixin):
     title: Mapped[str | None] = mapped_column(String(255))
     body: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(50), default="published", nullable=False)
-    is_verified_purchase: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_verified_purchase: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
@@ -413,6 +497,7 @@ class ProductReview(Base, TenantMixin):
 
 class EmailSequence(Base, TenantMixin):
     """Automated email sequences — welcome, abandoned cart, post-purchase."""
+
     __tablename__ = "funnel_email_sequences"
     __table_args__ = (
         CheckConstraint(
@@ -435,7 +520,9 @@ class EmailSequence(Base, TenantMixin):
     subject_template: Mapped[str] = mapped_column(String(500), nullable=False)
     body_template: Mapped[str] = mapped_column(Text, nullable=False)
     product_id: Mapped[UUIDType | None] = mapped_column(
-        SQLUUID(as_uuid=True), ForeignKey("digital_products.id", ondelete="SET NULL"), nullable=True
+        SQLUUID(as_uuid=True),
+        ForeignKey("digital_products.id", ondelete="SET NULL"),
+        nullable=True,
     )
     total_sent: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     total_opened: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
@@ -451,6 +538,7 @@ class EmailSequence(Base, TenantMixin):
 
 class BundleDeal(Base, TenantMixin):
     """Product bundles — auto-suggested bundles with discount."""
+
     __tablename__ = "funnel_bundles"
     __table_args__ = (
         CheckConstraint(
@@ -483,4 +571,3 @@ class BundleDeal(Base, TenantMixin):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
-

@@ -1,0 +1,48 @@
+{
+  "campaign": "7day_tsm_v2",
+  "start_time": "2026-07-02T17:40:46.313664+00:00",
+  "end_target": "2026-07-09T17:40:46.313664+00:00",
+  "strategy": "tsm_time_series_momentum",
+  "assets": {
+    "forex": [
+      "EURUSD",
+      "GBPUSD",
+      "USDJPY",
+      "AUDUSD"
+    ],
+    "metals": [
+      "XAUUSD"
+    ],
+    "indices": [
+      "US30",
+      "NAS100"
+    ]
+  },
+  "launch": {
+    "success": true,
+    "pid": 33372,
+    "command": "C:\\Users\\menum\\AppData\\Local\\hermes\\hermes-agent\\venv\\Scripts\\python.exe C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\scripts\\tsm_paper_trade.py --dry-run --force",
+    "assets": {
+      "forex": [
+        "EURUSD",
+        "GBPUSD",
+        "USDJPY",
+        "AUDUSD"
+      ],
+      "metals": [
+        "XAUUSD"
+      ],
+      "indices": [
+        "US30",
+        "NAS100"
+      ]
+    },
+    "mode": "paper"
+  },
+  "status": "launched",
+  "monitoring": {
+    "log_file": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\reports\\campaign_7day.log",
+    "report_file": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\reports\\campaign_7day_v2.json",
+    "heartbeat_file": "C:\\Users\\menum\\graxia os\\graxia\\packages\\quant_os\\data\\heartbeat.json"
+  }
+}

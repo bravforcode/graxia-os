@@ -1,0 +1,12 @@
+Tracked diff file inventory after Phase 1.5 cleanup is summarized in:
+- `docs/PHASE2_REMAINING_PRODUCT_DIFF_CLASSIFICATION.md`
+
+High-signal tracked groups:
+- backend implementation under `backend/app/**`
+- backend tests under `backend/tests/**`
+- frontend implementation under `frontend/src/**`
+- frontend build/test config under `frontend/*`
+- migrations under `backend/alembic/**`
+- scripts/config/CI under `.github/**`, `scripts/**`, `config/**`, `docker-compose.yml`
+- docs under `docs/**`, `README.md`, `AGENTS.md`, `CLAUDE.md`
+- suspicious tracked deletion: `"ersmenumgraxia os\\357\\200\\242 && git status"`

@@ -1,0 +1,292 @@
+{
+  "symbol": "ETHUSD",
+  "timeframe": "M15",
+  "trained_at": "2026-07-01T12:14:04.330986+00:00",
+  "n_features": 46,
+  "n_rows": 59999,
+  "split": {
+    "train": 41999,
+    "val": 9000,
+    "test": 9000
+  },
+  "cv_direction": {
+    "mean_accuracy": 0.6315,
+    "std_accuracy": 0.0033,
+    "mean_f1": 0.6507,
+    "folds": [
+      {
+        "accuracy": 0.6363,
+        "precision": 0.6331,
+        "recall": 0.669,
+        "f1": 0.6506,
+        "n_samples": 8399,
+        "n_up_true": 4251,
+        "n_down_true": 4148,
+        "n_up_pred": 4492,
+        "n_down_pred": 3907,
+        "fold": 1
+      },
+      {
+        "accuracy": 0.6306,
+        "precision": 0.6212,
+        "recall": 0.6649,
+        "f1": 0.6423,
+        "n_samples": 8399,
+        "n_up_true": 4190,
+        "n_down_true": 4209,
+        "n_up_pred": 4485,
+        "n_down_pred": 3914,
+        "fold": 2
+      },
+      {
+        "accuracy": 0.6301,
+        "precision": 0.631,
+        "recall": 0.6615,
+        "f1": 0.6458,
+        "n_samples": 8399,
+        "n_up_true": 4283,
+        "n_down_true": 4116,
+        "n_up_pred": 4490,
+        "n_down_pred": 3909,
+        "fold": 3
+      },
+      {
+        "accuracy": 0.6267,
+        "precision": 0.6191,
+        "recall": 0.7148,
+        "f1": 0.6635,
+        "n_samples": 8399,
+        "n_up_true": 4324,
+        "n_down_true": 4075,
+        "n_up_pred": 4993,
+        "n_down_pred": 3406,
+        "fold": 4
+      },
+      {
+        "accuracy": 0.6338,
+        "precision": 0.6174,
+        "recall": 0.6891,
+        "f1": 0.6512,
+        "n_samples": 8399,
+        "n_up_true": 4168,
+        "n_down_true": 4231,
+        "n_up_pred": 4652,
+        "n_down_pred": 3747,
+        "fold": 5
+      }
+    ]
+  },
+  "cv_magnitude": {
+    "mean_rmse": 0.003614,
+    "std_rmse": 0.000391,
+    "mean_r2": 0.1136,
+    "folds": [
+      {
+        "rmse": 0.003332,
+        "mae": 0.002275,
+        "r2": 0.1244,
+        "mape": 99.6666,
+        "n_samples": 8399,
+        "mean_true": 4.3e-05,
+        "std_true": 0.003561,
+        "mean_pred": 1.2e-05,
+        "std_pred": 0.001204,
+        "fold": 1
+      },
+      {
+        "rmse": 0.00419,
+        "mae": 0.002565,
+        "r2": 0.0995,
+        "mape": 99.5595,
+        "n_samples": 8399,
+        "mean_true": -6.1e-05,
+        "std_true": 0.004416,
+        "mean_pred": 6.3e-05,
+        "std_pred": 0.001213,
+        "fold": 2
+      },
+      {
+        "rmse": 0.003779,
+        "mae": 0.002528,
+        "r2": 0.1132,
+        "mape": 99.8214,
+        "n_samples": 8399,
+        "mean_true": 4.2e-05,
+        "std_true": 0.004013,
+        "mean_pred": -4.4e-05,
+        "std_pred": 0.001335,
+        "fold": 3
+      },
+      {
+        "rmse": 0.003051,
+        "mae": 0.002079,
+        "r2": 0.1135,
+        "mape": 99.9404,
+        "n_samples": 8399,
+        "mean_true": 6.9e-05,
+        "std_true": 0.00324,
+        "mean_pred": 8.7e-05,
+        "std_pred": 0.001158,
+        "fold": 4
+      },
+      {
+        "rmse": 0.003718,
+        "mae": 0.002388,
+        "r2": 0.1173,
+        "mape": 99.9404,
+        "n_samples": 8399,
+        "mean_true": -3.3e-05,
+        "std_true": 0.003958,
+        "mean_pred": 3.9e-05,
+        "std_pred": 0.001104,
+        "fold": 5
+      }
+    ]
+  },
+  "test_direction": {
+    "accuracy": 0.6096,
+    "precision": 0.5875,
+    "recall": 0.7121,
+    "f1": 0.6438,
+    "n_samples": 9000,
+    "n_up_true": 4460,
+    "n_down_true": 4540,
+    "n_up_pred": 5406,
+    "n_down_pred": 3594
+  },
+  "test_magnitude": {
+    "rmse": 0.002821,
+    "mae": 0.001812,
+    "r2": 0.0938,
+    "mape": 99.8444,
+    "n_samples": 9000,
+    "mean_true": -3.2e-05,
+    "std_true": 0.002963,
+    "mean_pred": 6.8e-05,
+    "std_pred": 0.000815
+  },
+  "feature_importance_direction": [
+    [
+      "swing_low",
+      0.2814
+    ],
+    [
+      "swing_high",
+      0.2231
+    ],
+    [
+      "structure_event_flag",
+      0.0904
+    ],
+    [
+      "structure_state",
+      0.0351
+    ],
+    [
+      "vp_inside_value_area",
+      0.0278
+    ],
+    [
+      "ote_retracement_pct",
+      0.0265
+    ],
+    [
+      "ote_in_band",
+      0.0222
+    ],
+    [
+      "wyckoff_spring_flag",
+      0.0219
+    ],
+    [
+      "wyckoff_upthrust_flag",
+      0.0181
+    ],
+    [
+      "sweep_bearish_flag",
+      0.0179
+    ],
+    [
+      "bars_since_bos_choch",
+      0.0177
+    ],
+    [
+      "vp_hvn_proximity",
+      0.0145
+    ],
+    [
+      "sweep_bullish_flag",
+      0.0117
+    ],
+    [
+      "pool_age_bars",
+      0.0115
+    ],
+    [
+      "inversion_fvg_flag",
+      0.0098
+    ]
+  ],
+  "feature_importance_magnitude": [
+    [
+      "swing_low",
+      0.3259
+    ],
+    [
+      "swing_high",
+      0.1907
+    ],
+    [
+      "structure_event_flag",
+      0.1037
+    ],
+    [
+      "wyckoff_spring_flag",
+      0.0495
+    ],
+    [
+      "vp_inside_value_area",
+      0.0488
+    ],
+    [
+      "structure_state",
+      0.0327
+    ],
+    [
+      "wyckoff_upthrust_flag",
+      0.0313
+    ],
+    [
+      "bars_since_bos_choch",
+      0.0303
+    ],
+    [
+      "ote_retracement_pct",
+      0.0248
+    ],
+    [
+      "vp_hvn_proximity",
+      0.0224
+    ],
+    [
+      "pool_age_bars",
+      0.0175
+    ],
+    [
+      "ote_in_band",
+      0.0124
+    ],
+    [
+      "wyckoff_range_bound",
+      0.0108
+    ],
+    [
+      "ob_age_bars",
+      0.0103
+    ],
+    [
+      "vp_poc_distance_atr",
+      0.0066
+    ]
+  ]
+}

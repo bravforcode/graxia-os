@@ -1,0 +1,12 @@
+{
+  "enabled": true,
+  "kill_switch": false,
+  "dry_run": true,
+  "risk_budget": {
+    "max_daily_loss_pct": 2.0,
+    "max_weekly_loss_pct": 5.0,
+    "max_position_pct": 1.0,
+    "max_open_positions": 3,
+    "cooldown_seconds": 300
+  }
+}

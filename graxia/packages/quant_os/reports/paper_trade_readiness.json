@@ -1,0 +1,75 @@
+{
+  "timestamp": "2026-07-01T12:12:44.210543+00:00",
+  "overall_pass": true,
+  "items": [
+    {
+      "name": "Python Environment",
+      "passed": true,
+      "message": "All 3 required packages available",
+      "category": "environment",
+      "severity": "required"
+    },
+    {
+      "name": "MT5 Connection",
+      "passed": true,
+      "message": "Connected: phirawit jitnarong (Pepperstone-Demo) balance=$49807.78",
+      "category": "mt5",
+      "severity": "required"
+    },
+    {
+      "name": "Data Pipeline",
+      "passed": true,
+      "message": "Pipeline available, 8 data files present (0 missing)",
+      "category": "data",
+      "severity": "recommended"
+    },
+    {
+      "name": "Models Trained",
+      "passed": true,
+      "message": "33 model files found, newest 3 days old",
+      "category": "models",
+      "severity": "recommended"
+    },
+    {
+      "name": "Risk Limits",
+      "passed": true,
+      "message": "Configured: risk/trade=1.0% daily=2.0% dd=10.0% capital=$10,000",
+      "category": "risk",
+      "severity": "required"
+    },
+    {
+      "name": "Monitoring",
+      "passed": true,
+      "message": "Monitor script available (not yet run)",
+      "category": "monitoring",
+      "severity": "required"
+    },
+    {
+      "name": "News Filter",
+      "passed": true,
+      "message": "News events module available (event_models, event_risk_gate, event_store)",
+      "category": "news",
+      "severity": "required"
+    },
+    {
+      "name": "Trading Hours",
+      "passed": true,
+      "message": "Trading hours for 4 symbols: XAUUSD={'start': '01:00', 'end': '21:00'}; EURUSD={'start': '01:00', 'end': '21:00'}; BTCUSD={'start': '00:00', 'end': '23:59'}; ETHUSD={'start': '00:00', 'end': '23:59'}",
+      "category": "schedule",
+      "severity": "required"
+    },
+    {
+      "name": "Telegram Alerts",
+      "passed": false,
+      "message": "Telegram bot_token not configured",
+      "category": "alerts",
+      "severity": "recommended"
+    }
+  ],
+  "summary": {
+    "total": 9,
+    "passed": 8,
+    "failed": 1,
+    "required_failed": 0
+  }
+}

@@ -241,8 +241,24 @@ async def test_execute_email_and_job_apply_actions_delegate_to_integrations(
         policy_class="approval_required",
         details={"to": "client@example.com", "subject": "Hello", "body": "Body"},
     )
+    from app.models.organization import Organization
+    from uuid import uuid4 as _new_uuid
+    async with approval_flow_session_factory() as approval_session:
+        org = Organization(
+            id=_new_uuid(),
+            name="Test Org",
+            slug="test-org",
+            status="active",
+        )
+        approval_session.add(org)
+        await approval_session.commit()
+
     job_result = await manager._execute_job_apply(
-        {"job_url": "https://example.test/job", "cover_letter": "Cover letter"}
+        {
+            "job_url": "https://example.test/job",
+            "cover_letter": "Cover letter",
+            "organization_id": str(org.id),
+        }
     )
     email_result = await manager._execute_action(email_approval)
     missing_email_result = await manager._execute_email_send({"to": "client@example.com"})

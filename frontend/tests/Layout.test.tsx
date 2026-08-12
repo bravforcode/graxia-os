@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { vi } from 'vitest'
 
@@ -40,7 +41,9 @@ vi.mock('@/store/uiStore', () => ({
 }))
 
 describe('Layout', () => {
-  it('renders the shell landmarks and skip link', () => {
+  it('renders the shell landmarks and skip link', async () => {
+    const user = userEvent.setup()
+
     render(
       <MemoryRouter
         initialEntries={['/']}
@@ -56,8 +59,11 @@ describe('Layout', () => {
 
     expect(screen.getByRole('link', { name: 'Skip to main content' })).toHaveAttribute('href', '#main-content')
     expect(screen.getByRole('navigation', { name: 'Sidebar' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument()
     expect(screen.getByText('Dashboard body')).toBeInTheDocument()
     expect(document.getElementById('main-content')).toBeTruthy()
+
+    // Sign out is inside a DropdownMenu — open it first
+    await user.click(screen.getByRole('button', { name: /operator/i }))
+    expect(await screen.findByRole('menuitem', { name: 'Sign out' })).toBeInTheDocument()
   }, 15000)
 })

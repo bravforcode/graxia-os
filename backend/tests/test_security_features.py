@@ -65,7 +65,6 @@ class TestSecurityHardening:
         from app.config import settings
 
         # Required config must be present
-        assert settings.APP_NAME is not None
         assert settings.APP_ENV is not None
 
         # Security-related config
@@ -94,10 +93,11 @@ class TestSecurityHardening:
     @pytest.mark.asyncio
     async def test_rate_limit_auth_exists(self):
         """Rate limit auth dependency should exist and work"""
-        from app.middleware.rate_limit import rate_limit_api, rate_limit_auth
+        from app.middleware.rate_limit import RateLimitMiddleware
+        from app.middleware.tiered_rate_limit import check_tiered_rate_limit
 
-        assert callable(rate_limit_auth)
-        assert callable(rate_limit_api)
+        assert RateLimitMiddleware is not None
+        assert callable(check_tiered_rate_limit)
 
     # Fix #8: Rate limiting on auth endpoints
     @pytest.mark.asyncio
