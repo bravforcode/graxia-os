@@ -14,7 +14,8 @@ backend/*.db
 backend/.state
 
 deploy
-
+config
+graxia
 venv-test
 04-Archive
 xiarchitect
