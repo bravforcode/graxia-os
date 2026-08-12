@@ -28,17 +28,28 @@ def upgrade() -> None:
     )
 
     op.execute("CREATE EXTENSION IF NOT EXISTS vector")
-    op.add_column("knowledge_items", sa.Column("embedding", Vector(768)))
-    op.add_column("knowledge_items", sa.Column("chunk_hash", sa.String(64)))
-    op.add_column("knowledge_items", sa.Column("chunk_index", sa.Integer()))
-    op.add_column("knowledge_items", sa.Column("source_path", sa.String(512)))
+
+    # Idempotent column adds — earlier baseline migrations may already have
+    # created these columns on fresh databases.
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    existing = {c["name"] for c in inspector.get_columns("knowledge_items")}
+    for column in (
+        sa.Column("embedding", Vector(768)),
+        sa.Column("chunk_hash", sa.String(64)),
+        sa.Column("chunk_index", sa.Integer()),
+        sa.Column("source_path", sa.String(512)),
+    ):
+        if column.name not in existing:
+            op.add_column("knowledge_items", column)
     op.execute("""
       CREATE INDEX IF NOT EXISTS knowledge_embedding_hnsw
       ON knowledge_items USING hnsw (embedding vector_cosine_ops)
       WITH (m=16, ef_construction=64)
     """)
-    op.create_index(
-        op.f("ix_knowledge_items_chunk_hash"), "knowledge_items", ["chunk_hash"], unique=False
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_knowledge_items_chunk_hash "
+        "ON knowledge_items (chunk_hash)"
     )
 
 
