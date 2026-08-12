@@ -1,0 +1,34 @@
+name: free-pipeline (daily content + auto-post + ad build)
+
+on:
+  schedule:
+    - cron: "30 0 * * *"   # 07:30 Bangkok time
+  workflow_dispatch: {}
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run daily pipeline
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}      # optional — AI copy
+          META_PAGE_TOKEN: ${{ secrets.META_PAGE_TOKEN }}     # optional — auto FB post
+          META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID }}  # optional — ad build (paused)
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}    # optional — ad build (paused)
+          META_PAGE_ID: ${{ secrets.META_PAGE_ID }}              # optional — ad creative
+        run: python automation/run_daily.py
+
+      - name: Commit generated content
+        run: |
+          git config user.name "pipeline-bot"
+          git config user.email "pipeline-bot@users.noreply.github.com"
+          git add docs/content/generated
+          git diff --cached --quiet && echo "no content changes" || \
+            git commit -m "pipeline: daily content generation [skip ci]"
+          git push origin HEAD:main || echo "push skipped (branch protection)"

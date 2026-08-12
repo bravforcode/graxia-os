@@ -1,0 +1,26 @@
+{
+  "generated_at": "2026-08-13",
+  "items": [
+    {
+      "channel": "ai",
+      "title": "AI item 1",
+      "body": "[AI generation failed: 'choices']",
+      "status": "queue",
+      "date": "2026-08-13"
+    },
+    {
+      "channel": "ai",
+      "title": "AI item 2",
+      "body": "[AI generation failed: 'choices']",
+      "status": "queue",
+      "date": "2026-08-13"
+    },
+    {
+      "channel": "ai",
+      "title": "AI item 3",
+      "body": "[AI generation failed: 'choices']",
+      "status": "queue",
+      "date": "2026-08-13"
+    }
+  ]
+}
