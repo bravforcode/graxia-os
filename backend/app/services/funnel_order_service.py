@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.funnel import DigitalProduct, FunnelCheckoutSession, FunnelOrder, FunnelOrderItem
 from app.services.funnel_delivery_service import FunnelDeliveryService
 from app.services.automation_email_service import AutomationEmailService
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -138,15 +139,25 @@ class FunnelOrderService:
             logger.error(f"[AUTOMATION] Post-purchase trigger failed for order {order.id}: {e}")
 
         try:
-            from app.tasks.funnel_automation_tasks import send_review_request, send_cross_sell
-            send_review_request.apply_async(
-                args=[str(organization_id), str(order.id)],
-                countdown=3 * 24 * 3600,  # 3 days
-            )
-            send_cross_sell.apply_async(
-                args=[str(organization_id), str(order.id)],
-                countdown=7 * 24 * 3600,  # 7 days
-            )
+            # Serverless: no Celery broker → skip (cron bridge scans cover
+            # review/cross-sell). Attempting apply_async without a broker costs
+            # 4-7s of connection-retry per call and blows the 10s function limit.
+            broker = getattr(settings, "CELERY_BROKER_URL", "") or getattr(settings, "REDIS_URL", "")
+            if broker:
+                from app.tasks.funnel_automation_tasks import send_review_request, send_cross_sell
+                send_review_request.apply_async(
+                    args=[str(organization_id), str(order.id)],
+                    countdown=3 * 24 * 3600,  # 3 days
+                )
+                send_cross_sell.apply_async(
+                    args=[str(organization_id), str(order.id)],
+                    countdown=7 * 24 * 3600,  # 7 days
+                )
+            else:
+                logger.info(
+                    f"[AUTOMATION] Review/cross-sell scheduling skipped (no broker) "
+                    f"for order {order.id} — cron bridge handles it"
+                )
         except Exception as e:
             logger.error(f"[AUTOMATION] Failed to schedule review/cross-sell for order {order.id}: {e}")
 
