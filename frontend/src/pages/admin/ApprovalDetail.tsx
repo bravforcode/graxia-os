@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { SafeJsonViewer } from "@/components/admin/SafeJsonViewer";
 import { PageHeader } from "@/components/ui/page-header";
-import { Panel } from "@/components/ui/panel";
+import { Panel } from "@/components/ui/Panel";
 import { Button } from "@/components/ui/button";
 import { getApprovalById, approveApproval, rejectApproval } from "@/lib/admin-api";
 

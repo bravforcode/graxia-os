@@ -4,7 +4,7 @@ import { Search } from "lucide-react";
 import { SafeJsonViewer } from "@/components/admin/SafeJsonViewer";
 import { ContextPackSummary } from "@/components/admin/ContextPackSummary";
 import { PageHeader } from "@/components/ui/page-header";
-import { Panel } from "@/components/ui/panel";
+import { Panel } from "@/components/ui/Panel";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 

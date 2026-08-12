@@ -7,7 +7,7 @@ import {
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { MetricCard } from "@/components/admin/MetricCard";
 import { PageHeader } from "@/components/ui/page-header";
-import { Panel } from "@/components/ui/panel";
+import { Panel } from "@/components/ui/Panel";
 import { cn } from "@/lib/utils";
 import { getAgentWorkflowStatus, getRuntimeStatus, listTools, runAgentWorkflow, type RuntimeStatus, type WorkflowStatus } from "@/lib/admin-api";
 

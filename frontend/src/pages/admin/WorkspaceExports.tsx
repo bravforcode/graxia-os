@@ -2,7 +2,7 @@ import { useState } from "react";
 import { FileText, Sheet, Mail, Calendar, HardDrive } from "lucide-react";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { PageHeader } from "@/components/ui/page-header";
-import { Panel } from "@/components/ui/panel";
+import { Panel } from "@/components/ui/Panel";
 import { cn } from "@/lib/utils";
 import { callTool } from "@/lib/admin-api";
 

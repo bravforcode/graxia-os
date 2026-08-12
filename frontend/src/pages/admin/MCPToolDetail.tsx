@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { RiskBadge } from "@/components/admin/RiskBadge";
 import { SafeJsonViewer } from "@/components/admin/SafeJsonViewer";
 import { PageHeader } from "@/components/ui/page-header";
-import { Panel } from "@/components/ui/panel";
+import { Panel } from "@/components/ui/Panel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { listTools, callTool, type MCPToolDefinition, type MCPToolCallResponse } from "@/lib/admin-api";
