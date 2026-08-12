@@ -3,9 +3,6 @@
   "version": "7.2.0",
   "private": true,
   "type": "module",
-  "workspaces": [
-    "frontend"
-  ],
   "scripts": {
     "dev": "echo 'Run both in separate terminals: bun run dev:backend | bun run dev:frontend'",
     "dev:frontend": "cd frontend && npm run dev",
