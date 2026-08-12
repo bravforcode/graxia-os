@@ -1,17 +1,20 @@
-"""Fresh-DB bootstrap: stamp alembic head + create_all from models."""
+"""Fresh-DB bootstrap: stamp alembic head + create_all from models.
+
+Secrets come from the environment (or .env.production via python-dotenv).
+"""
 import asyncio
 import os
 import sys
 
-os.environ["DATABASE_URL"] = os.environ.get(
-    "DATABASE_URL",
-    "postgresql+asyncpg://neondb_owner:npg_yFPCBGz9Dob4@ep-shiny-silence-a1xl2k6s-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require",
-)
-os.environ.setdefault("APP_ENV", "production")
-os.environ.setdefault("SECRET_KEY", "a1MZneLjJPD_LtsVFJE-a3Fb7nXbHHdKTEHJu98FvWPzb60duQof8AUxpv-lYjIM")
-os.environ.setdefault("ENCRYPTION_KEY", "N6rEpXb5gCUHOTp8sX4puuR7JGu-Et-_DQUagdvQPQc")
-os.environ.setdefault("CSRF_SECRET", "EpSCfpE6VXUEWbgHLRIUq1EL4CbH0fTpY1LITMBednY")
-os.environ.setdefault("POSTGRES_PASSWORD", "a10a5ad8a831ca507aee2f928c03002baa8951e4324c5a0a")
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".env.production"))
+
+REQUIRED = ("DATABASE_URL", "SECRET_KEY", "ENCRYPTION_KEY", "CSRF_SECRET", "POSTGRES_PASSWORD")
+missing = [k for k in REQUIRED if not os.environ.get(k)]
+if missing:
+    print(f"Missing env vars: {missing} — set them or create .env.production")
+    sys.exit(1)
 
 
 async def main() -> None:

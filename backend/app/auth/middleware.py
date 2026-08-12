@@ -36,6 +36,57 @@ class AuthContextMiddleware(BaseHTTPMiddleware):
         request_id = request.headers.get("X-Graxia-Request-Id", "").strip()
 
         if env in ("staging", "production") and not org_id_header:
+            # Public/anon traffic (store browsing, login, Stripe webhooks,
+            # delivery links, health) must not be blocked by the org gate.
+            from app.middleware.auth import AuthLevel, classify_route, find_route_template
+
+            template = find_route_template(request)
+            level = classify_route(request.method, template) if template else AuthLevel.PUBLIC
+            if level == AuthLevel.PUBLIC:
+                request.state.auth_context = None
+                return await call_next(request)
+
+            # Authenticated request without an org header: resolve the org from
+            # the JWT user's account instead of failing. Resolution errors must
+            # NOT swallow downstream errors — call_next stays OUTSIDE the try.
+            resolved_context = None
+            try:
+                from uuid import UUID
+
+                from app.database import AsyncSessionLocal
+                from app.middleware.auth import build_auth_context
+                from app.models.user import User
+
+                payload = await build_auth_context(request)
+                user_id = payload.get("sub")
+                if user_id:
+                    async with AsyncSessionLocal() as db:
+                        user = await db.get(User, UUID(str(user_id)))
+                        if user and user.organization_id:
+                            resolved_context = AuthContext(
+                                actor_type="user",
+                                actor_id=str(user.id),
+                                organization_id=user.organization_id,
+                                environment=env,
+                                is_authenticated=True,
+                                request_id=request_id or get_request_id(request),
+                                correlation_id=get_correlation_id(request),
+                            )
+            except Exception:  # noqa: BLE001 — fall through to the org gate
+                resolved_context = None
+
+            if resolved_context is not None:
+                request.state.auth_context = resolved_context
+                return await call_next(request)
+
+            # Block requests without org context in staging/production
+            return build_error_response(
+                request,
+                code="ORG_REQUIRED",
+                message="Organization context is required",
+                status_code=401,
+            )
+
             # Block requests without org context in staging/production
             return build_error_response(
                 request,
