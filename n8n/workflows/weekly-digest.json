@@ -1,0 +1,123 @@
+{
+  "name": "Ai Factory - Weekly Analytics Digest",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 7
+            }
+          ]
+        }
+      },
+      "id": "schedule-003",
+      "name": "Every Monday 08:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-420, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graxia-os-funnel.vercel.app/api/v1/auth/login",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $env.ADMIN_EMAIL }}"
+            },
+            {
+              "name": "password",
+              "value": "={{ $env.ADMIN_PASSWORD }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 25000
+        }
+      },
+      "id": "http-003",
+      "name": "Login",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-220, -100]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://graxia-os-funnel.vercel.app/api/v1/funnel/analytics/summary",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.access_token }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 25000
+        }
+      },
+      "id": "http-004",
+      "name": "Analytics Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-20, -100]
+    },
+    {
+      "parameters": {
+        "from": "Ai Factory <no-reply@graxia.store>",
+        "to": "={{ $env.ADMIN_EMAIL }}",
+        "subject": "Weekly store digest - {{ $now.format('yyyy-MM-dd') }}",
+        "text": "=Weekly summary:\nViews: {{ $json.views }}\nUnique visitors: {{ $json.unique_visitors }}\nLeads: {{ $json.leads }}\nCheckout starts: {{ $json.checkout_starts }}\nPurchases: {{ $json.purchases }}\nDelivery opened: {{ $json.delivery_opened }}\n\nCheckout rate: {{ $json.checkout_rate }}\nPurchase conversion: {{ $json.purchase_conversion_rate }}"
+      },
+      "id": "resend-003",
+      "name": "Resend - Weekly Digest",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [200, -100]
+    }
+  ],
+  "connections": {
+    "Every Monday 08:00": {
+      "main": [
+        [
+          {
+            "node": "Login",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Login": {
+      "main": [
+        [
+          {
+            "node": "Analytics Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analytics Summary": {
+      "main": [
+        [
+          {
+            "node": "Resend - Weekly Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
