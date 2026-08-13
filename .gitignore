@@ -193,3 +193,4 @@ ci_log.txt
 repos/
 n8n/.n8n-data/
 n8n/n8n-run.log
+n8n/.n8n-env

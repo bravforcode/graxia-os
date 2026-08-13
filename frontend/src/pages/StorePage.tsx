@@ -14,6 +14,7 @@ import {
 import { useLang } from "../i18n/LanguageContext";
 import {
   PRODUCTS,
+  STORE_ORG_ID,
   CATEGORY_META,
   getPRODUCTS_TH,
   formatPrice,
@@ -210,7 +211,7 @@ export default function StorePage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product, i) => (
-              <Link key={product.id} to={`/store/${product.slug}`}
+              <Link key={product.id} to={`/f/${STORE_ORG_ID}/${product.slug}`}
                 className={`group bg-slate-900/40 border border-slate-800/60 rounded-3xl overflow-hidden flex flex-col animate-fade-in-up ${ANIMATIONS.cardHoverGlow}`}
                 style={staggerDelay(i)}>
                 <div className="relative h-44 overflow-hidden">
