@@ -239,6 +239,31 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Marquee band (MagicUI/Aceternity marquee — infinite scroll strip) */}
+      <div className="relative border-y border-white/[0.06] bg-white/[0.02] py-4 overflow-hidden">
+        <div className="marquee-band">
+          <div className="marquee-band__track" style={{ ["--marquee-duration" as string]: "36s" }}>
+            {[0, 1].map((dup) => (
+              <div key={dup} className="flex items-center gap-10 shrink-0 pr-10">
+                {[
+                  "AI Prompt Pack",
+                  "Notion Template",
+                  "คอร์ส AI สำหรับธุรกิจ",
+                  t("featured.subtitle"),
+                  "ส่งสินค้าทันที ⚡",
+                  "รับประกันคืนเงิน 7 วัน",
+                ].map((item) => (
+                  <span key={`${dup}-${item}`} className="flex items-center gap-10 text-sm md:text-base text-slate-400 whitespace-nowrap">
+                    {item}
+                    <span className="text-gradient-brand">✦</span>
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Stats Bar */}
       <ScrollReveal delay={100}>
       <section className="border-y border-slate-800/50 bg-slate-900/30 backdrop-blur-xl">

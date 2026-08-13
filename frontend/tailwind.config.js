@@ -48,8 +48,9 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Bricolage Grotesque', 'Inter', 'system-ui', 'sans-serif'],
+        // TH glyphs fall back per-character: Inter→Sarabun, Bricolage→Prompt
+        sans: ['Inter', 'Sarabun', 'system-ui', 'sans-serif'],
+        display: ['Bricolage Grotesque', 'Prompt', 'Inter', 'Sarabun', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       animation: {
