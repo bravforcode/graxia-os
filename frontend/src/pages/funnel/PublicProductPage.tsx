@@ -199,7 +199,7 @@ export default function PublicProductPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white overflow-x-hidden">
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white overflow-x-clip">
       {/* SEO Structured Data */}
       <script
         type="application/ld+json"
@@ -386,7 +386,7 @@ export default function PublicProductPage() {
                 <button
                   type="submit"
                   disabled={checkingOut}
-                  className={`btn-rainbow btn-shine w-full py-4 disabled:opacity-50 text-white font-bold rounded-xl shadow-glow-md hover:shadow-glow-lg transition-all duration-200 flex items-center justify-center gap-2 group text-sm ${ANIMATIONS.buttonPress}`}
+                  className={`w-full py-4 bg-secondary hover:bg-secondary/80 disabled:opacity-50 text-white font-bold rounded-xl shadow-lyra border border-white/[0.12] transition-all ease-out flex items-center justify-center gap-2 group text-sm active:scale-95 ${ANIMATIONS.buttonPress}`}
                 >
                   {checkingOut ? (
                     <span className="relative z-10 flex items-center gap-2">
