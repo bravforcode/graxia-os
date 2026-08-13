@@ -39,6 +39,14 @@ export default function StorePage() {
   const { locale, toggle, t } = useLang();
   const [isLoading, setIsLoading] = useState(true);
 
+  // Cursor-following spotlight (Aceternity Card Spotlight technique)
+  const handleSpotlight = (e: React.MouseEvent<HTMLElement>) => {
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    el.style.setProperty("--mx", `${e.clientX - rect.left}px`);
+    el.style.setProperty("--my", `${e.clientY - rect.top}px`);
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 400);
     return () => clearTimeout(timer);
@@ -105,8 +113,8 @@ export default function StorePage() {
         <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full bg-cyan-500/4 blur-[120px]" />
       </div>
 
-      {/* Header */}
-      <div className="relative z-10 border-b border-slate-800/50 bg-slate-950/80 backdrop-blur-xl">
+      {/* Header — sticky: always visible while scrolling */}
+      <div className="sticky top-0 z-50 border-b border-slate-800/50 bg-slate-950/80 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 group">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center font-mono font-bold text-sm text-slate-950 group-hover:scale-105 transition-transform duration-200">
@@ -227,12 +235,9 @@ export default function StorePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product, i) => (
               <Link key={product.id} to={`/f/${STORE_ORG_ID}/${product.slug}`}
-                className={`group edge-light relative bg-slate-900/40 border border-white/[0.08] rounded-3xl overflow-hidden flex flex-col animate-fade-in-up transition-all duration-300 hover:-translate-y-1 hover:border-white/[0.18] hover:shadow-[0_0_40px_rgba(99,102,241,0.15)]`}
+                onMouseMove={handleSpotlight}
+                className={`group card-spotlight edge-light relative bg-slate-900/40 border border-white/[0.08] rounded-3xl overflow-hidden flex flex-col animate-fade-in-up transition-all duration-300 hover:-translate-y-1 hover:border-white/[0.18] hover:shadow-[0_0_40px_rgba(99,102,241,0.15)]`}
                 style={staggerDelay(i)}>
-                <div
-                  className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                  style={{ backgroundImage: "radial-gradient(circle at 50% 0%, rgba(99,102,241,0.10), transparent 60%)" }}
-                />
                 <div className="relative h-44 overflow-hidden">
                   <img src={product.coverImageUrl} alt={getLocalizedName(product, locale)} loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
