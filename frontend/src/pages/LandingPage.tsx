@@ -245,7 +245,7 @@ export default function LandingPage() {
             {/* Lyra 2-line primary CTA: violet pill + inset highlight + press scale */}
             <Link
               to="/store"
-              className={`group bg-secondary hover:bg-secondary/80 h-[72px] w-[336px] px-5 flex flex-col items-center justify-center text-white font-bold rounded-xl shadow-lyra border border-white/[0.12] transition-all ease-out active:scale-95 ${ANIMATIONS.buttonPress}`}
+              className={`group bg-secondary hover:bg-secondary/80 min-h-[72px] w-full sm:w-[336px] px-5 flex flex-col items-center justify-center text-white font-bold rounded-xl shadow-lyra border border-white/[0.12] transition-all ease-out active:scale-95 ${ANIMATIONS.buttonPress}`}
             >
               <div className="flex items-center gap-2 text-lg">
                 {t("hero.cta1")}
@@ -258,7 +258,7 @@ export default function LandingPage() {
             {/* Lyra 2-line secondary CTA: white card + explicit border */}
             <a
               href="#features"
-              className={`h-[72px] w-[336px] p-2 flex flex-col items-center justify-center bg-white hover:bg-white/80 text-slate-100 font-semibold rounded-xl border border-[#E5E7EB] transition-all ease-out active:scale-95 ${ANIMATIONS.buttonPress}`}
+              className={`min-h-[72px] w-full sm:w-[336px] p-2 flex flex-col items-center justify-center bg-white hover:bg-white/80 text-slate-100 font-semibold rounded-xl border border-[#E5E7EB] transition-all ease-out active:scale-95 ${ANIMATIONS.buttonPress}`}
             >
               <div className="flex items-center gap-2 text-lg">
                 <Play size={16} />
@@ -274,7 +274,7 @@ export default function LandingPage() {
             <div className="flex items-center gap-2">
               <div className="flex -space-x-2">
                 {["bg-indigo-500", "bg-purple-500", "bg-cyan-500", "bg-emerald-500"].map((bg, i) => (
-                  <div key={i} className={`w-8 h-8 rounded-full ${bg} border-2 border-slate-950 flex items-center justify-center text-[10px] font-bold text-white`}>
+                  <div key={i} className={`w-8 h-8 rounded-full ${bg} border-2 border-slate-950 flex items-center justify-center text-[11px] font-bold text-white`}>
                     {["S", "M", "A", "R"][i]}
                   </div>
                 ))}
@@ -368,7 +368,7 @@ export default function LandingPage() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
                   {product.badge && (
-                    <span className="absolute top-4 left-4 px-3 py-1 bg-indigo-500/90 text-white text-[10px] font-bold uppercase tracking-wider rounded-full">
+                    <span className="absolute top-4 left-4 px-3 py-1 bg-indigo-500/90 text-white text-[11px] font-bold uppercase tracking-wider rounded-full">
                       {product.badge}
                     </span>
                   )}
@@ -425,7 +425,7 @@ export default function LandingPage() {
                 >
                   <span className="text-3xl group-hover:scale-125 transition-transform duration-300 inline-block">{cat.icon}</span>
                   <h3 className="font-semibold text-sm text-white group-hover:text-indigo-300 transition-colors duration-200">{t(`cat.${key}`)}</h3>
-                  <p className="text-[10px] text-slate-500">{count} {t("store.products")}</p>
+                  <p className="text-[11px] text-slate-500">{count} {t("store.products")}</p>
                 </Link>
               );
             })}
@@ -523,7 +523,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               { name: "Sarah Chen", role: locale === "th" ? "ผู้อำนวยการฝ่ายการตลาด" : "Marketing Director", text: locale === "th" ? "ชุด AI Prompts ช่วยให้ทีมเราประหยัดเวลา 15+ ชั่วโมงต่อสัปดาห์ ROI ทันที เราคืนทุนในวันแรก" : "The AI prompts bundle saved our team 15+ hours per week. The ROI was immediate — we recouped the cost in the first day.", avatar: "SC", color: "bg-indigo-500" },
-              { name: "Marcus Rivera", role: locale === "th" ? "Indie Hacker" : "Indie Hacker", text: locale === "th" ? "เปิดตัว SaaS ใน 3 วันด้วย boilerplate kit ถ้าทำเองคงต้องใช้เวลาหลายเดือน  инвестицияที่ดีที่สุด" : "I launched my SaaS in 3 days with the boilerplate kit. Would have taken me months otherwise. Best investment I've made.", avatar: "MR", color: "bg-purple-500" },
+              { name: "Marcus Rivera", role: locale === "th" ? "Indie Hacker" : "Indie Hacker", text: locale === "th" ? "เปิดตัว SaaS ใน 3 วันด้วย boilerplate kit ถ้าทำเองคงต้องใช้เวลาหลายเดือน ที่ดีที่สุด" : "I launched my SaaS in 3 days with the boilerplate kit. Would have taken me months otherwise. Best investment I've made.", avatar: "MR", color: "bg-purple-500" },
               { name: "Lisa Wong", role: locale === "th" ? "ครีเอเตอร์ (200K ผู้ติดตาม)" : "Content Creator (200K)", text: locale === "th" ? "เทมเพลตโซเชียลมีเดียเปลี่ยนกลยุทธ์เนื้อหาของเรา Interaction เพิ่มขึ้น 340% ในเดือนแรก" : "The social media templates transformed my content strategy. Engagement went up 340% in the first month. Absolutely insane results.", avatar: "LW", color: "bg-cyan-500" },
               { name: "David Park", role: locale === "th" ? "ผู้ก่อตั้ง E-commerce" : "E-commerce Founder", text: locale === "th" ? "Conversion Rate หน้าสินค้าเพิ่มจาก 2.1% เป็น 5.8% ด้วยเทมเพลต copywriting คุ้มค่าทุกบาท" : "My product page conversion rate jumped from 2.1% to 5.8% using the copywriting templates. Worth every penny and then some.", avatar: "DP", color: "bg-emerald-500" },
               { name: "Emma Rodriguez", role: locale === "th" ? "Product Manager" : "Product Manager", text: locale === "th" ? "Notion Life OS เป็นเทมเพลตเดียวที่ใช้จริงจัง 6 เดือนแล้ว ชีวิตมีระเบียบเป็นครั้งแรก" : "The Notion Life OS is the only template that stuck. 6 months in and my entire life is organized. I've tried dozens of others.", avatar: "ER", color: "bg-amber-500" },
@@ -609,7 +609,7 @@ export default function LandingPage() {
                 </button>
                 <div
                   className={`overflow-hidden transition-all duration-300 ease-out ${
-                    openFaq === i ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+                    openFaq === i ? "max-h-[40rem] overflow-y-auto opacity-100" : "max-h-0 opacity-0"
                   }`}
                 >
                   <div className="px-5 pb-5 text-sm text-slate-400 leading-relaxed bg-slate-900/20">
@@ -681,8 +681,8 @@ export default function LandingPage() {
             <div>
               <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3">{t("footer.legal")}</h4>
               <div className="space-y-2 text-xs text-slate-500">
-                <span className="block">{t("footer.terms")}</span>
-                <span className="block">{t("footer.privacy")}</span>
+                <Link to="/terms" className="block hover:text-slate-200 transition-colors">{t("footer.terms")}</Link>
+                <Link to="/privacy" className="block hover:text-slate-200 transition-colors">{t("footer.privacy")}</Link>
                 <span className="block">{t("footer.refund")}</span>
                 <span className="block">{t("footer.license")}</span>
               </div>

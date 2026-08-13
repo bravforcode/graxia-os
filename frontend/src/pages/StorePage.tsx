@@ -157,10 +157,10 @@ export default function StorePage() {
         <div className="flex flex-col md:flex-row gap-4 mb-8">
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
-            <input type="text" placeholder={t("store.search")} value={search} onChange={(e) => setSearch(e.target.value)}
+            <input type="text" placeholder={t("store.search")} aria-label={t("store.searchAria")} value={search} onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-slate-900/60 border border-slate-800 focus:border-indigo-500 text-slate-200 pl-10 pr-4 py-3 rounded-2xl text-sm outline-none transition-all duration-200 focus:ring-2 focus:ring-indigo-500/20" />
             {search && (
-              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors duration-200">
+              <button onClick={() => setSearch("")} aria-label={t("store.clearSearch")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors duration-200">
                 <X size={16} />
               </button>
             )}
@@ -197,7 +197,7 @@ export default function StorePage() {
                 }`}>
                 <span>{CATEGORY_META[cat].icon}</span>
                 {t(`cat.${cat}`)}
-                <span className="text-[10px] opacity-60">({count})</span>
+                <span className="text-[11px] opacity-60">({count})</span>
               </button>
             );
           })}
@@ -243,17 +243,17 @@ export default function StorePage() {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
                   {product.badge && (
-                    <span className="absolute top-3 left-3 px-2.5 py-1 bg-indigo-500/90 backdrop-blur-sm text-white text-[10px] font-bold uppercase tracking-wider rounded-full">
+                    <span className="absolute top-3 left-3 px-2.5 py-1 bg-indigo-500/90 backdrop-blur-sm text-white text-[11px] font-bold uppercase tracking-wider rounded-full">
                       {product.badge}
                     </span>
                   )}
-                  <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 bg-slate-950/70 backdrop-blur-sm rounded-full text-[10px] text-amber-400">
+                  <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 bg-slate-950/70 backdrop-blur-sm rounded-full text-[11px] text-amber-400">
                     <Star size={10} className="fill-amber-400" /> {product.rating}
                   </div>
                 </div>
                 <div className="p-5 flex-1 flex flex-col">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800/80 text-slate-400 border border-slate-700/50">
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800/80 text-slate-400 border border-slate-700/50">
                       {CATEGORY_META[product.category].icon} {t(`cat.${product.category}`)}
                     </span>
                   </div>
@@ -264,7 +264,7 @@ export default function StorePage() {
                   <div className="flex items-end justify-between pt-3 border-t border-slate-800/60">
                     <div>
                       <span className="text-xl font-extrabold text-white">{formatPrice(product.priceAmount)}</span>
-                      <span className="text-[10px] text-slate-500 ml-1.5">{formatSalesCount(product.salesCount)} {t("featured.sold")}</span>
+                      <span className="text-[11px] text-slate-500 ml-1.5">{formatSalesCount(product.salesCount)} {t("featured.sold")}</span>
                     </div>
                     <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-all duration-300 group-hover:scale-110">
                       <ArrowRight size={14} />

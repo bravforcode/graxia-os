@@ -468,7 +468,23 @@ client.interceptors.response.use(
 
     if (status === 401) {
       clearAuthTokens();
-      if (window.location.pathname !== "/login") {
+      // Redirect to login only on protected pages — public storefront pages
+      // (/, /store, /f/..., /privacy, /terms, /login, /register, checkout/delivery)
+      // must keep working without a session (audit fix: 401 /auth/me was
+      // redirecting the whole storefront to /login).
+      const path = window.location.pathname;
+      const isPublicPage =
+        path === "/" ||
+        path === "/login" ||
+        path === "/register" ||
+        path === "/privacy" ||
+        path === "/terms" ||
+        path === "/store" ||
+        path === "/checkout/success" ||
+        path.startsWith("/store/") ||
+        path.startsWith("/f/") ||
+        path.startsWith("/delivery/");
+      if (!isPublicPage) {
         window.location.href = "/login";
       }
     }

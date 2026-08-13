@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import {
   CheckCircle, ArrowRight, Mail, ShieldCheck, Download,
   AlertTriangle, Gift, Star, ChevronDown, Clock, Check, Users,
-  Lock, Award, ArrowLeft,
+  Lock, Award, ArrowLeft, CreditCard,
 } from "lucide-react";
 import { useLang } from "../../i18n/LanguageContext";
 import { PRODUCTS, CATEGORY_META, formatPrice, formatSalesCount, getLocalizedName, getLocalizedShortDescription, getLocalizedDescription, type ProductCatalogItem } from "../../data/products";
@@ -35,7 +35,18 @@ export default function PublicProductPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   // Countdown timer
-  const [timeLeft, setTimeLeft] = useState({ hours: 23, minutes: 47, seconds: 33 });
+  // Real urgency: 24h window starting from first visit (no fake scarcity)
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const stored = localStorage.getItem("ai-factory-offer-deadline");
+    const deadline = stored ? Number(stored) : Date.now() + 24 * 60 * 60 * 1000;
+    if (!stored) localStorage.setItem("ai-factory-offer-deadline", String(deadline));
+    const diff = Math.max(0, deadline - Date.now());
+    return {
+      hours: Math.floor(diff / 3600000),
+      minutes: Math.floor((diff % 3600000) / 60000),
+      seconds: Math.floor((diff % 60000) / 1000),
+    };
+  });
 
   const orgId = organization_id || "";
   const productSlug = slug || "";
@@ -241,7 +252,7 @@ export default function PublicProductPage() {
             <span className="hidden sm:inline">{t("product.backToStore")}</span>
           </Link>
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center font-mono font-bold text-[10px] text-slate-950">AI</div>
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center font-mono font-bold text-[11px] text-slate-950">AI</div>
             <span className="font-serif font-bold text-sm text-slate-100">{t("brand.name")}</span>
           </div>
           <div className="flex items-center gap-2">
@@ -273,11 +284,11 @@ export default function PublicProductPage() {
                 </span>
               )}
               {cp?.badge && (
-                <span className="px-2.5 py-1 bg-amber-500/10 text-amber-300 border border-amber-500/20 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                <span className="px-2.5 py-1 bg-amber-500/10 text-amber-300 border border-amber-500/20 rounded-full text-[11px] font-bold uppercase tracking-wider">
                   {cp.badge}
                 </span>
               )}
-              <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+              <span className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">
                 {cp?.difficulty || (locale === "th" ? "ทุกระดับ" : "All Levels")}
               </span>
             </div>
@@ -354,7 +365,7 @@ export default function PublicProductPage() {
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">{t("product.premiumAccess")}</span>
                   {cp?.badge && (
-                    <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold rounded-full border border-emerald-500/20">
+                    <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[11px] font-bold rounded-full border border-emerald-500/20">
                       {cp.badge}
                     </span>
                   )}
@@ -363,7 +374,7 @@ export default function PublicProductPage() {
                   <span className="text-4xl font-extrabold text-white">{formatPrice(price, currency)}</span>
                   <span className="text-sm text-slate-500 line-through">{formatPrice(Math.round(price * 1.5), currency)}</span>
                 </div>
-                <p className="text-[10px] text-slate-500 mt-1">{t("product.oneTime")} · {guaranteeDays}-{locale === "th" ? "วันรับประกัน" : "day guarantee"}</p>
+                <p className="text-[11px] text-slate-500 mt-1">{t("product.oneTime")} · {guaranteeDays}-{locale === "th" ? "วันรับประกัน" : "day guarantee"}</p>
               </div>
 
               {/* Checkout Form */}
@@ -400,6 +411,7 @@ export default function PublicProductPage() {
                     </span>
                   )}
                 </button>
+              <p className="text-[11px] text-slate-500">{t("store.consent")}</p>
               </form>
 
               {/* Trust Signals */}
@@ -409,6 +421,7 @@ export default function PublicProductPage() {
                   { icon: ShieldCheck, text: t("product.stripeEncrypted") },
                   { icon: Award, text: `${guaranteeDays}-${locale === "th" ? "วันรับประกันคืนเงิน" : "day money-back guarantee"}` },
                   { icon: Lock, text: t("product.secureEncrypted") },
+                  { icon: CreditCard, text: t("store.promptpay") },
                 ].map(({ icon: Icon, text }) => (
                   <div key={text} className="flex items-center gap-2">
                     <Icon size={14} className="text-emerald-500" />
@@ -441,7 +454,7 @@ export default function PublicProductPage() {
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-white">{t("product.freeSample")}</h4>
-                  <p className="text-[10px] text-slate-500">{t("product.freeSampleDesc")}</p>
+                  <p className="text-[11px] text-slate-500">{t("product.freeSampleDesc")}</p>
                 </div>
               </div>
 
@@ -457,9 +470,9 @@ export default function PublicProductPage() {
               ) : (
                 <form onSubmit={handleLeadCapture} className="space-y-2">
                   <div className="grid grid-cols-2 gap-2">
-                    <input type="text" placeholder={locale === "th" ? "ชื่อ" : "Name"} value={leadName} onChange={(e) => setLeadName(e.target.value)}
+                    <input type="text" aria-label={t("store.name")} placeholder={locale === "th" ? "ชื่อ" : "Name"} value={leadName} onChange={(e) => setLeadName(e.target.value)}
                       className="bg-slate-950 border border-slate-800 text-slate-300 px-3 py-2 rounded-xl text-xs outline-none focus:border-indigo-500 transition-colors duration-200" />
-                    <input type="email" required placeholder={locale === "th" ? "อีเมล" : "Email"} value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)}
+                    <input type="email" required aria-label={t("auth.email")} placeholder={locale === "th" ? "อีเมล" : "Email"} value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)}
                       className="bg-slate-950 border border-slate-800 text-slate-300 px-3 py-2 rounded-xl text-xs outline-none focus:border-indigo-500 transition-colors duration-200" />
                   </div>
                   <button type="submit" disabled={submittingLead}
@@ -488,10 +501,10 @@ export default function PublicProductPage() {
                   </div>
                   <p className="text-sm text-slate-300 leading-relaxed">"{tItem.text}"</p>
                   <div className="flex items-center gap-2.5 pt-1">
-                    <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white text-[10px] font-bold">{tItem.avatar}</div>
+                    <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white text-[11px] font-bold">{tItem.avatar}</div>
                     <div>
                       <div className="text-xs font-semibold text-white">{tItem.name}</div>
-                      <div className="text-[10px] text-slate-500">{tItem.role}</div>
+                      <div className="text-[11px] text-slate-500">{tItem.role}</div>
                     </div>
                   </div>
                 </div>
@@ -533,7 +546,7 @@ export default function PublicProductPage() {
                   <span className="font-semibold text-sm text-white pr-4">{faq.q}</span>
                   <ChevronDown size={16} className={`text-slate-400 shrink-0 transition-transform duration-300 ${openFaq === i ? "rotate-180" : ""}`} />
                 </button>
-                <div className={`overflow-hidden transition-all duration-300 ease-out ${openFaq === i ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
+                <div className={`overflow-hidden transition-all duration-300 ease-out ${openFaq === i ? "max-h-[40rem] overflow-y-auto opacity-100" : "max-h-0 opacity-0"}`}>
                   <div className="px-5 pb-5 text-sm text-slate-400 leading-relaxed bg-slate-900/20">{faq.a}</div>
                 </div>
               </div>
