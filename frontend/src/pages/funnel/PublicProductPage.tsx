@@ -233,19 +233,19 @@ export default function PublicProductPage() {
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-cyan-500/6 blur-[120px]" />
       </div>
 
-      {/* Sticky Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 border-b border-slate-800/50 bg-slate-950/90 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <Link to="/store" className={`flex items-center gap-2 text-slate-400 hover:text-white text-sm transition-colors duration-200 ${ANIMATIONS.underlineHover}`}>
+      {/* Header — lyra floating pill navbar (consistent with store) */}
+      <div className="sticky top-4 z-50 flex justify-center px-4">
+        <div className="pill-nav w-full max-w-5xl flex h-[56px] items-center justify-between px-5">
+          <Link to="/store" className={`flex items-center gap-2 text-slate-400 hover:text-slate-100 text-sm transition-colors duration-200 ${ANIMATIONS.underlineHover}`}>
             <ArrowLeft size={16} />
             <span className="hidden sm:inline">{t("product.backToStore")}</span>
           </Link>
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center font-mono font-bold text-[10px] text-slate-950">AI</div>
-            <span className="font-display font-bold text-sm text-white">{t("brand.name")}</span>
+            <span className="font-serif font-bold text-sm text-slate-100">{t("brand.name")}</span>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={toggle} className={`text-xs px-2 py-1 rounded-lg border transition-all duration-200 ${ANIMATIONS.buttonPress} ${locale === "th" ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-300" : "bg-slate-800/50 border-slate-700/50 text-slate-400 hover:text-white"}`}>
+            <button onClick={toggle} className={`text-xs px-2 py-1 rounded-lg border transition-all duration-200 ${ANIMATIONS.buttonPress} ${locale === "th" ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-300" : "bg-slate-800/50 border-slate-700/50 text-slate-400 hover:text-slate-100"}`}>
               {t("lang.switch")}
             </button>
             <span className="hidden sm:inline text-xs text-slate-400 font-mono">{formatPrice(price, currency)}</span>
@@ -284,7 +284,7 @@ export default function PublicProductPage() {
 
             {/* Title */}
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-medium tracking-tight leading-[1.1]">
-              <span className="bg-gradient-to-r from-white via-white to-slate-300 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
                 {productName}
               </span>
             </h1>
@@ -418,16 +418,16 @@ export default function PublicProductPage() {
               </div>
 
               {/* Urgency */}
-              <div className="p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl text-center">
-                <div className="flex items-center justify-center gap-1.5 text-xs text-amber-400 font-semibold">
+              <div className="p-3 bg-rose-500/5 border border-rose-500/10 rounded-xl text-center">
+                <div className="flex items-center justify-center gap-1.5 text-xs text-rose-400 font-semibold">
                   <Clock size={12} />
                   {t("product.limitedOffer")}
                 </div>
-                <div className="flex items-center justify-center gap-3 mt-2 font-mono text-lg text-white font-bold">
+                <div className="flex items-center justify-center gap-3 mt-2 font-mono text-lg text-slate-100 font-bold">
                   <span>{String(timeLeft.hours).padStart(2, "0")}</span>
-                  <span className="text-amber-400">:</span>
+                  <span className="text-rose-400">:</span>
                   <span>{String(timeLeft.minutes).padStart(2, "0")}</span>
-                  <span className="text-amber-400">:</span>
+                  <span className="text-rose-400">:</span>
                   <span>{String(timeLeft.seconds).padStart(2, "0")}</span>
                 </div>
               </div>

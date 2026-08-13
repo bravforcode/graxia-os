@@ -105,7 +105,7 @@ export default function StorePage() {
           className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[900px] h-[500px] animate-aurora opacity-60"
           style={{
             backgroundImage:
-              "radial-gradient(ellipse at 30% 50%, rgba(99,102,241,0.16), transparent 55%), radial-gradient(ellipse at 70% 50%, rgba(168,85,247,0.12), transparent 55%)",
+              "radial-gradient(ellipse at 30% 50%, rgba(158,122,255,0.16), transparent 55%), radial-gradient(ellipse at 70% 50%, rgba(254,139,187,0.12), transparent 55%)",
             backgroundSize: "200% 100%",
           }}
         />

@@ -120,7 +120,7 @@ export default function StoreProductPage() {
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-display font-extrabold tracking-tight leading-[1.1]">
-              <span className="bg-gradient-to-r from-white via-white to-slate-300 bg-clip-text text-transparent">{getLocalizedName(product, locale)}</span>
+              <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">{getLocalizedName(product, locale)}</span>
             </h1>
 
             <p className="text-lg text-slate-300 font-medium leading-relaxed max-w-2xl">{getLocalizedShortDescription(product, locale)}</p>

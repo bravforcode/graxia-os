@@ -159,7 +159,7 @@ export default function LandingPage() {
       <div className="fixed inset-0 pointer-events-none">
         <div
           className="absolute inset-x-0 top-0 h-[600px] md:h-[800px]"
-          style={{ background: "radial-gradient(125% 125% at 50% 10%, #f8f6f1 40%, rgba(158,122,255,0.35) 100%)" }}
+          style={{ background: "radial-gradient(125% 125% at 50% 10%, #f5f4fa 40%, rgba(158,122,255,0.35) 100%)" }}
         />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-indigo-500/8 blur-[150px]" />
         <div className="absolute bottom-0 right-0 w-[600px] h-[600px] rounded-full bg-cyan-500/6 blur-[120px]" />
@@ -456,11 +456,11 @@ export default function LandingPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { icon: Zap, titleKey: "features.instant.title", descKey: "features.instant.desc", color: "from-amber-500 to-orange-600" },
-              { icon: Shield, titleKey: "features.quality.title", descKey: "features.quality.desc", color: "from-emerald-500 to-green-600" },
+              { icon: Zap, titleKey: "features.instant.title", descKey: "features.instant.desc", color: "from-violet-500 to-purple-600" },
+              { icon: Shield, titleKey: "features.quality.title", descKey: "features.quality.desc", color: "from-emerald-400 to-teal-500" },
               { icon: TrendingUp, titleKey: "features.roi.title", descKey: "features.roi.desc", color: "from-indigo-500 to-purple-600" },
-              { icon: RefreshCw, titleKey: "features.updates.title", descKey: "features.updates.desc", color: "from-cyan-500 to-blue-600" },
-              { icon: Lock, titleKey: "features.secure.title", descKey: "features.secure.desc", color: "from-rose-500 to-pink-600" },
+              { icon: RefreshCw, titleKey: "features.updates.title", descKey: "features.updates.desc", color: "from-indigo-400 to-cyan-400" },
+              { icon: Lock, titleKey: "features.secure.title", descKey: "features.secure.desc", color: "from-rose-400 to-pink-500" },
               { icon: Target, titleKey: "features.guarantee.title", descKey: "features.guarantee.desc", color: "from-violet-500 to-purple-600" },
             ].map(({ icon: Icon, titleKey, descKey, color }) => (
               <div
@@ -628,7 +628,7 @@ export default function LandingPage() {
       <section className="py-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <div className="p-12 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-cyan-500/10 border border-indigo-500/20 rounded-[2rem] relative overflow-hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.15),transparent_70%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(158,122,255,0.15),transparent_70%)]" />
             <div className="relative z-10">
               <h2 className="text-3xl md:text-4xl font-serif font-medium tracking-tighter text-balance text-slate-100 mb-4">
                 {t("cta.title")}
