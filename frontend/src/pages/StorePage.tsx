@@ -84,8 +84,23 @@ export default function StorePage() {
         url: "https://ai-factory-omega.vercel.app/store",
       }) }} />
 
-      {/* Background */}
+      {/* Background — layered: grid texture + aurora blobs (evidence: Aceternity grid-dark + aurora drift) */}
       <div className="fixed inset-0 pointer-events-none">
+        <div
+          className="absolute inset-0 bg-grid-dark opacity-60"
+          style={{
+            maskImage: "radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%)",
+            WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%)",
+          }}
+        />
+        <div
+          className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[900px] h-[500px] animate-aurora opacity-60"
+          style={{
+            backgroundImage:
+              "radial-gradient(ellipse at 30% 50%, rgba(99,102,241,0.16), transparent 55%), radial-gradient(ellipse at 70% 50%, rgba(168,85,247,0.12), transparent 55%)",
+            backgroundSize: "200% 100%",
+          }}
+        />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-indigo-500/5 blur-[150px]" />
         <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full bg-cyan-500/4 blur-[120px]" />
       </div>
@@ -120,7 +135,7 @@ export default function StorePage() {
         {/* Page Header */}
         <ScrollReveal>
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-display font-extrabold text-white">
+          <h1 className="text-3xl md:text-4xl font-display font-extrabold text-white tracking-tight">
             {selectedCategory !== "all" ? `${CATEGORY_META[selectedCategory].icon} ${t(`cat.${selectedCategory}`)}` : t("store.allProducts")}
           </h1>
           <p className="text-slate-400 mt-2 max-w-xl">
@@ -212,8 +227,12 @@ export default function StorePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product, i) => (
               <Link key={product.id} to={`/f/${STORE_ORG_ID}/${product.slug}`}
-                className={`group bg-slate-900/40 border border-slate-800/60 rounded-3xl overflow-hidden flex flex-col animate-fade-in-up ${ANIMATIONS.cardHoverGlow}`}
+                className={`group edge-light relative bg-slate-900/40 border border-white/[0.08] rounded-3xl overflow-hidden flex flex-col animate-fade-in-up transition-all duration-300 hover:-translate-y-1 hover:border-white/[0.18] hover:shadow-[0_0_40px_rgba(99,102,241,0.15)]`}
                 style={staggerDelay(i)}>
+                <div
+                  className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  style={{ backgroundImage: "radial-gradient(circle at 50% 0%, rgba(99,102,241,0.10), transparent 60%)" }}
+                />
                 <div className="relative h-44 overflow-hidden">
                   <img src={product.coverImageUrl} alt={getLocalizedName(product, locale)} loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
