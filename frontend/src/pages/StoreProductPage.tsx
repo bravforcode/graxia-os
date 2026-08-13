@@ -87,12 +87,12 @@ export default function StoreProductPage() {
             <ArrowLeft size={16} /><span className="hidden sm:inline">{t("product.backToStore")}</span>
           </Link>
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center font-mono font-bold text-[10px] text-slate-950">AI</div>
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center font-mono font-bold text-[11px] text-slate-950">AI</div>
             <span className="font-display font-bold text-sm text-white">{t("brand.name")}</span>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={toggle}
-              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold border transition-all duration-200 ${ANIMATIONS.buttonPress} ${
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold border transition-all duration-200 ${ANIMATIONS.buttonPress} ${
                 locale === "th" ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-300" : "bg-slate-800/50 border-slate-700/50 text-slate-400"
               }`}>
               <Globe size={10} />{t("lang.switch")}
@@ -115,8 +115,8 @@ export default function StoreProductPage() {
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
                 {CATEGORY_META[product.category].icon} {t(`cat.${product.category}`)}
               </span>
-              {product.badge && <span className="px-2.5 py-1 bg-amber-500/10 text-amber-300 border border-amber-500/20 rounded-full text-[10px] font-bold uppercase tracking-wider">{product.badge}</span>}
-              <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">{product.difficulty}</span>
+              {product.badge && <span className="px-2.5 py-1 bg-amber-500/10 text-amber-300 border border-amber-500/20 rounded-full text-[11px] font-bold uppercase tracking-wider">{product.badge}</span>}
+              <span className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">{product.difficulty}</span>
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-display font-extrabold tracking-tight leading-[1.1]">
@@ -129,12 +129,12 @@ export default function StoreProductPage() {
               <div className="flex items-center gap-1.5">
                 {[...Array(5)].map((_, i) => <Star key={i} size={14} className="fill-amber-400 text-amber-400" />)}
                 <span className="text-slate-300 font-semibold ml-1">{product.rating}</span>
-                <span className="text-slate-500">({product.reviewCount.toLocaleString()} reviews)</span>
+                <span className="text-slate-500">({product.reviewCount.toLocaleString()} {t("store.reviews")})</span>
               </div>
               <span className="text-slate-600">·</span>
               <div className="flex items-center gap-1.5 text-slate-400"><Users size={14} /><span>{formatSalesCount(product.salesCount)} {t("featured.sold")}</span></div>
               <span className="text-slate-600">·</span>
-              <span className="text-slate-400">Updated {new Date(product.lastUpdated).toLocaleDateString(locale === "th" ? "th-TH" : "en-US", { month: "short", year: "numeric" })}</span>
+              <span className="text-slate-400">{t("store.updated")} {new Date(product.lastUpdated).toLocaleDateString(locale === "th" ? "th-TH" : "en-US", { month: "short", year: "numeric" })}</span>
             </div>
 
             <div className="space-y-3 pt-2">
@@ -158,13 +158,13 @@ export default function StoreProductPage() {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">{t("product.premiumAccess")}</span>
-                  {product.badge && <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold rounded-full border border-emerald-500/20">{product.badge}</span>}
+                  {product.badge && <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[11px] font-bold rounded-full border border-emerald-500/20">{product.badge}</span>}
                 </div>
                 <div className="flex items-baseline gap-2 mt-2">
                   <span className="text-4xl font-extrabold text-white">{formatPrice(product.priceAmount)}</span>
                   <span className="text-sm text-slate-500 line-through">{formatPrice(Math.round(product.priceAmount * 1.5))}</span>
                 </div>
-                <p className="text-[10px] text-slate-500 mt-1">{t("product.oneTime")} · {product.guaranteeDays}-day guarantee</p>
+                <p className="text-[11px] text-slate-500 mt-1">{t("product.oneTime")} · {product.guaranteeDays}{t("store.dayGuarantee")}</p>
               </div>
 
               <Link to={`/f/demo/${product.slug}`}
@@ -177,7 +177,7 @@ export default function StoreProductPage() {
                 {[
                   { icon: CheckCircle, text: t("product.instantAccess") },
                   { icon: ShieldCheck, text: t("product.stripeEncrypted") },
-                  { icon: Award, text: `${product.guaranteeDays}-day ${t("product.moneyBack")}` },
+                  { icon: Award, text: `${product.guaranteeDays}{t("store.dayMoneyBack")}` },
                   { icon: TrendingUp, text: `${formatSalesCount(product.salesCount)} ${t("product.happyCustomers")}` },
                 ].map(({ icon: Icon, text }) => (
                   <div key={text} className="flex items-center gap-2"><Icon size={14} className="text-emerald-500" /><span>{text}</span></div>
@@ -204,13 +204,13 @@ export default function StoreProductPage() {
                 <div className="p-2 bg-indigo-500/10 rounded-xl text-indigo-400"><Gift size={16} /></div>
                 <div>
                   <h4 className="text-xs font-bold text-white">{t("product.freeSample")}</h4>
-                  <p className="text-[10px] text-slate-500">{t("product.freeSampleDesc")}</p>
+                  <p className="text-[11px] text-slate-500">{t("product.freeSampleDesc")}</p>
                 </div>
               </div>
               <form className="space-y-2" onSubmit={(e) => e.preventDefault()}>
                 <div className="grid grid-cols-2 gap-2">
-                  <input type="text" placeholder="Name" className="bg-slate-950 border border-slate-800 text-slate-300 px-3 py-2 rounded-xl text-xs outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200" />
-                  <input type="email" required placeholder="Email" className="bg-slate-950 border border-slate-800 text-slate-300 px-3 py-2 rounded-xl text-xs outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200" />
+                  <input type="text" aria-label={t("store.name")} placeholder={t("store.name")} className="bg-slate-950 border border-slate-800 text-slate-300 px-3 py-2 rounded-xl text-xs outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200" />
+                  <input type="email" required aria-label={t("auth.email")} placeholder={t("auth.email")} className="bg-slate-950 border border-slate-800 text-slate-300 px-3 py-2 rounded-xl text-xs outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200" />
                 </div>
                 <button type="submit" className={`w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition-all duration-200 ${ANIMATIONS.buttonPress}`}>
                   {t("product.getFreeSample")}
@@ -232,10 +232,10 @@ export default function StoreProductPage() {
                   <div className="flex gap-0.5">{[...Array(5)].map((_, j) => <Star key={j} size={12} className="fill-amber-400 text-amber-400" />)}</div>
                   <p className="text-sm text-slate-300 leading-relaxed">"{testimonial.text}"</p>
                   <div className="flex items-center gap-2.5 pt-1">
-                    <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white text-[10px] font-bold">{testimonial.avatar}</div>
+                    <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white text-[11px] font-bold">{testimonial.avatar}</div>
                     <div>
                       <div className="text-xs font-semibold text-white">{testimonial.name}</div>
-                      <div className="text-[10px] text-slate-500">{testimonial.role}</div>
+                      <div className="text-[11px] text-slate-500">{testimonial.role}</div>
                     </div>
                   </div>
                 </div>
@@ -272,7 +272,7 @@ export default function StoreProductPage() {
                   <span className="font-semibold text-sm text-white pr-4">{faq.q}</span>
                   <ChevronDown size={16} className={`text-slate-400 shrink-0 transition-transform duration-300 ${openFaq === i ? "rotate-180" : ""}`} />
                 </button>
-                <div className={`overflow-hidden transition-all duration-300 ease-out ${openFaq === i ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
+                <div className={`overflow-hidden transition-all duration-300 ease-out ${openFaq === i ? "max-h-[40rem] overflow-y-auto opacity-100" : "max-h-0 opacity-0"}`}>
                   <div className="px-5 pb-5 text-sm text-slate-400 leading-relaxed bg-slate-900/20">{faq.a}</div>
                 </div>
               </div>
@@ -298,7 +298,7 @@ export default function StoreProductPage() {
               </Link>
               <div className="flex items-center justify-center gap-1.5 text-xs text-slate-500">
                 <ShieldCheck size={12} className="text-emerald-500/60" />
-                {product.guaranteeDays}-day money-back guarantee · {t("store.trust2")}
+                {product.guaranteeDays}{t("store.dayMoneyBack")} · {t("store.trust2")}
               </div>
             </div>
           </div>

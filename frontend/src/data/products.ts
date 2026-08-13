@@ -54,10 +54,10 @@ export const PRODUCTS: ProductCatalogItem[] = [
   {
     id: "ef010cd2-055a-48fb-a162-04918e3ef00e",
     slug: "ai-prompt-pack-50-17014b",
-    name: "AI Prompt Pack เริ่มต้น (50 Prompts)",
-    shortDescription: "50 พรอมต์ AI ใช้ทำงานจริง สำหรับคนไทย",
+    name: "AI Prompt Pack Starter (50 Prompts)",
+    shortDescription: "50 ready-to-use AI prompts for real work",
     description:
-      "ชุดพรอมต์ ChatGPT/Claude 50 อัน แบ่งหมวด: เขียนคอนเทนต์, ทำงานออฟฟิศ, วางแผนธุรกิจ — พร้อมวิธีปรับใช้จริงทีละขั้น",
+      "50 battle-tested ChatGPT/Claude prompts in 3 categories — content, office work, and business planning — with step-by-step usage guides.",
     category: "content",
     productType: "prompt_pack",
     priceAmount: 149,
@@ -79,10 +79,10 @@ export const PRODUCTS: ProductCatalogItem[] = [
   {
     id: "48fcb76f-42d8-45c0-8aca-eeae96f5477e",
     slug: "notion-business-template-a9655b",
-    name: "Notion Template ธุรกิจครบวงจร",
-    shortDescription: "ระบบจัดการธุรกิจใน Notion: ลูกค้า, งาน, รายรับ",
+    name: "Notion Business Template — All-in-One",
+    shortDescription: "Run your business in Notion: clients, projects, income",
     description:
-      "เทมเพลต Notion สำหรับฟรีแลนซ์/SME: CRM ลูกค้า, ติดตามงาน, รายรับ-รายจ่าย, เป้าหมายรายเดือน — พร้อมคู่มือติดตั้ง",
+      "A Notion workspace for freelancers & SMEs: client CRM, project tracking, income/expenses, monthly goals — with a setup guide.",
     category: "productivity",
     productType: "template",
     priceAmount: 299,
@@ -104,10 +104,10 @@ export const PRODUCTS: ProductCatalogItem[] = [
   {
     id: "5a5cc4aa-47cb-496b-a22b-4ffba5c48af6",
     slug: "ai-business-course-0278b6",
-    name: "คอร์ส AI สำหรับธุรกิจ: เริ่มต้นจนใช้งานจริง",
-    shortDescription: "เรียนรู้ใช้ AI ในธุรกิจ 5 บทเรียน พร้อมตัวอย่างจริง",
+    name: "AI for Business Course: Beginner to Practical",
+    shortDescription: "Use AI in business: 5 lessons with real examples",
     description:
-      "คอร์สสอนใช้ ChatGPT/Claude ทำงานธุรกิจจริง: เขียนคอนเทนต์, ตอบลูกค้า, วิเคราะห์ข้อมูล, วางแผนการตลาด — 5 บทเรียน + แบบฝึกหัด + ตัวอย่างผลลัพธ์",
+      "Learn to use ChatGPT/Claude for real business work: content, customer replies, data analysis, marketing — 5 lessons + exercises + real outputs.",
     category: "education",
     productType: "course",
     priceAmount: 499,

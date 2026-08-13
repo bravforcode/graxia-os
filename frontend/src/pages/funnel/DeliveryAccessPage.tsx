@@ -9,8 +9,10 @@ import {
   CheckCircle
 } from "lucide-react";
 import { funnelApi, type DeliveryPayload } from "../../api/funnel";
+import { useLang } from "@/i18n/LanguageContext";
 
 export default function DeliveryAccessPage() {
+  const { t } = useLang();
   const { token } = useParams<{ token: string }>();
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
@@ -35,7 +37,7 @@ export default function DeliveryAccessPage() {
       setPayload(res);
     } catch (err: any) {
       console.error("Failed to retrieve delivery payload", err);
-      setErrorMsg(err.response?.data?.detail || "Invalid, expired, or capped delivery token. Access Denied.");
+      setErrorMsg(err.response?.data?.detail || t("delivery.invalid"));
     } finally {
       setLoading(false);
     }
@@ -54,7 +56,7 @@ export default function DeliveryAccessPage() {
       setPayload(res);
     } catch (err: any) {
       console.error("Failed to consume delivery asset", err);
-      setErrorMsg(err.response?.data?.detail || "Failed to download asset. Access might have expired or hit limit.");
+      setErrorMsg(err.response?.data?.detail || t("delivery.downloadSecured"));
     } finally {
       setConsuming(false);
     }
@@ -64,7 +66,7 @@ export default function DeliveryAccessPage() {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-400">
         <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-sm font-medium tracking-wide">Validating Secure Credentials...</p>
+        <p className="text-sm font-medium tracking-wide">{t("delivery.validating")}</p>
       </div>
     );
   }
@@ -75,7 +77,7 @@ export default function DeliveryAccessPage() {
         <div className="w-16 h-16 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-3xl flex items-center justify-center mb-6">
           <AlertTriangle size={32} />
         </div>
-        <h2 className="text-2xl font-bold text-slate-100">Access Denied</h2>
+        <h2 className="text-2xl font-bold text-slate-100">{t("delivery.accessDenied")}</h2>
         <p className="text-sm text-slate-500 text-center max-w-md mt-2">
           {errorMsg || "The credentials provided are invalid, expired, or have exceeded download limits."}
         </p>
@@ -99,22 +101,22 @@ export default function DeliveryAccessPage() {
               <Lock size={16} />
             </div>
             <div>
-              <div className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Vault Access Portal</div>
-              <div className="text-xs font-bold text-slate-300">Graxia Secure Delivery</div>
+              <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">{t("delivery.vault")}</div>
+              <div className="text-xs font-bold text-slate-300">{t("delivery.graxiaSecure")}</div>
             </div>
           </div>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
-            SECURE ACTIVE KEY
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+            {t("delivery.secureKey")}
           </span>
         </div>
 
         {/* Product Details Block */}
         <div className="space-y-2">
-          <h2 className="text-2xl font-bold tracking-tight text-slate-100">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-100">
             {payload.product_name}
-          </h2>
+          </h1>
           <p className="text-sm text-slate-400">
-            Item Attached: <span className="font-semibold text-slate-200">{payload.asset_title}</span>
+            {t("delivery.itemAttached")} <span className="font-semibold text-slate-200">{payload.asset_title}</span>
           </p>
         </div>
 
@@ -122,21 +124,21 @@ export default function DeliveryAccessPage() {
         <div className="grid grid-cols-2 gap-4 bg-slate-950/40 border border-slate-850 p-4 rounded-2xl text-xs">
           <div className="space-y-1">
             <span className="text-slate-500 flex items-center gap-1">
-              <Clock size={12} /> Expiry Limit
+              <Clock size={12} /> {t("delivery.expiryLimit")}
             </span>
             <span className="font-semibold text-slate-300 block">
-              {payload.expires_at ? new Date(payload.expires_at).toLocaleString() : "Never Expires"}
+              {payload.expires_at ? new Date(payload.expires_at).toLocaleString() : t("delivery.neverExpires")}
             </span>
           </div>
 
           <div className="space-y-1 border-l border-slate-850 pl-4">
             <span className="text-slate-500 flex items-center gap-1">
-              <Download size={12} /> Downloads Left
+              <Download size={12} /> {t("delivery.downloadsLeft")}
             </span>
             <span className="font-semibold text-slate-300 block">
               {payload.downloads_remaining !== undefined && payload.downloads_remaining !== null 
                 ? `${payload.downloads_remaining} Hits` 
-                : "Unlimited Downloads"}
+                : t("delivery.unlimited")}
             </span>
           </div>
         </div>
@@ -145,7 +147,7 @@ export default function DeliveryAccessPage() {
         {!assetUnlocked ? (
           <div className="space-y-4">
             <div className="p-4 bg-indigo-500/5 border border-indigo-500/10 text-slate-400 rounded-2xl text-xs text-center">
-              Clicking the unlock button registers 1 download hit. Exceeding your download cap will terminate this token.
+              {t("delivery.downloadNote")}
             </div>
 
             <button
@@ -153,20 +155,20 @@ export default function DeliveryAccessPage() {
               disabled={consuming}
               className="w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 text-white font-bold rounded-xl text-sm shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
             >
-              {consuming ? "Unlocking Vault Content..." : "Verify & Unlock Content"}
+              {consuming ? t("delivery.unlocking") : t("delivery.unlock")}
               <CheckCircle size={16} />
             </button>
           </div>
         ) : (
           <div className="space-y-6 border-t border-slate-850 pt-5 animate-fade-in">
             <div className="p-3 bg-emerald-500/5 border border-emerald-500/10 text-emerald-400 rounded-2xl text-xs flex items-center gap-2 font-medium">
-              <CheckCircle size={16} /> Verified! Content Decrypted Successfully.
+              <CheckCircle size={16} /> {t("delivery.verified")}
             </div>
 
             {/* Asset delivery display depending on type */}
             {unlockedPayload?.asset_type === "text" ? (
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-400">Exclusive Content Content:</label>
+                <label className="text-xs font-semibold text-slate-400">{t("delivery.content")}:</label>
                 <div className="bg-slate-950/60 border border-slate-800 p-4 rounded-2xl font-mono text-xs text-slate-300 overflow-x-auto max-h-80 select-all whitespace-pre-wrap">
                   {unlockedPayload.content_body}
                 </div>
@@ -182,7 +184,7 @@ export default function DeliveryAccessPage() {
                   rel="noopener noreferrer"
                   className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2"
                 >
-                  Visit External Platform URL
+                  {t("delivery.visitExternal")}
                   <ExternalLink size={16} />
                 </a>
               </div>
@@ -195,7 +197,7 @@ export default function DeliveryAccessPage() {
                   onClick={() => alert(`Initiating direct download of file from path: ${unlockedPayload?.content_body || unlockedPayload?.external_url}`)}
                   className="w-full py-3.5 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-lg"
                 >
-                  Download Secured {unlockedPayload?.asset_type.toUpperCase()} File
+                  {t("delivery.downloadSecured")} {unlockedPayload?.asset_type.toUpperCase()}
                   <Download size={16} />
                 </button>
               </div>
