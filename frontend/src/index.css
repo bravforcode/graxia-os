@@ -75,4 +75,77 @@
     transform: translateY(0);
     outline: none;
   }
+
+  /* ── Storefront craft utilities (evidence-based upgrades) ─────────────── */
+
+  /* COSS-style 1px edge lighting: white top edge + dark bottom edge (light from above) */
+  .edge-light {
+    position: relative;
+  }
+  .edge-light::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow:
+      0 -1px 0 rgba(255, 255, 255, 0.08),
+      0 1px 0 rgba(0, 0, 0, 0.6);
+  }
+
+  /* MagicUI rainbow glow button: dark fill layered over animated 5-color gradient border + blur halo */
+  .btn-rainbow {
+    position: relative;
+    border: 0;
+    background:
+      linear-gradient(#0a0a0a, #0a0a0a) padding-box,
+      linear-gradient(90deg, #6366f1, #a855f7, #06b6d4, #ec4899, #6366f1) border-box;
+    background-size: 200% 100%;
+    border: 1px solid transparent;
+    animation: rainbowBorder 6s linear infinite;
+  }
+  .btn-rainbow::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #6366f1, #a855f7, #06b6d4, #ec4899, #6366f1);
+    background-size: 200% 100%;
+    filter: blur(14px);
+    opacity: 0.35;
+    animation: rainbowBorder 6s linear infinite;
+  }
+  @keyframes rainbowBorder {
+    to { background-position: -200% 0; }
+  }
+
+  /* Shine sweep overlay for CTAs (pure CSS, zero DOM) */
+  .btn-shine {
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-shine::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 40%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+    transform: translateX(-120%);
+    animation: shine 2.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes shine {
+    0% { transform: translateX(-120%); }
+    60%, 100% { transform: translateX(320%); }
+  }
+
+  /* Brand gradient text (identity: indigo → purple → cyan) */
+  .text-gradient-brand {
+    background: linear-gradient(90deg, #818cf8, #c084fc, #22d3ee);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
 }

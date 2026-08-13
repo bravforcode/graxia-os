@@ -181,12 +181,12 @@ export default function LandingPage() {
             {t("hero.badge")}
           </div>
 
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-display font-extrabold tracking-tight leading-[1.1] mb-6 animate-fade-in-up">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-display font-extrabold tracking-tighter text-balance leading-[1.05] mb-6 animate-fade-in-up">
             <span className="bg-gradient-to-r from-white via-white to-slate-400 bg-clip-text text-transparent">
               {t("hero.title1")}
             </span>
             <br />
-            <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+            <span className="text-gradient-brand">
               {t("hero.title2")}
             </span>
           </h1>
@@ -198,10 +198,12 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
             <Link
               to="/store"
-              className={`group px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold rounded-2xl shadow-glow-md transition-all duration-200 flex items-center gap-2 text-lg ${ANIMATIONS.buttonPress} ${ANIMATIONS.buttonHover}`}
+              className={`group btn-rainbow btn-shine relative px-8 py-4 text-white font-bold rounded-2xl transition-all duration-200 flex items-center gap-2 text-lg shadow-glow-md hover:shadow-glow-lg ${ANIMATIONS.buttonPress}`}
             >
-              {t("hero.cta1")}
-              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+              <span className="relative z-10 flex items-center gap-2">
+                {t("hero.cta1")}
+                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+              </span>
             </Link>
             <a
               href="#features"

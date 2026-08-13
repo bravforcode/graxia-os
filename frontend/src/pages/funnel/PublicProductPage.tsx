@@ -346,7 +346,7 @@ export default function PublicProductPage() {
           {/* Right: Checkout Card */}
           <div id="checkout-section" className="lg:col-span-5 space-y-5 sticky top-20">
             {/* Purchase Card */}
-            <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6 shadow-2xl backdrop-blur-xl space-y-5 relative overflow-hidden">
+            <div className="edge-light bg-slate-900/40 border border-white/[0.08] rounded-3xl p-6 shadow-2xl backdrop-blur-xl space-y-5 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-indigo-500/10 to-transparent blur-xl pointer-events-none" />
 
               {/* Price */}
@@ -386,18 +386,18 @@ export default function PublicProductPage() {
                 <button
                   type="submit"
                   disabled={checkingOut}
-                  className={`w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 text-white font-bold rounded-xl shadow-glow-md transition-all duration-200 flex items-center justify-center gap-2 group text-sm ${ANIMATIONS.buttonPress} ${ANIMATIONS.buttonHover}`}
+                  className={`btn-rainbow btn-shine w-full py-4 disabled:opacity-50 text-white font-bold rounded-xl shadow-glow-md hover:shadow-glow-lg transition-all duration-200 flex items-center justify-center gap-2 group text-sm ${ANIMATIONS.buttonPress}`}
                 >
                   {checkingOut ? (
-                    <span className="flex items-center gap-2">
+                    <span className="relative z-10 flex items-center gap-2">
                       <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       {t("product.connecting")}
                     </span>
                   ) : (
-                    <>
+                    <span className="relative z-10 flex items-center gap-2">
                       {t("product.unlockAccess")}
                       <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
-                    </>
+                    </span>
                   )}
                 </button>
               </form>
