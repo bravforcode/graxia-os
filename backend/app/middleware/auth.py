@@ -44,6 +44,7 @@ PUBLIC_ROUTES: set[tuple[str, str]] = {
     ("GET", "/health"),
     ("GET", "/"),
     ("GET", "/favicon.ico"),
+    ("GET", "/api/v1/system/health"),
     ("GET", "/api/v1/funnel/delivery/{token}"),
     ("POST", "/api/v1/funnel/delivery/{token}/consume"),
     ("POST", "/api/v1/funnel/webhooks/stripe"),
