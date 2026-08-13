@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useLang } from "../i18n/LanguageContext";
-import { PRODUCTS, CATEGORY_META, formatPrice, formatSalesCount, getLocalizedName, getLocalizedShortDescription, type ProductCategory } from "../data/products";
+import { PRODUCTS, STORE_ORG_ID, CATEGORY_META, formatPrice, formatSalesCount, getLocalizedName, getLocalizedShortDescription, type ProductCategory } from "../data/products";
 import { ANIMATIONS, staggerDelay } from "../lib/animations";
 import { ScrollReveal } from "../components/ui/ScrollReveal";
 
@@ -272,7 +272,7 @@ export default function LandingPage() {
             {featuredProducts.map((product, i) => (
               <Link
                 key={product.id}
-                to={`/store/${product.slug}`}
+                to={`/f/${STORE_ORG_ID}/${product.slug}`}
                 className={`group bg-slate-900/40 border border-slate-800/80 rounded-3xl overflow-hidden animate-fade-in-up ${ANIMATIONS.cardHoverGlow}`}
                 style={staggerDelay(i)}
               >
