@@ -25,7 +25,8 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    font-family: 'Inter', system-ui, sans-serif;
+    /* TH glyphs fall back to Sarabun; display faces (Bricolage→Prompt) via font-display */
+    font-family: 'Inter', 'Sarabun', system-ui, sans-serif;
     min-height: 100vh;
     @apply antialiased;
   }
