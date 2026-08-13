@@ -97,7 +97,7 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white overflow-x-hidden">
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white overflow-x-clip">
       {/* SEO & Structured Data */}
       <script
         type="application/ld+json"
@@ -113,28 +113,31 @@ export default function LandingPage() {
         }}
       />
 
-      {/* Background Effects */}
+      {/* Background Effects — lyra violet radial bloom */}
       <div className="fixed inset-0 pointer-events-none">
+        <div
+          className="absolute inset-x-0 top-0 h-[600px] md:h-[800px]"
+          style={{ background: "radial-gradient(125% 125% at 50% 10%, #f8f6f1 40%, rgba(158,122,255,0.35) 100%)" }}
+        />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-indigo-500/8 blur-[150px]" />
         <div className="absolute bottom-0 right-0 w-[600px] h-[600px] rounded-full bg-cyan-500/6 blur-[120px]" />
-        <div className="absolute top-1/2 left-0 w-[400px] h-[400px] rounded-full bg-purple-500/5 blur-[100px]" />
       </div>
 
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-slate-800/50 bg-slate-950/80 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      {/* Navigation — lyra floating pill navbar (sticky top-4 rounded-2xl) */}
+      <nav className="sticky top-4 z-50 flex justify-center px-4">
+        <div className="pill-nav w-full max-w-5xl flex h-[56px] items-center justify-between px-5">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center font-mono font-bold text-sm tracking-widest text-slate-950">
               AI
             </div>
-            <span className="font-display font-bold text-lg tracking-tight text-white">{t("brand.name")}</span>
+            <span className="font-display font-bold text-lg tracking-tight text-slate-100">{t("brand.name")}</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm text-slate-400">
-            <a href="#features" className="hover:text-white transition-colors">{t("nav.features")}</a>
-            <Link to="/store" className="hover:text-white transition-colors">{t("nav.products")}</Link>
-            <a href="#testimonials" className="hover:text-white transition-colors">{t("nav.testimonials")}</a>
-            <a href="#pricing" className="hover:text-white transition-colors">{t("nav.pricing")}</a>
-            <a href="#faq" className="hover:text-white transition-colors">{t("nav.faq")}</a>
+            <a href="#features" className="hover:text-slate-100 transition-colors">{t("nav.features")}</a>
+            <Link to="/store" className="hover:text-slate-100 transition-colors">{t("nav.products")}</Link>
+            <a href="#testimonials" className="hover:text-slate-100 transition-colors">{t("nav.testimonials")}</a>
+            <a href="#pricing" className="hover:text-slate-100 transition-colors">{t("nav.pricing")}</a>
+            <a href="#faq" className="hover:text-slate-100 transition-colors">{t("nav.faq")}</a>
           </div>
           <div className="flex items-center gap-3">
             {/* Language Toggle */}
@@ -143,7 +146,7 @@ export default function LandingPage() {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 ${ANIMATIONS.buttonPress} ${
                 locale === "th"
                   ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-300"
-                  : "bg-slate-800/50 border-slate-700/50 text-slate-400 hover:text-white hover:border-slate-600"
+                  : "bg-slate-800/50 border-slate-700/50 text-slate-400 hover:text-slate-100"
               }`}
             >
               <Globe size={14} />
@@ -158,7 +161,7 @@ export default function LandingPage() {
               </Link>
             ) : (
               <>
-                <Link to="/login" className="text-sm text-slate-400 hover:text-white transition-colors">
+                <Link to="/login" className="text-sm text-slate-400 hover:text-slate-100 transition-colors">
                   {t("nav.signIn")}
                 </Link>
                 <Link
@@ -174,15 +177,18 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-6">
+      <section className="relative pt-24 pb-20 px-6">
         <div className="max-w-5xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold mb-8 animate-fade-in">
-            <Sparkles size={14} />
-            {t("hero.badge")}
-          </div>
+          {/* Lyra shiny-text badge (background-position sweep, 8s) */}
+          <a href="#store" onClick={(e) => { e.preventDefault(); window.location.href = "/store"; }}
+            className="group inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-neutral-100 border border-slate-700/30 text-xs font-semibold mb-8 animate-fade-in transition-colors hover:bg-neutral-200">
+            <Sparkles size={14} className="text-indigo-400" />
+            <span className="shiny-text">{t("hero.badge")}</span>
+            <ArrowRight size={12} className="text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+          </a>
 
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-display font-extrabold tracking-tighter text-balance leading-[1.05] mb-6 animate-fade-in-up">
-            <span className="bg-gradient-to-r from-white via-white to-slate-400 bg-clip-text text-transparent">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-display font-extrabold tracking-tighter text-balance leading-[1.05] mb-6 animate-fade-in-up">
+            <span className="text-slate-100">
               {t("hero.title1")}
             </span>
             <br />
@@ -191,23 +197,23 @@ export default function LandingPage() {
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed animate-fade-in-up whitespace-pre-line" style={{ animationDelay: "0.1s" }}>
+          <p className="text-base md:text-lg text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed animate-fade-in-up whitespace-pre-line" style={{ animationDelay: "0.1s" }}>
             {t("hero.subtitle")}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
+            {/* Lyra primary CTA: violet + inset-highlight shadow + press scale */}
             <Link
               to="/store"
-              className={`group btn-rainbow btn-shine relative px-8 py-4 text-white font-bold rounded-2xl transition-all duration-200 flex items-center gap-2 text-lg shadow-glow-md hover:shadow-glow-lg ${ANIMATIONS.buttonPress}`}
+              className={`group bg-secondary hover:bg-secondary/80 px-8 py-4 text-white font-bold rounded-xl shadow-lyra border border-white/[0.12] transition-all ease-out flex items-center gap-2 text-lg active:scale-95 ${ANIMATIONS.buttonPress}`}
             >
-              <span className="relative z-10 flex items-center gap-2">
-                {t("hero.cta1")}
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-              </span>
+              {t("hero.cta1")}
+              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </Link>
+            {/* Lyra secondary CTA: white card + explicit border */}
             <a
               href="#features"
-              className={`px-8 py-4 bg-slate-800/50 hover:bg-slate-800 text-slate-300 font-semibold rounded-2xl border border-slate-700/50 transition-all duration-200 flex items-center gap-2 ${ANIMATIONS.buttonPress}`}
+              className={`px-8 py-4 bg-white hover:bg-white/80 text-slate-100 font-semibold rounded-xl border border-[#E5E7EB] transition-all ease-out flex items-center gap-2 active:scale-95 ${ANIMATIONS.buttonPress}`}
             >
               <Play size={18} />
               {t("hero.cta2")}

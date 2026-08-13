@@ -113,20 +113,20 @@ export default function StorePage() {
         <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full bg-cyan-500/4 blur-[120px]" />
       </div>
 
-      {/* Header — sticky: always visible while scrolling */}
-      <div className="sticky top-0 z-50 border-b border-slate-800/50 bg-slate-950/80 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      {/* Header — lyra floating pill navbar (sticky top-4, always visible) */}
+      <div className="sticky top-4 z-50 flex justify-center px-4">
+        <div className="pill-nav w-full max-w-5xl flex h-[56px] items-center justify-between px-5">
           <Link to="/" className="flex items-center gap-2 group">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center font-mono font-bold text-sm text-slate-950 group-hover:scale-105 transition-transform duration-200">
               AI
             </div>
-            <span className="font-display font-bold text-lg text-white">{t("brand.name")}</span>
+            <span className="font-display font-bold text-lg text-slate-100">{t("brand.name")}</span>
           </Link>
           <div className="flex items-center gap-3">
             <button
               onClick={toggle}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 ${ANIMATIONS.buttonPress} ${
-                locale === "th" ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-300" : "bg-slate-800/50 border-slate-700/50 text-slate-400 hover:text-white"
+                locale === "th" ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-300" : "bg-slate-800/50 border-slate-700/50 text-slate-400 hover:text-slate-100"
               }`}
             >
               <Globe size={14} />{t("lang.switch")}
@@ -236,7 +236,7 @@ export default function StorePage() {
             {filteredProducts.map((product, i) => (
               <Link key={product.id} to={`/f/${STORE_ORG_ID}/${product.slug}`}
                 onMouseMove={handleSpotlight}
-                className={`group card-spotlight edge-light relative bg-slate-900/40 border border-white/[0.08] rounded-3xl overflow-hidden flex flex-col animate-fade-in-up transition-all duration-300 hover:-translate-y-1 hover:border-white/[0.18] hover:shadow-[0_0_40px_rgba(99,102,241,0.15)]`}
+                className={`group lyra-card card-spotlight edge-light relative bg-slate-900/40 rounded-3xl overflow-hidden flex flex-col animate-fade-in-up transition-all duration-300 hover:-translate-y-1`}
                 style={staggerDelay(i)}>
                 <div className="relative h-44 overflow-hidden">
                   <img src={product.coverImageUrl} alt={getLocalizedName(product, locale)} loading="lazy"

@@ -320,3 +320,138 @@
   background-color: #d97706;
   color: #fdfaf4;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LYRA-QUALITY SYSTEM — evidence from lyra.marqraft.com
+   (violet #9E7AFF → pink #FE8BBB brand · pill nav · shiny text · radial cards)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@layer utilities {
+  /* Lyra brand accent remaps (keep warm cream base) */
+  .bg-secondary { background-color: #9e7aff; }
+  .hover\:bg-secondary\/80:hover { background-color: rgba(158, 122, 255, 0.8); }
+  .hover\:bg-secondary:hover { background-color: #8b6cf5; }
+  .text-secondary { color: #8b6cf5; }
+
+  /* Violet→pink accent (lyra card gradient) */
+  .bg-indigo-500 { background-color: #9e7aff; }
+  .hover\:bg-indigo-500:hover { background-color: #9e7aff; }
+  .hover\:bg-indigo-600:hover { background-color: #8b6cf5; }
+  .group-hover\:bg-indigo-500:hover { background-color: #9e7aff; }
+  .bg-indigo-500\/10 { background-color: rgba(158, 122, 255, 0.12); }
+  .bg-indigo-500\/90 { background-color: rgba(158, 122, 255, 0.92); }
+  .bg-indigo-500\/5 { background-color: rgba(158, 122, 255, 0.06); }
+  .text-indigo-300 { color: #8b6cf5; }
+  .text-indigo-400 { color: #9e7aff; }
+  .group-hover\:text-indigo-300:hover { color: #8b6cf5; }
+  .border-indigo-500\/20 { border-color: rgba(158, 122, 255, 0.25); }
+  .border-indigo-500\/30 { border-color: rgba(158, 122, 255, 0.35); }
+  .bg-purple-500 { background-color: #fe8bbb; }
+  .bg-cyan-500 { background-color: #9e7aff; }
+  .bg-cyan-500\/4 { background-color: rgba(158, 122, 255, 0.05); }
+  .text-indigo-400\/60 { color: rgba(158, 122, 255, 0.6); }
+  .focus\:border-indigo-500:focus { border-color: #9e7aff; }
+  .focus\:ring-indigo-500\/20:focus { --tw-ring-color: rgba(158, 122, 255, 0.2); }
+  .hover\:border-indigo-500\/30:hover { border-color: rgba(158, 122, 255, 0.35); }
+
+  /* Warm glows → lyra violet glow */
+  .shadow-glow-sm { box-shadow: 0 0 15px rgba(158, 122, 255, 0.18); }
+  .shadow-glow-md { box-shadow: 0 0 30px rgba(158, 122, 255, 0.25); }
+  .shadow-glow-lg { box-shadow: 0 0 60px rgba(158, 122, 255, 0.32); }
+  .shadow-glow-cyan { box-shadow: 0 0 30px rgba(158, 122, 255, 0.25); }
+
+  /* Gradient stops → violet→pink (lyra) */
+  .from-indigo-400 { --tw-gradient-from: #9e7aff; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-to)); }
+  .via-purple-400 { --tw-gradient-via: #fe8bbb; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-to)); }
+  .to-cyan-400 { --tw-gradient-to: #fe8bbb; }
+  .from-indigo-500 { --tw-gradient-from: #9e7aff; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-to)); }
+  .to-purple-600 { --tw-gradient-to: #fe8bbb; }
+  .hover\:from-indigo-600:hover { --tw-gradient-from: #8b6cf5; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-to)); }
+  .hover\:to-purple-700:hover { --tw-gradient-to: #fe6ba4; }
+  .from-violet-500 { --tw-gradient-from: #9e7aff; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-to)); }
+  .from-indigo-500\/10 { --tw-gradient-from: rgba(158, 122, 255, 0.1); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-to)); }
+  .via-purple-500\/5 { --tw-gradient-via: rgba(254, 139, 187, 0.05); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-to)); }
+  .to-cyan-500\/10 { --tw-gradient-to: rgba(254, 139, 187, 0.1); }
+
+  /* Lyra grid texture (315deg 1px lines at 50% pitch) */
+  .bg-grid-lyra {
+    background-image: repeating-linear-gradient(315deg, currentColor 0 1px, transparent 0 50%);
+    background-size: 10px 10px;
+  }
+
+  /* Lyra CTA shadow recipe (inset top-light + soft drop) */
+  .shadow-lyra {
+    box-shadow:
+      inset 0 1px 2px rgba(255, 255, 255, 0.25),
+      0 3px 3px -1.5px rgba(16, 24, 40, 0.06),
+      0 1px 1px rgba(16, 24, 40, 0.08);
+  }
+
+  /* Lyra shiny-text (background-position sweep, 8s, --shiny-width) */
+  .shiny-text {
+    --shiny-width: 100px;
+    background-image: linear-gradient(90deg, transparent, rgba(43, 38, 32, 0.7) 50%, transparent);
+    background-size: var(--shiny-width) 100%;
+    background-repeat: no-repeat;
+    background-position: calc(-100% - var(--shiny-width)) 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shiny-text 8s infinite;
+  }
+  @keyframes shiny-text {
+    0%, 90%, 100% { background-position: calc(-100% - var(--shiny-width)) 0; }
+    50% { background-position: 200% 0; }
+  }
+}
+
+@layer components {
+  /* Lyra rainbow → violet/pink border button */
+  .btn-rainbow {
+    background:
+      linear-gradient(#fdfaf4, #fdfaf4) padding-box,
+      linear-gradient(90deg, #9e7aff, #fe8bbb, #9e7aff, #fe8bbb, #9e7aff) border-box;
+  }
+  .btn-rainbow::after {
+    background: linear-gradient(90deg, #9e7aff, #fe8bbb, #9e7aff);
+    opacity: 0.25;
+  }
+  .text-gradient-brand {
+    background: linear-gradient(90deg, #9e7aff, #fe8bbb);
+  }
+
+  /* Lyra floating pill navbar */
+  .pill-nav {
+    border-radius: 1.25rem;
+    border: 1px solid rgba(233, 227, 216, 0.9);
+    background: rgba(248, 246, 241, 0.85);
+    backdrop-filter: blur(12px);
+    box-shadow:
+      inset 0 1px 2px rgba(255, 255, 255, 0.5),
+      0 8px 32px -12px rgba(43, 38, 32, 0.15);
+  }
+
+  /* Lyra feature-card: 3-layer radial violet→pink border + spotlight */
+  .lyra-card {
+    position: relative;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(233, 227, 216, 0.9);
+    background: #fdfaf4;
+  }
+  .lyra-card::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    background: radial-gradient(200px circle at -200px -200px, #9e7aff, #fe8bbb, transparent 100%);
+  }
+  .lyra-card:hover::before {
+    opacity: 1;
+  }
+  .lyra-card > * {
+    position: relative;
+    z-index: 1;
+  }
+}
