@@ -134,7 +134,8 @@ class TestFunnelDelivery:
         # Consume 3 -> Limit exceeded
         resp = await public_async_client.get(f"/api/v1/funnel/delivery/{raw_token}")
         assert resp.status_code == 404
-        assert "Invalid or expired" in resp.json()["detail"]
+        # App wraps HTTPException errors in {"error": {code, message}} (safe-errors design)
+        assert resp.json()["error"]["code"] == "NOT_FOUND"
 
     async def test_expired_token_fails(
         self, public_async_client: AsyncClient, db_session: AsyncSession
