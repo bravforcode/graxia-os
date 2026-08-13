@@ -283,7 +283,7 @@ export default function PublicProductPage() {
             </div>
 
             {/* Title */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-display font-extrabold tracking-tight leading-[1.1]">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-medium tracking-tight leading-[1.1]">
               <span className="bg-gradient-to-r from-white via-white to-slate-300 bg-clip-text text-transparent">
                 {productName}
               </span>
@@ -477,7 +477,7 @@ export default function PublicProductPage() {
         {testimonials.length > 0 && (
           <ScrollReveal delay={100}>
           <section>
-            <h2 className="text-2xl font-display font-extrabold text-white mb-6">{t("product.customersSay")}</h2>
+            <h2 className="text-2xl font-serif font-medium text-white mb-6">{t("product.customersSay")}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {testimonials.map((tItem, i) => (
                 <div key={i} className={`p-5 bg-slate-900/40 border border-slate-800/60 rounded-2xl space-y-3 ${ANIMATIONS.cardHover}`} style={staggerDelay(i)}>
@@ -505,7 +505,7 @@ export default function PublicProductPage() {
         {deliverables.length > 0 && (
           <ScrollReveal delay={100}>
           <section>
-            <h2 className="text-2xl font-display font-extrabold text-white mb-6">{t("product.youllReceive")}</h2>
+            <h2 className="text-2xl font-serif font-medium text-white mb-6">{t("product.youllReceive")}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {deliverables.map((d, i) => (
                 <div key={i} className={`flex items-center gap-3 p-4 bg-slate-900/30 border border-slate-800/50 rounded-xl ${ANIMATIONS.cardHover}`} style={staggerDelay(i)}>
@@ -523,7 +523,7 @@ export default function PublicProductPage() {
         {/* FAQ */}
         <ScrollReveal delay={100}>
         <section>
-          <h2 className="text-2xl font-display font-extrabold text-white mb-6">{t("product.faqTitle")}</h2>
+          <h2 className="text-2xl font-serif font-medium text-white mb-6">{t("product.faqTitle")}</h2>
           <div className="space-y-3 max-w-3xl">
             {faqs.map((faq, i) => (
               <div key={i} className="border border-slate-800/60 rounded-2xl overflow-hidden">
@@ -548,7 +548,7 @@ export default function PublicProductPage() {
           <div className="p-10 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-cyan-500/10 border border-indigo-500/20 rounded-3xl relative overflow-hidden">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.1),transparent_70%)]" />
             <div className="relative z-10 space-y-4">
-              <h2 className="text-2xl md:text-3xl font-display font-extrabold text-white">
+              <h2 className="text-2xl md:text-3xl font-serif font-medium text-white">
                 {t("product.readyToStart")}
               </h2>
               <p className="text-slate-400 max-w-md mx-auto text-sm">

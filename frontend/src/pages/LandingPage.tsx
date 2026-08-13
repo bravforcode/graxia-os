@@ -74,10 +74,49 @@ function AnimatedCounter({ value, suffix = "", prefix = "" }: { value: number; s
   );
 }
 
+/** Lyra-style typewriter (evidence: lyra.marqraft.com hero type span). */
+function Typewriter({ words, locale }: { words: string[]; locale: string }) {
+  const [wordIdx, setWordIdx] = useState(0);
+  const [chars, setChars] = useState(0);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    const word = words[wordIdx % words.length];
+    let delay = deleting ? 40 : 90;
+    if (!deleting && chars === word.length) delay = 1900; // pause at full word
+    if (deleting && chars === 0) delay = 250;
+    const timer = setTimeout(() => {
+      if (!deleting && chars === word.length) {
+        setDeleting(true);
+        return;
+      }
+      if (deleting && chars === 0) {
+        setDeleting(false);
+        setWordIdx((i) => (i + 1) % words.length);
+        return;
+      }
+      setChars((c) => c + (deleting ? -1 : 1));
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [chars, deleting, wordIdx, words]);
+
+  const word = words[wordIdx % words.length];
+  return (
+    <span className="inline-flex items-baseline">
+      <span className="text-gradient-brand">{word.slice(0, chars)}</span>
+      <span className="ml-0.5 inline-block w-[3px] self-center h-[0.9em] bg-indigo-400 animate-pulse" aria-hidden="true" />
+    </span>
+  );
+}
+
 export default function LandingPage() {
   const { user } = useAuth();
   const { locale, toggle, t } = useLang();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const typeWords = locale === "th"
+    ? ["เขียนคอนเทนต์", "ทำงานออฟฟิศ", "วางแผนธุรกิจ", "ตอบลูกค้า"]
+    : ["Content", "Office work", "Business planning", "Customer replies"];
 
   useEffect(() => {
     if (user) {
@@ -97,7 +136,10 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white overflow-x-clip">
+    <div className="relative min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white overflow-x-clip">
+      {/* Lyra vertical side rails (w-px lines at left/right edges) */}
+      <div className="pointer-events-none absolute inset-y-0 left-4 md:left-6 z-0 w-px bg-slate-700/20" />
+      <div className="pointer-events-none absolute inset-y-0 right-4 md:right-6 z-0 w-px bg-slate-700/20" />
       {/* SEO & Structured Data */}
       <script
         type="application/ld+json"
@@ -130,7 +172,7 @@ export default function LandingPage() {
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center font-mono font-bold text-sm tracking-widest text-slate-950">
               AI
             </div>
-            <span className="font-display font-bold text-lg tracking-tight text-slate-100">{t("brand.name")}</span>
+            <span className="font-serif font-bold text-lg tracking-tight text-slate-100">{t("brand.name")}</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm text-slate-400">
             <a href="#features" className="hover:text-slate-100 transition-colors">{t("nav.features")}</a>
@@ -187,36 +229,44 @@ export default function LandingPage() {
             <ArrowRight size={12} className="text-slate-400 group-hover:translate-x-0.5 transition-transform" />
           </a>
 
-          <h1 className="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-display font-extrabold tracking-tighter text-balance leading-[1.05] mb-6 animate-fade-in-up">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-serif font-medium tracking-tighter text-balance leading-[1.1] mb-6 animate-fade-in-up">
             <span className="text-slate-100">
               {t("hero.title1")}
             </span>
             <br />
-            <span className="text-gradient-brand">
-              {t("hero.title2")}
-            </span>
+            <Typewriter words={typeWords} locale={locale} />
           </h1>
 
-          <p className="text-base md:text-lg text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed animate-fade-in-up whitespace-pre-line" style={{ animationDelay: "0.1s" }}>
+          <p className="font-mono text-base md:text-lg text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed animate-fade-in-up whitespace-pre-line tracking-tight" style={{ animationDelay: "0.1s" }}>
             {t("hero.subtitle")}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-            {/* Lyra primary CTA: violet + inset-highlight shadow + press scale */}
+            {/* Lyra 2-line primary CTA: violet pill + inset highlight + press scale */}
             <Link
               to="/store"
-              className={`group bg-secondary hover:bg-secondary/80 px-8 py-4 text-white font-bold rounded-xl shadow-lyra border border-white/[0.12] transition-all ease-out flex items-center gap-2 text-lg active:scale-95 ${ANIMATIONS.buttonPress}`}
+              className={`group bg-secondary hover:bg-secondary/80 h-[72px] w-[336px] px-5 flex flex-col items-center justify-center text-white font-bold rounded-xl shadow-lyra border border-white/[0.12] transition-all ease-out active:scale-95 ${ANIMATIONS.buttonPress}`}
             >
-              {t("hero.cta1")}
-              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+              <div className="flex items-center gap-2 text-lg">
+                {t("hero.cta1")}
+                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              </div>
+              <div className="text-xs font-normal opacity-90">
+                {locale === "th" ? "เริ่มต้น ฿149 · ส่งสินค้าทันที" : "From ฿149 · Instant delivery"}
+              </div>
             </Link>
-            {/* Lyra secondary CTA: white card + explicit border */}
+            {/* Lyra 2-line secondary CTA: white card + explicit border */}
             <a
               href="#features"
-              className={`px-8 py-4 bg-white hover:bg-white/80 text-slate-100 font-semibold rounded-xl border border-[#E5E7EB] transition-all ease-out flex items-center gap-2 active:scale-95 ${ANIMATIONS.buttonPress}`}
+              className={`h-[72px] w-[336px] p-2 flex flex-col items-center justify-center bg-white hover:bg-white/80 text-slate-100 font-semibold rounded-xl border border-[#E5E7EB] transition-all ease-out active:scale-95 ${ANIMATIONS.buttonPress}`}
             >
-              <Play size={18} />
-              {t("hero.cta2")}
+              <div className="flex items-center gap-2 text-lg">
+                <Play size={16} />
+                {t("hero.cta2")}
+              </div>
+              <div className="text-xs font-normal text-slate-500">
+                {locale === "th" ? "พรอมต์ เทมเพลต คอร์ส" : "Prompts · Templates · Courses"}
+              </div>
             </a>
           </div>
 
@@ -298,7 +348,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wider">{t("featured.badge")}</span>
-            <h2 className="text-3xl md:text-4xl font-display font-extrabold text-white mt-2">{t("featured.title")}</h2>
+            <h2 className="text-3xl md:text-4xl font-serif font-medium tracking-tighter text-balance text-slate-100 mt-2">{t("featured.title")}</h2>
             <p className="text-slate-400 mt-3 max-w-lg mx-auto">{t("featured.subtitle")}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -361,7 +411,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <span className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">{t("categories.badge")}</span>
-            <h2 className="text-3xl md:text-4xl font-display font-extrabold text-white mt-2">{t("categories.title")}</h2>
+            <h2 className="text-3xl md:text-4xl font-serif font-medium tracking-tighter text-balance text-slate-100 mt-2">{t("categories.title")}</h2>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {(Object.entries(CATEGORY_META) as [ProductCategory, typeof CATEGORY_META[ProductCategory]][]).map(([key, cat], i) => {
@@ -390,7 +440,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <span className="text-xs font-semibold text-purple-400 uppercase tracking-wider">{t("features.badge")}</span>
-            <h2 className="text-3xl md:text-4xl font-display font-extrabold text-white mt-2">
+            <h2 className="text-3xl md:text-4xl font-serif font-medium tracking-tighter text-balance text-slate-100 mt-2">
               {(() => {
                 const parts = t("features.title").split("||");
                 return parts.length > 1 ? (
@@ -435,7 +485,7 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
             <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">{t("howItWorks.badge")}</span>
-            <h2 className="text-3xl md:text-4xl font-display font-extrabold text-white mt-2">{t("howItWorks.title")}</h2>
+            <h2 className="text-3xl md:text-4xl font-serif font-medium tracking-tighter text-balance text-slate-100 mt-2">{t("howItWorks.title")}</h2>
           </div>
           <div className="space-y-8">
             {[
@@ -468,7 +518,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider">{t("testimonials.badge")}</span>
-            <h2 className="text-3xl md:text-4xl font-display font-extrabold text-white mt-2">{t("testimonials.title")}</h2>
+            <h2 className="text-3xl md:text-4xl font-serif font-medium tracking-tighter text-balance text-slate-100 mt-2">{t("testimonials.title")}</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
@@ -508,7 +558,7 @@ export default function LandingPage() {
       <section id="pricing" className="py-20 px-6 bg-slate-900/20">
         <div className="max-w-4xl mx-auto text-center">
           <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wider">{t("pricing.badge")}</span>
-          <h2 className="text-3xl md:text-4xl font-display font-extrabold text-white mt-2 mb-4">
+          <h2 className="text-3xl md:text-4xl font-serif font-medium tracking-tighter text-balance text-slate-100 mt-2 mb-4">
             {t("pricing.title")}
           </h2>
           <p className="text-slate-400 mb-10 max-w-xl mx-auto">
@@ -541,7 +591,7 @@ export default function LandingPage() {
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t("faq.badge")}</span>
-            <h2 className="text-3xl md:text-4xl font-display font-extrabold text-white mt-2">{t("faq.title")}</h2>
+            <h2 className="text-3xl md:text-4xl font-serif font-medium tracking-tighter text-balance text-slate-100 mt-2">{t("faq.title")}</h2>
           </div>
           <div className="space-y-3">
             {faqs.map((faq, i) => (
@@ -580,7 +630,7 @@ export default function LandingPage() {
           <div className="p-12 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-cyan-500/10 border border-indigo-500/20 rounded-[2rem] relative overflow-hidden">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.15),transparent_70%)]" />
             <div className="relative z-10">
-              <h2 className="text-3xl md:text-4xl font-display font-extrabold text-white mb-4">
+              <h2 className="text-3xl md:text-4xl font-serif font-medium tracking-tighter text-balance text-slate-100 mb-4">
                 {t("cta.title")}
               </h2>
               <p className="text-slate-400 mb-8 max-w-lg mx-auto">

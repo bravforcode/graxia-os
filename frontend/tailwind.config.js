@@ -51,6 +51,8 @@ export default {
         // TH glyphs fall back per-character: Inter→Sarabun, Bricolage→Prompt
         sans: ['Inter', 'Sarabun', 'system-ui', 'sans-serif'],
         display: ['Bricolage Grotesque', 'Prompt', 'Inter', 'Sarabun', 'system-ui', 'sans-serif'],
+        // Lyra headline serif (DM Serif Text — evidence: lyra.marqraft.com logo + H1)
+        serif: ['DM Serif Text', 'Prompt', 'Bricolage Grotesque', 'serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       animation: {

@@ -120,7 +120,7 @@ export default function StorePage() {
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center font-mono font-bold text-sm text-slate-950 group-hover:scale-105 transition-transform duration-200">
               AI
             </div>
-            <span className="font-display font-bold text-lg text-slate-100">{t("brand.name")}</span>
+            <span className="font-serif font-bold text-lg text-slate-100">{t("brand.name")}</span>
           </Link>
           <div className="flex items-center gap-3">
             <button
@@ -143,7 +143,7 @@ export default function StorePage() {
         {/* Page Header */}
         <ScrollReveal>
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-display font-extrabold text-white tracking-tight">
+          <h1 className="text-3xl md:text-4xl font-serif font-medium tracking-tighter text-balance text-slate-100">
             {selectedCategory !== "all" ? `${CATEGORY_META[selectedCategory].icon} ${t(`cat.${selectedCategory}`)}` : t("store.allProducts")}
           </h1>
           <p className="text-slate-400 mt-2 max-w-xl">
