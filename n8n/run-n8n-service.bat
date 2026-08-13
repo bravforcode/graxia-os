@@ -7,4 +7,10 @@ REM Load secrets from .n8n-env (gitignored — keep keys out of git)
 if exist "%~dp0.n8n-env" for /f "usebackq tokens=1,* delims==" %%a in ("%~dp0.n8n-env") do set "%%a=%%b"
 if not defined ADMIN_EMAIL set ADMIN_EMAIL=admin@graxia.store
 if not defined ADMIN_PASSWORD set ADMIN_PASSWORD=Graxia@Admin!2026
-npx --yes n8n@latest > "%~dp0n8n-run.log" 2>&1
+REM Run n8n directly from the npx cache (avoids re-download hangs)
+set N8N_BIN=%~dp0..\..\AppData\Local\npm-cache\_npx\83f51bd5dfda7e85\node_modules\n8n\bin\n8n
+if not exist "%N8N_BIN%" (
+  npx --yes n8n@latest > "%~dp0n8n-run.log" 2>&1
+) else (
+  node "%N8N_BIN%" > "%~dp0n8n-run.log" 2>&1
+)

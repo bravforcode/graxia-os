@@ -267,7 +267,7 @@ class Settings(BaseSettings):
 
     # Email
     RESEND_API_KEY: str = ""
-    FROM_EMAIL: str = "Graxia <notifications@graxia.io>"
+    FROM_EMAIL: str = "Ai Factory <no-reply@graxia.store>"
     ALLOW_REAL_EMAIL_SEND: bool = False
 
     # Identity
