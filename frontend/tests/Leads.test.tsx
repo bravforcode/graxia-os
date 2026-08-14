@@ -94,10 +94,12 @@ describe('Leads page', () => {
 
     await screen.findByText('Maya Chen')
 
-    await user.type(screen.getByLabelText('Name'), 'Alex Rivera')
-    await user.type(screen.getByLabelText('Company'), 'Northstar Systems')
-    await user.type(screen.getByLabelText('Email'), 'alex@northstar.dev')
-    await user.click(screen.getByRole('button', { name: 'Add lead' }))
+    // The page renders two LeadForm instances (capture + "Add New Asset");
+    // target the first (capture) form's fields and submit button by index.
+    await user.type(screen.getAllByLabelText('Name')[0], 'Alex Rivera')
+    await user.type(screen.getAllByLabelText('Company')[0], 'Northstar Systems')
+    await user.type(screen.getAllByLabelText('Email')[0], 'alex@northstar.dev')
+    await user.click(screen.getAllByRole('button', { name: 'Add lead' })[0])
 
     await waitFor(() => {
       expect(mockApi.createContact).toHaveBeenCalledWith(

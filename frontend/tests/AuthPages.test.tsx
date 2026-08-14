@@ -5,6 +5,7 @@ import { vi } from 'vitest'
 
 import Login from '@/pages/Login'
 import Register from '@/pages/Register'
+import { LanguageProvider } from '@/i18n/LanguageContext'
 
 const login = vi.fn()
 const register = vi.fn()
@@ -67,7 +68,9 @@ describe('auth pages when the backend is unavailable', () => {
 
     render(
       <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <Login />
+        <LanguageProvider>
+          <Login />
+        </LanguageProvider>
       </MemoryRouter>,
     )
 
@@ -82,7 +85,9 @@ describe('auth pages when the backend is unavailable', () => {
   it('shows the deployment-safe unavailable state on register', () => {
     render(
       <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <Register />
+        <LanguageProvider>
+          <Register />
+        </LanguageProvider>
       </MemoryRouter>,
     )
 

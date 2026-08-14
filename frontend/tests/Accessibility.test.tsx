@@ -10,6 +10,7 @@ import Layout from '@/components/Layout'
 import Login from '@/pages/Login'
 import Register from '@/pages/Register'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { LanguageProvider } from '@/i18n/LanguageContext'
 
 const logout = vi.fn()
 const login = vi.fn()
@@ -95,7 +96,11 @@ function renderWithProviders(node: ReactNode) {
     },
   })
 
-  return render(<QueryClientProvider client={queryClient}>{node}</QueryClientProvider>)
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <LanguageProvider>{node}</LanguageProvider>
+    </QueryClientProvider>,
+  )
 }
 
 describe('frontend accessibility baseline', () => {
