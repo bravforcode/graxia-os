@@ -16,6 +16,7 @@ export default function Register() {
   const [isLoading, setIsLoading] = useState(false)
   const { register, backendState, backendMessage, refreshSession } = useAuth()
   const navigate = useNavigate()
+  const { t } = useLang()
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()

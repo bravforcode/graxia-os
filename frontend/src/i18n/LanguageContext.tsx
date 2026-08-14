@@ -30,7 +30,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.lang = locale;
     // RTL-ready: set dir for future RTL locales (e.g. 'ar'); th/en are LTR
-    document.documentElement.dir = locale === "ar" ? "rtl" : "ltr";
+    document.documentElement.dir = (locale as string) === "ar" ? "rtl" : "ltr";
     document.title = locale === "th" ? "Ai Factory — ร้านเครื่องมือ AI สำหรับคนไทย" : "Ai Factory — AI Tools for Thai Creators";
   }, [locale]);
 

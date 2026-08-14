@@ -18,14 +18,9 @@ import {
   Target,
   UserPlus,
   Users,
-    Command,
+  Command,
   TerminalSquare,
-  Gauge,
-  Workflow,
-  ScrollText,
-  Server,
-  HardDrive,
-  Database
+  type LucideIcon,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -73,7 +68,7 @@ const systemNavItems = [
   { path: '/event-bus', label: 'Event Bus', icon: Activity },
 ]
 
-const adminNavItems: never[] = []
+const adminNavItems: { path: string; label: string; icon: LucideIcon }[] = []
 
 function isActivePath(pathname: string, path: string) {
   return path === '/' ? pathname === path : pathname === path || pathname.startsWith(`${path}/`)
