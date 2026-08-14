@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { RefreshCw } from "lucide-react";
-import { MetricCard } from "@/components/admin/MetricCard";
+import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { Panel } from "@/components/ui/Panel";
 import { Button } from "@/components/ui/button";

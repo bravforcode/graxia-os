@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AlertTriangle, RefreshCw, RotateCcw, Workflow } from "lucide-react";
-import { MetricCard } from "@/components/admin/MetricCard";
+import { MetricCard } from "@/components/ui/metric-card";
 import { RiskBadge } from "@/components/admin/RiskBadge";
 import { SafeJsonViewer } from "@/components/admin/SafeJsonViewer";
 import { StatusBadge } from "@/components/admin/StatusBadge";
