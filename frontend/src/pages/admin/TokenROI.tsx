@@ -42,6 +42,7 @@ export default function TokenROIPage() {
 
   useEffect(() => {
     void load(DEFAULT_INPUT);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initialize once on mount with DEFAULT_INPUT
   }, []);
 
   async function load(nextInput: TokenRoiInput = input) {

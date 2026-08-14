@@ -36,6 +36,7 @@ export default function ApprovalDetailPage() {
   useEffect(() => {
     if (!id) return;
     loadApproval();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadApproval only depends on id (captured above)
   }, [id]);
 
   async function loadApproval() {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { AxiosError } from "axios";
 import { 
   Download, 
   Lock, 
@@ -27,6 +28,7 @@ export default function DeliveryAccessPage() {
     if (rawToken) {
       fetchPayload();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchPayload only depends on rawToken
   }, [rawToken]);
 
   const fetchPayload = async () => {
@@ -35,9 +37,10 @@ export default function DeliveryAccessPage() {
       setErrorMsg("");
       const res = await funnelApi.getDeliveryPayload(rawToken);
       setPayload(res);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to retrieve delivery payload", err);
-      setErrorMsg(err.response?.data?.detail || t("delivery.invalid"));
+      const detail = err instanceof AxiosError ? err.response?.data?.detail : undefined;
+      setErrorMsg(detail || t("delivery.invalid"));
     } finally {
       setLoading(false);
     }
@@ -54,9 +57,10 @@ export default function DeliveryAccessPage() {
       
       // Update the generic view too
       setPayload(res);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to consume delivery asset", err);
-      setErrorMsg(err.response?.data?.detail || t("delivery.downloadSecured"));
+      const detail = err instanceof AxiosError ? err.response?.data?.detail : undefined;
+      setErrorMsg(detail || t("delivery.downloadSecured"));
     } finally {
       setConsuming(false);
     }

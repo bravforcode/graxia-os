@@ -40,7 +40,7 @@ function useInView(options?: IntersectionObserverInit) {
     }, { threshold: 0.1, ...options });
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [options]);
 
   return { ref, isInView };
 }
@@ -75,7 +75,7 @@ function AnimatedCounter({ value, suffix = "", prefix = "" }: { value: number; s
 }
 
 /** Lyra-style typewriter (evidence: lyra.marqraft.com hero type span). */
-function Typewriter({ words, locale: _locale }: { words: string[]; locale: string }) {
+function Typewriter({ words }: { words: string[] }) {
   const [wordIdx, setWordIdx] = useState(0);
   const [chars, setChars] = useState(0);
   const [deleting, setDeleting] = useState(false);
@@ -243,7 +243,7 @@ export default function LandingPage() {
               {t("hero.title1")}
             </span>
             <br />
-            <Typewriter words={typeWords} locale={locale} />
+            <Typewriter words={typeWords} />
           </h1>
 
           <p className="font-mono text-base md:text-lg text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed animate-fade-in-up whitespace-pre-line tracking-tight" style={{ animationDelay: "0.1s" }}>

@@ -14,7 +14,7 @@ function getInitialLocale(): Locale {
   try {
     const saved = localStorage.getItem("ai-factory-lang");
     if (saved === "th" || saved === "en") return saved;
-  } catch {}
+  } catch { /* noop */ }
   return "en";
 }
 
@@ -37,7 +37,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const toggle = useCallback(() => {
     setLocale((prev) => {
       const next = prev === "en" ? "th" : "en";
-      try { localStorage.setItem("ai-factory-lang", next); } catch {}
+      try { localStorage.setItem("ai-factory-lang", next); } catch { /* noop */ }
       return next;
     });
   }, []);
@@ -62,6 +62,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// useLang is a hook, not a component; co-located with LanguageProvider for ergonomics.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useLang() {
   const ctx = useContext(LanguageContext);
   if (!ctx) throw new Error("useLang must be used within LanguageProvider");
