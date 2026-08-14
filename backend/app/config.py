@@ -259,6 +259,7 @@ class Settings(BaseSettings):
     # Stripe Billing
     STRIPE_SECRET_KEY: str = ""
     STRIPE_WEBHOOK_SECRET: str = ""
+    STRIPE_ENABLE_PROMPTPAY: bool = False
     STRIPE_PUBLISHABLE_KEY: str = ""
     STRIPE_PRICE_STARTER_MONTHLY: str = ""
     STRIPE_PRICE_PRO_MONTHLY: str = ""

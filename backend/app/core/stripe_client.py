@@ -61,6 +61,11 @@ async def create_stripe_checkout_session(
         "line_items": line_items,
         "metadata": metadata,
     }
+    # PromptPay (TH) — enabled only when the merchant has activated it in the
+    # Stripe dashboard (STRIPE_ENABLE_PROMPTPAY=1). Off by default so checkout
+    # never breaks on accounts without the payment method enabled.
+    if settings.STRIPE_ENABLE_PROMPTPAY and line_items and line_items[0].get("price_data", {}).get("currency") == "thb":
+        params["payment_method_types"] = ["card", "promptpay"]
     if customer_id:
         params["customer"] = customer_id
     elif customer_email:

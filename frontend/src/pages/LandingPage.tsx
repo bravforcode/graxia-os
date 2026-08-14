@@ -104,7 +104,7 @@ function Typewriter({ words, locale }: { words: string[]; locale: string }) {
   return (
     <span className="inline-flex items-baseline">
       <span className="text-gradient-brand">{word.slice(0, chars)}</span>
-      <span className="ml-0.5 inline-block w-[3px] self-center h-[0.9em] bg-indigo-400 animate-pulse" aria-hidden="true" />
+      <span className="ms-0.5 inline-block w-[3px] self-center h-[0.9em] bg-indigo-400 animate-pulse" aria-hidden="true" />
     </span>
   );
 }
@@ -138,8 +138,8 @@ export default function LandingPage() {
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white overflow-x-clip">
       {/* Lyra vertical side rails (w-px lines at left/right edges) */}
-      <div className="pointer-events-none absolute inset-y-0 left-4 md:left-6 z-0 w-px bg-slate-700/20" />
-      <div className="pointer-events-none absolute inset-y-0 right-4 md:right-6 z-0 w-px bg-slate-700/20" />
+      <div className="pointer-events-none absolute inset-y-0 start-4 md:start-6 z-0 w-px bg-slate-700/20" />
+      <div className="pointer-events-none absolute inset-y-0 end-4 md:end-6 z-0 w-px bg-slate-700/20" />
       {/* SEO & Structured Data */}
       <script
         type="application/ld+json"
@@ -161,7 +161,7 @@ export default function LandingPage() {
           className="absolute inset-x-0 top-0 h-[600px] md:h-[800px]"
           style={{ background: "radial-gradient(125% 125% at 50% 10%, #f5f4fa 40%, rgba(158,122,255,0.35) 100%)" }}
         />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-indigo-500/8 blur-[150px]" />
+        <div className="absolute top-0 start-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-indigo-500/8 blur-[150px]" />
         <div className="absolute bottom-0 right-0 w-[600px] h-[600px] rounded-full bg-cyan-500/6 blur-[120px]" />
       </div>
 
@@ -249,7 +249,7 @@ export default function LandingPage() {
             >
               <div className="flex items-center gap-2 text-lg">
                 {t("hero.cta1")}
-                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                <ArrowRight size={18} className="group-hover:translate-x-1 rtl:-scale-x-100 transition-transform" />
               </div>
               <div className="text-xs font-normal opacity-90">
                 {locale === "th" ? "เริ่มต้น ฿149 · ส่งสินค้าทันที" : "From ฿149 · Instant delivery"}
@@ -272,7 +272,7 @@ export default function LandingPage() {
 
           <div className="flex flex-wrap items-center justify-center gap-8 text-sm text-slate-500 animate-fade-in" style={{ animationDelay: "0.3s" }}>
             <div className="flex items-center gap-2">
-              <div className="flex -space-x-2">
+              <div className="flex -space-x-2 rtl:space-x-reverse">
                 {["bg-indigo-500", "bg-purple-500", "bg-cyan-500", "bg-emerald-500"].map((bg, i) => (
                   <div key={i} className={`w-8 h-8 rounded-full ${bg} border-2 border-slate-950 flex items-center justify-center text-[11px] font-bold text-white`}>
                     {["S", "M", "A", "R"][i]}
@@ -285,7 +285,7 @@ export default function LandingPage() {
               {[...Array(5)].map((_, i) => (
                 <Star key={i} size={14} className="fill-amber-400 text-amber-400" />
               ))}
-              <span className="ml-1">4.8 {t("hero.rating")}</span>
+              <span className="ms-1">4.8 {t("hero.rating")}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Shield size={14} className="text-emerald-400" />
@@ -368,7 +368,7 @@ export default function LandingPage() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
                   {product.badge && (
-                    <span className="absolute top-4 left-4 px-3 py-1 bg-indigo-500/90 text-white text-[11px] font-bold uppercase tracking-wider rounded-full">
+                    <span className="absolute top-4 start-4 px-3 py-1 bg-indigo-500/90 text-white text-[11px] font-bold uppercase tracking-wider rounded-full">
                       {product.badge}
                     </span>
                   )}
@@ -540,7 +540,7 @@ export default function LandingPage() {
                     <div className="text-sm font-semibold text-white">{name}</div>
                     <div className="text-xs text-slate-500">{role}</div>
                   </div>
-                  <div className="ml-auto flex gap-0.5">
+                  <div className="ms-auto flex gap-0.5">
                     {[...Array(5)].map((_, i) => (
                       <Star key={i} size={10} className="fill-amber-400 text-amber-400" />
                     ))}
@@ -599,7 +599,7 @@ export default function LandingPage() {
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   aria-expanded={openFaq === i}
-                  className="w-full flex items-center justify-between p-5 text-left bg-slate-900/30 hover:bg-slate-900/50 transition-colors duration-200"
+                  className="w-full flex items-center justify-between p-5 text-start bg-slate-900/30 hover:bg-slate-900/50 transition-colors duration-200"
                 >
                   <span className="font-semibold text-sm text-white pr-4">{faq.q}</span>
                   <ChevronDown
