@@ -12,7 +12,8 @@
     "test:e2e": "node scripts/run-playwright.mjs",
     "test:e2e:headed": "node scripts/run-playwright.mjs --headed",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "prepare": "git config core.hooksPath scripts/hooks"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",

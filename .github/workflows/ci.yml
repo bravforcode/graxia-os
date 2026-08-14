@@ -91,6 +91,9 @@ jobs:
       - name: Run frontend lint
         run: bun run lint
 
+      - name: Case-collision guard
+        run: bash ../../scripts/check-case-collision.sh
+
       - name: Run frontend tests
         run: bun run test
 
