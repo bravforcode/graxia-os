@@ -311,7 +311,7 @@ export default function PublicProductPage() {
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} size={14} className="fill-amber-400 text-amber-400" />
                 ))}
-                <span className="text-slate-300 font-semibold ml-1">{rating}</span>
+                <span className="text-slate-300 font-semibold ms-1">{rating}</span>
                 <span className="text-slate-500">({reviewCount.toLocaleString()} {locale === "th" ? "รีวิว" : "reviews"})</span>
               </div>
               <span className="text-slate-600">·</span>
@@ -542,7 +542,7 @@ export default function PublicProductPage() {
               <div key={i} className="border border-slate-800/60 rounded-2xl overflow-hidden">
                 <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   aria-expanded={openFaq === i}
-                  className="w-full flex items-center justify-between p-5 text-left bg-slate-900/30 hover:bg-slate-900/50 transition-colors duration-200">
+                  className="w-full flex items-center justify-between p-5 text-start bg-slate-900/30 hover:bg-slate-900/50 transition-colors duration-200">
                   <span className="font-semibold text-sm text-white pr-4">{faq.q}</span>
                   <ChevronDown size={16} className={`text-slate-400 shrink-0 transition-transform duration-300 ${openFaq === i ? "rotate-180" : ""}`} />
                 </button>

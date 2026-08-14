@@ -102,14 +102,14 @@ export default function StorePage() {
           }}
         />
         <div
-          className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[900px] h-[500px] animate-aurora opacity-60"
+          className="absolute top-[-10%] start-1/2 -translate-x-1/2 w-[900px] h-[500px] animate-aurora opacity-60"
           style={{
             backgroundImage:
               "radial-gradient(ellipse at 30% 50%, rgba(158,122,255,0.16), transparent 55%), radial-gradient(ellipse at 70% 50%, rgba(254,139,187,0.12), transparent 55%)",
             backgroundSize: "200% 100%",
           }}
         />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-indigo-500/5 blur-[150px]" />
+        <div className="absolute top-0 start-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-indigo-500/5 blur-[150px]" />
         <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full bg-cyan-500/4 blur-[120px]" />
       </div>
 
@@ -156,11 +156,11 @@ export default function StorePage() {
         <ScrollReveal delay={100}>
         <div className="flex flex-col md:flex-row gap-4 mb-8">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
+            <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
             <input type="text" placeholder={t("store.search")} aria-label={t("store.searchAria")} value={search} onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-slate-900/60 border border-slate-800 focus:border-indigo-500 text-slate-200 pl-10 pr-4 py-3 rounded-2xl text-sm outline-none transition-all duration-200 focus:ring-2 focus:ring-indigo-500/20" />
             {search && (
-              <button onClick={() => setSearch("")} aria-label={t("store.clearSearch")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors duration-200">
+              <button onClick={() => setSearch("")} aria-label={t("store.clearSearch")} className="absolute end-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors duration-200">
                 <X size={16} />
               </button>
             )}
@@ -209,7 +209,7 @@ export default function StorePage() {
           <p className="text-sm text-slate-500">
             {t("store.showing")} <span className="font-semibold text-slate-300">{filteredProducts.length}</span> {t("store.products")}
             {selectedCategory !== "all" && (
-              <button onClick={() => handleCategoryChange("all")} className="ml-2 text-indigo-400 hover:text-indigo-300 text-xs transition-colors duration-200">
+              <button onClick={() => handleCategoryChange("all")} className="ms-2 text-indigo-400 hover:text-indigo-300 text-xs transition-colors duration-200">
                 {t("store.clearFilter")}
               </button>
             )}
@@ -247,7 +247,7 @@ export default function StorePage() {
                       {product.badge}
                     </span>
                   )}
-                  <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 bg-slate-950/70 backdrop-blur-sm rounded-full text-[11px] text-amber-400">
+                  <div className="absolute top-3 end-3 flex items-center gap-1 px-2 py-0.5 bg-slate-950/70 backdrop-blur-sm rounded-full text-[11px] text-amber-400">
                     <Star size={10} className="fill-amber-400" /> {product.rating}
                   </div>
                 </div>
@@ -264,7 +264,7 @@ export default function StorePage() {
                   <div className="flex items-end justify-between pt-3 border-t border-slate-800/60">
                     <div>
                       <span className="text-xl font-extrabold text-white">{formatPrice(product.priceAmount)}</span>
-                      <span className="text-[11px] text-slate-500 ml-1.5">{formatSalesCount(product.salesCount)} {t("featured.sold")}</span>
+                      <span className="text-[11px] text-slate-500 ms-1.5">{formatSalesCount(product.salesCount)} {t("featured.sold")}</span>
                     </div>
                     <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-all duration-300 group-hover:scale-110">
                       <ArrowRight size={14} />

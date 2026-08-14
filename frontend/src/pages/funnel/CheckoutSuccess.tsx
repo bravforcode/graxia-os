@@ -42,7 +42,7 @@ export default function CheckoutSuccess() {
         </div>
 
         {/* Action Steps Dashboard */}
-        <div className="bg-slate-950/40 border border-slate-850/80 rounded-2xl p-5 text-left space-y-4">
+        <div className="bg-slate-950/40 border border-slate-850/80 rounded-2xl p-5 text-start space-y-4">
           <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">{t("success.next")}</h3>
           
           <div className="flex gap-3">

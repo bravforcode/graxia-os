@@ -6,6 +6,7 @@ import App from './App'
 import './index.css'
 import { initializeTheme } from './store/uiStore'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { initWebVitals } from './lib/vitals'
 
 if (import.meta.env.VITE_SENTRY_DSN) {
   Sentry.init({
@@ -32,6 +33,7 @@ const queryClient = new QueryClient({
 })
 
 initializeTheme()
+initWebVitals()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
