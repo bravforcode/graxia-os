@@ -54,6 +54,7 @@ async def test_bearer_token_accepted(monkeypatch):
     monkeypatch.setenv("ADMIN_API_KEY", "test-key")
     result = await require_admin_api_key(
         _make_request([(b"authorization", b"Bearer test-key")]),
+        x_admin_api_key=None,
         authorization="Bearer test-key",
     )
     assert result is None
