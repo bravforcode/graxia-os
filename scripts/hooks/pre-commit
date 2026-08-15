@@ -1,6 +1,11 @@
 #!/bin/sh
 set -e
 
+# NOTE: package.json `prepare` runs `git config core.hooksPath scripts/hooks`,
+# which makes THIS the only active git hook repo-wide. If the project later
+# needs commit-msg / pre-push hooks, add them here (or switch to a hook
+# manager) — they will not run from any other location.
+
 # Case-collision guard — always runs (only needs git)
 bash scripts/check-case-collision.sh
 
