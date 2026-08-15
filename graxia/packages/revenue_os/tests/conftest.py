@@ -12,9 +12,9 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
 )
 from sqlalchemy.pool import NullPool
+from sqlalchemy import text
 
 from graxia.database import Base
-from ..db import _get_or_init_database_url
 import os
 
 
@@ -52,10 +52,17 @@ async def test_engine():
 
     yield engine
 
-    # Drop all tables after tests
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-
+    # Drop all tables after tests. Pre-existing FK cycle between revenue_os_ai_drafts
+    # and revenue_os_approvals (unnamed constraints) makes metadata drop_all raise
+    # CircularDependencyError — the test DB is ephemeral, so drop via CASCADE instead.
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+    except Exception:
+        async with engine.begin() as conn:
+            await conn.execute(text("DROP SCHEMA public CASCADE"))
+        async with engine.begin() as conn:
+            await conn.execute(text("CREATE SCHEMA public"))
     await engine.dispose()
 
 
@@ -63,7 +70,11 @@ async def test_engine():
 async def db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
     """
     Create a fresh database session for each test.
-    Uses transaction rollback to ensure test isolation.
+
+    NOTE: services in this package commit internally (order/fulfillment/email/...),
+    so the session must NOT be wrapped in a single outer transaction — commits inside
+    the test would close it. Instead: clean slate per test (delete all rows), then
+    yield a plain session; rollback at teardown as a safety net.
     """
     # Create session factory
     async_session_maker = async_sessionmaker(
@@ -73,11 +84,13 @@ async def db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
     )
 
     async with async_session_maker() as session:
-        # Start transaction
-        async with session.begin():
-            yield session
-            # Rollback transaction after test
-            await session.rollback()
+        # Clean slate: delete all rows (children first via reversed dependency order)
+        for table in reversed(Base.metadata.sorted_tables):
+            await session.execute(table.delete())
+        await session.commit()
+        yield session
+        # Safety net: discard anything the test left uncommitted
+        await session.rollback()
 
 
 @pytest.fixture
