@@ -136,6 +136,13 @@ def create_revenue_os_celery_app(settings) -> Celery:
                 "schedule": 300.0,  # Every 5 minutes
                 "options": {"queue": "critical"},
             },
+
+            # Rollout gate checker - daily autonomy stage readiness (never auto-advances)
+            "rollout-gate-checker": {
+                "task": "graxia.packages.revenue_os.celery.tasks.rollout_gate_checker",
+                "schedule": 86400.0,  # Daily
+                "options": {"queue": "reporting"},
+            },
         },
     })
 
