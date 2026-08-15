@@ -120,3 +120,16 @@ except ImportError as e:
         """
         async with get_db_session() as session:
             yield session
+
+
+def _resolve_database_url() -> str:
+    """Public DATABASE_URL accessor — works in both backend and fallback modes."""
+    url = os.getenv("DATABASE_URL")
+    if url:
+        return url
+    if not USING_BACKEND_SESSION:
+        return _get_or_init_database_url()
+    return "postgresql+asyncpg://graxia:graxia@localhost:5432/graxia_dev"
+
+
+DATABASE_URL = _resolve_database_url()

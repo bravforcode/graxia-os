@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ....packages.revenue_os.db import get_db
 from ....packages.revenue_os.models import WebhookEvent
 from ....packages.revenue_os.schemas import CheckoutWebhookResponse, CreateOrderPayload
-from ....packages.revenue_os.services.order_service import order_service
+from ....packages.revenue_os.services.order_service import OrderService
 from ..dependencies import require_stripe_hmac
 from sqlalchemy import select
 
@@ -83,7 +83,7 @@ async def stripe_webhook(
                 amount_cents=session.get("amount_total", 0),
                 currency=(session.get("currency") or "USD").upper(),
             )
-            order = await order_service.create_order(db, payload)
+            order = await OrderService.create_order(db, payload)
             order_id = order.id
             logger.info(
                 "Checkout completed: order_id=%s, email=%s, amount=%d",

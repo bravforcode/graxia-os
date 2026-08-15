@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ....packages.revenue_os.db import get_db_session
 from ....packages.revenue_os.models import BWCPMessage
 from ....packages.revenue_os.enums import AgentType, BWCPMessageType
-from ....packages.revenue_os.schemas.bwcp_schemas import (
+from ....packages.revenue_os.schemas_pkg.bwcp_schemas import (
     BWCPMessageResponse,
     BWCPMessageList,
     BWCPConversationResponse,
