@@ -10,11 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ...db import get_db_session
 from ...enums import IncidentSeverity
 from ...models import IncidentEvent
-from graxia.services.telegram_notifier import TelegramNotifier
+from graxia.services.telegram_notifier import UnifiedTelegramNotifier
 
 logger = structlog.get_logger()
 
-notifier = TelegramNotifier  # monkeypatch target for tests
+notifier = UnifiedTelegramNotifier  # monkeypatch target for tests
 
 
 async def alerter_sweep(db: AsyncSession) -> dict:
