@@ -670,6 +670,7 @@ class IncidentEvent(Base):
 
     resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     resolution_notes: Mapped[Optional[str]] = mapped_column(Text)
+    notified_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

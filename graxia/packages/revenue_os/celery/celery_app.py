@@ -129,6 +129,13 @@ def create_revenue_os_celery_app(settings) -> Celery:
                 "schedule": 3600.0,  # Hourly
                 "options": {"queue": "default"},
             },
+
+            # Incident alerter - Telegram for MEDIUM+ incidents (sent once)
+            "incident-alerter": {
+                "task": "graxia.packages.revenue_os.celery.tasks.incident_alerter",
+                "schedule": 300.0,  # Every 5 minutes
+                "options": {"queue": "critical"},
+            },
         },
     })
 
