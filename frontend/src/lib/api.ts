@@ -8,6 +8,7 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "/api/v1").replace(
 export const client = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
+  timeout: 30000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -16,6 +17,7 @@ export const client = axios.create({
 export const publicClient = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
+  timeout: 30000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -485,6 +487,7 @@ client.interceptors.response.use(
         path.startsWith("/f/") ||
         path.startsWith("/delivery/");
       if (!isPublicPage) {
+        window.dispatchEvent(new CustomEvent("auth:session-expired"));
         window.location.href = "/login";
       }
     }
@@ -492,6 +495,33 @@ client.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
+// Retry transient failures (network errors + 5xx) with exponential backoff.
+function attachRetry(instance: typeof client) {
+  instance.interceptors.response.use(
+    (response) => response,
+    async (error: unknown) => {
+      const err = error as { config?: AxiosRequestConfig & { _retryCount?: number }; response?: { status?: number } };
+      const cfg = err.config;
+      const status = err.response?.status;
+      const isRetryable =
+        !err.response || status === 502 || status === 503 || status === 504;
+      if (!isRetryable || !cfg) {
+        return Promise.reject(error);
+      }
+      cfg._retryCount = cfg._retryCount ?? 0;
+      if (cfg._retryCount >= 2) {
+        return Promise.reject(error);
+      }
+      cfg._retryCount += 1;
+      const delay = 500 * cfg._retryCount;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      return instance(cfg);
+    },
+  );
+}
+attachRetry(client);
+attachRetry(publicClient);
 
 async function loginRequest(
   email: string,
