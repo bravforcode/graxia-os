@@ -47,7 +47,7 @@ class RefundExecutor:
                 counts["skipped"] += 1  # already processed
                 continue
             try:
-                stripe.api_key = os.getenv("STRIPE_API_KEY")
+                stripe.api_key = os.getenv("STRIPE_API_KEY") or os.getenv("STRIPE_SECRET_KEY")
                 created = stripe_refunds.create(
                     payment_intent=order.stripe_payment_intent,
                     amount=refund.amount_cents,
