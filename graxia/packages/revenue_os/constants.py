@@ -101,3 +101,4 @@ CIRCUIT_BREAKER_WINDOW_MINUTES = 60   # trailing window checked for incident spi
 CIRCUIT_BREAKER_INCIDENT_THRESHOLD = 5  # MEDIUM+ incidents in the window that force mode -> OFF
 SUPPORT_VERIFICATION_TTL_MINUTES = 15   # one-time code validity
 SUPPORT_VERIFICATION_MAX_ATTEMPTS = 5  # wrong-code attempts before escalation
+SUPPORT_VERIFICATION_SALT = "graxia-support-v1"  # replace via env SECRET_KEY-derived salt in production

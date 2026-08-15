@@ -1087,3 +1087,20 @@ class AutonomyState(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
     mode: Mapped[AutonomyMode] = mapped_column(SAEnum(AutonomyMode), default=AutonomyMode.OFF, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class SupportVerification(Base):
+    """One-time codes proving email ownership before WISMO/refund actions (Risk Audit #3/#7)."""
+    __tablename__ = "revenue_os_support_verifications"
+    __table_args__ = (
+        Index("ix_support_verification_email", "email"),
+    )
+
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    email: Mapped[str] = mapped_column(String(320), nullable=False)
+    code_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    used_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

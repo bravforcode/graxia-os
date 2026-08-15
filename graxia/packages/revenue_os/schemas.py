@@ -356,3 +356,15 @@ class PolicyRuleResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class SupportChatRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=2000)
+    customer_email: str = Field(..., max_length=320)
+    verification_code: Optional[str] = Field(default=None, max_length=6)
+
+
+class SupportChatResponse(BaseModel):
+    intent: str
+    reply: str
+    action_taken: Optional[str] = None
