@@ -132,3 +132,46 @@ class BWCPMessageType(StrEnum):
     INCIDENT_RESOLVED = "incident_resolved"
     ORDER_FULFILLED = "order_fulfilled"
     ORDER_REFUNDED = "order_refunded"
+
+
+class ActionType(StrEnum):
+    PRICE_CHANGE = "price_change"
+    DISCOUNT = "discount"
+    REFUND = "refund"
+    FULFILL = "fulfill"
+    CAMPAIGN_PAUSE = "campaign_pause"
+    CAMPAIGN_PUBLISH = "campaign_publish"
+    EMAIL_SEND = "email_send"
+
+
+class RuleType(StrEnum):
+    MAX = "max"
+    MIN = "min"
+    ALLOW = "allow"
+    DENY = "deny"
+
+
+class ValueType(StrEnum):
+    """How a PolicyRule's `value` should be interpreted. ABSOLUTE is always in cents
+    (matches the existing price_cents/amount_cents convention). A money-moving action
+    is checked against BOTH: a percent cap alone does not bound absolute exposure."""
+    PERCENT = "percent"
+    ABSOLUTE = "absolute"
+
+
+class AutonomyMode(StrEnum):
+    """Staged autonomy rollout — see Task 12. Nothing reaches FULL without a defined
+    observation period in SHADOW and LIMITED first."""
+    OFF = "off"        # no autonomous action of any kind
+    SHADOW = "shadow"  # agents compute + log what they WOULD do; nothing is executed
+    LIMITED = "limited"  # agents execute, capped at value * limited_multiplier
+    FULL = "full"       # agents execute at full policy-configured caps
+
+
+class SupportIntent(StrEnum):
+    WISMO = "wismo"
+    REFUND = "refund"
+    PRODUCT_QUESTION = "product_question"
+    COMPLAINT = "complaint"
+    SALES = "sales"
+    OTHER = "other"
