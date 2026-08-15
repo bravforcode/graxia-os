@@ -24,7 +24,7 @@ from .enums import (
     LeadStatus, ContentStatus, ApprovalStatus, EmailStatus,
     CampaignStatus, IncidentSeverity, RefundStatus, LedgerEntryType,
     AgentType, BWCPMessageType, ValueType, AutonomyMode, RuleType,
-    ChannelType, SupplierStatus,
+    ChannelType, SupplierStatus, AffiliateStatus,
 )
 
 
@@ -1185,3 +1185,50 @@ class PriceChangeLock(Base):
     product_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
     last_change_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     last_delta_percent: Mapped[float] = mapped_column(Float, default=0.0)
+
+# ══════════════════════════════════════════════════════════════════
+# AFFILIATE / INVENTORY MODELS (Phase 3)
+# ══════════════════════════════════════════════════════════════════
+
+class Affiliate(Base):
+    """Affiliate/KOL program member. Commission is policy-capped (AFFILIATE rules)."""
+    __tablename__ = "revenue_os_affiliates"
+
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    email: Mapped[str] = mapped_column(String(320), nullable=False)
+    commission_percent: Mapped[float] = mapped_column(Float, default=0.0)
+    status: Mapped[AffiliateStatus] = mapped_column(SAEnum(AffiliateStatus), default=AffiliateStatus.ACTIVE, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class AffiliatePayout(Base):
+    """Commission payout for a confirmed attributed sale."""
+    __tablename__ = "revenue_os_affiliate_payouts"
+    __table_args__ = (
+        Index("ix_affiliate_payouts_status", "status"),
+    )
+
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    affiliate_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("revenue_os_affiliates.id"), nullable=False)
+    order_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("revenue_os_orders.id"), nullable=False)
+    amount_cents: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(30), default="pending")  # pending|approved|paid|rejected
+    needs_review: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class ChannelInventory(Base):
+    """Per-channel stock mirror with a safety buffer (never oversell)."""
+    __tablename__ = "revenue_os_channel_inventory"
+
+    channel: Mapped[ChannelType] = mapped_column(SAEnum(ChannelType), primary_key=True)
+    product_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("revenue_os_products.id"), primary_key=True)
+    channel_stock: Mapped[int] = mapped_column(Integer, default=0)
+    stock_buffer: Mapped[int] = mapped_column(Integer, default=0)
+
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

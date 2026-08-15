@@ -109,6 +109,15 @@ class PolicyEngine:
             if value is None:
                 return True, f"rule {rule.id} needs context['{context_key}']"
             cap = rule.value
+            if rule.value_type == ValueType.ABSOLUTE and context.get("currency") not in (None, "THB"):
+                # FX-aware: convert absolute cents via context fx_rate; without a rate
+                # the ABSOLUTE rule is skipped (PERCENT-only) — never apply a THB cap
+                # to a foreign-currency amount unchanged.
+                fx = context.get("fx_rate")
+                if not fx:
+                    return True, None  # skip ABSOLUTE rule (currency != THB, no rate)
+                value = value / fx
+                cap = cap / fx
             if mode == AutonomyMode.LIMITED and rule.rule_type == RuleType.MAX:
                 cap = rule.value * rule.limited_multiplier
             unit = "cents" if rule.value_type == ValueType.ABSOLUTE else "%"
@@ -168,6 +177,9 @@ class PolicyEngine:
             # Phase 2: ads budget changes (percent + absolute)
             (ActionType.AD_BUDGET.value, RuleType.MAX, ValueType.PERCENT, 10.0, "max daily budget change, percent"),
             (ActionType.AD_BUDGET.value, RuleType.MAX, ValueType.ABSOLUTE, 50_000_00, "max daily budget change, THB cents"),
+            # Phase 3: affiliate commissions
+            (ActionType.AFFILIATE.value, RuleType.MAX, ValueType.PERCENT, 20.0, "max affiliate commission percent"),
+            (ActionType.AFFILIATE.value, RuleType.MAX, ValueType.ABSOLUTE, 20_000_00, "max affiliate payout, THB cents"),
         ]
         inserted = 0
         for action, rule_type, value_type, value, desc in defaults:

@@ -145,6 +145,7 @@ class ActionType(StrEnum):
     EMAIL_SEND = "email_send"
     AD_BUDGET = "ad_budget"
     SUPPLIER_PURCHASE = "supplier_purchase"
+    AFFILIATE = "affiliate"
 
 
 class RuleType(StrEnum):
@@ -183,6 +184,16 @@ class SupportIntent(StrEnum):
 class ChannelType(StrEnum):
     SHOPIFY = "shopify"
     POD_SUPPLIER = "pod_supplier"
+    SHOPEE = "shopee"
+    LAZADA = "lazada"
+    TIKTOK_SHOP = "tiktok_shop"
+    AMAZON = "amazon"
+
+
+class AffiliateStatus(StrEnum):
+    ACTIVE = "active"
+    PAUSED = "paused"
+    BANNED = "banned"
 
 
 class SupplierStatus(StrEnum):
