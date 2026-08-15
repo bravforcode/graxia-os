@@ -95,7 +95,11 @@ class PolicyEngine:
         """Return (applies, deny_reason). applies=False means this rule is scoped to
         something else (e.g. a different product_id) and is excluded from BOTH the deny
         and the allow computation — an inapplicable rule must never silently permit."""
-        if rule.scope != "global" and rule.scope == "product_id" and context.get("product_id") != rule.scope_value:
+        if rule.scope == "product_id" and context.get("product_id") != rule.scope_value:
+            return False, None
+        if rule.scope not in ("global", "product_id"):
+            # Unknown scope is never applicable — an unrecognized scope must not
+            # silently behave as global (latent fail-open for ALLOW rules).
             return False, None
         if rule.rule_type == RuleType.DENY:
             return True, f"denied by rule {rule.id}"

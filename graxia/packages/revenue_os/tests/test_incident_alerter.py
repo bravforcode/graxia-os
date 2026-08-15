@@ -16,7 +16,7 @@ async def test_alerter_sends_medium_incidents_once(db_session: AsyncSession, mon
 
     class FakeNotifier:
         @staticmethod
-        def notify_system_alert(severity, msg):
+        async def notify_system_alert(severity, msg):
             sent.append((severity, msg))
             return True
 

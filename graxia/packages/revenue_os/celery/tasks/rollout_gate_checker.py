@@ -50,9 +50,15 @@ class RolloutGateChecker:
             select(func.count(AuditLog.id)).where(AuditLog.event_type.like("agent.%.shadow"))
         )
         today_denials = await db.scalar(
-            select(func.count(AuditLog.id)).where(
-                AuditLog.event_type.in_(["agent.price_change.denied", "agent.campaign_pause.denied"]),
-                AuditLog.created_at >= datetime.utcnow() - timedelta(days=1),
+            select(func.count(IncidentEvent.id)).where(
+                IncidentEvent.severity == IncidentSeverity.MEDIUM,
+                IncidentEvent.created_at >= datetime.utcnow() - timedelta(days=1),
+            )
+        )
+        breaker_trips = await db.scalar(
+            select(func.count(IncidentEvent.id)).where(
+                IncidentEvent.severity == IncidentSeverity.HIGH,
+                IncidentEvent.title.like("Circuit breaker%"),
             )
         )
         days = await days_in_mode(db, mode)
@@ -77,7 +83,7 @@ class RolloutGateChecker:
             ready = all(automated.values())
         elif mode == AutonomyMode.LIMITED:
             gates["no_high_incidents"] = (high_incidents or 0) == 0
-            gates["breaker_never_tripped"] = True  # see note: verify via AuditLog scan in prod
+            gates["breaker_never_tripped"] = (breaker_trips or 0) == 0
             gates["observation_period"] = days >= LIMITED_MIN_DAYS
             gates["impact_within_expectation"] = True  # manual review by operator
             gates["human_reviewed"] = False
@@ -107,7 +113,7 @@ class RolloutGateChecker:
         ))
         await db.commit()
         try:
-            UnifiedTelegramNotifier.notify_system_alert(
+            await UnifiedTelegramNotifier().notify_system_alert(
                 severity="info",
                 msg=f"Autonomy stage={readiness['stage']} ready_for_next={readiness['ready_for_next']}",
             )

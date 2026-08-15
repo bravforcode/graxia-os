@@ -24,18 +24,6 @@ from .fulfillment_service import FulfillmentService
 class WebhookProcessor:
     """Process payment webhooks and create orders"""
 
-    @staticmethod
-    def _resolve_product_id(session: Dict[str, Any], db: AsyncSession) -> Optional[Any]:
-        """Product id from metadata, else from stripe_price_id, else None."""
-        metadata = session.get("metadata") or {}
-        product_id = metadata.get("product_id")
-        if product_id:
-            return product_id
-        price_id = session.get("price") or metadata.get("stripe_price_id")
-        if price_id:
-            return None  # resolved by caller via lookup below
-        return None
-
     @classmethod
     async def _apply_customer_stats(cls, db: AsyncSession, customer: Customer, amount_cents: int) -> None:
         customer.total_spent_cents = (customer.total_spent_cents or 0) + amount_cents
@@ -55,6 +43,8 @@ class WebhookProcessor:
         customer_email = (session.get("customer_details") or {}).get("email") or session.get("customer_email")
         customer_name = (session.get("customer_details") or {}).get("name") or session.get("customer_name")
         amount_cents = int(session.get("amount_total", 0))  # Stripe amounts are cents
+        if amount_cents <= 0:
+            raise ValueError("checkout.session.completed amount must be greater than 0")
         currency = (session.get("currency") or "usd").upper()
         session_id = session.get("id")
         payment_intent = session.get("payment_intent")
@@ -116,6 +106,8 @@ class WebhookProcessor:
         invoice_id = invoice.get("id")
         customer_email = invoice.get("customer_email")
         amount_cents = int(invoice.get("amount_paid", 0))
+        if amount_cents <= 0:
+            raise ValueError("invoice.paid amount must be greater than 0")
         currency = (invoice.get("currency") or "usd").upper()
         product_id = (invoice.get("metadata") or {}).get("product_id")
 
@@ -170,17 +162,31 @@ class WebhookProcessor:
 
     @classmethod
     async def process_stripe_refund(
-        cls,
+        self,
         charge: Dict[str, Any],
         db: AsyncSession
     ) -> Order:
-        """Process Stripe refund"""
+        """Process Stripe refund (charge.refunded). The charge id (ch_*) differs from
+        the payment intent id (pi_*), so match against either the payment_intent
+        column or the stored session metadata."""
         charge_id = charge.get("id")
         order = (
             await db.execute(
                 select(Order).where(Order.stripe_payment_intent == charge_id)
             )
         ).scalar_one_or_none()
+        if order is None and charge_id:
+            # Fallback: the session metadata may hold the payment_intent under a
+            # different shape — match any order whose stored session id is the charge's
+            # payment_intent parent.
+            for candidate in (
+                await db.execute(select(Order).where(Order.platform == "stripe"))
+            ).scalars().all():
+                meta = candidate.metadata_ or {}
+                session_meta = (meta.get("stripe_session") or {})
+                if isinstance(session_meta, dict) and session_meta.get("payment_intent") == charge_id:
+                    order = candidate
+                    break
 
         if order:
             order.status = OrderStatus.REFUNDED
@@ -250,6 +256,8 @@ class WebhookProcessor:
         capture_id = resource.get("id")
         amount = resource.get("amount", {})
         amount_cents = int(Decimal(str(amount.get("value", "0"))) * 100)
+        if amount_cents <= 0:
+            raise ValueError("paypal capture amount must be greater than 0")
         currency = (amount.get("currency_code") or "USD").upper()
         product_id = (resource.get("metadata") or {}).get("product_id")
         customer_email = (resource.get("payer") or {}).get("email_address")

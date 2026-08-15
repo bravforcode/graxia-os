@@ -82,6 +82,12 @@ try:
 except ImportError:
     revenue_webhooks_router = None
 
+# SECURITY (2026-08): the legacy revenue webhooks router is NOT mounted —
+# its Stripe signature verification was a no-op and Gumroad/PayPal had no
+# verification, allowing forged payment webhooks (free orders). The verified,
+# HMAC-checked endpoint lives at /api/checkout/stripe-webhook (revenue_os_api).
+revenue_webhooks_router = None
+
 # Quant OS Routers (optional - graceful fallback)
 quant_routers = {}
 try:

@@ -13,8 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 import stripe
 from datetime import datetime
-from ..enums import RefundStatus
-from ..models import Order, Refund
+from ..enums import IncidentSeverity, RefundStatus
+from ..models import IncidentEvent, Order, Refund
 
 logger = structlog.get_logger()
 
@@ -33,6 +33,15 @@ class RefundExecutor:
             order = await db.get(Order, refund.order_id)
             if order is None or order.platform != "stripe":
                 counts["skipped"] += 1
+                if refund.platform != "stripe":
+                    # Customer was told "refund started" — surface it so a human can act
+                    db.add(IncidentEvent(
+                        title=f"Refund for non-stripe order skipped: {refund.id}",
+                        description=f"platform={refund.platform}, order={refund.order_id} — "
+                                    "no automated refund possible for this provider",
+                        severity=IncidentSeverity.LOW,
+                        affected_order_id=refund.order_id,
+                    ))
                 continue
             if refund.platform_refund_id:
                 counts["skipped"] += 1  # already processed
@@ -43,6 +52,7 @@ class RefundExecutor:
                     payment_intent=order.stripe_payment_intent,
                     amount=refund.amount_cents,
                     metadata={"refund_id": str(refund.id)},
+                    idempotency_key=f"refund-{refund.id}",  # crash-safe re-execution
                 )
                 refund.platform_refund_id = created.id
                 refund.status = RefundStatus.PROCESSED

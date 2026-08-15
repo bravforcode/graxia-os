@@ -41,7 +41,7 @@ async def sweep_pending_fulfillments(db: AsyncSession) -> int:
 async def digital_fulfillment_with_db(db: AsyncSession) -> dict:
     """Lock-wrapped sweep. Skips when another worker holds the lock (Risk Audit #8).
     db-injected variant so tests can exercise the lock path without redis."""
-    async with acquire_automation_lock(db, LOCK_NAME, ttl_seconds=300) as acquired:
+    async with acquire_automation_lock(db, LOCK_NAME, ttl_seconds=600) as acquired:
         if not acquired:
             return {"skipped": True, "reason": "lock_held_by_another_worker"}
         fulfilled = await sweep_pending_fulfillments(db)

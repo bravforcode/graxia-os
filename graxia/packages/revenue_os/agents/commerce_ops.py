@@ -129,9 +129,12 @@ class CommerceOpsAgent:
     @staticmethod
     async def _daily_report(db: AsyncSession) -> None:
         now = datetime.utcnow()
-        order_count = await db.scalar(select(Order.id).where(Order.purchased_at >= now - timedelta(days=1)))
+        from sqlalchemy import func as _func
+        order_count = await db.scalar(
+            select(_func.count(Order.id)).where(Order.purchased_at >= now - timedelta(days=1))
+        )
         revenue = await db.scalar(
-            select(Order.amount_cents).where(
+            select(_func.coalesce(_func.sum(Order.amount_cents), 0)).where(
                 Order.status == OrderStatus.PAID,
                 Order.purchased_at >= now - timedelta(days=1),
             )

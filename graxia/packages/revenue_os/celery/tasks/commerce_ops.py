@@ -13,7 +13,7 @@ LOCK_NAME = "commerce_ops"
 
 
 async def commerce_ops_with_db(db):
-    async with acquire_automation_lock(db, LOCK_NAME, ttl_seconds=300) as acquired:
+    async with acquire_automation_lock(db, LOCK_NAME, ttl_seconds=600) as acquired:
         if not acquired:
             return {"skipped": True, "reason": "lock_held_by_another_worker"}
         return await CommerceOpsAgent.run_cycle(db)

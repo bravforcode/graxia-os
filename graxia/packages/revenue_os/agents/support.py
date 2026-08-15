@@ -146,11 +146,14 @@ class SupportAgent:
         order = await SupportAgent._latest_order(db, customer_email)
         if order is None:
             return "ไม่พบออเดอร์สำหรับอีเมลนี้ จึงไม่สามารถคืนเงินได้", "refund_denied"
-        # Idempotency (Risk Audit #4): no refund already in flight for this order
+        # Only paid/fulfilled orders are refundable
+        if order.status not in (OrderStatus.PAID, OrderStatus.FULFILLED):
+            return "ออเดอร์นี้ยังไม่ผ่านการชำระเงิน จึงไม่สามารถคืนเงินได้", "refund_denied"
+        # Idempotency (Risk Audit #4): no refund already in flight OR processed for this order
         existing = await db.scalar(
             select(Refund).where(
                 Refund.order_id == order.id,
-                Refund.status.in_([RefundStatus.PENDING, RefundStatus.PROCESSING]),
+                Refund.status.in_([RefundStatus.PENDING, RefundStatus.PROCESSING, RefundStatus.PROCESSED]),
             ).limit(1)
         )
         if existing is not None:

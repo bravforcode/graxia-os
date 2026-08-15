@@ -28,7 +28,7 @@ async def alerter_sweep(db: AsyncSession) -> dict:
     sent = 0
     for incident in incidents:
         try:
-            notifier.notify_system_alert(
+            await notifier().notify_system_alert(
                 severity=incident.severity.value,
                 msg=f"{incident.title}\n{incident.description}",
             )
