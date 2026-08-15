@@ -11,7 +11,7 @@ from ...db import get_db_session
 from ...core.db_ops import acquire_automation_lock
 from ...enums import ChannelType
 from ...models import ChannelConnection
-from . import shopify as shopify_mod
+from ...channels import shopify as shopify_mod
 
 logger = structlog.get_logger()
 
