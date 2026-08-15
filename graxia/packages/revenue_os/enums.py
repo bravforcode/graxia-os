@@ -143,6 +143,8 @@ class ActionType(StrEnum):
     CAMPAIGN_PAUSE = "campaign_pause"
     CAMPAIGN_PUBLISH = "campaign_publish"
     EMAIL_SEND = "email_send"
+    AD_BUDGET = "ad_budget"
+    SUPPLIER_PURCHASE = "supplier_purchase"
 
 
 class RuleType(StrEnum):
@@ -176,3 +178,16 @@ class SupportIntent(StrEnum):
     COMPLAINT = "complaint"
     SALES = "sales"
     OTHER = "other"
+
+
+class ChannelType(StrEnum):
+    SHOPIFY = "shopify"
+    POD_SUPPLIER = "pod_supplier"
+
+
+class SupplierStatus(StrEnum):
+    SUBMITTED = "submitted"
+    IN_PRODUCTION = "in_production"
+    SHIPPED = "shipped"
+    DELIVERED = "delivered"
+    FAILED = "failed"

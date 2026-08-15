@@ -24,6 +24,7 @@ from .enums import (
     LeadStatus, ContentStatus, ApprovalStatus, EmailStatus,
     CampaignStatus, IncidentSeverity, RefundStatus, LedgerEntryType,
     AgentType, BWCPMessageType, ValueType, AutonomyMode, RuleType,
+    ChannelType, SupplierStatus,
 )
 
 
@@ -1105,3 +1106,77 @@ class SupportVerification(Base):
     attempts: Mapped[int] = mapped_column(Integer, default=0)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+# ══════════════════════════════════════════════════════════════════
+# CHANNEL / SUPPLIER / ADS / PRICING MODELS (Phase 2)
+# ══════════════════════════════════════════════════════════════════
+
+class ChannelConnection(Base):
+    """A connected external commerce channel (Shopify, POD supplier...).
+    config stores NON-secret settings only; credentials live in env/secrets."""
+    __tablename__ = "revenue_os_channel_connections"
+
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    channel: Mapped[ChannelType] = mapped_column(SAEnum(ChannelType), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    config: Mapped[dict] = mapped_column(JSONB, default=dict)
+    last_sync_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class SupplierOrder(Base):
+    """External POD/dropship order tracking. idempotency_key prevents double submission."""
+    __tablename__ = "revenue_os_supplier_orders"
+    __table_args__ = (
+        UniqueConstraint("idempotency_key", name="uq_supplier_orders_idempotency_key"),
+        Index("ix_supplier_orders_order_id", "order_id"),
+    )
+
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    order_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("revenue_os_orders.id"), nullable=False)
+    supplier: Mapped[str] = mapped_column(String(100), nullable=False)
+    supplier_order_ref: Mapped[Optional[str]] = mapped_column(String(255))
+    idempotency_key: Mapped[str] = mapped_column(String(255), nullable=False)
+    status: Mapped[SupplierStatus] = mapped_column(SAEnum(SupplierStatus), default=SupplierStatus.SUBMITTED, nullable=False)
+    tracking_number: Mapped[Optional[str]] = mapped_column(String(255))
+    raw: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class AdCampaignSync(Base):
+    """Mirror of an external ad campaign (budget/spend/roas). Budgets are only
+    changed by the policy-gated ads agent job."""
+    __tablename__ = "revenue_os_ad_campaign_syncs"
+    __table_args__ = (
+        UniqueConstraint("platform", "platform_campaign_id", name="uq_ad_campaign_platform_id"),
+    )
+
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    platform: Mapped[str] = mapped_column(String(50), nullable=False)
+    platform_campaign_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String(255))
+    status: Mapped[Optional[str]] = mapped_column(String(50))
+    daily_budget_cents: Mapped[int] = mapped_column(Integer, default=0)
+    spend_cents: Mapped[int] = mapped_column(Integer, default=0)
+    revenue_cents: Mapped[int] = mapped_column(Integer, default=0)
+    roas: Mapped[float] = mapped_column(Float, default=0.0)
+    last_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    metadata_: Mapped[Optional[dict]] = mapped_column("metadata", JSONB, default=dict)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class PriceChangeLock(Base):
+    """Per-product rate-limit for price changes (shared price-write path, Task 6)."""
+    __tablename__ = "revenue_os_price_change_locks"
+
+    product_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    last_change_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    last_delta_percent: Mapped[float] = mapped_column(Float, default=0.0)

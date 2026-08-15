@@ -102,3 +102,9 @@ CIRCUIT_BREAKER_INCIDENT_THRESHOLD = 5  # MEDIUM+ incidents in the window that f
 SUPPORT_VERIFICATION_TTL_MINUTES = 15   # one-time code validity
 SUPPORT_VERIFICATION_MAX_ATTEMPTS = 5  # wrong-code attempts before escalation
 SUPPORT_VERIFICATION_SALT = "graxia-support-v1"  # replace via env SECRET_KEY-derived salt in production
+
+# Channels / suppliers / ads (Phase 2)
+CHANNEL_ORDER_IMPORT_LIMIT = 200
+SUPPLIER_POLL_INTERVAL_MIN = 15
+ADS_METRICS_WINDOW_DAYS = 7
+PRICE_CHANGE_MIN_INTERVAL_HOURS = 24
