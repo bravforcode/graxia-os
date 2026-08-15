@@ -9,10 +9,45 @@ Supports:
 """
 
 import csv
+import logging
 import os
-from datetime import date, datetime, timedelta
+import re
+import sys
+from datetime import UTC, date, datetime, timedelta
+from typing import Any
 
 import pandas as pd
+
+try:
+    from ..data_pipeline.storage.duckdb_store import DuckDBStore
+except ImportError:  # top-level context (tests import backtest.data_loader directly)
+    from data_pipeline.storage.duckdb_store import DuckDBStore  # type: ignore[no-redef]
+
+logger = logging.getLogger(__name__)
+
+
+def _iso_to_msc(iso: str) -> int:
+    return int(datetime.fromisoformat(iso).replace(tzinfo=UTC).timestamp() * 1000)
+
+
+def load_real_ticks(
+    symbol: str,
+    start_iso: str,
+    end_iso: str,
+    *,
+    db: DuckDBStore | None = None,
+    use_backfill: bool = True,
+) -> pd.DataFrame | None:
+    """Return real bid/ask tick rows (time_msc, bid, ask, last, volume,
+    source, data_quality) from the DuckDB tick views, or None when no tick
+    data exists (caller falls back to config/cost_calibration.json)."""
+    store = db or DuckDBStore()
+    view = "v_ticks_combined" if use_backfill else "v_ticks"
+    try:
+        df = store.query_ticks(symbol, _iso_to_msc(start_iso), _iso_to_msc(end_iso), view=view)
+    except Exception:
+        return None  # empty glob / missing data — caller falls back to config
+    return None if df is None or len(df) == 0 else df
 
 
 def load_csv_data(
@@ -36,7 +71,7 @@ def load_csv_data(
         Tuple of (ohlcv_dict, timestamps)
     """
     timestamps = []
-    data = {"open": [], "high": [], "low": [], "close": [], "volume": []}
+    data: dict[str, list[Any]] = {"open": [], "high": [], "low": [], "close": [], "volume": []}
 
     with open(file_path, newline="") as f:
         reader = csv.DictReader(f)
@@ -112,7 +147,7 @@ def load_mt5_data(
         Tuple of (ohlcv_dict, timestamps)
     """
     try:
-        import MetaTrader5 as mt5
+        import MetaTrader5 as mt5  # noqa: N813
     except ImportError:
         raise ImportError("MetaTrader5 package not installed. Run: pip install MetaTrader5") from None
 
@@ -180,7 +215,7 @@ def generate_sample_data(
     rng = _random_mod.Random(seed)
 
     timestamps = []
-    data = {"open": [], "high": [], "low": [], "close": [], "volume": []}
+    data: dict[str, list[Any]] = {"open": [], "high": [], "low": [], "close": [], "volume": []}
 
     price = base_price
     start_date = datetime(2020, 1, 1)
@@ -265,7 +300,7 @@ def _require_pyarrow():
         return pyarrow
     except ImportError:
         raise ImportError(
-            "pyarrow is required for Arrow/Feather support. " "Install it with: pip install pyarrow"
+            "pyarrow is required for Arrow/Feather support. Install it with: pip install pyarrow"
         ) from None
 
 
@@ -347,3 +382,242 @@ def to_arrow(df: pd.DataFrame, path: str) -> None:
         # Default to .feather (Feather v2 / IPC file)
         out = path if ext else f"{path}.feather"
         df.reset_index().to_feather(out)
+
+
+# ---------------------------------------------------------------------------
+# Unified load_ohlcv() dispatcher — used by ml.labeling.label_from_source(),
+# which dynamically file-imports this module (bypassing normal package
+# import machinery, see that function's docstring) and calls
+# ``_dl.load_ohlcv(symbol=..., timeframe=..., sources=[...], **loader_kwargs)``.
+# ---------------------------------------------------------------------------
+
+
+def _graxia_repo_root() -> str:
+    """Filesystem root above the ``graxia`` namespace package.
+
+    Computed from this file's own ``__file__`` (not from the caller's sys.path
+    state) so it resolves correctly whether this module was imported normally
+    (``backtest.data_loader``) or file-loaded via importlib with no parent
+    package (as ``ml.labeling.label_from_source`` does).
+
+    backtest/data_loader.py -> quant_os -> packages -> graxia -> repo root.
+    """
+    quant_os_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.dirname(os.path.dirname(quant_os_root))
+
+
+def _normalize_timeframe_for_duckdb(timeframe: str) -> str:
+    """Map 'H1'/'M15'/'D1'-style timeframes to the lowercase 'Nh'/'Nm'/'Nd'
+    convention data/market_data.duckdb's flat ``ohlcv`` table actually stores
+    (see scripts/bootstrap_history.py, which writes ``timeframe="1h"``).
+    Falls back to a plain lowercase of the input for anything else.
+    """
+    m = re.match(r"^([HMD])(\d+)$", timeframe.strip(), re.IGNORECASE)
+    if not m:
+        return timeframe.lower()
+    unit, n = m.group(1).upper(), m.group(2)
+    suffix = {"H": "h", "M": "m", "D": "d"}[unit]
+    return f"{n}{suffix}"
+
+
+def _load_ohlcv_duckdb(symbol: str, timeframe: str, **kwargs) -> pd.DataFrame:
+    """Query the flat ``ohlcv`` table in data/market_data.duckdb.
+
+    Accepts an optional ``duckdb_path`` kwarg; otherwise resolves the path via
+    core.config.get_config().duckdb_path (same source scripts/bootstrap_history.py
+    uses), falling back to the DUCKDB_PATH env var / the documented default.
+    """
+    import duckdb
+
+    db_path = kwargs.get("duckdb_path")
+    if not db_path:
+        try:
+            root = _graxia_repo_root()
+            if root not in sys.path:
+                sys.path.insert(0, root)
+            from graxia.packages.quant_os.core.config import get_config
+
+            db_path = get_config().duckdb_path
+        except Exception:
+            db_path = None
+    db_path = str(db_path or os.getenv("DUCKDB_PATH", "data/market_data.duckdb"))
+
+    if not os.path.exists(db_path):
+        raise FileNotFoundError(f"duckdb file not found: {db_path}")
+
+    tf = _normalize_timeframe_for_duckdb(timeframe)
+    con = duckdb.connect(db_path, read_only=True)
+    try:
+        tables = {r[0] for r in con.execute("SELECT table_name FROM information_schema.tables").fetchall()}
+        if "ohlcv" not in tables:
+            raise ValueError(f"no 'ohlcv' table in {db_path}")
+        df = con.execute(
+            "SELECT time, open, high, low, close, volume, symbol "
+            "FROM ohlcv WHERE symbol = ? AND timeframe = ? ORDER BY time",
+            [symbol, tf],
+        ).fetchdf()
+    finally:
+        con.close()
+
+    if df.empty:
+        raise ValueError(f"no duckdb OHLCV rows for {symbol}/{timeframe} (normalized '{tf}') in {db_path}")
+    return df
+
+
+def _dedupe_warehouse_ohlcv(df: pd.DataFrame, *, symbol: str, timeframe: str) -> pd.DataFrame:
+    """Drop exact-duplicate rows returned by a hive-partitioned warehouse read.
+
+    Known ingestion bug (out of scope to fix at the source here, per project
+    decision): the same underlying file/rows can land in more than one
+    overlapping hive partition, so a single glob-registered view query can
+    return byte-identical rows several times over (confirmed on real
+    XAUUSD/H1 data: 300,000 rows collapsing to 50,000 unique rows, i.e. each
+    row repeated exactly 6x, all columns identical). Duplicate timestamps
+    straddling a purge/embargo split boundary would leak test-fold
+    information into the training fold, inflating apparent OOS performance.
+
+    This is a defensive load-time fix: drop full-row duplicates (safe --
+    never discards genuinely different data), then, if any duplicate
+    timestamps remain afterward (rows that share a time but disagree on some
+    other column -- a different, not-yet-seen problem), keep the first
+    occurrence and log loudly rather than silently feeding ambiguous rows
+    into training/evaluation.
+    """
+    if "time" not in df.columns:
+        return df
+
+    before = len(df)
+    df = df.drop_duplicates(subset=list(df.columns), keep="first")
+
+    remaining_dupe_ts = int(df.duplicated(subset=["time"], keep=False).sum())
+    if remaining_dupe_ts > 0:
+        logger.warning(
+            "warehouse_ohlcv_non_identical_duplicate_timestamps: symbol=%s timeframe=%s rows=%d",
+            symbol,
+            timeframe,
+            remaining_dupe_ts,
+        )
+        df = df.drop_duplicates(subset=["time"], keep="first")
+
+    df = df.reset_index(drop=True)
+    dropped = before - len(df)
+    if dropped > 0:
+        logger.warning(
+            "warehouse_ohlcv_duplicate_rows_dropped: symbol=%s timeframe=%s dropped=%d kept=%d",
+            symbol,
+            timeframe,
+            dropped,
+            len(df),
+        )
+    return df
+
+
+def _load_ohlcv_warehouse(symbol: str, timeframe: str, **kwargs) -> pd.DataFrame:
+    """Query the Parquet-backed warehouse via data.warehouse_loader.Warehouse.
+
+    Registers the hive-partitioned glob view for symbol/timeframe, then reads
+    it. Accepts optional ``warehouse_db_path``, ``start_date``, ``end_date``
+    kwargs. Deduplicates exact-duplicate rows before returning (see
+    ``_dedupe_warehouse_ohlcv`` docstring) -- a partition-ingestion bug can
+    otherwise return the same row several times over.
+    """
+    root = _graxia_repo_root()
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    from graxia.packages.quant_os.data.warehouse_loader import Warehouse
+
+    db_path = kwargs.get("warehouse_db_path", "data/warehouse/quantos.duckdb")
+    wh = Warehouse(db_path=db_path)
+    try:
+        wh.register_ohlcv_glob(symbol, timeframe)
+        df = wh.get_ohlcv(
+            symbol,
+            timeframe,
+            start=kwargs.get("start_date"),
+            end=kwargs.get("end_date"),
+        )
+    finally:
+        wh.close()
+
+    if df.empty:
+        raise ValueError(f"no warehouse OHLCV rows for {symbol}/{timeframe} in {db_path}")
+
+    df = _dedupe_warehouse_ohlcv(df, symbol=symbol, timeframe=timeframe)
+    return df
+
+
+def _load_ohlcv_csv(symbol: str, timeframe: str, **kwargs) -> pd.DataFrame:
+    """Load OHLCV from local files: Arrow/Feather first (schema-validated),
+    then a raw CSV via load_csv_data(). Accepts optional ``data_dir`` and
+    ``csv_path`` kwargs.
+    """
+    data_dir = kwargs.get("data_dir", "./data")
+    for ext in (".feather", ".arrow", ".parquet"):
+        path = os.path.join(data_dir, f"{symbol}_{timeframe}{ext}")
+        if os.path.exists(path):
+            return load_arrow(path)
+
+    csv_path = kwargs.get("csv_path") or os.path.join(data_dir, f"{symbol}.csv")
+    if not os.path.exists(csv_path):
+        raise FileNotFoundError(f"no CSV/Arrow OHLCV file found for {symbol}/{timeframe} under {data_dir}")
+
+    data, timestamps = load_csv_data(csv_path)
+    df = pd.DataFrame(data, index=pd.DatetimeIndex(timestamps))
+    return df
+
+
+def load_ohlcv(
+    symbol: str,
+    timeframe: str = "H1",
+    sources: list[str] | None = None,
+    **kwargs,
+) -> pd.DataFrame:
+    """Dispatch OHLCV loading across data sources, in order, returning the
+    first source that yields real rows.
+
+    This is the function ``ml.labeling.label_from_source()`` dynamically
+    file-imports and calls — see that function's docstring for the "auto"
+    source order (``["duckdb", "warehouse", "csv"]``).
+
+    Args:
+        symbol: Trading symbol (e.g. "XAUUSD").
+        timeframe: Bar timeframe, e.g. "H1", "M15", "D1".
+        sources: Ordered source names to try: "duckdb", "warehouse", "csv".
+            Defaults to all three, in that order.
+        **kwargs: Passed through to the per-source loader (e.g. ``duckdb_path``,
+            ``warehouse_db_path``, ``data_dir``, ``csv_path``, ``start_date``,
+            ``end_date``).
+
+    Returns:
+        DataFrame with at least [open, high, low, close] columns.
+
+    Raises:
+        RuntimeError: If every source in ``sources`` fails or returns empty.
+    """
+    if sources is None:
+        sources = ["duckdb", "warehouse", "csv"]
+
+    dispatch = {
+        "duckdb": _load_ohlcv_duckdb,
+        "warehouse": _load_ohlcv_warehouse,
+        "csv": _load_ohlcv_csv,
+    }
+
+    errors: list[str] = []
+    for src in sources:
+        loader = dispatch.get(src)
+        if loader is None:
+            errors.append(f"{src}: unknown source")
+            continue
+        try:
+            df = loader(symbol, timeframe, **kwargs)
+        except Exception as exc:  # noqa: BLE001 — try the next source instead of aborting
+            errors.append(f"{src}: {exc}")
+            continue
+        if df is not None and len(df) > 0:
+            return df
+        errors.append(f"{src}: empty result")
+
+    raise RuntimeError(
+        f"load_ohlcv: all sources failed for symbol={symbol!r} timeframe={timeframe!r}: " + "; ".join(errors)
+    )

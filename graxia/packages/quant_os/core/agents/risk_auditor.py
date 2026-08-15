@@ -16,8 +16,8 @@ from .base import Agent
 try:
     from ..canonical.macro_regime import RegimeBias, get_macro_regime
 except ImportError:
-    get_macro_regime = None
-    RegimeBias = None
+    get_macro_regime = None  # type: ignore[assignment]
+    RegimeBias = None  # type: ignore[assignment,misc]
 
 
 @dataclass

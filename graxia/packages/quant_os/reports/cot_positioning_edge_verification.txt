@@ -1,0 +1,80 @@
+================================================================================
+SUPERSEDED — DO NOT USE AS TRIAL 3007 VERDICT (added 2026-07-20)
+================================================================================
+This "0/5 gates, NO EDGE" result is a harness artifact, not a genuine null
+result. Root cause confirmed by direct instrumentation of the real
+StrategyValidator.run() pipeline (real ValidationConfig: risk_per_trade_bps=100,
+initial_capital=$10,000):
+
+  - 484 non-None signal calls total
+  - 24 calls got no stop-loss (local WFA-fold/PBO-period slice had only 2-14
+    bars of history, below ATR's warmup requirement) -> minor, separate bug
+  - 460 calls got a valid stop-loss and reached position sizing
+  - Of 358 sizing calls: 348 (97%) rounded down to 0.00 lots (below the 0.01
+    lot minimum), only 10 produced a nonzero position
+
+XAUUSD's 2023-2026 elevated price/volatility regime produces 2xATR stop
+distances of $27-$810 (median $83) per the strategy's sl_mult=2.0 convention.
+Against the $1/tick, 100oz/lot contract, a $83 stop needs ~$8,280 one-lot
+risk vs. a $100 risk budget (1% of $10k) -- most signal-bearing bars (which
+skew toward higher-ATR/volatility periods, consistent with COT contrarian
+extremes) can't clear the 0.01 lot minimum. Every 2000+ trade Path B trial
+(3004 DXYDiv, 3005 TSMOM) evidently ran under conditions where this didn't
+bind; this trial's narrow real-COT-data window (2023-12 to 2026-07) did not.
+
+Per user decision 2026-07-20: trial 3007 is classified UNTESTED (harness
+capital-scale limitation), not REJECTED, consistent with trial 3006's
+(FOMC) precedent. Does NOT count toward the Path B 3-consecutive-fail
+stopping rule. See research/trial_ledger_b.json for the recorded entry.
+
+Raw (invalid) run output preserved below for reference only.
+================================================================================
+EDGE VERIFICATION REPORT: COT Positioning XAUUSD D1
+Symbol: XAUUSD D1
+Data: 1279 bars
+Date: 2026-07-19T18:54:45.943637+00:00
+================================================================================
+
+BASELINE METRICS
+----------------------------------------
+Total Trades: 0
+Win Rate: 0.0%
+Sharpe Ratio: 0.0000
+Sharpe Ratio (bar-level):   0.0000
+Profit Factor: 0.00
+Max Drawdown Pct: 0.0
+Total PnL: 0.00
+
+WALK-FORWARD ANALYSIS
+----------------------------------------
+  0/5 positive, 0 trades, Sharpe=0.0000
+  FAIL
+
+DEFLATED SHARPE RATIO
+----------------------------------------
+  DSR: Sharpe=0.0000, P(alpha)=1.0000
+  Observations: 0
+  *** LOW POWER: DSR statistical power drops sharply below ~10 observations
+      (only 0 trades � interpret P(alpha) with caution)
+  FAIL
+
+PROBABILITY OF BACKTEST OVERFITTING
+----------------------------------------
+  PBO: 0.6000
+  FAIL
+
+BOOTSTRAP CONFIDENCE INTERVAL
+----------------------------------------
+  BOOTSTRAP: Sharpe=0.0000, CI=[0.0000, 0.0000]
+  FAIL
+
+COST STRESS TEST
+----------------------------------------
+  COST STRESS: Base PnL=0.00, 2x PnL=0.00, Degradation=0.0%
+  FAIL
+
+================================================================================
+FINAL: 0/5 gates passed
+VERDICT: NO EDGE
+RECOMMENDATION: Reject strategy
+================================================================================

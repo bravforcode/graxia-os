@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from typing import Any
 
 
 @dataclass
@@ -38,24 +39,25 @@ class MLPipeline:
         prediction = pipeline.predict("model.pkl", {"rsi": 65.0, "atr": 0.5})
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._data_points: list[MLDataPoint] = []
         self._current_point: MLDataPoint | None = None
         self._model = None
-        self._scaler = None
+        self._scaler: Any = None
         self._feature_names: list[str] = []
 
-    def gather_start(self):
+    def gather_start(self) -> None:
         """Start gathering ML data"""
         self._current_point = MLDataPoint(timestamp=datetime.now(UTC).timestamp(), features={})
 
-    def record_features(self, features: dict[str, float]):
+    def record_features(self, features: dict[str, float]) -> None:
         """Record features for current data point"""
         if self._current_point is None:
             self.gather_start()
+        assert self._current_point is not None
         self._current_point.features.update(features)
 
-    def record_label(self, name: str, value: float):
+    def record_label(self, name: str, value: float) -> None:
         """Record label (outcome) and save data point"""
         if self._current_point is not None:
             self._current_point.label = value
@@ -63,17 +65,17 @@ class MLPipeline:
             self._data_points.append(self._current_point)
             self._current_point = None
 
-    def gather_end(self):
+    def gather_end(self) -> None:
         """End gathering, discard incomplete point"""
         self._current_point = None
 
-    def export_csv(self, filepath: str):
+    def export_csv(self, filepath: str) -> None:
         """Export gathered data to CSV"""
         if not self._data_points:
             return
 
         # Get all feature names
-        all_features = set()
+        all_features: set[str] = set()
         for dp in self._data_points:
             all_features.update(dp.features.keys())
         self._feature_names = sorted(all_features)
@@ -94,7 +96,7 @@ class MLPipeline:
                     row.append(str(dp.features.get(feat, "")))
                 f.write(",".join(row) + "\n")
 
-    def import_csv(self, filepath: str):
+    def import_csv(self, filepath: str) -> None:
         """Import training data from CSV"""
         self._data_points = []
         with open(filepath) as f:
@@ -125,7 +127,9 @@ class MLPipeline:
             )
             self._data_points.append(dp)
 
-    def prepare_training_data(self, test_ratio: float = 0.2):
+    def prepare_training_data(
+        self, test_ratio: float = 0.2
+    ) -> tuple[list[list[float]], list[list[float]], list[float], list[float]]:
         """Prepare data for training with chronological train/test split"""
         sorted_data = sorted(self._data_points, key=lambda p: p.timestamp)
 
@@ -142,7 +146,7 @@ class MLPipeline:
 
         return X_train, X_test, y_train, y_test
 
-    def fit_scaler(self, X):
+    def fit_scaler(self, X: list[list[float]]) -> Any:
         """Fit StandardScaler on training data and store state.
 
         CRITICAL: Call ONLY on training data. Fitting on test data = data leakage.
@@ -153,13 +157,13 @@ class MLPipeline:
         self._scaler.fit(X)
         return self._scaler
 
-    def transform(self, X):
+    def transform(self, X: list[list[float]]) -> Any:
         """Transform data using fitted scaler"""
         if self._scaler is None:
             return X
         return self._scaler.transform(X)
 
-    def prepare_and_scale(self, test_ratio: float = 0.2):
+    def prepare_and_scale(self, test_ratio: float = 0.2) -> tuple[Any, Any, list[float], list[float]]:
         """
         Prepare training data with proper chronological split AND scaling.
 

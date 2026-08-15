@@ -183,6 +183,13 @@ class StateCoordinator:
             )
             self._bus.publish(event)
 
+        # 6. MT5 adapter module-level gate — prevents bypassing orchestrator
+        try:
+            from ..execution.adapters.mt5 import set_kill_switch
+            set_kill_switch(True, reason)
+        except ImportError:
+            pass  # MT5 not available (paper mode)
+
     def _propagate_deactivate(
         self,
         reason: str,
@@ -222,3 +229,10 @@ class StateCoordinator:
         # 5. TradingLoop in-memory reset
         if self._trading_loop and hasattr(self._trading_loop, "reset_kill_switch"):
             self._trading_loop.reset_kill_switch()
+
+        # 6. MT5 adapter module-level gate — deactivate
+        try:
+            from ..execution.adapters.mt5 import set_kill_switch
+            set_kill_switch(False, reason)
+        except ImportError:
+            pass  # MT5 not available (paper mode)

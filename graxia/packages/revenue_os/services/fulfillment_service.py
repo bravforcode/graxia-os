@@ -53,16 +53,18 @@ class FulfillmentService:
             
             if not order:
                 raise ValueError(f"Order {order_id} not found")
-            
-            if order.delivery_status == DeliveryStatus.DELIVERED:
+
+            # Idempotency: if a delivery event already exists for this order, return it.
+            # (Order model has no delivery_status column — delivery state lives in DeliveryEvent.)
+            event_result = await db.execute(
+                select(DeliveryEvent)
+                .where(DeliveryEvent.order_id == order_id)
+                .order_by(DeliveryEvent.created_at.desc())
+            )
+            existing_event = event_result.scalar_one_or_none()
+            if existing_event is not None:
                 logger.info("order_already_fulfilled", order_id=str(order_id))
-                # Return existing delivery event
-                event_result = await db.execute(
-                    select(DeliveryEvent)
-                    .where(DeliveryEvent.order_id == order_id)
-                    .order_by(DeliveryEvent.created_at.desc())
-                )
-                return event_result.scalar_one()
+                return existing_event
             
             # Get product
             product_result = await db.execute(
@@ -103,10 +105,9 @@ class FulfillmentService:
                     fulfillment_instructions=product.fulfillment_instructions,
                 )
                 delivery_event.email_outbox_id = email.id
-            
-            # Update order delivery status
-            order.delivery_status = DeliveryStatus.PENDING
-            
+
+            # Delivery state lives on the DeliveryEvent row, not on Order.
+
             await db.commit()
             
             logger.info(
@@ -265,15 +266,9 @@ class FulfillmentService:
         
         delivery_event.status = DeliveryStatus.DELIVERED
         delivery_event.delivered_at = datetime.utcnow()
-        
-        # Update order delivery status
-        order_result = await db.execute(
-            select(Order).where(Order.id == delivery_event.order_id)
-        )
-        order = order_result.scalar_one_or_none()
-        if order:
-            order.delivery_status = DeliveryStatus.DELIVERED
-        
+
+        # Delivery state lives on the DeliveryEvent row, not on Order.
+
         await db.commit()
         
         logger.info(

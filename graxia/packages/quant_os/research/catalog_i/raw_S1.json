@@ -1,0 +1,760 @@
+{
+  "schema_version": "1.0",
+  "source_id": "S1",
+  "entries": [
+    {
+      "name": "Institutional ATR Trailing Stop and Breakeven Manager",
+      "source_url": "https://www.mql5.com/en/code/71077",
+      "mechanism": "atr_trailing_stop",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "2b142b2e32a72d96e466286d7d3889744bb3d7b4fc8d163c839e7ccd592c605f",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "VR Rsi Robot",
+      "source_url": "https://www.mql5.com/en/code/70467",
+      "mechanism": "rsi_mean_reversion",
+      "params": {
+        "timeframes": "H1 and D1 synchronously",
+        "logic": "RSI overbought/oversold reversal with higher-timeframe confirmation"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "H1, D1",
+      "source_id": "S1",
+      "hash": "c7b2c07c5bb6792af2692427d0dbabcc69f0e833d7200746373f501189ed7f4b",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "VR Breakdown level",
+      "source_url": "https://www.mql5.com/en/code/69562",
+      "mechanism": "breakout_momentum",
+      "params": {
+        "strategy": "breakout of previous High and Low"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "61fa7e9db6ce507d8324493464aa98533424ff85fef86ab458d5805c0aed8b62",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "VR Locker Lite",
+      "source_url": "https://www.mql5.com/en/code/26947",
+      "mechanism": "positive_lock_strategy",
+      "params": {
+        "lock_type": "positive lock on one trade"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "4ee1e59ddd1aa04fe01e6e4bbdf485f8789f8efee5401e6bb05f8bffbb0f35fa",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "Trading strategy Heads or Tails",
+      "source_url": "https://www.mql5.com/en/code/68251",
+      "mechanism": "heads_or_tails_coinflip",
+      "params": {
+        "signal_block": "classic version with signal block analysis"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "4702c3bf54efefb71f51de79ce47745a61e4eeaada1703ae3731494d7a2a4e85",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "MT4 Telegram Trade Notifier",
+      "source_url": "https://www.mql5.com/en/code/68617",
+      "mechanism": "telegram_notify_utility",
+      "params": {
+        "transport": "Bot API via WebRequest"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "99c019b2990c5ebcdf1b7bf253b0477e45d82ab0c13b9ab40369586a4fa09112",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "RiskSizer Panel Lite MT4",
+      "source_url": "https://www.mql5.com/en/code/68530",
+      "mechanism": "lot_sizer_panel",
+      "params": {
+        "risk_percent": "user-set",
+        "sl_tp": "drag two chart lines",
+        "execution": "one-click BUY/SELL"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "2161bbde40711ffab57ce78af3af567db38f570d93535054fd11d3b6aa649e4e",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "FFC Calendar news fetcher EA",
+      "source_url": "https://www.mql5.com/en/code/68215",
+      "mechanism": "news_fetch_utility",
+      "params": {
+        "data_source": "FFC Calendar",
+        "transport": "native WebRequest, no DLLs"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "fc5045181aeeb9278d779e10d342f0365253d4416f7c8a36b654073a1b67d688",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "Popular (1M views) 4 Hour Range Strategy",
+      "source_url": "https://www.mql5.com/en/code/68095",
+      "mechanism": "range_breakout_momentum",
+      "params": {
+        "range": "4 Hour Range"
+      },
+      "claimed_perf": "author states: 'My own backtest shows that this strategy does not work as it was intended'",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "H4",
+      "source_id": "S1",
+      "hash": "9a4afc24c8cce71feff2760e02a4db6a4ea0cd4eb01f8b38c77c00c36e495271",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "StrategyTester in pips",
+      "source_url": "https://www.mql5.com/en/code/62861",
+      "mechanism": "backtest_analytics_utility",
+      "params": {
+        "units": "pips",
+        "filter": "early filter"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "0fa45949c9757dd8080e31f6d862dd9480292557565e5594ca9f597a0a1ca5cd",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "SAR_MACD_EA",
+      "source_url": "https://www.mql5.com/en/code/65407",
+      "mechanism": "macd_sar_sma_trend",
+      "params": {
+        "macd": "direction first",
+        "sar": "Sar Flip swing confirmation",
+        "sma": "SMA 40 shifted 3 with close price confirmation"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "d31c40923520a06608f796607b91701001b2ec68ee04f141ce106e4b43ca3448",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "Heikin Ashi MT4 EA",
+      "source_url": "https://www.mql5.com/en/code/64833",
+      "mechanism": "heikin_ashi_trend",
+      "params": {
+        "candles": "Heikin Ashi smoothed price action"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "46bf748c75d2053c0e834364ba6dc6f9626ec0e1279ba100bee5e519aae22721",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "Ichimoku Edge MT4 EA",
+      "source_url": "https://www.mql5.com/en/code/64492",
+      "mechanism": "ichimoku_cross",
+      "params": {
+        "indicator": "standard Ichimoku Kinko Hyo default settings",
+        "signal": "Chikou Span cross with price confirmed by Kumo position"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "0ece538416c7b51822bdc80f0f41c932143a7ace264846adda65179088fe3914",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "Trade By Retail Sentiment",
+      "source_url": "https://www.mql5.com/en/code/62627",
+      "mechanism": "sentiment_contrarian",
+      "params": {
+        "data_source": "Ziwox API retail sentiment",
+        "filter": "moving average trend filter",
+        "logic": "trade opposite majority retail positions"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "dc382c9396e0bc54f2c4fc02ffffa8dc6dd354cc07300c020962a5cbd35d2795",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "Stochastic Eclipse MT4 EA",
+      "source_url": "https://www.mql5.com/en/code/64117",
+      "mechanism": "stochastic_bollinger_multi_timeframe",
+      "params": {
+        "timeframes": "M1, M5, M15",
+        "indicators": "Stochastic Oscillator and Bollinger Bands"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "M1, M5, M15",
+      "source_id": "S1",
+      "hash": "a12cdcda981095f06dc14edbf1c370885ee3e30a775ff1ebb18803ece2ca2cb6",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "MT4-BuildYourGridEA",
+      "source_url": "https://www.mql5.com/en/code/62249",
+      "mechanism": "grid_martingale",
+      "params": {
+        "logic": "helps trader make a grid of orders"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "7a31895b08d322aacd0a833f7f5961e3b08226d92680e2aadd9f6a8aa2c0e043",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "Viral MACD Strategy",
+      "source_url": "https://www.mql5.com/en/code/62000",
+      "mechanism": "macd_trend_filter",
+      "params": {
+        "indicator": "MACD",
+        "filters": "trend and support/resistance filters"
+      },
+      "claimed_perf": "not stated (popularity claim: 3.5M+ views of source video)",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "1839538afed95a327b71d9b9f25d0124e5031fc4f51fefe459d9f34f130625cf",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "Eliot Waves",
+      "source_url": "https://www.mql5.com/en/code/25287",
+      "mechanism": "elliott_wave_retracement",
+      "params": {
+        "tools": "2 Trend Lines with zigzag",
+        "management": "Trailing Stop Loss and Take Profit"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "major forex pairs, NASDAQ stocks",
+      "timeframe": "all timeframes",
+      "source_id": "S1",
+      "hash": "557e421dc8db3fe77f2a56698bfea7c3c36aa8972b25cce1ef0a336c2dde44a3",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "Auto Tp",
+      "source_url": "https://www.mql5.com/en/code/60955",
+      "mechanism": "auto_tp_sl",
+      "params": {
+        "tp_sl": "automatic take profit and stop loss per trade"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "d960a267e143d30afb5718d5779ee1b4c75eff6e1395deae12e36cbd88bdad77",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "Pending tread EA",
+      "source_url": "https://www.mql5.com/en/code/60295",
+      "mechanism": "pending_order_grid",
+      "params": {
+        "pending_per_side": 10,
+        "order_types": "Buy Stop above, Sell Stop below",
+        "distance": "user-configurable pips",
+        "magic_number": "MagicNumber management"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "any timeframe (scalping)",
+      "source_id": "S1",
+      "hash": "08e7fde9dabe67b3bec2e876874f31b897609ef176dc7ca5b3823f676b646728",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "SniperJaw EA",
+      "source_url": "https://www.mql5.com/en/code/60015",
+      "mechanism": "alligator_trend_follow",
+      "params": {
+        "jaw_period": "JawPeriod, JawShift",
+        "teeth_period": "TeethPeriod, TeethShift",
+        "lips_period": "LipsPeriod, LipsShift",
+        "exit": "UseEntryToExit, TakeProfit, StopLoss in pips"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "1e1d9e549e3e9993a6f11cd39da2a13317db4f399a4cdb716bc077f9b2b2a8f2",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "MA2CCI",
+      "source_url": "https://www.mql5.com/en/code/10363",
+      "mechanism": "ma_cci_cross",
+      "params": {
+        "indicators": "2 Moving Averages cross + CCI"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "08b95c6551ca00d32abdbe65083983175cf1255cb1dd57489eb3f551228a7fba",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "EA Stochastic Bollinger Bands Multi-Timeframe",
+      "source_url": "https://www.mql5.com/en/code/58746",
+      "mechanism": "stochastic_bollinger_multi_timeframe",
+      "params": {
+        "indicators": "Stochastic Oscillator and Bollinger Bands",
+        "timeframes": "M1, M5, M15"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "M1, M5, M15",
+      "source_id": "S1",
+      "hash": "1e86f75c152474b25d9447297131eea558a6bbc742d0e99c25f6d6d77a919359",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "RRS Impulse",
+      "source_url": "https://www.mql5.com/en/code/58462",
+      "mechanism": "rsi_stoch_bollinger_scalp",
+      "params": {
+        "indicators": "RSI, Stochastic, Bollinger Bands",
+        "multi_pair": "scans multiple currency pairs",
+        "features": "Trailing, Risk Management, Money Management, Restriction Mode"
+      },
+      "claimed_perf": "source claims: 'With the right settings, it has the potential to generate significant profits'",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "multiple currency pairs",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "9b4b093987f2b9167bb1451c2ff8dd47ef659c64710468acfa4efda4cbd3784d",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "Adjustable Moving Average EA",
+      "source_url": "https://www.mql5.com/en/code/58250",
+      "mechanism": "moving_average_crossover",
+      "params": {
+        "periods": "adjustable",
+        "type": "EMA or SMA",
+        "direction": "long-only, short-only, or both",
+        "management": "optional SL, TP, Trailing Stop"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "9d427aa54762c48d7a0f0ec0ddafb9d078ff0d03c6b67a0c0b1fc17d731d54a3",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "Average Pip Movement based on Tick And Seconds",
+      "source_url": "https://www.mql5.com/en/code/57788",
+      "mechanism": "volatility_meter_utility",
+      "params": {
+        "max_ticks": "MAX_TICKS",
+        "check_seconds": "CHECK_SECONDS"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "573ebceb265ccf6afb282eb0c6d0be0c23fb422dfd9acc33fcd09eddabb535af",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "Withdrawal Tracking",
+      "source_url": "https://www.mql5.com/en/code/57675",
+      "mechanism": "account_monitor_utility",
+      "params": {
+        "monitors": "withdrawals from the running account"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "1de762dae4872a1f14fe375c741618c16b5147f24c7d4a0de17f746df3023ae1",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "RRS Tangled EA",
+      "source_url": "https://www.mql5.com/en/code/57409",
+      "mechanism": "random_trade_generator",
+      "params": {
+        "selection": "random symbols, lot sizes, order types",
+        "management": "TP, SL, Trailing, Risk Management"
+      },
+      "claimed_perf": "source claims: 'With proper settings such as Take Profit, Stop Loss, Trailing, and Risk Management, this EA can generate significant profits'",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "random currency pairs",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "4e16eda8c429dd9a2f2c581b00a43d8d73a512bf791d133f26a003d3fcfa4f25",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "RRS Chaotic EA",
+      "source_url": "https://www.mql5.com/en/code/57246",
+      "mechanism": "random_trade_generator",
+      "params": {
+        "selection": "random pairs, lot sizes, order types",
+        "strategies": "multiple trading strategies and risk management plans"
+      },
+      "claimed_perf": "source claims: 'Even though the EA works on randomness, it has still achieved good profits with proper risk management settings'",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "random currency pairs",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "3bb234533ef2a87315685897e32874030d3921da589ad33974731a0ca632085a",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "RRS Randomness in Nature EA",
+      "source_url": "https://www.mql5.com/en/code/57209",
+      "mechanism": "random_trade_generator",
+      "params": {
+        "selection": "random pairs, lot sizes, order types",
+        "strategies": "multiple trading strategies, risk management plans"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "random currency pairs",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "9a0de0a67a34b78e6d4d48c83fb0d3c97af714e5a6f255558855222c0d9082ac",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "RRS Non-Directional EA",
+      "source_url": "https://www.mql5.com/en/code/57113",
+      "mechanism": "random_trade_generator",
+      "params": {
+        "bias": "non-directional, trades continuously and randomly",
+        "strategies": "strategy-dependent"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "f81388e90dcae6d20518373c3639297e2f1506806b26ec31b34b1995f106c562",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "EA CloseAll",
+      "source_url": "https://www.mql5.com/en/code/55164",
+      "mechanism": "close_all_utility",
+      "params": {
+        "retries": 3,
+        "scope": "all market and pending orders on init"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "d87b7711d852229c0bb280a055ff84730c1b851a4af625671ff438935fed1765",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "Market Watch Panel Utility",
+      "source_url": "https://www.mql5.com/en/code/55041",
+      "mechanism": "symbol_watch_panel",
+      "params": {
+        "features": "quick symbol switching, customizable symbol lists, save/reload, color customization"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "285aae5038015518f24bc16fc3f98ffd48919b191900dbb7986acc86826b32aa",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "Symbol Swap Panel Utility",
+      "source_url": "https://www.mql5.com/en/code/55012",
+      "mechanism": "symbol_swap_panel",
+      "params": {
+        "action": "switch active symbol and add to Market Watch"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "adedf1c128cede912e59e77e8f10782012650d22a7e4ed8ba1a021f29a56c4a9",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "Surfing - 2 EMA strategy",
+      "source_url": "https://www.mql5.com/en/code/54396",
+      "mechanism": "ema_trend_follow",
+      "params": {
+        "recommended_timeframe": "D1",
+        "ema": "EMA built on high/low prices",
+        "rsi_filter": "RSI above 55 buy / below 45 sell, RSI vs its moving average",
+        "management": "TP, SL, trailing stop, opposite-signal close"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "D1",
+      "source_id": "S1",
+      "hash": "9e695d1b196d316b886420716ee26c7eefc7cae115b45b49a82b4321f7784e87",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "Backtesting Trade Assistant Panel",
+      "source_url": "https://www.mql5.com/en/code/52957",
+      "mechanism": "backtest_panel_utility",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "be6d297de892c6c9c550bcae65ddcb569032ff188b8e8f17f8b6e6c529d24820",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "Simplified EuroSurge Expert Advisor",
+      "source_url": "https://www.mql5.com/en/code/52753",
+      "mechanism": "multi_indicator_signal",
+      "params": {
+        "signals": "opens trades based on signals from multiple technical indicators"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "EUR",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "62449ea0f78e0ae013547088bc8c9c9ff32849925a9d374ac0c3e6a98095ed13",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "The Doji Candelstick Pattern",
+      "source_url": "https://www.mql5.com/en/code/52297",
+      "mechanism": "doji_pattern_detector",
+      "params": {
+        "pattern": "Doji candles (open=close near candle midpoint)"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "any chart",
+      "source_id": "S1",
+      "hash": "64beddb225410dca0e86f7cc1b89737182bef7c7edc5d5a2ee4d80c0eb4e6bbc",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "Detect Friday of First Week of Month (NFP Day)",
+      "source_url": "https://www.mql5.com/en/code/51006",
+      "mechanism": "news_day_guard_utility",
+      "params": {
+        "target_day": "Friday of first week of month (NFP day)"
+      },
+      "claimed_perf": "not stated",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "e55bda319b0210b0cfddfab06033113d18f2f431ef3ef28ffae7485d9309d6e1",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    },
+    {
+      "name": "Grid EA Pro",
+      "source_url": "https://www.mql5.com/en/code/49841",
+      "mechanism": "rsi_grid_recovery",
+      "params": {
+        "signal": "RSI indicator",
+        "drawdown_reduction": "overlap unprofitable orders",
+        "chart_info": "displays profit information"
+      },
+      "claimed_perf": "source describes it as 'a very useful tool for manual trading' (no numeric claim)",
+      "evidence_tier": "PRACTITIONER_LORE",
+      "symbol": "",
+      "timeframe": "",
+      "source_id": "S1",
+      "hash": "53c73a0a50776953e827a074e3c6098e73e3f2a244270e1a66f31164b7f81c84",
+      "ingested_at": "2026-08-06T10:02:54+00:00",
+      "partition_tag": "FREE",
+      "partition_owner": null,
+      "partition_note": ""
+    }
+  ],
+  "count": 40,
+  "written_at": "2026-08-06T10:02:54+00:00"
+}

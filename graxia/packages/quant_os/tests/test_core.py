@@ -11,22 +11,28 @@ class TestGoldenRules:
 
     def test_live_trading_default_false(self):
         """Live trading must be explicitly enabled"""
-        assert GOLDEN_RULES.LIVE_TRADING_DEFAULT == False
+        # `is False`, not `not ...`: a falsy-but-not-False value (0, None, "")
+        # must fail this assertion too. This flag gates live capital.
+        assert GOLDEN_RULES.LIVE_TRADING_DEFAULT is False
 
     def test_ai_cannot_submit_order(self):
         """AI cannot directly submit orders"""
-        assert GOLDEN_RULES.AI_CANNOT_SUBMIT_ORDER == True
+        assert GOLDEN_RULES.AI_CANNOT_SUBMIT_ORDER is True
 
     def test_paper_minimum_days(self):
         """Paper trading minimum 60 days"""
         assert GOLDEN_RULES.PAPER_MIN_TRADING_DAYS >= 60
 
     def test_max_risk_per_trade(self):
-        """Max risk per trade is defined in RiskPolicy (10 bps = 0.10%)"""
-        from risk.risk_policy import RiskPolicy
+        """Risk per trade is defined in RiskPolicy (100 bps = 1.00%)."""
+        # Updated 2026-07-07: RiskPolicy defaults changed to 1% per trade (100 bps)
+        from graxia.packages.quant_os.risk.risk_policy import RiskPolicy
 
         rp = RiskPolicy()
-        assert rp.risk_per_trade_bps == 10  # 0.10% risk per trade
+        assert rp.risk_per_trade_bps == 100  # 1.00% risk per trade
+        assert rp.max_daily_loss_bps == 50  # 0.50% daily loss limit
+        assert rp.max_weekly_loss_bps == 150  # 1.50% weekly loss limit
+        assert rp.max_total_drawdown_bps == 300  # 3.00% total drawdown limit
 
     def test_hard_stop_drawdown(self):
         """15% hard stop drawdown"""
@@ -35,7 +41,7 @@ class TestGoldenRules:
     def test_validate_golden_rules(self):
         """All golden rules validation checks pass"""
         result = validate_golden_rules()
-        assert result["all_checks_passed"] == True
+        assert result["all_checks_passed"] is True
 
 
 class TestEnums:
@@ -60,7 +66,7 @@ class TestConfig:
         """Default config is valid"""
         config = QuantConfig()
         assert config.trading_mode == TradingMode.PAPER
-        assert config.live_trading_enabled == False
+        assert config.live_trading_enabled is False
 
     def test_config_enforces_limits(self):
         """Config enforces risk limits"""

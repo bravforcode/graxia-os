@@ -23,9 +23,9 @@ from typing import Any
 
 import structlog
 
-from analysis.visual_search import VisualChartSearch
-from api.tv_cdp import PineCompileResult, TradingViewCDP
-from api.tv_client import (
+from ..analysis.visual_search import VisualChartSearch
+from ..api.tv_cdp import PineCompileResult, TradingViewCDP
+from ..api.tv_client import (
     FullAnalysis,
     TradingViewClient,
 )
@@ -244,7 +244,7 @@ class TradingOrchestrator:
             }
         except Exception as exc:
             logger.error("auto_backtest.tv_failed", error=str(exc))
-            tv_result = {"error": str(exc)}
+            tv_result = {"error": str(exc)}  # type: ignore[dict-item]
 
         # 2. Screenshot chart
         screenshot_path: Path | None = None
@@ -333,7 +333,7 @@ class TradingOrchestrator:
             if isinstance(result, Exception):
                 logger.warning("screen_and_analyze.analysis_failed", symbol=sym, error=str(result))
                 continue
-            insights.append(result)
+            insights.append(result)  # type: ignore[arg-type]
 
         # Sort by confidence descending
         insights.sort(key=lambda i: i.confidence, reverse=True)

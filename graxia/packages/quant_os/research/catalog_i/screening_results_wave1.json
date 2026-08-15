@@ -1,0 +1,658 @@
+{
+  "schema_version": "1.0",
+  "direction": "I",
+  "configs_tried": 80,
+  "survivors": [
+    {
+      "name": "Quantum XAUUSD Silver Trader",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/73622",
+      "mechanism": "trend_following",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "2ca18b35f783",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "trend_following",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      },
+      "screening": {
+        "config_id": "5e2df0751299",
+        "status": "done",
+        "symbol": "XAUUSD",
+        "timeframe": "D1",
+        "total_trades": 269,
+        "sharpe_ratio": 0.3663491979277664,
+        "profit_factor": 1.2353930557571307,
+        "total_return_pct": 31.04689665148948,
+        "max_drawdown_pct": 14.283454585715136,
+        "survivor": true,
+        "n_registered": true
+      }
+    },
+    {
+      "name": "naimkatiman/tradeclaw",
+      "source": "github",
+      "source_url": "https://github.com/naimkatiman/tradeclaw",
+      "mechanism": "regime",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "be9b1324bc4c",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "regime",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      },
+      "screening": {
+        "config_id": "a91f24671a72",
+        "status": "done",
+        "symbol": "XAUUSD",
+        "timeframe": "D1",
+        "total_trades": 172,
+        "sharpe_ratio": 0.3905678239660797,
+        "profit_factor": 1.3671056865156206,
+        "total_return_pct": 26.186633200869203,
+        "max_drawdown_pct": 8.206877119497499,
+        "survivor": true,
+        "n_registered": true
+      }
+    }
+  ],
+  "results": {
+    "eb939b86121f": {
+      "config_id": "eb939b86121f",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "f1bf15884a51": {
+      "config_id": "f1bf15884a51",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "195c62c53990": {
+      "config_id": "195c62c53990",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "27dccc822720": {
+      "config_id": "27dccc822720",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "05cedcf08496": {
+      "config_id": "05cedcf08496",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "08e5364a79a1": {
+      "config_id": "08e5364a79a1",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "518cf7859c85": {
+      "config_id": "518cf7859c85",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "d2ec92c78d5b": {
+      "config_id": "d2ec92c78d5b",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "dddaaf45bc5d": {
+      "config_id": "dddaaf45bc5d",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "2d88ca8f9905": {
+      "config_id": "2d88ca8f9905",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "2a8fe6d64c60": {
+      "config_id": "2a8fe6d64c60",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "01ee269b7d4f": {
+      "config_id": "01ee269b7d4f",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "9cfdd0644de6": {
+      "config_id": "9cfdd0644de6",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "a8d41bd103bc": {
+      "config_id": "a8d41bd103bc",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "b1a9f116ed14": {
+      "config_id": "b1a9f116ed14",
+      "status": "no_slippage_data",
+      "reason": "Symbol 'EURUSD' has no measured slippage ('slippage_bps_measured' is null in cost_calibration.json). Either measure it or pass an explicit slippage override.",
+      "n_registered": true
+    },
+    "2c938c96cac7": {
+      "config_id": "2c938c96cac7",
+      "status": "no_slippage_data",
+      "reason": "Symbol 'EURUSD' has no measured slippage ('slippage_bps_measured' is null in cost_calibration.json). Either measure it or pass an explicit slippage override.",
+      "n_registered": true
+    },
+    "281ccbb6ef71": {
+      "config_id": "281ccbb6ef71",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "007f3c1542a5": {
+      "config_id": "007f3c1542a5",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "1681cd30db17": {
+      "config_id": "1681cd30db17",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "4df5986896b3": {
+      "config_id": "4df5986896b3",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "379a28151fa2": {
+      "config_id": "379a28151fa2",
+      "status": "no_cost_data",
+      "reason": "no XAUUSD M1 data in duckdb",
+      "n_registered": true
+    },
+    "80ddb04046ac": {
+      "config_id": "80ddb04046ac",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "2cf1ad3e0b75": {
+      "config_id": "2cf1ad3e0b75",
+      "status": "done",
+      "symbol": "XAUUSD",
+      "timeframe": "M15",
+      "total_trades": 2535,
+      "sharpe_ratio": -0.13302927214459978,
+      "profit_factor": 0.9095358843346941,
+      "total_return_pct": -69.55166875488938,
+      "max_drawdown_pct": 71.04838027560382,
+      "survivor": false,
+      "n_registered": true
+    },
+    "206f140f8a11": {
+      "config_id": "206f140f8a11",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "8894537de7b4": {
+      "config_id": "8894537de7b4",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "06fa4a72badd": {
+      "config_id": "06fa4a72badd",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "35f915884762": {
+      "config_id": "35f915884762",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "55fc946c1bdc": {
+      "config_id": "55fc946c1bdc",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "bf57b9032510": {
+      "config_id": "bf57b9032510",
+      "status": "no_cost_data",
+      "reason": "no XAUUSD M1 data in duckdb",
+      "n_registered": true
+    },
+    "f31e16ba0274": {
+      "config_id": "f31e16ba0274",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "ab4a3843600c": {
+      "config_id": "ab4a3843600c",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "7dd2aaa24009": {
+      "config_id": "7dd2aaa24009",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "a7c022a702c0": {
+      "config_id": "a7c022a702c0",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "72b81461ba83": {
+      "config_id": "72b81461ba83",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "a47db65d2699": {
+      "config_id": "a47db65d2699",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "6a120d8036bd": {
+      "config_id": "6a120d8036bd",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "6f7a23b2c240": {
+      "config_id": "6f7a23b2c240",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "f5c2d775989e": {
+      "config_id": "f5c2d775989e",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "20512bb4f9cf": {
+      "config_id": "20512bb4f9cf",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "862d7ba8714d": {
+      "config_id": "862d7ba8714d",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "20f6b6bdc776": {
+      "config_id": "20f6b6bdc776",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "6bd6a935b077": {
+      "config_id": "6bd6a935b077",
+      "status": "done",
+      "symbol": "GBPUSD",
+      "timeframe": "M15",
+      "total_trades": 0,
+      "sharpe_ratio": 0.0,
+      "profit_factor": 0.0,
+      "total_return_pct": 0.0,
+      "max_drawdown_pct": 0.0,
+      "survivor": false,
+      "n_registered": true
+    },
+    "46d48fbccc61": {
+      "config_id": "46d48fbccc61",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "127732e24f3f": {
+      "config_id": "127732e24f3f",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "e6b5377d4c12": {
+      "config_id": "e6b5377d4c12",
+      "status": "done",
+      "symbol": "GBPUSD",
+      "timeframe": "M15",
+      "total_trades": 2490,
+      "sharpe_ratio": -0.5827099395179834,
+      "profit_factor": 0.7891336372064137,
+      "total_return_pct": -61.21499329253541,
+      "max_drawdown_pct": 99.11279377447151,
+      "survivor": false,
+      "n_registered": true
+    },
+    "0ad53c575ce2": {
+      "config_id": "0ad53c575ce2",
+      "status": "no_slippage_data",
+      "reason": "Symbol 'EURUSD' has no measured slippage ('slippage_bps_measured' is null in cost_calibration.json). Either measure it or pass an explicit slippage override.",
+      "n_registered": true
+    },
+    "881cb2532e69": {
+      "config_id": "881cb2532e69",
+      "status": "no_slippage_data",
+      "reason": "Symbol 'EURUSD' has no measured slippage ('slippage_bps_measured' is null in cost_calibration.json). Either measure it or pass an explicit slippage override.",
+      "n_registered": true
+    },
+    "d53d66d47f37": {
+      "config_id": "d53d66d47f37",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "c546af3b1b3f": {
+      "config_id": "c546af3b1b3f",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "040d3b46748c": {
+      "config_id": "040d3b46748c",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "be80a7fa1b67": {
+      "config_id": "be80a7fa1b67",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "feb3a3c6fd06": {
+      "config_id": "feb3a3c6fd06",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "18ff2a8da71d": {
+      "config_id": "18ff2a8da71d",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "7d426cd5e802": {
+      "config_id": "7d426cd5e802",
+      "status": "no_slippage_data",
+      "reason": "Symbol 'EURUSD' has no measured slippage ('slippage_bps_measured' is null in cost_calibration.json). Either measure it or pass an explicit slippage override.",
+      "n_registered": true
+    },
+    "253beeb6169d": {
+      "config_id": "253beeb6169d",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "37d4fd305a47": {
+      "config_id": "37d4fd305a47",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "1a5e4b1b83c4": {
+      "config_id": "1a5e4b1b83c4",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "099f2d615c7d": {
+      "config_id": "099f2d615c7d",
+      "status": "no_slippage_data",
+      "reason": "Symbol 'EURUSD' has no measured slippage ('slippage_bps_measured' is null in cost_calibration.json). Either measure it or pass an explicit slippage override.",
+      "n_registered": true
+    },
+    "1a75665a49ec": {
+      "config_id": "1a75665a49ec",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "a9a88c310168": {
+      "config_id": "a9a88c310168",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "1bfbab7aff33": {
+      "config_id": "1bfbab7aff33",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "7acf1d87c882": {
+      "config_id": "7acf1d87c882",
+      "status": "done",
+      "symbol": "GBPUSD",
+      "timeframe": "M15",
+      "total_trades": 2490,
+      "sharpe_ratio": -0.5827099395179834,
+      "profit_factor": 0.7891336372064137,
+      "total_return_pct": -61.21499329253541,
+      "max_drawdown_pct": 99.11279377447151,
+      "survivor": false,
+      "n_registered": true
+    },
+    "c3a0eda7e809": {
+      "config_id": "c3a0eda7e809",
+      "status": "done",
+      "symbol": "XAUUSD",
+      "timeframe": "M15",
+      "total_trades": 2535,
+      "sharpe_ratio": -0.13302927214459978,
+      "profit_factor": 0.9095358843346941,
+      "total_return_pct": -69.55166875488938,
+      "max_drawdown_pct": 71.04838027560382,
+      "survivor": false,
+      "n_registered": true
+    },
+    "abbcd1215977": {
+      "config_id": "abbcd1215977",
+      "status": "no_slippage_data",
+      "reason": "Symbol 'EURUSD' has no measured slippage ('slippage_bps_measured' is null in cost_calibration.json). Either measure it or pass an explicit slippage override.",
+      "n_registered": true
+    },
+    "82e5045d2879": {
+      "config_id": "82e5045d2879",
+      "status": "done",
+      "symbol": "XAUUSD",
+      "timeframe": "H1",
+      "total_trades": 2294,
+      "sharpe_ratio": -0.017337306502552347,
+      "profit_factor": 0.9743159506700021,
+      "total_return_pct": -24.691703263454055,
+      "max_drawdown_pct": 49.16864011549177,
+      "survivor": false,
+      "n_registered": true
+    },
+    "ee6e8125867c": {
+      "config_id": "ee6e8125867c",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "6e316fefb29f": {
+      "config_id": "6e316fefb29f",
+      "status": "no_slippage_data",
+      "reason": "Symbol 'EURUSD' has no measured slippage ('slippage_bps_measured' is null in cost_calibration.json). Either measure it or pass an explicit slippage override.",
+      "n_registered": true
+    },
+    "b05bb0719cd0": {
+      "config_id": "b05bb0719cd0",
+      "status": "done",
+      "symbol": "XAUUSD",
+      "timeframe": "W1",
+      "total_trades": 26,
+      "sharpe_ratio": -0.23283750058156055,
+      "profit_factor": 0.7608173881182828,
+      "total_return_pct": -3.564351751248059,
+      "max_drawdown_pct": 10.998426131114995,
+      "survivor": false,
+      "n_registered": true
+    },
+    "c9834060ebce": {
+      "config_id": "c9834060ebce",
+      "status": "done",
+      "symbol": "XAUUSD",
+      "timeframe": "H1",
+      "total_trades": 2294,
+      "sharpe_ratio": -0.017337306502552347,
+      "profit_factor": 0.9743159506700021,
+      "total_return_pct": -24.691703263454055,
+      "max_drawdown_pct": 49.16864011549177,
+      "survivor": false,
+      "n_registered": true
+    },
+    "7dac3038d3ce": {
+      "config_id": "7dac3038d3ce",
+      "status": "no_slippage_data",
+      "reason": "Symbol 'EURUSD' has no measured slippage ('slippage_bps_measured' is null in cost_calibration.json). Either measure it or pass an explicit slippage override.",
+      "n_registered": true
+    },
+    "5e2df0751299": {
+      "config_id": "5e2df0751299",
+      "status": "done",
+      "symbol": "XAUUSD",
+      "timeframe": "D1",
+      "total_trades": 269,
+      "sharpe_ratio": 0.3663491979277664,
+      "profit_factor": 1.2353930557571307,
+      "total_return_pct": 31.04689665148948,
+      "max_drawdown_pct": 14.283454585715136,
+      "survivor": true,
+      "n_registered": true
+    },
+    "d354f73353d8": {
+      "config_id": "d354f73353d8",
+      "status": "done",
+      "symbol": "XAUUSD",
+      "timeframe": "M15",
+      "total_trades": 0,
+      "sharpe_ratio": 0.0,
+      "profit_factor": 0.0,
+      "total_return_pct": 0.0,
+      "max_drawdown_pct": 0.0,
+      "survivor": false,
+      "n_registered": true
+    },
+    "1601beb5df71": {
+      "config_id": "1601beb5df71",
+      "status": "no_strategy",
+      "reason": "family 'microstructure' has no engine strategy",
+      "n_registered": true
+    },
+    "24d3ecf824b0": {
+      "config_id": "24d3ecf824b0",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "02acb42b2772": {
+      "config_id": "02acb42b2772",
+      "status": "no_strategy",
+      "reason": "family 'other' has no engine strategy",
+      "n_registered": true
+    },
+    "043cc6fa79a9": {
+      "config_id": "043cc6fa79a9",
+      "status": "no_cost_data",
+      "reason": "no XAUUSD M1 data in duckdb",
+      "n_registered": true
+    },
+    "4d353f6bda8f": {
+      "config_id": "4d353f6bda8f",
+      "status": "done",
+      "symbol": "XAUUSD",
+      "timeframe": "D1",
+      "total_trades": 0,
+      "sharpe_ratio": 0.0,
+      "profit_factor": 0.0,
+      "total_return_pct": 0.0,
+      "max_drawdown_pct": 0.0,
+      "survivor": false,
+      "n_registered": true
+    },
+    "5836776de115": {
+      "config_id": "5836776de115",
+      "status": "done",
+      "symbol": "XAUUSD",
+      "timeframe": "H1",
+      "total_trades": 1521,
+      "sharpe_ratio": -0.16090504617067378,
+      "profit_factor": 0.8623062326773484,
+      "total_return_pct": -66.43595104848904,
+      "max_drawdown_pct": 66.98735914767887,
+      "survivor": false,
+      "n_registered": true
+    },
+    "a91f24671a72": {
+      "config_id": "a91f24671a72",
+      "status": "done",
+      "symbol": "XAUUSD",
+      "timeframe": "D1",
+      "total_trades": 172,
+      "sharpe_ratio": 0.3905678239660797,
+      "profit_factor": 1.3671056865156206,
+      "total_return_pct": 26.186633200869203,
+      "max_drawdown_pct": 8.206877119497499,
+      "survivor": true,
+      "n_registered": true
+    },
+    "3e146395c527": {
+      "config_id": "3e146395c527",
+      "status": "no_slippage_data",
+      "reason": "Symbol 'EURUSD' has no measured slippage ('slippage_bps_measured' is null in cost_calibration.json). Either measure it or pass an explicit slippage override.",
+      "n_registered": true
+    }
+  }
+}

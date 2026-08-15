@@ -25,6 +25,7 @@ import {
 import { ANIMATIONS, staggerDelay } from "../lib/animations";
 import { SkeletonProductGrid } from "../components/ui/Skeleton";
 import { ScrollReveal } from "../components/ui/ScrollReveal";
+import { SupportChat } from "../components/chat/SupportChat";
 
 const ALL_CATEGORIES: ProductCategory[] = Object.keys(CATEGORY_META) as ProductCategory[];
 
@@ -260,6 +261,9 @@ export default function StorePage() {
         </div>
         </ScrollReveal>
       </div>
+
+      {/* Autonomous support chat (identity-verified via one-time code) */}
+      <SupportChat customerEmail="guest@graxia.local" />
     </div>
   );
 }

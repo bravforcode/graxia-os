@@ -76,6 +76,7 @@ class MultiTimeframeMomentum(Strategy):
         ohlcv_data: dict[str, list],
         indicators: dict[str, Any] | None = None,
         regime: RegimeType | None = None,
+        **kwargs,
     ) -> Signal | None:
         """Generate momentum signal"""
 
@@ -112,7 +113,9 @@ class MultiTimeframeMomentum(Strategy):
         vol_sma = indicators.get("volume_sma_20", [0])[-1] if indicators.get("volume_sma_20") else 0
         current_vol = volume[-1] if volume else 0
 
-        if not all([ema_fast, ema_mid, ema_slow, h4_ema_trend]):
+        # Explicit per-value checks: identical semantics to the previous
+        # `all([...])` (both None and 0 bail out) but narrowable by mypy.
+        if not ema_fast or not ema_mid or not ema_slow or not h4_ema_trend:
             return None
 
         # Calculate EMA cross conditions
@@ -242,7 +245,7 @@ class MultiTimeframeMomentum(Strategy):
         base_confidence = 0.60  # Base for all confirmed signals
 
         # Add for each condition met
-        for condition, met in conditions.items():
+        for _condition, met in conditions.items():
             if met:
                 base_confidence += 0.05
 

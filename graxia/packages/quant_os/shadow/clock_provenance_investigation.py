@@ -57,7 +57,7 @@ def get_system_clock() -> dict:
     }
 
 
-def run_mt5_investigation() -> dict:
+def run_mt5_investigation() -> str:
     """Run MT5 timestamp investigation in a subprocess."""
     script = (
         '''

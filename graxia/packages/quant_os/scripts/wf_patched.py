@@ -38,6 +38,7 @@ def get_feature_cols(df: pd.DataFrame) -> list[str]:
 def compute_fold_pnl(
     returns: np.ndarray, preds: np.ndarray, confs: np.ndarray,
     spread_cost: float, slippage_p90: float,
+    price_level: float,
     min_confidence: float = 0.85,
 ) -> dict:
     """3-class TB labels: 0→-1 short, 1→0 neutral/skip, 2→+1 long."""
@@ -58,8 +59,8 @@ def compute_fold_pnl(
     dir_mask = direction[mask]
     rets = returns[mask]
 
-    raw_pnl_dollars = dir_mask * rets * 2350.0
-    cost_per = spread_cost + slippage_p90
+    raw_pnl_dollars = dir_mask * rets * price_level
+    cost_per = (spread_cost + slippage_p90) * price_level
 
     net_pnl = raw_pnl_dollars - cost_per
 
@@ -83,15 +84,15 @@ def compute_fold_pnl(
         "accuracy": round(float(accuracy), 4),
         "wins": int((dir_mask * rets > 0).sum()),
         "losses": int((dir_mask * rets <= 0).sum()),
-        "gross_pnl": round(float(gross), 2),
-        "total_cost": round(float(total_cost), 2),
-        "net_pnl": round(float(net), 2),
+        "gross_pnl": float(gross),
+        "total_cost": float(total_cost),
+        "net_pnl": float(net),
         "win_rate": round(float(win_rate), 4),
         "avg_win": round(float(avg_win), 2),
         "avg_loss": round(float(avg_loss), 2),
         "max_drawdown": round(float(max_dd), 2),
         "sharpe_ratio": round(float(sharpe), 2),
-        "avg_move_points": round(float(np.abs(rets).mean() * 2350 * 100), 1) if len(rets) > 0 else 0.0,
+        "avg_move_points": round(float(np.abs(rets).mean() * price_level * 100), 1) if len(rets) > 0 else 0.0,
     }
 
 
@@ -135,6 +136,7 @@ def walk_forward(
             ret_test, preds, conf,
             spread_cost=spread_cost,
             slippage_p90=slippage_p90,
+            price_level=df["close"].mean(),
             min_confidence=min_confidence,
         )
 

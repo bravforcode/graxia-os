@@ -1,0 +1,46 @@
+================================================================================
+EDGE VERIFICATION REPORT: Mean Reversion Bollinger (MRB)
+Symbol: EURUSD M15
+Data: 15000 bars
+Date: 2026-07-18T18:05:41.699268+00:00
+================================================================================
+
+BASELINE METRICS
+----------------------------------------
+Total Trades: 0
+Win Rate: 0.0%
+Sharpe Ratio: 0.0000
+Profit Factor: 0.00
+Max Drawdown Pct: 0.0
+Total PnL: 0.00
+
+WALK-FORWARD ANALYSIS
+----------------------------------------
+  0/3 positive, 0 trades, Sharpe=0.0000
+  FAIL
+
+DEFLATED SHARPE RATIO
+----------------------------------------
+  DSR: Sharpe=0.0000, P(alpha)=1.0000
+  FAIL
+
+PROBABILITY OF BACKTEST OVERFITTING
+----------------------------------------
+  PBO: 0.0000
+  PASS
+
+BOOTSTRAP CONFIDENCE INTERVAL
+----------------------------------------
+  BOOTSTRAP: Sharpe=0.0000, CI=[0.0000, 0.0000]
+  FAIL
+
+COST STRESS TEST
+----------------------------------------
+  COST STRESS: Base=0.00, 2x=0.00, Degradation=0.0%
+  FAIL
+
+================================================================================
+FINAL: 1/5 gates passed
+VERDICT: MARGINAL EDGE
+RECOMMENDATION: Do not trade
+================================================================================

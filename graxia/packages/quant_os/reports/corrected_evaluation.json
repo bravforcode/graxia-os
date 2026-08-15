@@ -1,0 +1,102 @@
+[
+  {
+    "name": "TrendFollow",
+    "gross_is": -0.4649,
+    "net_is": -2.0884,
+    "cost_drag": 1.6235,
+    "net_oos": -2.6437,
+    "trades": 40,
+    "wf": 0,
+    "passes": false
+  },
+  {
+    "name": "TF+Session",
+    "gross_is": 0.5026,
+    "net_is": -1.826,
+    "cost_drag": 2.3286,
+    "net_oos": -3.6934,
+    "trades": 35,
+    "wf": 0,
+    "passes": false
+  },
+  {
+    "name": "TF+Volume",
+    "gross_is": -0.3724,
+    "net_is": -2.0494,
+    "cost_drag": 1.677,
+    "net_oos": -2.8996,
+    "trades": 95,
+    "wf": 0,
+    "passes": false
+  },
+  {
+    "name": "TF+Regime",
+    "gross_is": -0.429,
+    "net_is": -2.0276,
+    "cost_drag": 1.5985,
+    "net_oos": -1.854,
+    "trades": 98,
+    "wf": 0,
+    "passes": false
+  },
+  {
+    "name": "RSI",
+    "gross_is": -0.1267,
+    "net_is": -3.5875,
+    "cost_drag": 3.4608,
+    "net_oos": -3.3344,
+    "trades": 73,
+    "wf": 0,
+    "passes": false
+  },
+  {
+    "name": "BB",
+    "gross_is": -1.3756,
+    "net_is": -3.3866,
+    "cost_drag": 2.011,
+    "net_oos": -2.3282,
+    "trades": 63,
+    "wf": 0,
+    "passes": false
+  },
+  {
+    "name": "ATR_Break",
+    "gross_is": -0.1075,
+    "net_is": -2.1466,
+    "cost_drag": 2.0391,
+    "net_oos": -4.6988,
+    "trades": 84,
+    "wf": 0,
+    "passes": false
+  },
+  {
+    "name": "MA_Cross",
+    "gross_is": 0.3822,
+    "net_is": -3.515,
+    "cost_drag": 3.8972,
+    "net_oos": -4.7327,
+    "trades": 77,
+    "wf": 0,
+    "passes": false
+  },
+  {
+    "name": "VolPrice",
+    "gross_is": 0.1829,
+    "net_is": -3.0286,
+    "cost_drag": 3.2114,
+    "net_oos": -3.4756,
+    "trades": 91,
+    "wf": 0,
+    "passes": false
+  },
+  {
+    "name": "SR_Sweep",
+    "gross_is": -0.1921,
+    "net_is": -2.1955,
+    "cost_drag": 2.0034,
+    "net_oos": -3.877,
+    "trades": 50,
+    "wf": 0,
+    "passes": false
+  }
+]

@@ -189,7 +189,7 @@ class PositionReconciler:
 
         return [m for m in last.mismatches if m["type"] in ("MISSING_FROM_BROKER", "EXTRA_AT_BROKER")]
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset state for a new session."""
         self._history.clear()
         self._drift_count = 0

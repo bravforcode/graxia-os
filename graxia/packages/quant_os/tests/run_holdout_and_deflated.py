@@ -107,6 +107,9 @@ def run():
     result = validator.validate(
         dev_results=dev_metrics,
         holdout_results=holdout_metrics,
+        # holdout_metrics["sharpe_ratio"] was annualized with sqrt(252) above (line 46) —
+        # pass the same factor so deflated_sharpe_ratio() can recover the raw per-trade Sharpe.
+        sharpe_annualization_factor=math.sqrt(252),
     )
 
     print(f"\n  {'='*60}")

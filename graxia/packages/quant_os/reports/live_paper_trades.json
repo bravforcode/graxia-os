@@ -1,0 +1,13 @@
+{
+  "trades": [],
+  "equity_curve": [
+    {
+      "date": "2026-07-10",
+      "balance": 49842.59,
+      "equity": 49842.59,
+      "signal": 0,
+      "position_signal": 0
+    }
+  ],
+  "stats": {}
+}

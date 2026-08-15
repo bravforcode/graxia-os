@@ -183,13 +183,13 @@ class CascadeRouter:
             lines = text.split("\n")
             text = "\n".join(lines[1:-1]) if len(lines) > 2 else text
         try:
-            return json.loads(text)
+            return dict(json.loads(text))
         except json.JSONDecodeError:
             pass
         match = re.search(r"\{.*\}", text, re.DOTALL)
         if match:
             try:
-                return json.loads(match.group())
+                return dict(json.loads(match.group()))
             except json.JSONDecodeError:
                 pass
         return {}

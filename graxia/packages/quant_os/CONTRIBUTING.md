@@ -78,3 +78,47 @@ chore(dx): add pre-commit config
 4. Open a PR targeting the main branch
 5. Ensure CI passes and all tests are green
 6. Request review from a maintainer
+
+## Git Safety Rules
+
+**After any rebase or force push:**
+
+1. **Verify branch state** before pushing:
+   ```bash
+   git status          # Check for uncommitted changes
+   git log --oneline -5  # Verify commit history looks correct
+   git diff HEAD~1     # Review the last commit's changes
+   ```
+
+2. **Never force push to `main`** — only allowed on feature branches
+3. **Always run tests after rebase** before pushing:
+   ```bash
+   make test
+   make lint
+   ```
+4. **If something looks wrong after push**, do NOT force push again. Create a new commit to fix it.
+
+5. **Before merging PR**, verify:
+   - All CI checks pass
+   - No merge conflicts
+   - Commit history is clean (no "fix fix fix" chains)
+
+## Shell Environment Rules
+
+The development shell on this machine is **cmd.exe** (Windows), not bash. Follow these rules when writing or testing commands:
+
+1. **Use `python -m pytest <path>`** instead of bare `pytest` — the console-script entry may not be on PATH in every shell.
+2. **Avoid `*` globs inside `python -c "..."` strings** — cmd.exe expands `*` before Python sees it and fails with "The term '*' is not recognized". Write a temp script file and run it instead.
+3. **Use absolute paths for cwd-sensitive commands** or set the working directory explicitly; do not rely on `cd` chains.
+4. **In subprocess wrappers**, always pass `encoding='utf-8', errors='replace'` to avoid cp1252 `UnicodeEncodeError` when capturing output.
+
+## Trial Ledger Edit Rules
+
+**NEVER edit `trial_ledger.json`, `hypothesis_registry.json`, or any trial cap file without explicit sign-off from the user in the same turn.**
+
+This applies to all reasons, including:
+- "Updating to match what was already run" — still requires sign-off
+- "Fixing a count that's off" — still requires sign-off
+- "Bookkeeping catch-up" — still requires sign-off
+
+Rationale: These files control research governance (trial caps, DSR penalties, stopping rules). Edits are governance actions, not bookkeeping. A single unauthorized edit can consume limited trial budget or invalidate multiple-testing corrections.

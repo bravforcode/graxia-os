@@ -1,0 +1,96 @@
+{
+  "generated_at": "2026-07-30T05:21:47.020276",
+  "model": "qwen3.5:9b",
+  "articles_count": 24,
+  "analysis": {
+    "market_overview": "The market is experiencing mixed signals with major tech giants showing divergent performance. Microsoft and Western Digital are rallying on strong demand and supply constraints, while Meta faces significant pressure from disappointing revenue forecasts and reduced capital expenditure plans. The Federal Reserve held interest rates steady as expected, providing a neutral backdrop for equity volatility driven by individual earnings surprises.",
+    "edges": [
+      {
+        "type": "momentum",
+        "ticker": "MSFT",
+        "direction": "long",
+        "confidence": 0.85,
+        "reasoning": "Strong demand and positive free cash flow despite accounting changes support continued upside.",
+        "timeframe": "swing",
+        "entry_signal": "Break above recent consolidation highs following earnings release.",
+        "risk": "Potential profit-taking if broader tech sector corrects."
+      },
+      {
+        "type": "mean_reversion",
+        "ticker": "META",
+        "direction": "short",
+        "confidence": 0.75,
+        "reasoning": "Significant sell-off on weak guidance and narrowed capex suggests further downside before stabilization.",
+        "timeframe": "intraday",
+        "entry_signal": "Rejection at key moving averages or failure to reclaim pre-earnings levels.",
+        "risk": "Unexpected positive commentary from management could trigger a sharp reversal."
+      },
+      {
+        "type": "event_driven",
+        "ticker": "WDC",
+        "direction": "long",
+        "confidence": 0.7,
+        "reasoning": "Supply crunch and strong demand for hard drives create a favorable supply/demand imbalance.",
+        "timeframe": "positional",
+        "entry_signal": "Confirmation of sustained volume above key resistance levels.",
+        "risk": "Resolution of memory chip shortages could compress margins."
+      }
+    ],
+    "sectors_to_watch": [
+      "Technology",
+      "Semiconductors"
+    ],
+    "key_levels": {
+      "SPY": {
+        "support": "520.00",
+        "resistance": "545.00"
+      }
+    },
+    "risk_events": [
+      "Meta earnings report and guidance revision.",
+      "Potential regulatory scrutiny regarding Apple's App Store practices."
+    ]
+  },
+  "articles": [
+    {
+      "title": "Meta's stock plunges almost 10% on disappointing guidance, dwindling free cash flow",
+      "source": "cnbc_finance"
+    },
+    {
+      "title": "Qualcomm to raise prices during memory crunch as chipmaker issues light earnings guidance",
+      "source": "cnbc_finance"
+    },
+    {
+      "title": "Microsoft jumps 7% as it boosts capital spending plans, citing demand",
+      "source": "cnbc_finance"
+    },
+    {
+      "title": "Here are the five big takeaways from this week's Fed meeting",
+      "source": "cnbc_world"
+    },
+    {
+      "title": "Meta's stock plunges almost 10% on disappointing guidance, dwindling free cash flow",
+      "source": "cnbc_world"
+    },
+    {
+      "title": "Microsoft jumps 7% as it boosts capital spending plans, citing demand",
+      "source": "cnbc_world"
+    },
+    {
+      "title": "National beer and wine distributor files Chapter 11 bankruptcy",
+      "source": "yahoo_finance"
+    },
+    {
+      "title": "Western Digital Corporation (WDC) Surged on Strong Hard Drive Demand and Tighter Supply",
+      "source": "yahoo_finance"
+    },
+    {
+      "title": "Apple Sued For Keeping Fake Bitcoin Wallet On App Store",
+      "source": "yahoo_finance"
+    },
+    {
+      "title": "Bausch Health Q2 2026 slides: 13th straight growth quarter, guidance raised",
+      "source": "investing_com"
+    }
+  ]
+}

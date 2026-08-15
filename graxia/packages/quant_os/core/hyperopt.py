@@ -13,7 +13,7 @@ import optuna
 _optimization_mode = False
 
 
-def set_optimization_mode(enabled: bool):
+def set_optimization_mode(enabled: bool) -> None:
     global _optimization_mode
     _optimization_mode = enabled
 
@@ -34,7 +34,7 @@ class HyperParam:
     step: Any | None = None
 
     @property
-    def current(self):
+    def current(self) -> Any:
         """Returns full range during optimization, single value otherwise"""
         if is_optimizing() and self.optimize:
             if self.step is not None:
@@ -42,7 +42,7 @@ class HyperParam:
             return (self.low, self.high)
         return self.value
 
-    def sample(self):
+    def sample(self) -> Any:
         """Sample a random value from the range"""
         if is_optimizing() and self.optimize:
             if isinstance(self.low, float):
@@ -69,9 +69,9 @@ class RealParameter(HyperParam):
 class CategoricalParameter(HyperParam):
     """Categorical parameter for optimization"""
 
-    categories: list[Any] = None
+    categories: list[Any] | None = None
 
-    def sample(self):
+    def sample(self) -> Any:
         if is_optimizing() and self.optimize and self.categories:
             return random.choice(self.categories)
         return self.value

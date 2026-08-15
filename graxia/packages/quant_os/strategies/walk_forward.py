@@ -34,12 +34,12 @@ import structlog
 try:
     from ..core.enums import RegimeType
 except ImportError:
-    from core.enums import RegimeType
+    from core.enums import RegimeType  # type: ignore[no-redef]
 
 try:
     from ..validation.deflated_sharpe import deflated_sharpe_ratio as _canonical_dsr
 except ImportError:
-    from validation.deflated_sharpe import deflated_sharpe_ratio as _canonical_dsr
+    from validation.deflated_sharpe import deflated_sharpe_ratio as _canonical_dsr  # type: ignore[no-redef]
 
 logger = structlog.get_logger(__name__)
 
@@ -180,18 +180,25 @@ def _profit_factor(trades: Sequence[float]) -> float:
     return gross_profit / gross_loss
 
 
-def _deflated_sharpe(sharpe_obs: float, n_trials: int) -> float:
+def _deflated_sharpe(sharpe_obs: float, n_trials: int, n_observations: int) -> float:
     """Bailey & Lopez de Prado deflated Sharpe ratio.
 
     Adjusts observed Sharpe for multiple-testing bias.
     Delegates to canonical validation.deflated_sharpe.
+
+    n_observations should be the real OOS trade count backing sharpe_obs
+    (e.g. summed trades_taken across folds), not a placeholder — the Lo
+    (2002) sr_std formula this is built on is sensitive to it.
     """
     if n_trials <= 1:
         return sharpe_obs
     result = _canonical_dsr(
         observed_sharpe=sharpe_obs,
         n_trials=n_trials,
-        n_observations=1000,  # default; walk-forward caller doesn't track this
+        n_observations=max(n_observations, 2),  # DSR requires n_observations > 1
+        # sharpe_obs is an average of per-fold _sharpe() values, each annualized via
+        # sqrt(252) (see _sharpe() above) — same factor recovers the raw per-trade scale.
+        sharpe_annualization_factor=math.sqrt(252),
     )
     return result.deflated_sharpe
 
@@ -256,7 +263,7 @@ def _evaluate_strategy(
     wins = 0
     losses = 0
     equity = [10_000.0]  # arbitrary starting equity
-    peak = equity[0]
+    _peak = equity[0]
 
     n_bars = min(end, len(ohlcv_data.get("close", [])))
 
@@ -297,7 +304,7 @@ def _evaluate_strategy(
         equity.append(equity[-1] * (1 + pnl_pct / 100))
 
     total = len(trades)
-    avg_pnl = sum(trades) / total if total > 0 else 0.0
+    _avg_pnl = sum(trades) / total if total > 0 else 0.0
 
     return FoldMetrics(
         total_bars=end - start,
@@ -533,7 +540,8 @@ class WalkForwardValidator:
         normalised_std = oos_std / (abs(avg_oos_sharpe) + 1e-9) if avg_oos_sharpe != 0 else 1.0
         stability = max(0.0, 1.0 - min(normalised_std, 1.0))
 
-        deflated = _deflated_sharpe(avg_oos_sharpe, self._n_trials)
+        oos_trade_count = sum(f.out_of_sample.trades_taken for f in folds)
+        deflated = _deflated_sharpe(avg_oos_sharpe, self._n_trials, oos_trade_count)
         pooma = _pooma(avg_is_sharpe, avg_oos_sharpe, len(folds))
 
         # ── recommendation logic ───────────────────────────────────────

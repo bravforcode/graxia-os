@@ -6,6 +6,7 @@ Rejects naive datetimes. Validates returned ticks within requested window.
 import hashlib
 import json
 from datetime import UTC, datetime
+from typing import Any
 
 
 class TickWindowFetcher:
@@ -56,7 +57,7 @@ class TickWindowFetcher:
         }
         window_hash = hashlib.sha256(json.dumps(window_d, sort_keys=True).encode()).hexdigest()[:16]
 
-        result = {
+        result: dict[str, Any] = {
             "ticks": [],
             "request_window_hash": window_hash,
             "request_from_utc": request_from.isoformat(),

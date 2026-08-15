@@ -1,0 +1,110 @@
+[
+  {
+    "window": 20,
+    "entry_z": 2.0,
+    "is_sharpe": 1.683994927587557,
+    "oos_sharpe": 8.691989485748495,
+    "oos_trades": 220,
+    "is_trades": 767,
+    "beta": 0.09
+  },
+  {
+    "window": 20,
+    "entry_z": 2.5,
+    "is_sharpe": 0.30312419699526927,
+    "oos_sharpe": 8.502851436849117,
+    "oos_trades": 93,
+    "is_trades": 319,
+    "beta": 0.09
+  },
+  {
+    "window": 20,
+    "entry_z": 1.5,
+    "is_sharpe": 1.6641565691664437,
+    "oos_sharpe": 6.335056064159437,
+    "oos_trades": 378,
+    "is_trades": 1550,
+    "beta": 0.09
+  },
+  {
+    "window": 200,
+    "entry_z": 2.5,
+    "is_sharpe": -0.24764337754328278,
+    "oos_sharpe": 1.668226647604686,
+    "oos_trades": 39,
+    "is_trades": 262,
+    "beta": 0.09
+  },
+  {
+    "window": 50,
+    "entry_z": 1.5,
+    "is_sharpe": -0.4075617592213481,
+    "oos_sharpe": 0.7869068708911884,
+    "oos_trades": 329,
+    "is_trades": 1492,
+    "beta": 0.09
+  },
+  {
+    "window": 200,
+    "entry_z": 1.5,
+    "is_sharpe": -1.828087935547542,
+    "oos_sharpe": 0.45209688920338337,
+    "oos_trades": 386,
+    "is_trades": 1562,
+    "beta": 0.09
+  },
+  {
+    "window": 200,
+    "entry_z": 2.0,
+    "is_sharpe": -2.1476301155689277,
+    "oos_sharpe": 0.20361441904292896,
+    "oos_trades": 156,
+    "is_trades": 732,
+    "beta": 0.09
+  },
+  {
+    "window": 50,
+    "entry_z": 2.5,
+    "is_sharpe": -0.7803444533883049,
+    "oos_sharpe": -0.31428804995110887,
+    "oos_trades": 76,
+    "is_trades": 270,
+    "beta": 0.09
+  },
+  {
+    "window": 50,
+    "entry_z": 2.0,
+    "is_sharpe": -0.7382113910794608,
+    "oos_sharpe": -0.41615767427097733,
+    "oos_trades": 160,
+    "is_trades": 721,
+    "beta": 0.09
+  },
+  {
+    "window": 100,
+    "entry_z": 2.5,
+    "is_sharpe": 4.086135280257099,
+    "oos_sharpe": -1.3133959432400566,
+    "oos_trades": 53,
+    "is_trades": 285,
+    "beta": 0.09
+  },
+  {
+    "window": 100,
+    "entry_z": 1.5,
+    "is_sharpe": 0.5771064805707397,
+    "oos_sharpe": -3.29160058698745,
+    "oos_trades": 391,
+    "is_trades": 1509,
+    "beta": 0.09
+  },
+  {
+    "window": 100,
+    "entry_z": 2.0,
+    "is_sharpe": 0.8719188775748672,
+    "oos_sharpe": -6.4303713143029615,
+    "oos_trades": 144,
+    "is_trades": 769,
+    "beta": 0.09
+  }
+]

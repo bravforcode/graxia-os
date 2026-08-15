@@ -2,6 +2,7 @@
 
 import os
 from dataclasses import dataclass, field, replace
+from pathlib import Path
 
 from ..risk.risk_policy import RiskPolicy
 from .enums import SystemState, TradingMode
@@ -20,11 +21,14 @@ class QuantConfig:
     trading_mode: TradingMode = TradingMode.PAPER
     system_state: SystemState = SystemState.PAPER_TRADING
     live_trading_enabled: bool = False
+    shadow_mode: bool = False  # Read-only MT5 data + PaperAdapter execution (no real orders)
     log_level: str = "INFO"
+    environment: str = "development"
 
     # ==================== DATABASE ====================
     database_url: str = ""
     redis_url: str = "redis://localhost:6379/0"
+    duckdb_path: str = "data/market_data.duckdb"
 
     # ==================== MT5 BROKER ====================
     mt5_login: int = 0
@@ -38,10 +42,18 @@ class QuantConfig:
     fallback_broker_1: str = "pepperstone"
     fallback_broker_2: str = "xm"
 
+    # ==================== ACCOUNT DATA SOURCE ====================
+    # Selects which adapter feeds account state. Values: "mt5" | "myfxbook" | "binance".
+    # Myfxbook is a READ-ONLY analytics source and refuses trading operations.
+    account_data_source: str = "mt5"
+    myfxbook_email: str = ""
+    myfxbook_password: str = ""
+
     # ==================== SECURITY ====================
     jwt_secret_key: str = ""
     webhook_hmac_secret: str = ""
     admin_api_key: str = ""
+    model_signing_key: str = ""
 
     # ==================== NOTIFICATIONS ====================
     telegram_bot_token: str = ""
@@ -84,7 +96,7 @@ class QuantConfig:
 
     @property
     def max_positions(self) -> int:
-        return self.risk_policy.max_open_positions
+        return int(self.risk_policy.max_open_positions)
 
     max_correlation_threshold: float = 0.7
     max_var_pct: float = 2.0
@@ -138,24 +150,56 @@ class QuantConfig:
     sentry_dsn: str = ""
     health_check_interval_seconds: int = 30
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate config against golden rules and hard limits"""
         self._validate_from_env()
         self._enforce_hard_limits()
         self._validate_mode_consistency()
 
-    def _validate_from_env(self):
-        """Load from environment variables"""
-        # Trading mode
+    def _load_dotenv(self) -> None:
+        """Load .env file if present. Existing env vars take precedence."""
+        env_path = Path(".env")
+        if not env_path.exists():
+            return
+        try:
+            with open(env_path, encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#"):
+                        continue
+                    if "=" not in line:
+                        continue
+                    key, _, value = line.partition("=")
+                    key = key.strip()
+                    value = value.strip().strip('"').strip("'")
+                    # Only set if not already in environment (env vars take precedence)
+                    if key not in os.environ:
+                        os.environ[key] = value
+        except Exception:
+            pass  # Silently ignore .env parse errors
+
+    def _validate_from_env(self) -> None:
+        """Load from environment variables and .env file"""
+        # Load .env file if present (env vars already set take precedence)
+        self._load_dotenv()
+
+        # Trading mode — fail-closed: unrecognized modes raise, not silently paper
         mode_str = os.getenv("TRADING_MODE", "PAPER").upper()
-        self.trading_mode = TradingMode(mode_str) if mode_str in [m.value for m in TradingMode] else TradingMode.PAPER
+        valid_modes = [m.value for m in TradingMode]
+        if mode_str in valid_modes:
+            self.trading_mode = TradingMode(mode_str)
+        else:
+            raise ValueError(f"TRADING_MODE='{mode_str}' is not recognized. " f"Valid modes: {valid_modes}")
 
         self.live_trading_enabled = os.getenv("LIVE_TRADING_ENABLED", "false").lower() == "true"
+        self.shadow_mode = os.getenv("SHADOW_MODE", "false").lower() == "true"
         self.log_level = os.getenv("LOG_LEVEL", "INFO")
+        self.environment = os.getenv("ENVIRONMENT", self.environment)
 
         # Database
         self.database_url = os.getenv("DATABASE_URL", self.database_url)
         self.redis_url = os.getenv("REDIS_URL", self.redis_url)
+        self.duckdb_path = os.getenv("DUCKDB_PATH", self.duckdb_path)
 
         # MT5
         self.mt5_login = int(os.getenv("MT5_LOGIN", self.mt5_login))
@@ -164,10 +208,16 @@ class QuantConfig:
         self.mt5_path = os.getenv("MT5_PATH", self.mt5_path)
         self.mt5_timeout_ms = int(os.getenv("MT5_TIMEOUT_MS", self.mt5_timeout_ms))
 
+        # Account data source + Myfxbook credentials (read from env; never hard-coded)
+        self.account_data_source = os.getenv("ACCOUNT_DATA_SOURCE", self.account_data_source).lower()
+        self.myfxbook_email = os.getenv("MYFXBOOK_EMAIL", self.myfxbook_email)
+        self.myfxbook_password = os.getenv("MYFXBOOK_PASSWORD", self.myfxbook_password)
+
         # Security
         self.jwt_secret_key = os.getenv("JWT_SECRET_KEY", self.jwt_secret_key)
         self.webhook_hmac_secret = os.getenv("WEBHOOK_HMAC_SECRET", self.webhook_hmac_secret)
         self.admin_api_key = os.getenv("ADMIN_API_KEY", self.admin_api_key)
+        self.model_signing_key = os.getenv("MODEL_SIGNING_KEY", self.model_signing_key)
 
         # Notifications
         self.telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN", self.telegram_bot_token)
@@ -196,7 +246,7 @@ class QuantConfig:
         # Micro trading
         self.micro_max_position_size = float(os.getenv("MICRO_MAX_POSITION_SIZE", self.micro_max_position_size))
 
-    def _enforce_hard_limits(self):
+    def _enforce_hard_limits(self) -> None:
         """Ensure soft limits don't exceed hard limits"""
         risk_pct = float(self.risk_policy.max_risk_per_trade_pct)
         if risk_pct > HARD_LIMITS["max_risk_per_trade_pct"]:
@@ -217,9 +267,9 @@ class QuantConfig:
             )
 
         if self.max_positions > HARD_LIMITS["max_positions"]:
-            self.risk_policy = replace(self.risk_policy, max_open_positions=HARD_LIMITS["max_positions"])
+            self.risk_policy = replace(self.risk_policy, max_open_positions=int(HARD_LIMITS["max_positions"]))
 
-    def _validate_mode_consistency(self):
+    def _validate_mode_consistency(self) -> None:
         """Ensure trading mode and live flag are consistent"""
         if self.trading_mode == TradingMode.PAPER and self.live_trading_enabled:
             raise ValueError("Cannot enable live trading in PAPER mode")
@@ -230,6 +280,10 @@ class QuantConfig:
             TradingMode.LIVE_CONTROLLED,
         ]:
             raise ValueError("Live trading only allowed in LIVE_MICRO, LIVE_LIMITED, or LIVE_CONTROLLED mode")
+
+        # Shadow mode: read-only MT5 data + paper execution. Incompatible with live trading.
+        if self.shadow_mode and self.live_trading_enabled:
+            raise ValueError("Cannot enable shadow_mode and live_trading_enabled simultaneously")
 
         # Validate secrets when live trading is enabled
         if self.live_trading_enabled:
@@ -289,7 +343,7 @@ def get_config() -> QuantConfig:
     return _config
 
 
-def reset_config():
+def reset_config() -> None:
     """Reset config (for testing)"""
     global _config
     _config = None

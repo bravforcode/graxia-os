@@ -15,7 +15,7 @@ class BaseCandlesPipeline(ABC):
         """Regenerate candles. Return True if output was modified."""
         pass
 
-    def get_candles(self, candles: dict[str, list[float]], index: int) -> dict[str, list[float]]:
+    def get_candles(self, candles: dict[str, list[float]], index: int) -> dict[str, float]:
         """Get candle at index, regenerating batch if needed"""
         result = {}
         for key in candles:
@@ -27,8 +27,8 @@ class BaseCandlesPipeline(ABC):
 class MovingBlockBootstrapPipeline(BaseCandlesPipeline):
     """Bootstrap blocks of price changes to generate synthetic candles"""
 
-    def __init__(self, block_size: int = 5, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, block_size: int = 5, **kwargs: object) -> None:
+        super().__init__(**kwargs)  # type: ignore[arg-type]
         self.block_size = block_size
 
     def process(self, original_candles: dict[str, list[float]], output: dict[str, list[float]]) -> bool:
@@ -70,8 +70,8 @@ class MovingBlockBootstrapPipeline(BaseCandlesPipeline):
 class GaussianNoisePipeline(BaseCandlesPipeline):
     """Add Gaussian noise to candles"""
 
-    def __init__(self, noise_pct: float = 0.001, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, noise_pct: float = 0.001, **kwargs: object) -> None:
+        super().__init__(**kwargs)  # type: ignore[arg-type]
         self.noise_pct = noise_pct
 
     def process(self, original_candles: dict[str, list[float]], output: dict[str, list[float]]) -> bool:

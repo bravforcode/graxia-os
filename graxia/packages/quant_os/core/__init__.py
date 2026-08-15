@@ -5,7 +5,7 @@ when lightweight modules like core.tv_integration are imported directly.
 """
 
 
-def __getattr__(name: str):
+def __getattr__(name: str) -> object:
     """Lazy-load core attributes so that submodules can be imported
     without pulling in the entire dependency tree."""
     _lazy = {

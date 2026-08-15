@@ -1,4 +1,5 @@
 """Verify oracle adapters are isolated from canonical runtime."""
+
 import ast
 from pathlib import Path
 
@@ -14,7 +15,7 @@ def _collect_module_level_imports(tree):
     for node in tree.body:
         if isinstance(node, ast.Import):
             yield node
-        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+        elif isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef):
             for child in ast.walk(node):
                 if isinstance(child, ast.Import):
                     pass  # skip — inside function/class
@@ -23,7 +24,8 @@ def _collect_module_level_imports(tree):
 
 def test_no_oracle_imports_in_canonical():
     """Canonical source must not import oracle packages at module level."""
-    exclude = {"adapters", "test_", "phase_3b_oracle_runner"}
+    # Skip hidden worktree/archive dirs (legacy files there fail ast.parse)
+    exclude = {"adapters", "test_", "phase_3b_oracle_runner", ".freebuff", "04-Archive"}
     for py_file in CANONICAL_DIR.rglob("*.py"):
         if any(x in str(py_file) for x in exclude):
             continue
@@ -33,13 +35,16 @@ def test_no_oracle_imports_in_canonical():
             for alias in node.names:
                 for pkg in ORACLE_PACKAGES:
                     if pkg in alias.name.lower():
-                        assert False, f"Module-level oracle import in {py_file.name}:L{node.lineno}: {alias.name}"
+                        raise AssertionError(
+                            f"Module-level oracle import in {py_file.name}:L{node.lineno}: {alias.name}"
+                        )
         for node in tree.body:
-            if isinstance(node, ast.ImportFrom):
-                if node.module:
-                    for pkg in ORACLE_PACKAGES:
-                        if pkg in node.module.lower():
-                            assert False, f"Module-level oracle import in {py_file.name}:L{node.lineno}: from {node.module}"
+            if isinstance(node, ast.ImportFrom) and node.module:
+                for pkg in ORACLE_PACKAGES:
+                    if pkg in node.module.lower():
+                        raise AssertionError(
+                            f"Module-level oracle import in {py_file.name}:L{node.lineno}: from {node.module}"
+                        )
 
 
 def test_adapters_have_lazy_import():
@@ -53,4 +58,4 @@ def test_adapters_have_lazy_import():
             for alias in node.names:
                 for pkg in ORACLE_PACKAGES:
                     if pkg in alias.name.lower():
-                        assert False, f"Module-level oracle import in {adapter_file.name}:L{node.lineno}"
+                        raise AssertionError(f"Module-level oracle import in {adapter_file.name}:L{node.lineno}")

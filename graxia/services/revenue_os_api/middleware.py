@@ -58,9 +58,13 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "Referrer-Policy": "strict-origin-when-cross-origin",
             "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
         })
-        # Remove server fingerprint
-        response.headers.pop("Server", None)
-        response.headers.pop("X-Powered-By", None)
+        # Remove server fingerprint (version-safe: newer starlette MutableHeaders
+        # no longer inherits MutableMapping, so `.pop` is unavailable)
+        for header in ("Server", "X-Powered-By"):
+            try:
+                del response.headers[header]
+            except KeyError:
+                pass
 
         return response
 

@@ -5,6 +5,7 @@ Validates the complete signal → order → fill → position lifecycle.
 """
 
 import tempfile
+from decimal import Decimal
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -19,6 +20,7 @@ from graxia.packages.quant_os.core.events import (
     SignalEvent,
     TradeClosedEvent,
 )
+from graxia.packages.quant_os.core.exceptions import OrderStateError
 from graxia.packages.quant_os.core.position_manager import Position, PositionManager
 from graxia.packages.quant_os.core.trading_loop import (
     PaperExecutor,
@@ -425,7 +427,7 @@ class TestOrderStateMachineIntegration:
 
     def test_invalid_transition_raises(self):
         sm = OrderStateMachine(order_id="test-002", initial=OrderStatus.SIGNAL_CREATED)
-        with pytest.raises(Exception):
+        with pytest.raises(OrderStateError):
             sm.advance(OrderStatus.FILLED)  # skip中间 steps
 
     def test_terminal_states_have_no_outgoing(self):
@@ -443,3 +445,161 @@ class TestOrderStateMachineIntegration:
 
         sm2 = OrderStateMachine(initial=OrderStatus.SIGNAL_CREATED)
         assert sm2.is_terminal() is False
+
+
+# ── Risk Gate Integration ─────────────────────────────────────────────────
+
+
+class TestRiskGate:
+    """Verify pre_trade_check is actually wired and rejects bad orders."""
+
+    def test_risk_gate_rejects_when_daily_loss_exceeded(self, tmp_path):
+        """Order rejected if daily loss limit already hit."""
+
+        from graxia.packages.quant_os.risk.risk_ledger import RiskLedger
+        from graxia.packages.quant_os.risk.risk_policy import RiskPolicy
+
+        bus = EventBus()
+        policy = RiskPolicy(max_daily_loss_bps=50)  # 0.50% daily limit
+        ledger = RiskLedger(state_file=str(tmp_path / "risk.json"))
+        # Simulate: $50 loss on $10k account = 0.50% → at limit
+        ledger._state["daily_realized_loss"] = 50.0
+
+        loop = TradingLoop(
+            bus=bus,
+            risk_policy=policy,
+            risk_ledger=ledger,
+            account_equity=10000.0,
+        )
+        signal = _make_signal(approved_quantity=0.1)
+        loop.observe(signal)
+
+        # Should be rejected — no fill event published
+        assert loop.get_stats()["total_rejected"] == 1
+        assert loop.get_stats()["total_filled"] == 0
+
+    def test_risk_gate_passes_normal_order(self, tmp_path):
+        """Order passes when within risk limits."""
+        from graxia.packages.quant_os.risk.risk_ledger import RiskLedger
+        from graxia.packages.quant_os.risk.risk_policy import RiskPolicy
+
+        bus = EventBus()
+        policy = RiskPolicy()
+        ledger = RiskLedger(state_file=str(tmp_path / "risk.json"))
+
+        loop = TradingLoop(
+            bus=bus,
+            risk_policy=policy,
+            risk_ledger=ledger,
+            account_equity=10000.0,
+        )
+        signal = _make_signal(approved_quantity=0.1)
+        loop.observe(signal)
+
+        # Should pass — fill event published
+        assert loop.get_stats()["total_filled"] == 1
+        assert loop.get_stats()["total_rejected"] == 0
+
+    def test_orchestrator_passes_risk_components(self):
+        """Orchestrator constructs TradingLoop with real risk_policy and risk_ledger."""
+        from graxia.packages.quant_os.core.orchestrator import TradingOrchestrator
+
+        orch = TradingOrchestrator()
+        assert orch.trading_loop._risk_policy is not None
+        assert orch.trading_loop._risk_ledger is not None
+        assert orch.trading_loop._account_equity > 0
+
+    def test_risk_gate_rejects_when_margin_level_too_low(self, tmp_path):
+        """update_account_equity(equity, margin_level_pct=...) must actually
+        reach pre_trade_check() -- previously the broker's real margin_level
+        was read in orchestrator.py and forwarded to PositionManager, but
+        silently dropped before reaching the risk gate, so this check was
+        unreachable on every real order regardless of how low margin got."""
+        from graxia.packages.quant_os.risk.risk_ledger import RiskLedger
+        from graxia.packages.quant_os.risk.risk_policy import RiskPolicy
+
+        bus = EventBus()
+        policy = RiskPolicy()  # default reject_if_margin_level_below_pct=500
+        ledger = RiskLedger(state_file=str(tmp_path / "risk.json"))
+
+        loop = TradingLoop(
+            bus=bus,
+            risk_policy=policy,
+            risk_ledger=ledger,
+            account_equity=10000.0,
+        )
+        loop.update_account_equity(10000.0, margin_level_pct=100.0)  # well below 500%
+
+        signal = _make_signal(approved_quantity=0.1)
+        loop.observe(signal)
+
+        assert loop.get_stats()["total_rejected"] == 1
+        assert loop.get_stats()["total_filled"] == 0
+
+    def test_risk_gate_passes_when_margin_level_healthy(self, tmp_path):
+        """A healthy margin level must not spuriously reject."""
+        from graxia.packages.quant_os.risk.risk_ledger import RiskLedger
+        from graxia.packages.quant_os.risk.risk_policy import RiskPolicy
+
+        bus = EventBus()
+        policy = RiskPolicy()
+        ledger = RiskLedger(state_file=str(tmp_path / "risk.json"))
+
+        loop = TradingLoop(
+            bus=bus,
+            risk_policy=policy,
+            risk_ledger=ledger,
+            account_equity=10000.0,
+        )
+        loop.update_account_equity(10000.0, margin_level_pct=2000.0)  # well above 500%
+
+        signal = _make_signal(approved_quantity=0.1)
+        loop.observe(signal)
+
+        assert loop.get_stats()["total_filled"] == 1
+        assert loop.get_stats()["total_rejected"] == 0
+
+    def test_risk_gate_rejects_when_dollar_risk_exceeds_budget(self, tmp_path):
+        """Regression for the dummy-SizingResult defect: an approved quantity whose
+        implied dollar risk (qty * |entry - sl|) exceeds the per-trade budget must be
+        rejected by the risk gate, not silently passed with a fake zero risk."""
+        from graxia.packages.quant_os.risk.risk_ledger import RiskLedger
+        from graxia.packages.quant_os.risk.risk_policy import RiskPolicy
+
+        bus = EventBus()
+        policy = RiskPolicy()  # default 1% of $10k = $100 budget
+        ledger = RiskLedger(state_file=str(tmp_path / "risk.json"))
+
+        loop = TradingLoop(
+            bus=bus,
+            risk_policy=policy,
+            risk_ledger=ledger,
+            account_equity=10000.0,
+        )
+        # XAUUSD entry=2400 sl=2390 -> stop distance $10/unit; qty=20 -> $200 risk > $100 budget
+        signal = _make_signal(approved_quantity=20.0)
+        loop.observe(signal)
+
+        assert loop.get_stats()["total_rejected"] == 1
+        assert loop.get_stats()["total_filled"] == 0
+
+    def test_update_account_equity_ignores_zero_or_none_margin(self, tmp_path):
+        """0 or None margin_level_pct means 'unknown' (e.g. paper adapter
+        default) and must not overwrite a previously known real margin
+        level with a value that would skip the check outright."""
+        from graxia.packages.quant_os.risk.risk_ledger import RiskLedger
+        from graxia.packages.quant_os.risk.risk_policy import RiskPolicy
+
+        bus = EventBus()
+        policy = RiskPolicy()
+        ledger = RiskLedger(state_file=str(tmp_path / "risk.json"))
+        loop = TradingLoop(bus=bus, risk_policy=policy, risk_ledger=ledger, account_equity=10000.0)
+
+        loop.update_account_equity(10000.0, margin_level_pct=100.0)  # unhealthy, recorded
+        assert loop._margin_level_pct == Decimal("100.0")
+
+        loop.update_account_equity(10000.0, margin_level_pct=0.0)  # "unknown" snapshot
+        assert loop._margin_level_pct == Decimal("100.0")  # unchanged, not reset to 0/None
+
+        loop.update_account_equity(10000.0, margin_level_pct=None)
+        assert loop._margin_level_pct == Decimal("100.0")  # unchanged

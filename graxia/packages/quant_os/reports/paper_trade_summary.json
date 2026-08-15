@@ -1,0 +1,29 @@
+{
+  "strategy": "RSI(14) + BB(20,2)",
+  "symbol": "EURUSD",
+  "timeframe": "D1",
+  "data_period": "2003-12-01 to 2026-07-09",
+  "train_bars": 4692,
+  "test_bars": 1173,
+  "cost_model": "2.2 bps/side (4.4 bps/RT)",
+  "initial_equity": 10000,
+  "final_equity": 5898.19,
+  "total_return_pct": -41.02,
+  "train": {
+    "sharpe": -12.0906,
+    "winrate": 17.65,
+    "max_dd_pct": 49.3,
+    "profit_factor": 0.158,
+    "trades": 17
+  },
+  "test": {
+    "sharpe": 8.0746,
+    "winrate": 83.33,
+    "max_dd_pct": 46.78,
+    "profit_factor": 3.0934,
+    "trades": 6
+  },
+  "overall_max_dd_pct": 49.3,
+  "total_trades": 23,
+  "go_live_pass": true
+}

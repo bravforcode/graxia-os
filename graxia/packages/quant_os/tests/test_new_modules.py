@@ -3,6 +3,7 @@ Tests for new modules: Regime Filter, Monte Carlo, Signal Filter, Stability
 """
 
 import random
+from datetime import UTC
 
 random.seed(42)
 

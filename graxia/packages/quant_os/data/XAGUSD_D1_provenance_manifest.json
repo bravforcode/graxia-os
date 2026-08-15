@@ -1,0 +1,15 @@
+{
+  "source": "MT5 live terminal (Pepperstone-Demo), copy_rates_range D1",
+  "symbol": "XAGUSD",
+  "timeframe": "D1",
+  "start": "2005-01-01",
+  "end": "2026-07-29 00:00:00",
+  "rows": 5098,
+  "unique_dates": 5098,
+  "duplicate_bars": 0,
+  "min_year": 2007,
+  "generated_at": "2026-07-29T13:50:37.670947+00:00",
+  "script": "scripts/reexport_all_symbols_d1.py",
+  "backup": "XAGUSD_D1.csv.bak_20260729_205037",
+  "note": "Re-exported from MT5 for provenance-clean single-convention D1."
+}

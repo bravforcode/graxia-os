@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "direction": "I",
+  "lock_date": "2026-08-06",
+  "lock_doc_path": "reports/stopping_rule_2026_08_06_direction_i.md",
+  "lock_doc_sha256": "74d3f6f4f07649b64af9a918cce890af4667a3bf1f73df8b36137a271bdab210",
+  "description": "Direction I: EA Deep-Mine Funnel. Opened 2026-08-06 per docs/superpowers/specs/2026-08-06-direction-i-ea-funnel-design.md. Separate ledger per Path-B precedent; parallel Direction H (9000-9999) is citations-only. User override: no deadline; 400 research-hours; 40-trial hard cap across all cycles and sub-programs.",
+  "cumulative_trial_count": 0,
+  "cumulative_trial_cap": 40,
+  "next_available_trial_number": 10001,
+  "new_hypotheses_used": 0,
+  "new_hypotheses_remaining": 40,
+  "trial_range": "10000-10999",
+  "stopping_rule": {
+    "type": "budget_or_hours_or_consecutive_fail",
+    "budget": 40,
+    "deadline": null,
+    "hours_cap": 400,
+    "consecutive_fail_gate_threshold": 3,
+    "description": "Stop when any: 40 hypotheses used, 400 research-hours logged, or 3 consecutive hypotheses fail at the same gate. Deadline removed by user override 2026-08-06. Per stopping_rule_2026_08_06_direction_i.md §4."
+  },
+  "sacred_holdout": {
+    "path": "data/sacred_holdout/",
+    "status": "LOCKED",
+    "use_count": 0,
+    "max_use_count": 1,
+    "unlock_phase": "4.5 — final confirmation gate only (P7)",
+    "open_policy": "Opening this file and running any backtest against it counts as 1 trial. Cannot be reopened."
+  }
+}

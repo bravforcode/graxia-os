@@ -22,11 +22,11 @@ Handler = Callable[[Event], Any]
 class _PublishResult:
     """Dual-mode return: works as sync None or async awaitable."""
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return False
 
-    def __await__(self):
-        async def _noop():
+    def __await__(self) -> object:
+        async def _noop() -> None:
             return None
 
         return _noop().__await__()
@@ -54,7 +54,7 @@ class EventBus:
         self._event_log_path = event_log_path
         self._log_buffer: list[str] = []
         self._log_flush_interval: int = 100
-        self._log_file = None
+        self._log_file: Any = None
 
     def subscribe(self, event_type: type[Event] | str, handler: Handler) -> None:
         """Subscribe a handler to an event type (class or string key)."""
@@ -91,7 +91,7 @@ class EventBus:
                     "event_type": type(event).__name__ if isinstance(event_or_key, Event) else str(event_or_key),
                     "event_id": getattr(event, "event_id", ""),
                     "trace_id": getattr(event, "trace_id", ""),
-                    "timestamp": getattr(event, "timestamp", "").isoformat()
+                    "timestamp": getattr(event, "timestamp", "").isoformat()  # type: ignore[union-attr]
                     if hasattr(getattr(event, "timestamp", ""), "isoformat")
                     else "",
                     "source": getattr(event, "source", ""),
@@ -238,7 +238,8 @@ class EventBus:
 
             Path(self._event_log_path).parent.mkdir(parents=True, exist_ok=True)
             if self._log_file is None or self._log_file.closed:
-                self._log_file = open(self._event_log_path, "a", encoding="utf-8")
+                self._log_file = open(self._event_log_path, "a", encoding="utf-8")  # noqa: SIM115
+            assert self._log_file is not None
             self._log_file.write("\n".join(self._log_buffer) + "\n")
             self._log_file.flush()
             self._log_buffer.clear()
@@ -253,7 +254,7 @@ class EventBus:
         """Stop the event bus — flush remaining log buffer."""
         self._flush_log()
         if self._log_file and not self._log_file.closed:
-            try:
+            try:  # noqa: SIM105
                 self._log_file.close()
             except Exception:
                 pass

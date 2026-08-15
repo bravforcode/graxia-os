@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -25,7 +26,7 @@ class FailureRuleChecker:
     def __init__(self):
         self._violations: list[dict] = []
 
-    def check(self, rule_name: str, context: dict = None) -> bool:
+    def check(self, rule_name: str, context: dict[str, Any] | None = None) -> bool:
         rule = next((r for r in FAILURE_RULES if r.name == rule_name), None)
         if rule is None:
             return False

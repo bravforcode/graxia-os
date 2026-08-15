@@ -17,6 +17,7 @@ FAIL-CLOSED: _risk_gate defaults to False. No trade until explicitly approved.
 
 from dataclasses import dataclass
 
+from ..contract_specs import risk_based_units
 from ..enums import SignalType
 from ..events import Event, FillEvent, RiskEvent, SignalEvent
 from .base import Agent
@@ -76,7 +77,7 @@ class PortfolioManagerAgent(Agent):
                 self._positions[sym].quantity = 0
             return
 
-        if not isinstance(event, (SignalEvent, RiskEvent)):
+        if not isinstance(event, SignalEvent | RiskEvent):
             return
 
         # BLOCK dead signals from risk_auditor
@@ -124,12 +125,10 @@ class PortfolioManagerAgent(Agent):
         raw_confidence = consensus.confidence
         final_confidence = raw_confidence * sentiment_mod
 
-        # Position sizing: risk_budget / risk_per_unit
+        # Position sizing: single-source raw-units formula (mt5.py converts to lots)
         equity = consensus.metadata.get("equity", 10000.0)
         risk_pct = consensus.metadata.get("risk_pct", 0.01)
-        risk_budget = equity * risk_pct
-        risk_per_unit = abs(consensus.entry_price - consensus.stop_loss) if consensus.stop_loss else 0
-        approved_quantity = round(risk_budget / risk_per_unit, 6) if risk_per_unit > 0 else 0.0
+        approved_quantity = round(risk_based_units(equity, risk_pct, consensus.entry_price, consensus.stop_loss), 6)
 
         self._pending_consensus = None
         self._pending_risk_pass = False

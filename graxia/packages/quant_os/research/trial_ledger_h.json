@@ -1,0 +1,98 @@
+{
+  "schema_version": "1.0",
+  "direction": "H",
+  "lock_date": "2026-08-06",
+  "lock_doc_path": "reports/stopping_rule_2026_08_06_direction_h.md",
+  "lock_doc_sha256": "6b35a1b6feba1578b38a76a610a0b48a5031ed37c39855c5fe3c3b3b6a629afa",
+  "description": "Direction H: Forex 4-pair walk-forward retest (USDCAD/USDCHF/AUDUSD/NZDUSD H1). Opened 2026-08-06 after all 4 pairs got FROM_TICKS cost calibration (previously excluded for lack of cost data). Original 2026-07-12 INCONCLUSIVE verdicts invalidated by unmeasured default costs + underpowered folds (F24 provenance now resolved). Separate ledger per Path-B precedent.",
+  "cumulative_trial_count": 4,
+  "cumulative_trial_cap": 25,
+  "next_available_trial_number": 9005,
+  "new_hypotheses_used": 4,
+  "new_hypotheses_remaining": 21,
+  "trial_range": "9000-9999",
+  "stopping_rule": {
+    "type": "budget_or_time_or_consecutive_fail",
+    "budget": 25,
+    "deadline": "2026-11-06",
+    "hours_cap": 80,
+    "consecutive_fail_gate_threshold": 3,
+    "consecutive_fail_count": 3,
+    "consecutive_fail_note": "UPDATED 2026-08-06: 9001 REJECTED_MIXED (not a full fail), 9002 REJECTED (fail 1), 9003 REJECTED (fail 2). Count 2/3 — ONE more consecutive REJECT stops Direction H.",
+    "description": "Stop when any: new hypotheses reach 25, 3 months elapse (2026-11-06), 80 research-hours logged, or 3 consecutive hypotheses fail at the same gate. Per stopping_rule_2026_08_06_direction_h.md §4.",
+    "status": "TRIGGERED",
+    "triggered_at": "2026-08-06",
+    "trigger_note": "§4.4: 3 consecutive fails at same gate (9002, 9003, 9004). Direction H STOPPED. No further trials may be registered in this direction without a new stopping-rule document + human approval."
+  },
+  "sacred_holdout": {
+    "path": "data/sacred_holdout/",
+    "status": "LOCKED",
+    "use_count": 0,
+    "max_use_count": 1,
+    "unlock_phase": "4.5 — final confirmation gate only",
+    "open_policy": "Opening this file and running any backtest against it counts as 1 trial. Cannot be reopened."
+  },
+  "cost_basis": {
+    "USDCAD": {
+      "spread_bps_measured": 0.0713,
+      "commission_bps": 7.0,
+      "round_trip_bps": 14.14,
+      "status": "FROM_TICKS",
+      "calibrated_at": "2026-08-06"
+    },
+    "USDCHF": {
+      "spread_bps_measured": 0.1237,
+      "commission_bps": 7.0,
+      "round_trip_bps": 14.25,
+      "status": "FROM_TICKS",
+      "calibrated_at": "2026-08-06"
+    },
+    "AUDUSD": {
+      "spread_bps_measured": 0.1422,
+      "commission_bps": 7.0,
+      "round_trip_bps": 14.28,
+      "status": "FROM_TICKS",
+      "calibrated_at": "2026-08-06"
+    },
+    "NZDUSD": {
+      "spread_bps_measured": 0.3407,
+      "commission_bps": 7.0,
+      "round_trip_bps": 14.68,
+      "status": "FROM_TICKS",
+      "calibrated_at": "2026-08-06"
+    }
+  },
+  "lineage": [
+    {
+      "trial_id": "9001",
+      "status": "REJECTED_MIXED",
+      "result_at": "2026-08-06T18:40:20+00:00",
+      "notes": "RERUN at corrected costs 2026-08-06: AUDUSD/NZDUSD REJECT (t=-4.34/-3.22), USDCAD/USDCHF INCONCLUSIVE (t=-1.82/-0.68). Original REJECT x4 invalidated by commission-unit cost error (audit report)."
+    },
+    {
+      "trial_id": "9002",
+      "status": "REJECTED",
+      "result_at": "2026-08-06T08:45:00+00:00",
+      "notes": "DIRH-FX4-RSI-MR-H1 — RSI mean-reversion (fade extremes) REJECT on all 4 pairs at measured costs (PF 0.87-0.92, pooled DK t=-4.549, Sharpe<0 in 0/4, 1,375-1,435 trades each). Both momentum-classifier (9001) and mean-reversion (9002) families lose on these pairs. Stamped with provenance. Consecutive-fail count: 2/3 (§4.4)."
+    },
+    {
+      "trial_id": "9003",
+      "status": "REJECTED",
+      "result_at": "2026-08-06T20:15:00+00:00",
+      "notes": "DIRH-FX-MECH-SWEEP — 5 mechanisms x 2 pairs (hybrid MOM+MR, volume breakout, liquidity sweep, session pattern, BB-MR) all REJECT at corrected costs (0.84/0.95 bps rt). Best dk_t=-0.68. Session pattern flat (dk_t=0.004, overtrades). mrb/mtm INSUFFICIENT (strategy bugs). Stamped with provenance. Consecutive-fail count: 2/3 (9002+9003)."
+    },
+    {
+      "trial_id": "9004",
+      "status": "REJECTED",
+      "result_at": "2026-08-06T21:00:00+00:00",
+      "notes": "DIRH-FX-FINAL-ARMS — Momentum12M + TSMDXYDivergence (real DXY) both REJECT (t=-0.43..-2.11). FAIL #3/3 -> DIRECTION H STOPPED (§4.4)."
+    }
+  ],
+  "notes": [
+    "Opened 2026-08-06 per user approval (Direction H, range 9000-9999).",
+    "Pre-registered trial: 9001 (USDCAD/USDCHF/AUDUSD/NZDUSD H1 XGBoost walk-forward retest).",
+    "Verdicts MUST be stamped via research/registry_schema.stamp_trial_entry() (Phase 1 provenance).",
+    "GBPUSD/USDJPY NOT retested (conclusively REJECTED in original batch t=-8.77/-8.57).",
+    "Original 6-pair batch verdicts used --allow-default-costs for 5/6 pairs; retest forbids it."
+  ]
+}

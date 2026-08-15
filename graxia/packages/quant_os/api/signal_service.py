@@ -22,12 +22,21 @@ import numpy as np
 import pandas as pd
 import structlog
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request, Security
+from fastapi import FastAPI, HTTPException, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, Field
 
-from graxia.packages.quant_os.core.safe_pickle import safe_load_model
+from graxia.packages.quant_os.core.safe_pickle import safe_load_model, sign_model_file
+from graxia.packages.quant_os.ml.feature_store import (
+    LIVE_FEATURE_COLUMNS,
+    compute_feature_list_hash,
+)
+from graxia.packages.quant_os.ml.feature_store import (
+    compute_live_features as compute_features_live,
+)
+from graxia.packages.quant_os.ml.model_registry import ModelRegistry
+from graxia.packages.quant_os.risk.circuit_breaker import DEFAULT_STATE_FILE
 
 logger = structlog.get_logger(__name__)
 
@@ -62,7 +71,17 @@ SYMBOL = os.getenv("TRADE_SYMBOL", "XAUUSD")
 LOT_SIZE = float(os.getenv("LOT_SIZE", "0.01"))
 B2_STOP_DOLLARS = float(os.getenv("B2_STOP", "3.00"))
 MIN_CONFIDENCE = float(os.getenv("MIN_CONFIDENCE", "0.50"))
-LOG_DIR = Path(os.getenv("LOG_DIR", "/app/data"))
+# Shared circuit-breaker state file — mirrors KillSwitch's CWD-relative
+# data/kill_switch_state.json. Every process that constructs a
+# CircuitBreaker must use the same path so a trip in one process is
+# honored by the others (risk gate, orchestrator, webhook).
+CIRCUIT_BREAKER_STATE_FILE = DEFAULT_STATE_FILE
+MODEL_SIGNING_KEY = os.getenv("MODEL_SIGNING_KEY", "")
+# Path resolution: env-var-driven with defaults relative to this file's package.
+# Works both in Docker (/app mounts) and local dev (relative to repo root).
+_THIS_DIR = Path(__file__).resolve().parent  # api/
+_PACKAGE_DIR = _THIS_DIR.parent  # quant_os/
+LOG_DIR = Path(os.getenv("LOG_DIR", str(_PACKAGE_DIR / "data")))
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 # ---------------------------------------------------------------------------
@@ -73,11 +92,19 @@ _model = None
 _feature_names: list[str] = []
 _model_loaded = False
 _model_version: str = ""
+_expected_feature_hash: str = ""  # feature_list_hash from ModelRegistry, "" = unregistered (check skipped)
 _model_lock = threading.Lock()
+
+# Directories scanned for model artifacts. Env-var-driven, relative to
+# _PACKAGE_DIR by default — works both in Docker (mount an env var override)
+# and local dev. (Phase 2B.3 fixed LOG_DIR/FEATURES_DIR/MODEL_SAVE_DIR to this
+# pattern but missed this one — STRATEGY_MODEL_DIR was still hardcoded /app/.)
+STRATEGY_MODEL_DIR = Path(os.getenv("STRATEGY_MODEL_DIR", str(_PACKAGE_DIR / "artifacts" / "strategy_model")))
+MODEL_SAVE_DIR = Path(os.getenv("MODEL_SAVE_DIR", str(_PACKAGE_DIR / "ml" / "models")))
 
 
 def _load_model():
-    global _model, _feature_names, _model_loaded
+    global _model, _feature_names, _model_loaded, _model_version, _expected_feature_hash
     if _model_loaded:
         return
 
@@ -85,11 +112,7 @@ def _load_model():
         if _model_loaded:
             return
 
-        base = Path("/app")
-        model_dirs = [
-            base / "artifacts" / "strategy_model",
-            base / "ml" / "models",
-        ]
+        model_dirs = [STRATEGY_MODEL_DIR, MODEL_SAVE_DIR]
 
         # Try symbol-specific models first, then generic
         for d in model_dirs:
@@ -103,22 +126,53 @@ def _load_model():
 
             for path in ordered:
                 try:
-                    raw = safe_load_model(path)
+                    raw = safe_load_model(path, signing_key=MODEL_SIGNING_KEY or None)
                 except Exception as e:
                     logger.warning("model.load_error", path=str(path), error=str(e))
                     continue
 
+                # Look up this artifact in the ModelRegistry (keyed by version_id ==
+                # filename stem, since ModelRegistry.register_model() names its
+                # artifact "{version_id}.pkl"). This is the ONLY place the live
+                # feature_list_hash contract gets populated for enforcement in
+                # get_signal() below — an independent lookup, not a self-hash of
+                # the same pickle, so it actually catches drift/wrong-model loads.
+                meta = None
+                try:
+                    meta = ModelRegistry(models_dir=d).get_model(path.stem)
+                except Exception as e:
+                    logger.warning("model_registry.lookup_failed", path=str(path), error=str(e))
+
                 if isinstance(raw, dict) and "model" in raw:
-                    _model = raw["model"]
-                    _feature_names = raw.get("feature_names", [])
-                    if _feature_names:
-                        logger.info("model.loaded", path=str(path), features=len(_feature_names))
-                        _model_version = path.stem
-                        _model_loaded = True
-                        return
-                    else:
-                        logger.info("model.loaded_no_features", path=str(path))
-                        continue
+                    candidate_model = raw["model"]
+                    candidate_features = raw.get("feature_names", [])
+                elif meta is not None:
+                    # Registry-saved artifacts are the raw model object (registry
+                    # pickles `model` directly, not a {"model":...} wrapper) —
+                    # the feature list comes from the registry metadata instead.
+                    candidate_model = raw
+                    candidate_features = meta.feature_list
+                else:
+                    logger.info("model.loaded_unrecognized_format", path=str(path))
+                    continue
+
+                if candidate_features:
+                    _model = candidate_model
+                    _feature_names = candidate_features
+                    _model_version = meta.version_id if meta is not None else path.stem
+                    _expected_feature_hash = meta.feature_list_hash if meta is not None else ""
+                    if not _expected_feature_hash:
+                        logger.warning(
+                            "model.unregistered_no_hash_check",
+                            path=str(path),
+                            reason="model not found in ModelRegistry — feature contract check skipped",
+                        )
+                    logger.info("model.loaded", path=str(path), features=len(_feature_names))
+                    _model_loaded = True
+                    return
+                else:
+                    logger.info("model.loaded_no_features", path=str(path))
+                    continue
 
         # No model with features found — retrain
         _retrain_model()
@@ -126,11 +180,13 @@ def _load_model():
 
 def _retrain_model():
     """Retrain model using ONLY the 40 features available in live pipeline."""
-    global _model, _feature_names, _model_loaded
+    global _model, _feature_names, _model_loaded, _model_version, _expected_feature_hash
 
     import xgboost as xgb
 
-    features_path = Path("/app/artifacts/features_v2") / f"features_v2_{SYMBOL}_15min.parquet"
+    features_path = (
+        Path(os.getenv("FEATURES_DIR", str(_PACKAGE_DIR / "ml" / "models"))) / f"features_v2_{SYMBOL}_15min.parquet"
+    )
     if not features_path.exists():
         logger.warning("model.no_features", path=str(features_path))
         return
@@ -218,7 +274,7 @@ def _retrain_model():
     df_filtered["target"] = df_filtered["target"].replace({-1: 0, 1: 1})
 
     train = df_filtered.iloc[:-1000]
-    X_train = train[live_feature_cols].fillna(0).values
+    X_train = train[live_feature_cols].fillna(0).values  # noqa: N806
     y_train = train["target"].values.astype(int)
 
     if len(X_train) < 100:
@@ -238,191 +294,51 @@ def _retrain_model():
     _model.fit(X_train, y_train)
     _feature_names = live_feature_cols
 
-    # Save retrained model to disk for faster restart
+    # Save retrained model via ModelRegistry (instead of a hand-rolled pickle.dump)
+    # so it carries a feature_list_hash computed by the same canonical algorithm
+    # used at live-inference time (ml.feature_store.compute_feature_list_hash).
+    # ModelRegistry writes "{version_id}.pkl" — _load_model() looks up this exact
+    # version_id in the registry index to populate _expected_feature_hash for
+    # the fail-closed check in get_signal().
     try:
-        import pickle
-        model_save_dir = Path("/app/artifacts/strategy_model")
-        model_save_dir.mkdir(parents=True, exist_ok=True)
-        save_path = model_save_dir / f"xgboost_{SYMBOL}_live_features.pkl"
-        with open(save_path, "wb") as f:
-            pickle.dump(
-                {
-                    "model": _model,
-                    "feature_names": _feature_names,
-                    "model_type": "xgboost",
-                    "version": datetime.now(UTC).strftime("%Y%m%d_%H%M%S"),
-                    "training_samples": len(X_train),
-                },
-                f,
-            )
-        logger.info("model.saved_to_disk", path=str(save_path))
+        MODEL_SAVE_DIR.mkdir(parents=True, exist_ok=True)
+        registry = ModelRegistry(models_dir=MODEL_SAVE_DIR)
+        metadata = registry.register_model(
+            _model,
+            model_name=f"xgboost_{SYMBOL}_live_features",
+            model_type="xgboost",
+            symbol=SYMBOL,
+            timeframe="M15",
+            feature_list=live_feature_cols,
+            metrics={},
+            training_samples=len(X_train),
+        )
+        save_path = Path(metadata.artifact_path)
+        _model_version = metadata.version_id
+        _expected_feature_hash = metadata.feature_list_hash
+        logger.info("model.saved_to_disk", path=str(save_path), version_id=metadata.version_id)
+        if MODEL_SIGNING_KEY:
+            sign_model_file(save_path, MODEL_SIGNING_KEY)
+            logger.info("model.signed", path=str(save_path))
+        else:
+            logger.warning("model.save_unsigned", reason="MODEL_SIGNING_KEY not set")
     except Exception as e:
         logger.warning("model.save_failed", error=str(e))
+        _model_version = f"xgboost_{SYMBOL}_live_features"
+        _expected_feature_hash = ""
 
-    _model_version = f"xgboost_{SYMBOL}_live_features"
     _model_loaded = True
     logger.info("model.retrained_live_features", features=len(live_feature_cols), samples=len(X_train))
 
 
 # ---------------------------------------------------------------------------
-# Feature computation (identical to paper_trade_bot.py)
+# Feature computation
 # ---------------------------------------------------------------------------
-
-
-def compute_features_live(live_df: pd.DataFrame, feature_cols: list[str]) -> np.ndarray:
-    """Compute ALL 40 features on live data matching training pipeline exactly."""
-    # FEATURE PARITY — Fixed in Round 2.
-    # Training now uses ONLY the 40 features computed here (see _retrain_model()).
-    # If this function is modified, update _retrain_model() to match.
-    # Missing features are still filled with 0.0 as safety fallback (line ~350).
-    df = live_df.copy()
-
-    # Input validation — reject NaN/inf/negative prices
-    for col in ["open", "high", "low", "close"]:
-        if col in df.columns:
-            if df[col].isna().any():
-                logger.warning("feature.NaN_input", column=col)
-                df[col] = df[col].fillna(method="ffill").fillna(method="bfill")
-            if np.isinf(df[col]).any():
-                logger.warning("feature.inf_input", column=col)
-                df[col] = df[col].replace([np.inf, -np.inf], np.nan).fillna(method="ffill").fillna(method="bfill")
-    # Ensure high >= low >= 0
-    if "high" in df.columns and "low" in df.columns:
-        df["low"] = df["low"].clip(lower=0)
-        df["high"] = df["high"].clip(lower=df["low"])
-
-    # Returns
-    for p in [1, 5, 10, 15, 30, 60]:
-        df[f"ret_{p}bar"] = df["close"].pct_change(p)
-
-    # ATR
-    tr = pd.concat(
-        [
-            df["high"] - df["low"],
-            (df["high"] - df["close"].shift()).abs(),
-            (df["low"] - df["close"].shift()).abs(),
-        ],
-        axis=1,
-    ).max(axis=1)
-    for w in [7, 14, 21]:
-        df[f"atr_{w}"] = tr.rolling(w).mean()
-
-    # Realized Volatility
-    log_ret = np.log(df["close"] / df["close"].shift(1))
-    for w in [10, 20, 60]:
-        df[f"rvol_{w}"] = log_ret.rolling(w).std() * np.sqrt(252 * 96)
-
-    # RSI
-    delta = df["close"].diff()
-    for p in [7, 14, 21]:
-        gain = delta.clip(lower=0).rolling(p).mean()
-        loss = (-delta.clip(upper=0)).rolling(p).mean()
-        rs = gain / loss.replace(0, np.nan)
-        df[f"rsi_{p}"] = 100 - (100 / (1 + rs))
-
-    # Stochastic
-    low14 = df["low"].rolling(14).min()
-    high14 = df["high"].rolling(14).max()
-    df["stoch_k"] = 100 * (df["close"] - low14) / (high14 - low14).replace(0, np.nan)
-    df["stoch_d"] = df["stoch_k"].rolling(3).mean()
-
-    # CCI
-    tp = (df["high"] + df["low"] + df["close"]) / 3
-    df["cci_20"] = (tp - tp.rolling(20).mean()) / (0.015 * tp.rolling(20).std())
-
-    # Williams %R
-    df["willr_14"] = -100 * (high14 - df["close"]) / (high14 - low14).replace(0, np.nan)
-
-    # EMA distances
-    for p in [5, 10, 20, 200]:
-        ema = df["close"].ewm(span=p, adjust=False).mean()
-        df[f"ema_{p}_dist"] = (df["close"] - ema) / ema
-
-    # SMA cross
-    sma20 = df["close"].rolling(20).mean()
-    sma50 = df["close"].rolling(50).mean()
-    df["sma_20_50_cross"] = (sma20 - sma50) / sma50
-
-    # Bollinger Bands
-    sma20_bb = df["close"].rolling(20).mean()
-    std20 = df["close"].rolling(20).std()
-    upper_bb = sma20_bb + 2 * std20
-    lower_bb = sma20_bb - 2 * std20
-    df["bb_width"] = (upper_bb - lower_bb) / sma20_bb
-    df["bb_pctb"] = (df["close"] - lower_bb) / (upper_bb - lower_bb).replace(0, np.nan)
-    df["bb_squeeze"] = (df["bb_width"] < df["bb_width"].rolling(120).mean()).astype(float)
-
-    # Volume
-    if "volume" not in df.columns and "tick_volume" in df.columns:
-        df["volume"] = df["tick_volume"]
-    elif "volume" not in df.columns:
-        df["volume"] = 0
-    obv = (np.sign(df["close"].diff()) * df["volume"]).fillna(0).cumsum()
-
-    def _safe_slope(x):
-        if len(x) < 2:
-            return 0.0
-        try:
-            slope = np.polyfit(range(len(x)), x, 1)[0]
-            if np.isnan(slope) or np.isinf(slope):
-                return 0.0
-            return slope
-        except (np.linalg.LinAlgError, ValueError):
-            return 0.0
-
-    df["obv_slope_20"] = obv.rolling(20).apply(_safe_slope, raw=True)
-    vol_ma20 = df["volume"].rolling(20).mean()
-    vol_ma10 = df["volume"].rolling(10).mean()
-    df["vol_ratio_20"] = df["volume"] / vol_ma20.replace(0, np.nan)
-    df["vol_ratio_10"] = df["volume"] / vol_ma10.replace(0, np.nan)
-
-    # Candlestick patterns
-    body = (df["close"] - df["open"]).abs()
-    candle_range = (df["high"] - df["low"]).replace(0, np.nan)
-    df["body_ratio"] = body / candle_range
-    df["upper_shadow"] = (df["high"] - df[["open", "close"]].max(axis=1)) / candle_range
-    df["lower_shadow"] = (df[["open", "close"]].min(axis=1) - df["low"]) / candle_range
-    df["is_doji"] = (body / candle_range < 0.10).astype(float)
-    df["is_hammer"] = ((df["lower_shadow"] > 0.6) & (body / candle_range < 0.3)).astype(float)
-    prev_bearish = df["open"].shift(1) > df["close"].shift(1)
-    curr_bullish = df["close"] > df["open"]
-    df["is_bull_engulf"] = (
-        prev_bearish & curr_bullish & (df["close"] > df["open"].shift(1)) & (df["open"] < df["close"].shift(1))
-    ).astype(float)
-
-    # Session flags (UTC) — use bar time from index
-    try:
-        hour = df.index.hour
-    except AttributeError:
-        hour = pd.DatetimeIndex(df.index).hour
-    df["is_asian_session"] = ((hour >= 0) & (hour < 8)).astype(float)
-    df["is_london_session"] = ((hour >= 8) & (hour < 16)).astype(float)
-    df["is_ny_session"] = ((hour >= 13) & (hour < 21)).astype(float)
-
-    # Calendar
-    try:
-        df["day_of_week"] = df.index.dayofweek
-        df["day_of_month"] = df.index.day
-        df["month"] = df.index.month
-    except AttributeError:
-        idx = pd.DatetimeIndex(df.index)
-        df["day_of_week"] = idx.dayofweek
-        df["day_of_month"] = idx.day
-        df["month"] = idx.month
-
-    # Select only model features
-    missing = [c for c in feature_cols if c not in df.columns]
-    if missing:
-        import logging
-
-        logging.getLogger(__name__).warning(
-            f"FEATURE MISMATCH: {len(missing)} features missing, filled with 0.0: {missing[:5]}..."
-        )
-        for c in missing:
-            df[c] = 0.0
-
-    result = df[feature_cols].fillna(0).values
-    return result[-1:]
+# compute_features_live is imported from ml.feature_store (as compute_live_features)
+# above — it is the single feature-computation implementation shared by this
+# live-inference path and _retrain_model()'s training-data column selection.
+# Kept under its original name here since tests reference svc.compute_features_live
+# directly.
 
 
 # ---------------------------------------------------------------------------
@@ -475,6 +391,7 @@ class SignalRequest(BaseModel):
     bid: float
     ask: float
     hour_utc: int
+    symbol: str = ""  # the trading symbol (e.g. XAUUSD); populated by EA
 
 
 class SignalResponse(BaseModel):
@@ -497,6 +414,23 @@ class TradeRequest(BaseModel):
     confidence: float
     lot_size: float
     timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
+
+
+class RiskGateRequest(BaseModel):
+    """Trade pre-approval request — EA calls this BEFORE OrderSend."""
+
+    symbol: str
+    direction: str  # MUST be "long" or "short" — validated in endpoint
+    entry_price: float
+    stop_loss: float
+    confidence: float
+    lot_size: float = 0.01
+
+
+class RiskGateResponse(BaseModel):
+    allowed: bool
+    reason: str
+    approved_quantity: float = 0.0
 
 
 @app.on_event("startup")
@@ -593,7 +527,49 @@ async def get_signal(req: SignalRequest, _key: str = Security(verify_signal_api_
         if features.shape[1] != len(_feature_names):
             raise HTTPException(status_code=500, detail="Feature mismatch")
 
+        # Fail-closed feature/model contract check — refuse to serve a prediction
+        # if the CURRENT CODE's live feature vocabulary (ml.feature_store.LIVE_FEATURE_COLUMNS,
+        # i.e. what compute_live_features() actually computes right now) no longer
+        # matches the feature_list_hash the loaded model was registered with.
+        #
+        # This deliberately does NOT hash `_feature_names` here: `_feature_names`
+        # is populated from the SAME registry metadata that _expected_feature_hash
+        # comes from (see _load_model()), so hashing it would just re-derive
+        # _expected_feature_hash from itself — a tautology that can never fail.
+        # Hashing LIVE_FEATURE_COLUMNS instead makes this an independent check
+        # against what the running code actually computes: if someone edits
+        # LIVE_FEATURE_COLUMNS (add/remove/reorder a feature) without retraining
+        # and re-registering, this check catches the drift.
+        #
+        # This is a HARD refusal (raised outside the predict try/except below on
+        # purpose): the circuit breaker's except-Exception block returns a "flat"
+        # 200 response on prediction errors, which would silently swallow a
+        # contract violation instead of surfacing it. An empty _expected_feature_hash
+        # means the loaded model has no ModelRegistry entry (legacy/unregistered
+        # artifact) — the check is skipped and a warning was already logged at
+        # model-load time.
+        if _expected_feature_hash:
+            live_hash = compute_feature_list_hash(LIVE_FEATURE_COLUMNS)
+            if live_hash != _expected_feature_hash:
+                logger.error(
+                    "signal.feature_hash_mismatch",
+                    live_hash=live_hash,
+                    expected_hash=_expected_feature_hash,
+                    model_version=_model_version,
+                )
+                raise HTTPException(
+                    status_code=500,
+                    detail=(
+                        "Feature/model contract violation: live feature hash does not match "
+                        f"the registered model's feature_list_hash (model_version={_model_version}). "
+                        "Refusing to serve a prediction."
+                    ),
+                )
+
         # Predict with circuit breaker
+        if _model is None:
+            raise HTTPException(status_code=503, detail="Model not loaded")
+
         try:
             proba = _model.predict_proba(features)
             confidence = float(max(proba[0]))
@@ -637,7 +613,7 @@ async def get_signal(req: SignalRequest, _key: str = Security(verify_signal_api_
         raise
     except Exception as e:
         logger.exception("signal.error", error=str(e))
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.post("/api/trade")
@@ -656,6 +632,108 @@ async def log_trade(req: TradeRequest, _key: str = Security(verify_signal_api_ke
     with open(log_path, "a") as f:
         f.write(json.dumps(req.model_dump()) + "\n")
     return {"status": "logged", "ticket": req.ticket}
+
+
+@app.post("/api/risk-gate")
+async def risk_gate(req: RiskGateRequest, _key: str = Security(verify_signal_api_key)):
+    """
+    Pre-trade risk gate — EA calls this BEFORE OrderSend.
+
+    Wraps risk/engine.py's 4-layer gate. The EA MUST block on denial.
+    This is the single safety boundary between the EA's native OrderSend()
+    and the Python risk system.
+
+    Returns ``{"allowed": bool, "reason": str}`` — EA only places order
+    when ``allowed=true``.
+    """
+    from graxia.packages.quant_os.risk.circuit_breaker import CircuitBreaker
+    from graxia.packages.quant_os.risk.engine import (
+        AccountState,
+        PortfolioState,
+        RiskEngine,
+        Signal,
+    )
+    from graxia.packages.quant_os.risk.kill_switch import KillSwitch
+
+    # Rate limit: same window as /api/signal (max 30 requests per minute)
+    if not _rate_limiter.allow(client_id="risk_gate"):
+        raise HTTPException(status_code=429, detail="Rate limit exceeded. Max 30 requests/minute.")
+
+    # Validate direction — fail-closed, reject anything not explicitly "long" or "short"
+    if req.direction not in ("long", "short"):
+        return RiskGateResponse(
+            allowed=False,
+            reason=f"Invalid direction '{req.direction}' — must be 'long' or 'short'",
+            approved_quantity=0.0,
+        )
+
+    if req.entry_price <= 0 or req.stop_loss <= 0:
+        return RiskGateResponse(
+            allowed=False,
+            reason=f"Invalid price/sl: entry={req.entry_price}, sl={req.stop_loss}",
+            approved_quantity=0.0,
+        )
+
+    if req.confidence <= 0:
+        return RiskGateResponse(
+            allowed=False,
+            reason=f"Invalid confidence: {req.confidence}",
+            approved_quantity=0.0,
+        )
+
+    risk_signal = Signal(
+        symbol=req.symbol or SYMBOL,
+        conviction=req.confidence,
+        entry_price=req.entry_price,
+        stop_loss=req.stop_loss,
+        direction="BUY" if req.direction == "long" else "SELL",  # safe: validated above
+        side="BUY" if req.direction == "long" else "SELL",
+        timestamp=datetime.now(UTC),
+        timestamp_epoch=time.time(),
+        venue="paper",
+    )
+
+    engine = RiskEngine(
+        kill_switch=KillSwitch(),
+        circuit_breaker=CircuitBreaker(state_file=CIRCUIT_BREAKER_STATE_FILE),
+    )
+    account = AccountState(equity=0.0, balance=0.0)
+    portfolio = PortfolioState()
+
+    try:
+        verdict = engine.evaluate(risk_signal, account, portfolio)
+    except Exception as exc:
+        logger.exception("risk_gate.evaluate_failed", error=str(exc))
+        # Fail-closed: if the risk engine itself errors, do NOT trade
+        return RiskGateResponse(
+            allowed=False,
+            reason=f"Risk engine error: {exc}",
+            approved_quantity=0.0,
+        )
+
+    if verdict.approved:
+        logger.info(
+            "risk_gate.approved",
+            symbol=risk_signal.symbol,
+            direction=req.direction,
+            confidence=req.confidence,
+            approved_qty=verdict.approved_quantity,
+        )
+    else:
+        logger.warning(
+            "risk_gate.rejected",
+            symbol=risk_signal.symbol,
+            direction=req.direction,
+            reason=verdict.reason,
+            reason_code=verdict.reason_code.value if verdict.reason_code else None,
+            layer=verdict.layer_failed,
+        )
+
+    return RiskGateResponse(
+        allowed=verdict.approved,
+        reason=verdict.reason,
+        approved_quantity=verdict.approved_quantity,
+    )
 
 
 if __name__ == "__main__":

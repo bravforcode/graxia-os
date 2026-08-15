@@ -19,7 +19,7 @@ from ....packages.revenue_os.enums import (
     OrderStatus, LeadStatus, CampaignStatus, 
     ApprovalStatus, IncidentSeverity
 )
-from ....packages.revenue_os.schemas.ceo_schemas import (
+from ....packages.revenue_os.schemas_pkg.ceo_schemas import (
     CEODashboardSummary,
     RevenueMetrics,
     CampaignPerformance,

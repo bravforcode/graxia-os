@@ -1,0 +1,77 @@
+{
+  "schema_version": "1.0",
+  "direction": "G",
+  "lock_date": "2026-08-05",
+  "lock_doc_path": "reports/stopping_rule_2026_08_05.md",
+  "lock_doc_sha256": "1eca73ffed6dc2f940689482c56ff8129375586d375eebf0702dc45b65a8f09a",
+  "description": "Direction G: Trend following (BTCUSD H1 Donchian) + session-window breakout (EURUSD M15 London). Opened 2026-08-05 after BTCUSD/EURUSD cost calibration became FROM_TICKS (previously excluded for lack of cost data). Separate ledger per Path-B precedent — does not touch main ledger cap.",
+  "cumulative_trial_count": 3,
+  "cumulative_trial_cap": 25,
+  "next_available_trial_number": 8001,
+  "new_hypotheses_used": 3,
+  "new_hypotheses_remaining": 22,
+  "trial_range": "8000-8999",
+  "stopping_rule": {
+    "type": "budget_or_time_or_consecutive_fail",
+    "budget": 25,
+    "deadline": "2026-11-05",
+    "hours_cap": 80,
+    "consecutive_fail_gate_threshold": 3,
+    "description": "Stop when any: new hypotheses reach 25, 3 months elapse (2026-11-05), 80 research-hours logged, or 3 consecutive hypotheses fail at the same gate. Per stopping_rule_2026_08_05.md §4."
+  },
+  "sacred_holdout": {
+    "path": "data/sacred_holdout/",
+    "status": "LOCKED",
+    "use_count": 0,
+    "max_use_count": 1,
+    "unlock_phase": "4.5 — final confirmation gate only",
+    "open_policy": "Opening this file and running any backtest against it counts as 1 trial. Cannot be reopened."
+  },
+  "cost_basis": {
+    "BTCUSD": {
+      "spread_bps_measured": 2.376,
+      "commission_bps": 10.0,
+      "round_trip_bps": 24.75,
+      "slippage_source": "fill_simulator_p90_points",
+      "slippage_p90_points": 32.0,
+      "status": "FROM_TICKS",
+      "calibrated_at": "2026-08-05"
+    },
+    "EURUSD": {
+      "spread_bps_measured": 0.087,
+      "commission_bps": 7.0,
+      "round_trip_bps": 14.17,
+      "slippage_source": "fill_simulator_p90_points",
+      "slippage_p90_points": 1.0,
+      "status": "FROM_TICKS",
+      "calibrated_at": "2026-08-05"
+    }
+  },
+  "lineage": [
+    {
+      "trial_id": "8001",
+      "status": "REJECT",
+      "result_at": "2026-08-05T15:31:50.814878+00:00",
+      "notes": "DIRG-BTC-DONCHIAN-H1 — stamped with provenance per Phase 1"
+    },
+    {
+      "trial_id": "8002",
+      "status": "REJECT",
+      "result_at": "2026-08-05T15:35:53.703310+00:00",
+      "notes": "DIRG-EUR-SESSION-BREAKOUT-M15 — stamped with provenance per Phase 1"
+    },
+    {
+      "trial_id": "8003",
+      "status": "REJECT",
+      "result_at": "2026-08-05T17:44:02.178204+00:00",
+      "notes": "DIRG-BTC-TSMOM-YZ — stamped with provenance per Phase 1"
+    }
+  ],
+  "notes": [
+    "Opened 2026-08-05 per user approval (Direction G, range 8000-8999).",
+    "Pre-registered trials: 8001 (BTCUSD Donchian H1), 8002 (EURUSD London session breakout M15).",
+    "Verdicts MUST be stamped via research/registry_schema.stamp_trial_entry() (Phase 1 provenance).",
+    "M15 scalper space (trials 1034/1035) closed by post-mortem — Direction G uses structurally different mechanisms.",
+    "Direction D's use of the main ledger is acknowledged as an anomaly; Direction G uses a separate ledger per Path-B precedent."
+  ]
+}

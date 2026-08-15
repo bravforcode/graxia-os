@@ -15,13 +15,19 @@ Usage:
     python scripts/tsm_portfolio.py
 """
 
-from pathlib import Path
 import json
-import pandas as pd
+from pathlib import Path
+
 import numpy as np
+import pandas as pd
 from scipy import stats
 
 BASE = Path(__file__).resolve().parent.parent
+import sys  # noqa: E402
+
+sys.path.insert(0, str(BASE))
+from provenance import require_cost_calibrated_tsm_asset  # noqa: E402
+
 ARTIFACTS = BASE / "artifacts"
 OUT_DIR = ARTIFACTS / "portfolio"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -36,14 +42,21 @@ CORR_WINDOW = 60
 MAX_LEVERAGE = 1.0
 
 ASSETS = [
-    "XAUUSD", "EURUSD_YF", "GBPUSD_YF", "USDJPY",
-    "BTC_YF", "ETH_YF", "SILVER", "OIL",
+    "XAUUSD",
+    "EURUSD_YF",
+    "GBPUSD_YF",
+    "USDJPY",
+    "BTC_YF",
+    "ETH_YF",
+    "SILVER",
+    "OIL",
 ]
 
 
 # ─────────────────────────────────────────────
 # Data
 # ─────────────────────────────────────────────
+
 
 def load_data() -> pd.DataFrame:
     path = OUT_DIR / "d1_multi_asset.parquet"
@@ -65,6 +78,7 @@ def get_close_matrix(data: pd.DataFrame) -> pd.DataFrame:
 # Signals & Weights
 # ─────────────────────────────────────────────
 
+
 def tsm_signal(close: pd.Series, lookback: int) -> pd.Series:
     return np.sign(close.pct_change(lookback, fill_method=None))
 
@@ -83,9 +97,7 @@ def rebalance_weekly(weight: pd.DataFrame) -> pd.DataFrame:
     return weekly.reindex(weight.index, method="ffill")
 
 
-def sleeve_raw_weights(
-    close_matrix: pd.DataFrame, lookback: int
-) -> pd.DataFrame:
+def sleeve_raw_weights(close_matrix: pd.DataFrame, lookback: int) -> pd.DataFrame:
     """
     Compute raw sleeve weights per asset:
       raw_weight = signal(asset, lookback) * inv_vol_weight(asset)
@@ -184,6 +196,7 @@ def portfolio_backtest(
 # Correlation Monitoring
 # ─────────────────────────────────────────────
 
+
 def rolling_correlation(returns: pd.DataFrame, window: int = 60) -> pd.Series:
     """Rolling average pairwise cross-asset correlation."""
     n = returns.shape[1]
@@ -202,6 +215,7 @@ def rolling_correlation(returns: pd.DataFrame, window: int = 60) -> pd.Series:
 # ─────────────────────────────────────────────
 # Metrics
 # ─────────────────────────────────────────────
+
 
 def compute_metrics(ret: pd.Series, name: str = "") -> dict:
     """Sharpe, Sortino, Max DD, Calmar, skew, kurtosis."""
@@ -261,10 +275,17 @@ def deflated_sharpe_test(sharpe: float, n_obs: int, n_trials: int) -> dict:
 # Main
 # ─────────────────────────────────────────────
 
+
 def main():
     print("=" * 65)
     print("TSM Portfolio -- Multi-Lookback + Portfolio Vol-Targeting")
     print("=" * 65)
+
+    # 2026-07-30: ASSETS uses YF-suffixed aliases (EURUSD_YF etc); resolve
+    # to canonical symbols before gating so this can't silently run an
+    # uncalibrated asset through the flat COST_BPS=5 assumption below.
+    for _asset in ASSETS:
+        require_cost_calibrated_tsm_asset(_asset, mode="paper")
 
     data = load_data()
     close_matrix = get_close_matrix(data)
@@ -274,9 +295,7 @@ def main():
     print(f"Target vol: {TARGET_VOL:.0%}  Cost: {COST_BPS} bps  Rebalance: {REBALANCE_FREQ}")
 
     # ── Full-period backtest ──
-    port_ret, sleeve_iv, details = portfolio_backtest(
-        close_matrix, LOOKBACKS, TARGET_VOL, COST_BPS
-    )
+    port_ret, sleeve_iv, details = portfolio_backtest(close_matrix, LOOKBACKS, TARGET_VOL, COST_BPS)
 
     # ── Portfolio metrics ──
     m = compute_metrics(port_ret, "combined")
@@ -298,7 +317,9 @@ def main():
         sm = compute_metrics(sr, f"lb{lb}")
         sleeve_metrics[lb] = sm
         print(f"\n--- Sleeve {lb}d ---")
-        print(f"  Ann ret: {sm.get('ann_ret', 0):.2%}  Sharpe: {sm.get('sharpe', 0):.3f}  Max DD: {sm.get('max_dd', 0):.2%}")
+        print(
+            f"  Ann ret: {sm.get('ann_ret', 0):.2%}  Sharpe: {sm.get('sharpe', 0):.3f}  Max DD: {sm.get('max_dd', 0):.2%}"
+        )
 
     # ── Sleeve weights (recent) ──
     print("\n--- Sleeve Weights (recent) ---")
@@ -341,8 +362,10 @@ def main():
         sub = close_matrix.iloc[sl]
         sub_ret, _, _ = portfolio_backtest(sub, LOOKBACKS, TARGET_VOL, COST_BPS)
         sub_m = compute_metrics(sub_ret, label.lower())
-        print(f"  {label}: Sharpe={sub_m.get('sharpe', 0):.3f}  "
-              f"Ann ret={sub_m.get('ann_ret', 0):.2%}  Max DD={sub_m.get('max_dd', 0):.2%}")
+        print(
+            f"  {label}: Sharpe={sub_m.get('sharpe', 0):.3f}  "
+            f"Ann ret={sub_m.get('ann_ret', 0):.2%}  Max DD={sub_m.get('max_dd', 0):.2%}"
+        )
 
     # ── Deflated Sharpe ──
     n_trials = len(LOOKBACKS) * 2
@@ -401,9 +424,11 @@ def main():
     for key, entry in all_m.items():
         if "sharpe" not in entry:
             continue
-        print(f"{key:>12} {entry['sharpe']:>8.3f} {entry.get('sortino', 0):>8.3f} "
-              f"{entry['ann_ret']:>7.1%} {entry['ann_vol']:>7.1%} {entry['max_dd']:>7.1%} "
-              f"{entry.get('calmar', 0):>8.3f} {entry.get('skew', 0):>7.3f} {entry.get('kurtosis', 0):>7.3f}")
+        print(
+            f"{key:>12} {entry['sharpe']:>8.3f} {entry.get('sortino', 0):>8.3f} "
+            f"{entry['ann_ret']:>7.1%} {entry['ann_vol']:>7.1%} {entry['max_dd']:>7.1%} "
+            f"{entry.get('calmar', 0):>8.3f} {entry.get('skew', 0):>7.3f} {entry.get('kurtosis', 0):>7.3f}"
+        )
     print("=" * 75)
 
 

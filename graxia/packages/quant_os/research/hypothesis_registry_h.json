@@ -1,0 +1,325 @@
+{
+  "schema_version": "1.0",
+  "direction": "H",
+  "description": "Forex 4-Pair Walk-Forward Retest. Structural mechanism: XGBoost binary classification of next-bar direction on a FIXED technical feature set (returns, volatility, ATR, RSI, MACD, Bollinger, session flags) — the same mechanism family as the original 2026-07-12 batch (runner scripts/run_multi_instrument_wf.py, artifact wf_batch_H1_20260712_200555.json). The original INCONCLUSIVE verdicts (USDCAD t=-1.69, USDCHF t=-1.12, AUDUSD t=-1.55, NZDUSD t=-0.53) were invalid as evidence: F24 loader-provenance gap (now resolved) and 5/6 pairs ran with UNMEASURED default costs (--allow-default-costs). This retest runs the SAME mechanism with measured FROM_TICKS costs (mandatory) and a pre-registered min_confidence reduction 0.65->0.55 to overcome the ~7-trades/fold underpoweredness.",
+  "last_updated": "2026-08-06",
+  "current_verdict_2026-08-06": "DIRECTION H STOPPED 2026-08-06 (§4.4, 3/3 consecutive fails: 9002/9003/9004). No mechanism profitable on the 4 pairs at true costs.",
+  "cumulative_trial_count_at_creation": 0,
+  "stopping_rule_doc": "reports/stopping_rule_2026_08_06_direction_h.md",
+  "sacred_holdout_path": "N/A at the walk-forward stage (this is a validation-phase hypothesis, not a fitted-model holdout confirmation; sacred holdout remains LOCKED for Phase 4.5 only).",
+  "sacred_holdout_status": "LOCKED",
+  "notes": [
+    "Registered 2026-08-06 BEFORE running the retest, per pre-registration discipline (F27's lesson: never run-then-register).",
+    "Opened after Direction G stopped (§4.4, 2026-08-06) and after all 4 pairs received FROM_TICKS cost calibration (scripts/calibrate_forex4_from_ticks.py) — the cost-data blocker that excluded them since Direction D (2026-07-30) is resolved.",
+    "GBPUSD/USDJPY deliberately EXCLUDED — conclusively REJECTED in the original batch (t=-8.77 / t=-8.57) and remain closed.",
+    "min_confidence 0.65 -> 0.55 is frozen identically across all 4 pairs (no per-pair tuning, no lookahead at results).",
+    "Per F11 (MEGA_PLAN:37), INCONCLUSIVE is not a formal failure — this is a NEW hypothesis with real costs and a powered design."
+  ],
+  "hypotheses": [
+    {
+      "trial_number": 9001,
+      "id": "DIRH-FOREX4-H1",
+      "status": "REJECTED_MIXED",
+      "instrument": "USDCAD, USDCHF, AUDUSD, NZDUSD (H1)",
+      "symbols": [
+        "USDCAD",
+        "USDCHF",
+        "AUDUSD",
+        "NZDUSD"
+      ],
+      "registered_at": "2026-08-06T12:03:18.974826+00:00",
+      "result_at": "2026-08-06T12:03:18.974826+00:00",
+      "result_summary": {
+        "per_symbol": {
+          "USDCAD": {
+            "n_trades": 1901,
+            "net_pnl": -0.11,
+            "t_stat": -1.82,
+            "verdict": "INCONCLUSIVE"
+          },
+          "USDCHF": {
+            "n_trades": 2749,
+            "net_pnl": -0.06,
+            "t_stat": -0.68,
+            "verdict": "INCONCLUSIVE"
+          },
+          "AUDUSD": {
+            "n_trades": 6012,
+            "net_pnl": -0.34,
+            "t_stat": -4.34,
+            "verdict": "REJECT"
+          },
+          "NZDUSD": {
+            "n_trades": 6215,
+            "net_pnl": -0.24,
+            "t_stat": -3.22,
+            "verdict": "REJECT"
+          }
+        },
+        "pooled": {
+          "total_trades": 16877
+        },
+        "conclusion": "RERUN 2026-08-06 at CORRECTED costs (commission unit fix): USDCAD/USDCHF INCONCLUSIVE (t=-1.82/-0.68), AUDUSD/NZDUSD REJECT (t=-4.34/-3.22). Original all-4-REJECT invalidated by 22x cost overstatement (reports/audit_trial_9001_9002_cost_model.md).",
+        "artifact": "artifacts/wf_direction_h_9001_RERUN/wf_batch_H1_20260806_184020.json"
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "USDCAD": 0.84,
+        "USDCHF": 0.95,
+        "AUDUSD": 1.28,
+        "NZDUSD": 1.87
+      },
+      "slippage_source": "fill_simulator_p90_points",
+      "slippage_bps_used": {
+        "USDCAD": 0.0714,
+        "USDCHF": 0.1239,
+        "AUDUSD": 0.1417,
+        "NZDUSD": 1.3586
+      },
+      "data_manifest_ref": "artifacts/wf_direction_h_9001_RERUN/wf_batch_H1_20260806_184020.json",
+      "provenance_stamped_at": "2026-08-06T12:03:18.974826+00:00",
+      "notes": "Direction H trial 9001 — restamped 2026-08-06 after cost-model fix."
+    },
+    {
+      "trial_number": 9002,
+      "id": "DIRH-FX4-RSI-MR-H1",
+      "status": "REJECTED",
+      "instrument": "USDCAD, USDCHF, AUDUSD, NZDUSD (H1)",
+      "symbols": [
+        "USDCAD",
+        "USDCHF",
+        "AUDUSD",
+        "NZDUSD"
+      ],
+      "registered_at": "2026-08-06T12:03:18.974826+00:00",
+      "result_at": "2026-08-06T12:03:18.974826+00:00",
+      "result_summary": {
+        "per_symbol": {
+          "USDCAD": {
+            "n_trades": 1407,
+            "pf": 0.8977,
+            "trade_nw_t": -1.837,
+            "sharpe_daily": -2.173
+          },
+          "USDCHF": {
+            "n_trades": 1435,
+            "pf": 0.8834,
+            "trade_nw_t": -2.162,
+            "sharpe_daily": -2.148
+          },
+          "AUDUSD": {
+            "n_trades": 1375,
+            "pf": 0.9169,
+            "trade_nw_t": -1.503,
+            "sharpe_daily": -1.481
+          },
+          "NZDUSD": {
+            "n_trades": 1392,
+            "pf": 0.8742,
+            "trade_nw_t": -2.513,
+            "sharpe_daily": -2.542
+          }
+        },
+        "pooled": {
+          "dk_t_stat": -4.549,
+          "positive_sharpe_count": 0,
+          "total_trades": 5609
+        },
+        "conclusion": "REJECTED: RSI mean-reversion loses on all 4 pairs at measured costs. Engine $/lot cost path verified correct — verdict stands after cost-model audit.",
+        "artifact": "reports/edge_search_dirh_rsi_mr_9002.json"
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "USDCAD": 14.14,
+        "USDCHF": 14.25,
+        "AUDUSD": 14.28,
+        "NZDUSD": 14.68
+      },
+      "slippage_source": "fill_simulator_p90_points",
+      "slippage_bps_used": {
+        "USDCAD": 0.0714,
+        "USDCHF": 0.1239,
+        "AUDUSD": 0.1417,
+        "NZDUSD": 1.3586
+      },
+      "data_manifest_ref": "reports/edge_search_dirh_rsi_mr_9002.json",
+      "provenance_stamped_at": "2026-08-06T12:03:18.974826+00:00",
+      "notes": "Direction H trial 9002 — verdict REJECTED stands (engine cost path correct)."
+    },
+    {
+      "trial_number": 9003,
+      "id": "DIRH-EURUSD-H4-ASIS",
+      "status": "REJECTED",
+      "instrument": "EURUSD (H4)",
+      "symbols": [
+        "EURUSD"
+      ],
+      "registered_at": "2026-08-06T12:10:00+00:00",
+      "result_at": "2026-08-06T16:30:00+00:00",
+      "result_summary": {
+        "source": "reports/edge_search_tf_probe.json L119-140 (as-is M15 param transfer to H4)",
+        "n_trades": 34,
+        "net_sharpe_daily": 0.8735,
+        "net_pf": 1.7908,
+        "gross_sharpe_daily": 3.4558,
+        "gross_pf": 1.9023,
+        "cost_status": "measuring",
+        "classification": "pending_cost",
+        "caveat": "Break-even re-run 2026-08-06 (commit 9176c8bc): measured spread 0.1bps (conservative) + slippage 0 (honest, no fill sim) + commission 7.0/lot. be_mult=1.0 < 1.2 selection margin -> NOT SELECTED. Old 14.17bps cost was 8-29x commission-unit overstatement (audit_trial_9001_9002_cost_model.md); real RT 0.78bps."
+      },
+      "verdict_summary": {
+        "break_even_mult": 1.0,
+        "break_even_round_trip_bps": 0.78,
+        "measured_round_trip_bps": 0.78,
+        "net_pf": 1.3799,
+        "gross_sharpe_daily": 2.2295,
+        "selection_rule_result": "NOT_SELECTED (be_mult 1.0 < 1.2 margin; net edge exists post-cost but fails margin guard)",
+        "cost_path": "spread_pips=1 + slippage_pips=0 + commission 7.0/lot; engine override path (engine.py L1182-1187); market impact + adverse selection active"
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS (EURUSD 14.17bps RT)",
+      "blocked_on_previous": [
+        "direction_g_step1_completion (RESOLVED: G stopped 2026-08-06 §4.4)",
+        "tradeable_universe.json contradiction (RESOLVED: C1.1 cd0f4983)"
+      ],
+      "next_action": null,
+      "notes": "Pre-registered 2026-08-06 (Sub-project B decision). Direction H budget 25; 2 used (9001, 9002); 9003 is the 3rd."
+    },
+    {
+      "trial_number": 9003,
+      "id": "DIRH-FX-MECH-SWEEP",
+      "status": "REJECTED",
+      "instrument": "USDCAD, USDCHF (H1, 50k bars)",
+      "symbols": [
+        "USDCAD",
+        "USDCHF"
+      ],
+      "registered_at": "2026-08-06T16:32:42.380503+00:00",
+      "result_at": "2026-08-06T16:32:42.380503+00:00",
+      "result_summary": {
+        "arms": {
+          "hybrid_mom_mr": {
+            "USDCAD": {
+              "dk_t": -2.19,
+              "n_trades": 3368
+            },
+            "USDCHF": {
+              "dk_t": -2.6,
+              "n_trades": 3286
+            }
+          },
+          "volume_breakout": {
+            "USDCAD": {
+              "dk_t": -0.85,
+              "n_trades": 623
+            },
+            "USDCHF": {
+              "dk_t": -0.68,
+              "n_trades": 627
+            }
+          },
+          "liquidity_sweep_v2": {
+            "USDCAD": {
+              "dk_t": -0.78,
+              "n_trades": 772
+            },
+            "USDCHF": {
+              "dk_t": -2.23,
+              "n_trades": 870
+            }
+          },
+          "session_pattern": {
+            "USDCAD": {
+              "dk_t": 0.004,
+              "n_trades": 33565
+            },
+            "USDCHF": {
+              "dk_t": 0.004,
+              "n_trades": 33193
+            }
+          },
+          "mrb": "INSUFFICIENT (wall-clock low-liquidity filter blocks all trades — strategy bug)",
+          "mtm": "INSUFFICIENT (needs multi-TF data, not single-TF runner)"
+        },
+        "pooled": {
+          "best_arm_dk_t": -0.68,
+          "best_arm": "volume_breakout USDCHF (still REJECT)"
+        },
+        "conclusion": "REJECTED: all 5 runnable mechanisms (hybrid MOM+MR, volume breakout, liquidity sweep, session pattern, BB-MR) show no edge on USDCAD/USDCHF at corrected costs (0.84/0.95 bps rt). Best dk_t = -0.68. Session pattern flat (dk_t 0.004, overtrades 33k). Two arms INSUFFICIENT (mrb wall-clock bug, mtm multi-TF requirement). Both momentum and MR families now fail on these pairs; no rule-based mechanism found.",
+        "artifact": "reports/edge_search_dirh_mech_sweep_9003.json"
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "USDCAD": 0.84,
+        "USDCHF": 0.95
+      },
+      "slippage_source": "fill_simulator_p90_points",
+      "slippage_bps_used": {
+        "USDCAD": 0.0714,
+        "USDCHF": 0.1239
+      },
+      "data_manifest_ref": "reports/edge_search_dirh_mech_sweep_9003.json",
+      "provenance_stamped_at": "2026-08-06T16:32:42.380503+00:00",
+      "notes": "Direction H trial 9003 REJECTED 2026-08-06. 5 mechanisms x 2 pairs sweep at true costs. Consecutive-fail count now 2/3 (9002 REJECT + 9003 REJECT; 9001 REJECTED_MIXED not counted)."
+    },
+    {
+      "trial_number": 9004,
+      "id": "DIRH-FX-FINAL-ARMS",
+      "status": "REJECTED",
+      "instrument": "USDCAD, USDCHF (H1, 50k bars)",
+      "symbols": [
+        "USDCAD",
+        "USDCHF"
+      ],
+      "registered_at": "2026-08-06T16:59:02.005632+00:00",
+      "result_at": "2026-08-06T16:59:02.005632+00:00",
+      "result_summary": {
+        "arms": {
+          "momentum_12m": {
+            "USDCAD": {
+              "dk_t": -1.955,
+              "n_trades": 3365
+            },
+            "USDCHF": {
+              "dk_t": -2.113,
+              "n_trades": 3355
+            }
+          },
+          "tsm_dxy": {
+            "USDCAD": {
+              "dk_t": -1.928,
+              "n_trades": 789
+            },
+            "USDCHF": {
+              "dk_t": -0.432,
+              "n_trades": 783
+            }
+          }
+        },
+        "pooled": {
+          "best_arm_dk_t": -0.432,
+          "best_arm": "tsm_dxy USDCHF (still REJECT)"
+        },
+        "conclusion": "REJECTED: Momentum12M (t=-1.96/-2.11) and TSMDXYDivergence with real DXY data (t=-1.93/-0.43) both fail on USDCAD/USDCHF at corrected costs. DXY divergence filter — the structurally-most-relevant mechanism for USD pairs — shows no edge. THIS IS FAIL #3 -> Direction H STOPPING RULE 4.4 TRIGGERED.",
+        "artifact": "reports/edge_search_dirh_9004.json"
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "USDCAD": 0.84,
+        "USDCHF": 0.95
+      },
+      "slippage_source": "fill_simulator_p90_points",
+      "slippage_bps_used": {
+        "USDCAD": 0.0714,
+        "USDCHF": 0.1239
+      },
+      "data_manifest_ref": "reports/edge_search_dirh_9004.json",
+      "provenance_stamped_at": "2026-08-06T16:59:02.005632+00:00",
+      "notes": "Direction H trial 9004 REJECTED 2026-08-06. Consecutive-fail 3/3 (9002, 9003, 9004) -> Direction H STOPPED per stopping_rule_2026_08_06_direction_h.md §4.4. All mechanisms tested across 4 trials: ML classifier, RSI-MR, hybrid, breakout, liquidity, session, momentum12m, DXY-divergence — NONE profitable at true costs."
+    }
+  ]
+}

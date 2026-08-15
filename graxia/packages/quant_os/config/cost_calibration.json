@@ -1,96 +1,84 @@
 {
-  "version": "2.1",
-  "date": "2026-07-03",
-  "source": "Pepperstone Razor account — MEASURED",
-  "note": "Real spread measurement from 160 samples across 8 assets. Swap rates from Pepperstone published schedule.",
+  "version": "4.1",
+  "date": "2026-07-26",
+  "source": "Pepperstone Razor account — MIXED: see each asset's 'status' field. No single blanket status applies across all 4 tradeable assets — verify per-asset before trusting for live sizing.",
+  "note": "4-asset focused portfolio. Dead-weight removed (EURUSD, GBPUSD, SILVER, BTCUSD, ETHUSD). 2026-07-26 data-integrity fix: prior v3.0 claimed a blanket 'source: MEASURED' and a '2026-07-03 to 2026-07-05' window for NAS100/OIL/USDJPY that is NOT backed by any raw data in this repository (see measurement_caveat on each asset; fabrication traced to commit 33b90c31, 2026-07-08). XAUUSD and USDJPY now use real tick-level bid/ask data from data/ticks/*_ticks_24h.parquet (~27h continuous capture, 2026-06-25 09:35 to 2026-06-26 12:36 UTC, all 5 sessions covered once each) — genuine and far larger than the original snapshot, but still NOT multi-day/repeated-day sampling. OIL is restored to its real single ~3-minute snapshot (data/spread_log.jsonl / data/spread_analysis.json, MT5-reported symbol 'SpotCrude'). NAS100 has ZERO real spread or tick data anywhere in this repository — its numbers are unverified placeholders and must not be trusted for live sizing.",
   "swap_rate_note": "Daily swap in bps of position notional. Negative = cost. Derived from Pepperstone published overnight rates.",
   "assets": {
-    "BTCUSD": {
-      "mt5_symbol": "BTCUSD",
-      "spread_bps_measured": 2.43,
-      "spread_bps_p95": 2.58,
-      "spread_bps_mean": 2.58,
-      "spread_bps_min": 2.43,
-      "spread_bps_max": 5.43,
-      "spread_bps_std": 0.65,
-      "commission_bps": 0,
-      "slippage_bps_measured": null,
-      "round_trip_bps_measured": 4.86,
-      "round_trip_bps_p95": 5.16,
-      "contract_size": 1,
-      "tick_size": 0.01,
-      "status": "MEASURED",
-      "sample_size": 20,
-      "measurement_window": "2026-07-03 to 2026-07-03",
-      "notes": "Pepperstone CFD: $0 commission on crypto",
-      "swap_long_bps": -3.0,
-      "swap_short_bps": -1.5
-    },
-    "ETHUSD": {
-      "mt5_symbol": "ETHUSD",
-      "spread_bps_measured": 11.67,
-      "spread_bps_p95": 11.77,
-      "spread_bps_mean": 11.76,
-      "spread_bps_min": 11.66,
-      "spread_bps_max": 13.53,
-      "spread_bps_std": 0.41,
-      "commission_bps": 0,
-      "slippage_bps_measured": null,
-      "round_trip_bps_measured": 23.34,
-      "round_trip_bps_p95": 23.54,
-      "contract_size": 1,
-      "tick_size": 0.01,
-      "status": "MEASURED",
-      "sample_size": 20,
-      "measurement_window": "2026-07-03 to 2026-07-03",
-      "notes": "Pepperstone CFD: $0 commission on crypto",
-      "swap_long_bps": -3.0,
-      "swap_short_bps": -1.5
-    },
-    "EURUSD": {
-      "mt5_symbol": "EURUSD",
-      "spread_bps_measured": 0.0,
-      "spread_bps_p95": 0.0,
-      "spread_bps_mean": 0.0,
-      "spread_bps_min": 0.0,
-      "spread_bps_max": 0.0,
+    "XAUUSD": {
+      "mt5_symbol": "XAUUSD",
+      "spread_bps_measured": 0.324,
+      "spread_bps_p95": 0.426,
+      "spread_bps_mean": 0.35,
+      "spread_bps_min": 0.025,
+      "spread_bps_max": 129.559,
       "spread_bps_std": 0.0,
-      "commission_bps": 7,
-      "slippage_bps_measured": null,
-      "round_trip_bps_measured": 7.0,
-      "round_trip_bps_p95": 7.0,
-      "contract_size": 100000,
-      "tick_size": 1e-05,
-      "status": "MEASURED",
-      "sample_size": 20,
-      "measurement_window": "2026-07-03 to 2026-07-03",
-      "notes": "Pepperstone Razor: $7/rt commission on FX",
-      "swap_long_bps": -0.15,
-      "swap_short_bps": -0.10
+      "commission_bps": 0.0,
+      "slippage_bps_measured": 0.0,
+      "round_trip_bps_measured": 0.648,
+      "round_trip_bps_p95": 0.852,
+      "contract_size": 1.0,
+      "tick_size": 0.01,
+      "status": "FROM_TICKS",
+      "sample_size": 704402,
+      "measurement_window": "24h tick parquet (2026-06-25)",
+      "measurement_duration_days": 1,
+      "measurement_mode": "tick_parquet",
+      "sessions": {
+        "asian": {
+          "median": 0.424,
+          "p90": 0.522,
+          "n": 163359
+        },
+        "london": {
+          "median": 0.324,
+          "p90": 0.351,
+          "n": 193122
+        },
+        "london_ny_overlap": {
+          "median": 0.324,
+          "p90": 0.376,
+          "n": 129774
+        },
+        "ny": {
+          "median": 0.322,
+          "p90": 0.348,
+          "n": 188700
+        },
+        "rollover": {
+          "median": 0.322,
+          "p90": 0.323,
+          "n": 29447
+        }
+      },
+      "notes": "SP3: calibrated from existing 24h tick parquet — breadth expansion",
+      "swap_long_bps": -0.5,
+      "swap_short_bps": 0.1
     },
-    "GBPUSD": {
-      "mt5_symbol": "GBPUSD",
-      "spread_bps_measured": 0.15,
-      "spread_bps_p95": 0.3,
-      "spread_bps_mean": 0.14,
-      "spread_bps_min": 0.0,
-      "spread_bps_max": 0.37,
-      "spread_bps_std": 0.08,
-      "commission_bps": 7,
-      "slippage_bps_measured": null,
-      "round_trip_bps_measured": 7.3,
-      "round_trip_bps_p95": 7.6,
-      "contract_size": 100000,
-      "tick_size": 1e-05,
-      "status": "MEASURED",
-      "sample_size": 20,
-      "measurement_window": "2026-07-03 to 2026-07-03",
-      "notes": "Pepperstone Razor: $7/rt commission on FX",
-      "swap_long_bps": -0.12,
-      "swap_short_bps": -0.08
+    "NAS100": {
+      "mt5_symbol": "NAS100",
+      "spread_bps_measured": 1.3,
+      "spread_bps_p95": 2.0,
+      "spread_bps_mean": 1.3,
+      "spread_bps_min": 0.8,
+      "spread_bps_max": 3.0,
+      "spread_bps_std": 0.4,
+      "commission_bps": 0,
+      "slippage_bps_measured": 1.3,
+      "round_trip_bps_measured": 2.6,
+      "round_trip_bps_p95": 4.0,
+      "contract_size": 1,
+      "tick_size": 0.01,
+      "status": "UNVERIFIED_NO_DATA",
+      "sample_size": 0,
+      "measurement_window": "NONE — no measurement of NAS100 has ever taken place in this repository. NAS100 is absent from data/spread_log.jsonl (the 160-tick raw log backing the 2026-07-03 snapshot), data/spread_analysis.json, data/spread_report.json, and data/ticks/ (no NAS100 parquet exists).",
+      "measurement_caveat": "These numbers were introduced from scratch in commit 33b90c31 (2026-07-08, 'fix 37 test failures'), which also invented a 'measurement_window': '2026-07-03 to 2026-07-05' claim under a blanket top-level 'source: MEASURED' label. No raw tick or spread data for NAS100 exists anywhere in this repo to derive these numbers from. Treat as unverified placeholders only — do not use for live sizing or go-live decisions. Closing this gap requires either running live/paper tick recording for NAS100 across multiple real calendar days, or locating a historical NAS100 tick archive, neither of which currently exists here.",
+      "notes": "Pepperstone Razor: NAS100 CFD tight spread (UNVERIFIED — see measurement_caveat)",
+      "swap_long_bps": -2.0,
+      "swap_short_bps": 0.5
     },
     "OIL": {
-      "mt5_symbol": "SpotCrude",
+      "mt5_symbol": "USOIL",
       "spread_bps_measured": 4.88,
       "spread_bps_p95": 4.88,
       "spread_bps_mean": 4.31,
@@ -103,75 +91,553 @@
       "round_trip_bps_p95": 9.76,
       "contract_size": 1000,
       "tick_size": 0.001,
-      "status": "MEASURED",
+      "status": "SINGLE_SNAPSHOT",
       "sample_size": 20,
-      "measurement_window": "2026-07-03 to 2026-07-03",
-      "notes": "Pepperstone CFD: $0 commission on energy (OIL/WTI)",
-      "swap_long_bps": -0.50,
-      "swap_short_bps": 0.15
+      "measurement_window": "2026-07-03T05:48:07Z to 2026-07-03T05:51:17Z (single ~3-minute snapshot, NOT a 3-day span — see data/spread_analysis.json and data/spread_log.jsonl)",
+      "measurement_caveat": "Real multi-day, multi-session measurement is still required before this cost model should be trusted for any go-live decision. Commit 33b90c31 (2026-07-08) had overwritten these real, traceable numbers with different fabricated spread/RT values (same 'USOIL' mt5_symbol, same fabricated 3-day window); this entry restores the real measured spread/RT numbers. UNRESOLVED DISCREPANCY (flagged, not changed): the raw MT5 tick log (data/spread_log.jsonl) recorded this measurement under symbol 'SpotCrude' (display_name 'OIL'), not 'USOIL'. mt5_symbol is kept as 'USOIL' here only because scripts/tsm_paper_trade.py hardcodes MT5_SYMBOL_MAP['OIL']='USOIL' and indexes its cost lookup by that literal key (COST_MAP.get(mt5_sym, 10.0)) — changing this field to 'SpotCrude' would silently break that lookup and fall back to the 10bps default, discarding this real measurement. Someone with broker access must verify whether 'USOIL' and 'SpotCrude' are the same tradeable MT5 symbol at this broker before live order routing.",
+      "notes": "Pepperstone CFD: $0 commission on energy.",
+      "swap_long_bps": -1.5,
+      "swap_short_bps": 0.3
     },
     "USDJPY": {
       "mt5_symbol": "USDJPY",
-      "spread_bps_measured": 0.06,
-      "spread_bps_p95": 0.19,
-      "spread_bps_mean": 0.06,
-      "spread_bps_min": 0.0,
-      "spread_bps_max": 0.25,
-      "spread_bps_std": 0.06,
-      "commission_bps": 7,
-      "slippage_bps_measured": null,
-      "round_trip_bps_measured": 7.12,
-      "round_trip_bps_p95": 7.38,
-      "contract_size": 100000,
+      "spread_bps_measured": 0.124,
+      "spread_bps_p95": 0.186,
+      "spread_bps_mean": 0.138,
+      "spread_bps_min": 0.062,
+      "spread_bps_max": 6.243,
+      "spread_bps_std": 0.0,
+      "commission_bps": 7.0,
+      "slippage_bps_measured": 0.0,
+      "round_trip_bps_measured": 0.948,
+      "round_trip_bps_p95": 1.072,
+      "contract_size": 100000.0,
       "tick_size": 0.001,
-      "status": "MEASURED",
-      "sample_size": 20,
-      "measurement_window": "2026-07-03 to 2026-07-03",
-      "notes": "Pepperstone Razor: $7/rt commission on FX",
-      "swap_long_bps": 0.08,
-      "swap_short_bps": -0.20
+      "status": "FROM_TICKS",
+      "sample_size": 328246,
+      "measurement_window": "24h tick parquet (2026-06-25)",
+      "measurement_duration_days": 1,
+      "measurement_mode": "tick_parquet",
+      "sessions": {
+        "asian": {
+          "median": 0.124,
+          "p90": 0.247,
+          "n": 71552
+        },
+        "london": {
+          "median": 0.124,
+          "p90": 0.186,
+          "n": 101501
+        },
+        "london_ny_overlap": {
+          "median": 0.124,
+          "p90": 0.185,
+          "n": 55499
+        },
+        "ny": {
+          "median": 0.124,
+          "p90": 0.186,
+          "n": 79412
+        },
+        "rollover": {
+          "median": 0.124,
+          "p90": 0.247,
+          "n": 20282
+        }
+      },
+      "notes": "SP3: calibrated from existing 24h tick parquet — breadth expansion | COMMISSION UNIT FIX 2026-08-06: field commission_bps previously held USD/rt-lot (7.0/10.0) misread as bps -> rt overstated 8-29x. Now commission_usd_per_rt_lot + commission_bps_true; round_trip_bps_measured corrected (see reports/audit_trial_9001_9002_cost_model.md).",
+      "swap_long_bps": -0.3,
+      "swap_short_bps": 0.1,
+      "commission_usd_per_rt_lot": 7.0,
+      "commission_bps_true": 0.7
     },
-    "SILVER": {
-      "mt5_symbol": "XAGUSD",
-      "spread_bps_measured": 6.58,
-      "spread_bps_p95": 7.22,
-      "spread_bps_mean": 6.56,
-      "spread_bps_min": 5.61,
-      "spread_bps_max": 7.22,
-      "spread_bps_std": 0.44,
-      "commission_bps": 0,
+    "BTCUSD": {
+      "mt5_symbol": "BTCUSD",
+      "spread_bps_measured": 2.376175137414208,
+      "spread_bps_p95": 3.110908457339348,
+      "spread_bps_mean": 2.5301336487718067,
+      "spread_bps_min": 1.593405849233532,
+      "spread_bps_max": 11.621071986940342,
+      "spread_bps_std": 0.7141052817951864,
+      "commission_bps": 10.0,
       "slippage_bps_measured": null,
-      "round_trip_bps_measured": 13.16,
-      "round_trip_bps_p95": 14.44,
-      "contract_size": 5000,
-      "tick_size": 0.001,
-      "status": "MEASURED",
-      "sample_size": 20,
-      "measurement_window": "2026-07-03 to 2026-07-03",
-      "notes": "Pepperstone Razor: $0 commission on metals (SILVER)",
-      "swap_long_bps": -0.40,
-      "swap_short_bps": 0.15
-    },
-    "XAUUSD": {
-      "mt5_symbol": "XAUUSD",
-      "spread_bps_measured": 0.36,
-      "spread_bps_p95": 0.5,
-      "spread_bps_mean": 0.38,
-      "spread_bps_min": 0.24,
-      "spread_bps_max": 0.79,
-      "spread_bps_std": 0.1,
-      "commission_bps": 0,
-      "slippage_bps_measured": null,
-      "round_trip_bps_measured": 0.72,
-      "round_trip_bps_p95": 1.0,
-      "contract_size": 100,
+      "round_trip_bps_measured": 6.298758,
+      "round_trip_bps_p95": 7.768225,
+      "contract_size": 1.0,
       "tick_size": 0.01,
-      "status": "MEASURED",
-      "sample_size": 20,
-      "measurement_window": "2026-07-03 to 2026-07-03",
-      "notes": "Pepperstone Razor: $0 commission on metals",
-      "swap_long_bps": -0.50,
-      "swap_short_bps": 0.20
+      "status": "FROM_TICKS",
+      "sample_size": 1295870,
+      "measurement_window": "2026-07-31 -> 2026-08-05 (UTC)",
+      "measurement_duration_days": 4.4,
+      "measurement_mode": "mt5_copy_ticks_range_backfill",
+      "sessions": {
+        "asian": {
+          "median": 2.3698,
+          "p90": 2.391,
+          "n": 422447
+        },
+        "london": {
+          "median": 2.3753,
+          "p90": 2.3992,
+          "n": 224289
+        },
+        "london_ny_overlap": {
+          "median": 2.3789,
+          "p90": 2.3988,
+          "n": 183743
+        },
+        "ny": {
+          "median": 2.3773,
+          "p90": 2.6933,
+          "n": 348045
+        },
+        "rollover": {
+          "median": 2.3697,
+          "p90": 2.4008,
+          "n": 117346
+        }
+      },
+      "notes": "Backfilled via mt5.copy_ticks_range (full tick history served by broker). EURUSD filtered to ask>bid quotes only (MT5 COPY_TICKS_ALL mixes last-trade ticks). Pending live 7-day sampling completion 2026-08-12 for confirmation. | slippage: null in calibration; sourced from fill_samples_BTCUSD_1min.csv P90 (fill_simulator_p90_points). | swaps measured 2026-08-06 via scripts/measure_swap_rates.py (MT5 symbol_info, swap_mode=5 INTEREST_CURRENT %/yr of current price, verified against MQL5 SYMBOL_SWAP_MODE enum): long -11.5%/yr -> -3.1507 bps/day, short +2.29%/yr -> +0.6274 bps/day. rollover3=7 (Sunday). | COMMISSION UNIT FIX 2026-08-06: field commission_bps previously held USD/rt-lot (7.0/10.0) misread as bps -> rt overstated 8-29x. Now commission_usd_per_rt_lot + commission_bps_true; round_trip_bps_measured corrected (see reports/audit_trial_9001_9002_cost_model.md).",
+      "swap_long_bps": -3.1507,
+      "swap_short_bps": 0.6274,
+      "swap_measured_at": "2026-08-06",
+      "swap_source": "MT5 symbol_info mode=5 INTEREST_CURRENT (scripts/measure_swap_rates.py)",
+      "swap_rollover3days": 7,
+      "spread_bps": 2.376175137414208,
+      "recalibrated_at": "2026-08-05T07:02:12.953367+00:00",
+      "broker_source": "Pepperstone Razor (MT5)",
+      "slippage_source": "fill_simulator_p90_points",
+      "commission_usd_per_rt_lot": 10.0,
+      "commission_bps_true": 1.546408
+    },
+    "EURUSD": {
+      "mt5_symbol": "EURUSD",
+      "spread_bps_measured": 0.0868655018008566,
+      "spread_bps_p95": 3.290755574800147,
+      "spread_bps_mean": 0.395876784736667,
+      "spread_bps_min": 0.08651379678830949,
+      "spread_bps_max": 9.975321920988565,
+      "spread_bps_std": 1.0205219816584061,
+      "commission_bps": 7.0,
+      "slippage_bps_measured": null,
+      "round_trip_bps_measured": 0.779634,
+      "round_trip_bps_p95": 7.187414,
+      "contract_size": 100000.0,
+      "tick_size": 1e-05,
+      "status": "FROM_TICKS",
+      "sample_size": 56115,
+      "measurement_window": "2026-07-31 -> 2026-08-05 (UTC)",
+      "measurement_duration_days": 4.42,
+      "measurement_mode": "mt5_copy_ticks_range_backfill",
+      "sessions": {
+        "asian": {
+          "median": 0.1732,
+          "p90": 3.8228,
+          "n": 18287
+        },
+        "london": {
+          "median": 0.0869,
+          "p90": 0.1738,
+          "n": 6843
+        },
+        "london_ny_overlap": {
+          "median": 0.0868,
+          "p90": 0.2605,
+          "n": 7839
+        },
+        "ny": {
+          "median": 0.0868,
+          "p90": 0.2603,
+          "n": 13645
+        },
+        "rollover": {
+          "median": 0.1733,
+          "p90": 0.2599,
+          "n": 9501
+        }
+      },
+      "notes": "Backfilled via mt5.copy_ticks_range (full tick history served by broker). EURUSD filtered to ask>bid quotes only (MT5 COPY_TICKS_ALL mixes last-trade ticks). Pending live 7-day sampling completion 2026-08-12 for confirmation. | slippage: null in calibration; sourced from fill_samples_EURUSD_1min.csv P90 (fill_simulator_p90_points). | swaps measured 2026-08-06 via scripts/measure_swap_rates.py (MT5 symbol_info, swap_mode=1 per-lot USD, price 1.1553): long -7.42/lot -> -0.6423 bps, short +1.62/lot -> +0.1402 bps. | COMMISSION UNIT FIX 2026-08-06: field commission_bps previously held USD/rt-lot (7.0/10.0) misread as bps -> rt overstated 8-29x. Now commission_usd_per_rt_lot + commission_bps_true; round_trip_bps_measured corrected (see reports/audit_trial_9001_9002_cost_model.md).",
+      "swap_long_bps": -0.6423,
+      "swap_short_bps": 0.1402,
+      "swap_measured_at": "2026-08-06",
+      "swap_source": "MT5 symbol_info (scripts/measure_swap_rates.py)",
+      "spread_bps": 0.0868655018008566,
+      "recalibrated_at": "2026-08-05T07:02:12.953367+00:00",
+      "broker_source": "Pepperstone Razor (MT5)",
+      "slippage_source": "fill_simulator_p90_points",
+      "commission_usd_per_rt_lot": 7.0,
+      "commission_bps_true": 0.605903
+    },
+    "GBPUSD": {
+      "mt5_symbol": "GBPUSD",
+      "spread_bps_measured": 0.076,
+      "spread_bps_p95": 0.151,
+      "spread_bps_mean": 0.146,
+      "spread_bps_min": 0.076,
+      "spread_bps_max": 11.363,
+      "spread_bps_std": 0.0,
+      "commission_bps": 7.0,
+      "slippage_bps_measured": 0.0,
+      "round_trip_bps_measured": 0.671828,
+      "round_trip_bps_p95": 0.821828,
+      "contract_size": 100000.0,
+      "tick_size": 1e-05,
+      "status": "FROM_TICKS",
+      "sample_size": 214512,
+      "measurement_window": "24h tick parquet (2026-06-25)",
+      "measurement_duration_days": 1,
+      "measurement_mode": "tick_parquet",
+      "sessions": {
+        "asian": {
+          "median": 0.076,
+          "p90": 0.682,
+          "n": 44828
+        },
+        "london": {
+          "median": 0.076,
+          "p90": 0.076,
+          "n": 62979
+        },
+        "london_ny_overlap": {
+          "median": 0.076,
+          "p90": 0.152,
+          "n": 40029
+        },
+        "ny": {
+          "median": 0.076,
+          "p90": 0.076,
+          "n": 53498
+        },
+        "rollover": {
+          "median": 0.076,
+          "p90": 0.152,
+          "n": 13178
+        }
+      },
+      "notes": "SP3: calibrated from existing 24h tick parquet — breadth expansion | swaps measured 2026-08-06 via scripts/measure_swap_rates.py (MT5 symbol_info, swap_mode=1 per-lot USD, price 1.3466): long -2.39/lot -> -0.1775 bps, short -2.79/lot -> -0.2072 bps. | COMMISSION UNIT FIX 2026-08-06: field commission_bps previously held USD/rt-lot (7.0/10.0) misread as bps -> rt overstated 8-29x. Now commission_usd_per_rt_lot + commission_bps_true; round_trip_bps_measured corrected (see reports/audit_trial_9001_9002_cost_model.md).",
+      "swap_long_bps": -0.1775,
+      "swap_short_bps": -0.2072,
+      "swap_measured_at": "2026-08-06",
+      "swap_source": "MT5 symbol_info (scripts/measure_swap_rates.py)",
+      "commission_usd_per_rt_lot": 7.0,
+      "commission_bps_true": 0.519828
+    },
+    "US30": {
+      "mt5_symbol": "US30",
+      "spread_bps_measured": 0.231,
+      "spread_bps_p95": 0.231,
+      "spread_bps_mean": 0.19,
+      "spread_bps_min": 0.133,
+      "spread_bps_max": 1.964,
+      "spread_bps_std": 0.0,
+      "commission_bps": 0.0,
+      "slippage_bps_measured": 0.0,
+      "round_trip_bps_measured": 0.462,
+      "round_trip_bps_p95": 0.462,
+      "contract_size": 1.0,
+      "tick_size": 0.1,
+      "status": "FROM_TICKS",
+      "sample_size": 193782,
+      "measurement_window": "24h tick parquet (2026-06-25)",
+      "measurement_duration_days": 1,
+      "measurement_mode": "tick_parquet",
+      "sessions": {
+        "asian": {
+          "median": 0.231,
+          "p90": 0.232,
+          "n": 44226
+        },
+        "london": {
+          "median": 0.231,
+          "p90": 0.232,
+          "n": 41671
+        },
+        "london_ny_overlap": {
+          "median": 0.231,
+          "p90": 0.231,
+          "n": 25170
+        },
+        "ny": {
+          "median": 0.134,
+          "p90": 0.135,
+          "n": 66105
+        },
+        "rollover": {
+          "median": 0.135,
+          "p90": 0.135,
+          "n": 16610
+        }
+      },
+      "notes": "SP3: calibrated from existing 24h tick parquet — breadth expansion | swaps measured 2026-08-06 via scripts/measure_swap_rates.py (MT5 symbol_info, swap_mode=5 INTEREST_CURRENT %/yr of current price, verified against MQL5 SYMBOL_SWAP_MODE enum): long -6.12%/yr -> -1.6767 bps/day, short +1.12%/yr -> +0.3068 bps/day. rollover3=5 (Friday).",
+      "swap_long_bps": -1.6767,
+      "swap_short_bps": 0.3068,
+      "swap_measured_at": "2026-08-06",
+      "swap_source": "MT5 symbol_info mode=5 INTEREST_CURRENT (scripts/measure_swap_rates.py)",
+      "swap_rollover3days": 5
+    },
+    "USDCAD": {
+      "mt5_symbol": "USDCAD",
+      "spread_bps_measured": 0.0713126883089513,
+      "spread_bps_p95": 0.2854818219452732,
+      "spread_bps_mean": 0.16973289367180444,
+      "spread_bps_min": 0.07102096183577444,
+      "spread_bps_max": 10.776131226160468,
+      "spread_bps_std": 0.5062599980186056,
+      "commission_bps": 7.0,
+      "slippage_bps_measured": 0.0714,
+      "round_trip_bps_measured": 0.842625,
+      "round_trip_bps_p95": 1.270964,
+      "contract_size": 100000.0,
+      "tick_size": 1e-05,
+      "status": "FROM_TICKS",
+      "sample_size": 344241,
+      "measurement_window": "2026-07-31 -> 2026-08-05 (UTC)",
+      "measurement_duration_days": 5.09,
+      "measurement_mode": "mt5_copy_ticks_range_backfill",
+      "sessions": {
+        "asian": {
+          "median": 0.1424,
+          "p90": 0.2852,
+          "n": 86590
+        },
+        "london": {
+          "median": 0.0713,
+          "p90": 0.2136,
+          "n": 76734
+        },
+        "london_ny_overlap": {
+          "median": 0.0712,
+          "p90": 0.2135,
+          "n": 63128
+        },
+        "ny": {
+          "median": 0.0712,
+          "p90": 0.1427,
+          "n": 96592
+        },
+        "rollover": {
+          "median": 0.1427,
+          "p90": 0.3556,
+          "n": 21197
+        }
+      },
+      "broker_source": "Pepperstone Razor (MT5)",
+      "notes": "Direction H retest cost calibration — backfilled via mt5.copy_ticks_range. Filtered to ask>bid quote ticks (MT5 COPY_TICKS_ALL mixes last-trade ticks). slippage: null; fill-simulator P90 is the source when measured. | slippage P90=1.0pts (0.0714 bps) from fill simulator 2026-08-06. | COMMISSION UNIT FIX 2026-08-06: field commission_bps previously held USD/rt-lot (7.0/10.0) misread as bps -> rt overstated 8-29x. Now commission_usd_per_rt_lot + commission_bps_true; round_trip_bps_measured corrected (see reports/audit_trial_9001_9002_cost_model.md).",
+      "recalibrated_at": "2026-08-05T22:18:23.735125+00:00",
+      "slippage_source": "fill_simulator_p90_points",
+      "slippage_p90_points": 1.0,
+      "commission_usd_per_rt_lot": 7.0,
+      "commission_bps_true": 0.7
+    },
+    "USDCHF": {
+      "mt5_symbol": "USDCHF",
+      "spread_bps_measured": 0.12367283588077334,
+      "spread_bps_p95": 0.4937844877594403,
+      "spread_bps_mean": 0.24444505270777575,
+      "spread_bps_min": 0.12322023769127773,
+      "spread_bps_max": 19.69784252875675,
+      "spread_bps_std": 0.882216858333499,
+      "commission_bps": 7.0,
+      "slippage_bps_measured": 0.1239,
+      "round_trip_bps_measured": 0.947346,
+      "round_trip_bps_p95": 1.687569,
+      "contract_size": 100000.0,
+      "tick_size": 1e-05,
+      "status": "FROM_TICKS",
+      "sample_size": 243004,
+      "measurement_window": "2026-07-31 -> 2026-08-05 (UTC)",
+      "measurement_duration_days": 5.09,
+      "measurement_mode": "mt5_copy_ticks_range_backfill",
+      "sessions": {
+        "asian": {
+          "median": 0.1238,
+          "p90": 0.3709,
+          "n": 53135
+        },
+        "london": {
+          "median": 0.1236,
+          "p90": 0.2474,
+          "n": 45781
+        },
+        "london_ny_overlap": {
+          "median": 0.1236,
+          "p90": 0.2475,
+          "n": 43975
+        },
+        "ny": {
+          "median": 0.1237,
+          "p90": 0.2477,
+          "n": 82896
+        },
+        "rollover": {
+          "median": 0.2472,
+          "p90": 0.6192,
+          "n": 17217
+        }
+      },
+      "broker_source": "Pepperstone Razor (MT5)",
+      "notes": "Direction H retest cost calibration — backfilled via mt5.copy_ticks_range. Filtered to ask>bid quote ticks (MT5 COPY_TICKS_ALL mixes last-trade ticks). slippage: null; fill-simulator P90 is the source when measured. | slippage P90=1.0pts (0.1239 bps) from fill simulator 2026-08-06. | COMMISSION UNIT FIX 2026-08-06: field commission_bps previously held USD/rt-lot (7.0/10.0) misread as bps -> rt overstated 8-29x. Now commission_usd_per_rt_lot + commission_bps_true; round_trip_bps_measured corrected (see reports/audit_trial_9001_9002_cost_model.md).",
+      "recalibrated_at": "2026-08-05T22:18:23.735125+00:00",
+      "slippage_source": "fill_simulator_p90_points",
+      "slippage_p90_points": 1.0,
+      "commission_usd_per_rt_lot": 7.0,
+      "commission_bps_true": 0.7
+    },
+    "AUDUSD": {
+      "mt5_symbol": "AUDUSD",
+      "spread_bps_measured": 0.14221817690612193,
+      "spread_bps_p95": 0.426024411199976,
+      "spread_bps_mean": 0.22292403499032507,
+      "spread_bps_min": 0.14155383646378009,
+      "spread_bps_max": 20.308028772074934,
+      "spread_bps_std": 0.5579551051624724,
+      "commission_bps": 7.0,
+      "slippage_bps_measured": 0.1417,
+      "round_trip_bps_measured": 1.276078,
+      "round_trip_bps_p95": 1.843691,
+      "contract_size": 100000.0,
+      "tick_size": 1e-05,
+      "status": "FROM_TICKS",
+      "sample_size": 284510,
+      "measurement_window": "2026-07-31 -> 2026-08-05 (UTC)",
+      "measurement_duration_days": 5.09,
+      "measurement_mode": "mt5_copy_ticks_range_backfill",
+      "sessions": {
+        "asian": {
+          "median": 0.1422,
+          "p90": 0.2858,
+          "n": 61727
+        },
+        "london": {
+          "median": 0.1424,
+          "p90": 0.2839,
+          "n": 57095
+        },
+        "london_ny_overlap": {
+          "median": 0.1423,
+          "p90": 0.2845,
+          "n": 51302
+        },
+        "ny": {
+          "median": 0.1421,
+          "p90": 0.2841,
+          "n": 92401
+        },
+        "rollover": {
+          "median": 0.1422,
+          "p90": 0.4262,
+          "n": 21985
+        }
+      },
+      "broker_source": "Pepperstone Razor (MT5)",
+      "notes": "Direction H retest cost calibration — backfilled via mt5.copy_ticks_range. Filtered to ask>bid quote ticks (MT5 COPY_TICKS_ALL mixes last-trade ticks). slippage: null; fill-simulator P90 is the source when measured. | slippage P90=1.0pts (0.1417 bps) from fill simulator 2026-08-06. | COMMISSION UNIT FIX 2026-08-06: field commission_bps previously held USD/rt-lot (7.0/10.0) misread as bps -> rt overstated 8-29x. Now commission_usd_per_rt_lot + commission_bps_true; round_trip_bps_measured corrected (see reports/audit_trial_9001_9002_cost_model.md).",
+      "recalibrated_at": "2026-08-05T22:18:23.735125+00:00",
+      "slippage_source": "fill_simulator_p90_points",
+      "slippage_p90_points": 1.0,
+      "commission_usd_per_rt_lot": 7.0,
+      "commission_bps_true": 0.991642
+    },
+    "NZDUSD": {
+      "mt5_symbol": "NZDUSD",
+      "spread_bps_measured": 0.3407096983019029,
+      "spread_bps_p95": 0.6813845734539384,
+      "spread_bps_mean": 0.5106434745592913,
+      "spread_bps_min": 0.16935804831896067,
+      "spread_bps_max": 19.676024086168262,
+      "spread_bps_std": 1.0786645429814463,
+      "commission_bps": 7.0,
+      "slippage_bps_measured": 1.3586,
+      "round_trip_bps_measured": 1.870177,
+      "round_trip_bps_p95": 2.551527,
+      "contract_size": 100000.0,
+      "tick_size": 1e-05,
+      "status": "FROM_TICKS",
+      "sample_size": 230982,
+      "measurement_window": "2026-07-31 -> 2026-08-05 (UTC)",
+      "measurement_duration_days": 5.09,
+      "measurement_mode": "mt5_copy_ticks_range_backfill",
+      "sessions": {
+        "asian": {
+          "median": 0.3407,
+          "p90": 0.6805,
+          "n": 57626
+        },
+        "london": {
+          "median": 0.3408,
+          "p90": 0.5113,
+          "n": 45636
+        },
+        "london_ny_overlap": {
+          "median": 0.3408,
+          "p90": 0.5116,
+          "n": 39199
+        },
+        "ny": {
+          "median": 0.3402,
+          "p90": 0.511,
+          "n": 74678
+        },
+        "rollover": {
+          "median": 0.3395,
+          "p90": 0.6787,
+          "n": 13843
+        }
+      },
+      "broker_source": "Pepperstone Razor (MT5)",
+      "notes": "Direction H retest cost calibration — backfilled via mt5.copy_ticks_range. Filtered to ask>bid quote ticks (MT5 COPY_TICKS_ALL mixes last-trade ticks). slippage: null; fill-simulator P90 is the source when measured. | slippage P90=8.0pts (1.3586 bps) from fill simulator 2026-08-06. | COMMISSION UNIT FIX 2026-08-06: field commission_bps previously held USD/rt-lot (7.0/10.0) misread as bps -> rt overstated 8-29x. Now commission_usd_per_rt_lot + commission_bps_true; round_trip_bps_measured corrected (see reports/audit_trial_9001_9002_cost_model.md).",
+      "recalibrated_at": "2026-08-05T22:18:23.735125+00:00",
+      "slippage_source": "fill_simulator_p90_points",
+      "slippage_p90_points": 8.0,
+      "commission_usd_per_rt_lot": 7.0,
+      "commission_bps_true": 1.188758
+    },
+    "XAGUSD": {
+      "mt5_symbol": "XAGUSD",
+      "spread_bps_measured": 5.841026722697477,
+      "spread_bps_p95": 7.521493103840204,
+      "commission_bps": 0.0,
+      "commission_usd_per_rt_lot": 0.0,
+      "round_trip_bps_measured": 11.682053,
+      "round_trip_bps_p95": 15.042986,
+      "contract_size": 5000.0,
+      "tick_size": 0.001,
+      "status": "FROM_TICKS",
+      "sample_size": 805678,
+      "measurement_mode": "mt5_copy_ticks_range_backfill",
+      "broker_source": "Pepperstone Razor (MT5)",
+      "notes": "Calibrated 2026-08-07 from new MT5 tick backfill (data/ticks/). Commission=0 (commodities CFD on Razor)."
+    },
+    "XPDUSD": {
+      "mt5_symbol": "XPDUSD",
+      "spread_bps_measured": 34.11264572796554,
+      "spread_bps_p95": 45.432776987594416,
+      "commission_bps": 0.0,
+      "commission_usd_per_rt_lot": 0.0,
+      "round_trip_bps_measured": 68.225291,
+      "round_trip_bps_p95": 90.865554,
+      "contract_size": 100.0,
+      "tick_size": 0.01,
+      "status": "FROM_TICKS",
+      "sample_size": 193742,
+      "measurement_mode": "mt5_copy_ticks_range_backfill",
+      "broker_source": "Pepperstone Razor (MT5)",
+      "notes": "Calibrated 2026-08-07 from new MT5 tick backfill (data/ticks/). Commission=0 (commodities CFD on Razor)."
+    },
+    "XPTUSD": {
+      "mt5_symbol": "XPTUSD",
+      "spread_bps_measured": 18.26585116098874,
+      "spread_bps_p95": 28.061801197197582,
+      "commission_bps": 0.0,
+      "commission_usd_per_rt_lot": 0.0,
+      "round_trip_bps_measured": 36.531702,
+      "round_trip_bps_p95": 56.123602,
+      "contract_size": 50.0,
+      "tick_size": 0.01,
+      "status": "FROM_TICKS",
+      "sample_size": 534623,
+      "measurement_mode": "mt5_copy_ticks_range_backfill",
+      "broker_source": "Pepperstone Razor (MT5)",
+      "notes": "Calibrated 2026-08-07 from new MT5 tick backfill (data/ticks/). Commission=0 (commodities CFD on Razor)."
     }
   },
   "stress_scenarios": {
@@ -180,10 +646,30 @@
       "commission_bps": 0,
       "slippage_bps": 12,
       "round_trip_bps": 72,
-      "notes": "Observed worst-case XAUUSD round-trip cost"
+      "notes": "Observed worst-case XAUUSD round-trip cost (original v2.1/v3.0 assumption, provenance predates this audit)"
+    },
+    "XAUUSD_rollover_spike_20260626": {
+      "spread_bps": 129.56,
+      "commission_bps": 0,
+      "slippage_bps": 0,
+      "round_trip_bps": 259.12,
+      "notes": "Real observed XAUUSD spread spike in data/ticks/XAUUSD_ticks_24h.parquet at 2026-06-26T01:00 UTC (rollover window); 325 of 733,743 ticks show >5bps spread in this window. This is real recorded tick data, not a synthetic stress assumption — supersedes XAUUSD_72bps as the current worst-case-observed reference."
+    },
+    "NAS100_spike": {
+      "spread_bps": 15,
+      "commission_bps": 0,
+      "slippage_bps": 5,
+      "round_trip_bps": 20,
+      "notes": "NAS100 gap/widen scenario (assumption only — NAS100 has no real measured data at all, see assets.NAS100.measurement_caveat)"
     }
   },
-  "calibration_status": "MEASURED",
-  "measurement_total_samples": 160,
-  "measurement_asset_count": 8
+  "removed_assets": [
+    "SILVER",
+    "ETHUSD"
+  ],
+  "calibration_status": "MIXED — see per-asset 'status' field (FROM_TICKS: XAUUSD, USDJPY; SINGLE_SNAPSHOT: OIL; UNVERIFIED_NO_DATA: NAS100). No blanket calibration_status applies across all 4 assets.",
+  "measurement_total_samples": 1120008,
+  "measurement_asset_count": 4,
+  "data_integrity_fix_20260726": "Prior version claimed blanket top-level 'source: MEASURED' and per-asset 'MEASURED' status with a fabricated '2026-07-03 to 2026-07-05' 3-day window for NAS100/OIL/USDJPY; none of that window is backed by real data (traced to commit 33b90c31, 2026-07-08). This fix: (1) recomputed XAUUSD and USDJPY from real tick parquet data (genuine, session-covering, ~27h, NOT multi-day — see each asset's measurement_caveat); (2) restored OIL to its real single-snapshot SpotCrude measurement; (3) marked NAS100 UNVERIFIED_NO_DATA because zero real spread/tick data for it exists anywhere in this repository. True multi-day (repeated-calendar-day) measurement for any of these 4 assets remains outstanding and is calendar-bound, not fixable by engineering work alone.",
+  "updated": "2026-08-03T21:18:24.613230+00:00"
 }

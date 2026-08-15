@@ -1,0 +1,157 @@
+{
+  "generated_at": "2026-07-29T22:01:21.689431",
+  "query": "stock market",
+  "model": "qwen3.5:4b",
+  "analysis": {
+    "query": "stock market",
+    "analysis_date": "2026-07-29 21:58",
+    "articles_count": 9,
+    "articles": [
+      {
+        "title": "Stocks drop as Mideast fighting reignites, Fed decision looms",
+        "source": "yahoo_finance",
+        "sentiment": "negative",
+        "key_facts": [
+          "Mideast conflict escalates",
+          "Fed interest rate decision approaching"
+        ],
+        "relevance_to_market": "high",
+        "ticker_impact": [
+          {
+            "TICKER": "SPY",
+            "impact": "negative"
+          },
+          {
+            "TICKER": "DOW",
+            "impact": "negative"
+          }
+        ]
+      },
+      {
+        "title": "Norway stocks higher at close of trade; Oslo OBX up 0.63%",
+        "source": "investing_com",
+        "sentiment": "positive",
+        "key_facts": [
+          "Oslo OBX gained 0.63%"
+        ],
+        "relevance_to_market": "low",
+        "ticker_impact": []
+      },
+      {
+        "title": "Israel stocks lower at close of trade; TA 35 down 0.99%",
+        "source": "investing_com",
+        "sentiment": "negative",
+        "key_facts": [
+          "TA 35 declined by nearly 1%"
+        ],
+        "relevance_to_market": "medium",
+        "ticker_impact": [
+          {
+            "TICKER": "TLV",
+            "impact": "negative"
+          }
+        ]
+      },
+      {
+        "title": "Stocks Sink in Broad AI Rout Sparked by China's DeepSeek",
+        "source": "wsj_markets",
+        "sentiment": "negative",
+        "key_facts": [
+          "Nvidia fell 16%",
+          "AI infrastructure stocks hit hard"
+        ],
+        "relevance_to_market": "high",
+        "ticker_impact": [
+          {
+            "TICKER": "NVDA",
+            "impact": "negative"
+          },
+          {
+            "TICKER": "QQQ",
+            "impact": "negative"
+          }
+        ]
+      },
+      {
+        "title": "Dow tumbles 800 points as losses mount ahead of Fed decision: Live updates",
+        "source": "cnbc_finance",
+        "sentiment": "negative",
+        "key_facts": [
+          "Dow Jones dropped 800 points"
+        ],
+        "relevance_to_market": "high",
+        "ticker_impact": [
+          {
+            "TICKER": "SPY",
+            "impact": "negative"
+          },
+          {
+            "TICKER": "IWM",
+            "impact": "negative"
+          }
+        ]
+      },
+      {
+        "title": "Oil prices jump more than 7% after Trump says U.S. will hit Iran hard",
+        "source": "cnbc_finance",
+        "sentiment": "neutral",
+        "key_facts": [
+          "Oil surged over 7%",
+          "Tensions in Middle East"
+        ],
+        "relevance_to_market": "medium",
+        "ticker_impact": [
+          {
+            "TICKER": "USOIL",
+            "impact": "positive"
+          },
+          {
+            "TICKER": "XLE",
+            "impact": "positive"
+          }
+        ]
+      },
+      {
+        "title": "Trump says U.S. will give Iran a 'beating' after surprise attack",
+        "source": "cnbc_finance",
+        "sentiment": "neutral",
+        "key_facts": [
+          "Centcom intercepted all missiles"
+        ],
+        "relevance_to_market": "low",
+        "ticker_impact": []
+      },
+      {
+        "title": "Oil prices jump more than 7% after Trump says U.S. will hit Iran hard",
+        "source": "cnbc_world",
+        "sentiment": "neutral",
+        "key_facts": [
+          "Iran launched missile attack"
+        ],
+        "relevance_to_market": "medium",
+        "ticker_impact": [
+          {
+            "TICKER": "USOIL",
+            "impact": "positive"
+          }
+        ]
+      },
+      {
+        "title": "Ukraine has found a new pressure point in Russia’s wartime economy",
+        "source": "cnbc_world",
+        "sentiment": "neutral",
+        "key_facts": [
+          "Drone attacks on Wildberries intensified"
+        ],
+        "relevance_to_market": "low",
+        "ticker_impact": []
+      }
+    ],
+    "overall_sentiment": "mixed",
+    "market_impact_th": "ตลาดหุ้นทั่วโลกได้รับผลกระทบจากปัจจัยเสี่ยงหลายด้าน ทั้งความตึงเครียดในตะวันออกกลางที่อาจส่งผลกระทบต่อราคาน้ำมันและเศรษฐกิจโลก รวมถึงการตัดสินใจของเฟดซึ่งสร้างความไม่แน่นอนให้กับนักลงทุน ส่วนกลุ่มเทคโนโลยียังคงเผชิญแรงกดดันจากการปรับลดราคาอย่างกว้างขวาง โดยเฉพาะบริษัทที่เกี่ยวข้องกับ AI",
+    "action_items_th": [
+      "ติดตามข่าวสารจากคณะกรรมการธนาคารกลางสหรัฐฯ (Fed) อย่างใกล้ชิดเพื่อประเมินทิศทางดอกเบี้ยในอนาคต",
+      "เฝ้าระวังสถานการณ์ความขัดแย้งในตะวันออกกลางและผลกระทบต่อราคาน้ำมันดิบโลก"
+    ]
+  }
+}

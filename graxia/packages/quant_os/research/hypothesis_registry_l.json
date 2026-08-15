@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0",
+  "direction": "L",
+  "description": "Gold Vol Risk Premium (VRP). GVZ implied vs realized vol spread on XAUUSD. Data: FRED GVZCLS 2016-2026 + XAUUSD D1.",
+  "last_updated": "2026-08-07",
+  "current_verdict_2026-08-07": "4008 REJECTED (VRP), 3001 INCONCLUSIVE (carry data limitation).",
+  "stopping_rule_doc": "reports/stopping_rule_2026_08_07_direction_l.md",
+  "sacred_holdout_status": "LOCKED",
+  "notes": [
+    "Opened 2026-08-07. GVZ data unlocked via FRED download. Vol-selling mechanism - structurally different from price-directional."
+  ],
+  "hypotheses": [
+    {
+      "trial_number": 4008,
+      "id": "DIRL-GOLD-VRP",
+      "status": "REJECTED",
+      "instrument": "XAUUSD (D1) + GVZCLS",
+      "symbols": [
+        "XAUUSD"
+      ],
+      "registered_at": "2026-08-06T20:49:11.070700+00:00",
+      "result_at": "2026-08-06T20:49:11.070700+00:00",
+      "result_summary": {
+        "n_trades": 264,
+        "dk_t": 0.32,
+        "sharpe": 0.23,
+        "mean_pnl": 1063.26,
+        "conclusion": "REJECTED: Gold VRP z>=1.5 signal is positive (mean +1063 USD/trade, 264 trades) but NOT statistically significant (dk_t=0.32 < 1.5). No reliable vol-risk-premium harvest after 0.65 bps costs."
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "XAUUSD": 0.65
+      },
+      "slippage_source": "none",
+      "slippage_bps_used": {},
+      "data_manifest_ref": "reports/edge_search_dirl_4008.json",
+      "provenance_stamped_at": "2026-08-06T20:49:11.070700+00:00",
+      "notes": "Direction L 4008 — REJECTED. GVZ data finally tested; no significant edge."
+    },
+    {
+      "trial_number": 3001,
+      "id": "DIRL-CARRY-XAUUSD",
+      "status": "INCONCLUSIVE",
+      "instrument": "XAUUSD (D1) + DGS10",
+      "symbols": [
+        "XAUUSD"
+      ],
+      "registered_at": "2026-08-06T20:51:57.317373+00:00",
+      "result_at": "2026-08-06T20:51:57.317373+00:00",
+      "result_summary": {
+        "n_trades": 1,
+        "conclusion": "INCONCLUSIVE: DGS10 never negative in 2016-2026 window (min 0.52%) -> carry signal constant (short gold entire period) -> only 1 position. Sign-of-rate-differential carry is NOT testable on gold with this data window. Needs rate regime variation (pre-2016 QE period) or level-based (not sign) carry."
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "XAUUSD": 0.65
+      },
+      "slippage_source": "none",
+      "slippage_bps_used": {},
+      "data_manifest_ref": "reports/edge_search_dirl_3001.json",
+      "provenance_stamped_at": "2026-08-06T20:51:57.317373+00:00",
+      "notes": "Direction L 3001 — INCONCLUSIVE (data limitation: DGS10 always positive)."
+    }
+  ]
+}

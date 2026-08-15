@@ -1,5 +1,6 @@
 """Integration test — full overfitting detection pipeline end-to-end."""
 
+import math
 import random
 
 import numpy as np
@@ -30,11 +31,15 @@ def test_full_pipeline_clean_strategy():
     sr_std = (sum((r - sr_mean) ** 2 for r in returns) / (len(returns) - 1)) ** 0.5
     observed_sharpe = (sr_mean / sr_std) * (252**0.5) if sr_std > 0 else 0
 
-    dsr = deflated_sharpe_ratio(observed_sharpe=observed_sharpe, n_trials=20, n_observations=5000)
+    dsr = deflated_sharpe_ratio(
+        observed_sharpe=observed_sharpe, n_trials=20, n_observations=5000, sharpe_annualization_factor=math.sqrt(252)
+    )
     assert dsr.observed_sharpe > 0
 
     # 3. MinBTL — should have enough data
-    btl = min_backtest_length(observed_sharpe=observed_sharpe, n_trials=20, current_observations=5000)
+    btl = min_backtest_length(
+        observed_sharpe=observed_sharpe, n_trials=20, sharpe_annualization_factor=math.sqrt(252), current_observations=5000
+    )
     assert btl.min_observations > 0
 
     # 4. PBO — good OOS folds
@@ -131,18 +136,30 @@ def test_full_pipeline_imports():
 
 
 def test_detector_with_tracker():
-    """OverfittingDetector works with SearchBudgetTracker trial counts."""
+    """OverfittingDetector works with SearchBudgetTracker trial counts.
+
+    WS-C: The tracker now uses the central cumulative N (1050) for DSR
+    instead of the per-strategy in-session count.  When the tracker's
+    local count is 150 but the global N is 1050, the DSR uses the
+    global N — so the tracker's result is MORE conservative (larger
+    multiple_testing_adjustment) than the detector's explicit n_trials=150.
+    """
     tracker = SearchBudgetTracker(max_trials=500)
 
     # Simulate 150 trials
     for i in range(150):
         tracker.record_trial("xau_v1", {"lookback": 10 + i}, is_sharpe=1.0 + i * 0.005)
 
-    # Get the DSR from tracker
-    dsr = tracker.get_deflated_sharpe("xau_v1", observed_sharpe=2.0, n_observations=5000)
+    # Get the DSR from tracker (now uses global N=1050, not local 150)
+    # detector.evaluate() below annualizes its Sharpe with sqrt(252) internally (_compute_sharpe);
+    # match that factor here so the comparison isolates n_trials (global vs local N), not a
+    # units mismatch between differently-annualized Sharpes.
+    dsr = tracker.get_deflated_sharpe(
+        "xau_v1", observed_sharpe=2.0, n_observations=5000, sharpe_annualization_factor=math.sqrt(252)
+    )
     assert dsr.observed_sharpe == 2.0
 
-    # Now run full detector with same trial count
+    # Now run full detector with explicit n_trials=150 (local only)
     rng = random.Random(42)
     returns = [rng.gauss(0.001, 0.008) for _ in range(5000)]
     folds = [[rng.gauss(0.001, 0.008) for _ in range(500)] for _ in range(6)]
@@ -151,7 +168,7 @@ def test_detector_with_tracker():
     report = detector.evaluate(
         strategy_id="xau_v1",
         returns=returns,
-        n_trials=150,  # match tracker count
+        n_trials=150,  # explicit local count (detector doesn't auto-resolve)
         n_observations=5000,
         oos_returns_per_fold=folds,
         cost_pnl=10000,
@@ -164,8 +181,12 @@ def test_detector_with_tracker():
     # Detector auto-computes Sharpe from returns; both should be positive
     assert report.dsr_result.observed_sharpe > 0
     assert dsr.observed_sharpe > 0
-    # Both used 150 trials → same multiple_testing_adjustment
-    assert abs(report.dsr_result.multiple_testing_adjustment - dsr.multiple_testing_adjustment) < 0.01
+    # WS-C: Tracker uses global N=1050, detector uses explicit N=150
+    # → tracker's adjustment should be LARGER (more conservative)
+    assert report.dsr_result.multiple_testing_adjustment < dsr.multiple_testing_adjustment, (
+        f"Tracker DSR ({dsr.multiple_testing_adjustment:.4f}, global N) must be more conservative "
+        f"than detector DSR ({report.dsr_result.multiple_testing_adjustment:.4f}, N=150)"
+    )
 
 
 def test_pipeline_overfitted_vs_clean():
@@ -213,18 +234,24 @@ def test_pipeline_overfitted_vs_clean():
 
 def test_dsr_multiple_testing_adjustment():
     """DSR adjustment increases with more trials."""
-    r1 = deflated_sharpe_ratio(observed_sharpe=2.0, n_trials=10, n_observations=5000)
-    r10 = deflated_sharpe_ratio(observed_sharpe=2.0, n_trials=100, n_observations=5000)
-    r100 = deflated_sharpe_ratio(observed_sharpe=2.0, n_trials=1000, n_observations=5000)
+    r1 = deflated_sharpe_ratio(observed_sharpe=2.0, n_trials=10, n_observations=5000, sharpe_annualization_factor=math.sqrt(252))
+    r10 = deflated_sharpe_ratio(observed_sharpe=2.0, n_trials=100, n_observations=5000, sharpe_annualization_factor=math.sqrt(252))
+    r100 = deflated_sharpe_ratio(
+        observed_sharpe=2.0, n_trials=1000, n_observations=5000, sharpe_annualization_factor=math.sqrt(252)
+    )
     assert r1.multiple_testing_adjustment < r10.multiple_testing_adjustment < r100.multiple_testing_adjustment
 
 
 def test_min_btl_sufficient_insufficient():
     """MinBTL correctly identifies sufficient vs insufficient data."""
     # High Sharpe, few trials → should be sufficient with 5000 bars
-    s = min_backtest_length(observed_sharpe=3.0, n_trials=10, current_observations=5000)
+    s = min_backtest_length(
+        observed_sharpe=3.0, n_trials=10, sharpe_annualization_factor=math.sqrt(252), current_observations=5000
+    )
     assert s.sufficient is True
 
     # Zero observations should always be insufficient
-    ns = min_backtest_length(observed_sharpe=3.0, n_trials=100000, current_observations=0)
+    ns = min_backtest_length(
+        observed_sharpe=3.0, n_trials=100000, sharpe_annualization_factor=math.sqrt(252), current_observations=0
+    )
     assert ns.sufficient is False

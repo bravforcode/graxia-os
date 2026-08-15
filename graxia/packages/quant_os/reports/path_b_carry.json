@@ -1,0 +1,106 @@
+{
+  "generated_at": "2026-07-19T22:13:25.028262+00:00",
+  "universe": [
+    "XAUUSD",
+    "XAGUSD",
+    "EURUSD",
+    "GBPUSD",
+    "USDJPY",
+    "NAS100",
+    "US30"
+  ],
+  "go_rule": "dk_t>2.0 AND positive_sharpe_count>=5",
+  "marginal_rule": "dk_t>1.5 OR (dk_t>1.0 AND pos>=4)",
+  "n_strategies_tested": 1,
+  "go": [],
+  "marginal": [],
+  "ranked": [
+    {
+      "strategy": "Carry_default",
+      "dk_t_stat": -0.9837,
+      "pooled_sharpe": -0.8752,
+      "total_trades": 2570,
+      "positive_sharpe_count": 2,
+      "total_assets": 7,
+      "verdict": "REJECT"
+    }
+  ],
+  "results": {
+    "Carry_default": {
+      "dk_t_stat": -0.9837,
+      "pooled_sharpe": -0.8752,
+      "positive_sharpe_count": 2,
+      "total_assets": 7,
+      "total_days": 6059,
+      "total_trades": 2570,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 561,
+          "n_bars": 10547,
+          "sharpe": -0.085,
+          "win_pct": 46.52,
+          "profit_factor": 0.9171,
+          "max_dd_pct": 44.97,
+          "total_return_pct": -19.83
+        },
+        "XAGUSD": {
+          "n_trades": 6,
+          "n_bars": 5573,
+          "sharpe": -2.2592,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 109.31,
+          "total_return_pct": -109.31
+        },
+        "EURUSD": {
+          "n_trades": 376,
+          "n_bars": 5581,
+          "sharpe": -1.3313,
+          "win_pct": 38.56,
+          "profit_factor": 0.5017,
+          "max_dd_pct": 80.54,
+          "total_return_pct": -80.29
+        },
+        "GBPUSD": {
+          "n_trades": 380,
+          "n_bars": 5580,
+          "sharpe": -1.1539,
+          "win_pct": 38.68,
+          "profit_factor": 0.5487,
+          "max_dd_pct": 74.34,
+          "total_return_pct": -73.9
+        },
+        "USDJPY": {
+          "n_trades": 396,
+          "n_bars": 5821,
+          "sharpe": -1.5508,
+          "win_pct": 36.62,
+          "profit_factor": 0.3344,
+          "max_dd_pct": 89.97,
+          "total_return_pct": -89.73
+        },
+        "NAS100": {
+          "n_trades": 435,
+          "n_bars": 5733,
+          "sharpe": 0.5711,
+          "win_pct": 50.57,
+          "profit_factor": 1.4027,
+          "max_dd_pct": 14.5,
+          "total_return_pct": 96.03
+        },
+        "US30": {
+          "n_trades": 416,
+          "n_bars": 5470,
+          "sharpe": 0.5994,
+          "win_pct": 49.28,
+          "profit_factor": 1.3799,
+          "max_dd_pct": 15.04,
+          "total_return_pct": 82.24
+        }
+      },
+      "strategy": "Carry_default"
+    }
+  },
+  "honest_note": "GO does not equal live-ready. Must still pass label-shuffle, cost-stress, and not burn sacred holdout until single pre-committed hypothesis."
+}

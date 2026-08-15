@@ -45,10 +45,10 @@ class MonteCarloResult:
     mode: Literal["bootstrap", "shuffle"] = "shuffle"
 
     # Details
-    returns: list[float] = None
-    max_drawdowns: list[float] = None
+    returns: list[float] | None = None
+    max_drawdowns: list[float] | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.returns is None:
             self.returns = []
         if self.max_drawdowns is None:
@@ -89,7 +89,7 @@ def _t_test_p_value(returns: list[float]) -> float:
             return 0.0
         p_value = math.erfc(x / math.sqrt(2))
 
-    return min(1.0, max(0.0, p_value))
+    return float(min(1.0, max(0.0, p_value)))
 
 
 class MonteCarloSimulator:
@@ -105,7 +105,7 @@ class MonteCarloSimulator:
             print("Strategy is robust!")
     """
 
-    def __init__(self, seed: int | None = None):
+    def __init__(self, seed: int | None = None) -> None:
         self.seed = seed
 
     def run(
@@ -167,7 +167,7 @@ class MonteCarloSimulator:
             # Calculate equity curve
             equity = initial_capital
             peak = equity
-            max_dd = 0
+            max_dd = 0.0
 
             for ret in shuffled:
                 equity *= 1 + ret
@@ -222,7 +222,7 @@ class MonteCarloSimulator:
             survival_rate=survival_rate,
             mode=mode,
             returns=sim_returns,
-            max_drawdowns=sim_max_dds,
+            max_drawdowns=[float(x) for x in sim_max_dds],
         )
 
     def _empty_result(self, n_simulations: int, mode: Literal["bootstrap", "shuffle"] = "shuffle") -> MonteCarloResult:

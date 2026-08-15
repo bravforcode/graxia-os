@@ -1,0 +1,472 @@
+{
+  "dataset": "funding",
+  "generated_at": "2026-08-04T19:42:46.384474+00:00",
+  "file_count": 93,
+  "files": [
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-01.parquet",
+      "size_bytes": 4056,
+      "sha256": "b321b5d4573374c22150dd75f2fb12cc6d01e2cb1badb42813dcebe001aa3f44"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-02.parquet",
+      "size_bytes": 4056,
+      "sha256": "70db0770ed52eb3c0429d514042b6ba10ea40c8f41e0d1b7d6321baa391fb6a3"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-03.parquet",
+      "size_bytes": 4047,
+      "sha256": "9e29a2d0fdb38abecfb31d6f9e47ab9a372b58cf5d2e1cf4a5cb0adddf5ff743"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-04.parquet",
+      "size_bytes": 4047,
+      "sha256": "cac8f1ce48f833c73facd0005de40fdc5492b95e325b6c49c8bc5af3aa8a67af"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-05.parquet",
+      "size_bytes": 4056,
+      "sha256": "4e15809ab86b15a65e93afce6d57cb61bc5d45cbe2555960aea6894f29f960b0"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-06.parquet",
+      "size_bytes": 4056,
+      "sha256": "671e4be0f5f79301dcf1e5df6de94c7e7a17962aded7a1a4ae859f60801c5eb7"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-07.parquet",
+      "size_bytes": 4056,
+      "sha256": "3bc4329f68e5caf3da5848a39c57197b978e376aa4bf6e150069f878727ae6c2"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-08.parquet",
+      "size_bytes": 4056,
+      "sha256": "6657f28133ea4aae5f647d7c6ff93cbeb4e4803cb95c61314362c61b0e486ff5"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-09.parquet",
+      "size_bytes": 4056,
+      "sha256": "85fe1c030cb584bfcf4a494225c1bab03160a353bcc79da1ded9d75acc66ca71"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-10.parquet",
+      "size_bytes": 4056,
+      "sha256": "e9dd3a20369feab46a645006fffdf848a1971f8f75532eaa537457ed0c654ab5"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-11.parquet",
+      "size_bytes": 4057,
+      "sha256": "be4eef81e36792751884d8043b823f984d44fb92c2745001bdbbe69b3eb669b0"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-12.parquet",
+      "size_bytes": 4056,
+      "sha256": "47750bfdb62c57958569bef30d6aa46e8f8d07c74425bc1cfd9fb4c2c7f76999"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-13.parquet",
+      "size_bytes": 4057,
+      "sha256": "1ea9874edf2a1f0c5d397d65e11b9dc0d9e1b1078654e4779428809f49d19528"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-14.parquet",
+      "size_bytes": 4056,
+      "sha256": "edfb26441c2b40361f7d6c78cabddc3c3c45bd47a3bb992c9b25ca81fc8e5002"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-15.parquet",
+      "size_bytes": 4048,
+      "sha256": "2f5c2ee58da03ebcea84f73585ffe1aa9bc93b50a4a843c898c690da50986b92"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-16.parquet",
+      "size_bytes": 4056,
+      "sha256": "950996a64a6d43620cc0b17b131675d463a70bc7e75696a7413df8ac756675ce"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-17.parquet",
+      "size_bytes": 4058,
+      "sha256": "8199a74d05f88c25b5c418993acbb0b6276a16c21089d5521048e107537ff66a"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-18.parquet",
+      "size_bytes": 4056,
+      "sha256": "0962577c6426d7ac2d36267e5d18d5d7db6fbab1aee71307bb665837b10e06b3"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-19.parquet",
+      "size_bytes": 4057,
+      "sha256": "59f69d23efe719c612a17d23692879fbb6b396ea706043c9608d08f1629e9f43"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-20.parquet",
+      "size_bytes": 4056,
+      "sha256": "d7fa03e46364cc14c48b97539c47dfe68151bc1b3b0daa40f2302bce98648c5c"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-21.parquet",
+      "size_bytes": 4056,
+      "sha256": "2d053f74a4328e19ca4d07d9fa9d814360fdc616c540b8573bf8912d59f23aac"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-22.parquet",
+      "size_bytes": 4056,
+      "sha256": "0b6265ebd40e2ee62753c62211cd19b91f4f0d955bd9cfb0e26a8ce447801fb9"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-23.parquet",
+      "size_bytes": 4056,
+      "sha256": "f61f8657e4a92f983949dac6036944d2ea51da47a70221c12fe4e097991191d7"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-24.parquet",
+      "size_bytes": 4056,
+      "sha256": "b4975484322a4a8b739f405351adfee87f2888799d127bfad0adbb3ade895e82"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-25.parquet",
+      "size_bytes": 4056,
+      "sha256": "f33a5c0a405e810cfed01231898af30f8c374f9a49d73eea78084390cc4c6bb9"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-26.parquet",
+      "size_bytes": 4056,
+      "sha256": "321e48ad09bf00049d46bf194d290d8fe86c236d39e8049ecd86448d290687d3"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-27.parquet",
+      "size_bytes": 4056,
+      "sha256": "9eadb893a934722be7920251790e9a919703cb81c810413dda6522a9ad3f05a7"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-28.parquet",
+      "size_bytes": 4056,
+      "sha256": "e8079b84a46ef49b217d6adf20474f446369a0fb9b6d59a4138db2caa72ae4f7"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-29.parquet",
+      "size_bytes": 4047,
+      "sha256": "284b717601129340b195a96d487a26c34351dac37fbb16bac082a45211b7fb94"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-30.parquet",
+      "size_bytes": 4056,
+      "sha256": "099d59f16c04793abdae10c3fb4ac8b485b8aeac49c12b978557e7aac838fba6"
+    },
+    {
+      "path": "data/backfill/binance_funding/BTCUSDT_2026-07-31.parquet",
+      "size_bytes": 4056,
+      "sha256": "8971ae690e3db9972667df2f3761f8d8d103d85160d66b03669891807db5f31e"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-01.parquet",
+      "size_bytes": 4056,
+      "sha256": "0de9b80f1379e217428ef8abbb580d829dade5443d7755e09b8c2bd91c4d7238"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-02.parquet",
+      "size_bytes": 4056,
+      "sha256": "8232941266db8b9ea8b4195025d3a0bc3991870f8002c36cce2c4cd8d267b05e"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-03.parquet",
+      "size_bytes": 4056,
+      "sha256": "04202d0ed3b5eb2a7f93b31bec27b17e0d1b532daaf4cc48cfdf06b0b73f6eed"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-04.parquet",
+      "size_bytes": 4056,
+      "sha256": "e118c03ea33e49cbfc0f23c3ec91e65cb479273545749b94220cf25569f015e9"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-05.parquet",
+      "size_bytes": 4056,
+      "sha256": "699c35868ddcefc736315a9c1745c986c7c5ec58eae8fef97c1dcb0249218dfb"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-06.parquet",
+      "size_bytes": 4056,
+      "sha256": "533d3b55096ac2587305a084bc64e473ce2fdc9cf642534969474452cd6e66fb"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-07.parquet",
+      "size_bytes": 4056,
+      "sha256": "50a8e837a57838059bb433c5bbc70dfa434dc004eef459a13ab1eb075fde06ac"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-08.parquet",
+      "size_bytes": 4056,
+      "sha256": "1e11052663fa5cae0287a04a57a0aeb461e85e02c1a3c7c9fa3366a00a5553b5"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-09.parquet",
+      "size_bytes": 4056,
+      "sha256": "766df68c3568612aeb123ef6eef0d421ff870143f1a1d9d43f0c0182fe73696e"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-10.parquet",
+      "size_bytes": 4056,
+      "sha256": "0eb8b595bb0de3b37dee69e16039e2e09fc12fb96f02915867be7ccb3abb009b"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-11.parquet",
+      "size_bytes": 4057,
+      "sha256": "7fd5a4863cfe05556adc3ea69f5d44fc2dced969ed54bfacb1370a0b7a84135c"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-12.parquet",
+      "size_bytes": 4056,
+      "sha256": "8c07d6f7b2efdf5c631e38175cf0239a6dd06f7d5e3a847ff6edf45c2d9bec8b"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-13.parquet",
+      "size_bytes": 4057,
+      "sha256": "0c24a2b16cf9eb2c868b5659beefc5a0084eec4c57daeda4cc1d89a4999f80fd"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-14.parquet",
+      "size_bytes": 4056,
+      "sha256": "31a0c3745d69bb41d7bd742ad34e6dfeb76c601d519b00f3dd5531a3a487fcc3"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-15.parquet",
+      "size_bytes": 4057,
+      "sha256": "7d011a3f8269a4e56feeec72fd76b5d6464d397c01dcfd1cf6839f50d1507257"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-16.parquet",
+      "size_bytes": 4056,
+      "sha256": "f3af02efed523e662ca6efe8d985df56837435f639c4bf81866ab80ed32d53b0"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-17.parquet",
+      "size_bytes": 4058,
+      "sha256": "dde22f8cc7cb3ad121663cfcb2f61e3b11eba5f4b2d17fbb27278100a32c698d"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-18.parquet",
+      "size_bytes": 4056,
+      "sha256": "135fb2e2d3a68b3b3c51b418eb3e2d7bea3d6132b397b58286f7679b3e002a46"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-19.parquet",
+      "size_bytes": 4057,
+      "sha256": "2529925fa611d4d4dd9aff31c1a1aff01570d8a2181e697f0207b30205260119"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-20.parquet",
+      "size_bytes": 4056,
+      "sha256": "dc32dc8c28dadec95fb454b1a516d903de5938afb9a3b4351d65ee3b40f8dd85"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-21.parquet",
+      "size_bytes": 4056,
+      "sha256": "6c05fb9a4bd4c5c51478d96c6521d61153f1f98f6a259eeb45c34f10a42042de"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-22.parquet",
+      "size_bytes": 4056,
+      "sha256": "a6800ebd566c4c41cd68f1df5656f9800d6f6af5c8e23acd984f70fab839f3ba"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-23.parquet",
+      "size_bytes": 4056,
+      "sha256": "c8d1b5cdf30d3b190ac38515aa27b33f8c91c368d05e32d7ea4e303022be627b"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-24.parquet",
+      "size_bytes": 4056,
+      "sha256": "7f5d0850b9d101177452c8d4d562877f3a966577ff3475eb447d06a0dd048c74"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-25.parquet",
+      "size_bytes": 4056,
+      "sha256": "e96216123493986ebe3f1579f6ddea62d66ce54f9c0a7344e68bd9cf146f92f6"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-26.parquet",
+      "size_bytes": 4056,
+      "sha256": "e81ea6382c0cacc20303cd7010fbdea30c04cb2658938a2853ab9f76186c01a2"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-27.parquet",
+      "size_bytes": 4056,
+      "sha256": "0ce89b277021d3884b6093a4484d111245d8fe73dcaee424dc05292cdb3645d7"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-28.parquet",
+      "size_bytes": 4056,
+      "sha256": "3e28a0b2495d3abaf6c2d22dbeb1f6b34920a4ea8cc1256f3c0e9805bc538a8a"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-29.parquet",
+      "size_bytes": 4056,
+      "sha256": "d6e65b07b0897f0b3d788056ea0439c224675a9650d805029f793bfab58e9810"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-30.parquet",
+      "size_bytes": 4056,
+      "sha256": "c9346157fe40807dcab47518e60a94a8c3e42130bf34abd8541ea26c58aeceb6"
+    },
+    {
+      "path": "data/backfill/binance_funding/ETHUSDT_2026-07-31.parquet",
+      "size_bytes": 4056,
+      "sha256": "d513189a7d551bd9b84e4875e3f54011ecc717ef4a175817b875776f27ef8069"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-01.parquet",
+      "size_bytes": 4047,
+      "sha256": "125e0c490c88145d391363a4279a1170a10d4578cf8c0406a026eae3a76eb954"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-02.parquet",
+      "size_bytes": 4056,
+      "sha256": "cc2a2f40024e635d18c893428d29aa0c95770a81f290e828983c4d2f63fc9ca3"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-03.parquet",
+      "size_bytes": 4056,
+      "sha256": "4c1b5bef1ea381f5e64de69e42c6527689a9f8133dc9ce10dc6ef4f7a5958458"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-04.parquet",
+      "size_bytes": 4056,
+      "sha256": "06d02716e7ab8e65f160a24fd011506cd450014694e5c13244ec22bea6bc7dcf"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-05.parquet",
+      "size_bytes": 4056,
+      "sha256": "0dc36a90673a98ccb40997b11f521f9126974e31baac459cf0daec9eb5f5fe85"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-06.parquet",
+      "size_bytes": 4056,
+      "sha256": "0bf9f4cc20d4b70acc6f8be039575401b331f3499715867fb1a00b725b1ef87a"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-07.parquet",
+      "size_bytes": 4056,
+      "sha256": "a50fde5205b15bdd1aaeb1651cf16d73d1b3038b2d8fc2704bc73f51ab310976"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-08.parquet",
+      "size_bytes": 4056,
+      "sha256": "58c5d3792da73089af1b54c1667aa3abffbfc1ae1c97ed766e5d38528847c258"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-09.parquet",
+      "size_bytes": 4056,
+      "sha256": "4c517a411b1e7b1a0f7e4fd8455db687c1e96088f32313826c85c34faa3d190a"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-10.parquet",
+      "size_bytes": 4056,
+      "sha256": "58c5ce04a8de9657b7aa1efd0a0a20b94657902d72a907e8d2413f4bd3b65ec8"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-11.parquet",
+      "size_bytes": 4057,
+      "sha256": "dfa43a04c4cfc3c63414a1c13344e088f463e9fcf6551b5d4eb587b13b1e028d"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-12.parquet",
+      "size_bytes": 4056,
+      "sha256": "df4b02ae13e3ce98d669d9582031b7d39ed661d074b2647e8cd3cf1e4d19f63a"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-13.parquet",
+      "size_bytes": 4057,
+      "sha256": "8f59620d7468f2d94247667a3d2e69951ae0a31b3ec74361f9e3f991d5732f1c"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-14.parquet",
+      "size_bytes": 4056,
+      "sha256": "152027466613e7cb992d94fe4c621dd5b060f2807ca56f32cd75b36e8180ef90"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-15.parquet",
+      "size_bytes": 4057,
+      "sha256": "b553eac6e010abc10d37acc04eb66157d7581df0017a7813b81930928fd0bbba"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-16.parquet",
+      "size_bytes": 4056,
+      "sha256": "97e7787cafd22dcf7624b17bdeac9495abd2464cf4e6d71dae6978548f3d4478"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-17.parquet",
+      "size_bytes": 4058,
+      "sha256": "34ec5d651b792b1a687e067b4cbb8cdbb21e4ade910dfe0da6d2bf8a57e5767b"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-18.parquet",
+      "size_bytes": 4056,
+      "sha256": "32d08ad622c20d57251bcf7657e033b844559072823972473341207f65818ae8"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-19.parquet",
+      "size_bytes": 4057,
+      "sha256": "c76991190d17cada20402b2a90ee7b54e2a1002e9a9f676805460a14521d0845"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-20.parquet",
+      "size_bytes": 4056,
+      "sha256": "05ddeccdc85a9a82221fb866261b8652188a71117208d34c0a205f5e43dd2e1a"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-21.parquet",
+      "size_bytes": 4056,
+      "sha256": "acf100864e502fc152c203ea8ef17ed2684841772ef1011cc9a7989b9d49d11e"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-22.parquet",
+      "size_bytes": 4056,
+      "sha256": "e8fc93c6361279aafcaad68f23bd6d309a896766841ecfd999fbf5719d8a370c"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-23.parquet",
+      "size_bytes": 4056,
+      "sha256": "e47ec47abd140dd77f109314da98d5d1c9ac438b915adc4143c9b41847dbb30d"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-24.parquet",
+      "size_bytes": 4056,
+      "sha256": "7a086b82369fdf27b51e3e430ec3e8925c69af4a46268000a4387865b3dfc768"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-25.parquet",
+      "size_bytes": 4056,
+      "sha256": "4f0b52ca6a656f398bb29b671562491729ebc32b89fa70fe77e32ebc5a1c5e74"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-26.parquet",
+      "size_bytes": 4056,
+      "sha256": "1d3fc2bf4f910694c3632ae231ca03775eca4b8c3c403f0258c1d7ebe55dab02"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-27.parquet",
+      "size_bytes": 4056,
+      "sha256": "06082ba6c5771e74cc82f850a03a5e9983dd68ab9fa5cde07eb2caf7db088d4d"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-28.parquet",
+      "size_bytes": 4056,
+      "sha256": "d277f0b21a0bd6624f0614ab9cfba419114aff180db4c544122b62d511f84172"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-29.parquet",
+      "size_bytes": 4056,
+      "sha256": "d10e83144adff43c053b5ad892e8dcea7473bfb5a74788add910c9b597b2fb5b"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-30.parquet",
+      "size_bytes": 4056,
+      "sha256": "ddf9e820ec311e4e3f988783f2603938ed99ce1b278cb69f452959844a5d6969"
+    },
+    {
+      "path": "data/backfill/binance_funding/SOLUSDT_2026-07-31.parquet",
+      "size_bytes": 4056,
+      "sha256": "6a4b809cdaf9fe028e2c72a6788ba40ebf87f2df9cbcf18b405a384c4612827a"
+    }
+  ]
+}

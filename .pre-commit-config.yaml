@@ -9,6 +9,7 @@ repos:
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-added-large-files
+        args: [--maxkb=2048]
       - id: check-merge-conflict
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
@@ -23,4 +24,20 @@ repos:
     hooks:
       - id: mypy
         args: [--ignore-missing-imports]
-        additional_dependencies: [types-requests]
+        additional_dependencies: [types-requests, types-redis]
+        exclude: ^graxia/packages/quant_os/tools/
+
+  - repo: local
+    hooks:
+      - id: quant-os-trial-uniqueness
+        name: quant_os trial ID uniqueness ratchet
+        entry: python graxia/packages/quant_os/scripts/check_trial_uniqueness.py
+        language: system
+        files: ^graxia/packages/quant_os/research/(trial_ledger|hypothesis_registry).*\.json$
+        pass_filenames: false
+      - id: writer-lock-check
+        name: refuse commits while a live foreign writer lock is held
+        entry: python graxia/packages/quant_os/scripts/check_writer_lock.py
+        language: system
+        always_run: true
+        pass_filenames: false

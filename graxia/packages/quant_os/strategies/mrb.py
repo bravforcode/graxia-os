@@ -80,6 +80,7 @@ class MeanReversionBollinger(Strategy):
         ohlcv_data: dict[str, list],
         indicators: dict[str, Any] | None = None,
         regime: RegimeType | None = None,
+        **kwargs,
     ) -> Signal | None:
         """Generate mean reversion signal"""
 

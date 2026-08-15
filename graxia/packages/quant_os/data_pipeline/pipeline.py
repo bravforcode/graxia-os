@@ -1,19 +1,21 @@
 """
 pipeline.py — Main Data Pipeline
 """
-import sys
+
 import logging
-from pathlib import Path
+import sys
 from datetime import datetime
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from sources.market_data import fetch_all_market_data
 from sources.macro_data import fetch_all_macro_data
+from sources.market_data import fetch_all_market_data
 from sources.news_sentiment import fetch_news_with_sentiment
-from storage.duckdb_store import DuckDBStore
 from storage.chroma_store import ChromaStore
-from config import LOG_DIR
+from storage.duckdb_store import DuckDBStore
+
+from config import LOG_DIR  # type: ignore[attr-defined]  # data_pipeline/config.py via sys.path
 
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 log_file = LOG_DIR / f"pipeline_{datetime.now():%Y%m%d}.log"
@@ -80,18 +82,81 @@ class DataPipeline:
                 if f.name == "Index.md":
                     continue
                 content = f.read_text(encoding="utf-8")
-                strategies.append({
-                    "name": f.stem,
-                    "description": content[:500],
-                    "category": "strategy",
-                    "symbols": "all",
-                })
+                strategies.append(
+                    {
+                        "name": f.stem,
+                        "description": content[:500],
+                        "category": "strategy",
+                        "symbols": "all",
+                    }
+                )
             if strategies:
                 self.chroma.add_strategy(strategies)
                 self.results["strategies"] = len(strategies)
         except Exception as e:
             log.error(f"Vault sync failed: {e}")
             self.errors.append(("vault_sync", str(e)))
+
+    def run_research_sync(self):
+        """Ingest the XAUUSD research report into the research_embeddings collection.
+
+        The report is the input document for Tier-3 deep analysis (see
+        scripts/tier3_cron.py DEFAULT_REPORTS). Pipeline-ingesting it lets
+        downstream code retrieve it semantically via Chroma search_research,
+        so the report is no longer a file-only artifact.
+        """
+        log.info("[5/6] Research Report Sync")
+        try:
+            report_paths = [
+                Path(__file__).parent.parent / "research_xauusd_report.md",
+                Path(__file__).parent.parent / "Meta" / "states" / "researcher_xauusd.md",
+                Path(__file__).parent.parent / "Meta" / "states" / "researcher.md",
+            ]
+            reports = []
+            for p in report_paths:
+                if not p.exists():
+                    continue
+                content = p.read_text(encoding="utf-8", errors="replace")
+                reports.append(
+                    {
+                        "name": p.name,
+                        "content": content,
+                        "source": "pipeline_research_sync",
+                        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    }
+                )
+            if reports:
+                self.chroma.add_research(reports)
+                self.results["research_reports"] = len(reports)
+                log.info(f"  Ingested {len(reports)} research report(s) into research_embeddings")
+            else:
+                log.info("  No research reports found (skipped)")
+        except Exception as e:
+            log.error(f"Research sync failed: {e}")
+            self.errors.append(("research_sync", str(e)))
+
+    def run_data_bridge(self):
+        """Push pipeline data into MacroRegimeCache for trading logic."""
+        log.info("[5/5] Data Bridge → MacroRegimeCache")
+        try:
+            from data_bridge import DataBridge
+
+            bridge = DataBridge()
+            regime = bridge.update_macro_regime()
+            self.results["data_bridge"] = {
+                "bias": regime.bias.value,
+                "confidence": regime.confidence,
+                "regime": regime.regime_label,
+                "pos_mult": regime.position_multiplier,
+            }
+            log.info(
+                f"  Regime: {regime.bias.value} ({regime.regime_label}) "
+                f"conf={regime.confidence:.2f} pos_mult={regime.position_multiplier:.2f}"
+            )
+            bridge.close()
+        except Exception as e:
+            log.error(f"Data bridge failed: {e}")
+            self.errors.append(("data_bridge", str(e)))
 
     def run_full_pipeline(self):
         start = datetime.now()
@@ -103,6 +168,8 @@ class DataPipeline:
         self.run_macro_data()
         self.run_news_sentiment()
         self.run_vault_sync()
+        self.run_research_sync()  # research report → research_embeddings (searchable)
+        self.run_data_bridge()  # pipeline data → MacroRegimeCache → trading
 
         elapsed = (datetime.now() - start).total_seconds()
         status = "OK" if not self.errors else f"ERRORS: {len(self.errors)}"

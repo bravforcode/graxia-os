@@ -17,6 +17,18 @@ logger = logging.getLogger(__name__)
 
 ASSET_CLASSES = ("metals", "crypto", "forex", "indices")
 
+# Canonical shared state path — mirrors KillSwitch's data/kill_switch_state.json.
+# Every production process that constructs a CircuitBreaker must use this path
+# (or an explicit state_file) so a trip in one process is honored by the others.
+# Anchored to the package root so every process resolves the SAME file
+# regardless of its working directory (CWD-relative paths would silently
+# split state across processes and litter stray data/ directories).
+_PACKAGE_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_STATE_FILE = os.getenv(
+    "CIRCUIT_BREAKER_STATE_FILE",
+    str(_PACKAGE_ROOT / "data" / "circuit_breaker_state.json"),
+)
+
 
 @dataclass
 class CircuitBreakerConfig:
@@ -46,6 +58,9 @@ class CircuitBreaker:
         self._default_config = config or CircuitBreakerConfig()
         self._classes: dict[str, _ClassState] = {c: _ClassState() for c in ASSET_CLASSES}
         self._kill_switch = kill_switch
+        # Classes whose in-memory state diverges from disk — only these are
+        # written on _save() so one process cannot clobber another's trip.
+        self._dirty: set[str] = set()
         if self._state_file and self._state_file.exists():
             self._load()
 
@@ -65,6 +80,7 @@ class CircuitBreaker:
             s.open = False
             s.consecutive_losses = 0
             s.reason = ""
+            self._dirty.add(cls)
             self._save()
             return False
         return s.open
@@ -88,6 +104,7 @@ class CircuitBreaker:
 
         s = self._classes.setdefault(cls, _ClassState())
         cfg = self._cfg(cls)
+        self._dirty.add(cls)
         s.trip_count += 1
         if cfg.cooldown_minutes <= 0:
             s.open = False
@@ -120,9 +137,11 @@ class CircuitBreaker:
         if not authorized_by or not reason:
             raise ValueError("reset() requires both authorized_by and reason parameters")
         s = self._classes.setdefault(cls, _ClassState())
+        self._dirty.add(cls)
         s.open = False
         s.reason = ""
         s.consecutive_losses = 0
+        s.opened_at = 0.0  # clear cooldown clock so persisted state reads as fully reset
         logger.info(
             "circuit_breaker.reset: class=%s authorized_by=%s reason=%s",
             cls,
@@ -135,6 +154,7 @@ class CircuitBreaker:
         import time
 
         s = self._classes.setdefault(cls, _ClassState())
+        self._dirty.add(cls)
         if pnl < 0:
             s.consecutive_losses += 1
             cfg = self._cfg(cls)
@@ -180,16 +200,74 @@ class CircuitBreaker:
                 "consecutive_losses": s.consecutive_losses,
                 "trip_count": s.trip_count,
                 "reason": s.reason,
+                "opened_at": s.opened_at,
             }
         return status
 
+    def reload(self) -> None:
+        """Re-read state from disk.
+
+        Long-running processes (e.g. the orchestrator) build a breaker once at
+        startup, while per-call API entry points build a fresh breaker per
+        request.  reload() lets the long-running side honor trips or recoveries
+        persisted by other processes before acting on the breaker.
+        """
+        if self._state_file is None:
+            return
+        self._load()
+
+    def _read_disk_state(self) -> dict | None:
+        """Read the on-disk state file; None when absent, empty, or corrupt."""
+        if self._state_file is None or not self._state_file.exists():
+            return None
+        try:
+            text = self._state_file.read_text(encoding="utf-8")
+        except OSError as exc:
+            logger.critical(
+                "circuit_breaker: cannot read state file — fail-closed default (all tripped). " "file=%s error=%s",
+                self._state_file,
+                exc,
+            )
+            return None
+        if not text.strip():
+            logger.critical(
+                "circuit_breaker: state file is empty — fail-closed default (all tripped). " "file=%s",
+                self._state_file,
+            )
+            return None
+        try:
+            return json.loads(text)
+        except (json.JSONDecodeError, ValueError) as exc:
+            logger.critical(
+                "circuit_breaker: state file corrupted — fail-closed default (all tripped). " "file=%s error=%s",
+                self._state_file,
+                exc,
+            )
+            return None
+
     def _save(self) -> None:
-        """Save state atomically using temp file + rename."""
+        """Save state atomically using temp file + rename.
+
+        Only dirty classes are written, and on-disk state is merged first
+        (read-before-write) so a breaker that has not reloaded yet cannot
+        clobber a trip persisted by another process.
+        """
         if not self._state_file:
             return
-        data = {}
-        for cls, s in self._classes.items():
-            data[cls] = {"cl": s.consecutive_losses, "o": s.open, "r": s.reason, "tc": s.trip_count}
+        if not self._dirty:
+            return
+        data = self._read_disk_state() or {}
+        for cls in self._dirty:
+            s = self._classes.get(cls)
+            if s is None:
+                continue
+            data[cls] = {
+                "cl": s.consecutive_losses,
+                "o": s.open,
+                "r": s.reason,
+                "tc": s.trip_count,
+                "oa": s.opened_at,
+            }
         self._state_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Write to temp file first
@@ -212,10 +290,13 @@ class CircuitBreaker:
             with contextlib.suppress(OSError):
                 os.unlink(tmp_path)
             raise
+        self._dirty.clear()
 
     def _load(self) -> None:
         import time
 
+        if self._state_file is None:
+            return
         try:
             text = self._state_file.read_text(encoding="utf-8")
             if not text.strip():
@@ -236,6 +317,7 @@ class CircuitBreaker:
                 s.open = d.get("o", False)
                 s.reason = d.get("r", "")
                 s.trip_count = d.get("tc", 0)
+                s.opened_at = d.get("oa", 0.0)
         except (json.JSONDecodeError, ValueError) as exc:
             # Fail-closed: corrupted circuit breaker state → trip all classes
             logger.critical(

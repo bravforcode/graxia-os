@@ -1,0 +1,615 @@
+{
+  "trial_number": 6001,
+  "generated_at": "2026-07-28T17:51:07.225118+00:00",
+  "test": "crypto_basis_carry_rigor_pass",
+  "expiry_date_used": "2026-09-25",
+  "assumed_costs_bps_1x": 32.0,
+  "tbill_assumption": "Assumed 3-month T-bill yield ~4.5%/yr (approximate, manually entered 2026-07-28 -- NOT fetched live. Re-verify against FRED DGS3MO before using this comparison to make a real capital-allocation decision.",
+  "methodology_note": "Primary significance test is Newey-West HAC on the STATIONARY daily delta-neutral return series (spot_return - future_return), not on the basis level (which is near-unit-root for a dated future and would give spurious significance). The naive level-based NW test is also reported per-window for transparency/comparison only.",
+  "results": [
+    {
+      "symbol": "BTC",
+      "future_leg": "binance_future",
+      "expiry_date": "2026-09-25",
+      "full_window": {
+        "window": "full_available_history",
+        "date_range": [
+          "2026-03-27",
+          "2026-07-28"
+        ],
+        "n_days_spanned": 123,
+        "n_return_observations": 123,
+        "returns_based_nw_significance_PRIMARY": {
+          "mean_rate": 6.435840318640831e-05,
+          "n_periods": 123,
+          "max_lag": 4,
+          "nw_t_stat": 0.4394,
+          "p_value_two_sided": 0.660355,
+          "significant_p05": false
+        },
+        "realized_annualized_carry_pct_raw": 2.3491,
+        "cost_stress": {
+          "1.0x": {
+            "round_trip_cost_bps": 32.0,
+            "net_annualized_yield_bps": 139.95,
+            "net_annualized_yield_pct": 1.4,
+            "still_positive": true
+          },
+          "1.2x": {
+            "round_trip_cost_bps": 38.4,
+            "net_annualized_yield_bps": 120.96,
+            "net_annualized_yield_pct": 1.21,
+            "still_positive": true
+          },
+          "1.5x": {
+            "round_trip_cost_bps": 48.0,
+            "net_annualized_yield_bps": 92.47,
+            "net_annualized_yield_pct": 0.925,
+            "still_positive": true
+          }
+        },
+        "tbill_comparison": {
+          "net_apy_pct": 1.4,
+          "tbill_apy_pct_assumed": 4.5,
+          "excess_over_tbill_pct": -3.1,
+          "beats_tbill": false
+        },
+        "naive_level_based_nw_significance_COMPARISON_ONLY_DO_NOT_DECIDE_ON": {
+          "mean_rate": 0.027243765675266332,
+          "n_periods": 124,
+          "max_lag": 4,
+          "nw_t_stat": 19.0277,
+          "p_value_two_sided": 0.0,
+          "significant_p05": true,
+          "warning": "This NW test runs on the raw annualized-basis LEVEL series, which is near-unit-root (basis mechanically decays toward 0 at expiry). HAC with T^(1/3) lags does not fully correct for this; a large/significant t-stat here is expected and should NOT be treated as evidence of a real edge. The returns_based_nw_significance_PRIMARY field above is the valid test."
+        }
+      },
+      "recent_33d_window": {
+        "window": "recent_33d",
+        "date_range": [
+          "2026-06-25",
+          "2026-07-28"
+        ],
+        "n_days_spanned": 33,
+        "n_return_observations": 33,
+        "returns_based_nw_significance_PRIMARY": {
+          "mean_rate": 1.4749652389591124e-05,
+          "n_periods": 33,
+          "max_lag": 3,
+          "nw_t_stat": 0.0996,
+          "p_value_two_sided": 0.920676,
+          "significant_p05": false
+        },
+        "realized_annualized_carry_pct_raw": 0.5384,
+        "cost_stress": {
+          "1.0x": {
+            "round_trip_cost_bps": 32.0,
+            "net_annualized_yield_bps": -300.1,
+            "net_annualized_yield_pct": -3.001,
+            "still_positive": false
+          },
+          "1.2x": {
+            "round_trip_cost_bps": 38.4,
+            "net_annualized_yield_bps": -370.89,
+            "net_annualized_yield_pct": -3.709,
+            "still_positive": false
+          },
+          "1.5x": {
+            "round_trip_cost_bps": 48.0,
+            "net_annualized_yield_bps": -477.07,
+            "net_annualized_yield_pct": -4.771,
+            "still_positive": false
+          }
+        },
+        "tbill_comparison": {
+          "net_apy_pct": -3.001,
+          "tbill_apy_pct_assumed": 4.5,
+          "excess_over_tbill_pct": -7.501,
+          "beats_tbill": false
+        },
+        "naive_level_based_nw_significance_COMPARISON_ONLY_DO_NOT_DECIDE_ON": {
+          "mean_rate": 0.03583846506412395,
+          "n_periods": 34,
+          "max_lag": 3,
+          "nw_t_stat": 27.8885,
+          "p_value_two_sided": 0.0,
+          "significant_p05": true,
+          "warning": "This NW test runs on the raw annualized-basis LEVEL series, which is near-unit-root (basis mechanically decays toward 0 at expiry). HAC with T^(1/3) lags does not fully correct for this; a large/significant t-stat here is expected and should NOT be treated as evidence of a real edge. The returns_based_nw_significance_PRIMARY field above is the valid test."
+        }
+      },
+      "snapshot_hold_to_expiry": {
+        "as_of_date": "2026-07-28",
+        "days_to_expiry": 59,
+        "spot_price": 63630.26,
+        "future_price": 64082.8,
+        "raw_basis_pct": 0.7112,
+        "annualized_basis_pct_if_held_to_expiry": 4.3998,
+        "cost_stress": {
+          "1.0x": {
+            "round_trip_cost_bps": 32.0,
+            "net_annualized_yield_bps": 242.01,
+            "net_annualized_yield_pct": 2.42,
+            "still_positive": true
+          },
+          "1.2x": {
+            "round_trip_cost_bps": 38.4,
+            "net_annualized_yield_bps": 202.42,
+            "net_annualized_yield_pct": 2.024,
+            "still_positive": true
+          },
+          "1.5x": {
+            "round_trip_cost_bps": 48.0,
+            "net_annualized_yield_bps": 143.03,
+            "net_annualized_yield_pct": 1.43,
+            "still_positive": true
+          }
+        },
+        "tbill_comparison": {
+          "net_apy_pct": 2.42,
+          "tbill_apy_pct_assumed": 4.5,
+          "excess_over_tbill_pct": -2.08,
+          "beats_tbill": false
+        }
+      },
+      "largest_drawdown_day_color_only": {
+        "note": "INFORMAL COLOR ONLY, not a substitute for a real crash-window stress test (this contract's history does not reach 2020/2022 -- see Trial #4003 funding-rate results for the best available crypto-derivatives crash evidence).",
+        "date": "2026-06-02",
+        "spot_1day_return_pct": -6.509,
+        "basis_pct_that_day": 0.8776
+      }
+    },
+    {
+      "symbol": "BTC",
+      "future_leg": "deribit_future",
+      "expiry_date": "2026-09-25",
+      "full_window": {
+        "window": "full_available_history",
+        "date_range": [
+          "2025-09-26",
+          "2026-07-28"
+        ],
+        "n_days_spanned": 305,
+        "n_return_observations": 305,
+        "returns_based_nw_significance_PRIMARY": {
+          "mean_rate": 0.00019661070285018528,
+          "n_periods": 305,
+          "max_lag": 6,
+          "nw_t_stat": 0.0801,
+          "p_value_two_sided": 0.936174,
+          "significant_p05": false
+        },
+        "realized_annualized_carry_pct_raw": 7.1763,
+        "cost_stress": {
+          "1.0x": {
+            "round_trip_cost_bps": 32.0,
+            "net_annualized_yield_bps": 679.33,
+            "net_annualized_yield_pct": 6.793,
+            "still_positive": true
+          },
+          "1.2x": {
+            "round_trip_cost_bps": 38.4,
+            "net_annualized_yield_bps": 671.68,
+            "net_annualized_yield_pct": 6.717,
+            "still_positive": true
+          },
+          "1.5x": {
+            "round_trip_cost_bps": 48.0,
+            "net_annualized_yield_bps": 660.19,
+            "net_annualized_yield_pct": 6.602,
+            "still_positive": true
+          }
+        },
+        "tbill_comparison": {
+          "net_apy_pct": 6.793,
+          "tbill_apy_pct_assumed": 4.5,
+          "excess_over_tbill_pct": 2.293,
+          "beats_tbill": true
+        },
+        "naive_level_based_nw_significance_COMPARISON_ONLY_DO_NOT_DECIDE_ON": {
+          "mean_rate": 0.03953371867003363,
+          "n_periods": 306,
+          "max_lag": 6,
+          "nw_t_stat": 9.2229,
+          "p_value_two_sided": 0.0,
+          "significant_p05": true,
+          "warning": "This NW test runs on the raw annualized-basis LEVEL series, which is near-unit-root (basis mechanically decays toward 0 at expiry). HAC with T^(1/3) lags does not fully correct for this; a large/significant t-stat here is expected and should NOT be treated as evidence of a real edge. The returns_based_nw_significance_PRIMARY field above is the valid test."
+        }
+      },
+      "recent_33d_window": {
+        "window": "recent_33d",
+        "date_range": [
+          "2026-06-25",
+          "2026-07-28"
+        ],
+        "n_days_spanned": 33,
+        "n_return_observations": 33,
+        "returns_based_nw_significance_PRIMARY": {
+          "mean_rate": 0.00040327644046550076,
+          "n_periods": 33,
+          "max_lag": 3,
+          "nw_t_stat": 0.1036,
+          "p_value_two_sided": 0.917512,
+          "significant_p05": false
+        },
+        "realized_annualized_carry_pct_raw": 14.7196,
+        "cost_stress": {
+          "1.0x": {
+            "round_trip_cost_bps": 32.0,
+            "net_annualized_yield_bps": 1118.02,
+            "net_annualized_yield_pct": 11.18,
+            "still_positive": true
+          },
+          "1.2x": {
+            "round_trip_cost_bps": 38.4,
+            "net_annualized_yield_bps": 1047.23,
+            "net_annualized_yield_pct": 10.472,
+            "still_positive": true
+          },
+          "1.5x": {
+            "round_trip_cost_bps": 48.0,
+            "net_annualized_yield_bps": 941.05,
+            "net_annualized_yield_pct": 9.411,
+            "still_positive": true
+          }
+        },
+        "tbill_comparison": {
+          "net_apy_pct": 11.18,
+          "tbill_apy_pct_assumed": 4.5,
+          "excess_over_tbill_pct": 6.68,
+          "beats_tbill": true
+        },
+        "naive_level_based_nw_significance_COMPARISON_ONLY_DO_NOT_DECIDE_ON": {
+          "mean_rate": 0.026691037334207537,
+          "n_periods": 34,
+          "max_lag": 3,
+          "nw_t_stat": 2.0157,
+          "p_value_two_sided": 0.043832,
+          "significant_p05": true,
+          "warning": "This NW test runs on the raw annualized-basis LEVEL series, which is near-unit-root (basis mechanically decays toward 0 at expiry). HAC with T^(1/3) lags does not fully correct for this; a large/significant t-stat here is expected and should NOT be treated as evidence of a real edge. The returns_based_nw_significance_PRIMARY field above is the valid test."
+        }
+      },
+      "snapshot_hold_to_expiry": {
+        "as_of_date": "2026-07-28",
+        "days_to_expiry": 59,
+        "spot_price": 63630.26,
+        "future_price": 64035.0,
+        "raw_basis_pct": 0.6361,
+        "annualized_basis_pct_if_held_to_expiry": 3.9351,
+        "cost_stress": {
+          "1.0x": {
+            "round_trip_cost_bps": 32.0,
+            "net_annualized_yield_bps": 195.54,
+            "net_annualized_yield_pct": 1.955,
+            "still_positive": true
+          },
+          "1.2x": {
+            "round_trip_cost_bps": 38.4,
+            "net_annualized_yield_bps": 155.95,
+            "net_annualized_yield_pct": 1.56,
+            "still_positive": true
+          },
+          "1.5x": {
+            "round_trip_cost_bps": 48.0,
+            "net_annualized_yield_bps": 96.56,
+            "net_annualized_yield_pct": 0.966,
+            "still_positive": true
+          }
+        },
+        "tbill_comparison": {
+          "net_apy_pct": 1.955,
+          "tbill_apy_pct_assumed": 4.5,
+          "excess_over_tbill_pct": -2.545,
+          "beats_tbill": false
+        }
+      },
+      "largest_drawdown_day_color_only": {
+        "note": "INFORMAL COLOR ONLY, not a substitute for a real crash-window stress test (this contract's history does not reach 2020/2022 -- see Trial #4003 funding-rate results for the best available crypto-derivatives crash evidence).",
+        "date": "2026-02-05",
+        "spot_1day_return_pct": -14.017,
+        "basis_pct_that_day": 5.3412
+      }
+    },
+    {
+      "symbol": "ETH",
+      "future_leg": "binance_future",
+      "expiry_date": "2026-09-25",
+      "full_window": {
+        "window": "full_available_history",
+        "date_range": [
+          "2026-03-27",
+          "2026-07-28"
+        ],
+        "n_days_spanned": 123,
+        "n_return_observations": 123,
+        "returns_based_nw_significance_PRIMARY": {
+          "mean_rate": 8.89061727259488e-05,
+          "n_periods": 123,
+          "max_lag": 4,
+          "nw_t_stat": 0.6769,
+          "p_value_two_sided": 0.498461,
+          "significant_p05": false
+        },
+        "realized_annualized_carry_pct_raw": 3.2451,
+        "cost_stress": {
+          "1.0x": {
+            "round_trip_cost_bps": 32.0,
+            "net_annualized_yield_bps": 229.55,
+            "net_annualized_yield_pct": 2.296,
+            "still_positive": true
+          },
+          "1.2x": {
+            "round_trip_cost_bps": 38.4,
+            "net_annualized_yield_bps": 210.56,
+            "net_annualized_yield_pct": 2.106,
+            "still_positive": true
+          },
+          "1.5x": {
+            "round_trip_cost_bps": 48.0,
+            "net_annualized_yield_bps": 182.07,
+            "net_annualized_yield_pct": 1.821,
+            "still_positive": true
+          }
+        },
+        "tbill_comparison": {
+          "net_apy_pct": 2.296,
+          "tbill_apy_pct_assumed": 4.5,
+          "excess_over_tbill_pct": -2.204,
+          "beats_tbill": false
+        },
+        "naive_level_based_nw_significance_COMPARISON_ONLY_DO_NOT_DECIDE_ON": {
+          "mean_rate": 0.018978162376872117,
+          "n_periods": 124,
+          "max_lag": 4,
+          "nw_t_stat": 19.9586,
+          "p_value_two_sided": 0.0,
+          "significant_p05": true,
+          "warning": "This NW test runs on the raw annualized-basis LEVEL series, which is near-unit-root (basis mechanically decays toward 0 at expiry). HAC with T^(1/3) lags does not fully correct for this; a large/significant t-stat here is expected and should NOT be treated as evidence of a real edge. The returns_based_nw_significance_PRIMARY field above is the valid test."
+        }
+      },
+      "recent_33d_window": {
+        "window": "recent_33d",
+        "date_range": [
+          "2026-06-25",
+          "2026-07-28"
+        ],
+        "n_days_spanned": 33,
+        "n_return_observations": 33,
+        "returns_based_nw_significance_PRIMARY": {
+          "mean_rate": -3.292317158804557e-05,
+          "n_periods": 33,
+          "max_lag": 3,
+          "nw_t_stat": -0.1688,
+          "p_value_two_sided": 0.865967,
+          "significant_p05": false
+        },
+        "realized_annualized_carry_pct_raw": -1.2017,
+        "cost_stress": {
+          "1.0x": {
+            "round_trip_cost_bps": 32.0,
+            "net_annualized_yield_bps": -474.11,
+            "net_annualized_yield_pct": -4.741,
+            "still_positive": false
+          },
+          "1.2x": {
+            "round_trip_cost_bps": 38.4,
+            "net_annualized_yield_bps": -544.9,
+            "net_annualized_yield_pct": -5.449,
+            "still_positive": false
+          },
+          "1.5x": {
+            "round_trip_cost_bps": 48.0,
+            "net_annualized_yield_bps": -651.08,
+            "net_annualized_yield_pct": -6.511,
+            "still_positive": false
+          }
+        },
+        "tbill_comparison": {
+          "net_apy_pct": -4.741,
+          "tbill_apy_pct_assumed": 4.5,
+          "excess_over_tbill_pct": -9.241,
+          "beats_tbill": false
+        },
+        "naive_level_based_nw_significance_COMPARISON_ONLY_DO_NOT_DECIDE_ON": {
+          "mean_rate": 0.014569696514199811,
+          "n_periods": 34,
+          "max_lag": 3,
+          "nw_t_stat": 16.3729,
+          "p_value_two_sided": 0.0,
+          "significant_p05": true,
+          "warning": "This NW test runs on the raw annualized-basis LEVEL series, which is near-unit-root (basis mechanically decays toward 0 at expiry). HAC with T^(1/3) lags does not fully correct for this; a large/significant t-stat here is expected and should NOT be treated as evidence of a real edge. The returns_based_nw_significance_PRIMARY field above is the valid test."
+        }
+      },
+      "snapshot_hold_to_expiry": {
+        "as_of_date": "2026-07-28",
+        "days_to_expiry": 59,
+        "spot_price": 1898.65,
+        "future_price": 1905.36,
+        "raw_basis_pct": 0.3534,
+        "annualized_basis_pct_if_held_to_expiry": 2.1863,
+        "cost_stress": {
+          "1.0x": {
+            "round_trip_cost_bps": 32.0,
+            "net_annualized_yield_bps": 20.66,
+            "net_annualized_yield_pct": 0.207,
+            "still_positive": true
+          },
+          "1.2x": {
+            "round_trip_cost_bps": 38.4,
+            "net_annualized_yield_bps": -18.93,
+            "net_annualized_yield_pct": -0.189,
+            "still_positive": false
+          },
+          "1.5x": {
+            "round_trip_cost_bps": 48.0,
+            "net_annualized_yield_bps": -78.32,
+            "net_annualized_yield_pct": -0.783,
+            "still_positive": false
+          }
+        },
+        "tbill_comparison": {
+          "net_apy_pct": 0.207,
+          "tbill_apy_pct_assumed": 4.5,
+          "excess_over_tbill_pct": -4.293,
+          "beats_tbill": false
+        }
+      },
+      "largest_drawdown_day_color_only": {
+        "note": "INFORMAL COLOR ONLY, not a substitute for a real crash-window stress test (this contract's history does not reach 2020/2022 -- see Trial #4003 funding-rate results for the best available crypto-derivatives crash evidence).",
+        "date": "2026-06-05",
+        "spot_1day_return_pct": -10.581,
+        "basis_pct_that_day": 0.7042
+      }
+    },
+    {
+      "symbol": "ETH",
+      "future_leg": "deribit_future",
+      "expiry_date": "2026-09-25",
+      "full_window": {
+        "window": "full_available_history",
+        "date_range": [
+          "2025-09-26",
+          "2026-07-28"
+        ],
+        "n_days_spanned": 305,
+        "n_return_observations": 305,
+        "returns_based_nw_significance_PRIMARY": {
+          "mean_rate": 0.0001633140122314561,
+          "n_periods": 305,
+          "max_lag": 6,
+          "nw_t_stat": 0.0504,
+          "p_value_two_sided": 0.959813,
+          "significant_p05": false
+        },
+        "realized_annualized_carry_pct_raw": 5.961,
+        "cost_stress": {
+          "1.0x": {
+            "round_trip_cost_bps": 32.0,
+            "net_annualized_yield_bps": 557.8,
+            "net_annualized_yield_pct": 5.578,
+            "still_positive": true
+          },
+          "1.2x": {
+            "round_trip_cost_bps": 38.4,
+            "net_annualized_yield_bps": 550.15,
+            "net_annualized_yield_pct": 5.501,
+            "still_positive": true
+          },
+          "1.5x": {
+            "round_trip_cost_bps": 48.0,
+            "net_annualized_yield_bps": 538.66,
+            "net_annualized_yield_pct": 5.387,
+            "still_positive": true
+          }
+        },
+        "tbill_comparison": {
+          "net_apy_pct": 5.578,
+          "tbill_apy_pct_assumed": 4.5,
+          "excess_over_tbill_pct": 1.078,
+          "beats_tbill": true
+        },
+        "naive_level_based_nw_significance_COMPARISON_ONLY_DO_NOT_DECIDE_ON": {
+          "mean_rate": 0.028696028377218713,
+          "n_periods": 306,
+          "max_lag": 6,
+          "nw_t_stat": 5.6124,
+          "p_value_two_sided": 0.0,
+          "significant_p05": true,
+          "warning": "This NW test runs on the raw annualized-basis LEVEL series, which is near-unit-root (basis mechanically decays toward 0 at expiry). HAC with T^(1/3) lags does not fully correct for this; a large/significant t-stat here is expected and should NOT be treated as evidence of a real edge. The returns_based_nw_significance_PRIMARY field above is the valid test."
+        }
+      },
+      "recent_33d_window": {
+        "window": "recent_33d",
+        "date_range": [
+          "2026-06-25",
+          "2026-07-28"
+        ],
+        "n_days_spanned": 33,
+        "n_return_observations": 33,
+        "returns_based_nw_significance_PRIMARY": {
+          "mean_rate": 0.00024415277070684587,
+          "n_periods": 33,
+          "max_lag": 3,
+          "nw_t_stat": 0.0569,
+          "p_value_two_sided": 0.954646,
+          "significant_p05": false
+        },
+        "realized_annualized_carry_pct_raw": 8.9116,
+        "cost_stress": {
+          "1.0x": {
+            "round_trip_cost_bps": 32.0,
+            "net_annualized_yield_bps": 537.22,
+            "net_annualized_yield_pct": 5.372,
+            "still_positive": true
+          },
+          "1.2x": {
+            "round_trip_cost_bps": 38.4,
+            "net_annualized_yield_bps": 466.43,
+            "net_annualized_yield_pct": 4.664,
+            "still_positive": true
+          },
+          "1.5x": {
+            "round_trip_cost_bps": 48.0,
+            "net_annualized_yield_bps": 360.25,
+            "net_annualized_yield_pct": 3.603,
+            "still_positive": true
+          }
+        },
+        "tbill_comparison": {
+          "net_apy_pct": 5.372,
+          "tbill_apy_pct_assumed": 4.5,
+          "excess_over_tbill_pct": 0.872,
+          "beats_tbill": true
+        },
+        "naive_level_based_nw_significance_COMPARISON_ONLY_DO_NOT_DECIDE_ON": {
+          "mean_rate": 0.008203184967701739,
+          "n_periods": 34,
+          "max_lag": 3,
+          "nw_t_stat": 0.5607,
+          "p_value_two_sided": 0.575022,
+          "significant_p05": false,
+          "warning": "This NW test runs on the raw annualized-basis LEVEL series, which is near-unit-root (basis mechanically decays toward 0 at expiry). HAC with T^(1/3) lags does not fully correct for this; a large/significant t-stat here is expected and should NOT be treated as evidence of a real edge. The returns_based_nw_significance_PRIMARY field above is the valid test."
+        }
+      },
+      "snapshot_hold_to_expiry": {
+        "as_of_date": "2026-07-28",
+        "days_to_expiry": 59,
+        "spot_price": 1898.65,
+        "future_price": 1902.0,
+        "raw_basis_pct": 0.1764,
+        "annualized_basis_pct_if_held_to_expiry": 1.0915,
+        "cost_stress": {
+          "1.0x": {
+            "round_trip_cost_bps": 32.0,
+            "net_annualized_yield_bps": -88.82,
+            "net_annualized_yield_pct": -0.888,
+            "still_positive": false
+          },
+          "1.2x": {
+            "round_trip_cost_bps": 38.4,
+            "net_annualized_yield_bps": -128.41,
+            "net_annualized_yield_pct": -1.284,
+            "still_positive": false
+          },
+          "1.5x": {
+            "round_trip_cost_bps": 48.0,
+            "net_annualized_yield_bps": -187.8,
+            "net_annualized_yield_pct": -1.878,
+            "still_positive": false
+          }
+        },
+        "tbill_comparison": {
+          "net_apy_pct": -0.888,
+          "tbill_apy_pct_assumed": 4.5,
+          "excess_over_tbill_pct": -5.388,
+          "beats_tbill": false
+        }
+      },
+      "largest_drawdown_day_color_only": {
+        "note": "INFORMAL COLOR ONLY, not a substitute for a real crash-window stress test (this contract's history does not reach 2020/2022 -- see Trial #4003 funding-rate results for the best available crypto-derivatives crash evidence).",
+        "date": "2026-02-05",
+        "spot_1day_return_pct": -14.962,
+        "basis_pct_that_day": 5.9075
+      }
+    }
+  ]
+}

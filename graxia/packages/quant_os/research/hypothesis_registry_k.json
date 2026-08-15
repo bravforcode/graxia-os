@@ -1,0 +1,112 @@
+{
+  "schema_version": "1.0",
+  "direction": "K",
+  "description": "Crypto pairs / statistical arbitrage. BTC/ETH H1 joint data (50k bars 2020-2026, return corr 0.83). Market-neutral spread trading — structurally different from all directional mechanisms (A-J all failed).",
+  "last_updated": "2026-08-06",
+  "current_verdict_2026-08-06": "DIRECTION K STOPPED 2026-08-06 (3/3 consecutive REJECTS: 4005 pairs, 4006 BEVS, 4007 CVR).",
+  "stopping_rule_doc": "reports/stopping_rule_2026_08_06_direction_k.md",
+  "sacred_holdout_status": "LOCKED",
+  "notes": [
+    "Opened 2026-08-06 after Direction J stopped (3 consecutive REJECTS).",
+    "Market-neutral (long/short spread) — survives regimes; H1 frequency avoids COT-style underpoweredness.",
+    "Costs: Binance taker 10 bps rt + slippage 2 bps/leg = ~14 bps rt per pair trade."
+  ],
+  "hypotheses": [
+    {
+      "trial_number": 4005,
+      "id": "DIRK-BTCETH-PAIRS",
+      "status": "REJECTED",
+      "instrument": "BTCUSD/ETHUSD (H1, 50k joint bars 2020-2026)",
+      "symbols": [
+        "BTCUSD",
+        "ETHUSD"
+      ],
+      "registered_at": "2026-08-06T19:31:33.936174+00:00",
+      "result_at": "2026-08-06T19:31:33.936174+00:00",
+      "result_summary": {
+        "arms": {
+          "pairs_mr": {
+            "dk_t": -4.59,
+            "n_trades": 478,
+            "mean_pnl": -60.3
+          },
+          "pgm_eg": {
+            "n_trades": 0,
+            "note": "Engle-Granger no cointegration (consistent with Trial 5001 BTC/ETH p=0.13); half-life 255 bars"
+          }
+        },
+        "pooled": {
+          "best_dk_t": -4.59
+        },
+        "conclusion": "REJECTED: log-ratio z-score pairs trading loses significantly (dk_t=-4.59, 478 trades, mean -60 USD/pair) at 14 bps rt (Binance taker 10 bps + 4 bps slippage, see notes). BTC/ETH ratio does NOT mean-revert at H1 — beta 0.61 (not 1:1), half-life 255 bars. Engle-Granger arm finds no cointegration (0 trades). Statistical arbitrage hypothesis falsified on this pair."
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "PAIR": 14.0
+      },
+      "slippage_source": "none",
+      "slippage_bps_used": {},
+      "data_manifest_ref": "reports/edge_search_dirk_4005.json",
+      "provenance_stamped_at": "2026-08-06T19:31:33.936174+00:00",
+      "notes": "Direction K trial 4005 — REJECTED. Cost basis: Binance taker 10 bps rt + 4 bps slippage (documented in pre-registration; slippage_source=none because no fill-simulator for crypto spot). Consistent with Trial 5001 (cointegration p=0.13)."
+    },
+    {
+      "trial_number": 4006,
+      "id": "DIRK-BEVS",
+      "status": "REJECTED",
+      "instrument": "BTCUSD/ETHUSD (H1, 50k joint bars)",
+      "symbols": [
+        "BTCUSD",
+        "ETHUSD"
+      ],
+      "registered_at": "2026-08-06T19:37:17.543623+00:00",
+      "result_at": "2026-08-06T19:37:17.543623+00:00",
+      "result_summary": {
+        "n_trades": 6331,
+        "dk_t": -10.25,
+        "sharpe": -9.66,
+        "mean_pnl": -15.2,
+        "conclusion": "REJECTED: BTC/ETH volume-divergence spread loses massively (dk_t=-10.25, 6331 trades, mean -15 USD/pair) at 14 bps rt. Volume-flow divergence does NOT predict cross-sectional return spread in the hypothesized direction — hypothesis falsified."
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "PAIR": 14.0
+      },
+      "slippage_source": "none",
+      "slippage_bps_used": {},
+      "data_manifest_ref": "reports/edge_search_dirk_4006.json",
+      "provenance_stamped_at": "2026-08-06T19:37:17.543623+00:00",
+      "notes": "Direction K 4006 — REJECTED. Volume divergence (Trial 2003 config) falsified on crypto cross-section."
+    },
+    {
+      "trial_number": 4007,
+      "id": "DIRK-CVR-BTC",
+      "status": "REJECTED",
+      "instrument": "BTCUSD (H1, 50k bars)",
+      "symbols": [
+        "BTCUSD"
+      ],
+      "registered_at": "2026-08-06T19:38:48.844562+00:00",
+      "result_at": "2026-08-06T19:38:48.844562+00:00",
+      "result_summary": {
+        "n_trades": 5082,
+        "dk_t": -2.76,
+        "sharpe": -2.98,
+        "mean_pnl": -3.22,
+        "conclusion": "REJECTED: BTCUSD vol-rank signal (low-vol entry) loses at 14 bps rt (dk_t=-2.76, 5082 trades). Vol rank does NOT mean-revert profitably net of costs. FAIL #3 -> Direction K STOPPED per stopping_rule_2026_08_06_direction_k.md."
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "BTCUSD": 14.0
+      },
+      "slippage_source": "none",
+      "slippage_bps_used": {},
+      "data_manifest_ref": "reports/edge_search_dirk_4007.json",
+      "provenance_stamped_at": "2026-08-06T19:38:48.844562+00:00",
+      "notes": "Direction K 4007 — REJECTED. 3/3 consecutive fails (4005, 4006, 4007) -> K STOPPED."
+    }
+  ]
+}

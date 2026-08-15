@@ -1,0 +1,59 @@
+[
+  {
+    "name": "Cross-Asset Momentum",
+    "trial_number": 1003,
+    "n_trades": 135,
+    "win_rate": 0.562962962962963,
+    "total_pnl": 0.10628201947830433,
+    "sharpe": 0.36149998425546004,
+    "t_stat": 0.5291817915086956,
+    "p_value": 0.5975548837449977,
+    "wfa_oos_ratio": 0.2,
+    "wfe": 0.0,
+    "dsr": 0.8234766881700523,
+    "ci_lower": -0.8914620466410075,
+    "ci_upper": 1.626648164281074,
+    "gates": {
+      "p_value": "FAIL",
+      "wfa_oos_positive": "FAIL",
+      "wfe": "FAIL",
+      "dsr": "FAIL",
+      "bootstrap_ci": "FAIL",
+      "min_trades": "PASS"
+    },
+    "overall": "FAIL",
+    "pass_count": 1,
+    "fail_count": 5
+  },
+  {
+    "name": "Session Pattern",
+    "status": "ERROR: 'RangeIndex' object has no attribute 'hour'",
+    "overall": "FAIL"
+  },
+  {
+    "name": "Macro Regime MR",
+    "trial_number": 1005,
+    "n_trades": 65,
+    "win_rate": 0.46153846153846156,
+    "total_pnl": -0.18026008720115994,
+    "sharpe": -1.1574261578045144,
+    "t_stat": -1.1756544627882521,
+    "p_value": 0.24408798561400302,
+    "wfa_oos_ratio": 0.4,
+    "wfe": 0.0,
+    "dsr": 3.0538548460115295e-36,
+    "ci_lower": -3.488721435850999,
+    "ci_upper": 0.003304745978955123,
+    "gates": {
+      "p_value": "FAIL",
+      "wfa_oos_positive": "FAIL",
+      "wfe": "FAIL",
+      "dsr": "FAIL",
+      "bootstrap_ci": "FAIL",
+      "min_trades": "FAIL"
+    },
+    "overall": "FAIL",
+    "pass_count": 0,
+    "fail_count": 6
+  }
+]

@@ -29,9 +29,10 @@ from ..canonical.macro_regime import (
     RegimeBias,
 )
 from ..canonical.payloads import MacroRegimePayload
+from ..event_bus import EventBus
 from ..events import Event
 from .base import Agent
-from .llm_router import CascadeRouter, ImpactLevel, get_router
+from .llm_router import CascadeResult, CascadeRouter, ImpactLevel, get_router
 
 logger = structlog.get_logger(__name__)
 
@@ -52,7 +53,7 @@ _REGIME_MAP = {
 }
 
 
-def _cascade_to_regime(result, headline: str) -> MacroRegimePayload:
+def _cascade_to_regime(result: CascadeResult, headline: str) -> MacroRegimePayload:
     """Map CascadeResult → MacroRegimePayload."""
     impact_label = _REGIME_MAP.get(result.impact.value, "NORMAL")
     bias = _BIAS_MAP.get(result.direction, RegimeBias.NEUTRAL)
@@ -71,7 +72,7 @@ def _cascade_to_regime(result, headline: str) -> MacroRegimePayload:
         bias=bias,
         confidence=result.confidence,
         position_multiplier=pos_mult,
-        regime_label=impact_label,
+        regime_label=impact_label,  # type: ignore[arg-type]
         source_provider=f"cascade_t{result.tier_used}",
         headline=result.headline[:200],
         reasoning=result.reasoning,
@@ -95,7 +96,7 @@ class SentimentAgent(Agent):
 
     MAX_CONCURRENT = 3  # parallel headline processing
 
-    def __init__(self, name: str = "sentiment_agent", bus=None) -> None:
+    def __init__(self, name: str = "sentiment_agent", bus: EventBus | None = None) -> None:
         super().__init__(name)
         self._pending_headlines: list[dict] = []
         self._router: CascadeRouter | None = None
@@ -127,7 +128,7 @@ class SentimentAgent(Agent):
                 }
             )
 
-    async def act(self) -> MacroRegimePayload | None:
+    async def act(self) -> MacroRegimePayload | None:  # type: ignore[override]
         if not self._pending_headlines:
             return None
 

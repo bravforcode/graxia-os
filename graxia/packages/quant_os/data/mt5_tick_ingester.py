@@ -316,8 +316,8 @@ class MT5TickIngester:
                 checks={k: v["failed_count"] for k, v in gate_result["checks"].items() if v["failed_count"] > 0},
             )
             # Still write passing records
-            passing_records = []
-            passing_ticks = []
+            passing_records: list[dict] = []
+            passing_ticks: list[MT5Tick] = []
             for i, rec in enumerate(records):
                 # Re-run per-record check (fast, O(1))
                 rec_ok = all(c["failed_count"] == 0 for c in gate_result["checks"].values())

@@ -15,8 +15,9 @@ Research (Wikipedia + institutional practice):
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from decimal import Decimal
+from typing import Any
 
 
 @dataclass
@@ -139,7 +140,7 @@ class MarginSimulator:
         Returns:
             List of MarginEvent if any triggered
         """
-        events = []
+        events: list[Any] = []
 
         if not positions or account_equity <= 0:
             return events
@@ -165,13 +166,15 @@ class MarginSimulator:
 
         # Warning threshold
         if state.margin_utilization > self.config.warning_threshold_pct:
-            events.append(MarginEvent(
-                event_type="WARNING",
-                bar_index=current_bar,
-                equity=state.total_equity,
-                margin_utilization=state.margin_utilization,
-                message=f"Margin utilization {state.margin_utilization:.1%} > {self.config.warning_threshold_pct:.0%} warning threshold",
-            ))
+            events.append(
+                MarginEvent(
+                    event_type="WARNING",
+                    bar_index=current_bar,
+                    equity=state.total_equity,
+                    margin_utilization=state.margin_utilization,
+                    message=f"Margin utilization {state.margin_utilization:.1%} > {self.config.warning_threshold_pct:.0%} warning threshold",
+                )
+            )
 
         # Margin call trigger (equity < maintenance margin)
         maintenance_equity = state.used_margin * Decimal(str(self.config.maintenance_margin_pct))
@@ -181,33 +184,37 @@ class MarginSimulator:
                 sym = pos.get("symbol", "")
                 if sym not in self._pending_calls:
                     self._pending_calls[sym] = current_bar
-                    events.append(MarginEvent(
-                        event_type="MARGIN_CALL",
-                        bar_index=current_bar,
-                        equity=state.total_equity,
-                        margin_utilization=state.margin_utilization,
-                        position_symbol=sym,
-                        message=f"MARGIN CALL: equity {state.total_equity} < maintenance {maintenance_equity}",
-                    ))
+                    events.append(
+                        MarginEvent(
+                            event_type="MARGIN_CALL",
+                            bar_index=current_bar,
+                            equity=state.total_equity,
+                            margin_utilization=state.margin_utilization,
+                            position_symbol=sym,
+                            message=f"MARGIN CALL: equity {state.total_equity} < maintenance {maintenance_equity}",
+                        )
+                    )
 
         # Forced liquidation (after delay)
         for sym, call_bar in list(self._pending_calls.items()):
             if current_bar - call_bar >= self.config.margin_call_delay_bars:
-                events.append(MarginEvent(
-                    event_type="FORCED_LIQUIDATION",
-                    bar_index=current_bar,
-                    equity=state.total_equity,
-                    margin_utilization=state.margin_utilization,
-                    position_symbol=sym,
-                    liquidation_discount=self.config.forced_liquidation_discount,
-                    message=f"FORCED LIQUIDATION: {sym} at {self.config.forced_liquidation_discount:.0%} discount",
-                ))
+                events.append(
+                    MarginEvent(
+                        event_type="FORCED_LIQUIDATION",
+                        bar_index=current_bar,
+                        equity=state.total_equity,
+                        margin_utilization=state.margin_utilization,
+                        position_symbol=sym,
+                        liquidation_discount=self.config.forced_liquidation_discount,
+                        message=f"FORCED LIQUIDATION: {sym} at {self.config.forced_liquidation_discount:.0%} discount",
+                    )
+                )
                 del self._pending_calls[sym]
 
         self._events.extend(events)
         # Phase 4: Cap events list to prevent unbounded memory
         if len(self._events) > self._max_events:
-            self._events = self._events[-self._max_events:]
+            self._events = self._events[-self._max_events :]
         return events
 
     def apply_forced_liquidation(

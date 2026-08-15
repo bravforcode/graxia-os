@@ -3,6 +3,7 @@ Revenue OS Test Configuration
 Pytest fixtures and test database setup
 """
 import pytest
+import pytest_asyncio
 import asyncio
 from typing import AsyncGenerator
 
@@ -12,9 +13,9 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
 )
 from sqlalchemy.pool import NullPool
+from sqlalchemy import text
 
 from graxia.database import Base
-from ..db import _get_or_init_database_url
 import os
 
 
@@ -29,15 +30,7 @@ def _get_test_database_url():
 TEST_DATABASE_URL = _get_test_database_url()
 
 
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create event loop for async tests."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def test_engine():
     """Create test database engine."""
     engine = create_async_engine(
@@ -52,10 +45,15 @@ async def test_engine():
 
     yield engine
 
-    # Drop all tables after tests
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-
+    # Drop all tables after tests. Pre-existing FK cycle between revenue_os_ai_drafts
+    # and revenue_os_approvals (unnamed constraints) makes metadata drop_all raise
+    # CircularDependencyError — the test DB is ephemeral, so swallow the failure and
+    # let tables persist (per-test deletes keep isolation; create_all is idempotent).
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+    except Exception:
+        pass
     await engine.dispose()
 
 
@@ -63,7 +61,11 @@ async def test_engine():
 async def db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
     """
     Create a fresh database session for each test.
-    Uses transaction rollback to ensure test isolation.
+
+    NOTE: services in this package commit internally (order/fulfillment/email/...),
+    so the session must NOT be wrapped in a single outer transaction — commits inside
+    the test would close it. Instead: clean slate per test (delete all rows), then
+    yield a plain session; rollback at teardown as a safety net.
     """
     # Create session factory
     async_session_maker = async_sessionmaker(
@@ -73,11 +75,13 @@ async def db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
     )
 
     async with async_session_maker() as session:
-        # Start transaction
-        async with session.begin():
-            yield session
-            # Rollback transaction after test
-            await session.rollback()
+        # Clean slate: delete all rows (children first via reversed dependency order)
+        for table in reversed(Base.metadata.sorted_tables):
+            await session.execute(table.delete())
+        await session.commit()
+        yield session
+        # Safety net: discard anything the test left uncommitted
+        await session.rollback()
 
 
 @pytest.fixture

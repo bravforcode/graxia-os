@@ -1,0 +1,1620 @@
+{
+  "scan_date": "2026-07-10T17:15:27.705153",
+  "total_combinations": 180,
+  "pairs_scanned": [
+    "EURUSD",
+    "GBPUSD",
+    "AUDUSD",
+    "XAUUSD",
+    "US30"
+  ],
+  "cost_models": {
+    "EURUSD": 3.4,
+    "GBPUSD": 3.4,
+    "AUDUSD": 3.4,
+    "XAUUSD": 12.5,
+    "US30": 5.0
+  },
+  "bonferroni_alpha": 5.555555555555556e-05,
+  "top_50": [
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 28,
+      "rsi_os": 35,
+      "rsi_ob": 65,
+      "bb_period": 10,
+      "bb_std": 1.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 21,
+        "net_sharpe": -0.7921,
+        "winrate": 57.14,
+        "avg_return": -0.7586,
+        "profit_factor": 0.8549,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 6,
+        "net_sharpe": 34.6792,
+        "winrate": 100.0,
+        "avg_return": 4.1077,
+        "profit_factor": 0,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 55,
+      "total_bars": 14490
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 28,
+      "rsi_os": 35,
+      "rsi_ob": 65,
+      "bb_period": 30,
+      "bb_std": 1.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 21,
+        "net_sharpe": -0.9249,
+        "winrate": 57.14,
+        "avg_return": -0.9045,
+        "profit_factor": 0.8306,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 6,
+        "net_sharpe": 28.7427,
+        "winrate": 100.0,
+        "avg_return": 3.6427,
+        "profit_factor": 0,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 55,
+      "total_bars": 14490
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 28,
+      "rsi_os": 35,
+      "rsi_ob": 65,
+      "bb_period": 30,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 21,
+        "net_sharpe": -0.2414,
+        "winrate": 57.14,
+        "avg_return": -0.2238,
+        "profit_factor": 0.9536,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 6,
+        "net_sharpe": 28.7427,
+        "winrate": 100.0,
+        "avg_return": 3.6427,
+        "profit_factor": 0,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 55,
+      "total_bars": 14490
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 28,
+      "rsi_os": 35,
+      "rsi_ob": 65,
+      "bb_period": 20,
+      "bb_std": 1.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 21,
+        "net_sharpe": -0.627,
+        "winrate": 57.14,
+        "avg_return": -0.5881,
+        "profit_factor": 0.8829,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 6,
+        "net_sharpe": 25.0996,
+        "winrate": 100.0,
+        "avg_return": 3.4205,
+        "profit_factor": 0,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 55,
+      "total_bars": 14490
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 14,
+      "rsi_os": 25,
+      "rsi_ob": 75,
+      "bb_period": 20,
+      "bb_std": 1.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 20,
+        "net_sharpe": -1.8517,
+        "winrate": 50.0,
+        "avg_return": -2.0189,
+        "profit_factor": 0.6819,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 5,
+        "net_sharpe": 19.7748,
+        "winrate": 100.0,
+        "avg_return": 3.6465,
+        "profit_factor": 0,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 51,
+      "total_bars": 14490
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 14,
+      "rsi_os": 25,
+      "rsi_ob": 75,
+      "bb_period": 30,
+      "bb_std": 1.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 20,
+        "net_sharpe": -1.8517,
+        "winrate": 50.0,
+        "avg_return": -2.0189,
+        "profit_factor": 0.6819,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 5,
+        "net_sharpe": 19.7748,
+        "winrate": 100.0,
+        "avg_return": 3.6465,
+        "profit_factor": 0,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 51,
+      "total_bars": 14490
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 14,
+      "rsi_os": 25,
+      "rsi_ob": 75,
+      "bb_period": 30,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 20,
+        "net_sharpe": -1.7264,
+        "winrate": 50.0,
+        "avg_return": -1.8875,
+        "profit_factor": 0.699,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 5,
+        "net_sharpe": 19.7748,
+        "winrate": 100.0,
+        "avg_return": 3.6465,
+        "profit_factor": 0,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 51,
+      "total_bars": 14490
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 14,
+      "rsi_os": 25,
+      "rsi_ob": 75,
+      "bb_period": 10,
+      "bb_std": 1.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 20,
+        "net_sharpe": -1.8104,
+        "winrate": 50.0,
+        "avg_return": -1.9822,
+        "profit_factor": 0.6859,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 5,
+        "net_sharpe": 18.4485,
+        "winrate": 100.0,
+        "avg_return": 4.5446,
+        "profit_factor": 0,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 51,
+      "total_bars": 14490
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 10,
+      "rsi_os": 20,
+      "rsi_ob": 80,
+      "bb_period": 20,
+      "bb_std": 1.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 23,
+        "net_sharpe": -1.8122,
+        "winrate": 52.17,
+        "avg_return": -1.8729,
+        "profit_factor": 0.6848,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 5,
+        "net_sharpe": 14.5325,
+        "winrate": 80.0,
+        "avg_return": 3.1313,
+        "profit_factor": 39.9182,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 57,
+      "total_bars": 14490
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 10,
+      "rsi_os": 20,
+      "rsi_ob": 80,
+      "bb_period": 30,
+      "bb_std": 1.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 23,
+        "net_sharpe": -1.8122,
+        "winrate": 52.17,
+        "avg_return": -1.8729,
+        "profit_factor": 0.6848,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 5,
+        "net_sharpe": 14.5325,
+        "winrate": 80.0,
+        "avg_return": 3.1313,
+        "profit_factor": 39.9182,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 57,
+      "total_bars": 14490
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 10,
+      "rsi_os": 20,
+      "rsi_ob": 80,
+      "bb_period": 30,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 22,
+        "net_sharpe": -1.9984,
+        "winrate": 50.0,
+        "avg_return": -2.1068,
+        "profit_factor": 0.6609,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 5,
+        "net_sharpe": 14.5325,
+        "winrate": 80.0,
+        "avg_return": 3.1313,
+        "profit_factor": 39.9182,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 55,
+      "total_bars": 14490
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 10,
+      "rsi_os": 20,
+      "rsi_ob": 80,
+      "bb_period": 10,
+      "bb_std": 1.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 22,
+        "net_sharpe": -1.9357,
+        "winrate": 50.0,
+        "avg_return": -2.0391,
+        "profit_factor": 0.6681,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 5,
+        "net_sharpe": 13.4872,
+        "winrate": 80.0,
+        "avg_return": 3.8762,
+        "profit_factor": 49.1759,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 55,
+      "total_bars": 14490
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 7,
+      "rsi_os": 35,
+      "rsi_ob": 65,
+      "bb_period": 20,
+      "bb_std": 2.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 54,
+        "net_sharpe": 1.6011,
+        "winrate": 61.11,
+        "avg_return": 0.8445,
+        "profit_factor": 1.3989,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 9,
+        "net_sharpe": 10.6327,
+        "winrate": 77.78,
+        "avg_return": 1.3009,
+        "profit_factor": 5.5636,
+        "is_valid": true
+      },
+      "wf_efficiency": 6.6409,
+      "total_signals": 126,
+      "total_bars": 14490
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 10,
+      "rsi_os": 25,
+      "rsi_ob": 75,
+      "bb_period": 20,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 47,
+        "net_sharpe": -1.7446,
+        "winrate": 59.57,
+        "avg_return": -0.7928,
+        "profit_factor": 0.7351,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 10,
+        "net_sharpe": 10.2702,
+        "winrate": 70.0,
+        "avg_return": 2.3553,
+        "profit_factor": 6.0831,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 115,
+      "total_bars": 14508
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 10,
+      "rsi_os": 25,
+      "rsi_ob": 75,
+      "bb_period": 10,
+      "bb_std": 1.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 51,
+        "net_sharpe": -2.1117,
+        "winrate": 60.78,
+        "avg_return": -0.9095,
+        "profit_factor": 0.6929,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 10,
+        "net_sharpe": 9.2776,
+        "winrate": 70.0,
+        "avg_return": 2.3997,
+        "profit_factor": 4.8195,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 124,
+      "total_bars": 14508
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 10,
+      "rsi_os": 30,
+      "rsi_ob": 70,
+      "bb_period": 10,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 53,
+        "net_sharpe": -2.2233,
+        "winrate": 56.6,
+        "avg_return": -1.0802,
+        "profit_factor": 0.6648,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 13,
+        "net_sharpe": 7.6099,
+        "winrate": 69.23,
+        "avg_return": 1.9672,
+        "profit_factor": 3.7145,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 133,
+      "total_bars": 14508
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 14,
+      "rsi_os": 35,
+      "rsi_ob": 65,
+      "bb_period": 10,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 48,
+        "net_sharpe": -1.2197,
+        "winrate": 62.5,
+        "avg_return": -0.637,
+        "profit_factor": 0.801,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 13,
+        "net_sharpe": 7.4151,
+        "winrate": 69.23,
+        "avg_return": 1.5165,
+        "profit_factor": 3.0257,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 123,
+      "total_bars": 14508
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 21,
+      "rsi_os": 35,
+      "rsi_ob": 65,
+      "bb_period": 30,
+      "bb_std": 1.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 37,
+        "net_sharpe": -3.3415,
+        "winrate": 51.35,
+        "avg_return": -1.6526,
+        "profit_factor": 0.5097,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 10,
+        "net_sharpe": 7.0888,
+        "winrate": 80.0,
+        "avg_return": 2.6734,
+        "profit_factor": 3.0592,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 94,
+      "total_bars": 14508
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 10,
+      "rsi_os": 25,
+      "rsi_ob": 75,
+      "bb_period": 20,
+      "bb_std": 1.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 51,
+        "net_sharpe": -2.5001,
+        "winrate": 60.78,
+        "avg_return": -1.0667,
+        "profit_factor": 0.6439,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 13,
+        "net_sharpe": 6.9683,
+        "winrate": 76.92,
+        "avg_return": 2.0368,
+        "profit_factor": 2.768,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 129,
+      "total_bars": 14508
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 7,
+      "rsi_os": 20,
+      "rsi_ob": 80,
+      "bb_period": 10,
+      "bb_std": 1.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 60,
+        "net_sharpe": -2.2865,
+        "winrate": 60.0,
+        "avg_return": -0.8911,
+        "profit_factor": 0.6655,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 16,
+        "net_sharpe": 6.7646,
+        "winrate": 75.0,
+        "avg_return": 1.9876,
+        "profit_factor": 2.9483,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 154,
+      "total_bars": 14508
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 10,
+      "rsi_os": 35,
+      "rsi_ob": 65,
+      "bb_period": 20,
+      "bb_std": 2.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 53,
+        "net_sharpe": 1.6533,
+        "winrate": 60.38,
+        "avg_return": 0.8873,
+        "profit_factor": 1.4114,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 8,
+        "net_sharpe": 6.6339,
+        "winrate": 62.5,
+        "avg_return": 1.0267,
+        "profit_factor": 2.9116,
+        "is_valid": true
+      },
+      "wf_efficiency": 4.0125,
+      "total_signals": 122,
+      "total_bars": 14490
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 14,
+      "rsi_os": 30,
+      "rsi_ob": 70,
+      "bb_period": 20,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 42,
+        "net_sharpe": -1.5376,
+        "winrate": 54.76,
+        "avg_return": -0.7351,
+        "profit_factor": 0.7305,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 9,
+        "net_sharpe": 6.6004,
+        "winrate": 66.67,
+        "avg_return": 2.8431,
+        "profit_factor": 3.2551,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 102,
+      "total_bars": 14508
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 10,
+      "rsi_os": 25,
+      "rsi_ob": 75,
+      "bb_period": 30,
+      "bb_std": 1.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 50,
+        "net_sharpe": -3.0078,
+        "winrate": 58.0,
+        "avg_return": -1.3176,
+        "profit_factor": 0.5958,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 13,
+        "net_sharpe": 6.5984,
+        "winrate": 76.92,
+        "avg_return": 1.9676,
+        "profit_factor": 2.6112,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 127,
+      "total_bars": 14508
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 21,
+      "rsi_os": 35,
+      "rsi_ob": 65,
+      "bb_period": 10,
+      "bb_std": 1.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 35,
+        "net_sharpe": -3.8384,
+        "winrate": 51.43,
+        "avg_return": -1.9219,
+        "profit_factor": 0.4611,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 9,
+        "net_sharpe": 6.5946,
+        "winrate": 66.67,
+        "avg_return": 2.6036,
+        "profit_factor": 2.8614,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 88,
+      "total_bars": 14508
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 7,
+      "rsi_os": 20,
+      "rsi_ob": 80,
+      "bb_period": 30,
+      "bb_std": 1.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 54,
+        "net_sharpe": -3.7056,
+        "winrate": 57.41,
+        "avg_return": -1.5422,
+        "profit_factor": 0.5224,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 17,
+        "net_sharpe": 6.478,
+        "winrate": 76.47,
+        "avg_return": 1.8791,
+        "profit_factor": 2.8226,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 143,
+      "total_bars": 14508
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 7,
+      "rsi_os": 20,
+      "rsi_ob": 80,
+      "bb_period": 10,
+      "bb_std": 1.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 54,
+        "net_sharpe": -0.862,
+        "winrate": 55.56,
+        "avg_return": -0.4356,
+        "profit_factor": 0.8395,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 13,
+        "net_sharpe": 6.4744,
+        "winrate": 69.23,
+        "avg_return": 2.1412,
+        "profit_factor": 3.1578,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 134,
+      "total_bars": 14490
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 7,
+      "rsi_os": 20,
+      "rsi_ob": 80,
+      "bb_period": 20,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 55,
+        "net_sharpe": -1.625,
+        "winrate": 58.18,
+        "avg_return": -0.7293,
+        "profit_factor": 0.7525,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 14,
+        "net_sharpe": 6.4028,
+        "winrate": 71.43,
+        "avg_return": 2.0747,
+        "profit_factor": 2.7557,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 139,
+      "total_bars": 14508
+    },
+    {
+      "pair": "EURUSD",
+      "rsi_period": 7,
+      "rsi_os": 35,
+      "rsi_ob": 65,
+      "bb_period": 20,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 41,
+        "net_sharpe": -1.4978,
+        "winrate": 63.41,
+        "avg_return": -0.3946,
+        "profit_factor": 0.7526,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 16,
+        "net_sharpe": 6.383,
+        "winrate": 68.75,
+        "avg_return": 0.5942,
+        "profit_factor": 2.8327,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 116,
+      "total_bars": 5865
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 10,
+      "rsi_os": 35,
+      "rsi_ob": 65,
+      "bb_period": 10,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 90,
+        "net_sharpe": 0.9853,
+        "winrate": 72.22,
+        "avg_return": 0.3882,
+        "profit_factor": 1.2056,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 22,
+        "net_sharpe": 6.3823,
+        "winrate": 68.18,
+        "avg_return": 1.1741,
+        "profit_factor": 2.7925,
+        "is_valid": true
+      },
+      "wf_efficiency": 6.4775,
+      "total_signals": 225,
+      "total_bars": 14508
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 7,
+      "rsi_os": 20,
+      "rsi_ob": 80,
+      "bb_period": 20,
+      "bb_std": 1.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 60,
+        "net_sharpe": -2.7758,
+        "winrate": 60.0,
+        "avg_return": -1.0741,
+        "profit_factor": 0.6042,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 17,
+        "net_sharpe": 6.3776,
+        "winrate": 76.47,
+        "avg_return": 1.8476,
+        "profit_factor": 2.7921,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 155,
+      "total_bars": 14508
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 14,
+      "rsi_os": 35,
+      "rsi_ob": 65,
+      "bb_period": 20,
+      "bb_std": 2.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 37,
+        "net_sharpe": 1.4355,
+        "winrate": 59.46,
+        "avg_return": 0.9268,
+        "profit_factor": 1.3083,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 6,
+        "net_sharpe": 6.3402,
+        "winrate": 66.67,
+        "avg_return": 1.2556,
+        "profit_factor": 2.7796,
+        "is_valid": true
+      },
+      "wf_efficiency": 4.4167,
+      "total_signals": 86,
+      "total_bars": 14490
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 7,
+      "rsi_os": 30,
+      "rsi_ob": 70,
+      "bb_period": 20,
+      "bb_std": 2.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 54,
+        "net_sharpe": 1.6011,
+        "winrate": 61.11,
+        "avg_return": 0.8445,
+        "profit_factor": 1.3989,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 8,
+        "net_sharpe": 6.2617,
+        "winrate": 62.5,
+        "avg_return": 0.872,
+        "profit_factor": 2.6236,
+        "is_valid": true
+      },
+      "wf_efficiency": 3.9109,
+      "total_signals": 124,
+      "total_bars": 14490
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 7,
+      "rsi_os": 20,
+      "rsi_ob": 80,
+      "bb_period": 20,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 50,
+        "net_sharpe": -0.953,
+        "winrate": 54.0,
+        "avg_return": -0.5192,
+        "profit_factor": 0.8305,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 11,
+        "net_sharpe": 6.2078,
+        "winrate": 63.64,
+        "avg_return": 2.1209,
+        "profit_factor": 3.1354,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 122,
+      "total_bars": 14490
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 10,
+      "rsi_os": 30,
+      "rsi_ob": 70,
+      "bb_period": 20,
+      "bb_std": 2.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 43,
+        "net_sharpe": 1.9011,
+        "winrate": 60.47,
+        "avg_return": 1.1688,
+        "profit_factor": 1.4455,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 6,
+        "net_sharpe": 6.0464,
+        "winrate": 66.67,
+        "avg_return": 1.3909,
+        "profit_factor": 2.4199,
+        "is_valid": true
+      },
+      "wf_efficiency": 3.1805,
+      "total_signals": 98,
+      "total_bars": 14490
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 7,
+      "rsi_os": 20,
+      "rsi_ob": 80,
+      "bb_period": 30,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 50,
+        "net_sharpe": -3.7974,
+        "winrate": 54.0,
+        "avg_return": -1.5888,
+        "profit_factor": 0.5226,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 14,
+        "net_sharpe": 5.9514,
+        "winrate": 71.43,
+        "avg_return": 1.8691,
+        "profit_factor": 2.6032,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 129,
+      "total_bars": 14508
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 7,
+      "rsi_os": 20,
+      "rsi_ob": 80,
+      "bb_period": 20,
+      "bb_std": 1.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 56,
+        "net_sharpe": -0.8208,
+        "winrate": 58.93,
+        "avg_return": -0.4111,
+        "profit_factor": 0.8483,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 13,
+        "net_sharpe": 5.9006,
+        "winrate": 69.23,
+        "avg_return": 2.0091,
+        "profit_factor": 2.7868,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 138,
+      "total_bars": 14490
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 7,
+      "rsi_os": 25,
+      "rsi_ob": 75,
+      "bb_period": 20,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 78,
+        "net_sharpe": -0.5921,
+        "winrate": 58.97,
+        "avg_return": -0.2612,
+        "profit_factor": 0.8805,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 21,
+        "net_sharpe": 5.8588,
+        "winrate": 71.43,
+        "avg_return": 1.3245,
+        "profit_factor": 2.9823,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 198,
+      "total_bars": 14490
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 7,
+      "rsi_os": 20,
+      "rsi_ob": 80,
+      "bb_period": 30,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 50,
+        "net_sharpe": -0.7205,
+        "winrate": 62.0,
+        "avg_return": -0.3871,
+        "profit_factor": 0.864,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 12,
+        "net_sharpe": 5.8381,
+        "winrate": 66.67,
+        "avg_return": 2.0002,
+        "profit_factor": 2.8764,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 124,
+      "total_bars": 14490
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 7,
+      "rsi_os": 25,
+      "rsi_ob": 75,
+      "bb_period": 10,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 60,
+        "net_sharpe": -1.3376,
+        "winrate": 63.33,
+        "avg_return": -0.5975,
+        "profit_factor": 0.7772,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 15,
+        "net_sharpe": 5.8268,
+        "winrate": 73.33,
+        "avg_return": 1.7058,
+        "profit_factor": 2.7269,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 151,
+      "total_bars": 14508
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 14,
+      "rsi_os": 35,
+      "rsi_ob": 65,
+      "bb_period": 20,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 66,
+        "net_sharpe": -1.8751,
+        "winrate": 63.64,
+        "avg_return": -0.7317,
+        "profit_factor": 0.7202,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 19,
+        "net_sharpe": 5.7633,
+        "winrate": 68.42,
+        "avg_return": 1.4442,
+        "profit_factor": 2.5065,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 171,
+      "total_bars": 14508
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 21,
+      "rsi_os": 35,
+      "rsi_ob": 65,
+      "bb_period": 20,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 34,
+        "net_sharpe": -2.6192,
+        "winrate": 55.88,
+        "avg_return": -1.2942,
+        "profit_factor": 0.5845,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 6,
+        "net_sharpe": 5.7088,
+        "winrate": 66.67,
+        "avg_return": 3.0501,
+        "profit_factor": 2.7967,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 81,
+      "total_bars": 14508
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 7,
+      "rsi_os": 20,
+      "rsi_ob": 80,
+      "bb_period": 30,
+      "bb_std": 2.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 33,
+        "net_sharpe": -2.8036,
+        "winrate": 51.52,
+        "avg_return": -1.271,
+        "profit_factor": 0.6492,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 8,
+        "net_sharpe": 5.6893,
+        "winrate": 62.5,
+        "avg_return": 2.5368,
+        "profit_factor": 2.5184,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 82,
+      "total_bars": 14508
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 21,
+      "rsi_os": 35,
+      "rsi_ob": 65,
+      "bb_period": 20,
+      "bb_std": 1.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 37,
+        "net_sharpe": -3.4146,
+        "winrate": 51.35,
+        "avg_return": -1.6906,
+        "profit_factor": 0.504,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 9,
+        "net_sharpe": 5.6132,
+        "winrate": 66.67,
+        "avg_return": 2.1852,
+        "profit_factor": 2.5064,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 92,
+      "total_bars": 14508
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 7,
+      "rsi_os": 25,
+      "rsi_ob": 75,
+      "bb_period": 30,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 66,
+        "net_sharpe": -0.2678,
+        "winrate": 65.15,
+        "avg_return": -0.1325,
+        "profit_factor": 0.9466,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 19,
+        "net_sharpe": 5.5727,
+        "winrate": 73.68,
+        "avg_return": 1.2832,
+        "profit_factor": 2.9042,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 170,
+      "total_bars": 14490
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 10,
+      "rsi_os": 30,
+      "rsi_ob": 70,
+      "bb_period": 30,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 65,
+        "net_sharpe": -0.1687,
+        "winrate": 63.08,
+        "avg_return": -0.0825,
+        "profit_factor": 0.966,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 18,
+        "net_sharpe": 5.5105,
+        "winrate": 77.78,
+        "avg_return": 1.3441,
+        "profit_factor": 2.8721,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 166,
+      "total_bars": 14490
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 7,
+      "rsi_os": 20,
+      "rsi_ob": 80,
+      "bb_period": 10,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 40,
+        "net_sharpe": 0.5373,
+        "winrate": 60.0,
+        "avg_return": 0.2915,
+        "profit_factor": 1.1106,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 5,
+        "net_sharpe": 5.5045,
+        "winrate": 60.0,
+        "avg_return": 2.3039,
+        "profit_factor": 2.268,
+        "is_valid": true
+      },
+      "wf_efficiency": 10.2447,
+      "total_signals": 91,
+      "total_bars": 14508
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 10,
+      "rsi_os": 25,
+      "rsi_ob": 75,
+      "bb_period": 30,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 46,
+        "net_sharpe": -3.3552,
+        "winrate": 54.35,
+        "avg_return": -1.4605,
+        "profit_factor": 0.5631,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 11,
+        "net_sharpe": 5.472,
+        "winrate": 72.73,
+        "avg_return": 1.7005,
+        "profit_factor": 2.249,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 115,
+      "total_bars": 14508
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 21,
+      "rsi_os": 35,
+      "rsi_ob": 65,
+      "bb_period": 30,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 35,
+        "net_sharpe": -3.2992,
+        "winrate": 48.57,
+        "avg_return": -1.6312,
+        "profit_factor": 0.5126,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 8,
+        "net_sharpe": 5.4438,
+        "winrate": 75.0,
+        "avg_return": 2.133,
+        "profit_factor": 2.5498,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 86,
+      "total_bars": 14508
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 10,
+      "rsi_os": 30,
+      "rsi_ob": 70,
+      "bb_period": 20,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 66,
+        "net_sharpe": -1.106,
+        "winrate": 54.55,
+        "avg_return": -0.5266,
+        "profit_factor": 0.7946,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 17,
+        "net_sharpe": 5.4295,
+        "winrate": 70.59,
+        "avg_return": 1.37,
+        "profit_factor": 2.7747,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 166,
+      "total_bars": 14490
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 14,
+      "rsi_os": 30,
+      "rsi_ob": 70,
+      "bb_period": 20,
+      "bb_std": 1.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 45,
+        "net_sharpe": -1.9891,
+        "winrate": 55.56,
+        "avg_return": -0.9603,
+        "profit_factor": 0.6809,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 11,
+        "net_sharpe": 5.3463,
+        "winrate": 72.73,
+        "avg_return": 1.6656,
+        "profit_factor": 2.2026,
+        "is_valid": true
+      },
+      "wf_efficiency": 0.0,
+      "total_signals": 112,
+      "total_bars": 14508
+    }
+  ],
+  "pass_wf_40": [
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 7,
+      "rsi_os": 35,
+      "rsi_ob": 65,
+      "bb_period": 20,
+      "bb_std": 2.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 54,
+        "net_sharpe": 1.6011,
+        "winrate": 61.11,
+        "avg_return": 0.8445,
+        "profit_factor": 1.3989,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 9,
+        "net_sharpe": 10.6327,
+        "winrate": 77.78,
+        "avg_return": 1.3009,
+        "profit_factor": 5.5636,
+        "is_valid": true
+      },
+      "wf_efficiency": 6.6409,
+      "total_signals": 126,
+      "total_bars": 14490
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 10,
+      "rsi_os": 35,
+      "rsi_ob": 65,
+      "bb_period": 20,
+      "bb_std": 2.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 53,
+        "net_sharpe": 1.6533,
+        "winrate": 60.38,
+        "avg_return": 0.8873,
+        "profit_factor": 1.4114,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 8,
+        "net_sharpe": 6.6339,
+        "winrate": 62.5,
+        "avg_return": 1.0267,
+        "profit_factor": 2.9116,
+        "is_valid": true
+      },
+      "wf_efficiency": 4.0125,
+      "total_signals": 122,
+      "total_bars": 14490
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 10,
+      "rsi_os": 35,
+      "rsi_ob": 65,
+      "bb_period": 10,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 90,
+        "net_sharpe": 0.9853,
+        "winrate": 72.22,
+        "avg_return": 0.3882,
+        "profit_factor": 1.2056,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 22,
+        "net_sharpe": 6.3823,
+        "winrate": 68.18,
+        "avg_return": 1.1741,
+        "profit_factor": 2.7925,
+        "is_valid": true
+      },
+      "wf_efficiency": 6.4775,
+      "total_signals": 225,
+      "total_bars": 14508
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 14,
+      "rsi_os": 35,
+      "rsi_ob": 65,
+      "bb_period": 20,
+      "bb_std": 2.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 37,
+        "net_sharpe": 1.4355,
+        "winrate": 59.46,
+        "avg_return": 0.9268,
+        "profit_factor": 1.3083,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 6,
+        "net_sharpe": 6.3402,
+        "winrate": 66.67,
+        "avg_return": 1.2556,
+        "profit_factor": 2.7796,
+        "is_valid": true
+      },
+      "wf_efficiency": 4.4167,
+      "total_signals": 86,
+      "total_bars": 14490
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 7,
+      "rsi_os": 30,
+      "rsi_ob": 70,
+      "bb_period": 20,
+      "bb_std": 2.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 54,
+        "net_sharpe": 1.6011,
+        "winrate": 61.11,
+        "avg_return": 0.8445,
+        "profit_factor": 1.3989,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 8,
+        "net_sharpe": 6.2617,
+        "winrate": 62.5,
+        "avg_return": 0.872,
+        "profit_factor": 2.6236,
+        "is_valid": true
+      },
+      "wf_efficiency": 3.9109,
+      "total_signals": 124,
+      "total_bars": 14490
+    },
+    {
+      "pair": "GBPUSD",
+      "rsi_period": 10,
+      "rsi_os": 30,
+      "rsi_ob": 70,
+      "bb_period": 20,
+      "bb_std": 2.5,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 43,
+        "net_sharpe": 1.9011,
+        "winrate": 60.47,
+        "avg_return": 1.1688,
+        "profit_factor": 1.4455,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 6,
+        "net_sharpe": 6.0464,
+        "winrate": 66.67,
+        "avg_return": 1.3909,
+        "profit_factor": 2.4199,
+        "is_valid": true
+      },
+      "wf_efficiency": 3.1805,
+      "total_signals": 98,
+      "total_bars": 14490
+    },
+    {
+      "pair": "AUDUSD",
+      "rsi_period": 7,
+      "rsi_os": 20,
+      "rsi_ob": 80,
+      "bb_period": 10,
+      "bb_std": 2.0,
+      "cost_rt_bps": 3.4,
+      "is": {
+        "n_trades": 40,
+        "net_sharpe": 0.5373,
+        "winrate": 60.0,
+        "avg_return": 0.2915,
+        "profit_factor": 1.1106,
+        "is_valid": true
+      },
+      "oos": {
+        "n_trades": 5,
+        "net_sharpe": 5.5045,
+        "winrate": 60.0,
+        "avg_return": 2.3039,
+        "profit_factor": 2.268,
+        "is_valid": true
+      },
+      "wf_efficiency": 10.2447,
+      "total_signals": 91,
+      "total_bars": 14508
+    }
+  ],
+  "total_valid_combinations": 165
+}

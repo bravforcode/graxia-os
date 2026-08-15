@@ -92,3 +92,8 @@ class ExperimentRegistry:
     def check_budget(self, strategy_hash: str, budget: int = 12) -> bool:
         count = sum(1 for e in self._experiments.values() if e.strategy_snapshot_hash == strategy_hash)
         return count < budget
+
+    def clear(self):
+        """Reset registry (for testing)."""
+        self._experiments.clear()
+        self._trial_counts.clear()

@@ -13,6 +13,7 @@ import sys
 import time
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from graxia.packages.quant_os.shadow.broker_profile import BrokerProfile, validate_broker_match
 from graxia.packages.quant_os.shadow.canonical_tick_source import CanonicalTickBatch
@@ -37,9 +38,9 @@ logger = logging.getLogger(__name__)
 class MT5ReadOnly:
     """Read-only MT5 connector. No order_send, no execution API."""
 
-    def __init__(self, path: str | None = None):
+    def __init__(self, path: str | None = None) -> None:
         self._path = path
-        self._mt5 = None
+        self._mt5: Any = None
         self._connected = False
 
     def connect(self, timeout: int = 10000) -> bool:

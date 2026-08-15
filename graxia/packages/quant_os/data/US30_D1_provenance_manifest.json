@@ -1,0 +1,15 @@
+{
+  "source": "MT5 live terminal (Pepperstone-Demo), copy_rates_range D1",
+  "symbol": "US30",
+  "timeframe": "D1",
+  "start": "2005-01-01",
+  "end": "2026-07-29 00:00:00",
+  "rows": 2306,
+  "unique_dates": 2306,
+  "duplicate_bars": 0,
+  "min_year": 2017,
+  "generated_at": "2026-07-29T13:50:37.959530+00:00",
+  "script": "scripts/reexport_all_symbols_d1.py",
+  "backup": "US30_D1.csv.bak_20260729_205037",
+  "note": "Re-exported from MT5 for provenance-clean single-convention D1."
+}

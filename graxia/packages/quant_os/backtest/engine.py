@@ -11,8 +11,11 @@ Simulates strategy execution on historical data with:
 - Batch mode (C4): run multiple configs with shared indicators
 """
 
+import os
+from concurrent.futures import ProcessPoolExecutor
+from copy import deepcopy
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import ROUND_DOWN, Decimal
 from typing import Any
 from uuid import uuid4
@@ -75,8 +78,15 @@ except ImportError:
     _MARKET_IMPACT_AVAILABLE = False
 
 # Swap cost model
+from .data_loader import load_real_ticks
+from .dynamic_spread_model import UnmeasuredCostError
+
 try:
-    from ..core.risk.swap_cost import get_live_swap_rates, get_swap_cost_for_trade
+    from ..core.risk.swap_cost import (
+        get_live_swap_rates,
+        get_swap_cost_for_trade,
+        swap_cost_from_bps,
+    )
 
     _SWAP_COST_AVAILABLE = True
 except ImportError:
@@ -99,52 +109,29 @@ class InlineContractSpec:
 
     @classmethod
     def for_symbol(cls, symbol: str) -> "InlineContractSpec":
-        _FX = 100_000
-        _CRYPTO = 1
-        specs = {
-            "XAUUSD": cls(
-                trade_contract_size=Decimal("100"), trade_tick_size=Decimal("0.01"), trade_tick_value=Decimal("1.0")
-            ),
-            "EURUSD": cls(
-                trade_contract_size=Decimal(str(_FX)),
-                trade_tick_size=Decimal("0.0001"),
-                trade_tick_value=Decimal("10.0"),
-            ),
-            "GBPUSD": cls(
-                trade_contract_size=Decimal(str(_FX)),
-                trade_tick_size=Decimal("0.0001"),
-                trade_tick_value=Decimal("10.0"),
-            ),
-            "USDJPY": cls(
-                trade_contract_size=Decimal(str(_FX)), trade_tick_size=Decimal("0.01"), trade_tick_value=Decimal("6.67")
-            ),
-            "AUDUSD": cls(
-                trade_contract_size=Decimal(str(_FX)),
-                trade_tick_size=Decimal("0.0001"),
-                trade_tick_value=Decimal("10.0"),
-            ),
-            "USDCAD": cls(
-                trade_contract_size=Decimal(str(_FX)),
-                trade_tick_size=Decimal("0.0001"),
-                trade_tick_value=Decimal("7.50"),
-            ),
-            "USDCHF": cls(
-                trade_contract_size=Decimal(str(_FX)),
-                trade_tick_size=Decimal("0.0001"),
-                trade_tick_value=Decimal("11.00"),
-            ),
-            "NZDUSD": cls(
-                trade_contract_size=Decimal(str(_FX)),
-                trade_tick_size=Decimal("0.0001"),
-                trade_tick_value=Decimal("10.0"),
-            ),
-            "BTCUSDT": cls(
-                trade_contract_size=Decimal(str(_CRYPTO)),
-                trade_tick_size=Decimal("0.01"),
-                trade_tick_value=Decimal("0.01"),
-            ),
-        }
-        return specs.get(symbol, cls())
+        """Look up the canonical contract spec (core/contract_specs.py).
+
+        Fail-closed (2026-07-28, F27 follow-up): a prior silent fallback to
+        the gold-shaped default for unmapped symbols (XAGUSD/NAS100/US30/
+        BTCUSD/USOIL) caused a false-positive backtest edge and inflated
+        Trial #2001's NAS100/US30 legs by 2-3 orders of magnitude. Raise
+        instead of guessing.
+        """
+        from ..core.contract_specs import get_spec
+
+        spec = get_spec(symbol)
+        if spec is None:
+            raise ValueError(
+                f"InlineContractSpec.for_symbol({symbol!r}): no contract spec mapped. "
+                "Add it to core/contract_specs.py before backtesting this symbol -- "
+                "do not silently default to another instrument's spec."
+            )
+        return cls(
+            symbol=symbol,
+            trade_contract_size=spec.contract_size,
+            trade_tick_size=spec.tick_size,
+            trade_tick_value=spec.tick_value,
+        )
 
 
 def _historical_size(
@@ -191,8 +178,17 @@ class BacktestConfig:
     """
 
     initial_capital: Decimal = Decimal("10000")
-    slippage_pips: float = 0.5
-    spread_pips: float = 2.0  # Configurable spread in pips
+    # P0.1 (2026-07-29): default is now None = "use measured per-symbol costs
+    # from config/cost_calibration.json". Setting either to a float restores the
+    # legacy pip-denominated behaviour as an EXPLICIT caller override.
+    #
+    # The old defaults (0.5 / 2.0) silently applied one instrument's cost to
+    # every instrument, scaled by that instrument's tick_size — see
+    # backtest/dynamic_spread_model.py module docstring.
+    slippage_pips: float | None = None
+    spread_pips: float | None = None
+    # When True, use the p95 spread instead of the median (P1 stress scenario).
+    cost_stress: bool = False
     commission_per_lot: Decimal = Decimal("3.5")
     max_positions: int = 5
     risk_per_trade_bps: int = 10
@@ -203,6 +199,7 @@ class BacktestConfig:
     enable_swap: bool = True
     cost_params: Any = None  # Optional[CostParams] from core.cost_model
     fill_timing: Any = None  # Optional[FillTimingConfig] for latency-based slippage
+    max_bars_open: int = 50  # TIME_STOP after N bars (0 = disabled)
 
 
 @dataclass
@@ -224,6 +221,8 @@ class BacktestPosition:
     execution_quality: str = ""
     signal_bar_index: int = -1
     contract_size: Decimal = Decimal("100")
+    tick_size: Decimal = Decimal("0.01")
+    tick_value: Decimal = Decimal("1.0")
 
 
 @dataclass
@@ -390,11 +389,23 @@ class BacktestEngine:
         results = engine.run()
     """
 
+    # Attributes assigned in more than one method. Declared here so mypy takes
+    # these as the definition rather than treating a later annotated assignment
+    # as a redefinition of the first bare one.
+    _mtf_cursor: Any
+    _precomputed_indicators: dict[str, Any] | None
+    _cached_bar_dicts: list[dict] | None
+    _risk_policy: Any
+    _shared_indicators: dict[str, Any] | None
+
     def __init__(self, config: BacktestConfig | None = None):
         self.config = config or BacktestConfig()
 
         # Execution simulator
         self._simulator = BacktestExecutionSimulator()
+
+        # Symbol — set via set_symbol() or load_data(); fallback "BACKTEST" for compat
+        self._symbol: str = "BACKTEST"
 
         # State
         self.balance = Decimal(str(self.config.initial_capital))
@@ -500,11 +511,9 @@ class BacktestEngine:
 
         # Reset state
         self._reset()
+        self._reset_strategy_class_state()
 
         close = self.ohlcv_data["close"]
-        high = self.ohlcv_data.get("high", close)
-        low = self.ohlcv_data.get("low", close)
-        open_price = self.ohlcv_data.get("open", close)
         volume = self.ohlcv_data.get("volume", [0] * len(close))
 
         total_bars = len(close)
@@ -520,10 +529,10 @@ class BacktestEngine:
 
         # --- P3 FIX: Hoist RiskPolicy creation (was per-bar instantiation) ---
         try:
-            from ..risk.risk_policy import RiskPolicy as _RP
+            from ..risk.risk_policy import RiskPolicy as _RiskPolicy
         except ImportError:
-            from risk.risk_policy import RiskPolicy as _RP
-        self._risk_policy = _RP()
+            from risk.risk_policy import RiskPolicy as _RiskPolicy  # type: ignore[no-redef]
+        self._risk_policy = _RiskPolicy()
 
         # --- P2 FIX: Pre-compute bar dicts once (was O(n × Decimal) per signal) ---
         self._cached_bar_dicts = [
@@ -542,16 +551,18 @@ class BacktestEngine:
             guard.advance()
             current_time = self.timestamps[i] if i < len(self.timestamps) else self._deterministic_timestamp(i)
 
-            # Current bar OHLCV
-            bar_open = Decimal(str(open_price[i]))
-            bar_high = Decimal(str(high[i]))
-            bar_low = Decimal(str(low[i]))
-            bar_close = Decimal(str(close[i]))
+            # ponytail: reuse prebuilt Decimal bar dicts (P2 fix) instead of
+            # rebuilding 4 Decimal(str()) per bar; money precision preserved.
+            _bd = self._cached_bar_dicts[i]
+            bar_open = _bd["open"]
+            bar_high = _bd["high"]
+            bar_low = _bd["low"]
+            bar_close = _bd["close"]
 
             # B1 — Publish BarEvent if event_bus is attached
             if event_bus is not None:
                 bar_event = BarEvent(
-                    symbol="BACKTEST",
+                    symbol=self._symbol,
                     timeframe="M15",
                     open=float(bar_open),
                     high=float(bar_high),
@@ -568,7 +579,9 @@ class BacktestEngine:
 
             # Risk halt checks (P0-5: enforce daily/weekly/drawdown limits in backtest)
             if self._check_risk_halt():
-                break  # Stop trading, close remaining positions
+                # Close remaining positions at current bar price (not last bar)
+                self._close_all_positions(float(bar_close), current_time)
+                break
 
             # 2. Read pre-computed indicators (sliced to current bar)
             if self._precomputed_indicators:
@@ -589,10 +602,10 @@ class BacktestEngine:
                 self.strategy._set_mtf_cursor(sliced)
 
             signal = self.strategy.generate_signal(
-                symbol="BACKTEST",
+                symbol=self._symbol,
                 ohlcv_data=bar_data,
                 indicators=indicators,
-                regime=self._get_regime_state(),  # Phase 4: Wire regime detection
+                regime=self._get_regime_state(),  # type: ignore[arg-type]  # Phase 4: Wire regime detection
                 current_time=current_time,
             )
 
@@ -650,7 +663,9 @@ class BacktestEngine:
                                     },
                                     Decimal(str(bar_close)),
                                 )
-                                self._close_position(pid, exit_price, current_time, CloseReason.MANUAL, Decimal("0"))
+                                self._close_position(
+                                    pid, exit_price, current_time, CloseReason.CIRCUIT_BREAKER, Decimal("0")
+                                )
                                 break
 
         # Close any remaining positions at last price
@@ -661,53 +676,50 @@ class BacktestEngine:
         return result
 
     @staticmethod
-    def run_batch(configs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def run_batch(configs: list[dict[str, Any]], max_workers: int | None = None) -> list[dict[str, Any]]:
         """
         Batch mode (C4): run multiple backtest configs sharing precomputed indicators.
 
-        Args:
-            configs: list of dicts, each with keys:
-                'engine_cfg': BacktestConfig (or None for defaults)
-                'strategy': Strategy instance
-                'ohlcv_data': dict with OHLCV arrays
-                'timestamps': list of datetimes (optional)
-                'event_bus': EventBus (optional)
-
-        Returns:
-            List of result dicts (one per config).
+        Independent configs run in parallel via ProcessPoolExecutor. Falls back to
+        sequential when any config carries an event_bus (events can't cross a process
+        boundary) or when pickling/parallelism is unavailable.
         """
-        # Precompute indicators once for identical data across batch items
-        indicator_cache: dict[int, dict[str, Any]] = {}
+        if not configs:
+            return []
 
-        results = []
+        # Precompute indicators once per unique dataset (preserve C4 optimization)
+        indicator_cache: dict[tuple[int, int], dict[str, Any]] = {}
+        prepared: list[tuple[dict[str, Any], dict[str, Any]]] = []
+        has_bus = False
         for cfg in configs:
-            engine_cfg = cfg.get("engine_cfg")
-            strategy = cfg["strategy"]
             ohlcv_data = cfg["ohlcv_data"]
-            timestamps = cfg.get("timestamps")
-            event_bus = cfg.get("event_bus")
-
-            # Cache key by data identity (id of close list + length)
             data_key = (id(ohlcv_data.get("close", [])), len(ohlcv_data.get("close", [])))
             if data_key not in indicator_cache:
-                engine = BacktestEngine(config=engine_cfg)
-                engine.set_strategy(strategy)
-                engine.load_data(ohlcv_data, timestamps)
-                # Compute full indicator set once
+                engine = BacktestEngine(config=cfg.get("engine_cfg"))
+                engine.set_strategy(cfg["strategy"])
+                engine.load_data(ohlcv_data, cfg.get("timestamps"))
                 indicator_cache[data_key] = engine._calculate_indicators(len(ohlcv_data["close"]) - 1)
+            prepared.append((cfg, indicator_cache[data_key]))
+            if cfg.get("event_bus") is not None:
+                has_bus = True
 
-            # Shared indicators
-            shared_indicators = indicator_cache[data_key]
+        # event_bus can't cross process boundary; <2 configs gains nothing
+        if has_bus or len(prepared) < 2:
+            return [_run_batch_worker(c, ind) for c, ind in prepared]
 
-            # Create engine and run
-            engine = BacktestEngine(config=engine_cfg)
-            engine.set_strategy(strategy)
-            engine.load_data(ohlcv_data, timestamps)
-            engine._shared_indicators = shared_indicators
-            result = engine.run(event_bus=event_bus)
-            results.append(result)
-
-        return results
+        if max_workers is None:
+            max_workers = min(len(prepared), (os.cpu_count() or 1))
+        try:
+            with ProcessPoolExecutor(max_workers=max_workers) as ex:
+                return list(
+                    ex.map(
+                        _run_batch_worker,
+                        (c for c, _ in prepared),
+                        (i for _, i in prepared),
+                    )
+                )
+        except Exception:  # pragma: no cover - env without working multiprocessing
+            return [_run_batch_worker(c, ind) for c, ind in prepared]
 
     def get_overfitting_report(self) -> dict | None:
         """Return the last overfitting report from run(), or None if not yet run."""
@@ -727,8 +739,8 @@ class BacktestEngine:
         self._shared_indicators = None
         self._day_start_balance = Decimal(str(self.config.initial_capital))
         # P1 perf: pre-computed caches cleared each run
-        self._precomputed_indicators: dict[str, Any] | None = None
-        self._cached_bar_dicts: list[dict] | None = None
+        self._precomputed_indicators = None
+        self._cached_bar_dicts = None
         self._risk_policy = None
         # Phase 4: Initialize regime, margin, P&L trackers
         if _PHASE4_WIRING_AVAILABLE:
@@ -736,11 +748,60 @@ class BacktestEngine:
             self._margin_simulator = MarginSimulator()
             self._pnl_tracker = RealTimePnLTracker(initial_equity=Decimal(str(self.config.initial_capital)))
 
+    def _reset_strategy_class_state(self) -> None:
+        """Reset non-empty class-level list/dict/tuple/set attrs on the
+        strategy's class before every run.
+
+        LookaheadGuard.get_slice() (called every bar below, before
+        strategy.generate_signal()) only truncates the ohlcv_data/indicators
+        *arguments* it hands the strategy -- it has no way to stop a
+        strategy that independently holds a reference to the full dataset
+        via a class-level (not instance-level) mutable container, obtained
+        before this engine sliced anything. A strategy that stashes
+        `self.__class__._full_data_ref = ohlcv_data` before run() starts can
+        read arbitrary future bars through that reference regardless of what
+        get_slice() truncates. This closes that specific vector -- and the
+        general footgun of a class-level mutable cache surviving across
+        runs/instances.
+
+        A blanket wipe-to-empty (the original version of this method) is
+        indiscriminate: it also destroys legitimate static config authored
+        directly in a strategy's class body -- e.g. mlmr.MLMeanReversion's
+        SYMBOL_PARAMS dict of tuned per-symbol thresholds, or a strategy's
+        `universe` tuple -- silently degrading every such strategy to
+        generic fallback values on every run, with no error raised. Instead,
+        each non-empty container is restored to the pristine snapshot
+        `Strategy.__init_subclass__` captured at class-definition time
+        (before any instance existed or any external code could run); an
+        attribute absent from that snapshot (added onto the class only
+        after import, like the cheat vector) is still wiped to empty. It
+        does NOT and cannot stop a strategy that re-reads external state
+        fresh inside generate_signal() on every call (a file, a live
+        cache); that remains architecturally unblockable in-process and
+        needs a code-review-level check instead.
+        See reports/lookahead_guard_reachability_audit_2026_07_30.md.
+        """
+        strategy_cls = type(self.strategy)
+        pristine = getattr(strategy_cls, "_pristine_class_state", {})
+        for name, value in list(vars(strategy_cls).items()):
+            if not isinstance(value, list | dict | tuple | set) or not value:
+                continue
+            if name in pristine:
+                setattr(strategy_cls, name, deepcopy(pristine[name]))
+            elif isinstance(value, list):
+                setattr(strategy_cls, name, [])
+            elif isinstance(value, dict):
+                setattr(strategy_cls, name, {})
+            elif isinstance(value, tuple):
+                setattr(strategy_cls, name, ())
+            elif isinstance(value, set):
+                setattr(strategy_cls, name, set())
+
     def _calculate_indicators(self, up_to_index: int) -> dict[str, Any]:
         """Calculate indicators using Numba JIT (B3) or pandas_ta fallback."""
         # B3 — If batch mode provided precomputed indicators, use them directly
-        if getattr(self, "_shared_indicators", None) is not None:
-            shared = self._shared_indicators
+        shared = getattr(self, "_shared_indicators", None)
+        if shared is not None:
             return {
                 k: v[: up_to_index + 1] if isinstance(v, list) else v for k, v in shared.items() if k not in ("open",)
             }
@@ -818,7 +879,7 @@ class BacktestEngine:
             df["atr_14"] = ta.atr(df["high"], df["low"], df["close"], length=14)
 
             # Bollinger Bands
-            bb = ta.bbands(df["close"], length=20, std=2)
+            bb = ta.bbands(df["close"], length=20, std=2)  # type: ignore[arg-type]
             if bb is not None and len(bb.columns) >= 3:
                 df["bb_upper"] = bb.iloc[:, 2]  # Upper band
                 df["bb_lower"] = bb.iloc[:, 0]  # Lower band
@@ -879,27 +940,25 @@ class BacktestEngine:
 
         # Historical sizing — deterministic, no MT5
         entry_price = signal.entry_price or bar_close
+        contract_spec = InlineContractSpec.for_symbol(signal.symbol)
         volume = _historical_size(
             equity=self.equity,
             risk_per_trade_bps=self.config.risk_per_trade_bps,
             entry_price=entry_price,
             stop_loss=signal.stop_loss,
-            contract=InlineContractSpec.for_symbol(signal.symbol),
+            contract=contract_spec,
         )
         if regime_mult != 1.0:
             volume = volume * Decimal(str(regime_mult))
         if volume <= 0:
             return
 
-        # Build snapshot from current bar — dynamic spread based on time of day
-        try:
-            from backtest.dynamic_spread_model import SpreadConfig
+        pip_size = contract_spec.trade_tick_size  # 0.0001 for 4-decimal FX, 0.01 for JPY/gold
 
-            _spread_config = SpreadConfig()
-            bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
-            spread = Decimal("0.01") * _spread_config.get_spread(bar_hour)
-        except Exception:
-            spread = Decimal("0.01") * Decimal(str(self.config.spread_pips))
+        # Build snapshot from current bar — dynamic spread based on time of day.
+        # spread_pips_override ensures BacktestConfig.spread_pips actually
+        # affects P&L instead of being dead code.
+        spread, _ = self._cost_offsets(signal.symbol, bar_close, pip_size)
 
         # Add latency-based slippage from FillTimingConfig
         latency_slippage = Decimal("0")
@@ -908,7 +967,7 @@ class BacktestEngine:
                 atr = float(bar_high - bar_low)
                 latency_ms = self.config.fill_timing.estimate_latency_ms(atr)
                 latency_slippage = self.config.fill_timing.estimate_slippage_pips(latency_ms)
-                latency_slippage = Decimal("0.01") * latency_slippage
+                latency_slippage = pip_size * latency_slippage
             except Exception:
                 latency_slippage = Decimal("0")
 
@@ -947,8 +1006,11 @@ class BacktestEngine:
             symbol=signal.symbol,
         )
 
-        contract_spec = ContractSpec(
-            contract_size=InlineContractSpec.for_symbol(signal.symbol).trade_contract_size,
+        _spec_for_costs = InlineContractSpec.for_symbol(signal.symbol)
+        exec_contract_spec = ContractSpec(
+            # tick_value/tick_size (not raw trade_contract_size) so non-USD-quote
+            # pairs (USDJPY/USDCAD/USDCHF) get currency-converted cost math.
+            contract_size=_spec_for_costs.trade_tick_value / _spec_for_costs.trade_tick_size,
             commission_per_lot=self.config.commission_per_lot,
             spread_points=spread,
         )
@@ -972,7 +1034,7 @@ class BacktestEngine:
             snapshot,
             self._bar_dicts(),
             bar_index,
-            contract_spec=contract_spec,
+            contract_spec=exec_contract_spec,
         )
 
         if result.entry_price <= 0 or volume <= 0:
@@ -997,6 +1059,8 @@ class BacktestEngine:
             execution_quality=result.execution_quality.value,
             signal_bar_index=bar_index,
             contract_size=InlineContractSpec.for_symbol(signal.symbol).trade_contract_size,
+            tick_size=InlineContractSpec.for_symbol(signal.symbol).trade_tick_size,
+            tick_value=InlineContractSpec.for_symbol(signal.symbol).trade_tick_value,
         )
         self.balance -= result.commission
 
@@ -1012,15 +1076,12 @@ class BacktestEngine:
         if not self.positions:
             return
 
-        # Dynamic spread based on time of day
-        try:
-            from backtest.dynamic_spread_model import SpreadConfig
-
-            _spread_config = SpreadConfig()
-            bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
-            spread = Decimal("0.01") * _spread_config.get_spread(bar_hour)
-        except Exception:
-            spread = Decimal("0.01") * Decimal(str(self.config.spread_pips))
+        # Measured per-symbol cost, keyed on the first open position's symbol.
+        first_pos = next(iter(self.positions.values()), None)
+        if first_pos is None:
+            return
+        pip_size = first_pos.tick_size
+        spread, _ = self._cost_offsets(first_pos.symbol, bar_close, pip_size)
         bid, ask = estimate_bid_ask_from_bar(Decimal("0"), bar_high, bar_low, bar_close, spread)
         snapshot = MarketSnapshot(
             bid=bid,
@@ -1055,14 +1116,16 @@ class BacktestEngine:
             snapshot,
             bar_high,
             bar_low,
+            max_bars_open=self.config.max_bars_open,
             current_bar_index=bar_index,
         )
 
         for event in events:
             pos_id = event.trade_id
-            pos = pos_map.get(pos_id)
-            if not pos:
+            pos_opt = pos_map.get(pos_id)
+            if not pos_opt:
                 continue
+            pos = pos_opt
 
             if event.event_type.value == "STOP_LOSS":
                 reason = CloseReason.STOP_LOSS
@@ -1071,7 +1134,7 @@ class BacktestEngine:
             elif event.event_type.value == "AMBIGUOUS":
                 reason = CloseReason.AMBIGUOUS
             elif event.event_type.value == "TIME_STOP":
-                reason = CloseReason.MANUAL
+                reason = CloseReason.TIME_STOP
             else:
                 continue
 
@@ -1079,19 +1142,100 @@ class BacktestEngine:
                 exit_price = event.exit_price
                 exit_slip = Decimal("0")
             else:
-                try:
-                    from backtest.dynamic_spread_model import SpreadConfig
-
-                    _spread_config = SpreadConfig()
-                    bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
-                    atr = float(bar_high - bar_low)
-                    exit_slippage = Decimal("0.01") * _spread_config.get_slippage(bar_hour, atr=atr)
-                except Exception:
-                    exit_slippage = Decimal(str(self.config.slippage_pips)) * Decimal("0.01")
+                _, exit_slippage = self._cost_offsets(pos.symbol, bar_close, pos.tick_size)
                 exec_side = FillSide.BUY if pos.side == PositionType.LONG else FillSide.SELL
                 exit_price, exit_slip = fill_simulate_exit(exec_side, bid, ask, exit_slippage)
 
             self._close_position(pos_id, exit_price, current_time, reason, exit_slip)
+
+    def _cost_offsets(
+        self,
+        symbol: str,
+        price: Decimal,
+        tick_size: Decimal,
+        ts: datetime | None = None,
+    ) -> tuple[Decimal, Decimal]:
+        """Return (spread, slippage) as absolute price offsets, one side each.
+
+        Single source of truth for cost lookup — replaces six duplicated
+        try/except blocks that each instantiated an XAUUSD-shaped SpreadConfig
+        for whatever symbol happened to be passed, then swallowed the resulting
+        error in a bare `except`.
+
+        Two paths:
+          * explicit override — `config.spread_pips` / `config.slippage_pips`
+            set to a float. Legacy pip-denominated behaviour, caller's choice.
+          * measured (default) — per-symbol bps from config/cost_calibration.json.
+          * real ticks (P0-B1) — when `ts` is given AND tick data exists for
+            that instant, the measured bid/ask spread replaces the calibrated
+            median (falls back to the calibrated value otherwise).
+
+        Raises UnmeasuredCostError for a symbol with no measured data. That is
+        deliberate: substituting another instrument's costs is the defect this
+        method exists to prevent. Callers must NOT wrap this in a bare except.
+        """
+        from backtest.dynamic_spread_model import SymbolCostProfile, bps_to_price
+
+        spread_override = self.config.spread_pips
+        slippage_override = self.config.slippage_pips
+
+        if spread_override is not None and slippage_override is not None:
+            # Both sides explicitly overridden — no measured profile needed.
+            return (
+                tick_size * Decimal(str(spread_override)),
+                tick_size * Decimal(str(slippage_override)),
+            )
+
+        profile = SymbolCostProfile.for_symbol(symbol)
+
+        if spread_override is not None:
+            spread = tick_size * Decimal(str(spread_override))
+        else:
+            real_bps = self._real_spread_bps(symbol, ts) if ts is not None else None
+            if real_bps is not None:
+                spread = bps_to_price(Decimal(str(real_bps)), price)
+            else:
+                spread = bps_to_price(profile.get_spread_bps(stress=self.config.cost_stress), price)
+
+        if slippage_override is not None:
+            slippage = tick_size * Decimal(str(slippage_override))
+        else:
+            # No volatility scaling: the engine has no measured volatility
+            # reference to scale against, and inventing thresholds here is what
+            # produced the original defect. `cost_stress=True` covers the wide
+            # case via the measured p95 spread.
+            slippage = bps_to_price(profile.get_slippage_bps(), price)
+
+        return spread, slippage
+
+    def _real_spread_bps(self, symbol: str, ts: datetime) -> float | None:
+        """Real bid/ask spread bps when tick data exists; None → config fallback."""
+        try:
+            ticks = load_real_ticks(symbol, ts.date().isoformat(), (ts + timedelta(seconds=1)).isoformat())
+        except Exception:
+            return None
+        if ticks is None or ticks.empty:
+            return None
+        row = ticks.iloc[0]
+        mid = (row["bid"] + row["ask"]) / 2.0
+        return None if mid <= 0 else (row["ask"] - row["bid"]) / mid * 10_000.0
+
+    @staticmethod
+    def _pnl_from_ticks(
+        price_diff: Decimal,
+        quantity: Decimal,
+        tick_size: Decimal,
+        tick_value: Decimal,
+    ) -> Decimal:
+        """Convert a price difference to PnL using tick_size/tick_value.
+
+        This correctly handles JPY pairs where contract_size (100k) is in
+        quote-currency units but PnL must be in account-currency (USD).
+        For USDJPY: tick_size=0.01, tick_value=6.67 → 1 pip = $6.67/lot.
+        """
+        if tick_size <= 0:
+            return Decimal("0")
+        return (price_diff / tick_size) * tick_value * quantity
 
     def _close_position(
         self,
@@ -1106,12 +1250,13 @@ class BacktestEngine:
         if not pos:
             return
 
-        # Calculate P&L — quantity is in LOTS, convert to UNITS via contract_size
-        contract_size = getattr(pos, "contract_size", Decimal("100"))
+        # Calculate P&L via tick_size/tick_value (correct for JPY pairs)
+        tick_size = getattr(pos, "tick_size", Decimal("0.01"))
+        tick_value = getattr(pos, "tick_value", Decimal("1.0"))
         if pos.side == PositionType.LONG:
-            pnl = (exit_price - pos.entry_price) * pos.quantity * contract_size
+            pnl = self._pnl_from_ticks(exit_price - pos.entry_price, pos.quantity, tick_size, tick_value)
         else:
-            pnl = (pos.entry_price - exit_price) * pos.quantity * contract_size
+            pnl = self._pnl_from_ticks(pos.entry_price - exit_price, pos.quantity, tick_size, tick_value)
 
         # Commission on exit — quantity is already in lots
         exit_commission = pos.quantity * Decimal(str(self.config.commission_per_lot))
@@ -1122,6 +1267,8 @@ class BacktestEngine:
             symbol=pos.symbol,
             side=pos.side,
             quantity=pos.quantity,
+            price=exit_price,
+            contract_size=getattr(pos, "contract_size", Decimal("1")),
             entry_time=pos.entry_time
             or self._deterministic_timestamp(pos.signal_bar_index if hasattr(pos, "signal_bar_index") else 0),
             exit_time=exit_time,
@@ -1131,6 +1278,7 @@ class BacktestEngine:
         pnl += swap_cost
         self.balance += pnl
 
+        contract_size = getattr(pos, "contract_size", Decimal("100"))
         notional = pos.entry_price * pos.quantity * contract_size
         return_pct = (pnl / notional * 100) if notional > 0 else Decimal("0")
 
@@ -1166,17 +1314,12 @@ class BacktestEngine:
     def _close_all_positions(self, last_price: float, current_time: datetime) -> None:
         """Close all remaining positions at last price with slippage."""
         last_dec = Decimal(str(last_price))
-        try:
-            from backtest.dynamic_spread_model import SpreadConfig as _SpreadCfg
-
-            _spread_config = _SpreadCfg()
-            bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
-            exit_slippage = Decimal("0.01") * _spread_config.get_slippage(bar_hour)
-        except Exception:
-            exit_slippage = Decimal(str(self.config.slippage_pips)) * Decimal("0.01")
         for pos_id in list(self.positions.keys()):
             pos = self.positions.get(pos_id)
-            if pos and pos.side == PositionType.LONG:
+            if not pos:
+                continue
+            _, exit_slippage = self._cost_offsets(pos.symbol, last_dec, pos.tick_size)
+            if pos.side == PositionType.LONG:
                 # Selling: apply slippage (worse price)
                 exit_price = last_dec - exit_slippage
             elif pos:
@@ -1184,7 +1327,7 @@ class BacktestEngine:
                 exit_price = last_dec + exit_slippage
             else:
                 exit_price = last_dec
-            self._close_position(pos_id, exit_price, current_time, CloseReason.MANUAL, exit_slippage)
+            self._close_position(pos_id, exit_price, current_time, CloseReason.EXPIRED, exit_slippage)
 
     def _calculate_swap_cost(
         self,
@@ -1193,6 +1336,8 @@ class BacktestEngine:
         quantity: Decimal,
         entry_time: datetime,
         exit_time: datetime,
+        price: Decimal = Decimal("0"),
+        contract_size: Decimal = Decimal("1"),
     ) -> Decimal:
         """
         Calculate swap cost for a position held across rollover.
@@ -1203,19 +1348,36 @@ class BacktestEngine:
             return Decimal("0")
 
         try:
-            # Get live swap rates (or use default XAUUSD rates)
+            # Get live swap rates — fail loudly if unavailable (no silent XAUUSD defaults)
             swap_rates = get_live_swap_rates(symbol)
             if not swap_rates:
-                # Default XAUUSD swap rates for Pepperstone Razor
-                swap_rates = {
-                    "swap_long": -28.5,
-                    "swap_short": 5.2,
-                    "swap_mode": 0,
-                    "swap_rollover3days": 3,  # Wednesday
-                    "point": 0.01,
-                    "contract_size": 100.0,
-                    "currency_profit": "USD",
-                }
+                # No MT5 terminal (every offline backtest). Fall back to the
+                # MEASURED per-asset daily swap in config/cost_calibration.json
+                # rather than to zero: charging no swap understates the cost of
+                # any overnight position, which is the same class of error as
+                # the hardcoded XAUUSD rates this replaced.
+                from backtest.dynamic_spread_model import SymbolCostProfile
+
+                profile = SymbolCostProfile.for_symbol(symbol)
+                if profile.swap_long_bps is None or profile.swap_short_bps is None:
+                    raise UnmeasuredCostError(
+                        f"No swap data for '{symbol}': MT5 is unavailable and "
+                        f"cost_calibration.json has no swap_long_bps/swap_short_bps. "
+                        f"Measure it or set BacktestConfig.enable_swap=False explicitly."
+                    )
+                notional = float(quantity) * float(contract_size) * float(price)
+                return Decimal(
+                    str(
+                        swap_cost_from_bps(
+                            entry_time=entry_time,
+                            exit_time=exit_time,
+                            side="BUY" if side == PositionType.LONG else "SELL",
+                            notional=notional,
+                            swap_long_bps=float(profile.swap_long_bps),
+                            swap_short_bps=float(profile.swap_short_bps),
+                        )
+                    )
+                )
 
             # Convert position side to string
             side_str = "BUY" if side == PositionType.LONG else "SELL"
@@ -1237,8 +1399,13 @@ class BacktestEngine:
             )
 
             return Decimal(str(swap_cost))
+        except UnmeasuredCostError:
+            # Never silently zero a missing cost input -- that is the defect
+            # this whole change set exists to remove.
+            raise
         except Exception:
-            # If swap calculation fails, return 0
+            # Any other failure (bad timestamps, odd broker payload) is not a
+            # cost-integrity problem; keep the previous tolerant behaviour.
             return Decimal("0")
 
     def _check_risk_halt(self) -> bool:
@@ -1249,7 +1416,7 @@ class BacktestEngine:
             try:
                 from ..risk.risk_policy import RiskPolicy
             except ImportError:
-                from risk.risk_policy import RiskPolicy
+                from risk.risk_policy import RiskPolicy  # type: ignore[no-redef]
             policy = RiskPolicy()
 
         # Max drawdown check
@@ -1260,10 +1427,7 @@ class BacktestEngine:
 
         # Daily loss check
         daily_loss = self.balance - self._day_start_balance
-        if daily_loss < 0 and abs(daily_loss) / self._day_start_balance >= policy.max_daily_loss_fraction:
-            return True
-
-        return False
+        return daily_loss < 0 and abs(daily_loss) / self._day_start_balance >= policy.max_daily_loss_fraction
 
     def _log_critical_incident(self, incident_type: str, signal=None):
         """Log critical incident. No silent fallback."""
@@ -1290,25 +1454,22 @@ class BacktestEngine:
         """Calculate unrealized P&L across all open positions."""
         unrealized = 0.0
         current = Decimal(str(current_price))
-        try:
-            from backtest.dynamic_spread_model import SpreadConfig as _SpreadCfg
-
-            _spread_config = _SpreadCfg()
-            bar_hour = 12  # Default for equity calc
-            closing_spread = Decimal("0.01") * _spread_config.get_spread(bar_hour)
-        except Exception:
-            closing_spread = Decimal(str(self.config.spread_pips)) * Decimal("0.01")
-        closing_cost = closing_spread * Decimal("0.5")
-        closing_slip = Decimal("0.01") * Decimal(str(self.config.slippage_pips))
         for pos in self.positions.values():
-            contract_size = getattr(pos, "contract_size", Decimal("100"))
+            tick_size = getattr(pos, "tick_size", Decimal("0.01"))
+            tick_value = getattr(pos, "tick_value", Decimal("1.0"))
+            closing_spread, closing_slip = self._cost_offsets(pos.symbol, current, tick_size)
+            closing_cost = closing_spread * Decimal("0.5")
             if pos.side == PositionType.LONG:
                 unrealized += float(
-                    (current - closing_cost - closing_slip - pos.entry_price) * pos.quantity * contract_size
+                    self._pnl_from_ticks(
+                        current - closing_cost - closing_slip - pos.entry_price, pos.quantity, tick_size, tick_value
+                    )
                 )
             else:
                 unrealized += float(
-                    (pos.entry_price - current - closing_cost - closing_slip) * pos.quantity * contract_size
+                    self._pnl_from_ticks(
+                        pos.entry_price - current - closing_cost - closing_slip, pos.quantity, tick_size, tick_value
+                    )
                 )
         return unrealized
 
@@ -1340,25 +1501,22 @@ class BacktestEngine:
         """Update equity curve point"""
         # Calculate unrealized P&L — use dynamic spread consistent with execution
         unrealized = Decimal("0")
-        try:
-            from backtest.dynamic_spread_model import SpreadConfig as _SpreadCfg
-
-            _spread_config = _SpreadCfg()
-            bar_hour = current_time.hour if hasattr(current_time, "hour") else 12
-            closing_spread = Decimal("0.01") * _spread_config.get_spread(bar_hour)
-        except Exception:
-            closing_spread = Decimal(str(self.config.spread_pips)) * Decimal("0.01")
-        closing_cost = closing_spread * Decimal("0.5")  # half-spread to close
-        closing_slip = Decimal("0.01") * Decimal(str(self.config.slippage_pips))
         for pos in self.positions.values():
             current = Decimal(str(current_price))
-            contract_size = getattr(pos, "contract_size", Decimal("100"))
+            tick_size = getattr(pos, "tick_size", Decimal("0.01"))
+            tick_value = getattr(pos, "tick_value", Decimal("1.0"))
+            closing_spread, closing_slip = self._cost_offsets(pos.symbol, current, tick_size)
+            closing_cost = closing_spread * Decimal("0.5")  # half-spread to close
             if pos.side == PositionType.LONG:
                 # Close = sell at bid - slippage (worse than mid)
-                unrealized += (current - closing_cost - closing_slip - pos.entry_price) * pos.quantity * contract_size
+                unrealized += self._pnl_from_ticks(
+                    current - closing_cost - closing_slip - pos.entry_price, pos.quantity, tick_size, tick_value
+                )
             else:
                 # Close = buy at ask + slippage (worse than mid)
-                unrealized += (pos.entry_price - current - closing_cost - closing_slip) * pos.quantity * contract_size
+                unrealized += self._pnl_from_ticks(
+                    pos.entry_price - current - closing_cost - closing_slip, pos.quantity, tick_size, tick_value
+                )
 
         self.equity = self.balance + unrealized
 
@@ -1386,7 +1544,7 @@ class BacktestEngine:
 
         metrics = calculate_metrics(
             trades=self.trades,
-            initial_capital=self.config.initial_capital,
+            initial_capital=float(self.config.initial_capital),
             equity_curve=self.equity_curve,
         )
 
@@ -1491,3 +1649,12 @@ class BacktestEngine:
                 result["overfitting"] = {"error": str(e), "score": 0, "recommendation": "UNKNOWN"}
 
         return result
+
+
+def _run_batch_worker(cfg: dict[str, Any], shared_indicators: dict[str, Any]) -> dict[str, Any]:
+    """ponytail: process-worker entry; builds engine, reuses precomputed indicators."""
+    engine = BacktestEngine(config=cfg.get("engine_cfg"))
+    engine.set_strategy(cfg["strategy"])
+    engine.load_data(cfg["ohlcv_data"], cfg.get("timestamps"))
+    engine._shared_indicators = shared_indicators
+    return engine.run(event_bus=cfg.get("event_bus"))

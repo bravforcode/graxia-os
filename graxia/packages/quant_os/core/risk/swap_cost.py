@@ -13,7 +13,7 @@ swap_mode enum (from MT5):
 
 from __future__ import annotations
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -29,7 +29,7 @@ def get_live_swap_rates(symbol: str = "XAUUSD") -> dict[str, Any]:
     Returns empty dict if MT5 is unavailable.
     """
     try:
-        import MetaTrader5 as mt5
+        import MetaTrader5 as mt5  # noqa: N813
     except ImportError:
         return {}
 
@@ -146,6 +146,7 @@ def get_swap_cost_for_trade(
     current = entry_utc.replace(hour=rollover_hour, minute=0, second=0, microsecond=0)
     if current <= entry_utc:
         from datetime import timedelta
+
         current += timedelta(days=1)
 
     while current < exit_utc:
@@ -153,6 +154,7 @@ def get_swap_cost_for_trade(
         if current.weekday() == triple_swap_weekday:
             triple_count += 1
         from datetime import timedelta
+
         current += timedelta(days=1)
 
     effective_nights = (nights_held - triple_count) + (triple_count * 3)
@@ -165,3 +167,55 @@ def get_swap_cost_for_trade(
         swap_rates=swap_rates,
         apply_triple_multiplier=False,  # Already accounted for in effective_nights
     )
+
+
+def count_rollover_nights(
+    entry_time: datetime,
+    exit_time: datetime,
+    triple_swap_weekday: int,
+) -> int:
+    """Effective swap charges between entry and exit.
+
+    Counts 21:00 UTC (5pm NY) rollovers, weighting the configured triple-swap
+    weekday as three. Extracted from get_swap_cost_for_trade so the bps-based
+    path can reuse exactly the same accrual rule.
+    """
+    from datetime import timedelta
+
+    entry_utc = entry_time.astimezone(UTC) if entry_time.tzinfo else entry_time.replace(tzinfo=UTC)
+    exit_utc = exit_time.astimezone(UTC) if exit_time.tzinfo else exit_time.replace(tzinfo=UTC)
+
+    nights_held = 0
+    triple_count = 0
+    current = entry_utc.replace(hour=21, minute=0, second=0, microsecond=0)
+    if current <= entry_utc:
+        current += timedelta(days=1)
+    while current < exit_utc:
+        nights_held += 1
+        if current.weekday() == triple_swap_weekday:
+            triple_count += 1
+        current += timedelta(days=1)
+    return (nights_held - triple_count) + (triple_count * 3)
+
+
+def swap_cost_from_bps(
+    entry_time: datetime,
+    exit_time: datetime,
+    side: str,
+    notional: float,
+    swap_long_bps: float,
+    swap_short_bps: float,
+    triple_swap_weekday: int = 2,
+) -> float:
+    """Swap from measured per-asset daily bps of notional. Negative = cost.
+
+    Used when the MT5 terminal is unavailable (every offline backtest).
+    Previously that path silently charged zero swap, which understates the
+    cost of any position held overnight -- the opposite failure mode to the
+    hardcoded XAUUSD rates it replaced, but a failure mode all the same.
+    """
+    rate_bps = swap_long_bps if side.upper() == "BUY" else swap_short_bps
+    nights = count_rollover_nights(entry_time, exit_time, triple_swap_weekday)
+    if nights <= 0 or rate_bps == 0.0:
+        return 0.0
+    return float(notional) * float(rate_bps) / 10000.0 * nights

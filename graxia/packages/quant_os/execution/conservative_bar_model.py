@@ -8,16 +8,18 @@ Assumptions:
 - Spread is estimated as (ask - bid) from the bar
 - SL/TP triggers use the conservative (adverse) assumption
 """
+
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 
-from .fill_model import FillRequest, FillResult, Side, simulate_entry, check_sl_tp_trigger
+from .fill_model import FillRequest, FillResult, Side, check_sl_tp_trigger, simulate_entry
 
 
 @dataclass
 class BarTick:
     """Synthetic tick from bar data."""
+
     timestamp: datetime
     bid: Decimal
     ask: Decimal
@@ -61,9 +63,7 @@ def simulate_bar_execution(
             continue
 
         bar = bars[fill_idx]
-        bid, ask = estimate_bid_ask_from_bar(
-            bar["open"], bar["high"], bar["low"], bar["close"], spread_estimate
-        )
+        bid, ask = estimate_bid_ask_from_bar(bar["open"], bar["high"], bar["low"], bar["close"], spread_estimate)
         req = FillRequest(
             side=Side.BUY if sig["side"] == "BUY" else Side.SELL,
             entry_price=Decimal(str(sig.get("entry_price", bar["open"]))),
@@ -75,14 +75,16 @@ def simulate_bar_execution(
         spread = ask - bid
         fill = simulate_entry(req, bid, ask, spread)
         trigger = check_sl_tp_trigger(req.side, req.stop_loss, req.take_profit, bid, ask)
-        results.append({
-            "signal_bar": bar_idx,
-            "fill_bar": fill_idx,
-            "fill_price": fill.entry_price,
-            "trigger": trigger,
-            "bid": bid,
-            "ask": ask,
-        })
+        results.append(
+            {
+                "signal_bar": bar_idx,
+                "fill_bar": fill_idx,
+                "fill_price": fill.entry_price,
+                "trigger": trigger,
+                "bid": bid,
+                "ask": ask,
+            }
+        )
     return results
 
 
@@ -104,9 +106,7 @@ def next_bar_fill(
         return None
 
     bar = bars[fill_idx]
-    bid, ask = estimate_bid_ask_from_bar(
-        bar["open"], bar["high"], bar["low"], bar["close"], spread
-    )
+    bid, ask = estimate_bid_ask_from_bar(bar["open"], bar["high"], bar["low"], bar["close"], spread)
     fill = simulate_entry(signal, bid, ask, ask - bid)
     return FillResult(
         entry_price=fill.entry_price,

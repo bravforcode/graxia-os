@@ -1,0 +1,2603 @@
+{
+  "schema_version": "1.0",
+  "direction": "I",
+  "shortlist": [
+    {
+      "name": "167428837",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/SuperbGarry/167428837/11136908",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20250817162142",
+        "daily": "1.06%",
+        "monthly": "224.14%",
+        "drawdown": "48.11%",
+        "gain": "+5651.84%"
+      },
+      "claimed_perf": "gain +5651.84%, daily 1.06%, monthly 224.14%, drawdown 48.11% (myfxbook detail page capture 20250817)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems/2",
+      "catalog_id": "fd1c0f2f8330",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "173115622",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/SuperbGarry/173115622/11136921",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20250120231505",
+        "daily": "3.48%",
+        "monthly": "1158.23%",
+        "drawdown": "29.10%",
+        "gain": "+22135.59%"
+      },
+      "claimed_perf": "gain +22135.59%, daily 3.48%, monthly 1158.23%, drawdown 29.10% (myfxbook detail page capture 20250120)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems",
+      "catalog_id": "fa86e4be7fab",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "53658934",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/SuperbGarry/53658934/11136941",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20250813200031",
+        "daily": "1.18%",
+        "monthly": "919.91%",
+        "drawdown": "17.94%",
+        "gain": "+6066.79%"
+      },
+      "claimed_perf": "gain +6066.79%, daily 1.18%, monthly 919.91%, drawdown 17.94% (myfxbook detail page capture 20250813)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems/2",
+      "catalog_id": "39409b802706",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "AGI EA V.1.1_REAL ACCOUNT 1",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/leo23/agi-ea-v11-real-account/9794445",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "tracking": "858",
+        "abs_gain": "+239,814.62%",
+        "daily": "0.90%",
+        "snapshot_ts": "20230625010732",
+        "monthly": "30.83%",
+        "drawdown": "1.79%",
+        "gain": "+819.81%"
+      },
+      "claimed_perf": "gain +819.81%, daily 0.90%, monthly 30.83%, drawdown 1.79% (myfxbook detail page capture 20230625)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems",
+      "catalog_id": "c740d4222a37",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Astaport",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/astaport/214876",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20210729031043",
+        "daily": "0.47%",
+        "monthly": "15.16%",
+        "gain": "45.12%"
+      },
+      "claimed_perf": "gain 45.12%, daily 0.47%, monthly 15.16% (myfxbook detail page capture 20210729)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20210729132144/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "4a5bd23a02c1",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "AutoBot2021 EA",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/AutoBot2021/autobot2021-ea/9499456",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20230704142820",
+        "daily": "0.32%",
+        "monthly": "9.97%",
+        "drawdown": "22.08%",
+        "gain": "+613.18%"
+      },
+      "claimed_perf": "gain +613.18%, daily 0.32%, monthly 9.97%, drawdown 22.08% (myfxbook detail page capture 20230704)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/4",
+      "catalog_id": "defd439ef456",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "BlueWhale Capital",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/tradingsvietnam/bluewhale-capital/7501457",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20220926161422",
+        "daily": "0.23%",
+        "monthly": "7.10%",
+        "drawdown": "17.37%",
+        "gain": "+12046.81%"
+      },
+      "claimed_perf": "gain +12046.81%, daily 0.23%, monthly 7.10%, drawdown 17.37% (myfxbook detail page capture 20220926)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/4",
+      "catalog_id": "a33501446325",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "CR7EA CRYPTO",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/CR7EA/cr7ea-crypto/9624236",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20220815152147",
+        "daily": "7.16%",
+        "monthly": "1353.00%",
+        "drawdown": "2.80%",
+        "gain": "+2146.43%"
+      },
+      "claimed_perf": "gain +2146.43%, daily 7.16%, monthly 1353.00%, drawdown 2.80% (myfxbook detail page capture 20220815)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems",
+      "catalog_id": "0d8bc6b70916",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "CR7EA VIP SAFE SETTING",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/CR7EA/cr7ea-vip-safe-setting/11094361",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "snapshot_ts": "20250617022505",
+        "daily": "2.01%",
+        "monthly": "141.80%",
+        "drawdown": "1.28%",
+        "gain": "+65662.11%"
+      },
+      "claimed_perf": "gain +65662.11%, daily 2.01%, monthly 141.80%, drawdown 1.28% (myfxbook detail page capture 20250617)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems",
+      "catalog_id": "fa0409c694a0",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "CR7EA-VIP SAFE SETTING",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/CR7EA/cr7ea-vip-safe-setting/11004350",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "snapshot_ts": "20250812025000",
+        "daily": "1.96%",
+        "monthly": "79.02%",
+        "drawdown": "0.25%",
+        "gain": "+485772.42%"
+      },
+      "claimed_perf": "gain +485772.42%, daily 1.96%, monthly 79.02%, drawdown 0.25% (myfxbook detail page capture 20250812)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems",
+      "catalog_id": "4d1c34664f5f",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Cedric Fx",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/cedricdellamano/cedric-fx/11105785",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "snapshot_ts": "20250711112913",
+        "daily": "0.17%",
+        "monthly": "5.35%",
+        "drawdown": "45.66%",
+        "gain": "+5548.88%"
+      },
+      "claimed_perf": "gain +5548.88%, daily 0.17%, monthly 5.35%, drawdown 45.66% (myfxbook detail page capture 20250711)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems/2",
+      "catalog_id": "877018d99ddc",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "CheckMate",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/mr_ForexMaster/checkmate/11202465",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "tracking": "33",
+        "abs_gain": "+48,322.77%",
+        "daily": "2.08%",
+        "snapshot_ts": "20241216144615",
+        "monthly": "84.95%",
+        "drawdown": "18.22%",
+        "gain": "+48322.77%"
+      },
+      "claimed_perf": "gain +48322.77%, daily 2.08%, monthly 84.95%, drawdown 18.22% (myfxbook detail page capture 20241216)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems",
+      "catalog_id": "841223880a59",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "CheckMate",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/mr_ForexMaster/checkmate/11277842",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "tracking": "33",
+        "abs_gain": "+48,322.77%",
+        "daily": "1.33%",
+        "snapshot_ts": "20250708224142",
+        "monthly": "51.74%",
+        "drawdown": "18.22%",
+        "gain": "+78219.80%"
+      },
+      "claimed_perf": "gain +78219.80%, daily 1.33%, monthly 51.74%, drawdown 18.22% (myfxbook detail page capture 20250708)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20250118104951/https://www.myfxbook.com/systems",
+      "catalog_id": "c3c54fbfb4a3",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "DHTrade",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/DHTrade/dhtrade/11012700",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "trading_type": "Manual",
+        "system_type": "Technical",
+        "account_type": "Real",
+        "snapshot_ts": "20241220173443",
+        "daily": "0.48%",
+        "monthly": "15.27%",
+        "drawdown": "28.16%",
+        "gain": "+5195.21%"
+      },
+      "claimed_perf": "gain +5195.21%, daily 0.48%, monthly 15.27%, drawdown 28.16% (myfxbook detail page capture 20241220)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/most-popular-forex-systems",
+      "catalog_id": "464a0d7bea44",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "December",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/december/237906?utm_source=myfxbook&utm_content=systems",
+      "mechanism": "trend_following",
+      "mechanism_basis": "detail_page_description",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20220806144818"
+      },
+      "claimed_perf": "gain +6768.47%, drawdown 46.01% (as of 2023-06-03 capture)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20230603211310/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "3d4a623a2d0c",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "trend_following",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "ELITE FOREX SCALPER",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/TopRank/elite-forex-scalper/11102084",
+      "mechanism": "scalper",
+      "mechanism_basis": "name_inference",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "snapshot_ts": "20250624232832",
+        "daily": "0.20%",
+        "monthly": "6.53%",
+        "drawdown": "35.65%",
+        "gain": "+16693.86%"
+      },
+      "claimed_perf": "gain +16693.86%, daily 0.20%, monthly 6.53%, drawdown 35.65% (myfxbook detail page capture 20250624)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20250118104951/https://www.myfxbook.com/systems",
+      "catalog_id": "0dcac487ded5",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "scalper",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Europa 1",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/AlejandroGigena/europa-1/10842156",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20241126233955",
+        "daily": "1.27%",
+        "monthly": "50.50%",
+        "drawdown": "31.83%",
+        "gain": "+13997.64%"
+      },
+      "claimed_perf": "gain +13997.64%, daily 1.27%, monthly 50.50%, drawdown 31.83% (myfxbook detail page capture 20241126)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems/2",
+      "catalog_id": "e3e87ff640ea",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "FXCharger",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/fxcharger/27237",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20171130115621",
+        "daily": "0.41%",
+        "monthly": "13.20%",
+        "gain": "6.12%"
+      },
+      "claimed_perf": "gain 6.12%, daily 0.41%, monthly 13.20% (myfxbook detail page capture 20171130)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "1e324854d317",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "FXStabilizer_EUR - Turbo",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/forexstore/fxstabilizer-eur-turbo/1614052",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "trading_type": "Automated",
+        "system_type": "Technical",
+        "account_type": "Real",
+        "snapshot_ts": "20240116155135",
+        "daily": "0.12%",
+        "monthly": "3.77%",
+        "drawdown": "13.26%",
+        "gain": "+3226.51%"
+      },
+      "claimed_perf": "gain +3226.51%, daily 0.12%, monthly 3.77%, drawdown 13.26% (myfxbook detail page capture 20240116)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/most-popular-forex-systems",
+      "catalog_id": "3abed023a383",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "GARRY'S AI V3.0",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/SuperbGarry/garrys-ai-v30/11136877",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20250120233307",
+        "daily": "3.01%",
+        "monthly": "1527.19%",
+        "drawdown": "29.81%",
+        "gain": "+5894.63%"
+      },
+      "claimed_perf": "gain +5894.63%, daily 3.01%, monthly 1527.19%, drawdown 29.81% (myfxbook detail page capture 20250120)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems/2",
+      "catalog_id": "8947a86915a9",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Golden Buffalo Channel Rate",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/atlantisvn/golden-buffalo-channel-rate/10936554",
+      "mechanism": "breakout",
+      "mechanism_basis": "name_inference",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20240815162835",
+        "daily": "0.76%",
+        "monthly": "25.56%",
+        "drawdown": "10.69%",
+        "gain": "+21762.87%"
+      },
+      "claimed_perf": "gain +21762.87%, daily 0.76%, monthly 25.56%, drawdown 10.69% (myfxbook detail page capture 20240815)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems",
+      "catalog_id": "ba2ab0f897ed",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "breakout",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Golden Buffalo Pro",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/golden-buffalo-pro/267625?utm_source=myfxbook&utm_content=systems",
+      "mechanism": "other",
+      "mechanism_basis": "name_inference",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real"
+      },
+      "claimed_perf": "gain +6749.53%, drawdown 12.79% (as of 2024-04-04 capture)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20240404235655/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "f095552d5308",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Golden Buffalo Pro",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/golden-buffalo-pro/267625?utm_source=myfxbook&utm_content=systems",
+      "mechanism": "scalper",
+      "mechanism_basis": "detail_page_description",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20240924094026",
+        "daily": "0.39%",
+        "monthly": "12.29%",
+        "gain": "14.48%"
+      },
+      "claimed_perf": "gain 14.48%, daily 0.39%, monthly 12.29% (myfxbook detail page capture 20240924)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20240404235655/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "6fe8e03d92f8",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "scalper",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Golden Hub Lirunex",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/atlantisvn/golden-hub-lirunex/11228129",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20241212050704",
+        "daily": "0.69%",
+        "monthly": "22.88%",
+        "drawdown": "12.11%",
+        "gain": "+12998.82%"
+      },
+      "claimed_perf": "gain +12998.82%, daily 0.69%, monthly 22.88%, drawdown 12.11% (myfxbook detail page capture 20241212)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems/2",
+      "catalog_id": "044d33fe7e5a",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Green Trade EA",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/GreenTradeEA/green-trade-ea/11249805",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "snapshot_ts": "20250327063929",
+        "daily": "0.48%",
+        "monthly": "18.24%",
+        "drawdown": "7.84%",
+        "gain": "+7133.83%"
+      },
+      "claimed_perf": "gain +7133.83%, daily 0.48%, monthly 18.24%, drawdown 7.84% (myfxbook detail page capture 20250327)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems/2",
+      "catalog_id": "dd07e4036de0",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Happiness",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/happiness/216992",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20210729014347",
+        "daily": "0.24%",
+        "monthly": "7.31%",
+        "gain": "6.54%"
+      },
+      "claimed_perf": "gain 6.54%, daily 0.24%, monthly 7.31% (myfxbook detail page capture 20210729)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20210729132144/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "bf7c7a576f86",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Happy Gold - TMGM (M30)",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/HappyForex/happy-gold-tmgm-m30/9375654",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "XAUUSD",
+      "timeframe": "M30",
+      "params": {
+        "snapshot_ts": "20231210195508",
+        "daily": "0.32%",
+        "monthly": "10.01%",
+        "drawdown": "21.41%",
+        "gain": "+991.56%"
+      },
+      "claimed_perf": "gain +991.56%, daily 0.32%, monthly 10.01%, drawdown 21.41% (myfxbook detail page capture 20231210)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/5",
+      "catalog_id": "7c2eb67936d9",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Happy Gold - VTMarkets (M30)",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/HappyForex/happy-gold-vtmarkets-m30/8647517",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "XAUUSD",
+      "timeframe": "M30",
+      "params": {
+        "snapshot_ts": "20231210195429",
+        "daily": "0.31%",
+        "monthly": "9.72%",
+        "drawdown": "25.95%",
+        "gain": "+1579.08%"
+      },
+      "claimed_perf": "gain +1579.08%, daily 0.31%, monthly 9.72%, drawdown 25.95% (myfxbook detail page capture 20231210)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/4",
+      "catalog_id": "bf3913ac0881",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "IL BOSS DEL TRADING SCALPER",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/IlBossDelTrading/il-boss-del-trading-scalper/10565721",
+      "mechanism": "scalper",
+      "mechanism_basis": "name_inference",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20240420063250",
+        "daily": "0.72%",
+        "monthly": "23.95%",
+        "drawdown": "22.60%",
+        "gain": "+219.90%"
+      },
+      "claimed_perf": "gain +219.90%, daily 0.72%, monthly 23.95%, drawdown 22.60% (myfxbook detail page capture 20240420)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems/2",
+      "catalog_id": "0619701bb16e",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "scalper",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Johnpaul77",
+      "source": "myfxbook",
+      "source_url": "http://www.myfxbook.com/members/autotrade/johnpaul77/786533",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "trading_type": "Manual",
+        "system_type": "Technical",
+        "account_type": "Real",
+        "snapshot_ts": "20140503032422"
+      },
+      "claimed_perf": "gain +15365.81%, drawdown 18.13% (as of 2014-05-16 capture)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20140516145630/http://www.myfxbook.com/systems?pt=6&p=3",
+      "catalog_id": "38a6f6edfef8",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "KopipesGOLD",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/kopipes/kopipesgold/11153324",
+      "mechanism": "other",
+      "mechanism_basis": "name_inference_detail_page_fetched",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {
+        "tracking": "5",
+        "abs_gain": "+10.75%",
+        "daily": "+3.86%"
+      },
+      "claimed_perf": "gain +28,262.61%, abs gain +10.75%, daily +3.86%, monthly +387.18%, drawdown 7.08% (detail page capture, 2024)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems",
+      "catalog_id": "2f50ab0df493",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "KopipesGOLD",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/kopipes/kopipesgold/11153324",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "tracking": "5",
+        "abs_gain": "+10.75%",
+        "daily": "3.86%",
+        "snapshot_ts": "20241126220040",
+        "monthly": "387.18%",
+        "drawdown": "7.08%",
+        "gain": "+28262.61%"
+      },
+      "claimed_perf": "gain +28262.61%, daily 3.86%, monthly 387.18%, drawdown 7.08% (myfxbook detail page capture 20241126)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems",
+      "catalog_id": "1fbb09b1d45d",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "LUX",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/MarcellusLux/lux/8591067",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20210730183455",
+        "daily": "0.28%",
+        "monthly": "8.90%",
+        "drawdown": "9.74%",
+        "gain": "+1146.83%"
+      },
+      "claimed_perf": "gain +1146.83%, daily 0.28%, monthly 8.90%, drawdown 9.74% (myfxbook detail page capture 20210730)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems",
+      "catalog_id": "fd265adc79bb",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Max Nolimit ORI",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/max-nolimit-ori/267999?utm_source=myfxbook&utm_content=systems",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20240528013626",
+        "daily": "0.28%",
+        "monthly": "8.69%",
+        "gain": "39.73%"
+      },
+      "claimed_perf": "gain 39.73%, daily 0.28%, monthly 8.69% (myfxbook detail page capture 20240528)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20240404235655/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "1e9092d16e7f",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Megatron",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/megatron/32683",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20180511064042",
+        "daily": "1.93%",
+        "monthly": "77.34%",
+        "gain": "5.42%"
+      },
+      "claimed_perf": "gain 5.42%, daily 1.93%, monthly 77.34% (myfxbook detail page capture 20180511)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "40f8a099b22c",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Meta EA Gold BCR",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/Suntradingg/meta-ea-gold-bcr/11103502",
+      "mechanism": "other",
+      "mechanism_basis": "name_inference_detail_page_fetched",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {
+        "tracking": "13",
+        "abs_gain": "+1,408.65%",
+        "daily": "+0.58%"
+      },
+      "claimed_perf": "gain +48,261.72%, abs gain +1,408.65%, daily +0.58%, monthly +20.05%, drawdown 28.84% (detail page capture, 2024)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems",
+      "catalog_id": "31027351b3fe",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Meta EA Gold BCR",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/Suntradingg/meta-ea-gold-bcr/11103502",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "tracking": "13",
+        "abs_gain": "+1,408.65%",
+        "daily": "0.58%",
+        "snapshot_ts": "20241217212120",
+        "monthly": "20.05%",
+        "drawdown": "28.84%",
+        "gain": "+48261.72%"
+      },
+      "claimed_perf": "gain +48261.72%, daily 0.58%, monthly 20.05%, drawdown 28.84% (myfxbook detail page capture 20241217)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems",
+      "catalog_id": "8c40367effa5",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Moneymakersuper",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/moneymakersuper/51254",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20190819192444",
+        "daily": "2.00%",
+        "monthly": "80.59%",
+        "gain": "26.36%"
+      },
+      "claimed_perf": "gain 26.36%, daily 2.00%, monthly 80.59% (myfxbook detail page capture 20190819)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20200704184431/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "5f79e848e6f0",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Mosquito EA",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/Francesco7304/mosquito-ea/11028751",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20241217192419",
+        "daily": "3.68%",
+        "monthly": "194.10%",
+        "drawdown": "20.93%",
+        "gain": "+15634.04%"
+      },
+      "claimed_perf": "gain +15634.04%, daily 3.68%, monthly 194.10%, drawdown 20.93% (myfxbook detail page capture 20241217)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems",
+      "catalog_id": "21f1f28c7720",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Mt4-70034869",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/BrickmanKevin/mt4-70034869/10756368",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20250211192145",
+        "daily": "0.61%",
+        "monthly": "20.16%",
+        "drawdown": "49.77%",
+        "gain": "+117267.04%"
+      },
+      "claimed_perf": "gain +117267.04%, daily 0.61%, monthly 20.16%, drawdown 49.77% (myfxbook detail page capture 20250211)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems",
+      "catalog_id": "8b39eafe6e6b",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "MyfxTrading",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/LinoCapital/myfxtrading/11036983",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "trading_type": "Automated",
+        "system_type": "Technical",
+        "account_type": "Real",
+        "snapshot_ts": "20240913141320",
+        "daily": "16.30%",
+        "monthly": "9878.40%",
+        "drawdown": "2.84%",
+        "gain": "+89343.36%"
+      },
+      "claimed_perf": "gain +89343.36%, daily 16.30%, monthly 9878.40%, drawdown 2.84% (myfxbook detail page capture 20240913)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/most-popular-forex-systems",
+      "catalog_id": "f89c1850be63",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "NC GO",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/nc-go/252460?utm_source=myfxbook&utm_content=systems",
+      "mechanism": "session",
+      "mechanism_basis": "detail_page_description",
+      "symbol": "GBPUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20230127041559",
+        "daily": "0.52%",
+        "monthly": "16.89%",
+        "gain": "6.44%"
+      },
+      "claimed_perf": "gain 6.44%, daily 0.52%, monthly 16.89% (myfxbook detail page capture 20230127)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20230603211310/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "c7d786516e44",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "session",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.671828,
+        "annual_cost_pct": 1.69,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "NetWave (FX & Gold)",
+      "source": "myfxbook",
+      "source_url": "http://www.myfxbook.com/members/autotrade/netwave-fx--gold/645509",
+      "mechanism": "other",
+      "mechanism_basis": "name_inference",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {
+        "trading_type": "Automated",
+        "system_type": "Technical",
+        "account_type": "Real"
+      },
+      "claimed_perf": "gain +150.9%, drawdown 26.70% (as of 2014-05-16 capture)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20140516145630/http://www.myfxbook.com/systems?pt=6&p=3",
+      "catalog_id": "8b9c6250b510",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "NetWave (FX & Gold)",
+      "source": "myfxbook",
+      "source_url": "http://www.myfxbook.com/members/autotrade/netwave-fx--gold/645509",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "trading_type": "Automated",
+        "system_type": "Technical",
+        "account_type": "Real",
+        "snapshot_ts": "20131123172424",
+        "daily": "0.76%",
+        "monthly": "25.26%",
+        "drawdown": "14.67%",
+        "gain": "+155.09%"
+      },
+      "claimed_perf": "gain +155.09%, daily 0.76%, monthly 25.26%, drawdown 14.67% (myfxbook detail page capture 20131123)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20140516145630/http://www.myfxbook.com/systems?pt=6&p=3",
+      "catalog_id": "5133db6a54d9",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Night Scalping",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/night-scalping/18002",
+      "mechanism": "scalper",
+      "mechanism_basis": "detail_page_description",
+      "symbol": "GBPUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20180516013333",
+        "daily": "0.65%",
+        "monthly": "21.62%",
+        "gain": "47.53%"
+      },
+      "claimed_perf": "gain 47.53%, daily 0.65%, monthly 21.62% (myfxbook detail page capture 20180516)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "6025d05b9663",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "scalper",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.671828,
+        "annual_cost_pct": 1.69,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Nighthawk ICM Multipairs",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/nighthawk-icm-multipairs/12616",
+      "mechanism": "session",
+      "mechanism_basis": "detail_page_description",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20161203040108",
+        "daily": "0.46%",
+        "monthly": "14.64%",
+        "gain": "29.8%"
+      },
+      "claimed_perf": "gain 29.8%, daily 0.46%, monthly 14.64% (myfxbook detail page capture 20161203)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "d2149dddf995",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "session",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Option VSA",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/option-vsa/33120",
+      "mechanism": "orderflow",
+      "mechanism_basis": "detail_page_description",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20180521045105",
+        "daily": "4.02%",
+        "monthly": "225.61%",
+        "gain": "0%"
+      },
+      "claimed_perf": "gain 0%, daily 4.02%, monthly 225.61% (myfxbook detail page capture 20180521)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "e2fa18a0d477",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "orderflow",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Perfect EA",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/phuked/perfect-ea/10214932",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "snapshot_ts": "20250517030309",
+        "daily": "0.41%",
+        "monthly": "13.25%",
+        "drawdown": "69.92%",
+        "gain": "+3687.95%"
+      },
+      "claimed_perf": "gain +3687.95%, daily 0.41%, monthly 13.25%, drawdown 69.92% (myfxbook detail page capture 20250517)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/4",
+      "catalog_id": "fcf5a6ac7b61",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "PrincefxeaV3",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/princefxeav3/29937",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20180313043218",
+        "daily": "5.24%",
+        "monthly": "360.14%",
+        "gain": "39.8%"
+      },
+      "claimed_perf": "gain 39.8%, daily 5.24%, monthly 360.14% (myfxbook detail page capture 20180313)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "0b80c8061690",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Quantum Speed",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/atlantisvn/quantum-speed/10984634",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20240815132836",
+        "daily": "0.46%",
+        "monthly": "14.68%",
+        "drawdown": "4.50%",
+        "gain": "+2490.35%"
+      },
+      "claimed_perf": "gain +2490.35%, daily 0.46%, monthly 14.68%, drawdown 4.50% (myfxbook detail page capture 20240815)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/4",
+      "catalog_id": "aa35fe15477c",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Rising Star",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/rising-star/29985",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "GBPUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20180619104550",
+        "daily": "0.66%",
+        "monthly": "21.73%",
+        "gain": "34.64%"
+      },
+      "claimed_perf": "gain 34.64%, daily 0.66%, monthly 21.73% (myfxbook detail page capture 20180619)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "e08f89156d12",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.671828,
+        "annual_cost_pct": 1.69,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Robot_To_The_Moon",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/childrenofkoris/robot-to-the-moon/11169683",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20241217214748",
+        "daily": "10.66%",
+        "monthly": "7213.36%",
+        "drawdown": "27.51%",
+        "gain": "+59113.53%"
+      },
+      "claimed_perf": "gain +59113.53%, daily 10.66%, monthly 7213.36%, drawdown 27.51% (myfxbook detail page capture 20241217)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems",
+      "catalog_id": "4a1599777304",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Rocket Account Fx",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/rocket-account-fx/199896?utm_source=myfxbook&utm_content=systems",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20210417031928",
+        "daily": "0.69%",
+        "monthly": "22.75%",
+        "gain": "39.95%"
+      },
+      "claimed_perf": "gain 39.95%, daily 0.69%, monthly 22.75% (myfxbook detail page capture 20210417)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20220401051739/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "ffec0460616d",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "SFE Night Scalper",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/sfe-night-scalper/40973",
+      "mechanism": "scalper",
+      "mechanism_basis": "detail_page_description",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20201129020440",
+        "daily": "0.10%",
+        "monthly": "3.16%",
+        "gain": "34.48%"
+      },
+      "claimed_perf": "gain 34.48%, daily 0.10%, monthly 3.16% (myfxbook detail page capture 20201129)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20200704184431/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "76f535599a44",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "scalper",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Safex Trading Bot",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/SafexLabs/safex-trading-bot/11264176",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20241217194631",
+        "daily": "0.50%",
+        "monthly": "16.58%",
+        "drawdown": "6.86%",
+        "gain": "+18360.89%"
+      },
+      "claimed_perf": "gain +18360.89%, daily 0.50%, monthly 16.58%, drawdown 6.86% (myfxbook detail page capture 20241217)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems",
+      "catalog_id": "a7b98a9e95e0",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "The Money Tree",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/leapfx/money-tree/9526428",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "trading_type": "Automated",
+        "system_type": "Technical",
+        "account_type": "Real",
+        "snapshot_ts": "20220625081912",
+        "daily": "1.85%",
+        "monthly": "78.94%",
+        "drawdown": "18.79%",
+        "gain": "+1278.88%"
+      },
+      "claimed_perf": "gain +1278.88%, daily 1.85%, monthly 78.94%, drawdown 18.79% (myfxbook detail page capture 20220625)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/most-popular-forex-systems",
+      "catalog_id": "ec9f251a4fcd",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "TradingS Capital",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/tradingsvietnam/tradings-capital/7232342",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20221127113320",
+        "daily": "0.22%",
+        "monthly": "6.81%",
+        "drawdown": "39.88%",
+        "gain": "+11348.53%"
+      },
+      "claimed_perf": "gain +11348.53%, daily 0.22%, monthly 6.81%, drawdown 39.88% (myfxbook detail page capture 20221127)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/5",
+      "catalog_id": "4c68dfa5a548",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "ZoomFxPro NewEnergy 1",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/zoomfxpro-newenergy-1/196753",
+      "mechanism": "trend_following",
+      "mechanism_basis": "detail_page_description",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20210417022944",
+        "daily": "0.34%",
+        "monthly": "10.74%",
+        "gain": "40.83%"
+      },
+      "claimed_perf": "gain 40.83%, daily 0.34%, monthly 10.74% (myfxbook detail page capture 20210417)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20210729132144/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "98782701f559",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "trend_following",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "eurusdonly",
+      "source": "signalstart",
+      "source_url": "http://www.signalstart.com/analysis/eurusdonly/263070?utm_source=myfxbook&utm_content=systems",
+      "mechanism": "other",
+      "mechanism_basis": "name_inference",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real"
+      },
+      "claimed_perf": "gain +2520.0%, drawdown 48.09% (as of 2024-04-04 capture)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20240404235655/https://www.myfxbook.com/systems",
+      "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)",
+      "catalog_id": "0852a18c3504",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "fx2pro_2013",
+      "source": "myfxbook",
+      "source_url": "http://www.myfxbook.com/members/autotrade/fx2pro-2013/500617",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "trading_type": "Automated",
+        "system_type": "Technical",
+        "account_type": "Real",
+        "snapshot_ts": "20140328075658",
+        "daily": "0.40%",
+        "monthly": "12.67%",
+        "drawdown": "45.14%",
+        "gain": "+586.53%"
+      },
+      "claimed_perf": "gain +586.53%, daily 0.40%, monthly 12.67%, drawdown 45.14% (myfxbook detail page capture 20140328)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20140516145630/http://www.myfxbook.com/systems?pt=6&p=3",
+      "catalog_id": "f2608c08b766",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "money maker",
+      "source": "myfxbook",
+      "source_url": "https://www.myfxbook.com/members/Mastone90/money-maker/9519309",
+      "mechanism": "other",
+      "mechanism_basis": "detail_page_fetched_no_description",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "snapshot_ts": "20250421110221",
+        "daily": "0.26%",
+        "monthly": "8.13%",
+        "drawdown": "47.71%",
+        "gain": "+15705.34%"
+      },
+      "claimed_perf": "gain +15705.34%, daily 0.26%, monthly 8.13%, drawdown 47.71% (myfxbook detail page capture 20250421)",
+      "evidence_tier": "myfxbook_verified",
+      "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems/2",
+      "catalog_id": "96b11be5b8a4",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "5Mins Envelopes Scalping",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/30561",
+      "mechanism": "scalper",
+      "symbol": "GBPUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "0b137707a1cf",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "scalper",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.671828,
+        "annual_cost_pct": 1.69,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "BAKOME-Hub/BAKOMEGoldScalper",
+      "source": "github",
+      "source_url": "https://github.com/BAKOME-Hub/BAKOMEGoldScalper",
+      "mechanism": "scalper",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "1033c3b0a4b7",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "scalper",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Entry Hour Stochastic Trader",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/23958",
+      "mechanism": "mean_reversion",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "54bd1c736835",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "mean_reversion",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "ExMachina SafeScalping",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/70052",
+      "mechanism": "breakout",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "0813c30ed9fd",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "breakout",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Killer EURUSD_sell",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/25105",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "48c364edb19a",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Lisa EURUSD Breakout",
+      "source": "obscure",
+      "source_url": "https://ctrader.com/products/2131",
+      "mechanism": "breakout",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "be70a4fb79ab",
+      "ingested_at": "2026-08-06T11:27:20+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "breakout",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "MSNR v5.31Plus AEU EA",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/73680",
+      "mechanism": "orderflow",
+      "symbol": "XAUUSD",
+      "timeframe": "W1",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "5fabf246c411",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "orderflow",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Moving Average EA",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/23673",
+      "mechanism": "trend_following",
+      "symbol": "XAUUSD",
+      "timeframe": "H1",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "80255d8f6f1c",
+      "ingested_at": "2026-08-06T16:27:10+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "trend_following",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "NadirAliOfficial/eurusd-scalper-ea",
+      "source": "github",
+      "source_url": "https://github.com/NadirAliOfficial/eurusd-scalper-ea",
+      "mechanism": "scalper",
+      "symbol": "EURUSD",
+      "timeframe": "M5",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "2aacbdd7714b",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "scalper",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Quantum XAUUSD Silver Trader",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/73622",
+      "mechanism": "trend_following",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "2ca18b35f783",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "trend_following",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "SmartTradeOnHoursBreak - XAUUSD",
+      "source": "obscure",
+      "source_url": "https://ctrader.com/products/954",
+      "mechanism": "session",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "26c5ea4e772f",
+      "ingested_at": "2026-08-06T11:27:20+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "session",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "Triangular Arbitrage",
+      "source": "mql5",
+      "source_url": "https://www.mql5.com/en/code/57272",
+      "mechanism": "microstructure",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "244a34f3c8c6",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "microstructure",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "[Fx4U] GBPUSD - Price Action",
+      "source": "obscure",
+      "source_url": "https://ctrader.com/products/346",
+      "mechanism": "other",
+      "symbol": "GBPUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "db5f98691a26",
+      "ingested_at": "2026-08-06T11:27:20+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.671828,
+        "annual_cost_pct": 1.69,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "codedpro/mt5-trade-split-manager",
+      "source": "github",
+      "source_url": "https://github.com/codedpro/mt5-trade-split-manager",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "desc: profit",
+      "evidence_tier": "practitioner",
+      "catalog_id": "5e40f511ccf4",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "other",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "dammajid/Mushashi-EA",
+      "source": "github",
+      "source_url": "https://github.com/dammajid/Mushashi-EA",
+      "mechanism": "scalper",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "4ce6e16a9948",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "scalper",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "definitelyfkd/MultiStrategy-MT5-EA-Swap-Forex-Oil-Indices-Gold-Bitcoin-",
+      "source": "github",
+      "source_url": "https://github.com/definitelyfkd/MultiStrategy-MT5-EA-Swap-Forex-Oil-Indices-Gold-Bitcoin-",
+      "mechanism": "carry",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "0d665a9df3d9",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "carry",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "ilahuerta-IA/backtrader-pullback-window-xauusd",
+      "source": "github",
+      "source_url": "https://github.com/ilahuerta-IA/backtrader-pullback-window-xauusd",
+      "mechanism": "mean_reversion",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "desc: Sharpe",
+      "evidence_tier": "practitioner",
+      "catalog_id": "600811f78ae2",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "mean_reversion",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "naimkatiman/tradeclaw",
+      "source": "github",
+      "source_url": "https://github.com/naimkatiman/tradeclaw",
+      "mechanism": "regime",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "be9b1324bc4c",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "regime",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.648,
+        "annual_cost_pct": 1.63,
+        "reason": "within cost budget"
+      }
+    },
+    {
+      "name": "syngyn/Metatrader-5-GGTH-Forex-Predictions-with-News-Sentiment",
+      "source": "github",
+      "source_url": "https://github.com/syngyn/Metatrader-5-GGTH-Forex-Predictions-with-News-Sentiment",
+      "mechanism": "momentum",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "claimed_perf": "not stated",
+      "evidence_tier": "practitioner",
+      "catalog_id": "8a304aab266f",
+      "ingested_at": "2026-08-06T11:27:19+00:00",
+      "partition": {
+        "status": "FREE",
+        "owner": null,
+        "note": ""
+      },
+      "mechanism_family": "momentum",
+      "requires_martingale_gate": false,
+      "triage": {
+        "viable": true,
+        "cost_bps": 0.779634,
+        "annual_cost_pct": 1.96,
+        "reason": "within cost budget"
+      }
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "TSMOM": {
+    "dk_t": -0.4574,
+    "pooled_sharpe": -0.3794,
+    "positive_sharpe_count": 3,
+    "total_assets": 7,
+    "total_trades": 2663,
+    "label_shuffle_p": 0.345,
+    "label_shuffle_mean_t": -0.5064,
+    "verdict": "REJECT",
+    "go": false
+  },
+  "CAM": {
+    "dk_t": -0.3817,
+    "pooled_sharpe": -0.3166,
+    "positive_sharpe_count": 1,
+    "total_assets": 7,
+    "total_trades": 958,
+    "label_shuffle_p": 0.665,
+    "label_shuffle_mean_t": -0.2889,
+    "verdict": "REJECT",
+    "go": false
+  },
+  "VRP": {
+    "dk_t": -0.4298,
+    "pooled_sharpe": -0.3563,
+    "positive_sharpe_count": 4,
+    "total_assets": 7,
+    "total_trades": 471,
+    "label_shuffle_p": 0.44,
+    "label_shuffle_mean_t": -0.4552,
+    "verdict": "REJECT",
+    "go": false
+  },
+  "Carry": {
+    "dk_t": -0.6444,
+    "pooled_sharpe": -0.5341,
+    "positive_sharpe_count": 0,
+    "total_assets": 7,
+    "total_trades": 584,
+    "label_shuffle_p": 0.4,
+    "label_shuffle_mean_t": -0.7115,
+    "verdict": "REJECT",
+    "go": false
+  },
+  "FOMCDrift": {
+    "dk_t": -0.3236,
+    "pooled_sharpe": -0.2682,
+    "positive_sharpe_count": 2,
+    "total_assets": 7,
+    "total_trades": 270,
+    "label_shuffle_p": 0.345,
+    "label_shuffle_mean_t": -0.3943,
+    "verdict": "REJECT",
+    "go": false
+  },
+  "COTPositioning": {
+    "dk_t": -0.1695,
+    "pooled_sharpe": -0.1406,
+    "positive_sharpe_count": 3,
+    "total_assets": 7,
+    "total_trades": 40,
+    "label_shuffle_p": 0.49,
+    "label_shuffle_mean_t": -0.1311,
+    "verdict": "REJECT",
+    "go": false
+  }
+}

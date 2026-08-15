@@ -1,0 +1,83 @@
+{
+  "data": "XAUUSD_H1.csv",
+  "bars": 50000,
+  "strategies": [
+    {
+      "name": 1.731636146263809,
+      "sharpe": -2.7609,
+      "p_value": 0.99,
+      "trades": 4534,
+      "null_95th": 1.7316,
+      "survives": false
+    },
+    {
+      "name": 1.6868190002811683,
+      "sharpe": -3.5388,
+      "p_value": 0.98,
+      "trades": 2602,
+      "null_95th": 1.6868,
+      "survives": false
+    },
+    {
+      "name": 2.339339816354727,
+      "sharpe": -3.5225,
+      "p_value": 1.0,
+      "trades": 3464,
+      "null_95th": 2.3393,
+      "survives": false
+    },
+    {
+      "name": 3.1880180807665117,
+      "sharpe": -2.0919,
+      "p_value": 0.84,
+      "trades": 1416,
+      "null_95th": 3.188,
+      "survives": false
+    },
+    {
+      "name": 5.9568326761413255,
+      "sharpe": -0.112,
+      "p_value": 0.46,
+      "trades": 534,
+      "null_95th": 5.9568,
+      "survives": false
+    },
+    {
+      "name": 0.7805769867121778,
+      "sharpe": 0.4798,
+      "p_value": 0.21,
+      "trades": 38293,
+      "null_95th": 0.7806,
+      "survives": false
+    },
+    {
+      "name": 1.227283006377799,
+      "sharpe": 0.7127,
+      "p_value": 0.19,
+      "trades": 13741,
+      "null_95th": 1.2273,
+      "survives": false
+    },
+    {
+      "name": 0.7404150030259641,
+      "sharpe": 0.8364,
+      "p_value": 0.02,
+      "trades": 33226,
+      "null_95th": 0.7404,
+      "survives": true
+    },
+    {
+      "name": 1.2539419965384906,
+      "sharpe": 0.7014,
+      "p_value": 0.22,
+      "trades": 11155,
+      "null_95th": 1.2539,
+      "survives": false
+    }
+  ],
+  "best": {
+    "name": "TF+Session",
+    "sharpe": 0.8364,
+    "p_value": 0.02
+  }
+}

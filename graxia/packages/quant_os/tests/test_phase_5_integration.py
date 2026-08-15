@@ -1,12 +1,15 @@
 """Phase 5 integration tests — statistical validation."""
+
+import math
 import pytest
-from graxia.packages.quant_os.validation.experiment_registry import ExperimentRegistry, ExperimentRecord
-from graxia.packages.quant_os.validation.walk_forward import walk_forward_split
-from graxia.packages.quant_os.validation.deflated_sharpe import deflated_sharpe_ratio
-from graxia.packages.quant_os.validation.probability_overfitting import calculate_pbo
-from graxia.packages.quant_os.validation.cost_stress import analyze_cost_sensitivity
-from graxia.packages.quant_os.validation.parameter_stability import analyze_parameter_stability
+
 from graxia.packages.quant_os.validation.bootstrap_sensitivity import bootstrap_confidence_interval
+from graxia.packages.quant_os.validation.cost_stress import analyze_cost_sensitivity
+from graxia.packages.quant_os.validation.deflated_sharpe import deflated_sharpe_ratio
+from graxia.packages.quant_os.validation.experiment_registry import ExperimentRecord, ExperimentRegistry
+from graxia.packages.quant_os.validation.parameter_stability import analyze_parameter_stability
+from graxia.packages.quant_os.validation.probability_overfitting import calculate_pbo
+from graxia.packages.quant_os.validation.walk_forward import walk_forward_split
 
 
 def test_experiment_registry_works():
@@ -22,6 +25,7 @@ def test_experiment_registry_works():
         cost_scenario_id="base",
         risk_policy_id="r1",
     )
+    reg.clear()
     reg.register(record)
     assert reg.count() == 1
     assert reg.check_budget("def456", budget=12)
@@ -30,7 +34,7 @@ def test_experiment_registry_works():
 def test_walk_forward_split_works():
     splits = walk_forward_split(n_bars=1000, n_folds=5)
     assert len(splits) > 0
-    for (tr_start, tr_end), (te_start, te_end) in splits:
+    for (_tr_start, tr_end), (te_start, te_end) in splits:
         assert te_start >= tr_end
         assert te_end > te_start
 
@@ -40,6 +44,7 @@ def test_deflated_sharpe_works():
         observed_sharpe=1.5,
         n_trials=100,
         n_observations=252,
+        sharpe_annualization_factor=math.sqrt(252),
     )
     assert result.observed_sharpe == 1.5
     assert result.multiple_testing_adjustment > 0

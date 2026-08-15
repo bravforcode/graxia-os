@@ -931,12 +931,12 @@ class TestNotificationFailure:
 
     @pytest.mark.asyncio
     async def test_empty_bot_token_skips_send(self) -> None:
-        notifier = TradeNotifier(bot_token="", chat_id="123")
+        notifier = TradeNotifier(bot_token="", chat_id="123", enabled=False)
         await notifier.notify_trade(_make_decision(), MagicMock(success=True))
 
     @pytest.mark.asyncio
     async def test_empty_chat_id_skips_send(self) -> None:
-        notifier = TradeNotifier(bot_token="token", chat_id="")
+        notifier = TradeNotifier(bot_token="token", chat_id="", enabled=False)
         await notifier.notify_trade(_make_decision(), MagicMock(success=True))
 
     @pytest.mark.asyncio

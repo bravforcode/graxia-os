@@ -18,6 +18,11 @@ import pandas as pd
 from scipy import stats
 
 BASE = Path(__file__).resolve().parent.parent
+import sys  # noqa: E402
+
+sys.path.insert(0, str(BASE))
+from provenance import require_cost_calibrated_tsm_asset  # noqa: E402
+
 ARTIFACTS = BASE / "artifacts"
 OUT_DIR = ARTIFACTS / "portfolio"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -67,8 +72,7 @@ def ema_crossover_signal(close: pd.Series, fast: int, slow: int) -> pd.Series:
     return np.sign(ema_fast - ema_slow)
 
 
-def vol_targeted_weight(close: pd.Series, fast: int, slow: int,
-                        target_vol: float, rvol_window: int) -> pd.Series:
+def vol_targeted_weight(close: pd.Series, fast: int, slow: int, target_vol: float, rvol_window: int) -> pd.Series:
     """Vol-targeted position: signal * target_vol / realized_vol, cap at 1.0."""
     signal = ema_crossover_signal(close, fast, slow)
     daily_ret = close.pct_change(1, fill_method=None)
@@ -81,9 +85,9 @@ def vol_targeted_weight(close: pd.Series, fast: int, slow: int,
 # ── Single-asset backtest ───────────────────────────────────────────────────
 
 
-def backtest_single_asset(close: pd.Series, fast: int, slow: int,
-                          target_vol: float, rvol_window: int,
-                          cost_bps: float) -> pd.DataFrame:
+def backtest_single_asset(
+    close: pd.Series, fast: int, slow: int, target_vol: float, rvol_window: int, cost_bps: float
+) -> pd.DataFrame:
     """Backtest EMA crossover on one asset."""
     df = pd.DataFrame({"close": close})
     df["ret"] = df["close"].pct_change(1, fill_method=None)
@@ -109,9 +113,9 @@ def backtest_single_asset(close: pd.Series, fast: int, slow: int,
 # ── Portfolio backtest ──────────────────────────────────────────────────────
 
 
-def portfolio_backtest(data: pd.DataFrame, assets: list, fast: int, slow: int,
-                       target_vol: float, rvol_window: int,
-                       cost_bps: float) -> pd.DataFrame:
+def portfolio_backtest(
+    data: pd.DataFrame, assets: list, fast: int, slow: int, target_vol: float, rvol_window: int, cost_bps: float
+) -> pd.DataFrame:
     """Multi-asset portfolio with inverse-vol weighting."""
     asset_returns = {}
 
@@ -138,10 +142,12 @@ def portfolio_backtest(data: pd.DataFrame, assets: list, fast: int, slow: int,
 
     portfolio_ret = (ret_df * inv_rvol).sum(axis=1)
 
-    return pd.DataFrame({
-        "portfolio_ret": portfolio_ret,
-        "cum_ret": (1 + portfolio_ret).cumprod(),
-    })
+    return pd.DataFrame(
+        {
+            "portfolio_ret": portfolio_ret,
+            "cum_ret": (1 + portfolio_ret).cumprod(),
+        }
+    )
 
 
 # ── Metrics ─────────────────────────────────────────────────────────────────
@@ -203,9 +209,16 @@ def deflated_sharpe_test(sharpe: float, n_obs: int, n_trials: int) -> dict:
 # ── Walk-forward ────────────────────────────────────────────────────────────
 
 
-def walk_forward(data: pd.DataFrame, assets: list, fast: int, slow: int,
-                 target_vol: float, rvol_window: int, cost_bps: float,
-                 train_pct: float = 0.6) -> dict:
+def walk_forward(
+    data: pd.DataFrame,
+    assets: list,
+    fast: int,
+    slow: int,
+    target_vol: float,
+    rvol_window: int,
+    cost_bps: float,
+    train_pct: float = 0.6,
+) -> dict:
     """Walk-forward: train on first train_pct, test on rest."""
     n = len(data)
     split = int(n * train_pct)
@@ -231,6 +244,12 @@ def main():
     print("  (Baz et al. 2015, Man AHL style)")
     print("=" * 60)
     print()
+
+    # 2026-07-30: ASSETS uses YF-suffixed aliases (EURUSD_YF etc); resolve
+    # to canonical symbols before gating so this can't silently run an
+    # uncalibrated asset through the flat COST_BPS=5 assumption below.
+    for _asset in ASSETS:
+        require_cost_calibrated_tsm_asset(_asset, mode="paper")
 
     data = load_data()
     available = [a for a in ASSETS if f"{a}_close" in data.columns]
@@ -287,7 +306,9 @@ def main():
         print(f"  Max DD:   {m['max_dd']:.2%}")
         print(f"  Win rate: {m['win_rate']:.1%}")
         print(f"  Skew:     {m['skew']:.3f}")
-        print(f"  Deflated: p_single={dsr['p_single']:.4f}  p_deflated={dsr['p_deflated']:.4f}  sig@5%={dsr['significant_5pct']}")
+        print(
+            f"  Deflated: p_single={dsr['p_single']:.4f}  p_deflated={dsr['p_deflated']:.4f}  sig@5%={dsr['significant_5pct']}"
+        )
         print(f"  WF Train Sharpe: {train_m.get('sharpe', 0):.3f}  Ann Ret: {train_m.get('ann_ret', 0):.2%}")
         print(f"  WF Test  Sharpe: {test_m.get('sharpe', 0):.3f}  Ann Ret: {test_m.get('ann_ret', 0):.2%}")
         print()
@@ -298,16 +319,20 @@ def main():
         print("=" * 90)
         print("  SUMMARY — EMA-Crossover Trend Signal")
         print("=" * 90)
-        hdr = (f"{'Combo':<14} {'Sharpe':>7} {'Ann Ret':>8} {'Ann Vol':>8} "
-               f"{'Max DD':>8} {'Win%':>6} {'Skew':>7} "
-               f"{'p_defl':>7} {'Sig5%':>5} {'WF Trn':>7} {'WF Tst':>7}")
+        hdr = (
+            f"{'Combo':<14} {'Sharpe':>7} {'Ann Ret':>8} {'Ann Vol':>8} "
+            f"{'Max DD':>8} {'Win%':>6} {'Skew':>7} "
+            f"{'p_defl':>7} {'Sig5%':>5} {'WF Trn':>7} {'WF Tst':>7}"
+        )
         print(hdr)
         print("-" * len(hdr))
         for r in rows:
             sig = "YES" if r["deflated_sig"] else "NO"
-            print(f"{r['combo']:<14} {r['sharpe']:>7.3f} {r['ann_ret']:>+7.1%} {r['ann_vol']:>7.1%} "
-                  f"{r['max_dd']:>7.1%} {r['win_rate']:>5.1%} {r['skew']:>7.3f} "
-                  f"{r['p_deflated']:>7.4f} {sig:>5} {r['wf_train_sharpe']:>7.3f} {r['wf_test_sharpe']:>7.3f}")
+            print(
+                f"{r['combo']:<14} {r['sharpe']:>7.3f} {r['ann_ret']:>+7.1%} {r['ann_vol']:>7.1%} "
+                f"{r['max_dd']:>7.1%} {r['win_rate']:>5.1%} {r['skew']:>7.3f} "
+                f"{r['p_deflated']:>7.4f} {sig:>5} {r['wf_train_sharpe']:>7.3f} {r['wf_test_sharpe']:>7.3f}"
+            )
         print()
 
         # Save summary to CSV

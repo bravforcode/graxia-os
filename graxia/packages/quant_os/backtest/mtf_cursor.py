@@ -8,6 +8,7 @@ This is the ONLY safe way to provide multi-TF data to strategies.
 """
 
 from datetime import datetime
+from typing import Any
 
 
 class MultiTimeframeCursor:
@@ -53,7 +54,7 @@ class MultiTimeframeCursor:
         base bar — lower TF bars at the same timestamp are included since
         they would have closed at or before the base bar's close).
         """
-        result = {}
+        result: dict[str, Any] = {}
 
         for tf, (data, ts_list) in self._data.items():
             # Find rightmost index where ts <= as_of via sorted order
@@ -67,9 +68,9 @@ class MultiTimeframeCursor:
 
             if count == 0:
                 # No data available yet for this TF
-                result[tf] = {k: [] for k in data.keys()}
+                result[tf] = {k: [] for k in data}
             else:
-                result[tf] = {k: [data[k][i] for i in sorted_idx[:count]] for k in data.keys()}
+                result[tf] = {k: [data[k][i] for i in sorted_idx[:count]] for k in data}
 
         return result
 
@@ -78,7 +79,7 @@ class MultiTimeframeCursor:
         Return multi-TF data sliced to timestamp < as_of (exclusive).
         Used when the base bar itself should not be visible to lower TFs.
         """
-        result = {}
+        result: dict[str, Any] = {}
 
         for tf, (data, ts_list) in self._data.items():
             sorted_idx = self._sorted_indices[tf]
@@ -90,8 +91,8 @@ class MultiTimeframeCursor:
                     break
 
             if count == 0:
-                result[tf] = {k: [] for k in data.keys()}
+                result[tf] = {k: [] for k in data}
             else:
-                result[tf] = {k: [data[k][i] for i in sorted_idx[:count]] for k in data.keys()}
+                result[tf] = {k: [data[k][i] for i in sorted_idx[:count]] for k in data}
 
         return result

@@ -28,7 +28,7 @@ class LiveSpreadTracker:
         "GBPUSD": 0.15,   # ~1.5 pips
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._cache: dict[str, SpreadSnapshot] = {}
         self._last_update: float = 0
         self._update_interval: float = 300  # 5 minutes
@@ -40,7 +40,7 @@ class LiveSpreadTracker:
             return self._cache[symbol].spread_pips
         return self.DEFAULT_SPREADS.get(symbol, 0.5)
 
-    def update_spread(self, symbol: str, bid: float, ask: float):
+    def update_spread(self, symbol: str, bid: float, ask: float) -> None:
         """Update spread from live data (called by MT5 feed)."""
         spread = (ask - bid) * 10 if symbol in ("XAUUSD",) else ask - bid
         self._cache[symbol] = SpreadSnapshot(

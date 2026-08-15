@@ -1,0 +1,9 @@
+{
+  "n_trades": 43,
+  "dk_t": -10.1056,
+  "sharpe": -17.6977,
+  "mean_pnl": -163.6369,
+  "final_cash": 2963.62,
+  "verdict": "REJECT",
+  "executed_at": "2026-08-06T18:35:36.430111+00:00"
+}

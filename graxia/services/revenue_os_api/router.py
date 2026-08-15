@@ -27,10 +27,10 @@ URL map:
 from fastapi import APIRouter
 
 from .routers import (
-    approvals, automation, bwcp, campaigns, checkout,
+    approvals, automation, autonomy, bwcp, campaigns, checkout,
     dashboard, delivery, emails, entitlements,
-    incidents, leads, ledger, orders, outbox, refunds,
-    system, ceo_dashboard,
+    incidents, leads, ledger, orders, outbox, policy, refunds,
+    support, system, ceo_dashboard,
 )
 
 api_router = APIRouter(prefix="/api")
@@ -52,6 +52,11 @@ api_router.include_router(approvals.router,    prefix="/approvals",    tags=["Ap
 api_router.include_router(incidents.router,    prefix="/incidents",    tags=["Incidents"])
 api_router.include_router(dashboard.router,    prefix="/dashboard",    tags=["Dashboard"])
 api_router.include_router(automation.router,   prefix="/automation",   tags=["Automation"])
+api_router.include_router(autonomy.router,     prefix="/autonomy",     tags=["Autonomy"])
+api_router.include_router(policy.router,       prefix="/policy",       tags=["Policy"])
+
+# ── Public (identity verified inside the agent) ────────────────────────────
+api_router.include_router(support.router,      prefix="/support",      tags=["Support"])
 
 # ── NEW v12 Routers ──────────────────────────────────────────────────────
 api_router.include_router(bwcp.router,         prefix="/bwcp",         tags=["BWCP Messages"])

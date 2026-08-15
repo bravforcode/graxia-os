@@ -1,0 +1,29 @@
+[
+  {
+    "timeframe": "H1",
+    "bars": 50000,
+    "trades": 33297,
+    "sharpe": 0.836,
+    "p_value": 0.05,
+    "null_95th": 0.828,
+    "survives": false
+  },
+  {
+    "timeframe": "M15",
+    "bars": 50000,
+    "trades": 33297,
+    "sharpe": 0.546,
+    "p_value": 0.31,
+    "null_95th": 1.335,
+    "survives": false
+  },
+  {
+    "timeframe": "D1",
+    "bars": 20300,
+    "trades": 13478,
+    "sharpe": 0.116,
+    "p_value": 0.22,
+    "null_95th": 0.238,
+    "survives": false
+  }
+]

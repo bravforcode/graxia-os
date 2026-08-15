@@ -8,8 +8,8 @@ from datetime import UTC, datetime
 class ReviewReport:
     strategy_id: str = ""
     decision: str = ""
-    blockers: list = None
-    evidence_summary: dict = None
+    blockers: list | None = None
+    evidence_summary: dict | None = None
     recommendation: str = ""
     operator_notes: str = ""
     timestamp_utc: str = ""

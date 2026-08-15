@@ -447,6 +447,21 @@ class TestPriceSanityCheck:
 class TestPreTradeGatePriceSanity:
     """Tests for PreTradeRiskGate with price sanity check."""
 
+    class _FakeKillSwitch:
+        """Minimal kill switch that never triggers."""
+
+        def is_active(self):
+            return False
+
+        def is_paused(self):
+            return False
+
+    class _FakeCircuitBreaker:
+        """Minimal circuit breaker that never trips."""
+
+        def is_open(self, asset_class=None):
+            return False
+
     def _make_order(self, symbol="XAUUSD", asset_class="metals"):
         """Create a mock order."""
         order = MagicMock()
@@ -458,7 +473,7 @@ class TestPreTradeGatePriceSanity:
         """Gate passes when no price_provider is set."""
         from graxia.packages.quant_os.risk.pre_trade_gate import PreTradeRiskGate
 
-        gate = PreTradeRiskGate()
+        gate = PreTradeRiskGate(kill_switch=self._FakeKillSwitch(), circuit_breaker=self._FakeCircuitBreaker())
         result = gate.check_order_sync(self._make_order())
         assert result.passed is True
 
@@ -472,7 +487,9 @@ class TestPreTradeGatePriceSanity:
         prices.append(2300.5)  # current price (most recent)
         provider.get_recent_prices.return_value = prices
 
-        gate = PreTradeRiskGate(price_provider=provider)
+        gate = PreTradeRiskGate(
+            price_provider=provider, kill_switch=self._FakeKillSwitch(), circuit_breaker=self._FakeCircuitBreaker()
+        )
         result = gate.check_order_sync(self._make_order())
         assert result.passed is True
 
@@ -486,7 +503,9 @@ class TestPreTradeGatePriceSanity:
         prices.append(2400.0)  # way off
         provider.get_recent_prices.return_value = prices
 
-        gate = PreTradeRiskGate(price_provider=provider)
+        gate = PreTradeRiskGate(
+            price_provider=provider, kill_switch=self._FakeKillSwitch(), circuit_breaker=self._FakeCircuitBreaker()
+        )
         result = gate.check_order_sync(self._make_order())
         assert result.passed is False
         assert "Price anomaly" in result.reason
@@ -498,7 +517,9 @@ class TestPreTradeGatePriceSanity:
         provider = MagicMock()
         provider.get_recent_prices.side_effect = RuntimeError("DB connection lost")
 
-        gate = PreTradeRiskGate(price_provider=provider)
+        gate = PreTradeRiskGate(
+            price_provider=provider, kill_switch=self._FakeKillSwitch(), circuit_breaker=self._FakeCircuitBreaker()
+        )
         result = gate.check_order_sync(self._make_order())
         assert result.passed is False
         assert "Price check error" in result.reason
@@ -510,7 +531,9 @@ class TestPreTradeGatePriceSanity:
         provider = MagicMock()
         provider.get_recent_prices.return_value = []
 
-        gate = PreTradeRiskGate(price_provider=provider)
+        gate = PreTradeRiskGate(
+            price_provider=provider, kill_switch=self._FakeKillSwitch(), circuit_breaker=self._FakeCircuitBreaker()
+        )
         result = gate.check_order_sync(self._make_order())
         assert result.passed is True
 

@@ -18,8 +18,7 @@ with CostScenario. This module handles per-asset-class cost parameters.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, UTC
-from typing import Optional
+from datetime import UTC, datetime
 
 from .live_spread import LiveSpreadTracker
 
@@ -73,6 +72,15 @@ CRYPTO = CostParams(
     slippage_bps=2.0,  # Higher slippage for crypto
     swap_long_bps=-10.0,  # High funding cost
     swap_short_bps=-5.0,
+)
+
+INDICES = CostParams(
+    name="INDICES",
+    spread_bps=3.0,  # ~3 bps for major indices
+    commission_per_lot=5.0,  # $5 round-trip commission
+    slippage_bps=1.0,
+    swap_long_bps=-0.2,
+    swap_short_bps=-0.2,
 )
 
 # XAUUSD stress scenario: 72 bps (regulatory stress test)
@@ -138,7 +146,7 @@ _SESSION_HOURS: dict[str, tuple[int, int]] = {
 _spread_tracker = LiveSpreadTracker()
 
 
-def get_session(hour_utc: Optional[int] = None) -> str:
+def get_session(hour_utc: int | None = None) -> str:
     """Classify the current (or given) UTC hour into a trading session.
 
     Session windows (UTC):
@@ -163,7 +171,7 @@ def get_session(hour_utc: Optional[int] = None) -> str:
     return "asian"
 
 
-def get_backtest_cost(symbol: str = "XAUUSD", timestamp: Optional[datetime] = None) -> float:
+def get_backtest_cost(symbol: str = "XAUUSD", timestamp: datetime | None = None) -> float:
     """Session-aware backtest round-trip cost for a given timestamp.
 
     Uses live spread if available (via LiveSpreadTracker), otherwise
@@ -185,7 +193,7 @@ def get_backtest_cost(symbol: str = "XAUUSD", timestamp: Optional[datetime] = No
     return COST_PER_TRADE_BY_SESSION.get(session, COST_PER_TRADE_BY_SESSION["asian"])
 
 
-def get_live_round_trip_cost(symbol: str = "XAUUSD") -> Optional[float]:
+def get_live_round_trip_cost(symbol: str = "XAUUSD") -> float | None:
     """Pull live round-trip cost from MT5 terminal ask-bid.
 
     For Pepperstone Razor XAUUSD, commission is embedded in the spread.
@@ -207,7 +215,7 @@ def get_live_round_trip_cost(symbol: str = "XAUUSD") -> Optional[float]:
     return float(tick.ask - tick.bid)
 
 
-def get_live_spread_as_return(symbol: str = "XAUUSD") -> Optional[float]:
+def get_live_spread_as_return(symbol: str = "XAUUSD") -> float | None:
     """Get live spread as a fraction of price (return units).
 
     Useful for converting between dollar cost and return-unit cost

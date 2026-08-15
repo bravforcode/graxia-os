@@ -1,0 +1,17 @@
+[
+  {
+    "name": "Cross-Asset Momentum",
+    "status": "ERROR: cannot concatenate object of type '<class 'numpy.ndarray'>'; only Series and DataFrame objs are valid",
+    "overall": "FAIL"
+  },
+  {
+    "name": "Session Pattern",
+    "status": "ERROR: compute_sp_signals() missing 1 required positional argument: 'timestamps'",
+    "overall": "FAIL"
+  },
+  {
+    "name": "Macro Regime MR",
+    "status": "ERROR: cannot concatenate object of type '<class 'numpy.ndarray'>'; only Series and DataFrame objs are valid",
+    "overall": "FAIL"
+  }
+]

@@ -1,0 +1,47 @@
+================================================================================
+EDGE VERIFICATION REPORT: Donchian Breakout
+Symbol: XAUUSD D1
+Data: 11063 bars
+Date: 2026-07-18T18:16:02.815811+00:00
+================================================================================
+
+BASELINE METRICS
+----------------------------------------
+Total Trades: 1
+Win Rate: 0.0%
+Sharpe Ratio: 0.0000
+Sharpe Ratio (bar-level):   0.0000
+Profit Factor: 0.00
+Max Drawdown Pct: 0.0
+Total PnL: -66.91
+
+WALK-FORWARD ANALYSIS
+----------------------------------------
+  0/5 positive, 5 trades, Sharpe=-118.2546
+  FAIL
+
+DEFLATED SHARPE RATIO
+----------------------------------------
+  DSR: Sharpe=0.0000, P(alpha)=1.0000
+  FAIL
+
+PROBABILITY OF BACKTEST OVERFITTING
+----------------------------------------
+  PBO: 0.1000
+  FAIL
+
+BOOTSTRAP CONFIDENCE INTERVAL
+----------------------------------------
+  BOOTSTRAP: Sharpe=0.0000, CI=[0.0000, 0.0000]
+  FAIL
+
+COST STRESS TEST
+----------------------------------------
+  COST STRESS: Base PnL=-66.91, 2x PnL=-67.57, Degradation=1.0%
+  FAIL
+
+================================================================================
+FINAL: 0/5 gates passed
+VERDICT: NO EDGE
+RECOMMENDATION: Reject strategy
+================================================================================

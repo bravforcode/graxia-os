@@ -47,7 +47,7 @@ class LedgerRecord:
 class IntegrityChain:
     """Append-only chain with hash verification."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._records: list[LedgerRecord] = []
         self._previous_hash: str = "GENESIS"
 

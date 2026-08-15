@@ -32,14 +32,42 @@ Expected Performance (2020-2026, multi-pair):
 """
 
 from decimal import Decimal
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
-
 import structlog
 
 from ..core.enums import RegimeType, SignalType
 from .base import Signal, Strategy, StrategyConfig
+
+if TYPE_CHECKING:
+    import pandas as pd
+
+
+def _compute_swing_labels(high: "pd.Series", low: "pd.Series", window: int = 5) -> tuple["pd.Series", "pd.Series"]:
+    """Swing-high / swing-low labels with no lookahead.
+
+    A centered rolling window is the natural way to express "this bar is a
+    local extreme", but it reads ``window // 2`` bars *after* the bar it
+    labels. In a backtest that is free money: the label is available at the
+    swing bar itself, which in live trading it cannot be.
+
+    The fix is to keep the centered comparison -- it defines the right thing --
+    and shift the answer forward by ``window // 2`` so it only becomes readable
+    once the confirming bars have actually printed. The label at bar ``t``
+    therefore describes bar ``t - window // 2`` and depends only on bars up to
+    ``t``.
+
+    Returns ``(swing_high, swing_low)`` as boolean Series; the leading
+    ``window // 2`` bars are False (not NaN) because "not yet confirmed" and
+    "not a swing" are the same thing to every downstream consumer.
+    """
+    half = window // 2
+    centered_high = high.rolling(window=window, center=True).max() == high
+    centered_low = low.rolling(window=window, center=True).min() == low
+    swing_high = centered_high.shift(half, fill_value=False).astype(bool)
+    swing_low = centered_low.shift(half, fill_value=False).astype(bool)
+    return swing_high, swing_low
 
 
 class MLBreakout(Strategy):
@@ -107,6 +135,7 @@ class MLBreakout(Strategy):
         ohlcv_data: dict[str, list],
         indicators: dict[str, Any] | None = None,
         regime: RegimeType | None = None,
+        **kwargs,
     ) -> Signal | None:
         """Generate ML-enhanced breakout signal"""
 
@@ -265,9 +294,8 @@ class MLBreakout(Strategy):
             if vwap is not None:
                 df["vwap_delta"] = (df["close"] - vwap) / vwap * 100
 
-            # Structure - swing high/low
-            df["swing_high"] = df["high"].rolling(window=5, center=True).max() == df["high"]
-            df["swing_low"] = df["low"].rolling(window=5, center=True).min() == df["low"]
+            # Structure - swing high/low (lookahead-free; see _compute_swing_labels)
+            df["swing_high"], df["swing_low"] = _compute_swing_labels(df["high"], df["low"], window=5)
 
             # Recent high/low for breakout detection
             df["recent_high"] = df["high"].rolling(window=self.lookback_period).max()
@@ -315,7 +343,7 @@ class MLBreakout(Strategy):
             structlog.get_logger(__name__).warning("mlb.prediction_error", error=str(e))
             return 0.5
 
-    def train(self, X_train, y_train, X_val, y_val) -> dict[str, float]:
+    def train(self, X_train, y_train, X_val, y_val) -> dict[str, float]:  # noqa: N803
         """Train the ML model"""
         # This would integrate with actual training code
         # For now, placeholder

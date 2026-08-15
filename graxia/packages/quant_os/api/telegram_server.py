@@ -156,12 +156,22 @@ async def _dispatch_update(update: dict) -> None:
     """
     # Handle callback_query (inline keyboard presses)
     callback_query = update.get("callback_query")
-    if callback_query and _callback_handler:
-        try:
-            await _callback_handler.handle_callback(callback_query)
-        except Exception as exc:
-            logger.warning("telegram.callback_error", error=str(exc))
-        return
+    if callback_query:
+        data = callback_query.get("data", "")
+        # Kill/resume callbacks go to command handler (has coordinator)
+        if data.startswith(("kill:", "resume:")) and _command_handler:
+            try:
+                await _command_handler.handle_callback(callback_query)
+            except Exception as exc:
+                logger.warning("telegram.callback_error", error=str(exc))
+            return
+        # Trade approval callbacks go to callback handler
+        if _callback_handler:
+            try:
+                await _callback_handler.handle_callback(callback_query)
+            except Exception as exc:
+                logger.warning("telegram.callback_error", error=str(exc))
+            return
 
     # Handle text commands
     message = update.get("message")

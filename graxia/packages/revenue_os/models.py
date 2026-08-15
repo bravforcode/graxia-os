@@ -23,7 +23,7 @@ from .enums import (
     OrderStatus, DeliveryStatus, ProductStatus, ProductType,
     LeadStatus, ContentStatus, ApprovalStatus, EmailStatus,
     CampaignStatus, IncidentSeverity, RefundStatus, LedgerEntryType,
-    AgentType, BWCPMessageType,
+    AgentType, BWCPMessageType, ValueType, AutonomyMode, RuleType,
 )
 
 
@@ -48,7 +48,9 @@ class Order(Base):
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     platform: Mapped[str] = mapped_column(String(50), nullable=False)  # "stripe" | "gumroad" | "manual"
     platform_order_id: Mapped[str] = mapped_column(String(255), nullable=False)
-    idempotency_key: Mapped[str] = mapped_column(String(255), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(
+        String(255), nullable=False, default=lambda: f"auto:{uuid4()}"
+    )
 
     customer_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("revenue_os_customers.id"))
     customer_email: Mapped[str] = mapped_column(String(320), nullable=False)
@@ -668,6 +670,7 @@ class IncidentEvent(Base):
 
     resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     resolution_notes: Mapped[Optional[str]] = mapped_column(Text)
+    notified_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -877,7 +880,7 @@ class BWCPMessage(Base):
     campaign_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("revenue_os_campaigns.id"))
     lead_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("revenue_os_leads.id"))
     approval_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("revenue_os_approvals.id"))
-    incident_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("revenue_os_incidents.id"))
+    incident_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("revenue_os_incident_events.id"))
 
     # Delivery tracking
     delivered: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -1044,3 +1047,61 @@ class AttributionSummary(Base):
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+# ══════════════════════════════════════════════════════════════════
+# POLICY & AUTONOMY MODELS
+# ══════════════════════════════════════════════════════════════════
+
+class PolicyRule(Base):
+    """Policy engine rules - the ONLY automated guardrail on top of the staged
+    autonomy rollout (Task 12). Agents cannot modify these (authenticated admin API,
+    Task 1a). A money-moving action is expected to have BOTH a PERCENT rule and an
+    ABSOLUTE rule; PolicyEngine.check() denies if either is exceeded."""
+    __tablename__ = "revenue_os_policy_rules"
+    __table_args__ = (
+        Index("ix_policy_action_scope", "action", "scope"),
+    )
+
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    action: Mapped[str] = mapped_column(String(50), nullable=False)
+    rule_type: Mapped[RuleType] = mapped_column(SAEnum(RuleType), nullable=False)
+    value: Mapped[Optional[float]] = mapped_column(Float)
+    value_type: Mapped[ValueType] = mapped_column(SAEnum(ValueType), default=ValueType.PERCENT, nullable=False)
+    limited_multiplier: Mapped[float] = mapped_column(Float, default=0.25, nullable=False)
+    scope: Mapped[str] = mapped_column(String(50), default="global")
+    scope_value: Mapped[Optional[str]] = mapped_column(String(255))
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    priority: Mapped[int] = mapped_column(Integer, default=100)
+    description: Mapped[Optional[str]] = mapped_column(String(500))
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class AutonomyState(Base):
+    """Global autonomy state (singleton row, id=1). Holds a MODE, not a boolean —
+    a freshly-migrated row must default to OFF, never full autonomy (Risk Audit #1).
+    Task 12 is the only place expected to advance this past OFF, after its stage gates."""
+    __tablename__ = "revenue_os_autonomy_state"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
+    mode: Mapped[AutonomyMode] = mapped_column(SAEnum(AutonomyMode), default=AutonomyMode.OFF, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class SupportVerification(Base):
+    """One-time codes proving email ownership before WISMO/refund actions (Risk Audit #3/#7)."""
+    __tablename__ = "revenue_os_support_verifications"
+    __table_args__ = (
+        Index("ix_support_verification_email", "email"),
+    )
+
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    email: Mapped[str] = mapped_column(String(320), nullable=False)
+    code_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    used_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

@@ -1,0 +1,48 @@
+================================================================================
+EDGE VERIFICATION REPORT: Liquidity Sweep V2 (Isolated Trail Test: trail=3.0, RSI=35/65)
+Symbol: XAUUSD D1
+Data: 11063 bars
+Date: 2026-07-18T20:18:14.791678+00:00
+================================================================================
+
+BASELINE METRICS
+----------------------------------------
+Total Trades: 72
+Win Rate: 37.5%
+Sharpe Ratio: 0.2715
+Sharpe Ratio (bar-level):   0.0000
+Profit Factor: 0.94
+Max Drawdown Pct: 0.0
+Total PnL: -113.54
+
+WALK-FORWARD ANALYSIS
+----------------------------------------
+  1/5 positive, 35 trades, Sharpe=-2.5920
+  FAIL
+
+DEFLATED SHARPE RATIO
+----------------------------------------
+  DSR: Sharpe=0.2715, P(alpha)=0.1949
+  Observations: 72
+  FAIL
+
+PROBABILITY OF BACKTEST OVERFITTING
+----------------------------------------
+  PBO: 0.4000
+  FAIL
+
+BOOTSTRAP CONFIDENCE INTERVAL
+----------------------------------------
+  BOOTSTRAP: Sharpe=0.2715, CI=[-0.0087, 0.0086]
+  FAIL
+
+COST STRESS TEST
+----------------------------------------
+  COST STRESS: Base PnL=-113.54, 2x PnL=-120.05, Degradation=5.7%
+  FAIL
+
+================================================================================
+FINAL: 0/5 gates passed
+VERDICT: NO EDGE
+RECOMMENDATION: Reject strategy
+================================================================================

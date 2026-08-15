@@ -33,6 +33,8 @@ from ..execution.adapters.base import AccountInfo, Order, OrderResult
 from ..execution.adapters.manager import BrokerManager
 from ..risk.engine import AccountState, PortfolioState, RiskEngine, RiskVerdict, Signal
 from ..risk.kill_switch import KillSwitch
+from ..risk.position_sizer import FixedFractionalSizer
+from ..risk.realtime_pnl import RealTimePnLTracker
 from . import config as auto_config
 from .decision_engine import TradeDecision
 from .live_approval import LiveApprovalGate
@@ -88,9 +90,16 @@ class OrderExecutor:
 
         # Daily stats tracking (reset at midnight UTC)
         self._daily_trades: int = 0
-        self._daily_realized_pnl: Decimal = Decimal("0")
         self._open_positions: int = 0
         self._last_reset_date: datetime = datetime.now(UTC)
+
+        # Real-time daily/weekly P&L, derived from broker-reported equity.
+        # This is the *only* PnL tracker in the executor -- it feeds both
+        # the local daily-loss backstop (Step 5 below) and
+        # AccountState.daily_pnl/weekly_pnl passed to RiskEngine Layer 3.
+        self._pnl_tracker: RealTimePnLTracker = RealTimePnLTracker()
+        self._pnl_baseline_set: bool = False
+        self._last_week_key: tuple[int, int] | None = None
 
         # Audit trail
         self._execution_log: list[dict[str, Any]] = []
@@ -129,14 +138,21 @@ class OrderExecutor:
         if self._daily_trades >= auto_config.MAX_DAILY_TRADES:
             return self._reject(f"Max daily trades reached ({self._daily_trades}/{auto_config.MAX_DAILY_TRADES})")
 
-        # Step 5: MAX_DAILY_LOSS_PCT
+        # Step 5: MAX_DAILY_LOSS_PCT — fetch real account state once (fed by
+        # RealTimePnLTracker, synced from broker-reported equity) and reuse
+        # it for both this local backstop and the RiskEngine call below.
+        # This local check exists so the gate holds even if the risk engine
+        # is misconfigured/mocked — RiskEngine Layer 3 independently checks
+        # the same account.daily_pnl/weekly_pnl as defense in depth.
+        account, portfolio = self._fetch_account_state()
         if self._check_daily_loss_breached():
             return self._reject(
-                f"Daily loss limit breached ({float(self._daily_realized_pnl):.2f} / {auto_config.MAX_DAILY_LOSS_PCT}%)"
+                f"Daily loss limit breached (daily P&L ${float(self._pnl_tracker.daily_pnl):.2f} "
+                f"vs {self._effective_max_daily_loss_pct():.1f}% max)"
             )
 
-        # Step 6: Risk engine pre-trade check
-        risk_ok, risk_reason = self._check_risk(decision)
+        # Step 6: Risk engine pre-trade check (includes daily loss check)
+        risk_ok, risk_reason = self._check_risk(decision, account, portfolio)
         if not risk_ok:
             return self._reject(risk_reason)
 
@@ -163,8 +179,8 @@ class OrderExecutor:
         return {
             "trades_today": self._daily_trades,
             "max_daily_trades": auto_config.MAX_DAILY_TRADES,
-            "realized_pnl": float(self._daily_realized_pnl),
-            "max_daily_loss_pct": auto_config.MAX_DAILY_LOSS_PCT,
+            "realized_pnl": float(self._pnl_tracker.daily_pnl),
+            "max_daily_loss_pct": self._effective_max_daily_loss_pct(),
             "open_positions": self._open_positions,
             "max_open_positions": auto_config.MAX_OPEN_POSITIONS,
             "mode": self._mode,
@@ -197,8 +213,18 @@ class OrderExecutor:
 
         return True, ""
 
-    def _check_risk(self, decision: TradeDecision) -> tuple[bool, str]:
-        """Run the 4-layer RiskEngine evaluation."""
+    def _check_risk(
+        self,
+        decision: TradeDecision,
+        account: AccountState | None = None,
+        portfolio: PortfolioState | None = None,
+    ) -> tuple[bool, str]:
+        """Run the 4-layer RiskEngine evaluation.
+
+        ``account``/``portfolio`` may be pre-fetched by the caller (``execute()``
+        does this to avoid a duplicate broker round-trip); if omitted, they are
+        fetched here.
+        """
         signal = Signal(
             symbol=decision.symbol,
             conviction=decision.confidence,
@@ -214,7 +240,8 @@ class OrderExecutor:
             strategy_id="autonomous",
         )
 
-        account, portfolio = self._fetch_account_state()
+        if account is None or portfolio is None:
+            account, portfolio = self._fetch_account_state()
 
         verdict: RiskVerdict = self._risk_engine.evaluate(signal, account, portfolio)
 
@@ -235,14 +262,14 @@ class OrderExecutor:
 
         Rejects if 2+ positions already exist in the same asset class.
         """
-        MAX_PER_CLASS = 2
+        max_per_class = 2
         asset_class = self._symbol_registry.get_asset_class(decision.symbol)
 
         try:
             broker = self._broker_manager.active
             positions = broker.get_positions()
         except Exception:
-            return True, ""
+            return False, "Cannot verify correlation concentration — broker unavailable"
 
         class_count = 0
         for pos in positions:
@@ -250,20 +277,34 @@ class OrderExecutor:
             if self._symbol_registry.get_asset_class(sym) == asset_class:
                 class_count += 1
 
-        if class_count >= MAX_PER_CLASS:
-            return False, (f"Correlation limit: {class_count} positions in " f"{asset_class} (max {MAX_PER_CLASS})")
+        if class_count >= max_per_class:
+            return False, (f"Correlation limit: {class_count} positions in " f"{asset_class} (max {max_per_class})")
 
         return True, ""
 
     def _fetch_account_state(self) -> tuple[AccountState, PortfolioState]:
         """Fetch real account and portfolio state from the broker adapter.
 
-        Falls back to sensible defaults if the broker is unavailable.
+        Fails CLOSED if the broker is unavailable: returns a zero-equity
+        ``AccountState``.  RiskEngine Layer 3 rejects any signal when
+        ``equity <= 0`` ("account wiped") — we must never fabricate a
+        healthy default account here, or the risk engine would approve
+        trades while genuinely blind to real account state.
         """
         try:
             broker = self._broker_manager.active
             info: AccountInfo = broker.get_account_info()
             positions = broker.get_positions()
+
+            equity_dec = Decimal(str(info.equity))
+            self._maybe_reset_weekly_tracker()
+            if not self._pnl_baseline_set:
+                # First real reading — anchor daily/weekly start equity here
+                # instead of the tracker's placeholder constructor default.
+                self._pnl_tracker.set_baseline(equity_dec)
+                self._pnl_baseline_set = True
+            else:
+                self._pnl_tracker.sync_equity(equity_dec)
 
             margin_level = 999.0
             if info.margin_used > 0:
@@ -272,6 +313,8 @@ class OrderExecutor:
             account = AccountState(
                 equity=info.equity,
                 balance=info.cash,
+                daily_pnl=float(self._pnl_tracker.daily_pnl),
+                weekly_pnl=float(self._pnl_tracker.weekly_pnl),
                 free_margin=info.margin_available,
                 margin_level_pct=margin_level,
                 open_positions=len(positions),
@@ -281,7 +324,10 @@ class OrderExecutor:
 
         except Exception as exc:
             logger.warning("order_executor.fetch_account_fallback", error=str(exc))
-            return AccountState(), PortfolioState()
+            return (
+                AccountState(equity=0.0, balance=0.0, free_margin=0.0, margin_level_pct=0.0),
+                PortfolioState(),
+            )
 
     def _portfolio_from_positions(self, positions: list[dict], equity: float) -> PortfolioState:
         """Build a PortfolioState from broker position data."""
@@ -315,33 +361,41 @@ class OrderExecutor:
     def _calculate_position_size(self, decision: TradeDecision) -> float:
         """Derive position size from confidence and real account equity.
 
-        Risk is expressed as a % of equity per trade, then converted to lots
-        using SL distance and contract size for the asset class.
+        Delegates the actual lot-size math to
+        ``risk.position_sizer.FixedFractionalSizer`` (per-symbol contract
+        sizes + portfolio-exposure/max-position caps from config), scaled
+        by a confidence-derived risk percentage that reproduces this
+        method's original floor/cap (0.01%-0.5% of equity per trade).
+
+        Fails toward zero size (not a fabricated equity guess) if the
+        broker is unreachable -- sizing a real order off a made-up equity
+        number is a fail-open-adjacent pattern; zero size is safe because
+        ``execute()`` rejects orders with ``size <= 0``.
         """
         try:
             broker = self._broker_manager.active
             info = broker.get_account_info()
             equity = info.equity
-        except Exception:
-            equity = 10000.0  # fallback
-
-        risk_pct = max(0.01, min(decision.confidence * 0.5, 1.0)) / 100.0
-        risk_amount = equity * risk_pct
+        except Exception as exc:
+            logger.warning("order_executor.size_equity_fetch_failed", error=str(exc))
+            return 0.0
 
         sl_distance = abs(decision.entry - decision.stop_loss) if decision.stop_loss else 0
         if sl_distance <= 0:
             return 0.0
 
-        asset_class = self._symbol_registry.get_asset_class(decision.symbol)
-        if asset_class == "forex":
-            size = risk_amount / (sl_distance * 100000)
-        elif asset_class == "metals":
-            size = risk_amount / (sl_distance * 100)
-        elif asset_class == "crypto":
-            size = risk_amount / sl_distance
-        else:
-            size = risk_amount / sl_distance
+        # Same confidence-scaled risk% as before: floor 0.01%, cap 0.5% of equity.
+        risk_pct = max(0.01, min(decision.confidence * 0.5, 1.0))
 
+        sizer = FixedFractionalSizer(risk_pct=risk_pct)
+        result = sizer.calculate(
+            account_balance=Decimal(str(equity)),
+            entry_price=Decimal(str(decision.entry)),
+            stop_loss=Decimal(str(decision.stop_loss)),
+            symbol=decision.symbol,
+        )
+
+        size = float(result.lots)
         return round(max(0.01, min(size, 1.0)), 4)
 
     def _submit_order(self, decision: TradeDecision, size: float) -> ExecutionResult:
@@ -469,17 +523,42 @@ class OrderExecutor:
         self._log_execution(decision, exec_result)
         return exec_result
 
+    def _effective_max_daily_loss_pct(self) -> float:
+        """Single source of truth for the daily-loss % threshold.
+
+        Reads ``RiskEngine.effective_max_daily_loss_pct`` -- the *same*
+        number Layer 3 (``risk/engine.py::_layer3``) actually enforces --
+        so this local backstop can never silently disagree with the real
+        gate (previously this read ``auto_config.MAX_DAILY_LOSS_PCT`` (3%)
+        independently of Layer 3's threshold, which defaults to 2% or
+        whatever ``RiskPolicy`` the engine was built with -- two numbers
+        for one real-world limit).
+
+        Falls back to ``auto_config.MAX_DAILY_LOSS_PCT`` only when
+        ``self._risk_engine`` doesn't expose a real, numeric
+        ``effective_max_daily_loss_pct`` (e.g. a test double / mock risk
+        engine) -- there is nothing else to read in that case.
+        """
+        threshold = getattr(self._risk_engine, "effective_max_daily_loss_pct", None)
+        if isinstance(threshold, (int, float)):
+            return float(threshold)
+        return auto_config.MAX_DAILY_LOSS_PCT
+
     def _check_daily_loss_breached(self) -> bool:
-        """Check if daily realized P&L exceeds the loss limit (as % of equity)."""
-        if self._daily_realized_pnl >= 0:
+        """Check if today's real P&L exceeds the loss limit (as % of equity).
+
+        Backed by ``RealTimePnLTracker.daily_pnl``, which is synced from
+        broker-reported equity on every ``_fetch_account_state()`` call —
+        not a locally-incremented counter that nothing ever writes to.
+        """
+        daily_pnl = self._pnl_tracker.daily_pnl
+        if daily_pnl >= 0:
             return False
-        try:
-            broker = self._broker_manager.active
-            equity = broker.get_account_info().equity
-        except Exception:
-            equity = 10000.0
-        loss_pct = abs(float(self._daily_realized_pnl)) / equity * 100.0 if equity > 0 else 0.0
-        return loss_pct >= auto_config.MAX_DAILY_LOSS_PCT
+        equity = float(self._pnl_tracker.equity)
+        if equity <= 0:
+            return True
+        loss_pct = abs(float(daily_pnl)) / equity * 100.0
+        return loss_pct >= self._effective_max_daily_loss_pct()
 
     def _maybe_reset_daily_stats(self) -> None:
         """Reset daily counters at midnight UTC."""
@@ -490,11 +569,22 @@ class OrderExecutor:
                 prev_date=self._last_reset_date.date().isoformat(),
                 new_date=now.date().isoformat(),
                 trades=self._daily_trades,
-                pnl=float(self._daily_realized_pnl),
+                pnl=float(self._pnl_tracker.daily_pnl),
             )
             self._daily_trades = 0
-            self._daily_realized_pnl = Decimal("0")
+            self._pnl_tracker.new_day()
             self._last_reset_date = now
+
+    def _maybe_reset_weekly_tracker(self) -> None:
+        """Reset the PnL tracker's weekly baseline at the start of a new ISO week."""
+        now = datetime.now(UTC)
+        iso = now.isocalendar()
+        week_key = (iso[0], iso[1])
+        if self._last_week_key is None:
+            self._last_week_key = week_key
+        elif week_key != self._last_week_key:
+            self._pnl_tracker.new_week()
+            self._last_week_key = week_key
 
     def _reject(self, reason: str) -> ExecutionResult:
         """Create a rejection result and log it."""

@@ -50,7 +50,7 @@ class NewsBlackout:
         "LOW": 0,
     }
 
-    def __init__(self, blackout_minutes: int = 60):
+    def __init__(self, blackout_minutes: int = 60) -> None:
         self._default_minutes = blackout_minutes
         self._active: list[BlackoutEvent] = []
 
@@ -90,11 +90,11 @@ class NewsBlackout:
         self._cleanup_expired()
         return list(self._active)
 
-    def _cleanup_expired(self):
+    def _cleanup_expired(self) -> None:
         now = datetime.now(UTC)
         self._active = [e for e in self._active if e.expires_at > now]
 
-    def clear(self):
+    def clear(self) -> None:
         """Manually clear all blackouts."""
         self._active.clear()
 

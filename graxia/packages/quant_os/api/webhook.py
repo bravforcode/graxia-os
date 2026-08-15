@@ -22,6 +22,7 @@ Payload format:
 import hashlib
 import hmac
 import json
+import logging
 import time
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -38,7 +39,11 @@ from ..core.exceptions import KillSwitchTriggeredError, ValidationError
 from ..data.models import Signal as SignalModel
 from ..execution.adapters.manager import BrokerManager
 from ..execution.manager import OrderManager
+from ..risk.circuit_breaker import DEFAULT_STATE_FILE, CircuitBreaker
 from ..risk.engine import RiskEngine
+from ..risk.kill_switch import KillSwitch
+
+logger = logging.getLogger(__name__)
 
 webhook_router = APIRouter(prefix="/webhook", tags=["webhook"])
 
@@ -155,7 +160,7 @@ async def tradingview_webhook(
         data = json.loads(body)
         payload = TradingViewPayload(**data)
     except (json.JSONDecodeError, ValidationError) as e:
-        raise HTTPException(status_code=400, detail=f"Invalid payload: {e}")
+        raise HTTPException(status_code=400, detail=f"Invalid payload: {e}") from e
 
     # Deduplicate by event_id (if provided) or by hash of payload
     dedup_key = payload.event_id or hashlib.sha256(body).hexdigest()
@@ -171,7 +176,7 @@ async def tradingview_webhook(
     try:
         signal_type = SignalType.BUY if payload.action.lower() == "buy" else SignalType.SELL
     except ValueError:
-        raise HTTPException(status_code=400, detail=f"Invalid action: {payload.action}")
+        raise HTTPException(status_code=400, detail=f"Invalid action: {payload.action}") from None
 
     # Record signal in database
     signal = SignalModel(
@@ -191,20 +196,31 @@ async def tradingview_webhook(
         received_at=datetime.now(UTC),
     )
     db.add(signal)
-    db.commit()
-    db.refresh(signal)
+    await db.commit()
+    await db.refresh(signal)
 
     # Initialize components
     broker_manager = BrokerManager.from_config()
     await broker_manager.initialize()
 
-    risk_engine = RiskEngine(db_session=db)
+    kill_switch = KillSwitch()
+    circuit_breaker = CircuitBreaker(state_file=DEFAULT_STATE_FILE)
+    risk_engine = RiskEngine(kill_switch=kill_switch, circuit_breaker=circuit_breaker)
 
+    # KNOWN BROKEN (unresolved): `db` here is an AsyncSession (see
+    # graxia.packages.revenue_os.db.get_db), but OrderManager and
+    # IdempotencyChecker call self.db.query(...) - the legacy sync
+    # SQLAlchemy Session API, which AsyncSession does not implement.
+    # This handler will raise AttributeError the first time either
+    # class touches the DB. No sync session factory currently exists
+    # in revenue_os.db to substitute here. Not fixed in this pass -
+    # requires either an async rewrite of OrderManager/IdempotencyChecker's
+    # DB access or a dedicated sync session for this webhook path.
     order_manager = OrderManager(
         db_session=db,
         broker_manager=broker_manager,
         risk_engine=risk_engine,
-        kill_switch=None,  # Would be injected
+        kill_switch=kill_switch,
     )
 
     # Check if we should auto-trade
@@ -215,6 +231,14 @@ async def tradingview_webhook(
         TradingMode.LIVE_CONTROLLED,
     ]:
         try:
+            # Fetch real broker equity for position sizing
+            broker_equity = None
+            try:
+                account_info = broker_manager.active.get_account_info()
+                broker_equity = account_info.equity
+            except Exception:
+                logger.warning("webhook: failed to fetch broker equity, using default")
+
             # Submit order
             from decimal import Decimal
 
@@ -222,7 +246,7 @@ async def tradingview_webhook(
                 symbol=payload.symbol.upper(),
                 side=payload.action.upper(),
                 order_type="MARKET",
-                quantity=calculate_position_size(payload),  # Would calculate based on risk
+                quantity=calculate_position_size(payload, equity=broker_equity),
                 stop_price=Decimal(str(payload.sl)),
                 strategy_id=payload.strategy,
                 signal_id=str(signal.id),
@@ -232,7 +256,7 @@ async def tradingview_webhook(
                 signal.processed = True
                 signal.order_id = result.get("order_id")
                 signal.processed_at = datetime.now(UTC)
-                db.commit()
+                await db.commit()
 
                 return WebhookResponse(
                     success=True,
@@ -243,7 +267,7 @@ async def tradingview_webhook(
                 )
             else:
                 signal.rejection_reason = result.get("error")
-                db.commit()
+                await db.commit()
 
                 return WebhookResponse(
                     success=False,
@@ -255,13 +279,33 @@ async def tradingview_webhook(
 
         except KillSwitchTriggeredError as e:
             signal.rejection_reason = f"Kill switch: {e.switch_type}"
-            db.commit()
+            await db.commit()
 
             return WebhookResponse(
                 success=False,
                 signal_id=str(signal.id),
                 status="blocked",
                 message="Signal blocked by kill switch",
+                error=str(e),
+            )
+
+        except Exception as e:
+            # Fail closed: OrderManager/IdempotencyChecker use the sync
+            # SQLAlchemy Session API (self.db.query(...)) but `db` here is
+            # an AsyncSession, so any DB touch inside submit_order() raises
+            # (typically AttributeError). No order was placed. Rather than
+            # let this crash the request (raw 500 to TradingView, signal
+            # left uncommitted/unmarked), record it as a rejection and
+            # respond cleanly. Root cause unresolved: see note above.
+            logger.critical("webhook.order_submission_failed: %s", e, exc_info=True)
+            signal.rejection_reason = f"Order submission failed: {e}"
+            await db.commit()
+
+            return WebhookResponse(
+                success=False,
+                signal_id=str(signal.id),
+                status="error",
+                message="Signal recorded but order submission failed",
                 error=str(e),
             )
 
@@ -298,23 +342,59 @@ async def manual_signal(
         received_at=datetime.now(UTC),
     )
     db.add(signal)
-    db.commit()
+    await db.commit()
 
     return WebhookResponse(success=True, signal_id=str(signal.id), status="recorded", message="Manual signal recorded")
 
 
-def calculate_position_size(payload: TradingViewPayload) -> Decimal:
-    """Calculate position size based on signal parameters"""
-    from decimal import Decimal
+def calculate_position_size(payload: TradingViewPayload, equity: float | None = None) -> Decimal:
+    """Calculate position size based on risk per trade, SL distance, and account equity.
 
-    # Simplified - would use proper position sizing from risk engine
+    Args:
+        payload: TradingView webhook payload with price/SL info.
+        equity: Real broker equity in account currency. If None, uses default $10,000
+                (fallback for paper mode or when broker is unavailable).
+
+    Returns:
+        Position size in lots (Decimal, clamped to [0.01, 1.0]).
+    """
     config = get_config()
+    rp = config.risk_policy
 
-    # Default to 0.01 lot for testing
-    # In production, calculate based on:
-    # - Account balance
-    # - Risk per trade
-    # - SL distance
-    # - Symbol pip value
+    # Use real broker equity if provided, otherwise fall back to default
+    if equity is None or equity <= 0:
+        equity = 10000.0  # safe default for paper mode / broker unavailable
 
-    return Decimal("0.01")  # Minimum lot size
+    # Zero or missing ATR → return minimum lot (can't size without volatility)
+    atr = getattr(payload, "atr", None)
+    if atr is None or atr <= 0:
+        return Decimal("0.01")
+
+    # Risk amount = equity * risk_per_trade_fraction
+    risk_fraction = float(rp.risk_per_trade_fraction)
+    risk_amount = equity * risk_fraction
+
+    # SL distance in price
+    sl_distance = abs(payload.price - payload.sl)
+    if sl_distance <= 0:
+        return Decimal("0.01")  # fallback to minimum
+
+    # Single source of truth for per-symbol contract specs (core/contract_specs.py).
+    # Fixed 2026-08-07 (#11 batch): old code fabricated JPY contract_size
+    # (100000/100=1000) and mixed USD-risk with JPY-price distance.
+    symbol = payload.symbol.upper()
+    from ..core.contract_specs import get_spec
+    spec = get_spec(symbol)
+    if spec is not None and spec.tick_size > 0 and spec.tick_value > 0:
+        # FX/commodity: risk_usd / (SL-distance-in-ticks × USD-per-tick-per-lot)
+        sl_ticks = sl_distance / float(spec.tick_size)
+        lot_size = risk_amount / (sl_ticks * float(spec.tick_value))
+    else:
+        # Unmapped symbol → conservative fallback (previous default for non-FX)
+        contract_size = 100.0 if ("XAU" in symbol or "XAG" in symbol) else 100000.0
+        lot_size = risk_amount / (sl_distance * contract_size)
+
+    # Clamp to sane range
+    lot_size = max(0.01, min(lot_size, 1.0))
+
+    return Decimal(str(round(lot_size, 2)))

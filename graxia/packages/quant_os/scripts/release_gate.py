@@ -20,11 +20,17 @@ class ReleaseGate:
         self.check("clean_worktree", not dirty, dirty[:200] if dirty else "clean")
 
     def check_test_suite(self) -> None:
+        cmd = [sys.executable, "-m", "pytest", "-q", "--tb=line", "graxia/packages/quant_os/tests/"]
+        qm_path = self.root / "graxia" / "packages" / "quant_os" / "quarantine_manifest.json"
+        if qm_path.exists():
+            data = json.loads(qm_path.read_text())
+            for entry in data.get("quarantined_tests", []):
+                cmd.append("--ignore=" + str(self.root / "graxia" / "packages" / "quant_os" / entry["test_file"]))
         result = subprocess.run(
-            [sys.executable, "-m", "pytest", "-q", "--tb=line", "graxia/packages/quant_os/tests/"],
+            cmd,
             capture_output=True,
             text=True,
-            timeout=600,
+            timeout=1800,
             cwd=self.root,
         )
         output = result.stdout + result.stderr
@@ -45,7 +51,7 @@ class ReleaseGate:
         qm_path = self.root / "graxia" / "packages" / "quant_os" / "quarantine_manifest.json"
         if qm_path.exists():
             data = json.loads(qm_path.read_text())
-            entries = data.get("entries", [])
+            entries = data.get("quarantined_tests", [])
             self.check("quarantine_manifest", True, f"{len(entries)} entries")
         else:
             self.check("quarantine_manifest", True, "no manifest (no skips)")

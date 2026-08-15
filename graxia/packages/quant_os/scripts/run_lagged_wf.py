@@ -45,8 +45,9 @@ def compute_features_lagged(df):
     valid = ~np.isnan(features).any(axis=1)
     X = features[valid].astype(np.float32)
     y = ((target > 0)).astype(int)[valid]
-    
-    return X, y
+    price = close[valid]  # aligned price series for real-returns PnL
+
+    return X, y, price
 
 def run_walk_forward(symbol, tf, n_folds=5):
     """Run walk-forward with lagged features."""
@@ -58,13 +59,18 @@ def run_walk_forward(symbol, tf, n_folds=5):
     except:
         return None
     
-    X, y = compute_features_lagged(df)
+    X, y, price = compute_features_lagged(df)
     if len(X) < 500:
         return None
-    
+
     costs = COSTS.get(symbol, COSTS["XAUUSD"])
     spread = costs["spread"]
     slip = costs["slippage"]
+    price_level = df["close"].mean()
+
+    # Forward returns aligned with y: rets_full[t] = (price[t+1] - price[t]) / price[t]
+    rets_full = np.zeros_like(price)
+    rets_full[:-1] = np.diff(price) / price[:-1]
     
     fold_size = len(X) // n_folds
     train_size = int(fold_size * 0.7)
@@ -102,13 +108,17 @@ def run_walk_forward(symbol, tf, n_folds=5):
             correct = (preds == y_test)[trade_mask]
             wins = correct.sum()
             losses = (~correct).sum()
-            
-            # P&L: win = +0.0001, loss = -0.00005
-            gross = (wins * 0.0001 - losses * 0.00005) * 2350.0
-            cost = (spread + slip) * 2350.0 * n_trades
-            net = gross - cost
-            
-            fold_nets.append({"trades": n_trades, "wins": int(wins), "losses": int(losses), "net": net})
+
+            # Real P&L from actual forward returns (no fixed-pip mock)
+            dirs = np.where(preds == 1, 1.0, -1.0)          # 2-class: 1=up, 0=down
+            rets = rets_full[test_start:test_end][trade_mask]
+            trade_nets = dirs[trade_mask] * rets * price_level - (spread + slip) * price_level
+            net = trade_nets.sum()
+
+            fold_nets.append({
+                "trades": n_trades, "wins": int(wins), "losses": int(losses),
+                "net": net, "trade_nets": trade_nets,
+            })
         
         if fold_nets:
             total_trades = sum(f["trades"] for f in fold_nets)
@@ -117,10 +127,11 @@ def run_walk_forward(symbol, tf, n_folds=5):
             total_net = sum(f["net"] for f in fold_nets)
             avg_net = total_net / len(fold_nets)
             
-            # Deflated Sharpe
+            # Real per-trade expectancy
             win_rate = total_wins / total_trades if total_trades > 0 else 0
-            avg_win = 0.0001 * 2350.0 if total_wins > 0 else 0
-            avg_loss = -0.00005 * 2350.0 if total_losses > 0 else 0
+            all_nets = np.concatenate([f["trade_nets"] for f in fold_nets])
+            avg_win = all_nets[all_nets > 0].mean() if (all_nets > 0).any() else 0.0
+            avg_loss = all_nets[all_nets < 0].mean() if (all_nets < 0).any() else 0.0
             expectancy = win_rate * avg_win + (1 - win_rate) * avg_loss
             
             results[ct] = {

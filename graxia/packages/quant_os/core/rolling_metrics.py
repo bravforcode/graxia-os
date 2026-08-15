@@ -11,7 +11,7 @@ class RollingMetrics:
 
     def rolling_sharpe(self, window: int = 20, risk_free: float = 0.0) -> list[float | None]:
         """Rolling Sharpe ratio"""
-        result = []
+        result: list[float | None] = []
         for i in range(len(self.returns)):
             if i < window - 1:
                 result.append(None)
@@ -27,7 +27,7 @@ class RollingMetrics:
 
     def rolling_sortino(self, window: int = 20, risk_free: float = 0.0) -> list[float | None]:
         """Rolling Sortino ratio (downside deviation only)"""
-        result = []
+        result: list[float | None] = []
         for i in range(len(self.returns)):
             if i < window - 1:
                 result.append(None)
@@ -47,7 +47,7 @@ class RollingMetrics:
 
     def rolling_max_drawdown(self, window: int = 20) -> list[float | None]:
         """Rolling maximum drawdown"""
-        result = []
+        result: list[float | None] = []
         for i in range(len(self.returns)):
             if i < window - 1:
                 result.append(None)
@@ -69,7 +69,7 @@ class RollingMetrics:
 
     def rolling_volatility(self, window: int = 20) -> list[float | None]:
         """Rolling annualized volatility"""
-        result = []
+        result: list[float | None] = []
         for i in range(len(self.returns)):
             if i < window - 1:
                 result.append(None)
@@ -80,7 +80,7 @@ class RollingMetrics:
 
     def rolling_win_rate(self, window: int = 20) -> list[float | None]:
         """Rolling win rate"""
-        result = []
+        result: list[float | None] = []
         for i in range(len(self.returns)):
             if i < window - 1:
                 result.append(None)
@@ -92,7 +92,7 @@ class RollingMetrics:
 
     def rolling_profit_factor(self, window: int = 20) -> list[float | None]:
         """Rolling profit factor"""
-        result = []
+        result: list[float | None] = []
         for i in range(len(self.returns)):
             if i < window - 1:
                 result.append(None)

@@ -1,3 +1,5 @@
+# Legacy test for deprecated governance/validation_stack (see module docstring). No new tests should target it.
+
 from governance.experiment_registry import ExperimentRecord, ExperimentRegistry
 from governance.ml_policy import MLPhase, MLPolicyGuard, MLUsageType
 from governance.trial_budget import TrialBudget

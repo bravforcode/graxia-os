@@ -1,0 +1,194 @@
+{
+  "schema_version": "1.0",
+  "direction": "J",
+  "description": "XAUUSD positioning (COT) + cross-asset (DXY) mechanisms. Data that was previously missing is now available: CFTC COT disaggregated positioning 2021-2026 (data/cot/) and DXY 2018-2026 (data/DXY_D1.csv). XAUUSD costs verified correct (0.65 bps rt, commission=0).",
+  "last_updated": "2026-08-06",
+  "current_verdict_2026-08-06": "J: 3003 REJECTED, 3007/3008/3009 INCONCLUSIVE, 3010 REJECTED (FOMC), 3011 REJECTED (XAU H1).",
+  "stopping_rule_doc": "reports/stopping_rule_2026_08_06_direction_j.md",
+  "sacred_holdout_status": "LOCKED",
+  "notes": [
+    "Registered 2026-08-06 BEFORE running any backtest (F27 discipline).",
+    "Both mechanisms have economic rationale: positioning extremes historically precede gold reversals; USD (DXY) direction leads gold (inverse correlation).",
+    "XAUUSD was NOT affected by the commission unit error (commission=0 on Pepperstone Razor commodities CFD) — prior XAUUSD REJECTs stand; these are NEW mechanisms on the same instrument."
+  ],
+  "hypotheses": [
+    {
+      "trial_number": 3007,
+      "id": "DIRJ-COT-XAUUSD",
+      "status": "INCONCLUSIVE",
+      "instrument": "XAUUSD (D1)",
+      "symbols": [
+        "XAUUSD"
+      ],
+      "registered_at": "2026-08-06T18:14:54.587510+00:00",
+      "result_at": "2026-08-06T18:14:54.587510+00:00",
+      "result_summary": {
+        "n_trades": 3,
+        "conclusion": "INCONCLUSIVE: only 3 z>=2.0 positioning-extreme events in 5 years of COT data (2021-2026). Underpowered by construction — min-trades gate (30) not met. Managed Money net positioning rarely reaches 2-sigma extremes on gold. z threshold too strict for 5-year window."
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "XAUUSD": 0.65
+      },
+      "slippage_source": "none",
+      "slippage_bps_used": {},
+      "data_manifest_ref": "reports/edge_search_dirj.json",
+      "provenance_stamped_at": "2026-08-06T18:14:54.587510+00:00",
+      "notes": "Direction J trial 3007 — INCONCLUSIVE (insufficient signal frequency, not loss). No verdict change possible with 3 trades."
+    },
+    {
+      "trial_number": 3003,
+      "id": "DIRJ-DXY-XAUUSD",
+      "status": "REJECTED",
+      "instrument": "XAUUSD (D1)",
+      "symbols": [
+        "XAUUSD"
+      ],
+      "registered_at": "2026-08-06T18:14:54.587510+00:00",
+      "result_at": "2026-08-06T18:14:54.587510+00:00",
+      "result_summary": {
+        "n_trades": 245,
+        "dk_t": -15.47,
+        "sharpe": -10.07,
+        "mean_pnl": -139.73,
+        "conclusion": "REJECTED: DXY z>=1.0 momentum lead-lag loses massively (dk_t=-15.5, mean -/trade, 245 trades). Trading gold AGAINST DXY extremes is strongly wrong — gold and USD do NOT lead-lag in the hypothesized direction at 5-day horizon. Hypothesis falsified."
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "XAUUSD": 0.65
+      },
+      "slippage_source": "none",
+      "slippage_bps_used": {},
+      "data_manifest_ref": "reports/edge_search_dirj.json",
+      "provenance_stamped_at": "2026-08-06T18:14:54.587510+00:00",
+      "notes": "Direction J trial 3003 — REJECTED. DXY lead-lag hypothesis falsified (contra-direction loses)."
+    },
+    {
+      "trial_number": 3008,
+      "id": "DIRJ-COT-MM-Z15",
+      "status": "INCONCLUSIVE",
+      "instrument": "XAUUSD (D1)",
+      "symbols": [
+        "XAUUSD"
+      ],
+      "registered_at": "2026-08-06T18:27:21.412504+00:00",
+      "result_at": "2026-08-06T18:27:21.412504+00:00",
+      "result_summary": {
+        "n_trades": 8,
+        "cohort": "managed money",
+        "entry_z": 1.5,
+        "conclusion": "z>=1.5 gives 58 extreme weeks but only 8 trades after hold/exit logic (exit z=0.5 + re-entry lag). Underpowered — min-trades gate (30) not met. INCONCLUSIVE per pre-registered gate."
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "XAUUSD": 0.65
+      },
+      "slippage_source": "none",
+      "slippage_bps_used": {},
+      "data_manifest_ref": "reports/edge_search_dirj.json",
+      "provenance_stamped_at": "2026-08-06T18:27:21.412504+00:00",
+      "notes": "Direction J trial 3008 — INCONCLUSIVE (8 trades < 30 gate). COT weekly frequency structurally limits trade count."
+    },
+    {
+      "trial_number": 3009,
+      "id": "DIRJ-COT-SWAP-Z15",
+      "status": "INCONCLUSIVE",
+      "instrument": "XAUUSD (D1)",
+      "symbols": [
+        "XAUUSD"
+      ],
+      "registered_at": "2026-08-06T18:27:21.412504+00:00",
+      "result_at": "2026-08-06T18:27:21.412504+00:00",
+      "result_summary": {
+        "n_trades": 8,
+        "cohort": "swap dealer",
+        "entry_z": 1.5,
+        "conclusion": "Swap-dealer cohort z>=1.5 also yields only 8 trades. Underpowered — gate not met. INCONCLUSIVE per pre-registered gate."
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "XAUUSD": 0.65
+      },
+      "slippage_source": "none",
+      "slippage_bps_used": {},
+      "data_manifest_ref": "reports/edge_search_dirj.json",
+      "provenance_stamped_at": "2026-08-06T18:27:21.412504+00:00",
+      "notes": "Direction J trial 3009 — INCONCLUSIVE (8 trades < 30 gate). COT weekly frequency structurally limits trade count."
+    },
+    {
+      "trial_number": 3010,
+      "id": "DIRJ-FOMC-XAUUSD",
+      "status": "REJECTED",
+      "instrument": "XAUUSD (D1)",
+      "symbols": [
+        "XAUUSD"
+      ],
+      "registered_at": "2026-08-06T19:08:07.787706+00:00",
+      "result_at": "2026-08-06T19:08:07.787706+00:00",
+      "result_summary": {
+        "n_trades": 43,
+        "dk_t": -10.11,
+        "sharpe": -17.7,
+        "mean_pnl": -163.64,
+        "conclusion": "REJECTED: post-FOMC directional drift (3-day hold, 0.2-3.0% event filter) loses massively on gold (dk_t=-10.1, mean -/trade, 43 events 2020-2026). FOMC-day drift direction does NOT persist in gold — hypothesis falsified."
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "XAUUSD": 0.65
+      },
+      "slippage_source": "none",
+      "slippage_bps_used": {},
+      "data_manifest_ref": "reports/edge_search_dirj_fomc.json",
+      "provenance_stamped_at": "2026-08-06T19:08:07.787706+00:00",
+      "notes": "Direction J 3010 — REJECTED. Event-based (43 FOMC events) — powered sample, clean falsification."
+    },
+    {
+      "trial_number": 3011,
+      "id": "DIRJ-XAU-H1-MECH",
+      "status": "REJECTED",
+      "instrument": "XAUUSD (H1, 50k bars)",
+      "symbols": [
+        "XAUUSD"
+      ],
+      "registered_at": "2026-08-06T19:08:07.787706+00:00",
+      "result_at": "2026-08-06T19:08:07.787706+00:00",
+      "result_summary": {
+        "arms": {
+          "volume_breakout": {
+            "dk_t": 0.94,
+            "n_trades": 551
+          },
+          "hybrid_mom_mr": {
+            "dk_t": 0.64,
+            "n_trades": 3327
+          },
+          "liquidity_sweep_v2": {
+            "dk_t": -0.91,
+            "n_trades": 773
+          }
+        },
+        "pooled": {
+          "best_dk_t": 0.94
+        },
+        "conclusion": "REJECTED: 3 intraday mechanisms on XAUUSD H1 at 0.65 bps rt — none reaches significance (best dk_t=0.94). Volume breakout closest (positive but not significant)."
+      },
+      "cost_model_version": "4.1",
+      "cost_source": "FROM_TICKS",
+      "round_trip_bps_used": {
+        "XAUUSD": 0.65
+      },
+      "slippage_source": "fill_simulator_p90_points",
+      "slippage_bps_used": {
+        "XAUUSD": 0.056
+      },
+      "data_manifest_ref": "reports/edge_search_dirj_xau_h1.json",
+      "provenance_stamped_at": "2026-08-06T19:08:07.787706+00:00",
+      "notes": "Direction J 3011 — REJECTED. XAU H1 intraday mechanisms underpowered/absent."
+    }
+  ]
+}

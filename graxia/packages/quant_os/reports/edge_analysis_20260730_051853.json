@@ -1,0 +1,96 @@
+{
+  "generated_at": "2026-07-30T05:18:53.924456",
+  "model": "qwen3.5:9b",
+  "articles_count": 24,
+  "analysis": {
+    "market_overview": "The market is showing signs of divergence following the Federal Reserve's decision to hold interest rates steady. Tech giants are displaying mixed signals with Microsoft gaining on strong AI demand and capital spending, while Meta faces significant headwinds from disappointing guidance and cash flow concerns. Broader economic risks remain elevated as highlighted by Jamie Dimon, alongside specific sector volatility in consumer staples due to bankruptcy filings.",
+    "edges": [
+      {
+        "type": "momentum",
+        "ticker": "MSFT",
+        "direction": "long",
+        "confidence": 0.85,
+        "reasoning": "Strong backlog growth and increased capital spending indicate robust demand beyond just large AI clients.",
+        "timeframe": "swing",
+        "entry_signal": "Break above recent consolidation highs on volume following earnings confirmation.",
+        "risk": "Potential profit-taking if broader market sentiment sours due to Fed commentary."
+      },
+      {
+        "type": "mean_reversion",
+        "ticker": "META",
+        "direction": "short",
+        "confidence": 0.75,
+        "reasoning": "Stock plunged nearly 10% on weak guidance and narrowed capex; sentiment is likely overreacted to short-term cash flow issues.",
+        "timeframe": "intraday",
+        "entry_signal": "Rebound from immediate lows with low volume before fading back down.",
+        "risk": "Unexpected positive commentary or buyback announcement could reverse the move."
+      },
+      {
+        "type": "event_driven",
+        "ticker": "QCOM",
+        "direction": "long",
+        "confidence": 0.65,
+        "reasoning": "CEO explicitly stated prices will rise due to memory crunch; inflationary pass-through supports revenue.",
+        "timeframe": "positional",
+        "entry_signal": "Confirmation of inventory restocking by downstream partners or positive supply chain news.",
+        "risk": "Supply constraints easing faster than expected, negating the price increase strategy."
+      }
+    ],
+    "sectors_to_watch": [
+      "Technology",
+      "Consumer Staples"
+    ],
+    "key_levels": {
+      "SPY": {
+        "support": "520.00",
+        "resistance": "545.00"
+      }
+    },
+    "risk_events": [
+      "Federal Reserve meeting minutes release regarding rate cut timing.",
+      "Potential volatility in consumer staples following bankruptcy filings."
+    ]
+  },
+  "articles": [
+    {
+      "title": "Meta's stock plunges almost 10% on disappointing guidance, dwindling free cash flow",
+      "source": "cnbc_finance"
+    },
+    {
+      "title": "Qualcomm to raise prices during memory crunch as chipmaker issues light earnings guidance",
+      "source": "cnbc_finance"
+    },
+    {
+      "title": "Microsoft jumps 7% as it boosts capital spending plans, citing demand",
+      "source": "cnbc_finance"
+    },
+    {
+      "title": "Here are the five big takeaways from this week's Fed meeting",
+      "source": "cnbc_world"
+    },
+    {
+      "title": "Meta's stock plunges almost 10% on disappointing guidance, dwindling free cash flow",
+      "source": "cnbc_world"
+    },
+    {
+      "title": "Microsoft jumps 7% as it boosts capital spending plans, citing demand",
+      "source": "cnbc_world"
+    },
+    {
+      "title": "National beer and wine distributor files Chapter 11 bankruptcy",
+      "source": "yahoo_finance"
+    },
+    {
+      "title": "Jamie Dimon says market risks are 'bigger than other people think' – and he's not buying stocks right now",
+      "source": "yahoo_finance"
+    },
+    {
+      "title": "Paypal stock rises as CEO keeps door open on potential deals",
+      "source": "yahoo_finance"
+    },
+    {
+      "title": "Bausch Health Q2 2026 slides: 13th straight growth quarter, guidance raised",
+      "source": "investing_com"
+    }
+  ]
+}

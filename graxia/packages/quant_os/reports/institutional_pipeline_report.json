@@ -1,0 +1,256 @@
+{
+  "timestamp": "2026-08-03T21:01:24.423131+00:00",
+  "layer1_multiple_testing": {
+    "deflated_sharpe": {
+      "momentum_12m": {
+        "observed_sharpe": -1.0945,
+        "deflated_sharpe": 1.0,
+        "probability_alpha": 1.0,
+        "multiple_testing_adjustment": 2.0625,
+        "passes": false
+      },
+      "donchian_55": {
+        "observed_sharpe": -2.3125,
+        "deflated_sharpe": 1.0,
+        "probability_alpha": 1.0,
+        "multiple_testing_adjustment": 1.5966,
+        "passes": false
+      },
+      "donchian_20": {
+        "observed_sharpe": -1.9723,
+        "deflated_sharpe": 1.0,
+        "probability_alpha": 1.0,
+        "multiple_testing_adjustment": 1.3308,
+        "passes": false
+      },
+      "hybrid_mom_mr": {
+        "observed_sharpe": -1.6725,
+        "deflated_sharpe": 1.0,
+        "probability_alpha": 1.0,
+        "multiple_testing_adjustment": 1.398,
+        "passes": false
+      },
+      "dxy_divergence": {
+        "observed_sharpe": -1.4204,
+        "deflated_sharpe": 1.0,
+        "probability_alpha": 1.0,
+        "multiple_testing_adjustment": 0.9618,
+        "passes": false
+      }
+    },
+    "pbo": {
+      "pbo": 0.642857,
+      "n_partitions": 8,
+      "n_combinations_tested": 70,
+      "passes": false
+    },
+    "bh_adjusted_pvalues": {
+      "momentum_12m": 1.0,
+      "donchian_55": 1.0,
+      "donchian_20": 1.0,
+      "hybrid_mom_mr": 1.0,
+      "dxy_divergence": 1.0
+    },
+    "strategies_passing_deflation": [],
+    "verdict": "0/5 pass deflation, PBO=FAIL"
+  },
+  "layer2_portfolio_construction": {
+    "correlation_matrix": {
+      "momentum_12m": {
+        "momentum_12m": 1.0,
+        "donchian_55": 0.0274,
+        "donchian_20": -0.0314,
+        "hybrid_mom_mr": -0.1086,
+        "dxy_divergence": 0.0381
+      },
+      "donchian_55": {
+        "momentum_12m": 0.0274,
+        "donchian_55": 1.0,
+        "donchian_20": 0.0078,
+        "hybrid_mom_mr": 0.0891,
+        "dxy_divergence": 0.1177
+      },
+      "donchian_20": {
+        "momentum_12m": -0.0314,
+        "donchian_55": 0.0078,
+        "donchian_20": 1.0,
+        "hybrid_mom_mr": 0.0789,
+        "dxy_divergence": 0.14
+      },
+      "hybrid_mom_mr": {
+        "momentum_12m": -0.1086,
+        "donchian_55": 0.0891,
+        "donchian_20": 0.0789,
+        "hybrid_mom_mr": 1.0,
+        "dxy_divergence": -0.0205
+      },
+      "dxy_divergence": {
+        "momentum_12m": 0.0381,
+        "donchian_55": 0.1177,
+        "donchian_20": 0.14,
+        "hybrid_mom_mr": -0.0205,
+        "dxy_divergence": 1.0
+      }
+    },
+    "avg_correlation": 0.0339,
+    "weights_kelly": {
+      "momentum_12m": 0.2,
+      "donchian_55": 0.2,
+      "donchian_20": 0.2,
+      "hybrid_mom_mr": 0.2,
+      "dxy_divergence": 0.2
+    },
+    "vol_target_weights": {
+      "momentum_12m": 0.05,
+      "donchian_55": 0.05,
+      "donchian_20": 0.05,
+      "hybrid_mom_mr": 0.05,
+      "dxy_divergence": 0.05
+    },
+    "portfolio_vol": 0.9361,
+    "kelly_fractions": {
+      "momentum_12m": 0.01,
+      "donchian_55": 0.01,
+      "donchian_20": 0.01,
+      "hybrid_mom_mr": 0.01,
+      "dxy_divergence": 0.01
+    },
+    "verdict": "Avg corr=0.034, Port vol=0.936, CPPI=1.000"
+  },
+  "layer3_cost_capacity": {
+    "raw_sharpes": {
+      "momentum_12m": -1.0945,
+      "donchian_55": -2.3125,
+      "donchian_20": -1.9723,
+      "hybrid_mom_mr": -1.6725,
+      "dxy_divergence": -1.4204
+    },
+    "haircut_sharpes": {
+      "momentum_12m": -0.6567,
+      "donchian_55": -1.3875,
+      "donchian_20": -1.1834,
+      "hybrid_mom_mr": -1.0035,
+      "dxy_divergence": -0.8522
+    },
+    "market_impact_bps": {
+      "momentum_12m": 0.01,
+      "donchian_55": 0.01,
+      "donchian_20": 0.01,
+      "hybrid_mom_mr": 0.01,
+      "dxy_divergence": 0.01
+    },
+    "net_sharpes": {
+      "momentum_12m": -0.6589,
+      "donchian_55": -1.3897,
+      "donchian_20": -1.1856,
+      "hybrid_mom_mr": -1.0057,
+      "dxy_divergence": -0.8544
+    },
+    "capacity_lots": {
+      "momentum_12m": 0,
+      "donchian_55": 0,
+      "donchian_20": 0,
+      "hybrid_mom_mr": 0,
+      "dxy_divergence": 0
+    },
+    "verdict": "0/5 strategies have positive net Sharpe after costs"
+  },
+  "layer4_risk_overlays": {
+    "daily_loss_limit": -2.0,
+    "max_drawdown_kill": -15.0,
+    "correlation_cap": 0.7,
+    "current_drawdown": 0.0,
+    "regime_shift_detected": "False",
+    "regime_risk_level": "NORMAL",
+    "verdict": "ALL_CLEAR"
+  },
+  "layer5_execution_quality": {
+    "tca_metrics": {
+      "momentum_12m": {
+        "avg_return_bps": -59.57,
+        "vol_bps": 863.98,
+        "win_rate": 0.4332,
+        "profit_factor": 0.68,
+        "slippage_estimate_bps": 86.4,
+        "fill_quality_score": -0.4505
+      },
+      "donchian_55": {
+        "avg_return_bps": -296.56,
+        "vol_bps": 2035.77,
+        "win_rate": 0.4831,
+        "profit_factor": 0.17,
+        "slippage_estimate_bps": 203.58,
+        "fill_quality_score": 0.3135
+      },
+      "donchian_20": {
+        "avg_return_bps": -61.98,
+        "vol_bps": 498.84,
+        "win_rate": 0.4523,
+        "profit_factor": 0.34,
+        "slippage_estimate_bps": 49.88,
+        "fill_quality_score": 0.1951
+      },
+      "hybrid_mom_mr": {
+        "avg_return_bps": -34.84,
+        "vol_bps": 330.72,
+        "win_rate": 0.4177,
+        "profit_factor": 0.58,
+        "slippage_estimate_bps": 33.07,
+        "fill_quality_score": 0.0508
+      },
+      "dxy_divergence": {
+        "avg_return_bps": -52.0,
+        "vol_bps": 581.13,
+        "win_rate": 0.4286,
+        "profit_factor": 0.4,
+        "slippage_estimate_bps": 58.11,
+        "fill_quality_score": -0.1176
+      }
+    },
+    "order_type_recommendations": {
+      "momentum_12m": "LIMIT_ORDER_AGGRESSIVE",
+      "donchian_55": "LIMIT_ORDER_AGGRESSIVE",
+      "donchian_20": "LIMIT_ORDER_AGGRESSIVE",
+      "hybrid_mom_mr": "LIMIT_ORDER_AGGRESSIVE",
+      "dxy_divergence": "LIMIT_ORDER_AGGRESSIVE"
+    },
+    "verdict": "5 strategies TCA'd"
+  },
+  "layer6_governance": {
+    "hypothesis_registry": {
+      "momentum_12m": {
+        "hypothesis_documented": false,
+        "pre_registered_params": true,
+        "economic_rationale": "TBD",
+        "revalidation_date": null
+      },
+      "donchian_55": {
+        "hypothesis_documented": false,
+        "pre_registered_params": true,
+        "economic_rationale": "TBD",
+        "revalidation_date": null
+      },
+      "donchian_20": {
+        "hypothesis_documented": false,
+        "pre_registered_params": true,
+        "economic_rationale": "TBD",
+        "revalidation_date": null
+      },
+      "hybrid_mom_mr": {
+        "hypothesis_documented": false,
+        "pre_registered_params": true,
+        "economic_rationale": "TBD",
+        "revalidation_date": null
+      },
+      "dxy_divergence": {
+        "hypothesis_documented": false,
+        "pre_registered_params": true,
+        "economic_rationale": "TBD",
+        "revalidation_date": null
+      }
+    },
+    "revalidation_schedule": "quarterly",
+    "sacred_holdout_remaining": 0,
+    "verdict": "GOVERNANCE_INCOMPLETE: 5 strategies need hypothesis docs"
+  }
+}

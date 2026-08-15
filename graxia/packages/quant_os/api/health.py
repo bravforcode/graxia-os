@@ -91,7 +91,7 @@ async def health_detailed(request: Request) -> Dict[str, Any]:
     uptime_s = time.monotonic() - start_time if start_time else -1.0
 
     # Build SystemState snapshot
-    state = SystemState.default(environment=settings.ENVIRONMENT)
+    state = SystemState.default(environment=settings.environment)
 
     # Queue depths
     signal_queue = getattr(request.app.state, "signal_queue", None)
@@ -116,7 +116,7 @@ async def health_detailed(request: Request) -> Dict[str, Any]:
         } if write_queue and hasattr(write_queue, "stats") else {},
         "event_bus_pending": event_bus.pending if event_bus else 0,
         "dedup_window_active_signals": dedup_count,
-        "environment": settings.ENVIRONMENT,
+        "environment": settings.environment,
     }
 
     return _redact_secrets(detailed)

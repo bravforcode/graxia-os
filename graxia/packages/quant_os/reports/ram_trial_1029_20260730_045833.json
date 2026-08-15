@@ -1,0 +1,52 @@
+{
+  "config": {
+    "universe": [
+      "XAUUSD",
+      "XAGUSD",
+      "EURUSD",
+      "GBPUSD",
+      "USDJPY",
+      "NAS100",
+      "US30"
+    ],
+    "regime_lookback": 60,
+    "regime_crisis_threshold": 0.6,
+    "regime_trend_threshold": 0.3,
+    "mom_lookback": 20,
+    "mom_entry_z": 1.0,
+    "mr_lookback": 20,
+    "mr_entry_z": 2.0
+  },
+  "regime_distribution": {
+    "trending": 2118,
+    "neutral": 136
+  },
+  "metrics": {
+    "total_return": -0.09611030437511237,
+    "annual_return": -0.011233710981753298,
+    "annual_vol": 0.0507482124318513,
+    "sharpe": -0.2213617079978691,
+    "max_drawdown": -0.15669250395700582,
+    "win_rate": 0.47917888563049854,
+    "profit_factor": 0.9532847573738596,
+    "trade_count": "2010",
+    "n_observations": 2254
+  },
+  "signals_shape": [
+    2254,
+    7
+  ],
+  "portfolio_shape": [
+    2254,
+    7
+  ],
+  "gates": {
+    "sharpe_gt_1.0": "False",
+    "max_dd_lt_25pct": "True",
+    "win_rate_gt_50pct": "False",
+    "profit_factor_gt_1.1": "False",
+    "trade_count_gt_100": "True"
+  },
+  "gates_passed": "2",
+  "gates_total": 5
+}

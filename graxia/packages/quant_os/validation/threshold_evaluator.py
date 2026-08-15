@@ -13,7 +13,7 @@ class ThresholdResult:
 class ThresholdEvaluator:
     """Evaluate results against pre-committed thresholds."""
     
-    def __init__(self, gates: dict = None):
+    def __init__(self, gates: dict | None = None) -> None:
         self._gates = gates or {}
         self._results: list[ThresholdResult] = []
     

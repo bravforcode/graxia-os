@@ -22,7 +22,7 @@ from ..backtest.engine import (
 )
 from ..core.enums import CloseReason, PositionType, SignalType
 from ..execution.conservative_bar_model import estimate_bid_ask_from_bar
-from ..execution.cost_model import BASE, STRESS_1, STRESS_2, STRESS_3, CostScenario
+from ..execution.cost_model import BASE, CostScenario
 from ..execution.execution_simulator import (
     ContractSpec,
     ExecutionQuality,
@@ -133,6 +133,8 @@ class SpreadPatchedEngine(BacktestEngine):
             execution_quality=result.execution_quality.value,
             signal_bar_index=bar_index,
             contract_size=InlineContractSpec.for_symbol(signal.symbol).trade_contract_size,
+            tick_size=InlineContractSpec.for_symbol(signal.symbol).trade_tick_size,
+            tick_value=InlineContractSpec.for_symbol(signal.symbol).trade_tick_value,
         )
         self.balance -= result.commission
 
@@ -175,6 +177,7 @@ class SpreadPatchedEngine(BacktestEngine):
             snapshot,
             bar_high,
             bar_low,
+            max_bars_open=self.config.max_bars_open,
             current_bar_index=bar_index,
         )
 
@@ -189,7 +192,7 @@ class SpreadPatchedEngine(BacktestEngine):
             elif event.event_type.value == "AMBIGUOUS":
                 reason = CloseReason.AMBIGUOUS
             elif event.event_type.value == "TIME_STOP":
-                reason = CloseReason.MANUAL
+                reason = CloseReason.TIME_STOP
             else:
                 continue
 
@@ -197,7 +200,11 @@ class SpreadPatchedEngine(BacktestEngine):
                 exit_price = event.exit_price
                 exit_slip = Decimal("0")
             else:
-                exit_slippage = Decimal(str(self.config.slippage_pips)) * Decimal("0.01")
+                # P0.1: was `slippage_pips * Decimal("0.01")` — a hardcoded
+                # gold tick_size applied to every symbol. Use the inherited
+                # symbol-aware lookup instead.
+                _mid = (bid + ask) / Decimal("2")
+                _, exit_slippage = self._cost_offsets(pos.symbol, _mid, getattr(pos, "tick_size", Decimal("0.01")))
                 exec_side = FillSide.BUY if pos.side == PositionType.LONG else FillSide.SELL
                 exit_price, exit_slip = fill_simulate_exit(exec_side, bid, ask, exit_slippage)
             self._close_position(event.trade_id, exit_price, current_time, reason, exit_slip)
@@ -261,7 +268,7 @@ def run_scenario(
     """Run engine with given cost scenario and spread multiplier."""
     strategy = SignalStrategy(signals_raw)
     engine = SpreadPatchedEngine(config, spread_multiplier=spread_multiplier)
-    engine.set_strategy(strategy)
+    engine.set_strategy(strategy)  # type: ignore[arg-type]  # local duck-typed shim
 
     ohlcv = {
         "open": data["open"],
@@ -279,17 +286,18 @@ def run_scenario(
 
 def run_all_scenarios() -> dict[str, dict[str, Any]]:
     """Run R0-R3 scenarios. R4-R6 BLOCKED/pending."""
-    from .xauusd_liquidity_sweep_fixture import get_fixture
-
-    config, data, ts, signals = get_fixture()
-    results = {}
-    results["R0"] = run_scenario(config, data, ts, signals, cost_scenario=BASE, spread_multiplier=1.0)
-    results["R1"] = run_scenario(config, data, ts, signals, cost_scenario=STRESS_1, spread_multiplier=1.5)
-    # R2: 2.0x spread, 1.5x adverse swap
-    results["R2"] = run_scenario(config, data, ts, signals, cost_scenario=STRESS_2, spread_multiplier=2.0)
-    # R3: 3.0x spread, 2.0x adverse swap
-    results["R3"] = run_scenario(config, data, ts, signals, cost_scenario=STRESS_3, spread_multiplier=3.0)
-    return results
+    # BROKEN (found 2026-07-29): this imported `get_fixture`, which does not
+    # exist in xauusd_liquidity_sweep_fixture -- that module only exposes
+    # `load_xauusd_m15()`, and it returns (data, timestamps), not the
+    # (config, data, ts, signals) 4-tuple unpacked below. The function has no
+    # callers anywhere in the repo. Fail loudly rather than fabricate a fixture.
+    raise NotImplementedError(
+        "run_all_scenarios() is not wired: xauusd_liquidity_sweep_fixture exposes "
+        "load_xauusd_m15() -> (data, timestamps), not get_fixture() -> "
+        "(config, data, ts, signals). Supply a real fixture before using this. "
+        "The original R0-R3 scenario body was removed because every name it used "
+        "(config/data/ts/signals) came from that non-existent fixture call."
+    )
 
 
 if __name__ == "__main__":

@@ -1,0 +1,204 @@
+{
+  "schema_version": "1.0",
+  "direction": "D",
+  "description": "Funding Rate Arbitrage — Crypto Perpetual Futures. A structurally different research program from Directions A/B/C: this tests whether a market-structure mechanism (the perpetual funding rate, which caps long/short imbalance) produces collectible, cost-positive carry historically. It is NOT a directional price-prediction test and does not use the DK-test/label-shuffle/DSR machinery built for Directions A-C. Validation is: fetch real historical funding rates, compute realized annualized funding yield, net against realistic Binance spot+perp trading costs, and check whether the result is durably positive across the sample window and multiple assets — not whether any single number exceeds a threshold once.",
+  "last_updated": "2026-07-28",
+  "current_verdict_2026-07-28": "NOT CURRENTLY DEPLOYABLE. Trial #4001's weak feasibility threshold (PASS) is SUPERSEDED by #4003's rigor pass: the mechanism is real (statistically significant, positive in the long run) but the CURRENT market regime's funding yield does not beat the T-bill risk-free rate after realistic costs, on either exchange tested. Do not deploy real capital to this strategy based on #4001's headline number alone.",
+  "cumulative_trial_count_at_creation": 0,
+  "stopping_rule_doc": "N/A — different mechanism class, no DK-test stopping rule applies. Stop if realized net APY is not durably positive (>0 after realistic costs) across at least 2 independent assets and a >=180-day historical window.",
+  "sacred_holdout_path": "N/A — this is a measurement of a market-structure fact (funding rate history), not an in-sample-fit-then-holdout-confirm test. No holdout is needed because there is no fitted model to overfit; the only question is whether historical funding cashflows, net of realistic cost, are/were positive.",
+  "sacred_holdout_status": "N/A",
+  "notes": [
+    "Registered 2026-07-28, per user direction: 'ผมจะเริ่ม funding rate arbitrage บน Binance/crypto ควบคู่ไปเลยตั้งแต่วันนี้ ไม่ต้องรอผล Trial #2001' — motivated by the reasoning that of the 4 canonical edge sources (risk premia, microstructure, behavioral, informational), this project has tested 'behavioral/technical' ~1050 times with no edge, but has not seriously tested 'risk premia' via crypto funding rate (Path B's carry trials 2001-2008 tested FX/XAUUSD interest-rate carry, a different mechanism).",
+    "Pre-registered BEFORE running scripts/funding_rate_arb_pilot.py, per the pre-registration discipline established this session (F27's lesson: never run-then-register).",
+    "This is a measurement/feasibility pilot, not a live trading system. No API keys, no order execution, no capital at risk. Public market-data endpoints only (ccxt, no auth required for funding rate history)."
+  ],
+  "hypotheses": [
+    {
+      "trial_number": 4001,
+      "id": "FUNDING-ARB-FEASIBILITY-PILOT",
+      "name": "Perpetual Funding Rate Arbitrage — Historical Carry Feasibility",
+      "status": "PASS_FEASIBILITY (not a live-readiness pass -- see caveats)",
+      "registered_at": "2026-07-28",
+      "result_at": "2026-07-28",
+      "result_summary": {
+        "BTC/USDT": {
+          "n_periods": 1095,
+          "actual_days": 364.7,
+          "positive_period_pct": 76.0,
+          "raw_annualized_yield_bps": 337.9,
+          "net_annualized_yield_pct": 3.059
+        },
+        "ETH/USDT": {
+          "n_periods": 1095,
+          "actual_days": 364.7,
+          "positive_period_pct": 72.3,
+          "raw_annualized_yield_bps": 250.6,
+          "net_annualized_yield_pct": 2.186
+        },
+        "overall_verdict": "PASS",
+        "result_artifact": "reports/funding_rate_arb_pilot_20260727.json"
+      },
+      "caveats_not_yet_modeled": [
+        "This is unleveraged yield (2-3%/yr) -- modest, comparable to a savings account, not a large edge on its own. Standard crypto cash-and-carry uses modest leverage (commonly 2-3x) to scale this, which was NOT modeled here.",
+        "No margin/liquidation risk modeling -- the short-perp leg requires margin collateral and is subject to liquidation risk during sharp adverse price moves, even though the position is nominally delta-neutral (basis risk, funding-rate volatility, and exchange/counterparty risk are all real and unmeasured here).",
+        "No funding-rate volatility/regime-risk analysis -- 24-28% of periods were funding-negative; a real position pays during those periods, this pilot only checked the net over the full window, not worst-case drawdown or consecutive-negative-period risk.",
+        "Real trading (not a public-data pilot) requires actual API keys, capital, and exchange account -- explicitly out of scope for this measurement pilot per user instruction ('paper-test / small capital' is the next step, not yet started).",
+        "Single exchange (Binance) only -- no cross-exchange basis or funding-rate arbitrage considered."
+      ],
+      "instrument": "BTC/USDT, ETH/USDT perpetual futures (Binance) vs. spot",
+      "hypothesis": "Binance perpetual funding rate (paid periodically between long/short sides to anchor perp price to spot/index) has historically been net-positive-for-the-short-side (i.e. collectible via long-spot + short-perp cash-and-carry) by an amount exceeding realistic round-trip trading costs (spot maker/taker fee + perp maker/taker fee + estimated spread), on a sustained, multi-month basis, for at least BTC/USDT and ETH/USDT.",
+      "mechanism": "Structural: perpetual contracts use a periodic funding payment (every 8h on Binance) between long and short positions to keep perp price tethered to the underlying index. A structural, persistent long-side crowding (common in bull-biased retail perp markets) creates a persistent positive funding rate, which a delta-neutral cash-and-carry position (long spot, short equal-notional perp) can collect without taking directional price risk. This is NOT a claim about predicting price direction.",
+      "frozen_params": {
+        "symbols": [
+          "BTC/USDT",
+          "ETH/USDT"
+        ],
+        "lookback_days": 365,
+        "funding_interval_hours": 8,
+        "assumed_spot_fee_bps": 10,
+        "assumed_perp_fee_bps": 4,
+        "assumed_spread_bps": 2,
+        "position_rebalance": "none (static cash-and-carry, held for full window)"
+      },
+      "economic_rationale": "Distinct from Path B's carry trials (2001-2008), which tested FX/XAUUSD interest-rate-differential carry, a completely different funding mechanism, data source, and asset class. Crypto perpetual funding is driven by retail speculative demand imbalance, not central-bank rate differentials.",
+      "data_dependencies": [
+        "Binance funding rate history (ccxt, public endpoint, no auth)",
+        "Binance spot/perp fee schedule (public, documented)"
+      ],
+      "validation_plan": "fetch_real_funding_history -> compute_realized_annualized_funding_yield -> net_of_realistic_costs -> check durability across full window and both assets -> PASS/FAIL (not a DK-test/p-value framework; see description field for why)."
+    },
+    {
+      "trial_number": 4002,
+      "id": "FUNDING-ARB-PAPER-TRADE",
+      "name": "Perpetual Funding Rate Arbitrage — Live Paper-Trading Phase",
+      "status": "PAPER_TRADING_STARTED",
+      "registered_at": "2026-07-28",
+      "started_at": "2026-07-28",
+      "instrument": "BTC/USDT, ETH/USDT (same as #4001)",
+      "mechanism": "Same as #4001. This trial is the forward-testing phase: real, live price + funding-rate data (ccxt, no auth), simulated notional positions ($1000/leg, PAPER -- zero real capital, zero real orders), tracking the ACTUAL funding cashflow received/paid over real elapsed time. Not a backtest -- state persists between runs so the track record accumulates going forward only (bug found and fixed same day: first run incorrectly back-filled 100 pre-existing historical funding events as if they were new; fixed to anchor the funding-lookback window to the position's actual open time).",
+      "harness": "scripts/paper_trade_funding_arb.py",
+      "state_file": "reports/paper_trading/funding_arb_state.json",
+      "frozen_params": {
+        "notional_per_leg_usd": 1000,
+        "symbols": [
+          "BTC/USDT",
+          "ETH/USDT"
+        ],
+        "assumed_costs_bps": {
+          "spot_fee": 10,
+          "perp_fee": 4,
+          "spread": 2,
+          "round_trip_total": 32
+        }
+      },
+      "validation_plan": "Re-run scripts/paper_trade_funding_arb.py periodically (every 8h, matching Binance's funding interval) with no arguments to record real funding events since the last check. Accumulate for >=180 days before drawing any conclusion (per #4001's stopping-rule doc). No action needed between runs beyond re-invoking the script. Not yet automated/scheduled -- currently requires manual re-invocation.",
+      "caveats": [
+        "Not yet scheduled to run automatically -- someone/something needs to re-invoke this periodically for the track record to actually accumulate. A cron/scheduled-task wiring was NOT set up this session.",
+        "Same caveats as #4001 apply (unleveraged, no margin/liquidation modeling, single exchange).",
+        "This is a notional/paper simulation of a 2-leg cash-and-carry position, not routed through execution/adapters/paper.py's PaperAdapter (that adapter has no concept of perpetual funding payments -- it is built for FX/CFD-style single-instrument price P&L). Deliberately kept as a separate, honestly-labeled script rather than forced into an ill-fitting abstraction."
+      ],
+      "governance_note_2026_08_06": "Paper phase continues as of 2026-08-06. Reason per current_verdict_2026-07-28: economics (current-regime funding yield does not beat the T-bill risk-free rate after realistic costs) — NOT a signal-integrity failure. Direction D uses a static funding-history carry calculation (no BacktestEngine), so the bar-level lookahead guard is not the applicable control for this verdict. Re-review triggers: 30/90/180 days since 2026-07-28, or cumulative net funding < -1x entry_cost per leg. Live state: reports/paper_trading/funding_arb_state.json (positions opened 2026-07-27T21:21Z, last_checked 2026-08-05T17:00Z; BTC net ≈ -0.02 USD, ETH net ≈ -0.67 USD after 27 funding events).",
+      "automation_note_2026_08_06": "COLLECTOR NOW AUTOMATED (Design A, approved 2026-08-06): Windows Scheduled Task 'quant_os_funding_arb' runs the collector hourly via scripts/run_funding_arb.bat (registered by scripts/schedule_funding_arb.ps1, idempotent; output -> reports/paper_trading/funding_arb_run.log). Health gate: scripts/check_funding_arb_health.py exits 1 if last_checked_at older than 12h (missed funding interval) or state missing/empty. Previously required manual re-invocation every 8h (registry caveat 'not yet scheduled' now resolved). NOTE: task uses an interactive token (fires only while user logged on) — acceptable for a paper-only collector on a dev machine; revisit for VPS deployment."
+    },
+    {
+      "trial_number": 4003,
+      "id": "FUNDING-ARB-RIGOR-PASS",
+      "name": "Funding Rate Arbitrage — Rigor Pass (significance, cost-stress, 2nd exchange, crash, T-bill)",
+      "status": "FAIL_RIGOR — not currently deployable, per this trial's own pre-registered stopping rule",
+      "registered_at": "2026-07-28",
+      "result_at": "2026-07-28",
+      "result_summary": {
+        "long_run_4yr_window": {
+          "lookback_days": 1600,
+          "binance_BTC_net_apy_pct": 6.603,
+          "binance_ETH_net_apy_pct": 6.042,
+          "nw_significant_p05": true,
+          "beats_tbill_4.5pct": true,
+          "note": "Statistically real and durable over 4+ years, but this average is dominated by the high-funding-rate 2022 deleveraging era -- see recent-window result below before treating this number as current."
+        },
+        "recent_33day_window_apples_to_apples": {
+          "lookback_days": 33,
+          "binance_BTC_net_apy_pct": 2.748,
+          "binance_ETH_net_apy_pct": -0.056,
+          "bitget_BTC_net_apy_pct": 1.049,
+          "bitget_ETH_net_apy_pct": 0.042,
+          "beats_tbill_4.5pct": false,
+          "note": "Consistent across BOTH exchanges tested (Binance and Bitget) -- this is a market-REGIME effect (funding is currently thin market-wide), not an exchange-specific weakness. ETH is net-negative on Binance even before the T-bill comparison."
+        },
+        "second_exchange_used": "bitget, NOT okx as originally planned",
+        "second_exchange_substitution_reason": "OKX and Bybit were both unreachable from this environment (ccxt NetworkError on both -- confirmed not a code bug by successfully reaching Kraken/Deribit/Bitget from the same process). Substituted Bitget. Bitget's public funding-history endpoint only returns ~33 days of retention (100 periods), far short of the requested 1600-day lookback -- a real data-availability limitation of that endpoint, not a bug in this script.",
+        "crash_windows_reached": {
+          "LUNA_2022-05": {
+            "binance_BTC_cumulative_bps": 1.43,
+            "binance_ETH_cumulative_bps": 0.64,
+            "note": "funding stayed slightly POSITIVE through the LUNA collapse"
+          },
+          "Celsius_3AC_2022-06": {
+            "binance_BTC_cumulative_bps": -1.36,
+            "binance_ETH_cumulative_bps": -12.1
+          },
+          "FTX_2022-11": {
+            "binance_BTC_cumulative_bps": -25.96,
+            "binance_ETH_cumulative_bps": -22.13
+          },
+          "COVID_2020-03": "unreachable -- outside available funding-rate-history retention even at 1600-day lookback"
+        },
+        "verdict": "FAIL_RIGOR for deployment today. The per-period rate IS statistically distinguishable from zero (NW-significant on every exchange/window tested) -- this is a real structural cashflow, not noise -- but the CURRENT, recent-window magnitude does not clear the T-bill hurdle after realistic costs, on either exchange tested. The strong long-run headline number reflects a past regime (2022), not current conditions.",
+        "result_artifacts": [
+          "reports/funding_rate_arb_rigor_20260728.json",
+          "reports/funding_rate_arb_rigor_recent33d_20260728.json"
+        ]
+      },
+      "instrument": "BTC/USDT, ETH/USDT on Binance AND a second exchange (OKX)",
+      "mechanism": "Same as #4001/#4002. This trial applies the SAME rigor standard already used to reject Direction A/B to the last surviving 'edge': (1) Newey-West HAC significance test on the per-period net rate (identical formula/kernel to edge_search_cross_sectional.py's run_dk_test, reused deliberately for consistency) -- is the mean distinguishable from zero given autocorrelation; (2) cost stress at 1.0x/1.2x/1.5x realistic round-trip fees; (3) a second exchange (OKX) to check whether the mechanism is Binance-specific; (4) yield during 4 historical crypto crash windows (COVID Mar 2020, LUNA May 2022, Celsius/3AC Jun 2022, FTX Nov 2022) if data reaches that far back; (5) direct comparison to an assumed ~4.5%/yr T-bill yield -- explicitly NOT rationalizing past a negative result if net yield fails to beat risk-free.",
+      "frozen_params": {
+        "symbols": [
+          "BTC/USDT",
+          "ETH/USDT"
+        ],
+        "exchanges": [
+          "binance",
+          "okx"
+        ],
+        "lookback_days": 1460,
+        "cost_multipliers": [
+          1.0,
+          1.2,
+          1.5
+        ],
+        "tbill_apy_pct_assumed": 4.5,
+        "significance_test": "Newey-West HAC t-test, Bartlett kernel, T^(1/3) lag truncation, p<0.05 two-sided"
+      },
+      "stopping_rule_this_trial": "If net-of-cost annualized yield does not exceed the assumed T-bill yield, OR the Newey-West test is not significant at p<0.05, the mechanism does NOT constitute a deployable edge over simply holding T-bills, regardless of the raw sign of the mean funding rate. This is a valid, informative result if it happens -- not a reason to lower the bar.",
+      "validation_plan": "scripts/funding_rate_arb_rigor.py -- fetch real funding history from 2 exchanges, run HAC significance + cost stress + crash-window + T-bill comparison -> update this entry with result_summary and final status (PASS_RIGOR / FAIL_RIGOR) once run."
+    },
+    {
+      "trial_number": 4004,
+      "id": "FUND-CARRY-4004",
+      "name": "Perpetual Funding Carry (BTCUSDT/ETHUSDT) — follow-up to exploratory 4002",
+      "status": "PRE_REGISTERED",
+      "registered_at": "2026-08-05",
+      "instrument": "BTCUSDT, ETHUSDT",
+      "pre_registration_doc": "research/pre_registration_d/trial_4004_funding_carry.md",
+      "validation_runner": "scripts/run_funding_arb_4002.py",
+      "notes": "Filed per trial 4002 pre-reg section 5: exploratory signal (666 bps annualized, 98.92% positive) exceeds the cost floor. FROZEN criteria in pre-reg: annualized yield > 2x(round-trip spread+slippage), positive_share > 0.95, sign consistency across symbols. | RENUMBERED 4003->4004 2026-08-05: #4003 collided with Direction D FUNDING-ARB-RIGOR-PASS (hypothesis_registry_d.json). See reports/incident_20260805_trial_4002_collision.md."
+    }
+  ],
+  "findings_2026_08_07": [
+    {
+      "finding_id": "XRP-FUNDING-20260807",
+      "title": "XRP/USDT funding durable-positive but below T-bill baseline",
+      "date": "2026-08-07",
+      "result": {
+        "positive_period_pct": 55.8,
+        "net_annualized_yield_bps": 16.72,
+        "net_annualized_yield_pct": 0.167,
+        "durably_positive": true,
+        "window": "2025-08-07 -> 2026-08-06 (1095 periods)"
+      },
+      "conclusion": "XRP funding is statistically durable-positive (55.8% periods) but net yield +16.7 bps APY is ~27x below the T-bill baseline (~450 bps). Per Trial 4003 economic criterion (mechanism must beat risk-free), XRP does NOT qualify for a paper position. Consistent with 4001/4003 verdicts - mechanism real, economics insufficient.",
+      "data_ref": "reports/funding_rate_arb_pilot_20260806.json"
+    }
+  ]
+}

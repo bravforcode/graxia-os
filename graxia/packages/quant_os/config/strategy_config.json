@@ -1,0 +1,38 @@
+{
+  "strategy": "donchian",
+  "symbol": "BTCUSD",
+  "timeframe": "H1",
+  "params": {
+    "period": 35,
+    "vol_filter": true,
+    "atr_period": 14
+  },
+  "sl_atr_mult": 2.0,
+  "tp_atr_mult": 3.0,
+  "risk_per_trade_pct": 1.0,
+  "max_drawdown_pct": 5.0,
+  "max_hold_bars": 24,
+  "trail_breakeven_atr": 1.0,
+  "spread_bps": 2.43,
+  "initial_capital": 100000,
+  "validation": {
+    "sharpe": 3.946,
+    "total_trades": 1285,
+    "win_rate_pct": 58.2,
+    "max_drawdown_p99": 33699,
+    "monte_carlo_sharpe_p5": 1.986,
+    "monte_carlo_pnl_p5": 406428,
+    "multi_asset_profitable": "7/7",
+    "param_robustness": "18/18",
+    "regime_trending_sharpe": 1.745,
+    "regime_ranging_sharpe": 1.479,
+    "regime_volatile_sharpe": 2.647,
+    "validated_at": "2026-07-16T16:30:00Z"
+  },
+  "sources": {
+    "spread": "config/cost_calibration.json (Pepperstone Razor MEASURED)",
+    "params": "scripts/run_validation.py (18 configs tested)",
+    "holdout": "reports/paper_engine/holdout_result_h1.json (Sharpe 2.57)",
+    "monte_carlo": "reports/validation_suite/validation_v2.json (10K bootstraps)"
+  }
+}

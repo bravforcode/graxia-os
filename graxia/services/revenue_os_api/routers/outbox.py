@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ....packages.revenue_os.db import get_db_session
 from ....packages.revenue_os.models import OutboxEvent
-from ....packages.revenue_os.schemas.outbox_schemas import (
+from ....packages.revenue_os.schemas_pkg.outbox_schemas import (
     OutboxEventResponse,
     OutboxEventList,
     OutboxStats,

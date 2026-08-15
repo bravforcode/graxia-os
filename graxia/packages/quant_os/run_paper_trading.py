@@ -36,6 +36,31 @@ from graxia.packages.quant_os.regime.monitor import OrderReport as MonOrderRepor
 from graxia.packages.quant_os.regime.risk_overlay import RiskOverlay
 from graxia.packages.quant_os.regime.sweep_classifier import SweepClassifier
 
+# Phase 3 selection layer output (scripts/select_tradeable_instruments.py).
+# See validation/instrument_selection.py: only symbols that cleared real
+# walk-forward validation with Benjamini-Hochberg-corrected significance
+# belong here -- this replaces the old hardcoded --symbols default, which
+# mostly named symbols Phase 2C's tradeable_universe.json already flagged
+# as having no real cost data (EURUSD/GBPUSD/AUDUSD/USDCAD/USDCHF/NZDUSD).
+_SELECTED_INSTRUMENTS_PATH = Path(__file__).parent / "config" / "selected_instruments.json"
+
+
+def _load_selected_symbols() -> list[str]:
+    """Load the Phase 3 selection artifact's symbol list.
+
+    Returns an empty list (never a fallback list) if the artifact is
+    missing, unreadable, or selected zero instruments -- callers must
+    fail closed on an empty result, not substitute a different universe.
+    """
+    if not _SELECTED_INSTRUMENTS_PATH.exists():
+        return []
+    try:
+        payload = json.loads(_SELECTED_INSTRUMENTS_PATH.read_text())
+    except (json.JSONDecodeError, OSError):
+        return []
+    return list(payload.get("selected", []))
+
+
 # ── Graceful shutdown via SIGTERM/SIGINT ──────────────────────────────
 _shutdown_requested = False
 
@@ -116,8 +141,9 @@ class PaperTrader:
 
         # Phase 4: Broker reconnection logic + position reconciliation
         try:
-            from execution.broker_reconnector import BrokerReconnector, BrokerConfig
+            from execution.broker_reconnector import BrokerConfig, BrokerReconnector
             from execution.position_reconciler import PositionReconciler, ReconciliationConfig
+
             self._broker_reconnector = BrokerReconnector(BrokerConfig())
             self._position_reconciler = PositionReconciler(ReconciliationConfig())
         except ImportError:
@@ -316,30 +342,35 @@ class PaperTrader:
                 try:
                     # Phase 4: Use position reconciler if available
                     if self._position_reconciler:
-                        from execution.position_reconciler import InternalPosition, BrokerPosition
                         import MetaTrader5 as _mt5
+
+                        from execution.position_reconciler import BrokerPosition, InternalPosition
 
                         # Build internal positions list
                         internal = []
                         for sym, trade in self._open_trades.items():
-                            internal.append(InternalPosition(
-                                symbol=sym,
-                                side=trade.get("side", "LONG"),
-                                quantity=Decimal(str(trade.get("quantity", 0))),
-                                entry_price=Decimal(str(trade.get("entry_price", 0))),
-                            ))
+                            internal.append(
+                                InternalPosition(
+                                    symbol=sym,
+                                    side=trade.get("side", "LONG"),
+                                    quantity=Decimal(str(trade.get("quantity", 0))),
+                                    entry_price=Decimal(str(trade.get("entry_price", 0))),
+                                )
+                            )
 
                         # Build broker positions list
                         broker_positions = _mt5.positions_get()
                         broker = []
                         if broker_positions:
                             for p in broker_positions:
-                                broker.append(BrokerPosition(
-                                    symbol=p.symbol,
-                                    side="LONG" if p.type == 0 else "SHORT",
-                                    quantity=Decimal(str(p.volume)),
-                                    avg_price=Decimal(str(p.price_open)),
-                                ))
+                                broker.append(
+                                    BrokerPosition(
+                                        symbol=p.symbol,
+                                        side="LONG" if p.type == 0 else "SHORT",
+                                        quantity=Decimal(str(p.volume)),
+                                        avg_price=Decimal(str(p.price_open)),
+                                    )
+                                )
 
                         result = self._position_reconciler.reconcile(internal, broker)
                         if result.drift_detected:
@@ -347,7 +378,9 @@ class PaperTrader:
                             for m in result.mismatches:
                                 print(f"  - {m['message']}")
                             if self.telegram:
-                                await self._send_alert("CRITICAL", f"Position drift: {len(result.mismatches)} mismatches")
+                                await self._send_alert(
+                                    "CRITICAL", f"Position drift: {len(result.mismatches)} mismatches"
+                                )
                     else:
                         # Fallback: basic position count check
                         from execution.reconcile import Reconciler
@@ -765,10 +798,25 @@ async def main():
         "--symbols",
         type=str,
         nargs="+",
-        default=["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "USDCHF", "NZDUSD", "XAUUSD"],
-        help="Symbols to trade (space-separated)",
+        default=None,
+        help=(
+            "Symbols to trade (space-separated). Overrides the Phase 3 "
+            "selection artifact (config/selected_instruments.json) for "
+            "manual/debug runs. If omitted, the selection artifact is "
+            "required -- there is no hardcoded fallback list."
+        ),
     )
     args = parser.parse_args()
+
+    if args.symbols is None:
+        args.symbols = _load_selected_symbols()
+        if not args.symbols:
+            raise SystemExit(
+                f"No symbols to trade: {_SELECTED_INSTRUMENTS_PATH} is missing or selected "
+                "zero instruments. Run `python scripts/select_tradeable_instruments.py` first, "
+                "or pass --symbols explicitly for a manual/debug run."
+            )
+        print(f"Trading symbols from Phase 3 selection: {args.symbols}")
 
     from graxia.packages.quant_os.core.config import reset_config
 

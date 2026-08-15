@@ -1,0 +1,83 @@
+{
+  "trial_id": 2001,
+  "strategy": "momentum_factor_rotation",
+  "parameters": {
+    "lookbacks": [
+      21,
+      63,
+      252
+    ],
+    "vol_target": 0.1,
+    "top_n": 2,
+    "bottom_n": 0,
+    "rebalance_freq": 5,
+    "min_signal_strength": 0.3
+  },
+  "universe": [
+    "NAS100",
+    "US30"
+  ],
+  "cost_model": "pepperstone_razor",
+  "cost_multiplier": 1.0,
+  "data_range": {
+    "start": "2005-01-03",
+    "end": "2018-01-01",
+    "years": 12.99
+  },
+  "regime_coverage": {
+    "crisis": true,
+    "trend": true,
+    "choppy": true
+  },
+  "per_asset": {
+    "NAS100": {
+      "sharpe": -0.3553,
+      "return": -0.075136,
+      "max_dd": -0.07814983577910695,
+      "days": 23174,
+      "trades": 106
+    },
+    "US30": {
+      "sharpe": -0.0735,
+      "return": -0.016697,
+      "max_dd": -0.01997756093346481,
+      "days": 33730,
+      "trades": 99
+    }
+  },
+  "pooled": {
+    "dk_t": -0.6324,
+    "pooled_sharpe": -0.3553,
+    "positive_sharpe_count": 0,
+    "total_trades": 205,
+    "verdict": "REJECT"
+  },
+  "label_shuffle": {
+    "n_shuffles": 0,
+    "observed_sharpe": -0.3553,
+    "p_value": 1.0,
+    "verdict": "FAIL"
+  },
+  "effective_n": {
+    "n_nominal": 2,
+    "n_effective": 2.0,
+    "avg_pairwise_corr": NaN,
+    "diversification_ratio": 1.0,
+    "method": "eigenvalue_participation_ratio"
+  },
+  "monte_carlo_ruin": {
+    "prob_ruin_6mo": 0.0,
+    "median_max_dd_pct": 1.11,
+    "p95_max_dd_pct": 2.05,
+    "n_sims": 1000,
+    "horizon_months": 6,
+    "kill_threshold_dd": 0.2
+  },
+  "lot_feasibility": {
+    "status": "PENDING_BACKTEST_OUTPUT",
+    "note": "Run check_lot_feasibility() with theoretical lot sizes from backtest engine. Function ready in this module; needs per-symbol lot series from vol-targeting."
+  },
+  "combined_verdict": "REJECT",
+  "honest_note": "GO does not equal live-ready. Must still pass cost-stress (1.5x, 2.0x multiplier), jackknife robustness, and not burn sacred holdout until single pre-committed hypothesis.",
+  "timestamp": "2026-07-28T14:05:29.148167+00:00"
+}

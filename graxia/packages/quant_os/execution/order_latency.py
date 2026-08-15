@@ -63,7 +63,7 @@ class OrderLatencyTracker:
     Used to calibrate backtest slippage assumptions against live execution.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._records: list[LatencyRecord] = []
 
     def record_order(
@@ -74,7 +74,7 @@ class OrderLatencyTracker:
         ack_time: float = 0.0,
         fill_time: float = 0.0,
         update_time: float = 0.0,
-    ):
+    ) -> None:
         """Record an order's latency measurements.
 
         Args:
@@ -150,8 +150,8 @@ class OrderLatencyTracker:
 
         # Use P95 for conservative calibration
         recommended_slippage = p95_latency_ms * 0.001
-        return round(recommended_slippage, 4)
+        return float(round(recommended_slippage, 4))
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset for a new session."""
         self._records.clear()

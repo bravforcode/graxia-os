@@ -55,10 +55,11 @@ def test_mean_reversion(df, lookback=20, threshold=2.0):
     
     trades = np.array(trades)
     wins = (trades > 0).sum()
+    price_level = df["close"].mean()
     return {
         "trades": len(trades),
         "win_rate": wins / len(trades),
-        "net": trades.sum() * 2350,  # convert to dollars
+        "net": trades.sum() * price_level,  # convert to dollars
         "sharpe": trades.mean() / trades.std() * np.sqrt(min(len(trades), 252)) if trades.std() > 0 else 0,
     }
 
@@ -99,10 +100,11 @@ def test_momentum(df, lookback=20, hold=5):
     
     trades = np.array(trades)
     wins = (trades > 0).sum()
+    price_level = df["close"].mean()
     return {
         "trades": len(trades),
         "win_rate": wins / len(trades),
-        "net": trades.sum() * 2350,
+        "net": trades.sum() * price_level,
         "sharpe": trades.mean() / trades.std() * np.sqrt(min(len(trades), 252)) if trades.std() > 0 else 0,
     }
 
@@ -145,10 +147,11 @@ def test_volatility_breakout(df, lookback=20, mult=1.5):
     
     trades = np.array(trades)
     wins = (trades > 0).sum()
+    price_level = df["close"].mean()
     return {
         "trades": len(trades),
         "win_rate": wins / len(trades),
-        "net": trades.sum() * 2350,
+        "net": trades.sum() * price_level,
         "sharpe": trades.mean() / trades.std() * np.sqrt(min(len(trades), 252)) if trades.std() > 0 else 0,
     }
 
@@ -180,6 +183,7 @@ def test_session_pattern(df):
                 trades_ny.append(-returns[i])
     
     results = {}
+    price_level = df["close"].mean()
     for name, trades in [("london", trades_london), ("ny", trades_ny)]:
         if not trades:
             results[name] = {"trades": 0, "win_rate": 0, "net": 0, "sharpe": 0}
@@ -189,7 +193,7 @@ def test_session_pattern(df):
         results[name] = {
             "trades": len(trades),
             "win_rate": wins / len(trades),
-            "net": trades.sum() * 2350,
+            "net": trades.sum() * price_level,
             "sharpe": trades.mean() / trades.std() * np.sqrt(min(len(trades), 252)) if trades.std() > 0 else 0,
         }
     return results

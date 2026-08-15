@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import os
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -43,10 +44,10 @@ class CheckResult:
 class ProductionReadiness:
     """Production readiness checks for live trading."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._results: list[CheckResult] = []
 
-    def _check(self, name: str, fn, critical: bool = True) -> CheckResult:
+    def _check(self, name: str, fn: Callable[..., object], critical: bool = True) -> CheckResult:
         try:
             detail = fn()
             result = CheckResult(name=name, passed=True, detail=str(detail), critical=critical)
@@ -94,13 +95,13 @@ class ProductionReadiness:
         return f"max_risk={pr.MAX_TOTAL_RISK_PCT:.0%}, max_symbol={pr.MAX_PER_SYMBOL_PCT:.0%}"
 
     def _check_canonical(self) -> str:
-        from core.canonical.payloads import MLSignalPayload
+        from core.canonical.payloads import MLSignalPayload, SignalDirection
 
         ml = MLSignalPayload(
             symbol="X",
             xgb_probability=0.5,
             xgb_model_version="v1",
-            direction="HOLD",
+            direction=SignalDirection.HOLD,
             entry_price=100,
             stop_loss=99,
             take_profit=101,

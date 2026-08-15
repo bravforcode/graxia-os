@@ -94,3 +94,11 @@ DAILY_CONTENT_DRAFT_COUNT = 3
 # Metrics
 METRICS_RETENTION_DAYS = 365
 STRATEGY_LOG_RETENTION_DAYS = 730  # 2 years
+
+# Autonomy & policy engine
+AUTONOMY_STATE_ID = 1  # singleton row id for the autonomy state
+CIRCUIT_BREAKER_WINDOW_MINUTES = 60   # trailing window checked for incident spikes
+CIRCUIT_BREAKER_INCIDENT_THRESHOLD = 5  # MEDIUM+ incidents in the window that force mode -> OFF
+SUPPORT_VERIFICATION_TTL_MINUTES = 15   # one-time code validity
+SUPPORT_VERIFICATION_MAX_ATTEMPTS = 5  # wrong-code attempts before escalation
+SUPPORT_VERIFICATION_SALT = "graxia-support-v1"  # replace via env SECRET_KEY-derived salt in production

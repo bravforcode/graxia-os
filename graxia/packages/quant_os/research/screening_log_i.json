@@ -1,0 +1,1583 @@
+{
+  "schema_version": "1.0",
+  "direction": "I",
+  "configs": [
+    {
+      "config_id": "eb939b86121f",
+      "hash": "2a067e1fd18d764a3ce584fd87b04dc574a6ef2d4ef785344689c018fd4c6f6a",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20250817162142",
+        "daily": "1.06%",
+        "monthly": "224.14%",
+        "drawdown": "48.11%",
+        "gain": "+5651.84%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:57:27+00:00",
+      "status_updated_at": "2026-08-06T22:24:51+00:00"
+    },
+    {
+      "config_id": "f1bf15884a51",
+      "hash": "3a7b3788f16708a11a67d12218317186e6abd6a714f404332bfc6de364f1d11a",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20250120231505",
+        "daily": "3.48%",
+        "monthly": "1158.23%",
+        "drawdown": "29.10%",
+        "gain": "+22135.59%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:57:27+00:00",
+      "status_updated_at": "2026-08-06T22:24:51+00:00"
+    },
+    {
+      "config_id": "195c62c53990",
+      "hash": "392b435780803b1e53a98551d508278108fc31d5a56d623dbc3601d6558f8564",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20250813200031",
+        "daily": "1.18%",
+        "monthly": "919.91%",
+        "drawdown": "17.94%",
+        "gain": "+6066.79%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:57:27+00:00",
+      "status_updated_at": "2026-08-06T22:24:51+00:00"
+    },
+    {
+      "config_id": "27dccc822720",
+      "hash": "44093baf960be07f16c75cd04c12e0657cdca649d78ccab3e59cee4cfdddc1bd",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "tracking": "858",
+        "abs_gain": "+239,814.62%",
+        "daily": "0.90%",
+        "snapshot_ts": "20230625010732",
+        "monthly": "30.83%",
+        "drawdown": "1.79%",
+        "gain": "+819.81%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:38+00:00",
+      "status_updated_at": "2026-08-06T20:40:31+00:00"
+    },
+    {
+      "config_id": "05cedcf08496",
+      "hash": "85a473300b6197cbb7533b705254ba060739456de9cf428694108a553f0160f1",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20210729031043",
+        "daily": "0.47%",
+        "monthly": "15.16%",
+        "gain": "45.12%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:38+00:00",
+      "status_updated_at": "2026-08-06T20:40:31+00:00"
+    },
+    {
+      "config_id": "08e5364a79a1",
+      "hash": "70cdc697ddbe9a51c14d3b625ea3bc54997925449aa722245b97db1ed50f5a56",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20230704142820",
+        "daily": "0.32%",
+        "monthly": "9.97%",
+        "drawdown": "22.08%",
+        "gain": "+613.18%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:38+00:00",
+      "status_updated_at": "2026-08-06T20:40:31+00:00"
+    },
+    {
+      "config_id": "518cf7859c85",
+      "hash": "62310602d14278ac58ca1b33314921cdbdc2b86001d7acb8def1a0880e9fdc95",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20220926161422",
+        "daily": "0.23%",
+        "monthly": "7.10%",
+        "drawdown": "17.37%",
+        "gain": "+12046.81%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:38+00:00",
+      "status_updated_at": "2026-08-06T20:40:31+00:00"
+    },
+    {
+      "config_id": "d2ec92c78d5b",
+      "hash": "68f6eec95342e4853057e0955e1886590b23ff2524ec38782b300dd081e11194",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20220815152147",
+        "daily": "7.16%",
+        "monthly": "1353.00%",
+        "drawdown": "2.80%",
+        "gain": "+2146.43%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:38+00:00",
+      "status_updated_at": "2026-08-06T20:40:31+00:00"
+    },
+    {
+      "config_id": "dddaaf45bc5d",
+      "hash": "d518f8ba59fa6739729ec35f1620d57f940a355a52b24789f3a4aeddcd7b5247",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "snapshot_ts": "20250617022505",
+        "daily": "2.01%",
+        "monthly": "141.80%",
+        "drawdown": "1.28%",
+        "gain": "+65662.11%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:38+00:00",
+      "status_updated_at": "2026-08-06T20:40:31+00:00"
+    },
+    {
+      "config_id": "2d88ca8f9905",
+      "hash": "75a1d71c40e4e51f56491cd93bc66763ba5a2d503187af38b53774de9fac0a62",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "snapshot_ts": "20250812025000",
+        "daily": "1.96%",
+        "monthly": "79.02%",
+        "drawdown": "0.25%",
+        "gain": "+485772.42%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:38+00:00",
+      "status_updated_at": "2026-08-06T20:40:31+00:00"
+    },
+    {
+      "config_id": "2a8fe6d64c60",
+      "hash": "8422c3d0ddafa9347c2d41047ccc2d9562ac069fe6ff4136cb705241bd6be764",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "snapshot_ts": "20250711112913",
+        "daily": "0.17%",
+        "monthly": "5.35%",
+        "drawdown": "45.66%",
+        "gain": "+5548.88%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:39+00:00",
+      "status_updated_at": "2026-08-06T20:40:31+00:00"
+    },
+    {
+      "config_id": "01ee269b7d4f",
+      "hash": "31d900b8c80b18c7e2871b45034fbb01a2777bff983aa4a758bea79e564a6bb0",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "tracking": "33",
+        "abs_gain": "+48,322.77%",
+        "daily": "2.08%",
+        "snapshot_ts": "20241216144615",
+        "monthly": "84.95%",
+        "drawdown": "18.22%",
+        "gain": "+48322.77%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:39+00:00",
+      "status_updated_at": "2026-08-06T20:40:31+00:00"
+    },
+    {
+      "config_id": "9cfdd0644de6",
+      "hash": "f1ef3257dcec68e9e38df39ffa7477c110de82b438a15a12ca2338ed86aefe3c",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "tracking": "33",
+        "abs_gain": "+48,322.77%",
+        "daily": "1.33%",
+        "snapshot_ts": "20250708224142",
+        "monthly": "51.74%",
+        "drawdown": "18.22%",
+        "gain": "+78219.80%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:39+00:00",
+      "status_updated_at": "2026-08-06T20:40:31+00:00"
+    },
+    {
+      "config_id": "a8d41bd103bc",
+      "hash": "e224af0a2d3d724a1537303906a7c34d01f48bdd71e71b6cb66b38a29f412c11",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "trading_type": "Manual",
+        "system_type": "Technical",
+        "account_type": "Real",
+        "snapshot_ts": "20241220173443",
+        "daily": "0.48%",
+        "monthly": "15.27%",
+        "drawdown": "28.16%",
+        "gain": "+5195.21%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:39+00:00",
+      "status_updated_at": "2026-08-06T20:40:31+00:00"
+    },
+    {
+      "config_id": "b1a9f116ed14",
+      "hash": "f0eefdec226b43354099fa7941d62c7a2e2d3d3e211ef383c0dfe63965ef472d",
+      "mechanism": "trend_following",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20220806144818"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_slippage_data",
+      "registered_at": "2026-08-06T16:58:39+00:00",
+      "status_updated_at": "2026-08-06T20:40:31+00:00"
+    },
+    {
+      "config_id": "2c938c96cac7",
+      "hash": "bb5f9d73f4e7dedfcd8e4ea53232f5e384d4a24edaa3d51f5c4b50a9d0053450",
+      "mechanism": "scalper",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "snapshot_ts": "20250624232832",
+        "daily": "0.20%",
+        "monthly": "6.53%",
+        "drawdown": "35.65%",
+        "gain": "+16693.86%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_slippage_data",
+      "registered_at": "2026-08-06T16:58:39+00:00",
+      "status_updated_at": "2026-08-06T20:40:31+00:00"
+    },
+    {
+      "config_id": "281ccbb6ef71",
+      "hash": "1127084ea4e3ead4162c35adca27a3cb01a383c59f3f2c8763eeb852703e2690",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20241126233955",
+        "daily": "1.27%",
+        "monthly": "50.50%",
+        "drawdown": "31.83%",
+        "gain": "+13997.64%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:39+00:00",
+      "status_updated_at": "2026-08-06T20:40:31+00:00"
+    },
+    {
+      "config_id": "007f3c1542a5",
+      "hash": "abab900d73e0a64e019efeab40f02012bb8570661d2ab0c1e980d464f70b8b44",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20171130115621",
+        "daily": "0.41%",
+        "monthly": "13.20%",
+        "gain": "6.12%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:39+00:00",
+      "status_updated_at": "2026-08-06T20:40:31+00:00"
+    },
+    {
+      "config_id": "1681cd30db17",
+      "hash": "77768f48a713db73d8eeed2e8b5dd70a6abf526e76c08865ea4cc80e9594629f",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "trading_type": "Automated",
+        "system_type": "Technical",
+        "account_type": "Real",
+        "snapshot_ts": "20240116155135",
+        "daily": "0.12%",
+        "monthly": "3.77%",
+        "drawdown": "13.26%",
+        "gain": "+3226.51%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:39+00:00",
+      "status_updated_at": "2026-08-06T20:40:31+00:00"
+    },
+    {
+      "config_id": "4df5986896b3",
+      "hash": "d180005f5d7a6551db055024ea4267ac5ffb22de6310871648a5cebda227c148",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20250120233307",
+        "daily": "3.01%",
+        "monthly": "1527.19%",
+        "drawdown": "29.81%",
+        "gain": "+5894.63%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:39+00:00",
+      "status_updated_at": "2026-08-06T20:40:31+00:00"
+    },
+    {
+      "config_id": "379a28151fa2",
+      "hash": "a77d0cafb66f2247368e8f8114d285c93b4d83927c5e1400bc7ff79da1616cf8",
+      "mechanism": "breakout",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20240815162835",
+        "daily": "0.76%",
+        "monthly": "25.56%",
+        "drawdown": "10.69%",
+        "gain": "+21762.87%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_cost_data",
+      "registered_at": "2026-08-06T16:58:39+00:00",
+      "status_updated_at": "2026-08-06T20:40:31+00:00"
+    },
+    {
+      "config_id": "80ddb04046ac",
+      "hash": "78e6c92021b8a10737782bdde848931d116001039ffa0e9782ec310f7aafb2f9",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:39+00:00",
+      "status_updated_at": "2026-08-06T20:40:31+00:00"
+    },
+    {
+      "config_id": "2cf1ad3e0b75",
+      "hash": "7f1418a9ec19e662bfd3bd1675e641d56a7dd78c80c23c58a31d85965bdeec89",
+      "mechanism": "scalper",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20240924094026",
+        "daily": "0.39%",
+        "monthly": "12.29%",
+        "gain": "14.48%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "done",
+      "registered_at": "2026-08-06T16:58:39+00:00",
+      "status_updated_at": "2026-08-06T20:48:05+00:00"
+    },
+    {
+      "config_id": "206f140f8a11",
+      "hash": "59c42866fe48f7e12f39f7ff0c01434e3815dd05728e7ba4d2e96ff018193bb8",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20241212050704",
+        "daily": "0.69%",
+        "monthly": "22.88%",
+        "drawdown": "12.11%",
+        "gain": "+12998.82%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:39+00:00",
+      "status_updated_at": "2026-08-06T20:48:05+00:00"
+    },
+    {
+      "config_id": "8894537de7b4",
+      "hash": "19ca5b5d88bb2cf0d1dc8b7681bcac69f11b3fcd3b5bcf370aba0aed3dc54234",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "snapshot_ts": "20250327063929",
+        "daily": "0.48%",
+        "monthly": "18.24%",
+        "drawdown": "7.84%",
+        "gain": "+7133.83%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:39+00:00",
+      "status_updated_at": "2026-08-06T20:48:05+00:00"
+    },
+    {
+      "config_id": "06fa4a72badd",
+      "hash": "c501f15e7e37bb9c59cfc77f4b67b3ef6e938f2e3a3d096b270011ba02087637",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20210729014347",
+        "daily": "0.24%",
+        "monthly": "7.31%",
+        "gain": "6.54%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:39+00:00",
+      "status_updated_at": "2026-08-06T20:48:05+00:00"
+    },
+    {
+      "config_id": "35f915884762",
+      "hash": "16fb23951c639a3856913a3f421bd67b036576a8c604eeb4fda55f80e59442a8",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "M30",
+      "params": {
+        "snapshot_ts": "20231210195508",
+        "daily": "0.32%",
+        "monthly": "10.01%",
+        "drawdown": "21.41%",
+        "gain": "+991.56%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:39+00:00",
+      "status_updated_at": "2026-08-06T20:48:05+00:00"
+    },
+    {
+      "config_id": "55fc946c1bdc",
+      "hash": "52b3de51865a0675ecbe4f21b0332f2d324a9c2d0bd703c86bc1613074c0d152",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "M30",
+      "params": {
+        "snapshot_ts": "20231210195429",
+        "daily": "0.31%",
+        "monthly": "9.72%",
+        "drawdown": "25.95%",
+        "gain": "+1579.08%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:39+00:00",
+      "status_updated_at": "2026-08-06T20:48:05+00:00"
+    },
+    {
+      "config_id": "bf57b9032510",
+      "hash": "83e51cd246bcc61dd5840c74fb159cbb706545dc23df0d499a47d2d4701b810f",
+      "mechanism": "scalper",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20240420063250",
+        "daily": "0.72%",
+        "monthly": "23.95%",
+        "drawdown": "22.60%",
+        "gain": "+219.90%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_cost_data",
+      "registered_at": "2026-08-06T16:58:39+00:00",
+      "status_updated_at": "2026-08-06T20:48:05+00:00"
+    },
+    {
+      "config_id": "f31e16ba0274",
+      "hash": "27e98b07e8321ccfbe4aabcff48f27e6974fd31ee94ac2c8cd44f7146675e8ec",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "trading_type": "Manual",
+        "system_type": "Technical",
+        "account_type": "Real",
+        "snapshot_ts": "20140503032422"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:39+00:00",
+      "status_updated_at": "2026-08-06T20:48:05+00:00"
+    },
+    {
+      "config_id": "ab4a3843600c",
+      "hash": "5c308c70b4b46c3704bcbd7e14517e71360005f9b44688a34d1fbde029e39c0a",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {
+        "tracking": "5",
+        "abs_gain": "+10.75%",
+        "daily": "+3.86%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:40+00:00",
+      "status_updated_at": "2026-08-06T20:48:05+00:00"
+    },
+    {
+      "config_id": "7dd2aaa24009",
+      "hash": "2331a51ef47585c6c9001fccabe68628864511b83b1f21b14bdbf3d75248ab8c",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "tracking": "5",
+        "abs_gain": "+10.75%",
+        "daily": "3.86%",
+        "snapshot_ts": "20241126220040",
+        "monthly": "387.18%",
+        "drawdown": "7.08%",
+        "gain": "+28262.61%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:40+00:00",
+      "status_updated_at": "2026-08-06T20:48:05+00:00"
+    },
+    {
+      "config_id": "a7c022a702c0",
+      "hash": "9ae7ff3eb9a915eac46cfd17d3d5c989ab157b9a9657079b25f080830fec7d3c",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20210730183455",
+        "daily": "0.28%",
+        "monthly": "8.90%",
+        "drawdown": "9.74%",
+        "gain": "+1146.83%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:40+00:00",
+      "status_updated_at": "2026-08-06T20:48:05+00:00"
+    },
+    {
+      "config_id": "72b81461ba83",
+      "hash": "9c839edc81506bc8837b9e56e045f42db36a399989ba563c91e241d6d4de6897",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20240528013626",
+        "daily": "0.28%",
+        "monthly": "8.69%",
+        "gain": "39.73%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:40+00:00",
+      "status_updated_at": "2026-08-06T20:48:05+00:00"
+    },
+    {
+      "config_id": "a47db65d2699",
+      "hash": "d4626fc969603e3c18693e675290bb85ac127a214a3a8b22d0cfb8590c308440",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20180511064042",
+        "daily": "1.93%",
+        "monthly": "77.34%",
+        "gain": "5.42%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:40+00:00",
+      "status_updated_at": "2026-08-06T20:48:05+00:00"
+    },
+    {
+      "config_id": "6a120d8036bd",
+      "hash": "e0fd95d37732ef21b3190b706788b54c0442f16b0a169b6c36d6dc7fd2246fbe",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {
+        "tracking": "13",
+        "abs_gain": "+1,408.65%",
+        "daily": "+0.58%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:40+00:00",
+      "status_updated_at": "2026-08-06T20:48:05+00:00"
+    },
+    {
+      "config_id": "6f7a23b2c240",
+      "hash": "b7ec56f37b3705d8efc9a7b64d0293378ad1f8346b8579727b07d24091fe0a5e",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "tracking": "13",
+        "abs_gain": "+1,408.65%",
+        "daily": "0.58%",
+        "snapshot_ts": "20241217212120",
+        "monthly": "20.05%",
+        "drawdown": "28.84%",
+        "gain": "+48261.72%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:40+00:00",
+      "status_updated_at": "2026-08-06T20:48:05+00:00"
+    },
+    {
+      "config_id": "f5c2d775989e",
+      "hash": "e8db66f5c0c9323c8ae116585e9846eab8497708f34bebab9d8bc570dbdaa468",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20190819192444",
+        "daily": "2.00%",
+        "monthly": "80.59%",
+        "gain": "26.36%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:40+00:00",
+      "status_updated_at": "2026-08-06T20:48:05+00:00"
+    },
+    {
+      "config_id": "20512bb4f9cf",
+      "hash": "8820b329f3cb4897bc80aaec9b382b6f68b904e3bbf16f210868d292ca867a0e",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20241217192419",
+        "daily": "3.68%",
+        "monthly": "194.10%",
+        "drawdown": "20.93%",
+        "gain": "+15634.04%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:40+00:00",
+      "status_updated_at": "2026-08-06T20:48:05+00:00"
+    },
+    {
+      "config_id": "862d7ba8714d",
+      "hash": "878f2080e06c5520ef44b793e78ab61d5b5899b78f037da4645bcd2bc479896d",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20250211192145",
+        "daily": "0.61%",
+        "monthly": "20.16%",
+        "drawdown": "49.77%",
+        "gain": "+117267.04%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:40+00:00",
+      "status_updated_at": "2026-08-06T20:48:05+00:00"
+    },
+    {
+      "config_id": "20f6b6bdc776",
+      "hash": "8d50e89bae6e3f18fe16ab70f0b4827f055682c50cee95ad6d0f4a9c6c0dbede",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "trading_type": "Automated",
+        "system_type": "Technical",
+        "account_type": "Real",
+        "snapshot_ts": "20240913141320",
+        "daily": "16.30%",
+        "monthly": "9878.40%",
+        "drawdown": "2.84%",
+        "gain": "+89343.36%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:40+00:00",
+      "status_updated_at": "2026-08-06T20:48:05+00:00"
+    },
+    {
+      "config_id": "6bd6a935b077",
+      "hash": "5914d572efab3966b39fe0f5285ef66cc187349e59789fd7af040dd091327ad1",
+      "mechanism": "session",
+      "symbol": "GBPUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20230127041559",
+        "daily": "0.52%",
+        "monthly": "16.89%",
+        "gain": "6.44%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "done",
+      "registered_at": "2026-08-06T16:58:40+00:00",
+      "status_updated_at": "2026-08-06T20:55:04+00:00"
+    },
+    {
+      "config_id": "46d48fbccc61",
+      "hash": "acb0434303a0f3bcf8452e7c1b222ada90302e496549f6cb88e9ddc20f842339",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {
+        "trading_type": "Automated",
+        "system_type": "Technical",
+        "account_type": "Real"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:40+00:00",
+      "status_updated_at": "2026-08-06T20:55:04+00:00"
+    },
+    {
+      "config_id": "127732e24f3f",
+      "hash": "73f871fe5db7c38588bae5a7d9f6a7d576132ba67afe00ce0bb4e8a3f2657a7e",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "trading_type": "Automated",
+        "system_type": "Technical",
+        "account_type": "Real",
+        "snapshot_ts": "20131123172424",
+        "daily": "0.76%",
+        "monthly": "25.26%",
+        "drawdown": "14.67%",
+        "gain": "+155.09%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:40+00:00",
+      "status_updated_at": "2026-08-06T20:55:04+00:00"
+    },
+    {
+      "config_id": "e6b5377d4c12",
+      "hash": "dc22037985b2de6cda87c57a8491991fc80a58bc9481bde358ae41c944a4c69c",
+      "mechanism": "scalper",
+      "symbol": "GBPUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20180516013333",
+        "daily": "0.65%",
+        "monthly": "21.62%",
+        "gain": "47.53%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "done",
+      "registered_at": "2026-08-06T16:58:40+00:00",
+      "status_updated_at": "2026-08-06T21:06:17+00:00"
+    },
+    {
+      "config_id": "0ad53c575ce2",
+      "hash": "2234b8ca83d32d2c80dda5f39366b0ebc852ce0dc49f8527882b3b2025e52aea",
+      "mechanism": "session",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20161203040108",
+        "daily": "0.46%",
+        "monthly": "14.64%",
+        "gain": "29.8%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_slippage_data",
+      "registered_at": "2026-08-06T16:58:40+00:00",
+      "status_updated_at": "2026-08-06T21:06:17+00:00"
+    },
+    {
+      "config_id": "881cb2532e69",
+      "hash": "6f6f13a7132469d3c718f6c6048733542940947a3bef3b0b618c2c03571b1c23",
+      "mechanism": "orderflow",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20180521045105",
+        "daily": "4.02%",
+        "monthly": "225.61%",
+        "gain": "0%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_slippage_data",
+      "registered_at": "2026-08-06T16:58:40+00:00",
+      "status_updated_at": "2026-08-06T21:06:17+00:00"
+    },
+    {
+      "config_id": "d53d66d47f37",
+      "hash": "c0d41429d6057b9f89588abfa70beae928cdbc3dc61fb75873032ba2d0521810",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "snapshot_ts": "20250517030309",
+        "daily": "0.41%",
+        "monthly": "13.25%",
+        "drawdown": "69.92%",
+        "gain": "+3687.95%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:41+00:00",
+      "status_updated_at": "2026-08-06T21:06:17+00:00"
+    },
+    {
+      "config_id": "c546af3b1b3f",
+      "hash": "e572e93a88508c9b55205a6af2838d6c85dbdc5b4907b503310b2954b80e029a",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20180313043218",
+        "daily": "5.24%",
+        "monthly": "360.14%",
+        "gain": "39.8%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:41+00:00",
+      "status_updated_at": "2026-08-06T21:06:17+00:00"
+    },
+    {
+      "config_id": "040d3b46748c",
+      "hash": "79bef5c7fb8587d7d9151a6b9ad9f0f33d40954bc7f20c72e1b4ccfef514a28a",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20240815132836",
+        "daily": "0.46%",
+        "monthly": "14.68%",
+        "drawdown": "4.50%",
+        "gain": "+2490.35%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:41+00:00",
+      "status_updated_at": "2026-08-06T21:06:17+00:00"
+    },
+    {
+      "config_id": "be80a7fa1b67",
+      "hash": "c0ec03739e02241c047fe31841a9da29da626f14eb86bc56e4a1c593f759e4ec",
+      "mechanism": "other",
+      "symbol": "GBPUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20180619104550",
+        "daily": "0.66%",
+        "monthly": "21.73%",
+        "gain": "34.64%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:41+00:00",
+      "status_updated_at": "2026-08-06T21:06:17+00:00"
+    },
+    {
+      "config_id": "feb3a3c6fd06",
+      "hash": "835e41f75d1e4cd87b4c81e55db38c1b2f630b696ff0537bcecd040511ffff44",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20241217214748",
+        "daily": "10.66%",
+        "monthly": "7213.36%",
+        "drawdown": "27.51%",
+        "gain": "+59113.53%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:41+00:00",
+      "status_updated_at": "2026-08-06T21:06:17+00:00"
+    },
+    {
+      "config_id": "18ff2a8da71d",
+      "hash": "703c6cf2ecf41e72dbac1cc5d78225d7cb6699a077585318018838fc2a55beca",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20210417031928",
+        "daily": "0.69%",
+        "monthly": "22.75%",
+        "gain": "39.95%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:41+00:00",
+      "status_updated_at": "2026-08-06T21:06:17+00:00"
+    },
+    {
+      "config_id": "7d426cd5e802",
+      "hash": "6f49ad8ad51e39e55160dd93a5ee286c00aabcf4b9da147b67d72de351a55182",
+      "mechanism": "scalper",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20201129020440",
+        "daily": "0.10%",
+        "monthly": "3.16%",
+        "gain": "34.48%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_slippage_data",
+      "registered_at": "2026-08-06T16:58:41+00:00",
+      "status_updated_at": "2026-08-06T21:06:17+00:00"
+    },
+    {
+      "config_id": "253beeb6169d",
+      "hash": "4e8514901ad717ae9dd92807985f3e75c4389dea5084154af491c36ac432bea4",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20241217194631",
+        "daily": "0.50%",
+        "monthly": "16.58%",
+        "drawdown": "6.86%",
+        "gain": "+18360.89%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:41+00:00",
+      "status_updated_at": "2026-08-06T21:06:17+00:00"
+    },
+    {
+      "config_id": "37d4fd305a47",
+      "hash": "ff474fbbae93e68dcfd2f1653447decc853a3bdf12934ae67d580ad0177f2f63",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "trading_type": "Automated",
+        "system_type": "Technical",
+        "account_type": "Real",
+        "snapshot_ts": "20220625081912",
+        "daily": "1.85%",
+        "monthly": "78.94%",
+        "drawdown": "18.79%",
+        "gain": "+1278.88%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:41+00:00",
+      "status_updated_at": "2026-08-06T21:06:17+00:00"
+    },
+    {
+      "config_id": "1a5e4b1b83c4",
+      "hash": "c16da320caf25c9bb7016f7bfbccb9fa934b36f340311d9ceb739ee8586ba638",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {
+        "snapshot_ts": "20221127113320",
+        "daily": "0.22%",
+        "monthly": "6.81%",
+        "drawdown": "39.88%",
+        "gain": "+11348.53%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:41+00:00",
+      "status_updated_at": "2026-08-06T21:06:17+00:00"
+    },
+    {
+      "config_id": "099f2d615c7d",
+      "hash": "25c82f84addbed720fcb8337565cc54c39ee0672009d3f3d1a63a055f084897f",
+      "mechanism": "trend_following",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real",
+        "snapshot_ts": "20210417022944",
+        "daily": "0.34%",
+        "monthly": "10.74%",
+        "gain": "40.83%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_slippage_data",
+      "registered_at": "2026-08-06T16:58:41+00:00",
+      "status_updated_at": "2026-08-06T21:06:18+00:00"
+    },
+    {
+      "config_id": "1a75665a49ec",
+      "hash": "5a07a7f1ce954678dd18e7d4957928571a947528c8d61e482b04a2dd3829762f",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "account_type": "Real"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:41+00:00",
+      "status_updated_at": "2026-08-06T21:06:18+00:00"
+    },
+    {
+      "config_id": "a9a88c310168",
+      "hash": "35d9fc24fa52939992f5661333fdcadc694e649b9b28177ef76d05fd8857ac84",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "M1",
+      "params": {
+        "trading_type": "Automated",
+        "system_type": "Technical",
+        "account_type": "Real",
+        "snapshot_ts": "20140328075658",
+        "daily": "0.40%",
+        "monthly": "12.67%",
+        "drawdown": "45.14%",
+        "gain": "+586.53%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:41+00:00",
+      "status_updated_at": "2026-08-06T21:06:18+00:00"
+    },
+    {
+      "config_id": "1bfbab7aff33",
+      "hash": "5cfe0cf9c60e579cfd98afdfc42b8a9110be9caabbc26a9f6057054caabb04ea",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {
+        "snapshot_ts": "20250421110221",
+        "daily": "0.26%",
+        "monthly": "8.13%",
+        "drawdown": "47.71%",
+        "gain": "+15705.34%"
+      },
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:41+00:00",
+      "status_updated_at": "2026-08-06T21:06:18+00:00"
+    },
+    {
+      "config_id": "7acf1d87c882",
+      "hash": "068d142a756cb98e0f1bfec3c0b4d6f0c9f57d39304f38520610beb5b95ceff3",
+      "mechanism": "scalper",
+      "symbol": "GBPUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "done",
+      "registered_at": "2026-08-06T16:58:41+00:00",
+      "status_updated_at": "2026-08-06T21:13:47+00:00"
+    },
+    {
+      "config_id": "c3a0eda7e809",
+      "hash": "694108cc2841bd8b72bfcdb833798fe92a14f5617eb5a47f37fce3ae104fe4b7",
+      "mechanism": "scalper",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "done",
+      "registered_at": "2026-08-06T16:58:41+00:00",
+      "status_updated_at": "2026-08-06T21:20:56+00:00"
+    },
+    {
+      "config_id": "abbcd1215977",
+      "hash": "53ad385ca6c36f15ba43ea0fa844db40396a821a98515e0820c4fc32f56d65ee",
+      "mechanism": "mean_reversion",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_slippage_data",
+      "registered_at": "2026-08-06T16:58:41+00:00",
+      "status_updated_at": "2026-08-06T21:20:56+00:00"
+    },
+    {
+      "config_id": "82e5045d2879",
+      "hash": "f1b29bd510fa9cd8ebb9fa46449f8490c6b1c007c71aae0e6bb326470bcbeb98",
+      "mechanism": "breakout",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "done",
+      "registered_at": "2026-08-06T16:58:43+00:00",
+      "status_updated_at": "2026-08-06T21:27:45+00:00"
+    },
+    {
+      "config_id": "ee6e8125867c",
+      "hash": "c7fed8a84b19444170abe255fa5c6978c953c3172d2e75bb96dd6be6e8cae5d8",
+      "mechanism": "other",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:58:53+00:00",
+      "status_updated_at": "2026-08-06T21:27:45+00:00"
+    },
+    {
+      "config_id": "6e316fefb29f",
+      "hash": "9efd3e4fb2789d808fa7fec8ca3e8052a9ac3122a974c72a3487f17b5d8264f8",
+      "mechanism": "breakout",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_slippage_data",
+      "registered_at": "2026-08-06T16:58:53+00:00",
+      "status_updated_at": "2026-08-06T21:27:45+00:00"
+    },
+    {
+      "config_id": "b05bb0719cd0",
+      "hash": "1fbc23abb85647399074a2e2b27fd86955dd35ad95db8909dc3d33e761ea7261",
+      "mechanism": "orderflow",
+      "symbol": "XAUUSD",
+      "timeframe": "W1",
+      "params": {},
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "done",
+      "registered_at": "2026-08-06T16:58:53+00:00",
+      "status_updated_at": "2026-08-06T21:27:49+00:00"
+    },
+    {
+      "config_id": "c9834060ebce",
+      "hash": "c4c79eafcad80ff0a1d3fc65b28f60ce6686dfe64cbf994324822639e8a8f8a7",
+      "mechanism": "trend_following",
+      "symbol": "XAUUSD",
+      "timeframe": "H1",
+      "params": {},
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "done",
+      "registered_at": "2026-08-06T16:58:53+00:00",
+      "status_updated_at": "2026-08-06T21:34:43+00:00"
+    },
+    {
+      "config_id": "7dac3038d3ce",
+      "hash": "3bacf1f3783ee3884b0e3b009e848ad11121055c64dd4e9078e512e154dcc640",
+      "mechanism": "scalper",
+      "symbol": "EURUSD",
+      "timeframe": "M5",
+      "params": {},
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_slippage_data",
+      "registered_at": "2026-08-06T16:59:01+00:00",
+      "status_updated_at": "2026-08-06T21:34:43+00:00"
+    },
+    {
+      "config_id": "5e2df0751299",
+      "hash": "85c54a8de9d395ba09b9841d5570e67daa12d4645ecae6e04984c67c3bbd1388",
+      "mechanism": "trend_following",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "done",
+      "registered_at": "2026-08-06T16:59:01+00:00",
+      "status_updated_at": "2026-08-06T21:34:48+00:00"
+    },
+    {
+      "config_id": "d354f73353d8",
+      "hash": "39dfa27d6905b64aad44e505fbc2c162881a8076d229c565634daa687bd40204",
+      "mechanism": "session",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "done",
+      "registered_at": "2026-08-06T16:59:01+00:00",
+      "status_updated_at": "2026-08-06T21:41:20+00:00"
+    },
+    {
+      "config_id": "1601beb5df71",
+      "hash": "5b257380c0fda778465563c668ddd6d3b396d1ebf2579204a069d2b4533d8186",
+      "mechanism": "microstructure",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:59:01+00:00",
+      "status_updated_at": "2026-08-06T21:41:20+00:00"
+    },
+    {
+      "config_id": "24d3ecf824b0",
+      "hash": "fe2f0c4094b34fb3b996141cf651836783da2efacdf55bb2e80c51f91d560562",
+      "mechanism": "other",
+      "symbol": "GBPUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:59:01+00:00",
+      "status_updated_at": "2026-08-06T21:41:20+00:00"
+    },
+    {
+      "config_id": "02acb42b2772",
+      "hash": "5be294fe715901db4b0a0417b0972ad9069c7281d86456093ac48a262b3fe4ee",
+      "mechanism": "other",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_strategy",
+      "registered_at": "2026-08-06T16:59:01+00:00",
+      "status_updated_at": "2026-08-06T21:41:20+00:00"
+    },
+    {
+      "config_id": "043cc6fa79a9",
+      "hash": "957a5aac3746897c3237e3a1b0ab9a10a102b20fb29baa76be459cf89770ff49",
+      "mechanism": "scalper",
+      "symbol": "XAUUSD",
+      "timeframe": "M1",
+      "params": {},
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_cost_data",
+      "registered_at": "2026-08-06T16:59:01+00:00",
+      "status_updated_at": "2026-08-06T21:41:20+00:00"
+    },
+    {
+      "config_id": "4d353f6bda8f",
+      "hash": "7d2ae1d2dff5cd5f290b73fe442b69daecac0dd548bc0cf83021b837a06472c0",
+      "mechanism": "carry",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "done",
+      "registered_at": "2026-08-06T16:59:01+00:00",
+      "status_updated_at": "2026-08-06T21:41:23+00:00"
+    },
+    {
+      "config_id": "5836776de115",
+      "hash": "a07cf8edfe45891a70344547eff4b6fef6a08b01a95b5b878677854fe7a41b5a",
+      "mechanism": "mean_reversion",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "done",
+      "registered_at": "2026-08-06T16:59:01+00:00",
+      "status_updated_at": "2026-08-06T22:18:45+00:00"
+    },
+    {
+      "config_id": "a91f24671a72",
+      "hash": "df6ebc817be7c99a6b4d2033e7a5dd7c97cb45e6050950988ccd1556df11b208",
+      "mechanism": "regime",
+      "symbol": "XAUUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "done",
+      "registered_at": "2026-08-06T16:59:32+00:00",
+      "status_updated_at": "2026-08-06T22:18:50+00:00"
+    },
+    {
+      "config_id": "3e146395c527",
+      "hash": "724f5750ba840249fda6d742eeb2bc1670e9c0a300df3ede61e72653f7cebca1",
+      "mechanism": "momentum",
+      "symbol": "EURUSD",
+      "timeframe": "ALL",
+      "params": {},
+      "data_range": [
+        "",
+        ""
+      ],
+      "status": "no_slippage_data",
+      "registered_at": "2026-08-06T16:59:32+00:00",
+      "status_updated_at": "2026-08-06T22:18:50+00:00"
+    }
+  ],
+  "count": 80
+}

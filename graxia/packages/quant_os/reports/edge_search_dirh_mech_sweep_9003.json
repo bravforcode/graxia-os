@@ -1,0 +1,74 @@
+{
+  "title": "Direction H Trial 9003 \u2014 mechanism sweep USDCAD/USDCHF",
+  "executed_at": "2026-08-06T16:32:22.290599+00:00",
+  "symbols": [
+    "USDCAD",
+    "USDCHF"
+  ],
+  "arms": {
+    "mrb": {
+      "USDCHF": {
+        "n_trades": 0,
+        "verdict": "INSUFFICIENT",
+        "n_days": 0
+      }
+    },
+    "liquidity_sweep_v2": {
+      "USDCAD": {
+        "n_trades": 772,
+        "dk_t": -0.7763,
+        "sharpe": -0.417,
+        "verdict": "REJECT"
+      },
+      "USDCHF": {
+        "n_trades": 870,
+        "dk_t": -2.2269,
+        "sharpe": -1.1069,
+        "verdict": "REJECT"
+      }
+    },
+    "session_pattern": {
+      "USDCAD": {
+        "n_trades": 33565,
+        "dk_t": 0.0043,
+        "sharpe": 0.0001,
+        "verdict": "REJECT"
+      },
+      "USDCHF": {
+        "n_trades": 33193,
+        "dk_t": 0.004,
+        "sharpe": 0.0001,
+        "verdict": "REJECT"
+      }
+    },
+    "hybrid_mom_mr": {
+      "USDCAD": {
+        "n_trades": 3368,
+        "dk_t": -2.1897,
+        "sharpe": -0.5964,
+        "verdict": "REJECT"
+      },
+      "USDCHF": {
+        "n_trades": 3286,
+        "dk_t": -2.603,
+        "sharpe": -0.7581,
+        "verdict": "REJECT"
+      }
+    },
+    "volume_breakout": {
+      "USDCAD": {
+        "n_trades": 623,
+        "dk_t": -0.8518,
+        "sharpe": -0.5224,
+        "verdict": "REJECT"
+      },
+      "USDCHF": {
+        "n_trades": 627,
+        "dk_t": -0.6833,
+        "sharpe": -0.4509,
+        "verdict": "REJECT"
+      }
+    }
+  },
+  "verdict": "REJECT"
+}

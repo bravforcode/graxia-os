@@ -93,7 +93,7 @@ class BinanceFeeder:
 
     def __init__(self, config: ExchangeConfig | None = None):
         self._config = config or ExchangeConfig()
-        self._exchange = None
+        self._exchange: Any = None
 
     @classmethod
     def _get_ccxt(cls):

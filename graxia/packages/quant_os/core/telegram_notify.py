@@ -30,7 +30,7 @@ def _get_token(config: dict | None = None) -> str:
     if token:
         return token
     cfg = config or _load_config()
-    return cfg.get("bot_token", "")
+    return str(cfg.get("bot_token", ""))
 
 
 def _get_chat_id(config: dict | None = None) -> str:
@@ -38,11 +38,11 @@ def _get_chat_id(config: dict | None = None) -> str:
     if chat_id:
         return chat_id
     cfg = config or _load_config()
-    return cfg.get("chat_id", "")
+    return str(cfg.get("chat_id", ""))
 
 
 class TelegramNotifier:
-    def __init__(self, token: str | None = None, chat_id: str | None = None):
+    def __init__(self, token: str | None = None, chat_id: str | None = None) -> None:
         self.token = token or _get_token()
         self.chat_id = chat_id or _get_chat_id()
         if not self.token or not self.chat_id:
@@ -89,7 +89,7 @@ class TelegramNotifier:
         confidence: float,
         lot: float,
         regime: str,
-    ):
+    ) -> None:
         emoji = "🟢 LONG" if direction.upper() == "BUY" else "🔴 SHORT"
         self.send(
             f"*GRAXIA-OS | {emoji}*\n"
@@ -107,7 +107,7 @@ class TelegramNotifier:
         confidence: float,
         lot: float,
         regime: str,
-    ):
+    ) -> None:
         emoji = "🟢 LONG" if direction.upper() == "BUY" else "🔴 SHORT"
         await self.send_async(
             f"*GRAXIA-OS | {emoji}*\n"
@@ -124,7 +124,7 @@ class TelegramNotifier:
         daily_pnl: float,
         monthly_pnl: float,
         swap_paid: float = 0.0,
-    ):
+    ) -> None:
         emoji = "💚" if pnl_net > 0 else "❤️"
         msg = f"{emoji} *CLOSED | {reason}*\n" f"P&L: `${pnl_net:+.2f}`"
         if swap_paid:
@@ -140,7 +140,7 @@ class TelegramNotifier:
         daily_pnl: float,
         monthly_pnl: float,
         swap_paid: float = 0.0,
-    ):
+    ) -> None:
         emoji = "💚" if pnl_net > 0 else "❤️"
         msg = f"{emoji} *CLOSED | {reason}*\n" f"P&L: `${pnl_net:+.2f}`"
         if swap_paid:
@@ -148,10 +148,10 @@ class TelegramNotifier:
         msg += f"\nDaily: `${daily_pnl:+.2f}` | Monthly: `${monthly_pnl:+.2f}`"
         await self.send_async(msg)
 
-    def risk_alert(self, reason: str):
+    def risk_alert(self, reason: str) -> None:
         self.send(f"⚠️ *RISK ALERT*\n{reason}")
 
-    async def risk_alert_async(self, reason: str):
+    async def risk_alert_async(self, reason: str) -> None:
         await self.send_async(f"⚠️ *RISK ALERT*\n{reason}")
 
     def heartbeat(
@@ -160,7 +160,7 @@ class TelegramNotifier:
         win_rate_7d: float,
         balance: float,
         prob_ruin_at_current_lot: float | None = None,
-    ):
+    ) -> None:
         msg = (
             f"💓 *Daily Heartbeat*\n"
             f"Trades today: `{trades_today}`\n"
@@ -177,7 +177,7 @@ class TelegramNotifier:
         win_rate_7d: float,
         balance: float,
         prob_ruin_at_current_lot: float | None = None,
-    ):
+    ) -> None:
         msg = (
             f"💓 *Daily Heartbeat*\n"
             f"Trades today: `{trades_today}`\n"
@@ -188,14 +188,14 @@ class TelegramNotifier:
             msg += f"\nMonte Carlo P(ruin), current lot: `{prob_ruin_at_current_lot:.2%}`"
         await self.send_async(msg)
 
-    def failover_triggered(self, reason: str):
+    def failover_triggered(self, reason: str) -> None:
         self.send(
             f"🚨 *FAILOVER* — standby VPS is taking over.\n"
             f"Reason: {reason}\n"
             f"Verify open positions manually NOW."
         )
 
-    async def failover_triggered_async(self, reason: str):
+    async def failover_triggered_async(self, reason: str) -> None:
         await self.send_async(
             f"🚨 *FAILOVER* — standby VPS is taking over.\n"
             f"Reason: {reason}\n"

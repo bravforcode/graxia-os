@@ -1,0 +1,43 @@
+================================================================================
+EDGE VERIFICATION REPORT: Liquidity Sweep Optimized XAUUSD D1
+Symbol: XAUUSD D1 | Data: 11063 bars
+Date: 2026-07-18T12:20:01.287648+00:00
+================================================================================
+
+0. BASELINE
+----------------------------------------
+   Total Trades: 158.0000
+   Win Rate: 38.0%
+   Sharpe Ratio: 0.0000
+   Sortino Ratio: 0.0000
+   Max Drawdown Pct: 0.0%
+   Profit Factor: 0.9884
+   Cagr: 0.0000
+   Calmar Ratio: 0.0000
+
+1. WALK-FORWARD: 1/5 positive, 81 trades, Sharpe=0.0000
+   WF Efficiency: 0.000
+   VERDICT: FAIL
+
+2. DSR: Sharpe=0.0313, P(alpha)=0.9910, MinBTL=999999999
+   VERDICT: FAIL
+
+3. PBO: 0.2857, Combinations=70
+   VERDICT: FAIL
+
+4. BOOTSTRAP: Sharpe=0.0313, CI=[-0.1690, 0.2175]
+   VERDICT: FAIL
+
+5. COST STRESS: Base=0.000, 2x=0.000, Degradation=100.0%
+   VERDICT: FAIL
+
+================================================================================
+FINAL: 0/5 gates passed
+  Walk-Forward    FAIL
+  DSR             FAIL
+  PBO             FAIL
+  Bootstrap       FAIL
+  Cost            FAIL
+
+  VERDICT: EDGE NOT CONFIRMED
+  RECOMMENDATION: REJECT - do not trade this strategy

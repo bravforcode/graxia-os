@@ -1,5 +1,6 @@
 """Parameter sweep from vectorbt pattern — with automatic search-budget tracking."""
 
+import math
 from collections.abc import Callable
 from itertools import product
 
@@ -95,21 +96,23 @@ class ParamSweep:
         observed_sharpe: float,
         n_observations: int,
         *,
+        sharpe_annualization_factor: float = math.sqrt(252),  # SP1: caller passes ANNUALIZED Sharpe (e.g. best[1]) with raw-bar n; de-annualize by default
         skewness: float = 0.0,
         kurtosis: float = 3.0,
         confidence_level: float = 0.95,
-    ):
+    ) -> tuple[float, float]:
         """Compute Deflated Sharpe Ratio using the auto-recorded trial count."""
-        return self._tracker.get_deflated_sharpe(
+        return self._tracker.get_deflated_sharpe(  # type: ignore[return-value,no-any-return]
             strategy_id=self.strategy_id,
             observed_sharpe=observed_sharpe,
             n_observations=n_observations,
+            sharpe_annualization_factor=sharpe_annualization_factor,
             skewness=skewness,
             kurtosis=kurtosis,
             confidence_level=confidence_level,
         )
 
-    def budget_summary(self):
+    def budget_summary(self) -> object:
         """Return the SearchBudgetSummary for this sweep's strategy."""
         return self._tracker.summary(self.strategy_id)
 

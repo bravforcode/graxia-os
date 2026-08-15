@@ -13,7 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ....packages.revenue_os.db import get_db
 from ....packages.revenue_os.models import WebhookEvent
 from ....packages.revenue_os.schemas import CheckoutWebhookResponse, CreateOrderPayload
-from ....packages.revenue_os.services.order_service import order_service
+from ....packages.revenue_os.services.order_service import OrderService
+from ....packages.revenue_os.services.webhook_processor import WebhookProcessor
 from ..dependencies import require_stripe_hmac
 from sqlalchemy import select
 
@@ -71,28 +72,24 @@ async def stripe_webhook(
 
     try:
         if event_type == "checkout.session.completed":
+            # Verified path: HMAC-validated by require_stripe_hmac. Uses
+            # WebhookProcessor which sets PAID + fulfills immediately (idempotent).
+            # Requires metadata.product_id in the checkout session (fail-closed
+            # otherwise — no silent PROCESSING orders).
             session = event["data"]["object"]
-            customer_details = session.get("customer_details") or {}
-
-            payload = CreateOrderPayload(
-                platform="stripe",
-                platform_order_id=session["id"],
-                stripe_event_id=event_id,
-                customer_email=customer_details.get("email", "unknown@stripe.com"),
-                customer_name=customer_details.get("name"),
-                amount_cents=session.get("amount_total", 0),
-                currency=(session.get("currency") or "USD").upper(),
-            )
-            order = await order_service.create_order(db, payload)
-            order_id = order.id
+            order = await WebhookProcessor.process_stripe_checkout_completed(session, db)
+            if order is not None:
+                order_id = order.id
             logger.info(
-                "Checkout completed: order_id=%s, email=%s, amount=%d",
-                order.id, order.customer_email, order.amount_cents,
+                "Checkout completed: order_id=%s",
+                order_id or "duplicate-skipped",
             )
 
         elif event_type == "charge.refunded":
-            # Handled by refunds router / future refund_service
-            logger.info("charge.refunded event received, delegated to refund processor")
+            # External refund (e.g. dashboard/Stripe CLI): mark order refunded
+            charge = event["data"]["object"]
+            await WebhookProcessor.process_stripe_refund(charge, db)
+            logger.info("charge.refunded processed")
 
         else:
             logger.debug("Unhandled Stripe event type: %s", event_type)

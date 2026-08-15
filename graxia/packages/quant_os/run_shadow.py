@@ -59,8 +59,8 @@ async def main():
     heartbeat = HeartbeatMonitor(heartbeat_state)
     settings = get_settings()
     telegram = TelegramAlerts(
-        bot_token=settings.TELEGRAM_BOT_TOKEN,
-        chat_id=settings.TELEGRAM_CHAT_ID,
+        bot_token=settings.telegram_bot_token,
+        chat_id=settings.telegram_chat_id,
     )
     await telegram.start()
 
@@ -141,9 +141,9 @@ async def main():
 
     config = MT5IngesterConfig(
         poll_interval_ms=500,
-        mt5_login=settings.MT5_LOGIN,
-        mt5_password=settings.MT5_PASSWORD,
-        mt5_server=settings.MT5_SERVER,
+        mt5_login=settings.mt5_login,
+        mt5_password=settings.mt5_password,
+        mt5_server=settings.mt5_server,
     )
     ingester = MT5TickIngester(
         symbols=["XAUUSD", "EURUSD"],
@@ -158,7 +158,7 @@ async def main():
     now = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
     await telegram.send_alert(
         f"[SHADOW] System started\n"
-        f"Server: {settings.MT5_SERVER}\n"
+        f"Server: {settings.mt5_server}\n"
         f"Time: {now}\n"
         f"Symbols: XAUUSD, EURUSD\n"
         f"Mode: Shadow (paper trading)",

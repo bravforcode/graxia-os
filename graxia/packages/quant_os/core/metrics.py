@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
@@ -18,12 +19,9 @@ class PipelineMetrics:
     last_update: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def to_dict(self) -> dict:
-        return {
-            k: (v.isoformat() if isinstance(v, datetime) else v)
-            for k, v in self.__dict__.items()
-        }
+        return {k: (v.isoformat() if isinstance(v, datetime) else v) for k, v in self.__dict__.items()}
 
-    def log_summary(self, logger) -> None:
+    def log_summary(self, logger: logging.Logger) -> None:
         data = self.to_dict()
         try:
             logger.info("pipeline.metrics", **data)

@@ -15,11 +15,11 @@ Usage::
 
 from __future__ import annotations
 
-import os
 import logging
+import os
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, UTC
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import httpx
 
@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Data classes
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class TradeStats:
@@ -49,13 +50,14 @@ class TradeStats:
     sharpe_ratio: float = 0.0
     max_drawdown: float = 0.0
     profit_factor: float = 0.0
-    by_strategy: Dict[str, Dict[str, Any]] = field(default_factory=dict)
-    by_session: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    by_strategy: dict[str, dict[str, Any]] = field(default_factory=dict)
+    by_session: dict[str, dict[str, Any]] = field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
 # Main class
 # ---------------------------------------------------------------------------
+
 
 class ShadowReport:
     """Query DuckDB shadow_trades and produce Telegram-ready reports.
@@ -73,11 +75,7 @@ class ShadowReport:
         bot_token: str = "",
         chat_id: str = "",
     ) -> None:
-        self._db_path = (
-            db_path
-            or os.getenv("DUCKDB_PATH", "")
-            or "data/market_data.duckdb"
-        )
+        self._db_path = db_path or os.getenv("DUCKDB_PATH", "") or "data/market_data.duckdb"
         self._bot_token = bot_token or os.getenv("TELEGRAM_BOT_TOKEN", "")
         self._chat_id = chat_id or os.getenv("TELEGRAM_CHAT_ID", "")
 
@@ -95,11 +93,10 @@ class ShadowReport:
         """Check if a table exists in the database."""
         try:
             result = con.execute(
-                "SELECT COUNT(*) FROM information_schema.tables "
-                "WHERE table_name = ?",
+                "SELECT COUNT(*) FROM information_schema.tables " "WHERE table_name = ?",
                 [table],
             ).fetchone()
-            return result[0] > 0
+            return bool(result[0] > 0 if result else False)
         except Exception:
             return False
 
@@ -107,14 +104,12 @@ class ShadowReport:
     # Trade stats query
     # ------------------------------------------------------------------
 
-    def _fetch_stats(self, con: Any, date_filter: str, params: List[Any]) -> TradeStats:
+    def _fetch_stats(self, con: Any, date_filter: str, params: list[Any]) -> TradeStats:
         """Run aggregate queries and return TradeStats."""
         stats = TradeStats()
 
         # Total trades
-        row = con.execute(
-            f"SELECT COUNT(*) FROM shadow_trades WHERE {date_filter}", params
-        ).fetchone()
+        row = con.execute(f"SELECT COUNT(*) FROM shadow_trades WHERE {date_filter}", params).fetchone()
         stats.total = row[0] if row else 0
 
         if stats.total == 0:
@@ -122,9 +117,7 @@ class ShadowReport:
 
         # Wins / losses (closed trades only)
         closed_filter = f"{date_filter} AND status = 'CLOSED'"
-        row = con.execute(
-            f"SELECT COUNT(*) FROM shadow_trades WHERE {closed_filter}", params
-        ).fetchone()
+        row = con.execute(f"SELECT COUNT(*) FROM shadow_trades WHERE {closed_filter}", params).fetchone()
         closed_count = row[0] if row else 0
 
         row = con.execute(
@@ -139,42 +132,33 @@ class ShadowReport:
 
         # Avg win / avg loss
         row = con.execute(
-            f"SELECT AVG(pnl_after_costs) FROM shadow_trades "
-            f"WHERE {closed_filter} AND pnl_after_costs > 0",
+            f"SELECT AVG(pnl_after_costs) FROM shadow_trades " f"WHERE {closed_filter} AND pnl_after_costs > 0",
             params,
         ).fetchone()
         stats.avg_win = row[0] if row and row[0] else 0.0
 
         row = con.execute(
-            f"SELECT AVG(pnl_after_costs) FROM shadow_trades "
-            f"WHERE {closed_filter} AND pnl_after_costs <= 0",
+            f"SELECT AVG(pnl_after_costs) FROM shadow_trades " f"WHERE {closed_filter} AND pnl_after_costs <= 0",
             params,
         ).fetchone()
         stats.avg_loss = abs(row[0]) if row and row[0] else 0.0
 
         # Payoff ratio
-        stats.payoff_ratio = (
-            stats.avg_win / stats.avg_loss if stats.avg_loss > 0 else 0.0
-        )
+        stats.payoff_ratio = stats.avg_win / stats.avg_loss if stats.avg_loss > 0 else 0.0
 
         # Expectancy per trade
-        stats.expectancy = (
-            (stats.win_rate * stats.avg_win)
-            - ((1 - stats.win_rate) * stats.avg_loss)
-        )
+        stats.expectancy = (stats.win_rate * stats.avg_win) - ((1 - stats.win_rate) * stats.avg_loss)
 
         # Net PnL
         row = con.execute(
-            f"SELECT COALESCE(SUM(pnl_after_costs), 0) FROM shadow_trades "
-            f"WHERE {closed_filter}",
+            f"SELECT COALESCE(SUM(pnl_after_costs), 0) FROM shadow_trades " f"WHERE {closed_filter}",
             params,
         ).fetchone()
         stats.net_pnl = row[0] if row else 0.0
 
         # Best / worst
         row = con.execute(
-            f"SELECT MAX(pnl_after_costs), MIN(pnl_after_costs) "
-            f"FROM shadow_trades WHERE {closed_filter}",
+            f"SELECT MAX(pnl_after_costs), MIN(pnl_after_costs) " f"FROM shadow_trades WHERE {closed_filter}",
             params,
         ).fetchone()
         if row:
@@ -183,18 +167,14 @@ class ShadowReport:
 
         # Open positions
         open_filter = f"{date_filter} AND status = 'OPEN'"
-        row = con.execute(
-            f"SELECT COUNT(*) FROM shadow_trades WHERE {open_filter}", params
-        ).fetchone()
+        row = con.execute(f"SELECT COUNT(*) FROM shadow_trades WHERE {open_filter}", params).fetchone()
         stats.open_positions = row[0] if row else 0
 
         return stats
 
-    def _fetch_strategy_breakdown(
-        self, con: Any, date_filter: str, params: List[Any]
-    ) -> Dict[str, Dict[str, Any]]:
+    def _fetch_strategy_breakdown(self, con: Any, date_filter: str, params: list[Any]) -> dict[str, dict[str, Any]]:
         """Break down stats by strategy / signal source."""
-        breakdown: Dict[str, Dict[str, Any]] = {}
+        breakdown: dict[str, dict[str, Any]] = {}
         closed_filter = f"{date_filter} AND status = 'CLOSED'"
 
         try:
@@ -226,11 +206,9 @@ class ShadowReport:
 
         return breakdown
 
-    def _fetch_session_breakdown(
-        self, con: Any, date_filter: str, params: List[Any]
-    ) -> Dict[str, Dict[str, Any]]:
+    def _fetch_session_breakdown(self, con: Any, date_filter: str, params: list[Any]) -> dict[str, dict[str, Any]]:
         """Break down stats by trading session (Asian/London/NY)."""
-        breakdown: Dict[str, Dict[str, Any]] = {}
+        breakdown: dict[str, dict[str, Any]] = {}
         closed_filter = f"{date_filter} AND status = 'CLOSED'"
 
         try:
@@ -267,9 +245,7 @@ class ShadowReport:
 
         return breakdown
 
-    def _compute_sharpe(
-        self, con: Any, date_filter: str, params: List[Any]
-    ) -> float:
+    def _compute_sharpe(self, con: Any, date_filter: str, params: list[Any]) -> float:
         """Compute annualized Sharpe ratio from daily returns."""
         try:
             rows = con.execute(
@@ -292,18 +268,16 @@ class ShadowReport:
                 return 0.0
 
             variance = sum((r - mean_r) ** 2 for r in returns) / (len(returns) - 1)
-            std_r = variance ** 0.5
+            std_r = variance**0.5
             if std_r == 0:
                 return 0.0
 
-            return (mean_r / std_r) * (252 ** 0.5)
+            return (mean_r / std_r) * (252**0.5)  # type: ignore[no-any-return]
         except Exception as exc:
             logger.warning("sharpe_computation_error: %s", exc)
             return 0.0
 
-    def _compute_max_drawdown(
-        self, con: Any, date_filter: str, params: List[Any]
-    ) -> float:
+    def _compute_max_drawdown(self, con: Any, date_filter: str, params: list[Any]) -> float:
         """Compute max drawdown from cumulative PnL."""
         try:
             rows = con.execute(
@@ -335,9 +309,7 @@ class ShadowReport:
             logger.warning("max_drawdown_error: %s", exc)
             return 0.0
 
-    def _compute_profit_factor(
-        self, con: Any, date_filter: str, params: List[Any]
-    ) -> float:
+    def _compute_profit_factor(self, con: Any, date_filter: str, params: list[Any]) -> float:
         """Compute profit factor (gross wins / gross losses)."""
         try:
             row = con.execute(
@@ -354,7 +326,7 @@ class ShadowReport:
 
             if gross_losses == 0:
                 return float("inf") if gross_wins > 0 else 0.0
-            return gross_wins / gross_losses
+            return gross_wins / gross_losses  # type: ignore[no-any-return]
         except Exception as exc:
             logger.warning("profit_factor_error: %s", exc)
             return 0.0
@@ -363,7 +335,7 @@ class ShadowReport:
     # Report generation
     # ------------------------------------------------------------------
 
-    def generate_daily_report(self, target_date: Optional[datetime] = None) -> str:
+    def generate_daily_report(self, target_date: datetime | None = None) -> str:
         """Generate a daily expectancy report as Telegram HTML.
 
         Args:
@@ -383,7 +355,7 @@ class ShadowReport:
                 return self._empty_report(date_str, "shadow_trades table not found")
 
             date_filter = "DATE(timestamp_utc) = ?"
-            params: List[Any] = [date_str]
+            params: list[Any] = [date_str]
 
             stats = self._fetch_stats(con, date_filter, params)
             strategy = self._fetch_strategy_breakdown(con, date_filter, params)
@@ -394,9 +366,7 @@ class ShadowReport:
         finally:
             con.close()
 
-    def generate_weekly_report(
-        self, end_date: Optional[datetime] = None
-    ) -> str:
+    def generate_weekly_report(self, end_date: datetime | None = None) -> str:
         """Generate a weekly expectancy report as Telegram HTML.
 
         Args:
@@ -415,12 +385,10 @@ class ShadowReport:
 
         try:
             if not self._table_exists(con):
-                return self._empty_report(
-                    f"{start_str} to {end_str}", "shadow_trades table not found"
-                )
+                return self._empty_report(f"{start_str} to {end_str}", "shadow_trades table not found")
 
             date_filter = "DATE(timestamp_utc) BETWEEN ? AND ?"
-            params: List[Any] = [start_str, end_str]
+            params: list[Any] = [start_str, end_str]
 
             stats = self._fetch_stats(con, date_filter, params)
             stats.sharpe_ratio = self._compute_sharpe(con, date_filter, params)
@@ -453,12 +421,7 @@ class ShadowReport:
 
     def _empty_report(self, period: str, reason: str) -> str:
         """Return an HTML message for no-data scenarios."""
-        return (
-            f"📊 <b>Shadow Report</b>\n"
-            f"📅 {period}\n\n"
-            f"⚠️ {reason}\n\n"
-            f"<i>No data available.</i>"
-        )
+        return f"📊 <b>Shadow Report</b>\n" f"📅 {period}\n\n" f"⚠️ {reason}\n\n" f"<i>No data available.</i>"
 
     def _format_daily(self, date_str: str, stats: TradeStats) -> str:
         """Format daily stats as Telegram HTML."""
@@ -492,27 +455,18 @@ class ShadowReport:
                 short_hash = strat[:8] if len(strat) > 8 else strat
                 wr = self._pct(data["win_rate"])
                 pnl = self._pnl_color(data["net_pnl"])
-                lines.append(
-                    f"  <code>{short_hash}</code>: "
-                    f"{data['total']}T | {wr} WR | {pnl}"
-                )
+                lines.append(f"  <code>{short_hash}</code>: " f"{data['total']}T | {wr} WR | {pnl}")
 
         return "\n".join(lines)
 
-    def _format_weekly(
-        self, start_str: str, end_str: str, stats: TradeStats
-    ) -> str:
+    def _format_weekly(self, start_str: str, end_str: str, stats: TradeStats) -> str:
         """Format weekly stats as Telegram HTML."""
         pnl_str = self._pnl_color(stats.net_pnl)
         wr_str = self._pct(stats.win_rate)
         exp_str = self._pnl_color(stats.expectancy)
         dd_str = f"${stats.max_drawdown:,.2f}"
 
-        pf_str = (
-            f"{stats.profit_factor:.2f}"
-            if stats.profit_factor != float("inf")
-            else "∞"
-        )
+        pf_str = f"{stats.profit_factor:.2f}" if stats.profit_factor != float("inf") else "∞"
 
         lines = [
             "📊 <b>Shadow Weekly Report</b>",
@@ -544,10 +498,7 @@ class ShadowReport:
                 short_hash = strat[:8] if len(strat) > 8 else strat
                 wr = self._pct(data["win_rate"])
                 pnl = self._pnl_color(data["net_pnl"])
-                lines.append(
-                    f"  <code>{short_hash}</code>: "
-                    f"{data['total']}T | {wr} WR | {pnl}"
-                )
+                lines.append(f"  <code>{short_hash}</code>: " f"{data['total']}T | {wr} WR | {pnl}")
 
         if stats.by_session:
             lines.append("")
@@ -555,9 +506,7 @@ class ShadowReport:
             for session, data in stats.by_session.items():
                 wr = self._pct(data["win_rate"])
                 pnl = self._pnl_color(data["net_pnl"])
-                lines.append(
-                    f"  {session}: {data['total']}T | {wr} WR | {pnl}"
-                )
+                lines.append(f"  {session}: {data['total']}T | {wr} WR | {pnl}")
 
         return "\n".join(lines)
 
@@ -607,14 +556,13 @@ class ShadowReport:
 # CLI entry point
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     """CLI: generate and send the daily shadow report."""
     import argparse
 
     parser = argparse.ArgumentParser(description="Shadow trade daily report")
-    parser.add_argument(
-        "--weekly", action="store_true", help="Generate weekly report instead"
-    )
+    parser.add_argument("--weekly", action="store_true", help="Generate weekly report instead")
     parser.add_argument("--db-path", default="", help="DuckDB path override")
     parser.add_argument("--send", action="store_true", help="Send to Telegram")
     parser.add_argument("--dry-run", action="store_true", help="Print only, no send")

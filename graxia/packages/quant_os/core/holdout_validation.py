@@ -49,6 +49,7 @@ class HoldoutValidator:
         result = validator.validate(
             dev_results=dev_metrics,
             holdout_results=holdout_metrics,
+            sharpe_annualization_factor=math.sqrt(252),  # matches how holdout_metrics["sharpe_ratio"] was annualized
         )
 
         if not result.passed:
@@ -70,6 +71,8 @@ class HoldoutValidator:
         self,
         dev_results: dict[str, float],
         holdout_results: dict[str, float],
+        *,
+        sharpe_annualization_factor: float,
         max_acceptable_degradation: float = 0.5,
     ) -> HoldoutResult:
         """
@@ -78,6 +81,12 @@ class HoldoutValidator:
         Args:
             dev_results: Performance on development data
             holdout_results: Performance on holdout data (never seen)
+            sharpe_annualization_factor: factor holdout_results["sharpe_ratio"] was
+                scaled by relative to the per-trade Sharpe over holdout_trades
+                observations (e.g. math.sqrt(252) if the caller annualized a
+                trade-level Sharpe with a 252-bar/year convention). Required
+                because this validator has no visibility into how the caller
+                computed sharpe_ratio — see deflated_sharpe_ratio() docstring.
             max_acceptable_degradation: Max allowed performance drop (0.5 = 50%)
         """
         warnings = []
@@ -85,7 +94,6 @@ class HoldoutValidator:
         # Extract metrics
         dev_sharpe = dev_results.get("sharpe_ratio", 0)
         dev_win_rate = dev_results.get("win_rate", 0)
-        dev_pf = dev_results.get("profit_factor", 0)
 
         holdout_sharpe = holdout_results.get("sharpe_ratio", 0)
         holdout_win_rate = holdout_results.get("win_rate", 0)
@@ -102,7 +110,8 @@ class HoldoutValidator:
         dsr_result = deflated_sharpe_ratio(
             observed_sharpe=holdout_sharpe,
             n_trials=self.total_tests,
-            n_observations=holdout_trades,
+            n_observations=int(holdout_trades),
+            sharpe_annualization_factor=sharpe_annualization_factor,
         )
         deflated_sharpe = dsr_result.probability_alpha
         threshold = 1 - 0.95  # 0.05 for 95% confidence
@@ -131,7 +140,7 @@ class HoldoutValidator:
             holdout_profit_factor=holdout_pf,
             holdout_max_drawdown_pct=holdout_dd,
             holdout_total_pnl=holdout_pnl,
-            holdout_trades=holdout_trades,
+            holdout_trades=int(holdout_trades),
             dev_sharpe=dev_sharpe,
             dev_win_rate=dev_win_rate,
             sharpe_degradation=sharpe_deg,

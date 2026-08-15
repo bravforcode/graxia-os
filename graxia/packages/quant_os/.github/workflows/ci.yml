@@ -30,6 +30,9 @@ jobs:
       - name: Lint with ruff
         run: ruff check . --output-format=github
 
+      - name: Trial ID uniqueness ratchet
+        run: python scripts/check_trial_uniqueness.py
+
       - name: Run tests
         run: |
           python -m pytest tests/ -q --tb=short \
@@ -74,7 +77,8 @@ jobs:
           pip install -e .
 
       - name: Run production readiness check
-        run: python -c "
+        run: |
+          python -c "
           from core.production_readiness import ProductionReadiness
           pr = ProductionReadiness()
           results = pr.check()

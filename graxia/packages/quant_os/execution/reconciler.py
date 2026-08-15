@@ -278,7 +278,7 @@ class PositionReconciler:
     def auto_fix(
         self,
         result: ReconciliationResult,
-        broker_update_fn: callable | None = None,
+        broker_update_fn: Callable[..., object] | None = None,
     ) -> list[AutoFixAction]:
         """Auto-fix small discrepancies (rounding differences).
 

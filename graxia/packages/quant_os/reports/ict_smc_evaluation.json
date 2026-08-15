@@ -1,0 +1,52 @@
+[
+  {
+    "name": "Sweep",
+    "gross_is": -1.1988,
+    "net_is": -5.457,
+    "net_oos": -8.5132,
+    "trades": 48,
+    "wr_is": 14.6,
+    "wf": 0,
+    "passes": false
+  },
+  {
+    "name": "OrderBlock",
+    "gross_is": 1.0523,
+    "net_is": -6.9473,
+    "net_oos": -8.1503,
+    "trades": 40,
+    "wr_is": 5.0,
+    "wf": 0,
+    "passes": false
+  },
+  {
+    "name": "FairValueGap",
+    "gross_is": -0.9441,
+    "net_is": -7.5865,
+    "net_oos": -6.7137,
+    "trades": 37,
+    "wr_is": 5.4,
+    "wf": 0,
+    "passes": false
+  },
+  {
+    "name": "Sweep+Overlap",
+    "gross_is": -0.2829,
+    "net_is": -5.7321,
+    "net_oos": -5.8015,
+    "trades": 37,
+    "wr_is": 10.8,
+    "wf": 0,
+    "passes": false
+  },
+  {
+    "name": "MultiConfluence",
+    "gross_is": -0.0726,
+    "net_is": -2.875,
+    "net_oos": 0.0,
+    "trades": 21,
+    "wr_is": 14.3,
+    "wf": 0,
+    "passes": false
+  }
+]

@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0",
+  "direction": "J",
+  "lock_date": "2026-08-06",
+  "lock_doc_path": "reports/stopping_rule_2026_08_06_direction_j.md",
+  "lock_doc_sha256": "3fb9f8ecd6ba786716813bf47dcfcc1188ec3e6ea5bba1d8ed839041fa680d50",
+  "description": "Direction J: XAUUSD positioning (COT) + cross-asset (DXY) mechanisms. Opened 2026-08-06 after data became available (COT 2021-2026 parquet, DXY 2018-2026 CSV). XAUUSD costs verified correct (0.65 bps rt).",
+  "cumulative_trial_count": 6,
+  "cumulative_trial_cap": 10,
+  "next_available_trial_number": 3012,
+  "trial_range": "3007-3016",
+  "stopping_rule": {
+    "type": "budget_or_time_or_consecutive_fail",
+    "budget": 10,
+    "deadline": "2026-11-06",
+    "hours_cap": 40,
+    "consecutive_fail_gate_threshold": 3,
+    "consecutive_fail_count": 3,
+    "description": "Stop when any: 10 used, 3 months (2026-11-06), 40 research-hours, or 3 consecutive fails at same gate. Per stopping_rule_2026_08_06_direction_j.md.",
+    "status": "TRIGGERED",
+    "triggered_at": "2026-08-06",
+    "trigger_note": "3 consecutive REJECTED (3003, 3010, 3011) — INCONCLUSIVE trials (3007/3008/3009) do not reset the chain (not fails). Direction J STOPPED per stopping_rule_2026_08_06_direction_j.md."
+  },
+  "lineage": [
+    {
+      "trial_id": "3007",
+      "status": "INCONCLUSIVE",
+      "result_at": "2026-08-06",
+      "notes": "3 trades only (z>=2.0 rare in 5y COT) — underpowered, min-trades gate not met."
+    },
+    {
+      "trial_id": "3003",
+      "status": "REJECTED",
+      "result_at": "2026-08-06",
+      "notes": "DXY lead-lag falsified: dk_t=-15.5, mean -/trade, 245 trades."
+    },
+    {
+      "trial_id": "3008",
+      "status": "INCONCLUSIVE",
+      "result_at": "2026-08-06",
+      "notes": "COT MM z>=1.5: 8 trades < 30 gate. Underpowered."
+    },
+    {
+      "trial_id": "3009",
+      "status": "INCONCLUSIVE",
+      "result_at": "2026-08-06",
+      "notes": "COT Swap z>=1.5: 8 trades < 30 gate. Underpowered."
+    },
+    {
+      "trial_id": "3010",
+      "status": "REJECTED",
+      "result_at": "2026-08-06",
+      "notes": "FOMC drift: dk_t=-10.1, 43 events. Falsified."
+    },
+    {
+      "trial_id": "3011",
+      "status": "REJECTED",
+      "result_at": "2026-08-06",
+      "notes": "XAU H1 3-arm: best dk_t=0.94. No significance."
+    }
+  ],
+  "notes": [
+    "Opened 2026-08-06 per user approval (COT + DXY both).",
+    "Pre-registered: 3007 COT contrarian, 3003 DXY cross-asset momentum.",
+    "XAUUSD cost basis: 0.65 bps rt (commission=0, verified correct in cost audit)."
+  ]
+}

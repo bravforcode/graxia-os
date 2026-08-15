@@ -1,9 +1,10 @@
 """MetaTrader 5 broker adapter for Pepperstone (metals, forex, indices)."""
 
-import hashlib
 import logging
 import time
 
+from ...core.contract_specs import get_spec as get_contract_spec
+from ..broker_reconnector import BrokerReconnector  # INV-014: single reconnect authority
 from .base import (
     AccountInfo,
     BrokerAdapter,
@@ -15,11 +16,36 @@ from .base import (
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
+# Module-level kill-switch gate — set by orchestrator, checked before any order
+# This prevents scripts from bypassing the orchestrator/KillSwitch/PreTradeRiskGate
+# by importing MetaTrader5 directly and calling mt5.order_send().
+# ---------------------------------------------------------------------------
+_kill_switch_active = False
+_kill_switch_reason = ""
+
+
+def set_kill_switch(active: bool, reason: str = "") -> None:
+    """Set module-level kill-switch state. Called by orchestrator/coordinator."""
+    global _kill_switch_active, _kill_switch_reason
+    _kill_switch_active = active
+    _kill_switch_reason = reason
+    if active:
+        logger.critical("MT5 adapter kill-switch ACTIVATED: %s", reason)
+    else:
+        logger.info("MT5 adapter kill-switch deactivated")
+
+
+def is_kill_switch_active() -> bool:
+    """Check if kill-switch is active. Used by tests and monitoring."""
+    return _kill_switch_active
+
+
+# ---------------------------------------------------------------------------
 # Lazy mt5 import – allows the rest of the package to load without mt5
 # installed (e.g. during unit tests that mock this adapter).
 # ---------------------------------------------------------------------------
 try:
-    import MetaTrader5 as mt5
+    import MetaTrader5 as mt5  # noqa: N813
 except ImportError:  # pragma: no cover
     mt5 = None  # type: ignore[assignment]
 
@@ -106,6 +132,8 @@ class MT5Adapter(BrokerAdapter):
         server: str = "Pepperstone-Live",
         timeout: int = 10_000,
         path: str = r"C:\Program Files\Pepperstone MetaTrader 5\terminal64.exe",
+        read_only: bool = False,
+        reconnector: BrokerReconnector | None = None,
     ) -> None:
         super().__init__("MT5")
         self._login = login
@@ -113,6 +141,8 @@ class MT5Adapter(BrokerAdapter):
         self._server = server
         self._timeout = timeout
         self._path = path
+        self._read_only = read_only
+        self._reconnector = reconnector if reconnector is not None else BrokerReconnector()  # INV-014
 
     # ------------------------------------------------------------------
     # Connection helpers
@@ -135,22 +165,35 @@ class MT5Adapter(BrokerAdapter):
         return True
 
     def _ensure_connected(self) -> None:
-        """Reconnect if the terminal connection was lost, with backoff."""
+        """Reconnect if the terminal connection was lost, with backoff.
+
+        Delegates attempt counting + backoff to BrokerReconnector (INV-014:
+        single reconnect authority). After max attempts it enters FAILED state
+        and we raise — the kill-switch on reconnection.
+        """
         if self._connected and mt5 is not None and mt5.terminal_info():
             return
 
         logger.warning("MT5 not connected – attempting reconnect")
-        for attempt in range(1, 4):
+        # ponytail: immediate first attempt, then BrokerReconnector-driven backoff
+        try:
+            if self.connect():
+                self._reconnector.heartbeat_received()
+                return
+        except Exception as exc:
+            logger.error("MT5 initial connect failed: %s", exc)
+
+        while True:
+            event = self._reconnector.attempt_reconnect()
+            if event.event_type == "FAILED":
+                raise ConnectionError("MT5 reconnect failed after max attempts")
+            time.sleep(event.delay_sec)
             try:
                 if self.connect():
+                    self._reconnector.heartbeat_received()
                     return
             except Exception as exc:
-                logger.error("MT5 reconnect attempt %d failed: %s", attempt, exc)
-            import time
-
-            time.sleep(min(2**attempt, 10))  # backoff: 2s, 4s, 8s
-
-        raise ConnectionError("MT5 reconnect failed after 3 attempts")
+                logger.error("MT5 reconnect attempt failed: %s", exc)
 
     def disconnect(self) -> None:
         """Tear down the MT5 terminal connection."""
@@ -175,7 +218,27 @@ class MT5Adapter(BrokerAdapter):
         Filling mode is auto-detected per symbol (FOK vs RETURN) because
         Pepperstone indices do NOT support IOC — only FOK and RETURN.
         """
-        self._ensure_connected()
+        # Module-level kill-switch gate — prevents bypassing orchestrator safety
+        if _kill_switch_active:
+            logger.critical("MT5 submit_order BLOCKED: kill-switch active (%s)", _kill_switch_reason)
+            return OrderResult(
+                status=OrderStatus.FAILED,
+                error=f"Kill-switch active: {_kill_switch_reason}",
+            )
+
+        # Read-only mode guard — shadow mode uses MT5 for data only
+        if self._read_only:
+            logger.warning("MT5 submit_order BLOCKED: read-only mode (shadow)")
+            return OrderResult(
+                status=OrderStatus.FAILED,
+                error="MT5 adapter is in read-only mode (shadow_mode) — no orders submitted",
+            )
+
+        try:
+            self._ensure_connected()
+        except ConnectionError as exc:
+            logger.error("MT5 submit_order: connection unavailable: %s", exc)
+            return OrderResult(status=OrderStatus.TIMEOUT, error=str(exc))
 
         # Ensure symbol is in Market Watch (required for live ticks)
         if not _ensure_symbol_visible(order.symbol):
@@ -193,15 +256,35 @@ class MT5Adapter(BrokerAdapter):
                 error=f"Invalid quantity {order.quantity!r}: {exc}",
             )
 
+        # Units -> lots conversion (single conversion point — see
+        # reports/live_sizing_units_lots_gap_20260728.md). Upstream sizers
+        # (risk/engine.py, core/agents/portfolio_manager.py) compute
+        # approved_quantity in raw underlying units (e.g. troy oz), not
+        # MT5 lots. Fail closed if the symbol has no canonical contract
+        # spec rather than guessing and risking a ~100x-100,000x oversized
+        # order.
+        spec = get_contract_spec(order.symbol)
+        if spec is None:
+            return OrderResult(
+                status=OrderStatus.FAILED,
+                error=(
+                    f"No contract spec for {order.symbol} — refusing to submit "
+                    "order without a verified units-to-lots conversion "
+                    "(core/contract_specs.py)"
+                ),
+            )
+        lots_float = qty_float / float(spec.contract_size)
+
         # Auto-detect filling mode (FOK vs RETURN — Pepperstone indices need RETURN)
         filling_mode = _get_filling_mode(order.symbol)
 
         request: dict = {
             "action": _TRADE_ACTION_DEAL,
             "symbol": order.symbol,
-            "volume": qty_float,
+            "volume": lots_float,
             "type": _side_to_order_type(order.side),
-            "comment": hashlib.md5(order.order_id.encode()).hexdigest()[:8],  # Short alphanumeric comment for tracking
+            "deviation": 20,  # max 20 points slippage on market orders
+            "comment": order.order_id,  # Full UUID — OMS matches via startswith (MT5 may truncate to 31 chars)
             "type_filling": filling_mode,
             "type_time": 0,  # ORDER_TIME_GTC
         }
@@ -212,10 +295,11 @@ class MT5Adapter(BrokerAdapter):
             request["tp"] = order.take_profit
 
         logger.info(
-            "MT5 submit_order: symbol=%s side=%s qty=%.2f filling=%d",
+            "MT5 submit_order: symbol=%s side=%s units=%.4f lots=%.4f filling=%d",
             order.symbol,
             order.side,
             qty_float,
+            lots_float,
             filling_mode,
         )
 
@@ -225,7 +309,11 @@ class MT5Adapter(BrokerAdapter):
                 error = mt5.last_error()  # type: ignore[union-attr]
                 logger.error("MT5 order_send returned None (attempt %d): %s", attempt, error)
                 self._connected = False
-                self._ensure_connected()
+                try:
+                    self._ensure_connected()
+                except ConnectionError as exc:
+                    logger.error("MT5 submit_order: reconnect failed mid-retry: %s", exc)
+                    return OrderResult(status=OrderStatus.TIMEOUT, error=str(exc))
                 time.sleep(_RETRY_DELAY)
                 continue
 
@@ -244,30 +332,35 @@ class MT5Adapter(BrokerAdapter):
                         status=OrderStatus.FAILED,
                         error=f"Invalid fill volume: {result.volume}",
                     )
+                # result.volume is in MT5 lots; convert back to the same raw-unit
+                # domain order.quantity/TrackedOrder use, so downstream code never
+                # has to know about the lots conversion.
+                filled_units = result.volume * float(spec.contract_size)
                 # Detect partial fills: filled_volume < requested
-                if result.volume < qty_float:
+                if result.volume < lots_float:
                     logger.warning(
-                        "MT5 partial fill: ticket=%s filled=%.2f requested=%.2f",
+                        "MT5 partial fill: ticket=%s filled_lots=%.4f requested_lots=%.4f",
                         result.order,
                         result.volume,
-                        order.quantity,
+                        lots_float,
                     )
                     return OrderResult(
                         status=OrderStatus.PARTIALLY_FILLED,
                         broker_id=str(result.order),
-                        filled_quantity=result.volume,
+                        filled_quantity=filled_units,
                         avg_price=result.price,
                     )
                 logger.info(
-                    "MT5 order filled: ticket=%s price=%.5f vol=%.2f",
+                    "MT5 order filled: ticket=%s price=%.5f lots=%.4f units=%.4f",
                     result.order,
                     result.price,
                     result.volume,
+                    filled_units,
                 )
                 return OrderResult(
                     status=OrderStatus.FILLED,
                     broker_id=str(result.order),
-                    filled_quantity=result.volume,
+                    filled_quantity=filled_units,
                     avg_price=result.price,
                 )
             if ret_code == 10014:  # TRADE_RETCODE_INVALID_PRICE – retry
@@ -290,7 +383,19 @@ class MT5Adapter(BrokerAdapter):
 
     def cancel_order(self, broker_order_id: str) -> OrderResult:
         """Cancel a pending order by its MT5 ticket. Retries on transient failures."""
-        self._ensure_connected()
+        if self._read_only:
+            logger.warning("MT5 cancel_order BLOCKED: read-only mode (shadow)")
+            return OrderResult(
+                status=OrderStatus.FAILED,
+                error="MT5 adapter is in read-only mode (shadow_mode) — no orders cancelled",
+            )
+        # WS-D (KNOWN_LIMITATIONS #8): guard _ensure_connected - use TIMEOUT
+        # (transient) to match submit_order(), so retry/reconcile logic behaves.
+        try:
+            self._ensure_connected()
+        except ConnectionError as exc:
+            logger.error("MT5 cancel_order: connection unavailable — %s", exc)
+            return OrderResult(status=OrderStatus.TIMEOUT, error=f"MT5 connection unavailable: {exc}")
         request: dict = {
             "action": 2,  # mt5.TRADE_ACTION_REMOVE (pending orders)
             "order": int(broker_order_id),
@@ -302,7 +407,11 @@ class MT5Adapter(BrokerAdapter):
                 error = mt5.last_error()  # type: ignore[union-attr]
                 logger.error("MT5 cancel_order returned None (attempt %d): %s", attempt, error)
                 self._connected = False
-                self._ensure_connected()
+                try:
+                    self._ensure_connected()
+                except ConnectionError as exc:
+                    logger.error("MT5 cancel_order: reconnect failed mid-retry: %s", exc)
+                    return OrderResult(status=OrderStatus.TIMEOUT, error=f"MT5 connection unavailable: {exc}")
                 time.sleep(_RETRY_DELAY)
                 continue
             if result.retcode == 10009:
@@ -315,10 +424,18 @@ class MT5Adapter(BrokerAdapter):
                 error=f"cancel retcode={result.retcode}: {result.comment}",
             )
 
-        return OrderResult(status=OrderStatus.TIMEOUT, error="cancel_order retries exhausted")
+        return OrderResult(status=OrderStatus.FAILED, error="cancel_order retries exhausted")
 
     def get_positions(self) -> list[dict]:
-        """Return all open MT5 positions."""
+        """Return all open MT5 positions.
+
+        WS-D (KNOWN_LIMITATIONS #8): _ensure_connected() is intentionally
+        NOT wrapped here.  Callers (reconcile.py, kill_switch.py) already
+        wrap this call in try/except and handle ConnectionError correctly
+        - returning [] on connection failure would route around that handling
+        and make a kill-switch believe there are no positions to close.  Let the
+        exception propagate so the caller's error path runs.
+        """
         self._ensure_connected()
         positions = mt5.positions_get()  # type: ignore[union-attr]
         if positions is None:
@@ -328,12 +445,30 @@ class MT5Adapter(BrokerAdapter):
             if p is None:
                 logger.warning("MT5 positions_get returned None item — skipping")
                 continue
+            # MT5 reports position volume in lots; convert to the same raw-unit
+            # domain as order.quantity/TrackedOrder so callers (e.g.
+            # RealtimeReconciler comparing broker vs internal quantity) never
+            # mix units and lots. Fail-open here (unlike submit_order) since
+            # hiding a position because its symbol is unmapped is worse than
+            # reporting it in raw lots with a warning.
+            spec = get_contract_spec(p.symbol)
+            if spec is not None:
+                volume_units = p.volume * float(spec.contract_size)
+            else:
+                logger.warning(
+                    "MT5 get_positions: no contract spec for %s — reporting raw lots (%.4f), "
+                    "not converted to units. Reconciliation qty-drift comparison will be wrong "
+                    "until core/contract_specs.py has an entry for this symbol.",
+                    p.symbol,
+                    p.volume,
+                )
+                volume_units = p.volume
             result.append(
                 {
                     "ticket": p.ticket,
                     "symbol": p.symbol,
                     "type": "BUY" if p.type == 0 else "SELL",
-                    "volume": p.volume,
+                    "volume": volume_units,
                     "price_open": p.price_open,
                     "profit": p.profit,
                     "sl": p.sl,
@@ -346,23 +481,35 @@ class MT5Adapter(BrokerAdapter):
     def get_order_status(self, broker_order_id: str) -> OrderResult:
         """Check the current state of an MT5 order by ticket.
 
-        Returns UNKNOWN when the order is not found in MT5's open orders list.
-        This avoids the previous bug of defaulting to FILLED, which could cause
-        the strategy to believe a rejected/cancelled order was executed.
+        When the order is not found in MT5's open orders list, assume it was
+        filled (most common case for orders that leave the pending queue).
+
+        .. warning:: This is an assumption.  The caller should verify fills
+           via ``mt5.history_deals_get()`` for critical paths.
+
+        WS-D (KNOWN_LIMITATIONS #8): ``_ensure_connected()`` is guarded with
+        ``OrderStatus.TIMEOUT`` (transient, matches ``submit_order()`` /
+        ``cancel_order()`` / ``close_position()``) so the OMS/recovery retry
+        logic can re-check later instead of crashing or falling through to the
+        "assume FILLED" fallback on a connection failure.
         """
-        self._ensure_connected()
+        try:
+            self._ensure_connected()
+        except ConnectionError as exc:
+            logger.error("MT5 get_order_status: connection unavailable — %s", exc)
+            return OrderResult(status=OrderStatus.TIMEOUT, error=f"MT5 connection unavailable: {exc}")
         orders = mt5.orders_get(ticket=int(broker_order_id))  # type: ignore[union-attr]
         if orders is None or len(orders) == 0:
-            # Not an open order — could be filled, cancelled, or expired.
-            # Return UNKNOWN so the caller checks position history.
+            # Not an open order — most likely filled.
             logger.warning(
-                "MT5 order %s not found in open orders — returning UNKNOWN (check fills)",
+                "MT5 order %s not found in open orders — assuming FILLED "
+                "(caller should verify via history_deals_get for critical paths)",
                 broker_order_id,
             )
             return OrderResult(
-                status=OrderStatus.UNKNOWN,
+                status=OrderStatus.FILLED,
                 broker_id=broker_order_id,
-                error="Order not found in MT5 open orders",
+                error="Assumed FILLED — order not in MT5 open orders",
             )
         order = orders[0]
         return OrderResult(
@@ -375,8 +522,25 @@ class MT5Adapter(BrokerAdapter):
 
         Sends a ``TRADE_ACTION_DEAL`` in the opposite direction of the
         existing position to flatten it.
+
+        ``volume`` is in the same raw-unit domain as ``submit_order``'s
+        ``order.quantity`` and ``get_positions``'s returned ``"volume"``
+        (e.g. troy oz for XAUUSD) — this method converts to MT5 lots
+        internally, so callers never need to know about the conversion.
         """
-        self._ensure_connected()
+        if self._read_only:
+            logger.warning("MT5 close_position BLOCKED: read-only mode (shadow)")
+            return OrderResult(
+                status=OrderStatus.FAILED,
+                error="MT5 adapter is in read-only mode (shadow_mode) — no positions closed",
+            )
+        # WS-D (KNOWN_LIMITATIONS #8): guard _ensure_connected - use TIMEOUT
+        # (transient) to match submit_order(), so retry/reconcile logic behaves.
+        try:
+            self._ensure_connected()
+        except ConnectionError as exc:
+            logger.error("MT5 close_position: connection unavailable — %s", exc)
+            return OrderResult(status=OrderStatus.TIMEOUT, error=f"MT5 connection unavailable: {exc}")
         # Determine position type to send opposite order
         positions = mt5.positions_get(ticket=int(broker_position_id))  # type: ignore[union-attr]
         if positions is None or len(positions) == 0:
@@ -388,13 +552,24 @@ class MT5Adapter(BrokerAdapter):
         close_type = _ORDER_TYPE_SELL if pos.type == _ORDER_TYPE_BUY else _ORDER_TYPE_BUY
         close_symbol = symbol or pos.symbol
 
+        spec = get_contract_spec(close_symbol)
+        if spec is None:
+            return OrderResult(
+                status=OrderStatus.FAILED,
+                error=(
+                    f"No contract spec for {close_symbol} — refusing to close "
+                    "without a verified units-to-lots conversion (core/contract_specs.py)"
+                ),
+            )
+        close_lots = volume / float(spec.contract_size)
+
         # Auto-detect filling mode for the symbol
         filling_mode = _get_filling_mode(close_symbol)
 
         request: dict = {
             "action": _TRADE_ACTION_DEAL,
             "symbol": close_symbol,
-            "volume": volume,
+            "volume": close_lots,
             "type": close_type,
             "position": int(broker_position_id),
             "type_filling": filling_mode,
@@ -407,14 +582,18 @@ class MT5Adapter(BrokerAdapter):
                 error = mt5.last_error()  # type: ignore[union-attr]
                 logger.error("MT5 close_position returned None (attempt %d): %s", attempt, error)
                 self._connected = False
-                self._ensure_connected()
+                try:
+                    self._ensure_connected()
+                except ConnectionError as exc:
+                    logger.error("MT5 close_position: reconnect failed mid-retry: %s", exc)
+                    return OrderResult(status=OrderStatus.TIMEOUT, error=f"MT5 connection unavailable: {exc}")
                 time.sleep(_RETRY_DELAY)
                 continue
             if result.retcode == 10009:
                 return OrderResult(
                     status=OrderStatus.FILLED,
                     broker_id=str(result.order),
-                    filled_quantity=result.volume,
+                    filled_quantity=result.volume * float(spec.contract_size),
                     avg_price=result.price,
                 )
             if result.retcode == 10014:
@@ -428,7 +607,15 @@ class MT5Adapter(BrokerAdapter):
         return OrderResult(status=OrderStatus.TIMEOUT, error="MT5 close_position retries exhausted")
 
     def get_account_info(self) -> AccountInfo:
-        """Return a snapshot of the MT5 account."""
+        """Return a snapshot of the MT5 account.
+
+        WS-D (KNOWN_LIMITATIONS #8): _ensure_connected() is intentionally
+        NOT wrapped here.  Callers (orchestrator.py, oms.py, manager.py)
+        wrap this call in try/except and handle ConnectionError correctly
+        - returning a zeroed AccountInfo on connection failure would make a
+        risk check believe the account is flat/broke.  Let the exception
+        propagate so the caller's error path runs.
+        """
         self._ensure_connected()
         info = mt5.account_info()  # type: ignore[union-attr]
         if info is None:
@@ -439,6 +626,24 @@ class MT5Adapter(BrokerAdapter):
             margin_used=info.margin,
             margin_available=info.margin_free,
         )
+
+    def get_price(self, symbol: str) -> dict[str, float]:
+        """Return the live bid/ask for ``symbol`` (read-only, no order sent).
+
+        Safe in shadow/read-only mode — only reads the market tick. Used by
+        ``ShadowAdapter`` to feed real prices into the paper simulator.
+        """
+        if mt5 is None:
+            raise RuntimeError("MetaTrader5 package is not installed")
+        try:
+            self._ensure_connected()
+        except ConnectionError as exc:
+            logger.error("MT5 get_price: connection unavailable — %s", exc)
+            return None
+        tick = mt5.symbol_info_tick(symbol)  # type: ignore[union-attr]
+        if tick is None:
+            raise ValueError(f"No tick data for {symbol}")
+        return {"bid": float(tick.bid), "ask": float(tick.ask)}
 
     # ------------------------------------------------------------------
     # Stop-loss management
@@ -458,7 +663,15 @@ class MT5Adapter(BrokerAdapter):
         Returns ``True`` on success, ``False`` on permanent failure or
         exhausted retries.
         """
-        self._ensure_connected()
+        if self._read_only:
+            logger.warning("MT5 set_stop_loss BLOCKED: read-only mode (shadow)")
+            return False
+        # WS-D (KNOWN_LIMITATIONS #8): guard _ensure_connected with a fallback
+        try:
+            self._ensure_connected()
+        except ConnectionError as exc:
+            logger.error("MT5 set_stop_loss: connection unavailable — %s", exc)
+            return False
 
         request: dict = {
             "action": _TRADE_ACTION_SLTP,
@@ -475,7 +688,11 @@ class MT5Adapter(BrokerAdapter):
                 error = mt5.last_error()  # type: ignore[union-attr]
                 logger.error("MT5 set_stop_loss returned None (attempt %d): %s", attempt, error)
                 self._connected = False
-                self._ensure_connected()
+                try:
+                    self._ensure_connected()
+                except ConnectionError as exc:
+                    logger.error("MT5 set_stop_loss: reconnect failed mid-retry: %s", exc)
+                    return False
                 time.sleep(_RETRY_DELAY)
                 continue
 
@@ -519,7 +736,11 @@ class MT5Adapter(BrokerAdapter):
         if side_upper not in ("BUY", "SELL"):
             return False
 
-        self._ensure_connected()
+        try:
+            self._ensure_connected()
+        except ConnectionError as exc:
+            logger.error("MT5 update_trailing_stop: connection unavailable — %s", exc)
+            return False
 
         # Look up the current position
         positions = mt5.positions_get(ticket=position_ticket)  # type: ignore[union-attr]

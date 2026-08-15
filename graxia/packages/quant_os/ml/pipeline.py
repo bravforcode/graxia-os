@@ -1,6 +1,18 @@
 """
 ML Pipeline - Feature engineering and model training for MLB strategy
 
+⚠️ FEATURE DIVERGENCE WARNING:
+FeatureEngineer.generate_features() and ml.feature_store.compute_live_features()
+produce DIFFERENT feature vocabularies (~35 vs ~40 features, different names and
+periods). A model trained with one CANNOT be used for inference with the other
+without retraining. This is a known architectural split-brain tracked at H4 in
+the Phase 1-3 review.
+
+Canonical live-inference path: compute_live_features() → signal_service.py
+Training/eval path: FeatureEngineer.generate_features() → auto_retrain.py
+
+DO NOT cross-wire these without a full unification plan + model retrain.
+
 Handles:
 - Feature engineering from OHLCV data
 - Label generation (future returns)
@@ -16,7 +28,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
-from graxia.packages.quant_os.core.safe_pickle import safe_load_model
+from graxia.packages.quant_os.core.safe_pickle import safe_load_model, sign_model_file
 
 
 @dataclass
@@ -132,7 +144,7 @@ class FeatureEngineer:
             features["macd_hist"] = macd.iloc[:, 2]
 
         # === Bollinger Bands ===
-        bb = ta.bbands(df["close"], length=20, std=2)
+        bb = ta.bbands(df["close"], length=20, std=2)  # type: ignore[arg-type]
         if bb is not None and len(bb.columns) >= 3:
             bb_upper = bb.iloc[:, 2]
             bb_lower = bb.iloc[:, 0]
@@ -206,13 +218,19 @@ class FeatureEngineer:
         # Store feature names
         self.feature_names = list(features.columns)
 
-        # Generate labels (forward returns classification)
-        forward_return = df["close"].pct_change(10).shift(-10)
-        labels = self._classify_returns(forward_return)
+        # Generate labels using triple-barrier method (López de Prado)
+        # Replace naive ±0.5% threshold with proper TP/SL/timeout labeling.
+        # ATR must already be on df for triple_barrier to use.
+        df["atr_14"] = features["atr_14"] if "atr_14" in features else df["close"].rolling(14).std()
+
+        from .labeling import compute_triple_barrier
+
+        labels = compute_triple_barrier(df, tp_mult=1.5, sl_mult=1.0, max_bars=12, atr_col="atr_14")
+        _barrier_max_bars = 12  # must match compute_triple_barrier's max_bars
 
         # Trim to valid range (remove NaN from both ends)
         valid_start = 300  # Need history for indicators
-        valid_end = len(df) - 10  # Need forward returns
+        valid_end = len(df) - _barrier_max_bars  # Need forward bars for triple barrier
 
         feature_list = features.iloc[valid_start:valid_end].to_dict("records")
         label_list = labels[valid_start:valid_end].tolist()
@@ -226,10 +244,11 @@ class FeatureEngineer:
         )
 
     def _classify_returns(self, forward_returns, buy_threshold: float = 0.005, sell_threshold: float = -0.005):
-        """Classify forward returns into signals (returns pd.Series).
+        """DEPRECATED: Use ``compute_triple_barrier()`` from ``ml.labeling`` instead.
 
-        ponytail: 0.5% threshold for XAUUSD — higher than default 0.2% to avoid
-        noise in high-volatility instruments. Upgrade path: per-symbol calibration.
+        Naive ±0.5% threshold classifier — remains as reference/fallback only.
+        ``generate_features()`` now uses triple-barrier labeling for proper
+        TP/SL/timeout classification (López de Prado method).
         """
         import pandas as pd
 
@@ -237,6 +256,29 @@ class FeatureEngineer:
         labels[forward_returns > buy_threshold] = 1  # 1 = buy
         labels[forward_returns < sell_threshold] = 2  # 2 = sell
         return labels
+
+
+def purge_embargo_split_indices(n: int, test_ratio: float = 0.2, gap: int = 12) -> tuple[int, int]:
+    """Compute the (train_end, test_start) indices for a purge/embargo split.
+
+    Reserves ``gap`` bars between the end of the training window and the
+    start of the test window so the test set can't leak into training via
+    triple-barrier labels that peek forward past the nominal split point
+    (see ml/labeling.py's ``compute_triple_barrier`` ``max_bars``).
+
+    Falls back to a plain ratio split if there isn't enough data left for
+    the gap.
+
+    Extracted from ``MLTrainer.train()`` so any other caller that needs the
+    exact same held-out fold (e.g. a model evaluator) can reuse it instead
+    of re-deriving the split math, which would risk silently drifting out
+    of sync with the split ``train()`` actually used.
+    """
+    split_idx = int(n * (1.0 - test_ratio))
+    test_start = split_idx + gap
+    if test_start >= n:
+        test_start = max(split_idx, int(n * 0.5))
+    return split_idx, test_start
 
 
 class MLTrainer:
@@ -259,6 +301,7 @@ class MLTrainer:
         feature_set: FeatureSet,
         model_type: str = "xgboost",
         test_ratio: float = 0.2,
+        registry: Any | None = None,
     ) -> ModelResult:
         """
         Train a model on the given feature set.
@@ -267,36 +310,45 @@ class MLTrainer:
             feature_set: Features and labels
             model_type: "xgboost", "lightgbm", "random_forest"
             test_ratio: Hold-out test ratio
+            registry: Optional ml.model_registry.ModelRegistry instance. If
+                provided, the trained model is ALSO registered there (in
+                addition to the existing pickle save below, which is left
+                unchanged for backward compatibility). Registration computes
+                a feature_list_hash via the same canonical algorithm used by
+                the live inference path (ml.feature_store.compute_feature_list_hash),
+                so any consumer that loads this model through the registry can
+                fail closed on a feature/model contract mismatch. Registration
+                failures are logged and swallowed — they must never block
+                training from completing.
 
         Returns:
             ModelResult with metrics
         """
         import numpy as np
         from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
-        from sklearn.model_selection import train_test_split
 
         X = np.array([list(f.values()) for f in feature_set.features])
         y = np.array(feature_set.labels)
 
-        # Split
-        X_train, X_test, y_train, y_test = train_test_split(
-            X,
-            y,
-            test_size=test_ratio,
-            shuffle=False,  # Time series - don't shuffle
-        )
+        # Purge/embargo split: reserve a gap of 12 bars between train and test
+        # to prevent label leakage through the triple-barrier forward window.
+        # Without this, the last N training labels peek into the test set's
+        # forward returns (look-ahead bias).
+        split_idx, test_start = purge_embargo_split_indices(len(X), test_ratio=test_ratio, gap=12)
+
+        X_train, y_train = X[:split_idx], y[:split_idx]
+        X_test, y_test = X[test_start:], y[test_start:]
 
         # Train model
         model = self._create_model(model_type)
 
         # Configure early stopping at fit-time (avoid constructor/eval_metric conflicts)
         n_classes = len(set(y))
-        if hasattr(model, "set_params"):
-            if model_type == "xgboost":
-                model.set_params(
-                    early_stopping_rounds=10,
-                    eval_metric="mlogloss" if n_classes > 2 else "logloss",
-                )
+        if hasattr(model, "set_params") and model_type == "xgboost":
+            model.set_params(
+                early_stopping_rounds=10,
+                eval_metric="mlogloss" if n_classes > 2 else "logloss",
+            )
         model.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=False)
 
         # Evaluate
@@ -328,6 +380,41 @@ class MLTrainer:
                 },
                 f,
             )
+
+        # Sign so safe_load_model()'s TrustedUnpickler will accept the real
+        # sklearn/xgboost/lightgbm classes inside this pickle — RestrictedUnpickler
+        # (used when unsigned) rejects them (see core/safe_pickle.py). Mirrors
+        # api/signal_service.py's save/load contract. Read at call time (not
+        # module import) so the key can be configured per-environment/per-test.
+        model_signing_key = os.getenv("MODEL_SIGNING_KEY") or None
+        if model_signing_key:
+            sign_model_file(model_path, model_signing_key)
+        else:
+            import logging
+
+            logging.getLogger(__name__).warning("model_save_unsigned: MODEL_SIGNING_KEY not set (%s)", model_path)
+
+        if registry is not None:
+            try:
+                registry.register_model(
+                    model,
+                    model_name=f"{model_type}_{feature_set.symbol or 'unknown'}",
+                    model_type=model_type,
+                    symbol=feature_set.symbol,
+                    timeframe=feature_set.timeframe,
+                    feature_list=feature_set.feature_names,
+                    metrics={
+                        "accuracy": float(accuracy),
+                        "precision": float(precision),
+                        "recall": float(recall),
+                        "f1_score": float(f1),
+                    },
+                    training_samples=len(X_train),
+                )
+            except Exception as exc:  # noqa: BLE001 — registration is best-effort, never blocks training
+                import logging
+
+                logging.getLogger(__name__).warning("model_registry_registration_failed: %s", exc)
 
         return ModelResult(
             model_name=model_type,
@@ -365,19 +452,23 @@ class MLTrainer:
 
         results = []
 
+        # Purge gap: must match triple_barrier max_bars (12) to prevent
+        # label leakage through the forward-looking window.
+        _gap = 12
+
         for w in range(n_windows):
             is_end = window_size * (w + 2)
-            oos_start = is_end
+            oos_start = is_end + _gap  # skip the leakage window
             oos_end = min(oos_start + window_size, total)
 
             if oos_end <= oos_start:
                 break
 
-            # IS data
+            # IS data (excludes purge gap)
             is_features = feature_set.features[:is_end]
             is_labels = feature_set.labels[:is_end]
 
-            # OOS data
+            # OOS data (starts after purge gap)
             oos_features = feature_set.features[oos_start:oos_end]
             oos_labels = feature_set.labels[oos_start:oos_end]
 
@@ -396,8 +487,7 @@ class MLTrainer:
                 import numpy as np
                 from sklearn.metrics import accuracy_score
 
-                with open(result.model_path, "rb") as f:
-                    model_data = safe_load_model(result.model_path)
+                model_data = safe_load_model(result.model_path, signing_key=os.getenv("MODEL_SIGNING_KEY") or None)
                 model = model_data["model"]
 
                 X_oos = np.array([list(f.values()) for f in oos_features])
@@ -453,7 +543,7 @@ class MLTrainer:
 
     def load_model(self, model_path: str) -> dict[str, Any]:
         """Load a trained model"""
-        return safe_load_model(model_path)
+        return safe_load_model(model_path, signing_key=os.getenv("MODEL_SIGNING_KEY") or None)
 
     def predict(self, model_path: str, features: dict[str, float]) -> tuple[int, float]:
         """

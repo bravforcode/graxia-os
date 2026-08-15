@@ -1,0 +1,112 @@
+{
+  "strategy": "grid",
+  "parameters": {
+    "grid_count": 10,
+    "atr_multiplier": 2.0,
+    "order_volume": 0.01,
+    "atr_period": 14
+  },
+  "universe": [
+    "XAUUSD",
+    "XAGUSD",
+    "EURUSD",
+    "GBPUSD",
+    "USDJPY",
+    "NAS100",
+    "US30"
+  ],
+  "per_asset": {
+    "XAUUSD": {
+      "sharpe": 0.0,
+      "trades": 0,
+      "return": 0.0,
+      "return_pct": 0.0,
+      "max_dd": 0.0,
+      "grid_fills": 0,
+      "total_fees": 0.0,
+      "final_equity": 100000.0,
+      "equity_len": 20300
+    },
+    "XAGUSD": {
+      "sharpe": 0.0,
+      "trades": 0,
+      "return": 0.0,
+      "return_pct": 0.0,
+      "max_dd": 0.0,
+      "grid_fills": 0,
+      "total_fees": 0.0,
+      "final_equity": 100000.0,
+      "equity_len": 16671
+    },
+    "EURUSD": {
+      "sharpe": -0.0297,
+      "trades": 224,
+      "return": -0.0,
+      "return_pct": -0.0,
+      "max_dd": 0.0,
+      "grid_fills": 224,
+      "total_fees": 0.0,
+      "final_equity": 99999.94,
+      "equity_len": 14220
+    },
+    "GBPUSD": {
+      "sharpe": -0.0849,
+      "trades": 384,
+      "return": -0.0,
+      "return_pct": -0.0,
+      "max_dd": 0.0,
+      "grid_fills": 384,
+      "total_fees": 0.02,
+      "final_equity": 99999.64,
+      "equity_len": 14490
+    },
+    "USDJPY": {
+      "sharpe": -0.2229,
+      "trades": 154,
+      "return": -0.0002,
+      "return_pct": -0.02,
+      "max_dd": 0.0003,
+      "grid_fills": 154,
+      "total_fees": 0.55,
+      "final_equity": 99980.19,
+      "equity_len": 14462
+    },
+    "NAS100": {
+      "sharpe": -0.3016,
+      "trades": 1262,
+      "return": -0.0298,
+      "return_pct": -2.98,
+      "max_dd": 0.0307,
+      "grid_fills": 1262,
+      "total_fees": 0.03,
+      "final_equity": 97022.81,
+      "equity_len": 23176
+    },
+    "US30": {
+      "sharpe": -0.2384,
+      "trades": 116,
+      "return": -0.0522,
+      "return_pct": -5.22,
+      "max_dd": 0.0522,
+      "grid_fills": 116,
+      "total_fees": 0.03,
+      "final_equity": 94784.53,
+      "equity_len": 33732
+    }
+  },
+  "pooled": {
+    "dk_t": -0.5244,
+    "pooled_sharpe": -0.2457,
+    "positive_sharpe_count": 0,
+    "total_trades": 2140,
+    "verdict": "REJECT",
+    "T": 39989
+  },
+  "label_shuffle": {
+    "n_shuffles": 200,
+    "observed_dk_t": -0.5244,
+    "p_value": 0.235,
+    "verdict": "FAIL"
+  },
+  "timestamp": "2026-07-21T15:13:07.634565+00:00"
+}

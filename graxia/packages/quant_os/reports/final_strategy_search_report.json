@@ -1,0 +1,61 @@
+{
+  "date": "2026-07-10T17:56:10.770695",
+  "symbol": "EURUSD",
+  "timeframe": "D1",
+  "cost_model": "3.4 bps/RT",
+  "summary": {
+    "total_strategies_tested": "1000+ combinations across 6 families",
+    "statistically_significant": 0,
+    "best_candidate": "Donchian(25)",
+    "best_p_value": 0.08,
+    "conclusion": "No strategy meets p < 0.05 significance. Donchian(25) closest at p=0.08."
+  },
+  "results": [
+    {
+      "strategy": "RSI+BB",
+      "combos": 720,
+      "best_p": 1.0,
+      "verdict": "FAIL - No edge"
+    },
+    {
+      "strategy": "TSMOM",
+      "combos": 9,
+      "best_p": null,
+      "verdict": "FAIL - OOS degrades"
+    },
+    {
+      "strategy": "MA Crossover",
+      "combos": 5,
+      "best_p": null,
+      "verdict": "FAIL - IS negative"
+    },
+    {
+      "strategy": "Donchian(25)",
+      "combos": 10,
+      "best_p": 0.08,
+      "verdict": "SUGGESTIVE - Best candidate"
+    },
+    {
+      "strategy": "Donchian(5)",
+      "combos": 1,
+      "best_p": 0.29,
+      "verdict": "FAIL - Not significant"
+    },
+    {
+      "strategy": "BB Breakout(20,1.5)",
+      "combos": 9,
+      "best_p": 0.24,
+      "verdict": "NOT significant (p = 0.2400)"
+    },
+    {
+      "strategy": "Mean Reversion z-score",
+      "combos": 9,
+      "best_p": null,
+      "verdict": "FAIL - Low Sharpe"
+    }
+  ],
+  "production_fixes_completed": 6,
+  "mt5_connected": true,
+  "live_ready": false,
+  "next_recommendation": "Accept no edge found. Study pairs trading or multi-asset strategies."
+}

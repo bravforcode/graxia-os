@@ -1,0 +1,2392 @@
+{
+ "source": "myfxbook",
+ "entries": [
+  {
+   "name": "AGI EA V.1.1_REAL ACCOUNT 1",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/leo23/agi-ea-v11-real-account/9794445",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference_detail_page_fetched",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "tracking": "858",
+    "abs_gain": "+239,814.62%",
+    "daily": "+0.99%"
+   },
+   "claimed_perf": "gain +239,814.62%, abs gain +239,814.62%, daily +0.99%, monthly +34.35%, drawdown 5.74% (detail page capture, 2024)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "Artificial Intelligence",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/EAAIFX/artificial-intelligence/10748993",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +173,955.92%, drawdown +43.90%, monthly +69.68%, yearly +10,016.00% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "Mt4-70034869",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/BrickmanKevin/mt4-70034869/10756368",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +75,383.03%, drawdown +49.77%, monthly +19.76%, yearly +578.77% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "Robot_To_The_Moon",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/childrenofkoris/robot-to-the-moon/11169683",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +59,113.53%, drawdown +27.51%, monthly +7,213.36%, yearly +59,113.53% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "CheckMate",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/mr_ForexMaster/checkmate/11202465",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference_detail_page_fetched",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "tracking": "33",
+    "abs_gain": "+48,322.77%",
+    "daily": "+2.08%"
+   },
+   "claimed_perf": "gain +48,322.77%, abs gain +48,322.77%, daily +2.08%, monthly +84.95%, drawdown 18.22% (detail page capture, 2024)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "Meta EA Gold BCR",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/Suntradingg/meta-ea-gold-bcr/11103502",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference_detail_page_fetched",
+   "symbol": "XAUUSD",
+   "timeframe": "ALL",
+   "params": {
+    "tracking": "13",
+    "abs_gain": "+1,408.65%",
+    "daily": "+0.58%"
+   },
+   "claimed_perf": "gain +48,261.72%, abs gain +1,408.65%, daily +0.58%, monthly +20.05%, drawdown 28.84% (detail page capture, 2024)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "LUX",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/MarcellusLux/lux/8591067",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +33,148.17%, drawdown +13.78%, monthly +8.78%, yearly +93.08% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "Golden Buffalo Channel Rate",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/atlantisvn/golden-buffalo-channel-rate/10936554",
+   "mechanism": "breakout",
+   "mechanism_basis": "name_inference",
+   "symbol": "XAUUSD",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +28,940.03%, drawdown +10.69%, monthly +22.54%, yearly +654.08% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "KopipesGOLD",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/kopipes/kopipesgold/11153324",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference_detail_page_fetched",
+   "symbol": "XAUUSD",
+   "timeframe": "ALL",
+   "params": {
+    "tracking": "5",
+    "abs_gain": "+10.75%",
+    "daily": "+3.86%"
+   },
+   "claimed_perf": "gain +28,262.61%, abs gain +10.75%, daily +3.86%, monthly +387.18%, drawdown 7.08% (detail page capture, 2024)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "CR7EA-VIP SAFE SETTING",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/CR7EA/cr7ea-vip-safe-setting/11004350",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +24,828.15%, drawdown +0.25%, monthly +136.47%, yearly +24,828.15% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "173115622",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/SuperbGarry/173115622/11136921",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +22,135.59%, drawdown +29.10%, monthly +1,158.23%, yearly +22,135.59% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "Safex Trading Bot",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/SafexLabs/safex-trading-bot/11264176",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +18,360.89%, drawdown +6.86%, monthly +16.58%, yearly +423.14% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "Mosquito EA",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/Francesco7304/mosquito-ea/11028751",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +15,639.90%, drawdown +20.93%, monthly +191.44%, yearly +15,639.90% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "CR7EA VIP SAFE SETTING",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/CR7EA/cr7ea-vip-safe-setting/11094361",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +15,456.10%, drawdown +1.28%, monthly +203.53%, yearly +15,456.10% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "CR7EA CRYPTO",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/CR7EA/cr7ea-crypto/9624236",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +15,117.94%, drawdown +2.80%, monthly +18.53%, yearly +17.58% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "Europa 1",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/AlejandroGigena/europa-1/10842156",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +13,997.64%, drawdown +31.83%, monthly +50.50%, yearly +13,997.64% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems/2"
+  },
+  {
+   "name": "Golden Hub Lirunex",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/atlantisvn/golden-hub-lirunex/11228129",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "XAUUSD",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +13,780.72%, drawdown +12.11%, monthly +23.12%, yearly +820.16% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems/2"
+  },
+  {
+   "name": "555",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/iminwarn/555/6426348",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +13,070.09%, drawdown +18.65%, monthly +9.01%, yearly +15.01% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems/2"
+  },
+  {
+   "name": "money maker",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/Mastone90/money-maker/9519309",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +12,729.05%, drawdown +47.43%, monthly +8.34%, yearly +106.09% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems/2"
+  },
+  {
+   "name": "IL BOSS DEL TRADING SCALPER",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/IlBossDelTrading/il-boss-del-trading-scalper/10565721",
+   "mechanism": "scalper",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +11,598.03%, drawdown +22.60%, monthly +42.49%, yearly +8,685.89% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems/2"
+  },
+  {
+   "name": "Copymoneytrading Management",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/Copymoneytrading/copymoneytrading-management/11252986",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +8,244.07%, drawdown +14.05%, monthly +7.66%, yearly +15.89% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems/2"
+  },
+  {
+   "name": "Green Trade EA",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/GreenTradeEA/green-trade-ea/11249805",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +7,133.83%, drawdown +7.84%, monthly +18.24%, yearly +524.82% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems/2"
+  },
+  {
+   "name": "Golden Hub",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/atlantisvn/golden-hub/11195505",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "XAUUSD",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +6,852.49%, drawdown +1.71%, monthly +16.66%, yearly +429.42% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems/2"
+  },
+  {
+   "name": "DragonCrane U5504",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/martinycy/dragoncrane-u5504/11021951",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +6,388.68%, drawdown +47.93%, monthly +103.25%, yearly +6,388.68% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems/2"
+  },
+  {
+   "name": "EVERWIN AFX COIN FLIP EA- GOLD - AMAZE FOREX",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/Amaze_Forex/everwin-afx-coin-flip-ea/11240121",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "XAUUSD",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +6,361.35%, drawdown +31.94%, monthly +6,361.35%, yearly +6,361.35% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems/2"
+  },
+  {
+   "name": "Money Makers EA v3.0",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/MoneyMakersEA/money-makers-ea-v30/9865667",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +6,161.13%, drawdown +48.15%, monthly +17.59%, yearly +307.06% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems/2"
+  },
+  {
+   "name": "53658934",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/SuperbGarry/53658934/11136941",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +6,066.79%, drawdown +17.94%, monthly +919.91%, yearly +6,066.79% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems/2"
+  },
+  {
+   "name": "GARRY&#39;S AI V3.0",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/SuperbGarry/garrys-ai-v30/11136877",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +5,894.63%, drawdown +29.81%, monthly +1,527.19%, yearly +5,894.63% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems/2"
+  },
+  {
+   "name": "Cedric Fx",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/cedricdellamano/cedric-fx/11105785",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +5,758.99%, drawdown +13.59%, monthly +5.91%, yearly +142.96% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems/2"
+  },
+  {
+   "name": "167428837",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/SuperbGarry/167428837/11136908",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +5,651.84%, drawdown +48.11%, monthly +224.14%, yearly +5,651.84% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20241220173653/https://www.myfxbook.com/systems/2"
+  },
+  {
+   "name": "FXStabilizer_EUR - Turbo",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/forexstore/fxstabilizer-eur-turbo/1614052",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +3260.97%, drawdown 13.26% (as of 2024 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/most-popular-forex-systems"
+  },
+  {
+   "name": "Koala EA",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/SealEA/koala-ea/10967620",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +2036.07%, drawdown 45.37% (as of 2024 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/most-popular-forex-systems"
+  },
+  {
+   "name": "Snail EA",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/LinoCapital/snail-ea/10823446",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +236.49%, drawdown 29.01% (as of 2024 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/most-popular-forex-systems"
+  },
+  {
+   "name": "Seagull EA",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/LinoCapital/seagull-ea/10823424",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +589.51%, drawdown 20.51% (as of 2024 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/most-popular-forex-systems"
+  },
+  {
+   "name": "Beetle EA",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/LinoCapital/beetle-ea/10823450",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +381.39%, drawdown 17.34% (as of 2024 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/most-popular-forex-systems"
+  },
+  {
+   "name": "Seal EA",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/SealEA/seal-ea/10967632",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +255.37%, drawdown 20.52% (as of 2024 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/most-popular-forex-systems"
+  },
+  {
+   "name": "MyfxTrading",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/LinoCapital/myfxtrading/11036983",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +94755.55%, drawdown 45.71% (as of 2024 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/most-popular-forex-systems"
+  },
+  {
+   "name": "The Money Tree",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/leapfx/money-tree/9526428",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +17983.52%, drawdown 46.52% (as of 2024 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/most-popular-forex-systems"
+  },
+  {
+   "name": "Razor EA",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/TendencyForex/razor-ea/9475769",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +73.19%, drawdown 66.67% (as of 2024 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/most-popular-forex-systems"
+  },
+  {
+   "name": "ForexTruck",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/forexstore/forextruck/7050237",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain -99.55%, drawdown 99.96% (as of 2024 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/most-popular-forex-systems"
+  },
+  {
+   "name": "King Robot",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/leapfx/king-robot/10143391",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +1377.89%, drawdown 15.82% (as of 2024 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/most-popular-forex-systems"
+  },
+  {
+   "name": "DHTrade",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/DHTrade/dhtrade/11012700",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Manual",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +5195.21%, drawdown 28.16% (as of 2024 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/most-popular-forex-systems"
+  },
+  {
+   "name": "Johnpaul77",
+   "source": "myfxbook",
+   "source_url": "http://www.myfxbook.com/members/autotrade/johnpaul77/786533",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Manual",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +15365.81%, drawdown 18.13% (as of 2014-05-16 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20140516145630/http://www.myfxbook.com/systems?pt=6&p=3"
+  },
+  {
+   "name": "Axitrader",
+   "source": "myfxbook",
+   "source_url": "http://www.myfxbook.com/members/autotrade/axitrader/743390",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Manual",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +925.67%, drawdown 36.71% (as of 2014-05-16 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20140516145630/http://www.myfxbook.com/systems?pt=6&p=3"
+  },
+  {
+   "name": "WallStreet",
+   "source": "myfxbook",
+   "source_url": "http://www.myfxbook.com/members/autotrade/wallstreet/95290",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +477.84%, drawdown 27.95% (as of 2014-05-16 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20140516145630/http://www.myfxbook.com/systems?pt=6&p=3"
+  },
+  {
+   "name": "Portfolio",
+   "source": "myfxbook",
+   "source_url": "http://www.myfxbook.com/members/autotrade/portfolio/695281",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +355.16%, drawdown 40.42% (as of 2014-05-16 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20140516145630/http://www.myfxbook.com/systems?pt=6&p=3"
+  },
+  {
+   "name": "fx2pro_2013",
+   "source": "myfxbook",
+   "source_url": "http://www.myfxbook.com/members/autotrade/fx2pro-2013/500617",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +325.34%, drawdown 45.14% (as of 2014-05-16 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20140516145630/http://www.myfxbook.com/systems?pt=6&p=3"
+  },
+  {
+   "name": "Matthew Mcculloch",
+   "source": "myfxbook",
+   "source_url": "http://www.myfxbook.com/members/autotrade/matthew-mcculloch/802909",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Manual",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +321.73%, drawdown 44.53% (as of 2014-05-16 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20140516145630/http://www.myfxbook.com/systems?pt=6&p=3"
+  },
+  {
+   "name": "Investor",
+   "source": "myfxbook",
+   "source_url": "http://www.myfxbook.com/members/autotrade/investor/445606",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Manual",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +316.59%, drawdown 25.36% (as of 2014-05-16 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20140516145630/http://www.myfxbook.com/systems?pt=6&p=3"
+  },
+  {
+   "name": "STANOK",
+   "source": "myfxbook",
+   "source_url": "http://www.myfxbook.com/members/autotrade/stanok/517010",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +218.89%, drawdown 20.96% (as of 2014-05-16 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20140516145630/http://www.myfxbook.com/systems?pt=6&p=3"
+  },
+  {
+   "name": "NetWave (FX & Gold)",
+   "source": "myfxbook",
+   "source_url": "http://www.myfxbook.com/members/autotrade/netwave-fx--gold/645509",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "XAUUSD",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +150.9%, drawdown 26.70% (as of 2014-05-16 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20140516145630/http://www.myfxbook.com/systems?pt=6&p=3"
+  },
+  {
+   "name": "Forexsurf",
+   "source": "myfxbook",
+   "source_url": "http://www.myfxbook.com/members/autotrade/forexsurf/706886",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Mixed",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +110.49%, drawdown 30.67% (as of 2014-05-16 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20140516145630/http://www.myfxbook.com/systems?pt=6&p=3"
+  },
+  {
+   "name": "Catatan Trader",
+   "source": "myfxbook",
+   "source_url": "http://www.myfxbook.com/members/autotrade/catatan-trader/635791",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Manual",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +145.21%, drawdown 37.94% (as of 2014-05-30 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20140530160226/http://www.myfxbook.com/systems?pt=6&p=94"
+  },
+  {
+   "name": "Axitrader",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/autotrade/axitrader/743390",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Manual",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +1212.27%, drawdown 36.71% (as of 2014-10-05 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20141005014000/http://www.myfxbook.com/systems"
+  },
+  {
+   "name": "Portfolio",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/autotrade/portfolio/695281",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +578.72%, drawdown 40.42% (as of 2014-10-05 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20141005014000/http://www.myfxbook.com/systems"
+  },
+  {
+   "name": "WallStreet",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/autotrade/wallstreet/95290",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +517.86%, drawdown 27.95% (as of 2014-10-05 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20141005014000/http://www.myfxbook.com/systems"
+  },
+  {
+   "name": "fx2pro_2013",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/autotrade/fx2pro-2013/500617",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +446.62%, drawdown 45.14% (as of 2014-10-05 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20141005014000/http://www.myfxbook.com/systems"
+  },
+  {
+   "name": "themilliondollarproject",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/autotrade/themilliondollarproject/794378",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Manual",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +287.04%, drawdown 39.37% (as of 2014-10-05 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20141005014000/http://www.myfxbook.com/systems"
+  },
+  {
+   "name": "STANOK",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/autotrade/stanok/517010",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +162.74%, drawdown 20.96% (as of 2014-10-05 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20141005014000/http://www.myfxbook.com/systems"
+  },
+  {
+   "name": "Volatility Factor",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/autotrade/volatility-factor/599539",
+   "mechanism": "vol_targeting",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +110.98%, drawdown 27.75% (as of 2014-10-05 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20141005014000/http://www.myfxbook.com/systems"
+  },
+  {
+   "name": "Ping_Fox_3",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/autotrade/ping-fox-3/779501",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +107.68%, drawdown 44.64% (as of 2014-10-05 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20141005014000/http://www.myfxbook.com/systems"
+  },
+  {
+   "name": "SWIT Pro",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/autotrade/swit-pro/796789",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Manual",
+    "system_type": "Fundamental",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +80.74%, drawdown 22.63% (as of 2014-10-05 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20141005014000/http://www.myfxbook.com/systems"
+  },
+  {
+   "name": "ATLAS",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/autotrade/atlas/1783508",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +766.28%, drawdown 33.16% (as of 2018-09-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "SFE Price Action",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/autotrade/sfe-price-action/1331484",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +494.6%, drawdown 22.98% (as of 2018-09-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "NightProfit",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/autotrade/nightprofit/1439811",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Mixed",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +322.59%, drawdown 19.24% (as of 2018-09-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "ReInvesting",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/autotrade/reinvesting/2155121",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +320.75%, drawdown 42.53% (as of 2018-09-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "Queen",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/autotrade/queen/1733312",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +315.05%, drawdown 26.27% (as of 2018-09-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "ForexSmartProfit",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/autotrade/forexsmartprofit/1354782",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Mixed",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +217.51%, drawdown 17.75% (as of 2018-09-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "NinjaTrainer",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/autotrade/ninjatrainer/1346753",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +217.07%, drawdown 26.74% (as of 2018-09-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "Forex Cyborg",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/autotrade/forex-cyborg/2168587",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +201.63%, drawdown 25.75% (as of 2018-09-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "Rain-Maker",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/autotrade/rain-maker/1544275",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Mixed",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +180.65%, drawdown 25.64% (as of 2018-09-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "Soliton Falcon",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/autotrade/soliton-falcon/566228",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "trading_type": "Automated",
+    "system_type": "Technical",
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +178.85%, drawdown 23.54% (as of 2018-09-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "pocketmoney",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/MrDraghifx/pocketmoney/11191763",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +984,360.10%, drawdown +22.94%, monthly +984,360.10%, yearly +0.00% (as of 2025-01-18 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20250118104951/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "Victory BTC 10K",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/thekaysfx/victory-btc-10k/11267796",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "BTCUSD",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +82,546.08%, drawdown +31.19%, monthly +7,163.15%, yearly +76,183.22% (as of 2025-01-18 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20250118104951/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "CheckMate",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/mr_ForexMaster/checkmate/11277842",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference_detail_page_fetched",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "tracking": "33",
+    "abs_gain": "+48,322.77%",
+    "daily": "+2.08%"
+   },
+   "claimed_perf": "gain +48,322.77%, abs gain +48,322.77%, daily +2.08%, monthly +84.95%, drawdown 18.22% (detail page capture, 2024)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20250118104951/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "ELITE FOREX SCALPER",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/TopRank/elite-forex-scalper/11102084",
+   "mechanism": "scalper",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +16,641.32%, drawdown +35.65%, monthly +6.54%, yearly +1.37% (as of 2025-01-18 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20250118104951/https://www.myfxbook.com/systems"
+  },
+  {
+   "name": "Happy Gold - VTMarkets (M30)",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/HappyForex/happy-gold-vtmarkets-m30/8647517",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "XAUUSD",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +3,219.90%, drawdown +25.95%, monthly +8.53%, yearly +88.54% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/4"
+  },
+  {
+   "name": "MAT XAUUSD FAST",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/Bodrum/mat-xauusd-fast/11151520",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "XAUUSD",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +3,145.46%, drawdown +34.85%, monthly +49.61%, yearly +3,145.46% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/4"
+  },
+  {
+   "name": "Asalbiruclose Mt5",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/AbeYue/asalbiruclose-mt5/10710131",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +3,032.27%, drawdown +36.40%, monthly +23.02%, yearly +580.35% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/4"
+  },
+  {
+   "name": "IstvanTest",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/iamisti/istvantest/11232360",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +3,022.34%, drawdown +46.10%, monthly +312.33%, yearly +3,022.34% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/4"
+  },
+  {
+   "name": "EUROPA FX MR",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/ProspectIInvest/europa-fx-mr/9562363",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +3,021.04%, drawdown +10.82%, monthly +10.28%, yearly +32.69% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/4"
+  },
+  {
+   "name": "AutoBot2021 EA",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/AutoBot2021/autobot2021-ea/9499456",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +2,954.20%, drawdown +49.02%, monthly +9.32%, yearly +542.77% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/4"
+  },
+  {
+   "name": "BlueWhale Capital",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/tradingsvietnam/bluewhale-capital/7501457",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +2,899.16%, drawdown +20.60%, monthly +3.57%, yearly +27.46% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/4"
+  },
+  {
+   "name": "Purotrading Found",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/frankmarty/purotrading-found/3202478",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +2,754.69%, drawdown +40.17%, monthly +4.84%, yearly +211.46% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/4"
+  },
+  {
+   "name": "Mr.XAUUSD",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/MCYK83/mrxauusd/11162785",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "XAUUSD",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +2,714.05%, drawdown +9.87%, monthly +103.85%, yearly +2,714.05% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/4"
+  },
+  {
+   "name": "GODZILLA",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/OrangeApelsin/godzilla/11183879",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +2,618.48%, drawdown +49.51%, monthly +81.76%, yearly +2,618.48% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/4"
+  },
+  {
+   "name": "Kittipat 8213571 VT Markets",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/eawealthythai/kittipat-8213571-vt-markets/8589499",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +2,599.08%, drawdown +48.55%, monthly +8.15%, yearly +218.52% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/4"
+  },
+  {
+   "name": "Quantum Speed",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/atlantisvn/quantum-speed/10984634",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +2,589.94%, drawdown +9.88%, monthly +12.59%, yearly +226.84% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/4"
+  },
+  {
+   "name": "RC8.FX, IMD STRATEGY - COMPOUND INTEREST ACC.",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/raf898/rc8fx-imd-strategy-compound-interest/11182941",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +2,537.47%, drawdown +5.65%, monthly +6.99%, yearly +26.84% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/4"
+  },
+  {
+   "name": "Perfect EA",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/phuked/perfect-ea/10214932",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +2,498.96%, drawdown +47.59%, monthly +14.37%, yearly +594.96% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/4"
+  },
+  {
+   "name": "Exness XAUUSD",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/DiegoTraderRN/exness-xauusd/11132905",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "XAUUSD",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +2,253.80%, drawdown +39.84%, monthly +702.52%, yearly +2,253.80% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/5"
+  },
+  {
+   "name": "TradingS Capital",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/tradingsvietnam/tradings-capital/7232342",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +2,253.10%, drawdown +39.88%, monthly +3.31%, yearly +21.29% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/5"
+  },
+  {
+   "name": "168171895",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/SuperbGarry/168171895/11136885",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +2,171.53%, drawdown +20.81%, monthly +739.94%, yearly +2,171.53% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/5"
+  },
+  {
+   "name": "Happy News - 8EC",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/HappyForex/happy-news-8ec/10585558",
+   "mechanism": "event",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +2,139.15%, drawdown +9.14%, monthly +14.85%, yearly +176.23% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/5"
+  },
+  {
+   "name": "NKJ",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/iori753/nkj/11044923",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +2,068.54%, drawdown +25.06%, monthly +26.20%, yearly +795.49% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/5"
+  },
+  {
+   "name": "168156965",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/SuperbGarry/168156965/11136889",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +2,067.98%, drawdown +14.66%, monthly +633.40%, yearly +2,067.98% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/5"
+  },
+  {
+   "name": "Annic",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/mrAntonio/annic/10442687",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +2,046.17%, drawdown +43.37%, monthly +7.74%, yearly +28.52% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/5"
+  },
+  {
+   "name": "NobelPortolio Agressive",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/FCAcademyTS/nobelportolio-agressive/6521685",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +2,028.19%, drawdown +22.52%, monthly +2.25%, yearly +23.94% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/5"
+  },
+  {
+   "name": "SuperGoldBot Expert Advisor",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/SuperGoldBot/supergoldbot-expert-advisor/11190121",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "XAUUSD",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +2,015.12%, drawdown +31.55%, monthly +32.82%, yearly +2,015.12% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/5"
+  },
+  {
+   "name": "Alexander William Acc (1)",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/alexfoster/alexander-william-acc-1/8367610",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +1,990.45%, drawdown +24.67%, monthly +6.96%, yearly +142.64% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/5"
+  },
+  {
+   "name": "UpMath",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/yoni016/upmath/10609992",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +1,960.58%, drawdown +12.73%, monthly +14.97%, yearly +638.89% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/5"
+  },
+  {
+   "name": "131793828",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/SuperbGarry/131793828/11136887",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +1,937.62%, drawdown +13.62%, monthly +488.44%, yearly +1,937.62% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/5"
+  },
+  {
+   "name": "Happy Gold - TMGM (M30)",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/HappyForex/happy-gold-tmgm-m30/9375654",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "XAUUSD",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +1,934.94%, drawdown +21.52%, monthly +8.38%, yearly +72.99% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/5"
+  },
+  {
+   "name": "DemeterPunV1",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/beruntung/demeterpunv1/11141379",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {},
+   "claimed_perf": "gain +1,881.31%, drawdown +33.05%, monthly +192.17%, yearly +1,881.31% (as of 2024-12-20 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/2024/https://www.myfxbook.com/systems/5"
+  },
+  {
+   "name": "Happiness",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/happiness/216992",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +12971.64%, drawdown 6.54% (as of 2021-07-29 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20210729132144/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "ZoomFxPro NewEnergy 1",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/zoomfxpro-newenergy-1/196753",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +8838.95%, drawdown 40.83% (as of 2021-07-29 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20210729132144/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Astaport",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/astaport/214876",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +4233.92%, drawdown 45.12% (as of 2021-07-29 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20210729132144/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Ronin47 V4 February 2018",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/ronin47-v4-february-2018/138395",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +2655.56%, drawdown 40.57% (as of 2021-07-29 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20210729132144/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Investor Fest",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/investor-fest/206511",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +1879.83%, drawdown 31.82% (as of 2021-07-29 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20210729132144/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Shikari",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/shikari/1733",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +1735.67%, drawdown 33.29% (as of 2021-07-29 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20210729132144/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "ForexStar",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/forexstar/207983",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +1482.84%, drawdown 38.73% (as of 2021-07-29 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20210729132144/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Osiris Rex",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/osiris-rex/212370",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +1408.75%, drawdown 30.40% (as of 2021-07-29 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20210729132144/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Friday Monday",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/friday-monday/66191",
+   "mechanism": "session",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +1359.26%, drawdown 43.32% (as of 2021-07-29 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20210729132144/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "ProTraders",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/protraders/217087",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +1351.34%, drawdown 46.65% (as of 2021-07-29 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20210729132144/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "TolwAH",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/tolwah/240285?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +288731.55%, drawdown 14.34% (as of 2022-04-01 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20220401051739/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Astaport",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/astaport/214876?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +6117.56%, drawdown 45.12% (as of 2022-04-01 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20220401051739/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Blue Train",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/blue-train/236978?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +5734.64%, drawdown 49.47% (as of 2022-04-01 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20220401051739/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Friday Monday",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/friday-monday/66191?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "session",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +2201.11%, drawdown 43.32% (as of 2022-04-01 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20220401051739/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Shikari",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/shikari/1733?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +1924.74%, drawdown 33.29% (as of 2022-04-01 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20220401051739/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Scalp IC Markets",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/scalp-ic-markets/204502?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "scalper",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +1712.71%, drawdown 23.22% (as of 2022-04-01 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20220401051739/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Rocket Account Fx",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/rocket-account-fx/199896?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +1680.64%, drawdown 41.35% (as of 2022-04-01 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20220401051739/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Pro Trade Signal",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/pro-trade-signal/189957?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +1509.86%, drawdown 49.05% (as of 2022-04-01 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20220401051739/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "StartTrading",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/starttrading/72336?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +1303.59%, drawdown 9.28% (as of 2022-04-01 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20220401051739/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Night Golf",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/night-golf/237874?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +1239.46%, drawdown 41.43% (as of 2022-04-01 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20220401051739/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "BlueWhale Capital",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/bluewhale-capital/181110?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +20209.0%, drawdown 46.70% (as of 2023-06-03 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20230603211310/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Trading S Capital",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/trading-s-capital/153606?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +13677.47%, drawdown 48.98% (as of 2023-06-03 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20230603211310/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "December",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/december/237906?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +6768.47%, drawdown 46.01% (as of 2023-06-03 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20230603211310/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "NC GO",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/nc-go/252460?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +3133.0%, drawdown 7.20% (as of 2023-06-03 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20230603211310/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "5Star",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/5star/219587?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +2039.2%, drawdown 46.04% (as of 2023-06-03 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20230603211310/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Draco",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/draco/255222?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +1698.51%, drawdown 28.47% (as of 2023-06-03 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20230603211310/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Snowball 30",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/snowball-30/256420?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +1441.86%, drawdown 27.09% (as of 2023-06-03 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20230603211310/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Pipster 27",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/pipster-27/267689?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +145798.23%, drawdown 44.22% (as of 2024-04-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20240404235655/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Big Tree",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/big-tree/268760?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +12479.31%, drawdown 14.34% (as of 2024-04-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20240404235655/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Max Nolimit ORI",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/max-nolimit-ori/267999?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +9995.64%, drawdown 39.73% (as of 2024-04-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20240404235655/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Golden Buffalo Pro",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/golden-buffalo-pro/267625?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "XAUUSD",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +6749.53%, drawdown 12.79% (as of 2024-04-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20240404235655/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "eurusdonly",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/eurusdonly/263070?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "EURUSD",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +2520.0%, drawdown 48.09% (as of 2024-04-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20240404235655/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Pure Signals FX",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/pure-signals-fx/184941?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +1539.7%, drawdown 29.92% (as of 2024-04-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20240404235655/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Tango4 Robot 100k",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/tango4-robot-100k/258348?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +1519.32%, drawdown 24.70% (as of 2024-04-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20240404235655/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "R Factor Multi Portfolio",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/r-factor-multi-portfolio/243745?utm_source=myfxbook&utm_content=systems",
+   "mechanism": "multi_asset",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +1378.65%, drawdown 13.19% (as of 2024-04-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20240404235655/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Musikalisches Opfer",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/musikalisches-opfer/36849",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +62046.99%, drawdown 26.34% (as of 2018-09-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Jin Hai",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/jin-hai/31559",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +10870.69%, drawdown 26.13% (as of 2018-09-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Night Scalping",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/night-scalping/18002",
+   "mechanism": "scalper",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +5911.44%, drawdown 45.16% (as of 2018-09-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Megatron",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/megatron/32683",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +4618.71%, drawdown 34.17% (as of 2018-09-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Option VSA",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/option-vsa/33120",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +4098.84%, drawdown 28.88% (as of 2018-09-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "LT Signals",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/lt-signals/32258",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +3304.9%, drawdown 49.22% (as of 2018-09-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Rising Star",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/rising-star/29985",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +2883.22%, drawdown 36.47% (as of 2018-09-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Nighthawk ICM Multipairs",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/nighthawk-icm-multipairs/12616",
+   "mechanism": "multi_asset",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +2550.24%, drawdown 48.06% (as of 2018-09-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "PrincefxeaV3",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/princefxeav3/29937",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +2044.87%, drawdown 41.92% (as of 2018-09-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "FXCharger",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/fxcharger/27237",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +1575.36%, drawdown 21.88% (as of 2018-09-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20180904154000/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Moneymakersuper",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/moneymakersuper/51254",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +12547.62%, drawdown 26.36% (as of 2020-07-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20200704184431/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Forex signal",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/forex-signal/73463",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +1115.54%, drawdown 38.87% (as of 2020-07-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20200704184431/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "SFE Night Scalper EURCHF",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/sfe-night-scalper-eurchf/40974",
+   "mechanism": "scalper",
+   "mechanism_basis": "name_inference",
+   "symbol": "EURCHF",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +1078.82%, drawdown 47.20% (as of 2020-07-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20200704184431/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "ForexRealProfitEA EU GU",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/forexrealprofitea-eu-gu/128427",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +693.26%, drawdown 37.56% (as of 2020-07-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20200704184431/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "SFE Night Scalper",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/sfe-night-scalper/40973",
+   "mechanism": "scalper",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +677.16%, drawdown 34.48% (as of 2020-07-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20200704184431/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "Asha Pro",
+   "source": "signalstart",
+   "source_url": "http://www.signalstart.com/analysis/asha-pro/63097",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "account_type": "Real"
+   },
+   "claimed_perf": "gain +522.01%, drawdown 35.93% (as of 2020-07-04 capture)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20200704184431/https://www.myfxbook.com/systems",
+   "note": "displayed in Signal Start Systems table on myfxbook /systems page (partner listing)"
+  },
+  {
+   "name": "FURY V6 10K",
+   "source": "myfxbook",
+   "source_url": "https://www.myfxbook.com/members/forexfuryreal/fury-v6-10k/10879184",
+   "mechanism": "other",
+   "mechanism_basis": "name_inference_detail_page_fetched",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "tracking": "N/A",
+    "abs_gain": "+9.07%",
+    "daily": "+0.07%"
+   },
+   "claimed_perf": "gain +9.07%, abs gain +9.07%, daily +0.07%, monthly +2.64%, drawdown 0.50% (detail page capture 2024-05-28)",
+   "evidence_tier": "myfxbook_verified",
+   "listed_via": "https://web.archive.org/web/20240528173531/https://www.myfxbook.com/members/forexfuryreal/fury-v6-10k/10879184"
+  }
+ ],
+ "pages_fetched": 25,
+ "blocked": [
+  "https://www.myfxbook.com/systems (403 Cloudflare)",
+  "https://www.myfxbook.com/community/outstanding (403 Cloudflare)",
+  "https://www.myfxbook.com/community/outstanding (no capture on archive.org)",
+  "https://www.myfxbook.com/systems/3 (no capture on archive.org)",
+  "https://www.myfxbook.com/systems?pt=6&p=1&...2022 (archive URL variant 404)"
+ ],
+ "catalog_note": "Mined via web.archive.org captures of myfxbook.com listing pages. claimed_perf values are as displayed on the fetched capture. mechanism inferred from system name (mechanism_basis=name_inference); detail-page enrichment pending for notable systems.",
+ "fetch_log": {
+  "listing_pages": 20,
+  "system_detail_pages": 5,
+  "via": "web.archive.org"
+ }
+}

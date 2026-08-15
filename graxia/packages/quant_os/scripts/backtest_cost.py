@@ -6,7 +6,11 @@ charges tick-level spread + fill-simulator slippage P90,
 reports net P&L in dollars for 0.01 lot XAUUSD.
 """
 
-import argparse, json, os, sys, warnings
+import argparse
+import json
+import os
+import sys
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -22,11 +26,20 @@ FILL_DIR = os.path.join(BASE, "artifacts", "fill_samples_fixed")
 OUT_DIR = os.path.join(BASE, "artifacts", "backtest_cost")
 
 # XAUUSD constants (0.01 lot = 1 oz)
+sys.path.insert(0, BASE)
+from provenance import require_cost_calibrated  # noqa: E402
+
 POINT_VALUE = 0.01  # 1 point = $0.01 for 0.01 lot XAUUSD
+
 
 # ---------- helpers ----------
 def load_slippage_p90(symbol: str, freq: str) -> dict:
-    """Load fill simulator data and compute P90 slippage by condition."""
+    """Load fill simulator data and compute P90 slippage by condition.
+
+    FAIL-CLOSED: if no fill-simulator CSV exists for the symbol, raise instead
+    of returning hardcoded guesses. The historical fallback dict (39/45/33/42
+    etc.) was fabricated cost data — never silently inherit a guess.
+    """
     path = os.path.join(FILL_DIR, f"fill_samples_{symbol}_{freq}.csv")
     if not os.path.exists(path):
         # Try 1min as fallback
@@ -35,14 +48,14 @@ def load_slippage_p90(symbol: str, freq: str) -> dict:
             path = path_1min
             print("  [FALLBACK] Using 1min fill samples")
         else:
-            print(f"  [WARN] Fill samples not found: {path}")
-            return {"overall": 39.0, "vol_regime": {"high": 45, "low": 33, "med": 42},
-                    "spread_bucket": {"med": 40, "tight": 34, "wide": 48},
-                    "session": {"asian": 44, "london": 38, "ny": 34, "overlap": 37}}
+            raise FileNotFoundError(
+                f"Fill samples not found for {symbol}@{freq} or {symbol}@1min in {FILL_DIR}. "
+                f"Run scripts/simulate_fills.py first — refusing to use guessed slippage."
+            )
     df = pd.read_csv(path)
-    result = {"overall": float(df["slippage_points"].quantile(0.9))}
+    result: dict[str, float | dict[str, float]] = {"overall": float(df["slippage_points"].quantile(0.9))}
     for col in ["vol_regime", "spread_bucket", "session"]:
-        sub = {}
+        sub: dict[str, float] = {}
         for bucket in sorted(df[col].unique()):
             vals = df[df[col] == bucket]["slippage_points"]
             sub[bucket] = float(vals.quantile(0.9))
@@ -71,15 +84,24 @@ def load_features(symbol: str, freq: str) -> pd.DataFrame:
 def get_feature_cols(df: pd.DataFrame) -> list[str]:
     """Return numeric columns usable as model features."""
     exclude = {
-        "target", "target_return", "symbol", "freq",
-        "tb_label", "tb_bar_hit", "tb_side", "tb_ret",
-        "tb_k_upper", "tb_k_lower", "open", "high", "low", "close",
-        "volume", "tick_count",
+        "target",
+        "target_return",
+        "symbol",
+        "freq",
+        "tb_label",
+        "tb_bar_hit",
+        "tb_side",
+        "tb_ret",
+        "tb_k_upper",
+        "tb_k_lower",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "tick_count",
     }
-    return [
-        c for c in df.columns if c not in exclude
-        and df[c].dtype in (np.float64, np.float32, np.int64, np.int32)
-    ]
+    return [c for c in df.columns if c not in exclude and df[c].dtype in (np.float64, np.float32, np.int64, np.int32)]
 
 
 def compute_trade_pnl(
@@ -102,18 +124,26 @@ def compute_trade_pnl(
             Must be return-units, NOT dollars. XAUUSD calibrated: 0.000027.
         lot_mult: lot multiplier (1.0 = 0.01 lot)
         close_prices: bar close prices for per-trade dollar conversion.
-            If None, uses fallback 2350.0 (backward compat).
+            If None, derives per-trade price from the dataframe's 'close'
+            column; raises if neither is available (fail-closed, no stale
+            hardcoded anchor).
 
     Returns:
         DataFrame with trade results
     """
     target_return = df["target_return"].values
 
-    # Per-trade price: use actual bar close if available, else fallback
+    # Per-trade price: prefer explicit close_prices, else actual bar closes
+    # from the dataframe. Fail-closed instead of a stale hardcoded anchor.
     if close_prices is not None and len(close_prices) == len(target_return):
         price_arr = close_prices.astype(float)
+    elif "close" in df.columns and len(df) == len(target_return):
+        price_arr = df["close"].values.astype(float)
     else:
-        price_arr = np.full(len(target_return), 2350.0)
+        raise ValueError(
+            "compute_trade_pnl: no close prices available — pass close_prices "
+            "or a dataframe with a 'close' column (refusing stale fallback)"
+        )
 
     # Direction multiplier: pred=1 (up) → +1, pred=0 (down) → -1
     direction = 2 * preds.astype(float) - 1
@@ -156,8 +186,8 @@ def evaluate_backtest(
     spread_cost: float = 0.000050,
     slippage_p90: float = 0.000027,
     lot_mult: float = 1.0,
-    regime_scores: pd.Series = None,
-    confidences: np.ndarray = None,
+    regime_scores: pd.Series | None = None,
+    confidences: np.ndarray | None = None,
     min_confidence: float = 0.0,
     min_regime: float = 0.0,
 ) -> dict:
@@ -182,13 +212,13 @@ def evaluate_backtest(
         dict with backtest metrics
     """
     df_test = df.loc[test_mask].copy()
-    X_test = df_test[feature_cols].fillna(0).values
+    x_test = df_test[feature_cols].fillna(0).values
     y_true = df_test["target"].values
 
     # Predict
-    preds = model.predict(X_test)
+    preds = model.predict(x_test)
     if confidences is None:
-        proba = model.predict_proba(X_test)
+        proba = model.predict_proba(x_test)
         conf = np.max(proba, axis=1)
     else:
         conf = confidences[test_mask.values]
@@ -206,10 +236,22 @@ def evaluate_backtest(
     pct_bars = n_trades / n_total * 100
 
     if n_trades == 0:
-        return {"n_trades": 0, "pct_bars": 0, "accuracy": 0, "wins": 0, "losses": 0,
-                "gross_pnl": 0, "total_cost": 0, "net_pnl": 0, "win_rate": 0,
-                "avg_win": 0, "avg_loss": 0, "max_drawdown": 0, "sharpe_ratio": 0,
-                "avg_move_points": 0}
+        return {
+            "n_trades": 0,
+            "pct_bars": 0,
+            "accuracy": 0,
+            "wins": 0,
+            "losses": 0,
+            "gross_pnl": 0,
+            "total_cost": 0,
+            "net_pnl": 0,
+            "win_rate": 0,
+            "avg_win": 0,
+            "avg_loss": 0,
+            "max_drawdown": 0,
+            "sharpe_ratio": 0,
+            "avg_move_points": 0,
+        }
 
     # Get close prices for per-trade dollar conversion
     close_col = df_test["close"].values if "close" in df_test.columns else None
@@ -230,10 +272,16 @@ def evaluate_backtest(
     total_cost = pnl_df["cost_dollars"].sum()
     net_pnl = pnl_df["net_pnl_dollars"].sum()
     win_rate = (pnl_df["net_pnl_dollars"] > 0).mean()
-    avg_win = pnl_df.loc[pnl_df["net_pnl_dollars"] > 0, "net_pnl_dollars"].mean() if (
-        pnl_df["net_pnl_dollars"] > 0).sum() > 0 else 0
-    avg_loss = pnl_df.loc[pnl_df["net_pnl_dollars"] < 0, "net_pnl_dollars"].mean() if (
-        pnl_df["net_pnl_dollars"] < 0).sum() > 0 else 0
+    avg_win = (
+        pnl_df.loc[pnl_df["net_pnl_dollars"] > 0, "net_pnl_dollars"].mean()
+        if (pnl_df["net_pnl_dollars"] > 0).sum() > 0
+        else 0
+    )
+    avg_loss = (
+        pnl_df.loc[pnl_df["net_pnl_dollars"] < 0, "net_pnl_dollars"].mean()
+        if (pnl_df["net_pnl_dollars"] < 0).sum() > 0
+        else 0
+    )
     max_dd = pnl_df["net_pnl_dollars"].cumsum().min()
     # Sharpe ratio — annualize based on actual number of returns
     # Assume returns are evenly spaced; use sqrt(n) for annualization
@@ -245,8 +293,14 @@ def evaluate_backtest(
     else:
         sharpe = 0.0
 
-    # Average close price for move-points calculation
-    avg_price = float(np.mean(close_trades)) if close_trades is not None else 2350.0
+    # Average close price for move-points calculation — derive from actual
+    # data; never a stale hardcoded anchor.
+    if close_trades is not None:
+        avg_price = float(np.mean(close_trades))
+    elif "close" in df_test.columns:
+        avg_price = float(df_test["close"].mean())
+    else:
+        avg_price = 0.0
 
     return {
         "n_trades": int(n_trades),
@@ -270,8 +324,12 @@ def sweep_thresholds(
     sweeps: list[dict],
 ) -> list[dict]:
     """Pretty-print threshold sweep results."""
-    print(f"  {'Conf':>6s} | {'Trades':>7s} | {'%Bars':>6s} | {'Acc':>7s} | {'Gross':>7s} | {'Cost':>7s} | {'Net':>8s} | {'WR':>6s} | {'SR':>5s} | {'OK?':>4s}")
-    print(f"  {'-'*6}-|-{'-'*7}-|-{'-'*6}-|-{'-'*7}-|-{'-'*7}-|-{'-'*7}-|-{'-'*8}-|-{'-'*6}-|-{'-'*5}-|-{'-'*4}")
+    print(
+        f"  {'Conf':>6s} | {'Trades':>7s} | {'%Bars':>6s} | {'Acc':>7s} | {'Gross':>7s} | {'Cost':>7s} | {'Net':>8s} | {'WR':>6s} | {'SR':>5s} | {'OK?':>4s}"
+    )
+    print(
+        f"  {'-' * 6}-|-{'-' * 7}-|-{'-' * 6}-|-{'-' * 7}-|-{'-' * 7}-|-{'-' * 7}-|-{'-' * 8}-|-{'-' * 6}-|-{'-' * 5}-|-{'-' * 4}"
+    )
     for s in sweeps:
         ok = "[OK]" if s["net_pnl"] > 0 else "   "
         print(
@@ -288,26 +346,75 @@ def main():
     parser.add_argument("--symbol", type=str, default="XAUUSD")
     parser.add_argument("--freq", type=str, default="1min")
     parser.add_argument("--feat-dir", type=str, default=FEAT_DIR)
-    parser.add_argument("--spread-cost", type=float, default=0.000050,
-                        help="Round-trip spread cost in RETURN units (fraction of price). XAUUSD calibrated: 0.000050")
-    parser.add_argument("--slippage-p90", type=float, default=0.000027,
-                        help="Round-trip slippage P90 cost in RETURN units (fraction of price). XAUUSD calibrated: 0.000027")
-    parser.add_argument("--lot-mult", type=float, default=1.0,
-                        help="Lot multiplier (1.0 = 0.01 lot)")
+    parser.add_argument(
+        "--spread-cost",
+        type=float,
+        default=0.000050,
+        help="Round-trip spread cost in RETURN units (fraction of price). XAUUSD calibrated: 0.000050",
+    )
+    parser.add_argument(
+        "--slippage-p90",
+        type=float,
+        default=0.000027,
+        help="Round-trip slippage P90 cost in RETURN units (fraction of price). XAUUSD calibrated: 0.000027",
+    )
+    parser.add_argument("--lot-mult", type=float, default=1.0, help="Lot multiplier (1.0 = 0.01 lot)")
     parser.add_argument("--output", type=str, default=OUT_DIR)
-    parser.add_argument("--label-type", choices=["binary", "triple-barrier"], default="binary",
-                        help="Label type for training and evaluation")
-    parser.add_argument("--regime-threshold", type=float, default=0.55,
-                        help="Min regime score (default 0.55; lower=more trades)")
+    parser.add_argument(
+        "--label-type",
+        choices=["binary", "triple-barrier"],
+        default="binary",
+        help="Label type for training and evaluation",
+    )
+    parser.add_argument(
+        "--regime-threshold", type=float, default=0.55, help="Min regime score (default 0.55; lower=more trades)"
+    )
+    parser.add_argument(
+        "--cost-config",
+        type=str,
+        default=None,
+        help="Path to cost calibration JSON. If provided, overrides "
+        "--spread-cost with the real measured round-trip spread and "
+        "raises if the symbol is not cost-calibrated, rather than "
+        "silently using the flat default.",
+    )
     args = parser.parse_args()
 
     os.makedirs(args.output, exist_ok=True)
 
+    if args.cost_config:
+        # 2026-07-30: run_walk_forward.py has always passed --cost-config to
+        # this script's subprocess call, but this parser never accepted the
+        # flag at all -- every such call failed with "unrecognized
+        # arguments" and was silently swallowed by the caller's
+        # subprocess.run() + nonzero-exit warning. See Finding 2 in
+        # reports/bypass_loader_classification_20260730.md. Mirrors the
+        # walk_forward.py fix: real assets[symbol] schema, loud failure
+        # instead of a silent flat guess.
+        with open(args.cost_config) as f:
+            cost_cfg = json.load(f)
+        require_cost_calibrated(args.symbol, mode="paper")
+        sym_cfg = cost_cfg.get("assets", {})[args.symbol]
+        round_trip_bps = sym_cfg.get("round_trip_bps_measured", sym_cfg.get("spread_bps_measured", 0.0) * 2)
+        args.spread_cost = round_trip_bps / 10000.0
+        # Deliberately NOT touching args.slippage_p90 here: this file has
+        # its own real measured slippage source (the fill simulator loaded
+        # into `slip` below), which is a separate, deeper-rooted bug --
+        # documented but not fixed, see Finding 3 in the classification
+        # report. Wiring it in needs the point-value/contract conversion
+        # the advisor call explicitly flagged as unsafe to guess at.
+
     print("=" * 70)
     print("PHASE F — BACKTEST WITH REAL COSTS")
     print(f"  Symbol: {args.symbol} @ {args.freq}")
-    print(f"  Spread cost: {args.spread_cost:.6f} (return units) + Slippage P90: {args.slippage_p90:.6f} (return units)")
-    print(f"  Cost/trade at $2350: ${(args.spread_cost + args.slippage_p90) * 2350:.2f}")
+    if args.cost_config:
+        print(
+            f"  Spread cost: {args.spread_cost:.6f} (real, return units) + Slippage P90: {args.slippage_p90:.6f} (flat default, NOT calibrated)"
+        )
+    else:
+        print(
+            f"  Spread cost: {args.spread_cost:.6f} (return units) + Slippage P90: {args.slippage_p90:.6f} (return units)"
+        )
     print(f"  Lot size: {args.lot_mult * 0.01:.2f} lot")
     print("=" * 70)
 
@@ -320,6 +427,12 @@ def main():
     if "target_return" not in df.columns:
         print("  [ERROR] No 'target_return' column — needed for P&L")
         return
+
+    avg_close = float(df["close"].mean()) if "close" in df.columns else None
+    if avg_close:
+        print(
+            f"  Cost/trade at avg close ${avg_close:.2f}: " f"${(args.spread_cost + args.slippage_p90) * avg_close:.2f}"
+        )
 
     # 2. Load slippage P90
     print("\n--- Loading fill simulator ---")
@@ -338,36 +451,43 @@ def main():
     test_mask = pd.Series(False, index=df.index)
     test_mask.iloc[split:] = True
 
-    X_train = df[feature_cols].fillna(0).values[:split]
+    x_train = df[feature_cols].fillna(0).values[:split]
     if args.label_type == "triple-barrier":
         # Map tb_label (-1/0/+1) to binary: -1=0, 0=excluded, +1=1
         y_train_raw = df["tb_label"].values[:split]
         train_keep = y_train_raw != 0
-        X_train = X_train[train_keep]
+        x_train = x_train[train_keep]
         y_train = (y_train_raw[train_keep] + 1) // 2  # -1→0, +1→1
-        print(f"  Triple-barrier training: {len(y_train)} samples (excluded {train_keep.size - train_keep.sum()} neutral)")
+        print(
+            f"  Triple-barrier training: {len(y_train)} samples (excluded {train_keep.size - train_keep.sum()} neutral)"
+        )
     else:
         y_train = df["target"].values[:split]
 
-    print(f"  Train: {len(X_train)} samples, OOS: {test_mask.sum()} bars")
+    print(f"  Train: {len(x_train)} samples, OOS: {test_mask.sum()} bars")
 
     # 5. Train model
     print("\n--- Training XGBoost ---")
     model = xgb.XGBClassifier(
-        n_estimators=100, max_depth=5, learning_rate=0.1,
-        subsample=0.8, colsample_bytree=0.8,
-        random_state=42, eval_metric="logloss",
-        use_label_encoder=False, verbosity=0,
+        n_estimators=100,
+        max_depth=5,
+        learning_rate=0.1,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        random_state=42,
+        eval_metric="logloss",
+        use_label_encoder=False,
+        verbosity=0,
     )
-    model.fit(X_train, y_train)
-    train_acc = (model.predict(X_train) == y_train).mean()
+    model.fit(x_train, y_train)
+    train_acc = (model.predict(x_train) == y_train).mean()
     print(f"  Train accuracy: {train_acc:.4f}")
 
     # 6. Get OOS predictions + confidence
-    X_test = df[feature_cols].fillna(0).values[split:]
+    x_test = df[feature_cols].fillna(0).values[split:]
     y_test_all = df["target"].values[split:]
-    preds_test = model.predict(X_test)
-    proba_test = model.predict_proba(X_test)
+    preds_test = model.predict(x_test)
+    proba_test = model.predict_proba(x_test)
     conf_test = np.max(proba_test, axis=1)
     oos_acc = (preds_test == y_test_all).mean()
     print(f"  OOS accuracy (raw): {oos_acc:.4f}")
@@ -378,6 +498,7 @@ def main():
     try:
         sys.path.insert(0, os.path.join(BASE, "scripts"))
         from regime_filter import compute_regime_scores
+
         all_scores = compute_regime_scores(df)
         regime_scores = all_scores["_regime_score"]
         print(f"  Regime scores computed for {len(regime_scores)} bars")
@@ -390,7 +511,10 @@ def main():
     results = []
     for conf_thresh in [0.0, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90]:
         res = evaluate_backtest(
-            df, model, feature_cols, test_mask,
+            df,
+            model,
+            feature_cols,
+            test_mask,
             spread_cost=args.spread_cost,
             slippage_p90=args.slippage_p90,
             lot_mult=args.lot_mult,
@@ -408,22 +532,33 @@ def main():
     positive = [r for r in results if r["net_pnl"] > 0 and r["n_trades"] >= 5]
     if positive:
         best = max(positive, key=lambda r: r["net_pnl"])
-        print(f"\n  [OK] POSITIVE EXPECTANCY at conf>={best['min_confidence']:.2f}: "
-              f"${best['net_pnl']:.2f} net ({best['n_trades']} trades, {best['accuracy']:.1%} acc)")
+        print(
+            f"\n  [OK] POSITIVE EXPECTANCY at conf>={best['min_confidence']:.2f}: "
+            f"${best['net_pnl']:.2f} net ({best['n_trades']} trades, {best['accuracy']:.1%} acc)"
+        )
     else:
         print("\n  [WARN] No positive expectancy at any confidence threshold")
 
     # 10. Compare with zero-cost baseline
     print("\n--- Cost Impact Summary ---")
     zero_cost = evaluate_backtest(
-        df, model, feature_cols, test_mask,
-        spread_cost=0, slippage_p90=0, lot_mult=1.0,
-        regime_scores=regime_scores, confidences=None,
-        min_confidence=0.75, min_regime=args.regime_threshold,
+        df,
+        model,
+        feature_cols,
+        test_mask,
+        spread_cost=0,
+        slippage_p90=0,
+        lot_mult=1.0,
+        regime_scores=regime_scores,
+        confidences=None,
+        min_confidence=0.75,
+        min_regime=args.regime_threshold,
     )
-    idx75 = [r['min_confidence'] for r in results].index(0.75)
+    idx75 = [r["min_confidence"] for r in results].index(0.75)
     print(f"  Zero cost (conf>=0.75):  ${zero_cost['gross_pnl']:>+.2f} gross")
-    print(f"  Real cost (conf>=0.75): ${results[idx75]['net_pnl']:>+.2f} net  ({results[idx75]['total_cost']:.2f} total cost)")
+    print(
+        f"  Real cost (conf>=0.75): ${results[idx75]['net_pnl']:>+.2f} net  ({results[idx75]['total_cost']:.2f} total cost)"
+    )
     print(f"  Cost erosion:           ${zero_cost['gross_pnl'] - results[idx75]['net_pnl']:>+.2f}")
 
     # 11. Save
@@ -432,10 +567,12 @@ def main():
         "freq": args.freq,
         "spread_cost_return_units": args.spread_cost,
         "slippage_p90_return_units": args.slippage_p90,
-        "cost_per_trade_at_2350": round((args.spread_cost + args.slippage_p90) * 2350, 4),
+        "cost_per_trade_at_avg_close": (
+            round((args.spread_cost + args.slippage_p90) * avg_close, 4) if avg_close else None
+        ),
         "lot_mult": args.lot_mult,
         "oos_bars": int(test_mask.sum()),
-        "train_samples": len(X_train),
+        "train_samples": len(x_train),
         "oos_raw_accuracy": round(float(oos_acc), 4),
         "results": results,
         "positive_at_any": any(r["net_pnl"] > 0 and r["n_trades"] >= 5 for r in results),
@@ -454,11 +591,11 @@ def convert_numpy(obj):
         return {k: convert_numpy(v) for k, v in obj.items()}
     elif isinstance(obj, list):
         return [convert_numpy(v) for v in obj]
-    elif isinstance(obj, (np.bool_,)):
+    elif isinstance(obj, np.bool_):
         return bool(obj)
-    elif isinstance(obj, (np.integer,)):
+    elif isinstance(obj, np.integer):
         return int(obj)
-    elif isinstance(obj, (np.floating,)):
+    elif isinstance(obj, np.floating):
         return float(obj)
     elif isinstance(obj, np.ndarray):
         return obj.tolist()

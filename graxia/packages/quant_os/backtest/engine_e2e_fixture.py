@@ -7,6 +7,7 @@ No MT5, no external deps, no CSV files.
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from decimal import Decimal
+from typing import Any
 
 from ..core.enums import SignalType
 from ..strategies.base import Signal
@@ -44,7 +45,7 @@ def _make_bars(prices: list[float], spread: float = 0.02):
     return bars
 
 
-def _make_timestamps(n: int, start: datetime = None) -> list[datetime]:
+def _make_timestamps(n: int, start: datetime | None = None) -> list[datetime]:
     """Generate hourly timestamps starting from 2025-01-06 00:00 UTC."""
     if start is None:
         start = datetime(2025, 1, 6, 0, 0, 0)
@@ -68,8 +69,17 @@ class DeterministicStrategy:
 
 
 def _base_config(**overrides) -> BacktestConfig:
-    defaults = dict(
+    defaults: dict[str, Any] = dict(
         initial_capital=Decimal("10000"),
+        # Both cost knobs must be set together. These scenarios run on EURUSD,
+        # which has no measured entry in cost_calibration.json, so leaving
+        # either one unset sends _cost_offsets to SymbolCostProfile.for_symbol
+        # and raises UnmeasuredCostError. These are deterministic engine-
+        # mechanics fixtures (next-bar fill, SL/TP exit price, ledger
+        # provenance) -- the costs are a fixed synthetic scale chosen so the
+        # arithmetic is checkable by hand, NOT a claim about real EURUSD
+        # spreads. Do not copy these numbers into a research run.
+        spread_pips=2.0,
         slippage_pips=0.5,
         commission_per_lot=Decimal("3.5"),
         max_positions=5,

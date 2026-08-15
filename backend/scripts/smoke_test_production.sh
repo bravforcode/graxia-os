@@ -74,7 +74,7 @@ if command -v docker &> /dev/null; then
   echo "--- Docker Container Health ---"
 
   for svc in backend worker-critical worker-default beat redis postgres; do
-    status=$(docker compose -f docker-compose.prod.yml ps "$svc" 2>/dev/null | grep -o 'healthy\|running\|Up' | head -1 || echo "missing")
+    status=$(docker compose -f config/docker-compose.production.yml ps "$svc" 2>/dev/null | grep -o 'healthy\|running\|Up' | head -1 || echo "missing")
     if [ "$status" = "healthy" ] || [ "$status" = "Up" ] || [ "$status" = "running" ]; then
       check "Container: $svc ($status)" "0"
     else

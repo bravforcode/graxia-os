@@ -1,0 +1,68 @@
+{
+  "title": "Direction H Trial 9002 \u2014 RSI Mean-Reversion forex4 H1",
+  "frozen": {
+    "rsi_period": 14,
+    "oversold": 30.0,
+    "overbought": 70.0,
+    "ema_period": 0,
+    "atr_period": 14,
+    "atr_sl_mult": 2.0,
+    "atr_tp_mult": 3.0,
+    "risk_per_trade_bps": 50,
+    "max_positions": 1,
+    "initial_capital": 10000.0
+  },
+  "executed_at": "2026-08-06T09:48:04.221756+00:00",
+  "universe": [
+    "USDCAD",
+    "USDCHF",
+    "AUDUSD",
+    "NZDUSD"
+  ],
+  "per_asset": {
+    "USDCAD": {
+      "n_trades": 1407,
+      "net_pnl": -3103.6,
+      "profit_factor": 0.8977,
+      "trade_nw_t": -1.8368,
+      "sharpe_daily": -2.173
+    },
+    "USDCHF": {
+      "n_trades": 1435,
+      "net_pnl": -3358.32,
+      "profit_factor": 0.8834,
+      "trade_nw_t": -2.1621,
+      "sharpe_daily": -2.1475
+    },
+    "AUDUSD": {
+      "n_trades": 1375,
+      "net_pnl": -2252.7,
+      "profit_factor": 0.9169,
+      "trade_nw_t": -1.503,
+      "sharpe_daily": -1.4806
+    },
+    "NZDUSD": {
+      "n_trades": 1392,
+      "net_pnl": -3578.9,
+      "profit_factor": 0.8742,
+      "trade_nw_t": -2.5128,
+      "sharpe_daily": -2.5415
+    }
+  },
+  "pooled": {
+    "dk_t_stat": -4.549,
+    "dk_mean_return": -0.00120441,
+    "dk_se": 0.00026476,
+    "dk_sharpe": -3.1843,
+    "total_trades": 5609,
+    "positive_sharpe_count": 0,
+    "n_assets": 4
+  },
+  "gates": {
+    "dk_t_gt_2": "False",
+    "positive_sharpe_ge_3": false,
+    "min_trades_100_per_pair": true
+  },
+  "verdict": "REJECT",
+  "reason": "DK t=-4.549 (<1.5) AND Sharpe>0 in 0/4 (<2)"
+}

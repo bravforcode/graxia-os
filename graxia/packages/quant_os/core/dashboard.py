@@ -59,11 +59,11 @@ class Dashboard:
         dashboard.render()
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.history: list[DashboardMetrics] = []
         self.alerts: list[str] = []
 
-    def update(self, metrics: DashboardMetrics):
+    def update(self, metrics: DashboardMetrics) -> None:
         """Update dashboard with new metrics"""
         self.history.append(metrics)
 
@@ -141,7 +141,7 @@ class Dashboard:
 
         return "\n".join(lines)
 
-    def _check_alerts(self, metrics: DashboardMetrics):
+    def _check_alerts(self, metrics: DashboardMetrics) -> None:
         """Check for alert conditions"""
         # High drawdown
         if metrics.drawdown_pct > 10:

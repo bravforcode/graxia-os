@@ -27,15 +27,15 @@ import structlog
 class LokiSink:
     """Send structured logs to Grafana Loki via HTTP push."""
 
-    def __init__(self, url: str = "", tenant_id: str = ""):
+    def __init__(self, url: str = "", tenant_id: str = "") -> None:
         self.url = url or os.getenv("LOKI_URL", "")
         self.tenant_id = tenant_id or os.getenv("LOKI_TENANT_ID", "")
-        self._client = None
+        self._client: Any = None
         self._buffer: list[list] = []
         self._flush_interval = 5.0  # seconds
         self._last_flush = time.monotonic()
 
-    async def _ensure_client(self):
+    async def _ensure_client(self) -> Any:
         if self._client is None:
             import httpx
 
@@ -64,7 +64,7 @@ class LokiSink:
 
         return event_dict
 
-    def _flush_async(self):
+    def _flush_async(self) -> None:
         """Flush buffer to Loki (non-blocking)."""
         if not self._buffer:
             return
@@ -77,7 +77,7 @@ class LokiSink:
         except RuntimeError:
             pass
 
-    async def _flush(self):
+    async def _flush(self) -> None:
         """Send buffered logs to Loki."""
         if not self._buffer or not self.url:
             return
@@ -106,7 +106,7 @@ class LokiSink:
 class FileSink:
     """Write structured logs to a JSON file with rotation."""
 
-    def __init__(self, path: str = "", max_bytes: int = 10*1024*1024, backup_count: int = 5):
+    def __init__(self, path: str = "", max_bytes: int = 10 * 1024 * 1024, backup_count: int = 5):
         self.path = Path(path or os.getenv("LOG_FILE", "logs/quant_os.jsonl"))
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._max_bytes = max_bytes
@@ -123,7 +123,7 @@ class FileSink:
             pass
         return event_dict
 
-    def _rotate(self):
+    def _rotate(self) -> None:
         """Simple rotation: rename .jsonl.1 → .jsonl.2, etc."""
         for i in range(self._backup_count - 1, 0, -1):
             src = self.path.with_suffix(f".jsonl.{i}")
@@ -183,10 +183,8 @@ def setup_logging(
         pass
 
     structlog.configure(
-        processors=processors,
-        wrapper_class=structlog.make_filtering_bound_logger(
-            getattr(logging, level.upper(), logging.INFO)
-        ),
+        processors=processors,  # type: ignore[arg-type]
+        wrapper_class=structlog.make_filtering_bound_logger(getattr(logging, level.upper(), logging.INFO)),
         context_class=dict,
         logger_factory=structlog.PrintLoggerFactory(),
         cache_logger_on_first_use=True,

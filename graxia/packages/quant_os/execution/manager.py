@@ -82,7 +82,7 @@ class OrderManager:
         strategy_id: str = "",
         signal_id: str | None = None,
         take_profit: Decimal | None = None,
-        **kwargs,
+        **kwargs: object,
     ) -> dict[str, Any]:
         """
         Submit an order through the full lifecycle.
@@ -457,6 +457,10 @@ class OrderManager:
             raw_broker_response=db_order.raw_broker_response,
         )
 
+    def _on_expiry_task_done(self, task: asyncio.Task) -> None:
+        """Remove completed expiry task from background set."""
+        self._background_tasks.discard(task)
+
     async def _expire_order_after_delay(self, order_id: str, delay_seconds: int) -> None:
         """Expire order after delay if not approved"""
         await asyncio.sleep(delay_seconds)
@@ -471,4 +475,4 @@ class OrderManager:
             except Exception:
                 import logging as _log
 
-                _log.getLogger(__name__).warning("order_expiry_error", order_id=order_id, exc_info=True)
+                _log.getLogger(__name__).warning("order_expiry_error %s", order_id, exc_info=True)

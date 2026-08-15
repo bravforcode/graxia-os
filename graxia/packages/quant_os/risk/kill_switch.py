@@ -83,6 +83,22 @@ class KillSwitch:
             return True
         return asset_class.lower() in self._state.get("killed_classes", [])
 
+    def kill_symbol(self, symbol: str, reason: str, source: str = "system") -> str:
+        """Halt trading for a single symbol. Mirrors _cmd_kill_class but is
+        system-driven (demote pipeline), not Telegram-driven."""
+        killed = self._state.get("killed_symbols", [])
+        if symbol not in killed:
+            killed.append(symbol)
+            self._state["killed_symbols"] = killed
+        self._append_history(f"kill_symbol:{symbol}", source)
+        self._save()
+        return f"KILLED SYMBOL: {symbol} trading halted. Active symbol kills: {killed}"
+
+    def is_symbol_killed(self, symbol: str) -> bool:
+        if self._get_state_enum() == KillSwitchState.ACTIVE:
+            return True
+        return symbol in self._state.get("killed_symbols", [])
+
     @property
     def is_triggered(self) -> bool:
         return self.is_active() or self.is_paused()
@@ -95,6 +111,7 @@ class KillSwitch:
         return {
             "state": self._state.get("state", KillSwitchState.INACTIVE.value),
             "killed_classes": self._state.get("killed_classes", []),
+            "killed_symbols": self._state.get("killed_symbols", []),
             "reason": self._state.get("reason", ""),
             "activated_at_utc": self._state.get("activated_at_utc"),
             "authorized_by": self._state.get("authorized_by"),
@@ -130,6 +147,7 @@ class KillSwitch:
     def deactivate(self, reason: str, authorized_by: str = "system") -> None:
         self._set_state(KillSwitchState.INACTIVE, reason=reason, authorized_by=authorized_by)
         self._state["killed_classes"] = []
+        self._state["killed_symbols"] = []
         self._save()
         self._notify_coordinator(False, reason, authorized_by)
 
@@ -163,6 +181,7 @@ class KillSwitch:
         source = f"telegram:{self._last_user_id}"
         self._set_state(KillSwitchState.INACTIVE, reason="Telegram /resume", authorized_by=source)
         self._state["killed_classes"] = []
+        self._state["killed_symbols"] = []
         self._save()
         self._notify_coordinator(False, "Telegram /resume", source)
         return "RESUMED — normal operation."
@@ -324,7 +343,32 @@ class KillSwitch:
 
         # Wire enforce: when transitioning to ACTIVE, automatically close positions
         if state == KillSwitchState.ACTIVE and old_state != KillSwitchState.ACTIVE:
-            self.enforce(self._close_mode, self._broker_adapter)
+            result = self.enforce(self._close_mode, self._broker_adapter)
+            failed = result.get("failed", [])
+            remaining = result.get("remaining", [])
+            if failed or remaining:
+                # Escalate: positions failed to close — record in history + log critical
+                fail_summary = f"enforce_failed={len(failed)} remaining={len(remaining)}"
+                self._append_history(f"ENFORCE_ESCALATION: {fail_summary}", authorized_by)
+                self._save()
+                logger.critical(
+                    "kill_switch.enforce_escalation reason=%s failed=%d remaining=%d",
+                    reason,
+                    len(failed),
+                    len(remaining),
+                )
+                # Notify via Telegram if notifier available
+                try:
+                    from ..monitoring.telegram_notify import TelegramNotifier
+
+                    notifier = TelegramNotifier()
+                    notifier.risk_alert(
+                        f"KILL SWITCH ENFORCE FAILED: {fail_summary}. "
+                        f"Failed tickets: {[f.get('ticket') for f in failed]}. "
+                        f"MANUAL INTERVENTION REQUIRED."
+                    )
+                except Exception:
+                    pass  # Best-effort notification
 
     def _append_history(self, action: str, user: Any) -> None:
         history: list[dict[str, str]] = self._state.get("history", [])
@@ -334,42 +378,65 @@ class KillSwitch:
 
     def _load(self) -> dict[str, Any]:
         if self._state_file.exists():
-            try:
-                return json.loads(self._state_file.read_text(encoding="utf-8"))
-            except (json.JSONDecodeError, ValueError) as exc:
-                logger.critical(
-                    "kill_switch: state file corrupted — fail-closed default. " "file=%s error=%s",
-                    self._state_file,
-                    exc,
-                )
-                # Best-effort quarantine of the corrupted file for forensics.
-                corrupt_name = f"{self._state_file.stem}.corrupt.{int(time.time())}.json"
-                corrupt_path = self._state_file.with_name(corrupt_name)
+            max_attempts = 3
+            for attempt in range(max_attempts):
                 try:
-                    self._state_file.rename(corrupt_path)
+                    return json.loads(self._state_file.read_text(encoding="utf-8"))
+                except PermissionError:
+                    # Windows: file locked by another process, retry with backoff
+                    if attempt < max_attempts - 1:
+                        time.sleep(0.1 * (2**attempt))
+                    else:
+                        # Persistent lock — fail-closed
+                        logger.critical(
+                            "kill_switch: state file locked by another process — fail-closed default. file=%s",
+                            self._state_file,
+                        )
+                        return {
+                            "state": KillSwitchState.ACTIVE.value,
+                            "killed_classes": [],
+                            "killed_symbols": [],
+                            "reason": "State file locked by another process — fail-closed default",
+                            "activated_at_utc": datetime.now(UTC).isoformat(),
+                            "authorized_by": "system:fail_closed",
+                            "history": [],
+                        }
+                except (json.JSONDecodeError, ValueError) as exc:
                     logger.critical(
-                        "kill_switch: corrupted state file quarantined to %s",
-                        corrupt_path,
+                        "kill_switch: state file corrupted — fail-closed default. " "file=%s error=%s",
+                        self._state_file,
+                        exc,
                     )
-                except OSError as rename_exc:
-                    logger.critical(
-                        "kill_switch: failed to quarantine corrupted state file: %s",
-                        rename_exc,
-                    )
-                # Fail-closed: a corrupted kill-switch state cannot be trusted,
-                # so default to ACTIVE (block all trading) until manually cleared.
-                return {
-                    "state": KillSwitchState.ACTIVE.value,
-                    "killed_classes": [],
-                    "reason": "State file missing or corrupted — fail-closed default",
-                    "activated_at_utc": datetime.now(UTC).isoformat(),
-                    "authorized_by": "system:fail_closed",
-                    "history": [],
-                }
+                    # Best-effort quarantine of the corrupted file for forensics.
+                    corrupt_name = f"{self._state_file.stem}.corrupt.{int(time.time())}.json"
+                    corrupt_path = self._state_file.with_name(corrupt_name)
+                    try:
+                        self._state_file.rename(corrupt_path)
+                        logger.critical(
+                            "kill_switch: corrupted state file quarantined to %s",
+                            corrupt_path,
+                        )
+                    except OSError as rename_exc:
+                        logger.critical(
+                            "kill_switch: failed to quarantine corrupted state file: %s",
+                            rename_exc,
+                        )
+                    # Fail-closed: a corrupted kill-switch state cannot be trusted,
+                    # so default to ACTIVE (block all trading) until manually cleared.
+                    return {
+                        "state": KillSwitchState.ACTIVE.value,
+                        "killed_classes": [],
+                        "killed_symbols": [],
+                        "reason": "State file missing or corrupted — fail-closed default",
+                        "activated_at_utc": datetime.now(UTC).isoformat(),
+                        "authorized_by": "system:fail_closed",
+                        "history": [],
+                    }
         # Normal first-run case: file missing → INACTIVE.
         return {
             "state": KillSwitchState.INACTIVE.value,
             "killed_classes": [],
+            "killed_symbols": [],
             "reason": "",
             "activated_at_utc": None,
             "authorized_by": "",
@@ -377,29 +444,44 @@ class KillSwitch:
         }
 
     def _save(self) -> None:
-        """Save state atomically using temp file + rename."""
+        """Save state atomically using temp file + rename with retry.
+
+        On Windows, os.replace() can fail with PermissionError when another
+        process has the file open (mandatory file locking). This is retried
+        with exponential backoff up to 3 attempts.
+        """
+        import contextlib
         import tempfile
 
         path = self._state_file
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Write to temp file first
-        fd, tmp_path = tempfile.mkstemp(
-            dir=str(path.parent),
-            prefix=".kill_switch_",
-            suffix=".tmp",
-        )
-        try:
-            with os.fdopen(fd, "w") as f:
-                json.dump(self._state, f, indent=2)
-                f.flush()
-                os.fsync(f.fileno())
-            # Atomic rename
-            os.replace(tmp_path, str(path))
-        except Exception:
-            # Clean up temp file on failure
-            import contextlib
+        max_attempts = 3
+        for attempt in range(max_attempts):
+            fd, tmp_path = tempfile.mkstemp(
+                dir=str(path.parent),
+                prefix=".kill_switch_",
+                suffix=".tmp",
+            )
+            try:
+                with os.fdopen(fd, "w") as f:
+                    json.dump(self._state, f, indent=2)
+                    f.flush()
+                    os.fsync(f.fileno())
+                os.replace(tmp_path, str(path))
+                return  # Success
+            except PermissionError:
+                # Windows: another process has the file locked.
+                # Clean up temp file and retry with backoff.
+                with contextlib.suppress(OSError):
+                    os.unlink(tmp_path)
+                if attempt < max_attempts - 1:
+                    import time
 
-            with contextlib.suppress(OSError):
-                os.unlink(tmp_path)
-            raise
+                    time.sleep(0.1 * (2**attempt))  # 0.1s, 0.2s
+                else:
+                    raise
+            except Exception:
+                with contextlib.suppress(OSError):
+                    os.unlink(tmp_path)
+                raise

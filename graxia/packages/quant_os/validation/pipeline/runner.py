@@ -119,8 +119,19 @@ class ValidationRunner:
         return result
 
     def _get_data(self, result: PipelineResult, name: str) -> dict | None:
+        """Return workstream data dict, or None if workstream was never run.
+
+        WS-C: Differentiates between 'never run' (None) and 'ran but errored'
+        (returns sentinel dict with _error=True) so the gate engine does not
+        silently skip crashed workstreams.
+        """
         ws = result.results.get(name)
-        return ws.data if ws and ws.success else None
+        if ws is None:
+            return None  # workstream was never scheduled/run
+        if ws.success:
+            return ws.data
+        # Workstream ran but errored — return sentinel for gate engine
+        return {"_error": True, "_name": name, "_message": ws.error}
 
     # ── Workstream implementations ──────────────────────────────────────────
 
@@ -189,7 +200,6 @@ class ValidationRunner:
                 n_windows = self.config.wfa_n_windows
                 window_size = len(returns) // n_windows
                 is_size = int(window_size * self.config.wfa_is_ratio)
-                oos_size = window_size - is_size
 
                 window_results = []
                 for w in range(n_windows):
@@ -248,7 +258,7 @@ class ValidationRunner:
         try:
             # Generate trade PnLs from TSM strategy returns
             all_returns = []
-            for sym, raw in data_cache.items():
+            for _sym, raw in data_cache.items():
                 closes = [bar["close"] for bar in raw[-5000:]]
                 rets = self._compute_tsm_returns(closes, lookback=20)
                 all_returns.extend(rets)
@@ -287,43 +297,59 @@ class ValidationRunner:
             return ValidationResult(name="monte_carlo", success=False, error=str(e), elapsed_sec=time.time() - start)
 
     def _run_dsr(self, data_cache: dict) -> ValidationResult:
-        """Deflated Sharpe Ratio using actual TSM strategy returns."""
+        """Deflated Sharpe Ratio using actual TSM strategy returns.
+
+        SP1 (2026-08-04): replaced the governance/validation_stack pseudo-DSR
+        (no sigma(SR), no z, no probability) and the strategies.walk_forward
+        probability alias with the canonical unit-correct implementation.
+        The annualized Sharpe is de-annualized via dsr_from_annualized using
+        the same bars-per-year factor _calc_sharpe applies, so z and
+        probability_alpha are computed on raw per-bar units. Gate semantics:
+        probability_alpha (P(false positive)) must be < 0.05 to pass.
+        """
         start = time.time()
         try:
             # Calculate Sharpe from TSM strategy returns
             all_returns = []
-            for sym, raw in data_cache.items():
+            for _sym, raw in data_cache.items():
                 closes = [bar["close"] for bar in raw[-5000:]]
                 rets = self._compute_tsm_returns(closes, lookback=20)
                 all_returns.extend(rets)
 
             sharpe = self._calc_sharpe(all_returns)
             n_bars = len(all_returns)
+            bars_per_year = self._bars_per_year()
 
-            # Use existing DSR check
-            from ...governance.validation_stack import DeflatedSharpeRatio
+            # Resolve n_trials: use config override if set, else central reconciled N
+            n_trials = self._resolve_n_trials()
 
-            dsr_check = DeflatedSharpeRatio().run(
-                sharpe=sharpe,
-                n_trials=self.config.dsr_n_trials,
-                n_bars=n_bars,
+            # Canonical DSR (Bailey & Lopez de Prado 2014) with unit-correct
+            # de-annualization: sharpe is annualized via sqrt(bars_per_year).
+            from ...validation.deflated_sharpe import dsr_from_annualized
+
+            dsr = dsr_from_annualized(
+                observed_sharpe=sharpe,
+                n_trials=n_trials,
+                n_observations=n_bars,
+                annualization_factor=bars_per_year,
             )
-
-            # Also compute using strategies.walk_forward._deflated_sharpe
-            from ...strategies.walk_forward import _deflated_sharpe
-
-            dsr_value = _deflated_sharpe(sharpe, self.config.dsr_n_trials)
 
             return ValidationResult(
                 name="dsr",
                 success=True,
                 data={
                     "observed_sharpe": round(sharpe, 4),
-                    "deflated_sharpe": round(dsr_value, 4),
-                    "n_trials": self.config.dsr_n_trials,
+                    "deflated_sharpe": round(dsr.probability_alpha, 4),
+                    "probability_alpha": round(dsr.probability_alpha, 4),
+                    "n_trials": n_trials,
                     "n_bars": n_bars,
-                    "check_passed": dsr_check.passed,
-                    "check_details": dsr_check.details,
+                    "bars_per_year": bars_per_year,
+                    "check_passed": dsr.passes_threshold,
+                    "check_details": (
+                        f"prob_alpha={dsr.probability_alpha:.4f} "
+                        f"expected_max_adj={dsr.multiple_testing_adjustment:.4f} "
+                        f"annualization_factor={bars_per_year}"
+                    ),
                 },
                 elapsed_sec=time.time() - start,
             )
@@ -368,11 +394,19 @@ class ValidationRunner:
                     strategy_returns[f"config_{i}"] = periods
 
             if len(strategy_returns) < 2:
-                # Fallback: simple PBO from OOS degradation
-                pbo_val = 0.5  # uncertain
-            else:
-                pbo_result = calculate_pbo_from_matrix(strategy_returns, n_combinations=128)
-                pbo_val = pbo_result.pbo
+                # Cannot compute PBO with fewer than 2 strategy configs.
+                # Previously returned pbo_val=0.5 (threshold boundary) which
+                # was indistinguishable from a real result. Now fails explicitly.
+                return ValidationResult(
+                    name="pbo",
+                    success=False,
+                    error=f"PBO requires >= 2 strategy configs, got {len(strategy_returns)}. "
+                    f"Return series too short for CSCV matrix construction.",
+                    elapsed_sec=time.time() - start,
+                )
+
+            pbo_result = calculate_pbo_from_matrix(strategy_returns, n_combinations=128)
+            pbo_val = pbo_result.pbo
 
             return ValidationResult(
                 name="pbo",
@@ -394,7 +428,7 @@ class ValidationRunner:
             from ...backtest.metrics import bootstrap_metric_ci
 
             all_returns = []
-            for sym, raw in data_cache.items():
+            for _sym, raw in data_cache.items():
                 closes = [bar["close"] for bar in raw[-5000:]]
                 rets = self._compute_tsm_returns(closes, lookback=20)
                 all_returns.extend(rets)
@@ -439,7 +473,7 @@ class ValidationRunner:
         start = time.time()
         try:
             all_returns = []
-            for sym, raw in data_cache.items():
+            for _sym, raw in data_cache.items():
                 closes = [bar["close"] for bar in raw[-5000:]]
                 rets = self._compute_tsm_returns(closes, lookback=20)
                 all_returns.extend(rets)
@@ -504,16 +538,13 @@ class ValidationRunner:
         start = time.time()
         try:
             all_returns = []
-            for sym, raw in data_cache.items():
+            for _sym, raw in data_cache.items():
                 closes = [bar["close"] for bar in raw[-5000:]]
                 rets = self._compute_tsm_returns(closes, lookback=20)
                 all_returns.extend(rets)
 
             if not all_returns:
                 return ValidationResult(name="synthetic", success=False, error="No data")
-
-            mu = np.mean(all_returns)
-            sigma = np.std(all_returns)
 
             # Block bootstrap paths
             block_size = self.config.synthetic_block_size
@@ -574,8 +605,27 @@ class ValidationRunner:
                     continue
         return rows
 
+    def _resolve_n_trials(self) -> int:
+        """Resolve the n_trials for DSR: config override or central reconciled N.
+
+        WS-C: If the config explicitly sets dsr_n_trials, use it.
+        Otherwise, fall back to the authoritative reconciled cumulative N
+        from validation.n_trials.
+        """
+        if self.config.dsr_n_trials is not None:
+            return self.config.dsr_n_trials
+        from ...validation.n_trials import get_reconciled_n_trials
+
+        return get_reconciled_n_trials()  # type: ignore[no-any-return]
+
     def _calc_sharpe(self, returns: list[float]) -> float:
-        """Calculate annualized Sharpe ratio."""
+        """Calculate annualized Sharpe ratio.
+
+        SP1 (2026-08-04): annualization factor now comes from the config's
+        timeframe + asset class via _bars_per_year() instead of a hardcoded
+        sqrt(252). The old factor understated Sharpe for H1 (6048 bars/yr)
+        by ~4.9x (sqrt(252) vs sqrt(6048)).
+        """
         if len(returns) < 2:
             return 0.0
         mean = sum(returns) / len(returns)
@@ -583,7 +633,31 @@ class ValidationRunner:
         std = math.sqrt(var) if var > 0 else 0.0
         if std == 0:
             return 0.0
-        return mean / std * math.sqrt(252)  # annualized
+        return mean / std * math.sqrt(self._bars_per_year())  # annualized
+
+    def _bars_per_year(self) -> int:
+        """Resolve bars-per-year for the configured timeframe/asset class.
+
+        Uses backtest.metrics.BARS_PER_YEAR with per-symbol asset-class
+        detection; falls back to 252 (daily) when unknown.
+        """
+        from ...backtest.metrics import BARS_PER_YEAR
+
+        syms = self.config.symbols
+        asset_class = "_default"
+        for sym in syms:
+            up = sym.upper()
+            if up.startswith(("XAU", "XAG")):
+                asset_class = "metals"
+                break
+            if up.startswith(("BTC", "ETH")):
+                asset_class = "crypto"
+                break
+            if up.startswith(("NAS", "US30", "SPX", "DJI")):
+                asset_class = "indices"
+                break
+            asset_class = "forex"
+        return BARS_PER_YEAR.get((asset_class, self.config.timeframe), BARS_PER_YEAR[("_default", "D1")])
 
     def _calc_max_dd_from_returns(self, returns: list[float]) -> float:
         """Calculate max drawdown from return series."""

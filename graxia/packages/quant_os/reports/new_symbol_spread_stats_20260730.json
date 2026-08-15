@@ -1,0 +1,54 @@
+{
+  "BTCUSD": {
+    "measured": 2.5107,
+    "p95": 4.0662,
+    "mean": 2.6718,
+    "min": 2.4236,
+    "max": 18.2211,
+    "std": 0.759,
+    "n_before_filter": 459996,
+    "n_after_filter": 459996,
+    "n_dropped": 0,
+    "window_start": "2026-06-25 09:28:39",
+    "window_end": "2026-06-26 12:28:52"
+  },
+  "EURUSD": {
+    "measured": 0.088,
+    "p95": 0.3523,
+    "mean": 0.1455,
+    "min": 0.0877,
+    "max": 34.4968,
+    "std": 0.3349,
+    "n_before_filter": 408861,
+    "n_after_filter": 132790,
+    "n_dropped": 276071,
+    "window_start": "2026-06-25 09:35:56",
+    "window_end": "2026-06-26 12:35:55"
+  },
+  "GBPUSD": {
+    "measured": 0.0758,
+    "p95": 0.1516,
+    "mean": 0.1456,
+    "min": 0.0756,
+    "max": 11.3629,
+    "std": 0.4726,
+    "n_before_filter": 622772,
+    "n_after_filter": 214512,
+    "n_dropped": 408260,
+    "window_start": "2026-06-25 09:36:12",
+    "window_end": "2026-06-26 12:36:09"
+  },
+  "US30": {
+    "measured": 0.2307,
+    "p95": 0.2316,
+    "mean": 0.1904,
+    "min": 0.1329,
+    "max": 1.9642,
+    "std": 0.0638,
+    "n_before_filter": 193789,
+    "n_after_filter": 193782,
+    "n_dropped": 7,
+    "window_start": "2026-06-25 09:36:00",
+    "window_end": "2026-06-26 12:36:03"
+  }
+}

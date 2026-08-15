@@ -1,0 +1,10 @@
+{
+  "real_sharpe": -0.5568011891965142,
+  "null_mean": 0.2715125388026099,
+  "null_std": 2.1752887885461734,
+  "null_95th_percentile": 3.424480180973861,
+  "p_value": 0.66,
+  "survives": false,
+  "n_permutations": 100,
+  "n_bars": 4999
+}

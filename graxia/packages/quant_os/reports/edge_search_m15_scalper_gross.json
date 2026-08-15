@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "method": "post-hoc cost reconstruction (mult=0.0), same trade set",
+    "source": "edge_search_m15_scalper_core4.json",
+    "generated": "2026-08-05T23:31:20.121692+00:00",
+    "diagnostic_only": true,
+    "verdict_unchanged": true,
+    "note": "Generated 2026-08-06 cleanup: EURUSD excluded due to fail-closed null slippage (see blocked). Verdicts unchanged. XAUUSD=1034; USDJPY/GBPUSD=1035 legs; EURUSD=1035 leg blocked."
+  },
+  "per_asset": {
+    "XAUUSD": {
+      "n_trades": 2432,
+      "gross_sharpe_daily": -0.0588,
+      "gross_pf": 0.9883,
+      "gross_win_pct": 43.91,
+      "gross_total_return_pct": -10.74,
+      "gross_monthly_pct": -0.421,
+      "net_sharpe_daily": -0.6228,
+      "cost_erosion_sharpe": -0.564,
+      "break_even_mult": 0.0,
+      "break_even_round_trip_bps": 0.0,
+      "measured_round_trip_bps": 0.65,
+      "classification": "structural"
+    },
+    "USDJPY": {
+      "n_trades": 895,
+      "gross_sharpe_daily": -0.7268,
+      "gross_pf": 0.9182,
+      "gross_win_pct": 46.82,
+      "gross_total_return_pct": -11.9,
+      "gross_monthly_pct": -0.411,
+      "net_sharpe_daily": -3.5006,
+      "cost_erosion_sharpe": -2.7737,
+      "break_even_mult": 0.0,
+      "break_even_round_trip_bps": 0.0,
+      "measured_round_trip_bps": 7.25,
+      "classification": "structural"
+    },
+    "GBPUSD": {
+      "n_trades": 371,
+      "gross_sharpe_daily": 2.2082,
+      "gross_pf": 1.2289,
+      "gross_win_pct": 53.1,
+      "gross_total_return_pct": 28.6,
+      "gross_monthly_pct": 1.183,
+      "net_sharpe_daily": -0.6935,
+      "cost_erosion_sharpe": -2.9017,
+      "break_even_mult": 0.7566,
+      "break_even_round_trip_bps": 5.41,
+      "measured_round_trip_bps": 7.15,
+      "classification": "cost_driven"
+    }
+  },
+  "break_even": {
+    "XAUUSD": {
+      "break_even_mult": 0.0,
+      "break_even_round_trip_bps": 0.0,
+      "measured_round_trip_bps": 0.65,
+      "classification": "structural"
+    },
+    "USDJPY": {
+      "break_even_mult": 0.0,
+      "break_even_round_trip_bps": 0.0,
+      "measured_round_trip_bps": 7.25,
+      "classification": "structural"
+    },
+    "GBPUSD": {
+      "break_even_mult": 0.7566,
+      "break_even_round_trip_bps": 5.41,
+      "measured_round_trip_bps": 7.15,
+      "classification": "cost_driven"
+    }
+  },
+  "summary": {
+    "n_assets": 3,
+    "n_cost_driven": 1,
+    "n_structural": 2
+  },
+  "blocked": {
+    "EURUSD": "NOT RUN: slippage_bps_measured is null in cost_calibration.json (engine fail-closed, UnmeasuredCostError). Diagnostic-only; trial 1035 verdict REJECTED stands regardless (registry + post-mortem)."
+  }
+}

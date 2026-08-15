@@ -15,11 +15,11 @@ class HealthMonitor:
         self._threshold = stale_threshold_seconds
         self._consecutive_failures = 0
 
-    def record_success(self):
+    def record_success(self) -> None:
         self._last_success = time.time()
         self._consecutive_failures = 0
 
-    def record_failure(self):
+    def record_failure(self) -> None:
         self._consecutive_failures += 1
 
     def is_stale(self) -> bool:

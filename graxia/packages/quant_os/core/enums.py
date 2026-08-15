@@ -206,6 +206,7 @@ class CloseReason(str, Enum):
     EXPIRED = "EXPIRED"
     REVERSE_SIGNAL = "REVERSE_SIGNAL"
     AMBIGUOUS = "AMBIGUOUS"
+    TIME_STOP = "TIME_STOP"
 
 
 class ReconciliationStatus(str, Enum):

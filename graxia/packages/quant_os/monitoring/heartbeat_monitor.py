@@ -48,7 +48,7 @@ def _load_heartbeat() -> dict | None:
         raw = HEARTBEAT_PATH.read_text().strip()
         # Support legacy plain-timestamp format
         if raw.startswith("{"):
-            return json.loads(raw)
+            return json.loads(raw)  # type: ignore[no-any-return]
         else:
             # Legacy ISO timestamp string
             return {"timestamp_utc": raw}

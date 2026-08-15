@@ -1,0 +1,3487 @@
+{
+ "source": "academic",
+ "entries": [
+  {
+   "name": "Measuring the engine of a liquidation cascade: subcritical branching inside a first-order transition",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2608.03616v1",
+   "mechanism": "other",
+   "symbol": "crypto",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We study seven major crypto-perpetual liquidation cascades (2022-2025), and in the largest of them we can watch the mechanism directly. From the on-chain fill log of a fully transparent venue we measure the branching rat...",
+   "evidence_tier": "literature",
+   "published": "2026-08-04"
+  },
+  {
+   "name": "A New Approach to Goodness of Fit for Ergodic Markov Processes",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2608.03088v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We introduce a new density-based goodness of fit test for ergodic Markov processes. Our test compares the data against the class of models specified in the null hypothesis, and rejects if no model in the class yields a s...",
+   "evidence_tier": "literature",
+   "published": "2026-08-04"
+  },
+  {
+   "name": "Proper-score observation-driven filters: local geometry, estimation, and continuous-time limits",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2608.02828v1",
+   "mechanism": "microstructure",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Observation-driven filters update a time-varying parameter with the likelihood score, linking the recursion to the logarithmic scoring rule. We replace this update with the negative parameter derivative of a differentiab...",
+   "evidence_tier": "literature",
+   "published": "2026-08-03"
+  },
+  {
+   "name": "AI Governance for Institutional Readiness in Finance",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2608.02311v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Agentic AI is gaining acceptance in asset management, but governance has not kept pace: 88% of surveyed finance professionals report no operational governance framework for agentic AI despite universal awareness of its d...",
+   "evidence_tier": "literature",
+   "published": "2026-08-03"
+  },
+  {
+   "name": "AI and Exchange Rate Predictability",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2608.00761v1",
+   "mechanism": "event",
+   "symbol": "FX",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "A simple trading strategy that goes long currencies with strong fundamentals and short currencies with weak fundamentals generates a Sharpe ratio exceeding 0.",
+   "evidence_tier": "literature",
+   "published": "2026-08-01"
+  },
+  {
+   "name": "Drawdown Risk Beyond Brownian Motion: A Monte-Carlo Framework, Non-Gaussian Extensions, and Long Memory",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2608.00127v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We then relax the Gaussian assumption, holding the true Sharpe and volatility fixed while varying skewness, fat tails, volatility clustering and Sharpe-estimation uncertainty across strategy archetypes; the four measures move differently, so a single Gaussian table mis-warns.",
+   "evidence_tier": "literature",
+   "published": "2026-07-31"
+  },
+  {
+   "name": "Effort-Centric Fairness in Lending Decisions",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.28847v1",
+   "mechanism": "event",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Algorithmic credit scoring must satisfy fairness and explanation requirements, yet prevailing predictive-parity criteria assess only outcomes at the decision point. They can therefore overlook whether rejected applicants...",
+   "evidence_tier": "literature",
+   "published": "2026-07-30"
+  },
+  {
+   "name": "Bootstrap inference in autoregressive duration models",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.28294v1",
+   "mechanism": "seasonality",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "This paper develops bootstrap inference for autoregressive conditional duration (ACD) models observed over a fixed calendar span, so that the number of durations is random. We study recursive schemes that either fix the...",
+   "evidence_tier": "literature",
+   "published": "2026-07-30"
+  },
+  {
+   "name": "Boundary-Induced Apparent Risk Aversion in Nonergodic Multiplicative Growth",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.28230v2",
+   "mechanism": "mean_reversion",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Observed risk-taking behavior is often rationalized through expected-utility curvature, yet the curvature required to fit choices in one context can differ sharply from the curvature required in another, a tension highli...",
+   "evidence_tier": "literature",
+   "published": "2026-07-30"
+  },
+  {
+   "name": "FinSMART: Financial Sentiment Analysis for Algorithmic Trading through Market-Aligned Reinforcement Learning",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.28127v1",
+   "mechanism": "event",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Experimental results demonstrate that FinSMART significantly outperforms existing state-of-the-art methods in profitability, risk-adjusted performance, and sentiment signal quality, improving cumulative trading returns by 220% over the strongest baseline.",
+   "evidence_tier": "literature",
+   "published": "2026-07-30"
+  },
+  {
+   "name": "Are Three Matrices All You Need To Beat the Market? Observable Matrix Dynamics for Portfolio Optimization",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.27461v1",
+   "mechanism": "momentum",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "A portfolio built on the forecasts, a market-neutral momentum long-short blended with an opportunistic long-only sleeve, beats the market on two non-overlapping out-of-sample test sets, January 2022 to December 2024 and January 2025 to July 2026, at Sharpes of $1.",
+   "evidence_tier": "literature",
+   "published": "2026-07-29"
+  },
+  {
+   "name": "Inverse Learning of Latent Risk-Neutral Densities from Irregular Option Quotes",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.27188v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Accurate option prices do not imply accurate recovery of the latent risk-neutral density. We study this distinction with two complementary benchmarks. A controlled benchmark exposes simulator-truth densities for latent e...",
+   "evidence_tier": "literature",
+   "published": "2026-07-29"
+  },
+  {
+   "name": "Rainfall is rough",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.27099v1",
+   "mechanism": "microstructure",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We propose a new approach to model rainfall by combining heterogeneous data sources at different time scales. Continuous arrivals of rain cells are incorporated into a Hawkes process formalism that encompasses the classi...",
+   "evidence_tier": "literature",
+   "published": "2026-07-29"
+  },
+  {
+   "name": "Where does the criticality live? Early-warning signals are event-heterogeneous across seven crypto-perpetual liquidation cascades",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.27070v1",
+   "mechanism": "carry",
+   "symbol": "BTCUSD",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Do crypto perpetual-futures crashes carry a reproducible early-warning fingerprint of a critical transition, and in which state variable? We study seven major BTC liquidation cascades (2022-2025, including the record 19B...",
+   "evidence_tier": "literature",
+   "published": "2026-07-29"
+  },
+  {
+   "name": "Bitcoin Runs on a Clock: Why Every Price Indicator Dies and the Halving Clock Doesn't",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.26188v1",
+   "mechanism": "other",
+   "symbol": "BTCUSD",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Every widely followed Bitcoin cycle indicator (Pi Cycle, MVRV, Mayer, Puell) called turns precisely for a decade, then degraded in one sequence: precise, then early, then silent. This is one structural phenomenon. Across...",
+   "evidence_tier": "literature",
+   "published": "2026-07-28"
+  },
+  {
+   "name": "Emergent Latent-State Computation under Stochastic Volatility",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.25459v1",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "In long-cycle regimes, this computation simplifies into an explicit latent-state filter consisting of a learned linear projection followed by $\\ell^2$ normalization.",
+   "evidence_tier": "literature",
+   "published": "2026-07-28"
+  },
+  {
+   "name": "Long-memory GARCH via a two-dimensional Markov chain",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.25189v1",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Empirically, the model captures a substantial portion of observed volatility persistence and delivers competitive out-of-sample forecast accuracy using only a two-dimensional Markov state.",
+   "evidence_tier": "literature",
+   "published": "2026-07-28"
+  },
+  {
+   "name": "The Fundamental Structure of Risk: From Characteristics to Covariance",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.24410v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Estimating the covariance structure of financial assets typically relies on historical returns, making risk models dependent on noisy and asset-specific time series. We propose the Characteristic-Driven Dynamic Factor Mo...",
+   "evidence_tier": "literature",
+   "published": "2026-07-27"
+  },
+  {
+   "name": "Variational Quantum Conditional Boltzmann Machines for Time-Series Forecasting: Architectures, Symmetric Hyperparameter Evaluation, and a Nonlinear Benchmark",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.24065v1",
+   "mechanism": "regime",
+   "symbol": "futures",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "In this study, we developed and evaluated four conditional energy-based forecasting architectures: a classical Gaussian-Bernoulli CRBM, a hybrid quantum-classical QCRBM, a full-register QQRBM, and a lag-feature QFeatureQ...",
+   "evidence_tier": "literature",
+   "published": "2026-07-27"
+  },
+  {
+   "name": "Are cryptocurrencies real financial bubbles? Evidence from quantitative analyses",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.21826v1",
+   "mechanism": "event",
+   "symbol": "crypto",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "The growth of peer-to-peer exchanges and the blockchain technology has led to a proliferation of cryptocurrencies and to a massive increase in the number of investors who actually negotiate digital money. Cryptocurrencie...",
+   "evidence_tier": "literature",
+   "published": "2026-07-23"
+  },
+  {
+   "name": "Retail Trader's Ruin: An Anatomy of Popular Signal Failure",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.20093v1",
+   "mechanism": "momentum",
+   "symbol": "ALL",
+   "timeframe": "intraday",
+   "params": {
+    "frequency": "intraday"
+   },
+   "claimed_perf": "We test whether five widely promoted retail signal families - trend, oscillator, candlestick, volume, and calendar rules - deliver a positive, economically meaningful, net-of-cost, and survivable edge. Practical viabilit...",
+   "evidence_tier": "literature",
+   "published": "2026-07-22"
+  },
+  {
+   "name": "The Science and Practice of Trend-Following Systems",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.19497v1",
+   "mechanism": "momentum",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "In the frequency domain, the expected return is represented as a Poisson-kernel reading of the analytical or empirical spectrum of the volatility-normalized returns: the system profits at zero drift when the kernel-weighted spectral mass exceeds one, so trend-following alpha is excess spectral mass at low frequencies.",
+   "evidence_tier": "literature",
+   "published": "2026-07-21"
+  },
+  {
+   "name": "Predictive Extrema, Unprofitable Policies: An AI-Assisted Audit of Candle-Based Binance Spot Timing Models",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.19453v1",
+   "mechanism": "event",
+   "symbol": "crypto",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We audit whether candle-based machine-learning models can turn predictions of cryptocurrency extrema or short-horizon outcomes into positive Binance Spot paper policies after assumed costs. Numerical results come from sc...",
+   "evidence_tier": "literature",
+   "published": "2026-07-21"
+  },
+  {
+   "name": "Observable Matrix Dynamics of Stocks",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.19005v2",
+   "mechanism": "carry",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "The Observable Matrix Dynamics (OMD) approach monitors the time development of complex non-linear systems through the trajectory of a fixed-size distance matrix and its spectrum. We apply it to the S\\&P 500 cross section...",
+   "evidence_tier": "literature",
+   "published": "2026-07-21"
+  },
+  {
+   "name": "Mixing-Law Uncertainty in Multivariate Normal Mean-Variance Mixtures: Semi-parametric Estimation and Robust Cumulative-Prospect Decisions",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.18813v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "The distribution of a normal mean-variance mixture depends on the law of its positive mixing variable. We compare six parametric mixing laws with a grid nonparametric maximum likelihood estimator under the same determina...",
+   "evidence_tier": "literature",
+   "published": "2026-07-21"
+  },
+  {
+   "name": "Thermodynamic theory of voting and EU elections",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.15119v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We introduce a thermodynamic theory of voting and show that it provides a good description of distribution of party votes in EU elections. The theory traces parallels between system energies of coupled nonlinear oscillat...",
+   "evidence_tier": "literature",
+   "published": "2026-07-16"
+  },
+  {
+   "name": "How Much of a 10-K Matters? Aggregation-Dependent Value of Full-Text versus Risk-Factor Sentiment",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.14174v1",
+   "mechanism": "event",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Across 1,383 filings from 94 Nasdaq-100 technology constituents (2006--2023), we evaluate the resulting twelve sentiment metrics on classification accuracy, correlation with realised market outcomes, and qualitative lexical content.",
+   "evidence_tier": "literature",
+   "published": "2026-07-15"
+  },
+  {
+   "name": "Statistical Properties and Power Analysis of Divergence Measures for Credit Risk Model Monitoring",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.12407v1",
+   "mechanism": "other",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Divergence measures are essential tools for detecting distributional shifts in model monitoring, particularly crucial given the volatility of financial data. While the Population Stability Index is the most widely used m...",
+   "evidence_tier": "literature",
+   "published": "2026-07-14"
+  },
+  {
+   "name": "When Directional Accuracy Lies: A Base-Rate-Honest Benchmark for LoRA-Adapted TimesFM on Equity Forecasting",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.12248v2",
+   "mechanism": "microstructure",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Large pretrained time-series models such as TimesFM are attractive for financial forecasting, but raw directional accuracy is a misleading scoreboard in equity markets.",
+   "evidence_tier": "literature",
+   "published": "2026-07-14"
+  },
+  {
+   "name": "Recovering Structural Organization in Noisy Correlation Networks Using Financial Systems as a Testbed",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.10297v1",
+   "mechanism": "carry",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "As a practical application, portfolios constructed from peripheral assets of the denoised networks consistently outperform portfolios based on unfiltered correlations and standard benchmarks on a risk-adjusted basis, with robustness verified through Monte Carlo subsampling.",
+   "evidence_tier": "literature",
+   "published": "2026-07-11"
+  },
+  {
+   "name": "Depth-Efficient Quantum Topological Data Analysis for Regime-Specific Detection of Financial Stress",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.09906v1",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We present, to our knowledge, the first adaptation of Pauli Correlation Encoding (PCE) to quantum topological data analysis, reformulating Betti number estimation as a depth-efficient variational optimization over a comp...",
+   "evidence_tier": "literature",
+   "published": "2026-07-10"
+  },
+  {
+   "name": "A Novel Hybrid Quantum Reservoir Computing (nHQRC) for Phase Transition Detection in Non-Equilibrium Dynamical Systems",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.16281v1",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "The analysis of highly non-linear stochastic data within non-equilibrium dynamical systems requires computational frameworks capable of detecting latent phase transitions before systemic structural breakdowns occur. Trad...",
+   "evidence_tier": "literature",
+   "published": "2026-07-09"
+  },
+  {
+   "name": "Estimating the Stochastic Discount Factor from Option Prices and Predicting the Equity Premium",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.08500v2",
+   "mechanism": "event",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "This paper proposes a stochastic discount factor (SDF) scaled by time-varying volatility. By utilizing prices and market data implied solely from S\\&P 500 options, the proposed framework recovers a stable, non-monotonic...",
+   "evidence_tier": "literature",
+   "published": "2026-07-09"
+  },
+  {
+   "name": "Iterative detection of global factors near the BBP phase transition",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.06908v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Detecting the number of global factors in high-dimensional correlation matrices is a central problem in multivariate statistics and random matrix theory, with important implications for asset pricing and econophysics. Wh...",
+   "evidence_tier": "literature",
+   "published": "2026-07-08"
+  },
+  {
+   "name": "tsbootstrap: Distribution-Free Uncertainty Quantification and Conformal Prediction for Time Series",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.06690v1",
+   "mechanism": "event",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Finance, sensing, and demand streams violate the exchangeability that IID conformal prediction and the IID bootstrap assume, and existing libraries implement either a general resampling engine or conformal calibration wi...",
+   "evidence_tier": "literature",
+   "published": "2026-07-07"
+  },
+  {
+   "name": "Error Propagation in Spectral Functionals of Shrinkage Covariance Estimators: Perturbation Bounds and Calibrated Inference",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.06373v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Rolling covariance estimates feed two objects that are routinely treated as market structure. The first is the dominant eigenspace, monitored through the projector movement $\\widehat D_{K,t}=\\|\\widehat P_{K,t}-\\widehat P...",
+   "evidence_tier": "literature",
+   "published": "2026-07-07"
+  },
+  {
+   "name": "Entropic Dynamics of Jump-Diffusion Option Pricing",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.06355v1",
+   "mechanism": "other",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Standard models of stock price dynamics and option valuation usually begin by postulating stochastic processes. This paper develops an entropic inference framework that derives these processes from information constraint...",
+   "evidence_tier": "literature",
+   "published": "2026-07-07"
+  },
+  {
+   "name": "Stable Sentiment and Persistent Dynamics in U.S. Economic News over 45 Years",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.06220v1",
+   "mechanism": "mean_reversion",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Collective emotion is often inferred from the tone of mass media, but such emotion is not directly observed. One approximation is to extract sentiment from text and use sentiment indexes as proxies to study the temporal...",
+   "evidence_tier": "literature",
+   "published": "2026-07-07"
+  },
+  {
+   "name": "Forecasting Realized Volatility with Time Series Foundation Models: A Comparison with Econometric Benchmarks",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.05291v1",
+   "mechanism": "event",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We ask whether pretrained time series foundation models (TSFMs) improve on established econometric benchmarks for forecasting realized volatility. Using the VOLARE dataset, we conduct the first systematic comparison of n...",
+   "evidence_tier": "literature",
+   "published": "2026-07-06"
+  },
+  {
+   "name": "Overshooting the Coordinate: Where Factor Corrections Land on Characteristic Axes",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.05091v6",
+   "mechanism": "other",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Whole-stock capitalization prefixes are paired with equal realized exposure to the aggregate market, producing a bridge-alpha curve that localizes pricing errors within the market.",
+   "evidence_tier": "literature",
+   "published": "2026-07-06"
+  },
+  {
+   "name": "Local Gaussian Correlation in the Tails: A Scarcity Diagnostic, an Optimal Local Bandwidth, and the Limits of Adaptivity",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.03888v2",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Local Gaussian correlation (LGC) measures dependence locally, making it a natural tool for tail dependence and financial contagion, but its estimates degrade in the joint tails, where they are most needed. Location-adapt...",
+   "evidence_tier": "literature",
+   "published": "2026-07-04"
+  },
+  {
+   "name": "A Spectral Generalisation of the Variance Ratio: Eigenstructure of Long-Horizon Portfolio Covariance and a Multi-Memory Factor Model of U.S. Equity Returns",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.03858v1",
+   "mechanism": "momentum",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We propose a multivariate generalisation of the Lo-MacKinlay (1988) variance ratio that decomposes long-horizon equity-return dynamics into separate return-channel and volatility-channel memory components across the cros...",
+   "evidence_tier": "literature",
+   "published": "2026-07-04"
+  },
+  {
+   "name": "Portfolio Optimization and Tail-Risk Analytics of Actively Managed ETFs",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.03082v1",
+   "mechanism": "multi_asset",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Dynamic allocation does not improve all strategies uniformly: the long-only dynamic CVaR-95 portfolio is consistently attractive across several risk-adjusted criteria, whereas long--short dynamic tangency-CVaR portfolios perform strongly but are more sensitive to turnover and implementation costs.",
+   "evidence_tier": "literature",
+   "published": "2026-07-03"
+  },
+  {
+   "name": "Outcome-Classified Precision Auditing of Filter Rules in Algorithmic DEX Trading: Evidence from 2,400 Rejection Events",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.02830v1",
+   "mechanism": "trend_following",
+   "symbol": "ALL",
+   "timeframe": "D1",
+   "params": {
+    "lookback": 13,
+    "lookback_unit": "days"
+   },
+   "claimed_perf": "This paper reports a precision audit of a production filter stack against a 13-day window of post-rejection forward-market observations on Solana DEX trading (2026-04-10 to 2026-04-23, UTC). The audit yielded 99,510 foll...",
+   "evidence_tier": "literature",
+   "published": "2026-07-02"
+  },
+  {
+   "name": "Pump.fun Graduation Regime Windows: Survival Analysis of 832,941 Token Launches and the Social-Presence Effect",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.02823v1",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We present a Kaplan-Meier and Cox proportional-hazards survival analysis of 832,941 Solana pump.fun token launches with 24-hour graduation outcomes, observed continuously between 2026-05-08 and 2026-06-10. The pooled gra...",
+   "evidence_tier": "literature",
+   "published": "2026-07-02"
+  },
+  {
+   "name": "Coordinated Sniper Cohorts on Pump.fun: Detection of 1,012 Persistent Wallet Rings and a Contamination-Adjusted Estimate of Coordination-Specific First-Hour Buyer-Flow Lift",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.02795v3",
+   "mechanism": "orderflow",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Motivated by Kyle (1985) informed order flow and the Meiklejohn et al. (2013) wallet-clustering tradition, we ask whether persistent coordinated wallets causally raise first-hour buyer flow on the Solana pump.fun bonding...",
+   "evidence_tier": "literature",
+   "published": "2026-07-02"
+  },
+  {
+   "name": "A Cap-Axis Integral Diagnostic of Factor Models",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.01765v3",
+   "mechanism": "other",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Whole-stock capitalization prefixes are paired with equal realized exposure to the aggregate market, producing a bridge-alpha curve that localizes pricing errors within the market.",
+   "evidence_tier": "literature",
+   "published": "2026-07-02"
+  },
+  {
+   "name": "Liquidity Premium and Investment Horizons",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.01377v1",
+   "mechanism": "orderflow",
+   "symbol": "equities",
+   "timeframe": "D1",
+   "params": {
+    "frequency": "D1"
+   },
+   "claimed_perf": "We estimate Kyle's (1985) price-impact coefficient $λ$ directly from daily equity order flow and test its ability to forecast the cross-section of subsequent stock returns. Using CRSP data from 2020 to 2025, we construct...",
+   "evidence_tier": "literature",
+   "published": "2026-07-01"
+  },
+  {
+   "name": "End-to-End Parametric Portfolio Policies for Cross-Asset Futures Timing: When Do AI Models Beat Simple Rules?",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.00475v1",
+   "mechanism": "momentum",
+   "symbol": "futures",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We train these policies on the sixteen most liquid CME futures, where an edge is unlikely to be due to illiquidity, using a differentiable Sharpe ratio loss function, and we benchmark them against equal weighting, risk parity, and time-series momentum.",
+   "evidence_tier": "literature",
+   "published": "2026-07-01"
+  },
+  {
+   "name": "Real-time identification of the onset of financial rogue waves",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.31475v2",
+   "mechanism": "other",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Extreme events in financial systems, often captured by indicators such as volatility, remain difficult to identify close to their onset. Volatility shares many statistical properties with other natural, complex systems w...",
+   "evidence_tier": "literature",
+   "published": "2026-06-30"
+  },
+  {
+   "name": "Regime-Conditional Distributional Comparison of Trading Strategies: A GAMLSS/ZAGA Framework Applied to the S&P 500",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.31251v1",
+   "mechanism": "momentum",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "A walk-forward backtest of 146 out-of-sample folds on the S&P 500 (2002--2025) is used to compute the Adjusted Information Ratio ($IR^{\\ast}$) for a polynomial Support Vector Machine strategy (SVMP) and a buy-and-hold benchmark (BH) in each fold.",
+   "evidence_tier": "literature",
+   "published": "2026-06-30"
+  },
+  {
+   "name": "Heads, Not Backbones: Output Heads Dominate Architectures on Fat-Tailed Returns",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.30037v1",
+   "mechanism": "microstructure",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "In a deep forecasting pipeline for fat-tailed financial returns at short horizons, which matters more - the backbone architecture or the output head? We compare four modern backbones (TimesNet, DLinear, N-BEATS, iTransfo...",
+   "evidence_tier": "literature",
+   "published": "2026-06-29"
+  },
+  {
+   "name": "(In)Efficient Market States and Rough Volatility Detected via Grunwald-Letnikov Fractional Derivative",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.27932v1",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Testing self-similarity in fractional processes from a single observed trajectory is difficult under long-range dependence, because the associated Kolmogorov--Smirnov (KS) statistic undergoes a phase transition when $H>1...",
+   "evidence_tier": "literature",
+   "published": "2026-06-26"
+  },
+  {
+   "name": "CryptoGAT: Are Time Series Models Effective for Cryptocurrency Forecasting?",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.27670v1",
+   "mechanism": "multi_asset",
+   "symbol": "crypto",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Extensive experiments on real cryptocurrency benchmarks demonstrate that our proposed CryptoGAT outperforms various state-of-the-art forecasting methods with a notable margin.",
+   "evidence_tier": "literature",
+   "published": "2026-06-26"
+  },
+  {
+   "name": "The Inference-Compute Frontier and a Latency-Efficient Architecture for Limit Order Book Prediction",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.25986v1",
+   "mechanism": "orderflow",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We study whether a scaling-law-style inference-compute frontier appears in limit order book prediction. Using FI-2010 and a suite of models ranging from small decision trees to neural LOB architectures, we find that the...",
+   "evidence_tier": "literature",
+   "published": "2026-06-24"
+  },
+  {
+   "name": "Multi-Stream Temporal Fusion for Financial Fraud Detection",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.25007v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "5% fraud rate) with 85M parameter models, we demonstrate that (1) sequence models significantly outperform gradient-boosted trees operating on aggregated features (0.",
+   "evidence_tier": "literature",
+   "published": "2026-06-23"
+  },
+  {
+   "name": "Empirical Confirmation of the Square-Root Law of Market Impact in a U.S. Large-Cap Equity",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.24019v1",
+   "mechanism": "orderflow",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We test the square-root law (SRL) of market impact on a single U.S. large-capitalisation equity, Apple Inc. (AAPL), using the full Nasdaq TotalView-ITCH market-by-order feed over 178 trading days (2 December 2024 -- 19 A...",
+   "evidence_tier": "literature",
+   "published": "2026-06-22"
+  },
+  {
+   "name": "Continuous Hidden Markov Models for Equity Returns: Heavy-Tail Emission Families and Regime-Conditional Value-at-Risk",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.23492v1",
+   "mechanism": "microstructure",
+   "symbol": "equities",
+   "timeframe": "D1",
+   "params": {
+    "frequency": "D1"
+   },
+   "claimed_perf": "Synthetic generators of daily equity returns let practitioners stress test, backtest, and design scenarios that a single realized market history cannot supply, but only if the generator reproduces the stylized facts of r...",
+   "evidence_tier": "literature",
+   "published": "2026-06-22"
+  },
+  {
+   "name": "When Staking Rewards Compound: Measuring the Impact of Ethereum's Pectra Upgrade",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.23337v1",
+   "mechanism": "microstructure",
+   "symbol": "crypto",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Ethereum's beacon chain hosts over 920,000 active validators, a number inflated by the legacy 32 ETH stake cap. The Pectra upgrade (May 2025) addresses this by introducing 0x02 compounding validators, raising the maximum...",
+   "evidence_tier": "literature",
+   "published": "2026-06-22"
+  },
+  {
+   "name": "Leakage-Aware Benchmarking of LLM Forecasting: Real-Time Nowcasts as the Decision-Time Input for Macro Factor Ranking",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.22719v1",
+   "mechanism": "momentum",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Forecasting benchmarks for retrieval-augmented LLMs routinely confound model capability with information leakage: features labeled with a target's timestamp are often not observable at the system's decision time. We stud...",
+   "evidence_tier": "literature",
+   "published": "2026-06-21"
+  },
+  {
+   "name": "A Censored Transformed Model for Proportional Outcomes with Boundary Mass and an Application to Loss Given Default Modeling",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.21515v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We introduce the zero-one censored transformed normal (ZOC-TN) model for proportional responses with potential probability mass at the boundaries 0 and 1. The model combines a censored Gaussian variable with a two-parame...",
+   "evidence_tier": "literature",
+   "published": "2026-06-19"
+  },
+  {
+   "name": "Trends, Volatility, Correlations, and Critical Phenomena in Financial Markets",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.20145v1",
+   "mechanism": "mean_reversion",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We forecast future volatilities and correlations of financial markets based on the current trends in these markets. This complements previous work that models future expected returns by a cubic polynomial of the current...",
+   "evidence_tier": "literature",
+   "published": "2026-06-18"
+  },
+  {
+   "name": "Fitting Accumulated Stock Returns with Tempered Skew t-Distribution",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.19318v1",
+   "mechanism": "other",
+   "symbol": "equities",
+   "timeframe": "D1",
+   "params": {
+    "frequency": "D1"
+   },
+   "claimed_perf": "We analyze distributions of historic S&P500 multi-day returns, for the number of days of accumulation from 20 to 120. With the increase of the number of days of accumulation, we observe clear tempering of power-law tails...",
+   "evidence_tier": "literature",
+   "published": "2026-06-17"
+  },
+  {
+   "name": "Crashing Together, Rallying Apart: Dynamic Conditional Tail Dependence in Cryptocurrency Markets",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.16840v1",
+   "mechanism": "regime",
+   "symbol": "crypto",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Cryptocurrency markets are prone to violent, synchronised drawdowns, challenging the claim that a basket of crypto-assets offers genuine internal diversification. Because standard covariance-based metrics fail to capture...",
+   "evidence_tier": "literature",
+   "published": "2026-06-15"
+  },
+  {
+   "name": "A Multiplex Network Hawkes Model for Systemic Risk Measurement",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.15755v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We introduce the Multiplex Network Hawkes model, which extends the network Hawkes framework of Linderman & Adams (2014) by allowing multiple excitation layers whose weights depend on observed edge and node covariates. We...",
+   "evidence_tier": "literature",
+   "published": "2026-06-14"
+  },
+  {
+   "name": "Robust Transformer-Based One-Step Stock Index Forecasting via Shifted Data Augmentation",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.15701v1",
+   "mechanism": "event",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Experimental results demonstrate that cosine annealing with warmup consistently improves forecasting accuracy over the generalized inverse-power scheduler.",
+   "evidence_tier": "literature",
+   "published": "2026-06-14"
+  },
+  {
+   "name": "Correlation emergence and the Epps effect in two coupled limit order books",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.14182v1",
+   "mechanism": "orderflow",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We give a unified analytic account of correlation emergence and the Epps effect in two coupled limit order books. The model starts from a discrete random-walk description of order flow with creation, cancellation and dif...",
+   "evidence_tier": "literature",
+   "published": "2026-06-12"
+  },
+  {
+   "name": "Composite likelihood inference of fractional Gaussian processes with sequentially optimal subset selection",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.11962v2",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "The size of the subsets then allows us to control the trade-off between estimation accuracy and computational cost.",
+   "evidence_tier": "literature",
+   "published": "2026-06-10"
+  },
+  {
+   "name": "Scenario Generation for Time Series and Curves: A Comparison of Nonparametric and Semiparametric Bootstrap",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.11859v2",
+   "mechanism": "mean_reversion",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Generating stochastic trajectories for asset classes is an increasingly relevant task in quantitative finance. Traditional approaches, such as the stationary bootstrap, preserve by construction the empirical distribution...",
+   "evidence_tier": "literature",
+   "published": "2026-06-10"
+  },
+  {
+   "name": "Reverse Stress Testing for Multivariate Scenarios: A Conditional Framework for Stressed Time Series",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.09274v1",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "This paper develops a methodological framework for reverse stress testing (RST) in which a multivariate stress scenario, coherent with the empirical dependence structure of a market, is reconstructed from a single exogen...",
+   "evidence_tier": "literature",
+   "published": "2026-06-08"
+  },
+  {
+   "name": "Evaluating AI Investment Strategies",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.08791v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We study the problem of auditing a black-box algorithmic decision-maker from observable inputs and outputs alone. Our main result is an exact decomposition: under precisely characterized conditions, the cumulative \\emph{...",
+   "evidence_tier": "literature",
+   "published": "2026-06-07"
+  },
+  {
+   "name": "Cross-sectional topological anomaly scores and intraday return predictability in the S&P 500: A BallMapper, decoder-conditional VAE, and Function-on-Function regression approach",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.08586v1",
+   "mechanism": "mean_reversion",
+   "symbol": "equities",
+   "timeframe": "intraday",
+   "params": {
+    "frequency": "intraday"
+   },
+   "claimed_perf": "Anomaly detection methods in financial time series score statistically unusual observations in observable data, not topologically misexpected persistent deviations in the latent structure of co-movement. This study const...",
+   "evidence_tier": "literature",
+   "published": "2026-06-07"
+  },
+  {
+   "name": "Hour-Aware Adaptive Risk Management for Autonomous Memecoin Trading on Solana DEXs: Evidence, Theory, and Design Lessons from a 15-Day Deployment",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.08232v3",
+   "mechanism": "microstructure",
+   "symbol": "ALL",
+   "timeframe": "D1",
+   "params": {
+    "lookback": 15,
+    "lookback_unit": "days"
+   },
+   "claimed_perf": "The three findings connect to Kyle (1985) informed-flow, Precup-Sutton-Singh (2000) off-policy evaluation, and Bailey-Lopez de Prado (2014) deflated-Sharpe predictions.",
+   "evidence_tier": "literature",
+   "published": "2026-06-06"
+  },
+  {
+   "name": "Post-Rejection Follow-up Sampling: A Methodology for Counterfactual Outcome Measurement in Algorithmic DEX Trading",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.08228v1",
+   "mechanism": "microstructure",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Algorithmic trading systems on decentralised exchanges (DEXs) reject most candidate tokens they evaluate. The counterfactual outcome of rejected candidates (what would have happened had the system entered) is rarely meas...",
+   "evidence_tier": "literature",
+   "published": "2026-06-06"
+  },
+  {
+   "name": "Information Networks of Stock Prices",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.07450v1",
+   "mechanism": "regime",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "The collective movement of stock prices harbors complex interdependencies that are conventionally simplified only through a linear lens. This paper explores computed structural network representations in the Indonesian c...",
+   "evidence_tier": "literature",
+   "published": "2026-06-05"
+  },
+  {
+   "name": "PandaAI: A Practical Agent CQ2 for Neuro-symbolic Data Analysis And Integrated Decision-Making in Quantitative Finance",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.06823v1",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Leveraging the reasoning capabilities of Large Language Models (LLMs), we propose \\textbf{PandaAI}, a closed-loop neuro-symbolic LLM agent with market regime modeling and constrained alpha generation, which bridges general LLM reasoning with financial rigor and suppresses the financial toxicity of LLM-generated outputs.",
+   "evidence_tier": "literature",
+   "published": "2026-06-05"
+  },
+  {
+   "name": "Multi-Scale Markov Switching GARCH",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.06190v1",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Financial volatility exhibits substantial non-stationarity, making single-regime models inadequate for characterising changing market conditions. This paper proposes a triple-timeframe Markov-Switching GARCH (MS-GARCH) f...",
+   "evidence_tier": "literature",
+   "published": "2026-06-04"
+  },
+  {
+   "name": "Generating Financial Time Series by Matching Random Convolutional Features",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.05138v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We further demonstrate SOCK's expressiveness on two-sample hypothesis testing and time series classification tasks, where SOCK matches or outperforms existing unsupervised feature maps.",
+   "evidence_tier": "literature",
+   "published": "2026-06-03"
+  },
+  {
+   "name": "How the interpolation of life tables affects the decomposition of life insurance surplus",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.04715v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "However, life tables are not updated continuously, but rather, only once per year.",
+   "evidence_tier": "literature",
+   "published": "2026-06-03"
+  },
+  {
+   "name": "Dynamic Multi-Pair Trading Strategy in Cryptocurrency Markets with Deep Reinforcement Learning",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.04574v2",
+   "mechanism": "microstructure",
+   "symbol": "crypto",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Evaluated on 1-hour interval data from the Binance USD-M Futures market, the optimized RL policy achieved an out-of-sample performance that substantially outperformed the heuristic baseline.",
+   "evidence_tier": "literature",
+   "published": "2026-06-03"
+  },
+  {
+   "name": "Polymarket-v1 Database",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.04217v2",
+   "mechanism": "mean_reversion",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Replacing ground-truth metrics with classified proxies attenuates both relationships, illustrating that measurement accuracy at the transaction level is a prerequisite for reliable inference about prediction market design and probability calibration.",
+   "evidence_tier": "literature",
+   "published": "2026-06-02"
+  },
+  {
+   "name": "A new decomposition approach to modeling financial returns: Conditioning sign on magnitude",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.04153v1",
+   "mechanism": "other",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "stock market excess returns demonstrates substantial statistical and economic gains relative to linear regression and complete subset regression, while delivering performance that is competitive with copula-based return-decomposition methods and other nonlinear benchmarks.",
+   "evidence_tier": "literature",
+   "published": "2026-06-02"
+  },
+  {
+   "name": "Hybrid News Sentiment Engine: Real-Time Market Analysis via Adaptive Ensemble Learning on News-Price Pairs",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.03457v1",
+   "mechanism": "event",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We compare our approach against established methods -- FinBERT, GPT-based scoring, VADER, and commercial sentiment APIs -- across dimensions of cost, latency, accuracy, and adaptability.",
+   "evidence_tier": "literature",
+   "published": "2026-06-02"
+  },
+  {
+   "name": "FinStressTS: A Parametric Synthetic Benchmark for Time-Series Forecasting in Finance",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.03184v1",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "First, performance is mechanism-dependent: autoregressive and linear models are highly competitive, and often outperform Transformer-based models, in several volatility-, tail-, and jump-driven environments.",
+   "evidence_tier": "literature",
+   "published": "2026-06-02"
+  },
+  {
+   "name": "Regime-Arrival Uncertainty in Generalization Bounds under Distribution Shift",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.02657v1",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "The standard generalization bounds assume that the training and deployment distributions are the same, or are static, and don't consider regime switching environments where the ratio of calm vs crisis states is different...",
+   "evidence_tier": "literature",
+   "published": "2026-06-01"
+  },
+  {
+   "name": "Multiplicative Langevin Process for Volatilities Produces Observed Q-Variance Regularities",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.00800v2",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Q-variance (so-called) posits a statistical relationship $\\mathbf{E}(σ^2 | z) = σ_0^2 + \\tfrac{1}{2}z^2$ between an asset's volatility $σ^2$, as observed in a time interval $T$, and its (suitably scaled) return $z$ in th...",
+   "evidence_tier": "literature",
+   "published": "2026-05-30"
+  },
+  {
+   "name": "Macro-aware time series forecasting via hierarchical mixed-frequency attention models",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.00624v1",
+   "mechanism": "microstructure",
+   "symbol": "futures",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Empirically, across 55 liquid futures spanning multiple asset classes, HANET consistently outperforms neural forecasters that ignore macroeconomic information, particularly during turbulent periods, improving risk-adjusted returns and mitigating losses.",
+   "evidence_tier": "literature",
+   "published": "2026-05-30"
+  },
+  {
+   "name": "Temporal Coarse-Graining of Latent Default-Probability Paths Generates Effective Default Correlation",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.12446v2",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "MN1",
+   "params": {
+    "frequency": "MN1"
+   },
+   "claimed_perf": "We show that persistent dynamics of a latent default-probability path can generate effective default correlation through temporal coarse-graining. In the OU--Binomial baseline, monthly defaults are conditionally independ...",
+   "evidence_tier": "literature",
+   "published": "2026-05-30"
+  },
+  {
+   "name": "Change-point estimation for Weibull time series with copula-based Markov models",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.29541v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We study offline change-point estimation for time series data exhibiting nonlinear serial dependence. To address this problem, we propose a copula-based Markov chain model with Weibull marginal distributions, which is su...",
+   "evidence_tier": "literature",
+   "published": "2026-05-28"
+  },
+  {
+   "name": "From Classical Optimization to Bayesian Integration: A Comprehensive Analysis of Systematic Portfolio Management",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.29413v1",
+   "mechanism": "other",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "This paper compares a series of contemporary portfolio construction approaches by employing ten U.S. stocks (TSLA, WMT, BAC, GS, LLY, MRK, GOOG, META, AAPL and XOM) in a time frame from September 2023 to December 2025. T...",
+   "evidence_tier": "literature",
+   "published": "2026-05-28"
+  },
+  {
+   "name": "Deep Learning Forecasting of the U.S. Aggregate Bond Index",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.27977v1",
+   "mechanism": "event",
+   "symbol": "equities",
+   "timeframe": "D1",
+   "params": {
+    "frequency": "D1"
+   },
+   "claimed_perf": "This study looks at the statistical properties and predictability using deep learning methods of the U.S. aggregate bond index in daily observations spanning 2018 to February 2026. We first establish that index levels ar...",
+   "evidence_tier": "literature",
+   "published": "2026-05-27"
+  },
+  {
+   "name": "Stochastic Volatility, Jumps, and Rates: A Unified Framework for Option Pricing and Term-Structure Simulation",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.27945v1",
+   "mechanism": "other",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "This study develops an integrated stochastic modeling framework for pricing short and medium-maturity equity options and assessing interest-rate risk using the Heston (1993), Bates (1996), and CIR (1985) models. We calib...",
+   "evidence_tier": "literature",
+   "published": "2026-05-27"
+  },
+  {
+   "name": "Regime-Based Portfolio Allocation Using Hidden Markov Models and Reinforcement Learning",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.27848v1",
+   "mechanism": "microstructure",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Both HMM-based allocations outperform a passive SPY benchmark, while the RL policy achieves the highest risk-adjusted performance, delivering the strongest Sharpe ratio and materially lower drawdowns, yet remains fully interpretable through discrete regime-dependent actions.",
+   "evidence_tier": "literature",
+   "published": "2026-05-27"
+  },
+  {
+   "name": "Predicting Stock Price Direction on Earnings Announcement Days using Multi-modal Deep Learning",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.25894v1",
+   "mechanism": "event",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Predicting stock price movements during Earnings Announcements (EAs) is a significant challenge due to market noise and high-impact price discontinuities. In this study, we evaluate whether pre-announcement news sentimen...",
+   "evidence_tier": "literature",
+   "published": "2026-05-25"
+  },
+  {
+   "name": "Memory, Roughness, and Information Persistence in Financial Markets: A Structural Approach to Volatility Forecasting",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.24285v1",
+   "mechanism": "vol_targeting",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "This paper studies the joint role of long-memory dynamics,rough-volatility behavior, and persistence-based forecasting features in equity volatility modeling. We combine semiparametric long-memory estimation, rough-volat...",
+   "evidence_tier": "literature",
+   "published": "2026-05-22"
+  },
+  {
+   "name": "Wartime Controls, Political Connections, and the Pricing of Zaibatsu Rents in Japan, 1930-1943",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.21009v1",
+   "mechanism": "regime",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "This paper examines how wartime economic controls shaped stock-price formation in Japan from 1930 to 1943. We develop a four-portfolio asset-pricing model in which zaibatsu affiliation affects expected payoffs and the tr...",
+   "evidence_tier": "literature",
+   "published": "2026-05-20"
+  },
+  {
+   "name": "Reflexivity as Prompt: Does Awareness of Self-Reinforcing Market Dynamics Improve LLMs as Financial Market Forecasters?",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.00061v1",
+   "mechanism": "event",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We find that conditions incorporating reflexivity awareness improve forecasting accuracy differently across models and context windows, revealing that the same theoretical awareness can produce qualitatively different forecasting behavior across frontier LLMs.",
+   "evidence_tier": "literature",
+   "published": "2026-05-19"
+  },
+  {
+   "name": "Mining Financial Data using Mixtures of Mirrored Weibull Distributions",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.20142v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "D1",
+   "params": {
+    "frequency": "D1"
+   },
+   "claimed_perf": "Risk management is an important part of financial practice, essential for protecting assets and investments in modern-day volatile markets. This paper proposes a mixture of mirrored Weibull (MMW) distribution for modelli...",
+   "evidence_tier": "literature",
+   "published": "2026-05-19"
+  },
+  {
+   "name": "Sequential Structure in Intraday Futures Data: LSTM vs Gradient Boosting on MNQ",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.17724v1",
+   "mechanism": "microstructure",
+   "symbol": "futures",
+   "timeframe": "intraday",
+   "params": {
+    "frequency": "intraday"
+   },
+   "claimed_perf": "No configuration produces statistically significant out-of-sample accuracy above the 51.",
+   "evidence_tier": "literature",
+   "published": "2026-05-18"
+  },
+  {
+   "name": "Enhancing Regime Shift Detection Using Unstructured Data: A Study on the Treasury Market",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.30363v2",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Regime shifts in financial markets reorganise the joint dynamics of asset prices and macro variables, breaking any single-regime calibration. They are nonetheless hard to identify: the data signal is noisy and heavily mu...",
+   "evidence_tier": "literature",
+   "published": "2026-05-17"
+  },
+  {
+   "name": "Portfolio Allocation under Heterogeneous Scales and Multifractality",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2608.04987v1",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Cross-correlations between financial signals are neither scale-free nor amplitude-independent: they vary with the time scale over which they are measured and with the magnitude of the fluctuations that dominate the avera...",
+   "evidence_tier": "literature",
+   "published": "2026-08-05"
+  },
+  {
+   "name": "Optimal Life Insurance Decision in Mean-Variance DC Management with Mortality Improvements",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2608.04532v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "This paper studies the investment and insurance strategies of defined-contribution (DC) pension plans under the mean-variance framework. We consider a stochastic environment with time-varying interest rates, contribution...",
+   "evidence_tier": "literature",
+   "published": "2026-08-05"
+  },
+  {
+   "name": "Path Portfolio Optimization: Defect, Lift, and the Price of Path Complexity",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2608.02355v1",
+   "mechanism": "microstructure",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "This paper builds Path Portfolio Optimization: portfolio theory on a path-first framework in which the signature is the universal coordinate of the price path, and asks whether it survives estimation. A portfolio is a li...",
+   "evidence_tier": "literature",
+   "published": "2026-08-03"
+  },
+  {
+   "name": "AI Financial Advice: Supply, Demand, and Life Cycle Implications",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2608.01607v1",
+   "mechanism": "event",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We ask a representative sample to write prompts seeking spending and investing advice from LLMs, then simulate the lifetime effects of following the advice under realistic asset and labor market conditions. Applying this...",
+   "evidence_tier": "literature",
+   "published": "2026-08-03"
+  },
+  {
+   "name": "Conformal Kelly: Conformal Prediction Intervals as the Scale in Fractional Kelly Position Sizing",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2608.01494v1",
+   "mechanism": "event",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "0% per year, below the passive benchmarks, and a pre-registered hindsight benchmark beat them on raw growth while taking a 46% drawdown.",
+   "evidence_tier": "literature",
+   "published": "2026-08-02"
+  },
+  {
+   "name": "Optimal Control with Expectation Constraint in a Smooth Boundary Case",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.24114v1",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "As in Bouchard et al. (2010) and Bouchard and Nutz (2014), we study a utility maximization problem with expectation constraint. We first consider a uniformly elliptic case in which the endogenous state boundary associate...",
+   "evidence_tier": "literature",
+   "published": "2026-07-27"
+  },
+  {
+   "name": "Neural Network-Driven Volatility Drag Mitigation under Aggressive Leverage",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.23068v1",
+   "mechanism": "trend_following",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "These findings demonstrate that end-to-end variance-minimization architectures can achieve substantial parameter efficiency and robust capital-efficiency gains without sacrificing risk-adjusted performance.",
+   "evidence_tier": "literature",
+   "published": "2026-07-25"
+  },
+  {
+   "name": "Portfolio Optimization under Dynamic Rebalancing via Topological Data Analysis and News Sentiments",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.21170v1",
+   "mechanism": "event",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Extensive empirical analysis on S&P 500 constituents demonstrates that the proposed framework consistently outperforms correlation and Euclidean distance based methods, as well as benchmark strategies including Naïve, Index, and full-universe portfolios, in terms of returns and reward-risk performance.",
+   "evidence_tier": "literature",
+   "published": "2026-07-23"
+  },
+  {
+   "name": "AlphaZeroBeta: Deep Reinforcement Learning for Market-Neutral Portfolios",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.18001v1",
+   "mechanism": "microstructure",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "AlphaZeroBeta combines a composite reward function that balances risk-adjusted excess return, benchmark correlation, and transaction costs with a CNN-GRU policy trained end-to-end via Recurrent PPO and evaluated through a rolling walk-forward protocol.",
+   "evidence_tier": "literature",
+   "published": "2026-07-20"
+  },
+  {
+   "name": "Portfolio Optimization under Heavy Tails and Asymmetric Volatility: Evidence from Taiwan-Exposed ETFs",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.16450v1",
+   "mechanism": "other",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Portfolio rankings depend on the performance measure: the Sharpe ratio and STARR measure favor the equally weighted portfolio, whereas the Rachev ratio favors CVaR-based portfolios.",
+   "evidence_tier": "literature",
+   "published": "2026-07-17"
+  },
+  {
+   "name": "SciPhy Reinforcement Learning for Portfolio Optimization",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.15195v1",
+   "mechanism": "microstructure",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Evaluated on a $14$-asset ETF universe using an engineered oracle signal, the learned Gibbs policy yields substantial out-of-sample Sharpe ratio improvements over static and myopic baselines.",
+   "evidence_tier": "literature",
+   "published": "2026-07-16"
+  },
+  {
+   "name": "Large-Scale Portfolio Optimization Problem Under Cardinality Constraint With Enhanced Multi-Objective Evolutionary Algorithms",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.09566v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Decision-making is posing an increasingly formidable challenge to investors because of the growing number of alternatives available in financial markets. A hot area of research over the past few decades has been portfoli...",
+   "evidence_tier": "literature",
+   "published": "2026-07-10"
+  },
+  {
+   "name": "A novel robust mixed integer linear programming model for index tracking problem under no rebalancing: heuristic optimization approach",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.09556v1",
+   "mechanism": "microstructure",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Results indicate that not only is the heuristic able to converge to optimal solutions for not-so-large problem sizes, but the portfolios it generates also outperform those yielded by commercial solvers in terms of both in-sample and out-of-sample data.",
+   "evidence_tier": "literature",
+   "published": "2026-07-10"
+  },
+  {
+   "name": "Objective and subjective entropy measures of portfolio suboptimality",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.09505v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Under that measure, the suboptimal portfolio appears to outperform the Kelly portfolio, and the apparent outperformance equals the reverse KL divergence.",
+   "evidence_tier": "literature",
+   "published": "2026-07-10"
+  },
+  {
+   "name": "Augmenting Fundamental Analysis with Large Language Models: A RAG-Based System for Generating Investor Briefs",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.09121v1",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "In this study, we examine the opportunities brought by Large Language Models (LLMs) to various aspects of fundamental analysis of companies based on their reports as well as data and documents describing macroeconomic si...",
+   "evidence_tier": "literature",
+   "published": "2026-07-10"
+  },
+  {
+   "name": "Dynamic Causal Portfolio Choice: Hedging the Rotation of the Common-Driver Manifold",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.06702v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "When a portfolio is conditioned on a minimal set of observable drivers under which its assets become mutually independent over the investment horizon, the dynamic investment problem acquires a distinctive geometric struc...",
+   "evidence_tier": "literature",
+   "published": "2026-07-07"
+  },
+  {
+   "name": "From Gravity to Confinement: Wealth Redistribution as Optimal Drift Design in the Fokker-Planck Framework",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.06153v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "A proportional wealth tax acts as a uniform gravitational field on the wealth distribution: it shifts the drift of the Fokker-Planck equation without altering the diffusion, preserving the Gini coefficient at all finite...",
+   "evidence_tier": "literature",
+   "published": "2026-07-07"
+  },
+  {
+   "name": "Relief-Gated Relative Rotation for QQQ-DIA Allocation: Globally Screened Relative States, Fixed Position Mapping, Incremental Interaction Admission, and Walk-Forward Validation",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.06117v1",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Third-order terms must also improve rolling out-of-sample Sharpe versus the main plus second-order base and survive economic-family de-duplication.",
+   "evidence_tier": "literature",
+   "published": "2026-07-07"
+  },
+  {
+   "name": "Causal Separation, Conditional Risk, and Projected Markowitz Portfolios",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.05320v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We formalize a single structural condition on a portfolio problem, causal separation: conditional on the realized path of a declared set of drivers through the investment horizon, asset returns are mutually independent....",
+   "evidence_tier": "literature",
+   "published": "2026-07-06"
+  },
+  {
+   "name": "Look-Ahead-Freedom as Temporal Non-Interference: A Verifiable Correctness Property for Backtesting and Agentic Trading Pipelines",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.04958v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Look-ahead bias (using information from after a decision epoch to make the decision at that epoch) is the dominant way a backtest or a machine-learning evaluation flatters a system that will disappoint in deployment. The...",
+   "evidence_tier": "literature",
+   "published": "2026-07-06"
+  },
+  {
+   "name": "Preference-fitting Framework: Elicited Utility Function and PHARA Approximation",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.04346v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "The utility function plays a core role in portfolio selection, but its specific form is typically hard to elicit. We propose a definition of the elicited utility function and develop a preference-fitting method to obtain...",
+   "evidence_tier": "literature",
+   "published": "2026-07-05"
+  },
+  {
+   "name": "Is Trend Still Your Friend?: A Microstructural Account of the Demise of Short-Term Trend-Following",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.01550v1",
+   "mechanism": "trend_following",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Systematic trend following has, on average, been profitable for at least two centuries; yet since approximately 2009, short-term trends have ceased to deliver reliable returns. Using a cross-section of roughly 100 liquid...",
+   "evidence_tier": "literature",
+   "published": "2026-07-02"
+  },
+  {
+   "name": "CLQT: A Closed-Loop, Cost-Aware, Strategy-Consistent Benchmark for Diagnostic Evaluation of LLM Portfolio-Management Agents",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.29771v2",
+   "mechanism": "event",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Three findings illustrate the diagnosis-first read: the capability leader is not the Sharpe leader (the nominal winner is a 5-of-26-round reliability artifact); signal-action agreement exceeds a held-out judge's coherence score by a stable margin on both tracks (+0.",
+   "evidence_tier": "literature",
+   "published": "2026-06-29"
+  },
+  {
+   "name": "The Decision Geometry of Covariance Estimation for the Global Minimum-Variance Portfolio under Heavy Tails",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.27462v1",
+   "mechanism": "event",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "The decision-focused advantage is a sharper constant and a concentration discount rather than a faster rate; we report an honest high-conditioning boundary of the rate prediction.",
+   "evidence_tier": "literature",
+   "published": "2026-06-25"
+  },
+  {
+   "name": "A sharp order-three obstruction to the aggregation of conditional price-of-risk attribution",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.26835v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We study the squared price-of-risk premium of a portfolio -- an integrated conditional squared Sharpe-ratio functional, not an expected excess return -- and its attribution to causal drivers.",
+   "evidence_tier": "literature",
+   "published": "2026-06-25"
+  },
+  {
+   "name": "Data-Driven Duration Management -- Term Structure Forecasting Using Machine Learning",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.26815v1",
+   "mechanism": "event",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "To this end, we propose a robust model evaluation framework combining statistical accuracy metrics - such as RMSE, MAE, and directional accuracy - with the economic relevance of a quantitative bond trading strategy.",
+   "evidence_tier": "literature",
+   "published": "2026-06-25"
+  },
+  {
+   "name": "Portfolio Optimization for Commodity ETFs under Heavy-Tailed Returns",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.26625v1",
+   "mechanism": "multi_asset",
+   "symbol": "futures",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Historical optimization indicated that minimum-risk and CVaR-based portfolios provided more stable cumulative performance than tangent portfolios and generally improved Sharpe, Calmar, and STARR$_{0.",
+   "evidence_tier": "literature",
+   "published": "2026-06-25"
+  },
+  {
+   "name": "Hierarchical Graph Learning for Calendar Spread Strategies in Commodity Futures Markets",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.25811v1",
+   "mechanism": "seasonality",
+   "symbol": "futures",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We first establish the efficacy of CS strategies by analytically showing that CS strategies can possess higher risk-adjusted returns, measured by the information ratio, and lower risk, measured by variance and delta, than long-only strategies.",
+   "evidence_tier": "literature",
+   "published": "2026-06-24"
+  },
+  {
+   "name": "A Two-Stage Decision Support System for Sustainability-Aware Long Short Portfolio Optimization",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.25696v1",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "This paper proposes a two-stage decision support system for long-short portfolio optimization under environmental, social, and governance (ESG) considerations. In the first stage, assets are evaluated using a multi-crite...",
+   "evidence_tier": "literature",
+   "published": "2026-06-24"
+  },
+  {
+   "name": "FinBench: Time-Gated Calibration and Uncertainty Benchmarking for Agentic Financial Forecasting",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.16229v1",
+   "mechanism": "microstructure",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Existing benchmarks emphasize semantic understanding or point accuracy, but do not directly test probabilistic calibration under the temporal constraints and non-stationarity that define real markets.",
+   "evidence_tier": "literature",
+   "published": "2026-06-24"
+  },
+  {
+   "name": "Asymmetry PRISM: A CPU/GPU Portfolio Optimization Engine for Deadline-Bounded Institutional Rebalancing",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.23367v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Institutional rebalancing is a batched optimization workload with a hard operating deadline: hundreds of accounts need new weights under budget, turnover, exposure, exclusion, and tax-aware controls before trading can pr...",
+   "evidence_tier": "literature",
+   "published": "2026-06-22"
+  },
+  {
+   "name": "Reinforcement Learning for Risk-Sensitive Investment Management: a Free Energy--Entropy Duality Approach",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.20903v1",
+   "mechanism": "multi_asset",
+   "symbol": "futures",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "equity data shows that the actors learn the optimal policy with high accuracy and reveals a favorable asymmetry: the portfolio actor receives a cleaner learning signal than the auxiliary adversarial actor.",
+   "evidence_tier": "literature",
+   "published": "2026-06-18"
+  },
+  {
+   "name": "Sharpe Ratio and Return-VaR Ratio Maximization for Option Portfolios with Skew-Elliptical $t$ Underlying Returns",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.17032v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "The novelty of this paper and our main result is to provide explicit formulas for the portfolio weights when maximizing the Sharpe ratio and return-to-Value-at-Risk (VaR) ratio in the skew-elliptical setting.",
+   "evidence_tier": "literature",
+   "published": "2026-06-15"
+  },
+  {
+   "name": "Discovery under Hypothesis Redundancy: A Geometric Theory of Discovery Bottlenecks",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.14386v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Scientific discovery saturates when new hypotheses cease to provide independent information, even if the nominal hypothesis space remains large. We study hybrid discovery systems that combine structured local search with...",
+   "evidence_tier": "literature",
+   "published": "2026-06-12"
+  },
+  {
+   "name": "Battery Bidding under Price Uncertainty in Wholesale Electricity Markets",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.14050v1",
+   "mechanism": "microstructure",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Grid-scale batteries increasingly influence outcomes in wholesale electricity markets, but their observed bid patterns remain difficult to interpret. In particular, bids that appear to reflect strategic withholding may i...",
+   "evidence_tier": "literature",
+   "published": "2026-06-12"
+  },
+  {
+   "name": "A Declining CVaR Glidepath Framework for Target-Date Fund Design with an Application to the Chilean Pension System",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.13618v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We propose a framework for designing Target-Date Funds (TDFs) around an explicit return objective while controlling risk directly at the portfolio level through a declining Conditional Value-at-Risk (CVaR) constraint. In...",
+   "evidence_tier": "literature",
+   "published": "2026-06-11"
+  },
+  {
+   "name": "Two Sides of Schur Damping: High-Dimensional Pseudo-Likelihoods and Portfolio Allocation",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.14798v1",
+   "mechanism": "vol_targeting",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Two communities that rarely cite each other -- spatial statisticians fitting high-dimensional weather fields, and quantitative investors building portfolios -- have independently arrived at the same mathematical object:...",
+   "evidence_tier": "literature",
+   "published": "2026-06-11"
+  },
+  {
+   "name": "The Mathematics of Heuristic Portfolio Optimization (HPO)",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.12612v1",
+   "mechanism": "vol_targeting",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We formalize generic HPO maps, define the implied-return defect, prove that it equals squared Sharpe inefficiency, characterize tree-HPO coincidence by nodewise mass ratios, and give a bias--variance decomposition for estimated rules.",
+   "evidence_tier": "literature",
+   "published": "2026-06-10"
+  },
+  {
+   "name": "Mean-Variance Optimization in Ambiguous Financial Markets with Learning",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.11318v1",
+   "mechanism": "multi_asset",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We consider a continuous time investment problem in a multi-asset Black-Scholes market with the following features: The assets' drifts are not known and constitute a source of model ambiguity. However, there is a prior d...",
+   "evidence_tier": "literature",
+   "published": "2026-06-09"
+  },
+  {
+   "name": "Asymmetric Nonlinear Return Extrapolation and Optimal Portfolio Choice under Stochastic Volatility",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.10805v2",
+   "mechanism": "event",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We extend the return extrapolation framework of Atmaz (2022) to incorporate two behaviorally realistic features absent from the linear benchmark: saturation in belief updating and asymmetry between gains and losses. We i...",
+   "evidence_tier": "literature",
+   "published": "2026-06-09"
+  },
+  {
+   "name": "Benchmarking Deep Time Series Models for Equity Portfolios",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.09420v1",
+   "mechanism": "microstructure",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Broad-universe decile signals can survive costs, but the baseline constrained-QP net Sharpe at 20 bps is negative for every promoted model.",
+   "evidence_tier": "literature",
+   "published": "2026-06-08"
+  },
+  {
+   "name": "Addressing Market Regime Changes and Heavy-Tailed Returns in Portfolio Optimization via Bayesian VAR and Elliptical Black-Litterman",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.09104v1",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "An evaluation of 29 Dow Jones Industrial Average constituents over a decade-long market period shows that BAVAR-BLED significantly outperforms state-of-the-art methods, achieving Sharpe and Sortino ratios of 1.",
+   "evidence_tier": "literature",
+   "published": "2026-06-08"
+  },
+  {
+   "name": "Continuous Cash-Overlay Filters for a Static Growth--Defensive Risk Sleeve: Slow-Tail Compensation, V-Shape Crash Brakes, Walk-Forward Validation, and Max-Cash Combination",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.09025v2",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "This paper studies a modular cash-overlay rule for allocating between a fixed growth-defensive risky sleeve R and interest-bearing cash C. The risky sleeve is a static 50/50 combination of equal-weight growth/technology...",
+   "evidence_tier": "literature",
+   "published": "2026-06-08"
+  },
+  {
+   "name": "Stock Investment: The p-index Approach",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.08569v1",
+   "mechanism": "momentum",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "48%), the MCIRS method employing the p-index consistently delivered higher returns than its beta-based approach, and efficient (outperforming) stocks failed to sustain their momentum while inefficient (underperforming) stocks exhibited no mean reversion.",
+   "evidence_tier": "literature",
+   "published": "2026-06-07"
+  },
+  {
+   "name": "Macro Economists in the Machine: A Multi-Agent LLM Framework for Commodity-Related ETF Portfolio Construction",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.08283v1",
+   "mechanism": "carry",
+   "symbol": "futures",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "rate peak and the 2024-2025 soft landing, all three LLM strategies outperform the Rule Agent in Sharpe terms; the Hawkish and Debate Agents record the largest gains (ΔSharpe = +0.",
+   "evidence_tier": "literature",
+   "published": "2026-06-06"
+  },
+  {
+   "name": "Benchmarking Quantum Algorithmic Resilience for CVaR Portfolio Optimization: The Expressibility-Coherence Trade-off",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.07727v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Quantum combinatorial optimization offers theoretical advantages for complex financial modeling, but physical implementation on Noisy Intermediate Scale Quantum (NISQ) devices is severely constrained by hardware topology...",
+   "evidence_tier": "literature",
+   "published": "2026-06-05"
+  },
+  {
+   "name": "Anticipatory Portfolio Optimization",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.04258v1",
+   "mechanism": "microstructure",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "A portfolio is \\emph{anticipatory} when its optimizer acts on a richer model than the myopic, price-taking estimator used to calibrate it. Enrichment may be informational, via enlarged filtrations; dynamic, via horizon f...",
+   "evidence_tier": "literature",
+   "published": "2026-06-02"
+  },
+  {
+   "name": "Portfolio Choice with Competing Precautionary and Accumulation Goals",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.03158v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We study optimal portfolio choice for a household simultaneously managing a random-deadline goal, such as a medical emergency or job loss, and a fixed-deadline goal such as retirement or college tuition. Under a forced f...",
+   "evidence_tier": "literature",
+   "published": "2026-06-02"
+  },
+  {
+   "name": "Infinite Horizon Optimal Consumption: Intertemporal Hedging under Epstein-Zin Preferences",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.02945v2",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Examples with stochastic volatility, Gaussian excess returns, and fat-tailed excess returns illustrate the scope of the framework and its implications for intertemporal hedging.",
+   "evidence_tier": "literature",
+   "published": "2026-06-01"
+  },
+  {
+   "name": "Post Selection Estimation of Sharpe Ratios",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.01650v2",
+   "mechanism": "microstructure",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We test these estimators in simulations, computing bias and root mean square error across different values of sample size, number of assets, and spread and shape of population Sharpe ratios.",
+   "evidence_tier": "literature",
+   "published": "2026-06-01"
+  },
+  {
+   "name": "On Reference-Regulated Multiperiod Mean-Variance Portfolio Optimization in High Dimensions",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.13697v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "A key contribution of this paper is the characterization of the out-of-sample Sharpe ratio under high-dimensional asymptotics with estimation errors in both the mean vector and the covariance matrix.",
+   "evidence_tier": "literature",
+   "published": "2026-05-31"
+  },
+  {
+   "name": "Regime-Adaptive Continual Learning for Portfolio Management",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.00143v1",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Extensive experiments on five real-world datasets demonstrate that ReCAP consistently outperforms popular baselines, achieving superior returns in long-term investment horizons and rapid adaptation to regime shifts.",
+   "evidence_tier": "literature",
+   "published": "2026-05-29"
+  },
+  {
+   "name": "Distributional Portfolio Optimization (DPO): A Unified Framework for Distributions over Weights, Returns, and Parameters",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.30464v1",
+   "mechanism": "multi_asset",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "The contribution is synthetic and structural: we organize Bayesian, robust, chance-constrained, stochastic-allocation, and distributional reinforcement-learning portfolio methods through this coupling and prove boundary results connecting them, including a portfolio specialization of Wasserstein-CVaR duality, a static no-randomization theorem, a Bayesian credible-radius calibration of Wasserstein DRO, a Gaussian-isotropic second-order conservatism bound, a conditional two-sided rate W_1 = Theta(",
+   "evidence_tier": "literature",
+   "published": "2026-05-28"
+  },
+  {
+   "name": "PortBench: A Correlation-Aware, Full-Pipeline Benchmark for LLM-Driven Portfolio Management",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.27887v2",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Evaluating ten frontier LLMs, we find that despite strong performance on static financial QA, 90\\% of model-profile combinations fail to outperform a basic equal-weight allocation, and models that satisfy every procedural constraint still suffer catastrophic drawdowns under stress.",
+   "evidence_tier": "literature",
+   "published": "2026-05-27"
+  },
+  {
+   "name": "A Unified Theory of Ownership Concentration, Overlap, and Dependence",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.26740v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "The residual operator $L$ then yields two dynamic consequences: idiosyncratic fire-sale vulnerability is bounded by the dominant overlap mode $ρ(A)$, while aggregate benchmark-relative alpha variance has worst-case capacity $ρ(A)^2$ and isotropic average-case capacity $\\mathcal{X}(A)$.",
+   "evidence_tier": "literature",
+   "published": "2026-05-26"
+  },
+  {
+   "name": "Market Regime Council for Dynamic Credit Assignment in Multi-Agent LLM Decision Systems",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.24490v1",
+   "mechanism": "regime",
+   "symbol": "crypto",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Over 1,037 trading days across 13 crypto assets and five seeds, MRC achieves a Sharpe ratio of 1.",
+   "evidence_tier": "literature",
+   "published": "2026-05-23"
+  },
+  {
+   "name": "MadEvolve: Evolutionary Optimization of Trading Systems with Large Language Models",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.23007v1",
+   "mechanism": "microstructure",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "MadEvolve, a general-purpose algorithm optimization framework inspired by DeepMind's Alpha-Evolve, was recently developed to optimize algorithms in computational cosmology.",
+   "evidence_tier": "literature",
+   "published": "2026-05-21"
+  },
+  {
+   "name": "Portfolio Preference Elicitation in Institutional Crossing Markets",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.21409v1",
+   "mechanism": "orderflow",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Institutional crossing platforms face a hidden-information problem: investors value trades as portfolios, but liquidity discovery is typically organized around individual securities. We model portfolio crossing as limite...",
+   "evidence_tier": "literature",
+   "published": "2026-05-20"
+  },
+  {
+   "name": "Continuous Timing Signals for Growth-Defensive Style Allocation: Factor Attribution, Risk Matching, and Out-of-Sample Evidence",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.20636v2",
+   "mechanism": "momentum",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "The objective is not to discover a new standalone alpha factor, but to examine whether known style exposures can be dynamically allocated using macro-market timing signals.",
+   "evidence_tier": "literature",
+   "published": "2026-05-20"
+  },
+  {
+   "name": "Do Better Volatility Forecasts Lead to Better Portfolios? Evidence from Graph Neural Networks",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.19278v2",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "The empirical finding is that the model with the lowest forecast MSE, the model with the highest cross-sectional ranking accuracy, and the model with the highest portfolio Sharpe ratio are three different models.",
+   "evidence_tier": "literature",
+   "published": "2026-05-19"
+  },
+  {
+   "name": "A Penalty-Free Pipeline for Direct Quantum-Annealer Portfolio Optimization",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.17628v2",
+   "mechanism": "microstructure",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Cardinality-constrained portfolio selection is routinely cast as a quadratic unconstrained binary optimization (QUBO) and submitted to a quantum processing unit (QPU) for direct annealing. We show that this standard pena...",
+   "evidence_tier": "literature",
+   "published": "2026-05-17"
+  },
+  {
+   "name": "Where the Quantum Lives in D-Wave Hybrid Portfolio Optimization: An Operational Decomposition Audit",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.17623v3",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "A descriptive five-window Fama-French overlay of post-projection direct-QPU portfolios yields mean Sharpe 1.",
+   "evidence_tier": "literature",
+   "published": "2026-05-17"
+  },
+  {
+   "name": "Deep Reinforcement Learning Framework for Diversified Portfolio Management Across Global Equity Markets",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.17307v1",
+   "mechanism": "microstructure",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Results show that RL strategies achieve competitive risk-adjusted performance primarily in the Euro Stoxx 50, where statistically significant abnormal returns are observed, but the central hypothesis is only partially confirmed: no strategy achieves statistically significant excess returns relative to Buy and Hold under HAC-robust inference across all markets.",
+   "evidence_tier": "literature",
+   "published": "2026-05-17"
+  },
+  {
+   "name": "Financially Guided Deep Portfolio Optimization",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.28853v1",
+   "mechanism": "vol_targeting",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "The framework consistently outperforms the equal-weight portfolio, S&P 500, and traditional methods (MVP, HRP, NCO), demonstrating that embedding financial objectives directly into model training yields robust, economically meaningful outperformance even in adverse market conditions.",
+   "evidence_tier": "literature",
+   "published": "2026-05-16"
+  },
+  {
+   "name": "On the Expected Maximum Deficit and the Optimal Allocation of Reserves",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.16448v1",
+   "mechanism": "multi_asset",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "This paper investigates risk measures derived from the expected maximum deficit in a continuous-time framework and develops optimal reserve allocation strategies across multiple lines of business. We formalize the expect...",
+   "evidence_tier": "literature",
+   "published": "2026-05-15"
+  },
+  {
+   "name": "Quantifying the Risk-Return Tradeoff in Forecasting",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.09712v1",
+   "mechanism": "carry",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "I then evaluate these returns using risk-adjusted performance measures from finance, including the Sharpe ratio, Sortino ratio, Omega ratio, and drawdown-based metrics.",
+   "evidence_tier": "literature",
+   "published": "2026-05-10"
+  },
+  {
+   "name": "Beyond ESG Scores: Learning Dynamic Constraints for Sequential Portfolio Optimization",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.09310v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "This creates a mismatch for sequential control: ESG scores are noisy, provider-dependent, low-frequency, and temporally misaligned with sequential portfolio decisions, while financial evidence suggests that ESG is better treated as a portfolio preference, risk-exposure, or hedge dimension than as a robust alpha factor.",
+   "evidence_tier": "literature",
+   "published": "2026-05-10"
+  },
+  {
+   "name": "The Engineering of Skew: A Path-Dependent Framework for Asymmetric Volatility Management",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.09123v1",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Volatility is the language in which finance often describes risk, but it is not the language in which institutions experience risk. Allocators live through drawdowns, liquidity needs, spending rules, rebalance decisions,...",
+   "evidence_tier": "literature",
+   "published": "2026-05-09"
+  },
+  {
+   "name": "Single-Period Portfolio Selection via Information Projection",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.03184v2",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We study the single-period portfolio selection problem under Constant Relative Risk-Aversion (CRRA) utility through the information-theoretic lens. Assuming only that the market payoff vector has finite support, we show...",
+   "evidence_tier": "literature",
+   "published": "2026-05-04"
+  },
+  {
+   "name": "Large-Scale Asset Selection via Metric Dependence with Enriched High Frequency Information",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.02326v2",
+   "mechanism": "microstructure",
+   "symbol": "ALL",
+   "timeframe": "intraday",
+   "params": {
+    "frequency": "intraday"
+   },
+   "claimed_perf": "Large-scale portfolio choice is highly sensitive to estimation error, making the preliminary asset selection essential in empirical implementation. Existing selection rules typically rely on scalar returns or low dimensi...",
+   "evidence_tier": "literature",
+   "published": "2026-05-04"
+  },
+  {
+   "name": "Decision-Induced Ranking Explains Prediction Inflation and Excessive Turnover in SPO-Based Portfolio Optimization",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.01176v4",
+   "mechanism": "event",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Decision-focused learning (DFL) is attractive for portfolio optimization because it trains predictors according to downstream decision quality rather than prediction accuracy alone.",
+   "evidence_tier": "literature",
+   "published": "2026-05-02"
+  },
+  {
+   "name": "Sampler-Robust Optimization under Generative Models",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2604.27447v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Modern stochastic optimization pipelines increasingly rely on learned generative models to represent uncertainty, while downstream decisions are evaluated almost entirely through Monte Carlo scenarios. This shifts the op...",
+   "evidence_tier": "literature",
+   "published": "2026-04-30"
+  },
+  {
+   "name": "A Levered ETF Anomaly Explained",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2604.27287v1",
+   "mechanism": "other",
+   "symbol": "equities",
+   "timeframe": "D1",
+   "params": {
+    "frequency": "D1"
+   },
+   "claimed_perf": "Counterintuitively, the S&P 500 Index rose between January 1, 2022, and December 29, 2023, while exchange-traded funds (ETFs) seeking to deliver 2x and 3x daily returns of the index delivered substantially negative retur...",
+   "evidence_tier": "literature",
+   "published": "2026-04-30"
+  },
+  {
+   "name": "Learning to Spend: Model Predictive Control for Budgeting under Non-Stationary Returns",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2604.27186v1",
+   "mechanism": "microstructure",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "By contrast, when return efficiency exhibits predictable structure over the planning horizon, that is captured through an underlying model, MPC consistently outperforms reactive budgeting by exploiting intertemporal trade-offs.",
+   "evidence_tier": "literature",
+   "published": "2026-04-29"
+  },
+  {
+   "name": "From Hypotheses to Factors: Constrained LLM Agents in Cryptocurrency Markets",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2604.26747v1",
+   "mechanism": "carry",
+   "symbol": "crypto",
+   "timeframe": "MN1",
+   "params": {
+    "frequency": "MN1"
+   },
+   "claimed_perf": "55% annualized return and Sharpe ratio of 1.",
+   "evidence_tier": "literature",
+   "published": "2026-04-29"
+  },
+  {
+   "name": "Auditing Marketing Budget Allocation with Hindsight Regret",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2604.25977v2",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Organizations routinely make strategic budget allocations under operational constraints, but often lack a principled way to assess whether realized allocations were close to the best feasible choices in hindsight. We pre...",
+   "evidence_tier": "literature",
+   "published": "2026-04-28"
+  },
+  {
+   "name": "Yau's Affine-Normal Descent for Large-Scale Unrestricted Higher-Moment Portfolio Optimization",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2604.25378v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Unrestricted mean-variance-skewness-kurtosis portfolio optimization can capture asymmetry and tail risk, but sample-moment formulations become computationally impractical when the asset universe is large: they produce de...",
+   "evidence_tier": "literature",
+   "published": "2026-04-28"
+  },
+  {
+   "name": "Beyond De Prado and Cotton: Hierarchical and Iterative Methods for General Mean-Variance Portfolios",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2604.23833v1",
+   "mechanism": "vol_targeting",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "At convergence, CRISP is Markowitz applied to a variance-preserving shrunk covariance-diagonal variances unchanged, off-diagonal correlations shrunk-with $γ$ tuned for out-of-sample Sharpe rather than covariance-estimation loss.",
+   "evidence_tier": "literature",
+   "published": "2026-04-26"
+  },
+  {
+   "name": "Beyond Picking Winners: Correlation-Driven Tail Risk in Venture Capital Portfolio Construction",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2604.23087v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We propose a Gaussian-copula-based framework that learns deal-level dependence directly from observed joint success frequencies across founder, geography, and market attributes. Holding marginal deal success probabilitie...",
+   "evidence_tier": "literature",
+   "published": "2026-04-25"
+  },
+  {
+   "name": "Probabilistic Forecasting for Day-ahead Electricity Prices, Battery Trading Strategies and the Economic Evaluation of Predictive Accuracy",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2604.19580v1",
+   "mechanism": "event",
+   "symbol": "futures",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Electricity price forecasting supports decision-making in energy markets and asset operation. Probabilistic forecasts are increasingly adopted to explicitly quantify uncertainty, typically issued as quantile predictions...",
+   "evidence_tier": "literature",
+   "published": "2026-04-21"
+  },
+  {
+   "name": "Cross-Stock Predictability via LLM-Augmented Semantic Networks",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2604.19476v2",
+   "mechanism": "mean_reversion",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "In a backtest on S&P 500 constituents from 2011 to 2019, LLM-based edge filtering improves the long-short Sharpe ratio from 0.",
+   "evidence_tier": "literature",
+   "published": "2026-04-21"
+  },
+  {
+   "name": "Evaluating Structured Strategy Backtests: Peer Benchmarks, Regime Timing, and Live Performance",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2604.18821v1",
+   "mechanism": "carry",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Institutional allocators often evaluate structured strategies on the basis of marketed backtests -- hypothetical track records constructed by applying a strategy's rules to historical data prior to any live trading, also...",
+   "evidence_tier": "literature",
+   "published": "2026-04-20"
+  },
+  {
+   "name": "Post-Screening Portfolio Selection",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2604.17593v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "First, assets are screened by Lasso-type regression of a constant on excess returns without an intercept.",
+   "evidence_tier": "literature",
+   "published": "2026-04-19"
+  },
+  {
+   "name": "Signal or Noise in Multi-Agent LLM-based Stock Recommendations?",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2604.17327v1",
+   "mechanism": "momentum",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "These results suggest that multi-agent LLM equity systems can identify sources of alpha beyond what classical factor models capture, and that the buy signal functions as an effective universe-filter that can sit upstream of any portfolio-construction process.",
+   "evidence_tier": "literature",
+   "published": "2026-04-19"
+  },
+  {
+   "name": "The Virtue of Sparsity in Complexity",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2604.17166v1",
+   "mechanism": "carry",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Sparsity or complexity? In modern high-dimensional asset pricing, these are often viewed as competing principles: richer feature spaces appear to favor complexity, while economic intuition has long favored parsimony. We...",
+   "evidence_tier": "literature",
+   "published": "2026-04-18"
+  },
+  {
+   "name": "Public Trader Identity: Adverse Selection and Return Predictability",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2608.04373v1",
+   "mechanism": "carry",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Informed traders are supposed to need anonymity: they profit by hiding among the uninformed. A decentralized exchange now publishes the counterparty: every committed order, cancellation, rejection, and fill carries a per...",
+   "evidence_tier": "literature",
+   "published": "2026-08-05"
+  },
+  {
+   "name": "Exactly solvable model for the diffusive price-dynamics paradox under long-range correlated market-order flow",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2608.00988v1",
+   "mechanism": "orderflow",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We develop an exactly solvable nonlinear time-series model by incorporating the square-root price-impact law into the Lillo--Mike--Farmer (LMF) model to resolve the diffusive price-dynamics paradox under predictable mark...",
+   "evidence_tier": "literature",
+   "published": "2026-08-02"
+  },
+  {
+   "name": "Optimal Trading of Microstructure Mean Reversion",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2608.00885v1",
+   "mechanism": "mean_reversion",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "At the scale of seconds the observed mid carries a stationary, mean-reverting error around a latent efficient price. We build an order book whose own flow produces that error and solve for the trading rule that maximises...",
+   "evidence_tier": "literature",
+   "published": "2026-08-01"
+  },
+  {
+   "name": "Data-Driven Measures of High-Frequency Trading",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2608.00858v1",
+   "mechanism": "event",
+   "symbol": "ALL",
+   "timeframe": "intraday",
+   "params": {
+    "frequency": "intraday"
+   },
+   "claimed_perf": "Our measures outperform conventional proxies, which struggle to capture the temporal dynamics of HFT.",
+   "evidence_tier": "literature",
+   "published": "2026-08-01"
+  },
+  {
+   "name": "Axient: Debt-Free Finality for Leveraged Binary Event Markets",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2608.00631v1",
+   "mechanism": "microstructure",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Leveraged event positions combine a repayable loan with an outcome claim that may become non-tradable before oracle payout is final. This paper specifies Axient, a physically backed margin layer for binary event markets...",
+   "evidence_tier": "literature",
+   "published": "2026-08-01"
+  },
+  {
+   "name": "Train Often, Deploy Selectively: Forward-Gated Model Replacement in Crypto Markets",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.28577v1",
+   "mechanism": "seasonality",
+   "symbol": "crypto",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Production forecasting systems retrain models regularly, but a retrained candidate does not necessarily outperform a continuously maintained incumbent that has continued to learn.",
+   "evidence_tier": "literature",
+   "published": "2026-07-30"
+  },
+  {
+   "name": "Can Large Language Models Execute Parent Orders?",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.28410v1",
+   "mechanism": "microstructure",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Experiments on Shenzhen Stock Exchange Level-1 data show that PACE outperforms TWAP, Almgren-Chriss, and learning-based baselines, exceeding the strongest baseline by 0.",
+   "evidence_tier": "literature",
+   "published": "2026-07-30"
+  },
+  {
+   "name": "Optimal Execution with Passive Market Impact",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.28323v1",
+   "mechanism": "orderflow",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We derive a mesoscopic model for optimal execution with limit orders that incorporates microstructural features of passive price impact. Our framework is based on two empirical observables: the approximately exponential...",
+   "evidence_tier": "literature",
+   "published": "2026-07-30"
+  },
+  {
+   "name": "Energy Market and Carbon Emission Spillovers in Critical Minerals Investment: A Dynamic Connectedness Approach",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.27485v1",
+   "mechanism": "event",
+   "symbol": "futures",
+   "timeframe": "D1",
+   "params": {
+    "frequency": "D1"
+   },
+   "claimed_perf": "Design/methodology/approach A time-varying parameter vector autoregression (TVP-VAR) model is employed to quantify dynamic connectedness and directional volatility spillovers using daily data from May 1, 2013, to May 2,...",
+   "evidence_tier": "literature",
+   "published": "2026-07-29"
+  },
+  {
+   "name": "Herding, Momentum, and Reversal in China's A-Share Market: An Agent-Based Network Model with Information Diffusion",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.27063v1",
+   "mechanism": "momentum",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "This study develops an agent-based financial market model to explain stock-price momentum and reversal through the joint effects of local herding and delayed information diffusion. Investors form heterogeneous Gaussian b...",
+   "evidence_tier": "literature",
+   "published": "2026-07-29"
+  },
+  {
+   "name": "OpenMarket: A Synchronized Polymarket-Binance Dataset for High-Frequency Prediction-Market Research",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.26245v1",
+   "mechanism": "event",
+   "symbol": "BTCUSD",
+   "timeframe": "intraday",
+   "params": {
+    "frequency": "intraday"
+   },
+   "claimed_perf": "OpenMarket began as an attempt to trade Polymarket's BTC 15-minute binary markets against Binance BTC/USDT order flow. The attempt did not produce a tradable edge: out-of-sample, a walk-forward logistic model over 43 mic...",
+   "evidence_tier": "literature",
+   "published": "2026-07-28"
+  },
+  {
+   "name": "Optimal Market Making in Prediction Markets",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.17991v1",
+   "mechanism": "orderflow",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Prediction markets are attracting growing attention as trading volumes rise and their practical relevance increases. To ensure efficient price discovery, liquidity provision becomes ever more important. Due to the binary...",
+   "evidence_tier": "literature",
+   "published": "2026-07-20"
+  },
+  {
+   "name": "Uniform-Loss Automated Market Making for Prediction Markets",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.17428v2",
+   "mechanism": "orderflow",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Automated market makers (AMMs) for prediction markets descend from market scoring rules, where a mechanism operator subsidizes a market to aggregate beliefs about uncertain events. The existing literature has focused on...",
+   "evidence_tier": "literature",
+   "published": "2026-07-19"
+  },
+  {
+   "name": "Herding and Liquidity in Order-Book Markets. II. Fundamental Anchoring and the Resilience of Liquidity",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.16970v1",
+   "mechanism": "mean_reversion",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "An order-book market whose liquidity provision is anchored to a fundamental value carries a restoring force: the price mean-reverts to value and the book refills after a shock. We show this restoring force is a robust in...",
+   "evidence_tier": "literature",
+   "published": "2026-07-18"
+  },
+  {
+   "name": "Existence and convergence of discrete-time Kyle models with multiple insiders",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.15057v2",
+   "mechanism": "event",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Foster and Viswanathan (1996) extend the discrete-time setting of Kyle (1985) to multiple informed traders who have partial information about the stock's terminal dividend. We resolve two long-standing open problems in t...",
+   "evidence_tier": "literature",
+   "published": "2026-07-16"
+  },
+  {
+   "name": "Detecting unusual trading patterns on cryptocurrency exchanges by means of complexity measures",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.13916v1",
+   "mechanism": "microstructure",
+   "symbol": "crypto",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Artificial transaction generation remains an important source of potential market manipulation on cryptocurrency exchanges, as it may distort reported liquidity and reduce market transparency. This study proposes a diagn...",
+   "evidence_tier": "literature",
+   "published": "2026-07-15"
+  },
+  {
+   "name": "Multidimensional stochastic liquidity in Kyle's model of informed trading",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.10934v1",
+   "mechanism": "carry",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We develop a variational formulation of Kyle's model of informed trading that accommodates stochastic liquidity and multiple traded assets. The main equilibrium result is stated first: under a martingale dual condition,...",
+   "evidence_tier": "literature",
+   "published": "2026-07-12"
+  },
+  {
+   "name": "The Quarter-Hour Effect: Periodic Algorithmic Trading and Return Predictability in Cryptocurrency Futures",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.09426v2",
+   "mechanism": "orderflow",
+   "symbol": "crypto",
+   "timeframe": "intraday",
+   "params": {
+    "frequency": "intraday"
+   },
+   "claimed_perf": "Cryptocurrency markets exhibit periodic bursts in volatility and volume at one-minute, five-minute, and quarter-hour marks. Using trade data for six Binance perpetual contracts, we link these bursts to algorithmic partic...",
+   "evidence_tier": "literature",
+   "published": "2026-07-10"
+  },
+  {
+   "name": "When Does Order Flow Matter? State-Dependent L2 Liquidity-State Transitions in Crypto Futures",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.09230v1",
+   "mechanism": "seasonality",
+   "symbol": "BTCUSD",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Building event-conditioned market models requires separating macro-event labels from persistent microstructure state. We study this distinction in Binance BTCUSDT and ETHUSDT futures from 2023-2026, combining top-20 L2 o...",
+   "evidence_tier": "literature",
+   "published": "2026-07-10"
+  },
+  {
+   "name": "Herding and Liquidity in Order-Book Markets. I. A Robust Liquidity-Stress Crossover and its Reflexive Mechanism",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.08907v1",
+   "mechanism": "momentum",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Agent-based models of markets readily produce emergent instabilities, but telling a genuine collective effect apart from a parameter artefact takes discipline. We apply Bouchaud's phase-diagram method to a continuous-dou...",
+   "evidence_tier": "literature",
+   "published": "2026-07-09"
+  },
+  {
+   "name": "Robustness in Sequential Decision Making under Evolving Uncertainty: Evidence from High-Frequency Market Making",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.08291v1",
+   "mechanism": "orderflow",
+   "symbol": "ALL",
+   "timeframe": "intraday",
+   "params": {
+    "frequency": "intraday"
+   },
+   "claimed_perf": "We study sequential decision making under evolving uncertainty in high-frequency financial markets, where changing market dynamics continually challenge static decision policies. We show that robustness has two economica...",
+   "evidence_tier": "literature",
+   "published": "2026-07-09"
+  },
+  {
+   "name": "Volatility in Prediction Markets: A Structural Approach",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.08199v2",
+   "mechanism": "carry",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Forward-looking volatility forecasts are central inputs to derivatives pricing, market making, risk management, and volatility-linked trading strategies, with ARCH and GARCH models serving as the canonical workhorses. Su...",
+   "evidence_tier": "literature",
+   "published": "2026-07-09"
+  },
+  {
+   "name": "Can Reinforcement Learning Efficiently Discover Price Manipulation?",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.06121v1",
+   "mechanism": "microstructure",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "More importantly, RL consistently outperforms the model-based approach when parameter estimates are affected by sampling error, despite the latter benefiting from the correct model specification.",
+   "evidence_tier": "literature",
+   "published": "2026-07-07"
+  },
+  {
+   "name": "Reaction-boundary variance and adjoint-consistent local-volatility projection",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.05011v2",
+   "mechanism": "seasonality",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We derive an operational-time variance kernel for a latent-order-book reaction boundary and use it to separate three objects usually collapsed in calendar-time volatility models: a structural boundary cumulant, a clock p...",
+   "evidence_tier": "literature",
+   "published": "2026-07-06"
+  },
+  {
+   "name": "Order Splitting and Liquidity Replenishment Are Jointly Necessary for the Square-Root Law of Market Impact:",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.04280v1",
+   "mechanism": "momentum",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Three quantitative predictions have been advanced for the square-root law (SRL) of market impact, $I/σ_D = c\\,(Q/V_D)^δ$ with $δ\\approx 0.5$: GGPS ($δ=β-1$), FGLW ($δ=α-1$), and LOB walking ($δ=1/(1+γ)$). Using a minimal...",
+   "evidence_tier": "literature",
+   "published": "2026-07-05"
+  },
+  {
+   "name": "A Limit Order Market with Uncertain Informed Trading Participation",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.04221v1",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We study a one period limit order market with informed traders, noise traders, and competitive liquidity suppliers, in which the number of informed traders is random. Liquidity suppliers know the distribution of the info...",
+   "evidence_tier": "literature",
+   "published": "2026-07-05"
+  },
+  {
+   "name": "A Gabor--Epps uncertainty principle for traders",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.04130v1",
+   "mechanism": "seasonality",
+   "symbol": "ALL",
+   "timeframe": "intraday",
+   "params": {
+    "frequency": "intraday"
+   },
+   "claimed_perf": "We propose a Gabor--Epps uncertainty principle for practical trading. The key idea is that high-frequency correlation is not observed in clock time alone, but is resolved through market activity, order-flow overlap, and...",
+   "evidence_tier": "literature",
+   "published": "2026-07-05"
+  },
+  {
+   "name": "Exact conditional simulation of Point processes: Application to pathwise market impact estimation",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.03239v1",
+   "mechanism": "microstructure",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Market impact is defined as the difference between the observed price trajectory under a given execution strategy and the counterfactual trajectory that would have prevailed without it. Since this counterfactual is unobs...",
+   "evidence_tier": "literature",
+   "published": "2026-07-03"
+  },
+  {
+   "name": "When large trades are not (automatically) news: liquidity tail risk and price discovery",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.01198v3",
+   "mechanism": "orderflow",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We examine how heavy-tailed liquidity demand changes price discovery in a sequential limit order book with asymmetric information. In our setting, liquidity suppliers observe aggregate order flow, not its decomposition i...",
+   "evidence_tier": "literature",
+   "published": "2026-07-01"
+  },
+  {
+   "name": "Settlement Manipulation in Prediction Markets",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.31675v1",
+   "mechanism": "mean_reversion",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Prediction markets increasingly list contracts settling on an asset price that holders can move by trading the underlying. We build a model showing that such contracts transfer wealth from prediction-market liquidity tra...",
+   "evidence_tier": "literature",
+   "published": "2026-06-30"
+  },
+  {
+   "name": "Signature-Based Optimal Execution for Statistical Arbitrage with Path-Dependent Trading Signals",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.31387v2",
+   "mechanism": "mean_reversion",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Both the alpha process and the trading speed are modelled as linear functionals of the truncated signature of a time-augmented market path, placing signal generation and execution on the same truncated signature basis.",
+   "evidence_tier": "literature",
+   "published": "2026-06-30"
+  },
+  {
+   "name": "The Bounce Has No Direction: Sign, Magnitude, and the Microstructure of Equity Return Predictability",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.29591v1",
+   "mechanism": "mean_reversion",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "SPY's lag-1 return autocorrelation ($\\hatρ(1)=-0.081$, $z=-7.4$) is among the most significant regularities in empirical equity finance, yet the standard variance-ratio (VR) test cannot determine whether it reflects dire...",
+   "evidence_tier": "literature",
+   "published": "2026-06-28"
+  },
+  {
+   "name": "Time-dependent weighted directed networks of cryptocurrency interaction from high-frequency returns",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.25466v2",
+   "mechanism": "microstructure",
+   "symbol": "crypto",
+   "timeframe": "intraday",
+   "params": {
+    "frequency": "intraday"
+   },
+   "claimed_perf": "We investigate the evolving structure of interactions in cryptocurrency markets using a network-based framework constructed from high-frequency price data spanning 2020-2025. Directed and weighted networks are constructe...",
+   "evidence_tier": "literature",
+   "published": "2026-06-24"
+  },
+  {
+   "name": "Mitigating Adverse Selection in Concentrated Liquidity AMMs with Dynamic Fees: An Agent-Based Model Approach",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.23070v1",
+   "mechanism": "microstructure",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Automated Market Makers based on concentrated liquidity, such as Uniswap v3, significantly improve capital efficiency but expose Liquidity Providers (LPs) to adverse selection costs, formalized as Loss-Versus-Rebalancing...",
+   "evidence_tier": "literature",
+   "published": "2026-06-22"
+  },
+  {
+   "name": "Fundamental market design as a layer of AI-agent alignment",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2607.09702v1",
+   "mechanism": "orderflow",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "This paper argues that AI-agent alignment in markets should not be understood only as a property of agents, but also as a property of the interaction infrastructure in which agents act. In financial markets, this infrast...",
+   "evidence_tier": "literature",
+   "published": "2026-06-21"
+  },
+  {
+   "name": "Transaction Costs and Speed in the Ethereum Ecosystem: Scalability of the Mainnet and Layer 2s",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.22206v1",
+   "mechanism": "microstructure",
+   "symbol": "crypto",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We study the evolution of transaction speed and fees from January 2024 through March 2026, comparing Ethereum Mainnet and its Layer 2 (L2) networks, as well as Solana and Polygon. Ethereum has undergone upgrades that hav...",
+   "evidence_tier": "literature",
+   "published": "2026-06-20"
+  },
+  {
+   "name": "KineticSim: A Lightweight, High-Performance Execution Engine for Real-Time Market Simulators",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.21784v2",
+   "mechanism": "carry",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Simulating financial markets at scale with multi-agent (Agent-Based) models is critical for market design, regulatory stress-testing, and reinforcement learning, but traditional CPU simulators are bottlenecked by sequent...",
+   "evidence_tier": "literature",
+   "published": "2026-06-19"
+  },
+  {
+   "name": "Do Prediction Markets Match Option Prices? Bitcoin Threshold Evidence from Binance and Polymarket",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.19517v1",
+   "mechanism": "mean_reversion",
+   "symbol": "BTCUSD",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "The digitization of financial markets has produced two classes of platforms that price, in principle, the same state - contingent payoffs: centralized crypto-option exchanges and blockchain-based prediction markets. This...",
+   "evidence_tier": "literature",
+   "published": "2026-06-17"
+  },
+  {
+   "name": "Revisiting Trade-sign Long-memory and Square-root Law price impact",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.16269v2",
+   "mechanism": "seasonality",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Starting with a coupled discrete reaction--diffusion formulation for the lit and latent order books with non-uniformly sampled event times and meta-order source terms we show how two familiar market-microstructure regula...",
+   "evidence_tier": "literature",
+   "published": "2026-06-15"
+  },
+  {
+   "name": "Trading in the Sunshine or in the Shade: Market Impact and Adverse Selection on Hyperliquid",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.15715v1",
+   "mechanism": "orderflow",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Sunshine trading theory predicts that publicly disclosing trading intentions can reduce adverse selection and attract liquidity provision, lowering execution costs. Evidence is scarce, because explicit preannouncement of...",
+   "evidence_tier": "literature",
+   "published": "2026-06-14"
+  },
+  {
+   "name": "Realtime price impact detection",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.13419v1",
+   "mechanism": "carry",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Observed adverse price moves may be caused by the trader's own actions, or by an unrelated participant competing for the same liquidity and capturing the same alpha.",
+   "evidence_tier": "literature",
+   "published": "2026-06-11"
+  },
+  {
+   "name": "Option prices from operational-time reaction-boundary lattices",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.09564v4",
+   "mechanism": "seasonality",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We consider the role of a continuum operational time $u$, its mapping to calendar time $t$, and their relation to event time in option-pricing problems. We derive option-pricing equations from an operational-time Markov...",
+   "evidence_tier": "literature",
+   "published": "2026-06-08"
+  },
+  {
+   "name": "Volatility Forecasting and Return Prediction under Market Regimes: Evidence from High-Frequency Chinese Equity Data",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.09478v1",
+   "mechanism": "vol_targeting",
+   "symbol": "equities",
+   "timeframe": "intraday",
+   "params": {
+    "frequency": "intraday"
+   },
+   "claimed_perf": "The empirical results demonstrate that regime-aware volatility forecasting consistently outperforms baseline HARQ models across forecast evaluation metrics and is generally supported by formal forecast comparison tests.",
+   "evidence_tier": "literature",
+   "published": "2026-06-08"
+  },
+  {
+   "name": "Axiomatic Market Making",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.09454v1",
+   "mechanism": "orderflow",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "This paper axiomatizes the bid-ask market maker's quoting rule. A quoting rule maps the maker's state, namely inventory, belief, variance, trade intensity, and informed-trader fraction, to a bid-ask pair. Eight natural a...",
+   "evidence_tier": "literature",
+   "published": "2026-06-08"
+  },
+  {
+   "name": "Proof of Stake economy under centralized exchanges--a mean field model",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.09003v1",
+   "mechanism": "orderflow",
+   "symbol": "crypto",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We consider the interaction between centralized trading and decentralized Proof of Stake (PoS) blockchain ecosystems. Motivated by the increasing dominance of centralized exchanges and the institutionalization of crypto...",
+   "evidence_tier": "literature",
+   "published": "2026-06-08"
+  },
+  {
+   "name": "TT-DAC-PS: Twin-Target Deterministic Actor-Critic with Policy Smoothing for Optimal Trade Execution",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.08379v1",
+   "mechanism": "orderflow",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "The proposed model consistently reduces mean implementation shortfall percentage with competitive variance, outperforming classical baselines and standard reinforcement-learning benchmark models.",
+   "evidence_tier": "literature",
+   "published": "2026-06-07"
+  },
+  {
+   "name": "Beyond Agent Architecture: Execution Assumptions and Reproducibility in LLM-Based Trading Systems",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.08285v1",
+   "mechanism": "microstructure",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Large language models (LLMs) and agentic systems are increasingly proposed for financial trading, yet their reported performance remains difficult to compare because studies vary in data provenance, temporal split discip...",
+   "evidence_tier": "literature",
+   "published": "2026-06-06"
+  },
+  {
+   "name": "Diffusive in plain sight: An inconspicuous law of market impact",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.07059v1",
+   "mechanism": "regime",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Decomposing impact as the difference between realized and counterfactual returns and requiring both to be diffusive yields an identity that restricts admissible impact scaling at the level of individual participants. Thi...",
+   "evidence_tier": "literature",
+   "published": "2026-06-05"
+  },
+  {
+   "name": "Competition in Dealer Markets with Internalisation and Externalisation",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.06413v1",
+   "mechanism": "orderflow",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We model a market with multiple dealers who compete for client order flow by dynamically updating their bid and ask quotes for a risky asset. Dealers aim to maximise expected profits while controlling inventory risk by s...",
+   "evidence_tier": "literature",
+   "published": "2026-06-04"
+  },
+  {
+   "name": "Market Informedness and Market-Maker Profitability: The Trade-Off Between Adverse Selection and Price Discovery",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.05882v2",
+   "mechanism": "orderflow",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "This paper studies how market informedness affects market makers' profitability in a computational market environment with heterogeneous learning agents. We develop an agent-based market model in which market makers diff...",
+   "evidence_tier": "literature",
+   "published": "2026-06-04"
+  },
+  {
+   "name": "Cost of Manipulation in AMM-Based Oracles",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.03548v1",
+   "mechanism": "microstructure",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We study the robustness of AMM-based on-chain price oracles to strategic manipulation. An attacker trades against constant product automated market makers (CPMMs) to distort an on-chain oracle, arbitrageurs restore cross...",
+   "evidence_tier": "literature",
+   "published": "2026-06-02"
+  },
+  {
+   "name": "Avellaneda-Stoikov and Cartea-Jaimungal as One Framework: A Forced Uniqueness Theorem for Inventory Market Making",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.01477v3",
+   "mechanism": "orderflow",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "In inventory market making, the running-penalty coefficient $φ$ of the Cartea-Jaimungal framework and the risk-aversion parameter $γ$ of the Avellaneda-Stoikov framework are typically treated as independent free paramete...",
+   "evidence_tier": "literature",
+   "published": "2026-05-31"
+  },
+  {
+   "name": "Quality-Adjusted Hit-Ratio Targeting in Corporate Bond Market Making",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.30643v1",
+   "mechanism": "carry",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Under a quadratic value-function approximation, optimal quotes decompose into a riskless spread, inventory skew, credit-alpha skew, residual-toxicity charge, and quality-hit-ratio subsidy.",
+   "evidence_tier": "literature",
+   "published": "2026-05-28"
+  },
+  {
+   "name": "When market boundaries weaken: Network reconfiguration and regime-dependent cross-asset spillovers",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.30442v2",
+   "mechanism": "regime",
+   "symbol": "crypto",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Cryptocurrencies are increasingly adopted as investment assets, making their interactions with traditional financial markets central to cross-asset diversification and systemic risk. This paper studies the integration of...",
+   "evidence_tier": "literature",
+   "published": "2026-05-28"
+  },
+  {
+   "name": "From Knowing to Doing: A Memory-Controlled Benchmark for LLM Trading Agents on Stock Markets",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.28359v1",
+   "mechanism": "seasonality",
+   "symbol": "equities",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Attribution analysis further shows that LLM agents' cumulative returns under leakage-controlled evaluation are largely explained by passive market and style exposure, with limited evidence of persistent stock-selection alpha.",
+   "evidence_tier": "literature",
+   "published": "2026-05-27"
+  },
+  {
+   "name": "The Privacy Subsidy in Continuous-Time Kyle: Cumulative Welfare under Noise-Perturbed Order-Flow Observation",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.25631v4",
+   "mechanism": "orderflow",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We extend the closed-form privacy-subsidy result of Nakamura~(2026, arXiv:2605.15746) from the single-period Kyle model to continuous-time. A committed Bayesian automated market maker observes the aggregate order flow pe...",
+   "evidence_tier": "literature",
+   "published": "2026-05-25"
+  },
+  {
+   "name": "Entropy-Regularized Certainty-Equivalent Bellman Policies for Risk-Sensitive Market Making",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.24878v1",
+   "mechanism": "orderflow",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We study a finite-inventory risk-sensitive market making problem in which a dealer controls bid and ask quotes, faces Brownian midprice risk, and receives liquidity-taking orders through point processes with quote-depend...",
+   "evidence_tier": "literature",
+   "published": "2026-05-24"
+  },
+  {
+   "name": "Explicit Signal-Adaptive Sequential Optimal Execution Quotes",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.24242v2",
+   "mechanism": "orderflow",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "This paper develops a unified explicit solution theory for optimal execution through sequential limit-order placement in a limit order book. Rather than controlling only the trading speed of a metaorder, we determine how...",
+   "evidence_tier": "literature",
+   "published": "2026-05-22"
+  },
+  {
+   "name": "Imperfect Commitment in Maximal Extractable Value Auctions",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.22667v2",
+   "mechanism": "other",
+   "symbol": "crypto",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Ethereum block builders run sealed auctions among searchers, but nothing in the protocol forces a builder to honor the auction outcome after observing submitted bundles. This paper studies the commitment problem. We mode...",
+   "evidence_tier": "literature",
+   "published": "2026-05-21"
+  },
+  {
+   "name": "Machine Learning-Based Bitcoin Trading Under Transaction Costs: Evidence From Walk-Forward Forecasting",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2606.00060v1",
+   "mechanism": "carry",
+   "symbol": "BTCUSD",
+   "timeframe": "MN1",
+   "params": {
+    "frequency": "MN1"
+   },
+   "claimed_perf": "The strongest long-only XGBoost strategy produces annualised returns above 65% with a Sharpe ratio above one.",
+   "evidence_tier": "literature",
+   "published": "2026-05-19"
+  },
+  {
+   "name": "The Privacy Subsidy in Glosten-Milgrom: Bid-Ask Spread and Welfare under Flip-Noise Direction Observation",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.19742v4",
+   "mechanism": "microstructure",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "We derive a closed-form bid-ask spread and welfare decomposition for the Glosten-Milgrom 1985 sequential-trading model when the market maker observes the trade direction perturbed by a binary flip channel of probability...",
+   "evidence_tier": "literature",
+   "published": "2026-05-19"
+  },
+  {
+   "name": "The Viability of Blockchain Markets under Discrete Clearing and Paid Priority",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.17425v1",
+   "mechanism": "other",
+   "symbol": "ALL",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "This paper develops a model to evaluate the viability of blockchain markets as the sole venue for price formation. Blockchains clear at discrete intervals called block time, and transactions are executed sequentially acc...",
+   "evidence_tier": "literature",
+   "published": "2026-05-17"
+  },
+  {
+   "name": "The Privacy Subsidy: Kyle's $λ$ under Noise-Perturbed Order-Flow Observation",
+   "source": "academic",
+   "source_url": "http://arxiv.org/abs/2605.15746v5",
+   "mechanism": "orderflow",
+   "symbol": "crypto",
+   "timeframe": "ALL",
+   "params": {
+    "frequency": "ALL"
+   },
+   "claimed_perf": "Privacy-preserving cryptocurrency exchanges alter what the pricing mechanism observes about order flow. We derive the unique linear Kyle equilibrium when a committed Bayesian market maker observes order flow perturbed by...",
+   "evidence_tier": "literature",
+   "published": "2026-05-15"
+  }
+ ],
+ "pages_fetched": 6,
+ "blocked": [
+  "https://papers.ssrn.com/sol3/results.cfm?nxt=1 (403 Cloudflare)",
+  "https://alphaarchitect.com/blog/ (403)",
+  "https://quantpedia.com/strategies/ (redirected to login-walled Screener, no strategy data)",
+  "https://www.nber.org/papers (fetched, nav-only page, no abstracts)",
+  "https://www.aqr.com/Insights/Research (fetched, nav-only page, no abstracts)"
+ ]
+}

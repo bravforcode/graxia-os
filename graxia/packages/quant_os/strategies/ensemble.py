@@ -30,10 +30,10 @@ import structlog
 
 try:
     from ..core.enums import DecisionType, RegimeType, SignalType
-    from .base import Signal, Strategy, StrategyConfig
+    from .base import Signal, Strategy, StrategyConfig  # noqa: F401
 except (ImportError, SystemError):
-    from core.enums import DecisionType, RegimeType, SignalType
-    from strategies.base import Signal, Strategy
+    from core.enums import DecisionType, RegimeType, SignalType  # type: ignore[no-redef]
+    from strategies.base import Signal, Strategy  # type: ignore[no-redef]
 
 logger = structlog.get_logger(__name__)
 
@@ -452,22 +452,22 @@ class StrategyEnsemble:
         if not votes:
             return None, None
 
-        votes_with_sl = [v for v in votes if v.stop_loss is not None]
-        votes_with_tp = [v for v in votes if v.take_profit is not None]
+        votes_with_sl = [(v.stop_loss, v.weight) for v in votes if v.stop_loss is not None]
+        votes_with_tp = [(v.take_profit, v.weight) for v in votes if v.take_profit is not None]
 
         consensus_sl = None
         consensus_tp = None
 
         if votes_with_sl:
-            total_weight_sl = Decimal(str(sum(v.weight for v in votes_with_sl)))
+            total_weight_sl = Decimal(str(sum(w for _, w in votes_with_sl)))
             if total_weight_sl > 0:
-                weighted_sl_sum = sum(v.stop_loss * Decimal(str(v.weight)) for v in votes_with_sl)
+                weighted_sl_sum = sum(sl * Decimal(str(w)) for sl, w in votes_with_sl)
                 consensus_sl = weighted_sl_sum / total_weight_sl
 
         if votes_with_tp:
-            total_weight_tp = Decimal(str(sum(v.weight for v in votes_with_tp)))
+            total_weight_tp = Decimal(str(sum(w for _, w in votes_with_tp)))
             if total_weight_tp > 0:
-                weighted_tp_sum = sum(v.take_profit * Decimal(str(v.weight)) for v in votes_with_tp)
+                weighted_tp_sum = sum(tp * Decimal(str(w)) for tp, w in votes_with_tp)
                 consensus_tp = weighted_tp_sum / total_weight_tp
 
         # ── ATR-based fallback when sub-strategies don't provide SL/TP ──
@@ -534,7 +534,7 @@ def get_ensemble_signal(
     for name, sig in signal_map.items():
         if sig is not None:
             weight = STRATEGY_WEIGHTS.get(name, 1.0 / len(signal_map))
-            ensemble.add_strategy(_FakeStrategy(name, sig), weight)
+            ensemble.add_strategy(_FakeStrategy(name, sig), weight)  # type: ignore[arg-type]  # local duck-typed shim
 
     if strategies:
         for s in strategies:

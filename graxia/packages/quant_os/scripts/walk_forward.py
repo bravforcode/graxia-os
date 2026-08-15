@@ -7,6 +7,7 @@ Self-contained: trains XGBoost, evaluates with real costs, aggregates across fol
 import argparse
 import json
 import os
+import sys
 import warnings
 
 import numpy as np
@@ -18,6 +19,9 @@ warnings.filterwarnings("ignore")
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_DIR = os.path.join(BASE, "artifacts", "walk_forward")
 FEAT_DIR = os.path.join(BASE, "artifacts", "features_v2")
+
+sys.path.insert(0, BASE)
+from provenance import require_cost_calibrated  # noqa: E402
 
 
 def load_features(symbol: str, freq: str) -> pd.DataFrame:
@@ -199,17 +203,17 @@ def walk_forward(
         if test_end > n:
             break
 
-        X_train = data[train_start:train_end]
+        x_train = data[train_start:train_end]
         y_train_cls = targets[train_start:train_end]
         y_train_reg = y_reg[train_start:train_end]
-        X_test = data[train_end:test_end]
+        x_test = data[train_end:test_end]
         y_test_cls = targets[train_end:test_end]
         ret_test = returns[train_end:test_end]
 
         # Train classifier
         model = xgb.XGBClassifier(**model_params)
-        model.fit(X_train, y_train_cls)
-        train_acc = (model.predict(X_train) == y_train_cls).mean()
+        model.fit(x_train, y_train_cls)
+        train_acc = (model.predict(x_train) == y_train_cls).mean()
 
         # Train magnitude regressor
         mag_model = xgb.XGBRegressor(
@@ -219,23 +223,23 @@ def walk_forward(
             random_state=model_params["random_state"],
             verbosity=0,
         )
-        mag_model.fit(X_train, y_train_reg)
+        mag_model.fit(x_train, y_train_reg)
 
         # Predict
-        preds = model.predict(X_test)
-        proba = model.predict_proba(X_test)
+        preds = model.predict(x_test)
+        proba = model.predict_proba(x_test)
         conf = np.max(proba, axis=1)
         oos_acc = (preds == y_test_cls).mean()
 
         # Magnitude filter
-        mag_pred = mag_model.predict(X_test)
+        mag_pred = mag_model.predict(x_test)
         direction = 2 * preds.astype(float) - 1
         expected_profit = direction * mag_pred * conf
         combined_mask = (conf >= min_confidence) & (expected_profit > min_expected_profit)
 
         # Collect per-trade data for Gate #2 (mag_pred quality) and #3 (conf accuracy)
         test_times = df.index[train_end:test_end]
-        for t_bar in range(len(X_test)):
+        for t_bar in range(len(x_test)):
             per_trade_records.append(
                 {
                     "fold": fold_idx,
@@ -333,7 +337,7 @@ def print_results(agg: dict):
     print("WALK-FORWARD VALIDATION RESULTS")
     print("=" * 70)
     print(f"  Folds: {a['n_folds']}  Windows: train={p['train_window']} test={p['test_window']} step={p['step']}")
-    print(f"  Cost: ${p['spread_cost']+p['slippage_p90']:.3f}/trade  Conf>={p['min_confidence']}")
+    print(f"  Cost: ${p['spread_cost'] + p['slippage_p90']:.3f}/trade  Conf>={p['min_confidence']}")
     print()
     print(
         f"  {'Fold':>4s} | {'TrainAcc':>8s} | {'OOSAcc':>7s} | {'Trades':>6s} | {'Acc':>6s} | {'Gross':>7s} | {'Net':>8s} | {'SR':>6s} |"
@@ -391,21 +395,44 @@ def main():
 
     os.makedirs(args.output, exist_ok=True)
 
+    if args.cost_config:
+        # 2026-07-30: this block previously checked `args.symbol in config`
+        # (the JSON's top-level keys are version/date/assets/..., never a
+        # bare symbol) and read spread_cost_recommended/
+        # slippage_p90_recommended, fields that don't exist in either
+        # config/cost_calibration.json or cost_calibration_live.json (real
+        # schema: assets[symbol].spread_bps_measured /
+        # round_trip_bps_measured, in bps). The condition was never true for
+        # any real symbol, so this "calibrated cost" branch never fired --
+        # every run silently used the flat --spread-cost/--slippage-p90 CLI
+        # defaults while claiming (via --cost-config) to be calibrated. See
+        # Finding 2 in reports/bypass_loader_classification_20260730.md.
+        #
+        # Fixed to read the real schema and to fail loudly rather than
+        # silently keep the flat default when the symbol's cost isn't
+        # actually verified -- same skip-not-guess principle used throughout
+        # this session's fixes, just as a hard failure here since this
+        # script has no per-symbol loop to skip within.
+        with open(args.cost_config) as f:
+            config = json.load(f)
+        require_cost_calibrated(args.symbol, mode="paper")
+        sym_cfg = config.get("assets", {})[args.symbol]
+        round_trip_bps = sym_cfg.get("round_trip_bps_measured", sym_cfg.get("spread_bps_measured", 0.0) * 2)
+        args.spread_cost = round_trip_bps / 10000.0
+        args.slippage_p90 = 0.0
+
     print("=" * 70)
     print("WALK-FORWARD VALIDATION")
     print(f"  {args.symbol} @ {args.freq}")
     print(f"  Windows: train={args.train_window} test={args.test_window} step={args.step}")
-    print(f"  Cost: ${args.spread_cost+args.slippage_p90:.3f}/trade  Conf>={args.min_confidence}")
-    print("=" * 70)
-
     if args.cost_config:
-        with open(args.cost_config) as f:
-            config = json.load(f)
-        if args.symbol in config:
-            sym_cfg = config[args.symbol]
-            args.spread_cost = sym_cfg["spread_cost_recommended"]
-            args.slippage_p90 = sym_cfg["slippage_p90_recommended"]
-            print(f"  [Calibrated cost] {args.symbol}: spread={args.spread_cost:.6f}, slippage={args.slippage_p90:.6f}")
+        print(
+            f"  Cost: ${args.spread_cost + args.slippage_p90:.6f}/trade (real, "
+            f"round-trip spread-only, no measured slippage)  Conf>={args.min_confidence}"
+        )
+    else:
+        print(f"  Cost: ${args.spread_cost + args.slippage_p90:.3f}/trade  Conf>={args.min_confidence}")
+    print("=" * 70)
 
     df = load_features(args.symbol, args.freq)
     if "target" not in df.columns or "target_return" not in df.columns:
@@ -462,11 +489,11 @@ def convert_numpy(obj):
         return {k: convert_numpy(v) for k, v in obj.items()}
     elif isinstance(obj, list):
         return [convert_numpy(v) for v in obj]
-    elif isinstance(obj, (np.bool_,)):
+    elif isinstance(obj, np.bool_):
         return bool(obj)
-    elif isinstance(obj, (np.integer,)):
+    elif isinstance(obj, np.integer):
         return int(obj)
-    elif isinstance(obj, (np.floating,)):
+    elif isinstance(obj, np.floating):
         return float(obj)
     elif isinstance(obj, np.ndarray):
         return obj.tolist()

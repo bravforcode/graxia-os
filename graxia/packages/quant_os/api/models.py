@@ -5,7 +5,7 @@ Kept self-contained (local declarative Base) so Alembic and the API can import
 models without the external graxia.database package.
 """
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional
 
@@ -278,8 +278,8 @@ class Backtest(Base):
     timeframe: Mapped[str] = mapped_column(String(8), nullable=False)
     strategy_id: Mapped[str] = mapped_column(String(64), nullable=False)
 
-    start_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
-    end_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    end_date: Mapped[date] = mapped_column(Date, nullable=False)
 
     initial_capital: Mapped[Decimal] = mapped_column(Numeric(18, 2), default=Decimal("10000"))
     final_capital: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
@@ -311,7 +311,7 @@ class Backtest(Base):
     monthly_returns: Mapped[list | None] = mapped_column(JSONB)
 
     is_walk_forward: Mapped[bool] = mapped_column(Boolean, default=False)
-    oos_start_date: Mapped[datetime.date | None] = mapped_column(Date)
+    oos_start_date: Mapped[date | None] = mapped_column(Date)
     overfitting_tests: Mapped[dict | None] = mapped_column(JSONB)
 
     notes: Mapped[str | None] = mapped_column(Text)
@@ -350,7 +350,7 @@ class PortfolioSnapshot(Base):
     __table_args__ = (UniqueConstraint("snapshot_date", name="uq_snapshots_date"),)
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("uuid_generate_v4()"))
-    snapshot_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    snapshot_date: Mapped[date] = mapped_column(Date, nullable=False)
 
     balance: Mapped[Decimal] = mapped_column(Numeric(18, 2), default=Decimal("0"))
     equity: Mapped[Decimal] = mapped_column(Numeric(18, 2), default=Decimal("0"))
@@ -482,8 +482,8 @@ class MLModel(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=False)
 
     trained_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    train_start: Mapped[datetime.date | None] = mapped_column(Date)
-    train_end: Mapped[datetime.date | None] = mapped_column(Date)
+    train_start: Mapped[date | None] = mapped_column(Date)
+    train_end: Mapped[date | None] = mapped_column(Date)
 
     last_drift_check: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     drift_score: Mapped[Decimal | None] = mapped_column(Numeric(5, 4))
@@ -538,7 +538,7 @@ class PaperDailyReport(Base):
     __table_args__ = (UniqueConstraint("report_date", name="uq_paper_report_date"),)
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("uuid_generate_v4()"))
-    report_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    report_date: Mapped[date] = mapped_column(Date, nullable=False)
 
     total_trades: Mapped[int] = mapped_column(Integer, default=0)
     open_positions_count: Mapped[int] = mapped_column(Integer, default=0)
@@ -570,7 +570,7 @@ class ReconciliationLog(Base):
     )
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("uuid_generate_v4()"))
-    run_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    run_date: Mapped[date] = mapped_column(Date, nullable=False)
     broker_id: Mapped[str] = mapped_column(String(32), nullable=False)
     recon_type: Mapped[str] = mapped_column(String(32), nullable=False)
 

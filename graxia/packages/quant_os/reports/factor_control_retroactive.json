@@ -1,0 +1,23 @@
+{
+  "analysis": "Factor-Control Retroactive",
+  "description": "R\u00b2 of XAUUSD daily returns vs DXY/VIX/SPX",
+  "threshold": 0.3,
+  "results": {
+    "DXY": {
+      "r2": 0.1901,
+      "correlation": -0.436,
+      "n_obs": 2136
+    },
+    "VIX": {
+      "r2": 0.0003,
+      "correlation": -0.0178,
+      "n_obs": 2634
+    },
+    "SPX": {
+      "r2": 0.0049,
+      "correlation": 0.0697,
+      "n_obs": 2633
+    }
+  },
+  "high_exposure_factors": []
+}

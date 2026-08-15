@@ -1,0 +1,30 @@
+[
+  {
+    "symbol": "EURUSD",
+    "n_bars": 5865,
+    "oos_trades": 8,
+    "claimed_oos_trades": 26,
+    "trade_count_faithful": false,
+    "sharpe": 6.947083585906084,
+    "win_rate_pct": 50.0,
+    "null_mean": 0.23277422941130074,
+    "null_std": 4.08432590966596,
+    "p_value": 0.04,
+    "z_score": 1.6439210544977119,
+    "verdict": "** SIGNIFICANT p < 0.05 **"
+  },
+  {
+    "symbol": "GBPUSD",
+    "n_bars": 5863,
+    "oos_trades": 20,
+    "claimed_oos_trades": 27,
+    "trade_count_faithful": true,
+    "sharpe": 2.5410355779079428,
+    "win_rate_pct": 55.00000000000001,
+    "null_mean": 0.7581908639471792,
+    "null_std": 4.541996576364119,
+    "p_value": 0.3,
+    "z_score": 0.3925244512950918,
+    "verdict": "NOT significant (p = 0.3000)"
+  }
+]

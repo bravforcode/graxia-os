@@ -1,0 +1,17 @@
+[
+  {
+    "name": "Cross-Asset Momentum",
+    "status": "ERROR: tuple indices must be integers or slices, not str",
+    "overall": "FAIL"
+  },
+  {
+    "name": "Session Pattern",
+    "status": "ERROR: 'RangeIndex' object has no attribute 'hour'",
+    "overall": "FAIL"
+  },
+  {
+    "name": "Macro Regime MR",
+    "status": "ERROR: tuple indices must be integers or slices, not str",
+    "overall": "FAIL"
+  }
+]

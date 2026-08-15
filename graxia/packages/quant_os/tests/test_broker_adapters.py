@@ -287,6 +287,7 @@ class TestBrokerManager:
         """from_config with live_trading_enabled=False creates PaperAdapter."""
         mock_config = MagicMock()
         mock_config.live_trading_enabled = False
+        mock_config.shadow_mode = False
         with patch("graxia.packages.quant_os.execution.adapters.manager.PaperAdapter") as mock_paper:
             mock_paper.return_value = MagicMock(name="PAPER")
             from graxia.packages.quant_os.execution.adapters.manager import BrokerManager

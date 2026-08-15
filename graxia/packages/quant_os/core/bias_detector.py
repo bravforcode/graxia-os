@@ -10,7 +10,7 @@ class BiasDetector:
     """Detects recursive and lookahead bias in backtests"""
 
     def check_recursive_bias(
-        self, indicator_func, data: dict[str, list], candle_counts: list[int] = None
+        self, indicator_func: object, data: dict[str, list], candle_counts: list[int] | None = None
     ) -> dict[str, str]:
         """Compare indicator values across different warmup periods"""
         if candle_counts is None:
@@ -20,7 +20,7 @@ class BiasDetector:
         for count in candle_counts:
             if len(data.get("close", [])) >= count:
                 subset = {k: v[:count] for k, v in data.items()}
-                results[count] = indicator_func(subset)
+                results[count] = indicator_func(subset)  # type: ignore[operator]
 
         if len(results) < 2:
             return {}
@@ -40,17 +40,17 @@ class BiasDetector:
 
         return biases
 
-    def check_lookahead_bias(self, indicator_func, data: dict[str, list], split_index: int) -> dict[str, str]:
+    def check_lookahead_bias(self, indicator_func: object, data: dict[str, list], split_index: int) -> dict[str, str]:
         """Check if indicators use future data by comparing full vs truncated runs"""
         if split_index <= 0 or split_index >= len(data.get("close", [])):
             return {}
 
         # Full run
-        full_result = indicator_func(data)
+        full_result = indicator_func(data)  # type: ignore[operator]
 
         # Truncated run (up to split_index)
         truncated = {k: v[:split_index] for k, v in data.items()}
-        trunc_result = indicator_func(truncated)
+        trunc_result = indicator_func(truncated)  # type: ignore[operator]
 
         biases = {}
         for key in full_result:

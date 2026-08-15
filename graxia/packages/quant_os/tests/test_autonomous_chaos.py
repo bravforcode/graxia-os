@@ -22,11 +22,13 @@ import os
 import tempfile
 import threading
 import time
+from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+import graxia.packages.quant_os.autonomous.order_executor as _order_executor  # noqa: E402
 from graxia.packages.quant_os.autonomous.chart_monitor import ChartMonitor, ChartSnapshot
 from graxia.packages.quant_os.autonomous.decision_engine import DecisionEngine, TradeDecision
 from graxia.packages.quant_os.autonomous.live_approval import (
@@ -42,6 +44,8 @@ from graxia.packages.quant_os.autonomous.reconciler import TradeReconciler
 from graxia.packages.quant_os.autonomous.symbol_registry import SymbolInfo, SymbolRegistry
 from graxia.packages.quant_os.core.enums import SignalType
 from graxia.packages.quant_os.execution.adapters.base import AccountInfo
+from graxia.packages.quant_os.risk.engine import RiskEngine
+from graxia.packages.quant_os.risk.risk_policy import RiskPolicy
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Fixtures
@@ -127,7 +131,7 @@ def mock_kill() -> MagicMock:
 
 
 @pytest.fixture
-def trade_store() -> TradeStore:
+def trade_store() -> Iterator[TradeStore]:
     with tempfile.TemporaryDirectory() as tmpdir:
         store = TradeStore(db_path=os.path.join(tmpdir, "chaos_test.db"))
         yield store
@@ -209,19 +213,19 @@ class TestCDPChaos:
 
     def test_cdp_disconnection_recovery(self) -> None:
         monitor = _make_monitor()
-        monitor._tv_cdp.change_symbol.side_effect = ConnectionError("CDP disconnected")
+        monitor._tv_cdp.change_symbol.side_effect = ConnectionError("CDP disconnected")  # type: ignore[union-attr]
         monitor._cdp_available = False
         assert monitor._should_reconnect_cdp() is True
 
     def test_cdp_slow_response(self) -> None:
         monitor = _make_monitor()
-        monitor._tv_cdp.change_symbol.side_effect = asyncio.TimeoutError
+        monitor._tv_cdp.change_symbol.side_effect = asyncio.TimeoutError  # type: ignore[union-attr]
         monitor._cdp_available = False
         assert monitor._cdp_available is False
 
     def test_cdp_invalid_data(self) -> None:
         monitor = _make_monitor()
-        monitor._tv_cdp.get_chart_data = AsyncMock(return_value=None)
+        monitor._tv_cdp.get_chart_data = AsyncMock(return_value=None)  # type: ignore[method-assign, union-attr]
         assert monitor._cdp_available is True
 
     def test_cdp_reconnect_respects_interval(self) -> None:
@@ -569,7 +573,8 @@ class TestBrokerChaos:
         broker.active.get_account_info.side_effect = ConnectionError("MT5 connection lost")
         executor = _make_executor(broker)
         account, portfolio = executor._fetch_account_state()
-        assert account.equity == 100000.0
+        # Fail-closed: $0 equity means all risk checks reject
+        assert account.equity == 0.0
 
     @pytest.mark.asyncio
     async def test_broker_submit_order_exception(self) -> None:
@@ -658,11 +663,40 @@ class TestBrokerChaos:
         assert result.success is False
         assert "max open positions" in result.error.lower()
 
+    def test_daily_pnl_populated_in_account_state(self) -> None:
+        """Regression test for the Layer-3 wiring bug: account.daily_pnl (the
+        field RiskEngine._layer3 checks against MAX_DAILY_LOSS_PCT) must
+        reflect real broker equity movement, not stay pinned at 0.0 forever.
+        """
+        broker = MagicMock()
+        executor = _make_executor(broker)
+        broker.active.get_account_info.return_value = AccountInfo(
+            equity=10000.0, cash=10000.0, margin_used=0, margin_available=10000.0
+        )
+        executor._fetch_account_state()  # anchors today's baseline at $10,000
+        broker.active.get_account_info.return_value = AccountInfo(
+            equity=9500.0, cash=9500.0, margin_used=0, margin_available=9500.0
+        )
+        account, _ = executor._fetch_account_state()
+        assert account.daily_pnl == -500.0
+
     @pytest.mark.asyncio
     async def test_daily_loss_breached(self) -> None:
         broker = MagicMock()
         executor = _make_executor(broker)
-        executor._daily_realized_pnl = __import__("decimal").Decimal("-500.0")
+        # Anchor today's starting equity at $10,000 via a real fetch (this is
+        # what production does on the first risk check of the day).
+        broker.active.get_account_info.return_value = AccountInfo(
+            equity=10000.0, cash=10000.0, margin_used=0, margin_available=10000.0
+        )
+        executor._fetch_account_state()
+        # Simulate a realized $500 loss dropping equity to $9,500 (5% > the
+        # configured 3% daily loss limit). This drives the real
+        # RealTimePnLTracker-backed gate via broker-reported equity, not a
+        # hand-set internal counter that nothing else ever writes to.
+        broker.active.get_account_info.return_value = AccountInfo(
+            equity=9500.0, cash=9500.0, margin_used=0, margin_available=9500.0
+        )
         result = await executor.execute(_make_decision())
         assert result.success is False
         assert "daily loss" in result.error.lower()
@@ -673,6 +707,19 @@ class TestBrokerChaos:
         d = _make_decision(confidence=0.01)
         size = executor._calculate_position_size(d)
         assert size >= 0.01
+
+    def test_position_size_broker_unreachable_fails_to_zero(self) -> None:
+        """Regression test: if the broker is unreachable while sizing, the
+        executor must fail toward zero size (rejecting the trade), not
+        fabricate a mid-size equity guess (e.g. the old $10,000 fallback)
+        and size a real order off invented numbers.
+        """
+        broker = MagicMock()
+        executor = _make_executor(broker)
+        broker.active.get_account_info.side_effect = RuntimeError("broker unreachable")
+        d = _make_decision()
+        size = executor._calculate_position_size(d)
+        assert size == 0.0
 
     def test_broker_get_positions_exception(self) -> None:
         broker = MagicMock()
@@ -733,14 +780,21 @@ class TestBrokerChaos:
         ok, _ = executor._check_correlation(d)
         assert ok is True
 
-    def test_correlation_check_broker_error_graceful(self) -> None:
+    def test_correlation_check_broker_error_fails_closed(self) -> None:
+        """Matches this file's established fail-closed pattern (see
+        test_broker_connection_lost, test_position_size_broker_unreachable_fails_to_zero):
+        if we can't verify correlation exposure, we must not silently let the
+        trade through — that would let real correlated exposure pile up
+        exactly when the broker link is least trustworthy.
+        """
         broker = MagicMock()
         broker.active = MagicMock()
         broker.active.get_positions.side_effect = RuntimeError("broker down")
         executor = _make_executor(broker)
         d = _make_decision()
-        ok, _ = executor._check_correlation(d)
-        assert ok is True
+        ok, reason = executor._check_correlation(d)
+        assert ok is False
+        assert "unavailable" in reason.lower()
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1581,7 +1635,7 @@ class TestNotificationsChaos:
 
     @pytest.mark.asyncio
     async def test_disabled_notifier_no_send(self) -> None:
-        notifier = TradeNotifier(bot_token="", chat_id="")
+        notifier = TradeNotifier(bot_token="", chat_id="", enabled=False)
         await notifier.notify_trade(_make_decision(), MagicMock(success=True))
 
     @pytest.mark.asyncio
@@ -1884,22 +1938,67 @@ class TestEdgeCases:
     def test_daily_loss_zero_not_breached(self) -> None:
         broker = MagicMock()
         executor = _make_executor(broker)
-        executor._daily_realized_pnl = __import__("decimal").Decimal("0")
+        broker.active.get_account_info.return_value = AccountInfo(
+            equity=10000.0, cash=10000.0, margin_used=0, margin_available=10000.0
+        )
+        executor._fetch_account_state()  # anchor baseline; equity unchanged -> daily_pnl == 0
         assert executor._check_daily_loss_breached() is False
 
     def test_daily_loss_positive_not_breached(self) -> None:
         broker = MagicMock()
         executor = _make_executor(broker)
-        executor._daily_realized_pnl = __import__("decimal").Decimal("100.0")
+        broker.active.get_account_info.return_value = AccountInfo(
+            equity=10000.0, cash=10000.0, margin_used=0, margin_available=10000.0
+        )
+        executor._fetch_account_state()  # anchor baseline at $10,000
+        broker.active.get_account_info.return_value = AccountInfo(
+            equity=10100.0, cash=10100.0, margin_used=0, margin_available=10100.0
+        )
+        executor._fetch_account_state()  # +$100 -> daily_pnl positive, not a loss
         assert executor._check_daily_loss_breached() is False
 
+    def test_daily_loss_threshold_reads_real_risk_policy(self) -> None:
+        """Regression test for the auto_config vs RiskEngine threshold
+        mismatch: when a *real* RiskEngine (backed by a RiskPolicy) is
+        wired in, the local daily-loss backstop must gate on that
+        RiskPolicy's threshold -- the same number Layer 3 enforces --
+        not on the independent ``auto_config.MAX_DAILY_LOSS_PCT`` (3%)
+        constant.
+        """
+        broker = MagicMock()
+        broker.active = MagicMock()
+        broker.active.get_account_info.return_value = AccountInfo(
+            equity=10000.0, cash=10000.0, margin_used=0, margin_available=10000.0
+        )
+        broker.active.get_positions.return_value = []
+        ks = MagicMock()
+        ks.is_active.return_value = False
+        ks.is_triggered = False
+        ks.get_status.return_value = {}
+
+        # Tight custom policy: 1.0% daily loss limit (vs auto_config's 3.0%).
+        policy = RiskPolicy(max_daily_loss_bps=100)
+        risk_engine = RiskEngine(risk_policy=policy)
+        executor = OrderExecutor(broker_manager=broker, risk_engine=risk_engine, kill_switch=ks, mode="paper")
+
+        assert executor._effective_max_daily_loss_pct() == pytest.approx(1.0)
+
+        executor._fetch_account_state()  # anchor baseline at $10,000
+        # -2% loss: breaches the 1% RiskPolicy limit but NOT the 3%
+        # auto_config constant this code used to read independently.
+        broker.active.get_account_info.return_value = AccountInfo(
+            equity=9800.0, cash=9800.0, margin_used=0, margin_available=9800.0
+        )
+        executor._fetch_account_state()  # sync tracker to the new equity reading
+        assert executor._check_daily_loss_breached() is True
+
     @pytest.mark.asyncio
-    async def test_max_positions_zero_blocks(self) -> None:
+    async def test_max_positions_zero_blocks(self, monkeypatch) -> None:
         broker = MagicMock()
         executor = _make_executor(broker)
         executor._open_positions = 0
         d = _make_decision()
-        executor._max_open_positions = 0
+        monkeypatch.setattr(_order_executor.auto_config, "MAX_OPEN_POSITIONS", 0)
         result = await executor.execute(d)
         assert result.success is False
 
@@ -1913,12 +2012,12 @@ class TestEdgeCases:
             timestamp=datetime.now(UTC),
         )
         with pytest.raises(AttributeError):
-            snap.symbol = "BTCUSD"
+            snap.symbol = "BTCUSD"  # type: ignore[misc]
 
     def test_trade_decision_immutable(self) -> None:
         d = _make_decision()
         with pytest.raises(AttributeError):
-            d.symbol = "BTCUSD"
+            d.symbol = "BTCUSD"  # type: ignore[misc]
 
     @pytest.mark.asyncio
     async def test_empty_string_symbol(self) -> None:

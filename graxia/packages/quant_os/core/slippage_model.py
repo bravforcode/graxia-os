@@ -99,7 +99,7 @@ class SlippageModel:
     Distribution: Laplace(mu, b) where b = scale parameter
     """
 
-    def __init__(self, pip_values: dict[str, float] | None = None, seed: int | None = None):
+    def __init__(self, pip_values: dict[str, float] | None = None, seed: int | None = None) -> None:
         # Default pip values (price per pip per lot)
         self._pip_values = pip_values or {
             "XAUUSD": 0.01,
@@ -128,7 +128,7 @@ class SlippageModel:
         if volatility <= 0:
             return 1.0
         ratio = volatility / VOLATILITY_BASE
-        return 1.0 + (ratio - 1.0) ** 1.5
+        return float(1.0 + (ratio - 1.0) ** 1.5)
 
     def _laplace_sample(self, mu: float, b: float) -> float:
         """Sample from Laplace distribution.

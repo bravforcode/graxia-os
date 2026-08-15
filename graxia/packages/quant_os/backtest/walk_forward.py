@@ -79,7 +79,7 @@ class WalkForwardResult:
     pbo_result: Any = None  # PBOResult from probability_overfitting
 
     # Per-window details
-    windows: list[WalkForwardWindow] = None
+    windows: list[WalkForwardWindow] | None = None
 
     def __post_init__(self):
         if self.windows is None:
@@ -150,7 +150,7 @@ class WalkForwardAnalyzer:
             raise ValueError(f"Insufficient data: {total_bars} bars. Need at least 1000.")
 
         # Calculate window sizes (accounting for purge/embargo overhead)
-        total_gap = self.purge_bars + self.embargo_bars
+        _total_gap = self.purge_bars + self.embargo_bars
         oos_size = total_bars // (n_windows + 1)  # Each OOS window
         is_size = int(oos_size * self.is_ratio / (1 - self.is_ratio))
 
@@ -332,7 +332,7 @@ class WalkForwardAnalyzer:
             if w.is_params is None:
                 continue
             for k, v in w.is_params.items():
-                if isinstance(v, (int, float)):
+                if isinstance(v, int | float):
                     param_values.setdefault(k, []).append(float(v))
 
         stability = {}

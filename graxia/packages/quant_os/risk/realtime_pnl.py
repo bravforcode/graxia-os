@@ -12,7 +12,7 @@ Features:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from decimal import Decimal
 
 
@@ -103,6 +103,44 @@ class RealTimePnLTracker:
     def alerts(self) -> list[PnLAlert]:
         return list(self._alerts)
 
+    @property
+    def daily_pnl(self) -> Decimal:
+        return self._daily_pnl
+
+    @property
+    def weekly_pnl(self) -> Decimal:
+        return self._weekly_pnl
+
+    def set_baseline(self, equity: Decimal) -> None:
+        """(Re)anchor equity/balance/peak/daily/weekly start points.
+
+        Used once real external equity (e.g. from a broker) is known, so
+        subsequent daily/weekly P&L is measured from a true starting point
+        instead of the constructor's placeholder ``initial_equity``.
+        """
+        self._equity = equity
+        self._balance = equity
+        self._peak_equity = equity
+        self._daily_start_equity = equity
+        self._weekly_start_equity = equity
+        self._daily_pnl = Decimal("0")
+        self._weekly_pnl = Decimal("0")
+
+    def sync_equity(self, equity: Decimal) -> None:
+        """Sync tracker state from an externally-known equity figure.
+
+        Unlike :meth:`update_tick`, this sets equity directly rather than
+        deriving it from balance + unrealized P&L -- used when the caller
+        (e.g. a broker adapter) already reports authoritative total equity.
+        """
+        self._balance = equity
+        self._equity = equity
+        if self._equity > self._peak_equity:
+            self._peak_equity = self._equity
+        self._daily_pnl = self._equity - self._daily_start_equity
+        self._weekly_pnl = self._equity - self._weekly_start_equity
+        self._check_drawdowns()
+
     def update_tick(self, unrealized_pnl: Decimal, timestamp: float = 0.0):
         """Update with tick-level P&L.
 
@@ -166,39 +204,47 @@ class RealTimePnLTracker:
 
         # Total drawdown
         if dd >= self.config.max_total_drawdown_pct:
-            self._alerts.append(PnLAlert(
-                alert_type="BREACH",
-                metric="total_drawdown",
-                current_value=dd,
-                threshold=self.config.max_total_drawdown_pct,
-                message=f"TOTAL DRAWDOWN BREACH: {dd:.1%} >= {self.config.max_total_drawdown_pct:.0%}",
-            ))
+            self._alerts.append(
+                PnLAlert(
+                    alert_type="BREACH",
+                    metric="total_drawdown",
+                    current_value=dd,
+                    threshold=self.config.max_total_drawdown_pct,
+                    message=f"TOTAL DRAWDOWN BREACH: {dd:.1%} >= {self.config.max_total_drawdown_pct:.0%}",
+                )
+            )
         elif dd >= self.config.critical_drawdown_pct:
-            self._alerts.append(PnLAlert(
-                alert_type="CRITICAL",
-                metric="total_drawdown",
-                current_value=dd,
-                threshold=self.config.critical_drawdown_pct,
-                message=f"Critical drawdown: {dd:.1%} >= {self.config.critical_drawdown_pct:.0%}",
-            ))
+            self._alerts.append(
+                PnLAlert(
+                    alert_type="CRITICAL",
+                    metric="total_drawdown",
+                    current_value=dd,
+                    threshold=self.config.critical_drawdown_pct,
+                    message=f"Critical drawdown: {dd:.1%} >= {self.config.critical_drawdown_pct:.0%}",
+                )
+            )
         elif dd >= self.config.warning_drawdown_pct:
-            self._alerts.append(PnLAlert(
-                alert_type="WARNING",
-                metric="total_drawdown",
-                current_value=dd,
-                threshold=self.config.warning_drawdown_pct,
-                message=f"Drawdown warning: {dd:.1%} >= {self.config.warning_drawdown_pct:.0%}",
-            ))
+            self._alerts.append(
+                PnLAlert(
+                    alert_type="WARNING",
+                    metric="total_drawdown",
+                    current_value=dd,
+                    threshold=self.config.warning_drawdown_pct,
+                    message=f"Drawdown warning: {dd:.1%} >= {self.config.warning_drawdown_pct:.0%}",
+                )
+            )
 
         # Daily drawdown
         if daily_dd >= self.config.max_daily_drawdown_pct:
-            self._alerts.append(PnLAlert(
-                alert_type="BREACH",
-                metric="daily_drawdown",
-                current_value=daily_dd,
-                threshold=self.config.max_daily_drawdown_pct,
-                message=f"DAILY DRAWDOWN BREACH: {daily_dd:.1%} >= {self.config.max_daily_drawdown_pct:.0%}",
-            ))
+            self._alerts.append(
+                PnLAlert(
+                    alert_type="BREACH",
+                    metric="daily_drawdown",
+                    current_value=daily_dd,
+                    threshold=self.config.max_daily_drawdown_pct,
+                    message=f"DAILY DRAWDOWN BREACH: {daily_dd:.1%} >= {self.config.max_daily_drawdown_pct:.0%}",
+                )
+            )
 
     def get_snapshot(self, timestamp: float = 0.0) -> PnLSnapshot:
         """Get current P&L snapshot."""

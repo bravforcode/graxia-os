@@ -15,6 +15,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
+from .enums import RuleType, ValueType
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Shared
@@ -312,3 +314,57 @@ class CreateOrderPayload(BaseModel):
         if not v.isupper():
             raise ValueError("currency must be ISO 4217 uppercase (e.g. USD, EUR)")
         return v
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Policy engine schemas (autonomy guardrails — Task 1/3)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class PolicyRuleCreate(BaseModel):
+    action: str
+    rule_type: RuleType
+    value: Optional[float] = None
+    value_type: ValueType = ValueType.PERCENT
+    limited_multiplier: float = 0.25
+    scope: str = "global"
+    scope_value: Optional[str] = None
+    priority: int = 100
+    description: Optional[str] = None
+
+
+class PolicyRuleUpdate(BaseModel):
+    value: Optional[float] = None
+    value_type: Optional[ValueType] = None
+    limited_multiplier: Optional[float] = None
+    enabled: Optional[bool] = None
+    priority: Optional[int] = None
+    description: Optional[str] = None
+
+
+class PolicyRuleResponse(BaseModel):
+    id: UUID
+    action: str
+    rule_type: RuleType
+    value: Optional[float]
+    value_type: ValueType
+    limited_multiplier: float
+    scope: str
+    scope_value: Optional[str]
+    enabled: bool
+    priority: int
+    description: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+
+class SupportChatRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=2000)
+    customer_email: str = Field(..., max_length=320)
+    verification_code: Optional[str] = Field(default=None, max_length=6)
+
+
+class SupportChatResponse(BaseModel):
+    intent: str
+    reply: str
+    action_taken: Optional[str] = None

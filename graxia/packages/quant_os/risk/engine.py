@@ -19,9 +19,11 @@ import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Protocol
+from uuid import uuid4
 
+from ..core.contract_specs import risk_based_units
 from .risk_policy import RiskPolicy
 
 logger = logging.getLogger(__name__)
@@ -60,7 +62,7 @@ class _Layer4:
 # ── Data models ─────────────────────────────────────────────────────────────
 
 
-class RejectReason(str, Enum):
+class RejectReason(StrEnum):
     STALE_SIGNAL = "STALE_SIGNAL"
     LOW_CONVICTION = "LOW_CONVICTION"
     HIGH_RISK = "HIGH_RISK"
@@ -79,6 +81,7 @@ class RejectReason(str, Enum):
     EXCEEDS_VENUE_EXPOSURE = "EXCEEDS_VENUE_EXPOSURE"
     DRAWDOWN_LIMIT = "DRAWDOWN_LIMIT"
     SIZING_REJECTED = "SIZING_REJECTED"
+    NEWS_BLACKOUT = "NEWS_BLACKOUT"
 
 
 @dataclass
@@ -99,13 +102,13 @@ class Signal:
 
     def to_signal_event(self):
         """Convert RiskEngine Signal to EventBus SignalEvent."""
-        from ..core.enums import SignalType as ST
-        from ..core.events import SignalEvent as SE
+        from ..core.enums import SignalType
+        from ..core.events import SignalEvent
 
-        type_map = {"BUY": ST.BUY, "SELL": ST.SELL}
-        return SE(
+        type_map = {"BUY": SignalType.BUY, "SELL": SignalType.SELL}
+        return SignalEvent(
             symbol=self.symbol,
-            signal_type=type_map.get(self.direction, ST.NO_TRADE),
+            signal_type=type_map.get(self.direction, SignalType.NO_TRADE),
             confidence=self.conviction,
             entry_price=self.entry_price,
             stop_loss=self.stop_loss,
@@ -116,14 +119,14 @@ class Signal:
 
 @dataclass
 class AccountState:
-    equity: float = 100000.0
-    balance: float = 100000.0
+    equity: float = 0.0
+    balance: float = 0.0
     daily_pnl: float = 0.0
     weekly_pnl: float = 0.0
     max_drawdown_pct: float = 0.0
-    margin_level_pct: float = 999.0
-    free_margin: float = 100000.0
-    peak_equity: float = 100000.0
+    margin_level_pct: float = 0.0
+    free_margin: float = 0.0
+    peak_equity: float = 0.0
     current_drawdown_pct: float = 0.0
     open_positions: int = 0
 
@@ -151,6 +154,16 @@ class RiskVerdict:
     sizing_details: dict[str, Any] = field(default_factory=dict)
 
 
+@dataclass
+class RiskCheckResult:
+    """Result of :meth:`RiskEngine.check_order` — the OrderManager pre-trade gate."""
+
+    passed: bool
+    reason: str = ""
+    check_id: str = ""
+    check_type: str = ""
+
+
 # ── Protocols ───────────────────────────────────────────────────────────────
 
 
@@ -164,6 +177,24 @@ class CorrelationProvider(Protocol):
 
 class SchemaValidator(Protocol):
     def validate_signal(self, signal: Signal) -> bool: ...
+
+
+class CheckableOrder(Protocol):
+    """Protocol for objects accepted by :meth:`RiskEngine.check_order`.
+
+    The canonical :class:`execution.order.Order` dataclass satisfies this.
+    """
+
+    @property
+    def symbol(self) -> str: ...
+    @property
+    def side(self) -> str: ...
+    @property
+    def price(self) -> float | None: ...
+    @property
+    def stop_price(self) -> float | None: ...
+    @property
+    def stop_loss(self) -> float | None: ...
 
 
 # ── Kill Switch / Circuit Breaker protocols ──────────────────────────────────
@@ -204,6 +235,22 @@ class RiskEngine:
         self._regime_multiplier_map = regime_multiplier_map or {}
         self._risk_policy = risk_policy
         self._news_blackout = news_blackout
+
+    @property
+    def effective_max_daily_loss_pct(self) -> float:
+        """The daily-loss % that :meth:`_layer3` actually enforces right now.
+
+        Mirrors the exact fallback branch used inside ``_layer3``: the
+        configured ``RiskPolicy``'s threshold if one was supplied at
+        construction, otherwise the engine's built-in ``_Layer3`` default.
+        Exists so external callers (e.g. ``OrderExecutor``'s local
+        daily-loss backstop) can read the *single* number Layer 3 is
+        really gating on, instead of hard-coding a second, independently
+        maintained copy of the same threshold that can drift out of sync.
+        """
+        if self._risk_policy is not None:
+            return float(self._risk_policy.max_daily_loss_pct)
+        return _Layer3.MAX_DAILY_LOSS_PCT * 100
 
     def _pre_checks(self, signal: Signal) -> RiskVerdict | None:
         if self._kill_switch is not None and self._kill_switch.is_active():
@@ -249,6 +296,65 @@ class RiskEngine:
 
         # Layer 4
         return self._layer4(signal, account, portfolio, realized_vol, regime, sentiment_multiplier)
+
+    async def check_order(self, order: CheckableOrder) -> RiskCheckResult:
+        """OrderManager pre-trade gate.
+
+        Wraps :meth:`evaluate` by converting the incoming ``order`` object
+        into a :class:`Signal`, fetching default account/portfolio state
+        (broker unavailable → equity/balance = 10 000), and mapping the
+        resulting :class:`RiskVerdict` to a :class:`RiskCheckResult`.
+
+        The ``order`` object is expected to expose ``.symbol``,
+        ``.side``, ``.price``, ``.stop_price`` (or ``.stop_loss``) — the
+        canonical :class:`execution.order.Order` satisfies this.
+        """
+        # Explicit fast path: kill switch active short-circuits everything.
+        if self._kill_switch is not None and self._kill_switch.is_active():
+            return RiskCheckResult(
+                passed=False,
+                reason="Kill switch active",
+                check_type="KILL_SWITCH",
+            )
+
+        # Order → Signal
+        symbol = getattr(order, "symbol", "") or ""
+        stop_price = getattr(order, "stop_price", None)
+        if stop_price is None:
+            stop_price = getattr(order, "stop_loss", None)
+        price = getattr(order, "price", None)
+        side = getattr(order, "side", "BUY")
+        side_str = side.value if hasattr(side, "value") else str(side)
+
+        signal = Signal(
+            symbol=symbol,
+            conviction=0.8,
+            entry_price=float(price) if price is not None else 0.0,
+            stop_loss=float(stop_price) if stop_price is not None else 0.0,
+            direction=side_str,
+            side=side_str,
+            timestamp=datetime.now(),
+            timestamp_epoch=time.time(),
+        )
+
+        # Fail-closed: broker unavailable → zero-equity account (Layer 3 rejects).
+        account = AccountState(equity=0.0, balance=0.0)
+        portfolio = PortfolioState()
+
+        verdict = self.evaluate(signal, account, portfolio)
+
+        if verdict.approved:
+            return RiskCheckResult(
+                passed=True,
+                reason=verdict.reason or "Risk check passed",
+                check_id=str(uuid4()),
+                check_type="RISK_ENGINE",
+            )
+        return RiskCheckResult(
+            passed=False,
+            reason=verdict.reason or "Risk check failed",
+            check_type="RISK_ENGINE",
+        )
 
     def _layer1(self, signal: Signal, account: AccountState | None = None) -> RiskVerdict | None:
         if signal.timestamp_epoch > 0:
@@ -429,8 +535,8 @@ class RiskEngine:
             if self._risk_policy is not None
             else _Layer1.MAX_RISK_PCT_EQUITY
         )
-        risk_budget = account.equity * max_risk_pct
-        approved_qty = round(risk_budget / risk_per_unit, 2)
+        # Single-source raw-units formula (mt5.py converts to lots at the boundary)
+        approved_qty = round(risk_based_units(account.equity, max_risk_pct, signal.entry_price, signal.stop_loss), 2)
 
         approved_qty = max(approved_qty * kelly_fraction, 0)
         dollar_value = approved_qty * signal.entry_price if signal.entry_price else 0
@@ -482,7 +588,7 @@ class RiskEngine:
             return CheckResult(passed=True, check_type="VAR_EXPOSURE")
 
         var = self.var_95(returns)
-        order_value = getattr(order, "quantity", 0) * getattr(order, "price", 0)
+
         portfolio_var_pct = var  # simplified: use return-based VaR directly
 
         if portfolio_var_pct > max_var_pct:

@@ -1,0 +1,292 @@
+{
+  "timestamp": "2026-07-28T02:09:27.642297",
+  "strategy": "DonchianP1",
+  "superseded_by": {
+    "type": "jackknife",
+    "date": "2026-07-28",
+    "finding": "Exclude XAGUSD → dk_t drops from +3.32 to -0.136. Single-asset dependency destroys pooled signal.",
+    "final_verdict": "REJECTED"
+  },
+  "variants": {
+    "donchian_20": {
+      "variant": "donchian_20",
+      "params": {
+        "period": 20,
+        "vol_filter_mode": "none"
+      },
+      "universe": [
+        "XAUUSD",
+        "XAGUSD",
+        "EURUSD",
+        "GBPUSD",
+        "USDJPY",
+        "NAS100",
+        "US30",
+        "BTCUSD"
+      ],
+      "panel_shape": [
+        7360,
+        8
+      ],
+      "date_range": [
+        "2005-01-05 00:00:00",
+        "2026-07-01 00:00:00"
+      ],
+      "total_trades": 536,
+      "pooled": {
+        "dk_t_stat": 3.678806988207411,
+        "dk_mean_return": 1.9820210057291836e-05,
+        "dk_se": 5.387573264954224e-06,
+        "dk_sharpe": 0.6634251772909106,
+        "n_dates": 7360
+      },
+      "per_asset": {
+        "XAUUSD": {
+          "symbol": "XAUUSD",
+          "n_bars": 10545,
+          "n_trades": 137,
+          "sharpe": 0.004779075272075718,
+          "win_rate": 0.2846715328467153,
+          "profit_factor": 1.045913508516275,
+          "max_dd_pct": 5.978253736299901,
+          "nw_t_stat": 0.03036128620659423,
+          "mean_return": 2.2894006513321569e-07,
+          "std_return": 0.0007604630980006463
+        },
+        "XAGUSD": {
+          "symbol": "XAGUSD",
+          "n_bars": 5571,
+          "n_trades": 82,
+          "sharpe": 1.17880644820801,
+          "win_rate": 0.5975609756097561,
+          "profit_factor": 29.040264408224495,
+          "max_dd_pct": 1.9700360779055883,
+          "nw_t_stat": 5.8834206207287325,
+          "mean_return": 0.00020431521452433119,
+          "std_return": 0.0027514299461451406
+        },
+        "EURUSD": {
+          "symbol": "EURUSD",
+          "n_bars": 5579,
+          "n_trades": 88,
+          "sharpe": -0.059182665047903094,
+          "win_rate": 0.2727272727272727,
+          "profit_factor": 0.9336715903053763,
+          "max_dd_pct": 7.321802192959503,
+          "nw_t_stat": -0.28205246217230945,
+          "mean_return": -3.4884231005234306e-06,
+          "std_return": 0.0009356961871767346
+        },
+        "GBPUSD": {
+          "symbol": "GBPUSD",
+          "n_bars": 5578,
+          "n_trades": 92,
+          "sharpe": -0.15576482361704597,
+          "win_rate": 0.2391304347826087,
+          "profit_factor": 0.7705433963369462,
+          "max_dd_pct": 8.494936549716963,
+          "nw_t_stat": -0.7102066160516429,
+          "mean_return": -9.351668637709813e-06,
+          "std_return": 0.0009530593514596703
+        },
+        "USDJPY": {
+          "symbol": "USDJPY",
+          "n_bars": 5819,
+          "n_trades": 95,
+          "sharpe": -0.038614484062841146,
+          "win_rate": 0.29473684210526313,
+          "profit_factor": 1.0007408162938218,
+          "max_dd_pct": 8.347376649348384,
+          "nw_t_stat": -0.19454483625371993,
+          "mean_return": -2.6442741270224676e-06,
+          "std_return": 0.0010870673942073718
+        },
+        "NAS100": {
+          "symbol": "NAS100",
+          "n_bars": 5731,
+          "n_trades": 16,
+          "sharpe": -0.14629431136162474,
+          "win_rate": 0.1875,
+          "profit_factor": 0.6074619974198028,
+          "max_dd_pct": 3.9457520451358676,
+          "nw_t_stat": -0.6986422345468822,
+          "mean_return": -4.7067794014869056e-06,
+          "std_return": 0.000510736140793122
+        },
+        "US30": {
+          "symbol": "US30",
+          "n_bars": 5468,
+          "n_trades": 0,
+          "sharpe": 0.0,
+          "win_rate": 0,
+          "profit_factor": Infinity,
+          "max_dd_pct": 0.0,
+          "nw_t_stat": 0.0,
+          "mean_return": 0.0,
+          "std_return": 0.0
+        },
+        "BTCUSD": {
+          "symbol": "BTCUSD",
+          "n_bars": 5825,
+          "n_trades": 26,
+          "sharpe": 0.17644894300210928,
+          "win_rate": 0.38461538461538464,
+          "profit_factor": 10.81072083590567,
+          "max_dd_pct": 6.396691724933444,
+          "nw_t_stat": 0.8595379849937462,
+          "mean_return": 2.4093877958024936e-05,
+          "std_return": 0.0021676436878796256
+        }
+      },
+      "verdict": "REJECTED",
+      "reason": "Pooled t 1.5-2.0 OR Sharpe > 0 in 3-4/8 assets",
+      "positive_sharpe_count": 3,
+      "supersession_note": "MARGINAL verdict superseded by jackknife: exclude XAGUSD → dk_t from +3.32 to -0.136. Now REJECTED.",
+      "cost_sensitivity": {
+        "0pct": 3.678806988207411,
+        "30pct": 3.6662479091657114,
+        "50pct": 3.662453969648743
+      }
+    },
+    "donchian_vol_filter": {
+      "variant": "donchian_vol_filter",
+      "params": {
+        "period": 20,
+        "vol_filter_mode": "skip_high_vol"
+      },
+      "universe": [
+        "XAUUSD",
+        "XAGUSD",
+        "EURUSD",
+        "GBPUSD",
+        "USDJPY",
+        "NAS100",
+        "US30",
+        "BTCUSD"
+      ],
+      "panel_shape": [
+        7360,
+        8
+      ],
+      "date_range": [
+        "2005-01-05 00:00:00",
+        "2026-07-01 00:00:00"
+      ],
+      "total_trades": 523,
+      "pooled": {
+        "dk_t_stat": 3.3184015787791012,
+        "dk_mean_return": 1.9244881688295135e-05,
+        "dk_se": 5.799343265506059e-06,
+        "dk_sharpe": 0.5845438977225562,
+        "n_dates": 7360
+      },
+      "per_asset": {
+        "XAUUSD": {
+          "symbol": "XAUUSD",
+          "n_bars": 10545,
+          "n_trades": 131,
+          "sharpe": -0.22907906263280747,
+          "win_rate": 0.2366412213740458,
+          "profit_factor": 0.6904502482524817,
+          "max_dd_pct": 12.025673671077154,
+          "nw_t_stat": -1.448061669402348,
+          "mean_return": -1.1566525043296059e-05,
+          "std_return": 0.0008015261969749718
+        },
+        "XAGUSD": {
+          "symbol": "XAGUSD",
+          "n_bars": 5571,
+          "n_trades": 80,
+          "sharpe": 1.1177293674672106,
+          "win_rate": 0.6125,
+          "profit_factor": 34.20344806016927,
+          "max_dd_pct": 3.241801722664289,
+          "nw_t_stat": 5.75702081164206,
+          "mean_return": 0.0002096718498396764,
+          "std_return": 0.0029778561919772376
+        },
+        "EURUSD": {
+          "symbol": "EURUSD",
+          "n_bars": 5579,
+          "n_trades": 84,
+          "sharpe": 0.12461890288259277,
+          "win_rate": 0.2976190476190476,
+          "profit_factor": 1.0111890867216116,
+          "max_dd_pct": 6.676822370934859,
+          "nw_t_stat": 0.6069745950320738,
+          "mean_return": 8.208552785383652e-06,
+          "std_return": 0.0010456417147573973
+        },
+        "GBPUSD": {
+          "symbol": "GBPUSD",
+          "n_bars": 5578,
+          "n_trades": 88,
+          "sharpe": -0.18503575178575876,
+          "win_rate": 0.22727272727272727,
+          "profit_factor": 0.6908154224273209,
+          "max_dd_pct": 9.252164151906323,
+          "nw_t_stat": -0.8833802290643011,
+          "mean_return": -1.1725891242893754e-05,
+          "std_return": 0.0010059825329737872
+        },
+        "USDJPY": {
+          "symbol": "USDJPY",
+          "n_bars": 5819,
+          "n_trades": 93,
+          "sharpe": -0.047524068912107635,
+          "win_rate": 0.25806451612903225,
+          "profit_factor": 0.8920672200511759,
+          "max_dd_pct": 10.514705304557443,
+          "nw_t_stat": -0.27002868352041004,
+          "mean_return": -4.130727902725539e-06,
+          "std_return": 0.0013797906899467986
+        },
+        "NAS100": {
+          "symbol": "NAS100",
+          "n_bars": 5731,
+          "n_trades": 18,
+          "sharpe": 0.00807171226687483,
+          "win_rate": 0.16666666666666666,
+          "profit_factor": 0.6400162898378428,
+          "max_dd_pct": 4.719089301081364,
+          "nw_t_stat": 0.03745321696211396,
+          "mean_return": 3.584691282869655e-07,
+          "std_return": 0.0007049954212355148
+        },
+        "US30": {
+          "symbol": "US30",
+          "n_bars": 5468,
+          "n_trades": 2,
+          "sharpe": -0.252367348030771,
+          "win_rate": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 2.40816820853659,
+          "nw_t_stat": -1.4033780607449804,
+          "mean_return": -4.419113123798538e-06,
+          "std_return": 0.0002779726512041012
+        },
+        "BTCUSD": {
+          "symbol": "BTCUSD",
+          "n_bars": 5825,
+          "n_trades": 27,
+          "sharpe": 0.17335631906814059,
+          "win_rate": 0.3333333333333333,
+          "profit_factor": 9.537757216650792,
+          "max_dd_pct": 6.560993059078192,
+          "nw_t_stat": 0.845457366122053,
+          "mean_return": 2.622889269483612e-05,
+          "std_return": 0.0024018204142389377
+        }
+      },
+      "verdict": "REJECTED",
+      "reason": "Pooled t 1.5-2.0 OR Sharpe > 0 in 3-4/8 assets",
+      "positive_sharpe_count": 4,
+      "supersession_note": "MARGINAL verdict superseded by jackknife: exclude XAGUSD → dk_t from +3.32 to -0.136. Now REJECTED.",
+      "cost_sensitivity": {
+        "0pct": 3.3184015787791012,
+        "30pct": 3.3006396715972492,
+        "50pct": 3.288782451152103
+      }
+    }
+  }
+}

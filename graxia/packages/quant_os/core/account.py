@@ -17,14 +17,14 @@ from __future__ import annotations
 
 import threading
 from decimal import Decimal
-from typing import Optional
+from typing import Any
 
 # Module-level state
-_equity_override: Optional[float] = None
+_equity_override: float | None = None
 _lock = threading.Lock()
 
 
-def get_account_equity(mt5=None) -> float:
+def get_account_equity(mt5: Any = None) -> float:
     """Get current account equity from the canonical source.
 
     Priority:
@@ -75,7 +75,7 @@ def reset_account_equity() -> None:
         _equity_override = None
 
 
-def get_account_equity_decimal(mt5=None) -> Decimal:
+def get_account_equity_decimal(mt5: object = None) -> Decimal:
     """Get current account equity as Decimal for precision-sensitive calculations.
 
     Same logic as get_account_equity() but returns Decimal.

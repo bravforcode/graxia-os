@@ -29,8 +29,10 @@ import logging
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from decimal import Decimal
 from typing import Any
 
+from ..execution.adapters.base import realistic_slippage_pips
 from .enums import SignalType, TradingMode
 from .event_bus import EventBus
 from .events import (
@@ -44,6 +46,20 @@ from .events import (
 from .golden_rules import GOLDEN_RULES
 
 logger = logging.getLogger(__name__)
+
+# Risk gate — pre_trade_check
+# FAIL-CLOSED: if risk module is missing, we MUST refuse to trade in live mode.
+try:
+    from ..risk.position_sizer_v2 import SizingResult
+    from ..risk.pre_trade_risk import RiskCheckResult, pre_trade_check  # noqa: F401
+    from ..risk.risk_ledger import RiskLedger  # noqa: F401
+    from ..risk.risk_policy import RiskPolicy  # noqa: F401
+except ImportError:
+    pre_trade_check = None  # type: ignore[assignment]
+    logger.critical(
+        "trading_loop.risk_module_missing — live trading DISABLED. "
+        "Risk module failed to import. All live orders will be rejected."
+    )
 
 
 # ── Symbol → Asset Class mapping ──────────────────────────────────────────
@@ -68,7 +84,9 @@ _SYMBOL_ASSET_CLASS: dict[str, str] = {
     "NAS100": "indices",
     "DE40": "indices",
     "BTCUSD": "crypto",
+    "BTCUSDT": "crypto",
     "ETHUSD": "crypto",
+    "ETHUSDT": "crypto",
 }
 
 
@@ -137,7 +155,9 @@ class PaperExecutor:
         if symbol.upper() == "XAUUSD":
             pip_value = 0.01
 
-        slippage = self.slippage_pips * pip_value
+        # Realistic slippage via shared helper (half-normal distribution).
+        slippage_pips = realistic_slippage_pips(self.slippage_pips)
+        slippage = slippage_pips * pip_value
         if side.upper() == "BUY":
             fill_price = price + slippage
         else:
@@ -188,11 +208,20 @@ class TradingLoop:
         oms: Any | None = None,
         config: Any | None = None,
         paper_executor: PaperExecutor | None = None,
+        risk_policy: Any | None = None,
+        risk_ledger: Any | None = None,
+        risk_overlay: Any | None = None,
+        account_equity: float = 0.0,
     ) -> None:
         self._bus = bus
         self._oms = oms
         self._config = config
         self._paper = paper_executor or PaperExecutor()
+        self._risk_policy = risk_policy
+        self._risk_ledger = risk_ledger
+        self._risk_overlay = risk_overlay
+        self._account_equity = account_equity
+        self._margin_level_pct: Decimal | None = None
         self._kill_switch_active = False
         self._tracked: dict[str, TrackedOrder] = {}
         self._daily_order_count: int = 0
@@ -253,7 +282,7 @@ class TradingLoop:
 
         # Golden Rule: micro mode daily order limit
         mode = self._get_trading_mode()
-        if mode == TradingMode.LIVE_MICRO:
+        if mode == TradingMode.LIVE_MICRO:  # noqa: SIM102
             if self._daily_order_count >= GOLDEN_RULES.MICRO_DAILY_ORDER_LIMIT:
                 logger.warning(
                     "trading_loop.rejected_daily_limit symbol=%s count=%d",
@@ -264,7 +293,7 @@ class TradingLoop:
                 return
 
         # Golden Rule: limited mode daily trade limit
-        if mode == TradingMode.LIVE_LIMITED:
+        if mode == TradingMode.LIVE_LIMITED:  # noqa: SIM102
             if self._daily_order_count >= GOLDEN_RULES.LIMITED_MAX_DAILY_TRADES:
                 logger.warning(
                     "trading_loop.rejected_daily_limit_limited symbol=%s count=%d",
@@ -321,6 +350,87 @@ class TradingLoop:
         )
         self._tracked[order_id] = tracked
 
+        # ── Risk gate: pre_trade_check (P0 safety) ──────────────────────
+        # FAIL-CLOSED: In live modes with real money, risk gate is MANDATORY.
+        # LIVE_MICRO uses PaperExecutor (simulated) so risk gate is optional.
+        if mode in (TradingMode.LIVE_LIMITED, TradingMode.LIVE_CONTROLLED):  # noqa: SIM102
+            if pre_trade_check is None or self._risk_policy is None or self._risk_ledger is None:
+                logger.critical(
+                    "trading_loop.risk_gate_unavailable mode=%s symbol=%s — REJECTING (fail-closed)",
+                    mode.value,
+                    signal.symbol,
+                )
+                self._total_rejected += 1
+                return
+
+        if pre_trade_check is not None and self._risk_policy is not None and self._risk_ledger is not None:
+            # Real risk_amount/risk_budget from the actual approved_quantity and
+            # stop distance -- NOT hardcoded zeros. A dummy always-zero,
+            # always-rejected=False SizingResult here means pre_trade_check's
+            # budget/rejection logic is a no-op regardless of order size (P0
+            # finding 2026-07-28: reports/live_sizing_units_lots_gap_20260728.md
+            # covers the separate units-vs-lots gap; this is the risk-gate
+            # input itself being fake).
+            stop_distance_dec = Decimal(str(abs(signal.entry_price - signal.stop_loss)))
+            quantity_dec = Decimal(str(quantity))
+            risk_amount = quantity_dec * stop_distance_dec
+            risk_budget = Decimal(str(self._account_equity)) * (
+                Decimal(self._risk_policy.risk_per_trade_bps) / Decimal("10000")
+            )
+            sizing = SizingResult(
+                volume=quantity_dec,
+                volume_before_round=quantity_dec,
+                risk_amount=risk_amount,
+                risk_budget=risk_budget,
+                loss_at_stop=risk_amount,
+                margin_estimate=Decimal("0"),
+                rejected=risk_amount > risk_budget,
+                rejection_reasons=(
+                    [f"risk_amount {risk_amount} exceeds risk_budget {risk_budget}"]
+                    if risk_amount > risk_budget
+                    else []
+                ),
+            )
+            risk_result = pre_trade_check(
+                sizing_result=sizing,
+                risk_policy=self._risk_policy,
+                risk_ledger=self._risk_ledger,
+                account_equity=Decimal(str(self._account_equity)),
+                margin_level_pct=self._margin_level_pct,
+                signal_stop_loss=signal.stop_loss,
+            )
+            if not risk_result.approved:
+                logger.warning(
+                    "trading_loop.risk_rejected order_id=%s reasons=%s",
+                    order_id,
+                    risk_result.reasons,
+                )
+                self._total_rejected += 1
+                self._risk_ledger.add_rejection(f"pre_trade: {risk_result.reasons}")
+                return
+
+        # ── Risk gate 2: RiskOverlay (daily/weekly loss, cooldown, max trades)
+        if self._risk_overlay is not None:
+            stop_distance = (
+                abs(signal.entry_price - signal.stop_loss) if signal.stop_loss and signal.stop_loss > 0 else 0.0
+            )
+            risk_amount = Decimal(str(quantity * stop_distance)) if stop_distance > 0 else Decimal("0")
+            overlay_result = self._risk_overlay.approve(
+                risk_amount=risk_amount,
+                stop_distance=stop_distance,
+                current_balance=self._account_equity,
+            )
+            if not overlay_result.approved:
+                logger.warning(
+                    "trading_loop.risk_overlay_rejected order_id=%s reason=%s",
+                    order_id,
+                    overlay_result.reason_code,
+                )
+                self._total_rejected += 1
+                if self._risk_ledger is not None:
+                    self._risk_ledger.add_rejection(f"risk_overlay: {overlay_result.reason_code}")
+                return
+
         # Emit OrderEvent for audit trail
         order_event = OrderEvent(
             order_id=order_id,
@@ -354,6 +464,7 @@ class TradingLoop:
             if mode in (TradingMode.PAPER, TradingMode.LIVE_MICRO):
                 self._execute_paper(tracked)
             else:
+                # LIVE_LIMITED, LIVE_CONTROLLED — real broker execution.
                 self._execute_live(tracked, asset_class)
         except Exception as exc:
             logger.error(
@@ -431,21 +542,27 @@ class TradingLoop:
 
         if order.status == OrderStatus.FILLED:
             tracked.status = "filled"
-            tracked.fill_price = tracked.entry_price  # broker fills near entry for market orders
+            # Query broker for actual fill price and commission from Order.
+            # Order now has: avg_fill_price, commission (populated by OMS).
+            tracked.fill_price = order.avg_fill_price if order.avg_fill_price > 0 else tracked.entry_price
+            # Compute slippage from actual fill vs intended entry
+            slippage = abs(tracked.fill_price - tracked.entry_price) if tracked.fill_price else 0.0
             tracked.fill_quantity = order.quantity
             tracked.broker_order_id = order.broker_order_id or ""
             tracked.filled_at = datetime.now(UTC)
             self._daily_order_count += 1
             self._total_filled += 1
 
+            # Use actual commission from broker adapter (Order.commission)
+            actual_commission = order.commission
             fill_event = FillEvent(
                 order_id=tracked.order_id,
                 symbol=tracked.symbol,
                 side=tracked.side,
-                fill_price=tracked.entry_price,
-                fill_quantity=order.quantity,
-                commission=0.0,
-                slippage=0.0,
+                fill_price=tracked.fill_price,
+                fill_quantity=tracked.fill_quantity,
+                commission=actual_commission,
+                slippage=slippage,
                 strategy_id=tracked.strategy_id,
                 source="mt5_adapter",
                 trace_id=tracked.trace_id if tracked.trace_id else str(uuid.uuid4()),
@@ -495,11 +612,15 @@ class TradingLoop:
         )
         self._bus.publish(closed_event)
 
+        # Record to risk ledger for daily/weekly/drawdown tracking
+        if self._risk_ledger is not None:
+            self._risk_ledger.record_trade(pnl=pnl, symbol=tracked.symbol, volume=tracked.quantity)
+
     # ── Helpers ───────────────────────────────────────────────────────
 
     def _get_trading_mode(self) -> TradingMode:
         if self._config is not None:
-            return self._config.trading_mode
+            return TradingMode(self._config.trading_mode)
         return TradingMode.PAPER
 
     def _reset_daily_counter(self) -> None:
@@ -533,3 +654,23 @@ class TradingLoop:
     def reset_kill_switch(self) -> None:
         """Reset kill switch state (called by StateCoordinator on deactivate)."""
         self._kill_switch_active = False
+
+    def update_account_equity(self, equity: float, margin_level_pct: float | None = None) -> None:
+        """Update account equity (and, if supplied, margin level) for risk gate
+        checks — called on account snapshot.
+
+        margin_level_pct was previously silently dropped here: the broker
+        account snapshot (core/orchestrator.py's ``info.margin_level``) was
+        already being read and forwarded to PositionManager, but never to
+        the pre_trade_check() risk gate — so the margin-level check in
+        risk/pre_trade_risk.py was unreachable on every real order (its
+        `margin_level_pct is not None` guard always saw the parameter
+        default). 0 or None means "unknown" and leaves the margin check
+        skipped, same fail-open-only-when-genuinely-unknown behavior as
+        before.
+        """
+        self._account_equity = equity
+        if margin_level_pct is not None and margin_level_pct > 0:
+            self._margin_level_pct = Decimal(str(margin_level_pct))
+        if self._risk_ledger is not None:
+            self._risk_ledger.update_equity(equity)

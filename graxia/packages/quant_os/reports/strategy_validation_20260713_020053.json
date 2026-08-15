@@ -1,0 +1,28 @@
+[
+  {
+    "name": "BTC Vol Clustering",
+    "trial_number": 1007,
+    "n_trades": 29,
+    "win_rate": 0.7241379310344828,
+    "total_pnl": 0.135546079572312,
+    "sharpe": 1.7394071077124502,
+    "t_stat": 1.1801303096225417,
+    "p_value": 0.24787761443899564,
+    "wfa_oos_ratio": 0.4,
+    "wfe": 0.0,
+    "dsr": NaN,
+    "ci_lower": -0.8573797267317362,
+    "ci_upper": 5.542031825255102,
+    "gates": {
+      "p_value": "FAIL",
+      "wfa_oos_positive": "FAIL",
+      "wfe": "FAIL",
+      "dsr": "INSUFFICIENT_DATA",
+      "bootstrap_ci": "FAIL",
+      "min_trades": "FAIL"
+    },
+    "overall": "FAIL",
+    "pass_count": 0,
+    "fail_count": 5
+  }
+]

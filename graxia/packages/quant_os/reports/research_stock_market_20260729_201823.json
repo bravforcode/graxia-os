@@ -1,0 +1,167 @@
+{
+  "generated_at": "2026-07-29T20:18:23.961919",
+  "query": "stock market",
+  "model": "qwen3.5:4b",
+  "analysis": {
+    "query": "stock market",
+    "analysis_date": "2026-07-29 20:15",
+    "articles_count": 9,
+    "articles": [
+      {
+        "title": "Stock Market Today: Dow Falls As Iran Hostilities Spark Up Again; SK Hynix Slides On Earnings News (Live Coverage)",
+        "source": "yahoo_finance",
+        "sentiment": "negative",
+        "key_facts": [
+          "Dow Jones falls due to geopolitical tensions",
+          "SK Hynix stock slides on earnings news"
+        ],
+        "relevance_to_market": "high",
+        "ticker_impact": [
+          {
+            "TICKER": "^DJI",
+            "positive/negative": "negative"
+          },
+          {
+            "TICKER": "SKH",
+            "positive/negative": "negative"
+          }
+        ]
+      },
+      {
+        "title": "Nike was once China's sneaker king. Here's why its sales have fallen 30%",
+        "source": "cnbc_finance",
+        "sentiment": "neutral",
+        "key_facts": [
+          "China lost as Nike's fastest-growing region",
+          "Sales fell by 30% due to domestic competition"
+        ],
+        "relevance_to_market": "medium",
+        "ticker_impact": [
+          {
+            "TICKER": "NKE",
+            "positive/negative": "negative"
+          }
+        ]
+      },
+      {
+        "title": "Why shareholders are suing Novo Nordisk over next-generation weight-loss drug",
+        "source": "cnbc_world",
+        "sentiment": "negative",
+        "key_facts": [
+          "Shareholders sue over CagriSema tolerability claims",
+          "Clinical trial results wiped billions off market cap"
+        ],
+        "relevance_to_market": "high",
+        "ticker_impact": [
+          {
+            "TICKER": "NVO",
+            "positive/negative": "negative"
+          }
+        ]
+      },
+      {
+        "title": "Oil prices jump more than 6% after Trump says U.S. will hit Iran hard",
+        "source": "cnbc_finance",
+        "sentiment": "neutral",
+        "key_facts": [
+          "Trump threatens military action against Iran",
+          "Oil prices rose over 6% amid Middle East tensions"
+        ],
+        "relevance_to_market": "high",
+        "ticker_impact": [
+          {
+            "TICKER": "^BZ",
+            "positive/negative": "positive"
+          }
+        ]
+      },
+      {
+        "title": "Fed likely to keep rates on hold, but Warsh to face some strong dissension. What to watch: Live coverage",
+        "source": "cnbc_finance",
+        "sentiment": "neutral",
+        "key_facts": [
+          "Federal Reserve expected to maintain interest rates",
+          "Chairman Kevin Warsh faces internal dissent"
+        ],
+        "relevance_to_market": "high",
+        "ticker_impact": [
+          {
+            "TICKER": "^VIX",
+            "positive/negative": "neutral"
+          }
+        ]
+      },
+      {
+        "title": "Oil prices jump more than 6% after Trump says U.S. will hit Iran hard",
+        "source": "cnbc_world",
+        "sentiment": "neutral",
+        "key_facts": [
+          "Iran launched ballistic missile attack on U.S. forces",
+          "Renewed tensions in the Middle East"
+        ],
+        "relevance_to_market": "high",
+        "ticker_impact": [
+          {
+            "TICKER": "^BZ",
+            "positive/negative": "positive"
+          }
+        ]
+      },
+      {
+        "title": "Ukraine has found a new pressure point in Russia’s wartime economy",
+        "source": "cnbc_world",
+        "sentiment": "neutral",
+        "key_facts": [
+          "Ukrainian drone attacks target Wildberries retailer",
+          "Pressure increased on Moscow's wartime economy"
+        ],
+        "relevance_to_market": "medium",
+        "ticker_impact": [
+          {
+            "TICKER": "^GSPC",
+            "positive/negative": "neutral"
+          }
+        ]
+      },
+      {
+        "title": "Toyota doubles down on EVs while rivals retreat",
+        "source": "yahoo_finance",
+        "sentiment": "positive",
+        "key_facts": [
+          "Toyota increasing investment in electric vehicles",
+          "Competitors retreating from the market"
+        ],
+        "relevance_to_market": "medium",
+        "ticker_impact": [
+          {
+            "TICKER": "TMUS",
+            "positive/negative": "neutral"
+          }
+        ]
+      },
+      {
+        "title": "SK Hynix's record profit fails to impress investors",
+        "source": "yahoo_finance",
+        "sentiment": "negative",
+        "key_facts": [
+          "Record profits did not satisfy investor expectations",
+          "Stock slides despite strong financial performance"
+        ],
+        "relevance_to_market": "high",
+        "ticker_impact": [
+          {
+            "TICKER": "SKH",
+            "positive/negative": "negative"
+          }
+        ]
+      }
+    ],
+    "overall_sentiment": "mixed",
+    "market_impact_th": "ตลาดหุ้นได้รับผลกระทบจากปัจจัยเสี่ยงด้านความมั่นคงระหว่างประเทศ โดยเฉพาะการตึงเครียดในตะวันออกกลางที่ส่งให้ราคาพลังงานพุ่งสูงขึ้น ในขณะที่บริษัทเทคโนโลยีและเภสัชกรรมเผชิญกับความท้าทายจากการรายงานผลประกอบการที่ไม่ดีและการฟ้องร้องจากผู้ถือหุ้น ความไม่แน่นอนเหล่านี้ทำให้นักลงทุนระมัดระวังในการตัดสินใจลงทุน",
+    "action_items_th": [
+      "ติดตามข่าวสารเกี่ยวกับนโยบายการเงินของธนาคารกลางสหรัฐ (Fed)",
+      "เฝ้าสังเกตการเคลื่อนไหวราคาหุ้น SK Hynix และ Novo Nordisk อย่างใกล้ชิด",
+      "ตรวจสอบแนวโน้มราคาน้ำมันดิบและผลกระทบต่อภาคอุตสาหกรรม"
+    ]
+  }
+}

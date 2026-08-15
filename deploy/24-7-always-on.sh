@@ -29,7 +29,7 @@ log_error() {
 
 # Configuration
 PROJECT_NAME="personal-os"
-COMPOSE_FILE="docker-compose.prod.yml"
+COMPOSE_FILE="config/docker-compose.production.yml"
 ENV_FILE=".env.production"
 
 # Function: Check prerequisites
@@ -129,7 +129,7 @@ setup_health_monitoring() {
 #!/bin/bash
 # Health check script for GRAXIA OS
 
-COMPOSE_FILE="docker-compose.prod.yml"
+COMPOSE_FILE="config/docker-compose.production.yml"
 ENV_FILE=".env.production"
 
 # Check if backend is responding

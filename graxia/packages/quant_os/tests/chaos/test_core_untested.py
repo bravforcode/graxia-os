@@ -229,6 +229,28 @@ class TestLookaheadGuardChaos:
         data = {"a": list(range(10))}
         assert len(g.get_slice(data)["a"]) == 6
 
+    def test_get_slice_end_index_future_is_clamped_and_flagged(self):
+        """end_index beyond current bar must not leak future data even
+        though check_data_access() only logs (doesn't raise) in non-strict
+        mode -- the returned slice itself must stay truncated."""
+        g = LookaheadGuard()
+        g.initialize(10)
+        for _ in range(3):
+            g.advance()
+        data = {"a": list(range(10))}
+        sliced = g.get_slice(data, end_index=9)
+        assert sliced["a"] == [0, 1, 2, 3]
+        assert g.has_violations
+
+    def test_get_slice_end_index_future_raises_in_strict_mode(self):
+        g = LookaheadGuard(strict=True)
+        g.initialize(10)
+        for _ in range(3):
+            g.advance()
+        data = {"a": list(range(10))}
+        with pytest.raises(LookaheadViolation):
+            g.get_slice(data, end_index=9)
+
     def test_stress(self):
         g = LookaheadGuard()
         g.initialize(1000)
@@ -728,7 +750,8 @@ class TestStructuredTradesChaos:
         )
         p = str(tmp_path / "t.json")
         r.to_json(p)
-        assert len(json.load(open(p))) == 1
+        with open(p) as f:
+            assert len(json.load(f)) == 1
 
     def test_win_rate(self):
         r = TradeRecords()

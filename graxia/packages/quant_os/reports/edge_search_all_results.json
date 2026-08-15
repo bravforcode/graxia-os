@@ -1,0 +1,2201 @@
+{
+  "generated_at": "2026-08-04T09:05:38.182441+00:00",
+  "universe": [
+    "XAUUSD",
+    "XAGUSD",
+    "EURUSD",
+    "GBPUSD",
+    "USDJPY",
+    "NAS100",
+    "US30"
+  ],
+  "go_rule": "pooled HAC t > Phi^-1(1-0.05/168) AND positive_sharpe_count>=5 (Bonferroni N=168)",
+  "marginal_rule": "pooled HAC t > 1.96 OR (t > 1.5 AND pos>=4) (unadjusted)",
+  "n_trials_effective": 168,
+  "n_strategies_tested": 24,
+  "go": [],
+  "marginal": [],
+  "ranked": [
+    {
+      "strategy": "CAM_default",
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": 0.4267,
+      "p_value": 0.669565,
+      "pooled_sharpe": 0.3551,
+      "total_trades": 328,
+      "positive_sharpe_count": 5,
+      "total_assets": 7,
+      "verdict": "REJECT"
+    },
+    {
+      "strategy": "Momentum12M_126",
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": 0.1169,
+      "p_value": 0.90695,
+      "pooled_sharpe": 0.0938,
+      "total_trades": 2335,
+      "positive_sharpe_count": 4,
+      "total_assets": 7,
+      "verdict": "REJECT"
+    },
+    {
+      "strategy": "VRP_default",
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": 0.0887,
+      "p_value": 0.92931,
+      "pooled_sharpe": 0.1159,
+      "total_trades": 526,
+      "positive_sharpe_count": 3,
+      "total_assets": 7,
+      "verdict": "REJECT"
+    },
+    {
+      "strategy": "Momentum12M_252",
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": 0.077,
+      "p_value": 0.938659,
+      "pooled_sharpe": 0.0624,
+      "total_trades": 2296,
+      "positive_sharpe_count": 4,
+      "total_assets": 7,
+      "verdict": "REJECT"
+    },
+    {
+      "strategy": "VolumeBreakout_1.5",
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": 0.0649,
+      "p_value": 0.948248,
+      "pooled_sharpe": 0.0514,
+      "total_trades": 258,
+      "positive_sharpe_count": 3,
+      "total_assets": 7,
+      "verdict": "REJECT"
+    },
+    {
+      "strategy": "MRB_default",
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": 0.0,
+      "p_value": null,
+      "pooled_sharpe": 0.0,
+      "total_trades": 0,
+      "positive_sharpe_count": 0,
+      "total_assets": 0,
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    {
+      "strategy": "MTM_default",
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": 0.0,
+      "p_value": null,
+      "pooled_sharpe": 0.0,
+      "total_trades": 0,
+      "positive_sharpe_count": 0,
+      "total_assets": 0,
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    {
+      "strategy": "TSMOM_default",
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.0826,
+      "p_value": 0.934154,
+      "pooled_sharpe": -0.067,
+      "total_trades": 2291,
+      "positive_sharpe_count": 5,
+      "total_assets": 7,
+      "verdict": "REJECT"
+    },
+    {
+      "strategy": "RSI_20_80",
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.1027,
+      "p_value": 0.918217,
+      "pooled_sharpe": -0.0644,
+      "total_trades": 200,
+      "positive_sharpe_count": 2,
+      "total_assets": 7,
+      "verdict": "REJECT"
+    },
+    {
+      "strategy": "VolumeBreakout_2.0",
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.1687,
+      "p_value": 0.866043,
+      "pooled_sharpe": -0.1264,
+      "total_trades": 66,
+      "positive_sharpe_count": 3,
+      "total_assets": 7,
+      "verdict": "REJECT"
+    },
+    {
+      "strategy": "Donchian_55",
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.1759,
+      "p_value": 0.860341,
+      "pooled_sharpe": -0.1378,
+      "total_trades": 1055,
+      "positive_sharpe_count": 4,
+      "total_assets": 7,
+      "verdict": "REJECT"
+    },
+    {
+      "strategy": "DXYDiv_default",
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.2303,
+      "p_value": 0.817846,
+      "pooled_sharpe": -0.1822,
+      "total_trades": 2394,
+      "positive_sharpe_count": 4,
+      "total_assets": 7,
+      "verdict": "REJECT"
+    },
+    {
+      "strategy": "COT_default",
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.2756,
+      "p_value": 0.782884,
+      "pooled_sharpe": -0.4438,
+      "total_trades": 36,
+      "positive_sharpe_count": 2,
+      "total_assets": 7,
+      "verdict": "REJECT"
+    },
+    {
+      "strategy": "Carry_default",
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.279,
+      "p_value": 0.780207,
+      "pooled_sharpe": -0.3673,
+      "total_trades": 648,
+      "positive_sharpe_count": 2,
+      "total_assets": 7,
+      "verdict": "REJECT"
+    },
+    {
+      "strategy": "Donchian_20",
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.285,
+      "p_value": 0.775614,
+      "pooled_sharpe": -0.2247,
+      "total_trades": 1660,
+      "positive_sharpe_count": 3,
+      "total_assets": 7,
+      "verdict": "REJECT"
+    },
+    {
+      "strategy": "FOMC_default",
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.2904,
+      "p_value": 0.771475,
+      "pooled_sharpe": -0.3303,
+      "total_trades": 302,
+      "positive_sharpe_count": 2,
+      "total_assets": 7,
+      "verdict": "REJECT"
+    },
+    {
+      "strategy": "HybridMomMR_20",
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.2911,
+      "p_value": 0.77097,
+      "pooled_sharpe": -0.231,
+      "total_trades": 2461,
+      "positive_sharpe_count": 3,
+      "total_assets": 7,
+      "verdict": "REJECT"
+    },
+    {
+      "strategy": "HybridMomMR_60",
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.2983,
+      "p_value": 0.765511,
+      "pooled_sharpe": -0.24,
+      "total_trades": 2399,
+      "positive_sharpe_count": 5,
+      "total_assets": 7,
+      "verdict": "REJECT"
+    },
+    {
+      "strategy": "Donchian_10",
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.3055,
+      "p_value": 0.759954,
+      "pooled_sharpe": -0.2406,
+      "total_trades": 2024,
+      "positive_sharpe_count": 3,
+      "total_assets": 7,
+      "verdict": "REJECT"
+    },
+    {
+      "strategy": "RSI_25_75",
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.4199,
+      "p_value": 0.674582,
+      "pooled_sharpe": -0.3071,
+      "total_trades": 508,
+      "positive_sharpe_count": 1,
+      "total_assets": 7,
+      "verdict": "REJECT"
+    },
+    {
+      "strategy": "DonchianADX_10_25",
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.4432,
+      "p_value": 0.657597,
+      "pooled_sharpe": -0.3444,
+      "total_trades": 1059,
+      "positive_sharpe_count": 1,
+      "total_assets": 7,
+      "verdict": "REJECT"
+    },
+    {
+      "strategy": "BollingerSqueeze_p20",
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.558,
+      "p_value": 0.576877,
+      "pooled_sharpe": -0.4308,
+      "total_trades": 676,
+      "positive_sharpe_count": 2,
+      "total_assets": 7,
+      "verdict": "REJECT"
+    },
+    {
+      "strategy": "RSI_30_70",
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.6019,
+      "p_value": 0.54725,
+      "pooled_sharpe": -0.4617,
+      "total_trades": 1063,
+      "positive_sharpe_count": 1,
+      "total_assets": 7,
+      "verdict": "REJECT"
+    },
+    {
+      "strategy": "LiquiditySweep",
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -1.1568,
+      "p_value": 0.247371,
+      "pooled_sharpe": -0.9206,
+      "total_trades": 2490,
+      "positive_sharpe_count": 2,
+      "total_assets": 7,
+      "verdict": "REJECT"
+    }
+  ],
+  "results": {
+    "RSI_25_75": {
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.4199,
+      "p_value": 0.674582,
+      "pooled_sharpe": -0.3071,
+      "positive_sharpe_count": 1,
+      "total_assets": 7,
+      "total_days": 7835,
+      "total_trades": 508,
+      "n_trials_effective": 168,
+      "bonferroni_alpha": 0.00029762,
+      "go_t_threshold": 3.6175,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 98,
+          "n_bars": 5623,
+          "sharpe": -0.2613,
+          "win_pct": 33.67,
+          "profit_factor": 0.73,
+          "max_dd_pct": 12.53,
+          "total_return_pct": -8.99
+        },
+        "XAGUSD": {
+          "n_trades": 91,
+          "n_bars": 5098,
+          "sharpe": -0.4114,
+          "win_pct": 35.16,
+          "profit_factor": 0.5963,
+          "max_dd_pct": 16.98,
+          "total_return_pct": -14.49
+        },
+        "EURUSD": {
+          "n_trades": 72,
+          "n_bars": 5936,
+          "sharpe": -0.1203,
+          "win_pct": 36.11,
+          "profit_factor": 0.8331,
+          "max_dd_pct": 10.35,
+          "total_return_pct": -4.16
+        },
+        "GBPUSD": {
+          "n_trades": 69,
+          "n_bars": 5932,
+          "sharpe": 0.1749,
+          "win_pct": 46.38,
+          "profit_factor": 1.2798,
+          "max_dd_pct": 4.11,
+          "total_return_pct": 5.86
+        },
+        "USDJPY": {
+          "n_trades": 83,
+          "n_bars": 5933,
+          "sharpe": -0.0455,
+          "win_pct": 40.96,
+          "profit_factor": 0.9335,
+          "max_dd_pct": 10.82,
+          "total_return_pct": -1.88
+        },
+        "NAS100": {
+          "n_trades": 60,
+          "n_bars": 4803,
+          "sharpe": -0.4095,
+          "win_pct": 33.33,
+          "profit_factor": 0.5496,
+          "max_dd_pct": 13.46,
+          "total_return_pct": -12.19
+        },
+        "US30": {
+          "n_trades": 35,
+          "n_bars": 2306,
+          "sharpe": -0.3933,
+          "win_pct": 34.29,
+          "profit_factor": 0.5981,
+          "max_dd_pct": 12.14,
+          "total_return_pct": -7.17
+        }
+      },
+      "strategy": "RSI_25_75"
+    },
+    "RSI_30_70": {
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.6019,
+      "p_value": 0.54725,
+      "pooled_sharpe": -0.4617,
+      "positive_sharpe_count": 1,
+      "total_assets": 7,
+      "total_days": 7836,
+      "total_trades": 1063,
+      "n_trials_effective": 168,
+      "bonferroni_alpha": 0.00029762,
+      "go_t_threshold": 3.6175,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 198,
+          "n_bars": 5623,
+          "sharpe": -0.3049,
+          "win_pct": 36.36,
+          "profit_factor": 0.7722,
+          "max_dd_pct": 20.23,
+          "total_return_pct": -15.9
+        },
+        "XAGUSD": {
+          "n_trades": 161,
+          "n_bars": 5098,
+          "sharpe": -0.5945,
+          "win_pct": 34.78,
+          "profit_factor": 0.5655,
+          "max_dd_pct": 32.06,
+          "total_return_pct": -29.19
+        },
+        "EURUSD": {
+          "n_trades": 163,
+          "n_bars": 5936,
+          "sharpe": -0.1059,
+          "win_pct": 38.65,
+          "profit_factor": 0.8981,
+          "max_dd_pct": 11.97,
+          "total_return_pct": -5.7
+        },
+        "GBPUSD": {
+          "n_trades": 148,
+          "n_bars": 5932,
+          "sharpe": 0.0953,
+          "win_pct": 41.22,
+          "profit_factor": 1.0918,
+          "max_dd_pct": 6.4,
+          "total_return_pct": 4.25
+        },
+        "USDJPY": {
+          "n_trades": 177,
+          "n_bars": 5933,
+          "sharpe": -0.2289,
+          "win_pct": 38.98,
+          "profit_factor": 0.808,
+          "max_dd_pct": 14.46,
+          "total_return_pct": -11.79
+        },
+        "NAS100": {
+          "n_trades": 145,
+          "n_bars": 4803,
+          "sharpe": -0.4521,
+          "win_pct": 35.86,
+          "profit_factor": 0.6482,
+          "max_dd_pct": 22.11,
+          "total_return_pct": -20.83
+        },
+        "US30": {
+          "n_trades": 71,
+          "n_bars": 2306,
+          "sharpe": -0.2535,
+          "win_pct": 39.44,
+          "profit_factor": 0.7787,
+          "max_dd_pct": 13.33,
+          "total_return_pct": -6.67
+        }
+      },
+      "strategy": "RSI_30_70"
+    },
+    "RSI_20_80": {
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.1027,
+      "p_value": 0.918217,
+      "pooled_sharpe": -0.0644,
+      "positive_sharpe_count": 2,
+      "total_assets": 7,
+      "total_days": 7634,
+      "total_trades": 200,
+      "n_trials_effective": 168,
+      "bonferroni_alpha": 0.00029762,
+      "go_t_threshold": 3.6175,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 42,
+          "n_bars": 5623,
+          "sharpe": -0.0182,
+          "win_pct": 40.48,
+          "profit_factor": 0.9603,
+          "max_dd_pct": 5.81,
+          "total_return_pct": -0.53
+        },
+        "XAGUSD": {
+          "n_trades": 39,
+          "n_bars": 5098,
+          "sharpe": -0.2758,
+          "win_pct": 41.03,
+          "profit_factor": 0.6111,
+          "max_dd_pct": 6.19,
+          "total_return_pct": -5.8
+        },
+        "EURUSD": {
+          "n_trades": 23,
+          "n_bars": 5936,
+          "sharpe": 0.1805,
+          "win_pct": 43.48,
+          "profit_factor": 1.4686,
+          "max_dd_pct": 2.0,
+          "total_return_pct": 2.56
+        },
+        "GBPUSD": {
+          "n_trades": 28,
+          "n_bars": 5932,
+          "sharpe": 0.3693,
+          "win_pct": 57.14,
+          "profit_factor": 2.3021,
+          "max_dd_pct": 1.88,
+          "total_return_pct": 8.05
+        },
+        "USDJPY": {
+          "n_trades": 35,
+          "n_bars": 5933,
+          "sharpe": -0.3679,
+          "win_pct": 31.43,
+          "profit_factor": 0.4807,
+          "max_dd_pct": 9.5,
+          "total_return_pct": -7.77
+        },
+        "NAS100": {
+          "n_trades": 17,
+          "n_bars": 4803,
+          "sharpe": -0.0551,
+          "win_pct": 41.18,
+          "profit_factor": 0.8651,
+          "max_dd_pct": 2.22,
+          "total_return_pct": -0.83
+        },
+        "US30": {
+          "n_trades": 16,
+          "n_bars": 2306,
+          "sharpe": -0.7912,
+          "win_pct": 18.75,
+          "profit_factor": 0.1699,
+          "max_dd_pct": 12.36,
+          "total_return_pct": -10.58
+        }
+      },
+      "strategy": "RSI_20_80"
+    },
+    "Donchian_20": {
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.285,
+      "p_value": 0.775614,
+      "pooled_sharpe": -0.2247,
+      "positive_sharpe_count": 3,
+      "total_assets": 7,
+      "total_days": 7801,
+      "total_trades": 1660,
+      "n_trials_effective": 168,
+      "bonferroni_alpha": 0.00029762,
+      "go_t_threshold": 3.6175,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 282,
+          "n_bars": 5623,
+          "sharpe": 0.2925,
+          "win_pct": 46.45,
+          "profit_factor": 1.2331,
+          "max_dd_pct": 8.27,
+          "total_return_pct": 18.93
+        },
+        "XAGUSD": {
+          "n_trades": 240,
+          "n_bars": 5098,
+          "sharpe": -0.5486,
+          "win_pct": 41.67,
+          "profit_factor": 0.6402,
+          "max_dd_pct": 39.55,
+          "total_return_pct": -35.5
+        },
+        "EURUSD": {
+          "n_trades": 264,
+          "n_bars": 5936,
+          "sharpe": -0.0094,
+          "win_pct": 40.53,
+          "profit_factor": 0.9862,
+          "max_dd_pct": 10.26,
+          "total_return_pct": -1.16
+        },
+        "GBPUSD": {
+          "n_trades": 274,
+          "n_bars": 5932,
+          "sharpe": -0.1711,
+          "win_pct": 37.59,
+          "profit_factor": 0.8782,
+          "max_dd_pct": 15.2,
+          "total_return_pct": -11.64
+        },
+        "USDJPY": {
+          "n_trades": 283,
+          "n_bars": 5933,
+          "sharpe": -0.0625,
+          "win_pct": 39.58,
+          "profit_factor": 0.9474,
+          "max_dd_pct": 12.62,
+          "total_return_pct": -4.75
+        },
+        "NAS100": {
+          "n_trades": 210,
+          "n_bars": 4803,
+          "sharpe": 0.1122,
+          "win_pct": 45.24,
+          "profit_factor": 1.0842,
+          "max_dd_pct": 10.99,
+          "total_return_pct": 5.58
+        },
+        "US30": {
+          "n_trades": 107,
+          "n_bars": 2306,
+          "sharpe": 0.1458,
+          "win_pct": 42.06,
+          "profit_factor": 1.1063,
+          "max_dd_pct": 6.32,
+          "total_return_pct": 3.49
+        }
+      },
+      "strategy": "Donchian_20"
+    },
+    "Donchian_55": {
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.1759,
+      "p_value": 0.860341,
+      "pooled_sharpe": -0.1378,
+      "positive_sharpe_count": 4,
+      "total_assets": 7,
+      "total_days": 7769,
+      "total_trades": 1055,
+      "n_trials_effective": 168,
+      "bonferroni_alpha": 0.00029762,
+      "go_t_threshold": 3.6175,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 178,
+          "n_bars": 5623,
+          "sharpe": 0.3122,
+          "win_pct": 48.31,
+          "profit_factor": 1.336,
+          "max_dd_pct": 6.31,
+          "total_return_pct": 16.68
+        },
+        "XAGUSD": {
+          "n_trades": 154,
+          "n_bars": 5098,
+          "sharpe": -0.5708,
+          "win_pct": 38.31,
+          "profit_factor": 0.5783,
+          "max_dd_pct": 30.54,
+          "total_return_pct": -27.0
+        },
+        "EURUSD": {
+          "n_trades": 172,
+          "n_bars": 5936,
+          "sharpe": 0.1135,
+          "win_pct": 41.28,
+          "profit_factor": 1.0998,
+          "max_dd_pct": 6.31,
+          "total_return_pct": 5.39
+        },
+        "GBPUSD": {
+          "n_trades": 171,
+          "n_bars": 5932,
+          "sharpe": -0.2022,
+          "win_pct": 38.6,
+          "profit_factor": 0.8228,
+          "max_dd_pct": 13.02,
+          "total_return_pct": -10.94
+        },
+        "USDJPY": {
+          "n_trades": 175,
+          "n_bars": 5933,
+          "sharpe": 0.0655,
+          "win_pct": 39.43,
+          "profit_factor": 1.0545,
+          "max_dd_pct": 7.1,
+          "total_return_pct": 2.87
+        },
+        "NAS100": {
+          "n_trades": 138,
+          "n_bars": 4803,
+          "sharpe": 0.2133,
+          "win_pct": 47.83,
+          "profit_factor": 1.2135,
+          "max_dd_pct": 4.2,
+          "total_return_pct": 8.85
+        },
+        "US30": {
+          "n_trades": 67,
+          "n_bars": 2306,
+          "sharpe": -0.1281,
+          "win_pct": 35.82,
+          "profit_factor": 0.8765,
+          "max_dd_pct": 12.09,
+          "total_return_pct": -2.9
+        }
+      },
+      "strategy": "Donchian_55"
+    },
+    "Donchian_10": {
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.3055,
+      "p_value": 0.759954,
+      "pooled_sharpe": -0.2406,
+      "positive_sharpe_count": 3,
+      "total_assets": 7,
+      "total_days": 7836,
+      "total_trades": 2024,
+      "n_trials_effective": 168,
+      "bonferroni_alpha": 0.00029762,
+      "go_t_threshold": 3.6175,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 340,
+          "n_bars": 5623,
+          "sharpe": 0.1694,
+          "win_pct": 44.12,
+          "profit_factor": 1.1175,
+          "max_dd_pct": 10.45,
+          "total_return_pct": 11.93
+        },
+        "XAGUSD": {
+          "n_trades": 289,
+          "n_bars": 5098,
+          "sharpe": -0.4672,
+          "win_pct": 44.98,
+          "profit_factor": 0.7126,
+          "max_dd_pct": 36.55,
+          "total_return_pct": -32.16
+        },
+        "EURUSD": {
+          "n_trades": 334,
+          "n_bars": 5936,
+          "sharpe": -0.0834,
+          "win_pct": 38.92,
+          "profit_factor": 0.9394,
+          "max_dd_pct": 12.19,
+          "total_return_pct": -6.56
+        },
+        "GBPUSD": {
+          "n_trades": 328,
+          "n_bars": 5932,
+          "sharpe": -0.1275,
+          "win_pct": 39.63,
+          "profit_factor": 0.911,
+          "max_dd_pct": 16.34,
+          "total_return_pct": -9.97
+        },
+        "USDJPY": {
+          "n_trades": 326,
+          "n_bars": 5933,
+          "sharpe": -0.0864,
+          "win_pct": 38.65,
+          "profit_factor": 0.9325,
+          "max_dd_pct": 15.25,
+          "total_return_pct": -6.97
+        },
+        "NAS100": {
+          "n_trades": 284,
+          "n_bars": 4803,
+          "sharpe": 0.1309,
+          "win_pct": 42.61,
+          "profit_factor": 1.0825,
+          "max_dd_pct": 11.83,
+          "total_return_pct": 7.16
+        },
+        "US30": {
+          "n_trades": 123,
+          "n_bars": 2306,
+          "sharpe": 0.2778,
+          "win_pct": 46.34,
+          "profit_factor": 1.2089,
+          "max_dd_pct": 8.13,
+          "total_return_pct": 8.05
+        }
+      },
+      "strategy": "Donchian_10"
+    },
+    "DonchianADX_10_25": {
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.4432,
+      "p_value": 0.657597,
+      "pooled_sharpe": -0.3444,
+      "positive_sharpe_count": 1,
+      "total_assets": 7,
+      "total_days": 7801,
+      "total_trades": 1059,
+      "n_trials_effective": 168,
+      "bonferroni_alpha": 0.00029762,
+      "go_t_threshold": 3.6175,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 192,
+          "n_bars": 5623,
+          "sharpe": 0.2083,
+          "win_pct": 44.79,
+          "profit_factor": 1.1972,
+          "max_dd_pct": 5.71,
+          "total_return_pct": 10.7
+        },
+        "XAGUSD": {
+          "n_trades": 159,
+          "n_bars": 5098,
+          "sharpe": -0.4782,
+          "win_pct": 42.14,
+          "profit_factor": 0.6334,
+          "max_dd_pct": 26.65,
+          "total_return_pct": -22.77
+        },
+        "EURUSD": {
+          "n_trades": 172,
+          "n_bars": 5936,
+          "sharpe": -0.0542,
+          "win_pct": 38.95,
+          "profit_factor": 0.9446,
+          "max_dd_pct": 9.1,
+          "total_return_pct": -3.14
+        },
+        "GBPUSD": {
+          "n_trades": 147,
+          "n_bars": 5932,
+          "sharpe": -0.1511,
+          "win_pct": 36.73,
+          "profit_factor": 0.8561,
+          "max_dd_pct": 11.92,
+          "total_return_pct": -7.17
+        },
+        "USDJPY": {
+          "n_trades": 177,
+          "n_bars": 5933,
+          "sharpe": -0.0042,
+          "win_pct": 40.11,
+          "profit_factor": 0.989,
+          "max_dd_pct": 8.06,
+          "total_return_pct": -0.59
+        },
+        "NAS100": {
+          "n_trades": 139,
+          "n_bars": 4803,
+          "sharpe": -0.3134,
+          "win_pct": 34.53,
+          "profit_factor": 0.7353,
+          "max_dd_pct": 14.41,
+          "total_return_pct": -12.77
+        },
+        "US30": {
+          "n_trades": 73,
+          "n_bars": 2306,
+          "sharpe": -0.1474,
+          "win_pct": 38.36,
+          "profit_factor": 0.8664,
+          "max_dd_pct": 11.59,
+          "total_return_pct": -3.48
+        }
+      },
+      "strategy": "DonchianADX_10_25"
+    },
+    "BollingerSqueeze_p20": {
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.558,
+      "p_value": 0.576877,
+      "pooled_sharpe": -0.4308,
+      "positive_sharpe_count": 2,
+      "total_assets": 7,
+      "total_days": 7688,
+      "total_trades": 676,
+      "n_trials_effective": 168,
+      "bonferroni_alpha": 0.00029762,
+      "go_t_threshold": 3.6175,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 112,
+          "n_bars": 5623,
+          "sharpe": 0.143,
+          "win_pct": 45.54,
+          "profit_factor": 1.1652,
+          "max_dd_pct": 7.57,
+          "total_return_pct": 5.53
+        },
+        "XAGUSD": {
+          "n_trades": 102,
+          "n_bars": 5098,
+          "sharpe": -0.4663,
+          "win_pct": 42.16,
+          "profit_factor": 0.5806,
+          "max_dd_pct": 20.26,
+          "total_return_pct": -19.74
+        },
+        "EURUSD": {
+          "n_trades": 111,
+          "n_bars": 5936,
+          "sharpe": -0.3806,
+          "win_pct": 32.43,
+          "profit_factor": 0.6463,
+          "max_dd_pct": 16.73,
+          "total_return_pct": -15.51
+        },
+        "GBPUSD": {
+          "n_trades": 103,
+          "n_bars": 5932,
+          "sharpe": -0.0022,
+          "win_pct": 40.78,
+          "profit_factor": 0.99,
+          "max_dd_pct": 4.69,
+          "total_return_pct": -0.34
+        },
+        "USDJPY": {
+          "n_trades": 120,
+          "n_bars": 5933,
+          "sharpe": -0.3038,
+          "win_pct": 35.83,
+          "profit_factor": 0.7057,
+          "max_dd_pct": 18.26,
+          "total_return_pct": -12.39
+        },
+        "NAS100": {
+          "n_trades": 89,
+          "n_bars": 4803,
+          "sharpe": -0.0254,
+          "win_pct": 40.45,
+          "profit_factor": 0.9638,
+          "max_dd_pct": 8.42,
+          "total_return_pct": -1.09
+        },
+        "US30": {
+          "n_trades": 39,
+          "n_bars": 2306,
+          "sharpe": 0.0704,
+          "win_pct": 41.03,
+          "profit_factor": 1.0776,
+          "max_dd_pct": 3.59,
+          "total_return_pct": 0.95
+        }
+      },
+      "strategy": "BollingerSqueeze_p20"
+    },
+    "Momentum12M_252": {
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": 0.077,
+      "p_value": 0.938659,
+      "pooled_sharpe": 0.0624,
+      "positive_sharpe_count": 4,
+      "total_assets": 7,
+      "total_days": 7549,
+      "total_trades": 2296,
+      "n_trials_effective": 168,
+      "bonferroni_alpha": 0.00029762,
+      "go_t_threshold": 3.6175,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 377,
+          "n_bars": 5623,
+          "sharpe": 0.3745,
+          "win_pct": 45.89,
+          "profit_factor": 1.248,
+          "max_dd_pct": 10.63,
+          "total_return_pct": 25.86
+        },
+        "XAGUSD": {
+          "n_trades": 318,
+          "n_bars": 5098,
+          "sharpe": -0.2867,
+          "win_pct": 45.91,
+          "profit_factor": 0.8234,
+          "max_dd_pct": 28.53,
+          "total_return_pct": -19.9
+        },
+        "EURUSD": {
+          "n_trades": 365,
+          "n_bars": 5936,
+          "sharpe": -0.0931,
+          "win_pct": 39.45,
+          "profit_factor": 0.9358,
+          "max_dd_pct": 18.24,
+          "total_return_pct": -7.6
+        },
+        "GBPUSD": {
+          "n_trades": 384,
+          "n_bars": 5932,
+          "sharpe": -0.2883,
+          "win_pct": 36.72,
+          "profit_factor": 0.8336,
+          "max_dd_pct": 26.15,
+          "total_return_pct": -21.65
+        },
+        "USDJPY": {
+          "n_trades": 397,
+          "n_bars": 5933,
+          "sharpe": 0.1539,
+          "win_pct": 44.33,
+          "profit_factor": 1.0892,
+          "max_dd_pct": 9.25,
+          "total_return_pct": 10.42
+        },
+        "NAS100": {
+          "n_trades": 311,
+          "n_bars": 4803,
+          "sharpe": 0.3422,
+          "win_pct": 45.98,
+          "profit_factor": 1.2297,
+          "max_dd_pct": 6.88,
+          "total_return_pct": 19.44
+        },
+        "US30": {
+          "n_trades": 144,
+          "n_bars": 2306,
+          "sharpe": 0.2058,
+          "win_pct": 42.36,
+          "profit_factor": 1.13,
+          "max_dd_pct": 7.55,
+          "total_return_pct": 5.61
+        }
+      },
+      "strategy": "Momentum12M_252"
+    },
+    "Momentum12M_126": {
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": 0.1169,
+      "p_value": 0.90695,
+      "pooled_sharpe": 0.0938,
+      "positive_sharpe_count": 4,
+      "total_assets": 7,
+      "total_days": 7713,
+      "total_trades": 2335,
+      "n_trials_effective": 168,
+      "bonferroni_alpha": 0.00029762,
+      "go_t_threshold": 3.6175,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 387,
+          "n_bars": 5623,
+          "sharpe": 0.6096,
+          "win_pct": 49.1,
+          "profit_factor": 1.4478,
+          "max_dd_pct": 5.13,
+          "total_return_pct": 45.01
+        },
+        "XAGUSD": {
+          "n_trades": 338,
+          "n_bars": 5098,
+          "sharpe": -0.554,
+          "win_pct": 44.38,
+          "profit_factor": 0.6946,
+          "max_dd_pct": 46.38,
+          "total_return_pct": -40.51
+        },
+        "EURUSD": {
+          "n_trades": 377,
+          "n_bars": 5936,
+          "sharpe": 0.3037,
+          "win_pct": 45.62,
+          "profit_factor": 1.196,
+          "max_dd_pct": 6.29,
+          "total_return_pct": 21.89
+        },
+        "GBPUSD": {
+          "n_trades": 383,
+          "n_bars": 5932,
+          "sharpe": -0.2557,
+          "win_pct": 37.6,
+          "profit_factor": 0.8543,
+          "max_dd_pct": 22.83,
+          "total_return_pct": -18.9
+        },
+        "USDJPY": {
+          "n_trades": 390,
+          "n_bars": 5933,
+          "sharpe": 0.0711,
+          "win_pct": 41.54,
+          "profit_factor": 1.0371,
+          "max_dd_pct": 10.08,
+          "total_return_pct": 4.4
+        },
+        "NAS100": {
+          "n_trades": 309,
+          "n_bars": 4803,
+          "sharpe": 0.3386,
+          "win_pct": 46.6,
+          "profit_factor": 1.2346,
+          "max_dd_pct": 5.71,
+          "total_return_pct": 20.6
+        },
+        "US30": {
+          "n_trades": 151,
+          "n_bars": 2306,
+          "sharpe": -0.022,
+          "win_pct": 39.74,
+          "profit_factor": 0.9783,
+          "max_dd_pct": 8.88,
+          "total_return_pct": -1.03
+        }
+      },
+      "strategy": "Momentum12M_126"
+    },
+    "HybridMomMR_60": {
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.2983,
+      "p_value": 0.765511,
+      "pooled_sharpe": -0.24,
+      "positive_sharpe_count": 5,
+      "total_assets": 7,
+      "total_days": 7772,
+      "total_trades": 2399,
+      "n_trials_effective": 168,
+      "bonferroni_alpha": 0.00029762,
+      "go_t_threshold": 3.6175,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 407,
+          "n_bars": 5623,
+          "sharpe": 0.1589,
+          "win_pct": 43.24,
+          "profit_factor": 1.0985,
+          "max_dd_pct": 14.69,
+          "total_return_pct": 11.84
+        },
+        "XAGUSD": {
+          "n_trades": 347,
+          "n_bars": 5098,
+          "sharpe": -0.8294,
+          "win_pct": 39.19,
+          "profit_factor": 0.5761,
+          "max_dd_pct": 67.68,
+          "total_return_pct": -62.84
+        },
+        "EURUSD": {
+          "n_trades": 392,
+          "n_bars": 5936,
+          "sharpe": 0.2398,
+          "win_pct": 42.86,
+          "profit_factor": 1.1497,
+          "max_dd_pct": 10.83,
+          "total_return_pct": 17.64
+        },
+        "GBPUSD": {
+          "n_trades": 388,
+          "n_bars": 5932,
+          "sharpe": -0.1066,
+          "win_pct": 40.46,
+          "profit_factor": 0.9308,
+          "max_dd_pct": 15.58,
+          "total_return_pct": -9.11
+        },
+        "USDJPY": {
+          "n_trades": 401,
+          "n_bars": 5933,
+          "sharpe": 0.0294,
+          "win_pct": 41.65,
+          "profit_factor": 1.0106,
+          "max_dd_pct": 11.51,
+          "total_return_pct": 1.32
+        },
+        "NAS100": {
+          "n_trades": 319,
+          "n_bars": 4803,
+          "sharpe": 0.2655,
+          "win_pct": 45.45,
+          "profit_factor": 1.1744,
+          "max_dd_pct": 11.52,
+          "total_return_pct": 16.15
+        },
+        "US30": {
+          "n_trades": 145,
+          "n_bars": 2306,
+          "sharpe": 0.3163,
+          "win_pct": 44.14,
+          "profit_factor": 1.2197,
+          "max_dd_pct": 5.38,
+          "total_return_pct": 9.25
+        }
+      },
+      "strategy": "HybridMomMR_60"
+    },
+    "HybridMomMR_20": {
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.2911,
+      "p_value": 0.77097,
+      "pooled_sharpe": -0.231,
+      "positive_sharpe_count": 3,
+      "total_assets": 7,
+      "total_days": 7833,
+      "total_trades": 2461,
+      "n_trials_effective": 168,
+      "bonferroni_alpha": 0.00029762,
+      "go_t_threshold": 3.6175,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 398,
+          "n_bars": 5623,
+          "sharpe": 0.3054,
+          "win_pct": 44.47,
+          "profit_factor": 1.2032,
+          "max_dd_pct": 14.83,
+          "total_return_pct": 23.36
+        },
+        "XAGUSD": {
+          "n_trades": 353,
+          "n_bars": 5098,
+          "sharpe": -0.5878,
+          "win_pct": 43.06,
+          "profit_factor": 0.671,
+          "max_dd_pct": 53.3,
+          "total_return_pct": -46.39
+        },
+        "EURUSD": {
+          "n_trades": 393,
+          "n_bars": 5936,
+          "sharpe": -0.1145,
+          "win_pct": 38.42,
+          "profit_factor": 0.9249,
+          "max_dd_pct": 20.04,
+          "total_return_pct": -9.74
+        },
+        "GBPUSD": {
+          "n_trades": 393,
+          "n_bars": 5932,
+          "sharpe": -0.1171,
+          "win_pct": 38.42,
+          "profit_factor": 0.9233,
+          "max_dd_pct": 16.02,
+          "total_return_pct": -10.28
+        },
+        "USDJPY": {
+          "n_trades": 415,
+          "n_bars": 5933,
+          "sharpe": -0.0836,
+          "win_pct": 39.52,
+          "profit_factor": 0.9426,
+          "max_dd_pct": 16.9,
+          "total_return_pct": -7.56
+        },
+        "NAS100": {
+          "n_trades": 350,
+          "n_bars": 4803,
+          "sharpe": 0.1557,
+          "win_pct": 44.0,
+          "profit_factor": 1.0877,
+          "max_dd_pct": 8.39,
+          "total_return_pct": 9.19
+        },
+        "US30": {
+          "n_trades": 159,
+          "n_bars": 2306,
+          "sharpe": 0.2849,
+          "win_pct": 43.4,
+          "profit_factor": 1.1804,
+          "max_dd_pct": 11.23,
+          "total_return_pct": 8.78
+        }
+      },
+      "strategy": "HybridMomMR_20"
+    },
+    "VolumeBreakout_2.0": {
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.1687,
+      "p_value": 0.866043,
+      "pooled_sharpe": -0.1264,
+      "positive_sharpe_count": 3,
+      "total_assets": 7,
+      "total_days": 7118,
+      "total_trades": 66,
+      "n_trials_effective": 168,
+      "bonferroni_alpha": 0.00029762,
+      "go_t_threshold": 3.6175,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 10,
+          "n_bars": 5623,
+          "sharpe": 0.0038,
+          "win_pct": 50.0,
+          "profit_factor": 1.0087,
+          "max_dd_pct": 1.66,
+          "total_return_pct": 0.02
+        },
+        "XAGUSD": {
+          "n_trades": 13,
+          "n_bars": 5098,
+          "sharpe": -0.1864,
+          "win_pct": 46.15,
+          "profit_factor": 0.4573,
+          "max_dd_pct": 2.74,
+          "total_return_pct": -1.62
+        },
+        "EURUSD": {
+          "n_trades": 6,
+          "n_bars": 5936,
+          "sharpe": 0.1356,
+          "win_pct": 50.0,
+          "profit_factor": 1.9408,
+          "max_dd_pct": 0.78,
+          "total_return_pct": 0.73
+        },
+        "GBPUSD": {
+          "n_trades": 8,
+          "n_bars": 5932,
+          "sharpe": -0.4237,
+          "win_pct": 25.0,
+          "profit_factor": 0.1069,
+          "max_dd_pct": 1.84,
+          "total_return_pct": -1.84
+        },
+        "USDJPY": {
+          "n_trades": 11,
+          "n_bars": 5933,
+          "sharpe": 0.1755,
+          "win_pct": 54.55,
+          "profit_factor": 1.8332,
+          "max_dd_pct": 1.04,
+          "total_return_pct": 1.38
+        },
+        "NAS100": {
+          "n_trades": 13,
+          "n_bars": 4803,
+          "sharpe": -0.254,
+          "win_pct": 38.46,
+          "profit_factor": 0.5292,
+          "max_dd_pct": 3.78,
+          "total_return_pct": -2.3
+        },
+        "US30": {
+          "n_trades": 5,
+          "n_bars": 2306,
+          "sharpe": -0.0522,
+          "win_pct": 60.0,
+          "profit_factor": 0.8909,
+          "max_dd_pct": 1.26,
+          "total_return_pct": -0.14
+        }
+      },
+      "strategy": "VolumeBreakout_2.0"
+    },
+    "VolumeBreakout_1.5": {
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": 0.0649,
+      "p_value": 0.948248,
+      "pooled_sharpe": 0.0514,
+      "positive_sharpe_count": 3,
+      "total_assets": 7,
+      "total_days": 7583,
+      "total_trades": 258,
+      "n_trials_effective": 168,
+      "bonferroni_alpha": 0.00029762,
+      "go_t_threshold": 3.6175,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 37,
+          "n_bars": 5623,
+          "sharpe": 0.1969,
+          "win_pct": 48.65,
+          "profit_factor": 1.5625,
+          "max_dd_pct": 3.65,
+          "total_return_pct": 3.91
+        },
+        "XAGUSD": {
+          "n_trades": 47,
+          "n_bars": 5098,
+          "sharpe": -0.2364,
+          "win_pct": 40.43,
+          "profit_factor": 0.6344,
+          "max_dd_pct": 6.41,
+          "total_return_pct": -4.79
+        },
+        "EURUSD": {
+          "n_trades": 38,
+          "n_bars": 5936,
+          "sharpe": 0.3823,
+          "win_pct": 60.53,
+          "profit_factor": 2.3183,
+          "max_dd_pct": 1.52,
+          "total_return_pct": 6.22
+        },
+        "GBPUSD": {
+          "n_trades": 31,
+          "n_bars": 5932,
+          "sharpe": -0.0248,
+          "win_pct": 45.16,
+          "profit_factor": 0.9358,
+          "max_dd_pct": 3.39,
+          "total_return_pct": -0.43
+        },
+        "USDJPY": {
+          "n_trades": 51,
+          "n_bars": 5933,
+          "sharpe": 0.2695,
+          "win_pct": 50.98,
+          "profit_factor": 1.6412,
+          "max_dd_pct": 2.53,
+          "total_return_pct": 5.96
+        },
+        "NAS100": {
+          "n_trades": 33,
+          "n_bars": 4803,
+          "sharpe": -0.4197,
+          "win_pct": 27.27,
+          "profit_factor": 0.4267,
+          "max_dd_pct": 10.56,
+          "total_return_pct": -7.41
+        },
+        "US30": {
+          "n_trades": 21,
+          "n_bars": 2306,
+          "sharpe": -0.0885,
+          "win_pct": 33.33,
+          "profit_factor": 0.8485,
+          "max_dd_pct": 3.36,
+          "total_return_pct": -0.89
+        }
+      },
+      "strategy": "VolumeBreakout_1.5"
+    },
+    "LiquiditySweep": {
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -1.1568,
+      "p_value": 0.247371,
+      "pooled_sharpe": -0.9206,
+      "positive_sharpe_count": 2,
+      "total_assets": 7,
+      "total_days": 7804,
+      "total_trades": 2490,
+      "n_trials_effective": 168,
+      "bonferroni_alpha": 0.00029762,
+      "go_t_threshold": 3.6175,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 384,
+          "n_bars": 5623,
+          "sharpe": -0.154,
+          "win_pct": 41.41,
+          "profit_factor": 0.9041,
+          "max_dd_pct": 14.57,
+          "total_return_pct": -11.18
+        },
+        "XAGUSD": {
+          "n_trades": 340,
+          "n_bars": 5098,
+          "sharpe": -1.0323,
+          "win_pct": 38.53,
+          "profit_factor": 0.4099,
+          "max_dd_pct": 93.7,
+          "total_return_pct": -93.62
+        },
+        "EURUSD": {
+          "n_trades": 421,
+          "n_bars": 5936,
+          "sharpe": 0.0519,
+          "win_pct": 42.52,
+          "profit_factor": 1.0245,
+          "max_dd_pct": 15.67,
+          "total_return_pct": 2.99
+        },
+        "GBPUSD": {
+          "n_trades": 391,
+          "n_bars": 5932,
+          "sharpe": 0.078,
+          "win_pct": 45.01,
+          "profit_factor": 1.0396,
+          "max_dd_pct": 9.62,
+          "total_return_pct": 4.65
+        },
+        "USDJPY": {
+          "n_trades": 378,
+          "n_bars": 5933,
+          "sharpe": -0.1726,
+          "win_pct": 41.27,
+          "profit_factor": 0.898,
+          "max_dd_pct": 15.28,
+          "total_return_pct": -11.81
+        },
+        "NAS100": {
+          "n_trades": 401,
+          "n_bars": 4803,
+          "sharpe": -0.5335,
+          "win_pct": 38.9,
+          "profit_factor": 0.7417,
+          "max_dd_pct": 38.99,
+          "total_return_pct": -34.36
+        },
+        "US30": {
+          "n_trades": 175,
+          "n_bars": 2306,
+          "sharpe": -0.334,
+          "win_pct": 39.43,
+          "profit_factor": 0.8164,
+          "max_dd_pct": 12.12,
+          "total_return_pct": -10.49
+        }
+      },
+      "strategy": "LiquiditySweep"
+    },
+    "MRB_default": {
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": 0.0,
+      "pooled_sharpe": 0.0,
+      "positive_sharpe_count": 0,
+      "total_assets": 0,
+      "total_days": 0,
+      "total_trades": 0,
+      "n_trials_effective": 168,
+      "verdict": "INSUFFICIENT_DATA",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 0,
+          "n_bars": 5623,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "XAGUSD": {
+          "n_trades": 0,
+          "n_bars": 5098,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "EURUSD": {
+          "n_trades": 0,
+          "n_bars": 5936,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "GBPUSD": {
+          "n_trades": 0,
+          "n_bars": 5932,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "USDJPY": {
+          "n_trades": 0,
+          "n_bars": 5933,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "NAS100": {
+          "n_trades": 0,
+          "n_bars": 4803,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "US30": {
+          "n_trades": 0,
+          "n_bars": 2306,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        }
+      },
+      "strategy": "MRB_default"
+    },
+    "MTM_default": {
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": 0.0,
+      "pooled_sharpe": 0.0,
+      "positive_sharpe_count": 0,
+      "total_assets": 0,
+      "total_days": 0,
+      "total_trades": 0,
+      "n_trials_effective": 168,
+      "verdict": "INSUFFICIENT_DATA",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 0,
+          "n_bars": 5623,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "XAGUSD": {
+          "n_trades": 0,
+          "n_bars": 5098,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "EURUSD": {
+          "n_trades": 0,
+          "n_bars": 5936,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "GBPUSD": {
+          "n_trades": 0,
+          "n_bars": 5932,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "USDJPY": {
+          "n_trades": 0,
+          "n_bars": 5933,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "NAS100": {
+          "n_trades": 0,
+          "n_bars": 4803,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        },
+        "US30": {
+          "n_trades": 0,
+          "n_bars": 2306,
+          "sharpe": 0.0,
+          "win_pct": 0.0,
+          "profit_factor": 0.0,
+          "max_dd_pct": 0.0,
+          "total_return_pct": 0.0
+        }
+      },
+      "strategy": "MTM_default"
+    },
+    "TSMOM_default": {
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.0826,
+      "p_value": 0.934154,
+      "pooled_sharpe": -0.067,
+      "positive_sharpe_count": 5,
+      "total_assets": 7,
+      "total_days": 7573,
+      "total_trades": 2291,
+      "n_trials_effective": 168,
+      "bonferroni_alpha": 0.00029762,
+      "go_t_threshold": 3.6175,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 383,
+          "n_bars": 5623,
+          "sharpe": 0.428,
+          "win_pct": 47.0,
+          "profit_factor": 1.2978,
+          "max_dd_pct": 9.67,
+          "total_return_pct": 30.69
+        },
+        "XAGUSD": {
+          "n_trades": 321,
+          "n_bars": 5098,
+          "sharpe": -0.6122,
+          "win_pct": 42.06,
+          "profit_factor": 0.6664,
+          "max_dd_pct": 50.74,
+          "total_return_pct": -41.73
+        },
+        "EURUSD": {
+          "n_trades": 371,
+          "n_bars": 5936,
+          "sharpe": 0.0728,
+          "win_pct": 41.78,
+          "profit_factor": 1.0383,
+          "max_dd_pct": 11.89,
+          "total_return_pct": 4.39
+        },
+        "GBPUSD": {
+          "n_trades": 358,
+          "n_bars": 5932,
+          "sharpe": 0.0283,
+          "win_pct": 41.06,
+          "profit_factor": 1.0104,
+          "max_dd_pct": 10.57,
+          "total_return_pct": 1.19
+        },
+        "USDJPY": {
+          "n_trades": 399,
+          "n_bars": 5933,
+          "sharpe": -0.1172,
+          "win_pct": 39.35,
+          "profit_factor": 0.9194,
+          "max_dd_pct": 23.36,
+          "total_return_pct": -10.19
+        },
+        "NAS100": {
+          "n_trades": 316,
+          "n_bars": 4803,
+          "sharpe": 0.2648,
+          "win_pct": 45.25,
+          "profit_factor": 1.1727,
+          "max_dd_pct": 9.34,
+          "total_return_pct": 15.26
+        },
+        "US30": {
+          "n_trades": 143,
+          "n_bars": 2306,
+          "sharpe": 0.0533,
+          "win_pct": 41.26,
+          "profit_factor": 1.0265,
+          "max_dd_pct": 10.83,
+          "total_return_pct": 1.18
+        }
+      },
+      "strategy": "TSMOM_default"
+    },
+    "CAM_default": {
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": 0.4267,
+      "p_value": 0.669565,
+      "pooled_sharpe": 0.3551,
+      "positive_sharpe_count": 5,
+      "total_assets": 7,
+      "total_days": 6929,
+      "total_trades": 328,
+      "n_trials_effective": 168,
+      "bonferroni_alpha": 0.00029762,
+      "go_t_threshold": 3.6175,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 28,
+          "n_bars": 5623,
+          "sharpe": -0.002,
+          "win_pct": 39.29,
+          "profit_factor": 0.9892,
+          "max_dd_pct": 1.79,
+          "total_return_pct": -0.11
+        },
+        "XAGUSD": {
+          "n_trades": 37,
+          "n_bars": 5098,
+          "sharpe": -0.2588,
+          "win_pct": 43.24,
+          "profit_factor": 0.7345,
+          "max_dd_pct": 7.22,
+          "total_return_pct": -3.73
+        },
+        "EURUSD": {
+          "n_trades": 40,
+          "n_bars": 5936,
+          "sharpe": 0.3622,
+          "win_pct": 50.0,
+          "profit_factor": 1.4872,
+          "max_dd_pct": 3.66,
+          "total_return_pct": 5.34
+        },
+        "GBPUSD": {
+          "n_trades": 41,
+          "n_bars": 5932,
+          "sharpe": 0.3168,
+          "win_pct": 46.34,
+          "profit_factor": 1.4129,
+          "max_dd_pct": 3.52,
+          "total_return_pct": 5.43
+        },
+        "USDJPY": {
+          "n_trades": 55,
+          "n_bars": 5933,
+          "sharpe": 0.5429,
+          "win_pct": 52.73,
+          "profit_factor": 1.6373,
+          "max_dd_pct": 1.92,
+          "total_return_pct": 9.21
+        },
+        "NAS100": {
+          "n_trades": 64,
+          "n_bars": 4803,
+          "sharpe": 0.4951,
+          "win_pct": 51.56,
+          "profit_factor": 1.5345,
+          "max_dd_pct": 3.03,
+          "total_return_pct": 9.98
+        },
+        "US30": {
+          "n_trades": 63,
+          "n_bars": 2306,
+          "sharpe": 0.2812,
+          "win_pct": 52.38,
+          "profit_factor": 1.2865,
+          "max_dd_pct": 3.82,
+          "total_return_pct": 5.53
+        }
+      },
+      "strategy": "CAM_default"
+    },
+    "FOMC_default": {
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.2904,
+      "p_value": 0.771475,
+      "pooled_sharpe": -0.3303,
+      "positive_sharpe_count": 2,
+      "total_assets": 7,
+      "total_days": 2367,
+      "total_trades": 302,
+      "n_trials_effective": 168,
+      "bonferroni_alpha": 0.00029762,
+      "go_t_threshold": 3.6175,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 41,
+          "n_bars": 5623,
+          "sharpe": -0.0307,
+          "win_pct": 39.02,
+          "profit_factor": 0.9619,
+          "max_dd_pct": 4.34,
+          "total_return_pct": -0.44
+        },
+        "XAGUSD": {
+          "n_trades": 42,
+          "n_bars": 5098,
+          "sharpe": -0.8799,
+          "win_pct": 28.57,
+          "profit_factor": 0.3851,
+          "max_dd_pct": 13.58,
+          "total_return_pct": -11.89
+        },
+        "EURUSD": {
+          "n_trades": 46,
+          "n_bars": 5936,
+          "sharpe": -0.3277,
+          "win_pct": 30.43,
+          "profit_factor": 0.7235,
+          "max_dd_pct": 7.71,
+          "total_return_pct": -4.17
+        },
+        "GBPUSD": {
+          "n_trades": 47,
+          "n_bars": 5932,
+          "sharpe": -0.2508,
+          "win_pct": 31.91,
+          "profit_factor": 0.7791,
+          "max_dd_pct": 4.82,
+          "total_return_pct": -3.3
+        },
+        "USDJPY": {
+          "n_trades": 42,
+          "n_bars": 5933,
+          "sharpe": 0.3932,
+          "win_pct": 50.0,
+          "profit_factor": 1.478,
+          "max_dd_pct": 2.45,
+          "total_return_pct": 5.4
+        },
+        "NAS100": {
+          "n_trades": 39,
+          "n_bars": 4803,
+          "sharpe": 0.4672,
+          "win_pct": 48.72,
+          "profit_factor": 1.6385,
+          "max_dd_pct": 2.26,
+          "total_return_pct": 5.61
+        },
+        "US30": {
+          "n_trades": 45,
+          "n_bars": 2306,
+          "sharpe": -0.4098,
+          "win_pct": 31.11,
+          "profit_factor": 0.6697,
+          "max_dd_pct": 9.5,
+          "total_return_pct": -5.14
+        }
+      },
+      "strategy": "FOMC_default"
+    },
+    "VRP_default": {
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": 0.0887,
+      "p_value": 0.92931,
+      "pooled_sharpe": 0.1159,
+      "positive_sharpe_count": 3,
+      "total_assets": 7,
+      "total_days": 1809,
+      "total_trades": 526,
+      "n_trials_effective": 168,
+      "bonferroni_alpha": 0.00029762,
+      "go_t_threshold": 3.6175,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 87,
+          "n_bars": 5623,
+          "sharpe": 0.6291,
+          "win_pct": 48.28,
+          "profit_factor": 1.5041,
+          "max_dd_pct": 2.56,
+          "total_return_pct": 10.86
+        },
+        "XAGUSD": {
+          "n_trades": 77,
+          "n_bars": 5098,
+          "sharpe": -0.2073,
+          "win_pct": 45.45,
+          "profit_factor": 0.859,
+          "max_dd_pct": 10.43,
+          "total_return_pct": -3.67
+        },
+        "EURUSD": {
+          "n_trades": 72,
+          "n_bars": 5936,
+          "sharpe": -0.2673,
+          "win_pct": 33.33,
+          "profit_factor": 0.8254,
+          "max_dd_pct": 5.24,
+          "total_return_pct": -4.05
+        },
+        "GBPUSD": {
+          "n_trades": 74,
+          "n_bars": 5932,
+          "sharpe": -0.1084,
+          "win_pct": 37.84,
+          "profit_factor": 0.9246,
+          "max_dd_pct": 5.93,
+          "total_return_pct": -1.74
+        },
+        "USDJPY": {
+          "n_trades": 67,
+          "n_bars": 5933,
+          "sharpe": 0.4079,
+          "win_pct": 46.27,
+          "profit_factor": 1.3217,
+          "max_dd_pct": 3.16,
+          "total_return_pct": 5.48
+        },
+        "NAS100": {
+          "n_trades": 78,
+          "n_bars": 4803,
+          "sharpe": -0.1321,
+          "win_pct": 39.74,
+          "profit_factor": 0.9107,
+          "max_dd_pct": 5.35,
+          "total_return_pct": -2.09
+        },
+        "US30": {
+          "n_trades": 71,
+          "n_bars": 2306,
+          "sharpe": 0.226,
+          "win_pct": 45.07,
+          "profit_factor": 1.158,
+          "max_dd_pct": 6.6,
+          "total_return_pct": 3.55
+        }
+      },
+      "strategy": "VRP_default"
+    },
+    "Carry_default": {
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.279,
+      "p_value": 0.780207,
+      "pooled_sharpe": -0.3673,
+      "positive_sharpe_count": 2,
+      "total_assets": 7,
+      "total_days": 1849,
+      "total_trades": 648,
+      "n_trials_effective": 168,
+      "bonferroni_alpha": 0.00029762,
+      "go_t_threshold": 3.6175,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 99,
+          "n_bars": 5623,
+          "sharpe": 0.0729,
+          "win_pct": 42.42,
+          "profit_factor": 1.037,
+          "max_dd_pct": 12.74,
+          "total_return_pct": 1.11
+        },
+        "XAGUSD": {
+          "n_trades": 92,
+          "n_bars": 5098,
+          "sharpe": -0.3761,
+          "win_pct": 42.39,
+          "profit_factor": 0.7838,
+          "max_dd_pct": 13.08,
+          "total_return_pct": -7.2
+        },
+        "EURUSD": {
+          "n_trades": 78,
+          "n_bars": 5936,
+          "sharpe": -0.2039,
+          "win_pct": 37.18,
+          "profit_factor": 0.8615,
+          "max_dd_pct": 9.26,
+          "total_return_pct": -3.44
+        },
+        "GBPUSD": {
+          "n_trades": 86,
+          "n_bars": 5932,
+          "sharpe": -0.3571,
+          "win_pct": 33.72,
+          "profit_factor": 0.7894,
+          "max_dd_pct": 9.18,
+          "total_return_pct": -5.94
+        },
+        "USDJPY": {
+          "n_trades": 97,
+          "n_bars": 5933,
+          "sharpe": 0.2951,
+          "win_pct": 46.39,
+          "profit_factor": 1.1855,
+          "max_dd_pct": 8.57,
+          "total_return_pct": 5.09
+        },
+        "NAS100": {
+          "n_trades": 103,
+          "n_bars": 4803,
+          "sharpe": -0.2128,
+          "win_pct": 34.95,
+          "profit_factor": 0.877,
+          "max_dd_pct": 11.57,
+          "total_return_pct": -3.88
+        },
+        "US30": {
+          "n_trades": 93,
+          "n_bars": 2306,
+          "sharpe": -0.1067,
+          "win_pct": 37.63,
+          "profit_factor": 0.9285,
+          "max_dd_pct": 8.54,
+          "total_return_pct": -2.21
+        }
+      },
+      "strategy": "Carry_default"
+    },
+    "COT_default": {
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.2756,
+      "p_value": 0.782884,
+      "pooled_sharpe": -0.4438,
+      "positive_sharpe_count": 2,
+      "total_assets": 7,
+      "total_days": 1019,
+      "total_trades": 36,
+      "n_trials_effective": 168,
+      "bonferroni_alpha": 0.00029762,
+      "go_t_threshold": 3.6175,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 5,
+          "n_bars": 5623,
+          "sharpe": -0.8055,
+          "win_pct": 40.0,
+          "profit_factor": 0.4461,
+          "max_dd_pct": 3.25,
+          "total_return_pct": -1.8
+        },
+        "XAGUSD": {
+          "n_trades": 5,
+          "n_bars": 5098,
+          "sharpe": -1.5426,
+          "win_pct": 40.0,
+          "profit_factor": 0.1546,
+          "max_dd_pct": 4.78,
+          "total_return_pct": -4.04
+        },
+        "EURUSD": {
+          "n_trades": 5,
+          "n_bars": 5936,
+          "sharpe": -0.9098,
+          "win_pct": 20.0,
+          "profit_factor": 0.4249,
+          "max_dd_pct": 3.51,
+          "total_return_pct": -2.05
+        },
+        "GBPUSD": {
+          "n_trades": 6,
+          "n_bars": 5932,
+          "sharpe": 0.2247,
+          "win_pct": 33.33,
+          "profit_factor": 1.1998,
+          "max_dd_pct": 2.6,
+          "total_return_pct": 0.54
+        },
+        "USDJPY": {
+          "n_trades": 6,
+          "n_bars": 5933,
+          "sharpe": -0.0397,
+          "win_pct": 50.0,
+          "profit_factor": 0.9567,
+          "max_dd_pct": 3.06,
+          "total_return_pct": -0.13
+        },
+        "NAS100": {
+          "n_trades": 4,
+          "n_bars": 4803,
+          "sharpe": -1.4278,
+          "win_pct": 25.0,
+          "profit_factor": 0.1788,
+          "max_dd_pct": 3.05,
+          "total_return_pct": -2.52
+        },
+        "US30": {
+          "n_trades": 5,
+          "n_bars": 2306,
+          "sharpe": 0.9964,
+          "win_pct": 80.0,
+          "profit_factor": 3.1425,
+          "max_dd_pct": 1.04,
+          "total_return_pct": 2.23
+        }
+      },
+      "strategy": "COT_default"
+    },
+    "DXYDiv_default": {
+      "test_name": "pooled_hac_t_test",
+      "dk_t_stat": -0.2303,
+      "p_value": 0.817846,
+      "pooled_sharpe": -0.1822,
+      "positive_sharpe_count": 4,
+      "total_assets": 7,
+      "total_days": 7813,
+      "total_trades": 2394,
+      "n_trials_effective": 168,
+      "bonferroni_alpha": 0.00029762,
+      "go_t_threshold": 3.6175,
+      "verdict": "REJECT",
+      "per_asset": {
+        "XAUUSD": {
+          "n_trades": 394,
+          "n_bars": 5623,
+          "sharpe": 0.2703,
+          "win_pct": 45.18,
+          "profit_factor": 1.1772,
+          "max_dd_pct": 7.85,
+          "total_return_pct": 20.41
+        },
+        "XAGUSD": {
+          "n_trades": 337,
+          "n_bars": 5098,
+          "sharpe": -0.5603,
+          "win_pct": 42.73,
+          "profit_factor": 0.6738,
+          "max_dd_pct": 47.82,
+          "total_return_pct": -43.43
+        },
+        "EURUSD": {
+          "n_trades": 391,
+          "n_bars": 5936,
+          "sharpe": -0.0328,
+          "win_pct": 39.9,
+          "profit_factor": 0.9735,
+          "max_dd_pct": 14.29,
+          "total_return_pct": -3.38
+        },
+        "GBPUSD": {
+          "n_trades": 379,
+          "n_bars": 5932,
+          "sharpe": 0.1065,
+          "win_pct": 41.95,
+          "profit_factor": 1.0599,
+          "max_dd_pct": 9.92,
+          "total_return_pct": 7.23
+        },
+        "USDJPY": {
+          "n_trades": 399,
+          "n_bars": 5933,
+          "sharpe": 0.0426,
+          "win_pct": 41.6,
+          "profit_factor": 1.0193,
+          "max_dd_pct": 12.93,
+          "total_return_pct": 2.37
+        },
+        "NAS100": {
+          "n_trades": 336,
+          "n_bars": 4803,
+          "sharpe": 0.1475,
+          "win_pct": 43.75,
+          "profit_factor": 1.0889,
+          "max_dd_pct": 11.09,
+          "total_return_pct": 8.89
+        },
+        "US30": {
+          "n_trades": 158,
+          "n_bars": 2306,
+          "sharpe": -0.564,
+          "win_pct": 32.91,
+          "profit_factor": 0.7039,
+          "max_dd_pct": 25.33,
+          "total_return_pct": -17.33
+        }
+      },
+      "strategy": "DXYDiv_default"
+    }
+  },
+  "honest_note": "SP1 2026-08-04: statistic is a pooled one-sample Newey-West HAC t-test (renamed from the mislabeled 'DK test'); verdicts are Bonferroni-adjusted for n_trials_effective. GO does not equal live-ready. Must still pass label-shuffle, cost-stress, and not burn sacred holdout until single pre-committed hypothesis."
+}

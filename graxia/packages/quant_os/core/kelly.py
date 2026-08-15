@@ -125,3 +125,76 @@ def kelly_adjust_for_regime(
     mult = regime_mult.get(regime_label, 0.5)
     adjusted = base_fraction * mult
     return max(MIN_FRACTION, min(MAX_FRACTION, adjusted))
+
+
+from dataclasses import dataclass
+
+# Regime multipliers ordered by how much of base_kelly to deploy —
+# trending markets get full sizing, crisis regimes get near-zero.
+_REGIME_MULT = {
+    "trending": 1.00,
+    "normal": 0.75,
+    "ranging": 0.55,
+    "volatile": 0.35,
+    "crisis": 0.10,
+}
+
+
+@dataclass
+class KellyResult:
+    fraction: float
+    raw_fraction: float
+    regime: str
+    regime_mult: float
+    vol_mult: float
+    dd_mult: float
+
+
+class DynamicKellySizer:
+    """
+    Position sizer combining Kelly Criterion with regime, volatility-target,
+    and drawdown scaling. Stateless per call — safe to share across threads.
+    """
+
+    def __init__(
+        self,
+        base_kelly: float = 0.25,
+        vol_target: float = 0.15,
+        min_kelly: float = MIN_FRACTION,
+        max_kelly: float | None = None,
+    ) -> None:
+        self.base_kelly = base_kelly
+        self.vol_target = vol_target
+        self.min_kelly = min_kelly
+        self.max_kelly = max_kelly if max_kelly is not None else base_kelly
+
+    def compute_kelly(
+        self,
+        win_rate: float,
+        win_loss_ratio: float,
+        avg_loss: float,
+        current_vol: float,
+        regime: str = "normal",
+        drawdown: float = 0.0,
+    ) -> KellyResult:
+        if win_rate <= 0.0 or win_rate >= 1.0 or avg_loss <= 0.0 or win_loss_ratio <= 0.0:
+            return KellyResult(self.min_kelly, 0.0, regime, 0.0, 0.0, 0.0)
+
+        p = win_rate
+        q = 1.0 - p
+        b = win_loss_ratio
+        f_star = (b * p - q) / b
+
+        if f_star <= 0:
+            return KellyResult(self.min_kelly, f_star, regime, 0.0, 0.0, 0.0)
+
+        raw = f_star * self.base_kelly
+
+        regime_mult = _REGIME_MULT.get(regime, _REGIME_MULT["normal"])
+        vol_mult = min(1.5, self.vol_target / current_vol) if current_vol > 0 else 1.0
+        dd_mult = max(0.1, 1.0 - min(drawdown, 1.0) * 2.0)
+
+        fraction = raw * regime_mult * vol_mult * dd_mult
+        fraction = max(self.min_kelly, min(self.max_kelly, fraction))
+
+        return KellyResult(round(fraction, 6), raw, regime, regime_mult, vol_mult, dd_mult)

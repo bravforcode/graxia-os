@@ -20,6 +20,26 @@ from glob import glob
 import numpy as np
 import pandas as pd
 
+# Point value (price units per 1 point) per symbol class — drives both the
+# spread-pts feature and slippage_points output. Matches cost_calibration.json
+# tick_size. Unknown symbols default to forex (0.00001) with a warning.
+POINT_VALUE = {
+    "XAUUSD": 0.01,
+    "XAGUSD": 0.01,
+    "BTCUSD": 0.01,
+    "ETHUSD": 0.01,
+    "EURUSD": 0.00001,
+    "GBPUSD": 0.00001,
+    "USDJPY": 0.001,
+    "US30": 0.1,
+    "NAS100": 0.1,
+    "US500": 0.1,
+}
+
+
+def point_value(symbol: str) -> float:
+    return POINT_VALUE.get(symbol, 0.00001)
+
 
 def load_ticks(tick_dir: str, symbol: str) -> pd.DataFrame:
     """Load tick data for a symbol. Tries CSV then Parquet."""
@@ -47,7 +67,14 @@ def load_ticks(tick_dir: str, symbol: str) -> pd.DataFrame:
                 if col in ("timestamp_utc", "timestamp"):
                     df["timestamp"] = pd.to_datetime(df[col], utc=True)
                 elif col == "time":
-                    df["timestamp"] = pd.to_datetime(df["time"], unit="s", utc=True)
+                    # Support BOTH: epoch seconds (int) and already-parsed datetime.
+                    if pd.api.types.is_datetime64_any_dtype(df[col]):
+                        df["timestamp"] = pd.to_datetime(df[col], utc=True)
+                    else:
+                        try:
+                            df["timestamp"] = pd.to_datetime(df[col], unit="s", utc=True)
+                        except (ValueError, TypeError):
+                            df["timestamp"] = pd.to_datetime(df[col], utc=True)
                 break
         dfs.append(df)
 
@@ -110,7 +137,8 @@ def simulate_fills(
         decision_time = tick_times[idx]
         mid = decision_tick["bid"] + decision_tick["ask"] / 2
         spread_price = decision_tick["ask"] - decision_tick["bid"]
-        spread_pts = spread_price / 0.00001  # point value (forex)
+        pv = point_value(str(ticks.attrs.get("symbol", "")))
+        spread_pts = spread_price / pv
 
         # Context features
         session = decision_tick["session_label"]
@@ -131,7 +159,7 @@ def simulate_fills(
                 fill_price = fill_tick["ask"] if side == "buy" else fill_tick["bid"]
 
                 # Compute slippage in points
-                point_val = 0.01 if "XAU" in str(ticks.attrs.get("symbol", "")) else 0.00001
+                point_val = point_value(str(ticks.attrs.get("symbol", "")))
                 slippage_pts = (
                     (fill_price - decision_price_fast) / point_val
                     if side == "buy"

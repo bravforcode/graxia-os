@@ -333,6 +333,10 @@ class AutoStop:
 
     def _load(self) -> None:
         """Load state from JSON."""
+        if self._state_file is None:
+            # In-memory mode: __init__ only calls this when a file is configured,
+            # but make the invariant explicit rather than implied by the caller.
+            return
         try:
             data = json.loads(self._state_file.read_text(encoding="utf-8"))
             self._threshold_pct = data.get("threshold_pct", self._threshold_pct)

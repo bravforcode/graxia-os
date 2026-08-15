@@ -1,0 +1,16 @@
+{
+  "arm_pairs_mr": {
+    "n_trades": 478,
+    "dk_t": -4.59,
+    "sharpe": -13.709,
+    "mean_pnl": -60.2983,
+    "final_cash": -18883.66,
+    "verdict": "REJECT",
+    "executed_at": "2026-08-06T19:26:52.802762+00:00"
+  },
+  "arm_pgm": {
+    "n_trades": 0,
+    "verdict": "INSUFFICIENT",
+    "executed_at": "2026-08-06T19:27:56.286881+00:00"
+  }
+}

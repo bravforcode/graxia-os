@@ -27,6 +27,13 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+# Models saved via ml.pipeline.MLTrainer are only loadable through
+# core.safe_pickle.safe_load_model when signed (see core/safe_pickle.py's
+# RestrictedUnpickler vs TrustedUnpickler) — mirrors production, where
+# MODEL_SIGNING_KEY is set in the environment. setdefault() so a real
+# production value (if ever present) is never clobbered.
+os.environ.setdefault("MODEL_SIGNING_KEY", "test-signing-key")
+
 
 # ---------------------------------------------------------------------------
 # Feature builder (standalone, no pandas_ta dependency)
@@ -34,22 +41,40 @@ if str(PROJECT_ROOT) not in sys.path:
 
 # Canonical v3 feature list — must match build_features_v3_multi_asset.py + ml/pipeline.py
 V3_FEATURE_NAMES = [
-    "return_1", "return_5", "return_10", "return_20",
+    "return_1",
+    "return_5",
+    "return_10",
+    "return_20",
     "log_return_1",
     "price_position_20",
-    "ema_9_dist", "ema_20_dist", "ema_50_dist", "ema_200_dist",
+    "ema_9_dist",
+    "ema_20_dist",
+    "ema_50_dist",
+    "ema_200_dist",
     "ema_cross_9_20",
-    "rsi_14", "rsi_14_normalized",
-    "macd", "macd_signal", "macd_hist",
-    "bb_width", "bb_position",
-    "atr_14", "atr_ratio",
+    "rsi_14",
+    "rsi_14_normalized",
+    "macd",
+    "macd_signal",
+    "macd_hist",
+    "bb_width",
+    "bb_position",
+    "atr_14",
+    "atr_ratio",
     "adx",
-    "volume_ratio", "volume_change",
+    "volume_ratio",
+    "volume_change",
     "obv_trend",
-    "realized_vol_20", "realized_vol_5", "vol_ratio",
-    "candle_body_ratio", "upper_shadow", "lower_shadow",
-    "momentum_10", "momentum_20",
-    "stoch_k", "stoch_d",
+    "realized_vol_20",
+    "realized_vol_5",
+    "vol_ratio",
+    "candle_body_ratio",
+    "upper_shadow",
+    "lower_shadow",
+    "momentum_10",
+    "momentum_20",
+    "stoch_k",
+    "stoch_d",
 ]
 
 
@@ -102,9 +127,7 @@ def _build_features_raw(df: pd.DataFrame) -> pd.DataFrame:
     feat["bb_position"] = (close - bb_lower) / (bb_upper - bb_lower + 1e-10)
 
     # ATR
-    tr = pd.concat(
-        [high - low, (high - close.shift()).abs(), (low - close.shift()).abs()], axis=1
-    ).max(axis=1)
+    tr = pd.concat([high - low, (high - close.shift()).abs(), (low - close.shift()).abs()], axis=1).max(axis=1)
     feat["atr_14"] = tr.rolling(14).mean()
     feat["atr_ratio"] = feat["atr_14"] / close.replace(0, np.nan)
 
@@ -154,6 +177,7 @@ def _build_features_raw(df: pd.DataFrame) -> pd.DataFrame:
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def sample_ohlcv() -> dict[str, list]:
     """Generate synthetic OHLCV data (500 bars)."""
@@ -176,10 +200,7 @@ def feature_set(sample_ohlcv):
 
     df = pd.DataFrame(sample_ohlcv)
     feat = _build_features_raw(df)
-    timestamps = [
-        pd.Timestamp("2024-01-01") + pd.Timedelta(hours=i * 4)
-        for i in range(len(df))
-    ]
+    timestamps = [pd.Timestamp("2024-01-01") + pd.Timedelta(hours=i * 4) for i in range(len(df))]
 
     # Forward return labels (10-bar)
     fwd_ret = df["close"].pct_change(10).shift(-10)
@@ -230,9 +251,7 @@ class TestFeatureSchemaMatchesV3:
 
     def test_feature_count_reasonable(self, feature_set):
         """Feature count should be >= 30 (v3 spec)."""
-        assert len(feature_set.feature_names) >= 30, (
-            f"Only {len(feature_set.feature_names)} features, expected >= 30"
-        )
+        assert len(feature_set.feature_names) >= 30, f"Only {len(feature_set.feature_names)} features, expected >= 30"
 
     def test_no_all_nan_features(self, feature_set):
         """No feature column should be entirely NaN/zero."""
@@ -251,7 +270,9 @@ class TestTrainTestNoOverlap:
 
         indices = np.arange(len(feature_set.features))
         train_idx, test_idx = train_test_split(
-            indices, test_size=0.2, shuffle=False,
+            indices,
+            test_size=0.2,
+            shuffle=False,
         )
         overlap = set(train_idx) & set(test_idx)
         assert not overlap, f"Overlap of {len(overlap)} indices between train/test"
@@ -286,9 +307,7 @@ class TestTrainTestNoOverlap:
         for path in paths:
             for train_idx, test_idx in path:
                 overlap = set(train_idx.tolist()) & set(test_idx.tolist())
-                assert not overlap, (
-                    f"CPCV fold has {len(overlap)} overlapping indices"
-                )
+                assert not overlap, f"CPCV fold has {len(overlap)} overlapping indices"
 
 
 class TestModelSaveLoadRoundtrip:
@@ -314,15 +333,17 @@ class TestModelSaveLoadRoundtrip:
 
         preds_after = loaded["model"].predict(X)
         np.testing.assert_array_equal(
-            preds_before, preds_after,
+            preds_before,
+            preds_after,
             err_msg="Predictions differ after save/load roundtrip",
         )
         os.unlink(tmp_path)
 
     def test_model_registry_roundtrip(self):
         """ModelRegistry save/load must preserve predictions."""
-        from ml.model_registry import ModelRegistry
         from sklearn.ensemble import RandomForestClassifier
+
+        from ml.model_registry import ModelRegistry
 
         with tempfile.TemporaryDirectory() as tmpdir:
             registry = ModelRegistry(models_dir=tmpdir)
@@ -378,14 +399,17 @@ class TestEarlyStoppingReducesEstimators:
 
     def test_early_stopping_reduces_estimators(self, feature_set):
         """Model with early stopping should use fewer estimators than n_estimators."""
-        from xgboost import XGBClassifier
         from sklearn.model_selection import train_test_split
+        from xgboost import XGBClassifier
 
         X = np.array([list(f.values()) for f in feature_set.features])
         y = np.array(feature_set.labels)
 
         X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, shuffle=False,
+            X,
+            y,
+            test_size=0.2,
+            shuffle=False,
         )
 
         n_estimators = 500
@@ -401,15 +425,16 @@ class TestEarlyStoppingReducesEstimators:
             verbosity=0,
         )
         model.fit(
-            X_train, y_train,
+            X_train,
+            y_train,
             eval_set=[(X_test, y_test)],
             verbose=False,
         )
 
         actual_estimators = model.best_iteration
-        assert actual_estimators < n_estimators, (
-            f"Early stopping didn't trigger: used {actual_estimators}/{n_estimators} rounds"
-        )
+        assert (
+            actual_estimators < n_estimators
+        ), f"Early stopping didn't trigger: used {actual_estimators}/{n_estimators} rounds"
 
 
 class TestOverfitTriggersWarning:
@@ -424,9 +449,16 @@ class TestOverfitTriggersWarning:
 
         gap = result.accuracy - result.oos_accuracy if result.oos_accuracy > 0 else 0
 
-        if gap > 0.15:
-            assert True, (
-                f"Overfit detected: train={result.accuracy:.3f} vs test={result.oos_accuracy:.3f}"
+        if gap > 0.40:
+            pytest.fail(f"Severe overfit: train={result.accuracy:.3f} vs test={result.oos_accuracy:.3f}, gap={gap:.3f}")
+        elif gap > 0.15:
+            import logging
+
+            logging.getLogger(__name__).warning(
+                "Moderate overfit detected: train=%.3f test=%.3f gap=%.3f",
+                result.accuracy,
+                result.oos_accuracy,
+                gap,
             )
         else:
             assert result.accuracy > 0.0, "Model accuracy is zero"
@@ -442,18 +474,14 @@ class TestOverfitTriggersWarning:
         X_test = rng.randn(50, 10)
         y_test = rng.randint(0, 2, 50)
 
-        model = RandomForestClassifier(
-            n_estimators=100, max_depth=None, random_state=42
-        )
+        model = RandomForestClassifier(n_estimators=100, max_depth=None, random_state=42)
         model.fit(X_train, y_train)
 
         train_acc = (model.predict(X_train) == y_train).mean()
         test_acc = (model.predict(X_test) == y_test).mean()
 
         gap = train_acc - test_acc
-        assert gap > 0.0, (
-            f"No gap between train ({train_acc:.3f}) and test ({test_acc:.3f})"
-        )
+        assert gap > 0.0, f"No gap between train ({train_acc:.3f}) and test ({test_acc:.3f})"
 
 
 class TestMultipleTestingCorrection:
