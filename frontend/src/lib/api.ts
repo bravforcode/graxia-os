@@ -921,6 +921,28 @@ export const api = {
     const { data } = await client.get("/onboarding/required");
     return data;
   },
+
+  // Support chat (public endpoint — identity verified inside the agent)
+  supportChat: async (
+    message: string,
+    customerEmail: string,
+    verificationCode?: string,
+  ): Promise<{ intent: string; reply: string; action_taken?: string }> => {
+    const { data } = await publicClient.post("/support/chat", {
+      message,
+      customer_email: customerEmail,
+      verification_code: verificationCode,
+    });
+    return data;
+  },
 };
+
+export async function supportChat(
+  message: string,
+  customerEmail: string,
+  verificationCode?: string,
+): Promise<{ intent: string; reply: string; action_taken?: string }> {
+  return api.supportChat(message, customerEmail, verificationCode);
+}
 
 export default api;
