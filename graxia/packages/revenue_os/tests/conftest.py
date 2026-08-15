@@ -3,6 +3,7 @@ Revenue OS Test Configuration
 Pytest fixtures and test database setup
 """
 import pytest
+import pytest_asyncio
 import asyncio
 from typing import AsyncGenerator
 
@@ -29,15 +30,7 @@ def _get_test_database_url():
 TEST_DATABASE_URL = _get_test_database_url()
 
 
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create event loop for async tests."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def test_engine():
     """Create test database engine."""
     engine = create_async_engine(
@@ -54,15 +47,13 @@ async def test_engine():
 
     # Drop all tables after tests. Pre-existing FK cycle between revenue_os_ai_drafts
     # and revenue_os_approvals (unnamed constraints) makes metadata drop_all raise
-    # CircularDependencyError — the test DB is ephemeral, so drop via CASCADE instead.
+    # CircularDependencyError — the test DB is ephemeral, so swallow the failure and
+    # let tables persist (per-test deletes keep isolation; create_all is idempotent).
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
     except Exception:
-        async with engine.begin() as conn:
-            await conn.execute(text("DROP SCHEMA public CASCADE"))
-        async with engine.begin() as conn:
-            await conn.execute(text("CREATE SCHEMA public"))
+        pass
     await engine.dispose()
 
 
