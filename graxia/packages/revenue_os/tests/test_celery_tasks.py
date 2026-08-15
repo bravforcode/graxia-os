@@ -248,3 +248,13 @@ async def test_campaign_budget_auto_pause_integration(db_session: AsyncSession):
     over_budget_campaign = result.scalar_one()
     
     assert over_budget_campaign.status == CampaignStatus.PAUSED
+
+@pytest.mark.asyncio
+async def test_commerce_ops_task_respects_lock(db_session: AsyncSession):
+    from ..core.db_ops import acquire_automation_lock
+    from ..celery.tasks.commerce_ops import commerce_ops_with_db
+
+    async with acquire_automation_lock(db_session, "commerce_ops", ttl_seconds=300):
+        result = await commerce_ops_with_db(db_session)
+    assert result.get("skipped") is True
+    assert "lock" in result.get("reason", "")

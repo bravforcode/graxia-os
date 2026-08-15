@@ -108,6 +108,27 @@ def create_revenue_os_celery_app(settings) -> Celery:
                 "schedule": 30.0,  # Every 30 seconds
                 "options": {"queue": "critical"},
             },
+
+            # Digital fulfillment - sweep PAID orders missing delivery (locked)
+            "digital-fulfillment": {
+                "task": "graxia.packages.revenue_os.celery.tasks.digital_fulfillment",
+                "schedule": 300.0,  # Every 5 minutes
+                "options": {"queue": "default"},
+            },
+
+            # Process pending refunds against Stripe (idempotent)
+            "process-refunds": {
+                "task": "graxia.packages.revenue_os.celery.tasks.process_refunds",
+                "schedule": 300.0,  # Every 5 minutes
+                "options": {"queue": "default"},
+            },
+
+            # Commerce ops agent - autonomous decision cycle (locked)
+            "commerce-ops": {
+                "task": "graxia.packages.revenue_os.celery.tasks.commerce_ops",
+                "schedule": 3600.0,  # Hourly
+                "options": {"queue": "default"},
+            },
         },
     })
 
