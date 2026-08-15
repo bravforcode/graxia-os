@@ -220,6 +220,11 @@ class CommerceOpsAgent:
         proposals: list[str] = []
         a1, d1, p1 = await cls._price_optimization(db, shadow)
         actions += a1; denials += d1; proposals += p1
+        # Dynamic pricing (shared price-write path, 24h per-product lock)
+        from ..pricing.dynamic import DynamicPricingEngine
+        dyn = await DynamicPricingEngine.run_cycle(db, shadow=shadow)
+        if not shadow:
+            actions += [f"dynamic_price:{a}" for a in ([] if dyn["applied"] == 0 else [str(dyn["applied"])])]
         a2, d2, p2 = await cls._campaign_check(db, shadow)
         actions += a2; denials += d2; proposals += p2
         a3, d3, p3 = await cls._ads_optimization(db, shadow)
