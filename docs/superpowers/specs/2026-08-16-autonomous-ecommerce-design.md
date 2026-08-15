@@ -234,3 +234,77 @@ Router `POST /api/support/chat`:
 - Approval/BWCP infra stays (audit value) but is bypassed for autonomous actions
 - Digital asset storage location (S3/local/CDN) to be decided at implementation — token points to storage key
 - POD supplier choice (Printful/Printify) deferred to P2
+
+---
+
+## 10. Phase 1 Status (2026-08-16)
+
+**Tasks 1–9 implemented and committed on `review/rydc-atr-pnl-honesty`.**
+
+### Completed
+- **Task 1** Policy engine: fail-closed dual PERCENT+ABSOLUTE caps, `AutonomyMode` (off/shadow/limited/full), circuit breaker (5 MEDIUM+ incidents/60 min → auto-OFF + HIGH incident). 12 tests.
+- **Task 1a** Admin auth pinned: reused existing `require_admin_api_key` (`ADMIN_API_KEY`, constant-time, `X-Admin-Api-Key`/Bearer). 4 tests.
+- **Task 2** `/api/autonomy/status` + `/api/autonomy/mode` (router-level auth). HTTP-verified: 401 no key, 403 wrong key, 422 bad mode. 3 tests.
+- **Task 3** `/api/policy/rules` CRUD + `/api/policy/seed` (dual-cap aware schemas). 4 tests.
+- **Task 4** Digital fulfillment wired: Stripe/Gumroad/PayPal webhooks create PAID orders and fulfill immediately (idempotent); locked 5-min sweep task catches missed orders. 5 tests. `OrderStatus.PAID` added (additive).
+- **Task 5** Commerce ops agent: price-cut job (policy-gated, `value_cents` included), campaign pause (budget `should_pause`), stale-order escalation, daily StrategyLog; SHADOW mode logs-only; circuit breaker blocks cycle. 7 tests.
+- **Task 6** Support agent: one-time 6-digit verification code (emailed, hashed, 15 min TTL, 5-attempt burn), WISMO gated, refunds idempotent + per-customer capped + 30-day window + dual-cap + escalate-above-cap, complaints escalate. 10 tests. `SupportVerification` model.
+- **Task 6a** Stripe refund executor: PROCESSING → PROCESSED (with `platform_refund_id`) / FAILED; non-Stripe skipped; idempotent. 3 tests.
+- **Task 7** `POST /api/support/chat` (public, identity verified in agent). 1 test.
+- **Task 8** Celery beat: digital-fulfillment (5 min), process-refunds (5 min), commerce-ops (hourly) — all lock-wrapped; overlap test. 1 test.
+- **Task 9** Frontend `SupportChat` widget (floating, verification-code input flow) mounted on StorePage; `supportChat` API client. 2 tests.
+
+### Test infra unblocked (pre-existing breakage fixed, needed to run any test)
+- `conftest.py`: removed dead `_get_or_init_database_url` import; clean-slate per-test fixture (services commit internally); session `loop_scope` via pytest-asyncio 1.4.0; tolerant teardown (pre-existing FK cycle in drop_all).
+- `models.py`: `bwcp_messages.incident_id` FK pointed at non-existent table; `Order.idempotency_key` got a client-side default (NOT NULL without default broke direct construction).
+- API boot: `schemas/` dir renamed `schemas_pkg/` (shadowed by `schemas.py` module); `checkout.py` imported non-existent `order_service`; `db.py` exposes `DATABASE_URL`; `middleware.py` starlette `headers.pop` compat.
+- `fulfillment_service.fulfill_order`: idempotency via `DeliveryEvent` existence (removed reference to non-existent `Order.delivery_status`).
+- `webhook_processor.py`: rewritten against current schema (`amount_cents`, `product_id`, customer stats; previously referenced obsolete `total_amount`/`delivery_status`/`total_orders`/`total_spent`).
+- `chief_of_staff.escalate_issue` is a module-level function (not a class method) — callers updated.
+- Venv repair: `pydantic-core==2.46.4` (mismatch with pydantic 2.13.4); `pytest-asyncio>=0.24` (loop management).
+
+### Migration (manual DDL — alembic chain requires pgvector; not applicable to this DB)
+For a fresh deployment, create the new tables (or rely on `Base.metadata.create_all`):
+
+```sql
+CREATE TABLE IF NOT EXISTS revenue_os_policy_rules (
+    id UUID PRIMARY KEY,
+    action VARCHAR(50) NOT NULL,
+    rule_type VARCHAR(20) NOT NULL,
+    value DOUBLE PRECISION,
+    value_type VARCHAR(20) NOT NULL DEFAULT 'percent',
+    limited_multiplier DOUBLE PRECISION NOT NULL DEFAULT 0.25,
+    scope VARCHAR(50) NOT NULL DEFAULT 'global',
+    scope_value VARCHAR(255),
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    priority INTEGER NOT NULL DEFAULT 100,
+    description VARCHAR(500),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ix_policy_action_scope ON revenue_os_policy_rules (action, scope);
+
+CREATE TABLE IF NOT EXISTS revenue_os_autonomy_state (
+    id INTEGER PRIMARY KEY,
+    mode VARCHAR(20) NOT NULL DEFAULT 'off',
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+-- If an earlier deployment had `enabled` column: map enabled=false -> mode='off', enabled=true -> mode='full' explicitly.
+
+CREATE TABLE IF NOT EXISTS revenue_os_support_verifications (
+    id UUID PRIMARY KEY,
+    email VARCHAR(320) NOT NULL,
+    code_hash VARCHAR(64) NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used_at TIMESTAMPTZ,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ix_support_verification_email ON revenue_os_support_verifications (email);
+
+-- OrderStatus gained 'paid' (Postgres enum type 'orderstatus'): ALTER TYPE orderstatus ADD VALUE IF NOT EXISTS 'paid';
+```
+
+### Baseline (pre-existing) failures — NOT caused by Phase 1, documented for the record
+- Backend `graxia/packages/revenue_os/tests/`: 14 pre-existing failures — copywriter signature drift (5), fulfillment entitlement tests (3), celery task assert drift (3), validators rule drift (1), approval draft (1), campaign metrics (1). 123 passed.
+- Frontend `frontend/tests/`: 3 pre-existing failures (NoticeBanner role query etc.). 40 passed.
