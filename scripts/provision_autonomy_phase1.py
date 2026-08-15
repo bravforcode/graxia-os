@@ -35,9 +35,10 @@ def _read_root_env() -> dict:
 
 async def main() -> None:
     env = _read_root_env()
-    url = env.get("DATABASE_URL", "")
+    # Allow explicit override (e.g. local prod-equivalent or unpaused Supabase)
+    url = os.getenv("DATABASE_URL") or env.get("DATABASE_URL", "")
     if not url:
-        print("FAIL: DATABASE_URL missing from root .env")
+        print("FAIL: DATABASE_URL missing from root .env or environment")
         sys.exit(1)
     # asyncpg URL
     url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
