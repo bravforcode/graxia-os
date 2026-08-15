@@ -308,3 +308,28 @@ CREATE INDEX IF NOT EXISTS ix_support_verification_email ON revenue_os_support_v
 ### Baseline (pre-existing) failures — NOT caused by Phase 1, documented for the record
 - Backend `graxia/packages/revenue_os/tests/`: 14 pre-existing failures — copywriter signature drift (5), fulfillment entitlement tests (3), celery task assert drift (3), validators rule drift (1), approval draft (1), campaign metrics (1). 123 passed.
 - Frontend `frontend/tests/`: 3 pre-existing failures (NoticeBanner role query etc.). 40 passed.
+
+---
+
+## 11. Phase 2 Status (2026-08-16)
+
+**Plan:** `docs/superpowers/plans/2026-08-16-autonomous-ecommerce-phase2-plan.md` — 9 tasks.
+
+### Completed (all on `main`)
+- **T1 Channel framework**: `ChannelType`/`SupplierStatus` enums; `ChannelConnection`, `SupplierOrder` (unique idempotency_key), `AdCampaignSync` (unique per platform+campaign), `PriceChangeLock` models; `ChannelAdapter` ABC. 4 tests.
+- **T2 Shopify connector**: HMAC webhook verification (before parse), rate-limit-aware client (429 backoff), idempotent order import → PAID → fulfill, reconcile with no-downgrade rule. 5 tests.
+- **T3 POD supplier**: policy-gated submission (margin ≥ 20% / cost ≤ 100k THB cents), unique idempotency_key prevents double orders, HMAC status webhooks, locked poll task; `fulfill_order` physical branch (no download link). 3 tests.
+- **T4 Meta ads client**: campaigns/metrics/budget/status via Graph API, `sync_ads_metrics` upsert (never budgets). 3 tests.
+- **T5 Ads agent job**: ROAS rules (pause <1.0, cut toward target, clamp ±10%), dual-capped via `AD_BUDGET` policy, SHADOW never calls Meta API. 3 tests.
+- **T6 Dynamic pricing**: rule signals (stale −10% / hot +5%), shared policy-gated price-write path with 24h `PriceChangeLock`; wired into commerce cycle. 5 tests.
+- **T7 Backtest harness**: replays history through the REAL `PolicyEngine.check` in-memory; ESTIMATE impact labels; nightly StrategyLog. 3 tests.
+- **T8 Celery beat**: shopify-sync (5 min), supplier-poll (15 min), ads-sync (hourly), backtest-runner (nightly) — all lock-wrapped; task registry updated. Suite: **154 passed, 14 pre-existing failures, 0 errors**.
+- **T9 Runbooks**: `docs/runbooks/channel-onboarding.md`, `docs/runbooks/ads-budgets.md`.
+
+### Phase 2 env vars (secrets manager)
+`SHOPIFY_STORE_DOMAIN`, `SHOPIFY_ACCESS_TOKEN`, `SHOPIFY_WEBHOOK_SECRET`, `SUPPLIER_API_URL`, `SUPPLIER_API_KEY`, `SUPPLIER_WEBHOOK_SECRET`, `META_ACCESS_TOKEN`, `META_AD_ACCOUNT_ID` — none committed, fail-closed in production.
+
+### Provisioning status
+- Phase 1 SHADOW live on local prod-equivalent DB (`graxia-prod-db`, port 5435, `graxia_os`).
+- Supabase (root `.env`) unreachable (project paused — DNS fails) — unpause, then run `scripts/provision_autonomy_phase1.py` with that DATABASE_URL (idempotent).
+- `STRIPE_SECRET_KEY` in `.env` is still the test placeholder — replace before real money.
