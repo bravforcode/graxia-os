@@ -9,6 +9,15 @@ from .campaign_engine import campaign_engine
 from .weekly_review import weekly_review
 from .process_outbox import process_outbox
 from .agent_consumers import agent_consumers
+from .digital_fulfillment import digital_fulfillment
+from .process_refunds import process_refunds
+from .commerce_ops import commerce_ops
+from .incident_alerter import incident_alerter
+from .rollout_gate_checker import rollout_gate_checker
+from .shopify_sync import shopify_sync
+from .supplier_poll import supplier_poll
+from .ads_sync import ads_sync
+from .backtest_runner import backtest_runner
 
 __all__ = [
     "daily_revenue_ops",
@@ -18,4 +27,13 @@ __all__ = [
     "weekly_review",
     "process_outbox",
     "agent_consumers",
+    "digital_fulfillment",
+    "process_refunds",
+    "commerce_ops",
+    "incident_alerter",
+    "rollout_gate_checker",
+    "shopify_sync",
+    "supplier_poll",
+    "ads_sync",
+    "backtest_runner",
 ]

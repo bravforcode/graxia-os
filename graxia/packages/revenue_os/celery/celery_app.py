@@ -143,6 +143,28 @@ def create_revenue_os_celery_app(settings) -> Celery:
                 "schedule": 86400.0,  # Daily
                 "options": {"queue": "reporting"},
             },
+
+            # ── Phase 2 ─────────────────────────────────────────────────
+            "shopify-sync": {
+                "task": "graxia.packages.revenue_os.celery.tasks.shopify_sync",
+                "schedule": 300.0,  # Every 5 min
+                "options": {"queue": "default"},
+            },
+            "supplier-poll": {
+                "task": "graxia.packages.revenue_os.celery.tasks.supplier_poll",
+                "schedule": 900.0,  # Every 15 min
+                "options": {"queue": "default"},
+            },
+            "ads-sync": {
+                "task": "graxia.packages.revenue_os.celery.tasks.ads_sync",
+                "schedule": 3600.0,  # Hourly
+                "options": {"queue": "default"},
+            },
+            "backtest-runner": {
+                "task": "graxia.packages.revenue_os.celery.tasks.backtest_runner",
+                "schedule": 86400.0,  # Nightly
+                "options": {"queue": "reporting"},
+            },
         },
     })
 
