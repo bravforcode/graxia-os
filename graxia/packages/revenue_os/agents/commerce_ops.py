@@ -15,14 +15,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..core.policy_engine import PolicyEngine
 from ..enums import ActionType, AutonomyMode, CampaignStatus, IncidentSeverity, OrderStatus, ProductStatus
-from ..models import AuditLog, IncidentEvent, Order, Product, RevenueCampaign, StrategyLog
+from ..models import AdCampaignSync, AuditLog, IncidentEvent, Order, Product, RevenueCampaign, StrategyLog
 from ..services.campaign_service import RevenueCampaignService
+from ..ads.meta import MetaAdsClient
 
 logger = structlog.get_logger()
 
 PRICE_CUT_PERCENT = 10.0
 STALE_PRODUCT_DAYS = 14
 STALE_ORDER_HOURS = 48
+AD_ROAS_PAUSE = 1.0
+AD_BUDGET_CUT_PERCENT = 10.0
+AD_TARGET_ROAS = 3.0
+
+ads_client = MetaAdsClient()  # monkeypatch target for tests
 
 
 def _naive(dt: datetime) -> datetime:
@@ -109,6 +115,58 @@ class CommerceOpsAgent:
         return actions, denials, proposals
 
     @staticmethod
+    async def _ads_optimization(db: AsyncSession, shadow: bool) -> tuple[list[str], list[str], list[str]]:
+        """ROAS-based budget optimization — policy-gated, shadow-aware (Task 5)."""
+        actions, denials, proposals = [], [], []
+        result = await db.execute(select(AdCampaignSync).where(AdCampaignSync.status == "ACTIVE"))
+        for campaign in list(result.scalars().all()):
+            if campaign.roas < AD_ROAS_PAUSE:
+                # ROAS below 1.0 → pause (CAMPAIGN_PAUSE allow rule already seeded)
+                decision = await PolicyEngine.check(db, ActionType.CAMPAIGN_PAUSE, {})
+                if not decision.allow:
+                    denials.append(f"campaign_pause:{campaign.platform_campaign_id}:{decision.reason}")
+                    continue
+                if shadow:
+                    proposals.append(f"campaign_pause:{campaign.platform_campaign_id}")
+                    continue
+                await ads_client.set_status(campaign.platform_campaign_id, active=False)
+                campaign.status = "PAUSED"
+                actions.append(f"campaign_pause:{campaign.platform_campaign_id}")
+                continue
+            if campaign.daily_budget_cents <= 0 or campaign.spend_cents <= 0:
+                continue
+            # target budget = spend * (target_roas / actual_roas), clamped to ±10%
+            actual_roas = campaign.roas or 0.0
+            target_budget = campaign.daily_budget_cents * (AD_TARGET_ROAS / actual_roas) if actual_roas > 0 else campaign.daily_budget_cents
+            delta = target_budget - campaign.daily_budget_cents
+            if abs(delta) < campaign.daily_budget_cents * 0.01:
+                continue  # within noise
+            delta_pct = (delta / campaign.daily_budget_cents) * 100
+            delta_pct = max(-AD_BUDGET_CUT_PERCENT, min(AD_BUDGET_CUT_PERCENT, delta_pct))
+            delta_cents = int(campaign.daily_budget_cents * abs(delta_pct) / 100)
+            decision = await PolicyEngine.check(
+                db, ActionType.AD_BUDGET,
+                {"value": abs(delta_pct), "value_cents": delta_cents, "currency": "THB"},
+            )
+            if not decision.allow:
+                denials.append(f"ad_budget:{campaign.platform_campaign_id}:{decision.reason}")
+                db.add(IncidentEvent(
+                    title=f"Policy denied ad budget change for {campaign.name}",
+                    description=decision.reason,
+                    severity=IncidentSeverity.MEDIUM,
+                ))
+                continue
+            new_budget = campaign.daily_budget_cents + int(campaign.daily_budget_cents * delta_pct / 100)
+            if shadow:
+                proposals.append(f"ad_budget:{campaign.platform_campaign_id}:{new_budget}")
+                continue
+            await ads_client.set_budget(campaign.platform_campaign_id, new_budget)
+            campaign.daily_budget_cents = new_budget
+            actions.append(f"ad_budget:{campaign.platform_campaign_id}:{new_budget}")
+        await db.flush()
+        return actions, denials, proposals
+
+    @staticmethod
     async def _stale_order_review(db: AsyncSession) -> list[str]:
         actions = []
         cutoff = datetime.utcnow() - timedelta(hours=STALE_ORDER_HOURS)
@@ -164,6 +222,8 @@ class CommerceOpsAgent:
         actions += a1; denials += d1; proposals += p1
         a2, d2, p2 = await cls._campaign_check(db, shadow)
         actions += a2; denials += d2; proposals += p2
+        a3, d3, p3 = await cls._ads_optimization(db, shadow)
+        actions += a3; denials += d3; proposals += p3
         actions += await cls._stale_order_review(db)
         await cls._daily_report(db)
         await db.commit()
