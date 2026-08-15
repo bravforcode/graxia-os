@@ -32,13 +32,14 @@ async def ads_sync_with_db(db: AsyncSession) -> dict:
         except Exception as exc:
             logger.exception("ads_metrics_failed", err=str(exc))
             return {"skipped": True, "reason": f"metrics_failed: {exc}"}
+        status_map = {c["platform_campaign_id"]: c.get("status") or "ACTIVE" for c in campaigns}
+        for cid, m in metrics.items():
+            m["status"] = status_map.get(cid, "ACTIVE")
         synced = await sync_ads_metrics(db, "meta", metrics)
-        # Optimization runs only when autonomy is on (SHADOW = proposals)
-        if mode == AutonomyMode.OFF:
-            return {"skipped": False, "synced": synced, "optimized": "autonomy_off"}
-        actions, denials, proposals = await CommerceOpsAgent._ads_optimization(db, shadow=(mode == AutonomyMode.SHADOW))
+        # Optimization is owned by the commerce cycle (single owner, one lock).
+        # ads_sync ONLY refreshes metrics — budgets are never touched here.
         await db.commit()
-        return {"skipped": False, "synced": synced, "actions": actions, "denials": denials, "proposals": proposals}
+        return {"skipped": False, "synced": synced}
 
 
 def ads_sync():

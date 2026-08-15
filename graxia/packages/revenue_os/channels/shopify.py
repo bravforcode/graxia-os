@@ -11,7 +11,7 @@ import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..enums import ChannelType, OrderStatus
+from ..enums import ChannelType, IncidentSeverity, OrderStatus
 from ..models import IncidentEvent, Order, Product
 from .base import ChannelAdapter, ChannelError
 from ..services.fulfillment_service import FulfillmentService
@@ -106,7 +106,7 @@ class ShopifyAdapter(ChannelAdapter):
             out.append({
                 "platform_order_id": str(o["id"]),
                 "customer_email": (o.get("customer") or {}).get("email") or "unknown@shopify.local",
-                "amount_cents": int(float(o.get("total_price", "0")) * 100),
+                "amount_cents": int(Decimal(str(o.get("total_price", "0"))) * 100),
                 "currency": (o.get("currency") or "USD").upper(),
                 "product_id": product_id,
                 "status": o.get("financial_status", "pending"),

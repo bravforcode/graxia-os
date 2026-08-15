@@ -3,7 +3,9 @@ from datetime import datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import importlib
 from ..celery.tasks.rollout_gate_checker import RolloutGateChecker
+_gate_mod = importlib.import_module("graxia.packages.revenue_os.celery.tasks.rollout_gate_checker")
 from ..core.policy_engine import PolicyEngine
 from ..enums import AutonomyMode, IncidentSeverity
 from ..models import AuditLog, IncidentEvent
@@ -41,10 +43,7 @@ async def test_shadow_gate_ready_when_conditions_met(db_session: AsyncSession, m
     async def fake_days(db, mode):
         return 8
 
-    monkeypatch.setattr(
-        "graxia.packages.revenue_os.celery.tasks.rollout_gate_checker.days_in_mode",
-        fake_days,
-    )
+    monkeypatch.setattr(_gate_mod, "days_in_mode", fake_days)
     readiness = await RolloutGateChecker.check_readiness(db_session)
     assert readiness["gates"]["no_high_incidents"] is True
     assert readiness["gates"]["observation_period"] is True

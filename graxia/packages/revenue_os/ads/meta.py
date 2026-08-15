@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Optional
 
 import httpx
@@ -83,7 +84,7 @@ class MetaAdsClient(AdPlatformClient):
                     "date_preset": f"last_{ADS_METRICS_WINDOW_DAYS}d",
                 })
                 row = (data.get("data") or [{}])[0]
-                spend = int(float(row.get("spend") or 0) * 100)
+                spend = int(Decimal(str(row.get("spend") or 0)) * 100)
                 roas = float(row.get("purchase_roas") or 0)
                 revenue = int(spend * roas)
                 out[cid] = {"spend_cents": spend, "revenue_cents": revenue, "roas": roas}
@@ -114,6 +115,7 @@ async def sync_ads_metrics(db: AsyncSession, platform: str, metrics: dict[str, d
         row.spend_cents = m.get("spend_cents", 0)
         row.revenue_cents = m.get("revenue_cents", 0)
         row.roas = m.get("roas", 0.0)
+        row.status = m.get("status") or "ACTIVE"  # ads engine filters on this
         row.last_synced_at = datetime.now(timezone.utc)
         synced += 1
     await db.commit()

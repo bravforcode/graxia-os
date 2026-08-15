@@ -31,6 +31,16 @@ class SupplierPODAdapter:
             return existing  # already submitted (idempotent)
 
         cost = product.supplier_cost_cents or 0
+        if cost <= 0:
+            # unknown cost -> policy cannot protect the order; escalate
+            db.add(IncidentEvent(
+                title=f"Supplier order blocked (unknown cost): {order.id}",
+                description="supplier_cost_cents is 0/None — set it before auto-ordering",
+                severity=IncidentSeverity.MEDIUM,
+                affected_order_id=order.id,
+            ))
+            await db.flush()
+            return None
         margin_percent = ((order.amount_cents - cost) / order.amount_cents * 100) if order.amount_cents else 0.0
         decision = await PolicyEngine.check(
             db, ActionType.SUPPLIER_PURCHASE,
@@ -76,11 +86,26 @@ class SupplierPODAdapter:
         updated = 0
         rows = (await db.execute(
             select(SupplierOrder).where(
-                SupplierOrder.supplier_order_ref.isnot(None),
                 SupplierOrder.status.notin_([SupplierStatus.DELIVERED, SupplierStatus.FAILED]),
             )
         )).scalars().all()
         for so in rows:
+            if so.supplier_order_ref is None:
+                # SUBMITTED without ref (previous attempt failed): retry submission.
+                # Idempotency key makes retries safe.
+                from ..models import Order as OrderModel
+                order = await db.get(OrderModel, so.order_id)
+                product = await db.get(Product, order.product_id) if order else None
+                if order is None or product is None:
+                    continue
+                try:
+                    result = await self.client.submit(order_id=str(order.id), idempotency_key=so.idempotency_key)
+                    so.supplier_order_ref = result.get("id")
+                    so.raw = result
+                    updated += 1
+                except Exception:
+                    continue  # retry next tick
+                continue
             try:
                 status = await self.client.get_status(so.supplier_order_ref)
                 new_status = status.get("status", "").lower()
@@ -130,6 +155,8 @@ class DefaultSupplierClient:
         import httpx
         url = os.getenv("SUPPLIER_API_URL", "")
         key = os.getenv("SUPPLIER_API_KEY", "")
+        if not url or not key:
+            raise RuntimeError("SUPPLIER_API_URL / SUPPLIER_API_KEY not configured")
         async with httpx.AsyncClient(timeout=30.0) as client:
             resp = await client.get(
                 f"{url}/orders/{ref}", headers={"Authorization": f"Bearer {key}"}

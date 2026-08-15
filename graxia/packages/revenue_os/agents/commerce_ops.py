@@ -60,6 +60,10 @@ class CommerceOpsAgent:
                 ).limit(1)
             )
             if order_count is None and _naive(product.created_at) < datetime.utcnow() - timedelta(days=STALE_PRODUCT_DAYS):
+                from ..models import PriceChangeLock as _PCL
+                _lock = await db.get(_PCL, product.id)
+                if _lock is not None and _lock.last_change_at is not None and                         _lock.last_change_at.replace(tzinfo=None) > datetime.utcnow() - timedelta(hours=24):
+                    continue  # dynamic pricing already moved this product recently
                 cut_cents = int((product.price_cents or 0) * (PRICE_CUT_PERCENT / 100))
                 decision = await PolicyEngine.check(
                     db, ActionType.PRICE_CHANGE,
@@ -86,6 +90,12 @@ class CommerceOpsAgent:
                     )
                     continue
                 product.price_cents = max(0, (product.price_cents or 0) - cut_cents)
+                _pcl = await db.get(_PCL, product.id)
+                if _pcl is None:
+                    db.add(_PCL(product_id=product.id, last_delta_percent=-PRICE_CUT_PERCENT))
+                else:
+                    _pcl.last_change_at = datetime.utcnow()
+                    _pcl.last_delta_percent = -PRICE_CUT_PERCENT
                 actions.append(f"price_change:{product.slug}:-{PRICE_CUT_PERCENT}%")
                 await CommerceOpsAgent._log_action(
                     db, "agent.price_change",
@@ -120,6 +130,8 @@ class CommerceOpsAgent:
         actions, denials, proposals = [], [], []
         result = await db.execute(select(AdCampaignSync).where(AdCampaignSync.status == "ACTIVE"))
         for campaign in list(result.scalars().all()):
+            if campaign.spend_cents <= 0:
+                continue  # no data yet — never pause/cut on missing data
             if campaign.roas < AD_ROAS_PAUSE:
                 # ROAS below 1.0 → pause (CAMPAIGN_PAUSE allow rule already seeded)
                 decision = await PolicyEngine.check(db, ActionType.CAMPAIGN_PAUSE, {})
@@ -129,7 +141,12 @@ class CommerceOpsAgent:
                 if shadow:
                     proposals.append(f"campaign_pause:{campaign.platform_campaign_id}")
                     continue
-                await ads_client.set_status(campaign.platform_campaign_id, active=False)
+                try:
+                    await ads_client.set_status(campaign.platform_campaign_id, active=False)
+                except Exception:
+                    logger.exception("ads_pause_failed", campaign=campaign.platform_campaign_id)
+                    denials.append(f"campaign_pause:{campaign.platform_campaign_id}:api_error")
+                    continue
                 campaign.status = "PAUSED"
                 actions.append(f"campaign_pause:{campaign.platform_campaign_id}")
                 continue
@@ -160,7 +177,12 @@ class CommerceOpsAgent:
             if shadow:
                 proposals.append(f"ad_budget:{campaign.platform_campaign_id}:{new_budget}")
                 continue
-            await ads_client.set_budget(campaign.platform_campaign_id, new_budget)
+            try:
+                await ads_client.set_budget(campaign.platform_campaign_id, new_budget)
+            except Exception:
+                logger.exception("ads_budget_change_failed", campaign=campaign.platform_campaign_id)
+                denials.append(f"ad_budget:{campaign.platform_campaign_id}:api_error")
+                continue
             campaign.daily_budget_cents = new_budget
             actions.append(f"ad_budget:{campaign.platform_campaign_id}:{new_budget}")
         await db.flush()
