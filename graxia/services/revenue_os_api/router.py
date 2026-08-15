@@ -29,7 +29,7 @@ from fastapi import APIRouter
 from .routers import (
     approvals, automation, autonomy, bwcp, campaigns, checkout,
     dashboard, delivery, emails, entitlements,
-    incidents, leads, ledger, orders, outbox, refunds,
+    incidents, leads, ledger, orders, outbox, policy, refunds,
     system, ceo_dashboard,
 )
 
@@ -53,6 +53,7 @@ api_router.include_router(incidents.router,    prefix="/incidents",    tags=["In
 api_router.include_router(dashboard.router,    prefix="/dashboard",    tags=["Dashboard"])
 api_router.include_router(automation.router,   prefix="/automation",   tags=["Automation"])
 api_router.include_router(autonomy.router,     prefix="/autonomy",     tags=["Autonomy"])
+api_router.include_router(policy.router,       prefix="/policy",       tags=["Policy"])
 
 # ── NEW v12 Routers ──────────────────────────────────────────────────────
 api_router.include_router(bwcp.router,         prefix="/bwcp",         tags=["BWCP Messages"])
