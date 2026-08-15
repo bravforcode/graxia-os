@@ -5,7 +5,7 @@ import { BrainCircuit, Database, RefreshCw, ShieldCheck, Workflow } from 'lucide
 import { Button } from '@/components/ui/button'
 import { MetricCard } from '@/components/ui/metric-card'
 import { PageHeader } from '@/components/ui/page-header'
-import { Panel } from '@/components/ui/Panel'
+import { Panel } from '@/components/ui/panel'
 import { StatusPill } from '@/components/ui/status-pill'
 import type { AppShellContext } from '@/components/Layout'
 import { api } from '@/lib/api'

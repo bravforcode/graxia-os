@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { CheckCircle2, XCircle, AlertTriangle, RefreshCw } from "lucide-react";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { PageHeader } from "@/components/ui/page-header";
-import { Panel } from "@/components/ui/Panel";
+import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getAgentWorkflowStatus, getRuntimeStatus, listTools, type MCPToolDefinition, type RuntimeStatus } from "@/lib/admin-api";

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { RefreshCw } from "lucide-react";
 import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
-import { Panel } from "@/components/ui/Panel";
+import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 import { getFunnelAnalytics, type FunnelAnalytics } from "@/lib/admin-api";
 

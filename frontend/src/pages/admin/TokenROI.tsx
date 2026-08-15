@@ -4,7 +4,7 @@ import { ArrowRight, RefreshCw } from "lucide-react";
 import { MetricCard } from "@/components/ui/metric-card";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { PageHeader } from "@/components/ui/page-header";
-import { Panel } from "@/components/ui/Panel";
+import { Panel } from "@/components/ui/panel";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
