@@ -505,7 +505,7 @@ function attachRetry(instance: typeof client) {
       const cfg = err.config;
       const status = err.response?.status;
       const isRetryable =
-        !err.response || status === 502 || status === 503 || status === 504;
+        !err.response || (status !== undefined && status >= 500 && status < 600);
       if (!isRetryable || !cfg) {
         return Promise.reject(error);
       }
