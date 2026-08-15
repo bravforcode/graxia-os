@@ -166,19 +166,18 @@ class WebhookProcessor:
         charge: Dict[str, Any],
         db: AsyncSession
     ) -> Order:
-        """Process Stripe refund (charge.refunded). The charge id (ch_*) differs from
-        the payment intent id (pi_*), so match against either the payment_intent
-        column or the stored session metadata."""
+        """Process Stripe refund (charge.refunded). The charge object carries its own
+        payment_intent (pi_*) — that is the correct match key against
+        Order.stripe_payment_intent (charge ids ch_* never equal pi_*)."""
         charge_id = charge.get("id")
+        payment_intent = charge.get("payment_intent")
         order = (
             await db.execute(
-                select(Order).where(Order.stripe_payment_intent == charge_id)
+                select(Order).where(Order.stripe_payment_intent == payment_intent)
             )
         ).scalar_one_or_none()
-        if order is None and charge_id:
-            # Fallback: the session metadata may hold the payment_intent under a
-            # different shape — match any order whose stored session id is the charge's
-            # payment_intent parent.
+        if order is None and charge_id and not payment_intent:
+            # Fallback for legacy payloads lacking payment_intent: scan stored sessions
             for candidate in (
                 await db.execute(select(Order).where(Order.platform == "stripe"))
             ).scalars().all():

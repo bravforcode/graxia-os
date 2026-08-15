@@ -266,15 +266,9 @@ class FulfillmentService:
         
         delivery_event.status = DeliveryStatus.DELIVERED
         delivery_event.delivered_at = datetime.utcnow()
-        
-        # Update order delivery status
-        order_result = await db.execute(
-            select(Order).where(Order.id == delivery_event.order_id)
-        )
-        order = order_result.scalar_one_or_none()
-        if order:
-            order.delivery_status = DeliveryStatus.DELIVERED
-        
+
+        # Delivery state lives on the DeliveryEvent row, not on Order.
+
         await db.commit()
         
         logger.info(
