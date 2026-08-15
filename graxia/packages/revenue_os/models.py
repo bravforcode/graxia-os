@@ -184,6 +184,11 @@ class Product(Base):
     fulfillment_url: Mapped[Optional[str]] = mapped_column(String(1000))
     fulfillment_instructions: Mapped[Optional[str]] = mapped_column(Text)
 
+    # Phase 2: physical fulfillment (POD/dropship)
+    supplier: Mapped[Optional[str]] = mapped_column(String(100))
+    supplier_cost_cents: Mapped[Optional[int]] = mapped_column(Integer)
+    is_physical: Mapped[bool] = mapped_column(Boolean, default=False)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

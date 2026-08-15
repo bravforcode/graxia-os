@@ -88,7 +88,7 @@ class FulfillmentService:
                 order_id=order_id,
                 customer_id=order.customer_id,
                 event_type="product_delivered",
-                delivery_type="email_access",
+                delivery_type="physical" if getattr(product, "is_physical", False) else "email_access",
                 status=DeliveryStatus.QUEUED,
                 message=f"Entitlement granted for {product.name}",
             )
@@ -97,13 +97,23 @@ class FulfillmentService:
             
             # Queue delivery email if enabled
             if auto_queue_email:
-                email = await EmailService.queue_delivery_email(
-                    db=db,
-                    order_id=order_id,
-                    product_name=product.name,
-                    fulfillment_url=product.fulfillment_url,
-                    fulfillment_instructions=product.fulfillment_instructions,
-                )
+                if getattr(product, "is_physical", False):
+                    # Physical: no download link — "in production" notice; the
+                    # supplier poll task pushes the real tracking later.
+                    email = await EmailService.queue_email(
+                        db=db,
+                        to_email=order.customer_email,
+                        subject="ออเดอร์ของคุณกำลังผลิต (your order is in production)",
+                        body=f"ขอบคุณที่สั่งซื้อ {product.name} — เรากำลังจัดส่งให้เร็วที่สุด",
+                    )
+                else:
+                    email = await EmailService.queue_delivery_email(
+                        db=db,
+                        order_id=order_id,
+                        product_name=product.name,
+                        fulfillment_url=product.fulfillment_url,
+                        fulfillment_instructions=product.fulfillment_instructions,
+                    )
                 delivery_event.email_outbox_id = email.id
 
             # Delivery state lives on the DeliveryEvent row, not on Order.

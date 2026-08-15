@@ -162,6 +162,9 @@ class PolicyEngine:
             (ActionType.CAMPAIGN_PAUSE.value, RuleType.ALLOW, ValueType.PERCENT, None, "allow pausing campaigns"),
             (ActionType.CAMPAIGN_PUBLISH.value, RuleType.ALLOW, ValueType.PERCENT, None, "allow publishing campaigns"),
             (ActionType.EMAIL_SEND.value, RuleType.MAX, ValueType.PERCENT, 5.0, "max emails per customer per day"),
+            # Phase 2: supplier purchases (margin % must stay above the floor; absolute cost cap)
+            (ActionType.SUPPLIER_PURCHASE.value, RuleType.MIN, ValueType.PERCENT, 20.0, "min margin percent to auto-order from supplier"),
+            (ActionType.SUPPLIER_PURCHASE.value, RuleType.MAX, ValueType.ABSOLUTE, 100_000_00, "max supplier order cost, THB cents"),
         ]
         inserted = 0
         for action, rule_type, value_type, value, desc in defaults:
