@@ -110,14 +110,15 @@ class PolicyEngine:
                 return True, f"rule {rule.id} needs context['{context_key}']"
             cap = rule.value
             if rule.value_type == ValueType.ABSOLUTE and context.get("currency") not in (None, "THB"):
-                # FX-aware: convert absolute cents via context fx_rate; without a rate
-                # the ABSOLUTE rule is skipped (PERCENT-only) — never apply a THB cap
-                # to a foreign-currency amount unchanged.
+                # FX-aware: convert only the *value* (foreign cents -> THB cents); the cap
+                # is already in THB. Converting both sides would cancel out and silently
+                # disable the cap for foreign-currency money moves (review fa208122).
                 fx = context.get("fx_rate")
                 if not fx:
-                    return True, None  # skip ABSOLUTE rule (currency != THB, no rate)
+                    # No rate -> this ABSOLUTE rule cannot apply. applies=False excludes it
+                    # from BOTH allow and deny computation — never a silent permit.
+                    return False, None
                 value = value / fx
-                cap = cap / fx
             if mode == AutonomyMode.LIMITED and rule.rule_type == RuleType.MAX:
                 cap = rule.value * rule.limited_multiplier
             unit = "cents" if rule.value_type == ValueType.ABSOLUTE else "%"

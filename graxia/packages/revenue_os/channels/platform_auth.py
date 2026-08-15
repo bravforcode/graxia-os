@@ -1,8 +1,10 @@
 """Platform auth helpers — the ONLY place marketplace signing/token logic lives.
-Shopee: sign = SHA256(partner_key + url_query_string)
-Lazada: sign = HMAC-SHA256(app_secret, sorted "keyvalue" concatenation).upper()
-TikTok Shop: app_key + app_secret signed requests.
-Amazon: LWA client-credentials token + role ARN (AmazonTokenCache).
+Shopee v2: sign = SHA256(partner_key + timestamp + path + partner_id + access_token)
+Lazada:    sign = HMAC-SHA256(app_secret, sorted "keyvalue" concatenation).upper()
+           (values are signed raw; the receiver re-sorts the DECODED params, so
+           percent-encoding on the wire is transparent to the signature)
+TikTok Shop: app_key + app_secret signed requests (Task 4).
+Amazon: LWA client-credentials token (AmazonTokenCache); SP-API scope.
 All clients are 429-aware (backoff) and sandbox/live aware.
 """
 from __future__ import annotations
@@ -69,26 +71,31 @@ class ShopeeSigner:
         self.partner_id = partner_id
         self.partner_key = partner_key
 
-    def sign(self, method: str, path: str, query: str) -> str:
-        # Shopee Open Platform v2: sign = SHA256(partner_key + url_query)
-        return hashlib.sha256((self.partner_key + query).encode()).hexdigest()
+    def sign(self, timestamp: int, path: str, access_token: str = "") -> str:
+        # Shopee Open Platform v2 (API Signature):
+        # sign = SHA256(partner_key + timestamp + path + partner_id + access_token)
+        # path is the FULL API path, e.g. /api/v2/order/get_order_detail.
+        base = f"{self.partner_key}{timestamp}{path}{self.partner_id}{access_token}"
+        return hashlib.sha256(base.encode()).hexdigest()
 
 
 class ShopeeClient(BaseSignedClient):
     def __init__(self, partner_id: int, partner_key: str, shop_id: int, mode: str = "sandbox",
-                 http_client: Optional[httpx.AsyncClient] = None):
+                 access_token: str = "", http_client: Optional[httpx.AsyncClient] = None):
         host = ("https://openapi.test.shopee.cn" if mode == "sandbox"
                 else "https://openapi.shopee.com")
         super().__init__(host + "/api/v2", http_client=http_client)
         self.signer = ShopeeSigner(partner_id, partner_key)
         self.shop_id = shop_id
         self.partner_id = partner_id
+        self.access_token = access_token
 
     def _sign(self, method: str, path: str, params: dict) -> dict:
         base = {**params, "partner_id": self.partner_id, "shop_id": self.shop_id,
                 "timestamp": int(__import__("time").time()), "version": 2}
-        query = "&".join(f"{k}={base[k]}" for k in sorted(base))
-        return {"sign": self.signer.sign(method, path, query)}
+        full_path = "/api/v2" + path
+        base["sign"] = self.signer.sign(base["timestamp"], full_path, self.access_token)
+        return base  # partner_id/shop_id/timestamp/version MUST go on the wire too
 
 
 class LazadaSigner:
@@ -118,12 +125,11 @@ class LazadaClient(BaseSignedClient):
 
 
 class AmazonTokenCache:
-    """LWA client-credentials token cache with role ARN assume (SP-API)."""
+    """LWA client-credentials token cache for SP-API (sellingpartnerapi scope)."""
 
-    def __init__(self, client_id: str, client_secret: str, role_arn: str):
+    def __init__(self, client_id: str, client_secret: str):
         self.client_id = client_id
         self.client_secret = client_secret
-        self.role_arn = role_arn
         self._token: Optional[str] = None
         self._expires_at: float = 0.0
 
@@ -136,7 +142,7 @@ class AmazonTokenCache:
                 "https://api.amazon.com/auth/o2/token",
                 data={"grant_type": "client_credentials", "client_id": self.client_id,
                       "client_secret": self.client_secret,
-                      "scope": "sellingpartnerapi::migration"},
+                      "scope": "sellingpartnerapi"},
             )
             resp.raise_for_status()
             data = resp.json()
