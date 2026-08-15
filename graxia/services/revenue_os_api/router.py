@@ -27,7 +27,7 @@ URL map:
 from fastapi import APIRouter
 
 from .routers import (
-    approvals, automation, autonomy, bwcp, campaigns, checkout,
+    approvals, automation, autonomy, bwcp, campaigns, channels, checkout,
     dashboard, delivery, emails, entitlements,
     incidents, leads, ledger, orders, outbox, policy, refunds,
     support, system, ceo_dashboard,
@@ -57,6 +57,9 @@ api_router.include_router(policy.router,       prefix="/policy",       tags=["Po
 
 # ── Public (identity verified inside the agent) ────────────────────────────
 api_router.include_router(support.router,      prefix="/support",      tags=["Support"])
+
+# ── Channels (webhook public + HMAC; status admin) ─────────────────────────
+api_router.include_router(channels.router,     prefix="/channels",     tags=["Channels"])
 
 # ── NEW v12 Routers ──────────────────────────────────────────────────────
 api_router.include_router(bwcp.router,         prefix="/bwcp",         tags=["BWCP Messages"])
