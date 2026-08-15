@@ -210,7 +210,6 @@ const AgentCanvas = () => {
 
   const onNodeClick: NodeMouseHandler = useCallback(
     (_, node) => {
-      console.log("Opening control panel for:", node.data.label);
       navigate(`/agents?id=${node.data.agentId}`);
     },
     [navigate],
