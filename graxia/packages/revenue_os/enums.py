@@ -7,6 +7,7 @@ from enum import StrEnum
 
 class OrderStatus(StrEnum):
     PENDING = "pending"
+    PAID = "paid"  # payment captured, awaiting fulfillment
     PROCESSING = "processing"
     FULFILLED = "fulfilled"
     REFUNDED = "refunded"
