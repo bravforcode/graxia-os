@@ -165,6 +165,28 @@ def create_revenue_os_celery_app(settings) -> Celery:
                 "schedule": 86400.0,  # Nightly
                 "options": {"queue": "reporting"},
             },
+
+            # ── Phase 3 ─────────────────────────────────────────────────
+            "marketplace-poll": {
+                "task": "graxia.packages.revenue_os.celery.tasks.marketplace_poll",
+                "schedule": 600.0,  # every 10 min
+                "options": {"queue": "default"},
+            },
+            "inventory-sync": {
+                "task": "graxia.packages.revenue_os.celery.tasks.inventory_sync",
+                "schedule": 900.0,  # every 15 min
+                "options": {"queue": "default"},
+            },
+            "fx-refresh": {
+                "task": "graxia.packages.revenue_os.celery.tasks.fx_refresh",
+                "schedule": 86400.0,  # daily
+                "options": {"queue": "reporting"},
+            },
+            "affiliate-review": {
+                "task": "graxia.packages.revenue_os.celery.tasks.affiliate_review",
+                "schedule": 86400.0,  # daily
+                "options": {"queue": "reporting"},
+            },
         },
     })
 

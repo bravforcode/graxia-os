@@ -18,6 +18,10 @@ from .shopify_sync import shopify_sync
 from .supplier_poll import supplier_poll
 from .ads_sync import ads_sync
 from .backtest_runner import backtest_runner
+from .marketplace_poll import marketplace_poll
+from .inventory_sync import inventory_sync
+from .fx_refresh import fx_refresh
+from .affiliate_review import affiliate_review
 
 __all__ = [
     "daily_revenue_ops",
@@ -36,4 +40,8 @@ __all__ = [
     "supplier_poll",
     "ads_sync",
     "backtest_runner",
+    "marketplace_poll",
+    "inventory_sync",
+    "fx_refresh",
+    "affiliate_review",
 ]
