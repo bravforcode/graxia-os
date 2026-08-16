@@ -66,6 +66,7 @@ const navItems = [
   { path: '/contacts', label: 'Contacts', icon: Users },
   { path: '/costs', label: 'Costs', icon: DollarSign },
   { path: '/metrics', label: 'Metrics', icon: BarChart3 },
+  { path: '/revenue-os', label: 'Revenue OS', icon: DollarSign },
   { path: '/settings', label: 'Settings', icon: Settings },
 ]
 
