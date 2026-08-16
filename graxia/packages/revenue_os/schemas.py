@@ -185,13 +185,12 @@ class ApprovalResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
-    item_type: str
-    item_id: UUID
-    requested_by_agent: str
+    object_type: str
+    object_id: UUID
+    title: Optional[str]
     status: str
     ceo_notes: Optional[str]
     reviewed_at: Optional[datetime]
-    expires_at: Optional[datetime]
     created_at: datetime
 
 

@@ -44,4 +44,10 @@ async def decide_approval(
     approval.ceo_notes = body.ceo_notes
     approval.reviewed_at = datetime.utcnow()
     await db.flush()
-    return ApprovalResponse.model_validate(approval)
+    response = ApprovalResponse.model_validate(approval)
+    # Escalation bot: approved actions are replayed automatically (idempotent)
+    if body.decision == "approved":
+        from ....packages.revenue_os.approvals.escalation import replay_approved
+        replay = await replay_approved(db, approval)
+        response.ceo_notes = (response.ceo_notes or "") + f" | replay={replay.get('status')}"
+    return response

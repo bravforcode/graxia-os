@@ -59,6 +59,14 @@ class SupplierPODAdapter:
                 severity=IncidentSeverity.MEDIUM,
                 affected_order_id=order.id,
             ))
+            # Escalation bot: denial becomes a 1-click approval (money-moving
+            # actions get a human decision instead of a silent drop).
+            from ..approvals.escalation import escalate
+            await escalate(db, "supplier_order", order.id,
+                           title=f"Supplier order needs approval: order {order.id}",
+                           preview=f"{decision.reason} — order {order.id} "
+                                   f"{order.amount_cents}{order.currency}",
+                           notifier=None)
             await db.flush()
             return None
 
