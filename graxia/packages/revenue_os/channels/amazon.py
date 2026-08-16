@@ -197,6 +197,9 @@ async def reconcile_amazon(db: AsyncSession, external_status_map: dict[str, str]
             skipped += 1
             continue
         order.status = target
+        if target == OrderStatus.REFUNDED:
+            from ..finance.refund_sync import ensure_refund_record
+            await ensure_refund_record(db, order, reason=f"amazon {ext_status}")
         updated += 1
     await db.commit()
     return {"updated": updated, "skipped": skipped}
