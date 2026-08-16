@@ -25,6 +25,11 @@ from ..core.validators import (
 
 logger = structlog.get_logger()
 
+# Serialize send_email DB transactions: one AsyncSession is not safe for
+# concurrent commits (asyncpg raises "This transaction is closed"). Also
+# naturally rate-limits outbound sends across concurrent workers.
+_send_lock = asyncio.Lock()
+
 
 # Exponential backoff configuration
 RETRY_BASE_DELAY = 2  # seconds
@@ -184,6 +189,16 @@ class EmailService:
         Returns:
             bool: True if sent successfully, False otherwise
         """
+        async with _send_lock:
+            return await EmailService._send_email_locked(db, email_id, resend_client)
+
+    @staticmethod
+    async def _send_email_locked(
+        db: AsyncSession,
+        email_id: UUID,
+        resend_client,
+    ) -> bool:
+        """Send a queued email via Resend API (caller holds _send_lock)."""
         result = await db.execute(
             select(EmailOutbox).where(EmailOutbox.id == email_id)
         )

@@ -129,6 +129,9 @@ def validate_string_length(
     
     length = len(value)
     
+    if length == 0:
+        raise ValidationError(f"{field_name} must not be empty")
+    
     if length < min_length:
         raise ValidationError(
             f"{field_name} is too short (min {min_length} characters, got {length})"

@@ -57,7 +57,7 @@ class Order(Base):
     customer_email: Mapped[str] = mapped_column(String(320), nullable=False)
     customer_name: Mapped[Optional[str]] = mapped_column(String(255))
 
-    product_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("revenue_os_products.id"), nullable=False)
+    product_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("revenue_os_products.id"))
 
     amount_cents: Mapped[int] = mapped_column(Integer, nullable=False)
     currency: Mapped[str] = mapped_column(String(3), default="THB")
@@ -359,7 +359,7 @@ class AttributionEvent(Base):
     )
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    event_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    event_id: Mapped[Optional[str]] = mapped_column(String(255), default=lambda: str(uuid4()))
     event_type: Mapped[str] = mapped_column(String(100), nullable=False)
 
     campaign_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("revenue_os_campaigns.id"))
@@ -510,7 +510,7 @@ class AIDraft(Base):
     lead_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("revenue_os_leads.id"))
     campaign_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("revenue_os_campaigns.id"))
 
-    prompt_summary: Mapped[Optional[str]] = mapped_column(Text)
+    prompt: Mapped[Optional[str]] = mapped_column(Text)
     output: Mapped[str] = mapped_column(Text, nullable=False)
     subject: Mapped[Optional[str]] = mapped_column(String(998))
 
@@ -519,7 +519,7 @@ class AIDraft(Base):
     prompt_tokens: Mapped[Optional[int]] = mapped_column(Integer)
     completion_tokens: Mapped[Optional[int]] = mapped_column(Integer)
 
-    approval_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("revenue_os_approvals.id"))
+    approval_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("revenue_os_approvals.id", ondelete="SET NULL"))
     approval_status: Mapped[str] = mapped_column(String(50), default="pending_approval")
 
     generated_by_agent: Mapped[Optional[str]] = mapped_column(String(100))
