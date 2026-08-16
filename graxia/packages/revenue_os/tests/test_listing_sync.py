@@ -178,6 +178,25 @@ async def test_amazon_sync_products_patches_skus_only(db_session: AsyncSession, 
     assert '"productType":"GENERIC"' in seen["body"]
 
 
+@pytest.mark.asyncio
+async def test_shopee_sync_applies_price_multiplier(db_session: AsyncSession, monkeypatch):
+    _set_shopee_env(monkeypatch)
+    product = await _product(db_session, price=19990)
+    seen = {}
+
+    def handler(request):
+        seen["body"] = request.content.decode()
+        return Response(200, json={"response": {"item_id": 1}})
+
+    transport = MockTransport(handler)
+    async with AsyncClient(transport=transport) as client:
+        adapter = ShopeeAdapter(config={"mode": "sandbox", "price_multiplier": 1.1},
+                                http_client=client)
+        await adapter.sync_products(db_session, [product])
+    # 19990 cents * 1.1 = 219.89
+    assert '"original_price":"219.89"' in seen["body"]
+
+
 # ── sync_listings wiring ─────────────────────────────────────────────────────
 
 @pytest.mark.asyncio

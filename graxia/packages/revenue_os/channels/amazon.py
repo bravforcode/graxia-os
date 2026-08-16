@@ -128,6 +128,7 @@ class AmazonAdapter(ChannelAdapter):
         without a SKU mapping are skipped (no silent create — SP-API catalog
         creation needs category attributes, wired at deployment)."""
         from ..models import ChannelInventory
+        multiplier = float(self.config.get("price_multiplier", 1.0))
         pushed = 0
         skipped = 0
         for product in (products or []):
@@ -139,7 +140,7 @@ class AmazonAdapter(ChannelAdapter):
                 "productType": "GENERIC",
                 "attributes": {
                     "item_name": [{"value": product.name, "language_tag": "en-US"}],
-                    "list_price": [{"value": f"{Decimal(product.price_cents or 0) / 100:.2f}",
+                    "list_price": [{"value": f"{Decimal(int(product.price_cents or 0) * multiplier) / 100:.2f}",
                                     "currency": "USD"}],
                 },
             }

@@ -122,13 +122,14 @@ class ShopeeAdapter(ChannelAdapter):
         """Push products to Shopee (add_item / update_item by stored item_id).
         Persists the returned item_id on the ChannelInventory row."""
         from ..models import ChannelInventory
+        multiplier = float(self.config.get("price_multiplier", 1.0))
         pushed = 0
         for product in (products or []):
             inv = await db.get(ChannelInventory, (ChannelType.SHOPEE, product.id))
             stock = inv.channel_stock if inv is not None else 0
             payload = {
                 "item_name": product.name,
-                "original_price": f"{Decimal(product.price_cents or 0) / 100:.2f}",
+                "original_price": f"{Decimal(int(product.price_cents or 0) * multiplier) / 100:.2f}",
                 "stock": stock,
             }
             if inv is not None and inv.listing_id:

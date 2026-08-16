@@ -114,13 +114,14 @@ class TikTokShopAdapter(ChannelAdapter):
     async def sync_products(self, db: AsyncSession, products: Optional[list] = None) -> int:
         """Push products to TikTok Shop (create / edit by stored product_id)."""
         from ..models import ChannelInventory
+        multiplier = float(self.config.get("price_multiplier", 1.0))
         pushed = 0
         for product in (products or []):
             inv = await db.get(ChannelInventory, (ChannelType.TIKTOK_SHOP, product.id))
             stock = inv.channel_stock if inv is not None else 0
             payload = {
                 "name": product.name,
-                "price": {"amount": f"{Decimal(product.price_cents or 0) / 100:.2f}",
+                "price": {"amount": f"{Decimal(int(product.price_cents or 0) * multiplier) / 100:.2f}",
                           "currency_code": product.currency or "THB"},
                 "sku": [{"stock": stock}],
             }
