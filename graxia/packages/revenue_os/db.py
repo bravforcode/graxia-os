@@ -23,12 +23,41 @@ try:
     if backend_path.exists() and str(backend_path) not in sys.path:
         sys.path.insert(0, str(backend_path))
     
-    from app.database import get_db_session as _backend_get_db_session
-    from app.database import get_db as _backend_get_db
-    
-    # Re-export for compatibility
-    get_db_session = _backend_get_db_session
-    get_db = _backend_get_db
+    from app.database import AsyncSessionLocal as _backend_AsyncSessionLocal
+
+    # Backend's get_db_session() returns a bare session (not a context manager),
+    # which breaks `async with get_db_session() as db` used across revenue_os
+    # (API lifespan, Celery tasks). Keep the backend engine/sessionmaker as the
+    # single source of truth, but restore the revenue_os context-manager contract.
+    @asynccontextmanager
+    async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
+        """
+        Context manager that yields a session and handles commit/rollback.
+        Use this in Celery tasks and non-FastAPI code.
+
+        Example:
+            async with get_db_session() as db:
+                db.add(my_model)
+        """
+        async with _backend_AsyncSessionLocal() as session:
+            try:
+                yield session
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                raise
+
+    async def get_db() -> AsyncGenerator[AsyncSession, None]:
+        """
+        FastAPI dependency. Injects a session that auto-commits or rolls back.
+
+        Example:
+            @router.post("/")
+            async def create(db: AsyncSession = Depends(get_db)):
+                ...
+        """
+        async with get_db_session() as session:
+            yield session
     
     logger.info("Using backend database session factory")
     USING_BACKEND_SESSION = True

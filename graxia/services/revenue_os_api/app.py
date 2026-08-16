@@ -21,6 +21,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -112,6 +113,11 @@ def create_app() -> FastAPI:
 
     # ── Routers ────────────────────────────────────────────────────────────
     app.include_router(api_router)
+
+    # ── CEO console (static UI for the escalation-bot approvals) ───────────
+    static_dir = os.path.join(os.path.dirname(__file__), "static")
+    if os.path.isdir(static_dir):
+        app.mount("/ceo", StaticFiles(directory=static_dir, html=True), name="ceo-console")
 
     # ── Global exception handlers ──────────────────────────────────────────
 
