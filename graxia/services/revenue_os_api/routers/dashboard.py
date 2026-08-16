@@ -10,13 +10,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ....packages.revenue_os.db import get_db
 from ....packages.revenue_os.finance.channel_pl import channel_pl as compute_channel_pl
+from ....packages.revenue_os.finance.treasury import treasury_summary
 from ....packages.revenue_os.models import (
     Approval, ApprovalStatus, CampaignStatus,
     EmailOutbox, EmailStatus, IncidentEvent,
     Lead, Order, OrderStatus, RevenueCampaign,
 )
 from ....packages.revenue_os.schemas import (
-    ChannelPnLResponse, CustomerProfileResponse, DashboardSummary,
+    ChannelPnLResponse, CustomerProfileResponse, DashboardSummary, TreasuryResponse,
 )
 from ....packages.revenue_os.services.customer_identity import customer_profile
 from ..dependencies import require_admin_api_key
@@ -35,6 +36,16 @@ router = APIRouter()
 async def channel_pl(db: AsyncSession = Depends(get_db)) -> list[ChannelPnLResponse]:
     rows = await compute_channel_pl(db)
     return [ChannelPnLResponse.model_validate(row) for row in rows]
+
+
+@router.get(
+    "/treasury",
+    response_model=TreasuryResponse,
+    dependencies=[Depends(require_admin_api_key)],
+    summary="Multi-currency treasury (ledger balances + THB equivalents)",
+)
+async def treasury(db: AsyncSession = Depends(get_db)) -> TreasuryResponse:
+    return TreasuryResponse.model_validate(await treasury_summary(db))
 
 
 @router.get(

@@ -422,3 +422,15 @@ class CustomerProfileResponse(BaseModel):
     platforms: List[CustomerPlatformSummary]
     first_purchase_at: Optional[datetime]
     last_purchase_at: Optional[datetime]
+
+
+class TreasuryBalanceResponse(BaseModel):
+    currency: str
+    cents: int
+    thb_equivalent_cents: Optional[int]
+
+
+class TreasuryResponse(BaseModel):
+    balances: List[TreasuryBalanceResponse]
+    total_thb_cents: int
+    missing_rates: List[str]
