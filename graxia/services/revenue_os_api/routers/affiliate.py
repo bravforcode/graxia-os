@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ....packages.revenue_os.affiliate.service import AffiliateError, create_affiliate
+from ....packages.revenue_os.affiliate.service import AffiliateError, create_affiliate, fraud_signals
 from ....packages.revenue_os.db import get_db
 from ....packages.revenue_os.enums import AffiliateStatus
 from ....packages.revenue_os.models import Affiliate, AffiliatePayout
@@ -38,10 +38,12 @@ async def create(body: AffiliateCreateRequest, db: AsyncSession = Depends(get_db
 async def overview(db: AsyncSession = Depends(get_db)) -> AffiliateOverviewResponse:
     affiliates = (await db.execute(select(Affiliate))).scalars().all()
     payouts = (await db.execute(select(AffiliatePayout))).scalars().all()
+    signals = await fraud_signals(db)
     return AffiliateOverviewResponse(
         total=len(affiliates),
         active=sum(1 for a in affiliates if a.status == AffiliateStatus.ACTIVE),
         pending_payouts=sum(1 for p in payouts if p.status == "pending"),
         pending_payout_cents=sum(p.amount_cents for p in payouts if p.status == "pending"),
         needs_review=sum(1 for p in payouts if p.needs_review),
+        fraud_flags=len(signals),
     )

@@ -14,7 +14,7 @@ from typing import Optional
 from uuid import uuid4
 
 import structlog
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..constants import AFFILIATE_REVIEW_THRESHOLD_CENTS, ATTRIBUTION_WINDOW_DAYS
@@ -124,3 +124,34 @@ async def review_payouts(db: AsyncSession, notifier=None) -> dict:
         except Exception:
             logger.exception("affiliate_review_telegram_failed")
     return {"flagged": flagged}
+
+
+async def fraud_signals(db: AsyncSession) -> list[dict]:
+    """Runbook fraud signals:
+    - self_referral: payout where the order's customer email == affiliate email
+    - stacking: one order attributed from 2+ distinct affiliate sources
+    """
+    signals: list[dict] = []
+    payouts = (await db.execute(select(AffiliatePayout))).scalars().all()
+    for payout in payouts:
+        affiliate = await db.get(Affiliate, payout.affiliate_id)
+        order = await db.get(Order, payout.order_id)
+        if (affiliate is not None and order is not None
+                and order.customer_email == affiliate.email):
+            signals.append({
+                "type": "self_referral",
+                "payout_id": str(payout.id),
+                "affiliate_code": affiliate.code,
+                "order_id": str(order.id),
+                "email": order.customer_email,
+            })
+    stacked_orders = (await db.execute(
+        select(AttributionEvent.order_id, func.count(func.distinct(AttributionEvent.source)))
+        .where(AttributionEvent.order_id.isnot(None))
+        .group_by(AttributionEvent.order_id)
+        .having(func.count(func.distinct(AttributionEvent.source)) > 1)
+    )).all()
+    for order_id, sources in stacked_orders:
+        signals.append({"type": "stacking", "order_id": str(order_id),
+                        "distinct_sources": sources})
+    return signals

@@ -202,6 +202,11 @@ def create_revenue_os_celery_app(settings) -> Celery:
                 "schedule": 3600.0,  # hourly
                 "options": {"queue": "default"},
             },
+            "delivery-sla": {
+                "task": "graxia.packages.revenue_os.celery.tasks.delivery_sla",
+                "schedule": 86400.0,  # daily
+                "options": {"queue": "default"},
+            },
         },
     })
 

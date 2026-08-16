@@ -25,6 +25,7 @@ from .affiliate_review import affiliate_review
 from .payout_recon import payout_recon
 from .repricing import repricing
 from .channel_health import channel_health
+from .delivery_sla import delivery_sla
 
 __all__ = [
     "daily_revenue_ops",
@@ -50,4 +51,5 @@ __all__ = [
     "payout_recon",
     "repricing",
     "channel_health",
+    "delivery_sla",
 ]

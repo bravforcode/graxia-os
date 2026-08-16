@@ -397,6 +397,7 @@ class AffiliateOverviewResponse(BaseModel):
     pending_payouts: int
     pending_payout_cents: int
     needs_review: int
+    fraud_flags: int
 
 
 class ChannelPnLResponse(BaseModel):
@@ -406,3 +407,18 @@ class ChannelPnLResponse(BaseModel):
     est_fee_cents: int
     est_cost_cents: int
     est_margin_cents: int
+
+
+class CustomerPlatformSummary(BaseModel):
+    platform: str
+    orders: int
+    spend_cents: int
+
+
+class CustomerProfileResponse(BaseModel):
+    email: str
+    total_orders: int
+    total_spend_cents: int
+    platforms: List[CustomerPlatformSummary]
+    first_purchase_at: Optional[datetime]
+    last_purchase_at: Optional[datetime]

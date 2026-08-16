@@ -15,7 +15,10 @@ from ....packages.revenue_os.models import (
     EmailOutbox, EmailStatus, IncidentEvent,
     Lead, Order, OrderStatus, RevenueCampaign,
 )
-from ....packages.revenue_os.schemas import ChannelPnLResponse, DashboardSummary
+from ....packages.revenue_os.schemas import (
+    ChannelPnLResponse, CustomerProfileResponse, DashboardSummary,
+)
+from ....packages.revenue_os.services.customer_identity import customer_profile
 from ..dependencies import require_admin_api_key
 from datetime import datetime, timezone
 from calendar import monthrange
@@ -32,6 +35,20 @@ router = APIRouter()
 async def channel_pl(db: AsyncSession = Depends(get_db)) -> list[ChannelPnLResponse]:
     rows = await compute_channel_pl(db)
     return [ChannelPnLResponse.model_validate(row) for row in rows]
+
+
+@router.get(
+    "/customer/{email}",
+    response_model=CustomerProfileResponse,
+    dependencies=[Depends(require_admin_api_key)],
+    summary="Cross-platform customer profile (orders across all channels)",
+)
+async def customer(email: str, db: AsyncSession = Depends(get_db)) -> CustomerProfileResponse:
+    from fastapi import HTTPException
+    profile = await customer_profile(db, email)
+    if profile is None:
+        raise HTTPException(status_code=404, detail="no orders for this email")
+    return CustomerProfileResponse.model_validate(profile)
 
 
 @router.get(
