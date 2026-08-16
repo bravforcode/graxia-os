@@ -63,6 +63,16 @@ async def customer(email: str, db: AsyncSession = Depends(get_db)) -> CustomerPr
 
 
 @router.get(
+    "/opportunities",
+    dependencies=[Depends(require_admin_api_key)],
+    summary="Growth opportunities (margin shifts, demand, low-margin channels)",
+)
+async def opportunities(db: AsyncSession = Depends(get_db)) -> dict:
+    from ....packages.revenue_os.growth.opportunity import opportunity_scan
+    return await opportunity_scan(db)
+
+
+@router.get(
     "/",
     response_model=DashboardSummary,
     dependencies=[Depends(require_admin_api_key)],

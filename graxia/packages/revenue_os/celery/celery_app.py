@@ -207,6 +207,11 @@ def create_revenue_os_celery_app(settings) -> Celery:
                 "schedule": 86400.0,  # daily
                 "options": {"queue": "default"},
             },
+            "growth-digest": {
+                "task": "graxia.packages.revenue_os.celery.tasks.growth_digest",
+                "schedule": 86400.0,  # daily
+                "options": {"queue": "reporting"},
+            },
         },
     })
 
