@@ -27,10 +27,11 @@ class BaseSignedClient:
     """Rate-limit-aware HTTP base. Subclasses implement _sign()."""
 
     def __init__(self, base_url: str, http_client: Optional[httpx.AsyncClient] = None,
-                 extra_headers: Optional[dict] = None):
+                 extra_headers: Optional[dict] = None, rate_budget=None):
         self.base_url = base_url
         self._client = http_client
         self._extra_headers = extra_headers or {}
+        self._rate_budget = rate_budget  # optional TokenBucket (core.rate_budget)
 
     async def _ensure_client(self) -> httpx.AsyncClient:
         if self._client is None:
@@ -48,6 +49,8 @@ class BaseSignedClient:
 
     async def _request(self, method: str, path: str, **kw) -> dict:
         client = await self._ensure_client()
+        if self._rate_budget is not None:
+            await self._rate_budget.acquire()  # platform rate budget honored
         params = dict(kw.get("params") or {})
         signed = self._sign(method, path, params, kw.get("json"))
         params.update(signed)
@@ -85,10 +88,11 @@ class ShopeeSigner:
 
 class ShopeeClient(BaseSignedClient):
     def __init__(self, partner_id: int, partner_key: str, shop_id: int, mode: str = "sandbox",
-                 access_token: str = "", http_client: Optional[httpx.AsyncClient] = None):
+                 access_token: str = "", http_client: Optional[httpx.AsyncClient] = None,
+                 rate_budget=None):
         host = ("https://openapi.test.shopee.cn" if mode == "sandbox"
                 else "https://openapi.shopee.com")
-        super().__init__(host + "/api/v2", http_client=http_client)
+        super().__init__(host + "/api/v2", http_client=http_client, rate_budget=rate_budget)
         self.signer = ShopeeSigner(partner_id, partner_key)
         self.shop_id = shop_id
         self.partner_id = partner_id
