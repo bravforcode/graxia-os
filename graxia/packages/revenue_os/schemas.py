@@ -397,3 +397,12 @@ class AffiliateOverviewResponse(BaseModel):
     pending_payouts: int
     pending_payout_cents: int
     needs_review: int
+
+
+class ChannelPnLResponse(BaseModel):
+    platform: str
+    orders: int
+    revenue_cents: int
+    est_fee_cents: int
+    est_cost_cents: int
+    est_margin_cents: int

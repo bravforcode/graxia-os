@@ -9,17 +9,29 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ....packages.revenue_os.db import get_db
+from ....packages.revenue_os.finance.channel_pl import channel_pl as compute_channel_pl
 from ....packages.revenue_os.models import (
     Approval, ApprovalStatus, CampaignStatus,
     EmailOutbox, EmailStatus, IncidentEvent,
     Lead, Order, OrderStatus, RevenueCampaign,
 )
-from ....packages.revenue_os.schemas import DashboardSummary
+from ....packages.revenue_os.schemas import ChannelPnLResponse, DashboardSummary
 from ..dependencies import require_admin_api_key
 from datetime import datetime, timezone
 from calendar import monthrange
 
 router = APIRouter()
+
+
+@router.get(
+    "/channels",
+    response_model=list[ChannelPnLResponse],
+    dependencies=[Depends(require_admin_api_key)],
+    summary="Per-channel P&L (revenue, est fees, est COGS, est margin)",
+)
+async def channel_pl(db: AsyncSession = Depends(get_db)) -> list[ChannelPnLResponse]:
+    rows = await compute_channel_pl(db)
+    return [ChannelPnLResponse.model_validate(row) for row in rows]
 
 
 @router.get(
