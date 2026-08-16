@@ -187,6 +187,16 @@ def create_revenue_os_celery_app(settings) -> Celery:
                 "schedule": 86400.0,  # daily
                 "options": {"queue": "reporting"},
             },
+            "payout-recon": {
+                "task": "graxia.packages.revenue_os.celery.tasks.payout_recon",
+                "schedule": 3600.0,  # hourly
+                "options": {"queue": "reporting"},
+            },
+            "repricing": {
+                "task": "graxia.packages.revenue_os.celery.tasks.repricing",
+                "schedule": 3600.0,  # hourly
+                "options": {"queue": "default"},
+            },
         },
     })
 

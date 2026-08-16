@@ -22,6 +22,8 @@ from .marketplace_poll import marketplace_poll
 from .inventory_sync import inventory_sync
 from .fx_refresh import fx_refresh
 from .affiliate_review import affiliate_review
+from .payout_recon import payout_recon
+from .repricing import repricing
 
 __all__ = [
     "daily_revenue_ops",
@@ -44,4 +46,6 @@ __all__ = [
     "inventory_sync",
     "fx_refresh",
     "affiliate_review",
+    "payout_recon",
+    "repricing",
 ]
