@@ -35,7 +35,7 @@ async def test_simulation_denies_low_margin_orders(db_session: AsyncSession):
     low = await _order(db_session, "sim_low", 9900, 9000)    # margin 9.1%
     result = await simulate_policy_change(
         db_session, "supplier_purchase",
-        [("MIN", "PERCENT", 50.0), ("MAX", "ABSOLUTE", 100_000_00)])
+        [("min", "percent", 50.0), ("max", "absolute", 100_000_00)])
     assert result["supported"] is True
     assert result["orders_checked"] == 2
     assert result["would_allow"] == 1   # high-margin order
@@ -59,5 +59,5 @@ async def test_simulation_fails_closed_without_applicable_rule(db_session: Async
 
 @pytest.mark.asyncio
 async def test_simulation_unsupported_action(db_session: AsyncSession):
-    result = await simulate_policy_change(db_session, "affiliate", [("MAX", "PERCENT", 20.0)])
+    result = await simulate_policy_change(db_session, "affiliate", [("max", "percent", 20.0)])
     assert result["supported"] is False
