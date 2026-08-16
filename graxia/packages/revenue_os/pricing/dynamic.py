@@ -50,22 +50,29 @@ class DynamicPricingEngine:
         return None
 
     @staticmethod
-    async def apply(db: AsyncSession, product: Product, delta_percent: float, shadow: bool = False) -> bool:
-        """SHARED price-write path. Returns True if the change was applied (or logged in shadow)."""
+    async def apply(db: AsyncSession, product: Product, delta_percent: float, shadow: bool = False,
+                    fx_rate: Optional[float] = None) -> bool:
+        """SHARED price-write path. Returns True if the change was applied (or logged in shadow).
+
+        fx_rate: foreign-units-per-1-THB (from channel fx_rates) — lets the
+        PRICE_CHANGE ABSOLUTE cap convert non-THB product currencies (Task 6).
+        """
         lock = await db.get(PriceChangeLock, product.id)
         if lock is not None:
             last = lock.last_change_at
             if last is not None and last.replace(tzinfo=None) > datetime.utcnow() - timedelta(hours=PRICE_CHANGE_MIN_INTERVAL_HOURS):
                 return False  # rate-limited
         cut_cents = int((product.price_cents or 0) * abs(delta_percent) / 100)
+        context: dict = {
+            "value": abs(delta_percent),
+            "value_cents": cut_cents,
+            "product_id": str(product.id),
+            "currency": product.currency,
+        }
+        if fx_rate is not None:
+            context["fx_rate"] = fx_rate
         decision = await PolicyEngine.check(
-            db, ActionType.PRICE_CHANGE,
-            {
-                "value": abs(delta_percent),
-                "value_cents": cut_cents,
-                "product_id": str(product.id),
-                "currency": product.currency,
-            },
+            db, ActionType.PRICE_CHANGE, context,
         )
         if not decision.allow:
             return False

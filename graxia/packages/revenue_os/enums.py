@@ -188,6 +188,7 @@ class ChannelType(StrEnum):
     LAZADA = "lazada"
     TIKTOK_SHOP = "tiktok_shop"
     AMAZON = "amazon"
+    FX = "fx"  # global row holding fx_rates in ChannelConnection.config (Task 6)
 
 
 class AffiliateStatus(StrEnum):

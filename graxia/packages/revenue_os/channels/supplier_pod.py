@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..core.policy_engine import PolicyEngine
 from ..enums import ActionType, IncidentSeverity, SupplierStatus
 from ..models import IncidentEvent, Product, SupplierOrder
+from .marketplace_sync import margin_after_fee
 
 
 class SupplierPODAdapter:
@@ -41,7 +42,7 @@ class SupplierPODAdapter:
             ))
             await db.flush()
             return None
-        margin_percent = ((order.amount_cents - cost) / order.amount_cents * 100) if order.amount_cents else 0.0
+        margin_percent = (await margin_after_fee(db, order, product)) * 100
         decision = await PolicyEngine.check(
             db, ActionType.SUPPLIER_PURCHASE,
             {
