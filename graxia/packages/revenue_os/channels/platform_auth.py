@@ -111,15 +111,18 @@ class LazadaSigner:
 
 class LazadaClient(BaseSignedClient):
     def __init__(self, app_key: str, app_secret: str, mode: str = "sandbox",
-                 http_client: Optional[httpx.AsyncClient] = None):
+                 seller_id: str = "", http_client: Optional[httpx.AsyncClient] = None):
         host = ("https://api.sellercenter.lazada.com.my" if mode != "sandbox"
                 else "https://api.sellercenter.lazada.sandbox.com")
         super().__init__(host, http_client=http_client)
         self.signer = LazadaSigner(app_key, app_secret)
         self.app_key = app_key
+        self.seller_id = seller_id
 
     def _sign(self, method: str, path: str, params: dict) -> dict:
         base = {**params, "app_key": self.app_key, "timestamp": str(int(__import__("time").time() * 1000))}
+        if self.seller_id:
+            base["user_id"] = self.seller_id  # signed like every other param
         base["sign"] = self.signer.sign(method, path, base)
         return base
 
@@ -165,5 +168,6 @@ def client_from_env(platform: str, mode: str = "sandbox") -> BaseSignedClient:
             app_key=os.getenv("LAZADA_APP_KEY", ""),
             app_secret=os.getenv("LAZADA_APP_SECRET", ""),
             mode=mode,
+            seller_id=os.getenv("LAZADA_SELLER_ID", ""),
         )
     raise PlatformError(f"no client factory for platform {platform}")
