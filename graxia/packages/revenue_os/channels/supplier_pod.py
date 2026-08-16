@@ -62,11 +62,12 @@ class SupplierPODAdapter:
             # Escalation bot: denial becomes a 1-click approval (money-moving
             # actions get a human decision instead of a silent drop).
             from ..approvals.escalation import escalate
+            from graxia.services.telegram_notifier import UnifiedTelegramNotifier
             await escalate(db, "supplier_order", order.id,
                            title=f"Supplier order needs approval: order {order.id}",
                            preview=f"{decision.reason} — order {order.id} "
                                    f"{order.amount_cents}{order.currency}",
-                           notifier=None)
+                           notifier=UnifiedTelegramNotifier)
             await db.flush()
             return None
 
