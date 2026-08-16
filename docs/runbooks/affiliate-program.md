@@ -58,4 +58,17 @@ blocks nothing here — but the AFFILIATE policy rules can be tightened at
 ## Overview endpoint
 
 `GET /api/affiliate/overview` (admin key) → total/active affiliates, pending
-payouts (count + total cents), rows needing review.
+payouts (count + total cents), rows needing review, `fraud_flags` count.
+
+## Fraud signals (live detection)
+
+`affiliate/service.py: fraud_signals()` runs on every overview call:
+
+- **Self-referral**: payout whose order's customer email equals the affiliate's
+  email → flagged `self_referral`.
+- **Stacking**: an order with attribution events from 2+ distinct sources →
+  flagged `stacking` (one payout per order by construction, but multiple
+  touches are suspicious).
+
+Review flagged payouts before approving; the manual checklist above still
+applies.

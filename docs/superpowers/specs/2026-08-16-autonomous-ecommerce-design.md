@@ -356,3 +356,16 @@ CREATE INDEX IF NOT EXISTS ix_support_verification_email ON revenue_os_support_v
 - New enum values (`ChannelType` + FX, `AffiliateStatus`, `ActionType.AFFILIATE`) require `ALTER TYPE` on already-deployed DBs (`channeltype`, `affiliate_status`, `actiontype`) before the new tables/rows are written.
 - New tables: `revenue_os_affiliates`, `revenue_os_affiliate_payouts`, `revenue_os_channel_inventory` (created automatically by `create_all` on fresh DBs; migration path needed for existing deployments).
 - All marketplace channels are poll-first — webhook endpoints (where added later) must call `trigger_*_poll` and never import payloads directly.
+
+### Post-Phase-3 expansion (2026-08-16, same day)
+- **Listing sync**: real `sync_products` per adapter (add/update by persisted `ChannelInventory.listing_id`); Amazon SKU-mapped PATCH only; per-channel `price_multiplier`.
+- **Webhook-trigger endpoints**: `POST /api/channels/{platform}/webhook` (payload never read) + admin `POST /api/channels/{channel}/poll?since=` (backfill).
+- **Payout reconciliation**: settlements → append-only FEE/PAYOUT ledger entries (idempotent per ref); `payout-recon` hourly beat; `PayoutProvider` seam.
+- **Refund automation**: `RETURNED` reconcile books Refund + negative REFUND ledger entry (HR-16), marketplace executes the money.
+- **Competitor repricing**: >5%-above reaction, 2%-undercut target, ±20% clamp, shared price path; `repricing` hourly beat; provider seam.
+- **Channel health**: stale `last_sync_at` (>12h) → IncidentEvent LOW once; hourly beat.
+- **Delivery SLA**: PAID > 7 days without delivery → IncidentEvent MEDIUM once; daily beat.
+- **Affiliate fraud signals**: self-referral + stacking detection on overview.
+- **Dashboards**: `/api/dashboard/channels` (per-channel P&L), `/api/dashboard/treasury` (multi-currency with FX), `/api/dashboard/customer/{email}` (cross-platform identity).
+- **Migration runner**: `scripts/migrate_revenue_os_phase3.py` — idempotent ALTER TYPE + create_all.
+- Deferred (external dependency): carrier label APIs, affiliate auto-payout money APIs, BI warehouse export, ML demand forecasting, KOL discovery research, platform tax reports.

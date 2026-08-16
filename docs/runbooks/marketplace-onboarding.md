@@ -163,3 +163,53 @@ rate when promoting a channel to live.
 7. [ ] Incident LOW noise checked: unmappable orders are expected until product
        mapping (inventory sync) is wired — see `channel-onboarding.md` product
        mapping section
+
+---
+
+## Post-Phase-3 operations
+
+### Listing sync (products → channels)
+- The `inventory-sync` beat job pushes local PUBLISHED products to every
+  connected marketplace channel (`sync_listings`); adapters store the returned
+  channel-side item id on `ChannelInventory.listing_id` so re-pushes update.
+- Amazon only patches products whose `ChannelInventory.listing_id` holds the
+  seller SKU — create the SKU-mapped inventory rows first.
+- Per-channel price multipliers: `ChannelConnection.config["price_multiplier"]`
+  (e.g. `1.1` on Amazon to absorb its 15% fee); default `1.0`.
+
+### Admin poll / backfill
+- `POST /api/channels/{channel}/poll?since=<ISO>` (admin key) polls one channel
+  immediately — `since` backfills missed windows (same poll-first path as the
+  beat job). Channel values: `shopee`, `lazada`, `tiktok_shop`, `amazon`.
+
+### Payout reconciliation (settlements → ledger)
+- `finance/payout_recon.py` books append-only FEE + PAYOUT ledger entries per
+  settlement ref (idempotent). The `payout-recon` beat job (hourly) runs it via
+  a `PayoutProvider` seam — wire a provider subclass reading platform
+  settlement reports; without one the job reports `no_provider_configured`.
+- Returns vs money: marketplace refunds are booked locally (Refund + negative
+  REFUND ledger entry) when reconcile observes `RETURNED`/`REFUNDED`; the
+  marketplace executes the actual money move.
+
+### Competitor repricing
+- `pricing/repricing.py` reacts only when our price is > 5% above the
+  competitor, retargets to 2% under, deltas clamped ±20%, and applies through
+  the shared policy-gated price path (24h lock + PRICE_CHANGE caps + audit).
+  The hourly `repricing` beat job needs a `CompetitorPriceProvider` subclass
+  (scraping/API) — without one it reports `no_provider_configured`.
+
+### Channel health
+- The hourly `channel-health` beat job raises an IncidentEvent LOW (once) when
+  an enabled channel's `last_sync_at` is older than 12h (override per channel:
+  `config["health_stale_hours"]`).
+
+### Delivery SLA
+- The daily `delivery-sla` beat job flags PAID orders older than 7 days with no
+  delivered event (IncidentEvent MEDIUM, once per order).
+
+### Multi-currency treasury + customer identity
+- `GET /api/dashboard/treasury` — net ledger position per currency with THB
+  equivalents from stored fx rates (missing rates reported, never guessed).
+- `GET /api/dashboard/customer/{email}` — cross-platform purchase profile.
+- `GET /api/dashboard/channels` — per-channel P&L (revenue, est fees via
+  fee_rate, est COGS, est margin).
