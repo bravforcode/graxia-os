@@ -213,3 +213,26 @@ rate when promoting a channel to live.
 - `GET /api/dashboard/customer/{email}` — cross-platform purchase profile.
 - `GET /api/dashboard/channels` — per-channel P&L (revenue, est fees via
   fee_rate, est COGS, est margin).
+
+### Sandbox verification (BEFORE live — the honest gap)
+- Tests are mocked; the real payload contract must be proven against each
+  platform's sandbox. When sandbox credentials exist:
+  `MARKETPLACE_MODE=sandbox python scripts/sandbox_smoke.py` — polls every
+  connected sandbox channel with REAL calls, prints first-order previews.
+  The script refuses to run unless `MARKETPLACE_MODE=sandbox` and skips any
+  channel whose config mode is not `sandbox`.
+
+### Operations toolkit (post-Phase-3 additions)
+- **Rate budgets**: `core/rate_budget.py` TokenBucket per platform; pass into
+  a signed client (`ShopeeClient(..., rate_budget=get_budget("shopee", 5.0))`)
+  to cap request rate before the 429 backoff ever triggers.
+- **Tracking ingestion**: `channels/tracking_ingest.py ingest_tracking(db,
+  supplier_order_id, tracking, carrier)` — records carrier tracking on the
+  SupplierOrder with audit trail (data path; wire the carrier/webhook source).
+- **Per-channel agent**: `ChannelOpsAgent.run_cycle(db, channel)` — one
+  channel's poll/import/reconcile cycle, autonomy-gated (OFF/SHADOW never
+  call external APIs) and per-channel locked.
+- **Policy what-if**: `core/policy_sim.simulate_policy_change(db, action,
+  candidate_rules, days)` — replay candidate rules against recent orders
+  PURELY IN MEMORY (no writes). Supported: `supplier_purchase`; others
+  return `supported=False` until a historical context exists.

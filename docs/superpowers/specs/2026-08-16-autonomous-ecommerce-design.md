@@ -368,4 +368,6 @@ CREATE INDEX IF NOT EXISTS ix_support_verification_email ON revenue_os_support_v
 - **Affiliate fraud signals**: self-referral + stacking detection on overview.
 - **Dashboards**: `/api/dashboard/channels` (per-channel P&L), `/api/dashboard/treasury` (multi-currency with FX), `/api/dashboard/customer/{email}` (cross-platform identity).
 - **Migration runner**: `scripts/migrate_revenue_os_phase3.py` — idempotent ALTER TYPE + create_all.
+- **Provisioning (EXECUTED on prod-equivalent)**: `scripts/provision_marketplace_channels.py` — all 4 marketplace rows + fx row live on `graxia-prod-db` (sandbox mode); migration runner executed (enum member-name values, model registration fix).
+- **Ops toolkit**: `core/rate_budget.py` (token bucket per platform), `channels/tracking_ingest.py` (carrier tracking data path), `agents/channel_ops.py` (per-channel mode-gated cycle), `core/policy_sim.py` (what-if, pure read), `scripts/sandbox_smoke.py` (real sandbox calls, live-guarded).
 - Deferred (external dependency): carrier label APIs, affiliate auto-payout money APIs, BI warehouse export, ML demand forecasting, KOL discovery research, platform tax reports.
