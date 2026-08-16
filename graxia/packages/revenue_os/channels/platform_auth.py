@@ -26,16 +26,18 @@ class PlatformError(Exception):
 class BaseSignedClient:
     """Rate-limit-aware HTTP base. Subclasses implement _sign()."""
 
-    def __init__(self, base_url: str, http_client: Optional[httpx.AsyncClient] = None):
+    def __init__(self, base_url: str, http_client: Optional[httpx.AsyncClient] = None,
+                 extra_headers: Optional[dict] = None):
         self.base_url = base_url
         self._client = http_client
+        self._extra_headers = extra_headers or {}
 
     async def _ensure_client(self) -> httpx.AsyncClient:
         if self._client is None:
             self._client = httpx.AsyncClient(timeout=30.0)
         return self._client
 
-    def _sign(self, method: str, path: str, params: dict) -> dict:
+    def _sign(self, method: str, path: str, params: dict, body: Optional[dict] = None) -> dict:
         raise NotImplementedError
 
     async def get_json(self, path: str, params: Optional[dict] = None) -> dict:
@@ -47,9 +49,11 @@ class BaseSignedClient:
     async def _request(self, method: str, path: str, **kw) -> dict:
         client = await self._ensure_client()
         params = dict(kw.get("params") or {})
-        signed = self._sign(method, path, params)
+        signed = self._sign(method, path, params, kw.get("json"))
         params.update(signed)
         kw["params"] = params
+        if self._extra_headers:
+            kw["headers"] = {**(kw.get("headers") or {}), **self._extra_headers}
         for attempt in range(1, MAX_ATTEMPTS + 1):
             resp = await client.request(method, self.base_url + path, **kw)
             if resp.status_code == 429:
@@ -90,7 +94,7 @@ class ShopeeClient(BaseSignedClient):
         self.partner_id = partner_id
         self.access_token = access_token
 
-    def _sign(self, method: str, path: str, params: dict) -> dict:
+    def _sign(self, method: str, path: str, params: dict, body: Optional[dict] = None) -> dict:
         base = {**params, "partner_id": self.partner_id, "shop_id": self.shop_id,
                 "timestamp": int(__import__("time").time()), "version": 2}
         full_path = "/api/v2" + path
@@ -119,11 +123,60 @@ class LazadaClient(BaseSignedClient):
         self.app_key = app_key
         self.seller_id = seller_id
 
-    def _sign(self, method: str, path: str, params: dict) -> dict:
+    def _sign(self, method: str, path: str, params: dict, body: Optional[dict] = None) -> dict:
         base = {**params, "app_key": self.app_key, "timestamp": str(int(__import__("time").time() * 1000))}
         if self.seller_id:
             base["user_id"] = self.seller_id  # signed like every other param
         base["sign"] = self.signer.sign(method, path, base)
+        return base
+
+
+class TikTokSigner:
+    """TikTok Shop Open Platform v202309 request signature.
+
+    Formula (documented at partner.tiktokshop.com/doc/page/274638; verified
+    against the EcomPHP/tiktokshop-php v202309 SDK implementation):
+      sign = HMAC-SHA256(
+          key=app_secret,
+          data=app_secret + path + sorted_keyvalue_params + [body] + app_secret)
+    where sorted_keyvalue_params concatenates every query param EXCEPT
+    sign/access_token/x-tts-access-token in alphabetical key order, and the
+    raw request body is appended for non-GET requests. Hex digest.
+    """
+
+    def __init__(self, app_key: str, app_secret: str):
+        self.app_key = app_key
+        self.app_secret = app_secret
+
+    def sign(self, method: str, path: str, params: dict, body: Optional[str] = None) -> str:
+        excluded = {"sign", "access_token", "x-tts-access-token"}
+        kv = "".join(f"{k}{params[k]}" for k in sorted(params) if k not in excluded)
+        raw = f"{self.app_secret}{path}{kv}"
+        if method != "GET" and body:
+            raw += body
+        raw += self.app_secret
+        return hmac.new(self.app_secret.encode(), raw.encode(), hashlib.sha256).hexdigest()
+
+
+class TikTokClient(BaseSignedClient):
+    def __init__(self, app_key: str, app_secret: str, shop_id: int, mode: str = "sandbox",
+                 access_token: str = "", http_client: Optional[httpx.AsyncClient] = None):
+        host = ("https://open-api-sandbox.tiktokglobalshop.com" if mode == "sandbox"
+                else "https://open-api.tiktokglobalshop.com")
+        super().__init__(host + "/api", http_client=http_client,
+                         extra_headers={"x-tts-access-token": access_token} if access_token else None)
+        self.signer = TikTokSigner(app_key, app_secret)
+        self.app_key = app_key
+        self.shop_id = shop_id
+
+    def _sign(self, method: str, path: str, params: dict, body: Optional[dict] = None) -> dict:
+        import json
+        base = {**params, "app_key": self.app_key, "timestamp": str(int(__import__("time").time())),
+                "version": "202309", "shop_id": self.shop_id}
+        raw_body = None
+        if method != "GET" and body is not None:
+            raw_body = json.dumps(body, separators=(",", ":"))
+        base["sign"] = self.signer.sign(method, "/api" + path, base, raw_body)
         return base
 
 
@@ -169,5 +222,13 @@ def client_from_env(platform: str, mode: str = "sandbox") -> BaseSignedClient:
             app_secret=os.getenv("LAZADA_APP_SECRET", ""),
             mode=mode,
             seller_id=os.getenv("LAZADA_SELLER_ID", ""),
+        )
+    if platform == "tiktok_shop":
+        return TikTokClient(
+            app_key=os.getenv("TIKTOK_SHOP_APP_KEY", ""),
+            app_secret=os.getenv("TIKTOK_SHOP_APP_SECRET", ""),
+            shop_id=int(os.getenv("TIKTOK_SHOP_SHOP_ID", "0")),
+            mode=mode,
+            access_token=os.getenv("TIKTOK_SHOP_ACCESS_TOKEN", ""),
         )
     raise PlatformError(f"no client factory for platform {platform}")
