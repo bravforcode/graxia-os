@@ -11,10 +11,10 @@ from ..enums import AutonomyMode, ChannelType
 async def test_agent_skips_when_off_or_shadow(db_session: AsyncSession):
     await PolicyEngine.set_autonomy_mode(db_session, AutonomyMode.OFF)
     result = await ChannelOpsAgent.run_cycle(db_session, ChannelType.SHOPEE)
-    assert result["skipped"] is True and "OFF" in result["reason"]
+    assert result["skipped"] is True and result["reason"] == "mode=off"
     await PolicyEngine.set_autonomy_mode(db_session, AutonomyMode.SHADOW)
     result = await ChannelOpsAgent.run_cycle(db_session, ChannelType.SHOPEE)
-    assert result["skipped"] is True and "SHADOW" in result["reason"]
+    assert result["skipped"] is True and result["reason"] == "mode=shadow"
 
 
 @pytest.mark.asyncio
