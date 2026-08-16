@@ -181,30 +181,188 @@ class TikTokClient(BaseSignedClient):
 
 
 class AmazonTokenCache:
-    """LWA client-credentials token cache for SP-API (sellingpartnerapi scope)."""
+    """LWA client-credentials token cache for SP-API (sellingpartnerapi scope)
+    plus cached STS AssumeRole (role ARN) for request signing."""
 
-    def __init__(self, client_id: str, client_secret: str):
+    def __init__(self, client_id: str, client_secret: str,
+                 http_client: Optional[httpx.AsyncClient] = None):
         self.client_id = client_id
         self.client_secret = client_secret
+        self._client = http_client
         self._token: Optional[str] = None
         self._expires_at: float = 0.0
+        self._role_creds: Optional[dict] = None
+
+    async def _post_form(self, url: str, data: dict) -> httpx.Response:
+        if self._client is not None:
+            return await self._client.post(url, data=data)
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            return await client.post(url, data=data)
 
     async def get_token(self) -> str:
         import time
         if self._token and time.time() < self._expires_at - 60:
             return self._token
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(
-                "https://api.amazon.com/auth/o2/token",
-                data={"grant_type": "client_credentials", "client_id": self.client_id,
-                      "client_secret": self.client_secret,
-                      "scope": "sellingpartnerapi"},
-            )
-            resp.raise_for_status()
-            data = resp.json()
+        return await self.force_refresh()
+
+    async def force_refresh(self) -> str:
+        import time
+        resp = await self._post_form("https://api.amazon.com/auth/o2/token", {
+            "grant_type": "client_credentials", "client_id": self.client_id,
+            "client_secret": self.client_secret, "scope": "sellingpartnerapi",
+        })
+        resp.raise_for_status()
+        data = resp.json()
         self._token = data["access_token"]
         self._expires_at = time.time() + int(data.get("expires_in", 3600))
         return self._token
+
+    async def assume_role(self, role_arn: str, session_name: str = "graxia-revenue-os") -> dict:
+        """Exchange the LWA token for role credentials via STS AssumeRole
+        (WebIdentityToken flow). Cached until 5 min before expiry."""
+        import time
+        if self._role_creds and time.time() < self._role_creds["expires_at"] - 300:
+            return self._role_creds
+        token = await self.get_token()
+        resp = await self._post_form("https://sts.amazonaws.com/", {
+            "Action": "AssumeRole", "Version": "2011-06-15",
+            "RoleArn": role_arn, "RoleSessionName": session_name,
+            "WebIdentityToken": token,
+        })
+        resp.raise_for_status()
+        import xml.etree.ElementTree as ET
+        root = ET.fromstring(resp.text)
+        def _find(tag: str) -> str:
+            el = root.find(f".//{{*}}{tag}")
+            return el.text if el is not None else ""
+        exp = _find("Expiration")
+        self._role_creds = {
+            "access_key": _find("AccessKeyId"),
+            "secret_key": _find("SecretAccessKey"),
+            "session_token": _find("SessionToken"),
+            "expires_at": time.mktime(time.strptime(exp, "%Y-%m-%dT%H:%M:%SZ")) if exp else 0.0,
+        }
+        return self._role_creds
+
+
+class AmazonSigV4Signer:
+    """AWS Signature V4 for SP-API requests (service execute-api).
+
+    Verified against botocore (AWS reference SDK) for GET/GET-query/POST-body
+    shapes; test vector covers the pinned get-vanilla shape.
+    """
+
+    def __init__(self, access_key: str, secret_key: str, session_token: str = "",
+                 region: str = "us-east-1", service: str = "execute-api"):
+        self.access_key = access_key
+        self.secret_key = secret_key
+        self.session_token = session_token
+        self.region = region
+        self.service = service
+
+    def _hmac(self, key: bytes, msg: str) -> bytes:
+        import hashlib
+        import hmac
+        return hmac.new(key, msg.encode(), hashlib.sha256).digest()
+
+    def sign(self, method: str, path: str, query: str, headers: dict, body: str,
+             amz_date: str) -> str:
+        """Return the full Authorization header value for a request."""
+        import hashlib
+        payload_hash = hashlib.sha256(body.encode()).hexdigest()
+        canonical_headers = "".join(f"{k}:{headers[k]}\n" for k in sorted(headers))
+        signed_headers = ";".join(sorted(headers))
+        canonical_request = "\n".join([method, path, query, canonical_headers,
+                                       signed_headers, payload_hash])
+        scope = f"{amz_date[:8]}/{self.region}/{self.service}/aws4_request"
+        string_to_sign = "\n".join(["AWS4-HMAC-SHA256", amz_date, scope,
+                                    hashlib.sha256(canonical_request.encode()).hexdigest()])
+        k = self._hmac(("AWS4" + self.secret_key).encode(), amz_date[:8])
+        k = self._hmac(k, self.region)
+        k = self._hmac(k, self.service)
+        k = self._hmac(k, "aws4_request")
+        signature = self._hmac(k, string_to_sign).hex()
+        return (f"AWS4-HMAC-SHA256 Credential={self.access_key}/{scope}, "
+                f"SignedHeaders={signed_headers}, Signature={signature}")
+
+
+class AmazonClient:
+    """SP-API client: LWA token + role-credential SigV4 signing, 429 backoff
+    honoring x-amzn-RateLimit-*, token refresh on 401."""
+
+    def __init__(self, token_cache: AmazonTokenCache, role_arn: str,
+                 seller_id: str, marketplace_id: str = "ATVPDKIKX0DER",
+                 mode: str = "sandbox", region: str = "us-east-1",
+                 http_client: Optional[httpx.AsyncClient] = None):
+        self.host = ("sandbox.sellingpartnerapi-na.amazon.com" if mode == "sandbox"
+                     else "sellingpartnerapi-na.amazon.com")
+        self.base_url = f"https://{self.host}"
+        self.token_cache = token_cache
+        self.role_arn = role_arn
+        self.seller_id = seller_id
+        self.marketplace_id = marketplace_id
+        self.region = region
+        self._client = http_client
+
+    async def _ensure_client(self) -> httpx.AsyncClient:
+        if self._client is None:
+            self._client = httpx.AsyncClient(timeout=30.0)
+        return self._client
+
+    async def get_json(self, path: str, params: Optional[dict] = None) -> dict:
+        return await self._request("GET", path, params=params or {})
+
+    async def post_json(self, path: str, json: Optional[dict] = None) -> dict:
+        return await self._request("POST", path, json=json)
+
+    async def _request(self, method: str, path: str, params: Optional[dict] = None,
+                       json: Optional[dict] = None, _retried: bool = False) -> dict:
+        import json as _json
+        import time
+        import urllib.parse
+        client = await self._ensure_client()
+        creds = await self.token_cache.assume_role(self.role_arn)
+        token = await self.token_cache.get_token()
+        amz_date = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+        # Canonical query: sorted, url-encoded
+        query = "&".join(f"{urllib.parse.quote(k)}={urllib.parse.quote(str(v))}"
+                         for k, v in sorted((params or {}).items()))
+        body = _json.dumps(json, separators=(",", ":")) if json is not None else ""
+        headers = {
+            "host": self.host,
+            "x-amz-date": amz_date,
+            "x-amzn-access-token": token,
+            "x-amzn-marketplace-id": self.marketplace_id,
+            "x-amz-security-token": creds["session_token"],
+        }
+        if json is not None:
+            headers["content-type"] = "application/json"
+        signer = AmazonSigV4Signer(creds["access_key"], creds["secret_key"],
+                                   creds["session_token"], region=self.region)
+        authz = signer.sign(method, path, query, {"host": self.host, "x-amz-date": amz_date,
+                                                  "x-amz-security-token": creds["session_token"]},
+                            body, amz_date)
+        headers["authorization"] = authz
+        for attempt in range(1, MAX_ATTEMPTS + 1):
+            resp = await client.request(method, self.base_url + path, params=params or None,
+                                        headers=headers, content=body or None,
+                                        json=None)
+            if resp.status_code == 429:
+                try:
+                    limit = float(resp.headers.get("x-amzn-RateLimit-Limit", "1"))
+                except ValueError:
+                    limit = 1.0
+                wait = min(1.0 / limit if limit > 0 else 1.0, 10.0) * attempt
+                import asyncio
+                await asyncio.sleep(wait)
+                continue
+            if resp.status_code == 401 and not _retried:
+                await self.token_cache.force_refresh()
+                return await self._request(method, path, params=params, json=json, _retried=True)
+            if resp.status_code >= 400:
+                raise PlatformError(f"Amazon {method} {path} -> {resp.status_code}: {resp.text[:200]}")
+            return resp.json()
+        raise PlatformError(f"Amazon {method} {path} rate-limited after {MAX_ATTEMPTS} attempts")
 
 
 def client_from_env(platform: str, mode: str = "sandbox") -> BaseSignedClient:
