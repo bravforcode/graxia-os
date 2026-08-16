@@ -24,6 +24,7 @@ from .fx_refresh import fx_refresh
 from .affiliate_review import affiliate_review
 from .payout_recon import payout_recon
 from .repricing import repricing
+from .channel_health import channel_health
 
 __all__ = [
     "daily_revenue_ops",
@@ -48,4 +49,5 @@ __all__ = [
     "affiliate_review",
     "payout_recon",
     "repricing",
+    "channel_health",
 ]

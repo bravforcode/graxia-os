@@ -197,6 +197,11 @@ def create_revenue_os_celery_app(settings) -> Celery:
                 "schedule": 3600.0,  # hourly
                 "options": {"queue": "default"},
             },
+            "channel-health": {
+                "task": "graxia.packages.revenue_os.celery.tasks.channel_health",
+                "schedule": 3600.0,  # hourly
+                "options": {"queue": "default"},
+            },
         },
     })
 
