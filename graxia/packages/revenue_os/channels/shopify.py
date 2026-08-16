@@ -114,7 +114,7 @@ class ShopifyAdapter(ChannelAdapter):
             })
         return out
 
-    async def sync_products(self) -> int:
+    async def sync_products(self, db, products=None) -> int:
         # Simple create-or-update by metafield graxia_product_id; skips non-published.
         return 0  # wired in the sync task (Task 2 Step 4 keeps this minimal)
 

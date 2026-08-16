@@ -315,6 +315,9 @@ class AmazonClient:
     async def post_json(self, path: str, json: Optional[dict] = None) -> dict:
         return await self._request("POST", path, json=json)
 
+    async def patch_json(self, path: str, json: Optional[dict] = None) -> dict:
+        return await self._request("PATCH", path, json=json)
+
     async def _request(self, method: str, path: str, params: Optional[dict] = None,
                        json: Optional[dict] = None, _retried: bool = False) -> dict:
         import json as _json

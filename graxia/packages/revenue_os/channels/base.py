@@ -38,8 +38,13 @@ class ChannelAdapter(abc.ABC):
         amount_cents, currency, product_id (if mappable), status, metadata}."""
 
     @abc.abstractmethod
-    async def sync_products(self) -> int:
-        """Push local published products to the channel; return count."""
+    async def sync_products(self, db: AsyncSession, products: Optional[list] = None) -> int:
+        """Push local published products to the channel; return count pushed.
+
+        products: optional list of Product rows. The adapter persists the
+        channel-side listing id on the ChannelInventory row (via db) so
+        re-pushes update instead of duplicate-create.
+        """
 
     @abc.abstractmethod
     async def push_fulfillment(self, order, tracking: Optional[str] = None) -> None:

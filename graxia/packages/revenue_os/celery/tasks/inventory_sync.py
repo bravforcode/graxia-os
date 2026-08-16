@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...db import get_db_session
 from ...core.db_ops import acquire_automation_lock
-from ...channels.marketplace_sync import inventory_reconcile, price_sync
+from ...channels.marketplace_sync import inventory_reconcile, price_sync, sync_listings
 
 logger = structlog.get_logger()
 
@@ -19,7 +19,8 @@ async def inventory_sync_with_db(db: AsyncSession) -> dict:
             return {"skipped": True, "reason": "lock_held_by_another_worker"}
         inv = await inventory_reconcile(db)
         prices = await price_sync(db)
-        return {"skipped": False, "inventory": inv, "prices": prices}
+        listed = await sync_listings(db)
+        return {"skipped": False, "inventory": inv, "prices": prices, "listings": listed}
 
 
 def inventory_sync():

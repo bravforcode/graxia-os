@@ -111,9 +111,35 @@ class TikTokShopAdapter(ChannelAdapter):
             })
         return out
 
-    async def sync_products(self) -> int:
-        # Wired in the marketplace inventory/price sync task (Task 6).
-        return 0
+    async def sync_products(self, db: AsyncSession, products: Optional[list] = None) -> int:
+        """Push products to TikTok Shop (create / edit by stored product_id)."""
+        from ..models import ChannelInventory
+        pushed = 0
+        for product in (products or []):
+            inv = await db.get(ChannelInventory, (ChannelType.TIKTOK_SHOP, product.id))
+            stock = inv.channel_stock if inv is not None else 0
+            payload = {
+                "name": product.name,
+                "price": {"amount": f"{Decimal(product.price_cents or 0) / 100:.2f}",
+                          "currency_code": product.currency or "THB"},
+                "sku": [{"stock": stock}],
+            }
+            if inv is not None and inv.listing_id:
+                payload["product_id"] = inv.listing_id
+                await self._client().post_json("/product/edit", json=payload)
+            else:
+                data = await self._client().post_json("/product/create", json=payload)
+                product_id = (data.get("data") or {}).get("product_id")
+                if inv is None:
+                    inv = ChannelInventory(channel=ChannelType.TIKTOK_SHOP, product_id=product.id,
+                                           channel_stock=0, stock_buffer=0,
+                                           listing_id=str(product_id) if product_id else None)
+                    db.add(inv)
+                elif product_id:
+                    inv.listing_id = str(product_id)
+            pushed += 1
+        await db.commit()
+        return pushed
 
     async def push_fulfillment(self, order, tracking: Optional[str] = None) -> None:
         order_id = (order.metadata_ or {}).get("order_id")

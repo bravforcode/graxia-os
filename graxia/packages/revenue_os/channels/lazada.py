@@ -103,9 +103,34 @@ class LazadaAdapter(ChannelAdapter):
             })
         return out
 
-    async def sync_products(self) -> int:
-        # Wired in the marketplace inventory/price sync task (Task 6).
-        return 0
+    async def sync_products(self, db: AsyncSession, products: Optional[list] = None) -> int:
+        """Push products to Lazada (create / update by stored item_id)."""
+        from ..models import ChannelInventory
+        pushed = 0
+        for product in (products or []):
+            inv = await db.get(ChannelInventory, (ChannelType.LAZADA, product.id))
+            stock = inv.channel_stock if inv is not None else 0
+            payload = {"request": {"product": {
+                "name": product.name,
+                "price": f"{Decimal(product.price_cents or 0) / 100:.2f}",
+                "quantity": stock,
+            }}}
+            if inv is not None and inv.listing_id:
+                payload["request"]["product"]["item_id"] = inv.listing_id
+                await self._client().post_json("/product/update", json=payload)
+            else:
+                data = await self._client().post_json("/product/create", json=payload)
+                item_id = (data.get("data") or {}).get("item_id")
+                if inv is None:
+                    inv = ChannelInventory(channel=ChannelType.LAZADA, product_id=product.id,
+                                           channel_stock=0, stock_buffer=0,
+                                           listing_id=str(item_id) if item_id else None)
+                    db.add(inv)
+                elif item_id:
+                    inv.listing_id = str(item_id)
+            pushed += 1
+        await db.commit()
+        return pushed
 
     async def push_fulfillment(self, order, tracking: Optional[str] = None) -> None:
         order_id = (order.metadata_ or {}).get("order_id")

@@ -1223,12 +1223,15 @@ class AffiliatePayout(Base):
 
 
 class ChannelInventory(Base):
-    """Per-channel stock mirror with a safety buffer (never oversell)."""
+    """Per-channel stock mirror with a safety buffer (never oversell).
+    listing_id holds the channel-side item/product id returned by listing
+    sync (used to switch add_item -> update_item on re-push)."""
     __tablename__ = "revenue_os_channel_inventory"
 
     channel: Mapped[ChannelType] = mapped_column(SAEnum(ChannelType), primary_key=True)
     product_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("revenue_os_products.id"), primary_key=True)
     channel_stock: Mapped[int] = mapped_column(Integer, default=0)
     stock_buffer: Mapped[int] = mapped_column(Integer, default=0)
+    listing_id: Mapped[Optional[str]] = mapped_column(String(255))
 
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

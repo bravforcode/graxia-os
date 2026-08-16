@@ -29,22 +29,25 @@ FX_CHANNEL = ChannelType.FX
 async def inventory_reconcile(db: AsyncSession, adapter=None) -> dict:
     """Compute local available = channel_stock - stock_buffer (never negative).
 
-    adapter (optional): push seam — when a channel adapter with a stock
-    endpoint is wired, call adapter.sync_products() after changes.
+    adapter (optional): push seam — when a channel adapter is wired, the
+    affected products are pushed through adapter.sync_products(db, products).
     """
     rows = (await db.execute(select(ChannelInventory))).scalars().all()
     available_map: dict[str, int] = {}
-    changed = 0
+    changed_products: list[Product] = []
     for inv in rows:
         available = max(0, inv.channel_stock - inv.stock_buffer)
         available_map[f"{inv.channel.value}:{inv.product_id}"] = available
         if available != inv.channel_stock:
-            changed += 1
+            product = await db.get(Product, inv.product_id)
+            if product is not None:
+                changed_products.append(product)
     pushed = 0
-    if adapter is not None and changed:
-        pushed = await adapter.sync_products()
+    if adapter is not None and changed_products:
+        pushed = await adapter.sync_products(db, changed_products)
     await db.commit()
-    return {"rows": len(rows), "changed": changed, "pushed": pushed, "available": available_map}
+    return {"rows": len(rows), "changed": len(changed_products), "pushed": pushed,
+            "available": available_map}
 
 
 # ── price sync (shared path, FX-aware) ───────────────────────────────────────
@@ -67,6 +70,7 @@ async def price_sync(db: AsyncSession, adapter=None) -> dict:
     applied = skipped = 0
     products = (await db.execute(
         select(Product).where(Product.status == ProductStatus.PUBLISHED))).scalars().all()
+    changed_products: list[Product] = []
     for product in products:
         delta = await DynamicPricingEngine.propose(db, product)
         if delta is None:
@@ -76,13 +80,48 @@ async def price_sync(db: AsyncSession, adapter=None) -> dict:
             fx_rate = thb_rates[product.currency]
         if await DynamicPricingEngine.apply(db, product, delta, fx_rate=fx_rate):
             applied += 1
+            changed_products.append(product)
         else:
             skipped += 1
     pushed = 0
-    if adapter is not None and applied:
-        pushed = await adapter.sync_products()
+    if adapter is not None and changed_products:
+        pushed = await adapter.sync_products(db, changed_products)
     await db.commit()
     return {"applied": applied, "skipped": skipped, "pushed": pushed}
+
+
+async def sync_listings(db: AsyncSession, http_client=None) -> dict:
+    """Push local published products to every connected marketplace channel
+    (real listing sync — adapters persist listing ids on ChannelInventory).
+
+    http_client: optional injected httpx client (tests use MockTransport).
+    """
+    from .amazon import AmazonAdapter
+    from .lazada import LazadaAdapter
+    from .shopee import ShopeeAdapter
+    from .tiktok_shop import TikTokShopAdapter
+    listing_adapters = {
+        ChannelType.SHOPEE: ShopeeAdapter,
+        ChannelType.LAZADA: LazadaAdapter,
+        ChannelType.TIKTOK_SHOP: TikTokShopAdapter,
+        ChannelType.AMAZON: AmazonAdapter,
+    }
+    results: dict = {}
+    for channel, adapter_cls in listing_adapters.items():
+        conn = await db.scalar(
+            select(ChannelConnection).where(ChannelConnection.channel == channel))
+        if conn is None or not conn.enabled:
+            results[channel.value] = {"skipped": True, "reason": "not_connected"}
+            continue
+        invs = (await db.execute(
+            select(ChannelInventory).where(ChannelInventory.channel == channel))).scalars().all()
+        products = [await db.get(Product, inv.product_id) for inv in invs]
+        products = [p for p in products if p is not None and p.status == ProductStatus.PUBLISHED]
+        adapter = adapter_cls(config=conn.config or {}, http_client=http_client)
+        pushed = await adapter.sync_products(db, products)
+        results[channel.value] = {"products": len(products), "pushed": pushed}
+    await db.commit()
+    return results
 
 
 # ── fee-aware margin gate (SUPPLIER_PURCHASE) ────────────────────────────────

@@ -118,10 +118,35 @@ class ShopeeAdapter(ChannelAdapter):
             })
         return out
 
-    async def sync_products(self) -> int:
-        # Wired in the marketplace inventory/price sync task (Task 6);
-        # keeps the minimal shape of the existing ShopifyAdapter.
-        return 0
+    async def sync_products(self, db: AsyncSession, products: Optional[list] = None) -> int:
+        """Push products to Shopee (add_item / update_item by stored item_id).
+        Persists the returned item_id on the ChannelInventory row."""
+        from ..models import ChannelInventory
+        pushed = 0
+        for product in (products or []):
+            inv = await db.get(ChannelInventory, (ChannelType.SHOPEE, product.id))
+            stock = inv.channel_stock if inv is not None else 0
+            payload = {
+                "item_name": product.name,
+                "original_price": f"{Decimal(product.price_cents or 0) / 100:.2f}",
+                "stock": stock,
+            }
+            if inv is not None and inv.listing_id:
+                payload["item_id"] = inv.listing_id
+                await self._client().post_json("/product/update_item", json=payload)
+            else:
+                data = await self._client().post_json("/product/add_item", json=payload)
+                item_id = (data.get("response") or {}).get("item_id")
+                if inv is None:
+                    inv = ChannelInventory(channel=ChannelType.SHOPEE, product_id=product.id,
+                                           channel_stock=0, stock_buffer=0,
+                                           listing_id=str(item_id) if item_id else None)
+                    db.add(inv)
+                elif item_id:
+                    inv.listing_id = str(item_id)
+            pushed += 1
+        await db.commit()
+        return pushed
 
     async def push_fulfillment(self, order, tracking: Optional[str] = None) -> None:
         order_sn = (order.metadata_ or {}).get("order_sn")

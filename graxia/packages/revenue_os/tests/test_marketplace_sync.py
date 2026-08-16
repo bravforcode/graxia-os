@@ -72,7 +72,7 @@ async def test_inventory_reconcile_pushes_via_adapter(db_session: AsyncSession):
     calls = {"n": 0}
 
     class _FakeAdapter:
-        async def sync_products(self):
+        async def sync_products(self, db, products=None):
             calls["n"] += 1
             return 1
 

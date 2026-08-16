@@ -122,9 +122,36 @@ class AmazonAdapter(ChannelAdapter):
         logger.info("amazon_orders_fetched", count=len(out), order_ids=order_ids)  # ids only
         return out
 
-    async def sync_products(self) -> int:
-        # Wired in the marketplace inventory/price sync task (Task 6).
-        return 0
+    async def sync_products(self, db: AsyncSession, products: Optional[list] = None) -> int:
+        """Push price/name for SKU-mapped Amazon listings (Listings Items API
+        PATCH). Requires ChannelInventory.listing_id = seller SKU; products
+        without a SKU mapping are skipped (no silent create — SP-API catalog
+        creation needs category attributes, wired at deployment)."""
+        from ..models import ChannelInventory
+        pushed = 0
+        skipped = 0
+        for product in (products or []):
+            inv = await db.get(ChannelInventory, (ChannelType.AMAZON, product.id))
+            if inv is None or not inv.listing_id:
+                skipped += 1  # needs listing_id as the seller SKU
+                continue
+            payload = {
+                "productType": "GENERIC",
+                "attributes": {
+                    "item_name": [{"value": product.name, "language_tag": "en-US"}],
+                    "list_price": [{"value": f"{Decimal(product.price_cents or 0) / 100:.2f}",
+                                    "currency": "USD"}],
+                },
+            }
+            await self._client().patch_json(
+                f"/listings/2021-08-01/items/{self._seller_id()}/{inv.listing_id}", json=payload)
+            pushed += 1
+        await db.commit()
+        logger.info("amazon_products_synced", pushed=pushed, skipped=skipped)
+        return pushed
+
+    def _seller_id(self) -> str:
+        return os.getenv("AMAZON_SELLER_ID", "")
 
     async def push_fulfillment(self, order, tracking: Optional[str] = None) -> None:
         amazon_order_id = (order.metadata_ or {}).get("amazon_order_id")
