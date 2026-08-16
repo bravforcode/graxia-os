@@ -21,9 +21,11 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
+# SQLAlchemy SAEnum binds enum MEMBER NAMES (uppercase), not .value strings —
+# so ADD VALUE must use the member names to match what the ORM writes.
 ENUM_MIGRATIONS = [
-    ("channeltype", ["shopee", "lazada", "tiktok_shop", "amazon", "fx"]),
-    ("actiontype", ["affiliate"]),
+    ("channeltype", ["SHOPEE", "LAZADA", "TIKTOK_SHOP", "AMAZON", "FX"]),
+    ("actiontype", ["AFFILIATE"]),
 ]
 
 
@@ -55,6 +57,7 @@ async def run() -> None:
     # Tables + indexes via SQLAlchemy metadata (idempotent create_all)
     from sqlalchemy.ext.asyncio import create_async_engine
     from graxia.database import Base
+    import graxia.packages.revenue_os.models  # noqa: register all models on Base.metadata
     engine = create_async_engine(url)
     async with engine.begin() as db_conn:
         await db_conn.run_sync(Base.metadata.create_all)
