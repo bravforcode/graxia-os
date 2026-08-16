@@ -1,10 +1,19 @@
-"""Channel adapter framework — one adapter per external commerce surface."""
+"""Channel adapter framework — one adapter per external commerce surface.
+
+Also hosts the ONE shared order-import path (`import_channel_orders`) used by
+every adapter — idempotent via (platform, platform_order_id) unique constraint.
+"""
 from __future__ import annotations
 
 import abc
 from typing import Any, Optional
 
-from ..enums import ChannelType
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from ..enums import ChannelType, IncidentSeverity, OrderStatus
+from ..models import IncidentEvent, Order, Product
+from ..services.fulfillment_service import FulfillmentService
 
 
 class ChannelError(Exception):
@@ -39,3 +48,48 @@ class ChannelAdapter(abc.ABC):
     @abc.abstractmethod
     async def reconcile(self) -> dict:
         """Apply external status changes to local orders; return {updated, skipped}."""
+
+
+async def import_channel_orders(db: AsyncSession, platform: str, orders: list[dict]) -> int:
+    """Idempotent import for ANY channel (platform+platform_order_id unique).
+
+    - Unknown product -> IncidentEvent LOW (order skipped, nothing imported)
+    - status in ("paid", "PAID") -> OrderStatus.PAID and fulfillment queued
+    - Re-running with the same orders imports nothing (idempotent)
+    """
+    imported = 0
+    for data in orders:
+        existing = await db.scalar(
+            select(Order).where(Order.platform == platform,
+                                Order.platform_order_id == data["platform_order_id"])
+        )
+        if existing:
+            continue
+        product = None
+        if data.get("product_id"):
+            product = await db.get(Product, data["product_id"])
+        if product is None:
+            db.add(IncidentEvent(
+                title=f"{platform} order unmappable: {data['platform_order_id']}",
+                description="no graxia product_id on the order line item",
+                severity=IncidentSeverity.LOW,
+            ))
+            await db.flush()
+            continue
+        order = Order(
+            platform=platform,
+            platform_order_id=data["platform_order_id"],
+            customer_email=data["customer_email"],
+            product_id=product.id,
+            amount_cents=data["amount_cents"],
+            currency=data["currency"],
+            status=OrderStatus.PAID if data.get("status") in ("paid", "PAID") else OrderStatus.PENDING,
+            metadata_={**data.get("metadata", {})},
+        )
+        db.add(order)
+        await db.flush()
+        imported += 1
+        if order.status == OrderStatus.PAID:
+            await FulfillmentService.fulfill_order(db, order.id, auto_queue_email=True)
+    await db.commit()
+    return imported

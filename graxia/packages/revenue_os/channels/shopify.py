@@ -12,10 +12,9 @@ import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..enums import ChannelType, IncidentSeverity, OrderStatus
-from ..models import IncidentEvent, Order, Product
+from ..enums import ChannelType, OrderStatus
+from ..models import Order
 from .base import ChannelAdapter, ChannelError
-from ..services.fulfillment_service import FulfillmentService
 
 API_VERSION = "2024-01"
 MAX_ATTEMPTS = 3
@@ -132,42 +131,14 @@ class ShopifyAdapter(ChannelAdapter):
 
 
 async def import_shopify_orders(db: AsyncSession, orders: list[dict]) -> int:
-    """Idempotent import (platform+platform_order_id unique). PAID orders fulfill."""
-    imported = 0
-    for data in orders:
-        existing = await db.scalar(
-            select(Order).where(Order.platform == "shopify", Order.platform_order_id == data["platform_order_id"])
-        )
-        if existing:
-            continue
-        product = None
-        if data.get("product_id"):
-            product = await db.get(Product, data["product_id"])
-        if product is None:
-            db.add(IncidentEvent(
-                title=f"Shopify order unmappable: {data['platform_order_id']}",
-                description="no graxia product_id metafield on the order line item",
-                severity=IncidentSeverity.LOW,
-            ))
-            await db.flush()
-            continue
-        order = Order(
-            platform="shopify",
-            platform_order_id=data["platform_order_id"],
-            customer_email=data["customer_email"],
-            product_id=product.id,
-            amount_cents=data["amount_cents"],
-            currency=data["currency"],
-            status=OrderStatus.PAID if data.get("status") in ("paid", "PAID") else OrderStatus.PENDING,
-            metadata_={"shopify_id": data.get("metadata", {}).get("shopify_id"), **data.get("metadata", {})},
-        )
-        db.add(order)
-        await db.flush()
-        imported += 1
-        if order.status == OrderStatus.PAID:
-            await FulfillmentService.fulfill_order(db, order.id, auto_queue_email=True)
-    await db.commit()
-    return imported
+    """Idempotent import — now delegates to the shared channel helper.
+
+    Kept as a thin wrapper so the shopify sync task and existing callers keep
+    their import path; new adapters call channels.base.import_channel_orders
+    directly with their platform name.
+    """
+    from .base import import_channel_orders
+    return await import_channel_orders(db, "shopify", orders)
 
 
 async def reconcile_shopify(db: AsyncSession, external_status_map: dict[str, str]) -> dict:
