@@ -40,7 +40,7 @@ async def readiness_probe() -> HealthResponse:
     # Celery check: attempt ping via inspect (optional, non-blocking)
     celery_ok = False
     try:
-        from ....packages.revenue_os.celery.celery_app import celery_app
+        from ....packages.revenue_os.celery.entrypoint import app as celery_app
         inspector = celery_app.control.inspect(timeout=1.0)
         ping = inspector.ping()
         celery_ok = bool(ping)

@@ -1,0 +1,117 @@
+# docker-compose.revenue-os.yml — Revenue OS standalone stack
+# API + Celery worker/beat + Redis + PostgreSQL (24/7 autonomous commerce).
+#
+# Usage:
+#   docker compose -f docker-compose.revenue-os.yml up -d --build
+#   docker compose -f docker-compose.revenue-os.yml logs -f revenue-os-api
+#
+# Ports (host): 8001 API, 6380 Redis, 5436 Postgres — avoids clashing with
+# the main graxia stack (8000/6379/5432-5435).
+#
+# Required env (or defaults below): ADMIN_API_KEY, POSTGRES_PASSWORD.
+# Optional: STRIPE_WEBHOOK_SECRET, ALLOWED_ORIGINS, APP_ENV.
+
+services:
+  revenue-os-db:
+    image: postgres:16-alpine
+    container_name: revenue_os_db
+    environment:
+      POSTGRES_USER: graxia
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-graxia}
+      POSTGRES_DB: graxia_os
+    ports:
+      - "5436:5432"
+    volumes:
+      - revenue_os_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U graxia -d graxia_os"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  revenue-os-redis:
+    image: redis:7-alpine
+    container_name: revenue_os_redis
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  revenue-os-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.revenue-os
+    image: graxia-revenue-os:${TAG:-latest}
+    container_name: revenue_os_api
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      DATABASE_URL: postgresql+asyncpg://graxia:${POSTGRES_PASSWORD:-graxia}@revenue-os-db:5432/graxia_os
+      ADMIN_API_KEY: ${ADMIN_API_KEY:?ADMIN_API_KEY must be set}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      CELERY_BROKER_URL: redis://revenue-os-redis:6379/1
+      CELERY_RESULT_BACKEND: redis://revenue-os-redis:6379/2
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
+    ports:
+      - "8001:8000"
+    depends_on:
+      revenue-os-db:
+        condition: service_healthy
+      revenue-os-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/system/readiness"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  revenue-os-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.revenue-os
+    image: graxia-revenue-os:${TAG:-latest}
+    container_name: revenue_os_worker
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      DATABASE_URL: postgresql+asyncpg://graxia:${POSTGRES_PASSWORD:-graxia}@revenue-os-db:5432/graxia_os
+      ADMIN_API_KEY: ${ADMIN_API_KEY:?ADMIN_API_KEY must be set}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      CELERY_BROKER_URL: redis://revenue-os-redis:6379/1
+      CELERY_RESULT_BACKEND: redis://revenue-os-redis:6379/2
+    command: celery -A graxia.packages.revenue_os.celery.entrypoint:app worker --loglevel=info --concurrency=2
+    depends_on:
+      revenue-os-db:
+        condition: service_healthy
+      revenue-os-redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  revenue-os-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.revenue-os
+    image: graxia-revenue-os:${TAG:-latest}
+    container_name: revenue_os_beat
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      DATABASE_URL: postgresql+asyncpg://graxia:${POSTGRES_PASSWORD:-graxia}@revenue-os-db:5432/graxia_os
+      ADMIN_API_KEY: ${ADMIN_API_KEY:?ADMIN_API_KEY must be set}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      CELERY_BROKER_URL: redis://revenue-os-redis:6379/1
+      CELERY_RESULT_BACKEND: redis://revenue-os-redis:6379/2
+    command: celery -A graxia.packages.revenue_os.celery.entrypoint:app beat --loglevel=info
+    depends_on:
+      revenue-os-db:
+        condition: service_healthy
+      revenue-os-redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  revenue_os_db_data:

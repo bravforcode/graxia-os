@@ -70,6 +70,45 @@ jobs:
           name: backend-openapi
           path: backend/openapi.json
 
+  revenue_os:
+    name: Revenue OS Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: graxia
+          POSTGRES_PASSWORD: graxia
+          POSTGRES_DB: graxia_os
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U graxia"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql+asyncpg://graxia:graxia@localhost:5432/graxia_os
+      APP_ENV: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Revenue OS tests
+        run: python -m pytest graxia/packages/revenue_os/tests -q
+
   frontend:
     name: Frontend Checks
     runs-on: ubuntu-latest
