@@ -1,15 +1,22 @@
-"""Channel endpoints: Shopify webhook (public, HMAC-gated) + admin status/sync."""
+"""Channel endpoints: Shopify webhook (public, HMAC-gated) + admin status/sync
++ marketplace webhook-triggers (poll-only — payload NEVER imported)."""
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ....packages.revenue_os.channels.amazon import trigger_amazon_poll
+from ....packages.revenue_os.channels.lazada import trigger_lazada_poll
+from ....packages.revenue_os.channels.shopee import trigger_shopee_poll
 from ....packages.revenue_os.channels.shopify import ShopifyAdapter, import_shopify_orders
+from ....packages.revenue_os.channels.tiktok_shop import trigger_tiktok_poll
 from ....packages.revenue_os.db import get_db
 from ....packages.revenue_os.enums import ChannelType
 from ....packages.revenue_os.models import ChannelConnection
 from ..dependencies import require_admin_api_key
 
-router = APIRouter(prefix="/channels")
+# Prefix comes from router.py include (/channels) — declaring one here would
+# double it (this was a pre-existing path bug: /channels/channels/...).
+router = APIRouter()
 
 
 @router.post("/shopify/webhook")
@@ -34,6 +41,28 @@ async def shopify_webhook(request: Request, db: AsyncSession = Depends(get_db)) 
         imported = await import_shopify_orders(db, normalized)
         return {"status": "ok", "imported": imported}
     return {"status": "ignored", "topic": topic}
+
+
+@router.post("/shopee/webhook")
+async def shopee_webhook(db: AsyncSession = Depends(get_db)) -> dict:
+    """Poll-only trigger (risk audit #1): the payload is NEVER read or
+    imported — the webhook only wakes the poll, which is the source of truth."""
+    return {"status": "ok", **await trigger_shopee_poll(db)}
+
+
+@router.post("/lazada/webhook")
+async def lazada_webhook(db: AsyncSession = Depends(get_db)) -> dict:
+    return {"status": "ok", **await trigger_lazada_poll(db)}
+
+
+@router.post("/tiktok_shop/webhook")
+async def tiktok_shop_webhook(db: AsyncSession = Depends(get_db)) -> dict:
+    return {"status": "ok", **await trigger_tiktok_poll(db)}
+
+
+@router.post("/amazon/webhook")
+async def amazon_webhook(db: AsyncSession = Depends(get_db)) -> dict:
+    return {"status": "ok", **await trigger_amazon_poll(db)}
 
 
 @router.get("", dependencies=[Depends(require_admin_api_key)])
