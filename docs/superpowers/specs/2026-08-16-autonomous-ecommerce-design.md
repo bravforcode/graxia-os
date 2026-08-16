@@ -333,3 +333,26 @@ CREATE INDEX IF NOT EXISTS ix_support_verification_email ON revenue_os_support_v
 - Phase 1 SHADOW live on local prod-equivalent DB (`graxia-prod-db`, port 5435, `graxia_os`).
 - Supabase (root `.env`) unreachable (project paused — DNS fails) — unpause, then run `scripts/provision_autonomy_phase1.py` with that DATABASE_URL (idempotent).
 - `STRIPE_SECRET_KEY` in `.env` is still the test placeholder — replace before real money.
+
+## 12. Phase 3 Status (2026-08-16)
+
+**Plan:** `docs/superpowers/plans/2026-08-16-autonomous-ecommerce-phase3-plan.md` — 9 tasks.
+
+### Completed (all on `main`)
+- **T1 Platform auth + FX caps**: `PlatformSignedClient`/`BaseSignedClient` (429-aware), `ShopeeSigner`/`LazadaSigner` known-vector signature tests (Shopee v2 `SHA256(key+timestamp+path+partner_id+token)`; Lazada HMAC over sorted key-value), `AmazonTokenCache` (LWA), `ChannelType` += SHOPEE/LAZADA/TIKTOK_SHOP/AMAZON/FX, `AffiliateStatus`, `Affiliate`/`AffiliatePayout`/`ChannelInventory` models, `ActionType.AFFILIATE`; FX-aware ABSOLUTE caps (non-THB converts via `fx_rate`, no-rate → PERCENT-only, fail-closed). 8 tests.
+- **T2 Shopee adapter**: shared `import_channel_orders(db, platform, orders)` extracted to `channels/base.py` (shopify wrapper keeps behavior); poll-first `/order/get_order_list` (READY_TO_SHIP), sandbox gate fail-closed in production, status map, reconcile no-downgrade, webhook fails closed (poll-only trigger). 12 tests + shopify suite green.
+- **T3 Lazada adapter**: `/orders/get` poll, `user_id` signed via shared client, `/order/pack` + `/order/ship` fulfillment, status map, poll-only trigger. 11 tests.
+- **T4 TikTok Shop adapter**: `TikTokSigner`/`TikTokClient` (v202309 formula cross-verified against the EcomPHP SDK; hand-computed GET/POST-body vectors), `POST /api/order/search` poll, `/fulfillment/ship`. 13 tests.
+- **T5 Amazon SP-API adapter**: `AmazonSigV4Signer` (verified against botocore reference SDK), `AmazonTokenCache.assume_role` (STS WebIdentityToken, cached), throttle-aware 429 (honors `x-amzn-RateLimit-Limit`), 401 token refresh, PII-safe (ids-only metadata + logs), MFN-only filter. 13 tests.
+- **T6 Marketplace sync**: `inventory_reconcile` (available = stock − buffer, never negative), `price_sync` (shared price path + FX-aware caps + 24h lock), `margin_after_fee` wired into the SUPPLIER_PURCHASE gate (per-channel fee_rate, defaults shopee .07/lazada .06/tiktok .08/amazon .15), `fx_refresh` (daily rates → `ChannelConnection(channel="fx")`). 9 tests.
+- **T7 Affiliate program**: policy-gated `create_affiliate` (rejects > 20% cap, fail-closed), `record_attribution` (ACTIVE + 30-day window via AttributionEvent, payout = amount × commission, ≥ 50,000 THB → `needs_review` + IncidentEvent MEDIUM, no double payouts), `review_payouts` daily sweep + Telegram (manual payouts for Phase 3); `POST /api/affiliate/create` + `GET /api/affiliate/overview` (admin). 12 tests.
+- **T8 Celery beat**: marketplace-poll (10 min), inventory-sync (15 min), fx-refresh (daily), affiliate-review (daily) — all lock-wrapped; task registry updated; import smoke OK. Suite: **233 passed, 14 pre-existing failures, 0 errors** (baseline was 163 passed — +70 new tests, zero new failures).
+- **T9 Runbooks**: `docs/runbooks/marketplace-onboarding.md`, `docs/runbooks/affiliate-program.md`.
+
+### Phase 3 env vars (secrets manager)
+`SHOPEE_PARTNER_ID`, `SHOPEE_PARTNER_KEY`, `SHOPEE_SHOP_ID`, `SHOPEE_ACCESS_TOKEN`, `LAZADA_APP_KEY`, `LAZADA_APP_SECRET`, `LAZADA_SELLER_ID`, `TIKTOK_SHOP_APP_KEY`, `TIKTOK_SHOP_APP_SECRET`, `TIKTOK_SHOP_SHOP_ID`, `TIKTOK_SHOP_ACCESS_TOKEN`, `AMAZON_LWA_CLIENT_ID`, `AMAZON_LWA_CLIENT_SECRET`, `AMAZON_SP_API_ROLE_ARN`, `AMAZON_SELLER_ID`, `FX_SOURCE_URL` (optional) — none committed, fail-closed in production.
+
+### Phase 3 deploy notes
+- New enum values (`ChannelType` + FX, `AffiliateStatus`, `ActionType.AFFILIATE`) require `ALTER TYPE` on already-deployed DBs (`channeltype`, `affiliate_status`, `actiontype`) before the new tables/rows are written.
+- New tables: `revenue_os_affiliates`, `revenue_os_affiliate_payouts`, `revenue_os_channel_inventory` (created automatically by `create_all` on fresh DBs; migration path needed for existing deployments).
+- All marketplace channels are poll-first — webhook endpoints (where added later) must call `trigger_*_poll` and never import payloads directly.
