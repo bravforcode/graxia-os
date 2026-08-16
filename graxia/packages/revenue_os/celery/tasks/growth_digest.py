@@ -4,9 +4,9 @@ from __future__ import annotations
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..db import get_db_session
-from ..core.db_ops import acquire_automation_lock
-from ..growth.opportunity import _digest_text, opportunity_scan
+from ...db import get_db_session
+from ...core.db_ops import acquire_automation_lock
+from ...growth.opportunity import _digest_text, opportunity_scan
 
 logger = structlog.get_logger()
 
