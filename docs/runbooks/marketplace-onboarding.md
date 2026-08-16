@@ -236,3 +236,24 @@ rate when promoting a channel to live.
   candidate_rules, days)` — replay candidate rules against recent orders
   PURELY IN MEMORY (no writes). Supported: `supplier_purchase`; others
   return `supported=False` until a historical context exists.
+
+### Escalation bot (the "100% automation" enabler)
+- Policy denials on money-moving actions (SUPPLIER_PURCHASE) now create a
+  PENDING `Approval` (one per object, idempotent) instead of a silent drop.
+- CEO decides via `POST /api/approvals/{id}/decide` (admin); approved
+  supplier orders are **replayed automatically** (idempotent; `denied_again`
+  if policy still blocks). Telegram notify is available via
+  `escalate(notifier=...)` — wire the notifier at deployment.
+- `GET /api/approvals` lists pending decisions.
+
+### Incident auto-remediation
+- `agents/auto_remediation.py` (hourly, locked): open MEDIUM/HIGH incidents
+  with known handlers are retried automatically — `channel_health` → retry
+  the poll once; `supplier` → retry supplier submissions. Recovered incidents
+  are resolved; failures stay open for humans. Add handlers to the
+  `REMEDIATIONS` registry.
+
+### Growth engine (read-only — no auto-mutations)
+- `GET /api/dashboard/opportunities` (admin): channel margin-shift (>10pt
+  gap), 7-day demand per channel, low-margin channels (<20%) as repricing
+  targets. Daily `growth-digest` beat sends the summary to Telegram.
