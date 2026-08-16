@@ -1,9 +1,12 @@
 """Channel endpoints: Shopify webhook (public, HMAC-gated) + admin status/sync
 + marketplace webhook-triggers (poll-only — payload NEVER imported)."""
-from fastapi import APIRouter, Depends, HTTPException, Request
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ....packages.revenue_os.celery.tasks.marketplace_poll import poll_channel
 from ....packages.revenue_os.channels.amazon import trigger_amazon_poll
 from ....packages.revenue_os.channels.lazada import trigger_lazada_poll
 from ....packages.revenue_os.channels.shopee import trigger_shopee_poll
@@ -63,6 +66,19 @@ async def tiktok_shop_webhook(db: AsyncSession = Depends(get_db)) -> dict:
 @router.post("/amazon/webhook")
 async def amazon_webhook(db: AsyncSession = Depends(get_db)) -> dict:
     return {"status": "ok", **await trigger_amazon_poll(db)}
+
+
+@router.post("/{channel}/poll", dependencies=[Depends(require_admin_api_key)])
+async def poll_channel_route(channel: ChannelType, since: Optional[str] = Query(default=None),
+                             db: AsyncSession = Depends(get_db)) -> dict:
+    """Admin trigger: poll one marketplace channel now (source of truth).
+    `since` (ISO timestamp) enables backfill of missed windows."""
+    try:
+        result = await poll_channel(db, channel, since=since)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"no poll adapter for {channel.value}")
+    await db.commit()
+    return {"channel": channel.value, **result}
 
 
 @router.get("", dependencies=[Depends(require_admin_api_key)])
