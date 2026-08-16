@@ -30,7 +30,7 @@ from .routers import (
     approvals, automation, autonomy, bwcp, campaigns, channels, checkout,
     dashboard, delivery, emails, entitlements,
     incidents, leads, ledger, orders, outbox, policy, refunds,
-    support, system, ceo_dashboard,
+    support, system, ceo_dashboard, affiliate,
 )
 
 api_router = APIRouter(prefix="/api")
@@ -65,3 +65,6 @@ api_router.include_router(channels.router,     prefix="/channels",     tags=["Ch
 api_router.include_router(bwcp.router,         prefix="/bwcp",         tags=["BWCP Messages"])
 api_router.include_router(outbox.router,       prefix="/outbox",       tags=["Outbox Events"])
 api_router.include_router(ceo_dashboard.router, prefix="/ceo-dashboard", tags=["CEO Dashboard"])
+
+# ── Phase 3: Affiliate program (admin) ───────────────────────────────────
+api_router.include_router(affiliate.router,    prefix="/affiliate",    tags=["Affiliate"])

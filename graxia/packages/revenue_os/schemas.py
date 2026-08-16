@@ -368,3 +368,32 @@ class SupportChatResponse(BaseModel):
     intent: str
     reply: str
     action_taken: Optional[str] = None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Affiliate (Phase 3)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class AffiliateCreateRequest(BaseModel):
+    email: EmailStr
+    commission_percent: float = Field(..., gt=0, le=100)
+    code: Optional[str] = Field(default=None, max_length=50)
+
+
+class AffiliateResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    code: str
+    email: str
+    commission_percent: float
+    status: str
+    created_at: datetime
+
+
+class AffiliateOverviewResponse(BaseModel):
+    total: int
+    active: int
+    pending_payouts: int
+    pending_payout_cents: int
+    needs_review: int
