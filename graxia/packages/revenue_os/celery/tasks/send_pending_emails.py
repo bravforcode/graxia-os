@@ -14,9 +14,9 @@ from ...services.email_service import EmailService
 logger = structlog.get_logger()
 
 
-async def _send_pending_emails_impl(resend_client):
+async def send_pending_emails_with_db(db, resend_client):
     """
-    Send pending emails implementation.
+    Send pending emails implementation (db-injected — testable).
 
     Tasks:
     1. Query EmailOutbox WHERE status='pending' AND approved
@@ -25,70 +25,74 @@ async def _send_pending_emails_impl(resend_client):
     4. On failure: increment retry_count, set last_error
     5. Update linked DeliveryEvent accordingly
     """
-    async with get_db_session() as db:
-        async with acquire_automation_lock(db, "send_pending_emails", ttl_seconds=240) as acquired:
-            if not acquired:
-                logger.debug("send_pending_emails: lock not acquired, skipping")
-                return {
-                    "status": "skipped",
-                    "reason": "lock_held_by_another_worker",
-                }
+    async with acquire_automation_lock(db, "send_pending_emails", ttl_seconds=240) as acquired:
+        if not acquired:
+            logger.debug("send_pending_emails: lock not acquired, skipping")
+            return {
+                "status": "skipped",
+                "reason": "lock_held_by_another_worker",
+            }
 
-            try:
-                metrics = {
-                    "emails_processed": 0,
-                    "emails_sent": 0,
-                    "emails_failed": 0,
-                }
+        try:
+            metrics = {
+                "emails_processed": 0,
+                "emails_sent": 0,
+                "emails_failed": 0,
+            }
 
-                # Get pending emails
-                logger.info("send_pending_emails: fetching pending emails")
-                pending_emails = await EmailService.get_pending_emails(db, limit=50)
-                metrics["emails_processed"] = len(pending_emails)
+            # Get pending emails
+            logger.info("send_pending_emails: fetching pending emails")
+            pending_emails = await EmailService.get_pending_emails(db, limit=50)
+            metrics["emails_processed"] = len(pending_emails)
 
-                if not pending_emails:
-                    logger.debug("send_pending_emails: no pending emails")
-                    return {
-                        "status": "completed",
-                        "metrics": metrics,
-                    }
-
-                # Send each email
-                for email in pending_emails:
-                    try:
-                        success = await EmailService.send_email(
-                            db, email.id, resend_client
-                        )
-                        if success:
-                            metrics["emails_sent"] += 1
-                        else:
-                            metrics["emails_failed"] += 1
-                    except Exception as e:
-                        logger.error(
-                            "send_pending_emails: email send error",
-                            email_id=str(email.id),
-                            error=str(e),
-                        )
-                        metrics["emails_failed"] += 1
-
-                logger.info(
-                    "send_pending_emails: completed",
-                    **metrics,
-                )
-
+            if not pending_emails:
+                logger.debug("send_pending_emails: no pending emails")
                 return {
                     "status": "completed",
                     "metrics": metrics,
-                    "completed_at": datetime.utcnow().isoformat(),
                 }
 
-            except Exception as e:
-                logger.error(
-                    "send_pending_emails: failed",
-                    error=str(e),
-                    error_type=type(e).__name__,
-                )
-                raise
+            # Send each email
+            for email in pending_emails:
+                try:
+                    success = await EmailService.send_email(
+                        db, email.id, resend_client
+                    )
+                    if success:
+                        metrics["emails_sent"] += 1
+                    else:
+                        metrics["emails_failed"] += 1
+                except Exception as e:
+                    logger.error(
+                        "send_pending_emails: email send error",
+                        email_id=str(email.id),
+                        error=str(e),
+                    )
+                    metrics["emails_failed"] += 1
+
+            logger.info(
+                "send_pending_emails: completed",
+                **metrics,
+            )
+
+            return {
+                "status": "completed",
+                "metrics": metrics,
+                "completed_at": datetime.utcnow().isoformat(),
+            }
+
+        except Exception as e:
+            logger.error(
+                "send_pending_emails: failed",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
+            raise
+
+
+async def _send_pending_emails_impl(resend_client):
+    async with get_db_session() as db:
+        return await send_pending_emails_with_db(db, resend_client)
 
 
 def send_pending_emails(self: Task, resend_client=None):

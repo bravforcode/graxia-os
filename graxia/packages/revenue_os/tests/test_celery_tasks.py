@@ -8,12 +8,13 @@ from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from ..celery.tasks.daily_revenue_ops import _daily_revenue_ops_impl
-from ..celery.tasks.hourly_monitor import _hourly_monitor_impl
-from ..celery.tasks.campaign_engine import _campaign_engine_impl
-from ..celery.tasks.send_pending_emails import _send_pending_emails_impl
-from ..celery.tasks.weekly_review import _weekly_review_impl
-from ..models import Lead, Order, RevenueCampaign, EmailOutbox, Approval
+from ..celery.tasks.daily_revenue_ops import daily_revenue_ops_with_db
+from ..celery.tasks.hourly_monitor import hourly_monitor_with_db
+from ..celery.tasks.campaign_engine import campaign_engine_with_db
+from ..celery.tasks.send_pending_emails import send_pending_emails_with_db
+from ..celery.tasks.weekly_review import weekly_review_with_db
+from ..celery.tasks.process_outbox import process_outbox_with_db
+from ..models import Lead, Order, RevenueCampaign, EmailOutbox, Approval, OutboxEvent, StrategyLog
 from ..enums import LeadStatus, CampaignStatus, EmailStatus, ApprovalStatus, ProductStatus
 from ..services.campaign_service import RevenueCampaignService
 from ..services.email_service import EmailService
@@ -30,20 +31,25 @@ async def test_daily_revenue_ops_scores_leads(db_session: AsyncSession):
             status=LeadStatus.NEW,
         )
         db_session.add(lead)
-    
+
     await db_session.commit()
-    
+
     # Run daily revenue ops
-    # Note: This would normally be called via Celery, but we test the implementation directly
-    # result = await _daily_revenue_ops_impl()
-    
-    # For now, verify leads exist
-    result = await db_session.execute(
+    result = await daily_revenue_ops_with_db(db_session)
+
+    assert result["status"] == "completed"
+    assert result["metrics"]["leads_scored"] == 3
+
+    # Verify leads were scored
+    scored = await db_session.execute(
         select(Lead).where(Lead.status == LeadStatus.NEW)
     )
-    new_leads = result.scalars().all()
-    
+    new_leads = scored.scalars().all()
+
     assert len(new_leads) == 3
+    for lead in new_leads:
+        assert lead.score is not None
+        assert lead.score_rationale is not None
 
 
 @pytest.mark.asyncio
@@ -60,17 +66,12 @@ async def test_hourly_monitor_detects_stale_orders(db_session: AsyncSession):
     )
     db_session.add(stale_order)
     await db_session.commit()
-    
+
     # Run hourly monitor
-    # result = await _hourly_monitor_impl()
-    
-    # Verify stale order exists
-    result = await db_session.execute(
-        select(Order).where(Order.id == stale_order.id)
-    )
-    order = result.scalar_one()
-    
-    assert order.status == "pending"
+    result = await hourly_monitor_with_db(db_session)
+
+    assert result["status"] == "completed"
+    assert result["metrics"]["stale_orders"] == 1
 
 
 @pytest.mark.asyncio
@@ -86,17 +87,20 @@ async def test_hourly_monitor_expires_approvals(db_session: AsyncSession):
     )
     db_session.add(expired_approval)
     await db_session.commit()
-    
+
     # Run hourly monitor
-    # result = await _hourly_monitor_impl()
-    
-    # Verify approval still exists (would be rejected by actual task)
-    result = await db_session.execute(
+    result = await hourly_monitor_with_db(db_session)
+
+    assert result["status"] == "completed"
+    assert result["metrics"]["expired_approvals"] == 1
+
+    # Verify approval was rejected
+    approval_result = await db_session.execute(
         select(Approval).where(Approval.id == expired_approval.id)
     )
-    approval = result.scalar_one()
-    
-    assert approval.status == ApprovalStatus.PENDING  # Would be REJECTED after task runs
+    approval = approval_result.scalar_one()
+
+    assert approval.status == ApprovalStatus.REJECTED
 
 
 @pytest.mark.asyncio
@@ -109,21 +113,24 @@ async def test_campaign_engine_pauses_over_budget(db_session: AsyncSession):
         slug="over-budget-campaign",
         budget_cents=100000,
     )
-    
+
     campaign.status = CampaignStatus.ACTIVE
     campaign.spend_cents = 96000  # 96% used
     await db_session.commit()
-    
+
     # Run campaign engine
-    # result = await _campaign_engine_impl()
-    
-    # Verify campaign is still active (would be paused by actual task)
-    result = await db_session.execute(
+    result = await campaign_engine_with_db(db_session)
+
+    assert result["status"] == "completed"
+    assert result["metrics"]["campaigns_paused_budget"] == 1
+
+    # Verify campaign was paused
+    campaign_result = await db_session.execute(
         select(RevenueCampaign).where(RevenueCampaign.id == campaign.id)
     )
-    updated_campaign = result.scalar_one()
-    
-    assert updated_campaign.status == CampaignStatus.ACTIVE  # Would be PAUSED after task runs
+    updated_campaign = campaign_result.scalar_one()
+
+    assert updated_campaign.status == CampaignStatus.PAUSED
 
 
 @pytest.mark.asyncio
@@ -137,17 +144,21 @@ async def test_send_pending_emails_processes_queue(db_session: AsyncSession, moc
             subject=f"Test Email {i}",
             body="Test body",
         )
-    
+
     # Run send pending emails
-    # result = await _send_pending_emails_impl(mock_resend_client)
-    
-    # Verify emails are still pending (would be sent by actual task)
-    result = await db_session.execute(
-        select(EmailOutbox).where(EmailOutbox.status == EmailStatus.PENDING)
+    result = await send_pending_emails_with_db(db_session, mock_resend_client)
+
+    assert result["status"] == "completed"
+    assert result["metrics"]["emails_processed"] == 3
+    assert result["metrics"]["emails_sent"] == 3
+
+    # Verify emails were sent
+    sent_result = await db_session.execute(
+        select(EmailOutbox).where(EmailOutbox.status == EmailStatus.SENT)
     )
-    pending_emails = result.scalars().all()
-    
-    assert len(pending_emails) == 3
+    sent_emails = sent_result.scalars().all()
+
+    assert len(sent_emails) == 3
 
 
 @pytest.mark.asyncio
@@ -162,24 +173,30 @@ async def test_weekly_review_generates_summary(db_session: AsyncSession):
             amount_cents=10000,
         )
         db_session.add(order)
-    
+
     await db_session.commit()
-    
+
     # Run weekly review
-    # result = await _weekly_review_impl()
-    
-    # Verify orders exist
-    result = await db_session.execute(select(Order))
-    orders = result.scalars().all()
-    
-    assert len(orders) == 5
+    result = await weekly_review_with_db(db_session)
+
+    assert result["status"] == "completed"
+    assert result["metrics"]["total_orders"] == 5
+    assert result["metrics"]["total_revenue_cents"] == 50000
+    assert result["strategy_log_id"]
+
+    # Verify StrategyLog was created
+    log_result = await db_session.execute(select(StrategyLog))
+    logs = log_result.scalars().all()
+
+    assert len(logs) == 1
+    assert str(logs[0].id) == result["strategy_log_id"]
 
 
 @pytest.mark.asyncio
 async def test_concurrent_email_sending(db_session: AsyncSession, mock_resend_client):
     """Test concurrent email sending doesn't cause issues."""
     import asyncio
-    
+
     # Queue multiple emails
     email_ids = []
     for i in range(10):
@@ -190,15 +207,15 @@ async def test_concurrent_email_sending(db_session: AsyncSession, mock_resend_cl
             body="Test body",
         )
         email_ids.append(email.id)
-    
+
     # Send all emails concurrently
     tasks = [
         EmailService.send_email(db_session, email_id, mock_resend_client)
         for email_id in email_ids
     ]
-    
+
     results = await asyncio.gather(*tasks, return_exceptions=True)
-    
+
     # All should succeed
     successful = [r for r in results if r is True]
     assert len(successful) == 10
@@ -209,7 +226,7 @@ async def test_campaign_budget_auto_pause_integration(db_session: AsyncSession):
     """Integration test for campaign budget auto-pause."""
     # Create multiple campaigns with different budget statuses
     campaigns = []
-    
+
     # Campaign 1: Under budget (OK)
     c1 = await RevenueCampaignService.create_campaign(
         db=db_session,
@@ -220,7 +237,7 @@ async def test_campaign_budget_auto_pause_integration(db_session: AsyncSession):
     c1.status = CampaignStatus.ACTIVE
     c1.spend_cents = 50000  # 50% used
     campaigns.append(c1)
-    
+
     # Campaign 2: Over budget (should pause)
     c2 = await RevenueCampaignService.create_campaign(
         db=db_session,
@@ -231,23 +248,24 @@ async def test_campaign_budget_auto_pause_integration(db_session: AsyncSession):
     c2.status = CampaignStatus.ACTIVE
     c2.spend_cents = 96000  # 96% used
     campaigns.append(c2)
-    
+
     await db_session.commit()
-    
+
     # Run auto-pause
     paused_count = await RevenueCampaignService.auto_pause_over_budget_campaigns(
         db=db_session,
     )
-    
+
     assert paused_count == 1
-    
+
     # Verify correct campaign was paused
     result = await db_session.execute(
         select(RevenueCampaign).where(RevenueCampaign.slug == "over-budget")
     )
     over_budget_campaign = result.scalar_one()
-    
+
     assert over_budget_campaign.status == CampaignStatus.PAUSED
+
 
 @pytest.mark.asyncio
 async def test_commerce_ops_task_respects_lock(db_session: AsyncSession):
@@ -258,3 +276,161 @@ async def test_commerce_ops_task_respects_lock(db_session: AsyncSession):
         result = await commerce_ops_with_db(db_session)
     assert result.get("skipped") is True
     assert "lock" in result.get("reason", "")
+
+
+# ── Lock-skip (fail-closed) branches ──────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_daily_revenue_ops_skips_when_lock_held(db_session: AsyncSession):
+    from ..core.db_ops import acquire_automation_lock
+
+    async with acquire_automation_lock(db_session, "daily_revenue_ops", ttl_seconds=300):
+        result = await daily_revenue_ops_with_db(db_session)
+    assert result["status"] == "skipped"
+    assert "lock" in result["reason"]
+
+
+@pytest.mark.asyncio
+async def test_hourly_monitor_skips_when_lock_held(db_session: AsyncSession):
+    from ..core.db_ops import acquire_automation_lock
+
+    async with acquire_automation_lock(db_session, "hourly_monitor", ttl_seconds=300):
+        result = await hourly_monitor_with_db(db_session)
+    assert result["status"] == "skipped"
+    assert "lock" in result["reason"]
+
+
+@pytest.mark.asyncio
+async def test_campaign_engine_skips_when_lock_held(db_session: AsyncSession):
+    from ..core.db_ops import acquire_automation_lock
+
+    async with acquire_automation_lock(db_session, "campaign_engine", ttl_seconds=300):
+        result = await campaign_engine_with_db(db_session)
+    assert result["status"] == "skipped"
+    assert "lock" in result["reason"]
+
+
+@pytest.mark.asyncio
+async def test_send_pending_emails_skips_when_lock_held(db_session: AsyncSession, mock_resend_client):
+    from ..core.db_ops import acquire_automation_lock
+
+    async with acquire_automation_lock(db_session, "send_pending_emails", ttl_seconds=300):
+        result = await send_pending_emails_with_db(db_session, mock_resend_client)
+    assert result["status"] == "skipped"
+    assert "lock" in result["reason"]
+
+
+@pytest.mark.asyncio
+async def test_weekly_review_skips_when_lock_held(db_session: AsyncSession):
+    from ..core.db_ops import acquire_automation_lock
+
+    async with acquire_automation_lock(db_session, "weekly_review", ttl_seconds=300):
+        result = await weekly_review_with_db(db_session)
+    assert result["status"] == "skipped"
+    assert "lock" in result["reason"]
+
+
+# ── Process outbox ────────────────────────────────────────────────────────────
+
+
+class MockRedis:
+    """Minimal Redis Streams mock."""
+
+    def __init__(self, fail=False):
+        self.published = []
+        self.fail = fail
+
+    async def xadd(self, key, message):
+        if self.fail:
+            raise ConnectionError("redis down")
+        self.published.append((key, message))
+
+
+@pytest.mark.asyncio
+async def test_process_outbox_publishes_events(db_session: AsyncSession):
+    """Test that process_outbox publishes unprocessed events to Redis."""
+    redis_client = MockRedis()
+
+    for i in range(2):
+        db_session.add(OutboxEvent(
+            aggregate_type="order",
+            aggregate_id=f"order-{i}",
+            event_type="order.created",
+            payload={"order_id": f"order-{i}"},
+        ))
+    await db_session.commit()
+
+    result = await process_outbox_with_db(db_session, redis_client)
+
+    assert result["status"] == "completed"
+    assert result["metrics"]["processed"] == 2
+    assert len(redis_client.published) == 2
+
+    # Verify events marked processed
+    events_result = await db_session.execute(
+        select(OutboxEvent).where(OutboxEvent.processed == True)  # noqa: E712
+    )
+    processed_events = events_result.scalars().all()
+    assert len(processed_events) == 2
+
+
+@pytest.mark.asyncio
+async def test_process_outbox_retries_failed_publish(db_session: AsyncSession):
+    """Test that process_outbox increments retry_count on publish failure."""
+    redis_client = MockRedis(fail=True)
+
+    db_session.add(OutboxEvent(
+        aggregate_type="order",
+        aggregate_id="order-1",
+        event_type="order.created",
+        payload={"order_id": "order-1"},
+    ))
+    await db_session.commit()
+
+    result = await process_outbox_with_db(db_session, redis_client)
+
+    assert result["status"] == "completed"
+    assert result["metrics"]["failed"] == 1
+    assert result["metrics"]["processed"] == 0
+
+    # Verify event not processed, retry_count incremented
+    events_result = await db_session.execute(
+        select(OutboxEvent).where(OutboxEvent.aggregate_id == "order-1")
+    )
+    event = events_result.scalar_one()
+
+    assert event.processed is False
+    assert event.retry_count == 1
+    assert event.last_error is not None
+
+
+@pytest.mark.asyncio
+async def test_process_outbox_skips_max_retries(db_session: AsyncSession):
+    """Test that process_outbox skips events past max retries."""
+    redis_client = MockRedis()
+
+    db_session.add(OutboxEvent(
+        aggregate_type="order",
+        aggregate_id="order-1",
+        event_type="order.created",
+        payload={"order_id": "order-1"},
+        retry_count=3,  # At max retries — should be skipped
+    ))
+    await db_session.commit()
+
+    result = await process_outbox_with_db(db_session, redis_client)
+
+    assert result["status"] == "completed"
+    assert result["metrics"]["processed"] == 0
+    assert len(redis_client.published) == 0
+
+
+@pytest.mark.asyncio
+async def test_process_outbox_skips_when_lock_held(db_session: AsyncSession):
+    from ..core.db_ops import acquire_automation_lock
+
+    async with acquire_automation_lock(db_session, "process_outbox", ttl_seconds=300):
+        result = await process_outbox_with_db(db_session, MockRedis())
+    assert result["status"] == "skipped"
+    assert "lock" in result["reason"]

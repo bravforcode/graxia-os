@@ -156,10 +156,10 @@ async def _process_outbox_batch(
     return metrics
 
 
-async def _process_outbox_impl(redis_client=None):
+async def process_outbox_with_db(db, redis_client=None):
     """
-    Process outbox implementation.
-    
+    Process outbox implementation (db-injected — testable).
+
     Tasks:
     1. Acquire distributed lock
     2. Query unprocessed outbox events
@@ -167,43 +167,47 @@ async def _process_outbox_impl(redis_client=None):
     4. Mark events as processed
     5. Handle retries for failed events
     """
+    async with acquire_automation_lock(db, "process_outbox", ttl_seconds=120) as acquired:
+        if not acquired:
+            logger.debug("process_outbox: lock not acquired, skipping")
+            return {
+                "status": "skipped",
+                "reason": "lock_held_by_another_worker",
+            }
+
+        try:
+            # Get or create Redis client
+            if redis_client is None:
+                redis_client = await _get_redis_client()
+
+            if redis_client is None:
+                logger.error("process_outbox: no redis client available")
+                return {
+                    "status": "error",
+                    "reason": "redis_unavailable",
+                }
+
+            # Process batch
+            metrics = await _process_outbox_batch(db, redis_client)
+
+            return {
+                "status": "completed",
+                "metrics": metrics,
+                "completed_at": datetime.utcnow().isoformat(),
+            }
+
+        except Exception as e:
+            logger.error(
+                "process_outbox: failed",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
+            raise
+
+
+async def _process_outbox_impl(redis_client=None):
     async with get_db_session() as db:
-        async with acquire_automation_lock(db, "process_outbox", ttl_seconds=120) as acquired:
-            if not acquired:
-                logger.debug("process_outbox: lock not acquired, skipping")
-                return {
-                    "status": "skipped",
-                    "reason": "lock_held_by_another_worker",
-                }
-            
-            try:
-                # Get or create Redis client
-                if redis_client is None:
-                    redis_client = await _get_redis_client()
-                
-                if redis_client is None:
-                    logger.error("process_outbox: no redis client available")
-                    return {
-                        "status": "error",
-                        "reason": "redis_unavailable",
-                    }
-                
-                # Process batch
-                metrics = await _process_outbox_batch(db, redis_client)
-                
-                return {
-                    "status": "completed",
-                    "metrics": metrics,
-                    "completed_at": datetime.utcnow().isoformat(),
-                }
-                
-            except Exception as e:
-                logger.error(
-                    "process_outbox: failed",
-                    error=str(e),
-                    error_type=type(e).__name__,
-                )
-                raise
+        return await process_outbox_with_db(db, redis_client)
 
 
 async def _get_redis_client():
