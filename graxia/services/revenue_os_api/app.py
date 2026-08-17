@@ -25,6 +25,14 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
+# ── Live credentials (code-only wiring, approved 2026-08-17) ────────────────
+# Load .env.graxia (live Stripe/marketplace keys) if present. override=False so
+# deploy env vars win. Values are NEVER logged or committed.
+from dotenv import load_dotenv
+
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+load_dotenv(os.path.join(_REPO_ROOT, ".env.graxia"), override=False)
+
 # ── Module-level imports (not inside lifespan/functions) ─────────────────────
 from graxia.packages.revenue_os.db import DATABASE_URL, get_db_session
 from .middleware import RateLimitMiddleware, SecurityHeadersMiddleware
