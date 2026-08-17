@@ -135,8 +135,10 @@ async def stripe_webhook(
     if not existing_event:
         webhook_record = WebhookEvent(
             platform="stripe",
-            event_type=event_type,
             platform_event_id=event_id,
+            provider="stripe",
+            event_id=event_id,
+            event_type=event_type,
             payload=event,
         )
         db.add(webhook_record)
