@@ -316,6 +316,24 @@ class CreateOrderPayload(BaseModel):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Checkout session creation (P0-1: payment initiation)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class CheckoutSessionCreate(BaseModel):
+    """Payload for creating a Stripe Checkout session (customer-facing)."""
+    product_id: UUID
+    customer_email: EmailStr
+    success_url: str = Field(..., min_length=1, max_length=2000)
+    cancel_url: str = Field(..., min_length=1, max_length=2000)
+
+
+class CheckoutSessionResponse(BaseModel):
+    """Stripe Checkout session created — client redirects to checkout_url."""
+    session_id: str
+    checkout_url: str
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Policy engine schemas (autonomy guardrails — Task 1/3)
 # ─────────────────────────────────────────────────────────────────────────────
 

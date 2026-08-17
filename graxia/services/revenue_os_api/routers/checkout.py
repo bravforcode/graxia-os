@@ -1,25 +1,101 @@
 """
 graxia/services/revenue_os_api/routers/checkout.py
-Stripe webhook receiver — idempotent, HMAC-validated.
-Fixes CRIT-03 (real DB session).
+Stripe checkout — session creation (customer-facing) + webhook receiver.
+Fixes CRIT-03 (real DB session) + P0-1 (payment initiation).
 """
 from __future__ import annotations
 
 import logging
+import os
 
-from fastapi import APIRouter, Depends, Request
+import stripe
+from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ....packages.revenue_os.db import get_db
-from ....packages.revenue_os.models import WebhookEvent
-from ....packages.revenue_os.schemas import CheckoutWebhookResponse, CreateOrderPayload
+from ....packages.revenue_os.enums import ProductStatus
+from ....packages.revenue_os.models import Product, WebhookEvent
+from ....packages.revenue_os.schemas import (
+    CheckoutSessionCreate,
+    CheckoutSessionResponse,
+    CheckoutWebhookResponse,
+    CreateOrderPayload,
+)
 from ....packages.revenue_os.services.order_service import OrderService
 from ....packages.revenue_os.services.webhook_processor import WebhookProcessor
 from ..dependencies import require_stripe_hmac
-from sqlalchemy import select
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+stripe_checkout = stripe.checkout.Session  # monkeypatch target for tests
+
+
+def _get_stripe_secret_key() -> str:
+    """Fail-fast in production if key is not set (matches dependencies.py pattern)."""
+    key = os.getenv("STRIPE_SECRET_KEY") or os.getenv("STRIPE_API_KEY")
+    if not key:
+        if os.getenv("APP_ENV") == "production":
+            raise RuntimeError("STRIPE_SECRET_KEY must be set in production")
+        return "sk_test_placeholder"
+    return key
+
+
+@router.post(
+    "/session",
+    response_model=CheckoutSessionResponse,
+    status_code=201,
+    summary="Create Stripe Checkout session",
+)
+async def create_checkout_session(
+    payload: CheckoutSessionCreate,
+    db: AsyncSession = Depends(get_db),
+) -> CheckoutSessionResponse:
+    """
+    Create a Stripe Checkout session for a published product.
+
+    Guards:
+      1. Product must exist, be PUBLISHED, and have price_cents > 0 (fail-closed)
+      2. Amount/currency come from the DB product — never from the client
+      3. metadata.product_id is set so the webhook can create the order idempotently
+    """
+    product = await db.get(Product, payload.product_id)
+    if product is None:
+        raise HTTPException(status_code=404, detail="Product not found")
+    if product.status != ProductStatus.PUBLISHED:
+        raise HTTPException(status_code=400, detail="Product is not available for purchase")
+    if not product.price_cents or product.price_cents <= 0:
+        raise HTTPException(status_code=400, detail="Product has no price")
+
+    stripe.api_key = _get_stripe_secret_key()
+    try:
+        session = stripe_checkout.create(
+            mode="payment",
+            success_url=payload.success_url,
+            cancel_url=payload.cancel_url,
+            line_items=[
+                {
+                    "price_data": {
+                        "currency": (product.currency or "THB").lower(),
+                        "unit_amount": product.price_cents,
+                        "product_data": {"name": product.name},
+                    },
+                    "quantity": 1,
+                }
+            ],
+            metadata={"product_id": str(product.id)},
+            customer_email=payload.customer_email,
+        )
+    except stripe.error.StripeError as exc:
+        logger.error("Stripe checkout session creation failed: %s", exc)
+        raise HTTPException(status_code=502, detail="Payment provider error")
+
+    logger.info(
+        "Checkout session created: product_id=%s session_id=%s",
+        product.id, session.id,
+    )
+    return CheckoutSessionResponse(session_id=session.id, checkout_url=session.url)
 
 
 @router.post(
