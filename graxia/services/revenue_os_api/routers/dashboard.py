@@ -119,3 +119,13 @@ async def dashboard_summary(db: AsyncSession = Depends(get_db)) -> DashboardSumm
         open_incidents=open_incidents or 0,
         emails_pending=emails_pending or 0,
     )
+
+
+@router.get(
+    "/llm-cost",
+    dependencies=[Depends(require_admin_api_key)],
+    summary="LLM cost summary (P1-9)",
+)
+async def llm_cost(db: AsyncSession = Depends(get_db)) -> dict:
+    from ....packages.revenue_os.services.llm_cost import llm_cost_summary
+    return await llm_cost_summary(db)
