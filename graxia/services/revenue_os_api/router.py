@@ -27,7 +27,7 @@ URL map:
 from fastapi import APIRouter
 
 from .routers import (
-    approvals, automation, autonomy, bwcp, campaigns, channels, checkout,
+    approvals, automation, autonomy, billing, bwcp, campaigns, channels, checkout,
     dashboard, delivery, emails, entitlements,
     incidents, leads, ledger, orders, outbox, policy, refunds,
     support, system, ceo_dashboard, affiliate,
@@ -37,6 +37,7 @@ api_router = APIRouter(prefix="/api")
 
 # ── Public (no auth — validated at handler level) ─────────────────────────
 api_router.include_router(checkout.router, prefix="/checkout", tags=["Checkout"])
+api_router.include_router(billing.router,   prefix="/billing",   tags=["Billing"])
 api_router.include_router(system.router,   prefix="/system",   tags=["System"])
 
 # ── Admin (auth enforced per-route via Depends) ────────────────────────────

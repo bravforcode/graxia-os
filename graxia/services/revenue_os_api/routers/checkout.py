@@ -167,6 +167,12 @@ async def stripe_webhook(
             await WebhookProcessor.process_stripe_refund(charge, db)
             logger.info("charge.refunded processed")
 
+        elif event_type == "customer.subscription.deleted":
+            # P2-10: mirror Stripe subscription lifecycle locally
+            from ....packages.revenue_os.services.billing_service import BillingService
+            await BillingService.handle_subscription_deleted(db, event["data"]["object"])
+            logger.info("customer.subscription.deleted processed")
+
         else:
             logger.debug("Unhandled Stripe event type: %s", event_type)
 

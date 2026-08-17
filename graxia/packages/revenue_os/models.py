@@ -148,6 +148,34 @@ class Entitlement(Base):
     metadata_: Mapped[Optional[dict]] = mapped_column("metadata", JSONB, default=dict)
 
 
+class Subscription(Base):
+    """SaaS subscription (P2-10). One active row per customer; Stripe is source of
+    truth for billing, this row mirrors lifecycle for entitlements/reporting."""
+    __tablename__ = "revenue_os_subscriptions"
+    __table_args__ = (
+        UniqueConstraint("stripe_subscription_id", name="uq_subscriptions_stripe_id"),
+        Index("ix_subscriptions_customer_email", "customer_email"),
+        Index("ix_subscriptions_status", "status"),
+    )
+
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    customer_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("revenue_os_customers.id"))
+    customer_email: Mapped[str] = mapped_column(String(320), nullable=False)
+
+    plan: Mapped[str] = mapped_column(String(50), nullable=False)  # standard | enterprise
+    status: Mapped[str] = mapped_column(String(30), default="active")  # active|canceled|past_due
+    stripe_subscription_id: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    price_cents: Mapped[int] = mapped_column(Integer, nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), default="THB")
+
+    current_period_end: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    canceled_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
 # ══════════════════════════════════════════════════════════════════
 # PRODUCT & CUSTOMER MODELS
 # ══════════════════════════════════════════════════════════════════
