@@ -64,6 +64,7 @@
     <input type="password" id="apiKey" placeholder="Admin API key (X-Admin-Api-Key)" autocomplete="off">
     <button id="loadBtn" onclick="load()">Load pending</button>
     <button class="secondary" onclick="load()">Refresh</button>
+    <button class="ok" id="batchBtn" onclick="batchApprove()" style="display:none">Approve all pending</button>
   </div>
   <div id="error" class="error"></div>
   <div id="list"><div class="empty">Enter your admin API key and load pending approvals.</div></div>
@@ -114,10 +115,13 @@ async function load() {
 
 function render(approvals) {
   const list = document.getElementById("list");
+  const batchBtn = document.getElementById("batchBtn");
   if (!approvals.length) {
     list.innerHTML = '<div class="empty">No pending approvals. The happy path is fully automated. 🎉</div>';
+    batchBtn.style.display = "none";
     return;
   }
+  batchBtn.style.display = "inline-block";
   list.innerHTML = approvals.map(a => `
     <div class="card" id="card-${a.id}">
       <div class="meta">
@@ -163,6 +167,28 @@ async function decide(id, decision) {
 }
 
 document.getElementById("apiKey").value = localStorage.getItem(KEY_STORE) || "";
+
+async function batchApprove() {
+  const btn = document.getElementById("batchBtn");
+  btn.disabled = true;
+  const ids = [...document.querySelectorAll(".card")].map(c => c.id.replace("card-", ""));
+  let ok = 0, fail = 0;
+  for (const id of ids) {
+    try {
+      await call(`/approvals/${id}/decide`, {
+        method: "POST",
+        body: JSON.stringify({ decision: "approved", ceo_notes: "approved via CEO console (batch)" }),
+      });
+      ok++;
+    } catch (e) {
+      fail++;
+    }
+  }
+  btn.disabled = false;
+  await load();
+  const el = document.getElementById("error");
+  el.textContent = fail ? `Batch done: ${ok} approved, ${fail} failed.` : `Batch done: ${ok} approved.`;
+}
 </script>
 </body>
 </html>
