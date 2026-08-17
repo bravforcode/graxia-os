@@ -7,7 +7,8 @@ from ..approvals.escalation import escalate, replay_approved
 from ..channels.supplier_pod import SupplierPODAdapter
 from ..core.policy_engine import PolicyEngine
 from ..enums import ApprovalStatus, AutonomyMode, ProductStatus
-from ..models import Approval, Product
+from ..models import Approval, AuditLog, Product
+from ..services.approval_service import ApprovalService
 
 
 async def _product(db_session: AsyncSession, cost=3000) -> Product:
@@ -108,3 +109,27 @@ async def test_replay_denied_again_when_policy_still_blocks(db_session: AsyncSes
     approval = await escalate(db_session, "supplier_order", order.id, "Approve?", "x")
     result = await replay_approved(db_session, approval)
     assert result["status"] == "denied_again"
+
+
+@pytest.mark.asyncio
+async def test_approve_and_reject_write_audit_log(db_session: AsyncSession):
+    """P1-6: CEO decisions (money-moving) must be audited with decision+inputs+actions."""
+    import uuid
+    approval = await escalate(db_session, "supplier_order", uuid.uuid4(),
+                              "Approve supplier order", "margin below cap")
+
+    await ApprovalService.approve(db_session, approval.id, ceo_notes="OK, margin recovered")
+    log = await db_session.scalar(select(AuditLog).where(
+        AuditLog.event_type == "approval.approved"))
+    assert log is not None
+    assert log.object_id == approval.object_id
+    assert log.metadata_["approval_id"] == str(approval.id)
+    assert log.metadata_["ceo_notes"] == "OK, margin recovered"
+
+    approval2 = await escalate(db_session, "supplier_order", uuid.uuid4(),
+                               "Reject supplier order", "margin below cap")
+    await ApprovalService.reject(db_session, approval2.id, reason="too risky")
+    log2 = await db_session.scalar(select(AuditLog).where(
+        AuditLog.event_type == "approval.rejected"))
+    assert log2 is not None
+    assert log2.metadata_["reason"] == "too risky"

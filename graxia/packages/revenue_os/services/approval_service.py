@@ -11,7 +11,7 @@ from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import OperationalError, TimeoutError as SQLTimeoutError
 
-from ..models import Approval, AIDraft, EmailOutbox, ContentPost
+from ..models import Approval, AIDraft, AuditLog, EmailOutbox, ContentPost
 from ..enums import ApprovalStatus
 from ..constants import APPROVAL_DEFAULT_EXPIRY_HOURS
 from ..core.db_ops import atomic_operation
@@ -164,6 +164,21 @@ class ApprovalService:
                 approval.reviewed_at = datetime.utcnow()
                 approval.ceo_notes = ceo_notes
 
+                # P1-6: audit the money-moving decision (Stripe standard:
+                # decision + inputs + actions)
+                db.add(AuditLog(
+                    event_type="approval.approved",
+                    object_type=approval.object_type,
+                    object_id=approval.object_id,
+                    message=f"CEO approved {approval.object_type} {approval.object_id}",
+                    metadata_={
+                        "approval_id": str(approval.id),
+                        "requested_by_agent": approval.requested_by_agent,
+                        "title": approval.title,
+                        "ceo_notes": ceo_notes,
+                    },
+                ))
+
                 await db.commit()
 
                 logger.info(
@@ -225,6 +240,21 @@ class ApprovalService:
             approval.reviewed_at = datetime.utcnow()
             approval.reason = reason
             approval.ceo_notes = ceo_notes
+
+            # P1-6: audit the decision (decision + inputs + actions)
+            db.add(AuditLog(
+                event_type="approval.rejected",
+                object_type=approval.object_type,
+                object_id=approval.object_id,
+                message=f"CEO rejected {approval.object_type} {approval.object_id}",
+                metadata_={
+                    "approval_id": str(approval.id),
+                    "requested_by_agent": approval.requested_by_agent,
+                    "title": approval.title,
+                    "reason": reason,
+                    "ceo_notes": ceo_notes,
+                },
+            ))
 
             # Cancel associated email if exists
             email_result = await db.execute(
