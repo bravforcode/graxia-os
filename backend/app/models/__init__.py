@@ -27,6 +27,7 @@ from .openclaw_usage import OpenClawUsage
 from .opportunity import Opportunity
 from .orchestration import AgentMessage, AgentTask
 from .agent import Agent, AgentTeam, AgentSkill, AgentMarketplaceListing
+from .privacy import BreachNotification, PrivacyConsent
 from .skillsmp_skill import SkillsMPSkill
 from .workflow import (
     Workflow,
@@ -60,6 +61,10 @@ from .funnel import (
     LeadMagnet,
     ProductReview,
 )
+
+# Ensure the tamper-evident compliance audit table is registered with the
+# metadata (the module is otherwise imported by no one — it was dead code).
+import app.core.compliance_audit as _compliance_audit  # noqa: E402, F401
 
 __all__ = [
     "Base",
@@ -115,6 +120,8 @@ __all__ = [
     "AgentSkill",
     "AgentMarketplaceListing",
     "SkillsMPSkill",
+    "PrivacyConsent",
+    "BreachNotification",
     "Workflow",
     "WorkflowExecution",
     "WorkflowTrigger",

@@ -27,6 +27,7 @@ from app.api.obsidian import router as obsidian_router
 from app.api.opportunities import router as opportunities_router
 from app.api.orchestration import router as orchestration_router
 from app.api.outreach import router as outreach_router
+from app.api.privacy import router as privacy_router
 from app.api.runs import router as runs_router
 from app.api.scrapers import router as scrapers_router
 from app.api.skills import router as skills_router
@@ -81,6 +82,7 @@ api_router.include_router(
 api_router.include_router(email_threads_router)
 api_router.include_router(obsidian_router)
 api_router.include_router(outreach_router)
+api_router.include_router(privacy_router, prefix="/api/v1", tags=["privacy"])
 api_router.include_router(tasks_router)
 api_router.include_router(costs_router)
 api_router.include_router(events_router)
