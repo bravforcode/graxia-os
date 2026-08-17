@@ -62,7 +62,11 @@ _test_db_path = str(_project_root / "backend" / "tests" / f"test_{_test_db_id}.d
 os.environ["TESTING"] = "true"
 os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{_test_db_path}"
 os.environ["REDIS_ENABLED"] = "false"
-os.environ["REDIS_URL"] = "redis://localhost:6380/0"
+# Clear broker URLs so services that guard on them (e.g. funnel checkout's
+# abandoned-cart scheduling) skip apply_async instead of retrying a dead
+# Redis connection for ~100s per test.
+os.environ["REDIS_URL"] = ""
+os.environ["CELERY_BROKER_URL"] = ""
 
 import base64
 os.environ["APP_ENV"] = "testing"  # Bypass strict secret validation at module import time

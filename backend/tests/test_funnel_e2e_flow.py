@@ -212,6 +212,7 @@ class TestFunnelE2EFlow:
 
         with patch("app.api.funnel_webhooks.settings") as mock_settings:
             mock_settings.STRIPE_WEBHOOK_SECRET = stripe_webhook_secret
+            mock_settings.REVENUE_OS_WEBHOOK_URL = ""
             with patch("stripe.Webhook.construct_event") as mock_construct:
                 mock_construct.return_value = event_payload
                 webhook_res = await public_async_client.post(
@@ -336,6 +337,7 @@ class TestFunnelE2EFlow:
         with patch("stripe.Webhook.construct_event", return_value=event_payload):
             with patch("app.api.funnel_webhooks.settings") as s:
                 s.STRIPE_WEBHOOK_SECRET = "whsec_test"
+                s.REVENUE_OS_WEBHOOK_URL = ""
                 # Send twice
                 r1 = await public_async_client.post(
                     "/api/v1/funnel/webhooks/stripe",

@@ -13,6 +13,39 @@ from app.services.automation_email_service import AutomationEmailService
 router = APIRouter()
 logger = logging.getLogger("funnel.webhooks")
 
+
+async def _forward_to_revenue_os(raw_payload: bytes, signature: str) -> None:
+    """Best-effort forward of a raw Stripe webhook to Revenue OS.
+
+    Revenue OS re-validates the Stripe signature using the shared webhook
+    secret and records the order idempotently. Failures are logged and never
+    raise — the funnel webhook must keep working if Revenue OS is down.
+    """
+    url = (settings.REVENUE_OS_WEBHOOK_URL or "").strip()
+    if not url:
+        return
+    try:
+        import httpx
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                url,
+                content=raw_payload,
+                headers={
+                    "stripe-signature": signature,
+                    "content-type": "application/json",
+                },
+            )
+            if resp.status_code >= 400:
+                logger.warning(
+                    "Revenue OS forward failed: url=%s status=%s body=%s",
+                    url, resp.status_code, resp.text[:300],
+                )
+            else:
+                logger.info("Revenue OS forward ok: url=%s status=%s", url, resp.status_code)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Revenue OS forward error: %s", exc)
+
 async def get_order_service(db: AsyncSession = Depends(get_db)) -> FunnelOrderService:
     return FunnelOrderService(db)
 
@@ -54,6 +87,8 @@ async def stripe_funnel_webhook(
         order = await service.create_order_from_checkout_completed(data_object)
         if order:
             order_id = str(order.id)
+        # Forward to Revenue OS ops layer (best-effort, idempotent there).
+        await _forward_to_revenue_os(payload, sig)
 
     elif event_type == "checkout.session.expired":
         # Fire abandoned cart email immediately when Stripe confirms the session expired

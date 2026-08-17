@@ -265,6 +265,12 @@ class Settings(BaseSettings):
     STRIPE_PRICE_ENTERPRISE_MONTHLY: str = ""
     ALLOW_LIVE_STRIPE: bool = False
 
+    # Revenue OS bridge: forward Stripe webhook events to the ops layer.
+    # Empty = disabled. When set, the funnel webhook forwards the raw payload
+    # + original stripe-signature header (shared webhook secret) so Revenue OS
+    # records orders idempotently.
+    REVENUE_OS_WEBHOOK_URL: str = ""
+
     # Email
     RESEND_API_KEY: str = ""
     FROM_EMAIL: str = "Graxia <notifications@graxia.io>"
