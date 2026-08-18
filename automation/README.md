@@ -12,6 +12,28 @@ GitHub Actions (ฟรี, cron รายวัน)
        └─ meta_poster.py --ads   → สร้างแคมเปญ ads (PAUSED เสมอ = ไม่เสียเงิน)
 ```
 
+## FastWork Service Poster (`automation/fastwork_poster.py`)
+
+โพสต์บริการขายงาน dev ลง FastWork อัตโนมัติ (reverse-engineered จาก API จริง `api.fastwork.co` / `gateway.fastwork.co`)
+
+**Flow: generate → ตรวจ/อนุมัติ → โพสต์** (ไม่มีทางโพสต์โดยไม่ผ่านการอนุมัติ)
+
+| คำสั่ง | ผล |
+|---|---|
+| `python automation/fastwork_poster.py --generate` | สร้าง draft จาก `identity/projects.yaml` (เทมเพลต, $0) |
+| `python automation/fastwork_poster.py --generate --ai` | สร้าง draft ด้วย AI (ต้องมี OPENAI_API_KEY ที่ใช้ได้) |
+| `python automation/fastwork_poster.py --list` | ดู draft + สถานะ |
+| `python automation/fastwork_poster.py --approve <id>` | อนุมัติ draft (ขั้นตอนคนตรวจ) |
+| `python automation/fastwork_poster.py --verify` | ทดสอบ login + ดึงบริการของเรา |
+| `python automation/fastwork_poster.py --categories` | ดูหมวดย่อย dev ทั้งหมด (ต้อง login) |
+| `python automation/fastwork_poster.py --post <id> --dry-run` | ซ้อมโพสต์ (ไม่เรียก API จริง) |
+| `python automation/fastwork_poster.py --post <id>` | โพสต์จริง (draft ที่ approved เท่านั้น) |
+| `python automation/fastwork_poster.py --post --all-approved` | โพสต์ทุก draft ที่ approved |
+
+**Secrets (env):** `FASTWORK_EMAIL`, `FASTWORK_PASSWORD` (บังคับ), `OPENAI_API_KEY` (optional)
+
+**หมายเหตุ:** FastWork ไม่มี public API — ใช้ internal API ที่ reverse-engineer มา ถ้า FastWork เปลี่ยน API ต้องอัปเดต `fastwork_poster.py` (error จะบอกเอง)
+
 ## ทำงานอะไรบ้าง (ทุกวัน)
 
 | ขั้น | ผล | ต้องมี token ไหม |
