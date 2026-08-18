@@ -62,7 +62,7 @@
 | G1 | **Funnel เปิด** | legacy Vercel funnel + tier ใหม่ (subscription products), lead magnet ฿0 + auto-fulfillment ฿990 เดิมคงไว้ |
 | G2 | **Content engine รันรายวัน** | GitHub Actions cron 07:30 (มีอยู่แล้ว) — content_generator + meta_poster; theme: e-commerce ops, AI agent สำหรับ SME, case study |
 | G3 | **Warm lead outreach** | agents draft DM/email personalized ต่อราย (ใช้ข้อมูลร้าน + content), founder review + ส่ง (LINE/FB Messenger/email) — follow-up วันที่ 3 และ 7 |
-| G4 | **Lead tracking** | ใช้ leads router ที่มี: status flow `new → contacted → replied → demo → trial → paid → lost` + campaign_id |
+| G4 | **Lead tracking** | ใช้ leads router ที่มี + **ขยาย `LeadStatus` enum**: base เดิม `new → contacted → responded → qualified → proposal_sent → negotiating → converted → lost` → เพิ่ม `demo`/`trial`/`paid` (map `converted` → `paid` สำหรับ KPI) + campaign_id — state ใหม่จำเป็นเพราะ KPI หลักคือ lead→paid |
 | G5 | **Lead magnet nurture** | คนโหลด guide → auto-email → sequence 3 ฉบับ (agents draft, ส่งผ่านของที่มี) |
 | G6 | **Research target list** | agents หา 10–20 ร้านเป้าหมาย (Shopee/Lazada/TikTok sellers) สำหรับ cold outreach ใน P2 |
 
@@ -91,7 +91,7 @@
 | O1 | **Template bank** | เก็บ message variants ที่พิสูจน์แล้วใน P1 (reply rate สูงสุด) → 2–3 variants สำหรับ A/B test |
 | O2 | **Email outreach engine** | draft + send + follow-up sequence อัตโนมัติ, rate limit (max ~20/วัน/account), opt-out + PDPA |
 | O3 | **DM queue** | agents เตรียม draft ต่อราย → queue ในระบบ → founder approve batch → ส่งเอง (หรือผ่าน n8n ถ้ามี connector) |
-| O4 | **Lead scoring** | reply → demo → trial → paid; track conversion ต่อ template/ช่องทาง; ปรับอัตโนมัติ (template ที่แพ้ถูกถอด) |
+| O4 | **Lead scoring** | responded → demo → trial → paid (state จาก G4); track conversion ต่อ template/ช่องทาง; ปรับอัตโนมัติ (template ที่แพ้ถูกถอด) |
 | O5 | **Cold outreach** | ใช้ research list (G6) 10–20 ร้าน — เริ่ม email ก่อน, DM ตาม |
 
 **Exit gate P2:** engine รันจริง + cold leads ≥10 รายติดต่อ + ≥1 cold → demo + มี data conversion ต่อช่องทาง/template
@@ -136,7 +136,7 @@
 - Regression: coverage เดิม 73.9% (314+ tests) ต้องไม่ลดลง
 
 **Metrics (วัดทุกเฟส):**
-- Funnel: visitors → leads → trials → paid (conversion %)
+- Funnel: visitors → leads → trials → paid (conversion %) — trials/paid = state ที่ขยายใน G4
 - Outreach: sent → reply → demo → paid (ต่อช่องทาง/template)
 - Revenue: MRR, ARPU, churn, LTV → ลง CEO dashboard
 
