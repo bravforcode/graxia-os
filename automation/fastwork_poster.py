@@ -2,22 +2,23 @@
 FastWork service poster — post dev services (products) to FastWork automatically.
 
 Reverse-engineered from the public web app (api.fastwork.co / gateway.fastwork.co).
-Flow: generate drafts (AI or template) -> human approves -> script posts + submits.
+Flow: generate drafts (template, no AI key needed) -> human approves -> script posts + submits.
 
 Never posts anything without an explicit --post of an APPROVED draft.
 
-Credentials from the environment (never commit them):
-    FASTWORK_EMAIL      — FastWork account email
-    FASTWORK_PASSWORD   — FastWork account password
-    OPENAI_API_KEY      — optional, for AI-generated copy (template fallback if absent)
+Auth (no password needed — use the JWT from your browser):
+    FASTWORK_JWT        — paste from browser: fastwork.co -> DevTools Console ->
+                          localStorage.getItem('accessToken')  (run --jwt-help)
+    FASTWORK_EMAIL + FASTWORK_PASSWORD — fallback login (ถ้าหา JWT ไม่ได้)
 
 Usage:
-    python automation/fastwork_poster.py --generate          # create drafts (AI if key, else template)
+    python automation/fastwork_poster.py --generate          # create drafts (template, $0)
     python automation/fastwork_poster.py --list              # show drafts + status
     python automation/fastwork_poster.py --approve <id>      # mark a draft approved
     python automation/fastwork_poster.py --reject <id>       # mark a draft rejected
-    python automation/fastwork_poster.py --verify            # login + fetch my services (test creds)
-    python automation/fastwork_poster.py --categories        # list dev categories (auth required)
+    python automation/fastwork_poster.py --jwt-help          # how to get FASTWORK_JWT
+    python automation/fastwork_poster.py --verify            # test auth + fetch my services
+    python automation/fastwork_poster.py --categories        # list dev categories
     python automation/fastwork_poster.py --post <id> [--dry-run]
     python automation/fastwork_poster.py --post --all-approved [--dry-run]
 """
@@ -27,6 +28,11 @@ import os
 import sys
 import uuid
 from datetime import date, datetime
+
+# Windows console defaults to cp1252 — force UTF-8 so Thai output doesn't crash
+if sys.stdout.encoding and sys.stdout.encoding.lower() not in ("utf-8", "utf8"):
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
 from pathlib import Path
 
 import httpx
@@ -52,12 +58,17 @@ PROJECT_CATEGORY = {
 
 
 # ── auth ────────────────────────────────────────────────────────────────────
-def login() -> str:
-    """POST fastwork.co/api/login -> userJwt. Raises on failure."""
+def get_jwt() -> str:
+    """JWT from FASTWORK_JWT env, else login with email/password. Raises on failure."""
+    jwt = os.environ.get("FASTWORK_JWT", "").strip()
+    if jwt:
+        return jwt
     email = os.environ.get("FASTWORK_EMAIL", "")
     password = os.environ.get("FASTWORK_PASSWORD", "")
     if not email or not password:
-        raise SystemExit("FASTWORK_EMAIL / FASTWORK_PASSWORD not set")
+        raise SystemExit(
+            "no auth: set FASTWORK_JWT (run --jwt-help) or FASTWORK_EMAIL + FASTWORK_PASSWORD"
+        )
     r = httpx.post(f"{HOST}/api/login", json={"email": email, "password": password}, timeout=TIMEOUT)
     data = r.json()
     if not data.get("isLoggedIn") or not data.get("userJwt"):
@@ -168,7 +179,7 @@ def find_draft(drafts: list[dict], draft_id: str) -> dict:
     raise SystemExit(f"draft not found: {draft_id} (use --list)")
 
 
-# ── content generation ──────────────────────────────────────────────────────
+# ── content generation (template only — no AI key needed) ──────────────────
 def load_projects() -> list[dict]:
     import yaml
 
@@ -178,86 +189,79 @@ def load_projects() -> list[dict]:
     return yaml.safe_load(p.read_text(encoding="utf-8")).get("projects", [])
 
 
+# Thai service copy per project (title <= 60 chars, description ~150-250 chars).
+SERVICE_COPY = {
+    "Business Dashboard Automation": {
+        "title": "ทำระบบ Dashboard ธุรกิจอัตโนมัติ รายงานแบบ Real-time",
+        "description": (
+            "รับทำระบบ BI Dashboard อัตโนมัติสำหรับธุรกิจ SME และสตาร์ทอัพ "
+            "รวบรวมข้อมูลจากหลายแหล่ง (Excel, ฐานข้อมูล, API) เข้าสู่ระบบเดียว "
+            "ประมวลผล ETL อัตโนมัติ และแสดงผลเป็นกราฟแดชบอร์ดแบบเรียลไทม์ "
+            "แทนการทำรายงานด้วยมือที่ช้าและผิดพลาด — เจ้าของธุรกิจเห็นตัวเลข "
+            "ยอดขาย สต็อก และผลประกอบการได้ทันทีโดยไม่ต้องจ้างทีม data "
+            "เทคโนโลยี: Python, ETL, PostgreSQL, React, Power BI"
+        ),
+    },
+    "Testlyn — Hospital Management System": {
+        "title": "ทำระบบบริหารโรงพยาบาล/คลินิก ครบวงจร (HMS)",
+        "description": (
+            "รับพัฒนาระบบบริหารโรงพยาบาลและคลินิกแบบครบวงจร "
+            "จัดการเวชระเบียนผู้ป่วย การนัดหมาย พนักงาน และขั้นตอนการทำงาน "
+            "ทั้งหมดในระบบเดียว แทนที่กระดาษและสเปรดชีต "
+            "ลดความผิดพลาดของข้อมูล เพิ่มความเร็วในการให้บริการ "
+            "ออกแบบมาเพื่อคลินิกและโรงพยาบาลขนาดเล็กในไทยโดยเฉพาะ "
+            "เทคโนโลยี: React, Node.js, PostgreSQL, Docker, REST API"
+        ),
+    },
+    "Plexta — Auction Web Platform": {
+        "title": "ทำเว็บประมูลออนไลน์ Real-time ครบวงจร",
+        "description": (
+            "รับพัฒนาเว็บแพลตฟอร์มประมูลออนไลน์แบบเรียลไทม์ "
+            "ระบบประมูลสด (live bidding) การลงขายสินค้า การจัดการผู้ซื้อ-ผู้ขาย "
+            "ยืนยันตัวตน และการชำระเงิน ครบในแพลตฟอร์มเดียว "
+            "เหมาะสำหรับธุรกิจประมูลและตลาดซื้อขายของมือสองออนไลน์ "
+            "ไม่มีค่าธรรมเนียมบุคคลที่สาม ประสบการณ์ใช้งานลื่นไหลทั้งมือถือและคอม "
+            "เทคโนโลยี: React, Node.js, PostgreSQL, WebSockets, TailwindCSS"
+        ),
+    },
+    "API & System Integration": {
+        "title": "เชื่อมต่อ API ระหว่างระบบธุรกิจอัตโนมัติ",
+        "description": (
+            "รับทำระบบเชื่อมต่อ API ระหว่างระบบธุรกิจที่แยกกันอยู่ "
+            "ให้ข้อมูลไหลเวียนอัตโนมัติโดยไม่ต้องคีย์มือซ้ำ "
+            "เช่น ระบบขาย-สต็อก-บัญชี-CRM เชื่อมถึงกัน "
+            "ลดงาน manual ลดความผิดพลาด และรองรับการขยายระบบในอนาคต "
+            "ออกแบบสถาปัตยกรรมให้ยืดหยุ่น พร้อมเอกสารและโค้ดสะอาด "
+            "เทคโนโลยี: Node.js, Python, REST API, PostgreSQL, MongoDB"
+        ),
+    },
+}
+
+PACKAGES = [
+    {"name": "Basic", "price": 14900, "delivery_days": 7,
+     "description": "เริ่มต้น — งานตาม scope หลัก พร้อมแก้ไข 1 รอบ"},
+    {"name": "Standard", "price": 29900, "delivery_days": 14,
+     "description": "ยอดนิยม — ครบทุกฟีเจอร์ + แก้ไข 2 รอบ + ทดสอบระบบ"},
+    {"name": "Premium", "price": 59900, "delivery_days": 30,
+     "description": "เต็มรูปแบบ — ฟีเจอร์ทั้งหมด + deploy + สอนใช้งาน + support 30 วัน"},
+]
+
+
 def gen_templated() -> list[dict]:
-    """Deterministic template drafts (works without any API key)."""
-    now = datetime.now().isoformat(timespec="seconds")
-    drafts = []
-    for i, proj in enumerate(load_projects(), 1):
-        slug = PROJECT_CATEGORY.get(proj["name"], "web-development")
-        drafts.append(
-            {
-                "id": f"fw_{uuid.uuid4().hex[:6]}",
-                "project": proj["name"],
-                "category_slug": slug,
-                "title": proj["tagline"],
-                "description": proj["description"].strip(),
-                "packages": [
-                    {"name": "Basic", "price": 14900, "delivery_days": 7,
-                     "description": "เริ่มต้น — งานตาม scope หลัก พร้อมแก้ไข 1 รอบ"},
-                    {"name": "Standard", "price": 29900, "delivery_days": 14,
-                     "description": "ยอดนิยม — ครบทุกฟีเจอร์ + แก้ไข 2 รอบ + ทดสอบระบบ"},
-                    {"name": "Premium", "price": 59900, "delivery_days": 30,
-                     "description": "เต็มรูปแบบ — ฟีเจอร์ทั้งหมด + deploy + สอนใช้งาน + support 30 วัน"},
-                ],
-                "status": "pending",
-                "created_at": now,
-                "posted_at": None,
-                "product_id": None,
-                "subcategory_id": None,
-            }
-        )
-    return drafts
-
-
-def gen_with_ai() -> list[dict]:
-    """AI copy from identity/projects.yaml (requires OPENAI_API_KEY). Falls back to template."""
-    key = os.environ.get("OPENAI_API_KEY", "")
-    if not key:
-        return gen_templated()
+    """Deterministic Thai template drafts — works with $0, no API key."""
     now = datetime.now().isoformat(timespec="seconds")
     drafts = []
     for proj in load_projects():
         slug = PROJECT_CATEGORY.get(proj["name"], "web-development")
-        prompt = (
-            "คุณคือนักเขียนบริการบน FastWork (ตลาดฟรีแลนซ์ไทย) เขียนข้อมูลบริการขายงาน dev "
-            "จากโปรเจกต์นี้ (ตอบ JSON เท่านั้น ไม่มีข้อความอื่น):\n"
-            f"ชื่อโปรเจกต์: {proj['name']}\n"
-            f"tagline: {proj['tagline']}\n"
-            f"คำอธิบาย: {proj['description'].strip()}\n"
-            f"tech stack: {', '.join(proj.get('tech_stack', []))}\n"
-            "รูปแบบ JSON: "
-            '{"title": "ชื่อบริการ ภาษาไทย ไม่เกิน 60 ตัวอักษร", '
-            '"description": "คำอธิบายบริการ ภาษาไทย 150-250 คำ เน้นประโยชน์ต่อลูกค้า ไม่โฆษณาเกินจริง", '
-            '"packages": [{"name": "Basic", "price": 14900, "delivery_days": 7, "description": "..."}, '
-            '{"name": "Standard", "price": 29900, "delivery_days": 14, "description": "..."}, '
-            '{"name": "Premium", "price": 59900, "delivery_days": 30, "description": "..."}]} '
-            "ราคาเป็นสตางค์ (14900 = 149 บาท)"
-        )
-        try:
-            r = httpx.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers={"Authorization": f"Bearer {key}"},
-                json={"model": "gpt-4o-mini", "messages": [{"role": "user", "content": prompt}], "max_tokens": 1000},
-                timeout=60,
-            )
-            r.raise_for_status()
-            content = r.json()["choices"][0]["message"]["content"]
-            data = json.loads(content[content.find("{") : content.rfind("}") + 1])
-        except Exception as exc:  # noqa: BLE001
-            print(f"AI draft for '{proj['name']}' failed ({exc}) — using template")
-            data = None
-        if not data:
-            templated = gen_templated()
-            drafts.append(next(d for d in templated if d["project"] == proj["name"]))
-            continue
+        copy = SERVICE_COPY.get(proj["name"], {})
         drafts.append(
             {
                 "id": f"fw_{uuid.uuid4().hex[:6]}",
                 "project": proj["name"],
                 "category_slug": slug,
-                "title": data["title"],
-                "description": data["description"],
-                "packages": data.get("packages", []),
+                "title": copy.get("title", proj["tagline"]),
+                "description": copy.get("description", proj["description"].strip()),
+                "packages": [dict(p) for p in PACKAGES],
                 "status": "pending",
                 "created_at": now,
                 "posted_at": None,
@@ -292,9 +296,9 @@ def post_draft(jwt: str, draft: dict, dry_run: bool = False) -> dict:
     return {"ok": True, "product_id": product_id, "packages_response": pkgs, "submit_response": submitted}
 
 
-def cmd_generate(use_ai: bool) -> int:
+def cmd_generate() -> int:
     drafts = load_drafts()
-    new_drafts = gen_with_ai() if use_ai else gen_templated()
+    new_drafts = gen_templated()
     drafts.extend(new_drafts)
     save_drafts(drafts)
     print(f"Generated {len(new_drafts)} drafts -> {DRAFTS_FILE.relative_to(ROOT)}")
@@ -323,14 +327,14 @@ def cmd_set_status(draft_id: str, status: str) -> int:
 
 
 def cmd_verify() -> int:
-    jwt = login()
+    jwt = get_jwt()
     svc = get_my_services(jwt)
-    print(f"login OK. getMyServices -> {json.dumps(svc, ensure_ascii=False)[:500]}")
+    print(f"auth OK. getMyServices -> {json.dumps(svc, ensure_ascii=False)[:500]}")
     return 0
 
 
 def cmd_categories() -> int:
-    jwt = login()
+    jwt = get_jwt()
     subs = get_subcategories(jwt)
     print(f"{len(subs)} subcategories:")
     for s in subs:
@@ -338,8 +342,19 @@ def cmd_categories() -> int:
     return 0
 
 
+def cmd_jwt_help() -> int:
+    print("วิธีเอา FASTWORK_JWT (ไม่ต้องหารหัสผ่าน):")
+    print("  1. เปิด https://fastwork.co ใน Chrome แล้ว login (ถ้ายังไม่เข้า)")
+    print("  2. กด F12 (DevTools) -> แท็บ Console")
+    print("  3. พิมพ์:  localStorage.getItem('accessToken')  แล้วกด Enter")
+    print("  4. คัดลอกค่าที่ได้ (ขึ้นต้นด้วย eyJ...) ไปใส่ใน .env:")
+    print("     FASTWORK_JWT=eyJ...")
+    print("  หรือใช้ไฟล์ .env.local ใน repo นี้ก็ได้ (อย่า commit)")
+    return 0
+
+
 def cmd_post(draft_id: str | None, all_approved: bool, dry_run: bool) -> int:
-    jwt = login()
+    jwt = get_jwt()
     drafts = load_drafts()
     targets = []
     if all_approved:
@@ -371,20 +386,20 @@ def cmd_post(draft_id: str | None, all_approved: bool, dry_run: bool) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="FastWork service poster")
-    parser.add_argument("--generate", action="store_true", help="create drafts (AI if OPENAI_API_KEY, else template)")
-    parser.add_argument("--ai", action="store_true", help="use AI generation")
+    parser.add_argument("--generate", action="store_true", help="create drafts from templates (no AI needed)")
     parser.add_argument("--list", action="store_true", help="list drafts")
     parser.add_argument("--approve", metavar="ID", help="mark draft approved")
     parser.add_argument("--reject", metavar="ID", help="mark draft rejected")
-    parser.add_argument("--verify", action="store_true", help="login + fetch my services (test credentials)")
+    parser.add_argument("--verify", action="store_true", help="verify JWT + fetch my services (test credentials)")
     parser.add_argument("--categories", action="store_true", help="list dev subcategories (auth required)")
+    parser.add_argument("--jwt-help", action="store_true", help="how to get FASTWORK_JWT from browser")
     parser.add_argument("--post", metavar="ID", help="post one approved draft")
     parser.add_argument("--all-approved", action="store_true", help="post all approved drafts")
     parser.add_argument("--dry-run", action="store_true", help="print payloads without calling create API")
     args = parser.parse_args()
 
     if args.generate:
-        return cmd_generate(use_ai=args.ai)
+        return cmd_generate()
     if args.list:
         return cmd_list()
     if args.approve:
@@ -395,6 +410,8 @@ def main() -> int:
         return cmd_verify()
     if args.categories:
         return cmd_categories()
+    if args.jwt_help:
+        return cmd_jwt_help()
     if args.post or args.all_approved:
         return cmd_post(args.post, args.all_approved, args.dry_run)
     parser.print_help()

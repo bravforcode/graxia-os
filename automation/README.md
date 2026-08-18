@@ -20,17 +20,17 @@ GitHub Actions (ฟรี, cron รายวัน)
 
 | คำสั่ง | ผล |
 |---|---|
-| `python automation/fastwork_poster.py --generate` | สร้าง draft จาก `identity/projects.yaml` (เทมเพลต, $0) |
-| `python automation/fastwork_poster.py --generate --ai` | สร้าง draft ด้วย AI (ต้องมี OPENAI_API_KEY ที่ใช้ได้) |
+| `python automation/fastwork_poster.py --generate` | สร้าง draft จาก `identity/projects.yaml` (เทมเพลตไทย, $0 ไม่ต้องใช้ AI) |
 | `python automation/fastwork_poster.py --list` | ดู draft + สถานะ |
 | `python automation/fastwork_poster.py --approve <id>` | อนุมัติ draft (ขั้นตอนคนตรวจ) |
-| `python automation/fastwork_poster.py --verify` | ทดสอบ login + ดึงบริการของเรา |
-| `python automation/fastwork_poster.py --categories` | ดูหมวดย่อย dev ทั้งหมด (ต้อง login) |
+| `python automation/fastwork_poster.py --jwt-help` | วิธีเอา JWT จาก browser (ไม่ต้องหารหัสผ่าน) |
+| `python automation/fastwork_poster.py --verify` | ทดสอบ JWT + ดึงบริการของเรา |
+| `python automation/fastwork_poster.py --categories` | ดูหมวดย่อย dev ทั้งหมด (ต้อง auth) |
 | `python automation/fastwork_poster.py --post <id> --dry-run` | ซ้อมโพสต์ (ไม่เรียก API จริง) |
 | `python automation/fastwork_poster.py --post <id>` | โพสต์จริง (draft ที่ approved เท่านั้น) |
 | `python automation/fastwork_poster.py --post --all-approved` | โพสต์ทุก draft ที่ approved |
 
-**Secrets (env):** `FASTWORK_EMAIL`, `FASTWORK_PASSWORD` (บังคับ), `OPENAI_API_KEY` (optional)
+**Auth (ไม่ต้องใช้รหัสผ่าน):** เอา JWT จาก browser — เปิด fastwork.co → login → F12 → Console → `localStorage.getItem('accessToken')` → ใส่ค่าใน env `FASTWORK_JWT` (หรือรัน `--jwt-help` ดูขั้นตอนเต็ม) — fallback: `FASTWORK_EMAIL` + `FASTWORK_PASSWORD`
 
 **หมายเหตุ:** FastWork ไม่มี public API — ใช้ internal API ที่ reverse-engineer มา ถ้า FastWork เปลี่ยน API ต้องอัปเดต `fastwork_poster.py` (error จะบอกเอง)
 
