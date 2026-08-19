@@ -4,7 +4,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models import Customer, Subscription
-from ..services.billing_service import BillingService, stripe_billing_portal, stripe_subscriptions
+from ..services.billing_service import (
+    BillingService,
+    PLAN_PRICES_CENTS,
+    stripe_billing_portal,
+    stripe_subscriptions,
+)
 
 
 class _FakeSubscription:
@@ -23,15 +28,15 @@ async def test_create_subscription_success(db_session: AsyncSession, monkeypatch
     monkeypatch.setattr(stripe_subscriptions, "create", fake_create)
 
     sub = await BillingService.create_subscription(
-        db_session, "buyer@example.com", "standard"
+        db_session, "buyer@example.com", "starter"
     )
-    assert sub.plan == "standard"
+    assert sub.plan == "starter"
     assert sub.status == "active"
-    assert sub.price_cents == 490_000
+    assert sub.price_cents == 49_900
     assert sub.stripe_subscription_id == "sub_test_123"
     # Stripe call carries THB price + plan metadata
-    assert captured["items"][0]["price_data"]["unit_amount"] == 490_000
-    assert captured["metadata"]["plan"] == "standard"
+    assert captured["items"][0]["price_data"]["unit_amount"] == 49_900
+    assert captured["metadata"]["plan"] == "starter"
 
 
 @pytest.mark.asyncio
@@ -44,8 +49,8 @@ async def test_create_subscription_idempotent(db_session: AsyncSession, monkeypa
 
     monkeypatch.setattr(stripe_subscriptions, "create", fake_create)
 
-    await BillingService.create_subscription(db_session, "buyer@example.com", "standard")
-    again = await BillingService.create_subscription(db_session, "buyer@example.com", "standard")
+    await BillingService.create_subscription(db_session, "buyer@example.com", "starter")
+    again = await BillingService.create_subscription(db_session, "buyer@example.com", "starter")
     assert len(calls) == 1  # second call reuses active row, no Stripe call
     assert again.status == "active"
 
@@ -71,7 +76,7 @@ async def test_cancel_subscription(db_session: AsyncSession, monkeypatch):
     monkeypatch.setattr(stripe_subscriptions, "cancel", fake_cancel)
 
     sub = await BillingService.create_subscription(
-        db_session, "buyer@example.com", "enterprise"
+        db_session, "buyer@example.com", "starter"
     )
     await BillingService.cancel_subscription(db_session, sub.id)
     assert cancelled == ["sub_test_123"]
@@ -87,7 +92,7 @@ async def test_handle_subscription_deleted_webhook(db_session: AsyncSession, mon
     monkeypatch.setattr(stripe_subscriptions, "create", fake_create)
 
     sub = await BillingService.create_subscription(
-        db_session, "buyer@example.com", "standard"
+        db_session, "buyer@example.com", "starter"
     )
     updated = await BillingService.handle_subscription_deleted(
         db_session, {"id": "sub_webhook_1"}
@@ -141,3 +146,27 @@ async def test_create_portal_session_returns_url(db_session: AsyncSession, monke
 async def test_create_portal_session_no_customer_raises(db_session: AsyncSession):
     with pytest.raises(ValueError):
         await BillingService.create_portal_session(db_session, "nobody@example.com")
+
+
+def test_plan_prices_match_pricing_doc():
+    assert PLAN_PRICES_CENTS == {"starter": 49_900, "growth": 149_000, "scale": 490_000}
+
+
+@pytest.mark.asyncio
+async def test_create_subscription_starter_price(db_session: AsyncSession, monkeypatch):
+    from ..services.billing_service import stripe_subscriptions
+
+    class _FakeSub:
+        id = "sub_test_starter"
+
+    monkeypatch.setattr(stripe_subscriptions, "create", lambda **kwargs: _FakeSub())
+
+    sub = await BillingService.create_subscription(db_session, "buyer@example.com", "starter")
+    assert sub.plan == "starter"
+    assert sub.price_cents == 49_900
+
+
+@pytest.mark.asyncio
+async def test_create_subscription_unknown_plan_raises(db_session: AsyncSession):
+    with pytest.raises(ValueError):
+        await BillingService.create_subscription(db_session, "buyer@example.com", "standard")

@@ -13,7 +13,7 @@ router = APIRouter()
 
 class SubscriptionCreateRequest(BaseModel):
     customer_email: EmailStr
-    plan: str = Field(..., pattern="^(standard|enterprise)$")
+    plan: str = Field(..., pattern="^(starter|growth|scale)$")
 
 
 class SubscriptionResponse(BaseModel):

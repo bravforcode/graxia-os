@@ -23,10 +23,12 @@ logger = structlog.get_logger()
 stripe_subscriptions = stripe.Subscription  # monkeypatch target for tests
 stripe_billing_portal = stripe.billing_portal.Session  # monkeypatch target for tests
 
-# THB cents — matches seed pricing (docs/investor/01-pitch-deck.md)
+# THB cents — matches pricing strategy (docs/strategy/2026-08-17-pricing-strategy.md)
 PLAN_PRICES_CENTS: dict[str, int] = {
-    "standard": 490_000,    # 4,900 THB/mo
-    "enterprise": 1_990_000,  # 19,900 THB/mo
+    "starter": 49_900,    # 499 THB/mo
+    "growth": 149_000,    # 1,490 THB/mo
+    "scale": 490_000,     # 4,900 THB/mo
+    # enterprise = custom quote / % uplift (sales-led, not self-serve)
 }
 
 
