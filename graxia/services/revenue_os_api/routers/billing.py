@@ -49,3 +49,27 @@ async def create_subscription(
         price_cents=sub.price_cents,
         currency=sub.currency,
     )
+
+
+class PortalSessionRequest(BaseModel):
+    customer_email: EmailStr
+
+
+class PortalSessionResponse(BaseModel):
+    url: str
+
+
+@router.post(
+    "/portal-session",
+    response_model=PortalSessionResponse,
+    summary="Create Stripe billing portal session",
+)
+async def create_portal_session(
+    payload: PortalSessionRequest,
+    db: AsyncSession = Depends(get_db),
+) -> PortalSessionResponse:
+    try:
+        url = await BillingService.create_portal_session(db, payload.customer_email)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return PortalSessionResponse(url=url)

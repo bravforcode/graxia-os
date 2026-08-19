@@ -3,8 +3,8 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..models import Subscription
-from ..services.billing_service import BillingService, stripe_subscriptions
+from ..models import Customer, Subscription
+from ..services.billing_service import BillingService, stripe_billing_portal, stripe_subscriptions
 
 
 class _FakeSubscription:
@@ -98,3 +98,46 @@ async def test_handle_subscription_deleted_webhook(db_session: AsyncSession, mon
     # Unknown subscription id → no-op
     none = await BillingService.handle_subscription_deleted(db_session, {"id": "nope"})
     assert none is None
+
+
+@pytest.mark.asyncio
+async def test_handle_subscription_created_creates_mirror_row(db_session: AsyncSession):
+    stripe_sub = {
+        "id": "sub_test_1",
+        "metadata": {"plan": "starter", "customer_email": "buyer@example.com"},
+        "items": {"data": [{"price": {"unit_amount": 49900}}]},
+    }
+    sub = await BillingService.handle_subscription_created(db_session, stripe_sub)
+    assert sub is not None
+    assert sub.plan == "starter"
+    assert sub.price_cents == 49900
+    assert sub.status == "active"
+
+    # Idempotent: same event again returns the same row, no duplicate
+    sub2 = await BillingService.handle_subscription_created(db_session, stripe_sub)
+    rows = (await db_session.execute(
+        select(Subscription).where(Subscription.stripe_subscription_id == "sub_test_1")
+    )).scalars().all()
+    assert len(rows) == 1
+    assert sub2.id == sub.id
+
+
+@pytest.mark.asyncio
+async def test_create_portal_session_returns_url(db_session: AsyncSession, monkeypatch):
+    customer = Customer(email="buyer@example.com", name="Buyer", stripe_customer_id="cus_test_1")
+    db_session.add(customer)
+    await db_session.flush()
+
+    class _FakePortalSession:
+        url = "https://billing.stripe.com/session/test"
+
+    monkeypatch.setattr(stripe_billing_portal, "create", lambda **kwargs: _FakePortalSession())
+
+    url = await BillingService.create_portal_session(db_session, "buyer@example.com")
+    assert url == "https://billing.stripe.com/session/test"
+
+
+@pytest.mark.asyncio
+async def test_create_portal_session_no_customer_raises(db_session: AsyncSession):
+    with pytest.raises(ValueError):
+        await BillingService.create_portal_session(db_session, "nobody@example.com")

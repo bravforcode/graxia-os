@@ -178,6 +178,11 @@ async def stripe_webhook(
             await BillingService.handle_subscription_deleted(db, event["data"]["object"])
             logger.info("customer.subscription.deleted processed")
 
+        elif event_type == "customer.subscription.created":
+            from ....packages.revenue_os.services.billing_service import BillingService
+            await BillingService.handle_subscription_created(db, event["data"]["object"])
+            logger.info("customer.subscription.created processed")
+
         else:
             logger.debug("Unhandled Stripe event type: %s", event_type)
 

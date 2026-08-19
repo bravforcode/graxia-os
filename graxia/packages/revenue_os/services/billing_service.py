@@ -21,6 +21,7 @@ from ..models import Customer, Subscription
 logger = structlog.get_logger()
 
 stripe_subscriptions = stripe.Subscription  # monkeypatch target for tests
+stripe_billing_portal = stripe.billing_portal.Session  # monkeypatch target for tests
 
 # THB cents — matches seed pricing (docs/investor/01-pitch-deck.md)
 PLAN_PRICES_CENTS: dict[str, int] = {
@@ -126,3 +127,45 @@ class BillingService:
         await db.commit()
         logger.info("subscription_deleted_webhook", stripe_subscription_id=sid)
         return sub
+
+    @staticmethod
+    async def handle_subscription_created(db: AsyncSession, stripe_sub: dict) -> Optional[Subscription]:
+        """Webhook: customer.subscription.created → mirror row (idempotent)."""
+        sid = stripe_sub.get("id")
+        if not sid:
+            return None
+        existing = await db.scalar(
+            select(Subscription).where(Subscription.stripe_subscription_id == sid)
+        )
+        if existing:
+            return existing
+        metadata = stripe_sub.get("metadata", {}) or {}
+        items = stripe_sub.get("items", {}).get("data", []) or []
+        price_cents = 0
+        if items:
+            price_cents = items[0].get("price", {}).get("unit_amount") or 0
+        sub = Subscription(
+            customer_email=metadata.get("customer_email") or "",
+            plan=metadata.get("plan") or "starter",
+            status="active",
+            stripe_subscription_id=sid,
+            price_cents=price_cents,
+            currency="THB",
+            current_period_end=datetime.utcnow(),
+        )
+        db.add(sub)
+        await db.commit()
+        logger.info("subscription_created_webhook", stripe_subscription_id=sid)
+        return sub
+
+    @staticmethod
+    async def create_portal_session(db: AsyncSession, customer_email: str) -> str:
+        """Create a Stripe billing portal session URL for a customer."""
+        customer = await db.scalar(
+            select(Customer).where(Customer.email == customer_email)
+        )
+        if customer is None or not customer.stripe_customer_id:
+            raise ValueError(f"no Stripe customer for {customer_email}")
+        stripe.api_key = _get_stripe_secret_key()
+        session = stripe_billing_portal.create(customer=customer.stripe_customer_id)
+        return session.url
