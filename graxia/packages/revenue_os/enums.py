@@ -49,6 +49,9 @@ class LeadStatus(StrEnum):
     NEGOTIATING = "negotiating"
     CONVERTED = "converted"
     LOST = "lost"
+    DEMO = "demo"
+    TRIAL = "trial"
+    PAID = "paid"
 
 
 class ContentStatus(StrEnum):
