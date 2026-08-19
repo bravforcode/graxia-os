@@ -61,6 +61,29 @@ services:
     healthCheckPath: /health
     autoDeploy: true
 
+  # ── Revenue OS API (money path — Stripe webhook target) ────────────────
+  - type: web
+    name: graxia-revenue-os
+    runtime: docker
+    repo: https://github.com/bravforcode/graxia-os.git
+    branch: main
+    dockerfilePath: ./Dockerfile.revenue-os
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: graxia-db
+          property: connectionString
+      - { key: APP_ENV, value: production }
+      - { key: REQUIRE_SUPABASE, value: "false" }
+      - { key: ALLOWED_ORIGINS, value: "https://graxia-os-funnel.vercel.app" }
+      - { key: RATE_LIMIT_RPM, value: "60" }
+      # Manual env vars (fill in Render dashboard)
+      - { key: STRIPE_SECRET_KEY, sync: false }
+      - { key: STRIPE_WEBHOOK_SECRET, sync: false }
+      - { key: ADMIN_API_KEY, sync: false }
+    healthCheckPath: /api/system/readiness
+    autoDeploy: true
+
   # ── Celery Workers + Beat ───────────────────────────────────────────
   - type: worker
     name: graxia-worker-default

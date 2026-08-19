@@ -24,6 +24,11 @@ from ....packages.revenue_os.schemas import (
 )
 from ....packages.revenue_os.services.order_service import OrderService
 from ....packages.revenue_os.services.webhook_processor import WebhookProcessor
+from ....packages.revenue_os.services.kill_switch import (
+    MoneyKillSwitch,
+    MoneyKillSwitchError,
+    ensure_money_ops_allowed,
+)
 from ..dependencies import require_stripe_hmac
 
 router = APIRouter()
@@ -60,6 +65,11 @@ async def create_checkout_session(
       2. Amount/currency come from the DB product — never from the client
       3. metadata.product_id is set so the webhook can create the order idempotently
     """
+    try:
+        ensure_money_ops_allowed()
+    except MoneyKillSwitchError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
     product = await db.get(Product, payload.product_id)
     if product is None:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -70,21 +80,24 @@ async def create_checkout_session(
 
     stripe.api_key = _get_stripe_secret_key()
     try:
+        if product.stripe_price_id:
+            line_items = [{"price": product.stripe_price_id, "quantity": 1}]
+        else:
+            price_data = {
+                "currency": (product.currency or "THB").lower(),
+                "unit_amount": product.price_cents,
+                "product_data": {"name": product.name},
+            }
+            if payload.mode == "subscription":
+                price_data["recurring"] = {"interval": "month"}
+            line_items = [{"price_data": price_data, "quantity": 1}]
+
         session = stripe_checkout.create(
-            mode="payment",
+            mode=payload.mode,
             success_url=payload.success_url,
             cancel_url=payload.cancel_url,
-            line_items=[
-                {
-                    "price_data": {
-                        "currency": (product.currency or "THB").lower(),
-                        "unit_amount": product.price_cents,
-                        "product_data": {"name": product.name},
-                    },
-                    "quantity": 1,
-                }
-            ],
-            metadata={"product_id": str(product.id)},
+            line_items=line_items,
+            metadata={"product_id": str(product.id), "mode": payload.mode},
             customer_email=payload.customer_email,
         )
     except stripe.error.StripeError as exc:
@@ -174,6 +187,11 @@ async def stripe_webhook(
             from ....packages.revenue_os.services.billing_service import BillingService
             await BillingService.handle_subscription_deleted(db, event["data"]["object"])
             logger.info("customer.subscription.deleted processed")
+
+        elif event_type == "customer.subscription.created":
+            from ....packages.revenue_os.services.billing_service import BillingService
+            await BillingService.handle_subscription_created(db, event["data"]["object"])
+            logger.info("customer.subscription.created processed")
 
         else:
             logger.debug("Unhandled Stripe event type: %s", event_type)

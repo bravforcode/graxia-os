@@ -15,6 +15,7 @@ import stripe
 from datetime import datetime
 from ..enums import IncidentSeverity, RefundStatus
 from ..models import IncidentEvent, Order, Refund
+from ..services.kill_switch import ensure_money_ops_allowed
 
 logger = structlog.get_logger()
 
@@ -24,6 +25,7 @@ stripe_refunds = stripe.Refund  # monkeypatch target for tests
 class RefundExecutor:
     @staticmethod
     async def process_pending_refunds(db: AsyncSession) -> dict:
+        ensure_money_ops_allowed()
         result = await db.execute(
             select(Refund).where(Refund.status == RefundStatus.PROCESSING).order_by(Refund.created_at)
         )
