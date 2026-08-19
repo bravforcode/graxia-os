@@ -24,6 +24,11 @@ from ....packages.revenue_os.schemas import (
 )
 from ....packages.revenue_os.services.order_service import OrderService
 from ....packages.revenue_os.services.webhook_processor import WebhookProcessor
+from ....packages.revenue_os.services.kill_switch import (
+    MoneyKillSwitch,
+    MoneyKillSwitchError,
+    ensure_money_ops_allowed,
+)
 from ..dependencies import require_stripe_hmac
 
 router = APIRouter()
@@ -60,6 +65,11 @@ async def create_checkout_session(
       2. Amount/currency come from the DB product — never from the client
       3. metadata.product_id is set so the webhook can create the order idempotently
     """
+    try:
+        ensure_money_ops_allowed()
+    except MoneyKillSwitchError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
     product = await db.get(Product, payload.product_id)
     if product is None:
         raise HTTPException(status_code=404, detail="Product not found")

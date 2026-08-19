@@ -17,6 +17,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models import Customer, Subscription
+from ..services.kill_switch import ensure_money_ops_allowed
 
 logger = structlog.get_logger()
 
@@ -50,6 +51,7 @@ class BillingService:
         trial_days: int = 14,
     ) -> Subscription:
         """Create a Stripe subscription + local mirror row. Idempotent per customer."""
+        ensure_money_ops_allowed()
         if plan not in PLAN_PRICES_CENTS:
             raise ValueError(f"unknown plan '{plan}' (valid: {list(PLAN_PRICES_CENTS)})")
 
@@ -98,6 +100,7 @@ class BillingService:
 
     @staticmethod
     async def cancel_subscription(db: AsyncSession, subscription_id: UUID) -> Subscription:
+        ensure_money_ops_allowed()
         sub = await db.get(Subscription, subscription_id)
         if sub is None:
             raise ValueError(f"Subscription {subscription_id} not found")
