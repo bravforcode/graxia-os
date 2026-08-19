@@ -70,6 +70,7 @@ PRODUCTS = [
         promise="1 channel, orders, fulfillment, basic email, 1 user",
         target_audience="SMB <1M THB/yr",
         deliverables="ซอฟต์แวร์ + onboarding 2 สัปดาห์",
+        stripe_price_id="",  # set via SQL after Stripe dashboard creation (runbook)
     ),
     dict(
         name="Revenue OS Growth",
@@ -79,6 +80,7 @@ PRODUCTS = [
         promise="All channels, campaigns, approvals, AI ops agent, 5 users",
         target_audience="SMB 1-5M THB/yr",
         deliverables="ซอฟต์แวร์ + onboarding 2 สัปดาห์",
+        stripe_price_id="",  # set via SQL after Stripe dashboard creation (runbook)
     ),
     dict(
         name="Revenue OS Scale",
@@ -88,6 +90,7 @@ PRODUCTS = [
         promise="Everything + SLA 99.5% + onboarding + premium support",
         target_audience="Mid-market 5-20M THB/yr",
         deliverables="ซอฟต์แวร์ + onboarding 1 เดือน + SLA 99.5%",
+        stripe_price_id="",  # set via SQL after Stripe dashboard creation (runbook)
     ),
     dict(
         name="Revenue OS Enterprise (Custom Quote)",
@@ -97,6 +100,7 @@ PRODUCTS = [
         promise="Full stack, dedicated ops, SLA 99.9%, % uplift model",
         target_audience="20M+ THB/yr",
         deliverables="Full stack + ทีมดูแลเฉพาะ + SLA 99.9%",
+        stripe_price_id="",  # sales-led — no self-serve Price ID
     ),
     dict(
         name="Consulting: Revenue Audit",
