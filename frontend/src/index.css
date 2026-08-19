@@ -6,26 +6,27 @@
 
 @layer base {
   :root {
-    --background: 0 0% 0%; /* #000 */
-    --foreground: 0 0% 100%;
-    --border: 240 3.7% 15.9%; /* zinc-800 */
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --primary: 0 0% 100%;
-    --primary-foreground: 0 0% 0%;
+    --background: 250 45% 97%; /* light violet #F5F4FA */
+    --foreground: 255 30% 17%; /* violet-black #211D35 */
+    --border: 248 40% 91%; /* lavender #E2DEF2 */
+    --muted: 248 40% 91%;
+    --muted-foreground: 248 15% 47%;
+    --primary: 255 30% 17%;
+    --primary-foreground: 250 45% 97%;
   }
 
   html {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    color-scheme: dark;
+    color-scheme: light;
     min-height: 100%;
   }
 
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    font-family: 'Inter', system-ui, sans-serif;
+    /* TH glyphs fall back to Sarabun; display faces (Bricolage→Prompt) via font-display */
+    font-family: 'Inter', 'Sarabun', system-ui, sans-serif;
     min-height: 100vh;
     @apply antialiased;
   }
@@ -74,5 +75,446 @@
   .skip-link:focus-visible {
     transform: translateY(0);
     outline: none;
+  }
+
+  /* ── Storefront craft utilities (evidence-based upgrades) ─────────────── */
+
+  /* COSS-style 1px edge lighting: white top edge + dark bottom edge (light from above) */
+  .edge-light {
+    position: relative;
+  }
+  .edge-light::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow:
+      0 -1px 0 rgba(255, 255, 255, 0.08),
+      0 1px 0 rgba(0, 0, 0, 0.6);
+  }
+
+  /* MagicUI rainbow glow button: dark fill layered over animated 5-color gradient border + blur halo */
+  .btn-rainbow {
+    position: relative;
+    border: 0;
+    background:
+      linear-gradient(#0a0a0a, #0a0a0a) padding-box,
+      linear-gradient(90deg, #6366f1, #a855f7, #06b6d4, #ec4899, #6366f1) border-box;
+    background-size: 200% 100%;
+    border: 1px solid transparent;
+    animation: rainbowBorder 6s linear infinite;
+  }
+  .btn-rainbow::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #6366f1, #a855f7, #06b6d4, #ec4899, #6366f1);
+    background-size: 200% 100%;
+    filter: blur(14px);
+    opacity: 0.35;
+    animation: rainbowBorder 6s linear infinite;
+  }
+  @keyframes rainbowBorder {
+    to { background-position: -200% 0; }
+  }
+
+  /* Shine sweep overlay for CTAs (pure CSS, zero DOM) */
+  .btn-shine {
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-shine::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 40%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+    transform: translateX(-120%);
+    animation: shine 2.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes shine {
+    0% { transform: translateX(-120%); }
+    60%, 100% { transform: translateX(320%); }
+  }
+
+  /* Brand gradient text (identity: indigo → purple → cyan) */
+  .text-gradient-brand {
+    background: linear-gradient(90deg, #818cf8, #c084fc, #22d3ee);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* ── Marquee band (evidence: MagicUI `animate-marquee` + Aceternity `marquee 100s`) ── */
+  .marquee-band {
+    display: flex;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent);
+    mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent);
+  }
+  .marquee-band__track {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 2.5rem;
+    padding-right: 2.5rem;
+    animation: marquee var(--marquee-duration, 40s) linear infinite;
+  }
+
+  /* ── Cursor-following card spotlight (evidence: Aceternity Card Spotlight — radial follows pointer) ── */
+  .card-spotlight {
+    position: relative;
+  }
+  .card-spotlight::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    background: radial-gradient(
+      400px circle at var(--mx, 50%) var(--my, 0%),
+      rgba(158, 122, 255, 0.10),
+      transparent 65%
+    );
+  }
+  .card-spotlight:hover::after {
+    opacity: 1;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   WARM CREAM THEME — โทนอบอุ่น ครีม สบายตา
+   Utility overrides: later in the cascade, wins over Tailwind utilities.
+   Palette: cream #F7F2EA · sand #E4DACA · coffee #2B2620 · amber→orange→rose
+   ═══════════════════════════════════════════════════════════════════════════ */
+@layer utilities {
+  /* ── Surfaces ── */
+  .bg-slate-950 { background-color: #f5f4fa; }
+  .bg-slate-950\/80 { background-color: rgba(245, 244, 250, 0.92); }
+  .bg-slate-950\/90 { background-color: rgba(245, 244, 250, 0.97); }
+  .bg-slate-900 { background-color: #fbfaff; }
+  .bg-slate-900\/10 { background-color: rgba(251, 250, 255, 0.12); }
+  .bg-slate-900\/20 { background-color: rgba(251, 250, 255, 0.6); }
+  .bg-slate-900\/30 { background-color: rgba(251, 250, 255, 0.8); }
+  .bg-slate-900\/40 { background-color: rgba(251, 250, 255, 0.9); }
+  .bg-slate-900\/60 { background-color: rgba(248, 247, 253, 0.97); }
+  .bg-slate-900\/90 { background-color: rgba(248, 247, 253, 0.98); }
+  .bg-slate-800 { background-color: #eae6f5; }
+  .bg-slate-800\/50 { background-color: rgba(234, 230, 245, 0.65); }
+  .bg-slate-800\/60 { background-color: rgba(234, 230, 245, 0.75); }
+  .bg-slate-800\/80 { background-color: rgba(234, 230, 245, 0.9); }
+  .bg-slate-700 { background-color: #dfd9f0; }
+  .bg-slate-700\/50 { background-color: rgba(223, 217, 240, 0.65); }
+  .bg-white\/\[0\.02\] { background-color: rgba(33, 29, 53, 0.02); }
+
+  /* ── Text ── */
+  .text-slate-950 { color: #f5f4fa; }
+  .text-slate-100 { color: #211d35; }
+  .text-slate-200 { color: #332c4d; }
+  .text-slate-300 { color: #4c4568; }
+  .text-slate-400 { color: #6e6a85; }
+  .text-slate-500 { color: #8f8aa6; }
+  .text-white { color: #211d35; }
+
+  /* ── Borders ── */
+  .border-slate-800 { border-color: #e2def2; }
+  .border-slate-800\/50 { border-color: rgba(226, 222, 242, 0.85); }
+  .border-slate-800\/60 { border-color: rgba(226, 222, 242, 0.95); }
+  .border-slate-700 { border-color: #dbd6ee; }
+  .border-slate-700\/50 { border-color: rgba(219, 214, 238, 0.85); }
+  .border-white\/\[0\.08\] { border-color: rgba(226, 222, 242, 0.95); }
+  .border-white\/\[0\.18\] { border-color: rgba(214, 148, 66, 0.5); }
+  .border-white\/10 { border-color: rgba(226, 222, 242, 0.95); }
+  .border-white\/20 { border-color: rgba(226, 222, 242, 1); }
+  .border-white\/\[0\.06\] { border-color: rgba(33, 29, 53, 0.08); }
+
+  /* ── Accents: indigo → amber, purple → orange, cyan → gold ── */
+  .bg-indigo-500 { background-color: #d97706; }
+  .hover\:bg-indigo-500:hover { background-color: #d97706; }
+  .hover\:bg-indigo-600:hover { background-color: #b45309; }
+  .group-hover\:bg-indigo-500:hover { background-color: #d97706; }
+  .bg-indigo-500\/10 { background-color: rgba(217, 119, 6, 0.12); }
+  .bg-indigo-500\/90 { background-color: rgba(217, 119, 6, 0.92); }
+  .bg-indigo-500\/5 { background-color: rgba(217, 119, 6, 0.06); }
+  .text-indigo-300 { color: #b45309; }
+  .text-indigo-400 { color: #d97706; }
+  .group-hover\:text-indigo-300:hover { color: #b45309; }
+  .border-indigo-500\/20 { border-color: rgba(217, 119, 6, 0.25); }
+  .border-indigo-500\/30 { border-color: rgba(217, 119, 6, 0.35); }
+  .bg-purple-500 { background-color: #ea580c; }
+  .bg-cyan-500 { background-color: #d4a017; }
+  .bg-cyan-500\/4 { background-color: rgba(212, 160, 23, 0.05); }
+  .bg-emerald-500 { background-color: #2f7d5b; }
+  .bg-emerald-500\/10 { background-color: rgba(47, 125, 91, 0.12); }
+  .border-emerald-500\/20 { border-color: rgba(47, 125, 91, 0.25); }
+  .text-emerald-400 { color: #2f7d5b; }
+  .text-emerald-500 { color: #2f7d5b; }
+  .text-emerald-500\/60 { color: rgba(47, 125, 91, 0.6); }
+  .bg-slate-950\/70 { background-color: rgba(245, 244, 250, 0.88); }
+
+  /* ── Gradient stops (Tailwind v3 vars) ── */
+  .from-white { --tw-gradient-from: #3b342b; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-to)); }
+  .via-white { --tw-gradient-via: #3b342b; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-to)); }
+  .to-slate-400 { --tw-gradient-to: #948a79; }
+  .from-indigo-400 { --tw-gradient-from: #f59e0b; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-to)); }
+  .via-purple-400 { --tw-gradient-via: #ea580c; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-to)); }
+  .to-cyan-400 { --tw-gradient-to: #d4a017; }
+  .from-indigo-500 { --tw-gradient-from: #d97706; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-to)); }
+  .to-purple-600 { --tw-gradient-to: #c2410c; }
+  .hover\:from-indigo-600:hover { --tw-gradient-from: #b45309; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-to)); }
+  .hover\:to-purple-700:hover { --tw-gradient-to: #9a3412; }
+  .from-violet-500 { --tw-gradient-from: #ea580c; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-to)); }
+  .from-indigo-500\/10 { --tw-gradient-from: rgba(217, 119, 6, 0.1); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-to)); }
+  .via-purple-500\/5 { --tw-gradient-via: rgba(234, 88, 12, 0.05); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-to)); }
+  .to-cyan-500\/10 { --tw-gradient-to: rgba(212, 160, 23, 0.1); }
+
+  /* ── Warm glow shadows ── */
+  .shadow-glow-sm { box-shadow: 0 0 15px rgba(217, 119, 6, 0.18); }
+  .shadow-glow-md { box-shadow: 0 0 30px rgba(217, 119, 6, 0.25); }
+  .shadow-glow-lg { box-shadow: 0 0 60px rgba(217, 119, 6, 0.32); }
+  .shadow-glow-cyan { box-shadow: 0 0 30px rgba(212, 160, 23, 0.25); }
+  .shadow-glow-emerald { box-shadow: 0 0 30px rgba(47, 125, 91, 0.25); }
+  .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(107, 82, 51, 0.25), 0 18px 40px -18px rgba(107, 82, 51, 0.15); }
+
+  /* ── Focus / selection ── */
+  .focus\:border-indigo-500:focus { border-color: #d97706; }
+  .focus\:ring-indigo-500\/20:focus { --tw-ring-color: rgba(217, 119, 6, 0.2); }
+  .hover\:border-indigo-500\/30:hover { border-color: rgba(217, 119, 6, 0.35); }
+  .text-indigo-400\/60 { color: rgba(217, 119, 6, 0.6); }
+
+  /* ── Warm grid texture (dark lines on cream) ── */
+  .bg-grid-dark {
+    background-image: repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(33, 29, 53, 0.05) 4px, rgba(33, 29, 53, 0.05) 5px);
+  }
+}
+
+@layer components {
+  /* Warm re-definitions of the custom craft classes */
+  .btn-rainbow {
+    background:
+      linear-gradient(#fbfaff, #fbfaff) padding-box,
+      linear-gradient(90deg, #d97706, #ea580c, #d4a017, #e11d48, #d97706) border-box;
+  }
+  .btn-rainbow::after {
+    background: linear-gradient(90deg, #d97706, #ea580c, #d4a017, #e11d48, #d97706);
+    opacity: 0.28;
+  }
+  .text-gradient-brand {
+    background: linear-gradient(90deg, #d97706, #ea580c, #d4a017);
+  }
+  .edge-light::before {
+    box-shadow:
+      0 -1px 0 rgba(255, 255, 255, 0.65),
+      0 1px 0 rgba(43, 38, 32, 0.06);
+  }
+}
+
+::selection {
+  background-color: #d97706;
+  color: #fdfaf4;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   VIOLET THEME FIXES — audit-driven (2026-08-13): contrast + leftover warm colors
+   ═══════════════════════════════════════════════════════════════════════════ */
+@layer utilities {
+  /* Invisible hovers → violet-black */
+  .hover\:text-white:hover { color: #211d35; }
+  .hover\:border-slate-600:hover { border-color: rgba(226, 222, 242, 1); }
+
+  /* Amber (rating/urgency) → violet family for contrast on light bg */
+  .text-amber-400 { color: #8b6cf5; }
+  .fill-amber-400 { fill: #8b6cf5; }
+  .text-amber-300 { color: #8b6cf5; }
+  .bg-amber-500 { background-color: #9e7aff; }
+  .bg-amber-500\/10 { background-color: rgba(158, 122, 255, 0.12); }
+  .bg-amber-500\/5 { background-color: rgba(158, 122, 255, 0.06); }
+  .border-amber-500\/20 { border-color: rgba(158, 122, 255, 0.25); }
+  .border-amber-500\/10 { border-color: rgba(158, 122, 255, 0.15); }
+
+  /* cyan/purple text → violet (contrast 1.7-2.4:1 fails) */
+  .text-cyan-400 { color: #9e7aff; }
+  .text-purple-400 { color: #8b6cf5; }
+  .text-rose-400 { color: #e0527d; }
+
+  /* raw indigo blob opacity variants */
+  .bg-indigo-500\/8 { background-color: rgba(158, 122, 255, 0.08); }
+  .bg-cyan-500\/6 { background-color: rgba(254, 139, 187, 0.06); }
+  .bg-indigo-400 { background-color: #9e7aff; }
+
+  /* missing slate-950 opacity variants (dark boxes) */
+  .bg-slate-950\/40 { background-color: rgba(245, 244, 250, 0.75); }
+  .bg-slate-950\/60 { background-color: rgba(245, 244, 250, 0.85); }
+
+  /* skeleton on light theme */
+  .bg-slate-800\/40 { background-color: rgba(226, 222, 242, 0.55); }
+
+  /* text-slate-600 not previously overridden → violet-gray */
+  .text-slate-600 { color: #6e6a85; }
+  .text-slate-950 { color: #f5f4fa; }
+
+  /* neutral-100 badge (shiny badge bg) → lavender */
+  .bg-neutral-100 { background-color: #ece9f6; }
+  .hover\:bg-neutral-200:hover { background-color: #e2def2; }
+  .bg-neutral-300\/50 { background-color: rgba(226, 222, 242, 0.6); }
+
+  /* global focus-visible ring for keyboard a11y */
+  a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+    outline: 2px solid rgba(158, 122, 255, 0.6);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+@layer components {
+  /* Marquee keyframes (Tailwind only emits when utility used — define directly) */
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(calc(-50% - 1.25rem)); }
+  }
+  .marquee-band__track {
+    animation: marquee var(--marquee-duration, 40s) linear infinite;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LYRA-QUALITY SYSTEM — evidence from lyra.marqraft.com
+   (violet #9E7AFF → pink #FE8BBB brand · pill nav · shiny text · radial cards)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@layer utilities {
+  /* Lyra brand accent remaps (keep warm cream base) */
+  .bg-secondary { background-color: #9e7aff; }
+  .hover\:bg-secondary\/80:hover { background-color: rgba(158, 122, 255, 0.8); }
+  .hover\:bg-secondary:hover { background-color: #8b6cf5; }
+  .text-secondary { color: #8b6cf5; }
+
+  /* Violet→pink accent (lyra card gradient) */
+  .bg-indigo-500 { background-color: #9e7aff; }
+  .hover\:bg-indigo-500:hover { background-color: #9e7aff; }
+  .hover\:bg-indigo-600:hover { background-color: #8b6cf5; }
+  .group-hover\:bg-indigo-500:hover { background-color: #9e7aff; }
+  .bg-indigo-500\/10 { background-color: rgba(158, 122, 255, 0.12); }
+  .bg-indigo-500\/90 { background-color: rgba(158, 122, 255, 0.92); }
+  .bg-indigo-500\/5 { background-color: rgba(158, 122, 255, 0.06); }
+  .text-indigo-300 { color: #8b6cf5; }
+  .text-indigo-400 { color: #9e7aff; }
+  .group-hover\:text-indigo-300:hover { color: #8b6cf5; }
+  .border-indigo-500\/20 { border-color: rgba(158, 122, 255, 0.25); }
+  .border-indigo-500\/30 { border-color: rgba(158, 122, 255, 0.35); }
+  .bg-purple-500 { background-color: #fe8bbb; }
+  .bg-cyan-500 { background-color: #9e7aff; }
+  .bg-cyan-500\/4 { background-color: rgba(158, 122, 255, 0.05); }
+  .text-indigo-400\/60 { color: rgba(158, 122, 255, 0.6); }
+  .focus\:border-indigo-500:focus { border-color: #9e7aff; }
+  .focus\:ring-indigo-500\/20:focus { --tw-ring-color: rgba(158, 122, 255, 0.2); }
+  .hover\:border-indigo-500\/30:hover { border-color: rgba(158, 122, 255, 0.35); }
+
+  /* Warm glows → lyra violet glow */
+  .shadow-glow-sm { box-shadow: 0 0 15px rgba(158, 122, 255, 0.18); }
+  .shadow-glow-md { box-shadow: 0 0 30px rgba(158, 122, 255, 0.25); }
+  .shadow-glow-lg { box-shadow: 0 0 60px rgba(158, 122, 255, 0.32); }
+  .shadow-glow-cyan { box-shadow: 0 0 30px rgba(158, 122, 255, 0.25); }
+
+  /* Gradient stops → violet→pink (lyra) */
+  .from-indigo-400 { --tw-gradient-from: #9e7aff; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-to)); }
+  .via-purple-400 { --tw-gradient-via: #fe8bbb; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-to)); }
+  .to-cyan-400 { --tw-gradient-to: #fe8bbb; }
+  .from-indigo-500 { --tw-gradient-from: #9e7aff; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-to)); }
+  .to-purple-600 { --tw-gradient-to: #fe8bbb; }
+  .hover\:from-indigo-600:hover { --tw-gradient-from: #8b6cf5; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-to)); }
+  .hover\:to-purple-700:hover { --tw-gradient-to: #fe6ba4; }
+  .from-violet-500 { --tw-gradient-from: #9e7aff; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-to)); }
+  .from-indigo-500\/10 { --tw-gradient-from: rgba(158, 122, 255, 0.1); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-to)); }
+  .via-purple-500\/5 { --tw-gradient-via: rgba(254, 139, 187, 0.05); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, var(--tw-gradient-to)); }
+  .to-cyan-500\/10 { --tw-gradient-to: rgba(254, 139, 187, 0.1); }
+
+  /* Lyra grid texture (315deg 1px lines at 50% pitch) */
+  .bg-grid-lyra {
+    background-image: repeating-linear-gradient(315deg, currentColor 0 1px, transparent 0 50%);
+    background-size: 10px 10px;
+  }
+
+  /* Lyra CTA shadow recipe (inset top-light + soft drop) */
+  .shadow-lyra {
+    box-shadow:
+      inset 0 1px 2px rgba(255, 255, 255, 0.25),
+      0 3px 3px -1.5px rgba(16, 24, 40, 0.06),
+      0 1px 1px rgba(16, 24, 40, 0.08);
+  }
+
+  /* Lyra shiny-text (background-position sweep, 8s, --shiny-width) */
+  .shiny-text {
+    --shiny-width: 100px;
+    background-image: linear-gradient(90deg, transparent, rgba(43, 38, 32, 0.7) 50%, transparent);
+    background-size: var(--shiny-width) 100%;
+    background-repeat: no-repeat;
+    background-position: calc(-100% - var(--shiny-width)) 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shiny-text 8s infinite;
+  }
+  @keyframes shiny-text {
+    0%, 90%, 100% { background-position: calc(-100% - var(--shiny-width)) 0; }
+    50% { background-position: 200% 0; }
+  }
+}
+
+@layer components {
+  /* Lyra rainbow → violet/pink border button */
+  .btn-rainbow {
+    background:
+      linear-gradient(#fbfaff, #fbfaff) padding-box,
+      linear-gradient(90deg, #9e7aff, #fe8bbb, #9e7aff, #fe8bbb, #9e7aff) border-box;
+  }
+  .btn-rainbow::after {
+    background: linear-gradient(90deg, #9e7aff, #fe8bbb, #9e7aff);
+    opacity: 0.25;
+  }
+  .text-gradient-brand {
+    background: linear-gradient(90deg, #9e7aff, #fe8bbb);
+  }
+
+  /* Lyra floating pill navbar */
+  .pill-nav {
+    border-radius: 1.25rem;
+    border: 1px solid rgba(226, 222, 242, 0.95);
+    background: rgba(245, 244, 250, 0.85);
+    backdrop-filter: blur(12px);
+    box-shadow:
+      inset 0 1px 2px rgba(255, 255, 255, 0.5),
+      0 8px 32px -12px rgba(43, 38, 32, 0.15);
+  }
+
+  /* Lyra feature-card: 3-layer radial violet→pink border + spotlight */
+  .lyra-card {
+    position: relative;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(226, 222, 242, 0.95);
+    background: #fbfaff;
+  }
+  .lyra-card::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    background: radial-gradient(200px circle at -200px -200px, #9e7aff, #fe8bbb, transparent 100%);
+  }
+  .lyra-card:hover::before {
+    opacity: 1;
+  }
+  .lyra-card > * {
+    position: relative;
+    z-index: 1;
   }
 }

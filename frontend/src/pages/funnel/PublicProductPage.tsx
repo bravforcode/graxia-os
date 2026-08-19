@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import {
   CheckCircle, ArrowRight, Mail, ShieldCheck, Download,
   AlertTriangle, Gift, Star, ChevronDown, Clock, Check, Users,
-  Lock, Award, ArrowLeft,
+  Lock, Award, ArrowLeft, CreditCard,
 } from "lucide-react";
 import { useLang } from "../../i18n/LanguageContext";
 import { PRODUCTS, CATEGORY_META, formatPrice, formatSalesCount, getLocalizedName, getLocalizedShortDescription, getLocalizedDescription, type ProductCatalogItem } from "../../data/products";
@@ -35,7 +35,18 @@ export default function PublicProductPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   // Countdown timer
-  const [timeLeft, setTimeLeft] = useState({ hours: 23, minutes: 47, seconds: 33 });
+  // Real urgency: 24h window starting from first visit (no fake scarcity)
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const stored = localStorage.getItem("ai-factory-offer-deadline");
+    const deadline = stored ? Number(stored) : Date.now() + 24 * 60 * 60 * 1000;
+    if (!stored) localStorage.setItem("ai-factory-offer-deadline", String(deadline));
+    const diff = Math.max(0, deadline - Date.now());
+    return {
+      hours: Math.floor(diff / 3600000),
+      minutes: Math.floor((diff % 3600000) / 60000),
+      seconds: Math.floor((diff % 60000) / 1000),
+    };
+  });
 
   const orgId = organization_id || "";
   const productSlug = slug || "";
@@ -199,7 +210,7 @@ export default function PublicProductPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white overflow-x-hidden">
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white overflow-x-clip">
       {/* SEO Structured Data */}
       <script
         type="application/ld+json"
@@ -233,19 +244,19 @@ export default function PublicProductPage() {
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-cyan-500/6 blur-[120px]" />
       </div>
 
-      {/* Sticky Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 border-b border-slate-800/50 bg-slate-950/90 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <Link to="/store" className={`flex items-center gap-2 text-slate-400 hover:text-white text-sm transition-colors duration-200 ${ANIMATIONS.underlineHover}`}>
+      {/* Header — lyra floating pill navbar (consistent with store) */}
+      <div className="sticky top-4 z-50 flex justify-center px-4">
+        <div className="pill-nav w-full max-w-5xl flex h-[56px] items-center justify-between px-5">
+          <Link to="/store" className={`flex items-center gap-2 text-slate-400 hover:text-slate-100 text-sm transition-colors duration-200 ${ANIMATIONS.underlineHover}`}>
             <ArrowLeft size={16} />
             <span className="hidden sm:inline">{t("product.backToStore")}</span>
           </Link>
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center font-mono font-bold text-[10px] text-slate-950">AI</div>
-            <span className="font-display font-bold text-sm text-white">{t("brand.name")}</span>
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center font-mono font-bold text-[11px] text-slate-950">AI</div>
+            <span className="font-serif font-bold text-sm text-slate-100">{t("brand.name")}</span>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={toggle} className={`text-xs px-2 py-1 rounded-lg border transition-all duration-200 ${ANIMATIONS.buttonPress} ${locale === "th" ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-300" : "bg-slate-800/50 border-slate-700/50 text-slate-400 hover:text-white"}`}>
+            <button onClick={toggle} className={`text-xs px-2 py-1 rounded-lg border transition-all duration-200 ${ANIMATIONS.buttonPress} ${locale === "th" ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-300" : "bg-slate-800/50 border-slate-700/50 text-slate-400 hover:text-slate-100"}`}>
               {t("lang.switch")}
             </button>
             <span className="hidden sm:inline text-xs text-slate-400 font-mono">{formatPrice(price, currency)}</span>
@@ -273,18 +284,18 @@ export default function PublicProductPage() {
                 </span>
               )}
               {cp?.badge && (
-                <span className="px-2.5 py-1 bg-amber-500/10 text-amber-300 border border-amber-500/20 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                <span className="px-2.5 py-1 bg-amber-500/10 text-amber-300 border border-amber-500/20 rounded-full text-[11px] font-bold uppercase tracking-wider">
                   {cp.badge}
                 </span>
               )}
-              <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+              <span className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">
                 {cp?.difficulty || (locale === "th" ? "ทุกระดับ" : "All Levels")}
               </span>
             </div>
 
             {/* Title */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-display font-extrabold tracking-tight leading-[1.1]">
-              <span className="bg-gradient-to-r from-white via-white to-slate-300 bg-clip-text text-transparent">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-medium tracking-tight leading-[1.1]">
+              <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
                 {productName}
               </span>
             </h1>
@@ -300,7 +311,7 @@ export default function PublicProductPage() {
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} size={14} className="fill-amber-400 text-amber-400" />
                 ))}
-                <span className="text-slate-300 font-semibold ml-1">{rating}</span>
+                <span className="text-slate-300 font-semibold ms-1">{rating}</span>
                 <span className="text-slate-500">({reviewCount.toLocaleString()} {locale === "th" ? "รีวิว" : "reviews"})</span>
               </div>
               <span className="text-slate-600">·</span>
@@ -346,7 +357,7 @@ export default function PublicProductPage() {
           {/* Right: Checkout Card */}
           <div id="checkout-section" className="lg:col-span-5 space-y-5 sticky top-20">
             {/* Purchase Card */}
-            <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6 shadow-2xl backdrop-blur-xl space-y-5 relative overflow-hidden">
+            <div className="edge-light bg-slate-900/40 border border-white/[0.08] rounded-3xl p-6 shadow-2xl backdrop-blur-xl space-y-5 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-indigo-500/10 to-transparent blur-xl pointer-events-none" />
 
               {/* Price */}
@@ -354,7 +365,7 @@ export default function PublicProductPage() {
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">{t("product.premiumAccess")}</span>
                   {cp?.badge && (
-                    <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold rounded-full border border-emerald-500/20">
+                    <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[11px] font-bold rounded-full border border-emerald-500/20">
                       {cp.badge}
                     </span>
                   )}
@@ -363,7 +374,7 @@ export default function PublicProductPage() {
                   <span className="text-4xl font-extrabold text-white">{formatPrice(price, currency)}</span>
                   <span className="text-sm text-slate-500 line-through">{formatPrice(Math.round(price * 1.5), currency)}</span>
                 </div>
-                <p className="text-[10px] text-slate-500 mt-1">{t("product.oneTime")} · {guaranteeDays}-{locale === "th" ? "วันรับประกัน" : "day guarantee"}</p>
+                <p className="text-[11px] text-slate-500 mt-1">{t("product.oneTime")} · {guaranteeDays}-{locale === "th" ? "วันรับประกัน" : "day guarantee"}</p>
               </div>
 
               {/* Checkout Form */}
@@ -386,20 +397,21 @@ export default function PublicProductPage() {
                 <button
                   type="submit"
                   disabled={checkingOut}
-                  className={`w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 text-white font-bold rounded-xl shadow-glow-md transition-all duration-200 flex items-center justify-center gap-2 group text-sm ${ANIMATIONS.buttonPress} ${ANIMATIONS.buttonHover}`}
+                  className={`w-full py-4 bg-secondary hover:bg-secondary/80 disabled:opacity-50 text-white font-bold rounded-xl shadow-lyra border border-white/[0.12] transition-all ease-out flex items-center justify-center gap-2 group text-sm active:scale-95 ${ANIMATIONS.buttonPress}`}
                 >
                   {checkingOut ? (
-                    <span className="flex items-center gap-2">
+                    <span className="relative z-10 flex items-center gap-2">
                       <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       {t("product.connecting")}
                     </span>
                   ) : (
-                    <>
+                    <span className="relative z-10 flex items-center gap-2">
                       {t("product.unlockAccess")}
                       <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
-                    </>
+                    </span>
                   )}
                 </button>
+              <p className="text-[11px] text-slate-500">{t("store.consent")}</p>
               </form>
 
               {/* Trust Signals */}
@@ -409,6 +421,7 @@ export default function PublicProductPage() {
                   { icon: ShieldCheck, text: t("product.stripeEncrypted") },
                   { icon: Award, text: `${guaranteeDays}-${locale === "th" ? "วันรับประกันคืนเงิน" : "day money-back guarantee"}` },
                   { icon: Lock, text: t("product.secureEncrypted") },
+                  { icon: CreditCard, text: t("store.promptpay") },
                 ].map(({ icon: Icon, text }) => (
                   <div key={text} className="flex items-center gap-2">
                     <Icon size={14} className="text-emerald-500" />
@@ -418,16 +431,16 @@ export default function PublicProductPage() {
               </div>
 
               {/* Urgency */}
-              <div className="p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl text-center">
-                <div className="flex items-center justify-center gap-1.5 text-xs text-amber-400 font-semibold">
+              <div className="p-3 bg-rose-500/5 border border-rose-500/10 rounded-xl text-center">
+                <div className="flex items-center justify-center gap-1.5 text-xs text-rose-400 font-semibold">
                   <Clock size={12} />
                   {t("product.limitedOffer")}
                 </div>
-                <div className="flex items-center justify-center gap-3 mt-2 font-mono text-lg text-white font-bold">
+                <div className="flex items-center justify-center gap-3 mt-2 font-mono text-lg text-slate-100 font-bold">
                   <span>{String(timeLeft.hours).padStart(2, "0")}</span>
-                  <span className="text-amber-400">:</span>
+                  <span className="text-rose-400">:</span>
                   <span>{String(timeLeft.minutes).padStart(2, "0")}</span>
-                  <span className="text-amber-400">:</span>
+                  <span className="text-rose-400">:</span>
                   <span>{String(timeLeft.seconds).padStart(2, "0")}</span>
                 </div>
               </div>
@@ -441,7 +454,7 @@ export default function PublicProductPage() {
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-white">{t("product.freeSample")}</h4>
-                  <p className="text-[10px] text-slate-500">{t("product.freeSampleDesc")}</p>
+                  <p className="text-[11px] text-slate-500">{t("product.freeSampleDesc")}</p>
                 </div>
               </div>
 
@@ -457,9 +470,9 @@ export default function PublicProductPage() {
               ) : (
                 <form onSubmit={handleLeadCapture} className="space-y-2">
                   <div className="grid grid-cols-2 gap-2">
-                    <input type="text" placeholder={locale === "th" ? "ชื่อ" : "Name"} value={leadName} onChange={(e) => setLeadName(e.target.value)}
+                    <input type="text" aria-label={t("store.name")} placeholder={locale === "th" ? "ชื่อ" : "Name"} value={leadName} onChange={(e) => setLeadName(e.target.value)}
                       className="bg-slate-950 border border-slate-800 text-slate-300 px-3 py-2 rounded-xl text-xs outline-none focus:border-indigo-500 transition-colors duration-200" />
-                    <input type="email" required placeholder={locale === "th" ? "อีเมล" : "Email"} value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)}
+                    <input type="email" required aria-label={t("auth.email")} placeholder={locale === "th" ? "อีเมล" : "Email"} value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)}
                       className="bg-slate-950 border border-slate-800 text-slate-300 px-3 py-2 rounded-xl text-xs outline-none focus:border-indigo-500 transition-colors duration-200" />
                   </div>
                   <button type="submit" disabled={submittingLead}
@@ -477,7 +490,7 @@ export default function PublicProductPage() {
         {testimonials.length > 0 && (
           <ScrollReveal delay={100}>
           <section>
-            <h2 className="text-2xl font-display font-extrabold text-white mb-6">{t("product.customersSay")}</h2>
+            <h2 className="text-2xl font-serif font-medium text-white mb-6">{t("product.customersSay")}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {testimonials.map((tItem, i) => (
                 <div key={i} className={`p-5 bg-slate-900/40 border border-slate-800/60 rounded-2xl space-y-3 ${ANIMATIONS.cardHover}`} style={staggerDelay(i)}>
@@ -488,10 +501,10 @@ export default function PublicProductPage() {
                   </div>
                   <p className="text-sm text-slate-300 leading-relaxed">"{tItem.text}"</p>
                   <div className="flex items-center gap-2.5 pt-1">
-                    <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white text-[10px] font-bold">{tItem.avatar}</div>
+                    <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white text-[11px] font-bold">{tItem.avatar}</div>
                     <div>
                       <div className="text-xs font-semibold text-white">{tItem.name}</div>
-                      <div className="text-[10px] text-slate-500">{tItem.role}</div>
+                      <div className="text-[11px] text-slate-500">{tItem.role}</div>
                     </div>
                   </div>
                 </div>
@@ -505,7 +518,7 @@ export default function PublicProductPage() {
         {deliverables.length > 0 && (
           <ScrollReveal delay={100}>
           <section>
-            <h2 className="text-2xl font-display font-extrabold text-white mb-6">{t("product.youllReceive")}</h2>
+            <h2 className="text-2xl font-serif font-medium text-white mb-6">{t("product.youllReceive")}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {deliverables.map((d, i) => (
                 <div key={i} className={`flex items-center gap-3 p-4 bg-slate-900/30 border border-slate-800/50 rounded-xl ${ANIMATIONS.cardHover}`} style={staggerDelay(i)}>
@@ -523,17 +536,17 @@ export default function PublicProductPage() {
         {/* FAQ */}
         <ScrollReveal delay={100}>
         <section>
-          <h2 className="text-2xl font-display font-extrabold text-white mb-6">{t("product.faqTitle")}</h2>
+          <h2 className="text-2xl font-serif font-medium text-white mb-6">{t("product.faqTitle")}</h2>
           <div className="space-y-3 max-w-3xl">
             {faqs.map((faq, i) => (
               <div key={i} className="border border-slate-800/60 rounded-2xl overflow-hidden">
                 <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   aria-expanded={openFaq === i}
-                  className="w-full flex items-center justify-between p-5 text-left bg-slate-900/30 hover:bg-slate-900/50 transition-colors duration-200">
+                  className="w-full flex items-center justify-between p-5 text-start bg-slate-900/30 hover:bg-slate-900/50 transition-colors duration-200">
                   <span className="font-semibold text-sm text-white pr-4">{faq.q}</span>
                   <ChevronDown size={16} className={`text-slate-400 shrink-0 transition-transform duration-300 ${openFaq === i ? "rotate-180" : ""}`} />
                 </button>
-                <div className={`overflow-hidden transition-all duration-300 ease-out ${openFaq === i ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
+                <div className={`overflow-hidden transition-all duration-300 ease-out ${openFaq === i ? "max-h-[40rem] overflow-y-auto opacity-100" : "max-h-0 opacity-0"}`}>
                   <div className="px-5 pb-5 text-sm text-slate-400 leading-relaxed bg-slate-900/20">{faq.a}</div>
                 </div>
               </div>
@@ -548,7 +561,7 @@ export default function PublicProductPage() {
           <div className="p-10 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-cyan-500/10 border border-indigo-500/20 rounded-3xl relative overflow-hidden">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.1),transparent_70%)]" />
             <div className="relative z-10 space-y-4">
-              <h2 className="text-2xl md:text-3xl font-display font-extrabold text-white">
+              <h2 className="text-2xl md:text-3xl font-serif font-medium text-white">
                 {t("product.readyToStart")}
               </h2>
               <p className="text-slate-400 max-w-md mx-auto text-sm">

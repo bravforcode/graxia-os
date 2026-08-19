@@ -1,4 +1,5 @@
 import { useSearchParams, Link } from "react-router-dom";
+import { useLang } from "@/i18n/LanguageContext";
 import { 
   CheckCircle, 
   Mail, 
@@ -8,6 +9,7 @@ import {
 } from "lucide-react";
 
 export default function CheckoutSuccess() {
+  const { t } = useLang();
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get("session_id") || "";
 
@@ -28,27 +30,27 @@ export default function CheckoutSuccess() {
 
         {/* Title */}
         <div className="space-y-2">
-          <span className="text-[10px] font-mono tracking-[0.24em] text-emerald-400 uppercase font-semibold bg-emerald-500/5 border border-emerald-500/10 px-3 py-1 rounded-full">
-            Payment Completed Successfully
+          <span className="text-[11px] font-mono tracking-[0.24em] text-emerald-400 uppercase font-semibold bg-emerald-500/5 border border-emerald-500/10 px-3 py-1 rounded-full">
+            {t("success.title")}
           </span>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-100 mt-2">
-            Unlock Secured!
+            {t("success.unlock")}
           </h1>
           <p className="text-sm text-slate-400">
-            Thank you for your purchase. Your digital assets have been processed and are ready.
+            {t("success.thanks")}
           </p>
         </div>
 
         {/* Action Steps Dashboard */}
-        <div className="bg-slate-950/40 border border-slate-850/80 rounded-2xl p-5 text-left space-y-4">
-          <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Next Instructions:</h3>
+        <div className="bg-slate-950/40 border border-slate-850/80 rounded-2xl p-5 text-start space-y-4">
+          <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">{t("success.next")}</h3>
           
           <div className="flex gap-3">
             <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-400 shrink-0 h-9 w-9 flex items-center justify-center">
               <Mail size={16} />
             </div>
             <div>
-              <h4 className="text-xs font-semibold text-slate-200">Check Your Email Inbox</h4>
+              <h4 className="text-xs font-semibold text-slate-200">{t("success.checkEmail")}</h4>
               <p className="text-[11px] text-slate-500 mt-0.5">
                 We have emailed a unique secure delivery access link to your checkout email. Keep this key private.
               </p>
@@ -60,7 +62,7 @@ export default function CheckoutSuccess() {
               <Clock size={16} />
             </div>
             <div>
-              <h4 className="text-xs font-semibold text-slate-200">Delivery Delay Protection</h4>
+              <h4 className="text-xs font-semibold text-slate-200">{t("success.delayProtection")}</h4>
               <p className="text-[11px] text-slate-500 mt-0.5">
                 Emails are dispatched instantly. If not received in 3 minutes, verify your spam/junk folder.
               </p>
@@ -74,13 +76,13 @@ export default function CheckoutSuccess() {
             to="/"
             className="w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold rounded-xl text-sm transition-all transform hover:-translate-y-0.5 shadow-lg flex items-center justify-center gap-1.5"
           >
-            Go to Portal Dashboard
+            {t("success.goPortal")}
             <ArrowRight size={15} />
           </Link>
           
           {sessionId && (
-            <div className="text-[9px] text-slate-600 font-mono select-all uppercase">
-              Stripe Session ID: {sessionId}
+            <div className="text-[11px] text-slate-600 font-mono select-all uppercase">
+              {t("success.sessionId")} {sessionId}
             </div>
           )}
         </div>
@@ -89,7 +91,7 @@ export default function CheckoutSuccess() {
       {/* Verification footer */}
       <div className="mt-8 flex items-center gap-1.5 text-xs text-slate-600">
         <ShieldCheck size={14} className="text-emerald-500/60" />
-        Secured by Stripe Cryptographic Signatures
+        {t("success.secured")}
       </div>
     </div>
   );

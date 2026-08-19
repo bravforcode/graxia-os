@@ -26,6 +26,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     if (locale === "th") preloadThaiProducts();
   }, [locale]);
 
+  // Sync <html lang> + localized document title (audit: i18n #4)
+  useEffect(() => {
+    document.documentElement.lang = locale;
+    // RTL-ready: set dir for future RTL locales (e.g. 'ar'); th/en are LTR
+    document.documentElement.dir = locale === "ar" ? "rtl" : "ltr";
+    document.title = locale === "th" ? "Ai Factory — ร้านเครื่องมือ AI สำหรับคนไทย" : "Ai Factory — AI Tools for Thai Creators";
+  }, [locale]);
+
   const toggle = useCallback(() => {
     setLocale((prev) => {
       const next = prev === "en" ? "th" : "en";

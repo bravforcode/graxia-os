@@ -14,6 +14,7 @@ import {
 import { useLang } from "../i18n/LanguageContext";
 import {
   PRODUCTS,
+  STORE_ORG_ID,
   CATEGORY_META,
   getPRODUCTS_TH,
   formatPrice,
@@ -38,6 +39,14 @@ export default function StorePage() {
   const [sortBy, setSortBy] = useState<"popular" | "newest" | "price-low" | "price-high" | "rating">("popular");
   const { locale, toggle, t } = useLang();
   const [isLoading, setIsLoading] = useState(true);
+
+  // Cursor-following spotlight (Aceternity Card Spotlight technique)
+  const handleSpotlight = (e: React.MouseEvent<HTMLElement>) => {
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    el.style.setProperty("--mx", `${e.clientX - rect.left}px`);
+    el.style.setProperty("--my", `${e.clientY - rect.top}px`);
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 400);
@@ -84,26 +93,41 @@ export default function StorePage() {
         url: "https://ai-factory-omega.vercel.app/store",
       }) }} />
 
-      {/* Background */}
+      {/* Background — layered: grid texture + aurora blobs (evidence: Aceternity grid-dark + aurora drift) */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-indigo-500/5 blur-[150px]" />
+        <div
+          className="absolute inset-0 bg-grid-dark opacity-60"
+          style={{
+            maskImage: "radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%)",
+            WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%)",
+          }}
+        />
+        <div
+          className="absolute top-[-10%] start-1/2 -translate-x-1/2 w-[900px] h-[500px] animate-aurora opacity-60"
+          style={{
+            backgroundImage:
+              "radial-gradient(ellipse at 30% 50%, rgba(158,122,255,0.16), transparent 55%), radial-gradient(ellipse at 70% 50%, rgba(254,139,187,0.12), transparent 55%)",
+            backgroundSize: "200% 100%",
+          }}
+        />
+        <div className="absolute top-0 start-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-indigo-500/5 blur-[150px]" />
         <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full bg-cyan-500/4 blur-[120px]" />
       </div>
 
-      {/* Header */}
-      <div className="relative z-10 border-b border-slate-800/50 bg-slate-950/80 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      {/* Header — lyra floating pill navbar (sticky top-4, always visible) */}
+      <div className="sticky top-4 z-50 flex justify-center px-4">
+        <div className="pill-nav w-full max-w-5xl flex h-[56px] items-center justify-between px-5">
           <Link to="/" className="flex items-center gap-2 group">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center font-mono font-bold text-sm text-slate-950 group-hover:scale-105 transition-transform duration-200">
               AI
             </div>
-            <span className="font-display font-bold text-lg text-white">{t("brand.name")}</span>
+            <span className="font-serif font-bold text-lg text-slate-100">{t("brand.name")}</span>
           </Link>
           <div className="flex items-center gap-3">
             <button
               onClick={toggle}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 ${ANIMATIONS.buttonPress} ${
-                locale === "th" ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-300" : "bg-slate-800/50 border-slate-700/50 text-slate-400 hover:text-white"
+                locale === "th" ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-300" : "bg-slate-800/50 border-slate-700/50 text-slate-400 hover:text-slate-100"
               }`}
             >
               <Globe size={14} />{t("lang.switch")}
@@ -120,7 +144,7 @@ export default function StorePage() {
         {/* Page Header */}
         <ScrollReveal>
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-display font-extrabold text-white">
+          <h1 className="text-3xl md:text-4xl font-serif font-medium tracking-tighter text-balance text-slate-100">
             {selectedCategory !== "all" ? `${CATEGORY_META[selectedCategory].icon} ${t(`cat.${selectedCategory}`)}` : t("store.allProducts")}
           </h1>
           <p className="text-slate-400 mt-2 max-w-xl">
@@ -133,11 +157,11 @@ export default function StorePage() {
         <ScrollReveal delay={100}>
         <div className="flex flex-col md:flex-row gap-4 mb-8">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
-            <input type="text" placeholder={t("store.search")} value={search} onChange={(e) => setSearch(e.target.value)}
+            <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
+            <input type="text" placeholder={t("store.search")} aria-label={t("store.searchAria")} value={search} onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-slate-900/60 border border-slate-800 focus:border-indigo-500 text-slate-200 pl-10 pr-4 py-3 rounded-2xl text-sm outline-none transition-all duration-200 focus:ring-2 focus:ring-indigo-500/20" />
             {search && (
-              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors duration-200">
+              <button onClick={() => setSearch("")} aria-label={t("store.clearSearch")} className="absolute end-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors duration-200">
                 <X size={16} />
               </button>
             )}
@@ -174,7 +198,7 @@ export default function StorePage() {
                 }`}>
                 <span>{CATEGORY_META[cat].icon}</span>
                 {t(`cat.${cat}`)}
-                <span className="text-[10px] opacity-60">({count})</span>
+                <span className="text-[11px] opacity-60">({count})</span>
               </button>
             );
           })}
@@ -186,7 +210,7 @@ export default function StorePage() {
           <p className="text-sm text-slate-500">
             {t("store.showing")} <span className="font-semibold text-slate-300">{filteredProducts.length}</span> {t("store.products")}
             {selectedCategory !== "all" && (
-              <button onClick={() => handleCategoryChange("all")} className="ml-2 text-indigo-400 hover:text-indigo-300 text-xs transition-colors duration-200">
+              <button onClick={() => handleCategoryChange("all")} className="ms-2 text-indigo-400 hover:text-indigo-300 text-xs transition-colors duration-200">
                 {t("store.clearFilter")}
               </button>
             )}
@@ -211,25 +235,26 @@ export default function StorePage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product, i) => (
-              <Link key={product.id} to={`/store/${product.slug}`}
-                className={`group bg-slate-900/40 border border-slate-800/60 rounded-3xl overflow-hidden flex flex-col animate-fade-in-up ${ANIMATIONS.cardHoverGlow}`}
+              <Link key={product.id} to={`/f/${STORE_ORG_ID}/${product.slug}`}
+                onMouseMove={handleSpotlight}
+                className={`group lyra-card card-spotlight edge-light relative bg-slate-900/40 rounded-3xl overflow-hidden flex flex-col animate-fade-in-up transition-all duration-300 hover:-translate-y-1`}
                 style={staggerDelay(i)}>
                 <div className="relative h-44 overflow-hidden">
                   <img src={product.coverImageUrl} alt={getLocalizedName(product, locale)} loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
                   {product.badge && (
-                    <span className="absolute top-3 left-3 px-2.5 py-1 bg-indigo-500/90 backdrop-blur-sm text-white text-[10px] font-bold uppercase tracking-wider rounded-full">
+                    <span className="absolute top-3 left-3 px-2.5 py-1 bg-indigo-500/90 backdrop-blur-sm text-white text-[11px] font-bold uppercase tracking-wider rounded-full">
                       {product.badge}
                     </span>
                   )}
-                  <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 bg-slate-950/70 backdrop-blur-sm rounded-full text-[10px] text-amber-400">
+                  <div className="absolute top-3 end-3 flex items-center gap-1 px-2 py-0.5 bg-slate-950/70 backdrop-blur-sm rounded-full text-[11px] text-amber-400">
                     <Star size={10} className="fill-amber-400" /> {product.rating}
                   </div>
                 </div>
                 <div className="p-5 flex-1 flex flex-col">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800/80 text-slate-400 border border-slate-700/50">
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800/80 text-slate-400 border border-slate-700/50">
                       {CATEGORY_META[product.category].icon} {t(`cat.${product.category}`)}
                     </span>
                   </div>
@@ -240,7 +265,7 @@ export default function StorePage() {
                   <div className="flex items-end justify-between pt-3 border-t border-slate-800/60">
                     <div>
                       <span className="text-xl font-extrabold text-white">{formatPrice(product.priceAmount)}</span>
-                      <span className="text-[10px] text-slate-500 ml-1.5">{formatSalesCount(product.salesCount)} {t("featured.sold")}</span>
+                      <span className="text-[11px] text-slate-500 ms-1.5">{formatSalesCount(product.salesCount)} {t("featured.sold")}</span>
                     </div>
                     <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-all duration-300 group-hover:scale-110">
                       <ArrowRight size={14} />

@@ -61,7 +61,7 @@ export default function ExitIntentPopup() {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
       <div
-        className={`relative w-full max-w-md mx-4 bg-slate-900 border border-slate-700/60 rounded-3xl shadow-2xl overflow-hidden animate-fade-in-up`}
+        role="dialog" aria-modal="true" aria-label="Newsletter signup" className={`relative w-full max-w-md mx-4 bg-slate-900 border border-slate-700/60 rounded-3xl shadow-2xl overflow-hidden animate-fade-in-up`}
       >
         {/* Close button */}
         <button
@@ -132,7 +132,7 @@ export default function ExitIntentPopup() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full bg-slate-800/60 border border-slate-700 focus:border-indigo-500 text-slate-200 pl-10 pr-4 py-3 rounded-xl text-sm outline-none transition-all duration-200 focus:ring-2 focus:ring-indigo-500/20"
-                    autoFocus
+                    
                   />
                 </div>
                 <button

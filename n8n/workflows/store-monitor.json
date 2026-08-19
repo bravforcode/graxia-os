@@ -1,0 +1,144 @@
+{
+  "name": "Ai Factory - Store Monitor + Warm",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "schedule-002",
+      "name": "Every 15 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-420, 0]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://graxia-os-funnel.vercel.app/health",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "id": "http-001",
+      "name": "Check /health",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-220, -120]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "cond-001",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": "200",
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "id": "if-001",
+      "name": "Healthy?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-20, -120]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graxia-os-funnel.vercel.app/internal/funnel/process-due",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Internal-Token",
+              "value": "={{ $env.INTERNAL_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 25000
+        }
+      },
+      "id": "http-002",
+      "name": "Run Automation (warm)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [180, -220]
+    },
+    {
+      "parameters": {
+        "from": "Ai Factory Monitor <no-reply@graxia.store>",
+        "to": "={{ $env.ADMIN_EMAIL }}",
+        "subject": "⚠️ STORE DOWN - health check failed",
+        "text": "The store health check failed at {{ $now }}.\nStatus: {{ $json.statusCode }}\nCheck: https://graxia-os-funnel.vercel.app/health"
+      },
+      "id": "resend-002",
+      "name": "Resend - Alert",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [180, -20]
+    }
+  ],
+  "connections": {
+    "Every 15 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Check /health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check /health": {
+      "main": [
+        [
+          {
+            "node": "Healthy?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Healthy?": {
+      "main": [
+        [
+          {
+            "node": "Run Automation (warm)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resend - Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

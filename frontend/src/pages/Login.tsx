@@ -5,6 +5,7 @@ import { AuthShell } from '@/components/AuthShell'
 import { ControlPlaneUnavailable } from '@/components/ControlPlaneUnavailable'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/AuthContext'
+import { useLang } from '@/i18n/LanguageContext'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -12,6 +13,7 @@ export default function Login() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const { login, socialLogin, backendState, backendMessage, refreshSession } = useAuth()
+  const { t } = useLang()
   const navigate = useNavigate()
 
   const handleSubmit = async (event: FormEvent) => {
@@ -23,7 +25,7 @@ export default function Login() {
       await login(email, password)
       navigate('/')
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Login failed')
+      setError(err instanceof Error ? err.message : t('auth.loginFailed'))
     } finally {
       setIsLoading(false)
     }
@@ -32,11 +34,11 @@ export default function Login() {
   if (backendState === 'unavailable') {
     return (
       <AuthShell
-        title="Sign-in locked"
-        subtitle="The operator API is not reachable from this deployment yet."
+        title={t("auth.signInLocked")}
+        subtitle={t("auth.signInLockedDesc")}
       >
         <ControlPlaneUnavailable
-          message={backendMessage ?? 'The operator API is not reachable from this deployment yet.'}
+          message={backendMessage ?? t('auth.signInLockedDesc')}
           onRetry={refreshSession}
         />
       </AuthShell>
@@ -45,8 +47,8 @@ export default function Login() {
 
   return (
     <AuthShell
-      title="Log in to Graxia OS"
-      subtitle="Enter your details to access your workspace."
+      title={t("auth.title")}
+      subtitle={t("auth.subtitle")}
     >
       <form className="space-y-4" onSubmit={handleSubmit}>
         {error ? (
@@ -61,7 +63,7 @@ export default function Login() {
 
         <div className="space-y-1.5">
           <label htmlFor="email" className="block text-sm font-medium text-zinc-300">
-            Email
+            {t("auth.email")}
           </label>
           <input
             id="email"
@@ -78,7 +80,7 @@ export default function Login() {
 
         <div className="space-y-1.5">
           <label htmlFor="password" className="block text-sm font-medium text-zinc-300">
-            Password
+            {t("auth.password")}
           </label>
           <input
             id="password"
@@ -94,7 +96,7 @@ export default function Login() {
         </div>
 
         <Button type="submit" className="w-full bg-white text-black hover:bg-zinc-200" loading={isLoading}>
-          Continue with Email
+          {t("auth.continue")}
         </Button>
 
         <div className="relative py-4">
@@ -102,7 +104,7 @@ export default function Login() {
             <div className="w-full border-t border-zinc-800"></div>
           </div>
           <div className="relative flex justify-center text-xs">
-            <span className="bg-black px-2 text-zinc-500">Or continue with</span>
+            <span className="bg-black px-2 text-zinc-500">{t("auth.orContinue")}</span>
           </div>
         </div>
 
@@ -116,9 +118,9 @@ export default function Login() {
         </Button>
 
         <p className="text-center text-sm text-zinc-500 pt-2">
-          Don't have an account?{' '}
+          {t("auth.noAccount")}{' '}
           <Link className="font-medium text-white hover:underline" to="/register">
-            Sign up
+            {t("auth.signUp")}
           </Link>
         </p>
       </form>

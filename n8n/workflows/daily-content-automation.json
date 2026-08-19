@@ -1,0 +1,156 @@
+{
+  "name": "Ai Factory - Daily Content Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "schedule-001",
+      "name": "Every Day 07:30",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-420, 0]
+    },
+    {
+      "parameters": {
+        "promptType": "defineBelow",
+        "text": "คุณคือนักการตลาดคอนเทนต์ไทย เขียนโพสต์ Facebook ให้ความรู้เรื่องการใช้ AI ทำงาน สำหรับกลุ่มฟรีแลนซ์ไทย 120-150 คำ ภาษาไทยเป็นกันเอง ไม่ใช่โฆษณาตรงๆ ลงท้าย 1 บรรทัด: \"มีตัวอย่างพรอมต์ AI ในคอมเมนต์ครับ\"",
+        "options": {}
+      },
+      "id": "openai-001",
+      "name": "OpenAI - FB Post",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 2,
+      "position": [-220, -100]
+    },
+    {
+      "parameters": {
+        "promptType": "defineBelow",
+        "text": "คุณคือครีเอเตอร์ TikTok ไทย เขียนสคริปต์คลิป 30-45 วินาที ภาษาไทย โปรโมทสินค้าดิจิทัล 'AI Prompt Pack เริ่มต้น ราคา 149 บาท' เนื้อหา: สาธิต 1 พรอมต์ที่ใช้ทำงานจริง ลงท้าย CTA \"มีอีก 49 พรอมต์ในลิงก์โปรไฟล์\"",
+        "options": {}
+      },
+      "id": "openai-002",
+      "name": "OpenAI - TikTok Script",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 2,
+      "position": [-220, 100]
+    },
+    {
+      "parameters": {
+        "resource": "page",
+        "operation": "create",
+        "message": "={{ $json.output }}",
+        "pageId": ""
+      },
+      "id": "fb-001",
+      "name": "Facebook Page - Post",
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [60, -100]
+    },
+    {
+      "parameters": {
+        "repository": {
+          "__rl": true,
+          "mode": "list",
+          "value": "bravforcode/graxia-os"
+        },
+        "commitMessage": "n8n: daily content {{ $now.format('yyyy-MM-dd') }}",
+        "createAs": "file",
+        "filePath": "docs/content/n8n/daily-{{ $now.format('yyyy-MM-dd') }}.md",
+        "fileContent": "={{ $json.output }}\n\n---\n\n{{ $('OpenAI - TikTok Script').item.json.output }}",
+        "branch": "main"
+      },
+      "id": "gh-001",
+      "name": "GitHub - Commit Content",
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 2,
+      "position": [60, 100]
+    },
+    {
+      "parameters": {
+        "from": "Ai Factory <no-reply@graxia.store>",
+        "to": "={{ $env.ADMIN_EMAIL }}",
+        "subject": "Daily content generated - {{ $now.format('yyyy-MM-dd') }}",
+        "text": "FB post:\n{{ $('OpenAI - FB Post').item.json.output }}\n\nTikTok script:\n{{ $('OpenAI - TikTok Script').item.json.output }}"
+      },
+      "id": "resend-001",
+      "name": "Resend - Digest Email",
+      "type": "n8n-nodes-base.resend",
+      "typeVersion": 1,
+      "position": [300, 0]
+    }
+  ],
+  "connections": {
+    "Every Day 07:30": {
+      "main": [
+        [
+          {
+            "node": "OpenAI - FB Post",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "OpenAI - TikTok Script",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI - FB Post": {
+      "main": [
+        [
+          {
+            "node": "Facebook Page - Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook Page - Post": {
+      "main": [
+        [
+          {
+            "node": "Resend - Digest Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI - TikTok Script": {
+      "main": [
+        [
+          {
+            "node": "GitHub - Commit Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub - Commit Content": {
+      "main": [
+        [
+          {
+            "node": "Resend - Digest Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

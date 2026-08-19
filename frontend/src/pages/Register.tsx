@@ -5,6 +5,7 @@ import { AuthShell } from '@/components/AuthShell'
 import { ControlPlaneUnavailable } from '@/components/ControlPlaneUnavailable'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/AuthContext'
+import { useLang } from '@/i18n/LanguageContext'
 
 export default function Register() {
   const [email, setEmail] = useState('')
@@ -21,12 +22,12 @@ export default function Register() {
     setError('')
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
+      setError(t('auth.passwordsMismatch'))
       return
     }
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters')
+      setError(t('auth.passwordTooShort'))
       return
     }
 
@@ -36,7 +37,7 @@ export default function Register() {
       await register(email, password, fullName)
       navigate('/')
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Registration failed')
+      setError(err instanceof Error ? err.message : t('auth.registerFailed'))
     } finally {
       setIsLoading(false)
     }
@@ -45,8 +46,8 @@ export default function Register() {
   if (backendState === 'unavailable') {
     return (
       <AuthShell
-        title="Create account"
-        subtitle="Provision operator access after the backend control plane is reachable."
+        title={t("auth.createAccount")}
+        subtitle={t("auth.signInLockedDesc")}
       >
         <ControlPlaneUnavailable
           message={backendMessage ?? 'The operator API is not reachable from this deployment yet.'}
@@ -58,8 +59,8 @@ export default function Register() {
 
   return (
     <AuthShell
-      title="Create account"
-      subtitle="Provision a new operator identity for the Personal OS control plane with a clean, role-ready login."
+      title={t("auth.createAccount")}
+      subtitle={t("auth.registerSubtitle")}
     >
       <form className="space-y-5" onSubmit={handleSubmit}>
         {error ? (
@@ -73,20 +74,20 @@ export default function Register() {
         ) : null}
 
         <label className="block space-y-2 text-sm text-[var(--color-text-secondary)]">
-          <span>Full name</span>
+          <span>{t("auth.fullName")}</span>
           <input
             id="fullName"
             name="fullName"
             type="text"
             className="input-field"
-            placeholder="Optional display name"
+            placeholder={t("auth.optionalDisplayName")}
             value={fullName}
             onChange={(event) => setFullName(event.target.value)}
           />
         </label>
 
         <label className="block space-y-2 text-sm text-[var(--color-text-secondary)]">
-          <span>Email</span>
+          <span>{t("auth.email")}</span>
           <input
             id="email"
             name="email"
@@ -102,7 +103,7 @@ export default function Register() {
 
         <div className="grid gap-5 sm:grid-cols-2">
           <label className="block space-y-2 text-sm text-[var(--color-text-secondary)]">
-            <span>Password</span>
+            <span>{t("auth.password")}</span>
             <input
               id="password"
               name="password"
@@ -110,14 +111,14 @@ export default function Register() {
               autoComplete="new-password"
               required
               className="input-field"
-              placeholder="Minimum 8 characters"
+              placeholder={t("auth.min8")}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
             />
           </label>
 
           <label className="block space-y-2 text-sm text-[var(--color-text-secondary)]">
-            <span>Confirm password</span>
+            <span>{t("auth.confirmPassword")}</span>
             <input
               id="confirmPassword"
               name="confirmPassword"
@@ -125,7 +126,7 @@ export default function Register() {
               autoComplete="new-password"
               required
               className="input-field"
-              placeholder="Repeat password"
+              placeholder={t("auth.repeatPassword")}
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
             />
@@ -133,13 +134,13 @@ export default function Register() {
         </div>
 
         <Button type="submit" className="w-full" loading={isLoading}>
-          Create account
+          {t("auth.createAccount")}
         </Button>
 
         <div className="text-sm text-[var(--color-text-secondary)]">
-          Already have access?{' '}
+          {t("auth.alreadyHave")}{' '}
           <Link className="font-semibold text-[var(--color-accent-cyan)] hover:text-[var(--color-accent-lime)]" to="/login">
-            Sign in
+            {t("auth.signIn")}
           </Link>
         </div>
       </form>

@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useLang } from "../i18n/LanguageContext";
-import { PRODUCTS, CATEGORY_META, formatPrice, formatSalesCount, getLocalizedName, getLocalizedShortDescription, type ProductCategory } from "../data/products";
+import { PRODUCTS, STORE_ORG_ID, CATEGORY_META, formatPrice, formatSalesCount, getLocalizedName, getLocalizedShortDescription, type ProductCategory } from "../data/products";
 import { ANIMATIONS, staggerDelay } from "../lib/animations";
 import { ScrollReveal } from "../components/ui/ScrollReveal";
 
@@ -74,10 +74,49 @@ function AnimatedCounter({ value, suffix = "", prefix = "" }: { value: number; s
   );
 }
 
+/** Lyra-style typewriter (evidence: lyra.marqraft.com hero type span). */
+function Typewriter({ words, locale }: { words: string[]; locale: string }) {
+  const [wordIdx, setWordIdx] = useState(0);
+  const [chars, setChars] = useState(0);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    const word = words[wordIdx % words.length];
+    let delay = deleting ? 40 : 90;
+    if (!deleting && chars === word.length) delay = 1900; // pause at full word
+    if (deleting && chars === 0) delay = 250;
+    const timer = setTimeout(() => {
+      if (!deleting && chars === word.length) {
+        setDeleting(true);
+        return;
+      }
+      if (deleting && chars === 0) {
+        setDeleting(false);
+        setWordIdx((i) => (i + 1) % words.length);
+        return;
+      }
+      setChars((c) => c + (deleting ? -1 : 1));
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [chars, deleting, wordIdx, words]);
+
+  const word = words[wordIdx % words.length];
+  return (
+    <span className="inline-flex items-baseline">
+      <span className="text-gradient-brand">{word.slice(0, chars)}</span>
+      <span className="ms-0.5 inline-block w-[3px] self-center h-[0.9em] bg-indigo-400 animate-pulse" aria-hidden="true" />
+    </span>
+  );
+}
+
 export default function LandingPage() {
   const { user } = useAuth();
   const { locale, toggle, t } = useLang();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const typeWords = locale === "th"
+    ? ["เขียนคอนเทนต์", "ทำงานออฟฟิศ", "วางแผนธุรกิจ", "ตอบลูกค้า"]
+    : ["Content", "Office work", "Business planning", "Customer replies"];
 
   useEffect(() => {
     if (user) {
@@ -97,7 +136,10 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white overflow-x-hidden">
+    <div className="relative min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white overflow-x-clip">
+      {/* Lyra vertical side rails (w-px lines at left/right edges) */}
+      <div className="pointer-events-none absolute inset-y-0 start-4 md:start-6 z-0 w-px bg-slate-700/20" />
+      <div className="pointer-events-none absolute inset-y-0 end-4 md:end-6 z-0 w-px bg-slate-700/20" />
       {/* SEO & Structured Data */}
       <script
         type="application/ld+json"
@@ -113,28 +155,31 @@ export default function LandingPage() {
         }}
       />
 
-      {/* Background Effects */}
+      {/* Background Effects — lyra violet radial bloom */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-indigo-500/8 blur-[150px]" />
+        <div
+          className="absolute inset-x-0 top-0 h-[600px] md:h-[800px]"
+          style={{ background: "radial-gradient(125% 125% at 50% 10%, #f5f4fa 40%, rgba(158,122,255,0.35) 100%)" }}
+        />
+        <div className="absolute top-0 start-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-indigo-500/8 blur-[150px]" />
         <div className="absolute bottom-0 right-0 w-[600px] h-[600px] rounded-full bg-cyan-500/6 blur-[120px]" />
-        <div className="absolute top-1/2 left-0 w-[400px] h-[400px] rounded-full bg-purple-500/5 blur-[100px]" />
       </div>
 
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-slate-800/50 bg-slate-950/80 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      {/* Navigation — lyra floating pill navbar (sticky top-4 rounded-2xl) */}
+      <nav className="sticky top-4 z-50 flex justify-center px-4">
+        <div className="pill-nav w-full max-w-5xl flex h-[56px] items-center justify-between px-5">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center font-mono font-bold text-sm tracking-widest text-slate-950">
               AI
             </div>
-            <span className="font-display font-bold text-lg tracking-tight text-white">{t("brand.name")}</span>
+            <span className="font-serif font-bold text-lg tracking-tight text-slate-100">{t("brand.name")}</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm text-slate-400">
-            <a href="#features" className="hover:text-white transition-colors">{t("nav.features")}</a>
-            <Link to="/store" className="hover:text-white transition-colors">{t("nav.products")}</Link>
-            <a href="#testimonials" className="hover:text-white transition-colors">{t("nav.testimonials")}</a>
-            <a href="#pricing" className="hover:text-white transition-colors">{t("nav.pricing")}</a>
-            <a href="#faq" className="hover:text-white transition-colors">{t("nav.faq")}</a>
+            <a href="#features" className="hover:text-slate-100 transition-colors">{t("nav.features")}</a>
+            <Link to="/store" className="hover:text-slate-100 transition-colors">{t("nav.products")}</Link>
+            <a href="#testimonials" className="hover:text-slate-100 transition-colors">{t("nav.testimonials")}</a>
+            <a href="#pricing" className="hover:text-slate-100 transition-colors">{t("nav.pricing")}</a>
+            <a href="#faq" className="hover:text-slate-100 transition-colors">{t("nav.faq")}</a>
           </div>
           <div className="flex items-center gap-3">
             {/* Language Toggle */}
@@ -143,7 +188,7 @@ export default function LandingPage() {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 ${ANIMATIONS.buttonPress} ${
                 locale === "th"
                   ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-300"
-                  : "bg-slate-800/50 border-slate-700/50 text-slate-400 hover:text-white hover:border-slate-600"
+                  : "bg-slate-800/50 border-slate-700/50 text-slate-400 hover:text-slate-100"
               }`}
             >
               <Globe size={14} />
@@ -158,7 +203,7 @@ export default function LandingPage() {
               </Link>
             ) : (
               <>
-                <Link to="/login" className="text-sm text-slate-400 hover:text-white transition-colors">
+                <Link to="/login" className="text-sm text-slate-400 hover:text-slate-100 transition-colors">
                   {t("nav.signIn")}
                 </Link>
                 <Link
@@ -174,49 +219,62 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-6">
+      <section className="relative pt-24 pb-20 px-6">
         <div className="max-w-5xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold mb-8 animate-fade-in">
-            <Sparkles size={14} />
-            {t("hero.badge")}
-          </div>
+          {/* Lyra shiny-text badge (background-position sweep, 8s) */}
+          <a href="#store" onClick={(e) => { e.preventDefault(); window.location.href = "/store"; }}
+            className="group inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-neutral-100 border border-slate-700/30 text-xs font-semibold mb-8 animate-fade-in transition-colors hover:bg-neutral-200">
+            <Sparkles size={14} className="text-indigo-400" />
+            <span className="shiny-text">{t("hero.badge")}</span>
+            <ArrowRight size={12} className="text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+          </a>
 
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-display font-extrabold tracking-tight leading-[1.1] mb-6 animate-fade-in-up">
-            <span className="bg-gradient-to-r from-white via-white to-slate-400 bg-clip-text text-transparent">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-serif font-medium tracking-tighter text-balance leading-[1.1] mb-6 animate-fade-in-up">
+            <span className="text-slate-100">
               {t("hero.title1")}
             </span>
             <br />
-            <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-              {t("hero.title2")}
-            </span>
+            <Typewriter words={typeWords} locale={locale} />
           </h1>
 
-          <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed animate-fade-in-up whitespace-pre-line" style={{ animationDelay: "0.1s" }}>
+          <p className="font-mono text-base md:text-lg text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed animate-fade-in-up whitespace-pre-line tracking-tight" style={{ animationDelay: "0.1s" }}>
             {t("hero.subtitle")}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
+            {/* Lyra 2-line primary CTA: violet pill + inset highlight + press scale */}
             <Link
               to="/store"
-              className={`group px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold rounded-2xl shadow-glow-md transition-all duration-200 flex items-center gap-2 text-lg ${ANIMATIONS.buttonPress} ${ANIMATIONS.buttonHover}`}
+              className={`group bg-secondary hover:bg-secondary/80 min-h-[72px] w-full sm:w-[336px] px-5 flex flex-col items-center justify-center text-white font-bold rounded-xl shadow-lyra border border-white/[0.12] transition-all ease-out active:scale-95 ${ANIMATIONS.buttonPress}`}
             >
-              {t("hero.cta1")}
-              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+              <div className="flex items-center gap-2 text-lg">
+                {t("hero.cta1")}
+                <ArrowRight size={18} className="group-hover:translate-x-1 rtl:-scale-x-100 transition-transform" />
+              </div>
+              <div className="text-xs font-normal opacity-90">
+                {locale === "th" ? "เริ่มต้น ฿149 · ส่งสินค้าทันที" : "From ฿149 · Instant delivery"}
+              </div>
             </Link>
+            {/* Lyra 2-line secondary CTA: white card + explicit border */}
             <a
               href="#features"
-              className={`px-8 py-4 bg-slate-800/50 hover:bg-slate-800 text-slate-300 font-semibold rounded-2xl border border-slate-700/50 transition-all duration-200 flex items-center gap-2 ${ANIMATIONS.buttonPress}`}
+              className={`min-h-[72px] w-full sm:w-[336px] p-2 flex flex-col items-center justify-center bg-white hover:bg-white/80 text-slate-100 font-semibold rounded-xl border border-[#E5E7EB] transition-all ease-out active:scale-95 ${ANIMATIONS.buttonPress}`}
             >
-              <Play size={18} />
-              {t("hero.cta2")}
+              <div className="flex items-center gap-2 text-lg">
+                <Play size={16} />
+                {t("hero.cta2")}
+              </div>
+              <div className="text-xs font-normal text-slate-500">
+                {locale === "th" ? "พรอมต์ เทมเพลต คอร์ส" : "Prompts · Templates · Courses"}
+              </div>
             </a>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-8 text-sm text-slate-500 animate-fade-in" style={{ animationDelay: "0.3s" }}>
             <div className="flex items-center gap-2">
-              <div className="flex -space-x-2">
+              <div className="flex -space-x-2 rtl:space-x-reverse">
                 {["bg-indigo-500", "bg-purple-500", "bg-cyan-500", "bg-emerald-500"].map((bg, i) => (
-                  <div key={i} className={`w-8 h-8 rounded-full ${bg} border-2 border-slate-950 flex items-center justify-center text-[10px] font-bold text-white`}>
+                  <div key={i} className={`w-8 h-8 rounded-full ${bg} border-2 border-slate-950 flex items-center justify-center text-[11px] font-bold text-white`}>
                     {["S", "M", "A", "R"][i]}
                   </div>
                 ))}
@@ -227,7 +285,7 @@ export default function LandingPage() {
               {[...Array(5)].map((_, i) => (
                 <Star key={i} size={14} className="fill-amber-400 text-amber-400" />
               ))}
-              <span className="ml-1">4.8 {t("hero.rating")}</span>
+              <span className="ms-1">4.8 {t("hero.rating")}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Shield size={14} className="text-emerald-400" />
@@ -236,6 +294,31 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Marquee band (MagicUI/Aceternity marquee — infinite scroll strip) */}
+      <div className="relative border-y border-white/[0.06] bg-white/[0.02] py-4 overflow-hidden">
+        <div className="marquee-band">
+          <div className="marquee-band__track" style={{ ["--marquee-duration" as string]: "36s" }}>
+            {[0, 1].map((dup) => (
+              <div key={dup} className="flex items-center gap-10 shrink-0 pr-10">
+                {[
+                  "AI Prompt Pack",
+                  "Notion Template",
+                  "คอร์ส AI สำหรับธุรกิจ",
+                  t("featured.subtitle"),
+                  "ส่งสินค้าทันที ⚡",
+                  "รับประกันคืนเงิน 7 วัน",
+                ].map((item) => (
+                  <span key={`${dup}-${item}`} className="flex items-center gap-10 text-sm md:text-base text-slate-400 whitespace-nowrap">
+                    {item}
+                    <span className="text-gradient-brand">✦</span>
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* Stats Bar */}
       <ScrollReveal delay={100}>
@@ -265,14 +348,14 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wider">{t("featured.badge")}</span>
-            <h2 className="text-3xl md:text-4xl font-display font-extrabold text-white mt-2">{t("featured.title")}</h2>
+            <h2 className="text-3xl md:text-4xl font-serif font-medium tracking-tighter text-balance text-slate-100 mt-2">{t("featured.title")}</h2>
             <p className="text-slate-400 mt-3 max-w-lg mx-auto">{t("featured.subtitle")}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {featuredProducts.map((product, i) => (
               <Link
                 key={product.id}
-                to={`/store/${product.slug}`}
+                to={`/f/${STORE_ORG_ID}/${product.slug}`}
                 className={`group bg-slate-900/40 border border-slate-800/80 rounded-3xl overflow-hidden animate-fade-in-up ${ANIMATIONS.cardHoverGlow}`}
                 style={staggerDelay(i)}
               >
@@ -285,7 +368,7 @@ export default function LandingPage() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
                   {product.badge && (
-                    <span className="absolute top-4 left-4 px-3 py-1 bg-indigo-500/90 text-white text-[10px] font-bold uppercase tracking-wider rounded-full">
+                    <span className="absolute top-4 start-4 px-3 py-1 bg-indigo-500/90 text-white text-[11px] font-bold uppercase tracking-wider rounded-full">
                       {product.badge}
                     </span>
                   )}
@@ -328,7 +411,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <span className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">{t("categories.badge")}</span>
-            <h2 className="text-3xl md:text-4xl font-display font-extrabold text-white mt-2">{t("categories.title")}</h2>
+            <h2 className="text-3xl md:text-4xl font-serif font-medium tracking-tighter text-balance text-slate-100 mt-2">{t("categories.title")}</h2>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {(Object.entries(CATEGORY_META) as [ProductCategory, typeof CATEGORY_META[ProductCategory]][]).map(([key, cat], i) => {
@@ -342,7 +425,7 @@ export default function LandingPage() {
                 >
                   <span className="text-3xl group-hover:scale-125 transition-transform duration-300 inline-block">{cat.icon}</span>
                   <h3 className="font-semibold text-sm text-white group-hover:text-indigo-300 transition-colors duration-200">{t(`cat.${key}`)}</h3>
-                  <p className="text-[10px] text-slate-500">{count} {t("store.products")}</p>
+                  <p className="text-[11px] text-slate-500">{count} {t("store.products")}</p>
                 </Link>
               );
             })}
@@ -357,7 +440,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <span className="text-xs font-semibold text-purple-400 uppercase tracking-wider">{t("features.badge")}</span>
-            <h2 className="text-3xl md:text-4xl font-display font-extrabold text-white mt-2">
+            <h2 className="text-3xl md:text-4xl font-serif font-medium tracking-tighter text-balance text-slate-100 mt-2">
               {(() => {
                 const parts = t("features.title").split("||");
                 return parts.length > 1 ? (
@@ -373,11 +456,11 @@ export default function LandingPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { icon: Zap, titleKey: "features.instant.title", descKey: "features.instant.desc", color: "from-amber-500 to-orange-600" },
-              { icon: Shield, titleKey: "features.quality.title", descKey: "features.quality.desc", color: "from-emerald-500 to-green-600" },
+              { icon: Zap, titleKey: "features.instant.title", descKey: "features.instant.desc", color: "from-violet-500 to-purple-600" },
+              { icon: Shield, titleKey: "features.quality.title", descKey: "features.quality.desc", color: "from-emerald-400 to-teal-500" },
               { icon: TrendingUp, titleKey: "features.roi.title", descKey: "features.roi.desc", color: "from-indigo-500 to-purple-600" },
-              { icon: RefreshCw, titleKey: "features.updates.title", descKey: "features.updates.desc", color: "from-cyan-500 to-blue-600" },
-              { icon: Lock, titleKey: "features.secure.title", descKey: "features.secure.desc", color: "from-rose-500 to-pink-600" },
+              { icon: RefreshCw, titleKey: "features.updates.title", descKey: "features.updates.desc", color: "from-indigo-400 to-cyan-400" },
+              { icon: Lock, titleKey: "features.secure.title", descKey: "features.secure.desc", color: "from-rose-400 to-pink-500" },
               { icon: Target, titleKey: "features.guarantee.title", descKey: "features.guarantee.desc", color: "from-violet-500 to-purple-600" },
             ].map(({ icon: Icon, titleKey, descKey, color }) => (
               <div
@@ -402,7 +485,7 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
             <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">{t("howItWorks.badge")}</span>
-            <h2 className="text-3xl md:text-4xl font-display font-extrabold text-white mt-2">{t("howItWorks.title")}</h2>
+            <h2 className="text-3xl md:text-4xl font-serif font-medium tracking-tighter text-balance text-slate-100 mt-2">{t("howItWorks.title")}</h2>
           </div>
           <div className="space-y-8">
             {[
@@ -435,12 +518,12 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider">{t("testimonials.badge")}</span>
-            <h2 className="text-3xl md:text-4xl font-display font-extrabold text-white mt-2">{t("testimonials.title")}</h2>
+            <h2 className="text-3xl md:text-4xl font-serif font-medium tracking-tighter text-balance text-slate-100 mt-2">{t("testimonials.title")}</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               { name: "Sarah Chen", role: locale === "th" ? "ผู้อำนวยการฝ่ายการตลาด" : "Marketing Director", text: locale === "th" ? "ชุด AI Prompts ช่วยให้ทีมเราประหยัดเวลา 15+ ชั่วโมงต่อสัปดาห์ ROI ทันที เราคืนทุนในวันแรก" : "The AI prompts bundle saved our team 15+ hours per week. The ROI was immediate — we recouped the cost in the first day.", avatar: "SC", color: "bg-indigo-500" },
-              { name: "Marcus Rivera", role: locale === "th" ? "Indie Hacker" : "Indie Hacker", text: locale === "th" ? "เปิดตัว SaaS ใน 3 วันด้วย boilerplate kit ถ้าทำเองคงต้องใช้เวลาหลายเดือน  инвестицияที่ดีที่สุด" : "I launched my SaaS in 3 days with the boilerplate kit. Would have taken me months otherwise. Best investment I've made.", avatar: "MR", color: "bg-purple-500" },
+              { name: "Marcus Rivera", role: locale === "th" ? "Indie Hacker" : "Indie Hacker", text: locale === "th" ? "เปิดตัว SaaS ใน 3 วันด้วย boilerplate kit ถ้าทำเองคงต้องใช้เวลาหลายเดือน ที่ดีที่สุด" : "I launched my SaaS in 3 days with the boilerplate kit. Would have taken me months otherwise. Best investment I've made.", avatar: "MR", color: "bg-purple-500" },
               { name: "Lisa Wong", role: locale === "th" ? "ครีเอเตอร์ (200K ผู้ติดตาม)" : "Content Creator (200K)", text: locale === "th" ? "เทมเพลตโซเชียลมีเดียเปลี่ยนกลยุทธ์เนื้อหาของเรา Interaction เพิ่มขึ้น 340% ในเดือนแรก" : "The social media templates transformed my content strategy. Engagement went up 340% in the first month. Absolutely insane results.", avatar: "LW", color: "bg-cyan-500" },
               { name: "David Park", role: locale === "th" ? "ผู้ก่อตั้ง E-commerce" : "E-commerce Founder", text: locale === "th" ? "Conversion Rate หน้าสินค้าเพิ่มจาก 2.1% เป็น 5.8% ด้วยเทมเพลต copywriting คุ้มค่าทุกบาท" : "My product page conversion rate jumped from 2.1% to 5.8% using the copywriting templates. Worth every penny and then some.", avatar: "DP", color: "bg-emerald-500" },
               { name: "Emma Rodriguez", role: locale === "th" ? "Product Manager" : "Product Manager", text: locale === "th" ? "Notion Life OS เป็นเทมเพลตเดียวที่ใช้จริงจัง 6 เดือนแล้ว ชีวิตมีระเบียบเป็นครั้งแรก" : "The Notion Life OS is the only template that stuck. 6 months in and my entire life is organized. I've tried dozens of others.", avatar: "ER", color: "bg-amber-500" },
@@ -457,7 +540,7 @@ export default function LandingPage() {
                     <div className="text-sm font-semibold text-white">{name}</div>
                     <div className="text-xs text-slate-500">{role}</div>
                   </div>
-                  <div className="ml-auto flex gap-0.5">
+                  <div className="ms-auto flex gap-0.5">
                     {[...Array(5)].map((_, i) => (
                       <Star key={i} size={10} className="fill-amber-400 text-amber-400" />
                     ))}
@@ -475,7 +558,7 @@ export default function LandingPage() {
       <section id="pricing" className="py-20 px-6 bg-slate-900/20">
         <div className="max-w-4xl mx-auto text-center">
           <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wider">{t("pricing.badge")}</span>
-          <h2 className="text-3xl md:text-4xl font-display font-extrabold text-white mt-2 mb-4">
+          <h2 className="text-3xl md:text-4xl font-serif font-medium tracking-tighter text-balance text-slate-100 mt-2 mb-4">
             {t("pricing.title")}
           </h2>
           <p className="text-slate-400 mb-10 max-w-xl mx-auto">
@@ -508,7 +591,7 @@ export default function LandingPage() {
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t("faq.badge")}</span>
-            <h2 className="text-3xl md:text-4xl font-display font-extrabold text-white mt-2">{t("faq.title")}</h2>
+            <h2 className="text-3xl md:text-4xl font-serif font-medium tracking-tighter text-balance text-slate-100 mt-2">{t("faq.title")}</h2>
           </div>
           <div className="space-y-3">
             {faqs.map((faq, i) => (
@@ -516,7 +599,7 @@ export default function LandingPage() {
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   aria-expanded={openFaq === i}
-                  className="w-full flex items-center justify-between p-5 text-left bg-slate-900/30 hover:bg-slate-900/50 transition-colors duration-200"
+                  className="w-full flex items-center justify-between p-5 text-start bg-slate-900/30 hover:bg-slate-900/50 transition-colors duration-200"
                 >
                   <span className="font-semibold text-sm text-white pr-4">{faq.q}</span>
                   <ChevronDown
@@ -526,7 +609,7 @@ export default function LandingPage() {
                 </button>
                 <div
                   className={`overflow-hidden transition-all duration-300 ease-out ${
-                    openFaq === i ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+                    openFaq === i ? "max-h-[40rem] overflow-y-auto opacity-100" : "max-h-0 opacity-0"
                   }`}
                 >
                   <div className="px-5 pb-5 text-sm text-slate-400 leading-relaxed bg-slate-900/20">
@@ -545,9 +628,9 @@ export default function LandingPage() {
       <section className="py-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <div className="p-12 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-cyan-500/10 border border-indigo-500/20 rounded-[2rem] relative overflow-hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.15),transparent_70%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(158,122,255,0.15),transparent_70%)]" />
             <div className="relative z-10">
-              <h2 className="text-3xl md:text-4xl font-display font-extrabold text-white mb-4">
+              <h2 className="text-3xl md:text-4xl font-serif font-medium tracking-tighter text-balance text-slate-100 mb-4">
                 {t("cta.title")}
               </h2>
               <p className="text-slate-400 mb-8 max-w-lg mx-auto">
@@ -598,8 +681,8 @@ export default function LandingPage() {
             <div>
               <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3">{t("footer.legal")}</h4>
               <div className="space-y-2 text-xs text-slate-500">
-                <span className="block">{t("footer.terms")}</span>
-                <span className="block">{t("footer.privacy")}</span>
+                <Link to="/terms" className="block hover:text-slate-200 transition-colors">{t("footer.terms")}</Link>
+                <Link to="/privacy" className="block hover:text-slate-200 transition-colors">{t("footer.privacy")}</Link>
                 <span className="block">{t("footer.refund")}</span>
                 <span className="block">{t("footer.license")}</span>
               </div>

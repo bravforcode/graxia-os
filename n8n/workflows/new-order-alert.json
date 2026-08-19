@@ -1,0 +1,204 @@
+{
+  "name": "Ai Factory - New Order Alert (Line + Telegram)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 2
+            }
+          ]
+        }
+      },
+      "id": "schedule-n1",
+      "name": "Every 2 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-500, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graxia-os-funnel.vercel.app/api/v1/auth/login",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"email\":\"{{ $env.ADMIN_EMAIL }}\",\"password\":\"{{ $env.ADMIN_PASSWORD }}\"}",
+        "options": {
+          "timeout": 25000
+        }
+      },
+      "id": "http-n1",
+      "name": "Login",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-300, -100]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://graxia-os-funnel.vercel.app/api/v1/funnel/orders",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.access_token }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 25000
+        }
+      },
+      "id": "http-n2",
+      "name": "Get Orders",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-100, -100]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Dedup: keep the last seen order id in workflow static data.\nconst orders = $json.orders || $json || [];\nconst list = Array.isArray(orders) ? orders : [orders];\nconst staticData = $getWorkflowStaticData('global');\nconst lastId = staticData.lastOrderId || '';\nconst newOrders = list.filter(o => o && o.id && o.id !== lastId);\nif (newOrders.length > 0) {\n  staticData.lastOrderId = newOrders[0].id;\n  return newOrders.map(o => ({ json: { id: o.id, status: o.status, amount: o.amount, currency: o.currency, email: o.customer_email || '', created: o.created_at || '' } }));\n}\nreturn [{ json: { none: true } }];"
+      },
+      "id": "code-n1",
+      "name": "Find New Orders",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [100, -100]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "cond-n1",
+              "leftValue": "={{ $json.none }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "notEqual"
+              }
+            }
+          ]
+        }
+      },
+      "id": "if-n1",
+      "name": "Has New Order?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [300, -100]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://notify-api.line.me/api/notify",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.LINE_NOTIFY_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"message\":\"🛒 NEW ORDER!\\nOrder: {{ $json.id }}\\nAmount: {{ $json.amount }} {{ $json.currency }}\\nEmail: {{ $json.email }}\"}",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "id": "http-n3",
+      "name": "Line Notify Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, -200]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "=🛒 NEW ORDER!\nOrder: {{ $json.id }}\nAmount: {{ $json.amount }} {{ $json.currency }}\nEmail: {{ $json.email }}"
+      },
+      "id": "tg-n1",
+      "name": "Telegram Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.4,
+      "position": [500, 0]
+    }
+  ],
+  "connections": {
+    "Every 2 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Login",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Login": {
+      "main": [
+        [
+          {
+            "node": "Get Orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Orders": {
+      "main": [
+        [
+          {
+            "node": "Find New Orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find New Orders": {
+      "main": [
+        [
+          {
+            "node": "Has New Order?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has New Order?": {
+      "main": [
+        [
+          {
+            "node": "Line Notify Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Telegram Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

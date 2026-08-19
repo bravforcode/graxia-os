@@ -48,8 +48,11 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Space Grotesk', 'Inter', 'system-ui', 'sans-serif'],
+        // TH glyphs fall back per-character: Inter→Sarabun, Bricolage→Prompt
+        sans: ['Inter', 'Sarabun', 'system-ui', 'sans-serif'],
+        display: ['Bricolage Grotesque', 'Prompt', 'Inter', 'Sarabun', 'system-ui', 'sans-serif'],
+        // Lyra headline serif (DM Serif Text — evidence: lyra.marqraft.com logo + H1)
+        serif: ['DM Serif Text', 'Prompt', 'Bricolage Grotesque', 'serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       animation: {
@@ -66,6 +69,11 @@ export default {
         'shimmer': 'shimmer 2s linear infinite',
         'page-enter': 'pageEnter 0.4s ease-out',
         'counter': 'counter 2s ease-out forwards',
+        // Evidence-based additions (Aceternity aurora / MagicUI marquee+shine)
+        'aurora': 'aurora 60s linear infinite',
+        'marquee': 'marquee var(--marquee-duration, 40s) linear infinite',
+        'shine': 'shine 2.5s ease-in-out infinite',
+        'spotlight-in': 'spotlightIn 1.2s 0.4s cubic-bezier(0.16, 1, 0.3, 1) both',
       },
       keyframes: {
         pageEnter: {
@@ -108,11 +116,35 @@ export default {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
         },
+        // Aceternity aurora: dual radial gradients drifting 60s
+        aurora: {
+          from: { backgroundPosition: '50% 50%, 50% 50%' },
+          to: { backgroundPosition: '350% 50%, 350% 50%' },
+        },
+        // MagicUI marquee (configurable via --marquee-duration)
+        marquee: {
+          from: { transform: 'translateX(0)' },
+          to: { transform: 'translateX(calc(-100% - var(--marquee-gap, 1rem)))' },
+        },
+        // Shine sweep for CTAs
+        shine: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
+        // Spotlight entrance (Aceternity: scale+translate sweep with delay)
+        spotlightIn: {
+          '0%': { opacity: '0', transform: 'translate(-72%, -62%) scale(0.5)' },
+          '100%': { opacity: '1', transform: 'translate(-50%, -40%) scale(1)' },
+        },
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
         'shimmer-gradient': 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)',
+        // Aceternity grid/dot patterns (45° 1px stripes @4px, 6% white; dots @10%)
+        'grid-dark': 'repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(255,255,255,0.06) 4px, rgba(255,255,255,0.06) 5px)',
+        'dot-dark': 'radial-gradient(circle, rgba(255,255,255,0.10) 1px, transparent 1px)',
+        'dot-dark-sm': 'radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)',
       },
       boxShadow: {
         'glow-sm': '0 0 15px rgba(99, 102, 241, 0.15)',

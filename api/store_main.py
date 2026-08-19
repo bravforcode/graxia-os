@@ -162,6 +162,24 @@ async def process_due(request: Request):
     return {"status": "ok", "processed": result}
 
 
+@app.get("/api/v1/system/health")
+async def system_health():
+    """Storefront health surface — the login page polls this before enabling
+    sign-in/registration (SystemHealth shape from frontend/lib/api.ts)."""
+    from app.core.runtime_state import get_runtime_state
+
+    readiness = get_runtime_state()
+    return {
+        "status": "ok" if readiness["is_ready"] else "degraded",
+        "llm_degraded": False,
+        "llm_cost_paused": False,
+        "gemini_calls_today": 0,
+        "scraper_summary": {"healthy": 0, "total": 0},
+        "readiness": readiness,
+        "event_stats": {},
+    }
+
+
 @app.get("/health")
 async def health():
     from app.core.runtime_state import get_runtime_state

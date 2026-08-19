@@ -259,6 +259,7 @@ class Settings(BaseSettings):
     # Stripe Billing
     STRIPE_SECRET_KEY: str = ""
     STRIPE_WEBHOOK_SECRET: str = ""
+    STRIPE_ENABLE_PROMPTPAY: bool = False
     STRIPE_PUBLISHABLE_KEY: str = ""
     STRIPE_PRICE_STARTER_MONTHLY: str = ""
     STRIPE_PRICE_PRO_MONTHLY: str = ""
@@ -273,7 +274,7 @@ class Settings(BaseSettings):
 
     # Email
     RESEND_API_KEY: str = ""
-    FROM_EMAIL: str = "Graxia <notifications@graxia.io>"
+    FROM_EMAIL: str = "Ai Factory <no-reply@graxia.store>"
     ALLOW_REAL_EMAIL_SEND: bool = False
 
     # Identity

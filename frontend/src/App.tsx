@@ -8,6 +8,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { LanguageProvider } from "./i18n/LanguageContext";
 import ExitIntentPopup from "./components/ui/ExitIntentPopup";
 import SocialProofPopup from "./components/ui/SocialProofPopup";
+import LegalPage from "./pages/LegalPage";
 
 const UnifiedDashboard = lazy(() => import("./pages/UnifiedDashboard"));
 const ApprovalQueue = lazy(() => import("./pages/ApprovalQueue"));
@@ -59,6 +60,8 @@ export function AppRoutes() {
         <Route path="/f/:organization_id/:slug" element={<PublicProductPage />} />
         <Route path="/checkout/success" element={<CheckoutSuccess />} />
         <Route path="/delivery/:token" element={<DeliveryAccessPage />} />
+        <Route path="/privacy" element={<LegalPage type="privacy" />} />
+        <Route path="/terms" element={<LegalPage type="terms" />} />
 
         {/* Protected routes */}
         <Route path="/" element={<PageTransition><LandingPage /></PageTransition>} />
@@ -110,7 +113,7 @@ function App() {
           <AuthProvider>
             <AppRoutes />
             <ExitIntentPopup />
-            <SocialProofPopup />
+            {/* SocialProofPopup disabled — was using fabricated demo data (audit #9) */}
           </AuthProvider>
         </LanguageProvider>
       </BrowserRouter>
