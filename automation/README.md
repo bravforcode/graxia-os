@@ -30,7 +30,7 @@ GitHub Actions (ฟรี, cron รายวัน)
 | `python automation/fastwork_poster.py --post <id>` | โพสต์จริง (draft ที่ approved เท่านั้น) |
 | `python automation/fastwork_poster.py --post --all-approved` | โพสต์ทุก draft ที่ approved |
 
-**Auth (ไม่ต้องใช้รหัสผ่าน):** เอา JWT จาก browser — เปิด fastwork.co → login → F12 → Console → `localStorage.getItem('accessToken')` → ใส่ค่าใน env `FASTWORK_JWT` (หรือรัน `--jwt-help` ดูขั้นตอนเต็ม) — fallback: `FASTWORK_EMAIL` + `FASTWORK_PASSWORD`
+**Auth (ไม่ต้องใช้รหัสผ่าน):** JWT เก็บใน **cookie** ชื่อ `accessToken` — เปิด fastwork.co → login → F12 → Console → `document.cookie.split('; ').find(c => c.startsWith('accessToken='))?.split('=')[1]` → ใส่ค่าใน env `FASTWORK_JWT` (หรือรัน `--jwt-help` ดูขั้นตอนเต็ม) — fallback: `FASTWORK_EMAIL` + `FASTWORK_PASSWORD`
 
 **หมายเหตุ:** FastWork ไม่มี public API — ใช้ internal API ที่ reverse-engineer มา ถ้า FastWork เปลี่ยน API ต้องอัปเดต `fastwork_poster.py` (error จะบอกเอง)
 

@@ -8,7 +8,8 @@ Never posts anything without an explicit --post of an APPROVED draft.
 
 Auth (no password needed — use the JWT from your browser):
     FASTWORK_JWT        — paste from browser: fastwork.co -> DevTools Console ->
-                          localStorage.getItem('accessToken')  (run --jwt-help)
+                          document.cookie.split('; ').find(c => c.startsWith('accessToken='))
+                          (run --jwt-help)  [JWT is in a COOKIE named accessToken, not localStorage]
     FASTWORK_EMAIL + FASTWORK_PASSWORD — fallback login (ถ้าหา JWT ไม่ได้)
 
 Usage:
@@ -344,12 +345,15 @@ def cmd_categories() -> int:
 
 def cmd_jwt_help() -> int:
     print("วิธีเอา FASTWORK_JWT (ไม่ต้องหารหัสผ่าน):")
+    print("  JWT เก็บใน COOKIE ชื่อ accessToken (ไม่ใช่ localStorage)")
     print("  1. เปิด https://fastwork.co ใน Chrome แล้ว login (ถ้ายังไม่เข้า)")
     print("  2. กด F12 (DevTools) -> แท็บ Console")
-    print("  3. พิมพ์:  localStorage.getItem('accessToken')  แล้วกด Enter")
-    print("  4. คัดลอกค่าที่ได้ (ขึ้นต้นด้วย eyJ...) ไปใส่ใน .env:")
+    print("  3. พิมพ์:  document.cookie.split('; ').find(c => c.startsWith('accessToken='))?.split('=')[1]")
+    print("     แล้วกด Enter — จะได้ค่า eyJ... (ถ้าได้ undefined แปลว่ายังไม่ login)")
+    print("  4. คัดลอกค่านั้นไปใส่ใน .env.local:")
     print("     FASTWORK_JWT=eyJ...")
-    print("  หรือใช้ไฟล์ .env.local ใน repo นี้ก็ได้ (อย่า commit)")
+    print("  วิธีสำรอง: F12 -> แท็บ Application -> Cookies -> https://fastwork.co ->")
+    print("  หาแถว accessToken -> คัดลอกคอลัมน์ Value")
     return 0
 
 
