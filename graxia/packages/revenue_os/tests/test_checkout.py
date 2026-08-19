@@ -152,3 +152,72 @@ async def test_create_checkout_session_stripe_error(
     with pytest.raises(HTTPException) as exc:
         await create_checkout_session(payload, db_session)
     assert exc.value.status_code == 502
+
+
+@pytest.mark.asyncio
+async def test_create_checkout_session_subscription_mode(
+    db_session: AsyncSession, published_product: Product, monkeypatch
+):
+    captured = {}
+
+    def fake_create(**kwargs):
+        captured.update(kwargs)
+        return _FakeSession()
+
+    monkeypatch.setattr(stripe_checkout, "create", fake_create)
+
+    payload = CheckoutSessionCreate(
+        product_id=published_product.id,
+        customer_email="buyer@example.com",
+        success_url="https://example.com/success",
+        cancel_url="https://example.com/cancel",
+        mode="subscription",
+    )
+    resp = await create_checkout_session(payload, db_session)
+
+    assert resp.session_id == "cs_test_123"
+    assert captured["mode"] == "subscription"
+    assert captured["line_items"][0]["price_data"]["recurring"] == {"interval": "month"}
+    assert captured["metadata"]["mode"] == "subscription"
+
+
+@pytest.mark.asyncio
+async def test_create_checkout_session_uses_stripe_price_id(
+    db_session: AsyncSession, published_product: Product, monkeypatch
+):
+    published_product.stripe_price_id = "price_123"
+    await db_session.flush()
+    captured = {}
+
+    def fake_create(**kwargs):
+        captured.update(kwargs)
+        return _FakeSession()
+
+    monkeypatch.setattr(stripe_checkout, "create", fake_create)
+
+    payload = CheckoutSessionCreate(
+        product_id=published_product.id,
+        customer_email="buyer@example.com",
+        success_url="https://example.com/success",
+        cancel_url="https://example.com/cancel",
+    )
+    await create_checkout_session(payload, db_session)
+
+    assert captured["line_items"][0]["price"] == "price_123"
+    assert "price_data" not in captured["line_items"][0]
+
+
+@pytest.mark.asyncio
+async def test_create_checkout_session_rejects_invalid_mode(
+    db_session: AsyncSession, published_product: Product
+):
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        CheckoutSessionCreate(
+            product_id=published_product.id,
+            customer_email="buyer@example.com",
+            success_url="https://example.com/success",
+            cancel_url="https://example.com/cancel",
+            mode="bogus",
+        )

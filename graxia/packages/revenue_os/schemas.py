@@ -10,7 +10,7 @@ All API endpoints use these schemas as response_model to:
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
@@ -325,6 +325,7 @@ class CheckoutSessionCreate(BaseModel):
     customer_email: EmailStr
     success_url: str = Field(..., min_length=1, max_length=2000)
     cancel_url: str = Field(..., min_length=1, max_length=2000)
+    mode: Literal["payment", "subscription"] = "payment"
 
 
 class CheckoutSessionResponse(BaseModel):
