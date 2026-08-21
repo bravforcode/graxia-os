@@ -2,6 +2,7 @@
 # NOTE: This is the Vercel build requirements.txt (repo root). The full stack
 # (scrapers/ML/celery workers) stays in backend/requirements.txt for Render.
 fastapi==0.110.0
+uvicorn[standard]==0.29.0
 python-multipart==0.0.9
 PyJWT==2.8.0
 sqlalchemy[asyncio]==2.0.27
