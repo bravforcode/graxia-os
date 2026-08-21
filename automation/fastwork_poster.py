@@ -426,7 +426,16 @@ def cmd_login() -> int:
         from playwright.sync_api import sync_playwright  # type: ignore
 
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=False)
+            # ใช้ Chrome จริงของเครื่อง (channel='chrome') เพื่อให้ Google ไม่บล็อก — fallback เป็น bundled chromium
+            # ใส่ stealth flag เพื่อลดการตรวจจับ automation
+            stealth_args = ["--disable-blink-features=AutomationControlled"]
+            try:
+                browser = p.chromium.launch(channel="chrome", headless=False, args=stealth_args)
+            except Exception:
+                try:
+                    browser = p.chromium.launch(channel="chrome", headless=False)
+                except Exception:
+                    browser = p.chromium.launch(headless=False, args=stealth_args)
             context = browser.new_context()
             page = context.new_page()
             page.goto("https://fastwork.co", wait_until="domcontentloaded")
