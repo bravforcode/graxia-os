@@ -119,6 +119,11 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # ── Root probe for Render health check (HEAD /) ───────────────────────
+    @app.api_route("/", methods=["GET", "HEAD"], tags=["System"])
+    async def _root():
+        return {"status": "ok", "service": "graxia-revenue-os"}
+
     # ── Routers ────────────────────────────────────────────────────────────
     app.include_router(api_router)
 
