@@ -1,0 +1,15 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>FastWork JWT — ลากไป Bookmarks Bar</title>
+<style>body{font-family:system-ui;padding:32px;max-width:640px;margin:auto} a.btn{display:inline-block;padding:14px 22px;background:#111;color:#fff;border-radius:10px;text-decoration:none;font-weight:700} code{background:#f3f3f3;padding:2px 6px;border-radius:6px} ol{line-height:1.9}</style>
+<h1>ลากปุ่มนี้ไป Bookmarks Bar</h1>
+<p>แล้วเปิด <b>fastwork.co</b> (login แล้ว) → คลิก bookmark ที่ลากไป → JWT จะถูกคัดลอกให้อัตโนมัติ</p>
+<p><a class="btn" href="javascript:(()=>{let c=document.cookie.split('; ').find(x=>x.trim().startsWith('accessToken='));if(!c){alert('ไม่เจอ accessToken — กรุณา login fastwork.co ก่อน');return;}let v=c.split('=')[1];navigator.clipboard.writeText(v).then(()=>{let s=v.slice(0,22)+'…'+v.slice(-8);prompt('คัดลอกแล้ว! Ctrl+C แล้ววางใน .env.local (FASTWORK_JWT=...)\n\n'+s, v)}).catch(()=>prompt('คัดลอก JWT นี้ (Ctrl+C):',v))})()">⚡ คัดลอก FastWork JWT</a></p>
+<ol>
+  <li>ลากปุ่มดำด้านบนไป <b>Bookmarks Bar</b> (ถ้าไม่เห็น bar กด <code>Ctrl+Shift+B</code>)</li>
+  <li>เปิด <code>https://fastwork.co</code> แล้ว login</li>
+  <li>คลิก bookmark <b>⚡ คัดลอก FastWork JWT</b> → จะขึ้น popup ให้คัดลอก</li>
+  <li>วางค่าใน <code>.env.local</code> → <code>FASTWORK_JWT=...</code> แล้วรัน <code>python automation/fastwork_poster.py --verify</code></li>
+</ol>
+<p style="color:#666">* Bookmarklet ทำงานเฉพาะตอนอยู่บน fastwork.co เท่านั้น (อ่าน cookie ของเว็บนั้น)</p>
+<p><a href="..">← กลับ</a></p>

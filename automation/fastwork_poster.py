@@ -344,16 +344,39 @@ def cmd_categories() -> int:
 
 
 def cmd_jwt_help() -> int:
-    print("วิธีเอา FASTWORK_JWT (ไม่ต้องหารหัสผ่าน):")
-    print("  JWT เก็บใน COOKIE ชื่อ accessToken (ไม่ใช่ localStorage)")
-    print("  1. เปิด https://fastwork.co ใน Chrome แล้ว login (ถ้ายังไม่เข้า)")
-    print("  2. กด F12 (DevTools) -> แท็บ Console")
-    print("  3. พิมพ์:  document.cookie.split('; ').find(c => c.startsWith('accessToken='))?.split('=')[1]")
-    print("     แล้วกด Enter — จะได้ค่า eyJ... (ถ้าได้ undefined แปลว่ายังไม่ login)")
-    print("  4. คัดลอกค่านั้นไปใส่ใน .env.local:")
-    print("     FASTWORK_JWT=eyJ...")
-    print("  วิธีสำรอง: F12 -> แท็บ Application -> Cookies -> https://fastwork.co ->")
-    print("  หาแถว accessToken -> คัดลอกคอลัมน์ Value")
+    print("วิธีง่ายสุด (1 คลิก, ไม่ต้องเปิด DevTools):")
+    print("  1) เปิดไฟล์ automation/fastwork_bookmarklet.html (ดับเบิ้ลคลิก)")
+    print("  2) ลากปุ่มดำ '⚡ คัดลอก FastWork JWT' ไปไว้บน Bookmarks Bar (Ctrl+Shift+B ถ้าไม่เห็น bar)")
+    print("  3) เปิด https://fastwork.co แล้ว login ให้สำเร็จ")
+    print("  4) คลิก bookmark ที่ลากไว้ -> จะคัดลอก JWT ให้อัตโนมัติ (popup)")
+    print("  5) วาง JWT ลง .env.local:  python automation/fastwork_poster.py --paste")
+    print("     (หรือวางเอง: FASTWORK_JWT=eyJ... ใน .env.local)")
+    print("")
+    print("วิธีสำรอง (ไม่มี bookmark bar): F12 -> Application -> Cookies -> https://fastwork.co -> accessToken")
+    return 0
+
+
+def cmd_paste() -> int:
+    env_path = ROOT / ".env.local"
+    raw = input("วาง JWT (eyJ...): ").strip().strip('"').strip("'")
+    if not raw or not raw.startswith("eyJ"):
+        print("ดูไม่เหมือน JWT (ควรขึ้นต้น eyJ...) — ยกเลิก")
+        return 1
+    # upsert FASTWORK_JWT in .env.local
+    lines = []
+    if env_path.exists():
+        lines = env_path.read_text(encoding="utf-8").splitlines()
+    found = False
+    for i, line in enumerate(lines):
+        if line.strip().startswith("FASTWORK_JWT="):
+            lines[i] = f"FASTWORK_JWT={raw}"
+            found = True
+            break
+    if not found:
+        lines.append(f"FASTWORK_JWT={raw}")
+    env_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"บันทึกแล้ว -> {env_path} (len={len(raw)})")
+    print("ทดสอบ: python automation/fastwork_poster.py --verify")
     return 0
 
 
@@ -397,6 +420,7 @@ def main() -> int:
     parser.add_argument("--verify", action="store_true", help="verify JWT + fetch my services (test credentials)")
     parser.add_argument("--categories", action="store_true", help="list dev subcategories (auth required)")
     parser.add_argument("--jwt-help", action="store_true", help="how to get FASTWORK_JWT from browser")
+    parser.add_argument("--paste", action="store_true", help="paste JWT and save to .env.local")
     parser.add_argument("--post", metavar="ID", help="post one approved draft")
     parser.add_argument("--all-approved", action="store_true", help="post all approved drafts")
     parser.add_argument("--dry-run", action="store_true", help="print payloads without calling create API")
@@ -416,6 +440,8 @@ def main() -> int:
         return cmd_categories()
     if args.jwt_help:
         return cmd_jwt_help()
+    if args.paste:
+        return cmd_paste()
     if args.post or args.all_approved:
         return cmd_post(args.post, args.all_approved, args.dry_run)
     parser.print_help()
