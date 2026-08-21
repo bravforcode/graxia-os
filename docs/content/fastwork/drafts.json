@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "drafts": [
+    {
+      "id": "fw_b59d6c",
+      "project": "Business Dashboard Automation",
+      "category_slug": "data-engineering",
+      "title": "ทำระบบ Dashboard ธุรกิจอัตโนมัติ รายงานแบบ Real-time",
+      "description": "รับทำระบบ BI Dashboard อัตโนมัติสำหรับธุรกิจ SME และสตาร์ทอัพ รวบรวมข้อมูลจากหลายแหล่ง (Excel, ฐานข้อมูล, API) เข้าสู่ระบบเดียว ประมวลผล ETL อัตโนมัติ และแสดงผลเป็นกราฟแดชบอร์ดแบบเรียลไทม์ แทนการทำรายงานด้วยมือที่ช้าและผิดพลาด — เจ้าของธุรกิจเห็นตัวเลข ยอดขาย สต็อก และผลประกอบการได้ทันทีโดยไม่ต้องจ้างทีม data เทคโนโลยี: Python, ETL, PostgreSQL, React, Power BI",
+      "packages": [
+        {
+          "name": "Basic",
+          "price": 14900,
+          "delivery_days": 7,
+          "description": "เริ่มต้น — งานตาม scope หลัก พร้อมแก้ไข 1 รอบ"
+        },
+        {
+          "name": "Standard",
+          "price": 29900,
+          "delivery_days": 14,
+          "description": "ยอดนิยม — ครบทุกฟีเจอร์ + แก้ไข 2 รอบ + ทดสอบระบบ"
+        },
+        {
+          "name": "Premium",
+          "price": 59900,
+          "delivery_days": 30,
+          "description": "เต็มรูปแบบ — ฟีเจอร์ทั้งหมด + deploy + สอนใช้งาน + support 30 วัน"
+        }
+      ],
+      "status": "approved",
+      "created_at": "2026-08-19T02:18:02"
+    },
+    {
+      "id": "fw_6d73b2",
+      "project": "Testlyn — Hospital Management System",
+      "category_slug": "web-development",
+      "title": "ทำระบบบริหารโรงพยาบาล/คลินิก ครบวงจร (HMS)",
+      "description": "รับพัฒนาระบบบริหารโรงพยาบาลและคลินิกแบบครบวงจร จัดการเวชระเบียนผู้ป่วย การนัดหมาย พนักงาน และขั้นตอนการทำงาน ทั้งหมดในระบบเดียว แทนที่กระดาษและสเปรดชีต ลดความผิดพลาดของข้อมูล เพิ่มความเร็วในการให้บริการ ออกแบบมาเพื่อคลินิกและโรงพยาบาลขนาดเล็กในไทยโดยเฉพาะ เทคโนโลยี: React, Node.js, PostgreSQL, Docker, REST API",
+      "packages": [
+        {
+          "name": "Basic",
+          "price": 14900,
+          "delivery_days": 7,
+          "description": "เริ่มต้น — งานตาม scope หลัก พร้อมแก้ไข 1 รอบ"
+        },
+        {
+          "name": "Standard",
+          "price": 29900,
+          "delivery_days": 14,
+          "description": "ยอดนิยม — ครบทุกฟีเจอร์ + แก้ไข 2 รอบ + ทดสอบระบบ"
+        },
+        {
+          "name": "Premium",
+          "price": 59900,
+          "delivery_days": 30,
+          "description": "เต็มรูปแบบ — ฟีเจอร์ทั้งหมด + deploy + สอนใช้งาน + support 30 วัน"
+        }
+      ],
+      "status": "approved",
+      "created_at": "2026-08-19T02:18:02"
+    },
+    {
+      "id": "fw_0ce55c",
+      "project": "Plexta — Auction Web Platform",
+      "category_slug": "web-development",
+      "title": "ทำเว็บประมูลออนไลน์ Real-time ครบวงจร",
+      "description": "รับพัฒนาเว็บแพลตฟอร์มประมูลออนไลน์แบบเรียลไทม์ ระบบประมูลสด (live bidding) การลงขายสินค้า การจัดการผู้ซื้อ-ผู้ขาย ยืนยันตัวตน และการชำระเงิน ครบในแพลตฟอร์มเดียว เหมาะสำหรับธุรกิจประมูลและตลาดซื้อขายของมือสองออนไลน์ ไม่มีค่าธรรมเนียมบุคคลที่สาม ประสบการณ์ใช้งานลื่นไหลทั้งมือถือและคอม เทคโนโลยี: React, Node.js, PostgreSQL, WebSockets, TailwindCSS",
+      "packages": [
+        {
+          "name": "Basic",
+          "price": 14900,
+          "delivery_days": 7,
+          "description": "เริ่มต้น — งานตาม scope หลัก พร้อมแก้ไข 1 รอบ"
+        },
+        {
+          "name": "Standard",
+          "price": 29900,
+          "delivery_days": 14,
+          "description": "ยอดนิยม — ครบทุกฟีเจอร์ + แก้ไข 2 รอบ + ทดสอบระบบ"
+        },
+        {
+          "name": "Premium",
+          "price": 59900,
+          "delivery_days": 30,
+          "description": "เต็มรูปแบบ — ฟีเจอร์ทั้งหมด + deploy + สอนใช้งาน + support 30 วัน"
+        }
+      ],
+      "status": "approved",
+      "created_at": "2026-08-19T02:18:02"
+    },
+    {
+      "id": "fw_b1e57f",
+      "project": "API & System Integration",
+      "category_slug": "it-solution-and-support",
+      "title": "เชื่อมต่อ API ระหว่างระบบธุรกิจอัตโนมัติ",
+      "description": "รับทำระบบเชื่อมต่อ API ระหว่างระบบธุรกิจที่แยกกันอยู่ ให้ข้อมูลไหลเวียนอัตโนมัติโดยไม่ต้องคีย์มือซ้ำ เช่น ระบบขาย-สต็อก-บัญชี-CRM เชื่อมถึงกัน ลดงาน manual ลดความผิดพลาด และรองรับการขยายระบบในอนาคต ออกแบบสถาปัตยกรรมให้ยืดหยุ่น พร้อมเอกสารและโค้ดสะอาด เทคโนโลยี: Node.js, Python, REST API, PostgreSQL, MongoDB",
+      "packages": [
+        {
+          "name": "Basic",
+          "price": 14900,
+          "delivery_days": 7,
+          "description": "เริ่มต้น — งานตาม scope หลัก พร้อมแก้ไข 1 รอบ"
+        },
+        {
+          "name": "Standard",
+          "price": 29900,
+          "delivery_days": 14,
+          "description": "ยอดนิยม — ครบทุกฟีเจอร์ + แก้ไข 2 รอบ + ทดสอบระบบ"
+        },
+        {
+          "name": "Premium",
+          "price": 59900,
+          "delivery_days": 30,
+          "description": "เต็มรูปแบบ — ฟีเจอร์ทั้งหมด + deploy + สอนใช้งาน + support 30 วัน"
+        }
+      ],
+      "status": "approved",
+      "created_at": "2026-08-19T02:18:02"
+    }
+  ]
+}

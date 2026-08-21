@@ -534,11 +534,11 @@ def cmd_post(draft_id: str | None, all_approved: bool, dry_run: bool) -> int:
         print(f"posting {d['id']}: {d['title']}")
         result = post_draft(jwt, d, dry_run=dry_run)
         print(f"  -> {json.dumps(result, ensure_ascii=False)[:400]}")
-        if result.get("ok"):
+        if result.get("ok") and not dry_run:
             d["status"] = "posted"
             d["posted_at"] = datetime.now().isoformat(timespec="seconds")
             d["product_id"] = result.get("product_id")
-            d["subcategory_id"] = str(result.get("subcategory", {}).get("id", "")) if not dry_run else None
+            d["subcategory_id"] = str(result.get("subcategory", {}).get("id", ""))
             save_drafts(drafts)
     return 0
 
