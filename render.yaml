@@ -9,8 +9,7 @@ services:
   - type: web
     name: graxia-backend
     runtime: docker
-    repo: https://github.com/bravforcode/graxia-os.git
-    branch: main
+    plan: starter
     dockerfilePath: ./backend/Dockerfile
     envVars:
       - key: DATABASE_URL
@@ -44,8 +43,7 @@ services:
       - { key: ALLOWED_CORS_ORIGINS, value: "https://graxia-os-funnel.vercel.app" }
       - { key: CORS_ORIGINS, value: "https://graxia-os-funnel.vercel.app" }
       - { key: APP_HOST, value: "graxia-backend.onrender.com" }
-      - key: APP_BASE_URL
-        value: https://graxia-backend.onrender.com
+      - { key: APP_BASE_URL, value: "https://graxia-backend.onrender.com" }
       # Manual env vars (fill in Render dashboard)
       - { key: SECRET_KEY, sync: false }
       - { key: ENCRYPTION_KEY, sync: false }
@@ -65,8 +63,7 @@ services:
   - type: web
     name: graxia-revenue-os
     runtime: docker
-    repo: https://github.com/bravforcode/graxia-os.git
-    branch: main
+    plan: starter
     dockerfilePath: ./Dockerfile.revenue-os
     envVars:
       - key: DATABASE_URL
@@ -88,6 +85,7 @@ services:
   - type: worker
     name: graxia-worker-default
     runtime: docker
+    plan: starter
     dockerfilePath: ./backend/Dockerfile
     dockerCommand: celery -A app.tasks.celery_app worker -Q default -c 2 -n default@%h
     envVars:
@@ -118,6 +116,7 @@ services:
   - type: worker
     name: graxia-worker-critical
     runtime: docker
+    plan: starter
     dockerfilePath: ./backend/Dockerfile
     dockerCommand: celery -A app.tasks.celery_app worker -Q critical -c 1 -n critical@%h
     envVars:
@@ -148,6 +147,7 @@ services:
   - type: worker
     name: graxia-beat
     runtime: docker
+    plan: starter
     dockerfilePath: ./backend/Dockerfile
     dockerCommand: python -m app.tasks.beat_launcher
     envVars:
@@ -184,4 +184,3 @@ databases:
 redis:
   - name: graxia-redis
     plan: starter
-    ipAllowList: []
