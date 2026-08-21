@@ -30,7 +30,7 @@ GitHub Actions (ฟรี, cron รายวัน)
 | `python automation/fastwork_poster.py --post <id>` | โพสต์จริง (draft ที่ approved เท่านั้น) |
 | `python automation/fastwork_poster.py --post --all-approved` | โพสต์ทุก draft ที่ approved |
 
-**Auth (ไม่ต้องใช้รหัสผ่าน):** วิธีง่ายสุด — เปิด `automation/fastwork_bookmarklet.html` → ลากปุ่มดำไป Bookmarks Bar → เปิด fastwork.co login → คลิก bookmark (คัดลอก JWT อัตโนมัติ) → `python automation/fastwork_poster.py --paste` วางแล้วเซฟลง `.env.local` — รายละเอียด: `python automation/fastwork_poster.py --jwt-help` — fallback: `FASTWORK_EMAIL` + `FASTWORK_PASSWORD`
+**Auth (ไม่ต้องใช้รหัสผ่าน):** ง่ายสุด → `python automation/fastwork_poster.py --login` (เปิด browser ให้ login, ระบบจับ JWT บันทึก `.env.local` ให้เอง — ไม่ต้องเปิด DevTools) — สำรอง: เปิด `automation/fastwork_bookmarklet.html` ลากปุ่มไป Bookmarks Bar → คลิก → `python automation/fastwork_poster.py --paste` — fallback: `FASTWORK_EMAIL` + `FASTWORK_PASSWORD`
 
 **หมายเหตุ:** FastWork ไม่มี public API — ใช้ internal API ที่ reverse-engineer มา ถ้า FastWork เปลี่ยน API ต้องอัปเดต `fastwork_poster.py` (error จะบอกเอง)
 

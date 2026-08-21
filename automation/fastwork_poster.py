@@ -6,13 +6,13 @@ Flow: generate drafts (template, no AI key needed) -> human approves -> script p
 
 Never posts anything without an explicit --post of an APPROVED draft.
 
-Auth (no password needed — use the JWT from your browser):
-    FASTWORK_JWT        — paste from browser: fastwork.co -> DevTools Console ->
-                          document.cookie.split('; ').find(c => c.startsWith('accessToken='))
-                          (run --jwt-help)  [JWT is in a COOKIE named accessToken, not localStorage]
+Auth (no password needed):
+    --login  — easiest: opens browser, you login, auto-saves JWT to .env.local (recommended)
+    FASTWORK_JWT — or paste manually (run --jwt-help)
     FASTWORK_EMAIL + FASTWORK_PASSWORD — fallback login (ถ้าหา JWT ไม่ได้)
 
 Usage:
+    python automation/fastwork_poster.py --login             # easiest: browser login, auto-save JWT
     python automation/fastwork_poster.py --generate          # create drafts (template, $0)
     python automation/fastwork_poster.py --list              # show drafts + status
     python automation/fastwork_poster.py --approve <id>      # mark a draft approved
@@ -27,6 +27,7 @@ import argparse
 import json
 import os
 import sys
+import time
 import uuid
 from datetime import date, datetime
 
@@ -380,6 +381,102 @@ def cmd_paste() -> int:
     return 0
 
 
+def _save_jwt(jwt: str) -> None:
+    env_path = ROOT / ".env.local"
+    lines = env_path.read_text(encoding="utf-8").splitlines() if env_path.exists() else []
+    found = False
+    for i, line in enumerate(lines):
+        if line.strip().startswith("FASTWORK_JWT="):
+            lines[i] = f"FASTWORK_JWT={jwt}"
+            found = True
+            break
+    if not found:
+        lines.append(f"FASTWORK_JWT={jwt}")
+    env_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"บันทึก JWT แล้ว -> {env_path} (len={len(jwt)})")
+
+
+def cmd_login() -> int:
+    """Easiest path: open browser, you login, auto-capture cookie accessToken and save."""
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        print("ติดตั้ง playwright ครั้งแรก (รอ ~1 นาที)...")
+        import subprocess
+
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "playwright", "-q"])
+        except subprocess.CalledProcessError:
+            print("ติดตั้ง playwright ไม่สำเร็จ — ใช้วิธีสำรอง: python automation/fastwork_poster.py --jwt-help")
+            return 1
+        try:
+            from playwright.sync_api import sync_playwright  # type: ignore
+        except ImportError:
+            print("นำเข้า playwright ไม่ได้ — ใช้ --jwt-help")
+            return 1
+        print("ดาวน์โหลด browser (chromium)...")
+        try:
+            subprocess.check_call([sys.executable, "-m", "playwright", "install", "chromium"])
+        except subprocess.CalledProcessError:
+            subprocess.check_call([sys.executable, "-m", "playwright", "install"])
+
+    print("เปิด browser — กรุณา login ที่หน้าต่างที่เปิดขึ้น (มีเวลา 5 นาที)")
+    print("หลัง login สำเร็จ ระบบจะจับ JWT ให้อัตโนมัติและปิด browser เอง")
+    try:
+        from playwright.sync_api import sync_playwright  # type: ignore
+
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=False)
+            context = browser.new_context()
+            page = context.new_page()
+            page.goto("https://fastwork.co", wait_until="domcontentloaded")
+            # also try login page directly if not logged in
+            jwt = None
+            for _ in range(300):  # 5 min polling
+                if page.is_closed():
+                    break
+                try:
+                    cookies = context.cookies()
+                    for c in cookies:
+                        if c["name"] == "accessToken" and c["value"].startswith("eyJ"):
+                            jwt = c["value"]
+                            break
+                    if jwt:
+                        break
+                    # fallback: document.cookie (in case same-site)
+                    try:
+                        doc = page.evaluate("document.cookie")
+                        if "accessToken=" in doc:
+                            m = doc.split("accessToken=")[1].split(";")[0]
+                            if m.startswith("eyJ"):
+                                jwt = m
+                                break
+                    except Exception:
+                        pass
+                except Exception:
+                    pass
+                time.sleep(1)
+            browser.close()
+            if not jwt:
+                print("ไม่เจอ JWT — คุณได้ login สำเร็จหรือยัง? ลองใหม่: python automation/fastwork_poster.py --login")
+                print("หรือใช้ bookmarklet: python automation/fastwork_poster.py --jwt-help")
+                return 1
+            _save_jwt(jwt)
+            print("ทดสอบ auth...")
+            # quick verify
+            try:
+                svc = get_my_services(jwt)
+                print(f"auth OK — getMyServices ok: {str(svc)[:200]}")
+            except Exception as e:
+                print(f"บันทึกแล้วแต่ verify ไม่ผ่าน: {e}")
+                print("ลอง: python automation/fastwork_poster.py --verify")
+            return 0
+    except Exception as e:
+        print(f"login อัตโนมัติล้มเหลว: {e}")
+        print("วิธีสำรอง: python automation/fastwork_poster.py --jwt-help")
+        return 1
+
+
 def cmd_post(draft_id: str | None, all_approved: bool, dry_run: bool) -> int:
     jwt = get_jwt()
     drafts = load_drafts()
@@ -419,6 +516,7 @@ def main() -> int:
     parser.add_argument("--reject", metavar="ID", help="mark draft rejected")
     parser.add_argument("--verify", action="store_true", help="verify JWT + fetch my services (test credentials)")
     parser.add_argument("--categories", action="store_true", help="list dev subcategories (auth required)")
+    parser.add_argument("--login", action="store_true", help="easiest: open browser, login, auto-save JWT (recommended)")
     parser.add_argument("--jwt-help", action="store_true", help="how to get FASTWORK_JWT from browser")
     parser.add_argument("--paste", action="store_true", help="paste JWT and save to .env.local")
     parser.add_argument("--post", metavar="ID", help="post one approved draft")
@@ -438,6 +536,8 @@ def main() -> int:
         return cmd_verify()
     if args.categories:
         return cmd_categories()
+    if args.login:
+        return cmd_login()
     if args.jwt_help:
         return cmd_jwt_help()
     if args.paste:
