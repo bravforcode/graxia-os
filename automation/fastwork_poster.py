@@ -59,10 +59,26 @@ PROJECT_CATEGORY = {
 }
 
 
+def _load_dotenv_local() -> None:
+    """Load .env.local into os.environ if present (without overwriting existing env)."""
+    dotenv = ROOT / ".env.local"
+    if not dotenv.exists():
+        return
+    for line in dotenv.read_text(encoding="utf-8", errors="ignore").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, v = line.split("=", 1)
+        k, v = k.strip(), v.strip().strip('"').strip("'")
+        if k and v and k not in os.environ:
+            os.environ[k] = v
+
+
 # ── auth ────────────────────────────────────────────────────────────────────
 def get_jwt() -> str:
-    """JWT from FASTWORK_JWT env, else login with email/password. Raises on failure."""
-    jwt = os.environ.get("FASTWORK_JWT", "").strip()
+    """JWT from FASTWORK_JWT env (or .env.local), else login with email/password. Raises on failure."""
+    _load_dotenv_local()
+    jwt = os.environ.get("FASTWORK_JWT", "").strip().strip('"').strip("'")
     if jwt:
         return jwt
     email = os.environ.get("FASTWORK_EMAIL", "")
@@ -392,7 +408,17 @@ def _save_jwt(jwt: str) -> None:
             break
     if not found:
         lines.append(f"FASTWORK_JWT={jwt}")
-    env_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    # dedupe: keep only first FASTWORK_JWT
+    out, seen = [], False
+    for l in lines:
+        if l.strip().startswith("FASTWORK_JWT="):
+            if not seen:
+                out.append(l)
+                seen = True
+        else:
+            out.append(l)
+    env_path.write_text("\n".join(out) + "\n", encoding="utf-8")
+    os.environ["FASTWORK_JWT"] = jwt
     print(f"บันทึก JWT แล้ว -> {env_path} (len={len(jwt)})")
 
 
