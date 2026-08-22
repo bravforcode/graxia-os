@@ -129,6 +129,20 @@ async def seed_db(admin=Depends(require_admin_api_key)) -> dict:
     return {"status": "seeded", "wired": wired}
 
 
+@router.get("/products", dependencies=[Depends(require_admin_api_key)], summary="Admin: list products")
+async def list_products(admin=Depends(require_admin_api_key)) -> list[dict]:
+    async with get_db_session() as db:
+        from graxia.packages.revenue_os.models import Product
+        from sqlalchemy import select
+
+        result = await db.execute(select(Product))
+        products = result.scalars().all()
+        return [
+            {"id": str(p.id), "slug": p.slug, "name": p.name, "price_cents": p.price_cents, "stripe_price_id": p.stripe_price_id, "status": p.status.value if hasattr(p.status, "value") else str(p.status)}
+            for p in products
+        ]
+
+
 @router.get(
     "/metrics",
     summary="Prometheus metrics",
