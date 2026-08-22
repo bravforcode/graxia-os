@@ -25,6 +25,7 @@ const EventBus = lazy(() => import("./pages/EventBus"));
 const Agents = lazy(() => import("./pages/Agents"));
 const Settings = lazy(() => import("./pages/Settings"));
 const RevenueOSDashboard = lazy(() => import("./pages/RevenueOSDashboard"));
+const RevenueOSFunnel = lazy(() => import("./pages/RevenueOSFunnel"));
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -60,6 +61,7 @@ export function AppRoutes() {
         <Route path="/f/:organization_id/:slug" element={<PublicProductPage />} />
         <Route path="/checkout/success" element={<CheckoutSuccess />} />
         <Route path="/delivery/:token" element={<DeliveryAccessPage />} />
+        <Route path="/revenue-os" element={<PageTransition><RevenueOSFunnel /></PageTransition>} />
         <Route path="/privacy" element={<LegalPage type="privacy" />} />
         <Route path="/terms" element={<LegalPage type="terms" />} />
 
