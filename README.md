@@ -24,19 +24,14 @@
 
 ### Demo
 
-> **Docs/demo.gif placeholder — replace with 30s screen capture of control plane in action**
+> 🎬 **Demo coming soon** — 30s screen capture of the control plane in action will be added at `docs/demo.gif`
 
-<p align="center">
-  <img src="https://via.placeholder.com/1280x720/0f172a/38bdf8?text=Graxia+OS+—+Control+Plane+Demo+—+Add+docs/demo.gif" width="100%" alt="Graxia OS Demo" />
-  <br/>
-  <em>Control plane: opportunities → drafts → approvals → tasks → costs → event bus (React 18 + FastAPI)</em>
-</p>
+**Control plane: opportunities → drafts → approvals → tasks → costs → event bus (React 18 + FastAPI)**
 
-```
-# To add your demo:
-# 1. Record 30s of http://localhost:5173 (opportunities → draft → approval)
-# 2. Save as docs/demo.gif (optimize with gifsicle)
-# 3. Commit — placeholder above will auto-resolve
+```bash
+# Run it yourself in 30 seconds:
+docker compose --env-file .env.dev -f config/docker-compose.dev.yml up
+# Frontend: http://localhost:5173
 ```
 
 ---
@@ -156,3 +151,4 @@ Full runbook: [`docs/SUPABASE_PRODUCTION.md`](docs/SUPABASE_PRODUCTION.md)
 `nxme176@gmail.com` · `092-551-0427` · [LinkedIn](https://www.linkedin.com/in/%E0%B8%9E%E0%B8%B5%E0%B8%A3%E0%B8%A7%E0%B8%B4%E0%B8%8A%E0%B8%8D%E0%B9%8C-%E0%B8%88%E0%B8%B4%E0%B8%95%E0%B8%93%E0%B8%A3%E0%B8%87%E0%B8%84%E0%B9%8C-0000393a4) · [Fastwork](https://fastwork.co/user/bravforcode?source=search)
 
 > Looking for a technical co-founder or full-time AI + Full-Stack hire? Let's build.
+
